@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-dingtalk-excel"
+version = "1.0.0"
+description = "钉钉Excel解析 MCP 服务器 - 支持Excel表格数据获取"
+authors = [
+    {name = "黄云堃", email = "huang.yunkun@hellogroup.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["mcp", "dingtalk", "excel", "spreadsheet"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "mcp>=1.0.0",
+    "httpx>=0.27.0",
+    "pydantic>=2.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/mcp-dingtalk-excel"
+Documentation = "https://github.com/yourusername/mcp-dingtalk-excel#readme"
+Repository = "https://github.com/yourusername/mcp-dingtalk-excel.git"
+
+[project.scripts]
+mcp-dingtalk-excel = "mcp_dingtalk_excel:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["mcp_dingtalk_excel"]
+

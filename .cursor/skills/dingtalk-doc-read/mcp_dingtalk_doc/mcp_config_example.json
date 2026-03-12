@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "dingtalk-doc": {
+      "command": "/Users/momo/Downloads/mcp_dingtalk_doc/venv/bin/python3.12",
+      "args": [
+        "/Users/momo/Downloads/mcp_dingtalk_doc/server.py"
+      ],
+      "env": {
+        "DINGTALK_COOKIE": "XSRF-TOKEN=2c2a53ad-2cdb-42a5-be33-b3de9651a1ab; cna=WQDusGkrMgjDVtyn7CWtZmdv; deviceid=989d20eec8894c188de835198bded875; pub_uid=6P%2Br5K8UNB4f%2FFSUMjdKYg%3D%3D; arms_uid=7c315fc8-2048-4209-8435-4fa3ec0b816e; account=oauth_k1%3AX94U6A1EbvB6lkQg4qA7QL8Ju8Ozhm8H9KInUCR6NvZqA5o9AjWW773ThCSiQn4QKFLvT3ejV90lVkAx%2FInJSwMHwWP9tD3C6Yx8KjDhpAA%3D; portal_side_collapsed=true; xlly_s=1; doc_atoken=MzQwNzUwMDU2QqrIChjcdeBhigVOEaUafBnkdTxTtMDS; dt_s=u-144f6ee8-9a52c1e2e1-212b5f60-1353d0-53fc2b6c-d0f1b21e-11d2-4a7d-a9ae-ae4ab0e1c9b5; RECENT_OPEN_DOC_KEYS=4maOgXbAaEzoKlWN%2C3M0OzeZx4Wmwoqze; portal_corp_id=ding7bea6d685b5f346535c2f4657eb6378f; user_preferences_setting={%22appearance%22:%22light%22}; ding_doc_unified_login=true; tfstk=gBqoPatPVjO6ixxWr9m5ry1txB_Ae0iQYWKK9DhFujlfFDUROWc3LjELeJE-LDVbN2r-28FcxjPxwkBSwSmYiJJyp0i-lEE3yBEKPenxGAeJwz_zNsTxplPnRTGKTXVLLzBAXGe7FDiUt1IOXKBw2fNnU4kF09kKCQWxzXTO7AoF61IvkKu5wDy-qNFZu-ljKvREYWk2uAhqUU-zTjuqQAdrYDPFnjknIY8yz382uYGqTDoUT-WmpjkrYDPU3tDI6t-Eskrb06Z-_Ry3O_EZE4caUby8eoSKzUwoi7Pu0Y2m_8lWYHrmE4r2hScINDzzeS0Tr1xoX8z_OAPya_D0qRq37SSvqD247km40sJxaPw0x0EPpgo4q7qroWJpk4z_wPu0D_xj_ry0pq4fdUhL5vPI5kC6VbyUClatjMvnnP2qmg5WuFSf_HMVpo8BR4kjnfCGPQmmScBqptXD5agrhYCOntYBe4kjUL6cnF9EzxM-t; isg=BFdXZpec8qX3DHywdtVv-2_M5s2hnCv-HU6p2KmEyCaI2HYasWgqTqRmOnhGMAN2"
+      }
+    }
+  }
+}

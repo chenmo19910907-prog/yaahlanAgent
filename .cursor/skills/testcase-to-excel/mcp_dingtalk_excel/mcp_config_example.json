@@ -1,0 +1,16 @@
+{
+    "mcpServers": {
+        "dingtalk-excel": {
+            "command": "/Users/momo/Downloads/mcp_dingtalk_excel/venv/bin/python3",
+            "args": [
+                "/Users/momo/Downloads/mcp_dingtalk_excel/server_read.py"
+            ],
+            "env": {
+                "DINGTALK_AEGIS_KEY": "6e187070-8dfc-4260-94b2-3a87d2408479",
+                "DINGTALK_AEGIS_SECRET": "b64afa70-52ce-4c3f-9221-d4bf83ddf265t",
+                "DINGTALK_WORKID": "110762",
+                "DINGTALK_EXCEL_OUTPUT_DIR": "/Users/momo/Downloads/mcp_dingtalk_excel/cases"
+            }
+        }
+    }
+}

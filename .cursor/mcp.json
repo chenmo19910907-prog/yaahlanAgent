@@ -1,0 +1,29 @@
+{
+  "mcpServers": {
+    "dingtalk-doc": {
+      "command": ".cursor/skills/dingtalk-doc-read/mcp_dingtalk_doc/venv/bin/python3.12",
+      "args": [".cursor/skills/dingtalk-doc-read/mcp_dingtalk_doc/server.py"],
+      "env": {
+        "DINGTALK_COOKIE": "d34f2fee-2d0f-4e0b-8830-f45be56c72b6; deviceid=86335645cf2d4b55a0f43e0fa3be9092; pub_uid=6P%2Br5K8UNB4f%2FFSUMjdKYg%3D%3D; cna=LRICInLgBSICAWo/aJi0tNGV; account=oauth_k1%3AnkBp%2BTH4Jom%2BD1UKS6K%2Bj6BjA6zloRCv3EAXN9t7PdpZ%2FY%2Fp3ZVU2SMjDFeAI9hPHeBwsY%2Bs0vYZo8R%2F2nEgmmu3ahSLWDPpBm%2FGyPnaDfg%3D; doc_atoken=MzQwNzUwMDU2cfZWditlePQWvbBOcYLqsBlBtmTdPRzB; dt_s=u-144f6ee8-9cb7b2f66f-b522302-2203fa-1c930252-6e060d45-60ad-4541-8056-3949f4931bb3; portal_corp_id=ding7bea6d685b5f346535c2f4657eb6378f; ding_doc_unified_login=false"
+      }
+    },
+    "dingtalk-excel-read": {
+      "command": ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/venv/bin/python3",
+      "args": [".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/server_read.py"],
+      "env": {
+        "DINGTALK_AEGIS_KEY": "6e187070-8dfc-4260-94b2-3a87d2408479",
+        "DINGTALK_AEGIS_SECRET": "b64afa70-52ce-4c3f-9221-d4bf83ddf265",
+        "DINGTALK_WORKID": "110762"
+      }
+    },
+    "dingtalk-excel-write": {
+      "command": ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/venv/bin/python3",
+      "args": [".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/server_write.py"],
+      "env": {
+        "DINGTALK_AEGIS_KEY": "6e187070-8dfc-4260-94b2-3a87d2408479",
+        "DINGTALK_AEGIS_SECRET": "b64afa70-52ce-4c3f-9221-d4bf83ddf265",
+        "DINGTALK_WORKID": "110762"
+      }
+    }
+  }
+}
