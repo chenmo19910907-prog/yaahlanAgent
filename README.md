@@ -1,23 +1,29 @@
-# 钉钉营收活动测试用例自动生成
+# 钉钉测试用例自动生成（Yaahlan 分支）
 
-基于 Cursor Agent Skills 与钉钉 MCP 的营收活动测试用例自动生成工程。根据钉钉需求文档和通用测试规则，自动生成结构化测试用例并写入钉钉 Excel。
+基于 Cursor Agent Skills 与钉钉 MCP，从钉钉需求文档与项目规则生成结构化测试用例，并可同步到钉钉 Excel。本仓库 **`yaahlan`** 分支主要用于 **Yaahlan** 用例自动化；其他业务可在同流程下扩展。
 
 ## 功能特性
 
-- **需求解析**：从钉钉文档（普通文档/Excel）读取产品需求
-- **规则驱动**：参考 `rules/testcase_generation_rules.md` 中的榜单、抽奖、兑换、礼包等通用规则补充用例
-- **模板对齐**：相似模块（如房间榜/礼物榜）参考 `templates/` 下模板做结构对齐
-- **用例输出**：生成 Markdown/JSON 用例，支持写入钉钉 Excel
+- **需求解析**：钉钉普通文档 / Excel 需求读取（`dingtalk-doc-read` + `parse_document` 等）
+- **PRD 理解**：生成用例前可按 `prd-review` Skill 做需求摘要与边界梳理（见 `.cursor/skills/prd-review/SKILL.md`）
+- **规则驱动**：参考 `rules/testcase_generation_rules.md`（榜单、抽奖、兑换、礼包等通用规则）补充用例
+- **业务参考**：`documents/` 下可维护模块说明（如 `gift.md` 礼物业务），与 PRD 组合生成用例
+- **模板对齐**：相似模块参考 `templates/`（如榜单类对齐 `templates/榜单.md`）
+- **用例输出**：Markdown 表格等写入 `temporary_testcase/`，经 `testcase-to-excel` 分批写入钉钉 Excel
 
 ## 项目结构
 
 ```
-dingtalk-uc-auth-testcase-skill/
-├── README.md                 # 本文件
-├── SKILL.md                  # 主 Skill 定义（soulchill营收活动用例自动生成）
-├── rules/
-│   └── testcase_generation_rules.md   # 测试用例生成规则（榜单/抽奖/兑换/礼包）
-├── templates/                # 模块用例模板
+auto-generate-testcase/
+├── README.md                          # 本文件
+├── SKILL.md                           # 主流程：营收活动用例自动生成（模块提取与钉钉解析）
+├── rules/                             # 生成规则与辅助流程说明
+│   ├── testcase_generation_rules.md   # 通用：榜单 / 抽奖 / 兑换 / 礼包等
+│   ├── version_testcase_generation_rules.md  # 版本回归（须先读 documents/ 对应模块）
+│   └── dingtalk_historical_testcase_to_md.md   # 钉钉历史用例 → Markdown 等（按需）
+├── documents/                         # 业务模块参考（功能/版本用例生成前优先阅读）
+│   └── gift.md                        # 示例：礼物业务梳理（可继续增加 *.md）
+├── templates/                         # 与钉钉表或模块维度对齐的用例骨架
 │   ├── 榜单.md
 │   ├── 抽奖.md
 │   └── 奖励领取.md
@@ -52,20 +58,21 @@ dingtalk-uc-auth-testcase-skill/
 
 ### 1. 生成测试用例
 
-提供钉钉需求文档 URL，由 Agent 执行：
+向 Agent 提供 **钉钉需求文档 URL**（及可选：`documents/` 业务说明、规则/模板路径）。推荐流程：
 
-1. 使用 `dingtalk-doc-read` 解析需求文档
-2. 从需求表格提取所有模块（头图、规则、奖励、tab、业务模块等）
-3. 按 `testcase_generation_rules.md` 和 `templates/` 补充通用用例
-4. 生成用例并保存到 `temporary_testcase/`
+1. 必要时先按 **prd-review** 梳理需求摘要与异常边界  
+2. 使用 **dingtalk-doc** 解析文档（表格模块勿遗漏）  
+3. 结合 `testcase_generation_rules.md` 与 `templates/` 补全维度  
+4. 输出到 `temporary_testcase/*.md`（或项目约定格式）
 
 ### 2. 写入钉钉 Excel
 
-提供钉钉 Excel URL，由 Agent 执行：
+提供 **钉钉 Excel 文档 URL**，由 Agent 使用 **testcase-to-excel** Skill：
 
-1. 从 `temporary_testcase/` 读取用例（支持 `.md`、`.json`）
-2. 解析为 `编号 | 功能模块 | 测试步骤 | 预期结果` 格式
-3. 通过 `dingtalk-excel-write` 写入钉钉 Excel（大批量自动分批）
+1. 从 `temporary_testcase/` 读取 `.md` / `.csv`  
+2. 映射列为：`编号` | `功能模块` | `测试步骤` | `预期结果`（可与「用例标题」合并到功能模块列）  
+3. `write_sheet_data` 写入；**超过约 50 行时分批**，递增 `startRow`  
+4. 写入失败若提示 `InvalidAuthentication`，需更新 Aegis/Cookie 后重试  
 
 ### 3. 用例格式
 
@@ -78,14 +85,23 @@ dingtalk-uc-auth-testcase-skill/
 
 ## 规则与模板
 
-### 规则文档 (`rules/testcase_generation_rules.md`)
+- **`rules/testcase_generation_rules.md`**：榜单、抽奖、兑换、购买礼包等通用片段；生成时覆盖正向 / 反向 / 边界 / 交互。  
+- **`rules/version_testcase_generation_rules.md`**：发版 / 版本回归用例；**生成前须先在 `documents/` 查找并阅读对应模块文档**（如 `gift.md`），再叠加版本 PRD。  
+- **`templates/`**：与钉钉表结构对齐的模块骨架，可按活动同步更新。  
 
 - **榜单**：数据格式、显示规则、交互、分页、计值、房间榜
 - **抽奖**：积分获取、抽奖过程、奖励下发
 - **兑换**：积分获取、兑换失败/成功
 - **购买礼包**：礼包展示、购买/转赠成功/失败、状态更新
 
-### 模板 (`templates/`)
+| Skill / 文档 | 说明 |
+|--------------|------|
+| 根目录 `SKILL.md` | 营收活动用例主流程与模块提取要求 |
+| `dingtalk-doc-read` | 读钉钉文档、Cookie 处理 |
+| `testcase-generator` | 用例生成约定与参数 |
+| `testcase-to-excel` | 解析临时用例并写入钉钉 Excel |
+| `prd-review` | 生成前 PRD 理解与审查维度 |
+| `dingtalk_historical_testcase_to_md.md` | 历史用例导出 Markdown 等（按需） |
 
 - `榜单.md`：榜单类模块完整用例维度
 - `抽奖.md`：抽奖活动用例模板
@@ -93,20 +109,17 @@ dingtalk-uc-auth-testcase-skill/
 
 模板可从钉钉 Excel 的对应 sheet 同步更新。
 
-## Skills 说明
+## 分支说明
 
-| Skill | 说明 |
-|-------|------|
-| `dingtalk-doc-read` | 读取钉钉文档，支持 Cookie 过期时刷新 |
-| `testcase-generator` | 从需求文档生成测试用例 |
-| `testcase-to-excel` | 将用例写入钉钉 Excel |
+- **`yaahlan`**：当前默认开发分支，与远端 `origin/yaahlan` 对齐；README 以本分支为准更新。  
+- 其他分支（如 `hanmin`）可能结构不同，切换前请 **stash / 提交** 本地修改，避免与 `.cursor/mcp.json` 等冲突。
 
 ## 扩展模板
 
 从钉钉 Excel 同步模板到 `templates/`：
 
-```
-读取 https://alidocs.dingtalk.com/i/nodes/XXX 的 [sheet名] sheet
+```text
+读取 https://alidocs.dingtalk.com/i/nodes/<NODE_ID> 的 [sheet 名]
 生成 [模块名].md 放到 templates 目录下
 ```
 
