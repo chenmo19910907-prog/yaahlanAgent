@@ -7,7 +7,7 @@
 - **需求解析**：钉钉普通文档 / Excel 需求读取（`dingtalk-doc-read` + `parse_document` 等）
 - **PRD 理解**：生成用例前可按 `prd-review` Skill 做需求摘要与边界梳理（见 `.cursor/skills/prd-review/SKILL.md`）
 - **规则驱动**：参考 `rules/testcase_generation_rules.md`（榜单、抽奖、兑换、礼包等通用规则）补充用例
-- **业务参考**：`documents/` 下可维护模块说明（如 `gift.md` 礼物业务），与 PRD 组合生成用例
+- **业务参考**：`documents/` 下按模块维护说明（如 `gift.md` 礼物、`moments/` 下动态子域文档），与 PRD 组合生成用例
 - **模板对齐**：相似模块参考 `templates/`（如榜单类对齐 `templates/榜单.md`）
 - **用例输出**：Markdown 表格等写入 `temporary_testcase/`，经 `testcase-to-excel` 分批写入钉钉 Excel
 
@@ -19,10 +19,15 @@ auto-generate-testcase/
 ├── SKILL.md                           # 主流程：营收活动用例自动生成（模块提取与钉钉解析）
 ├── rules/                             # 生成规则与辅助流程说明
 │   ├── testcase_generation_rules.md   # 通用：榜单 / 抽奖 / 兑换 / 礼包等
-│   ├── version_testcase_generation_rules.md  # 版本回归（须先读 documents/ 对应模块）
+│   ├── version_testcase_generation_rules.md  # 版本用例生成规则（须先读 documents/ 对应模块）
 │   └── dingtalk_historical_testcase_to_md.md   # 钉钉历史用例 → Markdown 等（按需）
 ├── documents/                         # 业务模块参考（功能/版本用例生成前优先阅读）
-│   └── gift.md                        # 示例：礼物业务梳理（可继续增加 *.md）
+│   ├── gift.md                        # 礼物业务模块梳理
+│   └── moments/                       # 动态（Moments）相关说明
+│       ├── basic module               # 基础模块（无扩展名文本，路径含空格）
+│       ├── hot                        # 热门
+│       ├── label                      # 标签
+│       └── video                      # 视频
 ├── templates/                         # 与钉钉表或模块维度对齐的用例骨架
 │   ├── 榜单.md
 │   ├── 抽奖.md
