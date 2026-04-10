@@ -2,6 +2,7 @@
 
 ## 概览
 
+
 本 Skill 根据需求文档和营收活动设计思路自动生成高质量测试用例，始终以 **测试工程师视角** 思考，确保用例可执行、可复现、可验证。
 
 该 Skill 采用 [Agent Skills 开放规范](https://agentskills.io/home)，可被支持 Skills 的任意代理加载使用。
