@@ -40,6 +40,7 @@
 - 用户指定「**礼物**版本回归」→ **必须先读** `documents/gift.md`，再叠加版本 PRD。  
 - 用户指定「**动态 / Moment** 版本回归」「发版回归动态帧」「动态视频改版」「热度/hot 改版」「Topic 标签改版」→ **必须先读** 上表中与变更点匹配的 `documents/moments/*.md`（常组合阅读 2 个及以上）；再叠加版本 PRD。  
 - `basic module.md` 总结中强调 **动态视频** 见 `video.md`；生成 **图文 + 视频** 或 **纯视频** 发版用例时，**不得**只读 `documents/moments/basic module.md` 而跳过 `documents/moments/video.md`。
+- 从 PRD 生成动态用例的 **流程步骤、动态专属模块提取/层级拆解/相似模块对齐与自检清单** 见仓库根目录 `moments/moments_testcase_generation.md`（与根目录 `SKILL.md` 同构）。
 
 ---
 
