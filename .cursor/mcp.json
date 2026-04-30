@@ -2,14 +2,18 @@
   "mcpServers": {
     "dingtalk-doc": {
       "command": ".cursor/skills/dingtalk-doc-read/mcp_dingtalk_doc/venv/bin/python3.12",
-      "args": [".cursor/skills/dingtalk-doc-read/mcp_dingtalk_doc/server.py"],
+      "args": [
+        ".cursor/skills/dingtalk-doc-read/mcp_dingtalk_doc/server.py"
+      ],
       "env": {
-        "DINGTALK_COOKIE": "d34f2fee-2d0f-4e0b-8830-f45be56c72b6; deviceid=86335645cf2d4b55a0f43e0fa3be9092; pub_uid=6P%2Br5K8UNB4f%2FFSUMjdKYg%3D%3D; cna=LRICInLgBSICAWo/aJi0tNGV; account=oauth_k1%3AnkBp%2BTH4Jom%2BD1UKS6K%2Bj6BjA6zloRCv3EAXN9t7PdpZ%2FY%2Fp3ZVU2SMjDFeAI9hPHeBwsY%2Bs0vYZo8R%2F2nEgmmu3ahSLWDPpBm%2FGyPnaDfg%3D; doc_atoken=MzQwNzUwMDU2cfZWditlePQWvbBOcYLqsBlBtmTdPRzB; dt_s=u-144f6ee8-9cb7b2f66f-b522302-2203fa-1c930252-6e060d45-60ad-4541-8056-3949f4931bb3; portal_corp_id=ding7bea6d685b5f346535c2f4657eb6378f; ding_doc_unified_login=false"
+        "DINGTALK_COOKIE": "cna=cJGHIPeh8B4CASRuqI31kqiX; deviceid=1e635cf4726a4fa79830f35801f37350; pub_uid=SMbaccZj6gNq49wO5Co7HQ%3D%3D; XSRF-TOKEN=b9a66225-a9b5-4882-b7ba-f680278bad7e; xlly_s=1; account=oauth_k1%3A4CfHmZRXgj1TLSg0NOsftq7Ih%2BOFT9IcnW3yxHfSM6FKS1fs%2Bx2x9S2E3lOzdxEZ%2F1bdPRxy%2FAHnFZBzxLJJw2u3ahSLWDPpBm%2FGyPnaDfg%3D; portal_side_collapsed=true; doc_atoken=NTUyMjU2NTAzMwvdiJePOlleUhUIGOUqjhEwTjUNwHbdKu; RECENT_OPEN_DOC_KEYS=Mp7ld7brgw51vOBQ%2CWgZOZA8E9a5X8qLX; user_preferences_setting={%22appearance%22:%22light%22}; portal_corp_id=ding7bea6d685b5f346535c2f4657eb6378f; doc_atoken=NTUyMjU2NTAzMwrqJUHJhcmgrvAAKMMLCsBpSXlCCcssvK; ding_doc_unified_login=true; isg=BO_vjqq22pQdZN9c2NJMI3A_fgX5lEO2pRCnbAF8zt5nUAxSBmLCB9ND0kDuHBsu; tfstk=gQmtbkMKupBTOSKBwGYnmLcjpT9hGeDNJfk5mSVGlXhKiXMimlAaG2hr6rcgiFJvMWh4sPqsnjejZWuimVVcQ2loFGmM7ojYborXZQxkqOka0oiI-gaCQkwueGt01P6Qb-DRdMgDqAkNdOCXE2tkD5_qdGNjGPNId-PCCZsjGysQ3Ws_hGwfOpe4Oow1556QO8wbCGajGv9Ln8EbGjZXpkNUhoNjGoTzmIFCCSjxRE3iNeYciCRZvRUTMiVcD390IPEjQWLXlDCbW7M_9idtqxwuO8nBg1Vqvvi_3XthXoHQHbEsJBstMAgrg8G6v1wt5YHuJmR5DJuI_y2tJK_Q1YNgfWn23iPsSxi0kcO5n5iZsDUr01d3i4DnfyhWtMh4kVg7fmdJAgzqq0Hsd_V8nNpppZ745JoR-2Lw7kAISJFkBnQVuyJUp7vpNZ74JayLZddluZzeL"
       }
     },
     "dingtalk-excel-read": {
       "command": ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/venv/bin/python3",
-      "args": [".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/server_read.py"],
+      "args": [
+        ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/server_read.py"
+      ],
       "env": {
         "DINGTALK_AEGIS_KEY": "6e187070-8dfc-4260-94b2-3a87d2408479",
         "DINGTALK_AEGIS_SECRET": "b64afa70-52ce-4c3f-9221-d4bf83ddf265",
@@ -18,7 +22,9 @@
     },
     "dingtalk-excel-write": {
       "command": ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/venv/bin/python3",
-      "args": [".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/server_write.py"],
+      "args": [
+        ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/server_write.py"
+      ],
       "env": {
         "DINGTALK_AEGIS_KEY": "6e187070-8dfc-4260-94b2-3a87d2408479",
         "DINGTALK_AEGIS_SECRET": "b64afa70-52ce-4c3f-9221-d4bf83ddf265",
