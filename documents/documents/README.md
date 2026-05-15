@@ -4,7 +4,7 @@
 
 由 xlsx 汇总；**同父类型合并为单个 md**；**独立功能单独成库**。
 
-## 文件列表（21 个）
+## 文件列表（24 个）
 
 ### 独立功能（跨模块抽取，强相关才拆出）
 
@@ -16,6 +16,9 @@
 | `财富等级.md` | 财富/魅力等级、等级改版与进度 |
 | `收藏展馆.md` | 收藏展馆、成就收藏、礼物收集挑战 |
 | `注册登录.md` | 注册、登录、注销、账号绑定、密码、黑名单与白名单 |
+| [`CP好友关系.md`](CP好友关系.md) | CP/好友关系、亲密度、关系空间、关系特权、关系外显 |
+| [`个人主页.md`](个人主页.md) | 个人主页（profile）、资料页、资料编辑/修改、靓号、资料页背景 |
+| [`装扮.md`](装扮.md) | 装扮商城、我的装扮、装扮购买与佩戴/使用 |
 
 ### 房间切片
 
@@ -59,7 +62,7 @@
 python3 scripts/kb_optimize_pipeline.py  # 推荐：重分类 + 去重/矛盾 + 标题清理 + 房间切片
 
 python3 scripts/kb_merge_parents.py      # 同类型合并为父模块
-python3 scripts/kb_extract_features.py   # 拆出 特权VIP/神秘人/贵族/财富等级/收藏展馆
+python3 scripts/kb_extract_features.py   # 拆出 特权VIP/神秘人/贵族/财富等级/收藏展馆/CP好友关系/个人主页/装扮
 python3 scripts/kb_reclassify.py         # 修正误分类
 python3 scripts/kb_clean_toc_titles.py  # 清理目录/Sheet 标题中的人名与括号
 python3 scripts/kb_unify_modules.py      # 子域拆分/唯一命名

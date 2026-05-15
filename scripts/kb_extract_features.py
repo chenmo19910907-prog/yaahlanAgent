@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-将神秘人、VIP、贵族、财富等级、收藏展馆等独立功能从各父模块知识库拆出为单独 md。
+将神秘人、VIP、贵族、财富等级、收藏展馆、CP好友关系、个人主页等独立功能从各父模块知识库拆出为单独 md。
 
-输出：特权VIP.md、神秘人.md、贵族.md、财富等级.md、收藏展馆.md
+输出：特权VIP.md、神秘人.md、贵族.md、财富等级.md、收藏展馆.md、CP好友关系.md、个人主页.md、装扮.md
 其余用例仍保留在原父模块文件中。
 """
 
@@ -24,9 +24,22 @@ SCRIPTS = Path(__file__).resolve().parent
 VIP_MD = "特权VIP.md"
 
 AUTH_LOGIN_MD = "注册登录.md"
+CP_RELATIONSHIP_MD = "CP好友关系.md"
+PROFILE_HOME_MD = "个人主页.md"
+OUTFIT_MD = "装扮.md"
 
 FEATURE_FILES = frozenset(
-    {"神秘人.md", VIP_MD, "贵族.md", "财富等级.md", "收藏展馆.md", AUTH_LOGIN_MD},
+    {
+        "神秘人.md",
+        VIP_MD,
+        "贵族.md",
+        "财富等级.md",
+        "收藏展馆.md",
+        AUTH_LOGIN_MD,
+        CP_RELATIONSHIP_MD,
+        PROFILE_HOME_MD,
+        OUTFIT_MD,
+    },
 )
 
 PARENT_FILES = frozenset(
@@ -148,9 +161,72 @@ WEALTH_LEAF_STRONG_RE = re.compile(
 AUTH_LOGIN_PATH_SEGMENT = "账号与注册"
 
 AUTH_LOGIN_LEAF_STRONG_RE = re.compile(
-    r"^注册资料|^登录UI|^登录新增|^注销账号|^设置about|"
+    r"^登录UI|^登录新增|^注销账号|^设置about|"
     r"^账号绑定|^账号密码|^重复输入区号|^新用户欢迎|"
-    r"注册登录|注册资料简化|测试账号送礼",
+    r"注册登录|测试账号送礼",
+    re.I,
+)
+
+# 个人主页/资料编辑：与注册登录拆分，资料修改归入个人主页库
+AUTH_LOGIN_PROFILE_EXCLUDE_RE = re.compile(
+    r"profile|个人主页|个人资料|资料页|资料编辑|编辑资料|修改资料|"
+    r"个人信息页|注册资料简化|谁看过我|靓号|资料页背景|资料座驾",
+    re.I,
+)
+
+PROFILE_HOME_SHEET_STRONG_RE = re.compile(
+    r"profile页|个人主页|个人资料|资料页|资料编辑|编辑资料|修改资料|"
+    r"个人信息页|注册资料简化|profile页UI|资料页背景|"
+    r"编辑个人资料|靓号设计|修改资料页|ios个人主页|个人资料修改",
+    re.I,
+)
+
+PROFILE_HOME_SHEET_WEAK_RE = re.compile(
+    r"好友申请|转发消息|用户关系迁移|关系改版|CP空间|"
+    r"神秘人资料卡|仅.*跳转.*profile",
+    re.I,
+)
+
+PROFILE_HOME_LEAF_STRONG_RE = re.compile(
+    r"profile页|个人主页|个人资料|资料页|资料编辑|编辑资料|修改资料|"
+    r"个人信息页|注册资料简化|profile页UI|资料页背景|"
+    r"编辑个人资料|靓号|修改资料页|个人资料修改|资料座驾|"
+    r"谁看过我",
+    re.I,
+)
+
+OUTFIT_SHEET_STRONG_RE = re.compile(
+    r"装扮商城|我的装扮|装扮购买|装扮使用|装扮中心|装扮预览|"
+    r"outfitstore|我的装扮UI|装扮商城入口|房间背包装扮|"
+    r"送礼条|进房广播|上麦特效|入场特效|入场条|聊天气泡|"
+    r"头像框.*tab|座驾.*tab|道具礼物",
+    re.I,
+)
+
+OUTFIT_SHEET_WEAK_RE = re.compile(
+    r"仅.*跳转.*装扮|个人资料修改靓号",
+    re.I,
+)
+
+OUTFIT_LEAF_STRONG_RE = re.compile(
+    r"装扮商城|我的装扮|装扮购买|装扮使用|装扮中心|装扮预览|"
+    r"outfitstore|我的装扮UI|装扮商城入口|房间背包装扮|"
+    r"送礼条|进房广播|上麦特效",
+    re.I,
+)
+
+OUTFIT_MODULE_STRONG_RE = re.compile(
+    r"装扮商城|我的装扮|装扮购买|装扮穿戴|装扮佩戴|装扮预览|"
+    r"装扮展示|装扮为空|装扮更换|outfitstore|装扮中心|"
+    r"去商城逛逛|佩戴|穿戴|取消佩戴",
+    re.I,
+)
+
+PROFILE_HOME_MODULE_STRONG_RE = re.compile(
+    r"编辑资料|修改资料|资料编辑|个人资料修改|个人资料查看|"
+    r"资料页|profile|个人信息页|靓号|资料页背景|资料座驾|"
+    r"个人资料页|编辑个人资料|修改资料页提醒|资料页背景装扮|"
+    r"个人信息页修改资料提醒|修改资料页提醒|谁看过我",
     re.I,
 )
 
@@ -173,6 +249,42 @@ WEALTH_SHEET_WEAK_RE = re.compile(
     r"乱斗PK|IM UI|聊天列表|红包与宝箱|房间宝箱|隐身设置|"
     r"moment优化|支付发布|礼物展馆优化|心愿礼物|麦位样式|&|"
     r"客服系统回归|语音房客服|入场条|标签UI|网络请求|封禁踢出",
+    re.I,
+)
+
+CP_RELATIONSHIP_SHEET_STRONG_RE = re.compile(
+    r"关系改版|关系链·关系改版|面板与送礼·关系改版|"
+    r"新增关系外显|送CP头像礼物|麦位·新增关系外显|"
+    r"私聊与群聊·关系改版",
+    re.I,
+)
+
+CP_RELATIONSHIP_SHEET_WEAK_RE = re.compile(
+    r"用户关系迁移|后台设备拉黑|CP摩天轮|CP房PK|"
+    r"好友申请|转发消息|iOS我的页面网络|好友关系部分|&",
+    re.I,
+)
+
+CP_RELATIONSHIP_LEAF_STRONG_RE = re.compile(
+    r"^关系改版|^关系特权|^关系空间|^关系外显|"
+    r"亲密空间|CP空间|CP连线|CP UI|CP交互|CP 页面|"
+    r"组成关系|组建关系|关系入口|加关系值|解除关系|"
+    r"cp关系关系外显|CP空间送礼|主态空间|"
+    r"客态.*关系空间|组成关系弹窗|组成关系广播|"
+    r"关系特权页面|CPbanner|快捷礼物-CP|"
+    r"^关系$|我的关系|入口二.*我的关系|"
+    r"LV\d+\(\d+个权益\)|CP模式下|隐藏关系|"
+    r"非房间内礼物面板送CP",
+    re.I,
+)
+
+CP_RELATIONSHIP_MODULE_STRONG_RE = re.compile(
+    r"关系特权|关系空间|亲密空间|CP空间|CP连线|"
+    r"组成关系|组建关系|关系外显|亲密度升级|"
+    r"关系等级|衰减保级|CP双方|COUPLE|BUDDY|"
+    r"组成关系广播|更多按钮-解除关系|加关系值|"
+    r"CP空间送礼|CP空间礼物|祝福按钮|祝福记录|"
+    r"CP特权|好友特权",
     re.I,
 )
 
@@ -302,8 +414,13 @@ def should_extract_noble(block: CaseBlock) -> bool:
 
 
 def should_extract_auth_login(block: CaseBlock) -> bool:
-    """注册/登录/注销等强相关才拆入注册登录.md。"""
+    """注册/登录/注销等强相关才拆入注册登录.md；个人主页/资料编辑不归入此库。"""
     sheet = (block.sheet or "").strip()
+    module = (block.module or "").strip()
+    if AUTH_LOGIN_PROFILE_EXCLUDE_RE.search(sheet) or AUTH_LOGIN_PROFILE_EXCLUDE_RE.search(
+        module
+    ):
+        return False
     if not sheet or AUTH_LOGIN_SHEET_WEAK_RE.search(sheet) or SHEET_COMPOSITE_WEAK_RE.search(
         sheet
     ):
@@ -317,13 +434,55 @@ def should_extract_auth_login(block: CaseBlock) -> bool:
         if AUTH_LOGIN_PATH_LEAF_WEAK_RE.search(leaf):
             return False
         if AUTH_LOGIN_LEAF_STRONG_RE.search(leaf) or re.search(
-            r"注册|登录|注销|账号绑定|账号密码|设置about|资料|区号|欢迎",
+            r"注册|登录|注销|账号绑定|账号密码|设置about|区号|欢迎",
             leaf,
             re.I,
         ):
             return True
         return False
     if re.search(r"^注册|^登录|注销账号|设置about", sheet, re.I):
+        return True
+    return False
+
+
+def should_extract_outfit(block: CaseBlock) -> bool:
+    """装扮商城、我的装扮、购买佩戴等强相关才拆入装扮.md。"""
+    sheet = (block.sheet or "").strip()
+    module = (block.module or "").strip()
+    if not sheet and not module:
+        return False
+    if OUTFIT_SHEET_WEAK_RE.search(sheet) and not OUTFIT_MODULE_STRONG_RE.search(module):
+        return False
+    if OUTFIT_SHEET_STRONG_RE.search(sheet):
+        return True
+    leaf = _sheet_leaf(sheet)
+    if OUTFIT_LEAF_STRONG_RE.search(leaf):
+        return True
+    if OUTFIT_MODULE_STRONG_RE.search(module):
+        return True
+    if re.search(r"装扮商城|我的装扮|outfitstore|装扮购买|装扮佩戴", sheet, re.I):
+        return True
+    return False
+
+
+def should_extract_profile_home(block: CaseBlock) -> bool:
+    """个人主页、资料页、资料编辑/修改等强相关才拆入个人主页.md。"""
+    sheet = (block.sheet or "").strip()
+    module = (block.module or "").strip()
+    if not sheet and not module:
+        return False
+    if PROFILE_HOME_SHEET_WEAK_RE.search(sheet) and not PROFILE_HOME_MODULE_STRONG_RE.search(
+        module
+    ):
+        return False
+    if PROFILE_HOME_SHEET_STRONG_RE.search(sheet):
+        return True
+    leaf = _sheet_leaf(sheet)
+    if PROFILE_HOME_LEAF_STRONG_RE.search(leaf):
+        return True
+    if PROFILE_HOME_MODULE_STRONG_RE.search(module):
+        return True
+    if re.search(r"profile|个人主页|个人资料|资料编辑|编辑资料|修改资料", sheet, re.I):
         return True
     return False
 
@@ -339,9 +498,47 @@ def should_extract_wealth(block: CaseBlock) -> bool:
     return bool(WEALTH_LEAF_STRONG_RE.search(leaf))
 
 
+def should_extract_cp_relationship(block: CaseBlock) -> bool:
+    """CP/好友关系、亲密度、关系空间等强相关才拆出；关系迁移/好友申请等留父模块。"""
+    sheet = (block.sheet or "").strip()
+    module = (block.module or "").strip()
+    if not sheet:
+        return False
+    if re.search(r"用户关系迁移|好友申请优化|转发消息", sheet, re.I):
+        return False
+    if re.search(r"^后台设备拉黑$", _sheet_leaf(sheet), re.I) and not CP_RELATIONSHIP_MODULE_STRONG_RE.search(
+        module
+    ):
+        return False
+    if CP_RELATIONSHIP_SHEET_WEAK_RE.search(sheet) and not CP_RELATIONSHIP_MODULE_STRONG_RE.search(
+        module
+    ):
+        return False
+    if SHEET_COMPOSITE_WEAK_RE.search(sheet) and not CP_RELATIONSHIP_MODULE_STRONG_RE.search(
+        module
+    ):
+        return False
+    leaf = _sheet_leaf(sheet)
+    if GENERIC_WEAK_LEAF_RE.search(leaf) and not CP_RELATIONSHIP_MODULE_STRONG_RE.search(module):
+        return False
+    if CP_RELATIONSHIP_SHEET_STRONG_RE.search(sheet):
+        return True
+    if CP_RELATIONSHIP_LEAF_STRONG_RE.search(leaf):
+        return True
+    if CP_RELATIONSHIP_MODULE_STRONG_RE.search(module):
+        return True
+    if "关系链" in sheet.split("·") and re.search(r"关系改版|关系外显", sheet, re.I):
+        return True
+    return False
+
+
 def classify_feature(block: CaseBlock) -> Optional[str]:
     """独立功能库：仅强相关拆出，弱相关由 classify_target 保留在父业务域。"""
     sheet_mod = f"{block.sheet or ''} {block.module or ''}"
+    if should_extract_outfit(block):
+        return OUTFIT_MD
+    if should_extract_profile_home(block):
+        return PROFILE_HOME_MD
     if VIP_PRIVILEGE_RE.search(sheet_mod):
         return VIP_MD
     if should_extract_vip(block):
@@ -356,6 +553,8 @@ def classify_feature(block: CaseBlock) -> Optional[str]:
         return "贵族.md"
     if should_extract_wealth(block):
         return "财富等级.md"
+    if should_extract_cp_relationship(block):
+        return CP_RELATIONSHIP_MD
     return None
 
 
@@ -364,7 +563,124 @@ def normalize_feature_sheet(origin_parent: str, block: CaseBlock, feat: str) -> 
     parent = origin_parent.replace(".md", "")
     sub, inner = parse_sheet_parts(block.sheet or "")
     feat_label = feat.replace(".md", "")
-    if sub in (feat_label, "神秘人", "贵族与VIP", "贵族", "收藏展馆", "注册登录"):
+
+    if feat == OUTFIT_MD:
+        base = (block.sheet or "").strip() or "未归类需求"
+        if base.startswith(f"{parent}·"):
+            base = base[len(parent) + 1 :]
+        parts = [p.strip() for p in base.split("·") if p.strip()]
+        parent_domains = (
+            "消息",
+            "礼物",
+            "超管",
+            "榜单与活动",
+            "房间",
+            "其他模块",
+            "币商",
+            "主题房",
+            "动态",
+            "客服",
+            "游戏",
+            "公会",
+            "人脸认证",
+            "房间PK",
+            "注册登录",
+            "个人主页",
+            "特权VIP",
+            "收藏展馆",
+            "贵族",
+            "财富等级",
+            "CP好友关系",
+        )
+        if parts and parts[0] in parent_domains:
+            parts = parts[1:]
+        base = "·".join(parts) if parts else "未归类需求"
+        if OUTFIT_MODULE_STRONG_RE.search(block.module or ""):
+            mod = (block.module or "").strip()
+            if mod:
+                return f"装扮·{mod}"
+        if not base.startswith("装扮"):
+            return f"装扮·{base}" if base != "未归类需求" else "装扮"
+        return base
+
+    if feat == PROFILE_HOME_MD:
+        base = (block.sheet or "").strip() or "未归类需求"
+        if base.startswith(f"{parent}·"):
+            base = base[len(parent) + 1 :]
+        parts = [p.strip() for p in base.split("·") if p.strip()]
+        parent_domains = (
+            "消息",
+            "礼物",
+            "超管",
+            "榜单与活动",
+            "房间",
+            "其他模块",
+            "币商",
+            "主题房",
+            "动态",
+            "客服",
+            "游戏",
+            "公会",
+            "人脸认证",
+            "房间PK",
+            "注册登录",
+        )
+        if parts and parts[0] in parent_domains:
+            parts = parts[1:]
+        base = "·".join(parts) if parts else "未归类需求"
+        if PROFILE_HOME_MODULE_STRONG_RE.search(block.module or ""):
+            mod = (block.module or "").strip()
+            if mod:
+                return f"个人主页·{mod}"
+        if not base.startswith("个人主页"):
+            return f"个人主页·{base}" if base != "未归类需求" else "个人主页"
+        return base
+
+    if feat == CP_RELATIONSHIP_MD:
+        base = (block.sheet or "").strip() or "未归类需求"
+        if base.startswith(f"{parent}·"):
+            base = base[len(parent) + 1 :]
+        parts = [p.strip() for p in base.split("·") if p.strip()]
+        parent_domains = (
+            "消息",
+            "礼物",
+            "超管",
+            "榜单与活动",
+            "房间",
+            "其他模块",
+            "币商",
+            "主题房",
+            "动态",
+            "客服",
+            "游戏",
+            "公会",
+            "人脸认证",
+            "房间PK",
+        )
+        if parts and parts[0] in parent_domains:
+            parts = parts[1:]
+        base = "·".join(parts) if parts else "未归类需求"
+        if re.search(r"redis|后台设备拉黑", base, re.I) and CP_RELATIONSHIP_MODULE_STRONG_RE.search(
+            block.module or ""
+        ):
+            mod = (block.module or "").strip()
+            if mod:
+                return f"CP好友关系·{mod}"
+        if not base.startswith("CP好友关系"):
+            return f"CP好友关系·{base}" if base != "未归类需求" else "CP好友关系"
+        return base
+
+    if sub in (
+        feat_label,
+        "神秘人",
+        "贵族与VIP",
+        "贵族",
+        "收藏展馆",
+        "注册登录",
+        "CP好友关系",
+        "个人主页",
+        "装扮",
+    ):
         base = inner or sub
     else:
         base = block.sheet or "未归类需求"
@@ -499,6 +815,18 @@ def main() -> None:
         "财富等级.md": "> **范围**：财富/魅力等级、等级改版与进度等强相关能力。\n",
         "收藏展馆.md": "> **范围**：收藏展馆、礼物展馆、道具展馆、成就收藏、礼物收集挑战等强相关能力（弱相关仍留各父模块）。\n",
         AUTH_LOGIN_MD: "> **范围**：注册、登录、注销、账号绑定、密码与白名单等强相关能力。\n",
+        CP_RELATIONSHIP_MD: (
+            "> **范围**：CP/好友关系、亲密度、关系空间、关系特权、关系外显、"
+            "组建/解除关系等强相关能力（弱相关仍留各父模块）。\n"
+        ),
+        PROFILE_HOME_MD: (
+            "> **范围**：个人主页（profile）、资料页、资料编辑/修改、靓号、"
+            "资料页背景、谁看过我等强相关能力。\n"
+        ),
+        OUTFIT_MD: (
+            "> **范围**：装扮商城、我的装扮、装扮购买与佩戴/使用、"
+            "头像框/座驾/入场条/聊天气泡等装扮道具。\n"
+        ),
     }
 
     for fk, sheets_map in trees.items():
