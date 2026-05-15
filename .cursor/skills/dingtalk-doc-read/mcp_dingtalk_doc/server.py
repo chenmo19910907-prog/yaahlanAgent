@@ -127,6 +127,50 @@ class RefreshCookieRequest(BaseModel):
     ]
 
 
+class ListFolderRequest(BaseModel):
+    """列举钉钉文档目录（知识空间节点）下的子项"""
+    url_or_node_id: Annotated[
+        str,
+        Field(description="钉钉目录/文件夹节点的完整 URL 或 NODE_ID（alidocs 节点）"),
+    ]
+    cookie: Annotated[
+        Optional[str],
+        Field(description="钉钉登录 Cookie（可选，未提供则使用环境变量或本地缓存）", default=None),
+    ]
+
+
+class ParseFolderRequest(BaseModel):
+    """解析目录下（可选递归子目录）的全部文档节点"""
+    url_or_node_id: Annotated[
+        str,
+        Field(description="钉钉目录节点的完整 URL 或 NODE_ID"),
+    ]
+    cookie: Annotated[
+        Optional[str],
+        Field(description="钉钉登录 Cookie（可选）", default=None),
+    ]
+    recursive: Annotated[
+        bool,
+        Field(description="是否递归扫描子文件夹", default=True),
+    ]
+    save_files: Annotated[
+        bool,
+        Field(description="是否为每个文档保存 mainsite/document/content/html", default=True),
+    ]
+    output_dir: Annotated[
+        Optional[str],
+        Field(description="输出根目录（可选；默认与 parse_document 相同逻辑）", default=None),
+    ]
+    max_documents: Annotated[
+        int,
+        Field(description="最多解析多少个文档节点（防止超大目录）", default=30, ge=1, le=200),
+    ]
+    max_folder_fetches: Annotated[
+        int,
+        Field(description="最多请求多少个文件夹页面（BFS 上限）", default=60, ge=1, le=300),
+    ]
+
+
 # ==================== 工具函数 ====================
 def check_cookie(cookie: Optional[str] = None) -> str:
     """
@@ -452,6 +496,213 @@ def extract_dentry_key(mainsite_content: Dict[str, Any]) -> str:
         code=INTERNAL_ERROR,
         message="未找到dentryKey或nodeId"
     ))
+
+
+# ==================== 目录 / 批量文档 ====================
+# 钉钉节点 ID 形态随产品变化，此处用宽松规则匹配 mainsite 内嵌字段
+_NODE_ID_RE = re.compile(r"^[A-Za-z0-9]{12,64}$")
+_PREFERRED_CHILD_KEYS = frozenset(
+    {
+        "children",
+        "childNodes",
+        "nodes",
+        "dentries",
+        "items",
+        "records",
+        "nodeList",
+        "resourceList",
+        "files",
+        "dentryList",
+    }
+)
+
+
+def _infer_node_kind(entry: Dict[str, Any]) -> str:
+    """根据字段推断节点是 folder 还是 document（启发式）。"""
+    t = str(
+        entry.get("type")
+        or entry.get("nodeType")
+        or entry.get("dentryType")
+        or entry.get("resourceType")
+        or ""
+    ).upper()
+    if t in ("FOLDER", "DIR", "DIRECTORY", "CATALOG", "SPACE_FOLDER", "GROUP"):
+        return "folder"
+    if t in (
+        "FILE",
+        "DOC",
+        "DOCUMENT",
+        "ONLINE_DOC",
+        "SHEET",
+        "MIND",
+        "WHITEBOARD",
+        "NOTE",
+    ):
+        return "document"
+    if entry.get("hasChildren") is True or entry.get("hasChild") is True:
+        return "folder"
+    return "document"
+
+
+def _pick_node_id(entry: Dict[str, Any]) -> Optional[str]:
+    for key in (
+        "nodeUuid",
+        "nodeId",
+        "uuid",
+        "resourceId",
+        "dentryUuid",
+        "dentryId",
+        "id",
+    ):
+        v = entry.get(key)
+        if isinstance(v, str) and _NODE_ID_RE.match(v):
+            return v
+    return None
+
+
+def _known_child_arrays(mainsite: Dict[str, Any]) -> List[List[Any]]:
+    """从常见路径直接取出子节点列表，减少误识别。"""
+    out: List[List[Any]] = []
+
+    def add_list(lst: Any) -> None:
+        if isinstance(lst, list) and lst:
+            out.append(lst)
+
+    dentry = mainsite.get("dentryInfo")
+    if isinstance(dentry, dict):
+        data = dentry.get("data")
+        if isinstance(data, dict):
+            for k in _PREFERRED_CHILD_KEYS:
+                add_list(data.get(k))
+    data_top = mainsite.get("data")
+    if isinstance(data_top, dict):
+        for k in _PREFERRED_CHILD_KEYS:
+            add_list(data_top.get(k))
+        catalog = data_top.get("catalog")
+        if isinstance(catalog, dict):
+            for k in _PREFERRED_CHILD_KEYS:
+                add_list(catalog.get(k))
+    return out
+
+
+def _walk_collect_child_dicts(
+    obj: Any,
+    depth: int,
+    sink: List[Dict[str, Any]],
+    max_depth: int,
+    max_dicts: int = 1200,
+) -> None:
+    if depth > max_depth or len(sink) >= max_dicts:
+        return
+    if isinstance(obj, dict):
+        sink.append(obj)
+        for v in obj.values():
+            _walk_collect_child_dicts(v, depth + 1, sink, max_depth, max_dicts)
+    elif isinstance(obj, list):
+        for it in obj:
+            _walk_collect_child_dicts(it, depth + 1, sink, max_depth, max_dicts)
+
+
+def extract_child_entries_from_mainsite(
+    mainsite_content: Dict[str, Any],
+    parent_node_id: str,
+    *,
+    max_entries: int = 400,
+) -> List[Dict[str, Any]]:
+    """
+    从 mainsite_server_content 中解析子节点（文档/子文件夹）。
+    依赖钉钉前端下发文案结构，若钉钉改版导致为空，请用 parse_document 保存 *_mainsite.json 排查。
+    """
+    candidates: List[Dict[str, Any]] = []
+    seen_obj_ids: set[int] = set()
+
+    for arr in _known_child_arrays(mainsite_content):
+        for item in arr:
+            if isinstance(item, dict):
+                oid = id(item)
+                if oid not in seen_obj_ids:
+                    seen_obj_ids.add(oid)
+                    candidates.append(item)
+
+    if not candidates:
+        sink: List[Dict[str, Any]] = []
+        _walk_collect_child_dicts(mainsite_content, 0, sink, max_depth=24, max_dicts=1200)
+        for d in sink:
+            oid = id(d)
+            if oid not in seen_obj_ids:
+                seen_obj_ids.add(oid)
+                candidates.append(d)
+
+    found: Dict[str, Dict[str, Any]] = {}
+    for entry in candidates:
+        nid = _pick_node_id(entry)
+        if not nid or nid == parent_node_id:
+            continue
+        name = entry.get("name") or entry.get("title") or entry.get("fileName")
+        if not isinstance(name, str) or not name.strip():
+            continue
+        if nid in found:
+            continue
+        if len(found) >= max_entries:
+            break
+        found[nid] = {
+            "node_id": nid,
+            "name": name.strip(),
+            "url": f"{BASE_URL}/i/nodes/{nid}",
+            "kind": _infer_node_kind(entry),
+        }
+
+    return list(found.values())
+
+
+async def list_folder_children(
+    url_or_node_id: str,
+    cookie: str,
+) -> List[Dict[str, Any]]:
+    """拉取目录节点 HTML，解析 mainsite，返回子项列表。"""
+    parent_node_id = extract_node_id_from_url(url_or_node_id)
+    html = await fetch_node_by_get(parent_node_id, cookie)
+    mainsite = extract_mainsite_content(html)
+    return extract_child_entries_from_mainsite(mainsite, parent_node_id)
+
+
+async def collect_documents_under_folder(
+    url_or_node_id: str,
+    cookie: str,
+    *,
+    recursive: bool,
+    max_folder_fetches: int,
+) -> List[Dict[str, Any]]:
+    """
+    BFS 扫描文件夹，收集待解析的文档节点（去重）。
+    """
+    root_id = extract_node_id_from_url(url_or_node_id)
+    folder_queue: List[str] = [root_id]
+    visited_folders: set[str] = set()
+    doc_map: Dict[str, Dict[str, Any]] = {}
+
+    while folder_queue and len(visited_folders) < max_folder_fetches:
+        fid = folder_queue.pop(0)
+        if fid in visited_folders:
+            continue
+        visited_folders.add(fid)
+
+        html = await fetch_node_by_get(fid, cookie)
+        mainsite = extract_mainsite_content(html)
+        children = extract_child_entries_from_mainsite(mainsite, fid)
+
+        for ch in children:
+            cid = ch["node_id"]
+            if cid == fid:
+                continue
+            if ch["kind"] == "folder":
+                if recursive and cid not in visited_folders and cid not in folder_queue:
+                    folder_queue.append(cid)
+            else:
+                if cid not in doc_map:
+                    doc_map[cid] = ch
+
+    return list(doc_map.values())
 
 
 # ==================== HTML解析函数 ====================
@@ -1107,6 +1358,16 @@ async def serve() -> None:
                 description="当钉钉文档权限过期时，保存新 Cookie 以便后续请求使用。从浏览器打开 alidocs.dingtalk.com 登录后，在开发者工具 Application/Cookies 中复制 doc_atoken 等完整 Cookie 字符串传入。",
                 inputSchema=RefreshCookieRequest.model_json_schema(),
             ),
+            Tool(
+                name="list_folder_contents",
+                description="读取钉钉 alidocs 目录节点下的一级子项（名称、node_id、类型、链接）。依赖页面内 mainsite_server_content；子项为空时可对目录节点执行 parse_document 保存 *_mainsite.json 排查结构。",
+                inputSchema=ListFolderRequest.model_json_schema(),
+            ),
+            Tool(
+                name="parse_folder_documents",
+                description="在目录节点下批量解析文档：可选递归子文件夹，按 max_documents 上限依次调用与 parse_document 相同的拉取与落盘逻辑（每个文档单独子目录）。",
+                inputSchema=ParseFolderRequest.model_json_schema(),
+            ),
         ]
     
     @server.list_prompts()
@@ -1196,7 +1457,7 @@ async def serve() -> None:
                 ))
             try:
                 _save_cookie_to_file(args.cookie)
-                return [TextContent(type="text", text=f"✅ Cookie 已刷新并保存至 {COOKIE_FILE}\n后续 parse_document 请求将自动使用新 Cookie。")]
+                return [TextContent(type="text", text=f"✅ Cookie 已刷新并保存至 {COOKIE_FILE}\n后续 parse_document / list_folder_contents / parse_folder_documents 将优先使用新 Cookie。")]
             except Exception as e:
                 raise McpError(ErrorData(
                     code=INTERNAL_ERROR,
@@ -1234,6 +1495,92 @@ async def serve() -> None:
                 raise McpError(ErrorData(
                     code=INTERNAL_ERROR,
                     message=f"文档解析失败: {str(e)}"
+                ))
+        
+        elif name == "list_folder_contents":
+            try:
+                args = ListFolderRequest(**arguments)
+            except ValueError as e:
+                raise McpError(ErrorData(code=INVALID_PARAMS, message=str(e)))
+            cookie = check_cookie(args.cookie)
+            try:
+                rows = await list_folder_children(args.url_or_node_id, cookie)
+                text = json.dumps(rows, ensure_ascii=False, indent=2)
+                if not rows:
+                    text += (
+                        "\n\n未解析到任何子节点：请确认传入的是「目录/知识空间」节点 URL；"
+                        "仍为空时可用 parse_document 对该节点 save_files=true，检查输出目录中的 *_mainsite.json 是否包含 children/nodes 等列表字段（钉钉改版后字段名可能变化）。"
+                    )
+                return [TextContent(type="text", text=text)]
+            except McpError:
+                raise
+            except Exception as e:
+                raise McpError(ErrorData(
+                    code=INTERNAL_ERROR,
+                    message=f"列举目录失败: {str(e)}"
+                ))
+        
+        elif name == "parse_folder_documents":
+            try:
+                args = ParseFolderRequest(**arguments)
+            except ValueError as e:
+                raise McpError(ErrorData(code=INVALID_PARAMS, message=str(e)))
+            cookie = check_cookie(args.cookie)
+            try:
+                discovered = await collect_documents_under_folder(
+                    args.url_or_node_id,
+                    cookie,
+                    recursive=args.recursive,
+                    max_folder_fetches=args.max_folder_fetches,
+                )
+                if not discovered:
+                    return [
+                        TextContent(
+                            type="text",
+                            text=(
+                                "未发现可解析的文档节点。请先调用 list_folder_contents 查看该目录是否解析出子项；"
+                                "若子项列表为空，请对该目录 URL 执行 parse_document（save_files=true）并检查 *_mainsite.json 中的目录结构字段。"
+                            ),
+                        )
+                    ]
+                to_parse = discovered[: args.max_documents]
+                lines: List[str] = [
+                    f"扫描完成：共收集 {len(discovered)} 个文档节点，本批解析 {len(to_parse)} 个（max_documents={args.max_documents}，recursive={args.recursive}）。",
+                    "",
+                ]
+                errors: List[str] = []
+                for d in to_parse:
+                    name = d.get("name", "未命名")
+                    nid = d.get("node_id", "")
+                    url = d.get("url") or f"{BASE_URL}/i/nodes/{nid}"
+                    try:
+                        result = await get_complete_document_data(
+                            url,
+                            cookie,
+                            args.save_files,
+                            args.output_dir,
+                        )
+                        lines.append(f"✅ {name} ({nid})")
+                        if result.output_dir:
+                            lines.append(f"   输出: {result.output_dir}")
+                        elif not args.save_files:
+                            lines.append("   （save_files=false，未写磁盘）")
+                    except McpError as e:
+                        msg = e.error.message or str(e)
+                        errors.append(f"❌ {name} ({nid}): {msg}")
+                    except Exception as e:
+                        errors.append(f"❌ {name} ({nid}): {str(e)}")
+                if errors:
+                    lines.append("")
+                    lines.append("--- 失败项 ---")
+                    lines.extend(errors)
+                return [TextContent(type="text", text="\n".join(lines))]
+            except McpError:
+                raise
+            except Exception as e:
+                raise McpError(ErrorData(
+                    code=INTERNAL_ERROR,
+                    message=f"批量解析目录失败: {str(e)}"
                 ))
         
         else:

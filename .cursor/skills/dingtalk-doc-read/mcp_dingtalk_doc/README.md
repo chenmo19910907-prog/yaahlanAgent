@@ -5,6 +5,8 @@
 ## ✨ 功能特性
 
 - 🔐 **完整解析流程**: GET → 提取dentryKey → POST → 生成HTML
+- 📂 **目录列举**: `list_folder_contents` 从目录节点解析子文档/子文件夹（依赖 `mainsite_server_content` 结构）
+- 📚 **目录批量解析**: `parse_folder_documents` 递归扫描子文件夹并按上限批量执行与 `parse_document` 相同的落盘逻辑
 - 📊 **多元素支持**: 段落、表格、图片、代码块
 - 🎨 **美观渲染**: 渐变色UI + 深色代码主题
 - 📋 **代码复制**: 代码块支持一键复制
@@ -136,6 +138,27 @@ prompt:
 }
 ```
 
+### Tool 3: list_folder_contents
+
+列出 **alidocs 目录/知识空间节点** 下一层子项（名称、`node_id`、推断类型 `folder|document`、访问 URL）。实现方式与单文档一致：GET 节点页并解析 `mainsite_server_content` 中常见 `children` / `nodes` 等字段；若钉钉前端结构变更导致列表为空，请对该节点执行一次 `parse_document`（`save_files: true`），人工查看 `*_mainsite.json` 中的子列表路径后可在 `server.py` 中补充 `_known_child_arrays` 路径。
+
+**参数：**
+- `url_or_node_id` (必需): 目录节点 URL 或 NODE_ID
+- `cookie` (可选)
+
+### Tool 4: parse_folder_documents
+
+在目录下 **批量解析文档**（每个文档仍按标题单独子目录写入，与 `parse_document` 相同）。支持 `recursive` 递归子文件夹；`max_documents` 限制本批解析数量；`max_folder_fetches` 限制 BFS 访问的文件夹页面数，防止超大空间请求过多。
+
+**参数：**
+- `url_or_node_id` (必需)
+- `recursive` (可选，默认 `true`)
+- `save_files` (可选，默认 `true`)
+- `output_dir` (可选)
+- `max_documents` (可选，默认 30，最大 200)
+- `max_folder_fetches` (可选，默认 60，最大 300)
+- `cookie` (可选)
+
 ## 📖 支持的元素
 
 | 元素 | 标签 | 功能 |
@@ -171,8 +194,13 @@ mcp_dingtalk_doc/
 - ⚠️ OSS加密的文档内容暂不支持完整解密
 - ⚠️ 部分特殊元素（列表、引用块等）待支持
 - ⚠️ 需要有效的Cookie（会话过期需要更新）
+- ⚠️ 目录列举依赖 `mainsite_server_content` 内嵌 JSON；钉钉改版后若子项为空，需按上文用 `*_mainsite.json` 排查或扩展 `_known_child_arrays`
 
 ## 📝 版本历史
+
+### v1.1.0 (2026-05-15)
+- ✅ `list_folder_contents`：解析目录节点 mainsite 子项
+- ✅ `parse_folder_documents`：递归/限量批量解析目录下文档
 
 ### v1.0.0 (2025-11-03)
 - ✅ 初始版本
@@ -190,7 +218,7 @@ mcp_dingtalk_doc/
 
 ---
 
-**MCP版本**: 1.0.0  
+**MCP版本**: 1.1.0  
 **Python版本**: >=3.10  
 **最后更新**: 2025-11-03
 

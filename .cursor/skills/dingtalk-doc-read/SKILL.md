@@ -1,6 +1,6 @@
 ---
 name: dingtalk-doc-read
-description: 使用 MCP dingtalk-doc 读取钉钉需求文档，支持权限过期时自动刷新 Cookie。在需要解析钉钉文档、读取需求文档、或 parse_document 报错时使用。
+description: 使用 MCP dingtalk-doc 读取钉钉需求文档（含目录列举 list_folder_contents、批量解析 parse_folder_documents），支持权限过期时自动刷新 Cookie。在需要解析钉钉文档、读取需求文档、或 parse_document 报错时使用。
 ---
 
 # 钉钉文档读取技能
@@ -8,6 +8,7 @@ description: 使用 MCP dingtalk-doc 读取钉钉需求文档，支持权限过�
 ## 何时使用
 
 - 需要从钉钉文档（alidocs.dingtalk.com）读取需求文档内容时
+- 需要列出 **目录节点** 下有哪些子文档，或 **批量解析** 目录内多个文档时（`list_folder_contents` / `parse_folder_documents`）
 - 测试用例生成流程中需要解析产品需求文档时
 - parse_document 返回「权限过期」或 302 重定向错误时
 
@@ -24,6 +25,11 @@ description: 使用 MCP dingtalk-doc 读取钉钉需求文档，支持权限过�
 ```
 
 **示例**：`parse_document` 传入 `https://alidocs.dingtalk.com/i/nodes/XXX`
+
+### 1.1 目录与子文档批量读取
+
+- **`list_folder_contents`**：传入 **文件夹/目录** 节点的 `url_or_node_id`，返回 JSON 列表（每项含 `name`、`node_id`、`kind`：`folder` | `document`、`url`）。用于先看目录再决定解析哪些单篇。
+- **`parse_folder_documents`**：在同一 MCP 上批量执行与 `parse_document` 相同的拉取与落盘；可调 `recursive`、`max_documents`、`max_folder_fetches`。子项解析依赖页面内嵌数据，若返回空列表，可对该目录节点执行一次 `parse_document`（保存 `*_mainsite.json`）对照结构是否变更。
 
 ### 2. 权限过期时的处理
 

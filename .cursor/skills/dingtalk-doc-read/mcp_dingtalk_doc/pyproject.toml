@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp-dingtalk-doc"
-version = "1.0.0"
-description = "钉钉文档解析 MCP 服务器 - 支持文档内容提取、HTML生成"
+version = "1.1.0"
+description = "钉钉文档解析 MCP 服务器 - 支持文档内容提取、HTML 生成、目录列举与批量解析"
 authors = [
     {name = "黄云堃", email = "huang.yunkun@hellogroup.com"}
 ]
