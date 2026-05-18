@@ -107,6 +107,7 @@ PRESERVE_FILES = frozenset(
         "人脸认证.md",
         "客服.md",
         "超管.md",
+        "充值提现转账.md",
         "README.md",
     }
 )
@@ -125,6 +126,21 @@ ROOM_SUB_FILENAME: Dict[str, str] = {
     "优化杂项": "房间优化.md",
     "通用": "房间其他.md",
 }
+
+# 币商域子域 -> 输出文件名（充值/提现/转账合并；币商.md 仅强相关）
+COIN_SUB_FILENAME: Dict[str, str] = {
+    "币商": "币商.md",
+    "充值": "充值提现转账.md",
+    "提现": "充值提现转账.md",
+    "转账": "充值提现转账.md",
+    "钻石明细": "充值提现转账.md",
+    "稳定币": "充值提现转账.md",
+    "通用": "其他模块.md",
+    "优化杂项": "其他模块.md",
+}
+
+# 币商域拆分后的旧文件名（合并时需删除）
+COIN_LEGACY_SPLIT_FILES = frozenset({"充值.md", "提现.md", "转账.md"})
 
 # 礼物子域 -> 输出文件名
 GIFT_SUB_FILENAME: Dict[str, str] = {
@@ -203,12 +219,30 @@ SUB_RULES: Dict[str, List[Tuple[re.Pattern[str], str]]] = {
         (re.compile(r"优化|分区策略|设备拉黑"), "优化杂项"),
     ],
     "coin": [
-        (re.compile(r"充值|限额|避审|支付|WEB充值|防控"), "充值"),
-        (re.compile(r"提现|转账|钱包|押金|自提"), "提现转账"),
-        (re.compile(r"币商"), "币商"),
+        (re.compile(r"钱包转账|充值·钱包转账"), "转账"),
+        (
+            re.compile(
+                r"币商·充值·币商押金|币商押金退回|商户业务|币商功能|币商icon|"
+                r"币商列表|币商客户|币商充值增加|币商功能升级|不同模式运营位"
+            ),
+            "币商",
+        ),
+        (re.compile(r"币商·充值|充值·"), "充值"),
+        (re.compile(r"币商·提现与转账·.*转账|转账|钱包转账"), "转账"),
+        (re.compile(r"币商·提现与转账|币商·提现|提现|预提|自提|yaahlan|薪资"), "提现"),
+        (
+            re.compile(
+                r"^币商·|币商大额|币商退回|币商白名单|"
+                r"币商押金|币商视角",
+            ),
+            "币商",
+        ),
+        (re.compile(r"充值|限额|避审|支付|WEB充值|防控|首充|印度不下发"), "充值"),
+        (re.compile(r"提现|预提|自提|yaahlan|薪资"), "提现"),
+        (re.compile(r"转账|钱包转账"), "转账"),
         (re.compile(r"钻石明细|钻石到账|钻石补偿"), "钻石明细"),
         (re.compile(r"稳定币"), "稳定币"),
-        (re.compile(r"优化|域名|VIP"), "优化杂项"),
+        (re.compile(r"优化|域名|懒加载|广播分流"), "优化杂项"),
     ],
     "customer_service": [
         (re.compile(r"客服|快捷回复|券包"), "客服"),
@@ -265,6 +299,8 @@ def output_filename(parent: str, sub: str) -> str:
         return ROOM_SUB_FILENAME.get(sub, f"房间{sub}.md")
     if parent == "gift" and sub:
         return GIFT_SUB_FILENAME.get(sub, f"礼物{sub}.md")
+    if parent == "coin" and sub:
+        return COIN_SUB_FILENAME.get(sub, f"币商{sub}.md")
     label = PARENT_CN.get(parent, parent)
     if parent in SPLIT_PARENTS and sub:
         return f"{label}-{sub}.md"
@@ -343,9 +379,14 @@ def main() -> None:
         unknown = parents_scope - SPLIT_PARENTS
         if unknown:
             raise SystemExit(f"未知父域: {unknown}，可选: {sorted(SPLIT_PARENTS)}")
-        source_names = frozenset(
-            LEGACY_MONOLITH[p] for p in parents_scope if p in LEGACY_MONOLITH
-        )
+        if "coin" in parents_scope:
+            source_names = frozenset(
+                {"币商.md", "充值提现转账.md", "充值.md", "提现.md", "转账.md"}
+            )
+        else:
+            source_names = frozenset(
+                LEGACY_MONOLITH[p] for p in parents_scope if p in LEGACY_MONOLITH
+            )
 
     blocks = load_blocks(root, source_names)
     if not blocks:
@@ -395,15 +436,22 @@ def main() -> None:
         path.write_text(md, encoding="utf-8")
         written.append(path)
 
-    # 删除本次拆分范围内的旧大文件
+    # 删除本次拆分范围内的旧大文件（若子域已复用同名文件则保留）
     for parent in parents_scope:
         legacy = LEGACY_MONOLITH.get(parent)
-        if not legacy:
+        if not legacy or legacy in trees:
             continue
         p = root / legacy
         if p.exists():
             p.unlink()
             print(f"  删除旧文件: {legacy}")
+
+    if "coin" in parents_scope:
+        for name in COIN_LEGACY_SPLIT_FILES:
+            p = root / name
+            if p.exists() and name not in {x.name for x in written}:
+                p.unlink()
+                print(f"  删除旧文件: {name}")
 
     # 全量拆分时：删除其它未写入的残留子文件；仅拆 room 时不删其它 md
     if args.parents.strip().lower() == "all":

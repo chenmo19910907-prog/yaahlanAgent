@@ -32,13 +32,18 @@ def main() -> None:
         run("kb_reclassify.py", root)
     else:
         run("kb_optimize_all.py", root)
+        run("kb_knowledge_style.py", root)
         run("kb_clean_toc_titles.py", root)
+        run("kb_final_polish.py", root)
         run("optimize_kb_docs.py", root)
         run("kb_extract_room_modules.py", root)
         return
 
-    # reclassify 已含 clean_toc / room_extract / index；再跑 optimize 深化去重
     run("kb_optimize_all.py", root)
+    run("kb_knowledge_style.py", root)
+    run("kb_clean_toc_titles.py", root)
+    run("kb_final_polish.py", root)
+    run("optimize_kb_docs.py", root)
     print(f"\npipeline done -> {root}")
 
 

@@ -86,6 +86,7 @@ PARENT_LABELS = (
     "账号与安全",
     "注册登录",
     "人脸认证",
+    "充值提现转账",
     "神秘人",
     "VIP",
     "特权VIP",
@@ -134,6 +135,15 @@ INTROS = {
         "> **范围**：装扮商城、我的装扮、装扮购买与佩戴/使用、"
         "头像框/座驾/入场条/聊天气泡等装扮道具。\n"
     ),
+    "币商.md": (
+        "> **范围**：币商身份、押金缴纳/退回、商户榜单、币商运营位、"
+        "币商充值真人认证、币商 icon 等强相关能力。"
+        "充值/提现/转账见 [`充值提现转账.md`](充值提现转账.md)。\n"
+    ),
+    "充值提现转账.md": (
+        "> **范围**：用户/币商充值、提现、转账、钻石明细、钱包转账 UI、"
+        "稳定币充值等（不含币商身份与押金本体，见 [`币商.md`](币商.md)）。\n"
+    ),
 }
 
 # 不参与全量重写的独立/切片文件（房间红包成员在重分类后由 extract 脚本再生）
@@ -156,6 +166,8 @@ STANDALONE_OUTPUT = frozenset(
     }
 )
 
+COIN_SPLIT_FILES = frozenset({"币商.md", "充值提现转账.md"})
+
 ROOM_SLICE_FILES = frozenset({"房间红包.md", "房间成员.md"})
 
 
@@ -171,6 +183,12 @@ def main() -> None:
     moved: dict[str, int] = defaultdict(int)
 
     for b, origin in raw:
+        sheet = (b.sheet or "").strip()
+        if csm.is_default_sheet_name(sheet):
+            continue
+        mod_clean = content_opt.SAME_AS_SUFFIX_RE.sub("", b.module or "").strip()
+        if sheet in ("未归类需求", "") and not mod_clean and not (b.body or "").strip():
+            continue
         parent = classify_target(b)
         feat = classify_feature(b)
         if feat:
@@ -216,7 +234,7 @@ def main() -> None:
         (root / fk).write_text(md, encoding="utf-8")
         written.add(fk)
 
-    # 房间红包/成员：从 房间.md 拆出强相关切片后再清理旧文件
+    # 房间红包/成员：从 房间.md 拆出强相关切片
     extract_room = SCRIPTS / "kb_extract_room_modules.py"
     if extract_room.exists():
         subprocess.run(
@@ -225,12 +243,36 @@ def main() -> None:
         )
         written.update(ROOM_SLICE_FILES)
 
+    extract_feat = SCRIPTS / "kb_extract_features.py"
+    if extract_feat.exists():
+        subprocess.run(
+            [sys.executable, str(extract_feat), "--root", str(root)],
+            check=False,
+        )
+        written.update(kb_feat.FEATURE_FILES)
+
+    split_coin = SCRIPTS / "kb_split_submodules.py"
+    if split_coin.exists():
+        subprocess.run(
+            [
+                sys.executable,
+                str(split_coin),
+                "--root",
+                str(root),
+                "--parents",
+                "coin",
+            ],
+            check=False,
+        )
+        written.update(COIN_SPLIT_FILES)
+
     for p in root.glob("*.md"):
         if (
             p.name not in written
             and p.name not in PRESERVE_ALWAYS
             and p.name not in STANDALONE_OUTPUT
             and p.name not in ROOM_SLICE_FILES
+            and p.name not in COIN_SPLIT_FILES
             and not p.name.startswith("_")
         ):
             p.unlink()

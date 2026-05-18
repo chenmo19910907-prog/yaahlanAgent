@@ -80,7 +80,7 @@ def normalize_lines(text: str) -> str:
 def body_fingerprint(body: str) -> str:
     lines = []
     for ln in body.splitlines():
-        if "来源版本" in ln or "来源文件" in ln:
+        if "来源版本" in ln or "来源文件" in ln or "**版本**" in ln:
             continue
         lines.append(ln.strip())
     return "\n".join(lines).strip()
@@ -252,10 +252,25 @@ def group_blocks(latest: Dict[Tuple[str, str, str], CaseBlock]) -> Dict[str, Dic
 
 
 def render_block_header(b: CaseBlock) -> str:
-    return (
-        f"> **来源版本**：`{b.version_label}`\n"
-        f"> **来源文件**：`{b.source_file}`\n"
-    )
+    ver = b.version_label or "—"
+    sf = b.source_file.strip() if b.source_file else ""
+    if sf and ("/" in sf or "\\" in sf):
+        from pathlib import Path as _P
+
+        sf = _P(sf).name
+    line = f"> **版本**：`{ver}`"
+    if sf:
+        line += f" · **摘录自**：`{sf}`"
+    return line + "\n"
+
+
+def render_body_kb(body: str) -> str:
+    try:
+        from kb_knowledge_style import transform_body
+
+        return transform_body(body)
+    except ImportError:
+        return body
 
 
 def render_module_section(blocks: List[CaseBlock]) -> str:
@@ -265,14 +280,14 @@ def render_module_section(blocks: List[CaseBlock]) -> str:
         if i == 0 and not b.is_variant and not has_parent_child:
             out.append(f"### {b.module}\n")
             out.append(render_block_header(b))
-            out.append(b.body)
+            out.append(render_body_kb(b.body))
         else:
             label = b.variant_label or (b.module if has_parent_child else b.module)
             if has_parent_child and i == 0:
                 out.append(f"### {b.parent_module}\n")
-            out.append(f"\n#### 变体：{label}\n")
+            out.append(f"\n#### 补充场景：{label}\n")
             out.append(render_block_header(b))
-            out.append(b.body)
+            out.append(render_body_kb(b.body))
         out.append("")
     return "\n".join(out).strip()
 
@@ -297,8 +312,12 @@ def build_document(title: str, sheets: Dict[str, Dict[str, List[CaseBlock]]]) ->
     parts: List[str] = [
         f"# {title}",
         "",
-        "- **说明**：按版本用例 xlsx 汇总；**同一 Sheet + 功能模块**仅保留最新版本；「同上/同…」变体并入父模块。",
-        "- **结构**：`## Sheet（Excel 工作表）` → `### 功能模块` → 用例步骤/预期。",
+        "> **文档类型**：产品规则与验收要点知识库（由版本需求整理，非测试执行清单）",
+        "",
+        "| 项 | 说明 |",
+        "|---|---|",
+        "| 组织方式 | `## 业务主题` → `### 功能点` → 场景小节与规则列表 |",
+        "| 版本口径 | 同一功能点多版本时保留最新；「同上」类补充已并入父条目 |",
         "",
         "---",
         "",

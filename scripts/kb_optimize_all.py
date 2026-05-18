@@ -48,8 +48,10 @@ extract_blocks = content_opt.extract_blocks
 body_fingerprint = content_opt.body_fingerprint
 SAME_AS_SUFFIX_RE = content_opt.SAME_AS_SUFFIX_RE
 
-STEP_RE = re.compile(r"^- \*\*步骤\*\*：(.+)$")
-EXPECT_RE = re.compile(r"^  - \*\*预期\*\*：(.+)$")
+STEP_RE = re.compile(r"^- \*\*步骤\*\*：(.+)$", re.M)
+EXPECT_RE = re.compile(r"^  - \*\*预期\*\*：(.+)$", re.M)
+KB_SCENARIO_RE = re.compile(r"^\*\*(.+?)\*\*\s*$", re.M)
+KB_VERSION_RE = re.compile(r"^> \*\*版本\*\*")
 
 # 无效 / 应丢弃的块（整块）
 DROP_SHEET_RE = re.compile(
@@ -127,27 +129,48 @@ def should_drop_block(b: CaseBlock) -> bool:
     for name in (b.module, b.parent_module):
         if name and DROP_MODULE_RE.search(name):
             return True
-    if not re.search(r"\*\*步骤\*\*", b.body or ""):
+    body = b.body or ""
+    if re.search(r"\*\*步骤\*\*", body):
+        pass
+    elif KB_VERSION_RE.search(body) or KB_SCENARIO_RE.search(body):
+        pass
+    elif re.search(r"^- ", body, re.M):
+        pass
+    else:
         return True
-    if len(body_fingerprint(b.body)) < 8:
+    if len(body_fingerprint(body)) < 8:
         return True
     return False
 
 
 def parse_steps(body: str) -> Dict[str, frozenset[str]]:
-    steps: Dict[str, List[str]] = {}
-    current: Optional[str] = None
+    """解析步骤/预期或知识库场景要点，用于跨 Sheet 矛盾检测。"""
+    if STEP_RE.search(body):
+        steps: Dict[str, List[str]] = {}
+        current: Optional[str] = None
+        for ln in body.splitlines():
+            sm = STEP_RE.match(ln.strip())
+            if sm:
+                current = sm.group(1).strip()
+                steps.setdefault(current, [])
+                continue
+            if current:
+                em = EXPECT_RE.match(ln)
+                if em:
+                    steps[current].append(em.group(1).strip())
+        return {k: frozenset(v) for k, v in steps.items()}
+
+    scenarios: Dict[str, List[str]] = {}
+    current_kb: Optional[str] = None
     for ln in body.splitlines():
-        sm = STEP_RE.match(ln.strip())
-        if sm:
-            current = sm.group(1).strip()
-            steps.setdefault(current, [])
+        km = KB_SCENARIO_RE.match(ln.strip())
+        if km:
+            current_kb = km.group(1).strip()
+            scenarios.setdefault(current_kb, [])
             continue
-        if current:
-            em = EXPECT_RE.match(ln)
-            if em:
-                steps[current].append(em.group(1).strip())
-    return {k: frozenset(v) for k, v in steps.items()}
+        if current_kb and ln.strip().startswith("- "):
+            scenarios[current_kb].append(ln.strip()[2:].strip())
+    return {k: frozenset(v) for k, v in scenarios.items()}
 
 
 def block_sort_key(ib: IndexedBlock) -> Tuple[Tuple[int, int, int], int]:
@@ -347,7 +370,9 @@ def detect_all_conflicts(
 
 
 def resolve_duplicate_steps_in_body(body: str) -> Tuple[str, int]:
-    """正文内同一步骤重复出现：保留最后一次（视为较新）。"""
+    """正文内同一步骤/场景重复出现：保留最后一次（视为较新）。"""
+    if not STEP_RE.search(body):
+        return body, 0
     lines = body.splitlines()
     meta_end = 0
     for j, ln in enumerate(lines):

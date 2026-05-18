@@ -67,6 +67,23 @@ def _title_blob(sheet: str, module: str) -> str:
 TITLE_DOMAIN_RULES: List[Tuple[re.Pattern[str], str]] = [
     (
         re.compile(
+            r"VIP成长|vip页面|购买tab信息与充值tab|新增VIP\d|贵族与VIP|"
+            r"新用户vip体验",
+            re.I,
+        ),
+        "other",
+    ),
+    (re.compile(r"app图标|启动器图标|图标更换", re.I), "other"),
+    (re.compile(r"iOS真人认证|未成年警告", re.I), "face_auth"),
+    (re.compile(r"发言飘屏", re.I), "moments"),
+    (re.compile(r"礼物播放器", re.I), "gift"),
+    (re.compile(r"游戏bridge|游戏客服", re.I), "game"),
+    (re.compile(r"活动大入口|内嵌web", re.I), "rank_activity"),
+    (re.compile(r"房间管理员权限", re.I), "room"),
+    (re.compile(r"自定义接收通知", re.I), "message"),
+    (re.compile(r"^支付验证|^支付验证重构", re.I), "auth_login"),
+    (
+        re.compile(
             r"语音通话优化|语音通话接入|火山引擎|分区策略·语音通话|"
             r"私聊与群聊·语音通话|账号与注册·语音通话",
             re.I,
@@ -93,7 +110,78 @@ TITLE_DOMAIN_RULES: List[Tuple[re.Pattern[str], str]] = [
     (re.compile(r"主播薪资|预提|公会长|公会预提|修改公会长", re.I), "agency"),
     (re.compile(r"个人数据请求|新用户承接", re.I), "other"),
     (re.compile(r"^Redis迁移", re.I), "other"),
-    (re.compile(r"改名卡|首充弹窗", re.I), "coin"),
+    (re.compile(r"首充弹窗", re.I), "coin"),
+    (re.compile(r"改名卡", re.I), "message"),
+    (re.compile(r"定制礼物违规|定制礼物", re.I), "gift"),
+    (re.compile(r"平台标签调整", re.I), "gift"),
+    (re.compile(r"每日任务改版|每日任务", re.I), "other"),
+    (re.compile(r"房间小时榜|房间操作优化", re.I), "room"),
+    (re.compile(r"^客服后台$|^客服评价$|访客记录剔除客服", re.I), "customer_service"),
+]
+
+# Sheet 路径中含其它业务域前缀时优先归位（高于 coin/公会 等宽泛 DOMAIN_ROUTING）
+CROSS_DOMAIN_PREFIX_RULES: List[Tuple[re.Pattern[str], str]] = [
+    (re.compile(r"^支付验证|支付验证重构", re.I), "auth_login"),
+    (re.compile(r"私聊与群聊·|^私聊与群聊$", re.I), "message"),
+    (re.compile(r"面板与送礼·|礼物与打赏·|房内礼物·", re.I), "gift"),
+    (re.compile(r"发布与浏览·", re.I), "moments"),
+    (re.compile(r"提现与转账·cp头像|提现与转账·贵族|提现与转账·平台标签", re.I), "gift"),
+    (re.compile(r"提现与转账·域名", re.I), "other"),
+    (re.compile(r"提现与转账·", re.I), "coin"),
+    (
+        re.compile(
+            r"账号与注册·(?:支付验证|注册|登录|注销|绑定|密码|设置about|资料|区号)",
+            re.I,
+        ),
+        "auth_login",
+    ),
+    (re.compile(r"账号与注册·", re.I), "auth_login"),
+    (re.compile(r"进房·|麦位·|成员与等级·|服务端进房", re.I), "room"),
+    (
+        re.compile(
+            r"^房间·|房间操作优化|房间小时榜|房间背景|房间管理员|"
+            r"房间成员|房间收听|房间等级",
+            re.I,
+        ),
+        "room",
+    ),
+    (re.compile(r"客服·|^客服后台$|^客服评价$", re.I), "customer_service"),
+    (re.compile(r"超管·|审核·|审核后台", re.I), "super_admin"),
+    (re.compile(r"主题房·|^主题房$", re.I), "theme_room"),
+    (
+        re.compile(
+            r"家族·|^家族改版|创建与加入·|任务与等级·|成员管理·发言飘屏",
+            re.I,
+        ),
+        "family",
+    ),
+    (
+        re.compile(
+            r"公会·|^公会|公会长|主播薪资|薪资预提|yaahlan-family|"
+            r"yaahlan-star",
+            re.I,
+        ),
+        "agency",
+    ),
+    (re.compile(r"游戏·|游戏bridge|游戏客服|概率游戏|大冒险", re.I), "game"),
+    (re.compile(r"勋章与展馆·|礼物展馆|cp头像礼物", re.I), "gift"),
+    (re.compile(r"提现与转账·贵族|·贵族$", re.I), "gift"),
+    (re.compile(r"关系链·|关系改版|CP好友|组成关系", re.I), "message"),
+    (re.compile(r"个人主页·|profile|谁看过我|靓号设计", re.I), "other"),
+    (re.compile(r"活动·主题房|主题房活动", re.I), "theme_room"),
+    (re.compile(r"榜单与活动·|活动运营·|^活动·", re.I), "rank_activity"),
+    (
+        re.compile(
+            r"域名替换|广播分流|首页懒加载|网络请求优化|接口接缓存|"
+            r"个人数据请求|安卓.*接口接缓存|安卓普通麦位",
+            re.I,
+        ),
+        "other",
+    ),
+    (
+        re.compile(r"界面与运营·(?!活动.*主题房|活动新增房间大入口)", re.I),
+        "room",
+    ),
 ]
 
 # 从「其他模块」迁出：Sheet/标题含明确业务域关键词（优先于泛化 other 规则）
@@ -109,8 +197,9 @@ DOMAIN_ROUTING_RULES: List[Tuple[re.Pattern[str], str]] = [
     ),
     (
         re.compile(
-            r"币商|充值|提现|支付验证|商户|转账|支付|钻石明细|改名卡|首充|"
-            r"提现与转账|广播分流",
+            r"^币商|币商·|商户业务|充值·|提现与转账·|"
+            r"^充值$|^提现$|^转账$|支付验证|钻石明细|"
+            r"^首充|首充弹窗|钱包转账|广播分流",
             re.I,
         ),
         "coin",
@@ -412,7 +501,13 @@ def classify_target(b: CaseBlock) -> str:
 
     title = _title_blob(sheet, mod)
 
-    for pat, target in DOMAIN_ROUTING_RULES:
+    # Sheet 路径前缀（须早于 TITLE/DOMAIN 中「主播薪资」等宽泛规则）
+    for pat, target in CROSS_DOMAIN_PREFIX_RULES:
+        if pat.search(sheet) or pat.search(title):
+            return target
+
+    # 精确标题优先（避免 DOMAIN_ROUTING 中「首充」等子串误伤合订 Sheet）
+    for pat, target in TITLE_DOMAIN_RULES:
         if pat.search(title):
             return target
 
@@ -421,7 +516,7 @@ def classify_target(b: CaseBlock) -> str:
         if pat.search(title):
             return target
 
-    for pat, target in TITLE_DOMAIN_RULES:
+    for pat, target in DOMAIN_ROUTING_RULES:
         if pat.search(title):
             return target
 
@@ -550,7 +645,7 @@ def render_cluster_blocks(cluster: str, blocks: List[CaseBlock]) -> str:
         title = _norm_module_name(b.module) or cluster
         out.append(f"### {title}\n")
         out.append(content_opt.render_block_header(b))
-        out.append(b.body)
+        out.append(content_opt.render_body_kb(b.body))
         out.append("")
         return "\n".join(out)
 
@@ -561,7 +656,7 @@ def render_cluster_blocks(cluster: str, blocks: List[CaseBlock]) -> str:
             label = f"{b.parent_module} / {b.module}"
         out.append(f"\n#### {label}\n")
         out.append(content_opt.render_block_header(b))
-        out.append(b.body)
+        out.append(content_opt.render_body_kb(b.body))
         out.append("")
     return "\n".join(out).strip()
 
@@ -590,9 +685,13 @@ def build_from_tree(
     parts = [
         f"# {title}",
         "",
-        "- **说明**：按版本 xlsx 汇总；已按**业务域**拆分归类，同 Sheet 下相近模块已合并。",
-        "- **结构**：`## Sheet` → `### 功能模块` → `#### 子模块` → 步骤/预期。",
-        "- **冲突**：同一 Sheet + 原功能模块名仅保留最新版本。",
+        "> **文档类型**：产品规则与验收要点知识库（由版本需求整理，非测试执行清单）",
+        "",
+        "| 项 | 说明 |",
+        "|---|---|",
+        "| 组织方式 | `## 业务主题` → `### 功能点` → 场景小节与规则列表 |",
+        "| 版本口径 | 同 Sheet 下相近条目仅保留最新版本 |",
+        "| 索引 | 下方目录为文内业务主题 |",
         "",
         "---",
         "",

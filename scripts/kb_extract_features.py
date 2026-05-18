@@ -78,7 +78,6 @@ VIP_EXCLUDE_PARENTS = frozenset(
         "room",
         "room_pk",
         "gift",
-        "coin",
         "family",
         "moments",
         "theme_room",
