@@ -30,6 +30,7 @@ _kstyle = _load_module("kb_knowledge_style_polish", "kb_knowledge_style.py")
 transform_toc = _kstyle.transform_toc
 
 SCOPE_LINE_RE = re.compile(r"^> \*\*范围\*\*：.+$", re.M)
+LEGACY_OTHER_PREFIX_RE = re.compile(r"^其他模块·+")
 EMPTY_UNCAT_RE = re.compile(
     r"(?ms)^## 未归类需求\s*\n(?:\s*\n)*(?=## |\Z)"
 )
@@ -89,6 +90,29 @@ def prune_toc_uncategorized(text: str) -> Tuple[str, bool]:
     return new, new != text
 
 
+def strip_legacy_other_prefix(text: str) -> Tuple[str, bool]:
+    lines = text.splitlines()
+    out: List[str] = []
+    changed = False
+    for line in lines:
+        if line.startswith("## "):
+            title = line[3:].strip()
+            new_title = LEGACY_OTHER_PREFIX_RE.sub("", title)
+            if new_title != title:
+                changed = True
+                out.append(f"## {new_title}")
+                continue
+        if line.startswith("- ") and not line.startswith("- ["):
+            item = line[2:].strip()
+            new_item = LEGACY_OTHER_PREFIX_RE.sub("", item)
+            if new_item != item:
+                changed = True
+                out.append(f"- {new_item}")
+                continue
+        out.append(line)
+    return "\n".join(out), changed
+
+
 def dedupe_toc_intro(text: str) -> Tuple[str, bool]:
     first_sep = text.find("\n---\n")
     if first_sep == -1:
@@ -140,6 +164,12 @@ def polish_file(path: Path) -> Tuple[bool, List[str]]:
         changed = True
     text = new
 
+    new, c = strip_legacy_other_prefix(text)
+    if c:
+        notes.append("prefix")
+        changed = True
+    text = new
+
     if changed:
         path.write_text(text.strip() + "\n", encoding="utf-8")
     return changed, notes
@@ -164,6 +194,7 @@ def main() -> None:
             t, _ = remove_empty_uncategorized(t)
             t, _ = prune_toc_uncategorized(t)
             t, _ = dedupe_toc_intro(t)
+            t, _ = strip_legacy_other_prefix(t)
             if t != old:
                 n += 1
                 print(f"[dry] {p.name}: would update")

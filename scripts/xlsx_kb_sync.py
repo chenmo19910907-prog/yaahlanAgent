@@ -47,7 +47,6 @@ KB_FILES: Dict[str, str] = {
     "coin": "币商.md",
     "game": "游戏.md",
     "rank_activity": "榜单与活动.md",
-    "other": "其他模块.md",
 }
 
 
@@ -228,7 +227,7 @@ def classify_big_module(file_name: str, sheet_title: str, module_name: str, step
         return "game"
     if has("榜", "活动", "排名", "排行", "banner"):
         return "rank_activity"
-    return "other"
+    return "room"
 
 
 def section_heading(module_name: str) -> str:

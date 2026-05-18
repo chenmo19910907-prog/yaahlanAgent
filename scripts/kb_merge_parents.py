@@ -36,7 +36,6 @@ MERGE_PREFIXES: List[Tuple[str, str, str]] = [
     ("家族", "family", "家族.md"),
     ("主题房", "theme_room", "主题房.md"),
     ("动态", "moments", "动态.md"),
-    ("其他", "other", "其他模块.md"),
 ]
 
 # 从 房间.md 拆出的子模块，回并时不再并入 房间.md
@@ -68,7 +67,6 @@ PRESERVE_ALWAYS = frozenset(
         "家族.md",
         "主题房.md",
         "动态.md",
-        "其他模块.md",
         "客服.md",
         "超管.md",
         "游戏.md",
@@ -91,7 +89,6 @@ PARENT_MERGE_OUT: Dict[str, str] = {
     "family": "家族.md",
     "theme_room": "主题房.md",
     "moments": "动态.md",
-    "other": "其他模块.md",
     "customer_service": "客服.md",
     "super_admin": "超管.md",
 }

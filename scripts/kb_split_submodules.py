@@ -135,8 +135,8 @@ COIN_SUB_FILENAME: Dict[str, str] = {
     "转账": "充值提现转账.md",
     "钻石明细": "充值提现转账.md",
     "稳定币": "充值提现转账.md",
-    "通用": "其他模块.md",
-    "优化杂项": "其他模块.md",
+    "通用": "币商.md",
+    "优化杂项": "币商.md",
 }
 
 # 币商域拆分后的旧文件名（合并时需删除）
@@ -164,7 +164,6 @@ LEGACY_MONOLITH: Dict[str, str] = {
     "gift": "礼物.md",
     "message": "消息.md",
     "coin": "币商.md",
-    "other": "其他模块.md",
     "customer_service": "客服.md",
     "super_admin": "超管.md",
     "family": "家族.md",

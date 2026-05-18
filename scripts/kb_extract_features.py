@@ -52,7 +52,6 @@ PARENT_FILES = frozenset(
         "家族.md",
         "主题房.md",
         "动态.md",
-        "其他模块.md",
         "客服.md",
         "超管.md",
         "游戏.md",
@@ -773,7 +772,6 @@ def main() -> None:
                     "family": "家族.md",
                     "theme_room": "主题房.md",
                     "moments": "动态.md",
-                    "other": "其他模块.md",
                     "customer_service": "客服.md",
                     "super_admin": "超管.md",
                     "room_pk": "房间PK.md",
@@ -783,7 +781,7 @@ def main() -> None:
                     "face_auth": "人脸认证.md",
                     "auth_login": AUTH_LOGIN_MD,
                 }
-                target = parent_map.get(parent, "其他模块.md")
+                target = parent_map.get(parent, "房间.md")
             else:
                 target = origin
             sheet = b.sheet or "未归类需求"

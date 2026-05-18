@@ -56,7 +56,6 @@ PARENT_MAP = {
     "family": "家族.md",
     "theme_room": "主题房.md",
     "moments": "动态.md",
-    "other": "其他模块.md",
     "customer_service": "客服.md",
     "super_admin": "超管.md",
     "game": "游戏.md",
@@ -75,7 +74,7 @@ PARENT_LABELS = (
     "家族",
     "主题房",
     "动态",
-    "其他模块",
+    "其他模块",  # 历史 Sheet 前缀，仅用于剥离，不再输出独立文件
     "客服",
     "超管",
     "客服与超管",
@@ -198,7 +197,7 @@ def main() -> None:
             )
             moved[f"->{feat}"] += 1
         else:
-            target = PARENT_MAP.get(parent, "其他模块.md")
+            target = PARENT_MAP.get(parent, "房间.md")
             sheet = _strip_cross_prefixes(b.sheet or "未归类需求", target)
             moved[target] += 1
         tagged.append((b, target, sheet))

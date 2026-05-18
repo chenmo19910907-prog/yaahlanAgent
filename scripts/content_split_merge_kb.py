@@ -52,8 +52,9 @@ KB_FILE_NAMES: Dict[str, str] = {
     "coin": "币商.md",
     "game": "游戏.md",
     "rank_activity": "榜单与活动.md",
-    "other": "其他模块.md",
 }
+
+DEFAULT_FALLBACK_TARGET = "room"
 
 def _title_blob(sheet: str, module: str) -> str:
     """Sheet / 子域·Sheet / 模块名合并，用于按标题判定业务域。"""
@@ -71,9 +72,9 @@ TITLE_DOMAIN_RULES: List[Tuple[re.Pattern[str], str]] = [
             r"新用户vip体验",
             re.I,
         ),
-        "other",
+        "coin",
     ),
-    (re.compile(r"app图标|启动器图标|图标更换", re.I), "other"),
+    (re.compile(r"app图标|启动器图标|图标更换", re.I), "room"),
     (re.compile(r"iOS真人认证|未成年警告", re.I), "face_auth"),
     (re.compile(r"发言飘屏", re.I), "moments"),
     (re.compile(r"礼物播放器", re.I), "gift"),
@@ -90,15 +91,16 @@ TITLE_DOMAIN_RULES: List[Tuple[re.Pattern[str], str]] = [
         ),
         "message",
     ),
-    (re.compile(r"网络速度检测|网络速度|网速", re.I), "other"),
+    (re.compile(r"网络速度检测|网络速度|网速", re.I), "room"),
     (re.compile(
         r"网络请求优化|接口接缓存|首页懒加载|Android回退|回退\s*SDK|"
         r"iOS我的页面|安卓普通麦位|UIScene|lifecycle",
         re.I,
-    ), "other"),
+    ), "room"),
     (re.compile(r"钻石充值明细|钻石明细筛选|钻石明细|钻石补偿", re.I), "coin"),
     (re.compile(r"审核后台|设备拉黑|历史设备", re.I), "super_admin"),
-    (re.compile(r"域名替换|广播分流", re.I), "other"),
+    (re.compile(r"域名替换", re.I), "coin"),
+    (re.compile(r"广播分流", re.I), "room"),
     (re.compile(
         r"麦位系统|语音房麦位|付费表情|房间列表边框|心愿礼物下线|"
         r"房间等级5|环绕模式|20麦位",
@@ -108,13 +110,13 @@ TITLE_DOMAIN_RULES: List[Tuple[re.Pattern[str], str]] = [
     (re.compile(r"关系改版|亲密度|关系空间|组成关系", re.I), "message"),
     (re.compile(r"私聊与群聊·.*设置页ui|IM·.*设置页", re.I), "message"),
     (re.compile(r"主播薪资|预提|公会长|公会预提|修改公会长", re.I), "agency"),
-    (re.compile(r"个人数据请求|新用户承接", re.I), "other"),
-    (re.compile(r"^Redis迁移", re.I), "other"),
+    (re.compile(r"个人数据请求|新用户承接", re.I), "agency"),
+    (re.compile(r"^Redis迁移", re.I), "room"),
     (re.compile(r"首充弹窗", re.I), "coin"),
     (re.compile(r"改名卡", re.I), "message"),
     (re.compile(r"定制礼物违规|定制礼物", re.I), "gift"),
     (re.compile(r"平台标签调整", re.I), "gift"),
-    (re.compile(r"每日任务改版|每日任务", re.I), "other"),
+    (re.compile(r"每日任务改版|每日任务", re.I), "rank_activity"),
     (re.compile(r"房间小时榜|房间操作优化", re.I), "room"),
     (re.compile(r"^客服后台$|^客服评价$|访客记录剔除客服", re.I), "customer_service"),
 ]
@@ -126,7 +128,7 @@ CROSS_DOMAIN_PREFIX_RULES: List[Tuple[re.Pattern[str], str]] = [
     (re.compile(r"面板与送礼·|礼物与打赏·|房内礼物·", re.I), "gift"),
     (re.compile(r"发布与浏览·", re.I), "moments"),
     (re.compile(r"提现与转账·cp头像|提现与转账·贵族|提现与转账·平台标签", re.I), "gift"),
-    (re.compile(r"提现与转账·域名", re.I), "other"),
+    (re.compile(r"提现与转账·域名", re.I), "coin"),
     (re.compile(r"提现与转账·", re.I), "coin"),
     (
         re.compile(
@@ -167,17 +169,21 @@ CROSS_DOMAIN_PREFIX_RULES: List[Tuple[re.Pattern[str], str]] = [
     (re.compile(r"勋章与展馆·|礼物展馆|cp头像礼物", re.I), "gift"),
     (re.compile(r"提现与转账·贵族|·贵族$", re.I), "gift"),
     (re.compile(r"关系链·|关系改版|CP好友|组成关系", re.I), "message"),
-    (re.compile(r"个人主页·|profile|谁看过我|靓号设计", re.I), "other"),
     (re.compile(r"活动·主题房|主题房活动", re.I), "theme_room"),
     (re.compile(r"榜单与活动·|活动运营·|^活动·", re.I), "rank_activity"),
+    (re.compile(r"个人数据请求|我的公会", re.I), "agency"),
+    (re.compile(r"其他模块·礼物|iOS我的页面", re.I), "gift"),
+    (re.compile(r"背包·每日任务", re.I), "gift"),
     (
         re.compile(
-            r"域名替换|广播分流|首页懒加载|网络请求优化|接口接缓存|"
-            r"个人数据请求|安卓.*接口接缓存|安卓普通麦位",
+            r"首页懒加载|网络请求优化|接口接缓存|安卓.*接口接缓存|"
+            r"安卓普通麦位|房间帧跳转|语音房跳转",
             re.I,
         ),
-        "other",
+        "room",
     ),
+    (re.compile(r"子公会.*退出母公会|退出母公会", re.I), "agency"),
+    (re.compile(r"广播分流", re.I), "room"),
     (
         re.compile(r"界面与运营·(?!活动.*主题房|活动新增房间大入口)", re.I),
         "room",
@@ -199,7 +205,7 @@ DOMAIN_ROUTING_RULES: List[Tuple[re.Pattern[str], str]] = [
         re.compile(
             r"^币商|币商·|商户业务|充值·|提现与转账·|"
             r"^充值$|^提现$|^转账$|支付验证|钻石明细|"
-            r"^首充|首充弹窗|钱包转账|广播分流",
+            r"^首充|首充弹窗|钱包转账",
             re.I,
         ),
         "coin",
@@ -264,14 +270,14 @@ DOMAIN_ROUTING_RULES: List[Tuple[re.Pattern[str], str]] = [
     (re.compile(r"真人认证|人脸认证", re.I), "face_auth"),
 ]
 
-# 仅保留在「其他模块」的泛化技术/杂项标题
-OTHER_MISC_TITLE_RE = re.compile(
-    r"Android技术|个人数据请求|用户信息请求|我的tab|profile页|"
-    r"优化部分|不跟版|^优化需求$|^优化$|^iOS$|主播任务|主播用户|"
-    r"新增帮助中心|网络速度|新用户承接|分区策略(?!.*语音通话)|"
-    r"技术优化|域名替换|其他需求|商店UI改版|概率游戏优化",
-    re.I,
-)
+# 按功能模块名细分的域（优先于 Sheet 级「广播分流」等）
+MODULE_DOMAIN_RULES: List[Tuple[re.Pattern[str], str]] = [
+    (re.compile(r"^游戏广播$", re.I), "game"),
+    (re.compile(r"^升级广播$", re.I), "room"),
+    (re.compile(r"子公会.*退出|退出母公会", re.I), "agency"),
+    (re.compile(r"任务列表未完成认证|真人头像认证条款", re.I), "face_auth"),
+    (re.compile(r"ChatRoomTab|getWatchHistory|已看过列表", re.I), "room"),
+]
 
 # Sheet/模块标题明确非消息域（优先于 IM/私聊 等宽泛 Sheet 规则）
 NON_MESSAGE_TITLE_RULES: List[Tuple[re.Pattern[str], str]] = [
@@ -295,14 +301,11 @@ NON_MESSAGE_TITLE_RULES: List[Tuple[re.Pattern[str], str]] = [
     ),
     (re.compile(r"账号与注册·语音通话", re.I), "message"),
     (re.compile(r"账号与注册·幸运祈愿", re.I), "gift"),
-    (
-        re.compile(
-            r"账号与注册·(?:自定义表情|活动分享|分区策略|个人数据|拉黑|标签UI|"
-            r"网络请求|缓存|谁看过我|iOS我的页面)",
-            re.I,
-        ),
-        "other",
-    ),
+    (re.compile(r"账号与注册·(?:网络请求|缓存|iOS我的页面)", re.I), "room"),
+    (re.compile(r"账号与注册·(?:自定义表情|活动分享)", re.I), "rank_activity"),
+    (re.compile(r"账号与注册·(?:分区策略|个人数据)", re.I), "agency"),
+    (re.compile(r"账号与注册·(?:拉黑|标签UI)", re.I), "gift"),
+    (re.compile(r"账号与注册·谁看过我", re.I), "auth_login"),
     (
         re.compile(
             r"账号与注册·(?:注册|登录|注销|绑定|密码|设置about|资料|区号|欢迎|承接)|"
@@ -362,7 +365,7 @@ BODY_TARGET_RULES: List[Tuple[re.Pattern[str], str]] = [
     (re.compile(r"真人认证|人脸", re.I), "face_auth"),
     (re.compile(r"客服后台|快捷回复|客服下发|客服评价|券包", re.I), "customer_service"),
     (re.compile(r"超管|审核后台|设备拉黑|工单", re.I), "super_admin"),
-    (re.compile(r"网络速度|网速检测", re.I), "other"),
+    (re.compile(r"网络速度|网速检测", re.I), "room"),
     (re.compile(r"礼物面板|背包礼物|盲盒|勋章|展馆|幸运礼物", re.I), "gift"),
     (re.compile(r"大冒险|游戏bridge", re.I), "game"),
     (re.compile(r"语音房|进房|麦位|房间背景|房间等级|房间管理员", re.I), "room"),
@@ -501,6 +504,10 @@ def classify_target(b: CaseBlock) -> str:
 
     title = _title_blob(sheet, mod)
 
+    for pat, target in MODULE_DOMAIN_RULES:
+        if pat.search(mod) or pat.search(title):
+            return target
+
     # Sheet 路径前缀（须早于 TITLE/DOMAIN 中「主播薪资」等宽泛规则）
     for pat, target in CROSS_DOMAIN_PREFIX_RULES:
         if pat.search(sheet) or pat.search(title):
@@ -559,9 +566,6 @@ def classify_target(b: CaseBlock) -> str:
     if MESSAGE_CORE_RE.search(title):
         return "message"
 
-    if OTHER_MISC_TITLE_RE.search(title):
-        return "other"
-
     # 原「客服与超管」混合域：按标题拆分为客服 / 超管
     if re.search(r"客服与超管|客服|超管|审核·|审核后台", title, re.I):
         return classify_cs_admin_target(title, sheet, text)
@@ -571,7 +575,7 @@ def classify_target(b: CaseBlock) -> str:
         if pat.search(text):
             return target
 
-    return "other"
+    return DEFAULT_FALLBACK_TARGET
 
 
 def merge_cluster_key(sheet: str, module: str) -> str:
