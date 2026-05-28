@@ -90,15 +90,9 @@ python3 MOA/moa_execute.py \
   --exp 10000000
 ```
 
-## 房间等级经验值阈值（已固化在脚本）
+## 房间等级经验值阈值（配置文件）
 
-- **Lv1**: 0
-- **Lv2**: 200000
-- **Lv3**: 1000000
-- **Lv4**: 4500000
-- **Lv5**: 18000000
-- **Lv6**: 63000000
-- **Lv7**: 189000000
+阈值已迁移到 `MOA/config.json` 的 `room_level_exp_thresholds` 字段；后续类似“规则/映射表”都统一沉淀到该配置文件。
 
 ### 只说等级的用法（脚本按阈值算增量）
 
@@ -138,6 +132,44 @@ python3 MOA/moa_execute.py \
   --host 10.247.244.119:29584 \
   --room-id 31668628 \
   --exp 10000000
+```
+
+## VIP：增加 VIP 经验值 / 按 VIP 等级补差
+
+你抓包的 VIP MOA：
+
+- `url`: `/service/voga-mts-user-vip-stage`
+- `method`: `addVipValue`
+- `params[0]`: 用户ID（string）
+- `params[1]`: 增加的 VIP 经验值（int）
+
+### 给用户增加指定 VIP 经验值
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/vip_payload.example.json \
+  --vip-user-id 100066819 \
+  --vip-exp 10
+```
+
+### 只说目标 VIP 等级（自动先查当前 VIP 经验，再补差）
+
+VIP 等级阈值已迁移到 `MOA/config.json` 的 `vip_level_exp_thresholds`。
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/vip_payload.example.json \
+  --vip-user-id 100066819 \
+  --vip-level 4
+```
+
+### 查询当前 VIP 经验值与等级
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/vip_payload.example.json \
+  --vip-user-id 100066819 \
+  --vip-query-current
 ```
 
 如果返回 `ec=300` 但 MOA 页面同操作能成功，优先怀疑这几个字段与你页面不一致（常见：`yoga`/`voga` 拼写、超时太短）：

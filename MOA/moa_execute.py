@@ -39,15 +39,79 @@ def _load_local_env() -> None:
         return
 
 
-ROOM_LEVEL_EXP_THRESHOLDS: dict[int, int] = {
-    1: 0,
-    2: 200_000,
-    3: 1_000_000,
-    4: 4_500_000,
-    5: 18_000_000,
-    6: 63_000_000,
-    7: 189_000_000,
-}
+_CONFIG_CACHE: Optional[Dict[str, Any]] = None
+
+
+def _default_config() -> Dict[str, Any]:
+    return {
+        "room_level_exp_thresholds": {
+            "1": 0,
+            "2": 200000,
+            "3": 1000000,
+            "4": 4500000,
+            "5": 18000000,
+            "6": 63000000,
+            "7": 189000000,
+        }
+    }
+
+
+def _load_config() -> Dict[str, Any]:
+    global _CONFIG_CACHE
+    if _CONFIG_CACHE is not None:
+        return _CONFIG_CACHE
+
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    cfg_path = os.path.join(base_dir, "config.json")
+    cfg: Dict[str, Any] = _default_config()
+    if os.path.exists(cfg_path):
+        try:
+            with open(cfg_path, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+            if isinstance(loaded, dict):
+                cfg.update(loaded)
+        except Exception:
+            # 配置解析失败时回退默认配置，不阻断主流程
+            cfg = _default_config()
+
+    _CONFIG_CACHE = cfg
+    return cfg
+
+
+def _room_level_thresholds() -> dict[int, int]:
+    cfg = _load_config()
+    raw = cfg.get("room_level_exp_thresholds")
+    if not isinstance(raw, dict):
+        raise RuntimeError("配置错误：room_level_exp_thresholds 必须是 object")
+    thresholds: dict[int, int] = {}
+    for k, v in raw.items():
+        try:
+            lv = int(k)
+            exp = int(v)
+        except Exception:
+            raise RuntimeError(f"配置错误：room_level_exp_thresholds 键值必须可转为 int: {k}={v}")
+        thresholds[lv] = exp
+    if not thresholds:
+        raise RuntimeError("配置错误：room_level_exp_thresholds 不能为空")
+    return thresholds
+
+
+def _vip_level_thresholds() -> dict[int, int]:
+    cfg = _load_config()
+    raw = cfg.get("vip_level_exp_thresholds")
+    if not isinstance(raw, dict):
+        raise RuntimeError("配置错误：vip_level_exp_thresholds 必须是 object")
+    thresholds: dict[int, int] = {}
+    for k, v in raw.items():
+        try:
+            lv = int(k)
+            exp = int(v)
+        except Exception:
+            raise RuntimeError(f"配置错误：vip_level_exp_thresholds 键值必须可转为 int: {k}={v}")
+        thresholds[lv] = exp
+    if not thresholds:
+        raise RuntimeError("配置错误：vip_level_exp_thresholds 不能为空")
+    return thresholds
 
 
 def _build_room_exp_expr(room_id: str, exp: int) -> str:
@@ -60,14 +124,28 @@ def _build_room_exp_expr(room_id: str, exp: int) -> str:
 
 
 def _build_room_exp_delta_for_level(level: int, current_exp: int) -> int:
-    if level not in ROOM_LEVEL_EXP_THRESHOLDS:
-        raise ValueError(f"不支持的房间等级: {level}，支持范围: {sorted(ROOM_LEVEL_EXP_THRESHOLDS.keys())}")
+    thresholds = _room_level_thresholds()
+    if level not in thresholds:
+        raise ValueError(f"不支持的房间等级: {level}，支持范围: {sorted(thresholds.keys())}")
     if current_exp < 0:
         raise ValueError("current_exp 不能为负数")
-    target = ROOM_LEVEL_EXP_THRESHOLDS[level]
+    target = thresholds[level]
     delta = target - current_exp
     if delta <= 0:
         raise ValueError(f"当前经验值已 >= 目标等级阈值：current_exp={current_exp}, target={target}")
+    return delta
+
+
+def _build_vip_exp_delta_for_level(level: int, current_exp: int) -> int:
+    thresholds = _vip_level_thresholds()
+    if level not in thresholds:
+        raise ValueError(f"不支持的 VIP 等级: {level}，支持范围: {sorted(thresholds.keys())}")
+    if current_exp < 0:
+        raise ValueError("current_exp 不能为负数")
+    target = thresholds[level]
+    delta = target - current_exp
+    if delta <= 0:
+        raise ValueError(f"当前 VIP 经验值已 >= 目标等级阈值：current_exp={current_exp}, target={target}")
     return delta
 
 
@@ -75,11 +153,46 @@ def _level_by_exp(exp: int) -> int:
     if exp < 0:
         raise ValueError("exp 不能为负数")
     # 返回满足阈值的最高等级
+    thresholds = _room_level_thresholds()
     level = 1
-    for lv in sorted(ROOM_LEVEL_EXP_THRESHOLDS.keys()):
-        if exp >= ROOM_LEVEL_EXP_THRESHOLDS[lv]:
+    for lv in sorted(thresholds.keys()):
+        if exp >= thresholds[lv]:
             level = lv
     return level
+
+
+def _vip_level_by_exp(exp: int) -> int:
+    if exp < 0:
+        raise ValueError("exp 不能为负数")
+    thresholds = _vip_level_thresholds()
+    level = min(thresholds.keys())
+    for lv in sorted(thresholds.keys()):
+        if exp >= thresholds[lv]:
+            level = lv
+    return level
+
+
+def _set_vip_params(payload: Dict[str, Any], user_id: str, vip_exp_delta: int) -> None:
+    if vip_exp_delta < 0:
+        raise ValueError("vip_exp_delta 不能为负数")
+    payload["params"] = [
+        {
+            "title": "参数1",
+            "name": "1",
+            "txt": str(user_id),
+            "json": "",
+            "type": "string",
+            "value": str(user_id),
+        },
+        {
+            "title": "参数2",
+            "name": "2",
+            "txt": str(vip_exp_delta),
+            "json": "",
+            "type": "int",
+            "value": str(vip_exp_delta),
+        },
+    ]
 
 
 def _load_payload(args: argparse.Namespace) -> Dict[str, Any]:
@@ -146,6 +259,30 @@ def _load_payload(args: argparse.Namespace) -> Dict[str, Any]:
         if not isinstance(settings, dict):
             raise ValueError("payload.settings 必须是 object，才能使用 --header-type 覆盖")
         settings["headerType"] = args.header_type
+
+    # VIP 模式：用 params[0]=userId, params[1]=vipExpDelta
+    if args.vip_user_id is not None:
+        # 默认对齐你抓包里的 service/method（也可被 --service-url/--moa-method 覆盖）
+        payload.setdefault("url", "/service/voga-mts-user-vip-stage")
+        payload.setdefault("method", "addVipValue")
+
+        if args.vip_query_current:
+            _set_vip_params(payload, user_id=args.vip_user_id, vip_exp_delta=0)
+            return payload
+
+        if args.vip_exp is not None:
+            if args.vip_exp < 0:
+                raise ValueError("vip_exp 不能为负数")
+            _set_vip_params(payload, user_id=args.vip_user_id, vip_exp_delta=args.vip_exp)
+            return payload
+
+        if args.vip_level is not None:
+            current = args.vip_current_exp if args.vip_current_exp is not None else 0
+            delta = _build_vip_exp_delta_for_level(args.vip_level, current_exp=current)
+            _set_vip_params(payload, user_id=args.vip_user_id, vip_exp_delta=delta)
+            return payload
+
+        raise ValueError("提供了 --vip-user-id 时，必须同时提供 --vip-exp 或 --vip-level 或 --vip-query-current")
 
     expr: Optional[str] = None
     if args.expr is not None:
@@ -306,6 +443,13 @@ def main() -> int:
     parser.add_argument("--current-exp", type=int, help="便捷参数：当前房间经验值（用于配合 --level 计算增量；不传默认按 0 处理）")
     parser.add_argument("--query-current", action="store_true", help="查询当前经验值与等级（通过 addRoomActiveValue(roomId,0D)）")
 
+    # VIP：userId + 增量 / 目标等级（按配置阈值）
+    parser.add_argument("--vip-user-id", help="VIP 经验操作：用户ID（对应 addVipValue 的参数1）")
+    parser.add_argument("--vip-exp", type=int, help="VIP 经验操作：增加的 VIP 经验值（>=0，对应 addVipValue 的参数2）")
+    parser.add_argument("--vip-level", type=int, help="VIP 经验操作：目标 VIP 等级（按阈值计算需要增加的经验值）")
+    parser.add_argument("--vip-current-exp", type=int, help="VIP 经验操作：当前 VIP 经验值（配合 --vip-level 计算增量；不传默认按 0 处理）")
+    parser.add_argument("--vip-query-current", action="store_true", help="查询当前 VIP 经验值与等级（通过 addVipValue(userId,0)）")
+
     args = parser.parse_args()
 
     if not args.entry_url:
@@ -326,8 +470,31 @@ def main() -> int:
         if args.request_source:
             os.environ["MOA_REQUEST_SOURCE"] = args.request_source
 
+        # VIP 目标等级升级：先 query，再补差值
+        if args.vip_level is not None and args.vip_user_id is not None and args.vip_exp is None and not args.vip_query_current and args.expr is None:
+            q_args = argparse.Namespace(**vars(args))
+            q_args.vip_query_current = True
+            q_payload = _load_payload(q_args)
+            timeout_s = max(args.timeout_ms, 1) / 1000.0
+            q_resp = _http_post_json(args.entry_url, args.cookie, q_payload, timeout_s=timeout_s)
+            q_ec, q_em, _ = _extract_ec_em_result(q_resp)
+            if not _outer_success(q_ec):
+                raise RuntimeError(f"查询当前 VIP 经验值失败(外层): ec={q_ec}, em={q_em}")
+            inner_ec, inner_em, inner_result = _extract_inner_result(q_resp)
+            if inner_ec != 0:
+                raise RuntimeError(f"查询当前 VIP 经验值失败(业务): ec={inner_ec}, em={inner_em}")
+            current_vip_exp = _parse_current_exp_from_inner(inner_result)
+            delta = _build_vip_exp_delta_for_level(args.vip_level, current_exp=current_vip_exp)
+            print(f"已查询当前 VIP 经验值: {current_vip_exp}，目标 VIP 等级: {args.vip_level}，需要增加: {delta}", file=sys.stderr)
+
+            e_args = argparse.Namespace(**vars(args))
+            e_args.vip_current_exp = current_vip_exp
+            e_args.vip_exp = delta
+            e_args.vip_level = None
+            payload = _load_payload(e_args)
+
         # 目标等级升级：先查询当前经验值，再补差值
-        if args.level is not None and args.room_id is not None and args.exp is None and not args.query_current and args.expr is None:
+        elif args.level is not None and args.room_id is not None and args.exp is None and not args.query_current and args.expr is None:
             # 1) query current exp via 0D
             q_args = argparse.Namespace(**vars(args))
             q_args.query_current = True
@@ -401,23 +568,57 @@ def main() -> int:
         except Exception as e:
             print(str(e), file=sys.stderr)
             return 4
-            lv = _level_by_exp(current_exp)
-            next_lv = lv + 1 if (lv + 1) in ROOM_LEVEL_EXP_THRESHOLDS else None
-            next_threshold = ROOM_LEVEL_EXP_THRESHOLDS.get(next_lv) if next_lv else None
-            remaining = (next_threshold - current_exp) if next_threshold is not None else None
-            print(
-                json.dumps(
-                    {
-                        "roomId": args.room_id,
-                        "currentExp": current_exp,
-                        "level": lv,
-                        "nextLevelThreshold": next_threshold,
-                        "remainingToNextLevel": remaining,
-                    },
-                    ensure_ascii=False,
-                    indent=2,
-                )
+        lv = _level_by_exp(current_exp)
+        thresholds = _room_level_thresholds()
+        next_lv = lv + 1 if (lv + 1) in thresholds else None
+        next_threshold = thresholds.get(next_lv) if next_lv else None
+        remaining = (next_threshold - current_exp) if next_threshold is not None else None
+        print(
+            json.dumps(
+                {
+                    "roomId": args.room_id,
+                    "currentExp": current_exp,
+                    "level": lv,
+                    "nextLevelThreshold": next_threshold,
+                    "remainingToNextLevel": remaining,
+                },
+                ensure_ascii=False,
+                indent=2,
             )
+        )
+
+    if args.vip_query_current:
+        try:
+            inner_ec, inner_em, inner_result = _extract_inner_result(resp)
+        except Exception as e:
+            print(str(e), file=sys.stderr)
+            return 4
+        if inner_ec != 0:
+            print(f"业务返回失败: ec={inner_ec}, em={inner_em}", file=sys.stderr)
+            return 4
+        try:
+            current_exp = _parse_current_exp_from_inner(inner_result)
+        except Exception as e:
+            print(str(e), file=sys.stderr)
+            return 4
+        lv = _vip_level_by_exp(current_exp)
+        thresholds = _vip_level_thresholds()
+        next_lv = lv + 1 if (lv + 1) in thresholds else None
+        next_threshold = thresholds.get(next_lv) if next_lv else None
+        remaining = (next_threshold - current_exp) if next_threshold is not None else None
+        print(
+            json.dumps(
+                {
+                    "userId": args.vip_user_id,
+                    "currentVipExp": current_exp,
+                    "vipLevel": lv,
+                    "nextVipLevelThreshold": next_threshold,
+                    "remainingToNextVipLevel": remaining,
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
 
     return 0
 
