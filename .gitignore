@@ -3,3 +3,6 @@
 .DS_Store
 MOA/.env.local
 MOA/.env
+MOA/__pycache__/
+**/__pycache__/
+*.pyc
