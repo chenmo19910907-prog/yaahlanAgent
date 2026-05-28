@@ -1,3 +1,5 @@
 .cursor/
 .venv-xlsx/
 .DS_Store
+MOA/.env.local
+MOA/.env
