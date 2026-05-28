@@ -1,0 +1,42 @@
+{
+  "type": "moa",
+  "url": "/service/voga-base-service-middle-pay-stage",
+  "method": "provideDiamond",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": {
+        "userId": "100465989",
+        "num": 1000000,
+        "activityId": "2005000496",
+        "taskId": "2005000497",
+        "outOrderId": "system-11131",
+        "signKey": "189ad0ec4e41438abf29e2f2874d94eb"
+      },
+      "json": "{\"userId\":\"100465989\",\"num\":1000000,\"activityId\":\"2005000496\",\"taskId\":\"2005000497\",\"outOrderId\":\"system-11131\",\"signKey\":\"189ad0ec4e41438abf29e2f2874d94eb\"}",
+      "type": "json",
+      "value": {
+        "userId": "100465989",
+        "num": 1000000,
+        "activityId": "2005000496",
+        "taskId": "2005000497",
+        "outOrderId": "system-11131",
+        "signKey": "189ad0ec4e41438abf29e2f2874d94eb"
+      }
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad"
+}

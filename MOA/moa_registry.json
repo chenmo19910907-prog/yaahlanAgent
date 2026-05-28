@@ -1,0 +1,149 @@
+{
+  "version": 1,
+  "generated_index_path": "MOA/MOA使用方法.md",
+  "items": [
+    {
+      "id": "room_exp_add",
+      "name": "房间经验值-增加",
+      "category": "房间经验值（voga-mts-room-backdoor）",
+      "description": "给指定房间增加经验值（增量）",
+      "prompts": [
+        "给房间 <roomId> 增加 <exp> 经验值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/payload.example.json \\\n  --service-url /service/voga-mts-room-backdoor \\\n  --moa-method execute \\\n  --room-id <roomId> \\\n  --exp <exp>\n"
+    },
+    {
+      "id": "room_level_upgrade",
+      "name": "房间等级-升级到目标等级",
+      "category": "房间经验值（voga-mts-room-backdoor）",
+      "description": "把房间升级到目标等级（按阈值自动先查当前经验后补差）",
+      "prompts": [
+        "把房间 <roomId> 升级到 <level> 级",
+        "把房间 <roomId> 升级到 <level>级"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/payload.example.json \\\n  --service-url /service/voga-mts-room-backdoor \\\n  --moa-method execute \\\n  --room-id <roomId> \\\n  --level <level>\n"
+    },
+    {
+      "id": "room_query_current",
+      "name": "房间经验值-查询当前等级经验",
+      "category": "房间经验值（voga-mts-room-backdoor）",
+      "description": "查询房间当前经验值与等级（通过 addRoomActiveValue(roomId,0D)）",
+      "prompts": [
+        "查询房间 <roomId> 当前等级经验值",
+        "帮我查询房间 <roomId> 当前等级经验值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/payload.example.json \\\n  --service-url /service/voga-mts-room-backdoor \\\n  --moa-method execute \\\n  --room-id <roomId> \\\n  --query-current\n"
+    },
+    {
+      "id": "vip_exp_add",
+      "name": "VIP经验值-增加",
+      "category": "VIP 经验值（voga-mts-user-vip-stage）",
+      "description": "给指定用户增加 VIP 经验值（增量）",
+      "prompts": [
+        "给用户 <userId> 增加 <vipExp> VIP经验值",
+        "给用户 <userId> 增加 <vipExp> VIP 经验值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/vip_payload.example.json \\\n  --vip-user-id <userId> \\\n  --vip-exp <vipExp>\n"
+    },
+    {
+      "id": "vip_level_upgrade",
+      "name": "VIP等级-升级到目标等级",
+      "category": "VIP 经验值（voga-mts-user-vip-stage）",
+      "description": "把用户升级到目标 VIP 等级（按阈值自动先查当前 VIP 经验后补差）",
+      "prompts": [
+        "用户 <userId> 升级到 VIP<level>",
+        "把用户 <userId> 升级到 VIP<level>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/vip_payload.example.json \\\n  --vip-user-id <userId> \\\n  --vip-level <level>\n"
+    },
+    {
+      "id": "vip_query_current",
+      "name": "VIP经验值-查询当前等级经验",
+      "category": "VIP 经验值（voga-mts-user-vip-stage）",
+      "description": "查询用户当前 VIP 经验值与等级（通过 addVipValue(userId,0)）",
+      "prompts": [
+        "查询用户 <userId> 当前VIP等级经验值",
+        "帮我查询用户 <userId> 当前VIP等级经验值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/vip_payload.example.json \\\n  --vip-user-id <userId> \\\n  --vip-query-current\n"
+    },
+    {
+      "id": "vip_delete_info",
+      "name": "VIP等级-清除VIP信息",
+      "category": "VIP 经验值（voga-mts-user-vip-stage）",
+      "description": "清除用户VIP等级信息（delVipInfo）",
+      "prompts": [
+        "清除用户 <userId> 的VIP等级",
+        "清除 <userId> 的VIP等级"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/vip_del_payload.example.json \\\n  --vip-del-user-id <userId>\n"
+    },
+    {
+      "id": "id_auth_query_real_person_record",
+      "name": "实名认证-查询认证记录",
+      "category": "实名认证（internal/user/id-auth-api）",
+      "description": "查询用户实名认证记录（queryRealPersonRecord）",
+      "prompts": [
+        "查询用户 <userId> 的认证结果",
+        "查询用户 <userId> 实名认证结果"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/id_auth_payload.example.json \\\n  --id-auth-user-id <userId>\n"
+    },
+    {
+      "id": "id_auth_fix_failure_by_reason",
+      "name": "实名认证-解决认证失败（清 reason 关联账号）",
+      "category": "实名认证（internal/user/id-auth-api）",
+      "description": "查询用户认证记录并清除最近一条 reason 中的账号认证记录（queryRealPersonRecord -> internalAuthDeletePerson）",
+      "prompts": [
+        "解决用户 <userId> 认证失败",
+        "解决 <userId> 认证失败"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/id_auth_payload.example.json \\\n  --id-auth-fix-failure-user-id <userId>\n"
+    },
+    {
+      "id": "id_auth_reset_relation_expire_time",
+      "name": "实名认证-设置认证过期时间",
+      "category": "实名认证（internal/user/id-auth-api）",
+      "description": "设置用户认证过期时间（resetRelationPersonExpireTime，支持输入日期时间自动转毫秒时间戳）",
+      "prompts": [
+        "把用户 <userId> 的认证过期时间设置为 <time>",
+        "设置用户 <userId> 认证过期时间为 <time>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/id_auth_reset_expire_payload.example.json \\\n  --id-auth-reset-expire-user-id <userId> \\\n  --id-auth-expire-ms <expireMs>\n"
+    },
+    {
+      "id": "id_auth_delete_person",
+      "name": "实名认证-清除认证信息",
+      "category": "实名认证（internal/user/id-auth-api）",
+      "description": "清除用户认证信息（internalAuthDeletePerson）",
+      "prompts": [
+        "清除用户 <userId> 的认证信息",
+        "删除用户 <userId> 的认证信息"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/id_auth_delete_person_payload.example.json \\\n  --id-auth-delete-user-id <userId>\n"
+    },
+    {
+      "id": "diamond_provide",
+      "name": "钻石-发放",
+      "category": "钻石（voga-base-service-middle-pay-stage）",
+      "description": "给用户发放钻石（provideDiamond）；outOrderId 每次自动生成 system-随机5位数",
+      "prompts": [
+        "给用户 <userId> 增加 <num> 钻石",
+        "给用户 <userId> 发放 <num> 钻石"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/diamond_payload.example.json \\\n  --diamond-user-id <userId> \\\n  --diamond-num <num>\n"
+    },
+    {
+      "id": "package_gift_add",
+      "name": "背包礼物-下发",
+      "category": "背包礼物（voga-base-service-middle-gift-stage）",
+      "description": "给用户下发背包礼物（addPackageGift，默认两种各100个）；outOrderId 末尾每次随机13位数",
+      "prompts": [
+        "给用户 <userId> 下发背包礼物",
+        "给用户 <userId> 下发100个两种背包礼物"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/package_gift_payload.example.json \\\n  --package-gift-user-id <userId>\n"
+    }
+  ]
+}
+

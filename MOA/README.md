@@ -172,6 +172,20 @@ python3 MOA/moa_execute.py \
   --vip-query-current
 ```
 
+### 清除用户 VIP 等级信息
+
+你抓包的 VIP 清除 MOA：
+
+- `url`: `/service/voga-mts-user-vip-stage`
+- `method`: `delVipInfo`
+- `params[0]`: 用户ID（string）
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/vip_del_payload.example.json \
+  --vip-del-user-id 2176
+```
+
 如果返回 `ec=300` 但 MOA 页面同操作能成功，优先怀疑这几个字段与你页面不一致（常见：`yoga`/`voga` 拼写、超时太短）：
 
 ```bash
@@ -182,6 +196,77 @@ python3 MOA/moa_execute.py \
   --moa-time 5000 \
   --room-id 34760986 \
   --exp 10000000
+```
+
+## 实名认证：查询用户认证记录
+
+你抓包的实名认证查询 MOA：
+
+- `url`: `/service/internal/user/id-auth-api`
+- `method`: `queryRealPersonRecord`
+- `params[0]`: `{"userId":"..."}`（json）
+
+### 查询指定用户的认证记录
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/id_auth_payload.example.json \
+  --id-auth-user-id 100486375
+```
+
+默认输出为“最近一条记录的 reason”（便于你快速查看审核原因等）。如果需要完整 JSON：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/id_auth_payload.example.json \
+  --id-auth-user-id 100486375 \
+  --id-auth-output json
+```
+
+## 实名认证：设置用户认证过期时间
+
+你抓包的 MOA：
+
+- `url`: `/service/internal/user/id-auth-api`
+- `method`: `resetRelationPersonExpireTime`
+- `params[0]`: `userId`（string）
+- `params[1]`: `expireTime`（long，毫秒时间戳）
+
+脚本只接收你提供的**毫秒时间戳**；像“24小时后 / 15天前”这类提示词，我会先在对话里换算出时间戳，再执行脚本。
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/id_auth_reset_expire_payload.example.json \
+  --id-auth-reset-expire-user-id 100006869 \
+  --id-auth-expire-ms 1747034397000
+```
+
+## 实名认证：清除用户认证信息
+
+你抓包的 MOA：
+
+- `url`: `/service/internal/user/id-auth-api`
+- `method`: `internalAuthDeletePerson`
+- `params[0]`: `userId`（string）
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/id_auth_delete_person_payload.example.json \
+  --id-auth-delete-user-id 107427060
+```
+
+## 实名认证：解决“认证失败”关联账号（自动清除 reason 中账号）
+
+当你说“解决某个用户认证失败”，脚本会：
+
+1. 查询该用户的认证记录（`queryRealPersonRecord`）
+2. 取最近一条记录的 `reason`（通常是一个账号列表）
+3. 逐个调用 `internalAuthDeletePerson` 清除这些账号的认证记录
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/id_auth_payload.example.json \
+  --id-auth-fix-failure-user-id 100079102
 ```
 
 ## 4) 输出与成功判定
@@ -208,5 +293,101 @@ curl -sS "$MOA_ENTRY_URL" \
   -H "Referer: ${MOA_REFERER:-https://mse.wemomo.com/}" \
   -H 'request-source: moaProxy' \
   --data-raw '{"type":"moa","url":"/service/voga-mts-room-backdoor","method":"execute","header":"","params":[{"title":"参数1","name":"1","txt":"context.getBean(\"roomProfileDao\").addRoomActiveValue(\"31668628\",11D)","json":"","type":"string","value":"context.getBean(\"roomProfileDao\").addRoomActiveValue(\"31668628\",11D)"}],"settings":{"time":"2000","group":"default","host":"","headerType":"TXT"},"region":"alpha","env":"alpha","cluster":"stage","server":"config","momoId":"df4c6f364f9fcae3","momoName":"e88aa376b29864ad"}'
+```
+
+---
+
+## 6) MOA 方法录入规范（你说我记）
+
+你后续提供新的 MOA 方法时，按以下规范提供信息；我会把它落到 `MOA/` 中，并自动加入 `MOA/MOA使用方法.md`（由 `MOA/generate_moa_index.py` 自动生成）。
+
+### 6.1 录入目标
+
+- **可运行**：在本仓库用 `python3 MOA/moa_execute.py ...` 可以直接执行
+- **可复用**：参数化（用户只给核心参数，如 roomId/level/userId 等）
+- **可追溯**：README 里能看懂“这个方法干什么/怎么用/成功怎么判定”
+- **安全**：Cookie/Token 只放本地（`MOA/.env.local`），绝不入库
+
+### 6.2 你需要提供的最小信息
+
+把下面 3 块信息粘贴给我即可（越完整越好）。
+
+#### 6.2.1 入口请求（httpproxy）
+
+从浏览器 Network 抓包复制这几项：
+
+- **URL**：例如 `https://mse.wemomo.com/apirest/httpproxy/moa/test`
+- **请求行**：例如 `POST /apirest/httpproxy/moa/test HTTP/1.1`
+- **关键请求头**（至少要有这些）：
+  - `Content-Type: application/json`
+  - `Origin`
+  - `Referer`
+  - `request-source: moaProxy`（如果有）
+  - `User-Agent`
+  - `Cookie`（敏感，可单独发我，我会只写进 `MOA/.env.local` 并加忽略）
+
+#### 6.2.2 请求 body（payload JSON）
+
+把 Network 里 “请求数据 / Request Payload” 的 JSON 原样贴出来，例如：
+
+```json
+{
+  "type": "moa",
+  "url": "/service/xxx",
+  "method": "execute",
+  "params": [ ... ],
+  "settings": { "time": "2000", "group": "default", "host": "", "headerType": "TXT" },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config"
+}
+```
+
+#### 6.2.3 参数说明（你口述我记录）
+
+请告诉我：
+
+- **这个 MOA 做什么**（一句话）
+- **params 每个参数的含义与类型**（string/int/long…）
+- **调取方式**（你希望以后怎么说）
+  - 例：`给房间 <roomId> 升级到 <level>`
+  - 例：`用户 <userId> 升到 VIP<level>`
+- **成功判定**：返回体里哪个字段为成功（常见：外层 `ec=200`，内层 `result.ec=0`）
+- **是否需要“先查再补差”**：比如升级等级需要先查当前经验值（可通过“加 0”查询）
+
+### 6.3 我会如何落库（我来做）
+
+- **敏感配置**：写入 `MOA/.env.local`（不入库）
+- **payload 示例**：新增 `MOA/*_payload.example.json`
+- **脚本入口**：在 `MOA/moa_execute.py` 增加可调用参数/模式
+- **规则/映射表**：写入 `MOA/config.json`
+- **清单登记**：写入 `MOA/moa_registry.json`，并运行 `MOA/generate_moa_index.py` 刷新 `MOA/MOA使用方法.md`
+
+### 6.4 你给我的推荐模板（复制填空）
+
+```text
+【方法名称】：
+【用途一句话】：
+
+【入口 URL】：
+【请求头（除 Cookie 外）】：
+【Cookie】：（单独贴也行）
+
+【payload JSON】：
+（粘贴完整 JSON）
+
+【params 说明】：
+1) ...
+2) ...
+
+【我希望以后怎么说】：
+（例如：把房间 89333567 升级到 5 级）
+
+【成功判定】：
+（例如：外层 ec=200 且 result.ec=0）
+
+【是否需要先查再补差】：
+（是/否；若是，如何查询当前值）
 ```
 

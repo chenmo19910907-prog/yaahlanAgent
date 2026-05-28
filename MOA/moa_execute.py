@@ -2,6 +2,7 @@
 import argparse
 import json
 import os
+import random
 import sys
 import urllib.error
 import urllib.request
@@ -195,6 +196,265 @@ def _set_vip_params(payload: Dict[str, Any], user_id: str, vip_exp_delta: int) -
     ]
 
 
+def _random_five_digit_out_order_id(prefix: str = "system") -> str:
+    return f"{prefix}-{random.randint(10000, 99999)}"
+
+
+def _random_thirteen_digit() -> int:
+    return random.randint(10**12, 10**13 - 1)
+
+
+def _random_package_gift_out_order_id(prefix: str, middle: str) -> str:
+    return f"{prefix}-{middle}-{_random_thirteen_digit()}"
+
+
+def _diamond_provide_defaults() -> dict[str, str]:
+    cfg = _load_config()
+    raw = cfg.get("diamond_provide")
+    if not isinstance(raw, dict):
+        return {
+            "activityId": "2005000496",
+            "taskId": "2005000497",
+            "signKey": "189ad0ec4e41438abf29e2f2874d94eb",
+            "outOrderIdPrefix": "system",
+        }
+    return {
+        "activityId": str(raw.get("activityId", "2005000496")),
+        "taskId": str(raw.get("taskId", "2005000497")),
+        "signKey": str(raw.get("signKey", "189ad0ec4e41438abf29e2f2874d94eb")),
+        "outOrderIdPrefix": str(raw.get("outOrderIdPrefix", "system")),
+    }
+
+
+def _set_diamond_provide_params(
+    payload: Dict[str, Any],
+    user_id: str,
+    num: int,
+    *,
+    out_order_id: Optional[str] = None,
+    activity_id: Optional[str] = None,
+    task_id: Optional[str] = None,
+    sign_key: Optional[str] = None,
+) -> None:
+    user_id = str(user_id).strip()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    if num <= 0:
+        raise ValueError("num 必须为正整数（钻石数量）")
+
+    defaults = _diamond_provide_defaults()
+    if out_order_id is None:
+        out_order_id = _random_five_digit_out_order_id(defaults["outOrderIdPrefix"])
+    if activity_id is None:
+        activity_id = defaults["activityId"]
+    if task_id is None:
+        task_id = defaults["taskId"]
+    if sign_key is None:
+        sign_key = defaults["signKey"]
+
+    value = {
+        "userId": user_id,
+        "num": num,
+        "activityId": activity_id,
+        "taskId": task_id,
+        "outOrderId": out_order_id,
+        "signKey": sign_key,
+    }
+    payload["params"] = [
+        {
+            "title": "参数1",
+            "name": "1",
+            "txt": value,
+            "json": json.dumps(value, ensure_ascii=False, separators=(",", ":")),
+            "type": "json",
+            "value": value,
+        }
+    ]
+
+
+def _package_gift_defaults() -> dict[str, Any]:
+    cfg = _load_config()
+    raw = cfg.get("package_gift")
+    default_gifts = [
+        {"baseProductId": "2005001272", "productNum": 100},
+        {"baseProductId": "2005001282", "productNum": 100},
+    ]
+    if not isinstance(raw, dict):
+        return {
+            "outOrderIdPrefix": "PACKAGE_GIFT",
+            "outOrderIdMiddle": "100328136",
+            "category": "2005000189",
+            "source": 2005001287,
+            "signKey": "76b26f6deb1e4851b728e3b0770629db",
+            "realFee": "0",
+            "expireSeconds": 86339,
+            "giftDetails": default_gifts,
+        }
+    gifts = raw.get("giftDetails")
+    if not isinstance(gifts, list) or not gifts:
+        gifts = default_gifts
+    return {
+        "outOrderIdPrefix": str(raw.get("outOrderIdPrefix", "PACKAGE_GIFT")),
+        "outOrderIdMiddle": str(raw.get("outOrderIdMiddle", "100328136")),
+        "category": str(raw.get("category", "2005000189")),
+        "source": int(raw.get("source", 2005001287)),
+        "signKey": str(raw.get("signKey", "76b26f6deb1e4851b728e3b0770629db")),
+        "realFee": str(raw.get("realFee", "0")),
+        "expireSeconds": int(raw.get("expireSeconds", 86339)),
+        "giftDetails": gifts,
+    }
+
+
+def _set_package_gift_params(
+    payload: Dict[str, Any],
+    user_id: str,
+    *,
+    product_num: Optional[int] = None,
+    give_user_id: str = "",
+    out_order_id: Optional[str] = None,
+) -> None:
+    user_id = str(user_id).strip()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+
+    defaults = _package_gift_defaults()
+    if out_order_id is None:
+        out_order_id = _random_package_gift_out_order_id(
+            defaults["outOrderIdPrefix"],
+            defaults["outOrderIdMiddle"],
+        )
+
+    gift_details: list[dict[str, Any]] = []
+    for item in defaults["giftDetails"]:
+        if not isinstance(item, dict):
+            continue
+        base_id = item.get("baseProductId")
+        if base_id is None:
+            continue
+        num = product_num if product_num is not None else item.get("productNum", 100)
+        try:
+            num_int = int(num)
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"gift productNum 无效: {num}") from e
+        if num_int <= 0:
+            raise ValueError("gift productNum 必须为正整数")
+        gift_details.append({"baseProductId": str(base_id), "productNum": num_int})
+
+    if not gift_details:
+        raise ValueError("package_gift.giftDetails 配置为空或无效")
+
+    value = {
+        "userId": user_id,
+        "giveUserId": give_user_id,
+        "outOrderId": out_order_id,
+        "category": defaults["category"],
+        "source": defaults["source"],
+        "giftDetails": gift_details,
+        "realFee": defaults["realFee"],
+        "expireSeconds": defaults["expireSeconds"],
+        "signKey": defaults["signKey"],
+    }
+    payload["params"] = [
+        {
+            "title": "参数1",
+            "name": "1",
+            "txt": value,
+            "json": json.dumps(value, ensure_ascii=False, separators=(",", ":")),
+            "type": "json",
+            "value": value,
+        }
+    ]
+
+
+def _set_vip_del_params(payload: Dict[str, Any], user_id: str) -> None:
+    user_id = str(user_id).strip()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    payload["params"] = [
+        {
+            "title": "参数1",
+            "name": "1",
+            "txt": user_id,
+            "json": "",
+            "type": "string",
+            "value": user_id,
+        }
+    ]
+
+
+def _set_id_auth_params(payload: Dict[str, Any], user_id: str) -> None:
+    user_id = str(user_id).strip()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    payload["params"] = [
+        {
+            "title": "参数1",
+            "name": "1",
+            "txt": {"userId": user_id},
+            "json": json.dumps({"userId": user_id}, ensure_ascii=False, separators=(",", ":")),
+            "type": "json",
+            "value": {"userId": user_id},
+        }
+    ]
+
+
+def _set_id_auth_reset_expire_params(payload: Dict[str, Any], user_id: str, expire_ms: int) -> None:
+    user_id = str(user_id).strip()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    if expire_ms <= 0:
+        raise ValueError("expire_ms 必须为正整数（毫秒时间戳）")
+    payload["params"] = [
+        {"title": "参数1", "name": "1", "txt": user_id, "json": "", "type": "string", "value": user_id},
+        {"title": "参数2", "name": "2", "txt": str(expire_ms), "json": "", "type": "long", "value": str(expire_ms)},
+    ]
+
+
+def _set_id_auth_delete_person_params(payload: Dict[str, Any], user_id: str) -> None:
+    user_id = str(user_id).strip()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    payload["params"] = [
+        {"title": "参数1", "name": "1", "txt": user_id, "json": "", "type": "string", "value": user_id},
+    ]
+
+
+def _extract_latest_id_auth_reason_list(inner_result: Any) -> list[str]:
+    """
+    从 queryRealPersonRecord 的业务返回中提取最近一条记录的 reason，并解析成 userId 列表。
+    reason 在历史数据中可能为：
+    - 空字符串
+    - JSON 字符串数组，如 "[\"100486375\"]"
+    - 真实 list，如 ["100486375"]
+    """
+    if not isinstance(inner_result, dict):
+        raise RuntimeError("无法解析实名认证业务返回 result（不是 object）")
+    data = inner_result.get("data")
+    if not isinstance(data, dict):
+        return []
+    lst = data.get("list")
+    if not isinstance(lst, list) or not lst:
+        return []
+    reason = lst[0].get("reason")
+    if reason is None:
+        return []
+    if isinstance(reason, list):
+        return [str(x) for x in reason if str(x).strip()]
+    if isinstance(reason, str):
+        s = reason.strip()
+        if not s:
+            return []
+        # 尝试解析 JSON 数组字符串
+        try:
+            parsed = json.loads(s)
+            if isinstance(parsed, list):
+                return [str(x) for x in parsed if str(x).strip()]
+        except Exception:
+            pass
+        return [s]
+    return [str(reason)]
+
+
 def _load_payload(args: argparse.Namespace) -> Dict[str, Any]:
     if args.payload_file:
         with open(args.payload_file, "r", encoding="utf-8") as f:
@@ -259,6 +519,58 @@ def _load_payload(args: argparse.Namespace) -> Dict[str, Any]:
         if not isinstance(settings, dict):
             raise ValueError("payload.settings 必须是 object，才能使用 --header-type 覆盖")
         settings["headerType"] = args.header_type
+
+    # 实名认证查询：internal/user/id-auth-api queryRealPersonRecord
+    if args.id_auth_user_id is not None:
+        payload["url"] = "/service/internal/user/id-auth-api"
+        payload["method"] = "queryRealPersonRecord"
+        _set_id_auth_params(payload, user_id=args.id_auth_user_id)
+        return payload
+
+    # 实名认证：设置认证过期时间 resetRelationPersonExpireTime
+    if args.id_auth_reset_expire_user_id is not None:
+        payload["url"] = "/service/internal/user/id-auth-api"
+        payload["method"] = "resetRelationPersonExpireTime"
+        if args.id_auth_expire_ms is None:
+            raise ValueError("必须提供 --id-auth-expire-ms（毫秒时间戳）")
+        expire_ms = args.id_auth_expire_ms
+        _set_id_auth_reset_expire_params(payload, user_id=args.id_auth_reset_expire_user_id, expire_ms=expire_ms)
+        return payload
+
+    # 实名认证：清除用户认证信息 internalAuthDeletePerson
+    if args.id_auth_delete_user_id is not None:
+        payload["url"] = "/service/internal/user/id-auth-api"
+        payload["method"] = "internalAuthDeletePerson"
+        _set_id_auth_delete_person_params(payload, user_id=args.id_auth_delete_user_id)
+        return payload
+
+    # VIP：清除 VIP 信息 delVipInfo
+    if args.vip_del_user_id is not None:
+        payload["url"] = "/service/voga-mts-user-vip-stage"
+        payload["method"] = "delVipInfo"
+        _set_vip_del_params(payload, user_id=args.vip_del_user_id)
+        return payload
+
+    # 钻石发放：provideDiamond
+    if args.diamond_user_id is not None:
+        payload["url"] = "/service/voga-base-service-middle-pay-stage"
+        payload["method"] = "provideDiamond"
+        if args.diamond_num is None:
+            raise ValueError("必须提供 --diamond-num（钻石数量）")
+        _set_diamond_provide_params(payload, user_id=args.diamond_user_id, num=args.diamond_num)
+        return payload
+
+    # 背包礼物下发：addPackageGift
+    if args.package_gift_user_id is not None:
+        payload["url"] = "/service/voga-base-service-middle-gift-stage"
+        payload["method"] = "addPackageGift"
+        _set_package_gift_params(
+            payload,
+            user_id=args.package_gift_user_id,
+            product_num=args.package_gift_num,
+            give_user_id=args.package_gift_give_user_id or "",
+        )
+        return payload
 
     # VIP 模式：用 params[0]=userId, params[1]=vipExpDelta
     if args.vip_user_id is not None:
@@ -449,6 +761,41 @@ def main() -> int:
     parser.add_argument("--vip-level", type=int, help="VIP 经验操作：目标 VIP 等级（按阈值计算需要增加的经验值）")
     parser.add_argument("--vip-current-exp", type=int, help="VIP 经验操作：当前 VIP 经验值（配合 --vip-level 计算增量；不传默认按 0 处理）")
     parser.add_argument("--vip-query-current", action="store_true", help="查询当前 VIP 经验值与等级（通过 addVipValue(userId,0)）")
+    parser.add_argument("--vip-del-user-id", help="VIP 经验操作：清除 VIP 等级信息（delVipInfo）")
+
+    # 实名认证
+    parser.add_argument("--id-auth-user-id", help="查询实名认证记录：userId（调用 queryRealPersonRecord）")
+    parser.add_argument(
+        "--id-auth-output",
+        choices=["latest-reason", "json"],
+        default="latest-reason",
+        help="实名认证查询输出格式：latest-reason=仅输出最近一条reason（默认）；json=输出完整响应JSON",
+    )
+    parser.add_argument("--id-auth-reset-expire-user-id", help="设置认证过期时间：userId（resetRelationPersonExpireTime）")
+    parser.add_argument(
+        "--id-auth-expire-ms",
+        type=int,
+        help="设置认证过期时间：毫秒时间戳（由提示词先换算得到，再传给脚本）",
+    )
+    parser.add_argument("--id-auth-delete-user-id", help="清除用户认证信息：userId（internalAuthDeletePerson）")
+    parser.add_argument(
+        "--id-auth-fix-failure-user-id",
+        help="解决认证失败：先查询该用户认证记录，提取最近一条 reason 中的账号列表，并逐个清除这些账号的认证记录",
+    )
+
+    parser.add_argument("--diamond-user-id", help="发放钻石：用户ID（provideDiamond）")
+    parser.add_argument("--diamond-num", type=int, help="发放钻石：数量 num（正整数）")
+
+    parser.add_argument("--package-gift-user-id", help="下发背包礼物：用户ID（addPackageGift）")
+    parser.add_argument(
+        "--package-gift-num",
+        type=int,
+        help="下发背包礼物：每种礼物的数量 productNum（默认取 config 中 giftDetails，通常为 100）",
+    )
+    parser.add_argument(
+        "--package-gift-give-user-id",
+        help="下发背包礼物：giveUserId（可选，默认空字符串）",
+    )
 
     args = parser.parse_args()
 
@@ -469,6 +816,79 @@ def main() -> int:
             os.environ["MOA_USER_AGENT"] = args.user_agent
         if args.request_source:
             os.environ["MOA_REQUEST_SOURCE"] = args.request_source
+
+        # 认证失败自愈：query -> parse reason -> delete each userId in reason
+        if args.id_auth_fix_failure_user_id is not None and args.expr is None:
+            timeout_s = max(args.timeout_ms, 1) / 1000.0
+
+            # 1) query reason list
+            q_args = argparse.Namespace(**vars(args))
+            q_args.id_auth_user_id = args.id_auth_fix_failure_user_id
+            q_args.id_auth_output = "json"
+            # 避免与其他实名相关参数冲突
+            q_args.id_auth_delete_user_id = None
+            q_args.id_auth_reset_expire_user_id = None
+            q_args.diamond_user_id = None
+            q_args.package_gift_user_id = None
+            q_payload = _load_payload(q_args)
+            q_resp = _http_post_json(args.entry_url, args.cookie, q_payload, timeout_s=timeout_s)
+            q_ec, q_em, _ = _extract_ec_em_result(q_resp)
+            if not _outer_success(q_ec):
+                raise RuntimeError(f"查询认证记录失败(外层): ec={q_ec}, em={q_em}")
+            inner_ec, inner_em, inner_result = _extract_inner_result(q_resp)
+            if inner_ec != 0:
+                raise RuntimeError(f"查询认证记录失败(业务): ec={inner_ec}, em={inner_em}")
+
+            reason_user_ids = _extract_latest_id_auth_reason_list(inner_result)
+            print(
+                json.dumps(
+                    {"userId": str(args.id_auth_fix_failure_user_id), "reasonUserIds": reason_user_ids},
+                    ensure_ascii=False,
+                ),
+                file=sys.stderr,
+            )
+            if not reason_user_ids:
+                # 没有需要清除的账号，直接输出空并结束
+                print("[]")
+                return 0
+
+            # 2) delete each
+            results: list[dict[str, Any]] = []
+            for uid in reason_user_ids:
+                d_args = argparse.Namespace(**vars(args))
+                # 强制进入 delete 模式，清空其他实名相关参数，避免 _load_payload 命中其它分支
+                d_args.id_auth_user_id = None
+                d_args.id_auth_reset_expire_user_id = None
+                d_args.id_auth_fix_failure_user_id = None
+                d_args.diamond_user_id = None
+                d_args.package_gift_user_id = None
+                d_args.id_auth_delete_user_id = uid
+                d_payload = _load_payload(d_args)
+                d_resp = _http_post_json(args.entry_url, args.cookie, d_payload, timeout_s=timeout_s)
+                d_ec, d_em, _ = _extract_ec_em_result(d_resp)
+                ok_outer = _outer_success(d_ec)
+                ok_inner = False
+                inner_err = None
+                try:
+                    d_inner_ec, d_inner_em, _ = _extract_inner_result(d_resp)
+                    ok_inner = d_inner_ec == 0
+                    if not ok_inner:
+                        inner_err = {"ec": d_inner_ec, "em": d_inner_em}
+                except Exception as e:
+                    inner_err = str(e)
+
+                results.append(
+                    {
+                        "deletedUserId": uid,
+                        "outer": {"ec": d_ec, "em": d_em, "ok": ok_outer},
+                        "innerOk": ok_inner,
+                        "innerErr": inner_err,
+                    }
+                )
+
+            # 输出汇总（便于复制/留存）
+            print(json.dumps({"fixedForUserId": str(args.id_auth_fix_failure_user_id), "deletions": results}, ensure_ascii=False, indent=2))
+            return 0
 
         # VIP 目标等级升级：先 query，再补差值
         if args.vip_level is not None and args.vip_user_id is not None and args.vip_exp is None and not args.vip_query_current and args.expr is None:
@@ -527,6 +947,9 @@ def main() -> int:
         params = payload.get("params")
         if isinstance(params, list) and params and isinstance(params[0], dict):
             params0 = params[0].get("value")
+        extra = ""
+        if isinstance(params0, dict) and "outOrderId" in params0:
+            extra = f', outOrderId="{params0.get("outOrderId")}"'
         print(
             "请求信息: "
             f'entry_url="{args.entry_url}", '
@@ -534,7 +957,8 @@ def main() -> int:
             f'method="{payload.get("method")}", '
             f'host="{settings.get("host", "")}", '
             f'time="{settings.get("time", "")}", '
-            f'expr="{params0 if isinstance(params0, str) else ""}"',
+            f'expr="{params0 if isinstance(params0, str) else ""}"'
+            f"{extra}",
             file=sys.stderr,
         )
         if args.dump_payload:
@@ -546,7 +970,30 @@ def main() -> int:
         print(f"执行失败: {e}", file=sys.stderr)
         return 1
 
-    print(json.dumps(resp, ensure_ascii=False, indent=2))
+    # 实名认证：默认只输出最近一条 reason（你要求的交互）
+    if args.id_auth_user_id is not None and args.id_auth_output == "latest-reason":
+        try:
+            inner_ec, inner_em, inner_result = _extract_inner_result(resp)
+        except Exception as e:
+            print(str(e), file=sys.stderr)
+            return 4
+        if inner_ec != 0:
+            print(f"业务返回失败: ec={inner_ec}, em={inner_em}", file=sys.stderr)
+            return 4
+        if not isinstance(inner_result, dict):
+            print("无法解析实名认证业务返回 result（不是 object）", file=sys.stderr)
+            return 4
+        latest = (inner_result.get("data") or {}).get("list") if isinstance(inner_result.get("data"), dict) else None
+        if not isinstance(latest, list) or not latest:
+            print("")
+        else:
+            reason = latest[0].get("reason")
+            if isinstance(reason, (dict, list)):
+                print(json.dumps(reason, ensure_ascii=False))
+            else:
+                print("" if reason is None else str(reason))
+    else:
+        print(json.dumps(resp, ensure_ascii=False, indent=2))
 
     ec, em, _ = _extract_ec_em_result(resp)
     if not _outer_success(ec):

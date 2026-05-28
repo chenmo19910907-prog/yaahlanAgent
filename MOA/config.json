@@ -19,6 +19,25 @@
     "8": 40000000,
     "9": 60000000,
     "10": 100000000
+  },
+  "diamond_provide": {
+    "activityId": "2005000496",
+    "taskId": "2005000497",
+    "signKey": "189ad0ec4e41438abf29e2f2874d94eb",
+    "outOrderIdPrefix": "system"
+  },
+  "package_gift": {
+    "outOrderIdPrefix": "PACKAGE_GIFT",
+    "outOrderIdMiddle": "100328136",
+    "category": "2005000189",
+    "source": 2005001287,
+    "signKey": "76b26f6deb1e4851b728e3b0770629db",
+    "realFee": "0",
+    "expireSeconds": 86339,
+    "giftDetails": [
+      {"baseProductId": "2005001272", "productNum": 100},
+      {"baseProductId": "2005001282", "productNum": 100}
+    ]
   }
 }
 
