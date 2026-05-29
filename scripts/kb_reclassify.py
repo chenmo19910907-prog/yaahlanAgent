@@ -11,7 +11,7 @@ from collections import defaultdict
 from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent
-ROOT = SCRIPTS.parent / "documents" / "documents"
+ROOT = SCRIPTS.parent / "testcase-kb"
 
 
 def _load_module(name: str, path: Path):

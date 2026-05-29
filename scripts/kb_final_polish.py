@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 SCRIPTS = Path(__file__).resolve().parent
-ROOT_DEFAULT = SCRIPTS.parent / "documents" / "documents"
+ROOT_DEFAULT = SCRIPTS.parent / "testcase-kb"
 
 
 def _load_module(name: str, filename: str):

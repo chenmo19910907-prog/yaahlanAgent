@@ -24,7 +24,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
-ROOT = Path(__file__).resolve().parent.parent / "documents" / "documents"
+ROOT = Path(__file__).resolve().parent.parent / "testcase-kb"
 SCRIPTS = Path(__file__).resolve().parent
 
 # 文件名前缀 -> (parent_key, 合并后文件名)

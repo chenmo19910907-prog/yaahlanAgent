@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent
-ROOT = SCRIPTS.parent / "documents" / "documents"
+ROOT = SCRIPTS.parent / "testcase-kb"
 
 
 def run(script: str, root: Path, extra: list[str] | None = None) -> None:

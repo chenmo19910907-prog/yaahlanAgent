@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-将 documents/documents 下 Markdown 从「用例步骤/预期」体例改写为知识库体例：
+将 testcase-kb 下 Markdown 从「用例步骤/预期」体例改写为知识库体例：
 
 - 文档头：说明表 + 知识库定位（非执行用例清单）
 - 来源：合并为单行「版本 · 摘录自」
@@ -16,7 +16,7 @@ import re
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-ROOT_DEFAULT = Path(__file__).resolve().parent.parent / "documents" / "documents"
+ROOT_DEFAULT = Path(__file__).resolve().parent.parent / "testcase-kb"
 
 STEP_RE = re.compile(r"^- \*\*步骤\*\*：(.+)$", re.M)
 EXPECT_RE = re.compile(r"^  - \*\*预期\*\*：(.+)$", re.M)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-全量优化 documents/documents 知识库（保留现有文件划分，不跨文件重分类）：
+全量优化 testcase-kb 知识库（保留现有文件划分，不跨文件重分类）：
 
 1. 移除无效块：无步骤、空正文、默认 Sheet、土语/俄语/老版本兼容专项等
 2. 同文件 + 同 Sheet + 归一化模块名：仅保留最新版本
@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
-ROOT = Path(__file__).resolve().parent.parent / "documents" / "documents"
+ROOT = Path(__file__).resolve().parent.parent / "testcase-kb"
 SCRIPTS = Path(__file__).resolve().parent
 
 _SPEC_OPT = importlib.util.spec_from_file_location(

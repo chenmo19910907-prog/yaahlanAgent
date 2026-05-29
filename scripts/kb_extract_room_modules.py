@@ -21,7 +21,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-ROOT = Path(__file__).resolve().parent.parent / "documents" / "documents"
+ROOT = Path(__file__).resolve().parent.parent / "testcase-kb"
 SCRIPTS = Path(__file__).resolve().parent
 
 EXTRACT_SUB_TO_FILE = {

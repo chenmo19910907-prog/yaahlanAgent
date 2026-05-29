@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-按语义对 documents/documents 知识库做「拆分 + 合并」：
+按语义对 testcase-kb 知识库做「拆分 + 合并」：
 
 拆分：将误归入某大模块的用例块，按 Sheet/模块/正文关键词重新归类到正确 md。
 合并：同一 Sheet 下语义相近的 ### 功能模块合并为一个章节，子模块保留为 #### 变体。
@@ -19,7 +19,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-ROOT = Path(__file__).resolve().parent.parent / "documents" / "documents"
+ROOT = Path(__file__).resolve().parent.parent / "testcase-kb"
 
 # 加载 content_optimize_kb_docs
 _SPEC = importlib.util.spec_from_file_location(

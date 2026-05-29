@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 DEFAULT_SOURCE_DIR = Path("/Users/user/Desktop/未命名文件夹")
-DEFAULT_OUTPUT_DOC_DIR = Path(__file__).resolve().parent.parent / "documents" / "documents"
+DEFAULT_OUTPUT_DOC_DIR = Path(__file__).resolve().parent.parent / "testcase-kb"
 
 # 固定大模块文件映射（尽量少文件）
 # 同步时跳过土语/俄语专项（与 kb_filter_locales.py 一致）
@@ -331,7 +331,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="逐文件逐sheet生成大模块知识库")
     ap.add_argument("--source", type=Path, default=DEFAULT_SOURCE_DIR)
     ap.add_argument("--only-version", type=str, default="")
-    ap.add_argument("--reset", action="store_true", help="先清空 documents/documents/*.md")
+    ap.add_argument("--reset", action="store_true", help="先清空 testcase-kb/*.md")
     args = ap.parse_args()
 
     if not args.source.is_dir():

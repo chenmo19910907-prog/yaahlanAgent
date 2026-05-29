@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-从 documents/documents 知识库移除「老版本 / 系统兼容」相关用例。
+从 testcase-kb 知识库移除「老版本 / 系统兼容」相关用例。
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 from typing import List
 
-ROOT = Path(__file__).resolve().parent.parent / "documents" / "documents"
+ROOT = Path(__file__).resolve().parent.parent / "testcase-kb"
 SCRIPTS = Path(__file__).resolve().parent
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-从 documents/documents 知识库移除土语、俄语相关用例。
+从 testcase-kb 知识库移除土语、俄语相关用例。
 
 规则：
 - 整 Sheet：土耳其政策整改、土语区分区策略 等
@@ -21,7 +21,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-ROOT = Path(__file__).resolve().parent.parent / "documents" / "documents"
+ROOT = Path(__file__).resolve().parent.parent / "testcase-kb"
 SCRIPTS = Path(__file__).resolve().parent
 
 _SPEC_OPT = importlib.util.spec_from_file_location(

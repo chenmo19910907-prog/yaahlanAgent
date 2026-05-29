@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 SCRIPTS = Path(__file__).resolve().parent
-ROOT = SCRIPTS.parent / "documents" / "documents"
+ROOT = SCRIPTS.parent / "testcase-kb"
 
 SKIP_H2 = frozenset({"目录", "---", "知识地图（阶段）", "知识地图（阶段）"})
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-documents/documents 知识库「内容级」优化：
+testcase-kb 知识库「内容级」优化：
 
 1. 解析用例块（支持 xlsx 导出的 ##### 格式，以及 ## Sheet / ### 模块 格式）
 2. 同 Sheet + 同功能模块：仅保留最新版本
@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-ROOT_DEFAULT = Path(__file__).resolve().parent.parent / "documents" / "documents"
+ROOT_DEFAULT = Path(__file__).resolve().parent.parent / "testcase-kb"
 
 HASH5_RE = re.compile(r"^#####\s+(.+?)\s+·\s+(.+?)\s*$")
 VER_RE = re.compile(r"[->]*\s*\*\*来源版本\*\*：`([^`]+)`")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-批量优化 documents/documents 下的大模块知识库 Markdown：
+批量优化 testcase-kb 下的大模块知识库 Markdown：
 
 - 统一换行（LF）、去除行尾空格
 - 确保分隔线 '---' 与标题之间有合适空行
@@ -21,7 +21,7 @@ from typing import Dict, List, Tuple
 
 
 ROOT_DEFAULT = (
-    Path(__file__).resolve().parent.parent / "documents" / "documents"
+    Path(__file__).resolve().parent.parent / "testcase-kb"
 )
 
 
