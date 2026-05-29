@@ -55,7 +55,7 @@
 
 ### VIP等级-升级到目标等级
 
-- **功能**：把用户升级到目标 VIP 等级（按阈值自动先查当前 VIP 经验后补差）
+- **功能**：把用户升级到目标 VIP 等级（先 `getVipInfo` 查当前 `value`，再 `addVipValue` 补差）
 - **提示词**：
   - `用户 <userId> 升级到 VIP<level>`
   - `把用户 <userId> 升级到 VIP<level>`
@@ -105,7 +105,7 @@ python3 MOA/moa_execute.py \
 
 ### VIP经验值-查询当前等级经验
 
-- **功能**：查询用户当前 VIP 经验值与等级（通过 addVipValue(userId,0)）
+- **功能**：查询用户当前 VIP 经验值与等级（通过 `getVipInfo`，读取 `value` 字段）
 - **提示词**：
   - `查询用户 <userId> 当前VIP等级经验值`
   - `帮我查询用户 <userId> 当前VIP等级经验值`

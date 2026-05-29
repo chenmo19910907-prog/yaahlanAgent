@@ -82,7 +82,7 @@
       "id": "vip_level_upgrade",
       "name": "VIP等级-升级到目标等级",
       "category": "VIP 经验值（voga-mts-user-vip-stage）",
-      "description": "把用户升级到目标 VIP 等级（按阈值自动先查当前 VIP 经验后补差）",
+      "description": "把用户升级到目标 VIP 等级（先 getVipInfo 查 value，再 addVipValue 补差）",
       "prompts": [
         "用户 <userId> 升级到 VIP<level>",
         "把用户 <userId> 升级到 VIP<level>"
@@ -93,7 +93,7 @@
       "id": "vip_query_current",
       "name": "VIP经验值-查询当前等级经验",
       "category": "VIP 经验值（voga-mts-user-vip-stage）",
-      "description": "查询用户当前 VIP 经验值与等级（通过 addVipValue(userId,0)）",
+      "description": "查询用户当前 VIP 经验值与等级（通过 getVipInfo，读取 value 字段）",
       "prompts": [
         "查询用户 <userId> 当前VIP等级经验值",
         "帮我查询用户 <userId> 当前VIP等级经验值"

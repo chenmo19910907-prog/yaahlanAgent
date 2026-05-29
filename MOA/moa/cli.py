@@ -14,7 +14,7 @@ from .client import (
     outer_success,
     parse_current_exp_from_inner,
 )
-from .config import level_by_exp, room_level_thresholds, vip_level_thresholds
+from .config import level_by_exp, room_level_thresholds
 from .diamond import parse_diamond_account_summary
 from .family import parse_family_exp_summary, parse_family_fund_summary, parse_family_fund_tier_set_count
 from .env import load_local_env
@@ -30,6 +30,7 @@ from .flows import (
     run_id_auth_fix_failure,
 )
 from .time_utils import resolve_family_fund_week_key
+from .vip import parse_vip_info_summary
 from .payload import load_payload
 
 
@@ -72,7 +73,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--vip-exp", type=int, help="增加的 VIP 经验值")
     parser.add_argument("--vip-level", type=int, help="目标 VIP 等级")
     parser.add_argument("--vip-current-exp", type=int, help="当前 VIP 经验值")
-    parser.add_argument("--vip-query-current", action="store_true", help="查询当前 VIP 经验值与等级")
+    parser.add_argument("--vip-query-current", action="store_true", help="查询当前 VIP 经验值与等级（getVipInfo）")
     parser.add_argument("--vip-del-user-id", help="清除 VIP 信息")
 
     parser.add_argument("--noble-user-id", help="贵族月消费值：用户 ID（incrNobelLevel）")
@@ -210,33 +211,17 @@ def _print_level_summary(args: argparse.Namespace, resp: dict[str, object]) -> N
             )
         )
 
+
+def _print_response(args: argparse.Namespace, resp: dict[str, object]) -> None:
     if args.vip_query_current:
         inner_ec, inner_em, inner_result = extract_inner_result(resp)
         if inner_ec != 0:
             print(f"业务返回失败: ec={inner_ec}, em={inner_em}", file=sys.stderr)
             raise SystemExit(4)
-        current_exp = parse_current_exp_from_inner(inner_result)
-        thresholds = vip_level_thresholds()
-        lv = level_by_exp(current_exp, thresholds)
-        next_lv = lv + 1 if (lv + 1) in thresholds else None
-        next_threshold = thresholds.get(next_lv) if next_lv else None
-        remaining = (next_threshold - current_exp) if next_threshold is not None else None
-        print(
-            json.dumps(
-                {
-                    "userId": args.vip_user_id,
-                    "currentVipExp": current_exp,
-                    "vipLevel": lv,
-                    "nextVipLevelThreshold": next_threshold,
-                    "remainingToNextVipLevel": remaining,
-                },
-                ensure_ascii=False,
-                indent=2,
-            )
-        )
+        summary = parse_vip_info_summary(args.vip_user_id, inner_result)
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+        return
 
-
-def _print_response(args: argparse.Namespace, resp: dict[str, object]) -> None:
     if args.id_auth_user_id is not None and args.id_auth_output == "latest-reason":
         _print_id_auth_latest_reason(resp)
         return

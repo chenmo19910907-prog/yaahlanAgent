@@ -81,6 +81,14 @@ def set_vip_params(payload: dict[str, Any], user_id: str, vip_exp_delta: int) ->
     payload["params"] = two_params(str(user_id), vip_exp_delta, second_type="int")
 
 
+def set_vip_info_query_params(payload: dict[str, Any], user_id: str) -> None:
+    user_id = str(user_id).strip()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    payload["method"] = "getVipInfo"
+    payload["params"] = [string_param(user_id)]
+
+
 def set_noble_params(payload: dict[str, Any], user_id: str, noble_exp_delta: int) -> None:
     if noble_exp_delta < 0:
         raise ValueError("noble_exp_delta 不能为负数")

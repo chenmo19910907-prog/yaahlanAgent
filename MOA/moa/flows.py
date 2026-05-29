@@ -19,6 +19,7 @@ from .id_auth import extract_latest_id_auth_reason_list
 from .family import parse_family_fund_summary, parse_family_fund_tier_set_count
 from .payload import load_payload
 from .time_utils import resolve_family_fund_week_key
+from .vip import extract_vip_value_from_inner
 
 
 def _clone_args(args: argparse.Namespace, **overrides: Any) -> argparse.Namespace:
@@ -29,8 +30,8 @@ def _clone_args(args: argparse.Namespace, **overrides: Any) -> argparse.Namespac
 
 def build_vip_level_upgrade_payload(args: argparse.Namespace, client: MoaClient) -> dict[str, Any]:
     q_payload = load_payload(_clone_args(args, vip_query_current=True, vip_level=None, vip_exp=None))
-    inner_result = client.post_expect_inner_ok(q_payload, action="查询当前 VIP 经验值")
-    current_vip_exp = parse_current_exp_from_inner(inner_result)
+    inner_result = client.post_expect_inner_ok(q_payload, action="查询当前 VIP 信息")
+    current_vip_exp = extract_vip_value_from_inner(inner_result)
     delta = build_vip_exp_delta_for_level(args.vip_level, current_exp=current_vip_exp)
     print(
         f"已查询当前 VIP 经验值: {current_vip_exp}，目标 VIP 等级: {args.vip_level}，需要增加: {delta}",

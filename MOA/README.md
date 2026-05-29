@@ -165,12 +165,30 @@ python3 MOA/moa_execute.py \
 
 ### 查询当前 VIP 经验值与等级
 
+通过 `getVipInfo` 查询，返回 `value` 作为 VIP 经验值、`level`/`trueLevel` 作为当前等级。
+
 ```bash
 python3 MOA/moa_execute.py \
   --payload-file MOA/vip_payload.example.json \
   --vip-user-id 100066819 \
   --vip-query-current
 ```
+
+输出示例：
+
+```json
+{
+  "userId": "100465989",
+  "currentVipExp": 1809999,
+  "vipLevel": 4,
+  "trueLevel": 4,
+  "tryLevel": 0,
+  "nextVipLevelThreshold": 1810000,
+  "remainingToNextVipLevel": 1
+}
+```
+
+> 说明：`addVipValue(userId, 0)` 仅返回 `true`，不能用于查询经验值；升级补差也已改为先调 `getVipInfo` 读取 `value`。
 
 ### 清除用户 VIP 等级信息
 

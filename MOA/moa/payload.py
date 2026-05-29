@@ -35,6 +35,7 @@ from .params import (
     set_room_bot_params,
     set_room_member_lv_params,
     set_vip_del_params,
+    set_vip_info_query_params,
     set_vip_params,
 )
 from .time_utils import resolve_expire_ms, resolve_family_fund_week_key
@@ -341,7 +342,7 @@ def _op_vip(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     payload.setdefault("method", "addVipValue")
 
     if args.vip_query_current:
-        set_vip_params(payload, user_id=args.vip_user_id, vip_exp_delta=0)
+        set_vip_info_query_params(payload, user_id=args.vip_user_id)
         return
     if args.vip_exp is not None:
         if args.vip_exp < 0:
