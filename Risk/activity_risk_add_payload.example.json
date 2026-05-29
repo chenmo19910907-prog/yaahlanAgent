@@ -1,0 +1,9 @@
+{
+  "menu_event": "cf6bdc74-7be7-474a-b10d-1859f056e1b9",
+  "menu_type": "black",
+  "dimension": "user_id",
+  "elements": ["100465989"],
+  "action": "add",
+  "reason": "测试",
+  "token": "sec_risk_IHAH"
+}

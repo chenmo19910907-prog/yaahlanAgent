@@ -1,0 +1,68 @@
+{
+  "defaults": {
+    "base_url": "https://sec-risk-admin-oversea.wemomo.com",
+    "menu_operate_path": "/open/menu/operate",
+    "token": "sec_risk_IHAH",
+    "menu_type": "white",
+    "dimension": "mmuid",
+    "max_elements_per_request": 5
+  },
+  "menu_events": {
+    "device_risk_release": {
+      "name": "解除设备风控（iOS / mmuid）",
+      "menu_event": "8af999b5-73e7-4dab-9950-9b28bc4b6962",
+      "menu_type": "white",
+      "dimension": "mmuid",
+      "action": "add",
+      "max_elements_per_request": 5,
+      "description": "将设备 mmuid 加入白名单以解除设备风控；单次最多 5 个 mmuid"
+    },
+    "device_risk_release_mmuidv3": {
+      "name": "解除设备风控（Android，element 填 mmuidv3 值）",
+      "menu_event": "8af999b5-73e7-4dab-9950-9b28bc4b6962",
+      "menu_type": "white",
+      "dimension": "mmuid",
+      "action": "add",
+      "max_elements_per_request": 5,
+      "description": "Android 解除设备风控：dimension 仍为 mmuid，elements 填 mmuidv3 字段值"
+    },
+    "phone_risk_release": {
+      "name": "解除手机号风控",
+      "menu_event": "a5d5630a-fb68-47c3-9f13-2f98d43ba0d2",
+      "menu_type": "white",
+      "dimension": "phone",
+      "action": "add",
+      "max_elements_per_request": 5,
+      "description": "将手机号加入白名单以解除手机号风控；单次最多 5 个手机号"
+    },
+    "recharge_risk_control": {
+      "name": "充值风控",
+      "menu_event": "2cbed5b4-7cbb-4da5-bb47-048108dcdf75",
+      "menu_type": "black",
+      "dimension": "user_id",
+      "action": "add",
+      "max_elements_per_request": 5,
+      "description": "用户 user_id 充值风控黑名单：action=add 添加风控，action=delete 解除风控"
+    },
+    "activity_risk_control": {
+      "name": "活动风控",
+      "menu_event": "cf6bdc74-7be7-474a-b10d-1859f056e1b9",
+      "menu_type": "black",
+      "dimension": "user_id",
+      "action": "add",
+      "max_elements_per_request": 5,
+      "description": "用户 user_id 活动风控黑名单：action=add 添加风控，action=delete 解除风控"
+    },
+    "example_mmuid_whitelist": {
+      "name": "解除设备风控（别名，同 device_risk_release）",
+      "menu_event": "8af999b5-73e7-4dab-9950-9b28bc4b6962",
+      "menu_type": "white",
+      "dimension": "mmuid",
+      "description": "兼容旧 menu_key"
+    }
+  },
+  "test_device_registry": {
+    "xlsx_path": "~/Desktop/团队测试机统计表.xlsx",
+    "description": "团队测试机统计表；Android/鸿蒙用 mmuidv3，iOS 用 mmuid 解除设备风控"
+  }
+}

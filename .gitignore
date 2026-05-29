@@ -4,5 +4,8 @@
 MOA/.env.local
 MOA/.env
 MOA/__pycache__/
+Risk/.env.local
+Risk/.env
+Risk/__pycache__/
 **/__pycache__/
 *.pyc

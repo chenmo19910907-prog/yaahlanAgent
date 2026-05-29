@@ -1,0 +1,9 @@
+{
+  "menu_event": "a5d5630a-fb68-47c3-9f13-2f98d43ba0d2",
+  "menu_type": "white",
+  "dimension": "phone",
+  "elements": ["13311111117"],
+  "action": "add",
+  "reason": "测试",
+  "token": "sec_risk_IHAH"
+}
