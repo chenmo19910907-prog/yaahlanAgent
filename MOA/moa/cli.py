@@ -30,6 +30,7 @@ from .flows import (
     run_id_auth_fix_failure,
 )
 from .time_utils import resolve_family_fund_week_key
+from .user_login import normalize_mobile_login, parse_login_status_summary
 from .vip import parse_vip_info_summary
 from .payload import load_payload
 
@@ -130,6 +131,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--diamond-num", type=int, help="发放钻石数量")
     parser.add_argument("--diamond-query-user-id", help="查询用户钻石余额 userId（queryUserAccount）")
     parser.add_argument(
+        "--query-user-by-phone",
+        help="按手机号查询 userId（queryLoginStatusV2；data 为空表示未注册）",
+    )
+    parser.add_argument("--phone-area-code", default="86", help="手机号区号（默认 86；也可在号码中带 +86）")
+    parser.add_argument("--phone-app-id", type=int, help="queryLoginStatusV2 的 appId（默认 config.json 中 2005）")
+    parser.add_argument(
+        "--phone-output",
+        choices=["summary", "json"],
+        default="summary",
+        help="手机号查 userId 输出格式：summary=摘要（默认）；json=完整响应 JSON",
+    )
+    parser.add_argument(
         "--diamond-output",
         choices=["summary", "json"],
         default="summary",
@@ -219,6 +232,16 @@ def _print_level_summary(args: argparse.Namespace, resp: dict[str, object]) -> N
 
 
 def _print_response(args: argparse.Namespace, resp: dict[str, object]) -> None:
+    if args.query_user_by_phone is not None and args.phone_output == "summary":
+        inner_ec, inner_em, inner_result = extract_inner_result(resp)
+        if inner_ec != 0:
+            print(f"业务返回失败: ec={inner_ec}, em={inner_em}", file=sys.stderr)
+            raise SystemExit(4)
+        area_code, mobile = normalize_mobile_login(args.query_user_by_phone, args.phone_area_code or "86")
+        summary = parse_login_status_summary(area_code, mobile, inner_result)
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+        return
+
     if args.vip_query_current:
         inner_ec, inner_em, inner_result = extract_inner_result(resp)
         if inner_ec != 0:

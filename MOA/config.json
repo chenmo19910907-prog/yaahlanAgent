@@ -91,6 +91,11 @@
     "signKey": "189ad0ec4e41438abf29e2f2874d94eb",
     "outOrderIdPrefix": "system"
   },
+  "query_login_status": {
+    "appId": 2005,
+    "loginType": "MOBILE",
+    "areaCode": "86"
+  },
   "package_gift": {
     "outOrderIdPrefix": "PACKAGE_GIFT",
     "outOrderIdMiddle": "100328136",

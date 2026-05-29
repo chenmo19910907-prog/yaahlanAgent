@@ -230,6 +230,42 @@ def diamond_provide_defaults() -> dict[str, str]:
     )
 
 
+def query_login_status_defaults() -> dict[str, Any]:
+    return section_defaults(
+        "query_login_status",
+        {
+            "appId": 2005,
+            "loginType": "MOBILE",
+            "areaCode": "86",
+        },
+    )
+
+
+def set_query_login_status_params(
+    payload: dict[str, Any],
+    *,
+    area_code: str,
+    mobile: str,
+    app_id: int | None = None,
+    login_type: str | None = None,
+) -> None:
+    area_code = str(area_code).strip().lstrip("+")
+    mobile = str(mobile).strip()
+    if not area_code:
+        raise ValueError("area_code 不能为空")
+    if not mobile:
+        raise ValueError("mobile 不能为空")
+
+    defaults = query_login_status_defaults()
+    value = {
+        "loginType": login_type or str(defaults["loginType"]),
+        "areaCode": area_code,
+        "thirdUid": mobile,
+        "appId": int(app_id if app_id is not None else defaults["appId"]),
+    }
+    payload["params"] = [json_param(value)]
+
+
 def set_diamond_query_params(payload: dict[str, Any], user_id: str) -> None:
     user_id = str(user_id).strip()
     if not user_id:

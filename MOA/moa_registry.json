@@ -288,6 +288,18 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/id_auth_delete_person_payload.example.json \\\n  --id-auth-delete-user-id <userId>\n"
     },
     {
+      "id": "user_login_query_by_phone",
+      "name": "用户-按手机号查 userId",
+      "category": "用户登录（yaahlan/mdp-user-login）",
+      "description": "按手机号查询 userId（queryLoginStatusV2；默认区号 86；result.data 为空表示未注册）",
+      "prompts": [
+        "查询手机号 <phone> 对应的 userId",
+        "手机号 <phone> 是否已注册",
+        "查 +86<phone> 的 userId"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/user_login_query_payload.example.json \\\n  --query-user-by-phone <phone>\n"
+    },
+    {
       "id": "diamond_query_account",
       "name": "钻石-查询余额",
       "category": "钻石（voga-base-service-middle-pay-stage）",

@@ -33,12 +33,14 @@
   - [房间等级-升级到目标等级](#room_level_upgrade)
   - [房间经验值-增加](#room_exp_add)
   - [房间经验值-查询当前等级经验](#room_query_current)
-- [6) 背包礼物（voga-base-service-middle-gift-stage）](#moa-cat-6)
+- [6) 用户登录（yaahlan/mdp-user-login）](#moa-cat-6)
+  - [用户-按手机号查 userId](#user_login_query_by_phone)
+- [7) 背包礼物（voga-base-service-middle-gift-stage）](#moa-cat-7)
   - [背包礼物-下发](#package_gift_add)
-- [7) 贵族（voga-mts-user-wealth-charm-level-stage）](#moa-cat-7)
+- [8) 贵族（voga-mts-user-wealth-charm-level-stage）](#moa-cat-8)
   - [贵族-升级到目标等级](#noble_level_upgrade)
   - [贵族-增加月消费值](#noble_exp_add)
-- [8) 钻石（voga-base-service-middle-pay-stage）](#moa-cat-8)
+- [9) 钻石（voga-base-service-middle-pay-stage）](#moa-cat-9)
   - [钻石-发放](#diamond_provide)
   - [钻石-查询余额](#diamond_query_account)
 
@@ -487,7 +489,28 @@ python3 MOA/moa_execute.py \
 
 <a id="moa-cat-6"></a>
 
-## 6) 背包礼物（voga-base-service-middle-gift-stage）
+## 6) 用户登录（yaahlan/mdp-user-login）
+
+<a id="user_login_query_by_phone"></a>
+
+### 用户-按手机号查 userId
+
+- **功能**：按手机号查询 userId（queryLoginStatusV2；默认区号 86；result.data 为空表示未注册）
+- **提示词**：
+  - `查询手机号 <phone> 对应的 userId`
+  - `手机号 <phone> 是否已注册`
+  - `查 +86<phone> 的 userId`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/user_login_query_payload.example.json \
+  --query-user-by-phone <phone>
+```
+
+<a id="moa-cat-7"></a>
+
+## 7) 背包礼物（voga-base-service-middle-gift-stage）
 
 <a id="package_gift_add"></a>
 
@@ -505,9 +528,9 @@ python3 MOA/moa_execute.py \
   --package-gift-user-id <userId>
 ```
 
-<a id="moa-cat-7"></a>
+<a id="moa-cat-8"></a>
 
-## 7) 贵族（voga-mts-user-wealth-charm-level-stage）
+## 8) 贵族（voga-mts-user-wealth-charm-level-stage）
 
 <a id="noble_level_upgrade"></a>
 
@@ -544,9 +567,9 @@ python3 MOA/moa_execute.py \
   --noble-exp <exp>
 ```
 
-<a id="moa-cat-8"></a>
+<a id="moa-cat-9"></a>
 
-## 8) 钻石（voga-base-service-middle-pay-stage）
+## 9) 钻石（voga-base-service-middle-pay-stage）
 
 <a id="diamond_provide"></a>
 
