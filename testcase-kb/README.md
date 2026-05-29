@@ -8,7 +8,7 @@
 
 与 `documents/` 下业务参考文档的关系：`documents/` 为模块说明与 PRD 对齐入口；**本目录**为从用例 xlsx 汇总的大模块验收知识库。
 
-## 文件列表（24 个）
+## 文件列表（25 个）
 
 ### 独立功能（跨模块抽取，强相关才拆出）
 
@@ -50,6 +50,7 @@
 | `公会.md` | 公会、公会长、预提等 |
 | `榜单与活动.md` | 榜单与活动 |
 | `人脸认证.md` | 真人认证 |
+| [`测试机.md`](测试机.md) | 团队测试机台账（mmuid/mmuidv3、资产编号、持有人；由 Desktop xlsx 同步） |
 
 ## 文档结构
 
@@ -78,4 +79,7 @@ python3 scripts/kb_unify_modules.py      # 子域拆分/唯一命名
 python3 scripts/kb_optimize_all.py       # 去重、跨文件重复、Sheet 规范化
 python3 scripts/kb_filter_locales.py       # 移除土语/俄语
 python3 scripts/kb_filter_version_compat.py  # 移除老版本/兼容
+
+# 测试机台账（独立 xlsx，非版本用例库）
+python3 scripts/sync_test_devices_kb.py      # ~/Desktop/团队测试机统计表.xlsx → 测试机.md
 ```
