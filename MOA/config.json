@@ -91,6 +91,10 @@
     "signKey": "189ad0ec4e41438abf29e2f2874d94eb",
     "outOrderIdPrefix": "system"
   },
+  "user_area": {
+    "defaultArea": "MENA",
+    "codes": ["MENA", "TR", "RU", "SEA", "SA", "CN"]
+  },
   "query_login_status": {
     "appId": 2005,
     "loginType": "MOBILE",

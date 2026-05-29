@@ -266,6 +266,16 @@ def set_query_login_status_params(
     payload["params"] = [json_param(value)]
 
 
+def set_change_user_area_params(payload: dict[str, Any], user_id: str, area_code: str) -> None:
+    user_id = str(user_id).strip()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    area_code = str(area_code).strip().upper()
+    if not area_code:
+        raise ValueError("area_code 不能为空")
+    payload["params"] = two_params(user_id, area_code, second_type="string")
+
+
 def set_diamond_query_params(payload: dict[str, Any], user_id: str) -> None:
     user_id = str(user_id).strip()
     if not user_id:

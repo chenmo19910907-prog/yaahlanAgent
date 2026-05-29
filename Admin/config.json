@@ -1,0 +1,8 @@
+{
+  "api": {
+    "baseUrl": "https://yaahlan-admin-alpha.wemomo.com"
+  },
+  "query_user_detail": {
+    "path": "/admin/user/queryUserDetail"
+  }
+}

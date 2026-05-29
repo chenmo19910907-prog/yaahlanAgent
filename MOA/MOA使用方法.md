@@ -33,14 +33,16 @@
   - [房间等级-升级到目标等级](#room_level_upgrade)
   - [房间经验值-增加](#room_exp_add)
   - [房间经验值-查询当前等级经验](#room_query_current)
-- [6) 用户登录（yaahlan/mdp-user-login）](#moa-cat-6)
+- [6) 用户大区（yaahlan/components/callback/user-area）](#moa-cat-6)
+  - [用户-修改大区](#user_area_change)
+- [7) 用户登录（yaahlan/mdp-user-login）](#moa-cat-7)
   - [用户-按手机号查 userId](#user_login_query_by_phone)
-- [7) 背包礼物（voga-base-service-middle-gift-stage）](#moa-cat-7)
+- [8) 背包礼物（voga-base-service-middle-gift-stage）](#moa-cat-8)
   - [背包礼物-下发](#package_gift_add)
-- [8) 贵族（voga-mts-user-wealth-charm-level-stage）](#moa-cat-8)
+- [9) 贵族（voga-mts-user-wealth-charm-level-stage）](#moa-cat-9)
   - [贵族-升级到目标等级](#noble_level_upgrade)
   - [贵族-增加月消费值](#noble_exp_add)
-- [9) 钻石（voga-base-service-middle-pay-stage）](#moa-cat-9)
+- [10) 钻石（voga-base-service-middle-pay-stage）](#moa-cat-10)
   - [钻石-发放](#diamond_provide)
   - [钻石-查询余额](#diamond_query_account)
 
@@ -489,7 +491,29 @@ python3 MOA/moa_execute.py \
 
 <a id="moa-cat-6"></a>
 
-## 6) 用户登录（yaahlan/mdp-user-login）
+## 6) 用户大区（yaahlan/components/callback/user-area）
+
+<a id="user_area_change"></a>
+
+### 用户-修改大区
+
+- **功能**：测试环境切换用户大区（changeAreaForTest；params[0]=userId, params[1]=大区代码）
+- **提示词**：
+  - `把用户 <userId> 大区改为 <area>`
+  - `切换用户 <userId> 到 <area> 区`
+  - `修改用户 <userId> 大区为 MENA`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/user_area_change_payload.example.json \
+  --change-user-area-user-id <userId> \
+  --user-area <area>
+```
+
+<a id="moa-cat-7"></a>
+
+## 7) 用户登录（yaahlan/mdp-user-login）
 
 <a id="user_login_query_by_phone"></a>
 
@@ -508,9 +532,9 @@ python3 MOA/moa_execute.py \
   --query-user-by-phone <phone>
 ```
 
-<a id="moa-cat-7"></a>
+<a id="moa-cat-8"></a>
 
-## 7) 背包礼物（voga-base-service-middle-gift-stage）
+## 8) 背包礼物（voga-base-service-middle-gift-stage）
 
 <a id="package_gift_add"></a>
 
@@ -528,9 +552,9 @@ python3 MOA/moa_execute.py \
   --package-gift-user-id <userId>
 ```
 
-<a id="moa-cat-8"></a>
+<a id="moa-cat-9"></a>
 
-## 8) 贵族（voga-mts-user-wealth-charm-level-stage）
+## 9) 贵族（voga-mts-user-wealth-charm-level-stage）
 
 <a id="noble_level_upgrade"></a>
 
@@ -567,9 +591,9 @@ python3 MOA/moa_execute.py \
   --noble-exp <exp>
 ```
 
-<a id="moa-cat-9"></a>
+<a id="moa-cat-10"></a>
 
-## 9) 钻石（voga-base-service-middle-pay-stage）
+## 10) 钻石（voga-base-service-middle-pay-stage）
 
 <a id="diamond_provide"></a>
 

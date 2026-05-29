@@ -1,6 +1,6 @@
 # 钉钉测试用例自动生成（Yaahlan 分支）
 
-基于 Cursor Agent Skills 与钉钉 MCP，从钉钉需求文档与项目规则生成结构化测试用例，并可同步到钉钉 Excel。本仓库 **`yaahlan`** 分支主要用于 **Yaahlan** 用例自动化，并附带 **MOA**、**Risk** 等本地测试辅助脚本；其他业务可在同流程下扩展。
+基于 Cursor Agent Skills 与钉钉 MCP，从钉钉需求文档与项目规则生成结构化测试用例，并可同步到钉钉 Excel。本仓库 **`yaahlan`** 分支主要用于 **Yaahlan** 用例自动化，并附带 **MOA**、**Risk**、**Admin** 等本地测试辅助脚本；其他业务可在同流程下扩展。
 
 ## 功能特性
 
@@ -13,10 +13,11 @@
 - **模板对齐**：相似模块参考 `templates/`（如榜单类对齐 `templates/榜单.md`）
 - **用例输出**：Markdown 表格等写入 `temporary_testcase/`，经 `testcase-to-excel` 分批写入钉钉 Excel
 
-### 本地自动化（MOA / Risk）
+### 本地自动化（MOA / Risk / Admin）
 
-- **MOA**（`MOA/`）：通过 MSE httpproxy 调用 MOA 接口，支持钻石/背包/VIP/实名认证、家族声望与基金等测试数据构造；详见 [MOA/README.md](MOA/README.md)
+- **MOA**（`MOA/`）：通过 MSE httpproxy 调用 MOA 接口，支持钻石/背包/VIP/实名认证、家族声望与基金、**手机号查 userId** 等；详见 [MOA/README.md](MOA/README.md)
 - **Risk**（`Risk/`）：调用海外风控开放接口 `/open/menu/operate`，支持解除设备/手机号风控、充值/活动风控加白加黑；可读取团队测试机统计表按平台自动选取 mmuid 或 mmuidv3 值；详见 [Risk/README.md](Risk/README.md)
+- **Admin**（`Admin/`）：调用 Yaahlan 测试后台，支持 **按 userId 查询用户全量详情**（`queryUserDetail`）；详见 [Admin/README.md](Admin/README.md)
 
 ## 项目结构
 
@@ -31,6 +32,10 @@ auto-generate-testcase/
 ├── Risk/                              # 海外风控开放接口（设备/手机/充值/活动）
 │   ├── README.md
 │   ├── risk_execute.py                # 入口
+│   └── config.json
+├── Admin/                             # Yaahlan 测试后台（用户详情查询等）
+│   ├── README.md
+│   ├── admin_execute.py               # 入口
 │   └── config.json
 ├── rules/                             # 生成规则与辅助流程说明
 │   ├── testcase_generation_rules.md   # 通用：榜单 / 抽奖 / 兑换 / 礼包等

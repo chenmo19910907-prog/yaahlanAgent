@@ -30,6 +30,7 @@ from .flows import (
     run_id_auth_fix_failure,
 )
 from .time_utils import resolve_family_fund_week_key
+from .user_area import USER_AREA_CODES
 from .user_login import normalize_mobile_login, parse_login_status_summary
 from .vip import parse_vip_info_summary
 from .payload import load_payload
@@ -130,6 +131,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--diamond-user-id", help="发放钻石 userId")
     parser.add_argument("--diamond-num", type=int, help="发放钻石数量")
     parser.add_argument("--diamond-query-user-id", help="查询用户钻石余额 userId（queryUserAccount）")
+    parser.add_argument(
+        "--change-user-area-user-id",
+        help="修改用户大区 userId（changeAreaForTest；params=userId, 大区代码）",
+    )
+    parser.add_argument(
+        "--user-area",
+        choices=sorted(USER_AREA_CODES),
+        default="MENA",
+        help="目标大区代码：MENA/TR/RU/SEA/SA/CN（默认 MENA）",
+    )
     parser.add_argument(
         "--query-user-by-phone",
         help="按手机号查询 userId（queryLoginStatusV2；data 为空表示未注册）",

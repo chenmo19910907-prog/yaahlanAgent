@@ -300,6 +300,18 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/user_login_query_payload.example.json \\\n  --query-user-by-phone <phone>\n"
     },
     {
+      "id": "user_area_change",
+      "name": "用户-修改大区",
+      "category": "用户大区（yaahlan/components/callback/user-area）",
+      "description": "测试环境切换用户大区（changeAreaForTest；params[0]=userId, params[1]=大区代码）",
+      "prompts": [
+        "把用户 <userId> 大区改为 <area>",
+        "切换用户 <userId> 到 <area> 区",
+        "修改用户 <userId> 大区为 MENA"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/user_area_change_payload.example.json \\\n  --change-user-area-user-id <userId> \\\n  --user-area <area>\n"
+    },
+    {
       "id": "diamond_query_account",
       "name": "钻石-查询余额",
       "category": "钻石（voga-base-service-middle-pay-stage）",

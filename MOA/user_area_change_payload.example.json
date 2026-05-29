@@ -1,0 +1,36 @@
+{
+  "type": "moa",
+  "url": "/service/yaahlan/components/callback/user-area",
+  "method": "changeAreaForTest",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "100465989",
+      "json": "",
+      "type": "string",
+      "value": "100465989"
+    },
+    {
+      "title": "参数2",
+      "name": "2",
+      "txt": "MENA",
+      "json": "",
+      "type": "string",
+      "value": "MENA"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad"
+}

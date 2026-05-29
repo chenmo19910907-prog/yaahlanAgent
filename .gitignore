@@ -7,5 +7,8 @@ MOA/__pycache__/
 Risk/.env.local
 Risk/.env
 Risk/__pycache__/
+Admin/.env.local
+Admin/.env
+Admin/__pycache__/
 **/__pycache__/
 *.pyc

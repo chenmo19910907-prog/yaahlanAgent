@@ -33,6 +33,7 @@ from .params import (
     set_id_auth_reset_expire_params,
     set_noble_params,
     set_package_gift_params,
+    set_change_user_area_params,
     set_query_login_status_params,
     set_room_bot_params,
     set_room_member_lv_params,
@@ -41,6 +42,7 @@ from .params import (
     set_vip_params,
 )
 from .time_utils import resolve_expire_ms, resolve_family_fund_week_key
+from .user_area import describe_user_area, normalize_user_area
 from .user_login import normalize_mobile_login
 
 PayloadBuilder = Callable[[argparse.Namespace, dict[str, Any]], None]
@@ -140,6 +142,20 @@ def _op_vip_del(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     payload["url"] = "/service/voga-mts-user-vip-stage"
     payload["method"] = "delVipInfo"
     set_vip_del_params(payload, user_id=args.vip_del_user_id)
+
+
+def _op_change_user_area(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/yaahlan/components/callback/user-area"
+    payload["method"] = "changeAreaForTest"
+    area = normalize_user_area(args.user_area)
+    set_change_user_area_params(payload, user_id=args.change_user_area_user_id, area_code=area)
+    meta = describe_user_area(area)
+    print(
+        f"切换用户 {args.change_user_area_user_id} 大区为 {area}（{meta['name']}，{meta['time_label']} {meta['timezone']}）",
+        file=sys.stderr,
+    )
+    if meta.get("note"):
+        print(f"  说明: {meta['note']}", file=sys.stderr)
 
 
 def _op_query_user_by_phone(args: argparse.Namespace, payload: dict[str, Any]) -> None:
@@ -397,6 +413,7 @@ def _op_vip(args: argparse.Namespace, payload: dict[str, Any]) -> None:
 
 # (predicate, handler) — 按优先级匹配首个操作
 OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = [
+    (lambda a: a.change_user_area_user_id is not None, _op_change_user_area),
     (lambda a: a.query_user_by_phone is not None, _op_query_user_by_phone),
     (lambda a: a.id_auth_user_id is not None, _op_id_auth_query),
     (lambda a: a.id_auth_reset_expire_user_id is not None, _op_id_auth_reset_expire),
