@@ -104,6 +104,12 @@ class BugRecord:
     repro: str
     actual: str
     expected: str
+    creator: str = ""
+    executor: str = ""
+    participants: str = ""
+    qa_owner: str = ""
+    product_owner: str = ""
+    ui_reviewer: str = ""
     module_key: str = "other"
 
     @property
@@ -201,6 +207,112 @@ def classify_bug(title: str, module_field: str, remark: str) -> str:
     return "other"
 
 
+_CATEGORY_TYPE_KEYWORDS = frozenset(
+    {"版本线", "非版本线", "活动线", "线上问题", "待优化问题", "马甲包", "遗留问题"}
+)
+_VERSION_LIKE = re.compile(r"版本|yaahlan\d|\d+\.\d+", re.I)
+
+
+def parse_defect_category(category: str) -> dict[str, str]:
+    """解析缺陷分类路径，提取汇总根、归属类型、版本号等。"""
+    raw = category.strip()
+    if not raw:
+        return {}
+
+    parts = [part.strip() for part in re.split(r"\s*/\s*", raw) if part.strip()]
+    if not parts:
+        return {"full": raw}
+
+    result: dict[str, str] = {"full": raw, "summary_root": parts[0]}
+    category_type = ""
+    version = ""
+    sub_category = ""
+
+    if len(parts) == 1:
+        return result
+
+    second = parts[1]
+    if second in _CATEGORY_TYPE_KEYWORDS:
+        category_type = second
+        if len(parts) >= 3:
+            tail = parts[-1]
+            if _VERSION_LIKE.search(tail):
+                version = tail
+            else:
+                sub_category = tail
+    elif _VERSION_LIKE.search(second):
+        version = second
+    else:
+        category_type = second
+        if len(parts) >= 3:
+            tail = parts[-1]
+            if _VERSION_LIKE.search(tail):
+                version = tail
+            else:
+                sub_category = tail
+
+    if category_type:
+        result["category_type"] = category_type
+    if version:
+        result["version"] = version
+    if sub_category:
+        result["sub_category"] = sub_category
+    return result
+
+
+def render_category_lines(record: BugRecord) -> list[str]:
+    if not record.defect_category:
+        return []
+
+    parsed = parse_defect_category(record.defect_category)
+    lines = [f"- **缺陷分类**：{parsed['full']}"]
+    details: list[str] = []
+    if parsed.get("category_type"):
+        details.append(f"归属 {parsed['category_type']}")
+    if parsed.get("version"):
+        details.append(f"版本 {parsed['version']}")
+    if parsed.get("sub_category"):
+        details.append(f"子类 {parsed['sub_category']}")
+    if parsed.get("summary_root") and len(parsed["full"].split("/")) > 1:
+        details.append(f"汇总 {parsed['summary_root']}")
+    if details:
+        lines.append(f"- **版本归属**：{' · '.join(details)}")
+    return lines
+
+
+def record_from_row(row: dict[str, str], field_map: dict[str, str], row_num: int) -> BugRecord:
+    title = pick(row, field_map, "标题")
+    remark = pick(row, field_map, "备注")
+    repro, actual, expected = parse_remark_sections(remark)
+    module_field = pick(row, field_map, "所属模块")
+    record = BugRecord(
+        bug_id=pick(row, field_map, "任务ID") or f"ROW-{row_num}",
+        title=title,
+        platform=pick(row, field_map, "所属平台") or "未知",
+        module_field=module_field,
+        status=pick(row, field_map, "任务状态"),
+        severity=pick(row, field_map, "严重程度") or "未知",
+        defect_type=pick(row, field_map, "缺陷类型") or "未知",
+        defect_category=pick(row, field_map, "缺陷分类"),
+        iteration=pick(row, field_map, "迭代"),
+        remark=remark,
+        solution=pick(row, field_map, "解决方案"),
+        created=pick(row, field_map, "创建时间")[:10],
+        completed=pick(row, field_map, "完成时间")[:10],
+        repro=repro,
+        actual=actual,
+        expected=expected,
+        creator=pick(row, field_map, "创建者"),
+        executor=pick(row, field_map, "执行者"),
+        participants=pick(row, field_map, "参与者"),
+        qa_owner=pick(row, field_map, "QA负责人"),
+        product_owner=pick(row, field_map, "产品负责人"),
+        ui_reviewer=pick(row, field_map, "UI验收人"),
+    )
+    record.module_key = classify_bug(title, module_field, remark)
+    return record
+
+
 def load_bugs(xlsx_path: Path) -> list[BugRecord]:
     rows = load_sheet_rows(xlsx_path)
     field_map = build_field_map(rows[1])
@@ -209,30 +321,7 @@ def load_bugs(xlsx_path: Path) -> list[BugRecord]:
         row = rows[row_num]
         if pick(row, field_map, "任务类型") != "缺陷":
             continue
-        title = pick(row, field_map, "标题")
-        remark = pick(row, field_map, "备注")
-        repro, actual, expected = parse_remark_sections(remark)
-        module_field = pick(row, field_map, "所属模块")
-        record = BugRecord(
-            bug_id=pick(row, field_map, "任务ID") or f"ROW-{row_num}",
-            title=title,
-            platform=pick(row, field_map, "所属平台") or "未知",
-            module_field=module_field,
-            status=pick(row, field_map, "任务状态"),
-            severity=pick(row, field_map, "严重程度") or "未知",
-            defect_type=pick(row, field_map, "缺陷类型") or "未知",
-            defect_category=pick(row, field_map, "缺陷分类"),
-            iteration=pick(row, field_map, "迭代"),
-            remark=remark,
-            solution=pick(row, field_map, "解决方案"),
-            created=pick(row, field_map, "创建时间")[:10],
-            completed=pick(row, field_map, "完成时间")[:10],
-            repro=repro,
-            actual=actual,
-            expected=expected,
-        )
-        record.module_key = classify_bug(title, module_field, remark)
-        bugs.append(record)
+        bugs.append(record_from_row(row, field_map, row_num))
     return bugs
 
 
@@ -241,6 +330,23 @@ def summarize_one_line(record: BugRecord) -> str:
         if candidate:
             return candidate[:160]
     return record.title[:160]
+
+
+def render_personnel_line(record: BugRecord) -> str:
+    parts: list[str] = []
+    if record.creator:
+        parts.append(f"提交 {record.creator}")
+    if record.executor:
+        parts.append(f"处理 {record.executor}")
+    if record.participants:
+        parts.append(f"参与 {record.participants}")
+    if record.qa_owner:
+        parts.append(f"QA {record.qa_owner}")
+    if record.product_owner:
+        parts.append(f"产品 {record.product_owner}")
+    if record.ui_reviewer:
+        parts.append(f"UI验收 {record.ui_reviewer}")
+    return " · ".join(parts)
 
 
 def render_bug_entry(record: BugRecord) -> list[str]:
@@ -252,6 +358,10 @@ def render_bug_entry(record: BugRecord) -> list[str]:
     ]
     if record.created:
         lines[-1] += f" · **创建**：{record.created}"
+    personnel = render_personnel_line(record)
+    if personnel:
+        lines.append(f"- **人员**：{personnel}")
+    lines.extend(render_category_lines(record))
     summary = summarize_one_line(record)
     if summary and summary != record.title:
         lines.append(f"- **摘要**：{summary}")
@@ -337,8 +447,9 @@ def render_readme(bugs: list[BugRecord], source_path: Path, generated_at: str) -
         "- 生成测试用例时补充异常/边界参考",
         "- 排查相似现象是否已有历史记录",
         "",
-        "每条缺陷保留：**任务ID、标题、端、严重度、状态、迭代、现象/期望**（从备注解析）。",
-        "模块分类依据标题与备注关键词自动推断（`所属模块` 字段在源表中几乎为空）。",
+        "每条缺陷保留：**任务ID、标题、端、严重度、状态、迭代、缺陷分类、版本归属、人员、现象/期望**"
+        "（缺陷分类含版本线/线上问题等路径；人员含提交/处理/参与等；现象从备注解析）。",
+        "模块文件按标题与备注关键词自动推断（`所属模块` 字段在源表中几乎为空）。",
         "",
         "## 统计",
         "",
@@ -354,6 +465,26 @@ def render_readme(bugs: list[BugRecord], source_path: Path, generated_at: str) -
     ]
     for platform, count in Counter(b.platform for b in bugs).most_common(12):
         lines.append(f"- **{platform}**：{count}")
+
+    version_counter: Counter[str] = Counter()
+    category_type_counter: Counter[str] = Counter()
+    for bug in bugs:
+        parsed = parse_defect_category(bug.defect_category)
+        if parsed.get("version"):
+            version_counter[parsed["version"]] += 1
+        if parsed.get("category_type"):
+            category_type_counter[parsed["category_type"]] += 1
+
+    if category_type_counter:
+        lines.extend(["", "### 缺陷归属 Top", ""])
+        for category_type, count in category_type_counter.most_common(8):
+            lines.append(f"- **{category_type}**：{count}")
+
+    if version_counter:
+        lines.extend(["", "### 版本归属 Top", ""])
+        for version, count in version_counter.most_common(12):
+            lines.append(f"- **{version}**：{count}")
+
     lines.extend(["", "### 模块索引", "", "| 模块 | 文件 | 数量 |", "|------|------|------|"])
     for module_key in sorted(by_module, key=lambda k: (-len(by_module[k]), k)):
         filename = MODULE_FILES[module_key]
@@ -400,7 +531,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="从 Yaahlan 任务信息表生成 Bug 知识库")
     parser.add_argument(
         "--source",
-        default="/Users/user/Desktop/【yaahlan】任务信息表_20260529.xlsx",
+        default="/Users/user/Desktop/【yaahlan】任务信息表_20260529 15.37.14.xlsx",
         help="任务信息表 xlsx 路径",
     )
     parser.add_argument(

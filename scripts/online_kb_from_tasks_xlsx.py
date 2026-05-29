@@ -14,11 +14,11 @@ from bug_kb_from_tasks_xlsx import (
     MODULE_FILES,
     MODULE_TITLES,
     BugRecord,
-    classify_bug,
     load_sheet_rows,
     build_field_map,
     pick,
-    parse_remark_sections,
+    parse_defect_category,
+    record_from_row,
     render_bug_entry,
 )
 
@@ -61,36 +61,12 @@ def load_online_issues(xlsx_path: Path) -> list[BugRecord]:
         defect_category = pick(row, field_map, "缺陷分类")
         if not is_online_issue(defect_category=defect_category, title=title, remark=remark):
             continue
-        repro, actual, expected = parse_remark_sections(remark)
-        module_field = pick(row, field_map, "所属模块")
-        record = BugRecord(
-            bug_id=pick(row, field_map, "任务ID") or f"ROW-{row_num}",
-            title=title,
-            platform=pick(row, field_map, "所属平台") or "未知",
-            module_field=module_field,
-            status=pick(row, field_map, "任务状态"),
-            severity=pick(row, field_map, "严重程度") or "未知",
-            defect_type=pick(row, field_map, "缺陷类型") or "未知",
-            defect_category=defect_category,
-            iteration=pick(row, field_map, "迭代"),
-            remark=remark,
-            solution=pick(row, field_map, "解决方案"),
-            created=pick(row, field_map, "创建时间")[:10],
-            completed=pick(row, field_map, "完成时间")[:10],
-            repro=repro,
-            actual=actual,
-            expected=expected,
-        )
-        record.module_key = classify_bug(title, module_field, remark)
-        issues.append(record)
+        issues.append(record_from_row(row, field_map, row_num))
     return issues
 
 
 def render_online_entry(record: BugRecord) -> list[str]:
-    lines = render_bug_entry(record)
-    if record.defect_category:
-        lines.insert(3, f"- **分类**：{record.defect_category}")
-    return lines
+    return render_bug_entry(record)
 
 
 def render_module_doc(module_key: str, records: list[BugRecord]) -> str:
@@ -149,6 +125,11 @@ def render_readme(issues: list[BugRecord], source_path: Path, generated_at: str)
         by_module[issue.module_key].append(issue)
 
     by_cat = Counter(i.defect_category for i in issues if i.defect_category)
+    version_counter: Counter[str] = Counter()
+    for issue in issues:
+        parsed = parse_defect_category(issue.defect_category)
+        if parsed.get("version"):
+            version_counter[parsed["version"]] += 1
 
     lines = [
         "# online-kb · 线上问题知识库",
@@ -170,6 +151,9 @@ def render_readme(issues: list[BugRecord], source_path: Path, generated_at: str)
         "- `缺陷分类` 路径含 `/ 线上问题`（如 `2025-yaahlan版本问题汇总 / 线上问题`）",
         "- 标题/备注标注 `【线上问题】`、`【线上包】`、`【线上】`、`线上也有` 等",
         "",
+        "每条记录保留：**任务ID、标题、端、严重度、状态、迭代、缺陷分类、版本归属、人员、现象/期望**"
+        "（缺陷分类含版本线/线上问题等路径）。",
+        "",
         "与 [`bug-kb/`](../bug-kb/README.md) 的关系：bug-kb 含全部缺陷；online-kb 为其中 **线上问题** 子集。",
         "",
         "## 统计",
@@ -186,6 +170,10 @@ def render_readme(issues: list[BugRecord], source_path: Path, generated_at: str)
     ]
     for category, count in by_cat.most_common(8):
         lines.append(f"- **{category}**：{count}")
+    if version_counter:
+        lines.extend(["", "### 版本归属 Top", ""])
+        for version, count in version_counter.most_common(8):
+            lines.append(f"- **{version}**：{count}")
     lines.extend(["", "### 端分布", ""])
     for platform, count in Counter(i.platform for i in issues).most_common(12):
         lines.append(f"- **{platform}**：{count}")
@@ -235,7 +223,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="从 Yaahlan 任务信息表生成线上问题知识库")
     parser.add_argument(
         "--source",
-        default="/Users/user/Desktop/【yaahlan】任务信息表_20260529.xlsx",
+        default="/Users/user/Desktop/【yaahlan】任务信息表_20260529 15.37.14.xlsx",
         help="任务信息表 xlsx 路径",
     )
     parser.add_argument(
