@@ -9,7 +9,7 @@
 - **需求解析**：钉钉普通文档 / Excel 需求读取（`dingtalk-doc-read` + `parse_document` 等）
 - **PRD 理解**：生成用例前可按 `prd-review` Skill 做需求摘要与边界梳理（见 `.cursor/skills/prd-review/SKILL.md`）
 - **规则驱动**：参考 `rules/testcase_generation_rules.md`（榜单、抽奖、兑换、礼包等通用规则）补充用例
-- **业务参考**：`documents/` 下按模块维护说明；**用例知识库**见 `testcase-kb/`，**Bug 知识库**见 `bug-kb/`，**线上问题**见 `online-kb/`；动态用例生成流程见 `moments/`
+- **业务参考**：`documents/` 下按模块维护说明；**用例知识库**见 `testcase-kb/`，**发版回归用例**见 `regression-kb/`，**Bug 知识库**见 `bug-kb/`，**线上问题**见 `online-kb/`；动态用例生成流程见 `moments/`
 - **模板对齐**：相似模块参考 `templates/`（如榜单类对齐 `templates/榜单.md`）
 - **用例输出**：Markdown 表格等写入 `temporary_testcase/`，经 `testcase-to-excel` 分批写入钉钉 Excel
 
@@ -46,6 +46,9 @@ auto-generate-testcase/
 │   └── moments_testcase_generation.md
 ├── testcase-kb/                       # 用例知识库（由版本 xlsx 汇总的产品规则/验收要点）
 │   └── README.md
+├── regression-kb/                     # 发版回归用例知识库（单文件，xlsx 同步）
+│   ├── README.md
+│   └── 发版回归用例.md
 ├── bug-kb/                            # Bug 知识库（历史缺陷归档）
 │   └── README.md
 ├── online-kb/                         # 线上问题知识库（现网/生产问题子集）

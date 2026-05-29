@@ -1,6 +1,7 @@
 # testcase-kb · 用例知识库
 
 > **特权 VIP**：[`特权VIP.md`](特权VIP.md)  
+> **发版回归用例**：[`../regression-kb/README.md`](../regression-kb/README.md)  
 > **历史 Bug 归档**：[`../bug-kb/README.md`](../bug-kb/README.md)  
 > **线上问题归档**：[`../online-kb/README.md`](../online-kb/README.md)
 
@@ -82,4 +83,8 @@ python3 scripts/kb_filter_version_compat.py  # 移除老版本/兼容
 
 # 测试机台账（独立 xlsx，非版本用例库）
 python3 scripts/sync_test_devices_kb.py      # ~/Desktop/团队测试机统计表.xlsx → 测试机.md
+
+# 发版回归用例（桌面发版回归 case xlsx）
+python3 scripts/regression_kb_from_xlsx.py   # → regression-kb/发版回归用例.md
+python3 scripts/export_regression_case_review_xlsx.py  # → ~/Desktop/发版回归case_评审导出.xlsx
 ```
