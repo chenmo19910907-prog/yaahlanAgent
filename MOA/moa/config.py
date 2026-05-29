@@ -165,36 +165,91 @@ def level_by_exp(exp: int, thresholds: dict[int, int]) -> int:
     return level
 
 
-def build_exp_delta_for_level(level: int, current_exp: int, thresholds: dict[int, int], label: str) -> int:
+def normalize_level_exp_mode(mode: str | None) -> str:
+    value = (mode or "min").strip().lower()
+    if value not in {"min", "max"}:
+        raise ValueError(f"level_exp_mode 仅支持 min/max，当前: {mode}")
+    return value
+
+
+def target_exp_for_level(level: int, thresholds: dict[int, int], mode: str = "min") -> int:
+    """按等级计算目标经验值。
+
+    - min：该等级最低阈值（刚达到该等级）
+    - max：该等级最高经验（下一等级阈值 - 1；最高等级时同 min）
+    """
+    normalized_mode = normalize_level_exp_mode(mode)
     if level not in thresholds:
-        raise ValueError(f"不支持的{label}等级: {level}，支持范围: {sorted(thresholds)}")
+        raise ValueError(f"不支持的等级: {level}，支持范围: {sorted(thresholds)}")
+
+    if normalized_mode == "min":
+        return thresholds[level]
+
+    sorted_levels = sorted(thresholds)
+    index = sorted_levels.index(level)
+    if index + 1 < len(sorted_levels):
+        return thresholds[sorted_levels[index + 1]] - 1
+    return thresholds[level]
+
+
+def build_exp_delta_for_level(
+    level: int,
+    current_exp: int,
+    thresholds: dict[int, int],
+    label: str,
+    mode: str = "min",
+) -> int:
     if current_exp < 0:
         raise ValueError("current_exp 不能为负数")
-    target = thresholds[level]
+    normalized_mode = normalize_level_exp_mode(mode)
+    target = target_exp_for_level(level, thresholds, normalized_mode)
     delta = target - current_exp
     if delta <= 0:
-        raise ValueError(f"当前经验值已 >= 目标等级阈值：current_exp={current_exp}, target={target}")
+        mode_label = "最低" if normalized_mode == "min" else "最高"
+        raise ValueError(
+            f"当前经验值已 >= 目标{label}等级 {level} 的{mode_label}阈值："
+            f"current_exp={current_exp}, target={target}"
+        )
     return delta
 
 
-def build_room_exp_delta_for_level(level: int, current_exp: int) -> int:
-    return build_exp_delta_for_level(level, current_exp, room_level_thresholds(), "房间")
+def describe_level_upgrade_plan(
+    *,
+    level: int,
+    current_exp: int,
+    thresholds: dict[int, int],
+    label: str,
+    mode: str = "min",
+) -> tuple[int, int, str]:
+    normalized_mode = normalize_level_exp_mode(mode)
+    target = target_exp_for_level(level, thresholds, normalized_mode)
+    delta = build_exp_delta_for_level(level, current_exp, thresholds, label, normalized_mode)
+    mode_label = "最低" if normalized_mode == "min" else "最高"
+    message = (
+        f"目标{label}等级: {level}（{mode_label}阈值 {target}），"
+        f"当前经验值: {current_exp}，需要增加: {delta}"
+    )
+    return delta, target, message
 
 
-def build_vip_exp_delta_for_level(level: int, current_exp: int) -> int:
-    return build_exp_delta_for_level(level, current_exp, vip_level_thresholds(), " VIP")
+def build_room_exp_delta_for_level(level: int, current_exp: int, mode: str = "min") -> int:
+    return build_exp_delta_for_level(level, current_exp, room_level_thresholds(), "房间", mode)
 
 
-def build_member_lv_exp_delta_for_level(level: int, current_exp: int) -> int:
-    return build_exp_delta_for_level(level, current_exp, member_level_thresholds(), "房间成员")
+def build_vip_exp_delta_for_level(level: int, current_exp: int, mode: str = "min") -> int:
+    return build_exp_delta_for_level(level, current_exp, vip_level_thresholds(), " VIP", mode)
 
 
-def build_noble_exp_delta_for_level(level: int, current_exp: int) -> int:
-    return build_exp_delta_for_level(level, current_exp, noble_level_thresholds(), "贵族")
+def build_member_lv_exp_delta_for_level(level: int, current_exp: int, mode: str = "min") -> int:
+    return build_exp_delta_for_level(level, current_exp, member_level_thresholds(), "房间成员", mode)
 
 
-def build_family_exp_delta_for_level(level: int, current_exp: int) -> int:
-    return build_exp_delta_for_level(level, current_exp, family_level_thresholds(), "家族")
+def build_noble_exp_delta_for_level(level: int, current_exp: int, mode: str = "min") -> int:
+    return build_exp_delta_for_level(level, current_exp, noble_level_thresholds(), "贵族", mode)
+
+
+def build_family_exp_delta_for_level(level: int, current_exp: int, mode: str = "min") -> int:
+    return build_exp_delta_for_level(level, current_exp, family_level_thresholds(), "家族", mode)
 
 
 def build_room_exp_expr(room_id: str, exp: int) -> str:

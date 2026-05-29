@@ -10,10 +10,10 @@ from typing import Any
 from .client import MoaClient, extract_ec_em_result, extract_inner_result, outer_success, parse_current_exp_from_inner
 from .config import (
     family_fund_plan_by_reward_diamonds,
-    build_family_exp_delta_for_level,
-    build_noble_exp_delta_for_level,
-    build_room_exp_delta_for_level,
-    build_vip_exp_delta_for_level,
+    describe_level_upgrade_plan,
+    family_level_thresholds,
+    room_level_thresholds,
+    vip_level_thresholds,
 )
 from .id_auth import extract_latest_id_auth_reason_list
 from .family import parse_family_fund_summary, parse_family_fund_tier_set_count
@@ -32,11 +32,14 @@ def build_vip_level_upgrade_payload(args: argparse.Namespace, client: MoaClient)
     q_payload = load_payload(_clone_args(args, vip_query_current=True, vip_level=None, vip_exp=None))
     inner_result = client.post_expect_inner_ok(q_payload, action="查询当前 VIP 信息")
     current_vip_exp = extract_vip_value_from_inner(inner_result)
-    delta = build_vip_exp_delta_for_level(args.vip_level, current_exp=current_vip_exp)
-    print(
-        f"已查询当前 VIP 经验值: {current_vip_exp}，目标 VIP 等级: {args.vip_level}，需要增加: {delta}",
-        file=sys.stderr,
+    delta, _, message = describe_level_upgrade_plan(
+        level=args.vip_level,
+        current_exp=current_vip_exp,
+        thresholds=vip_level_thresholds(),
+        label="VIP",
+        mode=args.level_exp_mode,
     )
+    print(message, file=sys.stderr)
     return load_payload(
         _clone_args(args, vip_current_exp=current_vip_exp, vip_exp=delta, vip_level=None, vip_query_current=False)
     )
@@ -46,8 +49,14 @@ def build_room_level_upgrade_payload(args: argparse.Namespace, client: MoaClient
     q_payload = load_payload(_clone_args(args, query_current=True, exp=None, level=None))
     inner_result = client.post_expect_inner_ok(q_payload, action="查询当前经验值")
     current_exp = parse_current_exp_from_inner(inner_result)
-    delta = build_room_exp_delta_for_level(args.level, current_exp=current_exp)
-    print(f"已查询当前经验值: {current_exp}，目标等级: {args.level}，需要增加: {delta}", file=sys.stderr)
+    delta, _, message = describe_level_upgrade_plan(
+        level=args.level,
+        current_exp=current_exp,
+        thresholds=room_level_thresholds(),
+        label="房间",
+        mode=args.level_exp_mode,
+    )
+    print(message, file=sys.stderr)
     return load_payload(
         _clone_args(args, current_exp=current_exp, exp=delta, level=None, query_current=False)
     )
@@ -57,11 +66,14 @@ def build_family_level_upgrade_payload(args: argparse.Namespace, client: MoaClie
     q_payload = load_payload(_clone_args(args, family_query_current=True, family_level=None, family_exp=None))
     inner_result = client.post_expect_inner_ok(q_payload, action="查询当前家族声望值")
     current_exp = parse_current_exp_from_inner(inner_result)
-    delta = build_family_exp_delta_for_level(args.family_level, current_exp=current_exp)
-    print(
-        f"已查询当前家族声望值: {current_exp}，目标家族等级: {args.family_level}，需要增加: {delta}",
-        file=sys.stderr,
+    delta, _, message = describe_level_upgrade_plan(
+        level=args.family_level,
+        current_exp=current_exp,
+        thresholds=family_level_thresholds(),
+        label="家族",
+        mode=args.level_exp_mode,
     )
+    print(message, file=sys.stderr)
     return load_payload(
         _clone_args(
             args,

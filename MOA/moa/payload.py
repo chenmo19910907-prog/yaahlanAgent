@@ -9,15 +9,16 @@ from collections.abc import Callable
 from typing import Any
 
 from .config import (
-    build_family_exp_delta_for_level,
     build_family_fund_contrib_expr,
     build_family_fund_tier_set_expr,
     build_family_fund_clear_expr,
-    build_member_lv_exp_delta_for_level,
-    build_noble_exp_delta_for_level,
-    build_room_exp_delta_for_level,
     build_room_exp_expr,
-    build_vip_exp_delta_for_level,
+    describe_level_upgrade_plan,
+    family_level_thresholds,
+    member_level_thresholds,
+    noble_level_thresholds,
+    room_level_thresholds,
+    vip_level_thresholds,
 )
 from .params import (
     family_member_fund_api_value,
@@ -90,7 +91,14 @@ def _apply_room_expr(payload: dict[str, Any], args: argparse.Namespace) -> None:
             expr = build_room_exp_expr(args.room_id, args.exp)
         elif args.level is not None:
             current = args.current_exp if args.current_exp is not None else 0
-            delta = build_room_exp_delta_for_level(args.level, current_exp=current)
+            delta, _, message = describe_level_upgrade_plan(
+                level=args.level,
+                current_exp=current,
+                thresholds=room_level_thresholds(),
+                label="房间",
+                mode=args.level_exp_mode,
+            )
+            print(message, file=sys.stderr)
             expr = build_room_exp_expr(args.room_id, delta)
         else:
             raise ValueError("提供了 --room-id 时，必须同时提供 --exp 或 --level 或 --query-current")
@@ -159,11 +167,14 @@ def _op_room_member_lv(args: argparse.Namespace, payload: dict[str, Any]) -> Non
         return
     if args.member_lv_level is not None:
         current = args.member_lv_current_exp if args.member_lv_current_exp is not None else 0
-        delta = build_member_lv_exp_delta_for_level(args.member_lv_level, current_exp=current)
-        print(
-            f"目标成员等级: {args.member_lv_level}，按当前陪伴值 {current} 计算需增加: {delta}",
-            file=sys.stderr,
+        delta, _, message = describe_level_upgrade_plan(
+            level=args.member_lv_level,
+            current_exp=current,
+            thresholds=member_level_thresholds(),
+            label="房间成员",
+            mode=args.level_exp_mode,
         )
+        print(message, file=sys.stderr)
         set_room_member_lv_params(payload, args.member_lv_room_id, args.member_lv_user_id, exp_delta=delta)
         return
     raise ValueError(
@@ -308,11 +319,14 @@ def _op_family_exp(args: argparse.Namespace, payload: dict[str, Any]) -> None:
         return
     if args.family_level is not None:
         current = args.family_current_exp if args.family_current_exp is not None else 0
-        delta = build_family_exp_delta_for_level(args.family_level, current_exp=current)
-        print(
-            f"目标家族等级: {args.family_level}，按当前声望值 {current} 计算需增加: {delta}",
-            file=sys.stderr,
+        delta, _, message = describe_level_upgrade_plan(
+            level=args.family_level,
+            current_exp=current,
+            thresholds=family_level_thresholds(),
+            label="家族",
+            mode=args.level_exp_mode,
         )
+        print(message, file=sys.stderr)
         set_family_exp_params(payload, family_id=args.family_id, exp_delta=delta)
         return
     raise ValueError("提供了 --family-id 时，必须同时提供 --family-exp、--family-level 或 --family-query-current")
@@ -327,11 +341,14 @@ def _op_noble(args: argparse.Namespace, payload: dict[str, Any]) -> None:
         return
     if args.noble_level is not None:
         current = args.noble_current_exp if args.noble_current_exp is not None else 0
-        delta = build_noble_exp_delta_for_level(args.noble_level, current_exp=current)
-        print(
-            f"目标贵族等级: {args.noble_level}，按当前月消费值 {current} 计算需增加: {delta}",
-            file=sys.stderr,
+        delta, _, message = describe_level_upgrade_plan(
+            level=args.noble_level,
+            current_exp=current,
+            thresholds=noble_level_thresholds(),
+            label="贵族",
+            mode=args.level_exp_mode,
         )
+        print(message, file=sys.stderr)
         set_noble_params(payload, user_id=args.noble_user_id, noble_exp_delta=delta)
         return
     raise ValueError("提供了 --noble-user-id 时，必须同时提供 --noble-exp 或 --noble-level")
@@ -351,7 +368,14 @@ def _op_vip(args: argparse.Namespace, payload: dict[str, Any]) -> None:
         return
     if args.vip_level is not None:
         current = args.vip_current_exp if args.vip_current_exp is not None else 0
-        delta = build_vip_exp_delta_for_level(args.vip_level, current_exp=current)
+        delta, _, message = describe_level_upgrade_plan(
+            level=args.vip_level,
+            current_exp=current,
+            thresholds=vip_level_thresholds(),
+            label="VIP",
+            mode=args.level_exp_mode,
+        )
+        print(message, file=sys.stderr)
         set_vip_params(payload, user_id=args.vip_user_id, vip_exp_delta=delta)
         return
     raise ValueError("提供了 --vip-user-id 时，必须同时提供 --vip-exp 或 --vip-level 或 --vip-query-current")

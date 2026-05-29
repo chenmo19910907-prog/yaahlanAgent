@@ -46,6 +46,7 @@
 
 - **提示词**：你对我说的自然语言口令
 - **命令**：对应可执行脚本命令（默认已配置 `MOA/.env.local`）
+- **等级升级经验模式**：`--level-exp-mode min`（默认，该等级最低阈值）或 `max`（该等级最高经验，下一级阈值-1）
 
 <a id="moa-cat-1"></a>
 
@@ -55,7 +56,7 @@
 
 ### VIP等级-升级到目标等级
 
-- **功能**：把用户升级到目标 VIP 等级（先 `getVipInfo` 查当前 `value`，再 `addVipValue` 补差）
+- **功能**：把用户升级到目标 VIP 等级（先 getVipInfo 查 value，再 addVipValue 补差；可用 --level-exp-mode min/max）
 - **提示词**：
   - `用户 <userId> 升级到 VIP<level>`
   - `把用户 <userId> 升级到 VIP<level>`
@@ -105,7 +106,7 @@ python3 MOA/moa_execute.py \
 
 ### VIP经验值-查询当前等级经验
 
-- **功能**：查询用户当前 VIP 经验值与等级（通过 `getVipInfo`，读取 `value` 字段）
+- **功能**：查询用户当前 VIP 经验值与等级（通过 getVipInfo，读取 value 字段）
 - **提示词**：
   - `查询用户 <userId> 当前VIP等级经验值`
   - `帮我查询用户 <userId> 当前VIP等级经验值`
@@ -195,7 +196,7 @@ python3 MOA/moa_execute.py \
 
 ### 家族-升级到目标等级
 
-- **功能**：把家族升到目标等级（按阈值自动先查当前声望值后补差）
+- **功能**：把家族升到目标等级（先查当前声望值后补差；可用 --level-exp-mode min/max 控制目标经验）
 - **提示词**：
   - `家族 <familyId> 升级到 lv<level>`
   - `给家族 <familyId> 升到 <level> 级`
@@ -373,7 +374,7 @@ python3 MOA/moa_execute.py \
 
 ### 房间成员-升级到目标等级
 
-- **功能**：把用户在房间内的成员等级升到目标 lv（按陪伴值阈值与 --member-lv-current-exp 计算增量）
+- **功能**：把用户在房间内的成员等级升到目标 lv（按陪伴值阈值与 --member-lv-current-exp 计算增量；可用 --level-exp-mode min/max）
 - **提示词**：
   - `用户 <userId> 在房间 <roomId> 升级到成员 lv<level>`
   - `房间 <roomId> 用户 <userId> 升到成员等级 <level>`
@@ -432,7 +433,7 @@ python3 MOA/moa_execute.py \
 
 ### 房间等级-升级到目标等级
 
-- **功能**：把房间升级到目标等级（按阈值自动先查当前经验后补差）
+- **功能**：把房间升级到目标等级（先查当前经验后补差；可用 --level-exp-mode min/max 控制目标经验）
 - **提示词**：
   - `把房间 <roomId> 升级到 <level> 级`
   - `把房间 <roomId> 升级到 <level>级`
@@ -512,7 +513,7 @@ python3 MOA/moa_execute.py \
 
 ### 贵族-升级到目标等级
 
-- **功能**：把用户升级到目标贵族等级（按 noble_level_exp_thresholds 与 --noble-current-exp 计算增量）
+- **功能**：把用户升级到目标贵族等级（按 noble_level_exp_thresholds 与 --noble-current-exp 计算增量；可用 --level-exp-mode min/max）
 - **提示词**：
   - `用户 <userId> 升级到贵族 lv<level>`
   - `给用户 <userId> 升到贵族 <level> 级`

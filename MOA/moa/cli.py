@@ -148,6 +148,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--member-lv-exp", type=int, help="房间成员陪伴值：增加量")
     parser.add_argument("--member-lv-level", type=int, help="房间成员陪伴值：目标成员等级 lv1-lv20")
     parser.add_argument("--member-lv-current-exp", type=int, help="房间成员陪伴值：当前陪伴值（配合 --member-lv-level，默认 0）")
+    parser.add_argument(
+        "--level-exp-mode",
+        choices=["min", "max"],
+        default="min",
+        help="按等级升级时的目标经验：min=该等级最低阈值（默认）；max=该等级最高经验（下一级阈值-1）",
+    )
     return parser
 
 

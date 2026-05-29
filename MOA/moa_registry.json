@@ -16,7 +16,7 @@
       "id": "room_level_upgrade",
       "name": "房间等级-升级到目标等级",
       "category": "房间经验值（voga-mts-room-backdoor）",
-      "description": "把房间升级到目标等级（按阈值自动先查当前经验后补差）",
+      "description": "把房间升级到目标等级（先查当前经验后补差；可用 --level-exp-mode min/max 控制目标经验）",
       "prompts": [
         "把房间 <roomId> 升级到 <level> 级",
         "把房间 <roomId> 升级到 <level>级"
@@ -60,7 +60,7 @@
       "id": "room_member_lv_level_upgrade",
       "name": "房间成员-升级到目标等级",
       "category": "房间成员等级（room-user-active-stage）",
-      "description": "把用户在房间内的成员等级升到目标 lv（按陪伴值阈值与 --member-lv-current-exp 计算增量）",
+      "description": "把用户在房间内的成员等级升到目标 lv（按陪伴值阈值与 --member-lv-current-exp 计算增量；可用 --level-exp-mode min/max）",
       "prompts": [
         "用户 <userId> 在房间 <roomId> 升级到成员 lv<level>",
         "房间 <roomId> 用户 <userId> 升到成员等级 <level>"
@@ -82,7 +82,7 @@
       "id": "vip_level_upgrade",
       "name": "VIP等级-升级到目标等级",
       "category": "VIP 经验值（voga-mts-user-vip-stage）",
-      "description": "把用户升级到目标 VIP 等级（先 getVipInfo 查 value，再 addVipValue 补差）",
+      "description": "把用户升级到目标 VIP 等级（先 getVipInfo 查 value，再 addVipValue 补差；可用 --level-exp-mode min/max）",
       "prompts": [
         "用户 <userId> 升级到 VIP<level>",
         "把用户 <userId> 升级到 VIP<level>"
@@ -126,7 +126,7 @@
       "id": "noble_level_upgrade",
       "name": "贵族-升级到目标等级",
       "category": "贵族（voga-mts-user-wealth-charm-level-stage）",
-      "description": "把用户升级到目标贵族等级（按 noble_level_exp_thresholds 与 --noble-current-exp 计算增量）",
+      "description": "把用户升级到目标贵族等级（按 noble_level_exp_thresholds 与 --noble-current-exp 计算增量；可用 --level-exp-mode min/max）",
       "prompts": [
         "用户 <userId> 升级到贵族 lv<level>",
         "给用户 <userId> 升到贵族 <level> 级"
@@ -225,7 +225,7 @@
       "id": "family_level_upgrade",
       "name": "家族-升级到目标等级",
       "category": "家族（internal/user/family-moa）",
-      "description": "把家族升到目标等级（按阈值自动先查当前声望值后补差）",
+      "description": "把家族升到目标等级（先查当前声望值后补差；可用 --level-exp-mode min/max 控制目标经验）",
       "prompts": [
         "家族 <familyId> 升级到 lv<level>",
         "给家族 <familyId> 升到 <level> 级"

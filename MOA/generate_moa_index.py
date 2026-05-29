@@ -78,6 +78,7 @@ def _render(registry: Dict[str, Any]) -> str:
     lines.append("")
     lines.append("- **提示词**：你对我说的自然语言口令")
     lines.append("- **命令**：对应可执行脚本命令（默认已配置 `MOA/.env.local`）")
+    lines.append("- **等级升级经验模式**：`--level-exp-mode min`（默认，该等级最低阈值）或 `max`（该等级最高经验，下一级阈值-1）")
     lines.append("")
 
     for idx, cat in enumerate(sorted_cats, start=1):

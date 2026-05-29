@@ -156,12 +156,26 @@ python3 MOA/moa_execute.py \
 
 VIP 等级阈值已迁移到 `MOA/config.json` 的 `vip_level_exp_thresholds`。
 
+默认 `--level-exp-mode min`：补到该等级**最低**阈值（刚达标）。  
+若需补到该等级**最高**经验（下一级阈值 - 1），加 `--level-exp-mode max`。
+
 ```bash
 python3 MOA/moa_execute.py \
   --payload-file MOA/vip_payload.example.json \
   --vip-user-id 100066819 \
   --vip-level 4
 ```
+
+```bash
+# 升到 VIP4 的最高经验（VIP5 阈值 - 1）
+python3 MOA/moa_execute.py \
+  --payload-file MOA/vip_payload.example.json \
+  --vip-user-id 100066819 \
+  --vip-level 4 \
+  --level-exp-mode max
+```
+
+> `--level-exp-mode` 同样适用于房间、家族、贵族、房间成员等等级升级场景。
 
 ### 查询当前 VIP 经验值与等级
 
