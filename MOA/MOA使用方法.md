@@ -14,14 +14,33 @@
   - [实名认证-清除认证信息](#id_auth_delete_person)
   - [实名认证-解决认证失败（清 reason 关联账号）](#id_auth_fix_failure_by_reason)
   - [实名认证-设置认证过期时间](#id_auth_reset_relation_expire_time)
-- [3) 房间经验值（voga-mts-room-backdoor）](#moa-cat-3)
+- [3) 家族（internal/user/family-moa）](#moa-cat-3)
+  - [家族-升级到目标等级](#family_level_upgrade)
+  - [家族-增加基金贡献值](#family_fund_contrib_add)
+  - [家族-增加声望值](#family_exp_add)
+  - [家族-成员增加基金贡献值](#family_member_fund_contrib_add)
+  - [家族-查询基金贡献值](#family_fund_contrib_query)
+  - [家族-查询当前声望值](#family_query_current)
+  - [家族-清除基金贡献值](#family_fund_clear)
+  - [家族-衰减声望值](#family_exp_decrease)
+  - [家族-设置基金档位](#family_fund_tier_set)
+  - [家族-设置基金返奖钻石](#family_fund_reward_setup)
+- [4) 房间成员等级（room-user-active-stage）](#moa-cat-4)
+  - [房间成员-升级到目标等级](#room_member_lv_level_upgrade)
+  - [房间成员-增加陪伴值](#room_member_lv_exp_add)
+- [5) 房间经验值（voga-mts-room-backdoor）](#moa-cat-5)
+  - [房间-增加机器人](#room_add_bots)
   - [房间等级-升级到目标等级](#room_level_upgrade)
   - [房间经验值-增加](#room_exp_add)
   - [房间经验值-查询当前等级经验](#room_query_current)
-- [4) 背包礼物（voga-base-service-middle-gift-stage）](#moa-cat-4)
+- [6) 背包礼物（voga-base-service-middle-gift-stage）](#moa-cat-6)
   - [背包礼物-下发](#package_gift_add)
-- [5) 钻石（voga-base-service-middle-pay-stage）](#moa-cat-5)
+- [7) 贵族（voga-mts-user-wealth-charm-level-stage）](#moa-cat-7)
+  - [贵族-升级到目标等级](#noble_level_upgrade)
+  - [贵族-增加月消费值](#noble_exp_add)
+- [8) 钻石（voga-base-service-middle-pay-stage）](#moa-cat-8)
   - [钻石-发放](#diamond_provide)
+  - [钻石-查询余额](#diamond_query_account)
 
 ### 使用说明
 
@@ -165,12 +184,249 @@ python3 MOA/moa_execute.py \
 python3 MOA/moa_execute.py \
   --payload-file MOA/id_auth_reset_expire_payload.example.json \
   --id-auth-reset-expire-user-id <userId> \
-  --id-auth-expire-ms <expireMs>
+  --id-auth-expire-at tomorrow
 ```
 
 <a id="moa-cat-3"></a>
 
-## 3) 房间经验值（voga-mts-room-backdoor）
+## 3) 家族（internal/user/family-moa）
+
+<a id="family_level_upgrade"></a>
+
+### 家族-升级到目标等级
+
+- **功能**：把家族升到目标等级（按阈值自动先查当前声望值后补差）
+- **提示词**：
+  - `家族 <familyId> 升级到 lv<level>`
+  - `给家族 <familyId> 升到 <level> 级`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_exp_payload.example.json \
+  --family-id <familyId> \
+  --family-level <level>
+```
+
+<a id="family_fund_contrib_add"></a>
+
+### 家族-增加基金贡献值
+
+- **功能**：增加家族基金贡献值（voga-mts-user-backdoor execute；incrFundFamilyTotal；周期为周一 YYYYMMDD-week）
+- **提示词**：
+  - `给家族 <familyId> 在 <week> 周期增加 <contrib> 基金贡献值`
+  - `家族 <familyId> 基金贡献 +<contrib>`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_fund_contrib_payload.example.json \
+  --family-id <familyId> \
+  --family-fund-contrib <contrib> \
+  --family-fund-week <weekMonday>
+```
+
+<a id="family_exp_add"></a>
+
+### 家族-增加声望值
+
+- **功能**：给家族增加声望值（addFamilyActiveValueBySystem；params=familyId, 增量 long）
+- **提示词**：
+  - `给家族 <familyId> 增加 <exp> 经验值`
+  - `家族 <familyId> 增加 <exp> 声望值`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_exp_payload.example.json \
+  --family-id <familyId> \
+  --family-exp <exp>
+```
+
+<a id="family_member_fund_contrib_add"></a>
+
+### 家族-成员增加基金贡献值
+
+- **功能**：给家族成员增加基金贡献值（batchIncrFundContribution；API 传值为贡献值×2）
+- **提示词**：
+  - `成员 <userId> 在家族 <familyId> 增加 <contrib> 基金贡献值`
+  - `给家族成员 <userId> 加 <contrib> 基金`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_member_fund_contrib_payload.example.json \
+  --family-id <familyId> \
+  --family-member-fund-user-id <userId> \
+  --family-member-fund-contrib <contrib> \
+  --family-fund-week <weekMonday>
+```
+
+<a id="family_fund_contrib_query"></a>
+
+### 家族-查询基金贡献值
+
+- **功能**：查询家族基金贡献值（incrFundFamilyTotal 增量 0）
+- **提示词**：
+  - `查询家族 <familyId> 基金贡献值`
+  - `家族 <familyId> 基金值`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_fund_contrib_payload.example.json \
+  --family-id <familyId> \
+  --family-fund-contrib 0
+```
+
+<a id="family_query_current"></a>
+
+### 家族-查询当前声望值
+
+- **功能**：查询家族当前声望值与等级（addFamilyActiveValueBySystem 增量 0，返回当前总值）
+- **提示词**：
+  - `查询家族 <familyId> 当前声望值`
+  - `家族 <familyId> 当前等级`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_exp_payload.example.json \
+  --family-id <familyId> \
+  --family-query-current
+```
+
+<a id="family_fund_clear"></a>
+
+### 家族-清除基金贡献值
+
+- **功能**：清除家族基金贡献值（delFamilyFundRankTest；0=本周，-1=上周）
+- **提示词**：
+  - `清除家族 <familyId> 本周基金贡献值`
+  - `清除家族 <familyId> 上周基金贡献值`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_fund_clear_payload.example.json \
+  --family-id <familyId> \
+  --family-fund-clear \
+  --family-fund-week-offset <0|-1>
+```
+
+<a id="family_exp_decrease"></a>
+
+### 家族-衰减声望值
+
+- **功能**：给家族衰减声望值（decreaseFamilyActiveValue；params=familyId, 负增量 long）
+- **提示词**：
+  - `给家族 <familyId> 衰减 <exp> 经验值`
+  - `家族 <familyId> 减少 <exp> 声望值`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_decrease_exp_payload.example.json \
+  --family-id <familyId> \
+  --family-decrease-exp <exp>
+```
+
+<a id="family_fund_tier_set"></a>
+
+### 家族-设置基金档位
+
+- **功能**：设置家族基金档位（backdoor FamilyFundService.batchSetFamilyFundTierForTest；result=更新家族数）
+- **提示词**：
+  - `设置家族 <familyId> 基金档位为 <tier>`
+  - `家族 <familyId> 基金档位 <tier>`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_fund_tier_payload.example.json \
+  --family-id <familyId> \
+  --family-fund-tier <tier>
+```
+
+<a id="family_fund_reward_setup"></a>
+
+### 家族-设置基金返奖钻石
+
+- **功能**：一键设置家族基金返奖钻石（自动清贡献、设档位、设贡献值）
+- **提示词**：
+  - `家族 <familyId> 基金返奖 <diamonds> 钻石`
+  - `设置家族 <familyId> 返奖 <diamonds>`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_fund_tier_payload.example.json \
+  --family-id <familyId> \
+  --family-fund-reward-diamonds <diamonds>
+```
+
+<a id="moa-cat-4"></a>
+
+## 4) 房间成员等级（room-user-active-stage）
+
+<a id="room_member_lv_level_upgrade"></a>
+
+### 房间成员-升级到目标等级
+
+- **功能**：把用户在房间内的成员等级升到目标 lv（按陪伴值阈值与 --member-lv-current-exp 计算增量）
+- **提示词**：
+  - `用户 <userId> 在房间 <roomId> 升级到成员 lv<level>`
+  - `房间 <roomId> 用户 <userId> 升到成员等级 <level>`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/room_member_lv_payload.example.json \
+  --member-lv-room-id <roomId> \
+  --member-lv-user-id <userId> \
+  --member-lv-level <level> \
+  --member-lv-current-exp <currentExp>
+```
+
+<a id="room_member_lv_exp_add"></a>
+
+### 房间成员-增加陪伴值
+
+- **功能**：给指定用户在房间内增加成员陪伴值（doorIncrMemberLv；params=roomId, userId, 增量）
+- **提示词**：
+  - `用户 <userId> 在房间 <roomId> 增加 <exp> 成员经验值`
+  - `房间 <roomId> 用户 <userId> 加 <exp> 陪伴值`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/room_member_lv_payload.example.json \
+  --member-lv-room-id <roomId> \
+  --member-lv-user-id <userId> \
+  --member-lv-exp <exp>
+```
+
+<a id="moa-cat-5"></a>
+
+## 5) 房间经验值（voga-mts-room-backdoor）
+
+<a id="room_add_bots"></a>
+
+### 房间-增加机器人
+
+- **功能**：给房间增加在线机器人（addOnlineUsersToRoom；params=roomId, 总数, 麦上数）
+- **提示词**：
+  - `给房间 <roomId> 增加 <total> 个机器人，其中 <onMic> 个麦上`
+  - `房间 <roomId> 加 <total> 机器人 <onMic> 麦上`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/room_bot_payload.example.json \
+  --room-bot-room-id <roomId> \
+  --room-bot-total <total> \
+  --room-bot-on-mic <onMic>
+```
 
 <a id="room_level_upgrade"></a>
 
@@ -228,9 +484,9 @@ python3 MOA/moa_execute.py \
   --query-current
 ```
 
-<a id="moa-cat-4"></a>
+<a id="moa-cat-6"></a>
 
-## 4) 背包礼物（voga-base-service-middle-gift-stage）
+## 6) 背包礼物（voga-base-service-middle-gift-stage）
 
 <a id="package_gift_add"></a>
 
@@ -248,9 +504,48 @@ python3 MOA/moa_execute.py \
   --package-gift-user-id <userId>
 ```
 
-<a id="moa-cat-5"></a>
+<a id="moa-cat-7"></a>
 
-## 5) 钻石（voga-base-service-middle-pay-stage）
+## 7) 贵族（voga-mts-user-wealth-charm-level-stage）
+
+<a id="noble_level_upgrade"></a>
+
+### 贵族-升级到目标等级
+
+- **功能**：把用户升级到目标贵族等级（按 noble_level_exp_thresholds 与 --noble-current-exp 计算增量）
+- **提示词**：
+  - `用户 <userId> 升级到贵族 lv<level>`
+  - `给用户 <userId> 升到贵族 <level> 级`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/noble_payload.example.json \
+  --noble-user-id <userId> \
+  --noble-level <level> \
+  --noble-current-exp <currentExp>
+```
+
+<a id="noble_exp_add"></a>
+
+### 贵族-增加月消费值
+
+- **功能**：给用户增加贵族月消费值（incrNobelLevel；params=userId, 增量 long）
+- **提示词**：
+  - `给用户 <userId> 增加 <exp> 贵族经验值`
+  - `用户 <userId> 增加 <exp> 贵族月消费值`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/noble_payload.example.json \
+  --noble-user-id <userId> \
+  --noble-exp <exp>
+```
+
+<a id="moa-cat-8"></a>
+
+## 8) 钻石（voga-base-service-middle-pay-stage）
 
 <a id="diamond_provide"></a>
 
@@ -267,4 +562,20 @@ python3 MOA/moa_execute.py \
   --payload-file MOA/diamond_payload.example.json \
   --diamond-user-id <userId> \
   --diamond-num <num>
+```
+
+<a id="diamond_query_account"></a>
+
+### 钻石-查询余额
+
+- **功能**：查询用户当前钻石余额（queryUserAccount，params[0]=userId string）
+- **提示词**：
+  - `查询用户 <userId> 当前钻石数`
+  - `查询 <userId> 钻石余额`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/diamond_query_payload.example.json \
+  --diamond-query-user-id <userId>
 ```

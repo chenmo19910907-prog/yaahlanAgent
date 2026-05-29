@@ -1,0 +1,401 @@
+"""Payload 加载与操作路由。"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from collections.abc import Callable
+from typing import Any
+
+from .config import (
+    build_family_exp_delta_for_level,
+    build_family_fund_contrib_expr,
+    build_family_fund_tier_set_expr,
+    build_family_fund_clear_expr,
+    build_member_lv_exp_delta_for_level,
+    build_noble_exp_delta_for_level,
+    build_room_exp_delta_for_level,
+    build_room_exp_expr,
+    build_vip_exp_delta_for_level,
+)
+from .params import (
+    family_member_fund_api_value,
+    set_diamond_provide_params,
+    set_diamond_query_params,
+    set_family_exp_params,
+    set_family_decrease_exp_params,
+    set_family_member_fund_contrib_params,
+    set_backdoor_execute_expr,
+    set_id_auth_delete_person_params,
+    set_id_auth_params,
+    set_id_auth_reset_expire_params,
+    set_noble_params,
+    set_package_gift_params,
+    set_room_bot_params,
+    set_room_member_lv_params,
+    set_vip_del_params,
+    set_vip_params,
+)
+from .time_utils import resolve_expire_ms, resolve_family_fund_week_key
+
+PayloadBuilder = Callable[[argparse.Namespace, dict[str, Any]], None]
+
+
+def _ensure_settings(payload: dict[str, Any]) -> dict[str, Any]:
+    settings = payload.get("settings")
+    if settings is None:
+        settings = {}
+        payload["settings"] = settings
+    if not isinstance(settings, dict):
+        raise ValueError("payload.settings 必须是 object")
+    return settings
+
+
+def apply_top_level_overrides(payload: dict[str, Any], args: argparse.Namespace) -> None:
+    for arg_name, key in (
+        ("service_url", "url"),
+        ("moa_method", "method"),
+        ("region", "region"),
+        ("env", "env"),
+        ("cluster", "cluster"),
+        ("server", "server"),
+        ("momo_id", "momoId"),
+        ("momo_name", "momoName"),
+        ("header", "header"),
+    ):
+        value = getattr(args, arg_name, None)
+        if value is not None:
+            payload[key] = value
+
+    if getattr(args, "host", None) is not None:
+        _ensure_settings(payload)["host"] = args.host
+    if getattr(args, "moa_time", None) is not None:
+        _ensure_settings(payload)["time"] = str(args.moa_time)
+    if getattr(args, "group", None) is not None:
+        _ensure_settings(payload)["group"] = args.group
+    if getattr(args, "header_type", None) is not None:
+        _ensure_settings(payload)["headerType"] = args.header_type
+
+
+def _apply_room_expr(payload: dict[str, Any], args: argparse.Namespace) -> None:
+    expr: str | None = None
+    if args.expr is not None:
+        expr = args.expr
+    elif args.room_id is not None:
+        if args.query_current:
+            expr = build_room_exp_expr(args.room_id, 0)
+        elif args.exp is not None:
+            expr = build_room_exp_expr(args.room_id, args.exp)
+        elif args.level is not None:
+            current = args.current_exp if args.current_exp is not None else 0
+            delta = build_room_exp_delta_for_level(args.level, current_exp=current)
+            expr = build_room_exp_expr(args.room_id, delta)
+        else:
+            raise ValueError("提供了 --room-id 时，必须同时提供 --exp 或 --level 或 --query-current")
+    elif args.exp is not None or args.level is not None:
+        raise ValueError("使用 --exp/--level 时必须提供 --room-id")
+
+    if expr is None:
+        return
+
+    params = payload.get("params")
+    if not isinstance(params, list) or not params or not isinstance(params[0], dict):
+        raise ValueError("payload.params 必须是非空数组，才能覆盖 params[0].value/txt")
+    params[0]["value"] = expr
+    params[0]["txt"] = expr
+
+
+def _op_id_auth_query(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/internal/user/id-auth-api"
+    payload["method"] = "queryRealPersonRecord"
+    set_id_auth_params(payload, user_id=args.id_auth_user_id)
+
+
+def _op_id_auth_reset_expire(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/internal/user/id-auth-api"
+    payload["method"] = "resetRelationPersonExpireTime"
+    expire_ms = resolve_expire_ms(expire_ms=args.id_auth_expire_ms, expire_at=args.id_auth_expire_at)
+    set_id_auth_reset_expire_params(payload, user_id=args.id_auth_reset_expire_user_id, expire_ms=expire_ms)
+
+
+def _op_id_auth_delete(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/internal/user/id-auth-api"
+    payload["method"] = "internalAuthDeletePerson"
+    set_id_auth_delete_person_params(payload, user_id=args.id_auth_delete_user_id)
+
+
+def _op_vip_del(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/voga-mts-user-vip-stage"
+    payload["method"] = "delVipInfo"
+    set_vip_del_params(payload, user_id=args.vip_del_user_id)
+
+
+def _op_diamond_query(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/voga-base-service-middle-pay-stage"
+    payload["method"] = "queryUserAccount"
+    set_diamond_query_params(payload, user_id=args.diamond_query_user_id)
+
+
+def _op_diamond(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/voga-base-service-middle-pay-stage"
+    payload["method"] = "provideDiamond"
+    if args.diamond_num is None:
+        raise ValueError("必须提供 --diamond-num（钻石数量）")
+    set_diamond_provide_params(payload, user_id=args.diamond_user_id, num=args.diamond_num)
+
+
+def _member_lv_mode(args: argparse.Namespace) -> bool:
+    return args.member_lv_room_id is not None and args.member_lv_user_id is not None
+
+
+def _op_room_member_lv(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/room/internal/room-user-active-stage"
+    payload["method"] = "doorIncrMemberLv"
+
+    if args.member_lv_exp is not None:
+        set_room_member_lv_params(payload, args.member_lv_room_id, args.member_lv_user_id, exp_delta=args.member_lv_exp)
+        return
+    if args.member_lv_level is not None:
+        current = args.member_lv_current_exp if args.member_lv_current_exp is not None else 0
+        delta = build_member_lv_exp_delta_for_level(args.member_lv_level, current_exp=current)
+        print(
+            f"目标成员等级: {args.member_lv_level}，按当前陪伴值 {current} 计算需增加: {delta}",
+            file=sys.stderr,
+        )
+        set_room_member_lv_params(payload, args.member_lv_room_id, args.member_lv_user_id, exp_delta=delta)
+        return
+    raise ValueError(
+        "提供了 --member-lv-room-id 与 --member-lv-user-id 时，"
+        "必须同时提供 --member-lv-exp 或 --member-lv-level"
+    )
+
+
+def _op_room_add_bots(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/room/internal/room-test-stage"
+    payload["method"] = "addOnlineUsersToRoom"
+    if args.room_bot_total is None or args.room_bot_on_mic is None:
+        raise ValueError("增加房间机器人时，必须同时提供 --room-bot-total 与 --room-bot-on-mic")
+    set_room_bot_params(
+        payload,
+        room_id=args.room_bot_room_id,
+        total_bots=args.room_bot_total,
+        on_mic_bots=args.room_bot_on_mic,
+    )
+
+
+def _op_package_gift(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/voga-base-service-middle-gift-stage"
+    payload["method"] = "addPackageGift"
+    set_package_gift_params(
+        payload,
+        user_id=args.package_gift_user_id,
+        product_num=args.package_gift_num,
+        give_user_id=args.package_gift_give_user_id or "",
+    )
+
+
+def _family_decrease_mode(args: argparse.Namespace) -> bool:
+    return args.family_id is not None and args.family_decrease_exp is not None
+
+
+def _family_fund_tier_mode(args: argparse.Namespace) -> bool:
+    return args.family_fund_tier is not None
+
+
+def _family_fund_contrib_mode(args: argparse.Namespace) -> bool:
+    return args.family_fund_contrib is not None
+
+
+def _family_fund_clear_mode(args: argparse.Namespace) -> bool:
+    return args.family_fund_clear
+
+
+def _family_member_fund_contrib_mode(args: argparse.Namespace) -> bool:
+    return args.family_member_fund_user_id is not None and args.family_member_fund_contrib is not None
+
+
+def _family_add_mode(args: argparse.Namespace) -> bool:
+    return (
+        args.family_id is not None
+        and not _family_decrease_mode(args)
+        and not _family_fund_tier_mode(args)
+        and not _family_fund_contrib_mode(args)
+        and not _family_fund_clear_mode(args)
+        and not _family_member_fund_contrib_mode(args)
+    )
+
+
+def _op_family_member_fund_contrib(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/internal/user/family-moa"
+    payload["method"] = "batchIncrFundContribution"
+    if not args.family_id:
+        raise ValueError("给成员增加家族基金贡献值时，必须提供 --family-id")
+    week_key = resolve_family_fund_week_key(args.family_fund_week)
+    user_id = str(args.family_member_fund_user_id).strip()
+    contrib = args.family_member_fund_contrib
+    api_value = family_member_fund_api_value(contrib)
+    print(
+        f"成员 {user_id} 增加家族基金贡献值 {contrib}，周期: {week_key}（API 传值 {api_value}）",
+        file=sys.stderr,
+    )
+    set_family_member_fund_contrib_params(
+        payload,
+        family_id=args.family_id,
+        week_key=week_key,
+        user_contributions={user_id: contrib},
+    )
+
+
+def _op_family_fund_clear(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/voga-mts-user-backdoor"
+    payload["method"] = "execute"
+    if not args.family_id:
+        raise ValueError("清除家族基金贡献值时，必须提供 --family-id")
+    week_offset = 0 if args.family_fund_week_offset is None else args.family_fund_week_offset
+    week_label = "本周" if week_offset == 0 else ("上周" if week_offset == -1 else f"偏移 {week_offset} 周")
+    expr = build_family_fund_clear_expr(args.family_id, week_offset)
+    print(f"清除家族基金贡献值: {week_label}（week_offset={week_offset}）", file=sys.stderr)
+    set_backdoor_execute_expr(payload, expr)
+
+
+def _op_family_fund_contrib(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/voga-mts-user-backdoor"
+    payload["method"] = "execute"
+    if not args.family_id:
+        raise ValueError("家族基金贡献值操作时，必须提供 --family-id")
+    week_key = resolve_family_fund_week_key(args.family_fund_week)
+    expr = build_family_fund_contrib_expr(args.family_id, args.family_fund_contrib, week_key)
+    if args.family_fund_contrib == 0:
+        print(f"查询家族基金贡献值，周期: {week_key}", file=sys.stderr)
+    else:
+        print(f"家族基金周期: {week_key}", file=sys.stderr)
+    set_backdoor_execute_expr(payload, expr)
+
+
+def _op_family_fund_tier(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/voga-mts-user-backdoor"
+    payload["method"] = "execute"
+    family_ids = args.family_fund_ids if args.family_fund_ids else args.family_id
+    if not family_ids:
+        raise ValueError("设置家族基金档位时，必须提供 --family-id 或 --family-fund-ids")
+    if isinstance(family_ids, str):
+        ids = [item.strip() for item in family_ids.split(",") if item.strip()]
+    else:
+        ids = [str(item).strip() for item in family_ids if str(item).strip()]
+    flag = 0 if args.family_fund_tier_flag is None else args.family_fund_tier_flag
+    expr = build_family_fund_tier_set_expr(ids, args.family_fund_tier, flag)
+    print(f"设置家族基金档位: {args.family_fund_tier}，家族: {','.join(ids)}，flag={flag}", file=sys.stderr)
+    set_backdoor_execute_expr(payload, expr)
+
+
+def _op_family_decrease_exp(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/internal/user/family-moa"
+    payload["method"] = "decreaseFamilyActiveValue"
+    set_family_decrease_exp_params(payload, family_id=args.family_id, decrease_exp=args.family_decrease_exp)
+
+
+def _op_family_exp(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/internal/user/family-moa"
+    payload["method"] = "addFamilyActiveValueBySystem"
+
+    if args.family_query_current:
+        set_family_exp_params(payload, family_id=args.family_id, exp_delta=0)
+        return
+    if args.family_exp is not None:
+        set_family_exp_params(payload, family_id=args.family_id, exp_delta=args.family_exp)
+        return
+    if args.family_level is not None:
+        current = args.family_current_exp if args.family_current_exp is not None else 0
+        delta = build_family_exp_delta_for_level(args.family_level, current_exp=current)
+        print(
+            f"目标家族等级: {args.family_level}，按当前声望值 {current} 计算需增加: {delta}",
+            file=sys.stderr,
+        )
+        set_family_exp_params(payload, family_id=args.family_id, exp_delta=delta)
+        return
+    raise ValueError("提供了 --family-id 时，必须同时提供 --family-exp、--family-level 或 --family-query-current")
+
+
+def _op_noble(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/voga-mts-user-wealth-charm-level-stage"
+    payload["method"] = "incrNobelLevel"
+
+    if args.noble_exp is not None:
+        set_noble_params(payload, user_id=args.noble_user_id, noble_exp_delta=args.noble_exp)
+        return
+    if args.noble_level is not None:
+        current = args.noble_current_exp if args.noble_current_exp is not None else 0
+        delta = build_noble_exp_delta_for_level(args.noble_level, current_exp=current)
+        print(
+            f"目标贵族等级: {args.noble_level}，按当前月消费值 {current} 计算需增加: {delta}",
+            file=sys.stderr,
+        )
+        set_noble_params(payload, user_id=args.noble_user_id, noble_exp_delta=delta)
+        return
+    raise ValueError("提供了 --noble-user-id 时，必须同时提供 --noble-exp 或 --noble-level")
+
+
+def _op_vip(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload.setdefault("url", "/service/voga-mts-user-vip-stage")
+    payload.setdefault("method", "addVipValue")
+
+    if args.vip_query_current:
+        set_vip_params(payload, user_id=args.vip_user_id, vip_exp_delta=0)
+        return
+    if args.vip_exp is not None:
+        if args.vip_exp < 0:
+            raise ValueError("vip_exp 不能为负数")
+        set_vip_params(payload, user_id=args.vip_user_id, vip_exp_delta=args.vip_exp)
+        return
+    if args.vip_level is not None:
+        current = args.vip_current_exp if args.vip_current_exp is not None else 0
+        delta = build_vip_exp_delta_for_level(args.vip_level, current_exp=current)
+        set_vip_params(payload, user_id=args.vip_user_id, vip_exp_delta=delta)
+        return
+    raise ValueError("提供了 --vip-user-id 时，必须同时提供 --vip-exp 或 --vip-level 或 --vip-query-current")
+
+
+# (predicate, handler) — 按优先级匹配首个操作
+OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = [
+    (lambda a: a.id_auth_user_id is not None, _op_id_auth_query),
+    (lambda a: a.id_auth_reset_expire_user_id is not None, _op_id_auth_reset_expire),
+    (lambda a: a.id_auth_delete_user_id is not None, _op_id_auth_delete),
+    (lambda a: a.vip_del_user_id is not None, _op_vip_del),
+    (lambda a: a.diamond_query_user_id is not None, _op_diamond_query),
+    (lambda a: a.diamond_user_id is not None, _op_diamond),
+    (lambda a: a.room_bot_room_id is not None, _op_room_add_bots),
+    (lambda a: _member_lv_mode(a), _op_room_member_lv),
+    (lambda a: a.package_gift_user_id is not None, _op_package_gift),
+    (lambda a: _family_fund_tier_mode(a), _op_family_fund_tier),
+    (lambda a: _family_fund_clear_mode(a), _op_family_fund_clear),
+    (lambda a: _family_member_fund_contrib_mode(a), _op_family_member_fund_contrib),
+    (lambda a: _family_fund_contrib_mode(a), _op_family_fund_contrib),
+    (lambda a: _family_decrease_mode(a), _op_family_decrease_exp),
+    (lambda a: _family_add_mode(a), _op_family_exp),
+    (lambda a: a.noble_user_id is not None, _op_noble),
+    (lambda a: a.vip_user_id is not None, _op_vip),
+]
+
+
+def load_payload(args: argparse.Namespace) -> dict[str, Any]:
+    if args.payload_file:
+        with open(args.payload_file, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+    elif args.payload:
+        payload = json.loads(args.payload)
+    else:
+        raise ValueError("必须提供 --payload-file 或 --payload")
+
+    if not isinstance(payload, dict):
+        raise ValueError("payload 必须是 JSON object")
+
+    apply_top_level_overrides(payload, args)
+
+    for predicate, handler in OPERATIONS:
+        if predicate(args):
+            handler(args, payload)
+            return payload
+
+    _apply_room_expr(payload, args)
+    return payload

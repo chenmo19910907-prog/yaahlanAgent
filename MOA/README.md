@@ -232,7 +232,16 @@ python3 MOA/moa_execute.py \
 - `params[0]`: `userId`（string）
 - `params[1]`: `expireTime`（long，毫秒时间戳）
 
-脚本只接收你提供的**毫秒时间戳**；像“24小时后 / 15天前”这类提示词，我会先在对话里换算出时间戳，再执行脚本。
+脚本接收毫秒时间戳，或通过 `--id-auth-expire-at` 传入自然语言/日期（如 `tomorrow`、`明天`、`+1d`、`2026-05-30 23:59:59`）。
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/id_auth_reset_expire_payload.example.json \
+  --id-auth-reset-expire-user-id 100006869 \
+  --id-auth-expire-at tomorrow
+```
+
+也可直接传毫秒时间戳：
 
 ```bash
 python3 MOA/moa_execute.py \
@@ -267,6 +276,312 @@ python3 MOA/moa_execute.py \
 python3 MOA/moa_execute.py \
   --payload-file MOA/id_auth_payload.example.json \
   --id-auth-fix-failure-user-id 100079102
+```
+
+## 贵族：增加月消费值 / 升级等级
+
+服务：`/service/voga-mts-user-wealth-charm-level-stage`
+
+贵族等级与月消费值阈值见 `MOA/config.json` 的 `noble_level_exp_thresholds`（lv1=25000 … lv6=21000000）。
+
+### 增加贵族月消费值（增量）
+
+- `method`: `incrNobelLevel`
+- `params[0]`: 用户 ID（string）
+- `params[1]`: 增加的月消费值（long）
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/noble_payload.example.json \
+  --noble-user-id 100079102 \
+  --noble-exp 400000
+```
+
+### 升级到目标贵族等级（需已知当前月消费值）
+
+已知当前月消费值时，脚本按 `noble_level_exp_thresholds` 计算需增加的数值；未传 `--noble-current-exp` 时默认按 0 计算。
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/noble_payload.example.json \
+  --noble-user-id 100079102 \
+  --noble-level 2 \
+  --noble-current-exp 25000
+```
+
+## 家族：增加声望值 / 升级等级
+
+服务：`/service/internal/user/family-moa`
+
+家族等级与声望值阈值见 `MOA/config.json` 的 `family_level_exp_thresholds`（lv1=0 … lv10=8724000）。
+
+### 增加家族声望值（增量）
+
+- `method`: `addFamilyActiveValueBySystem`
+- `params[0]`: 家族 ID（string）
+- `params[1]`: 增加的声望值（long）
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_exp_payload.example.json \
+  --family-id 101435 \
+  --family-exp 10
+```
+
+### 衰减家族声望值
+
+- `method`: `decreaseFamilyActiveValue`
+- `params[0]`: 家族 ID（string）
+- `params[1]`: 衰减量（long，**负值**，如 `-10`）
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_decrease_exp_payload.example.json \
+  --family-id 101435 \
+  --family-decrease-exp 10
+```
+
+执行后会输出衰减后的当前声望值与等级摘要（若接口返回数值）。
+
+### 家族基金 ABC 档位小档位阈值
+
+配置见 `MOA/config.json` 的 `family_fund_tier_sub_rewards`（仅小档位、家族整体贡献值、返奖钻石）。
+
+**A 档（≥ 1,000,000）**
+
+| 小档位 | 家族整体贡献值 | 返奖钻石 |
+|--------|----------------|----------|
+| 初始值 | 0 | 0 |
+| 档位 1 | 1,000,000 | 80,000 |
+| 档位 2 | 3,000,000 | 240,000 |
+| 档位 3 | 4,500,000 | 360,000 |
+| 档位 4 | 6,000,000 | 600,000 |
+
+**B 档（< 1,000,000）**
+
+| 小档位 | 家族整体贡献值 | 返奖钻石 |
+|--------|----------------|----------|
+| 初始值 | 0 | 0 |
+| 档位 1 | 100,000 | 6,000 |
+| 档位 2 | 350,000 | 21,000 |
+| 档位 3 | 450,000 | 27,000 |
+| 档位 4 | 600,000 | 48,000 |
+
+**C 档（< 100,000）**
+
+| 小档位 | 家族整体贡献值 | 返奖钻石 |
+|--------|----------------|----------|
+| 初始值 | 0 | 0 |
+| 档位 1 | 10,000 | 400 |
+| 档位 2 | 25,000 | 1,000 |
+| 档位 3 | 45,000 | 1,800 |
+| 档位 4 | 70,000 | 4,200 |
+
+### 设置家族基金档位
+
+- 服务：`/service/voga-mts-user-backdoor` / `execute`
+- 表达式：`context.getBean("familyFundService").batchSetFamilyFundTierForTest(...)`
+- **返回 `result` 为成功更新的家族数量**；`0` 表示未更新（设置失败）
+- 家族 ID 必须为 **字符串**（json 数组 `["101435"]`），数字数组会报错
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_fund_tier_payload.example.json \
+  --family-id 101435 \
+  --family-fund-tier B
+```
+
+### 一键设置家族基金返奖钻石
+
+自动：清除本周贡献 → 设置档位 → 设置贡献值 → 查询摘要。
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_fund_tier_payload.example.json \
+  --family-id 101435 \
+  --family-fund-reward-diamonds 27000
+```
+
+批量设置多个家族档位：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_fund_tier_payload.example.json \
+  --family-fund-ids 101435,101436 \
+  --family-fund-tier B
+```
+
+### 增加家族基金贡献值
+
+- 服务：`/service/voga-mts-user-backdoor` / `execute`
+- 表达式：`context.getBean("familyFundDao").incrFundFamilyTotal("<familyId>",<contrib>L,"<YYYYMMDD>-week")`
+- 周期键为该周**周一**日期 + `-week`（如 `20260525-week`）
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_fund_contrib_payload.example.json \
+  --family-id 101435 \
+  --family-fund-contrib 1 \
+  --family-fund-week 20260525
+```
+
+省略 `--family-fund-week` 时默认使用**本周周一**；也可传任意日期，脚本会自动归到该周周一。
+
+### 查询家族基金贡献值
+
+- 表达式：`incrFundFamilyTotal("<familyId>",0L,"<YYYYMMDD>-week")`（增量 0 仅查询）
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_fund_contrib_payload.example.json \
+  --family-id 101435 \
+  --family-fund-contrib 0
+```
+
+### 清除家族基金贡献值
+
+- 表达式：`context.getBean("familyFundService").delFamilyFundRankTest("<familyId>",<weekOffset>)`
+- `weekOffset`：`0`=本周，`-1`=上周
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_fund_clear_payload.example.json \
+  --family-id 101435 \
+  --family-fund-clear
+```
+
+清除上周：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_fund_clear_payload.example.json \
+  --family-id 101435 \
+  --family-fund-clear \
+  --family-fund-week-offset -1
+```
+
+### 给成员增加家族基金贡献值
+
+- `method`: `batchIncrFundContribution`
+- `params[0]`: 家族 ID（string）
+- `params[1]`: 周期键（string，如 `20260525-week`）
+- `params[2]`: 成员贡献 map（json，`userId -> API传值`）
+- **注意**：API 传值为实际贡献值的 **2 倍**（如贡献 500，传 `1000`）
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_member_fund_contrib_payload.example.json \
+  --family-id 101435 \
+  --family-member-fund-user-id 100465989 \
+  --family-member-fund-contrib 500 \
+  --family-fund-week 20260525
+```
+
+### 升级到目标家族等级（自动先查当前声望值再补差）
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_exp_payload.example.json \
+  --family-id 101435 \
+  --family-level 3
+```
+
+### 查询当前家族声望值与等级
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/family_exp_payload.example.json \
+  --family-id 101435 \
+  --family-query-current
+```
+
+说明：`addFamilyActiveValueBySystem` 在增量为 **0** 时也会返回当前家族声望总值（与贵族/房间成员接口不同）。
+
+## 钻石：查询余额 / 发放
+
+服务：`/service/voga-base-service-middle-pay-stage`
+
+### 查询用户当前钻石数
+
+- `method`: `queryUserAccount`
+- `params[0]`: `userId`（string）
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/diamond_query_payload.example.json \
+  --diamond-query-user-id 100465989
+```
+
+默认输出摘要 JSON（含 `diamonds`、`coinCount` 等）。完整响应：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/diamond_query_payload.example.json \
+  --diamond-query-user-id 100465989 \
+  --diamond-output json
+```
+
+### 给用户发放钻石
+
+- `method`: `provideDiamond`
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/diamond_payload.example.json \
+  --diamond-user-id 100465989 \
+  --diamond-num 10000
+```
+
+## 房间：增加在线机器人
+
+你抓包的 MOA：
+
+- `url`: `/service/room/internal/room-test-stage`
+- `method`: `addOnlineUsersToRoom`
+- `params[0]`: 房间 ID（string）
+- `params[1]`: 在线机器人总数（int）
+- `params[2]`: 麦上机器人数量（int）
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/room_bot_payload.example.json \
+  --room-bot-room-id 38826842 \
+  --room-bot-total 10 \
+  --room-bot-on-mic 5
+```
+
+## 房间成员：增加陪伴值 / 升级等级
+
+服务：`/service/room/internal/room-user-active-stage`
+
+成员等级与陪伴值阈值见 `MOA/config.json` 的 `member_level_exp_thresholds`（lv1=0 … lv20=55000000）。
+
+### 增加陪伴值（增量）
+
+- `method`: `doorIncrMemberLv`
+- `params[0]`: 房间 ID（string）
+- `params[1]`: 用户 ID（string）
+- `params[2]`: 增加的陪伴值（int）
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/room_member_lv_payload.example.json \
+  --member-lv-room-id 44283732 \
+  --member-lv-user-id 8250 \
+  --member-lv-exp 1
+```
+
+### 升级到目标成员等级（需已知当前陪伴值）
+
+已知当前陪伴值时，脚本按 `member_level_exp_thresholds` 计算需增加的陪伴值；未传 `--member-lv-current-exp` 时默认按 0 计算。
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/room_member_lv_payload.example.json \
+  --member-lv-room-id 44283732 \
+  --member-lv-user-id 8250 \
+  --member-lv-level 5 \
+  --member-lv-current-exp 3000
 ```
 
 ## 4) 输出与成功判定

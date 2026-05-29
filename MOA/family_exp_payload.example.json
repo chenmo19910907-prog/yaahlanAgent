@@ -1,0 +1,36 @@
+{
+  "type": "moa",
+  "url": "/service/internal/user/family-moa",
+  "method": "addFamilyActiveValueBySystem",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "101435",
+      "json": "",
+      "type": "string",
+      "value": "101435"
+    },
+    {
+      "title": "参数2",
+      "name": "2",
+      "txt": "10",
+      "json": "",
+      "type": "long",
+      "value": "10"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad"
+}

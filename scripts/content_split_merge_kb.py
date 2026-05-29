@@ -76,7 +76,7 @@ TITLE_DOMAIN_RULES: List[Tuple[re.Pattern[str], str]] = [
     ),
     (re.compile(r"app图标|启动器图标|图标更换", re.I), "room"),
     (re.compile(r"iOS真人认证|未成年警告", re.I), "face_auth"),
-    (re.compile(r"发言飘屏", re.I), "moments"),
+    (re.compile(r"发言飘屏", re.I), "room"),
     (re.compile(r"礼物播放器", re.I), "gift"),
     (re.compile(r"游戏bridge|游戏客服", re.I), "game"),
     (re.compile(r"活动大入口|内嵌web", re.I), "rank_activity"),
@@ -210,7 +210,7 @@ DOMAIN_ROUTING_RULES: List[Tuple[re.Pattern[str], str]] = [
         ),
         "coin",
     ),
-    (re.compile(r"发布与浏览|moment|发言飘屏|动态·", re.I), "moments"),
+    (re.compile(r"发布与浏览|moment|动态·", re.I), "moments"),
     (
         re.compile(
             r"面板与送礼|礼物与打赏|背包|道具类型|我的装扮|商店UI|"

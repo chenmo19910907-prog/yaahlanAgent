@@ -1,0 +1,44 @@
+{
+  "type": "moa",
+  "url": "/service/room/internal/room-test-stage",
+  "method": "addOnlineUsersToRoom",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "38826842",
+      "json": "",
+      "type": "string",
+      "value": "38826842"
+    },
+    {
+      "title": "参数2",
+      "name": "2",
+      "txt": "10",
+      "json": "",
+      "type": "int",
+      "value": "10"
+    },
+    {
+      "title": "参数3",
+      "name": "3",
+      "txt": "5",
+      "json": "",
+      "type": "int",
+      "value": "5"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad"
+}

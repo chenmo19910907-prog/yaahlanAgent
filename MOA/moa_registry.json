@@ -35,6 +35,39 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/payload.example.json \\\n  --service-url /service/voga-mts-room-backdoor \\\n  --moa-method execute \\\n  --room-id <roomId> \\\n  --query-current\n"
     },
     {
+      "id": "room_add_bots",
+      "name": "房间-增加机器人",
+      "category": "房间经验值（voga-mts-room-backdoor）",
+      "description": "给房间增加在线机器人（addOnlineUsersToRoom；params=roomId, 总数, 麦上数）",
+      "prompts": [
+        "给房间 <roomId> 增加 <total> 个机器人，其中 <onMic> 个麦上",
+        "房间 <roomId> 加 <total> 机器人 <onMic> 麦上"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/room_bot_payload.example.json \\\n  --room-bot-room-id <roomId> \\\n  --room-bot-total <total> \\\n  --room-bot-on-mic <onMic>\n"
+    },
+    {
+      "id": "room_member_lv_exp_add",
+      "name": "房间成员-增加陪伴值",
+      "category": "房间成员等级（room-user-active-stage）",
+      "description": "给指定用户在房间内增加成员陪伴值（doorIncrMemberLv；params=roomId, userId, 增量）",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 增加 <exp> 成员经验值",
+        "房间 <roomId> 用户 <userId> 加 <exp> 陪伴值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/room_member_lv_payload.example.json \\\n  --member-lv-room-id <roomId> \\\n  --member-lv-user-id <userId> \\\n  --member-lv-exp <exp>\n"
+    },
+    {
+      "id": "room_member_lv_level_upgrade",
+      "name": "房间成员-升级到目标等级",
+      "category": "房间成员等级（room-user-active-stage）",
+      "description": "把用户在房间内的成员等级升到目标 lv（按陪伴值阈值与 --member-lv-current-exp 计算增量）",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 升级到成员 lv<level>",
+        "房间 <roomId> 用户 <userId> 升到成员等级 <level>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/room_member_lv_payload.example.json \\\n  --member-lv-room-id <roomId> \\\n  --member-lv-user-id <userId> \\\n  --member-lv-level <level> \\\n  --member-lv-current-exp <currentExp>\n"
+    },
+    {
       "id": "vip_exp_add",
       "name": "VIP经验值-增加",
       "category": "VIP 经验值（voga-mts-user-vip-stage）",
@@ -79,6 +112,138 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/vip_del_payload.example.json \\\n  --vip-del-user-id <userId>\n"
     },
     {
+      "id": "noble_exp_add",
+      "name": "贵族-增加月消费值",
+      "category": "贵族（voga-mts-user-wealth-charm-level-stage）",
+      "description": "给用户增加贵族月消费值（incrNobelLevel；params=userId, 增量 long）",
+      "prompts": [
+        "给用户 <userId> 增加 <exp> 贵族经验值",
+        "用户 <userId> 增加 <exp> 贵族月消费值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/noble_payload.example.json \\\n  --noble-user-id <userId> \\\n  --noble-exp <exp>\n"
+    },
+    {
+      "id": "noble_level_upgrade",
+      "name": "贵族-升级到目标等级",
+      "category": "贵族（voga-mts-user-wealth-charm-level-stage）",
+      "description": "把用户升级到目标贵族等级（按 noble_level_exp_thresholds 与 --noble-current-exp 计算增量）",
+      "prompts": [
+        "用户 <userId> 升级到贵族 lv<level>",
+        "给用户 <userId> 升到贵族 <level> 级"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/noble_payload.example.json \\\n  --noble-user-id <userId> \\\n  --noble-level <level> \\\n  --noble-current-exp <currentExp>\n"
+    },
+    {
+      "id": "family_exp_add",
+      "name": "家族-增加声望值",
+      "category": "家族（internal/user/family-moa）",
+      "description": "给家族增加声望值（addFamilyActiveValueBySystem；params=familyId, 增量 long）",
+      "prompts": [
+        "给家族 <familyId> 增加 <exp> 经验值",
+        "家族 <familyId> 增加 <exp> 声望值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/family_exp_payload.example.json \\\n  --family-id <familyId> \\\n  --family-exp <exp>\n"
+    },
+    {
+      "id": "family_exp_decrease",
+      "name": "家族-衰减声望值",
+      "category": "家族（internal/user/family-moa）",
+      "description": "给家族衰减声望值（decreaseFamilyActiveValue；params=familyId, 负增量 long）",
+      "prompts": [
+        "给家族 <familyId> 衰减 <exp> 经验值",
+        "家族 <familyId> 减少 <exp> 声望值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/family_decrease_exp_payload.example.json \\\n  --family-id <familyId> \\\n  --family-decrease-exp <exp>\n"
+    },
+    {
+      "id": "family_fund_tier_set",
+      "name": "家族-设置基金档位",
+      "category": "家族（internal/user/family-moa）",
+      "description": "设置家族基金档位（backdoor FamilyFundService.batchSetFamilyFundTierForTest；result=更新家族数）",
+      "prompts": [
+        "设置家族 <familyId> 基金档位为 <tier>",
+        "家族 <familyId> 基金档位 <tier>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/family_fund_tier_payload.example.json \\\n  --family-id <familyId> \\\n  --family-fund-tier <tier>\n"
+    },
+    {
+      "id": "family_fund_reward_setup",
+      "name": "家族-设置基金返奖钻石",
+      "category": "家族（internal/user/family-moa）",
+      "description": "一键设置家族基金返奖钻石（自动清贡献、设档位、设贡献值）",
+      "prompts": [
+        "家族 <familyId> 基金返奖 <diamonds> 钻石",
+        "设置家族 <familyId> 返奖 <diamonds>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/family_fund_tier_payload.example.json \\\n  --family-id <familyId> \\\n  --family-fund-reward-diamonds <diamonds>\n"
+    },
+    {
+      "id": "family_fund_contrib_add",
+      "name": "家族-增加基金贡献值",
+      "category": "家族（internal/user/family-moa）",
+      "description": "增加家族基金贡献值（voga-mts-user-backdoor execute；incrFundFamilyTotal；周期为周一 YYYYMMDD-week）",
+      "prompts": [
+        "给家族 <familyId> 在 <week> 周期增加 <contrib> 基金贡献值",
+        "家族 <familyId> 基金贡献 +<contrib>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/family_fund_contrib_payload.example.json \\\n  --family-id <familyId> \\\n  --family-fund-contrib <contrib> \\\n  --family-fund-week <weekMonday>\n"
+    },
+    {
+      "id": "family_fund_contrib_query",
+      "name": "家族-查询基金贡献值",
+      "category": "家族（internal/user/family-moa）",
+      "description": "查询家族基金贡献值（incrFundFamilyTotal 增量 0）",
+      "prompts": [
+        "查询家族 <familyId> 基金贡献值",
+        "家族 <familyId> 基金值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/family_fund_contrib_payload.example.json \\\n  --family-id <familyId> \\\n  --family-fund-contrib 0\n"
+    },
+    {
+      "id": "family_fund_clear",
+      "name": "家族-清除基金贡献值",
+      "category": "家族（internal/user/family-moa）",
+      "description": "清除家族基金贡献值（delFamilyFundRankTest；0=本周，-1=上周）",
+      "prompts": [
+        "清除家族 <familyId> 本周基金贡献值",
+        "清除家族 <familyId> 上周基金贡献值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/family_fund_clear_payload.example.json \\\n  --family-id <familyId> \\\n  --family-fund-clear \\\n  --family-fund-week-offset <0|-1>\n"
+    },
+    {
+      "id": "family_member_fund_contrib_add",
+      "name": "家族-成员增加基金贡献值",
+      "category": "家族（internal/user/family-moa）",
+      "description": "给家族成员增加基金贡献值（batchIncrFundContribution；API 传值为贡献值×2）",
+      "prompts": [
+        "成员 <userId> 在家族 <familyId> 增加 <contrib> 基金贡献值",
+        "给家族成员 <userId> 加 <contrib> 基金"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/family_member_fund_contrib_payload.example.json \\\n  --family-id <familyId> \\\n  --family-member-fund-user-id <userId> \\\n  --family-member-fund-contrib <contrib> \\\n  --family-fund-week <weekMonday>\n"
+    },
+    {
+      "id": "family_level_upgrade",
+      "name": "家族-升级到目标等级",
+      "category": "家族（internal/user/family-moa）",
+      "description": "把家族升到目标等级（按阈值自动先查当前声望值后补差）",
+      "prompts": [
+        "家族 <familyId> 升级到 lv<level>",
+        "给家族 <familyId> 升到 <level> 级"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/family_exp_payload.example.json \\\n  --family-id <familyId> \\\n  --family-level <level>\n"
+    },
+    {
+      "id": "family_query_current",
+      "name": "家族-查询当前声望值",
+      "category": "家族（internal/user/family-moa）",
+      "description": "查询家族当前声望值与等级（addFamilyActiveValueBySystem 增量 0，返回当前总值）",
+      "prompts": [
+        "查询家族 <familyId> 当前声望值",
+        "家族 <familyId> 当前等级"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/family_exp_payload.example.json \\\n  --family-id <familyId> \\\n  --family-query-current\n"
+    },
+    {
       "id": "id_auth_query_real_person_record",
       "name": "实名认证-查询认证记录",
       "category": "实名认证（internal/user/id-auth-api）",
@@ -109,7 +274,7 @@
         "把用户 <userId> 的认证过期时间设置为 <time>",
         "设置用户 <userId> 认证过期时间为 <time>"
       ],
-      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/id_auth_reset_expire_payload.example.json \\\n  --id-auth-reset-expire-user-id <userId> \\\n  --id-auth-expire-ms <expireMs>\n"
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/id_auth_reset_expire_payload.example.json \\\n  --id-auth-reset-expire-user-id <userId> \\\n  --id-auth-expire-at tomorrow\n"
     },
     {
       "id": "id_auth_delete_person",
@@ -121,6 +286,17 @@
         "删除用户 <userId> 的认证信息"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/id_auth_delete_person_payload.example.json \\\n  --id-auth-delete-user-id <userId>\n"
+    },
+    {
+      "id": "diamond_query_account",
+      "name": "钻石-查询余额",
+      "category": "钻石（voga-base-service-middle-pay-stage）",
+      "description": "查询用户当前钻石余额（queryUserAccount，params[0]=userId string）",
+      "prompts": [
+        "查询用户 <userId> 当前钻石数",
+        "查询 <userId> 钻石余额"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/diamond_query_payload.example.json \\\n  --diamond-query-user-id <userId>\n"
     },
     {
       "id": "diamond_provide",
