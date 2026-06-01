@@ -174,6 +174,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--package-gift-num", type=int, help="每种礼物 productNum")
     parser.add_argument("--package-gift-give-user-id", help="giveUserId")
 
+    parser.add_argument(
+        "--room-set-level-room-id",
+        help="设置房间等级：房间 ID（downgradeRoomLevelForTest）",
+    )
+    parser.add_argument("--room-set-level", type=int, help="设置房间等级：目标等级（downgradeRoomLevelForTest）")
+
     parser.add_argument("--room-bot-room-id", help="增加房间机器人：房间 ID（addOnlineUsersToRoom）")
     parser.add_argument("--room-bot-total", type=int, help="增加房间机器人：在线机器人总数")
     parser.add_argument("--room-bot-on-mic", type=int, help="增加房间机器人：麦上机器人数量")

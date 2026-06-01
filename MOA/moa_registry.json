@@ -35,6 +35,17 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/payload.example.json \\\n  --service-url /service/voga-mts-room-backdoor \\\n  --moa-method execute \\\n  --room-id <roomId> \\\n  --query-current\n"
     },
     {
+      "id": "room_set_level",
+      "name": "房间-设置等级",
+      "category": "房间测试（room/internal/room-test-stage）",
+      "description": "测试环境直接设置房间等级（downgradeRoomLevelForTest；params=roomId, 目标等级 int）。与按经验值补差升级不同",
+      "prompts": [
+        "设置房间 <roomId> 等级为 <level> 级",
+        "把房间 <roomId> 设为 <level> 级"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/room_set_level_payload.example.json \\\n  --room-set-level-room-id <roomId> \\\n  --room-set-level <level>\n"
+    },
+    {
       "id": "room_add_bots",
       "name": "房间-增加机器人",
       "category": "房间经验值（voga-mts-room-backdoor）",

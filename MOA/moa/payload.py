@@ -37,6 +37,7 @@ from .params import (
     set_query_login_status_params,
     set_room_bot_params,
     set_room_member_lv_params,
+    set_room_downgrade_level_params,
     set_custom_gift_reset_expire_params,
     set_vip_del_params,
     set_vip_info_query_params,
@@ -232,6 +233,20 @@ def _op_room_member_lv(args: argparse.Namespace, payload: dict[str, Any]) -> Non
     raise ValueError(
         "提供了 --member-lv-room-id 与 --member-lv-user-id 时，"
         "必须同时提供 --member-lv-exp 或 --member-lv-level"
+    )
+
+
+def _room_set_level_mode(args: argparse.Namespace) -> bool:
+    return args.room_set_level_room_id is not None
+
+
+def _op_room_set_level(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if args.room_set_level is None:
+        raise ValueError("设置房间等级时，必须提供 --room-set-level")
+    set_room_downgrade_level_params(
+        payload,
+        room_id=args.room_set_level_room_id,
+        level=args.room_set_level,
     )
 
 
@@ -445,6 +460,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.custom_gift_reset_user_id is not None, _op_custom_gift_reset_expire),
     (lambda a: a.diamond_query_user_id is not None, _op_diamond_query),
     (lambda a: a.diamond_user_id is not None, _op_diamond),
+    (lambda a: _room_set_level_mode(a), _op_room_set_level),
     (lambda a: a.room_bot_room_id is not None, _op_room_add_bots),
     (lambda a: _member_lv_mode(a), _op_room_member_lv),
     (lambda a: a.package_gift_user_id is not None, _op_package_gift),

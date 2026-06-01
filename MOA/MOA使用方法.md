@@ -31,21 +31,23 @@
 - [5) 房间成员等级（room-user-active-stage）](#moa-cat-5)
   - [房间成员-升级到目标等级](#room_member_lv_level_upgrade)
   - [房间成员-增加陪伴值](#room_member_lv_exp_add)
-- [6) 房间经验值（voga-mts-room-backdoor）](#moa-cat-6)
+- [6) 房间测试（room/internal/room-test-stage）](#moa-cat-6)
+  - [房间-设置等级](#room_set_level)
+- [7) 房间经验值（voga-mts-room-backdoor）](#moa-cat-7)
   - [房间-增加机器人](#room_add_bots)
   - [房间等级-升级到目标等级](#room_level_upgrade)
   - [房间经验值-增加](#room_exp_add)
   - [房间经验值-查询当前等级经验](#room_query_current)
-- [7) 用户大区（yaahlan/components/callback/user-area）](#moa-cat-7)
+- [8) 用户大区（yaahlan/components/callback/user-area）](#moa-cat-8)
   - [用户-修改大区](#user_area_change)
-- [8) 用户登录（yaahlan/mdp-user-login）](#moa-cat-8)
+- [9) 用户登录（yaahlan/mdp-user-login）](#moa-cat-9)
   - [用户-按手机号查 userId](#user_login_query_by_phone)
-- [9) 背包礼物（voga-base-service-middle-gift-stage）](#moa-cat-9)
+- [10) 背包礼物（voga-base-service-middle-gift-stage）](#moa-cat-10)
   - [背包礼物-下发](#package_gift_add)
-- [10) 贵族（voga-mts-user-wealth-charm-level-stage）](#moa-cat-10)
+- [11) 贵族（voga-mts-user-wealth-charm-level-stage）](#moa-cat-11)
   - [贵族-升级到目标等级](#noble_level_upgrade)
   - [贵族-增加月消费值](#noble_exp_add)
-- [11) 钻石（voga-base-service-middle-pay-stage）](#moa-cat-11)
+- [12) 钻石（voga-base-service-middle-pay-stage）](#moa-cat-12)
   - [钻石-发放](#diamond_provide)
   - [钻石-查询余额](#diamond_query_account)
 
@@ -455,7 +457,28 @@ python3 MOA/moa_execute.py \
 
 <a id="moa-cat-6"></a>
 
-## 6) 房间经验值（voga-mts-room-backdoor）
+## 6) 房间测试（room/internal/room-test-stage）
+
+<a id="room_set_level"></a>
+
+### 房间-设置等级
+
+- **功能**：测试环境直接设置房间等级（downgradeRoomLevelForTest；params=roomId, 目标等级 int）。与按经验值补差升级不同
+- **提示词**：
+  - `设置房间 <roomId> 等级为 <level> 级`
+  - `把房间 <roomId> 设为 <level> 级`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/room_set_level_payload.example.json \
+  --room-set-level-room-id <roomId> \
+  --room-set-level <level>
+```
+
+<a id="moa-cat-7"></a>
+
+## 7) 房间经验值（voga-mts-room-backdoor）
 
 <a id="room_add_bots"></a>
 
@@ -531,9 +554,9 @@ python3 MOA/moa_execute.py \
   --query-current
 ```
 
-<a id="moa-cat-7"></a>
+<a id="moa-cat-8"></a>
 
-## 7) 用户大区（yaahlan/components/callback/user-area）
+## 8) 用户大区（yaahlan/components/callback/user-area）
 
 <a id="user_area_change"></a>
 
@@ -553,9 +576,9 @@ python3 MOA/moa_execute.py \
   --user-area <area>
 ```
 
-<a id="moa-cat-8"></a>
+<a id="moa-cat-9"></a>
 
-## 8) 用户登录（yaahlan/mdp-user-login）
+## 9) 用户登录（yaahlan/mdp-user-login）
 
 <a id="user_login_query_by_phone"></a>
 
@@ -574,9 +597,9 @@ python3 MOA/moa_execute.py \
   --query-user-by-phone <phone>
 ```
 
-<a id="moa-cat-9"></a>
+<a id="moa-cat-10"></a>
 
-## 9) 背包礼物（voga-base-service-middle-gift-stage）
+## 10) 背包礼物（voga-base-service-middle-gift-stage）
 
 <a id="package_gift_add"></a>
 
@@ -594,9 +617,9 @@ python3 MOA/moa_execute.py \
   --package-gift-user-id <userId>
 ```
 
-<a id="moa-cat-10"></a>
+<a id="moa-cat-11"></a>
 
-## 10) 贵族（voga-mts-user-wealth-charm-level-stage）
+## 11) 贵族（voga-mts-user-wealth-charm-level-stage）
 
 <a id="noble_level_upgrade"></a>
 
@@ -633,9 +656,9 @@ python3 MOA/moa_execute.py \
   --noble-exp <exp>
 ```
 
-<a id="moa-cat-11"></a>
+<a id="moa-cat-12"></a>
 
-## 11) 钻石（voga-base-service-middle-pay-stage）
+## 12) 钻石（voga-base-service-middle-pay-stage）
 
 <a id="diamond_provide"></a>
 

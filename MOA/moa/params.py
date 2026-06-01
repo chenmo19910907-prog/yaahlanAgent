@@ -212,6 +212,17 @@ def set_vip_try_dispatch_params(
     payload["params"] = three_params(user_id, try_level, duration_seconds)
 
 
+def set_room_downgrade_level_params(payload: dict[str, Any], room_id: str, level: int) -> None:
+    room_id = str(room_id).strip()
+    if not room_id:
+        raise ValueError("room_id 不能为空")
+    if level < 1:
+        raise ValueError("room_set_level 必须为正整数")
+    payload["url"] = "/service/room/internal/room-test-stage"
+    payload["method"] = "downgradeRoomLevelForTest"
+    payload["params"] = two_params(room_id, level, second_type="int")
+
+
 def set_custom_gift_reset_expire_params(payload: dict[str, Any], user_id: str) -> None:
     user_id = str(user_id).strip()
     if not user_id:
