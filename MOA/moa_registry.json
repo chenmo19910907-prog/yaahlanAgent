@@ -112,6 +112,29 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/vip_del_payload.example.json \\\n  --vip-del-user-id <userId>\n"
     },
     {
+      "id": "vip_try_dispatch",
+      "name": "VIP体验卡-下发",
+      "category": "VIP 经验值（voga-mts-user-vip-stage）",
+      "description": "下发 VIP 体验等级（dispatchTryVip；params=userId、体验等级、时长秒）。App 展示 tryLevel，与 addVipValue 永久升级不同；若已有更高体验等级，低等级下发可能失败(ec:10011)",
+      "prompts": [
+        "给用户 <userId> 下发 <durationSeconds> 秒 VIP<level> 体验",
+        "给 <userId> 下发1天VIP5",
+        "用户 <userId> 体验 VIP<level> <durationSeconds> 秒"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/vip_try_dispatch_payload.example.json \\\n  --vip-try-user-id <userId> \\\n  --vip-try-level <level> \\\n  --vip-try-duration-seconds <durationSeconds>\n"
+    },
+    {
+      "id": "custom_gift_reset_upload",
+      "name": "定制礼物-重置上传次数",
+      "category": "定制礼物（voga-components/gateway/custom-gift-stage）",
+      "description": "重置用户定制礼物上传次数（resetExpireTime；params[0]=userId）",
+      "prompts": [
+        "重置用户 <userId> 定制礼物上传次数",
+        "重置 <userId> 的定制礼物上传次数"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/custom_gift_reset_expire_payload.example.json \\\n  --custom-gift-reset-user-id <userId>\n"
+    },
+    {
       "id": "noble_exp_add",
       "name": "贵族-增加月消费值",
       "category": "贵族（voga-mts-user-wealth-charm-level-stage）",

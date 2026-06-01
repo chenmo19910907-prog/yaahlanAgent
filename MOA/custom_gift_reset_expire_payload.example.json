@@ -1,0 +1,28 @@
+{
+  "type": "moa",
+  "url": "/service/voga-components/gateway/custom-gift-stage",
+  "method": "resetExpireTime",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "100486375",
+      "json": "",
+      "type": "string",
+      "value": "100486375"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad"
+}

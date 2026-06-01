@@ -195,6 +195,32 @@ def set_vip_del_params(payload: dict[str, Any], user_id: str) -> None:
     payload["params"] = [string_param(user_id)]
 
 
+def set_vip_try_dispatch_params(
+    payload: dict[str, Any],
+    user_id: str,
+    try_level: int,
+    duration_seconds: int,
+) -> None:
+    user_id = str(user_id).strip()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    if try_level < 1 or try_level > 10:
+        raise ValueError("vip_try_level 必须在 1-10 之间")
+    if duration_seconds < 1:
+        raise ValueError("vip_try_duration_seconds 必须为正整数")
+    payload["method"] = "dispatchTryVip"
+    payload["params"] = three_params(user_id, try_level, duration_seconds)
+
+
+def set_custom_gift_reset_expire_params(payload: dict[str, Any], user_id: str) -> None:
+    user_id = str(user_id).strip()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    payload["url"] = "/service/voga-components/gateway/custom-gift-stage"
+    payload["method"] = "resetExpireTime"
+    payload["params"] = [string_param(user_id)]
+
+
 def set_id_auth_params(payload: dict[str, Any], user_id: str) -> None:
     user_id = str(user_id).strip()
     if not user_id:

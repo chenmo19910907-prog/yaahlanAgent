@@ -37,9 +37,11 @@ from .params import (
     set_query_login_status_params,
     set_room_bot_params,
     set_room_member_lv_params,
+    set_custom_gift_reset_expire_params,
     set_vip_del_params,
     set_vip_info_query_params,
     set_vip_params,
+    set_vip_try_dispatch_params,
 )
 from .time_utils import resolve_expire_ms, resolve_family_fund_week_key
 from .user_area import describe_user_area, normalize_user_area
@@ -142,6 +144,26 @@ def _op_vip_del(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     payload["url"] = "/service/voga-mts-user-vip-stage"
     payload["method"] = "delVipInfo"
     set_vip_del_params(payload, user_id=args.vip_del_user_id)
+
+
+def _vip_try_mode(args: argparse.Namespace) -> bool:
+    return args.vip_try_user_id is not None
+
+
+def _op_vip_try_dispatch(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/voga-mts-user-vip-stage"
+    if args.vip_try_level is None or args.vip_try_duration_seconds is None:
+        raise ValueError("下发 VIP 体验卡时，必须同时提供 --vip-try-level 与 --vip-try-duration-seconds")
+    set_vip_try_dispatch_params(
+        payload,
+        user_id=args.vip_try_user_id,
+        try_level=args.vip_try_level,
+        duration_seconds=args.vip_try_duration_seconds,
+    )
+
+
+def _op_custom_gift_reset_expire(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    set_custom_gift_reset_expire_params(payload, user_id=args.custom_gift_reset_user_id)
 
 
 def _op_change_user_area(args: argparse.Namespace, payload: dict[str, Any]) -> None:
@@ -419,6 +441,8 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.id_auth_reset_expire_user_id is not None, _op_id_auth_reset_expire),
     (lambda a: a.id_auth_delete_user_id is not None, _op_id_auth_delete),
     (lambda a: a.vip_del_user_id is not None, _op_vip_del),
+    (lambda a: _vip_try_mode(a), _op_vip_try_dispatch),
+    (lambda a: a.custom_gift_reset_user_id is not None, _op_custom_gift_reset_expire),
     (lambda a: a.diamond_query_user_id is not None, _op_diamond_query),
     (lambda a: a.diamond_user_id is not None, _op_diamond),
     (lambda a: a.room_bot_room_id is not None, _op_room_add_bots),

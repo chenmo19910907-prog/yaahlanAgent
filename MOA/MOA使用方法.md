@@ -5,16 +5,19 @@
 ### 目录
 
 - [1) VIP 经验值（voga-mts-user-vip-stage）](#moa-cat-1)
+  - [VIP体验卡-下发](#vip_try_dispatch)
   - [VIP等级-升级到目标等级](#vip_level_upgrade)
   - [VIP等级-清除VIP信息](#vip_delete_info)
   - [VIP经验值-增加](#vip_exp_add)
   - [VIP经验值-查询当前等级经验](#vip_query_current)
-- [2) 实名认证（internal/user/id-auth-api）](#moa-cat-2)
+- [2) 定制礼物（voga-components/gateway/custom-gift-stage）](#moa-cat-2)
+  - [定制礼物-重置上传次数](#custom_gift_reset_upload)
+- [3) 实名认证（internal/user/id-auth-api）](#moa-cat-3)
   - [实名认证-查询认证记录](#id_auth_query_real_person_record)
   - [实名认证-清除认证信息](#id_auth_delete_person)
   - [实名认证-解决认证失败（清 reason 关联账号）](#id_auth_fix_failure_by_reason)
   - [实名认证-设置认证过期时间](#id_auth_reset_relation_expire_time)
-- [3) 家族（internal/user/family-moa）](#moa-cat-3)
+- [4) 家族（internal/user/family-moa）](#moa-cat-4)
   - [家族-升级到目标等级](#family_level_upgrade)
   - [家族-增加基金贡献值](#family_fund_contrib_add)
   - [家族-增加声望值](#family_exp_add)
@@ -25,24 +28,24 @@
   - [家族-衰减声望值](#family_exp_decrease)
   - [家族-设置基金档位](#family_fund_tier_set)
   - [家族-设置基金返奖钻石](#family_fund_reward_setup)
-- [4) 房间成员等级（room-user-active-stage）](#moa-cat-4)
+- [5) 房间成员等级（room-user-active-stage）](#moa-cat-5)
   - [房间成员-升级到目标等级](#room_member_lv_level_upgrade)
   - [房间成员-增加陪伴值](#room_member_lv_exp_add)
-- [5) 房间经验值（voga-mts-room-backdoor）](#moa-cat-5)
+- [6) 房间经验值（voga-mts-room-backdoor）](#moa-cat-6)
   - [房间-增加机器人](#room_add_bots)
   - [房间等级-升级到目标等级](#room_level_upgrade)
   - [房间经验值-增加](#room_exp_add)
   - [房间经验值-查询当前等级经验](#room_query_current)
-- [6) 用户大区（yaahlan/components/callback/user-area）](#moa-cat-6)
+- [7) 用户大区（yaahlan/components/callback/user-area）](#moa-cat-7)
   - [用户-修改大区](#user_area_change)
-- [7) 用户登录（yaahlan/mdp-user-login）](#moa-cat-7)
+- [8) 用户登录（yaahlan/mdp-user-login）](#moa-cat-8)
   - [用户-按手机号查 userId](#user_login_query_by_phone)
-- [8) 背包礼物（voga-base-service-middle-gift-stage）](#moa-cat-8)
+- [9) 背包礼物（voga-base-service-middle-gift-stage）](#moa-cat-9)
   - [背包礼物-下发](#package_gift_add)
-- [9) 贵族（voga-mts-user-wealth-charm-level-stage）](#moa-cat-9)
+- [10) 贵族（voga-mts-user-wealth-charm-level-stage）](#moa-cat-10)
   - [贵族-升级到目标等级](#noble_level_upgrade)
   - [贵族-增加月消费值](#noble_exp_add)
-- [10) 钻石（voga-base-service-middle-pay-stage）](#moa-cat-10)
+- [11) 钻石（voga-base-service-middle-pay-stage）](#moa-cat-11)
   - [钻石-发放](#diamond_provide)
   - [钻石-查询余额](#diamond_query_account)
 
@@ -55,6 +58,25 @@
 <a id="moa-cat-1"></a>
 
 ## 1) VIP 经验值（voga-mts-user-vip-stage）
+
+<a id="vip_try_dispatch"></a>
+
+### VIP体验卡-下发
+
+- **功能**：下发 VIP 体验等级（dispatchTryVip；params=userId、体验等级、时长秒）。App 展示 tryLevel，与 addVipValue 永久升级不同；若已有更高体验等级，低等级下发可能失败(ec:10011)
+- **提示词**：
+  - `给用户 <userId> 下发 <durationSeconds> 秒 VIP<level> 体验`
+  - `给 <userId> 下发1天VIP5`
+  - `用户 <userId> 体验 VIP<level> <durationSeconds> 秒`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/vip_try_dispatch_payload.example.json \
+  --vip-try-user-id <userId> \
+  --vip-try-level <level> \
+  --vip-try-duration-seconds <durationSeconds>
+```
 
 <a id="vip_level_upgrade"></a>
 
@@ -125,7 +147,27 @@ python3 MOA/moa_execute.py \
 
 <a id="moa-cat-2"></a>
 
-## 2) 实名认证（internal/user/id-auth-api）
+## 2) 定制礼物（voga-components/gateway/custom-gift-stage）
+
+<a id="custom_gift_reset_upload"></a>
+
+### 定制礼物-重置上传次数
+
+- **功能**：重置用户定制礼物上传次数（resetExpireTime；params[0]=userId）
+- **提示词**：
+  - `重置用户 <userId> 定制礼物上传次数`
+  - `重置 <userId> 的定制礼物上传次数`
+- **命令**：
+
+```bash
+python3 MOA/moa_execute.py \
+  --payload-file MOA/custom_gift_reset_expire_payload.example.json \
+  --custom-gift-reset-user-id <userId>
+```
+
+<a id="moa-cat-3"></a>
+
+## 3) 实名认证（internal/user/id-auth-api）
 
 <a id="id_auth_query_real_person_record"></a>
 
@@ -192,9 +234,9 @@ python3 MOA/moa_execute.py \
   --id-auth-expire-at tomorrow
 ```
 
-<a id="moa-cat-3"></a>
+<a id="moa-cat-4"></a>
 
-## 3) 家族（internal/user/family-moa）
+## 4) 家族（internal/user/family-moa）
 
 <a id="family_level_upgrade"></a>
 
@@ -370,9 +412,9 @@ python3 MOA/moa_execute.py \
   --family-fund-reward-diamonds <diamonds>
 ```
 
-<a id="moa-cat-4"></a>
+<a id="moa-cat-5"></a>
 
-## 4) 房间成员等级（room-user-active-stage）
+## 5) 房间成员等级（room-user-active-stage）
 
 <a id="room_member_lv_level_upgrade"></a>
 
@@ -411,9 +453,9 @@ python3 MOA/moa_execute.py \
   --member-lv-exp <exp>
 ```
 
-<a id="moa-cat-5"></a>
+<a id="moa-cat-6"></a>
 
-## 5) 房间经验值（voga-mts-room-backdoor）
+## 6) 房间经验值（voga-mts-room-backdoor）
 
 <a id="room_add_bots"></a>
 
@@ -489,9 +531,9 @@ python3 MOA/moa_execute.py \
   --query-current
 ```
 
-<a id="moa-cat-6"></a>
+<a id="moa-cat-7"></a>
 
-## 6) 用户大区（yaahlan/components/callback/user-area）
+## 7) 用户大区（yaahlan/components/callback/user-area）
 
 <a id="user_area_change"></a>
 
@@ -511,9 +553,9 @@ python3 MOA/moa_execute.py \
   --user-area <area>
 ```
 
-<a id="moa-cat-7"></a>
+<a id="moa-cat-8"></a>
 
-## 7) 用户登录（yaahlan/mdp-user-login）
+## 8) 用户登录（yaahlan/mdp-user-login）
 
 <a id="user_login_query_by_phone"></a>
 
@@ -532,9 +574,9 @@ python3 MOA/moa_execute.py \
   --query-user-by-phone <phone>
 ```
 
-<a id="moa-cat-8"></a>
+<a id="moa-cat-9"></a>
 
-## 8) 背包礼物（voga-base-service-middle-gift-stage）
+## 9) 背包礼物（voga-base-service-middle-gift-stage）
 
 <a id="package_gift_add"></a>
 
@@ -552,9 +594,9 @@ python3 MOA/moa_execute.py \
   --package-gift-user-id <userId>
 ```
 
-<a id="moa-cat-9"></a>
+<a id="moa-cat-10"></a>
 
-## 9) 贵族（voga-mts-user-wealth-charm-level-stage）
+## 10) 贵族（voga-mts-user-wealth-charm-level-stage）
 
 <a id="noble_level_upgrade"></a>
 
@@ -591,9 +633,9 @@ python3 MOA/moa_execute.py \
   --noble-exp <exp>
 ```
 
-<a id="moa-cat-10"></a>
+<a id="moa-cat-11"></a>
 
-## 10) 钻石（voga-base-service-middle-pay-stage）
+## 11) 钻石（voga-base-service-middle-pay-stage）
 
 <a id="diamond_provide"></a>
 

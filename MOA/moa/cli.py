@@ -77,6 +77,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--vip-current-exp", type=int, help="当前 VIP 经验值")
     parser.add_argument("--vip-query-current", action="store_true", help="查询当前 VIP 经验值与等级（getVipInfo）")
     parser.add_argument("--vip-del-user-id", help="清除 VIP 信息")
+    parser.add_argument("--vip-try-user-id", help="VIP 体验卡：用户 ID（dispatchTryVip）")
+    parser.add_argument("--vip-try-level", type=int, help="VIP 体验卡：体验等级 1-10")
+    parser.add_argument(
+        "--vip-try-duration-seconds",
+        type=int,
+        help="VIP 体验卡：体验时长（秒）；1 天=86400",
+    )
+    parser.add_argument(
+        "--custom-gift-reset-user-id",
+        help="定制礼物：重置上传次数 userId（resetExpireTime）",
+    )
 
     parser.add_argument("--noble-user-id", help="贵族月消费值：用户 ID（incrNobelLevel）")
     parser.add_argument("--noble-exp", type=int, help="贵族月消费值：增加量")
