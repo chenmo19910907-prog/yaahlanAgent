@@ -2,6 +2,8 @@
 
 这个目录用于在本地（Cursor 终端）复现 MOA 的 `execute` 调用：把 MOA 页面里的一段请求 JSON 作为 body，POST 到 httpproxy 接口，由后端执行目标 service 的 `execute`。
 
+> 首次使用或换电脑：请先阅读 [docs/新手上手.md](../docs/新手上手.md) 配置 `MOA/.env.local`。
+
 ## 1) 准备环境变量（必需）
 
 - `MOA_ENTRY_URL`: httpproxy 入口完整 URL  
