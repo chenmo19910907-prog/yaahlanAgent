@@ -100,6 +100,33 @@
     "loginType": "MOBILE",
     "areaCode": "86"
   },
+  "custom_gift_rank": {
+    "defaultUserId": "100493343",
+    "defaultPeriod": "PRE",
+    "defaultArea": "MENA",
+    "headerTemplate": {
+      "osVersion": "18.7.9",
+      "ip": "172.18.124.171",
+      "lang": "en",
+      "clientType": "2",
+      "imsi": 0,
+      "deviceId": "ea8836506ad680281c27e5e90dbb8e57b8f9af1717515355460f",
+      "country": "B1",
+      "appVersion": "2.5.2",
+      "show_prop": true,
+      "rom": "18.7.9",
+      "os": "ios",
+      "innerVersion": "1000",
+      "timeZone": "Asia/Shanghai",
+      "netQuality": 4,
+      "appId": 2005,
+      "model": "iPhone XR",
+      "channelKey": "primary",
+      "osType": "ios",
+      "showType": "present",
+      "mmuid": "ea8836506ad680281c27e5e90dbb8e57b8f9af1717515355460f"
+    }
+  },
   "package_gift": {
     "outOrderIdPrefix": "PACKAGE_GIFT",
     "outOrderIdMiddle": "100328136",

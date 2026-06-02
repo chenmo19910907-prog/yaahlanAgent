@@ -146,6 +146,30 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/custom_gift_reset_expire_payload.example.json \\\n  --custom-gift-reset-user-id <userId>\n"
     },
     {
+      "id": "custom_gift_rank_active_add",
+      "name": "定制礼物榜单-增加活跃值",
+      "category": "定制礼物榜单（room/internal/room-rank-list-stage）",
+      "description": "给定制礼物增加榜单活跃值（mockCustomGiftRankData；params=周期 NOW/PRE/PRE_PRE、大区、giftId、活跃值 long）",
+      "prompts": [
+        "礼物 <giftId> 增加 <value> 活跃值",
+        "定制礼物 <giftId> 榜单活跃值 +<value>",
+        "礼物 <giftId> 上周活跃值 +<value>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/custom_gift_rank_active_payload.example.json \\\n  --custom-gift-rank-gift-id <giftId> \\\n  --custom-gift-rank-active-value <value> \\\n  --custom-gift-rank-period PRE \\\n  --custom-gift-rank-area MENA\n"
+    },
+    {
+      "id": "custom_gift_rank_delete",
+      "name": "定制礼物榜单-清除数据",
+      "category": "定制礼物榜单（room/internal/room-rank-list-stage）",
+      "description": "清除定制礼物榜单数据（delCustomGiftRankData；params=大区、giftId）",
+      "prompts": [
+        "清除礼物 <giftId> 定制礼物榜单",
+        "删除礼物 <giftId> 榜单数据",
+        "清除 <giftId> 定制礼物榜"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/custom_gift_rank_delete_payload.example.json \\\n  --custom-gift-rank-gift-id <giftId> \\\n  --custom-gift-rank-delete \\\n  --custom-gift-rank-area MENA\n"
+    },
+    {
       "id": "noble_exp_add",
       "name": "贵族-增加月消费值",
       "category": "贵族（voga-mts-user-wealth-charm-level-stage）",

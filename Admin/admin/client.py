@@ -47,6 +47,23 @@ def http_post_json(
     }
 
     req = urllib.request.Request(url=url, data=body, method="POST", headers=req_headers)
+    return _read_json_response(req, timeout_s=timeout_s)
+
+
+def http_get_json(
+    url: str,
+    *,
+    timeout_s: float = 10.0,
+) -> dict[str, Any]:
+    req_headers: dict[str, str] = {
+        "Accept": "application/json, text/plain, */*",
+        **build_auth_headers(),
+    }
+    req = urllib.request.Request(url=url, method="GET", headers=req_headers)
+    return _read_json_response(req, timeout_s=timeout_s)
+
+
+def _read_json_response(req: urllib.request.Request, *, timeout_s: float) -> dict[str, Any]:
     try:
         with urllib.request.urlopen(req, timeout=timeout_s) as resp:
             raw = resp.read().decode("utf-8", errors="replace")

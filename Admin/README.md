@@ -16,6 +16,7 @@ cp Admin/.env.example Admin/.env.local
 | `ADMIN_YAAHLAN_JWT` | 请求头 `yaahlan-jwt` |
 | `ADMIN_LANG` | 默认 `zh` |
 | `ADMIN_ORIGIN` / `ADMIN_REFERER` | 默认 `https://test-s.immomo.com` |
+| `ADMIN_GATEWAY_BASE_URL` | 定制礼物列表 Gateway，默认 `https://melon-gateway-alpha-stage.immomo.com` |
 
 > Token 会过期，失效时从后台页面重新抓包更新 `.env.local`。
 
@@ -40,6 +41,26 @@ python3 Admin/admin_execute.py --query-user-id 100465989 --output json
 ```bash
 python3 Admin/admin_execute.py \
   --payload-file Admin/query_user_detail_payload.example.json
+```
+
+## 查询定制礼物列表（userId ↔ giftId）
+
+接口：`GET /yaahlan/backend/vip5UserConfig/getListConfig`（melon-gateway）
+
+```bash
+python3 Admin/admin_execute.py --query-custom-gift-list
+```
+
+按 userId 查对应 giftId：
+
+```bash
+python3 Admin/admin_execute.py --query-custom-gift-list --custom-gift-user-id 100006869
+```
+
+完整 JSON：
+
+```bash
+python3 Admin/admin_execute.py --query-custom-gift-list --output json
 ```
 
 ## 与 MOA 手机号查询的关系

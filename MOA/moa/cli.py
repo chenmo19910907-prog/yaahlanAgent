@@ -88,6 +88,27 @@ def build_parser() -> argparse.ArgumentParser:
         "--custom-gift-reset-user-id",
         help="定制礼物：重置上传次数 userId（resetExpireTime）",
     )
+    parser.add_argument("--custom-gift-rank-gift-id", help="定制礼物榜单：礼物 ID")
+    parser.add_argument(
+        "--custom-gift-rank-delete",
+        action="store_true",
+        help="清除定制礼物榜单数据（delCustomGiftRankData；需配合 --custom-gift-rank-gift-id）",
+    )
+    parser.add_argument("--custom-gift-rank-active-value", type=int, help="定制礼物榜单：增加活跃值（mockCustomGiftRankData）")
+    parser.add_argument(
+        "--custom-gift-rank-period",
+        choices=["NOW", "PRE", "PRE_PRE"],
+        help="定制礼物榜单周期：NOW=本周 PRE=上周 PRE_PRE=上上周（默认 PRE）",
+    )
+    parser.add_argument(
+        "--custom-gift-rank-area",
+        choices=sorted(USER_AREA_CODES),
+        help="定制礼物榜单大区（默认 MENA）",
+    )
+    parser.add_argument(
+        "--custom-gift-rank-user-id",
+        help="定制礼物榜单 header 中的 userId（默认 config.json custom_gift_rank.defaultUserId）",
+    )
 
     parser.add_argument("--noble-user-id", help="贵族月消费值：用户 ID（incrNobelLevel）")
     parser.add_argument("--noble-exp", type=int, help="贵族月消费值：增加量")

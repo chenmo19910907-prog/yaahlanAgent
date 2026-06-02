@@ -39,6 +39,9 @@ from .params import (
     set_room_member_lv_params,
     set_room_downgrade_level_params,
     set_custom_gift_reset_expire_params,
+    set_custom_gift_rank_active_params,
+    set_custom_gift_rank_delete_params,
+    custom_gift_rank_defaults,
     set_vip_del_params,
     set_vip_info_query_params,
     set_vip_params,
@@ -165,6 +168,50 @@ def _op_vip_try_dispatch(args: argparse.Namespace, payload: dict[str, Any]) -> N
 
 def _op_custom_gift_reset_expire(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     set_custom_gift_reset_expire_params(payload, user_id=args.custom_gift_reset_user_id)
+
+
+def _custom_gift_rank_add_mode(args: argparse.Namespace) -> bool:
+    return args.custom_gift_rank_gift_id is not None and not args.custom_gift_rank_delete
+
+
+def _custom_gift_rank_delete_mode(args: argparse.Namespace) -> bool:
+    return args.custom_gift_rank_gift_id is not None and args.custom_gift_rank_delete
+
+
+def _op_custom_gift_rank_delete(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    defaults = custom_gift_rank_defaults()
+    area = args.custom_gift_rank_area or defaults.get("defaultArea", "MENA")
+    set_custom_gift_rank_delete_params(
+        payload,
+        area=str(area),
+        gift_id=args.custom_gift_rank_gift_id,
+    )
+    print(
+        f"清除定制礼物榜单：giftId={args.custom_gift_rank_gift_id} area={area}",
+        file=sys.stderr,
+    )
+
+
+def _op_custom_gift_rank_active(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if args.custom_gift_rank_active_value is None:
+        raise ValueError("必须提供 --custom-gift-rank-active-value（活跃值增量）")
+    defaults = custom_gift_rank_defaults()
+    period = args.custom_gift_rank_period or defaults.get("defaultPeriod", "PRE")
+    area = args.custom_gift_rank_area or defaults.get("defaultArea", "MENA")
+    user_id = args.custom_gift_rank_user_id or defaults.get("defaultUserId", "")
+    set_custom_gift_rank_active_params(
+        payload,
+        period=str(period),
+        area=str(area),
+        gift_id=args.custom_gift_rank_gift_id,
+        active_value=args.custom_gift_rank_active_value,
+        user_id=str(user_id),
+    )
+    print(
+        f"定制礼物榜单活跃值：giftId={args.custom_gift_rank_gift_id} +{args.custom_gift_rank_active_value} "
+        f"period={period} area={area}",
+        file=sys.stderr,
+    )
 
 
 def _op_change_user_area(args: argparse.Namespace, payload: dict[str, Any]) -> None:
@@ -458,6 +505,8 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.vip_del_user_id is not None, _op_vip_del),
     (lambda a: _vip_try_mode(a), _op_vip_try_dispatch),
     (lambda a: a.custom_gift_reset_user_id is not None, _op_custom_gift_reset_expire),
+    (lambda a: _custom_gift_rank_delete_mode(a), _op_custom_gift_rank_delete),
+    (lambda a: _custom_gift_rank_add_mode(a), _op_custom_gift_rank_active),
     (lambda a: a.diamond_query_user_id is not None, _op_diamond_query),
     (lambda a: a.diamond_user_id is not None, _op_diamond),
     (lambda a: _room_set_level_mode(a), _op_room_set_level),

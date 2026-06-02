@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import json
 import random
+import time
 from typing import Any
 
 from .config import section_defaults
+
+CUSTOM_GIFT_RANK_PERIODS = frozenset({"NOW", "PRE", "PRE_PRE"})
 
 
 def _param(title: str, name: str, value: Any, *, ptype: str, txt: Any | None = None, json_str: str = "") -> dict[str, Any]:
@@ -230,6 +233,112 @@ def set_custom_gift_reset_expire_params(payload: dict[str, Any], user_id: str) -
     payload["url"] = "/service/voga-components/gateway/custom-gift-stage"
     payload["method"] = "resetExpireTime"
     payload["params"] = [string_param(user_id)]
+
+
+def custom_gift_rank_defaults() -> dict[str, Any]:
+    return section_defaults(
+        "custom_gift_rank",
+        {
+            "defaultUserId": "100493343",
+            "defaultPeriod": "PRE",
+            "defaultArea": "MENA",
+            "headerTemplate": {},
+        },
+    )
+
+
+def _indexed_param(name: int, value: Any, *, ptype: str, json_str: str = "") -> dict[str, Any]:
+    display = str(value)
+    return {
+        "title": "",
+        "name": name,
+        "txt": display,
+        "json": json_str,
+        "type": ptype,
+        "value": display if ptype in ("long", "int") else value,
+    }
+
+
+def build_custom_gift_rank_header(*, user_id: str, area: str) -> str:
+    user_id = str(user_id).strip()
+    area = str(area).strip().upper()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    if not area:
+        raise ValueError("area 不能为空")
+
+    defaults = custom_gift_rank_defaults()
+    template = defaults.get("headerTemplate")
+    if not isinstance(template, dict):
+        template = {}
+
+    header = dict(template)
+    header["localTime"] = int(time.time() * 1000)
+    header["uid"] = user_id
+    header["userId"] = user_id
+    header["area"] = area
+    if "mmuid" not in header and "deviceId" in header:
+        header["mmuid"] = header["deviceId"]
+    return json.dumps(header, ensure_ascii=False, separators=(",", ": "))
+
+
+def set_custom_gift_rank_active_params(
+    payload: dict[str, Any],
+    *,
+    period: str,
+    area: str,
+    gift_id: str,
+    active_value: int,
+    user_id: str,
+) -> None:
+    period = str(period).strip().upper()
+    area = str(area).strip().upper()
+    gift_id = str(gift_id).strip()
+    user_id = str(user_id).strip()
+
+    if period not in CUSTOM_GIFT_RANK_PERIODS:
+        raise ValueError(f"period 必须是 {sorted(CUSTOM_GIFT_RANK_PERIODS)} 之一")
+    if not area:
+        raise ValueError("area 不能为空")
+    if not gift_id:
+        raise ValueError("gift_id 不能为空")
+    if active_value <= 0:
+        raise ValueError("active_value 必须为正整数")
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+
+    header_str = build_custom_gift_rank_header(user_id=user_id, area=area)
+    payload["url"] = "/service/room/internal/room-rank-list-stage"
+    payload["method"] = "mockCustomGiftRankData"
+    payload["header"] = header_str
+    payload["params"] = [
+        _indexed_param(0, period, ptype="string", json_str=header_str),
+        _indexed_param(1, area, ptype="string"),
+        _indexed_param(2, gift_id, ptype="string"),
+        _indexed_param(3, active_value, ptype="long"),
+    ]
+
+
+def set_custom_gift_rank_delete_params(
+    payload: dict[str, Any],
+    *,
+    area: str,
+    gift_id: str,
+) -> None:
+    area = str(area).strip().upper()
+    gift_id = str(gift_id).strip()
+    if not area:
+        raise ValueError("area 不能为空")
+    if not gift_id:
+        raise ValueError("gift_id 不能为空")
+
+    payload["url"] = "/service/room/internal/room-rank-list-stage"
+    payload["method"] = "delCustomGiftRankData"
+    payload["header"] = ""
+    payload["params"] = [
+        _indexed_param(0, area, ptype="string"),
+        _indexed_param(1, gift_id, ptype="string"),
+    ]
 
 
 def set_id_auth_params(payload: dict[str, Any], user_id: str) -> None:

@@ -4,5 +4,10 @@
   },
   "query_user_detail": {
     "path": "/admin/user/queryUserDetail"
+  },
+  "vip5_custom_gift_list": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/backend/vip5UserConfig/getListConfig",
+    "defaultPerPage": 100
   }
 }
