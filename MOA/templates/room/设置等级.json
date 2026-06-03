@@ -1,0 +1,37 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/room/internal/room-test-stage",
+  "method": "downgradeRoomLevelForTest",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "83652563",
+      "json": "",
+      "type": "string",
+      "value": "83652563"
+    },
+    {
+      "title": "参数2",
+      "name": "2",
+      "txt": "4",
+      "json": "",
+      "type": "int",
+      "value": "4"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad"
+}

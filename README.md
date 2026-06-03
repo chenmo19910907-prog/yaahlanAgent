@@ -17,10 +17,11 @@
 
 ### 本地自动化（MOA / Risk / Admin）
 
-- **MOA**（`MOA/`）：通过 MSE httpproxy 调用 MOA 接口，支持钻石/背包/VIP/实名认证、家族声望与基金、**手机号查 userId** 等；详见 [MOA/README.md](MOA/README.md)
+- **MOA**（`MOA/`）：通过 MSE httpproxy 调用 MOA 接口；JSON 模板在 `MOA/templates/<域>/`，详见 [MOA/README.md](MOA/README.md) 与 [MOA/使用方法.md](MOA/使用方法.md)
 - **Risk**（`Risk/`）：调用海外风控开放接口 `/open/menu/operate`，支持解除设备/手机号风控、充值/活动风控加白加黑；默认读取 `testcase-kb/test_devices.json` 按平台自动选取 mmuid 或 mmuidv3 值；详见 [Risk/README.md](Risk/README.md)
 - **Admin**（`Admin/`）：调用 Yaahlan 测试后台，支持 **按 userId 查询用户全量详情**（`queryUserDetail`）；详见 [Admin/README.md](Admin/README.md)
 - **Report**（`Report/`）：从版本用例 xlsx 生成内网/外网测试总结 HTML；详见 [Report/README.md](Report/README.md)
+- **adb**（`adb/`）：截图视觉循环（截屏 → 读图算坐标 → 点击，仅保留最新 2 张截图）；详见 [adb/README.md](adb/README.md)
 
 ## 项目结构
 
@@ -30,10 +31,14 @@ auto-generate-testcase/
 ├── docs/
 │   └── 新手上手.md                    # 新机器配置 MOA/Admin/Risk/MCP 引导
 ├── SKILL.md                           # 主流程：营收活动用例自动生成（模块提取与钉钉解析）
-├── MOA/                               # MOA httpproxy 本地调用（钻石、家族、实名等）
+├── MOA/                               # MOA httpproxy 本地调用
 │   ├── README.md
-│   ├── moa_execute.py                 # 入口
-│   └── config.json
+│   ├── moa_execute.py                 # CLI 入口
+│   ├── config/                        # registry + 等级阈值
+│   ├── 使用方法.md                    # 能力清单（自动生成）
+│   ├── scripts/                       # generate_index / test_all
+│   ├── templates/                     # JSON 模板（vip/room/family/...）
+│   └── moa/                           # Python 实现
 ├── Risk/                              # 海外风控开放接口（设备/手机/充值/活动）
 │   ├── README.md
 │   ├── risk_execute.py                # 入口
@@ -46,6 +51,9 @@ auto-generate-testcase/
 │   ├── README.md
 │   ├── report_execute.py              # 入口
 │   └── requirements.txt
+├── adb/                               # ADB 截图视觉循环（读图坐标点击）
+│   ├── README.md
+│   └── adb_execute.py                 # 入口
 ├── rules/                             # 生成规则与辅助流程说明
 │   ├── testcase_generation_rules.md   # 通用：榜单 / 抽奖 / 兑换 / 礼包等
 │   ├── version_testcase_generation_rules.md  # 版本用例生成规则（须先读 documents/ 对应模块）
@@ -131,9 +139,10 @@ cp MOA/.env.example MOA/.env.local
 # 编辑 MOA/.env.local 填入 MOA_ENTRY_URL、MOA_COOKIE
 
 python3 MOA/moa_execute.py --help
+python3 MOA/scripts/test_all.py   # 可选：批量自测全部模板
 ```
 
-常用能力：钻石增减、背包礼物、VIP/贵族、实名认证、家族声望/基金档位/贡献等。完整用法见 [MOA/README.md](MOA/README.md) 与 [MOA/MOA使用方法.md](MOA/MOA使用方法.md)。
+常用能力：钻石增减、背包礼物、VIP/贵族、实名认证、家族声望/基金档位/贡献等。完整用法见 [MOA/README.md](MOA/README.md) 与 [MOA/使用方法.md](MOA/使用方法.md)。
 
 ### 4. 风控名单操作
 
@@ -188,7 +197,7 @@ python3 Report/report_execute.py /path/to/v2.4.4版本用例.xlsx
 | `testpoints-to-testcases` | 测试点扩写为用例 |
 | `dingtalk_historical_testcase_to_md.md` | 历史用例导出 Markdown 等（按需） |
 | [docs/新手上手.md](docs/新手上手.md) | **新电脑必看**：本地 `.env.local` 与验证步骤 |
-| [MOA/README.md](MOA/README.md) | MOA 本地调用与家族/钻石等能力 |
+| [MOA/README.md](MOA/README.md) | MOA 本地调用与目录说明 |
 | [Risk/README.md](Risk/README.md) | 海外风控开放接口与测试机解除 |
 
 - `榜单.md`：榜单类模块完整用例维度

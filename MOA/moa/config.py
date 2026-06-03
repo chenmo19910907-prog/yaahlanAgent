@@ -6,6 +6,8 @@ import json
 import os
 from typing import Any
 
+from .paths import thresholds_path
+
 _DEFAULT_CONFIG: dict[str, Any] = {
     "room_level_exp_thresholds": {
         "1": 0,
@@ -36,7 +38,10 @@ def load_config() -> dict[str, Any]:
     if _CONFIG_CACHE is not None:
         return _CONFIG_CACHE
 
-    cfg_path = os.path.join(_base_dir(), "config.json")
+    cfg_path = thresholds_path()
+    legacy_path = os.path.join(_base_dir(), "config.json")
+    if not os.path.exists(cfg_path) and os.path.exists(legacy_path):
+        cfg_path = legacy_path
     cfg = dict(_DEFAULT_CONFIG)
     if os.path.exists(cfg_path):
         try:

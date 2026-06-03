@@ -1,0 +1,67 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-base-service-middle-gift-stage",
+  "method": "addPackageGift",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": {
+        "userId": "100465989",
+        "giveUserId": "",
+        "outOrderId": "PACKAGE_GIFT-100328136-1770617597123",
+        "category": "2005000189",
+        "source": 2005001287,
+        "giftDetails": [
+          {
+            "baseProductId": "2005001272",
+            "productNum": 100
+          },
+          {
+            "baseProductId": "2005001282",
+            "productNum": 100
+          }
+        ],
+        "realFee": "0",
+        "expireSeconds": 86339,
+        "signKey": "76b26f6deb1e4851b728e3b0770629db"
+      },
+      "json": "{\"userId\":\"100465989\",\"giveUserId\":\"\",\"outOrderId\":\"PACKAGE_GIFT-100328136-1770617597123\",\"category\":\"2005000189\",\"source\":2005001287,\"giftDetails\":[{\"baseProductId\":\"2005001272\",\"productNum\":100},{\"baseProductId\":\"2005001282\",\"productNum\":100}],\"realFee\":\"0\",\"expireSeconds\":86339,\"signKey\":\"76b26f6deb1e4851b728e3b0770629db\"}",
+      "type": "json",
+      "value": {
+        "userId": "100465989",
+        "giveUserId": "",
+        "outOrderId": "PACKAGE_GIFT-100328136-1770617597123",
+        "category": "2005000189",
+        "source": 2005001287,
+        "giftDetails": [
+          {
+            "baseProductId": "2005001272",
+            "productNum": 100
+          },
+          {
+            "baseProductId": "2005001282",
+            "productNum": 100
+          }
+        ],
+        "realFee": "0",
+        "expireSeconds": 86339,
+        "signKey": "76b26f6deb1e4851b728e3b0770629db"
+      }
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad"
+}

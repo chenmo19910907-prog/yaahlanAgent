@@ -1,0 +1,39 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/yaahlan/mdp-user-login",
+  "method": "queryLoginStatusV2",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": {
+        "loginType": "MOBILE",
+        "areaCode": "86",
+        "thirdUid": "13311111150",
+        "appId": 2005
+      },
+      "json": "{\"loginType\":\"MOBILE\",\"areaCode\":\"86\",\"thirdUid\":\"13311111150\",\"appId\":2005}",
+      "type": "json",
+      "value": {
+        "loginType": "MOBILE",
+        "areaCode": "86",
+        "thirdUid": "13311111150",
+        "appId": 2005
+      }
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad"
+}
