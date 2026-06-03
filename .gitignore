@@ -12,5 +12,7 @@ Admin/.env
 Admin/__pycache__/
 Report/.venv/
 Report/__pycache__/
+adb/screenshots/
+adb/__pycache__/
 **/__pycache__/
 *.pyc
