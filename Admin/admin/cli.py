@@ -17,6 +17,12 @@ from .custom_gift import (
 )
 from .custom_prop import DEFAULT_PROP_TYPE, parse_reset_custom_prop_cooldown_summary
 from .custom_vehicle import parse_reset_custom_vehicle_cooldown_summary
+from .customer_service import (
+    parse_change_cs_taking_order_summary,
+    parse_cs_role_list,
+    parse_query_cs_data_summary,
+    parse_save_cs_data_summary,
+)
 from .env import load_local_env
 from .family import parse_add_family_member_summary, parse_query_family_summary
 from .guild import (
@@ -102,6 +108,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="按家族 ID 或名称查询家族信息（queryFamilyByIdAndName）",
     )
+    parser.add_argument(
+        "--list-all-families",
+        action="store_true",
+        help="查询全部家族列表（getAllFamilyList；offset/limit 分页）",
+    )
     parser.add_argument("--family-name", help="家族名称（配合 --query-family，可与 --family-id 组合）")
     parser.add_argument("--family-offset", type=int, help="家族查询分页 offset（默认 0）")
     parser.add_argument("--family-limit", type=int, help="家族查询分页 limit（默认 20）")
@@ -135,6 +146,48 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--guild-area", help="公会查询大区 area（默认 MENA）")
     parser.add_argument("--guild-page", type=int, help="公会查询页码 page（默认 1）")
     parser.add_argument("--guild-page-size", type=int, help="公会查询 pageSize（默认 20）")
+    parser.add_argument(
+        "--query-cs-data",
+        action="store_true",
+        help="查询客服账号列表（queryCsData；可按 userId/role/enable/area 筛选）",
+    )
+    parser.add_argument(
+        "--save-cs-data",
+        action="store_true",
+        help="新增/编辑客服账号（saveCsData；需 --cs-user-id）",
+    )
+    parser.add_argument(
+        "--change-cs-taking-order",
+        action="store_true",
+        help="修改客服接单状态（changeTakingOrder；需 --cs-user-id 与 --cs-taking-order）",
+    )
+    parser.add_argument(
+        "--cs-user-id",
+        help="客服 userId（--save-cs-data 必填；--query-cs-data 可选筛选）",
+    )
+    parser.add_argument(
+        "--cs-role-list",
+        help="客服身份组合，逗号分隔 role ID（默认 1=VIP客服；2 游戏；3 语音房；4 Admin；5 公会通知审核；6 公会运营）",
+    )
+    parser.add_argument(
+        "--cs-taking-order",
+        type=int,
+        help="是否接单 takingOrder（--save-cs-data；默认 1 接单；0 不接单）",
+    )
+    parser.add_argument(
+        "--cs-opt-type",
+        type=int,
+        help="操作类型 optType（--save-cs-data；默认 1 创建；2 编辑）",
+    )
+    parser.add_argument("--cs-role", type=int, help="客服角色 role（默认 0=全部）")
+    parser.add_argument(
+        "--cs-enable",
+        type=int,
+        help="启用状态 enable（默认 2=全部；0 禁用；1 启用）",
+    )
+    parser.add_argument("--cs-area", help="大区 area（默认空=全部）")
+    parser.add_argument("--cs-page-index", type=int, help="客服查询页码 pageIndex（默认 1）")
+    parser.add_argument("--cs-page-size", type=int, help="客服查询 pageSize（默认 20）")
     parser.add_argument(
         "--output",
         choices=["summary", "json"],
@@ -219,6 +272,29 @@ def _resolve_query_family_request(args: argparse.Namespace) -> tuple[str, dict[s
     return url, body
 
 
+def _resolve_list_all_families_request(args: argparse.Namespace) -> tuple[str, dict[str, object]]:
+    cfg = defaults("list_all_families")
+    base_url = _resolve_gateway_base_url(cfg)
+    path = str(cfg.get("path", "/yaahlan/backend/family/getAllFamilyList"))
+    offset = args.family_offset
+    if offset is None:
+        offset = int(cfg.get("defaultOffset", 0))
+    limit = args.family_limit
+    if limit is None:
+        limit = int(cfg.get("defaultLimit", 20))
+    if offset < 0:
+        raise ValueError("family_offset 不能为负数")
+    if limit <= 0:
+        raise ValueError("family_limit 必须为正整数")
+
+    url = f"{base_url}{path}"
+    body: dict[str, object] = {
+        "offset": offset,
+        "limit": limit,
+    }
+    return url, body
+
+
 def _resolve_query_guild_request(args: argparse.Namespace) -> tuple[str, dict[str, object]]:
     trade_id = str(args.trade_id or "").strip()
     trade_name = str(args.trade_union or "").strip()
@@ -245,6 +321,95 @@ def _resolve_query_guild_request(args: argparse.Namespace) -> tuple[str, dict[st
         "page": page,
         "pageSize": page_size,
         "area": area,
+    }
+    return url, body
+
+
+def _resolve_query_cs_data_request(args: argparse.Namespace) -> tuple[str, dict[str, object]]:
+    cfg = defaults("query_cs_data")
+    base_url = _resolve_gateway_base_url(cfg)
+    path = str(cfg.get("path", "/yaahlan/cms/customerservice/queryCsData"))
+    page_index = args.cs_page_index
+    if page_index is None:
+        page_index = int(cfg.get("defaultPageIndex", 1))
+    page_size = args.cs_page_size
+    if page_size is None:
+        page_size = int(cfg.get("defaultPageSize", 20))
+    role = args.cs_role if args.cs_role is not None else int(cfg.get("defaultRole", 0))
+    enable = args.cs_enable if args.cs_enable is not None else int(cfg.get("defaultEnable", 2))
+    area = str(args.cs_area if args.cs_area is not None else cfg.get("defaultArea") or "").strip()
+    if page_index <= 0:
+        raise ValueError("cs_page_index 必须为正整数")
+    if page_size <= 0:
+        raise ValueError("cs_page_size 必须为正整数")
+
+    url = f"{base_url}{path}"
+    body: dict[str, object] = {
+        "userId": str(args.cs_user_id or "").strip(),
+        "role": role,
+        "enable": enable,
+        "pageIndex": page_index,
+        "pageSize": page_size,
+        "area": area,
+    }
+    return url, body
+
+
+def _resolve_save_cs_data_request(args: argparse.Namespace) -> tuple[str, dict[str, object]]:
+    user_id = str(args.cs_user_id or "").strip()
+    if not user_id:
+        raise ValueError("save-cs-data 必须提供 --cs-user-id")
+
+    cfg = defaults("save_cs_data")
+    base_url = _resolve_gateway_base_url(cfg)
+    path = str(cfg.get("path", "/yaahlan/cms/customerservice/saveCsData"))
+    default_roles = cfg.get("defaultRoleList")
+    if not isinstance(default_roles, list):
+        default_roles = [1]
+    role_raw = str(args.cs_role_list or ",".join(str(role) for role in default_roles)).strip()
+    role_list = parse_cs_role_list(role_raw)
+    enable = args.cs_enable if args.cs_enable is not None else int(cfg.get("defaultEnable", 1))
+    taking_order = (
+        args.cs_taking_order
+        if args.cs_taking_order is not None
+        else int(cfg.get("defaultTakingOrder", 1))
+    )
+    opt_type = args.cs_opt_type if args.cs_opt_type is not None else int(cfg.get("defaultOptType", 1))
+    if enable not in (0, 1):
+        raise ValueError("cs_enable 仅支持 0（禁用）或 1（启用）")
+    if taking_order not in (0, 1):
+        raise ValueError("cs_taking_order 仅支持 0（不接单）或 1（接单）")
+    if opt_type not in (1, 2):
+        raise ValueError("cs_opt_type 仅支持 1（创建）或 2（编辑）")
+
+    url = f"{base_url}{path}"
+    body: dict[str, object] = {
+        "userId": user_id,
+        "roleList": role_list,
+        "enable": enable,
+        "takingOrder": taking_order,
+        "optType": opt_type,
+    }
+    return url, body
+
+
+def _resolve_change_cs_taking_order_request(args: argparse.Namespace) -> tuple[str, dict[str, object]]:
+    user_id = str(args.cs_user_id or "").strip()
+    if not user_id:
+        raise ValueError("change-cs-taking-order 必须提供 --cs-user-id")
+    if args.cs_taking_order is None:
+        raise ValueError("change-cs-taking-order 必须提供 --cs-taking-order（0 不接单；1 接单）")
+    taking_order = int(args.cs_taking_order)
+    if taking_order not in (0, 1):
+        raise ValueError("cs_taking_order 仅支持 0（不接单）或 1（接单）")
+
+    cfg = defaults("change_cs_taking_order")
+    base_url = _resolve_gateway_base_url(cfg)
+    path = str(cfg.get("path", "/yaahlan/cms/customerservice/changeTakingOrder"))
+    url = f"{base_url}{path}"
+    body: dict[str, object] = {
+        "userId": user_id,
+        "takingOrder": taking_order,
     }
     return url, body
 
@@ -390,6 +555,12 @@ def main() -> int:
                 print(f"POST {url}", file=sys.stderr)
                 print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
             resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
+        elif args.list_all_families:
+            url, body = _resolve_list_all_families_request(args)
+            if args.dump_body:
+                print(f"POST {url}", file=sys.stderr)
+                print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
+            resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
         elif args.add_guild_member:
             url, body = _resolve_add_guild_member_request(args)
             if args.dump_body:
@@ -410,6 +581,24 @@ def main() -> int:
             resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
         elif args.query_guild:
             url, body = _resolve_query_guild_request(args)
+            if args.dump_body:
+                print(f"POST {url}", file=sys.stderr)
+                print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
+            resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
+        elif args.query_cs_data:
+            url, body = _resolve_query_cs_data_request(args)
+            if args.dump_body:
+                print(f"POST {url}", file=sys.stderr)
+                print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
+            resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
+        elif args.save_cs_data:
+            url, body = _resolve_save_cs_data_request(args)
+            if args.dump_body:
+                print(f"POST {url}", file=sys.stderr)
+                print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
+            resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
+        elif args.change_cs_taking_order:
+            url, body = _resolve_change_cs_taking_order_request(args)
             if args.dump_body:
                 print(f"POST {url}", file=sys.stderr)
                 print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
@@ -472,7 +661,7 @@ def main() -> int:
             user_id=str(args.family_user_id).strip(),
         )
         print(json.dumps(summary, ensure_ascii=False, indent=2))
-    elif args.query_family:
+    elif args.query_family or args.list_all_families:
         if not gateway_success(resp.get("status")):
             print(f"Gateway 返回失败: status={resp.get('status')}, msg={resp.get('msg')}", file=sys.stderr)
             print(json.dumps(resp, ensure_ascii=False, indent=2))
@@ -507,6 +696,44 @@ def main() -> int:
             return 3
         summary = parse_query_trade_union_summary(resp.get("data"))
         print(json.dumps(summary, ensure_ascii=False, indent=2))
+    elif args.query_cs_data:
+        if not anchor_success(resp):
+            print(f"客服接口返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
+            print(json.dumps(resp, ensure_ascii=False, indent=2))
+            return 3
+        summary = parse_query_cs_data_summary(resp.get("data"))
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+    elif args.save_cs_data:
+        cfg = defaults("save_cs_data")
+        default_roles = cfg.get("defaultRoleList")
+        if not isinstance(default_roles, list):
+            default_roles = [1]
+        role_list = parse_cs_role_list(
+            str(args.cs_role_list or ",".join(str(role) for role in default_roles)).strip()
+        )
+        enable = args.cs_enable if args.cs_enable is not None else int(cfg.get("defaultEnable", 1))
+        taking_order = (
+            args.cs_taking_order
+            if args.cs_taking_order is not None
+            else int(cfg.get("defaultTakingOrder", 1))
+        )
+        opt_type = args.cs_opt_type if args.cs_opt_type is not None else int(cfg.get("defaultOptType", 1))
+        summary = parse_save_cs_data_summary(
+            resp,
+            user_id=str(args.cs_user_id).strip(),
+            role_list=role_list,
+            enable=enable,
+            taking_order=taking_order,
+            opt_type=opt_type,
+        )
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+    elif args.change_cs_taking_order:
+        summary = parse_change_cs_taking_order_summary(
+            resp,
+            user_id=str(args.cs_user_id).strip(),
+            taking_order=int(args.cs_taking_order),
+        )
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
     elif args.reset_custom_gift_upload:
         summary = parse_reset_custom_gift_upload_summary(
             resp,
@@ -540,11 +767,11 @@ def main() -> int:
     else:
         print(json.dumps(resp, ensure_ascii=False, indent=2))
 
-    if args.query_custom_gift_list or args.add_family_member or args.query_family:
+    if args.query_custom_gift_list or args.add_family_member or args.query_family or args.list_all_families:
         if not gateway_success(resp.get("status")):
             print(f"Gateway 返回失败: status={resp.get('status')}, msg={resp.get('msg')}", file=sys.stderr)
             return 3
-    elif args.add_guild_member or args.remove_guild_member or args.change_guild_member or args.query_guild:
+    elif args.add_guild_member or args.remove_guild_member or args.change_guild_member or args.query_guild or args.query_cs_data or args.save_cs_data or args.change_cs_taking_order:
         if not anchor_success(resp):
             print(f"公会接口返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
             return 3

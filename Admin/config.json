@@ -30,6 +30,12 @@
     "defaultOffset": 0,
     "defaultLimit": 20
   },
+  "list_all_families": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/backend/family/getAllFamilyList",
+    "defaultOffset": 0,
+    "defaultLimit": 20
+  },
   "add_guild_member": {
     "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
     "path": "/yaahlan/cms/anchor/addAnchor/addAnchor"
@@ -48,5 +54,26 @@
     "defaultArea": "MENA",
     "defaultPage": 1,
     "defaultPageSize": 20
+  },
+  "query_cs_data": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/customerservice/queryCsData",
+    "defaultRole": 0,
+    "defaultEnable": 2,
+    "defaultPageIndex": 1,
+    "defaultPageSize": 20,
+    "defaultArea": ""
+  },
+  "save_cs_data": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/customerservice/saveCsData",
+    "defaultRoleList": [1],
+    "defaultEnable": 1,
+    "defaultTakingOrder": 1,
+    "defaultOptType": 1
+  },
+  "change_cs_taking_order": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/customerservice/changeTakingOrder"
   }
 }
