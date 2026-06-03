@@ -2,6 +2,8 @@
 
 在本地复现 Postman 中的风控名单操作：`POST /open/menu/operate`。
 
+> 能力口令与可复制命令见 **[使用方法.md](使用方法.md)**（由 `Risk/config/registry.json` 自动生成）。
+
 参考：[风控文档（钉钉）](https://alidocs.dingtalk.com/i/nodes/qnYMoO1rWxDKo2l2IkoDajmzW47Z3je9)
 
 ## 1) 准备环境
@@ -284,3 +286,11 @@ python3 Risk/risk_execute.py \
   --mmuid "mmuid1" \
   --dump-body
 ```
+
+## 维护
+
+| 操作 | 命令 |
+|------|------|
+| 刷新能力清单 | `python3 Risk/scripts/generate_index.py` |
+
+新增 Risk 能力后，登记 `Risk/config/registry.json` 并执行上述命令，更新 [使用方法.md](使用方法.md)。

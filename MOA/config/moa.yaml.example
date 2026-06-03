@@ -1,0 +1,21 @@
+# 复制为 moa.yaml 后按需修改（moa.yaml 不入库）
+#
+# 加载顺序（后者不覆盖前者已设置的值）：
+#   1. 系统环境变量
+#   2. MOA/.env.local
+#   3. 本文件 moa 段
+#   4. Redis（仅当 MOA_COOKIE 仍未设置且 redis.enabled=true）
+
+moa:
+  entry_url: https://mse.wemomo.com/apirest/httpproxy/moa/test
+  origin: https://mse.wemomo.com
+  referer: https://mse.wemomo.com/
+  user_agent: Mozilla/5.0
+  request_source: moaProxy
+  # cookie: 可选；通常写在 .env.local 或 Redis
+
+redis:
+  enabled: false
+  url: redis://127.0.0.1:6379/0
+  cookie_key: moa:cookie
+  socket_timeout: 2

@@ -50,3 +50,13 @@ def parse_custom_gift_list_summary(data: Any, *, filter_user_id: str | None = No
         "returnedCount": len(items),
         "items": items,
     }
+
+
+def parse_reset_custom_gift_upload_summary(resp: dict[str, Any], *, user_id: str) -> dict[str, Any]:
+    return {
+        "userId": user_id,
+        "ec": resp.get("ec"),
+        "em": resp.get("em"),
+        "data": resp.get("data"),
+        "success": resp.get("success") is True or str(resp.get("ec")) == "200",
+    }

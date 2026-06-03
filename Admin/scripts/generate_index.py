@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""根据 config/registry.json 生成 MOA/使用方法.md。"""
+"""根据 config/registry.json 生成 Admin/使用方法.md。"""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from typing import Any
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from moa.paths import moa_dir, registry_path, usage_doc_path
+from admin.paths import admin_dir, registry_path, usage_doc_path
 
 
 def _read_json(path: str) -> dict[str, Any]:
@@ -23,10 +23,10 @@ def _read_json(path: str) -> dict[str, Any]:
 
 
 def _require_str(d: dict[str, Any], key: str) -> str:
-    v = d.get(key)
-    if not isinstance(v, str) or not v.strip():
+    value = d.get(key)
+    if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{key} 必须是非空字符串")
-    return v
+    return value
 
 
 def _write_text(path: str, text: str) -> None:
@@ -35,11 +35,11 @@ def _write_text(path: str, text: str) -> None:
         f.write(text)
 
 
-def _item_anchor(it: dict[str, Any]) -> str:
-    item_id = it.get("id")
+def _item_anchor(item: dict[str, Any]) -> str:
+    item_id = item.get("id")
     if isinstance(item_id, str) and item_id.strip():
         return item_id.strip()
-    name = it.get("name")
+    name = item.get("name")
     if isinstance(name, str) and name.strip():
         return name.strip().replace(" ", "-")
     raise ValueError("registry item 缺少可用 id")
@@ -53,11 +53,11 @@ def _render_toc(
     lines.append("### 目录")
     lines.append("")
     for idx, cat in enumerate(sorted_cats, start=1):
-        cat_anchor = f"moa-cat-{idx}"
+        cat_anchor = f"admin-cat-{idx}"
         lines.append(f"- [{idx}) {cat}](#{cat_anchor})")
-        for it in sorted(by_cat[cat], key=lambda x: str(x.get("name", ""))):
-            name = _require_str(it, "name")
-            anchor = _item_anchor(it)
+        for item in sorted(by_cat[cat], key=lambda x: str(x.get("name", ""))):
+            name = _require_str(item, "name")
+            anchor = _item_anchor(item)
             lines.append(f"  - [{name}](#{anchor})")
     lines.append("")
 
@@ -68,15 +68,15 @@ def _render(registry: dict[str, Any]) -> str:
         raise ValueError("items 必须是数组")
 
     by_cat: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for it in items:
-        if not isinstance(it, dict):
+    for item in items:
+        if not isinstance(item, dict):
             continue
-        by_cat[_require_str(it, "category")].append(it)
+        by_cat[_require_str(item, "category")].append(item)
 
     lines: list[str] = []
-    lines.append("## 已录入 MOA 清单（自动生成）")
+    lines.append("## 已录入 Admin 清单（自动生成）")
     lines.append("")
-    lines.append("> 本文件由 `MOA/scripts/generate_index.py` 根据 `MOA/config/registry.json` 自动生成，请勿手动编辑。")
+    lines.append("> 本文件由 `Admin/scripts/generate_index.py` 根据 `Admin/config/registry.json` 自动生成，请勿手动编辑。")
     lines.append("")
     sorted_cats = sorted(by_cat.keys())
     _render_toc(lines, sorted_cats, by_cat)
@@ -84,33 +84,34 @@ def _render(registry: dict[str, Any]) -> str:
     lines.append("### 使用说明")
     lines.append("")
     lines.append("- **提示词**：你对我说的自然语言口令")
-    lines.append("- **命令**：对应可执行脚本命令（默认已配置 `MOA/.env.local`）")
-    lines.append("- **等级升级经验模式**：`--level-exp-mode min`（默认，该等级最低阈值）或 `max`（该等级最高经验，下一级阈值-1）")
-    lines.append("- **定制装扮前置 VIP**：定制头像框 **VIP6**、定制座驾 **VIP8**；升级后用 Admin 重置上传冷却")
+    lines.append("- **命令**：对应可执行脚本命令（默认已配置 `Admin/.env.local`）")
+    lines.append("- **鉴权**：请求头 `sso-token`、`yaahlan-jwt`（从 Yaahlan 测试后台抓包）")
+    lines.append("- **完整响应**：追加 `--output json`")
+    lines.append("- **定制装扮**：定制头像框需 **VIP6**，定制座驾需 **VIP8**；先 MOA 升级，再 Admin 重置上传冷却（见「定制装扮工作流」）")
     lines.append("")
 
     for idx, cat in enumerate(sorted_cats, start=1):
-        cat_anchor = f"moa-cat-{idx}"
+        cat_anchor = f"admin-cat-{idx}"
         lines.append(f'<a id="{cat_anchor}"></a>')
         lines.append("")
         lines.append(f"## {idx}) {cat}")
         lines.append("")
-        for it in sorted(by_cat[cat], key=lambda x: str(x.get("name", ""))):
-            name = _require_str(it, "name")
-            desc = _require_str(it, "description")
-            prompts = it.get("prompts") if isinstance(it.get("prompts"), list) else []
-            cmd = _require_str(it, "command").rstrip()
+        for item in sorted(by_cat[cat], key=lambda x: str(x.get("name", ""))):
+            name = _require_str(item, "name")
+            desc = _require_str(item, "description")
+            prompts = item.get("prompts") if isinstance(item.get("prompts"), list) else []
+            cmd = _require_str(item, "command").rstrip()
 
-            lines.append(f'<a id="{_item_anchor(it)}"></a>')
+            lines.append(f'<a id="{_item_anchor(item)}"></a>')
             lines.append("")
             lines.append(f"### {name}")
             lines.append("")
             lines.append(f"- **功能**：{desc}")
             if prompts:
                 lines.append("- **提示词**：")
-                for p in prompts:
-                    if isinstance(p, str) and p.strip():
-                        lines.append(f"  - `{p.strip()}`")
+                for prompt in prompts:
+                    if isinstance(prompt, str) and prompt.strip():
+                        lines.append(f"  - `{prompt.strip()}`")
             lines.append("- **命令**：")
             lines.append("")
             lines.append("```bash")
@@ -125,7 +126,7 @@ def main() -> int:
     registry = _read_json(registry_path())
     out_rel = registry.get("generated_index_path")
     if isinstance(out_rel, str) and out_rel.strip():
-        repo_root = os.path.dirname(moa_dir())
+        repo_root = os.path.dirname(admin_dir())
         out_path = os.path.join(repo_root, out_rel)
     else:
         out_path = usage_doc_path()

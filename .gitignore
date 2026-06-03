@@ -11,6 +11,8 @@ Admin/.env.local
 Admin/.env
 Admin/__pycache__/
 Report/.venv/
+MOA/.venv/
+MOA/config/moa.yaml
 Report/__pycache__/
 adb/screenshots/
 adb/__pycache__/

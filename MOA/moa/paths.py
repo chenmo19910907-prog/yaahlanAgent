@@ -21,6 +21,10 @@ def registry_path() -> str:
     return os.path.join(config_dir(), "registry.json")
 
 
+def runtime_yaml_path() -> str:
+    return os.path.join(config_dir(), "moa.yaml")
+
+
 def templates_dir() -> str:
     return os.path.join(moa_dir(), "templates")
 

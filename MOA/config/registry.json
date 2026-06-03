@@ -57,6 +57,17 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-增加机器人.json \\\n  --room-bot-room-id <roomId> \\\n  --room-bot-total <total> \\\n  --room-bot-on-mic <onMic>\n"
     },
     {
+      "id": "room_hourly_top1_broadcast",
+      "name": "房间-下发小时榜全服通知",
+      "category": "房间管理（room/external/room-admin-handle）",
+      "description": "发送小时榜 Top1 全服 IM 广播（sendImTop1Broadcast；params[0]=roomId string）",
+      "prompts": [
+        "给房间 <roomId> 下发小时榜全服通知",
+        "房间 <roomId> 发送小时榜全服通知"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-下发小时榜全服通知.json \\\n  --expr <roomId>\n"
+    },
+    {
       "id": "room_member_lv_exp_add",
       "name": "房间成员-增加陪伴值",
       "category": "房间成员等级（room-user-active-stage）",
@@ -96,7 +107,9 @@
       "description": "把用户升级到目标 VIP 等级（先 getVipInfo 查 value，再 addVipValue 补差；可用 --level-exp-mode min/max）",
       "prompts": [
         "用户 <userId> 升级到 VIP<level>",
-        "把用户 <userId> 升级到 VIP<level>"
+        "把用户 <userId> 升级到 VIP<level>",
+        "用户 <userId> 需要定制头像框，先升级到 VIP6",
+        "用户 <userId> 需要定制座驾，先升级到 VIP8"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/VIP-增加经验值.json \\\n  --vip-user-id <userId> \\\n  --vip-level <level>\n"
     },

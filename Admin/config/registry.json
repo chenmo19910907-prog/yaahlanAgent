@@ -1,0 +1,166 @@
+{
+  "version": 1,
+  "generated_index_path": "Admin/使用方法.md",
+  "items": [
+    {
+      "id": "query_user_detail",
+      "name": "用户-查询详情",
+      "category": "用户（yaahlan-admin）",
+      "description": "按 userId 查询用户全量详情（queryUserDetail；昵称、手机、等级、钻石、房间、公会、设备 mmuid/mmuidv3、业务状态等）",
+      "prompts": [
+        "查询用户 <userId> 详情",
+        "查 userId <userId> 的资料",
+        "用户 <userId> 房间 ID 是多少"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-user-id <userId>"
+    },
+    {
+      "id": "query_custom_gift_list",
+      "name": "定制礼物-查询列表",
+      "category": "定制礼物（melon-gateway）",
+      "description": "查询 VIP5 定制礼物 userId ↔ giftId 映射（getListConfig）",
+      "prompts": [
+        "查询定制礼物列表",
+        "用户 <userId> 的定制礼物 id 是多少",
+        "查 <userId> 自定义礼物 giftId"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-custom-gift-list --custom-gift-user-id <userId>"
+    },
+    {
+      "id": "reset_custom_gift_upload",
+      "name": "定制礼物-重置上传时间",
+      "category": "定制礼物（yaahlan-admin）",
+      "description": "重置用户定制礼物上传次数/过期时间（resetExpireTime；params=userId）。与 MOA resetExpireTime 等效，走 Yaahlan 测试后台",
+      "prompts": [
+        "重置用户 <userId> 定制礼物上传次数",
+        "重置 <userId> 自定义礼物上传时间",
+        "清除 <userId> 定制礼物上传冷却"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --reset-custom-gift-upload \\\n  --custom-gift-reset-user-id <userId>"
+    },
+    {
+      "id": "reset_custom_vehicle_cooldown",
+      "name": "定制座驾-重置上传冷却",
+      "category": "定制座驾（yaahlan-admin）",
+      "description": "重置用户定制座驾上传冷却时间（resetCoolDown；params=remoteId，即 userId）。需 VIP8 才可定制座驾；用户座驾审核中或当前可定制时不支持重置",
+      "prompts": [
+        "重置用户 <userId> 定制座驾上传时间",
+        "重置 <userId> 自定义座驾上传冷却",
+        "清除 <userId> 定制座驾 cooldown",
+        "用户 <userId> 需要定制座驾，先升 VIP8 再重置座驾上传冷却",
+        "<userId> 需要定制座驾"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --reset-custom-vehicle-cooldown \\\n  --custom-vehicle-remote-id <userId>"
+    },
+    {
+      "id": "reset_custom_prop_cooldown",
+      "name": "定制头像框-重置上传冷却",
+      "category": "定制道具（yaahlan-admin）",
+      "description": "重置用户定制道具上传冷却（resetCoolDownProp；params=remoteId、propType）。头像框默认 propType=HEADER_FRAME；需 VIP6 才可定制头像框；审核中或当前可定制时可能不支持重置",
+      "prompts": [
+        "重置用户 <userId> 自定义头像框上传时间",
+        "重置 <userId> 定制头像框 cooldown",
+        "清除 <userId> HEADER_FRAME 上传冷却",
+        "用户 <userId> 需要定制头像框，先升 VIP6 再重置头像框上传冷却",
+        "<userId> 需要定制头像框"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --reset-custom-prop-cooldown \\\n  --custom-prop-remote-id <userId> \\\n  --custom-prop-type HEADER_FRAME"
+    },
+    {
+      "id": "query_family",
+      "name": "家族-查询信息",
+      "category": "家族（melon-gateway）",
+      "description": "按家族 ID 或名称查询家族信息（queryFamilyByIdAndName；含头像、等级、家族长、人数、活跃人数、加入/退出总数）",
+      "prompts": [
+        "查询家族 <familyId> 信息",
+        "查家族 <familyName> 详情",
+        "家族 <familyId> 当前人数"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-family --family-id <familyId>"
+    },
+    {
+      "id": "add_family_member",
+      "name": "家族-增加成员",
+      "category": "家族（melon-gateway）",
+      "description": "把用户加入指定家族（addFamilyMember；params=familyId, userId）。若用户已在该家族，msg 会提示添加失败",
+      "prompts": [
+        "在家族 <familyId> 增加用户 <userId>",
+        "把 <userId> 加入家族 <familyId>",
+        "家族 <familyId> 添加成员 <userId>"
+      ],
+      "command": "python3 Admin/admin_execute.py --add-family-member --family-id <familyId> --family-user-id <userId>"
+    },
+    {
+      "id": "add_guild_member",
+      "name": "公会-用户加入",
+      "category": "公会（melon-gateway / cms/anchor）",
+      "description": "把用户加入指定公会（addAnchor；params=tradeId 或 tradeUnion、userIds）。userIds 可逗号分隔多个用户",
+      "prompts": [
+        "用户 <userId> 加入公会 <tradeId>",
+        "把 <userId> 加入公会 <tradeUnion>",
+        "公会 <tradeId> 添加成员 <userId>"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --add-guild-member \\\n  --trade-id <tradeId> \\\n  --guild-user-id <userId>"
+    },
+    {
+      "id": "remove_guild_member",
+      "name": "公会-用户移除",
+      "category": "公会（melon-gateway / cms/anchor）",
+      "description": "把用户从公会移除（batchDeleteAnchor；params=anchorIdList）。可逗号分隔多个 userId",
+      "prompts": [
+        "用户 <userId> 移除公会",
+        "把 <userId> 踢出公会",
+        "移除公会成员 <userId>"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --remove-guild-member \\\n  --guild-user-id <userId>"
+    },
+    {
+      "id": "change_guild_member",
+      "name": "公会-用户转移",
+      "category": "公会（melon-gateway / cms/anchor）",
+      "description": "把用户转移到目标公会（batchAnchorChangeTradeUnion；params=tradeUnion、userIdSet）。userIdSet 可逗号分隔多个 userId",
+      "prompts": [
+        "用户 <userId> 转移到公会 <tradeUnion>",
+        "把 <userId> 转到公会 <tradeUnion>",
+        "<userId> 加入公会 <tradeUnion>（已在其他公会时转移）"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --change-guild-member \\\n  --trade-union <tradeUnion> \\\n  --guild-user-id <userId>"
+    },
+    {
+      "id": "query_guild",
+      "name": "公会-查询信息",
+      "category": "公会（melon-gateway / cms/anchor）",
+      "description": "按公会长 userId、公会 ID 或名称查询公会信息（tradeUnionPageList；含母公会、子公会、提现方式、主播人数、分成比例等）",
+      "prompts": [
+        "查询公会长 <userId> 的公会信息",
+        "查公会 <tradeUnion> 详情",
+        "公会 ID <tradeId> 有多少主播"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --query-guild \\\n  --guild-leader-id <userId>"
+    },
+    {
+      "id": "setup_custom_avatar_frame",
+      "name": "定制头像框-开通流程",
+      "category": "定制装扮工作流（MOA + Admin）",
+      "description": "定制头像框需 VIP6。按顺序执行：① MOA 升到 VIP6；② Admin 重置 HEADER_FRAME 上传冷却（resetCoolDownProp）",
+      "prompts": [
+        "用户 <userId> 需要定制头像框",
+        "<userId> 需要定制头像框，先升级 VIP6 再重置上传",
+        "100465989 需要定制头像框"
+      ],
+      "command": "# ① 升到 VIP6（MOA）\npython3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/VIP-增加经验值.json \\\n  --vip-user-id <userId> \\\n  --vip-level 6\n\n# ② 重置头像框上传冷却（Admin）\npython3 Admin/admin_execute.py \\\n  --reset-custom-prop-cooldown \\\n  --custom-prop-remote-id <userId> \\\n  --custom-prop-type HEADER_FRAME"
+    },
+    {
+      "id": "setup_custom_vehicle",
+      "name": "定制座驾-开通流程",
+      "category": "定制装扮工作流（MOA + Admin）",
+      "description": "定制座驾需 VIP8。按顺序执行：① MOA 升到 VIP8；② Admin 重置座驾上传冷却（resetCoolDown）",
+      "prompts": [
+        "用户 <userId> 需要定制座驾",
+        "<userId> 需要定制座驾，先升级 VIP8 再重置上传",
+        "100465989 需要定制座驾"
+      ],
+      "command": "# ① 升到 VIP8（MOA）\npython3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/VIP-增加经验值.json \\\n  --vip-user-id <userId> \\\n  --vip-level 8\n\n# ② 重置座驾上传冷却（Admin）\npython3 Admin/admin_execute.py \\\n  --reset-custom-vehicle-cooldown \\\n  --custom-vehicle-remote-id <userId>"
+    }
+  ]
+}

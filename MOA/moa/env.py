@@ -23,3 +23,7 @@ def load_local_env(base_dir: str) -> None:
                     os.environ.setdefault(k, v)
     except OSError:
         return
+
+    from .runtime_config import load_runtime_config
+
+    load_runtime_config()

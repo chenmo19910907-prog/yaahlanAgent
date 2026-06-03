@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "generated_index_path": "Risk/使用方法.md",
+  "items": [
+    {
+      "id": "list_test_devices",
+      "name": "测试机-列出知识库",
+      "category": "测试机（testcase-kb/test_devices.json）",
+      "description": "列出团队测试机知识库及每台设备解除风控时应使用的 dimension 与 element（Android/鸿蒙=mmuidv3，iOS=mmuid）",
+      "prompts": [
+        "列出测试机",
+        "查看风控测试机列表",
+        "测试机知识库有哪些设备"
+      ],
+      "command": "python3 Risk/risk_execute.py --list-test-devices"
+    },
+    {
+      "id": "release_test_device",
+      "name": "测试机-解除设备风控",
+      "category": "测试机（testcase-kb/test_devices.json）",
+      "description": "从测试机知识库按资产编号或名称解除设备风控；Android/鸿蒙自动取 mmuidv3，iOS 自动取 mmuid；按 dimension 分组并自动分批（单次最多 5 个）",
+      "prompts": [
+        "解除测试机 <assetId> 设备风控",
+        "给测试机 <deviceName> 加白",
+        "解除 GalaxyA80 设备风控"
+      ],
+      "command": "python3 Risk/risk_execute.py \\\n  --release-test-device \\\n  --device-asset <assetId> \\\n  --reason 测试"
+    },
+    {
+      "id": "release_device",
+      "name": "设备风控-解除（手动 mmuid）",
+      "category": "设备风控（mmuid 白名单）",
+      "description": "将设备 mmuid（iOS 填 mmuid，Android 填 mmuidv3 字段值）加入白名单解除设备风控；dimension 固定 mmuid；单次最多 5 个，超出自动分批",
+      "prompts": [
+        "解除设备 <mmuid> 风控",
+        "给 mmuid <mmuid> 加白",
+        "解除设备风控 <mmuid1>,<mmuid2>"
+      ],
+      "command": "python3 Risk/risk_execute.py \\\n  --release-device \\\n  --mmuid <mmuid> \\\n  --reason 测试"
+    },
+    {
+      "id": "release_device_from_file",
+      "name": "设备风控-批量解除（文件）",
+      "category": "设备风控（mmuid 白名单）",
+      "description": "从文件读取 mmuid 列表批量解除设备风控（每行一个）；超过 5 个自动分批",
+      "prompts": [
+        "从文件批量解除设备风控",
+        "按 mmuid 文件加白设备"
+      ],
+      "command": "python3 Risk/risk_execute.py \\\n  --release-device \\\n  --element-file Risk/device_mmuid.example.txt \\\n  --reason 测试"
+    },
+    {
+      "id": "release_phone",
+      "name": "手机号风控-解除",
+      "category": "手机号风控（phone 白名单）",
+      "description": "将手机号加入白名单解除手机号风控；dimension=phone；单次最多 5 个，超出自动分批",
+      "prompts": [
+        "解除手机号 <phone> 风控",
+        "给手机号 <phone> 加白",
+        "解除 <phone1>,<phone2> 手机风控"
+      ],
+      "command": "python3 Risk/risk_execute.py \\\n  --release-phone \\\n  --phone <phone> \\\n  --reason 测试"
+    },
+    {
+      "id": "add_recharge_risk",
+      "name": "充值风控-添加",
+      "category": "充值风控（user_id 黑名单）",
+      "description": "将 user_id 加入充值风控黑名单（menu_type=black，action=add）；单次最多 5 个，超出自动分批",
+      "prompts": [
+        "给用户 <userId> 加充值风控",
+        "添加 <userId> 充值黑名单"
+      ],
+      "command": "python3 Risk/risk_execute.py \\\n  --add-recharge-risk \\\n  --user-id <userId> \\\n  --reason 测试"
+    },
+    {
+      "id": "release_recharge_risk",
+      "name": "充值风控-解除",
+      "category": "充值风控（user_id 黑名单）",
+      "description": "将 user_id 从充值风控黑名单移除（action=delete）；单次最多 5 个，超出自动分批",
+      "prompts": [
+        "解除用户 <userId> 充值风控",
+        "移除 <userId> 充值黑名单"
+      ],
+      "command": "python3 Risk/risk_execute.py \\\n  --release-recharge-risk \\\n  --user-id <userId> \\\n  --reason 测试"
+    },
+    {
+      "id": "add_activity_risk",
+      "name": "活动风控-添加",
+      "category": "活动风控（user_id 黑名单）",
+      "description": "将 user_id 加入活动风控黑名单（menu_type=black，action=add）；单次最多 5 个，超出自动分批",
+      "prompts": [
+        "给用户 <userId> 加活动风控",
+        "添加 <userId> 活动黑名单"
+      ],
+      "command": "python3 Risk/risk_execute.py \\\n  --add-activity-risk \\\n  --user-id <userId> \\\n  --reason 测试"
+    },
+    {
+      "id": "release_activity_risk",
+      "name": "活动风控-解除",
+      "category": "活动风控（user_id 黑名单）",
+      "description": "将 user_id 从活动风控黑名单移除（action=delete）；单次最多 5 个，超出自动分批",
+      "prompts": [
+        "解除用户 <userId> 活动风控",
+        "移除 <userId> 活动黑名单"
+      ],
+      "command": "python3 Risk/risk_execute.py \\\n  --release-activity-risk \\\n  --user-id <userId> \\\n  --reason 测试"
+    },
+    {
+      "id": "generic_menu_operate",
+      "name": "通用名单-操作",
+      "category": "通用名单（/open/menu/operate）",
+      "description": "通过 menu_key 或 menu_event 执行任意名单操作（white/black；elements 逗号分隔）",
+      "prompts": [
+        "用 menu_key <menuKey> 加白 <elements>",
+        "通用风控名单操作"
+      ],
+      "command": "python3 Risk/risk_execute.py \\\n  --menu-key device_risk_release \\\n  --action add \\\n  --elements <element1,element2> \\\n  --reason 测试"
+    }
+  ]
+}

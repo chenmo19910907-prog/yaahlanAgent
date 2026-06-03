@@ -5,9 +5,48 @@
   "query_user_detail": {
     "path": "/admin/user/queryUserDetail"
   },
+  "reset_custom_gift_upload": {
+    "path": "/mts/components/resetExpireTime"
+  },
+  "reset_custom_vehicle_cooldown": {
+    "path": "/backend/custom/resetCoolDown"
+  },
+  "reset_custom_prop_cooldown": {
+    "path": "/backend/custom/resetCoolDownProp",
+    "defaultPropType": "HEADER_FRAME"
+  },
   "vip5_custom_gift_list": {
     "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
     "path": "/yaahlan/backend/vip5UserConfig/getListConfig",
     "defaultPerPage": 100
+  },
+  "add_family_member": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/backend/family/addFamilyMember"
+  },
+  "query_family": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/backend/family/queryFamilyByIdAndName",
+    "defaultOffset": 0,
+    "defaultLimit": 20
+  },
+  "add_guild_member": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/anchor/addAnchor/addAnchor"
+  },
+  "remove_guild_member": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/anchor-opt/batchDeleteAnchor"
+  },
+  "change_guild_member": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/anchor-opt/batchAnchorChangeTradeUnion"
+  },
+  "query_guild": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/anchor/tradeUnionList/tradeUnionPageList",
+    "defaultArea": "MENA",
+    "defaultPage": 1,
+    "defaultPageSize": 20
   }
 }
