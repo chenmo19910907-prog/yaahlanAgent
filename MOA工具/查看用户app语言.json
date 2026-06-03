@@ -1,0 +1,35 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-user-profile-stage",
+  "method": "getUserVersionInfo",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": {
+        "userId": "100357461",
+        "lang": "en"
+      },
+      "json": "{\"userId\":\"100357461\",\"lang\":\"en\"}",
+      "type": "json",
+      "value": {
+        "userId": "100357461",
+        "lang": "en"
+      }
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad"
+}
