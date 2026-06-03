@@ -1,6 +1,8 @@
-# Moments（动态）用例生成逻辑
+# documents · 业务模块参考
 
-本目录（仓库根目录 `moments/`）存放 **动态 / Moment** 域与根目录 `SKILL.md`（soulchill 营收活动用例自动生成）**同构的流程说明**，供 Agent 在生成/回归 **动态相关** 测试用例时遵循。
+本目录存放各业务模块的说明文档，供**版本用例生成**前优先阅读（见 `rules/version_testcase_generation_rules.md`）。
 
-- 主文档：`moments_testcase_generation.md`（与 `SKILL.md` 步骤对齐，并补充动态域前置读文档、交叉阅读与输出约定）。
-- 业务口径仍以仓库内 `documents/moments/` 下 Markdown 为准；与 `rules/version_testcase_generation_rules.md` §1.2 映射表一致。
+- **动态（Moments）业务口径**：`moments/` 子目录
+- **动态用例生成流程**（与根 `SKILL.md` 同构）：见 `moments/moments_testcase_generation.md`
+
+与 `testcase-kb/` 的关系：本目录为模块说明与 PRD 对齐入口；`testcase-kb/` 为从用例 xlsx 汇总的大模块验收知识库。

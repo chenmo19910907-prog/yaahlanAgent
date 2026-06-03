@@ -1,6 +1,12 @@
 .cursor/
 .venv-xlsx/
 .DS_Store
+
+# MCP 本地缓存与 IDE 历史（勿提交）
+**/.dingtalk_token_cache.json
+**/.specstory/
+**/__pycache__/
+**/venv/
 MOA/.env.local
 MOA/.env
 MOA/__pycache__/
