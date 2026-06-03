@@ -18,8 +18,9 @@
 ### 本地自动化（MOA / Risk / Admin）
 
 - **MOA**（`MOA/`）：通过 MSE httpproxy 调用 MOA 接口，支持钻石/背包/VIP/实名认证、家族声望与基金、**手机号查 userId** 等；详见 [MOA/README.md](MOA/README.md)
-- **Risk**（`Risk/`）：调用海外风控开放接口 `/open/menu/operate`，支持解除设备/手机号风控、充值/活动风控加白加黑；可读取团队测试机统计表按平台自动选取 mmuid 或 mmuidv3 值；详见 [Risk/README.md](Risk/README.md)
+- **Risk**（`Risk/`）：调用海外风控开放接口 `/open/menu/operate`，支持解除设备/手机号风控、充值/活动风控加白加黑；默认读取 `testcase-kb/test_devices.json` 按平台自动选取 mmuid 或 mmuidv3 值；详见 [Risk/README.md](Risk/README.md)
 - **Admin**（`Admin/`）：调用 Yaahlan 测试后台，支持 **按 userId 查询用户全量详情**（`queryUserDetail`）；详见 [Admin/README.md](Admin/README.md)
+- **Report**（`Report/`）：从版本用例 xlsx 生成内网/外网测试总结 HTML；详见 [Report/README.md](Report/README.md)
 
 ## 项目结构
 
@@ -41,6 +42,10 @@ auto-generate-testcase/
 │   ├── README.md
 │   ├── admin_execute.py               # 入口
 │   └── config.json
+├── Report/                            # 版本用例 xlsx → 内网/外网测试总结 HTML
+│   ├── README.md
+│   ├── report_execute.py              # 入口
+│   └── requirements.txt
 ├── rules/                             # 生成规则与辅助流程说明
 │   ├── testcase_generation_rules.md   # 通用：榜单 / 抽奖 / 兑换 / 礼包等
 │   ├── version_testcase_generation_rules.md  # 版本用例生成规则（须先读 documents/ 对应模块）
@@ -134,15 +139,26 @@ python3 MOA/moa_execute.py --help
 
 ```bash
 cp Risk/.env.example Risk/.env.local
-# 可选：SEC_RISK_TOKEN、RISK_TEST_DEVICE_XLSX
+# 可选：SEC_RISK_TOKEN、RISK_TEST_DEVICE_KB
 
 python3 Risk/risk_execute.py --list-test-devices
 python3 Risk/risk_execute.py --release-test-device --device-name "GalaxyA80" --reason 测试
 ```
 
-支持：解除设备/手机号风控、充值/活动风控添加与解除。设备解除默认读取 `~/Desktop/团队测试机统计表.xlsx`，Android/鸿蒙取 **mmuidv3 字段值**，iOS 取 **mmuid 字段值**（接口 dimension 均为 `mmuid`）。详见 [Risk/README.md](Risk/README.md)。
+支持：解除设备/手机号风控、充值/活动风控添加与解除。设备解除默认读取 `testcase-kb/test_devices.json`，Android/鸿蒙取 **mmuidv3 字段值**，iOS 取 **mmuid 字段值**（接口 dimension 均为 `mmuid`）。详见 [Risk/README.md](Risk/README.md)。
 
-### 5. 用例格式
+### 5. 测试报告生成
+
+```bash
+python3 -m venv Report/.venv && source Report/.venv/bin/activate
+python -m pip install -r Report/requirements.txt
+
+python3 Report/report_execute.py /path/to/v2.4.4版本用例.xlsx
+```
+
+在同目录生成 `{文件名}_内网测试总结.html` 与 `{文件名}_外网测试总结.html`。详见 [Report/README.md](Report/README.md)。
+
+### 6. 用例格式
 
 | 字段 | 说明 |
 |------|------|

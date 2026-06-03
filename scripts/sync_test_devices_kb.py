@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""将「团队测试机统计表.xlsx」同步到 testcase-kb 知识库。"""
+"""将外部 xlsx 导入 testcase-kb 团队测试机知识库。"""
 
 from __future__ import annotations
 
@@ -14,9 +14,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "Risk"))
-
-from risk.test_devices import default_test_device_xlsx_path, load_test_devices  # noqa: E402
 
 _NS = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
 _CELL_REF = __import__("re").compile(r"^([A-Z]+)(\d+)$")
@@ -119,15 +116,15 @@ def build_markdown(items: list[dict[str, str]], *, source_path: str, synced_at: 
         "# 团队测试机统计",
         "",
         "> **文档类型**：测试资源知识库（团队测试机台账）",
-        "> **数据来源**：`团队测试机统计表.xlsx`",
-        f"> **源文件路径**：`{source_path}`",
+        "> **数据来源**：`testcase-kb/test_devices.json`（知识库 JSON，运行时唯一数据源）",
+        f"> **最近导入源**：`{source_path}`",
         f"> **最近同步**：{synced_at}",
         "",
         "| 项 | 说明 |",
         "|---|---|",
         "| 用途 | 按 mmuid / mmuidv3 / 资产编号反查设备归属与持有人 |",
         "| 关联工具 | `Risk/risk_execute.py --list-test-devices`；Admin `queryUserDetail` 登录设备字段 |",
-        "| 同步命令 | `python3 scripts/sync_test_devices_kb.py` |",
+        "| 维护命令 | `python3 scripts/sync_test_devices_kb.py --xlsx <外部xlsx>`（可选，从 xlsx 更新知识库） |",
         "",
         "---",
         "",
@@ -145,9 +142,9 @@ def build_markdown(items: list[dict[str, str]], *, source_path: str, synced_at: 
         "",
         "## 查询指引",
         "",
-        "- **Admin 查到用户最后登录 mmuid** → 在本表 E 列精确匹配，读「持有人」",
-        "- **Admin 查到 mmuidv3** → 在本表 F 列匹配（测试环境部分设备 mmuidv3 可能重复，需结合 mmuid 与 UA 机型交叉验证）",
-        "- **按资产编号** → B 列匹配，用于 `Risk/risk_execute.py --release-test-device --device-asset <编号>`",
+        "- **Admin 查到用户最后登录 mmuid** → 在本表 mmuid 列精确匹配，读「持有人」",
+        "- **Admin 查到 mmuidv3** → 在本表 mmuidv3 列匹配（测试环境部分设备 mmuidv3 可能重复，需结合 mmuid 与 UA 机型交叉验证）",
+        "- **按资产编号** → 资产编号列匹配，用于 `Risk/risk_execute.py --release-test-device --device-asset <编号>`",
         "",
         "## 按持有人汇总",
         "",
@@ -194,11 +191,11 @@ def build_markdown(items: list[dict[str, str]], *, source_path: str, synced_at: 
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="同步团队测试机统计表到 testcase-kb")
+    parser = argparse.ArgumentParser(description="从外部 xlsx 导入团队测试机到 testcase-kb 知识库")
     parser.add_argument(
         "--xlsx",
-        default=os.environ.get("RISK_TEST_DEVICE_XLSX") or default_test_device_xlsx_path(),
-        help="xlsx 路径（默认 Desktop/团队测试机统计表.xlsx）",
+        default=os.environ.get("RISK_TEST_DEVICE_XLSX", "").strip() or None,
+        help="外部 xlsx 路径（需显式指定，或通过 RISK_TEST_DEVICE_XLSX 环境变量）",
     )
     parser.add_argument(
         "--output-dir",
@@ -206,6 +203,10 @@ def main() -> int:
         help="知识库输出目录（默认 testcase-kb/）",
     )
     args = parser.parse_args()
+
+    if not args.xlsx:
+        print("错误: 请通过 --xlsx 指定外部 xlsx 路径", file=sys.stderr)
+        return 1
 
     xlsx_path = os.path.expanduser(args.xlsx)
     if not os.path.isfile(xlsx_path):
@@ -224,7 +225,8 @@ def main() -> int:
     json_path.write_text(
         json.dumps(
             {
-                "sourcePath": xlsx_path,
+                "kbPath": str(json_path.relative_to(ROOT)),
+                "importSource": xlsx_path,
                 "syncedAt": synced_at,
                 "count": len(items),
                 "devices": items,

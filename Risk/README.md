@@ -15,7 +15,7 @@ cp Risk/.env.example Risk/.env.local
 - `SEC_RISK_TOKEN`：开放接口 token（默认 `sec_risk_IHAH`）
 - `SEC_RISK_BASE_URL`：默认 `https://sec-risk-admin-oversea.wemomo.com`
 - `SEC_RISK_COOKIE`：可选；开放接口 `/open/menu/operate` 通常**不需要** Cookie，仅需 body 中的 `token`
-- `RISK_TEST_DEVICE_XLSX`：团队测试机统计表路径（默认 `~/Desktop/团队测试机统计表.xlsx`）
+- `RISK_TEST_DEVICE_KB`：团队测试机知识库 JSON 路径（默认 `testcase-kb/test_devices.json`）
 
 ## 2) 解除设备风控（mmuid / mmuidv3 加白）
 
@@ -34,9 +34,9 @@ cp Risk/.env.example Risk/.env.local
 | `menu_type` | `white` |
 | `action` | `add` |
 
-### 推荐：从团队测试机统计表解除（自动选 dimension）
+### 推荐：从团队测试机知识库解除（自动选 dimension）
 
-默认读取 `~/Desktop/团队测试机统计表.xlsx`，也可通过 `RISK_TEST_DEVICE_XLSX` 或 `--device-xlsx` 指定路径。
+默认读取项目内 `testcase-kb/test_devices.json`，也可通过 `RISK_TEST_DEVICE_KB` 或 `--device-kb` 指定路径。
 
 **列出测试机及对应解除维度：**
 

@@ -62,7 +62,7 @@
     }
   },
   "test_device_registry": {
-    "xlsx_path": "~/Desktop/团队测试机统计表.xlsx",
-    "description": "团队测试机统计表；Android/鸿蒙用 mmuidv3，iOS 用 mmuid 解除设备风控"
+    "kb_json_path": "testcase-kb/test_devices.json",
+    "description": "团队测试机知识库；Android/鸿蒙用 mmuidv3，iOS 用 mmuid 解除设备风控"
   }
 }

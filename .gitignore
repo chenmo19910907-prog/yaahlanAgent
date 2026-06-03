@@ -10,5 +10,7 @@ Risk/__pycache__/
 Admin/.env.local
 Admin/.env
 Admin/__pycache__/
+Report/.venv/
+Report/__pycache__/
 **/__pycache__/
 *.pyc

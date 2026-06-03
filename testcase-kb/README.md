@@ -51,7 +51,7 @@
 | `公会.md` | 公会、公会长、预提等 |
 | `榜单与活动.md` | 榜单与活动 |
 | `人脸认证.md` | 真人认证 |
-| [`测试机.md`](测试机.md) | 团队测试机台账（mmuid/mmuidv3、资产编号、持有人；由 Desktop xlsx 同步） |
+| [`测试机.md`](测试机.md) | 团队测试机台账（mmuid/mmuidv3、资产编号、持有人；数据源为 `test_devices.json`） |
 
 ## 文档结构
 
@@ -82,7 +82,7 @@ python3 scripts/kb_filter_locales.py       # 移除土语/俄语
 python3 scripts/kb_filter_version_compat.py  # 移除老版本/兼容
 
 # 测试机台账（独立 xlsx，非版本用例库）
-python3 scripts/sync_test_devices_kb.py      # ~/Desktop/团队测试机统计表.xlsx → 测试机.md
+python3 scripts/sync_test_devices_kb.py --xlsx <外部xlsx>  # 可选：从 xlsx 更新 test_devices.json / 测试机.md
 
 # 发版回归用例（桌面发版回归 case xlsx）
 python3 scripts/regression_kb_from_xlsx.py   # → regression-kb/发版回归用例.md

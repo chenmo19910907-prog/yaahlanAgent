@@ -1,13 +1,14 @@
-"""团队测试机统计表读取与解除设备风控维度解析。"""
+"""团队测试机知识库读取与解除设备风控维度解析。"""
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import xml.etree.ElementTree as ET
 import zipfile
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Any, Iterable
 
 _NS = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
 _CELL_REF = re.compile(r"^([A-Z]+)(\d+)$")
@@ -62,8 +63,12 @@ class TestDevice:
         )
 
 
-def default_test_device_xlsx_path() -> str:
-    env_path = os.environ.get("RISK_TEST_DEVICE_XLSX", "").strip()
+def _project_root() -> str:
+    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def default_test_device_kb_path() -> str:
+    env_path = os.environ.get("RISK_TEST_DEVICE_KB", "").strip()
     if env_path:
         return os.path.expanduser(env_path)
 
@@ -72,13 +77,71 @@ def default_test_device_xlsx_path() -> str:
 
         registry = load_config().get("test_device_registry")
         if isinstance(registry, dict):
-            configured = str(registry.get("xlsx_path") or "").strip()
+            configured = str(registry.get("kb_json_path") or "").strip()
             if configured:
-                return os.path.expanduser(configured)
+                if os.path.isabs(configured):
+                    return configured
+                return os.path.join(_project_root(), configured)
     except (ImportError, ValueError, OSError):
         pass
 
-    return os.path.expanduser("~/Desktop/团队测试机统计表.xlsx")
+    return os.path.join(_project_root(), "testcase-kb", "test_devices.json")
+
+
+def _record_to_device(record: dict[str, Any]) -> TestDevice | None:
+    asset_id = str(record.get("资产编号") or record.get("asset_id") or "").strip()
+    brand = str(record.get("设备品牌") or record.get("brand") or "").strip()
+    name = str(record.get("设备名称") or record.get("name") or "").strip()
+    mmuid = str(record.get("mmuid") or "").strip()
+    mmuidv3 = str(record.get("mmuidv3") or "").strip()
+    os_name = str(record.get("设备系统") or record.get("os_name") or "").strip()
+    if not asset_id and not name and not mmuid and not mmuidv3:
+        return None
+    return TestDevice(
+        project=str(record.get("项目") or record.get("project") or "").strip(),
+        asset_id=asset_id,
+        brand=brand,
+        name=name,
+        mmuid=mmuid,
+        mmuidv3=mmuidv3,
+        os_name=os_name,
+        owner=str(record.get("归属人") or record.get("owner") or "").strip(),
+        holder=str(record.get("持有人") or record.get("holder") or "").strip(),
+    )
+
+
+def load_test_devices_from_json(json_path: str) -> list[TestDevice]:
+    path = os.path.expanduser(json_path)
+    if not os.path.isfile(path):
+        raise ValueError(f"测试机知识库不存在: {path}")
+
+    with open(path, "r", encoding="utf-8") as f:
+        payload = json.load(f)
+
+    records: list[dict[str, Any]]
+    if isinstance(payload, dict):
+        raw_devices = payload.get("devices")
+        if not isinstance(raw_devices, list):
+            raise ValueError(f"测试机知识库格式错误（缺少 devices 数组）: {path}")
+        records = raw_devices
+    elif isinstance(payload, list):
+        records = payload
+    else:
+        raise ValueError(f"测试机知识库格式错误: {path}")
+
+    devices: list[TestDevice] = []
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        device = _record_to_device(record)
+        if device is not None:
+            devices.append(device)
+    return devices
+
+
+def load_test_devices(source: str | None = None) -> list[TestDevice]:
+    """从知识库 JSON 加载团队测试机（默认 testcase-kb/test_devices.json）。"""
+    return load_test_devices_from_json(source or default_test_device_kb_path())
 
 
 def _col_row(cell_ref: str) -> tuple[str, int]:
@@ -127,8 +190,9 @@ def _parse_sheet_rows(zf: zipfile.ZipFile) -> dict[int, dict[str, str]]:
     return rows
 
 
-def load_test_devices(xlsx_path: str | None = None) -> list[TestDevice]:
-    path = os.path.expanduser(xlsx_path or default_test_device_xlsx_path())
+def load_test_devices_from_xlsx(xlsx_path: str) -> list[TestDevice]:
+    """从 xlsx 加载（仅 sync_test_devices_kb.py 导入知识库时使用）。"""
+    path = os.path.expanduser(xlsx_path)
     if not os.path.isfile(path):
         raise ValueError(f"测试机统计表不存在: {path}")
 
@@ -140,27 +204,21 @@ def load_test_devices(xlsx_path: str | None = None) -> list[TestDevice]:
         if row_num == 1:
             continue
         row = rows[row_num]
-        asset_id = row.get("B", "").strip()
-        brand = row.get("C", "").strip()
-        name = row.get("D", "").strip()
-        mmuid = row.get("E", "").strip()
-        mmuidv3 = row.get("F", "").strip()
-        os_name = row.get("G", "").strip()
-        if not asset_id and not name and not mmuid and not mmuidv3:
-            continue
-        devices.append(
-            TestDevice(
-                project=row.get("A", "").strip(),
-                asset_id=asset_id,
-                brand=brand,
-                name=name,
-                mmuid=mmuid,
-                mmuidv3=mmuidv3,
-                os_name=os_name,
-                owner=row.get("I", "").strip(),
-                holder=row.get("J", "").strip(),
-            )
+        device = _record_to_device(
+            {
+                "项目": row.get("A", ""),
+                "资产编号": row.get("B", ""),
+                "设备品牌": row.get("C", ""),
+                "设备名称": row.get("D", ""),
+                "mmuid": row.get("E", ""),
+                "mmuidv3": row.get("F", ""),
+                "设备系统": row.get("G", ""),
+                "归属人": row.get("I", ""),
+                "持有人": row.get("J", ""),
+            }
         )
+        if device is not None:
+            devices.append(device)
     return devices
 
 

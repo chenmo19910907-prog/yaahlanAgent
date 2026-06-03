@@ -19,7 +19,7 @@ from .config import (
 )
 from .env import load_local_env
 from .test_devices import (
-    default_test_device_xlsx_path,
+    default_test_device_kb_path,
     find_devices,
     group_release_elements,
     load_test_devices,
@@ -98,16 +98,16 @@ def build_parser() -> argparse.ArgumentParser:
     scenario.add_argument(
         "--release-test-device",
         action="store_true",
-        help="从团队测试机统计表按平台解除设备风控（Android/鸿蒙=mmuidv3，iOS=mmuid）",
+        help="从团队测试机知识库按平台解除设备风控（Android/鸿蒙=mmuidv3，iOS=mmuid）",
     )
     parser.add_argument(
         "--list-test-devices",
         action="store_true",
-        help="列出测试机统计表中的设备及其解除风控维度",
+        help="列出知识库中的测试机及其解除风控维度",
     )
     parser.add_argument(
-        "--device-xlsx",
-        help=f"测试机统计表 xlsx 路径（默认 RISK_TEST_DEVICE_XLSX 或 {default_test_device_xlsx_path()}）",
+        "--device-kb",
+        help=f"测试机知识库 JSON 路径（默认 RISK_TEST_DEVICE_KB 或 {default_test_device_kb_path()}）",
     )
     parser.add_argument("--device-asset", help="测试机资产编号，逗号分隔（与 --release-test-device 配合）")
     parser.add_argument("--device-name", help="测试机名称/品牌模糊匹配（与 --release-test-device 配合）")
@@ -266,10 +266,10 @@ def _parse_device_assets(raw: str | None) -> list[str]:
     return [part.strip() for part in raw.split(",") if part.strip()]
 
 
-def _print_test_devices(xlsx_path: str | None) -> None:
-    devices = load_test_devices(xlsx_path)
-    path = xlsx_path or default_test_device_xlsx_path()
-    print(f"测试机统计表: {path}（共 {len(devices)} 台）")
+def _print_test_devices(kb_path: str | None) -> None:
+    devices = load_test_devices(kb_path)
+    path = kb_path or default_test_device_kb_path()
+    print(f"测试机知识库: {path}（共 {len(devices)} 台）")
     print(f"{'资产编号':<16} {'设备名称':<24} {'系统':<8} {'字段':<10} {'element'}")
     print("-" * 100)
     for device in devices:
@@ -289,7 +289,7 @@ def _build_bodies_from_test_devices(args: argparse.Namespace) -> list[dict[str, 
         raise ValueError("解除测试机设备风控需提供 --device-asset 或 --device-name")
 
     devices = find_devices(
-        devices=load_test_devices(args.device_xlsx),
+        devices=load_test_devices(args.device_kb),
         asset_ids=asset_ids or None,
         name_query=args.device_name,
     )
@@ -339,7 +339,7 @@ def main() -> int:
 
     if args.list_test_devices:
         try:
-            _print_test_devices(args.device_xlsx)
+            _print_test_devices(args.device_kb)
         except ValueError as e:
             print(f"参数错误: {e}", file=sys.stderr)
             return 2

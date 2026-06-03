@@ -1,5 +1,6 @@
 {
-  "sourcePath": "/Users/user/Desktop/团队测试机统计表.xlsx",
+  "kbPath": "testcase-kb/test_devices.json",
+  "importSource": "/Users/user/Desktop/团队测试机统计表.xlsx",
   "syncedAt": "2026-05-29 10:25:11 UTC",
   "count": 47,
   "devices": [
