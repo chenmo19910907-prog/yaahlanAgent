@@ -25,25 +25,19 @@ def _repo_root() -> str:
     return os.path.dirname(moa_dir())
 
 
-def _iter_template_files() -> list[str]:
-    root = templates_dir()
-    results: list[str] = []
-    for dirpath, _, filenames in os.walk(root):
-        for fname in sorted(filenames):
-            if fname.endswith(".json"):
-                rel = os.path.relpath(os.path.join(dirpath, fname), root)
-                results.append(rel.replace(os.sep, "/"))
-    return sorted(results)
-
-
 def build_direct_cases() -> list[TestCase]:
+    root = templates_dir()
+    files = sorted(
+        f for f in os.listdir(root)
+        if f.endswith(".json") and os.path.isfile(os.path.join(root, f))
+    )
     return [
         TestCase(
-            name=rel,
-            args=["--payload-file", os.path.join("MOA/templates", rel)],
+            name=fname,
+            args=["--payload-file", os.path.join("MOA/templates", fname)],
             category="direct-json",
         )
-        for rel in _iter_template_files()
+        for fname in files
     ]
 
 
@@ -52,7 +46,7 @@ def build_cli_cases() -> list[TestCase]:
         TestCase(
             name="room_exp_add",
             args=[
-                "--payload-file", "MOA/templates/room/经验值-backdoor.json",
+                "--payload-file", "MOA/templates/房间经验值-backdoor.json",
                 "--service-url", "/service/voga-mts-room-backdoor",
                 "--moa-method", "execute",
                 "--room-id", "31668628",
@@ -63,7 +57,7 @@ def build_cli_cases() -> list[TestCase]:
         TestCase(
             name="room_query_current",
             args=[
-                "--payload-file", "MOA/templates/room/经验值-backdoor.json",
+                "--payload-file", "MOA/templates/房间经验值-backdoor.json",
                 "--service-url", "/service/voga-mts-room-backdoor",
                 "--moa-method", "execute",
                 "--room-id", "31668628",
@@ -74,7 +68,7 @@ def build_cli_cases() -> list[TestCase]:
         TestCase(
             name="vip_query_current",
             args=[
-                "--payload-file", "MOA/templates/vip/增加经验值.json",
+                "--payload-file", "MOA/templates/VIP-增加经验值.json",
                 "--vip-user-id", "100066819",
                 "--vip-query-current",
             ],
@@ -83,7 +77,7 @@ def build_cli_cases() -> list[TestCase]:
         TestCase(
             name="family_query_current",
             args=[
-                "--payload-file", "MOA/templates/family/增加声望值.json",
+                "--payload-file", "MOA/templates/家族-增加声望值.json",
                 "--family-id", "101435",
                 "--family-query-current",
             ],
@@ -92,7 +86,7 @@ def build_cli_cases() -> list[TestCase]:
         TestCase(
             name="family_fund_contrib_query",
             args=[
-                "--payload-file", "MOA/templates/family/增加基金贡献值.json",
+                "--payload-file", "MOA/templates/家族-增加基金贡献值.json",
                 "--family-id", "101435",
                 "--family-fund-contrib", "0",
             ],
@@ -101,7 +95,7 @@ def build_cli_cases() -> list[TestCase]:
         TestCase(
             name="diamond_query_cli",
             args=[
-                "--payload-file", "MOA/templates/diamond/查询余额.json",
+                "--payload-file", "MOA/templates/钻石-查询余额.json",
                 "--diamond-query-user-id", "100465989",
             ],
             category="cli-variant",
@@ -109,7 +103,7 @@ def build_cli_cases() -> list[TestCase]:
         TestCase(
             name="user_login_query_by_phone",
             args=[
-                "--payload-file", "MOA/templates/user/手机号查userId.json",
+                "--payload-file", "MOA/templates/用户-按手机号查userId.json",
                 "--query-user-by-phone", "13311111150",
             ],
             category="cli-variant",
@@ -117,7 +111,7 @@ def build_cli_cases() -> list[TestCase]:
         TestCase(
             name="user_active_days_query",
             args=[
-                "--payload-file", "MOA/templates/user/登录天数.json",
+                "--payload-file", "MOA/templates/查询用户登录天数.json",
                 "--expr", "100465989",
             ],
             category="cli-variant",

@@ -18,15 +18,10 @@ MOA/
 ├── scripts/
 │   ├── generate_index.py     # 生成 使用方法.md
 │   └── test_all.py           # 批量自测全部模板
-├── templates/                # MOA 请求 JSON 模板（按业务分目录）
-│   ├── vip/
-│   ├── room/
-│   ├── family/
-│   ├── diamond/
-│   ├── gift/
-│   ├── user/
-│   ├── auth/
-│   └── noble/
+├── templates/                # MOA 请求 JSON 模板（扁平存放）
+│   ├── VIP-增加经验值.json
+│   ├── 钻石-查询余额.json
+│   └── ...
 └── moa/                      # Python 实现
     ├── cli.py                # 命令行入口
     ├── client.py             # httpproxy 客户端
@@ -47,15 +42,15 @@ python3 MOA/moa_execute.py --help
 ### 直接执行模板
 
 ```bash
-python3 MOA/moa_execute.py --payload-file "MOA/templates/diamond/查询余额.json"
-python3 MOA/moa_execute.py --payload-file "MOA/templates/user/登录天数.json" --expr 100465989
+python3 MOA/moa_execute.py --payload-file "MOA/templates/钻石-查询余额.json"
+python3 MOA/moa_execute.py --payload-file "MOA/templates/查询用户登录天数.json" --expr 100465989
 ```
 
 ### 带 CLI 参数
 
 ```bash
 python3 MOA/moa_execute.py \
-  --payload-file "MOA/templates/vip/增加经验值.json" \
+  --payload-file "MOA/templates/VIP-增加经验值.json" \
   --vip-user-id 100465989 \
   --vip-query-current
 ```
@@ -71,7 +66,7 @@ python3 MOA/moa_execute.py \
 
 ### 新增 MOA 能力
 
-1. 在 **`templates/<域>/`** 新增 JSON 模板（须含 `key` 字段）
+1. 在 **`templates/`** 新增 JSON 模板（须含 `key` 字段）
 2. 如需参数化，扩展 **`moa/`** 包中的 CLI 逻辑
 3. 规则/映射写入 **`config/thresholds.json`**
 4. 登记 **`config/registry.json`**

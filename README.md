@@ -17,7 +17,7 @@
 
 ### 本地自动化（MOA / Risk / Admin）
 
-- **MOA**（`MOA/`）：通过 MSE httpproxy 调用 MOA 接口；JSON 模板在 `MOA/templates/<域>/`，详见 [MOA/README.md](MOA/README.md) 与 [MOA/使用方法.md](MOA/使用方法.md)
+- **MOA**（`MOA/`）：通过 MSE httpproxy 调用 MOA 接口；JSON 模板在 `MOA/templates/`，详见 [MOA/README.md](MOA/README.md) 与 [MOA/使用方法.md](MOA/使用方法.md)
 - **Risk**（`Risk/`）：调用海外风控开放接口 `/open/menu/operate`，支持解除设备/手机号风控、充值/活动风控加白加黑；默认读取 `testcase-kb/test_devices.json` 按平台自动选取 mmuid 或 mmuidv3 值；详见 [Risk/README.md](Risk/README.md)
 - **Admin**（`Admin/`）：调用 Yaahlan 测试后台，支持 **按 userId 查询用户全量详情**（`queryUserDetail`）；详见 [Admin/README.md](Admin/README.md)
 - **Report**（`Report/`）：从版本用例 xlsx 生成内网/外网测试总结 HTML；详见 [Report/README.md](Report/README.md)
@@ -37,7 +37,7 @@ auto-generate-testcase/
 │   ├── config/                        # registry + 等级阈值
 │   ├── 使用方法.md                    # 能力清单（自动生成）
 │   ├── scripts/                       # generate_index / test_all
-│   ├── templates/                     # JSON 模板（vip/room/family/...）
+│   ├── templates/                     # JSON 模板
 │   └── moa/                           # Python 实现
 ├── Risk/                              # 海外风控开放接口（设备/手机/充值/活动）
 │   ├── README.md
