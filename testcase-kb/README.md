@@ -1,11 +1,13 @@
 # testcase-kb · 用例知识库
 
-> **特权 VIP**：[`特权VIP.md`](特权VIP.md)  
-> **发版回归用例**：[`../regression-kb/README.md`](../regression-kb/README.md)  
-> **历史 Bug 归档**：[`../bug-kb/README.md`](../bug-kb/README.md)  
+> **特权 VIP**：[`特权VIP.md`](特权VIP.md)
+> **发版回归用例**：[`../regression-kb/README.md`](../regression-kb/README.md)
+> **历史 Bug 归档**：[`../bug-kb/README.md`](../bug-kb/README.md)
 > **线上问题归档**：[`../online-kb/README.md`](../online-kb/README.md)
 
 由版本需求 xlsx 提炼为**产品规则 / 验收要点**知识库（非逐条执行用例）；**同父类型合并为单个 md**；**独立功能单独成库**。
+
+**版本号**：每个功能点下的场景会保留 `> **版本**：\`vX.Y.Z\``（及可选 `摘录自` xlsx 文件名），对应该条规则**上传/同步时的来源版本**；同主题冲突合并时保留较新条目，但版本标注不丢。若显示 `—`，说明当前正文已无来源元数据，需用 `scripts/xlsx_kb_sync.py` 从版本用例 xlsx 重新同步。
 
 与 `documents/` 下业务参考文档的关系：`documents/` 为模块说明与 PRD 对齐入口；**本目录**为从用例 xlsx 汇总的大模块验收知识库。
 

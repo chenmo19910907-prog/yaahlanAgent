@@ -16,11 +16,16 @@
 from __future__ import annotations
 
 import argparse
+import sys
 import re
 import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
+
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
 
 DEFAULT_SOURCE_DIR = Path("/Users/user/Desktop/未命名文件夹")
 DEFAULT_OUTPUT_DOC_DIR = Path(__file__).resolve().parent.parent / "testcase-kb"
@@ -78,6 +83,22 @@ def list_xlsx_files(source: Path) -> List[Tuple[Tuple[int, int, int], Path]]:
         ver = parse_version_from_filename(p.name)
         if ver:
             items.append((ver, p))
+    items.sort(key=lambda x: x[0])
+    return items
+
+
+def list_xlsx_paths(paths: List[Path]) -> List[Tuple[Tuple[int, int, int], Path]]:
+    items: List[Tuple[Tuple[int, int, int], Path]] = []
+    for raw in paths:
+        p = raw.expanduser().resolve()
+        if not p.is_file():
+            raise SystemExit(f"文件不存在: {p}")
+        if p.name.startswith("~$"):
+            continue
+        ver = parse_version_from_filename(p.name)
+        if not ver:
+            raise SystemExit(f"无法从文件名解析版本号: {p.name}")
+        items.append((ver, p))
     items.sort(key=lambda x: x[0])
     return items
 
@@ -260,11 +281,12 @@ def replace_or_insert_module_section(content: str, module_name: str, body: str) 
 
 
 def build_module_body(version_label: str, xlsx_name: str, sheet_title: str, module_name: str, rows: List[CaseRow]) -> str:
+    from kb_version import render_version_header
+
     out: List[str] = []
     out.append(f"##### {sheet_title} · {module_name}")
     out.append("")
-    out.append(f"- **来源版本**：`{version_label}`")
-    out.append(f"- **来源文件**：`{xlsx_name}`")
+    out.append(render_version_header(version_label, xlsx_name))
     out.append("")
     for c in rows:
         out.append(f"- **步骤**：{c.step}")
@@ -330,14 +352,23 @@ def reset_output_dir() -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(description="逐文件逐sheet生成大模块知识库")
     ap.add_argument("--source", type=Path, default=DEFAULT_SOURCE_DIR)
+    ap.add_argument(
+        "--file",
+        type=Path,
+        action="append",
+        default=[],
+        help="指定版本用例 xlsx（可重复传入；按版本号升序处理）",
+    )
     ap.add_argument("--only-version", type=str, default="")
     ap.add_argument("--reset", action="store_true", help="先清空 testcase-kb/*.md")
     args = ap.parse_args()
 
-    if not args.source.is_dir():
-        raise SystemExit(f"源目录不存在: {args.source}")
-
-    items = list_xlsx_files(args.source)
+    if args.file:
+        items = list_xlsx_paths(args.file)
+    else:
+        if not args.source.is_dir():
+            raise SystemExit(f"源目录不存在: {args.source}（或用 --file 指定 xlsx）")
+        items = list_xlsx_files(args.source)
     if args.only_version:
         t = tuple(int(x) for x in args.only_version.split("."))
         items = [(v, p) for v, p in items if v == t]

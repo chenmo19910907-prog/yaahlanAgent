@@ -60,5 +60,8 @@
 ```bash
 python3 scripts/regression_kb_from_xlsx.py
 python3 scripts/regression_kb_from_xlsx.py --xlsx ~/Desktop/发版回归case.xlsx
+
+# 或与 bug-kb、online-kb 一并同步
+python3 scripts/sync_all_kb.py
 ```
 

@@ -14,17 +14,27 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
 import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-ROOT_DEFAULT = Path(__file__).resolve().parent.parent / "testcase-kb"
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+ROOT_DEFAULT = _SCRIPTS.parent / "testcase-kb"
 
 HASH5_RE = re.compile(r"^#####\s+(.+?)\s+·\s+(.+?)\s*$")
-VER_RE = re.compile(r"[->]*\s*\*\*来源版本\*\*：`([^`]+)`")
-FILE_RE = re.compile(r"[->]*\s*\*\*来源文件\*\*：`([^`]+)`")
-VERSION_TUPLE_RE = re.compile(r"v?(\d+)\.(\d+)\.(\d+)", re.I)
+from kb_version import (  # noqa: E402
+    VERSION_TABLE_BLURB,
+    effective_version_label,
+    parse_version_meta_line,
+    parse_version_tuple,
+    peel_version_prefix_from_body,
+    render_version_header,
+)
 GONGNENG_PREFIX_RE = re.compile(r"^功能模块\s*[:：]\s*(.+?)\s*$", re.UNICODE)
 
 SAME_AS_SUFFIX_RE = re.compile(
@@ -63,13 +73,6 @@ class CaseBlock:
         return self.module
 
 
-def parse_version_tuple(label: str) -> Tuple[int, int, int]:
-    m = VERSION_TUPLE_RE.search(label)
-    if not m:
-        return (0, 0, 0)
-    return int(m.group(1)), int(m.group(2)), int(m.group(3))
-
-
 def normalize_lines(text: str) -> str:
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     lines = [ln.rstrip() for ln in text.split("\n")]
@@ -80,7 +83,12 @@ def normalize_lines(text: str) -> str:
 def body_fingerprint(body: str) -> str:
     lines = []
     for ln in body.splitlines():
-        if "来源版本" in ln or "来源文件" in ln or "**版本**" in ln:
+        if (
+            "来源版本" in ln
+            or "来源文件" in ln
+            or ln.startswith("> **版本**")
+            or (ln.startswith("> ") and "**摘录自**" in ln)
+        ):
             continue
         lines.append(ln.strip())
     return "\n".join(lines).strip()
@@ -122,14 +130,20 @@ def extract_blocks(md: str) -> List[CaseBlock]:
             return
         sheet = current_sheet or "未归类需求"
         body = normalize_lines("\n".join(body_lines))
+        ver_from_body, file_from_body, body = peel_version_prefix_from_body(body)
+        if ver_from_body and not version_label:
+            version_label = ver_from_body
+        if file_from_body and not source_file:
+            source_file = file_from_body
         if not body and not version_label:
             return
+        resolved_ver = effective_version_label(version_label, source_file)
         blocks.append(
             CaseBlock(
                 sheet=sheet,
                 module=current_module,
-                version_label=version_label,
-                version_tuple=parse_version_tuple(version_label),
+                version_label=version_label or resolved_ver,
+                version_tuple=parse_version_tuple(resolved_ver),
                 source_file=source_file,
                 body=body,
                 parent_module=pending_parent if pending_parent and pending_parent != current_module else "",
@@ -190,13 +204,12 @@ def extract_blocks(md: str) -> List[CaseBlock]:
             current_module = line[4:].strip()
             continue
 
-        vm = VER_RE.search(line)
-        if vm:
-            version_label = vm.group(1).strip()
-            continue
-        fm = FILE_RE.search(line)
-        if fm:
-            source_file = fm.group(1).strip()
+        ver_upd, file_upd = parse_version_meta_line(line)
+        if ver_upd is not None or file_upd is not None:
+            if ver_upd:
+                version_label = ver_upd
+            if file_upd:
+                source_file = file_upd
             continue
 
         if line.startswith("- **步骤**") or line.startswith("  - **预期**") or line.startswith("- "):
@@ -252,16 +265,7 @@ def group_blocks(latest: Dict[Tuple[str, str, str], CaseBlock]) -> Dict[str, Dic
 
 
 def render_block_header(b: CaseBlock) -> str:
-    ver = b.version_label or "—"
-    sf = b.source_file.strip() if b.source_file else ""
-    if sf and ("/" in sf or "\\" in sf):
-        from pathlib import Path as _P
-
-        sf = _P(sf).name
-    line = f"> **版本**：`{ver}`"
-    if sf:
-        line += f" · **摘录自**：`{sf}`"
-    return line + "\n"
+    return render_version_header(b.version_label, b.source_file) + "\n"
 
 
 def render_body_kb(body: str) -> str:
@@ -317,7 +321,7 @@ def build_document(title: str, sheets: Dict[str, Dict[str, List[CaseBlock]]]) ->
         "| 项 | 说明 |",
         "|---|---|",
         "| 组织方式 | `## 业务主题` → `### 功能点` → 场景小节与规则列表 |",
-        "| 版本口径 | 同一功能点多版本时保留最新；「同上」类补充已并入父条目 |",
+        f"| 版本口径 | {VERSION_TABLE_BLURB} |",
         "",
         "---",
         "",

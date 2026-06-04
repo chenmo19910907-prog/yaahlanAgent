@@ -56,6 +56,11 @@
    - **【变更点聚焦】** 结合 PRD 中的本次变更点，在 documents 业务上下文基础上，重点生成变更影响的新增用例、回归用例
    - **【覆盖目标】** 按 `version_testcase_generation_rules.md` 要求覆盖：功能验收、边界值、多角色、屏幕适配（有前端变更时）、多语言（英/阿/土/俄，所有需求均需覆盖）
 
+   **【知识库参考（所有需求，推荐）】**：
+   - 生成前运行 `python3 scripts/suggest_kb_for_module.py <模块关键词>`（或 `--file modules.txt`）获取应读的 `documents/`、`testcase-kb/`、`bug-kb/`、`online-kb/`、`templates/` 路径
+   - **活动/营收需求**：在 `bug-kb/`、`online-kb/` 查阅同模块历史缺陷与线上问题，优先补充严重/阻碍与现网翻车场景（不必等版本需求才读）
+   - **版本需求**：另读 `regression-kb/发版回归用例.md` 与 `rules/version_testcase_generation_rules.md` §1
+
    **通用步骤（所有需求）**：
    - **【模块提取】从需求文档开发需求表格中提取所有模块**：逐行遍历表格，不遗漏任何一行（头图、规则、奖励、一级tab、各业务模块、预热模块、活动条等）。用户若只列举部分模块，仍需覆盖文档中的全部模块。
    - **【层级拆解】对每个模块拆解子功能点**：如「开斋旅行」下含中奖滚动条、地图、宝箱、骰子、终点瓜分、瓜分逻辑、榜单icon、榜单弹窗、兑换商店等；「终点瓜分」下含瓜分逻辑。确保每个有独立说明的子功能都有对应用例。
@@ -93,9 +98,33 @@
    - 不要自行补充复杂派单/路由/多角色逻辑：涉及多角色、多入口、多状态的交叉场景，若没有逐条确认，极易写出与需求不符的用例，需主动询问
 
 5. **输出整理**：
+   - **落盘前校验**：`python3 scripts/check_testcase_md.py`（格式、续行预期、重复编号等）；可选 `python3 scripts/module_coverage.py --modules-file <PRD模块清单.txt> --testcase temporary_testcase/<文件>.md` 做覆盖 diff
    - 使用 `testcase-to-excel` 技能：读取 `temporary_testcase` 文件夹下的用例，通过 MCP `dingtalk-excel-write` 写入 `testcase_file_path`（钉钉 Excel URL）
    - 分批写入或一次性写入，确保 `testcase_file_path` 包含完整的全部测试用例
    - 写入前确认用户没有手动改动 Excel，若有需提前告知否则会被覆盖
+
+### 常用命令
+
+```bash
+# 环境自检（MOA / MCP / 用例目录）
+python3 scripts/doctor.py
+python3 scripts/doctor.py --run-moa-probe --check-testcases
+
+# 生成前：推荐读哪些知识库
+python3 scripts/suggest_kb_for_module.py 礼物 榜单 --version
+
+# 生成后：校验用例 Markdown
+python3 scripts/check_testcase_md.py
+python3 scripts/check_testcase_md.py temporary_testcase/某活动测试用例.md --strict
+
+# 导出到桌面（评审/分享）
+python3 scripts/export_testcases_to_desktop.py
+python3 scripts/export_testcases_to_desktop.py --out-dir ./exports
+
+# 维护者：同步四库（xlsx 路径可用环境变量 YAAHLAN_REGRESSION_XLSX / YAAHLAN_TASKS_XLSX）
+python3 scripts/sync_all_kb.py
+python3 scripts/sync_all_kb.py --dry-run
+```
 
 
 

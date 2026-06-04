@@ -93,4 +93,9 @@
 ```bash
 python3 scripts/bug_kb_from_tasks_xlsx.py \
   --source '/Users/user/Desktop/【yaahlan】任务信息表_20260529 15.37.14.xlsx'
+
+# 一键同步 regression-kb + bug-kb + online-kb
+export YAAHLAN_TASKS_XLSX=~/Desktop/【yaahlan】任务信息表_xxx.xlsx
+export YAAHLAN_REGRESSION_XLSX=~/Desktop/发版回归case.xlsx
+python3 scripts/sync_all_kb.py
 ```

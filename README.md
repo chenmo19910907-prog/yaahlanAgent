@@ -14,6 +14,7 @@
 - **业务参考**：`documents/` 下按模块维护说明；**用例知识库**见 `testcase-kb/`，**发版回归用例**见 `regression-kb/`，**Bug 知识库**见 `bug-kb/`，**线上问题**见 `online-kb/`；动态用例生成流程见 `moments/`
 - **模板对齐**：相似模块参考 `templates/`（如榜单类对齐 `templates/榜单.md`）
 - **用例输出**：Markdown 表格等写入 `temporary_testcase/`，经 `testcase-to-excel` 分批写入钉钉 Excel
+- **质量工具**：`scripts/check_testcase_md.py` 格式校验、`suggest_kb_for_module.py` 知识库推荐、`doctor.py` 环境自检（见根目录 `SKILL.md`「常用命令」）
 
 ### 本地自动化（MOA / Risk / Admin）
 
@@ -82,6 +83,12 @@ auto-generate-testcase/
 │   ├── 抽奖.md
 │   └── 奖励领取.md
 ├── temporary_testcase/                # 生成的用例临时存放目录
+├── scripts/
+│   ├── check_testcase_md.py           # 用例 Markdown 校验
+│   ├── suggest_kb_for_module.py       # 按模块推荐知识库路径
+│   ├── doctor.py                      # MOA/MCP/目录自检
+│   ├── sync_all_kb.py                 # 一键同步 regression/bug/online KB
+│   └── export_testcases_to_desktop.py # 导出用例副本
 ├── .cursor/
 │   ├── mcp.json                       # MCP 服务器配置
 │   └── skills/
