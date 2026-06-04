@@ -1,0 +1,12 @@
+{
+  "id": "my-profile-from-me",
+  "name": "我的页进入个人资料详情",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "已在 Me 页时，点头像进入个人资料详情页",
+  "steps": [
+    { "sleep_ms": 300 },
+    { "tap_pct": [0.111, 0.162], "note": "头像" },
+    { "sleep_ms": 800 }
+  ]
+}

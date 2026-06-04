@@ -8,7 +8,25 @@ import sys
 from pathlib import Path
 
 from .actions import input_text, keyevent, swipe, tap
+from .chain import load_steps_file, run_chain
 from .device import AdbError, display_size, list_devices, require_device
+from .device_calibrate import (
+    calibrate_commit,
+    calibrate_init,
+    calibrate_set_point,
+    device_info_payload,
+    profile_show,
+    record_reference_device,
+)
+from .device_profile import (
+    adapt_dir,
+    default_draft_path,
+    list_profile_paths,
+    load_profile,
+)
+from .flows import list_flows_summary, run_bootstrap, run_locate, run_recorded
+from .macros import apply_skip_flags, list_macros, resolve_macro
+from .recorded_scripts import list_catalog, scripts_root
 from .screenshot import (
     DEFAULT_MAX_SCREENSHOTS,
     capture_screenshot,
@@ -25,8 +43,8 @@ def _emit(payload: dict[str, object]) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "ADB 截图视觉循环：截图供 Agent 读图算坐标 → tap → 再截图；"
-            f"目录内仅保留最新 {DEFAULT_MAX_SCREENSHOTS} 张 PNG"
+            "ADB 截图视觉循环：确定路径用 chain/macro 连续操作，仅在边界 capture；"
+            f"不确定时再读图。目录内仅保留最新 {DEFAULT_MAX_SCREENSHOTS} 张 PNG"
         ),
     )
     parser.add_argument("--serial", "-s", help="设备 serial（多台时必须指定）")
@@ -77,7 +95,204 @@ def build_parser() -> argparse.ArgumentParser:
         "cycle",
         help="一步循环：先截屏（返回路径供读图），你 tap 后再执行 capture 或单独 capture",
     )
+
+    p_scripts = sub.add_parser(
+        "scripts",
+        help="列出 adb/录制脚本 目录（中文名 + 片段/流程）",
+    )
+
+    p_macros = sub.add_parser("macros", help="列出录制片段（同 scripts 中 kind=fragment）")
+
+    p_macro = sub.add_parser("macro", help="执行录制片段（支持中文名）")
+    p_macro.add_argument("name", help="中文名或 id，如 发布纯文本动态")
+    p_macro.add_argument(
+        "--skip",
+        action="append",
+        default=[],
+        metavar="KEY",
+        help="跳过带 skip_key 的可选步骤，如 dismiss_popup",
+    )
+    p_macro.add_argument(
+        "--text",
+        help="片段参数：发布纯文本动态 的正文（纯文本，建议数字/英文）",
+    )
+    p_macro.add_argument(
+        "--capture",
+        choices=("never", "start", "end", "both"),
+        help="覆盖宏内 capture 策略",
+    )
+    p_macro.add_argument(
+        "--no-capture",
+        action="store_true",
+        help="等同 --capture never，全程不截图（最连贯）",
+    )
+    p_macro.add_argument(
+        "--no-adapt",
+        action="store_true",
+        help="跳过设备换算（仅调试用；换机未校准时不要用）",
+    )
+
+    p_chain = sub.add_parser(
+        "chain",
+        help="按步骤文件连续操作（默认结束时 capture 一次）",
+    )
+    p_chain.add_argument(
+        "steps_file",
+        type=Path,
+        help="JSON：{ \"capture\": \"end\", \"steps\": [...] }",
+    )
+    p_chain.add_argument(
+        "--capture",
+        choices=("never", "start", "end", "both"),
+        help="覆盖文件中的 capture",
+    )
+    p_chain.add_argument(
+        "--no-capture",
+        action="store_true",
+        help="等同 --capture never",
+    )
+    p_chain.add_argument("--no-adapt", action="store_true", help="跳过设备换算")
+
+    p_device = sub.add_parser("device", help="设备型号与坐标换算（换机先校准）")
+    dev_sub = p_device.add_subparsers(dest="device_command", required=True)
+    dev_sub.add_parser("info", help="当前设备型号、分辨率、是否已有换算档案")
+
+    p_dev_prof = dev_sub.add_parser("profiles", help="列出已保存的设备档案")
+    p_dev_init = dev_sub.add_parser(
+        "calibrate",
+        help="从录制脚本提取基准点并截屏，生成校准草稿",
+    )
+    p_dev_init.add_argument(
+        "--script",
+        required=True,
+        help="录制片段中文名或 id，如 发布纯文本动态",
+    )
+    p_dev_init.add_argument("--draft", type=Path, help="草稿 JSON 路径")
+    p_dev_init.add_argument(
+        "--force",
+        action="store_true",
+        help="已有档案时仍重新截图校准（用于操作失败后更正）",
+    )
+
+    p_dev_recal = dev_sub.add_parser(
+        "recalibrate",
+        help="等同 calibrate --force（更正已有机型的换算）",
+    )
+    p_dev_recal.add_argument("--script", required=True)
+    p_dev_recal.add_argument("--draft", type=Path)
+
+    p_dev_set = dev_sub.add_parser(
+        "set",
+        help="根据截图读到的像素填写某校准点的 devicePct",
+    )
+    p_dev_set.add_argument("--draft", type=Path, help="草稿路径（默认按 serial）")
+    p_dev_set.add_argument("--note", required=True, help="与草稿 anchor.note 对应")
+    p_dev_set.add_argument("--device-pct", nargs=2, type=float, metavar=("X", "Y"))
+    p_dev_set.add_argument("--pixel", nargs=2, type=int, metavar=("X", "Y"))
+
+    p_dev_commit = dev_sub.add_parser(
+        "commit",
+        help="根据草稿拟合换算并写入设备档案",
+    )
+    p_dev_commit.add_argument("--draft", type=Path)
+    p_dev_commit.add_argument("--id", required=True, dest="profile_id", help="档案 id")
+    p_dev_commit.add_argument("--name", required=True, help="档案中文名")
+    p_dev_commit.add_argument(
+        "--fix-offset",
+        action="store_true",
+        help="仅缩放、offset=0（校准点少时用）",
+    )
+    p_dev_commit.add_argument(
+        "--reason",
+        choices=("initial", "correction"),
+        default="initial",
+        help="initial=首次建档；correction=操作失败后更正",
+    )
+
+    dev_sub.add_parser(
+        "record-reference",
+        help="把当前手机记入基准设备.json（在录制基准机上执行一次）",
+    )
+    p_dev_show = dev_sub.add_parser("show", help="查看某档案详情")
+    p_dev_show.add_argument("profile_id", help="档案 id")
+
+    p_flows = sub.add_parser(
+        "flows",
+        help="列出录制流程（导航阶段截图 + 录制阶段无截图）",
+    )
+
+    p_flow = sub.add_parser(
+        "flow",
+        help="两阶段流程：locate（截图判断位置）/ bootstrap（知识库对齐）/ run（纯录制）",
+    )
+    flow_sub = p_flow.add_subparsers(dest="flow_command", required=True)
+
+    p_flow_locate = flow_sub.add_parser(
+        "locate",
+        help="阶段 A：截一张图，返回入口特征与各 state（Agent 读图匹配）",
+    )
+    p_flow_locate.add_argument("name", help="流程中文名或 id，如 发布纯文本动态")
+
+    p_flow_boot = flow_sub.add_parser(
+        "bootstrap",
+        help="阶段 A：按 state 执行知识库/宏对齐（默认结束时再截一张）",
+    )
+    p_flow_boot.add_argument("name")
+    p_flow_boot.add_argument(
+        "--from",
+        dest="from_state",
+        required=True,
+        metavar="STATE",
+        help="flow locate 读图判定的 state id",
+    )
+    p_flow_boot.add_argument(
+        "--skip",
+        action="append",
+        default=[],
+        metavar="KEY",
+        help="跳过宏内可选步骤",
+    )
+    p_flow_boot.add_argument(
+        "--no-capture",
+        action="store_true",
+        help="bootstrap 后不截图",
+    )
+
+    p_flow_run = flow_sub.add_parser(
+        "run",
+        help="阶段 B：仅执行录制脚本，默认全程不截图",
+    )
+    p_flow_run.add_argument("name")
+    p_flow_run.add_argument("--text", help="如 发布纯文本动态 的正文")
+    p_flow_run.add_argument(
+        "--skip",
+        action="append",
+        default=[],
+        metavar="KEY",
+    )
+    p_flow_run.add_argument(
+        "--verify",
+        action="store_true",
+        help="录制结束后截一张图核对（否则不截图）",
+    )
+    p_flow_run.add_argument("--no-adapt", action="store_true", help="跳过设备换算")
+
     return parser
+
+
+def _use_adaptation(args: argparse.Namespace) -> bool:
+    return not getattr(args, "no_adapt", False)
+
+
+def _resolve_capture_mode(
+    *,
+    explicit: str | None,
+    no_capture: bool,
+    default: str,
+) -> str:
+    if no_capture:
+        return "never"
+    return explicit or default
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -173,6 +388,183 @@ def main(argv: list[str] | None = None) -> int:
             input_text(text=args.content, serial=serial)
             _emit({"action": "text", "serial": serial})
             return 0
+
+        if args.command == "scripts":
+            _emit(
+                {
+                    "root": str(scripts_root().resolve()),
+                    "catalog": list_catalog(),
+                }
+            )
+            return 0
+
+        if args.command == "macros":
+            _emit({"macros": list_macros()})
+            return 0
+
+        if args.command == "macro":
+            spec = resolve_macro(args.name, text=args.text)
+            capture = _resolve_capture_mode(
+                explicit=args.capture,
+                no_capture=args.no_capture,
+                default=spec.get("capture", "end"),
+            )
+            steps = apply_skip_flags(
+                list(spec.get("steps", [])),
+                skip=set(args.skip),
+            )
+            out = run_chain(
+                serial=serial,
+                steps=steps,
+                capture=capture,
+                screenshot_dir=shot_dir,
+                max_screenshots=args.max_screenshots,
+                use_adaptation=_use_adaptation(args),
+            )
+            out["script"] = spec.get("name", args.name)
+            out["scriptId"] = spec.get("id", args.name)
+            out["description"] = spec.get("description", "")
+            if args.text is not None:
+                out["text"] = args.text
+            _emit(out)
+            return 0
+
+        if args.command == "flows":
+            _emit({"flows": list_flows_summary()})
+            return 0
+
+        if args.command == "flow":
+            if args.flow_command == "locate":
+                out = run_locate(
+                    name=args.name,
+                    serial=serial,
+                    screenshot_dir=shot_dir,
+                    max_screenshots=args.max_screenshots,
+                )
+                _emit(out)
+                return 0
+            if args.flow_command == "bootstrap":
+                out = run_bootstrap(
+                    name=args.name,
+                    from_state=args.from_state,
+                    serial=serial,
+                    screenshot_dir=shot_dir,
+                    max_screenshots=args.max_screenshots,
+                    skip=set(args.skip),
+                    capture_end=not args.no_capture,
+                )
+                _emit(out)
+                return 0
+            if args.flow_command == "run":
+                out = run_recorded(
+                    name=args.name,
+                    serial=serial,
+                    screenshot_dir=shot_dir,
+                    max_screenshots=args.max_screenshots,
+                    skip=set(args.skip),
+                    text=args.text,
+                    verify_end=args.verify,
+                    use_adaptation=_use_adaptation(args),
+                )
+                _emit(out)
+                return 0
+            print(f"未知 flow 子命令: {args.flow_command}", file=sys.stderr)
+            return 2
+
+        if args.command == "chain":
+            steps, file_capture = load_steps_file(args.steps_file)
+            capture = _resolve_capture_mode(
+                explicit=args.capture,
+                no_capture=args.no_capture,
+                default=file_capture,
+            )
+            out = run_chain(
+                serial=serial,
+                steps=steps,
+                capture=capture,
+                screenshot_dir=shot_dir,
+                max_screenshots=args.max_screenshots,
+                use_adaptation=_use_adaptation(args),
+            )
+            out["stepsFile"] = str(args.steps_file.resolve())
+            _emit(out)
+            return 0
+
+        if args.command == "device":
+            if args.device_command == "info":
+                _emit(device_info_payload(serial))
+                return 0
+            if args.device_command == "profiles":
+                items = []
+                for path in list_profile_paths():
+                    try:
+                        p = load_profile(path)
+                    except (OSError, ValueError, json.JSONDecodeError):
+                        continue
+                    dev = p.get("device") or {}
+                    items.append(
+                        {
+                            "id": p.get("id"),
+                            "name": p.get("name"),
+                            "deviceModel": p.get("deviceModel") or dev.get("model"),
+                            "width": dev.get("width"),
+                            "height": dev.get("height"),
+                            "path": str(path.resolve()),
+                            "reusePolicy": p.get("reusePolicy"),
+                            "updatedAt": p.get("updatedAt"),
+                            "transform": p.get("transform"),
+                        }
+                    )
+                _emit({"adaptDir": str(adapt_dir().resolve()), "profiles": items})
+                return 0
+            draft = args.draft if getattr(args, "draft", None) else default_draft_path(serial)
+            if args.device_command in ("calibrate", "recalibrate"):
+                force = args.device_command == "recalibrate" or getattr(
+                    args, "force", False
+                )
+                out = calibrate_init(
+                    serial=serial,
+                    script_key=args.script,
+                    screenshot_dir=shot_dir,
+                    max_screenshots=args.max_screenshots,
+                    draft_path=draft,
+                    force=force,
+                )
+                _emit(out)
+                return 0
+            if args.device_command == "record-reference":
+                _emit(record_reference_device(serial))
+                return 0
+            if args.device_command == "show":
+                _emit(profile_show(args.profile_id))
+                return 0
+            if args.device_command == "set":
+                pct = None
+                if args.device_pct:
+                    pct = (float(args.device_pct[0]), float(args.device_pct[1]))
+                pixel = None
+                if args.pixel:
+                    pixel = (int(args.pixel[0]), int(args.pixel[1]))
+                out = calibrate_set_point(
+                    draft_path=draft,
+                    note=args.note,
+                    device_pct=pct,
+                    pixel=pixel,
+                )
+                _emit(out)
+                return 0
+            if args.device_command == "commit":
+                out = calibrate_commit(
+                    draft_path=draft,
+                    profile_id=args.profile_id,
+                    name=args.name,
+                    fix_offset=args.fix_offset,
+                    reason=args.reason,
+                )
+                _emit(out)
+                return 0
+            print(f"未知 device 子命令: {args.device_command}", file=sys.stderr)
+            return 2
 
         print(f"未知命令: {args.command}", file=sys.stderr)
         return 2

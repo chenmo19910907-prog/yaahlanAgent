@@ -1,0 +1,11 @@
+{
+  "id": "me-tab",
+  "name": "切换我的底栏",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "点击底部 Me（我的帧）",
+  "steps": [
+    { "sleep_ms": 300 },
+    { "tap_pct": [0.900, 0.949], "note": "底部 Me" }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "id": "moment-tab",
+  "name": "切换动态底栏",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "点击底部 Moment（动态帧）",
+  "steps": [
+    { "sleep_ms": 300 },
+    { "tap_pct": [0.700, 0.949], "note": "底部 Moment" }
+  ]
+}

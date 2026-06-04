@@ -1,0 +1,49 @@
+{
+  "title": "Yaahlan ADB 录制脚本库",
+  "app": "yaahlan",
+  "items": [
+    {
+      "id": "moment-tab",
+      "name": "切换动态底栏",
+      "kind": "fragment",
+      "file": "片段/切换动态底栏.json"
+    },
+    {
+      "id": "me-tab",
+      "name": "切换我的底栏",
+      "kind": "fragment",
+      "file": "片段/切换我的底栏.json"
+    },
+    {
+      "id": "my-profile",
+      "name": "进入个人资料详情页",
+      "kind": "fragment",
+      "file": "片段/进入个人资料详情页.json"
+    },
+    {
+      "id": "my-profile-from-me",
+      "name": "我的页进入个人资料详情",
+      "kind": "fragment",
+      "file": "片段/我的页进入个人资料详情.json"
+    },
+    {
+      "id": "post-moment",
+      "name": "发布纯文本动态",
+      "kind": "fragment",
+      "params": ["text"],
+      "file": "片段/发布纯文本动态.json"
+    },
+    {
+      "id": "post-moment",
+      "name": "发布纯文本动态",
+      "kind": "flow",
+      "file": "流程/发布纯文本动态.json"
+    },
+    {
+      "id": "my-profile",
+      "name": "进入个人资料详情页",
+      "kind": "flow",
+      "file": "流程/进入个人资料详情页.json"
+    }
+  ]
+}

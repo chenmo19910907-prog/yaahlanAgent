@@ -43,16 +43,16 @@ cp MOA/.env.example MOA/.env.local
 cp MOA/config/moa.yaml.example MOA/config/moa.yaml
 # 若启用 redis.enabled，Cookie 可从 Redis 键 moa:cookie 读取
 
-MOA/.venv/bin/python MOA/moa_execute.py --help
+python3 MOA/moa_execute.py --help
 ```
 
-> 依赖 **redis**、**PyYAML**（见 `requirements.txt`）。未创建 `moa.yaml` 时仍可用 `.env.local` 运行。
+> 依赖 **redis**、**PyYAML**（见 `requirements.txt`）。已创建 `MOA/.venv` 时，用系统 `python3 MOA/moa_execute.py` 会**自动切换**到虚拟环境解释器。未创建 `moa.yaml` 时仍可用 `.env.local` 运行。
 
 ### 直接执行模板
 
 ```bash
-MOA/.venv/bin/python MOA/moa_execute.py --payload-file "MOA/templates/钻石-查询余额.json"
-MOA/.venv/bin/python MOA/moa_execute.py --payload-file "MOA/templates/查询用户登录天数.json" --expr 100465989
+python3 MOA/moa_execute.py --payload-file "MOA/templates/钻石-查询余额.json"
+python3 MOA/moa_execute.py --payload-file "MOA/templates/查询用户登录天数.json" --expr 100465989
 ```
 
 ### 带 CLI 参数

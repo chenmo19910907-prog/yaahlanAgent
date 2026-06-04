@@ -1,0 +1,21 @@
+{
+  "id": "post-moment",
+  "name": "发布纯文本动态",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "从任意底栏页发布纯文本动态（动态帧 → + → 输入 → Post）",
+  "params": ["text"],
+  "steps": [
+    { "sleep_ms": 300 },
+    { "tap_pct": [0.700, 0.949], "note": "Moment" },
+    { "sleep_ms": 600 },
+    { "tap_pct": [0.926, 0.077], "note": "右上角 +" },
+    { "sleep_ms": 700 },
+    { "tap_pct": [0.370, 0.154], "note": "正文输入区" },
+    { "sleep_ms": 400 },
+    { "text": "{{text}}", "note": "输入正文" },
+    { "sleep_ms": 600 },
+    { "tap_pct": [0.907, 0.051], "note": "Post" },
+    { "sleep_ms": 3500, "note": "等待发布完成" }
+  ]
+}

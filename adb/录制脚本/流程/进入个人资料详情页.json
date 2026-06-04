@@ -1,0 +1,44 @@
+{
+  "id": "my-profile",
+  "name": "进入个人资料详情页",
+  "description": "进入个人资料详情页（知识库/回归：Me → 点头像）",
+  "kbRef": [
+    "adb/README.md（知识库：进入我的个人主页）",
+    "regression-kb/发版回归用例.md（个人主页展示）"
+  ],
+  "app": "yaahlan",
+  "entry": {
+    "description": "录制起点：任意 Yaahlan 底栏帧；或已在 Me 帧",
+    "signals": [
+      "Yaahlan 底栏可见",
+      "若在 Me 帧：可见顶部头像区域",
+      "若不在 Me 帧：录制脚本会先点 Me"
+    ]
+  },
+  "states": {
+    "outside_app": {
+      "description": "非 Yaahlan 前台",
+      "bootstrap": { "type": "launch_app" }
+    },
+    "not_me_tab": {
+      "description": "在 Yaahlan 但不在 Me 帧",
+      "bootstrap": { "type": "script", "id": "me-tab" }
+    },
+    "me_tab": {
+      "description": "已在 Me 帧，可见头像 — 满足录制入口",
+      "bootstrap": { "type": "noop" }
+    },
+    "other_tab": {
+      "description": "其它底栏帧",
+      "bootstrap": {
+        "type": "noop",
+        "message": "录制脚本内含点 Me，可直接 flow run"
+      }
+    }
+  },
+  "recorded": {
+    "type": "script",
+    "id": "my-profile",
+    "capture": "never"
+  }
+}

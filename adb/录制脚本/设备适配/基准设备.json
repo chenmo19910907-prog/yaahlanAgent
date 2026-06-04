@@ -1,0 +1,13 @@
+{
+  "id": "reference",
+  "name": "录制基准机",
+  "description": "当前片段/流程内 tap_pct 均按此分辨率比例录制",
+  "model": "",
+  "width": 1080,
+  "height": 2340,
+  "transform": {
+    "type": "pct_linear",
+    "x": { "scale": 1.0, "offset": 0.0 },
+    "y": { "scale": 1.0, "offset": 0.0 }
+  }
+}
