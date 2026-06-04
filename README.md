@@ -22,7 +22,7 @@
 - **Risk**（`Risk/`）：调用海外风控开放接口 `/open/menu/operate`，支持解除设备/手机号风控、充值/活动风控加白加黑；默认读取 `testcase-kb/test_devices.json` 按平台自动选取 mmuid 或 mmuidv3 值；详见 [Risk/README.md](Risk/README.md)
 - **Admin**（`Admin/`）：调用 Yaahlan 测试后台，支持 **按 userId 查询用户全量详情**（`queryUserDetail`）；详见 [Admin/README.md](Admin/README.md)
 - **Report**（`Report/`）：从版本用例 xlsx 生成内网/外网测试总结 HTML；详见 [Report/README.md](Report/README.md)
-- **adb**（`adb/`）：截图视觉循环（截屏 → 读图算坐标 → 点击，仅保留最新 2 张截图）；详见 [adb/README.md](adb/README.md)
+- **adb**（`adb/`）：真机 UI 自动化（截屏 → 读图算坐标 → 点击，仅保留最新 2 张截图）；**录制脚本库**按发版回归一级模块存放 **片段（积木）** 与 **组合（配方）**，命令 `macro` / `compose`；详见 [adb/README.md](adb/README.md)、[adb/录制脚本/README.md](adb/录制脚本/README.md)
 
 ## 项目结构
 
@@ -52,9 +52,15 @@ auto-generate-testcase/
 │   ├── README.md
 │   ├── report_execute.py              # 入口
 │   └── requirements.txt
-├── adb/                               # ADB 截图视觉循环（读图坐标点击）
+├── adb/                               # ADB 真机 UI 自动化（读图坐标点击）
 │   ├── README.md
-│   └── adb_execute.py                 # 入口
+│   ├── adb_execute.py                 # 入口（macro / compose / device / capture…）
+│   └── 录制脚本/
+│       ├── 索引.json                  # 片段与组合总目录（含 module）
+│       ├── KB对照.md                  # 知识库 ↔ 脚本映射
+│       ├── 片段/<一级模块>/           # 积木：注册登录、动态帧、我的帧等
+│       ├── 组合/<一级模块>/           # 配方：按 sequence 拼接片段
+│       └── 设备适配/                  # 换机坐标换算（基准设备、档案）
 ├── rules/                             # 生成规则与辅助流程说明
 │   ├── testcase_generation_rules.md   # 通用：榜单 / 抽奖 / 兑换 / 礼包等
 │   ├── version_testcase_generation_rules.md  # 版本用例生成规则（须先读 documents/ 对应模块）
@@ -174,7 +180,23 @@ python3 Report/report_execute.py /path/to/v2.4.4版本用例.xlsx
 
 在同目录生成 `{文件名}_内网测试总结.html` 与 `{文件名}_外网测试总结.html`。详见 [Report/README.md](Report/README.md)。
 
-### 6. 用例格式
+### 6. ADB 真机录制脚本（Yaahlan）
+
+前置：`adb devices` 可见 `device`；目标 App 为 **Yaahlan**（非桌面 Yaha）。换机坐标适配见 `adb/录制脚本/设备适配/README.md`。
+
+```bash
+python3 adb/adb_execute.py scripts          # 按模块列出片段与组合
+python3 adb/adb_execute.py compose 冷启动登录   # 桌面 → 开屏 → QA 手机号登录
+python3 adb/adb_execute.py macro 发布纯文本动态 --text 5555 --no-capture
+```
+
+- **片段**：单段已验证操作，`macro <中文名>`（目录仅归档，调用用中文名或 id）
+- **组合**：多片段顺序执行，`compose <中文名>`（如 `冷启动登录`、`发布纯文本动态`）
+- **落库**：真机探索验收成功后，写入 `adb/录制脚本/片段/<模块>/` 并更新 `索引.json`；模块名与 `regression-kb` 一级模块一致
+
+详见 [adb/README.md](adb/README.md)、[adb/录制脚本/KB对照.md](adb/录制脚本/KB对照.md)。
+
+### 7. 用例格式
 
 | 字段 | 说明 |
 |------|------|
@@ -206,6 +228,9 @@ python3 Report/report_execute.py /path/to/v2.4.4版本用例.xlsx
 | [docs/新手上手.md](docs/新手上手.md) | **新电脑必看**：本地 `.env.local` 与验证步骤 |
 | [MOA/README.md](MOA/README.md) | MOA 本地调用与目录说明 |
 | [Risk/README.md](Risk/README.md) | 海外风控开放接口与测试机解除 |
+| [adb/README.md](adb/README.md) | ADB 截图循环、macro / compose、设备适配 |
+| [adb/录制脚本/README.md](adb/录制脚本/README.md) | 录制脚本库目录与落库约定 |
+| [adb/录制脚本/KB对照.md](adb/录制脚本/KB对照.md) | 知识库路径 ↔ 片段/组合对照 |
 
 - `榜单.md`：榜单类模块完整用例维度
 - `抽奖.md`：抽奖活动用例模板
