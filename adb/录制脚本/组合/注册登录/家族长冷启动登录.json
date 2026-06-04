@@ -1,0 +1,12 @@
+{
+  "id": "family-leader-cold-login",
+  "name": "家族长冷启动登录",
+  "description": "桌面 → 启动 → 开屏 → 家族长 +86 13311111112 登录",
+  "kbRef": ["documents/家族改版.md"],
+  "capture": "end",
+  "sequence": [
+    { "script": "启动Yaahlan", "capture": "never" },
+    { "script": "跳过开屏广告", "capture": "never" },
+    { "script": "家族长手机号登录", "capture": "never" }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "logout",
+  "name": "退出登录",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "任意底栏帧 → Me → 设置 → Log out → 登录页",
+  "kbRef": [
+    "documents/登录注册.md（退出登录）",
+    "regression-kb/发版回归用例.md（我的帧-设置页）"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.900, 0.956], "note": "Me" },
+    { "sleep_ms": 700 },
+    { "tap_pct": [0.922, 0.068], "note": "iv_setting" },
+    { "sleep_ms": 800 },
+    { "tap_pct": [0.500, 0.942], "note": "Log out（bounds 中心 540,2205）" },
+    { "sleep_ms": 2500, "note": "等待回到登录页" }
+  ]
+}

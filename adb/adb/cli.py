@@ -115,7 +115,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=[],
         metavar="KEY",
-        help="跳过带 skip_key 的步骤，如 dismiss_popup、dismiss_splash_ad",
+        help="跳过带 skip_key 的步骤，如 dismiss_popup_taps、dismiss_splash_ad、login_lang",
     )
     p_macro.add_argument(
         "--text",

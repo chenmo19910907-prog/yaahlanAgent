@@ -14,6 +14,32 @@
     "动态帧",
     "我的帧"
   ],
+  "loginDefaults": {
+    "countryCode": "+86",
+    "phone": "13311111115",
+    "verifyCode": "000000"
+  },
+  "testAccounts": {
+    "guildLeader": {
+      "role": "公会长",
+      "countryCode": "+86",
+      "phone": "13311111111",
+      "verifyCode": "000000",
+      "userId": "100465989",
+      "guild": "cm",
+      "loginScript": "公会长手机号登录"
+    },
+    "familyLeader": {
+      "role": "家族长",
+      "countryCode": "+86",
+      "phone": "13311111112",
+      "verifyCode": "000000",
+      "userId": "100486375",
+      "familyId": "101435",
+      "familyName": "CCVC",
+      "loginScript": "家族长手机号登录"
+    }
+  },
   "items": [
     {
       "id": "launch-yaahlan",
@@ -67,11 +93,32 @@
       "file": "片段/注册登录/手机号登录.json"
     },
     {
+      "id": "login-guild-leader",
+      "name": "公会长手机号登录",
+      "kind": "fragment",
+      "module": "注册登录",
+      "file": "片段/注册登录/公会长手机号登录.json"
+    },
+    {
+      "id": "login-family-leader",
+      "name": "家族长手机号登录",
+      "kind": "fragment",
+      "module": "注册登录",
+      "file": "片段/注册登录/家族长手机号登录.json"
+    },
+    {
       "id": "login-dismiss-popup",
       "name": "登录后关闭弹窗",
       "kind": "fragment",
       "module": "注册登录",
       "file": "片段/注册登录/登录后关闭弹窗.json"
+    },
+    {
+      "id": "dismiss-common-popups",
+      "name": "关闭常见弹窗",
+      "kind": "fragment",
+      "module": "注册登录",
+      "file": "片段/注册登录/关闭常见弹窗.json"
     },
     {
       "id": "game-tab",
@@ -137,6 +184,20 @@
       "file": "片段/我的帧/进入设置.json"
     },
     {
+      "id": "logout",
+      "name": "退出登录",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/退出登录.json"
+    },
+    {
+      "id": "logout-from-settings",
+      "name": "设置页退出登录",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/设置页退出登录.json"
+    },
+    {
       "id": "me-tab",
       "name": "切换我的底栏",
       "kind": "fragment",
@@ -173,11 +234,32 @@
       "file": "片段/动态帧/发布视频动态.json"
     },
     {
+      "id": "post-image-moment",
+      "name": "发布图片动态",
+      "kind": "fragment",
+      "module": "动态帧",
+      "file": "片段/动态帧/发布图片动态.json"
+    },
+    {
       "id": "cold-start-login",
       "name": "冷启动登录",
       "kind": "compose",
       "module": "注册登录",
       "file": "组合/注册登录/冷启动登录.json"
+    },
+    {
+      "id": "guild-leader-cold-login",
+      "name": "公会长冷启动登录",
+      "kind": "compose",
+      "module": "注册登录",
+      "file": "组合/注册登录/公会长冷启动登录.json"
+    },
+    {
+      "id": "family-leader-cold-login",
+      "name": "家族长冷启动登录",
+      "kind": "compose",
+      "module": "注册登录",
+      "file": "组合/注册登录/家族长冷启动登录.json"
     },
     {
       "id": "post-moment-compose",
@@ -193,6 +275,20 @@
       "kind": "compose",
       "module": "动态帧",
       "file": "组合/动态帧/发布视频动态.json"
+    },
+    {
+      "id": "guild-leader-post-image",
+      "name": "公会长发布图片动态",
+      "kind": "compose",
+      "module": "动态帧",
+      "file": "组合/动态帧/公会长发布图片动态.json"
+    },
+    {
+      "id": "family-leader-post-image",
+      "name": "家族长发布图片动态",
+      "kind": "compose",
+      "module": "动态帧",
+      "file": "组合/动态帧/家族长发布图片动态.json"
     },
     {
       "id": "my-profile-compose",

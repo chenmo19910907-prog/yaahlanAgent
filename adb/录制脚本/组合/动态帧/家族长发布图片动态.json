@@ -1,0 +1,14 @@
+{
+  "id": "family-leader-post-image",
+  "name": "家族长发布图片动态",
+  "description": "家族长冷启动登录后发布单图动态（相册首张图）",
+  "kbRef": ["documents/moments/basic module.md"],
+  "capture": "end",
+  "sequence": [
+    { "script": "启动Yaahlan", "capture": "never" },
+    { "script": "跳过开屏广告", "capture": "never" },
+    { "script": "家族长手机号登录", "capture": "never" },
+    { "script": "关闭常见弹窗", "capture": "never" },
+    { "script": "发布图片动态", "capture": "end" }
+  ]
+}

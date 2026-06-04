@@ -3,9 +3,11 @@
   "name": "登录-手机号发短信",
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
-  "description": "手机号登录页：输入手机号 → Get via SMS（需已在该页，区号默认 +86）",
+  "description": "手机号登录页：区号默认 +86，输入手机号 → Get via SMS",
   "kbRef": ["documents/登录注册.md（手机号注册/登陆）"],
+  "countryCode": "+86",
   "params": ["text"],
+  "defaults": { "text": "13311111115" },
   "steps": [
     { "sleep_ms": 400 },
     { "tap_pct": [0.609, 0.317], "note": "input_phone" },

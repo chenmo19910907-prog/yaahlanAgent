@@ -1,0 +1,37 @@
+{
+  "id": "sm_a805f",
+  "name": "Samsung SM-A805F",
+  "deviceModel": "SM-A805F",
+  "calibratedAt": "2026-06-04T00:00:00+00:00",
+  "updatedAt": "2026-06-04T00:00:00+00:00",
+  "notes": "同宽 1080；高度 2400 vs 基准 2340，Y 按 2340/2400 比例初算（未逐点读图校准）",
+  "lastChangeReason": "initial",
+  "match": {
+    "models": ["SM-A805F"],
+    "serials": ["R58M65Z2H0P"]
+  },
+  "device": {
+    "serial": "R58M65Z2H0P",
+    "model": "SM-A805F",
+    "manufacturer": "samsung",
+    "brand": "samsung",
+    "productDevice": "r1q",
+    "width": 1080,
+    "height": 2400
+  },
+  "reference": {
+    "id": "reference",
+    "width": 1080,
+    "height": 2340,
+    "name": "录制基准机",
+    "model": ""
+  },
+  "reusePolicy": "use_saved_transform",
+  "transform": {
+    "type": "pct_linear",
+    "x": { "scale": 1.0, "offset": 0.0 },
+    "y": { "scale": 0.975, "offset": 0.0 }
+  },
+  "anchors": [],
+  "history": []
+}

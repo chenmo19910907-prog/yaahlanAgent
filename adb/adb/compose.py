@@ -163,11 +163,9 @@ def run_compose(
             raise ValueError(f"sequence[{index}] 缺少 script")
 
         block_skip = set(block.get("skip") or []) | global_skip
-        frag = load_fragment(script_key, text=text)
-        params = frag.get("params") or []
-        if params and "text" in params and text is None:
-            raise ValueError(f"组合块 {script_key!r} 需要 --text")
-
+        block_text = block.get("text")
+        frag_text = str(block_text).strip() if block_text is not None else text
+        frag = load_fragment(script_key, text=frag_text)
         steps = apply_skip_flags(list(frag.get("steps", [])), skip=block_skip)
         block_capture: CaptureMode = str(block.get("capture", "never"))  # type: ignore[assignment]
         if block_capture not in ("never", "start", "end", "both"):

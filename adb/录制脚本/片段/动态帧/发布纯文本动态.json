@@ -7,6 +7,8 @@
   "params": ["text"],
   "steps": [
     { "sleep_ms": 300 },
+    { "run_script": "关闭常见弹窗", "note": "切页前关挡路弹窗" },
+    { "sleep_ms": 200 },
     { "tap_pct": [0.700, 0.956], "note": "Moment" },
     { "sleep_ms": 600 },
     { "tap_pct": [0.922, 0.087], "note": "publish_feed" },

@@ -26,6 +26,8 @@
 
 ### 注册登录
 
+**登录默认**（`索引.json` → `loginDefaults`）：**+86** / 手机 `13311111115` / 验证码 `000000`。带 `params.text` 的片段可不传 `--text`。
+
 | 中文名 | id |
 |--------|-----|
 | 启动Yaahlan | launch-yaahlan |
@@ -35,7 +37,8 @@
 | 登录-手机号发短信 | login-phone-sms（`--text`） |
 | 登录-输入验证码 | login-verify-code（`--text`） |
 | 手机号登录 | login-phone-full |
-| 登录后关闭弹窗 | login-dismiss-popup |
+| **关闭常见弹窗** | dismiss-common-popups |
+| 登录后关闭弹窗（→ 上） | login-dismiss-popup |
 
 ### 首页-游戏帧 / 首页-房间帧 / 消息帧
 
@@ -65,6 +68,8 @@
 | 我的页进入个人资料详情 | my-profile-from-me |
 | 进入钱包 | wallet |
 | 进入设置 | settings |
+| 退出登录 | logout |
+| 设置页退出登录 | logout-from-settings |
 
 ### 组合（按模块）
 
@@ -89,6 +94,8 @@
 ```bash
 python3 adb/adb_execute.py scripts    # 含 fragmentsByModule 分组
 python3 adb/adb_execute.py macro 切换动态底栏   # 中文名或 id，勿写目录路径
+python3 adb/adb_execute.py macro 退出登录
+python3 adb/adb_execute.py macro 设置页退出登录   # 已在 Settings 时
 python3 adb/adb_execute.py macro 发布纯文本动态 --text 5555 --no-capture
 python3 adb/adb_execute.py compose 冷启动登录
 ```

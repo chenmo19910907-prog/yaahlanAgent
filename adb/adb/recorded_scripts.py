@@ -120,6 +120,31 @@ def resolve_key(key: str, *, kind: str | None = None) -> tuple[str, str, Path]:
     return str(entry["id"]), str(entry.get("name", entry["id"])), path
 
 
+def login_defaults() -> dict[str, str]:
+    """QA 登录默认值（索引 loginDefaults，可被片段 defaults 覆盖）。"""
+    raw = _load_index().get("loginDefaults") or {}
+    if not isinstance(raw, dict):
+        raw = {}
+    return {
+        "countryCode": str(raw.get("countryCode", "+86")).strip() or "+86",
+        "phone": str(raw.get("phone", "13311111115")).strip(),
+        "verifyCode": str(raw.get("verifyCode", "000000")).strip(),
+    }
+
+
+def _default_text_for_script(spec: dict[str, Any]) -> str | None:
+    defaults = spec.get("defaults")
+    if isinstance(defaults, dict) and defaults.get("text") is not None:
+        return str(defaults["text"]).strip()
+    spec_id = str(spec.get("id", ""))
+    login = login_defaults()
+    if spec_id == "login-verify-code":
+        return login["verifyCode"]
+    if spec_id == "login-phone-sms":
+        return login["phone"]
+    return None
+
+
 def _format_known(kind: str | None) -> str:
     names: list[str] = []
     for entry in _load_index().get("items", []):
@@ -133,9 +158,14 @@ def _apply_params(spec: dict[str, Any], *, text: str | None) -> dict[str, Any]:
     if not params:
         return spec
     if "text" in params:
-        if text is None or not str(text).strip():
-            raise ValueError(f"{spec.get('name', spec.get('id'))} 需要 --text <正文>")
-        content = str(text).strip()
+        content = str(text).strip() if text is not None and str(text).strip() else None
+        if content is None:
+            content = _default_text_for_script(spec)
+        if content is None:
+            raise ValueError(
+                f"{spec.get('name', spec.get('id'))} 需要 --text <正文>，"
+                "或未配置 defaults / 索引 loginDefaults"
+            )
     else:
         content = None
     steps_out: list[dict[str, Any]] = []

@@ -37,7 +37,7 @@
 
 **开屏广告**：组合 **冷启动登录** 含 **跳过开屏广告**。无跳过按钮时用 `--skip dismiss_splash_ad`。详见 [`录制脚本/README.md`](录制脚本/README.md#开屏广告约-5s)。
 
-**未登录**：`compose 冷启动登录` 或 `macro 手机号登录`（QA 号见 [`录制脚本/KB对照.md`](录制脚本/KB对照.md)）。
+**未登录**：`compose 冷启动登录` 或 `macro 手机号登录`。默认 **+86**、验证码 **000000**、QA 手机 **13311111115**（见 [`录制脚本/KB对照.md`](录制脚本/KB对照.md)）。
 
 ## 设备型号适配（换机必读）
 
@@ -116,4 +116,5 @@ python3 adb/adb_execute.py macro post-moment --text 1234 --no-capture
 ## 说明
 
 - 仅支持 **Android + adb**。
-- 可选 `--skip`：`dismiss_splash_ad`、`login_lang`、`login_popup`、`dismiss_popup` 等（见各片段 `skip_key`）。
+- 可选 `--skip`：`dismiss_splash_ad`、`login_lang`、`dismiss_popup_taps` 等（见各片段 `skip_key`）。
+- **偶发弹窗**：登录、发动态、进 Me 等流程会执行 **关闭常见弹窗**（先 BACK，再点常见 Cancel）。稳定页且确认无弹窗时可 `--skip dismiss_popup_taps` 只保留 BACK 关层。

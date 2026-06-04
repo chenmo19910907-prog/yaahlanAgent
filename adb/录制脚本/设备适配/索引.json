@@ -2,5 +2,14 @@
   "title": "设备坐标换算档案",
   "description": "按 deviceModel 匹配；已有机型复用 transform，操作失败用 recalibrate + commit --reason correction 更新",
   "referenceFile": "基准设备.json",
-  "profiles": []
+  "profiles": [
+    {
+      "id": "sm_a805f",
+      "name": "Samsung SM-A805F",
+      "file": "档案/sm_a805f.json",
+      "deviceModel": "SM-A805F",
+      "width": 1080,
+      "height": 2400
+    }
+  ]
 }

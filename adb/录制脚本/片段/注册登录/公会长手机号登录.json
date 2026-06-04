@@ -1,18 +1,17 @@
 {
-  "id": "login-phone-full",
-  "name": "手机号登录",
+  "id": "login-guild-leader",
+  "name": "公会长手机号登录",
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
-  "description": "冷启动登录全流程：语言 Next → 协议+手机 → +86 13311111115 → SMS → 验证码 000000（QA 测试号）",
+  "description": "公会长 QA 号 +86 13311111111 / 000000（tradeUid 100465989，公会 cm）",
   "countryCode": "+86",
-  "loginDefaults": { "countryCode": "+86", "phone": "13311111115", "verifyCode": "000000" },
   "kbRef": [
-    "documents/登录注册.md（7、手机号登陆）",
-    "regression-kb/发版回归用例.md（P0 手机号登录）"
+    "documents/Agency/公会完整用例2026.4.16.md",
+    "regression-kb/发版回归用例.md（公会-内网账号）"
   ],
   "steps": [
     { "sleep_ms": 500 },
-    { "tap_pct": [0.500, 0.918], "note": "语言 Next（无语言页时可 --skip login_lang）", "skip_key": "login_lang" },
+    { "tap_pct": [0.500, 0.918], "note": "语言 Next", "skip_key": "login_lang" },
     { "sleep_ms": 1200 },
     { "tap_pct": [0.195, 0.921], "note": "勾选协议" },
     { "sleep_ms": 300 },
@@ -20,13 +19,13 @@
     { "sleep_ms": 800 },
     { "tap_pct": [0.609, 0.317], "note": "input_phone" },
     { "sleep_ms": 300 },
-    { "text": "13311111115", "note": "QA 手机号" },
+    { "text": "13311111111", "note": "公会长手机号" },
     { "sleep_ms": 500 },
     { "tap_pct": [0.500, 0.504], "note": "Get via SMS" },
     { "sleep_ms": 2000 },
     { "tap_pct": [0.500, 0.349], "note": "input_code" },
     { "sleep_ms": 300 },
-    { "text": "000000", "note": "QA 验证码" },
+    { "text": "000000", "note": "验证码" },
     { "sleep_ms": 3000, "note": "进入首页" },
     { "run_script": "关闭常见弹窗", "note": "关登录后偶发弹窗" },
     { "sleep_ms": 300 }

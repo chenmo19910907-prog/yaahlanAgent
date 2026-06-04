@@ -1,0 +1,34 @@
+{
+  "id": "post-image-moment",
+  "name": "发布图片动态",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "从任意底栏发布单图动态：Moment → + → 相册选第一张图 → 勾选 → Select → Post",
+  "kbRef": [
+    "documents/moments/basic module.md（图片选择逻辑）",
+    "documents/moments/video.md（相册入口，选图非视频）"
+  ],
+  "steps": [
+    { "sleep_ms": 300 },
+    { "run_script": "关闭常见弹窗", "note": "切页前关挡路弹窗" },
+    { "sleep_ms": 200 },
+    { "tap_pct": [0.700, 0.956], "note": "Moment" },
+    { "sleep_ms": 600 },
+    { "tap_pct": [0.922, 0.087], "note": "publish_feed" },
+    { "sleep_ms": 700 },
+    { "tap_pct": [0.198, 0.374], "note": "上传区 id/main" },
+    { "sleep_ms": 500 },
+    { "tap_pct": [0.500, 0.856], "note": "底部菜单 Album" },
+    { "sleep_ms": 2500, "note": "等待相册列表" },
+    { "tap_pct": [0.181, 0.773], "note": "相册网格首张图片" },
+    { "sleep_ms": 800, "note": "进入预览" },
+    { "tap_pct": [0.935, 0.070], "note": "preview_checkbox 勾选" },
+    { "sleep_ms": 500 },
+    { "tap_pct": [0.880, 0.952], "note": "preview_select_finish Select" },
+    { "sleep_ms": 1500, "note": "回到编辑页" },
+    { "key": 4, "note": "收起键盘以免挡住 Post" },
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.881, 0.068], "note": "Post" },
+    { "sleep_ms": 8000, "note": "等待上传与发布" }
+  ]
+}
