@@ -75,5 +75,15 @@
   "change_cs_taking_order": {
     "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
     "path": "/yaahlan/cms/customerservice/changeTakingOrder"
+  },
+  "query_app_store_review_version": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/backend/pangu/getAppStoreReviewVersion",
+    "defaultAppName": "yaahlan"
+  },
+  "update_app_store_review_version": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/backend/pangu/updateAppStoreReviewVersion",
+    "defaultAppName": "yaahlan"
   }
 }

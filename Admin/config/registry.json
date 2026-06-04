@@ -187,6 +187,31 @@
       "command": "python3 Admin/admin_execute.py \\\n  --change-cs-taking-order \\\n  --cs-user-id <userId> \\\n  --cs-taking-order 0"
     },
     {
+      "id": "query_app_store_review_version",
+      "name": "版本-查询 App Store 审核版本",
+      "category": "版本（melon-gateway / backend/pangu）",
+      "description": "查询 iOS App Store 审核版本与 Android versionCode（getAppStoreReviewVersion；params=appName，默认 yaahlan）",
+      "prompts": [
+        "查询 iOS 审核版本",
+        "当前 App Store 审核版本是多少",
+        "yaahlan 审核版本",
+        "getAppStoreReviewVersion"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-app-store-review-version"
+    },
+    {
+      "id": "update_app_store_review_version",
+      "name": "版本-设置 App Store 审核版本",
+      "category": "版本（melon-gateway / backend/pangu）",
+      "description": "设置 iOS App Store 审核版本与 Android versionCode（updateAppStoreReviewVersion；params=appName、iosVersion、androidVersionCode）",
+      "prompts": [
+        "设置 iOS 审核版本为 <iosVersion>",
+        "把 App Store 审核版本改成 <iosVersion>",
+        "updateAppStoreReviewVersion <iosVersion>"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --update-app-store-review-version \\\n  --ios-version <iosVersion> \\\n  --android-version-code <androidVersionCode>"
+    },
+    {
       "id": "setup_custom_avatar_frame",
       "name": "定制头像框-开通流程",
       "category": "定制装扮工作流（MOA + Admin）",

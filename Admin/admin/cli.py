@@ -8,6 +8,10 @@ import os
 import sys
 import urllib.parse
 
+from .app_store_review import (
+    parse_app_store_review_version_summary,
+    parse_update_app_store_review_version_summary,
+)
 from .client import admin_success, http_get_json, http_post_json
 from .config import defaults
 from .custom_gift import (
@@ -188,6 +192,28 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--cs-area", help="大区 area（默认空=全部）")
     parser.add_argument("--cs-page-index", type=int, help="客服查询页码 pageIndex（默认 1）")
     parser.add_argument("--cs-page-size", type=int, help="客服查询 pageSize（默认 20）")
+    parser.add_argument(
+        "--query-app-store-review-version",
+        action="store_true",
+        help="查询 App Store 审核版本（getAppStoreReviewVersion；返回 iOS 版本与 Android versionCode）",
+    )
+    parser.add_argument(
+        "--update-app-store-review-version",
+        action="store_true",
+        help="设置 App Store 审核版本（updateAppStoreReviewVersion；需 --ios-version）",
+    )
+    parser.add_argument(
+        "--ios-version",
+        help="iOS 审核版本号 iosVersion（配合 --update-app-store-review-version）",
+    )
+    parser.add_argument(
+        "--android-version-code",
+        help="Android versionCode（配合 --update-app-store-review-version；可选）",
+    )
+    parser.add_argument(
+        "--app-name",
+        help="应用名 appName（审核版本查询/设置；默认 yaahlan）",
+    )
     parser.add_argument(
         "--output",
         choices=["summary", "json"],
@@ -414,6 +440,47 @@ def _resolve_change_cs_taking_order_request(args: argparse.Namespace) -> tuple[s
     return url, body
 
 
+def _resolve_app_store_app_name(args: argparse.Namespace, cfg: dict[str, object]) -> str:
+    app_name = str(args.app_name or cfg.get("defaultAppName") or "yaahlan").strip()
+    if not app_name:
+        raise ValueError("app-name 不能为空")
+    return app_name
+
+
+def _resolve_query_app_store_review_version_request(
+    args: argparse.Namespace,
+) -> tuple[str, dict[str, str]]:
+    cfg = defaults("query_app_store_review_version")
+    base_url = _resolve_gateway_base_url(cfg)
+    path = str(cfg.get("path", "/yaahlan/backend/pangu/getAppStoreReviewVersion"))
+    app_name = _resolve_app_store_app_name(args, cfg)
+    url = f"{base_url}{path}"
+    body = {"appName": app_name}
+    return url, body
+
+
+def _resolve_update_app_store_review_version_request(
+    args: argparse.Namespace,
+) -> tuple[str, dict[str, str]]:
+    ios_version = str(args.ios_version or "").strip()
+    if not ios_version:
+        raise ValueError("设置审核版本时必须提供 --ios-version")
+
+    cfg = defaults("update_app_store_review_version")
+    base_url = _resolve_gateway_base_url(cfg)
+    path = str(cfg.get("path", "/yaahlan/backend/pangu/updateAppStoreReviewVersion"))
+    app_name = _resolve_app_store_app_name(args, cfg)
+    url = f"{base_url}{path}"
+    body: dict[str, str] = {
+        "appName": app_name,
+        "iosVersion": ios_version,
+    }
+    android_version_code = str(args.android_version_code or "").strip()
+    if android_version_code:
+        body["androidVersionCode"] = android_version_code
+    return url, body
+
+
 def _resolve_add_guild_member_request(args: argparse.Namespace) -> tuple[str, dict[str, str]]:
     trade_id = str(args.trade_id or "").strip()
     trade_union = str(args.trade_union or "").strip()
@@ -603,6 +670,18 @@ def main() -> int:
                 print(f"POST {url}", file=sys.stderr)
                 print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
             resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
+        elif args.query_app_store_review_version:
+            url, body = _resolve_query_app_store_review_version_request(args)
+            if args.dump_body:
+                print(f"POST {url}", file=sys.stderr)
+                print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
+            resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
+        elif args.update_app_store_review_version:
+            url, body = _resolve_update_app_store_review_version_request(args)
+            if args.dump_body:
+                print(f"POST {url}", file=sys.stderr)
+                print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
+            resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
         elif args.reset_custom_gift_upload:
             url, body = _resolve_reset_custom_gift_upload_request(args)
             if args.dump_body:
@@ -734,6 +813,26 @@ def main() -> int:
             taking_order=int(args.cs_taking_order),
         )
         print(json.dumps(summary, ensure_ascii=False, indent=2))
+    elif args.query_app_store_review_version:
+        if not gateway_success(resp.get("status")):
+            print(f"Gateway 返回失败: status={resp.get('status')}, msg={resp.get('msg')}", file=sys.stderr)
+            print(json.dumps(resp, ensure_ascii=False, indent=2))
+            return 3
+        summary = parse_app_store_review_version_summary(resp.get("data"))
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+    elif args.update_app_store_review_version:
+        if not gateway_success(resp.get("status")):
+            print(f"Gateway 返回失败: status={resp.get('status')}, msg={resp.get('msg')}", file=sys.stderr)
+            print(json.dumps(resp, ensure_ascii=False, indent=2))
+            return 3
+        android_version_code = str(args.android_version_code or "").strip() or None
+        summary = parse_update_app_store_review_version_summary(
+            resp,
+            app_name=_resolve_app_store_app_name(args, defaults("update_app_store_review_version")),
+            ios_version=str(args.ios_version).strip(),
+            android_version_code=android_version_code,
+        )
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
     elif args.reset_custom_gift_upload:
         summary = parse_reset_custom_gift_upload_summary(
             resp,
@@ -767,7 +866,14 @@ def main() -> int:
     else:
         print(json.dumps(resp, ensure_ascii=False, indent=2))
 
-    if args.query_custom_gift_list or args.add_family_member or args.query_family or args.list_all_families:
+    if (
+        args.query_custom_gift_list
+        or args.add_family_member
+        or args.query_family
+        or args.list_all_families
+        or args.query_app_store_review_version
+        or args.update_app_store_review_version
+    ):
         if not gateway_success(resp.get("status")):
             print(f"Gateway 返回失败: status={resp.get('status')}, msg={resp.get('msg')}", file=sys.stderr)
             return 3
