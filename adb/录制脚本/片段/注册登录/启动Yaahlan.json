@@ -1,0 +1,10 @@
+{
+  "id": "launch-yaahlan",
+  "name": "启动Yaahlan",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "从桌面启动 Yaahlan（LAUNCHER），并 force-stop Yaha",
+  "steps": [
+    { "launch_app": "yaahlan", "note": "启动目标包 com.immomo.biz.yaahlan" }
+  ]
+}

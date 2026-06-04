@@ -1,0 +1,13 @@
+{
+  "id": "login-lang-next",
+  "name": "登录-语言下一步",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "首次安装语言选择页 → Next（id/confirm）",
+  "kbRef": ["documents/登录注册.md（语言选择页 → next）"],
+  "steps": [
+    { "sleep_ms": 500 },
+    { "tap_pct": [0.500, 0.918], "note": "Next" },
+    { "sleep_ms": 1200 }
+  ]
+}

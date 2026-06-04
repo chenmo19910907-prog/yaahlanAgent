@@ -1,0 +1,10 @@
+{
+  "id": "post-moment-compose",
+  "name": "发布纯文本动态",
+  "description": "已在 Yaahlan 任意底栏帧时：Moment → + → 输入 → Post（需 --text）",
+  "kbRef": ["documents/moments/basic module.md"],
+  "capture": "never",
+  "sequence": [
+    { "script": "发布纯文本动态", "capture": "never" }
+  ]
+}

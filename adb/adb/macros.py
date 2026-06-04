@@ -51,6 +51,7 @@ def list_macros() -> list[dict[str, Any]]:
             {
                 "id": item.get("id"),
                 "name": item.get("name"),
+                "module": item.get("module"),
                 "description": spec.get("description", ""),
                 "capture": spec.get("capture", "end"),
                 "stepCount": len(spec.get("steps", [])),

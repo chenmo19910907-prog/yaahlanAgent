@@ -1,0 +1,25 @@
+{
+  "id": "post-video-moment",
+  "name": "发布视频动态",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "从任意底栏页发布视频动态（Moment → + → 相册 → 选视频 → 确认 → Post）",
+  "kbRef": ["documents/moments/video.md"],
+  "steps": [
+    { "sleep_ms": 300 },
+    { "tap_pct": [0.700, 0.956], "note": "Moment" },
+    { "sleep_ms": 600 },
+    { "tap_pct": [0.922, 0.087], "note": "publish_feed" },
+    { "sleep_ms": 700 },
+    { "tap_pct": [0.198, 0.375], "note": "上传区 id/main" },
+    { "sleep_ms": 500 },
+    { "tap_pct": [0.500, 0.856], "note": "底部菜单 Ablum" },
+    { "sleep_ms": 2500, "note": "等待相册" },
+    { "tap_pct": [0.498, 0.626], "note": "相册网格默认视频格（00:26 实测位）" },
+    { "sleep_ms": 2000, "note": "视频预览" },
+    { "tap_pct": [0.878, 0.965], "note": "预览 Confirm" },
+    { "sleep_ms": 1500 },
+    { "tap_pct": [0.881, 0.068], "note": "Post" },
+    { "sleep_ms": 18000, "note": "等待上传与发布" }
+  ]
+}

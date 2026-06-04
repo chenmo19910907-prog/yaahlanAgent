@@ -1,0 +1,12 @@
+{
+  "id": "msg-tab",
+  "name": "切换消息底栏",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "点击底部 Message（消息帧，id/tab_msg）",
+  "kbRef": ["regression-kb/发版回归用例.md（消息帧）", "documents/消息.md"],
+  "steps": [
+    { "sleep_ms": 300 },
+    { "tap_pct": [0.500, 0.956], "note": "tab_msg" }
+  ]
+}

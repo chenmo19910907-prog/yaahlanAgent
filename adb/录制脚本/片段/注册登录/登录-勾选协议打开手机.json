@@ -1,0 +1,15 @@
+{
+  "id": "login-agree-phone",
+  "name": "登录-勾选协议打开手机",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "登陆注册页：勾选服务协议 → 点手机 图标进入手机号页",
+  "kbRef": ["documents/登录注册.md（服务协议勾选、手机图标）"],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.195, 0.921], "note": "img_check_terms" },
+    { "sleep_ms": 300 },
+    { "tap_pct": [0.312, 0.855], "note": "phone 入口" },
+    { "sleep_ms": 1000 }
+  ]
+}

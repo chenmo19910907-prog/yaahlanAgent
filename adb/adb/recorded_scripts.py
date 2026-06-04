@@ -1,4 +1,4 @@
-"""从 adb/录制脚本 加载片段与流程（支持中文名与英文 id）。"""
+"""从 adb/录制脚本 加载片段（支持中文名与英文 id）；组合见 compose 模块。"""
 
 from __future__ import annotations
 
@@ -38,11 +38,59 @@ def list_catalog() -> list[dict[str, Any]]:
                 "id": entry.get("id"),
                 "name": entry.get("name"),
                 "kind": entry.get("kind"),
+                "module": entry.get("module"),
                 "file": entry.get("file"),
                 "params": entry.get("params", []),
             }
         )
     return items
+
+
+def load_compose_spec(
+    key: str,
+) -> dict[str, Any]:
+    _id, _name, path = resolve_key(key, kind="compose")
+    spec = _read_json(path)
+    spec.setdefault("id", _id)
+    spec.setdefault("name", _name)
+    spec["_file"] = str(path)
+    return spec
+
+
+def list_composes_by_module() -> dict[str, list[dict[str, Any]]]:
+    """按一级模块分组组合（与 索引.json composeModules 顺序一致）。"""
+    index = _load_index()
+    order = [str(m) for m in index.get("composeModules", []) if m]
+    grouped: dict[str, list[dict[str, Any]]] = {m: [] for m in order}
+    other_key = "其他"
+    for item in list_catalog():
+        if item.get("kind") != "compose":
+            continue
+        mod = str(item.get("module") or other_key)
+        if mod not in grouped:
+            grouped[mod] = []
+        grouped[mod].append(item)
+    if grouped.get(other_key):
+        order = order + [other_key]
+    return {k: grouped[k] for k in order if grouped.get(k)}
+
+
+def list_fragments_by_module() -> dict[str, list[dict[str, Any]]]:
+    """按发版回归一级模块分组片段（与 索引.json fragmentModules 顺序一致）。"""
+    index = _load_index()
+    order = [str(m) for m in index.get("fragmentModules", []) if m]
+    grouped: dict[str, list[dict[str, Any]]] = {m: [] for m in order}
+    other_key = "其他"
+    for item in list_catalog():
+        if item.get("kind") != "fragment":
+            continue
+        mod = str(item.get("module") or other_key)
+        if mod not in grouped:
+            grouped[mod] = []
+        grouped[mod].append(item)
+    if grouped.get(other_key):
+        order = order + [other_key]
+    return {k: grouped[k] for k in order if grouped.get(k)}
 
 
 def resolve_key(key: str, *, kind: str | None = None) -> tuple[str, str, Path]:
@@ -68,13 +116,6 @@ def resolve_key(key: str, *, kind: str | None = None) -> tuple[str, str, Path]:
     if not matches:
         hint = _format_known(kind)
         raise ValueError(f"未知脚本 {key!r}，{hint}")
-    if len(matches) > 1 and kind is None:
-        kinds = {m[0].get("kind") for m in matches}
-        if len(kinds) > 1:
-            raise ValueError(
-                f"{key!r} 同时存在片段与流程，请用 macro/flow 子命令区分，"
-                f"或指定 kind: {', '.join(sorted(kinds))}"
-            )
     entry, path = matches[0]
     return str(entry["id"]), str(entry.get("name", entry["id"])), path
 
@@ -127,38 +168,7 @@ def load_fragment(
 
 
 def load_flow_file(key: str) -> dict[str, Any]:
-    _id, _name, path = resolve_key(key, kind="flow")
-    spec = _read_json(path)
-    spec.setdefault("id", _id)
-    spec.setdefault("name", _name)
-    return spec
-
-
-def flow_paths() -> list[Path]:
-    return sorted((_SCRIPTS_ROOT / "流程").glob("*.json"))
-
-
-def load_flow_by_path(path: Path) -> dict[str, Any]:
-    spec = _read_json(path)
-    spec.setdefault("name", path.stem)
-    return spec
-
-
-def list_flows_summary() -> list[dict[str, Any]]:
-    out: list[dict[str, Any]] = []
-    for path in flow_paths():
-        try:
-            flow = load_flow_by_path(path)
-        except (OSError, json.JSONDecodeError, ValueError):
-            continue
-        recorded = flow.get("recorded") or {}
-        out.append(
-            {
-                "id": flow.get("id", path.stem),
-                "name": flow.get("name", path.stem),
-                "description": flow.get("description", ""),
-                "recordedCapture": recorded.get("capture", "never"),
-                "kbRef": flow.get("kbRef", []),
-            }
-        )
-    return out
+    raise ValueError(
+        f"已移除流程脚本，请用 macro {key!r} 或 compose <组合名>；"
+        "组合见 adb/录制脚本/组合/"
+    )

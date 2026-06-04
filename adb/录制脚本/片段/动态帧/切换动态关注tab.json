@@ -1,0 +1,15 @@
+{
+  "id": "moment-follow-tab",
+  "name": "切换动态关注tab",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "动态帧 → 顶部 Follow 关注 tab（需已在 Moment 底栏）",
+  "kbRef": ["documents/moments/basic module.md（顶部 tab：发现/关注）"],
+  "steps": [
+    { "sleep_ms": 300 },
+    { "tap_pct": [0.700, 0.956], "note": "Moment 底栏" },
+    { "sleep_ms": 700 },
+    { "tap_pct": [0.349, 0.087], "note": "Follow" },
+    { "sleep_ms": 800 }
+  ]
+}

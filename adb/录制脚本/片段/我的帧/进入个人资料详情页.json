@@ -6,7 +6,7 @@
   "description": "从任意底栏页进入个人资料详情页（Me → 关众测弹窗 → 点头像）",
   "steps": [
     { "sleep_ms": 400 },
-    { "tap_pct": [0.900, 0.949], "note": "底部 Me" },
+    { "tap_pct": [0.900, 0.956], "note": "tab_profile" },
     { "sleep_ms": 600 },
     {
       "tap_pct": [0.296, 0.479],

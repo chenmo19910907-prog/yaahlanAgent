@@ -1,49 +1,205 @@
 {
   "title": "Yaahlan ADB 录制脚本库",
   "app": "yaahlan",
+  "fragmentModules": [
+    "注册登录",
+    "首页-游戏帧",
+    "首页-房间帧",
+    "消息帧",
+    "动态帧",
+    "我的帧"
+  ],
+  "composeModules": [
+    "注册登录",
+    "动态帧",
+    "我的帧"
+  ],
   "items": [
+    {
+      "id": "launch-yaahlan",
+      "name": "启动Yaahlan",
+      "kind": "fragment",
+      "module": "注册登录",
+      "file": "片段/注册登录/启动Yaahlan.json"
+    },
+    {
+      "id": "dismiss-splash-ad",
+      "name": "跳过开屏广告",
+      "kind": "fragment",
+      "module": "注册登录",
+      "file": "片段/注册登录/跳过开屏广告.json"
+    },
+    {
+      "id": "login-lang-next",
+      "name": "登录-语言下一步",
+      "kind": "fragment",
+      "module": "注册登录",
+      "file": "片段/注册登录/登录-语言下一步.json"
+    },
+    {
+      "id": "login-agree-phone",
+      "name": "登录-勾选协议打开手机",
+      "kind": "fragment",
+      "module": "注册登录",
+      "file": "片段/注册登录/登录-勾选协议打开手机.json"
+    },
+    {
+      "id": "login-phone-sms",
+      "name": "登录-手机号发短信",
+      "kind": "fragment",
+      "module": "注册登录",
+      "params": ["text"],
+      "file": "片段/注册登录/登录-手机号发短信.json"
+    },
+    {
+      "id": "login-verify-code",
+      "name": "登录-输入验证码",
+      "kind": "fragment",
+      "module": "注册登录",
+      "params": ["text"],
+      "file": "片段/注册登录/登录-输入验证码.json"
+    },
+    {
+      "id": "login-phone-full",
+      "name": "手机号登录",
+      "kind": "fragment",
+      "module": "注册登录",
+      "file": "片段/注册登录/手机号登录.json"
+    },
+    {
+      "id": "login-dismiss-popup",
+      "name": "登录后关闭弹窗",
+      "kind": "fragment",
+      "module": "注册登录",
+      "file": "片段/注册登录/登录后关闭弹窗.json"
+    },
+    {
+      "id": "game-tab",
+      "name": "切换游戏底栏",
+      "kind": "fragment",
+      "module": "首页-游戏帧",
+      "file": "片段/首页-游戏帧/切换游戏底栏.json"
+    },
+    {
+      "id": "room-tab",
+      "name": "切换房间底栏",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/切换房间底栏.json"
+    },
+    {
+      "id": "msg-tab",
+      "name": "切换消息底栏",
+      "kind": "fragment",
+      "module": "消息帧",
+      "file": "片段/消息帧/切换消息底栏.json"
+    },
     {
       "id": "moment-tab",
       "name": "切换动态底栏",
       "kind": "fragment",
-      "file": "片段/切换动态底栏.json"
+      "module": "动态帧",
+      "file": "片段/动态帧/切换动态底栏.json"
+    },
+    {
+      "id": "moment-follow-tab",
+      "name": "切换动态关注tab",
+      "kind": "fragment",
+      "module": "动态帧",
+      "file": "片段/动态帧/切换动态关注tab.json"
+    },
+    {
+      "id": "open-moment-compose",
+      "name": "打开动态发布页",
+      "kind": "fragment",
+      "module": "动态帧",
+      "file": "片段/动态帧/打开动态发布页.json"
+    },
+    {
+      "id": "my-moments-list",
+      "name": "进入我的动态列表",
+      "kind": "fragment",
+      "module": "动态帧",
+      "file": "片段/动态帧/进入我的动态列表.json"
+    },
+    {
+      "id": "wallet",
+      "name": "进入钱包",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/进入钱包.json"
+    },
+    {
+      "id": "settings",
+      "name": "进入设置",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/进入设置.json"
     },
     {
       "id": "me-tab",
       "name": "切换我的底栏",
       "kind": "fragment",
-      "file": "片段/切换我的底栏.json"
+      "module": "我的帧",
+      "file": "片段/我的帧/切换我的底栏.json"
     },
     {
       "id": "my-profile",
       "name": "进入个人资料详情页",
       "kind": "fragment",
-      "file": "片段/进入个人资料详情页.json"
+      "module": "我的帧",
+      "file": "片段/我的帧/进入个人资料详情页.json"
     },
     {
       "id": "my-profile-from-me",
       "name": "我的页进入个人资料详情",
       "kind": "fragment",
-      "file": "片段/我的页进入个人资料详情.json"
+      "module": "我的帧",
+      "file": "片段/我的帧/我的页进入个人资料详情.json"
     },
     {
       "id": "post-moment",
       "name": "发布纯文本动态",
       "kind": "fragment",
+      "module": "动态帧",
       "params": ["text"],
-      "file": "片段/发布纯文本动态.json"
+      "file": "片段/动态帧/发布纯文本动态.json"
     },
     {
-      "id": "post-moment",
+      "id": "post-video-moment",
+      "name": "发布视频动态",
+      "kind": "fragment",
+      "module": "动态帧",
+      "file": "片段/动态帧/发布视频动态.json"
+    },
+    {
+      "id": "cold-start-login",
+      "name": "冷启动登录",
+      "kind": "compose",
+      "module": "注册登录",
+      "file": "组合/注册登录/冷启动登录.json"
+    },
+    {
+      "id": "post-moment-compose",
       "name": "发布纯文本动态",
-      "kind": "flow",
-      "file": "流程/发布纯文本动态.json"
+      "kind": "compose",
+      "module": "动态帧",
+      "params": ["text"],
+      "file": "组合/动态帧/发布纯文本动态.json"
     },
     {
-      "id": "my-profile",
+      "id": "post-video-moment-compose",
+      "name": "发布视频动态",
+      "kind": "compose",
+      "module": "动态帧",
+      "file": "组合/动态帧/发布视频动态.json"
+    },
+    {
+      "id": "my-profile-compose",
       "name": "进入个人资料详情页",
-      "kind": "flow",
-      "file": "流程/进入个人资料详情页.json"
+      "kind": "compose",
+      "module": "我的帧",
+      "file": "组合/我的帧/进入个人资料详情页.json"
     }
   ]
 }

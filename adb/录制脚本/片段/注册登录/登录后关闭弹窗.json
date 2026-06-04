@@ -1,0 +1,12 @@
+{
+  "id": "login-dismiss-popup",
+  "name": "登录后关闭弹窗",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "登录进首页后若出现运营弹窗（如 Surprise gift），按 BACK 关闭",
+  "steps": [
+    { "sleep_ms": 800 },
+    { "key": 4, "note": "BACK" },
+    { "sleep_ms": 600 }
+  ]
+}

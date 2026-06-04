@@ -7,9 +7,9 @@
   "params": ["text"],
   "steps": [
     { "sleep_ms": 300 },
-    { "tap_pct": [0.700, 0.949], "note": "Moment" },
+    { "tap_pct": [0.700, 0.956], "note": "Moment" },
     { "sleep_ms": 600 },
-    { "tap_pct": [0.926, 0.077], "note": "右上角 +" },
+    { "tap_pct": [0.922, 0.087], "note": "publish_feed" },
     { "sleep_ms": 700 },
     { "tap_pct": [0.370, 0.154], "note": "正文输入区" },
     { "sleep_ms": 400 },

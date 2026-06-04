@@ -1,0 +1,12 @@
+{
+  "id": "room-tab",
+  "name": "切换房间底栏",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "点击底部 Room（房间帧，id/tab_room）",
+  "kbRef": ["regression-kb/发版回归用例.md（首页-房间帧）", "documents/room/活动主题房.md"],
+  "steps": [
+    { "sleep_ms": 300 },
+    { "tap_pct": [0.300, 0.956], "note": "tab_room" }
+  ]
+}

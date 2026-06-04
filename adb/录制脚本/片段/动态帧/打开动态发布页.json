@@ -1,0 +1,18 @@
+{
+  "id": "open-moment-compose",
+  "name": "打开动态发布页",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "动态帧 → 右上角 publish_feed（+）进入发布编辑页",
+  "kbRef": [
+    "documents/moments/basic module.md（动态发布【➕】）",
+    "documents/moments/video.md（编辑页 + 上传）"
+  ],
+  "steps": [
+    { "sleep_ms": 300 },
+    { "tap_pct": [0.700, 0.956], "note": "Moment" },
+    { "sleep_ms": 700 },
+    { "tap_pct": [0.922, 0.087], "note": "publish_feed" },
+    { "sleep_ms": 800 }
+  ]
+}

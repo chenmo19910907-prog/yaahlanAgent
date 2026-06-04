@@ -1,0 +1,18 @@
+{
+  "id": "login-phone-sms",
+  "name": "登录-手机号发短信",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "手机号登录页：输入手机号 → Get via SMS（需已在该页，区号默认 +86）",
+  "kbRef": ["documents/登录注册.md（手机号注册/登陆）"],
+  "params": ["text"],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.609, 0.317], "note": "input_phone" },
+    { "sleep_ms": 300 },
+    { "text": "{{text}}", "note": "手机号（不含区号）" },
+    { "sleep_ms": 500 },
+    { "tap_pct": [0.500, 0.504], "note": "Get via SMS ll_phone_sms" },
+    { "sleep_ms": 2000 }
+  ]
+}

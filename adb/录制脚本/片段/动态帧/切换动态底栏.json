@@ -6,6 +6,6 @@
   "description": "点击底部 Moment（动态帧）",
   "steps": [
     { "sleep_ms": 300 },
-    { "tap_pct": [0.700, 0.949], "note": "底部 Moment" }
+    { "tap_pct": [0.700, 0.956], "note": "tab_feed" }
   ]
 }

@@ -1,0 +1,15 @@
+{
+  "id": "settings",
+  "name": "进入设置",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "我的帧 → 右上角设置（id/iv_setting）",
+  "kbRef": ["regression-kb/发版回归用例.md（我的帧-设置）"],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.900, 0.956], "note": "Me" },
+    { "sleep_ms": 700 },
+    { "tap_pct": [0.922, 0.068], "note": "iv_setting" },
+    { "sleep_ms": 800 }
+  ]
+}

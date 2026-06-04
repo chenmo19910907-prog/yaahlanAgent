@@ -24,9 +24,14 @@ from .device_profile import (
     list_profile_paths,
     load_profile,
 )
-from .flows import list_flows_summary, run_bootstrap, run_locate, run_recorded
+from .compose import load_compose, list_compose_summary, run_compose
 from .macros import apply_skip_flags, list_macros, resolve_macro
-from .recorded_scripts import list_catalog, scripts_root
+from .recorded_scripts import (
+    list_catalog,
+    list_composes_by_module,
+    list_fragments_by_module,
+    scripts_root,
+)
 from .screenshot import (
     DEFAULT_MAX_SCREENSHOTS,
     capture_screenshot,
@@ -98,7 +103,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_scripts = sub.add_parser(
         "scripts",
-        help="列出 adb/录制脚本 目录（中文名 + 片段/流程）",
+        help="列出 adb/录制脚本 片段目录",
     )
 
     p_macros = sub.add_parser("macros", help="列出录制片段（同 scripts 中 kind=fragment）")
@@ -110,7 +115,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=[],
         metavar="KEY",
-        help="跳过带 skip_key 的可选步骤，如 dismiss_popup",
+        help="跳过带 skip_key 的步骤，如 dismiss_popup、dismiss_splash_ad",
     )
     p_macro.add_argument(
         "--text",
@@ -216,66 +221,36 @@ def build_parser() -> argparse.ArgumentParser:
     p_dev_show = dev_sub.add_parser("show", help="查看某档案详情")
     p_dev_show.add_argument("profile_id", help="档案 id")
 
-    p_flows = sub.add_parser(
-        "flows",
-        help="列出录制流程（导航阶段截图 + 录制阶段无截图）",
+    p_compose_list = sub.add_parser(
+        "composes",
+        help="列出组合搭建方案（按模块分子目录）",
     )
 
-    p_flow = sub.add_parser(
-        "flow",
-        help="两阶段流程：locate（截图判断位置）/ bootstrap（知识库对齐）/ run（纯录制）",
+    p_compose = sub.add_parser(
+        "compose",
+        help="按顺序执行多个片段（积木搭建）",
     )
-    flow_sub = p_flow.add_subparsers(dest="flow_command", required=True)
-
-    p_flow_locate = flow_sub.add_parser(
-        "locate",
-        help="阶段 A：截一张图，返回入口特征与各 state（Agent 读图匹配）",
-    )
-    p_flow_locate.add_argument("name", help="流程中文名或 id，如 发布纯文本动态")
-
-    p_flow_boot = flow_sub.add_parser(
-        "bootstrap",
-        help="阶段 A：按 state 执行知识库/宏对齐（默认结束时再截一张）",
-    )
-    p_flow_boot.add_argument("name")
-    p_flow_boot.add_argument(
-        "--from",
-        dest="from_state",
-        required=True,
-        metavar="STATE",
-        help="flow locate 读图判定的 state id",
-    )
-    p_flow_boot.add_argument(
+    p_compose.add_argument("name", help="组合中文名或文件名（无 .json）")
+    p_compose.add_argument("--text", help="传给带 params.text 的片段")
+    p_compose.add_argument(
         "--skip",
         action="append",
         default=[],
         metavar="KEY",
-        help="跳过宏内可选步骤",
+        help="全局跳过 skip_key（各块可再在组合 JSON 里单独 skip）",
     )
-    p_flow_boot.add_argument(
-        "--no-capture",
-        action="store_true",
-        help="bootstrap 后不截图",
+    p_compose.add_argument(
+        "--capture",
+        choices=("never", "start", "end", "both"),
+        help="覆盖组合内 capture（默认取组合文件）",
     )
-
-    p_flow_run = flow_sub.add_parser(
-        "run",
-        help="阶段 B：仅执行录制脚本，默认全程不截图",
-    )
-    p_flow_run.add_argument("name")
-    p_flow_run.add_argument("--text", help="如 发布纯文本动态 的正文")
-    p_flow_run.add_argument(
-        "--skip",
-        action="append",
-        default=[],
-        metavar="KEY",
-    )
-    p_flow_run.add_argument(
+    p_compose.add_argument("--no-capture", action="store_true", help="等同 --capture never")
+    p_compose.add_argument(
         "--verify",
         action="store_true",
-        help="录制结束后截一张图核对（否则不截图）",
+        help="最后一块结束时截一张图核对",
     )
-    p_flow_run.add_argument("--no-adapt", action="store_true", help="跳过设备换算")
+    p_compose.add_argument("--no-adapt", action="store_true", help="跳过设备换算")
 
     return parser
 
@@ -390,9 +365,17 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         if args.command == "scripts":
+            catalog = [e for e in list_catalog() if e.get("kind") != "compose"]
+            composes = [e for e in list_catalog() if e.get("kind") == "compose"]
             _emit(
                 {
                     "root": str(scripts_root().resolve()),
+                    "fragmentModules": list(list_fragments_by_module().keys()),
+                    "fragmentsByModule": list_fragments_by_module(),
+                    "fragments": catalog,
+                    "composeModules": list(list_composes_by_module().keys()),
+                    "composesByModule": list_composes_by_module(),
+                    "composes": composes,
                     "catalog": list_catalog(),
                 }
             )
@@ -420,6 +403,8 @@ def main(argv: list[str] | None = None) -> int:
                 screenshot_dir=shot_dir,
                 max_screenshots=args.max_screenshots,
                 use_adaptation=_use_adaptation(args),
+                text=args.text,
+                skip=set(args.skip),
             )
             out["script"] = spec.get("name", args.name)
             out["scriptId"] = spec.get("id", args.name)
@@ -429,47 +414,36 @@ def main(argv: list[str] | None = None) -> int:
             _emit(out)
             return 0
 
-        if args.command == "flows":
-            _emit({"flows": list_flows_summary()})
+        if args.command == "composes":
+            _emit(
+                {
+                    "composes": list_compose_summary(),
+                    "composesByModule": list_composes_by_module(),
+                    "root": str(scripts_root() / "组合"),
+                }
+            )
             return 0
 
-        if args.command == "flow":
-            if args.flow_command == "locate":
-                out = run_locate(
-                    name=args.name,
-                    serial=serial,
-                    screenshot_dir=shot_dir,
-                    max_screenshots=args.max_screenshots,
-                )
-                _emit(out)
-                return 0
-            if args.flow_command == "bootstrap":
-                out = run_bootstrap(
-                    name=args.name,
-                    from_state=args.from_state,
-                    serial=serial,
-                    screenshot_dir=shot_dir,
-                    max_screenshots=args.max_screenshots,
-                    skip=set(args.skip),
-                    capture_end=not args.no_capture,
-                )
-                _emit(out)
-                return 0
-            if args.flow_command == "run":
-                out = run_recorded(
-                    name=args.name,
-                    serial=serial,
-                    screenshot_dir=shot_dir,
-                    max_screenshots=args.max_screenshots,
-                    skip=set(args.skip),
-                    text=args.text,
-                    verify_end=args.verify,
-                    use_adaptation=_use_adaptation(args),
-                )
-                _emit(out)
-                return 0
-            print(f"未知 flow 子命令: {args.flow_command}", file=sys.stderr)
-            return 2
+        if args.command == "compose":
+            spec = load_compose(args.name)
+            capture = _resolve_capture_mode(
+                explicit=args.capture,
+                no_capture=args.no_capture,
+                default=str(spec.get("capture", "end")),
+            )
+            out = run_compose(
+                name=args.name,
+                serial=serial,
+                screenshot_dir=shot_dir,
+                max_screenshots=args.max_screenshots,
+                text=args.text,
+                skip=set(args.skip),
+                capture=capture,  # type: ignore[arg-type]
+                verify_end=args.verify,
+                use_adaptation=_use_adaptation(args),
+            )
+            _emit(out)
+            return 0
 
         if args.command == "chain":
             steps, file_capture = load_steps_file(args.steps_file)

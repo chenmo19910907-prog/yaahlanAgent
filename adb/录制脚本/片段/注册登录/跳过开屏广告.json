@@ -1,0 +1,16 @@
+{
+  "id": "dismiss-splash-ad",
+  "name": "跳过开屏广告",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "冷启动后约 5s 全屏广告：先尝试点右上角跳过，再等待至广告结束（无广告时可 --skip dismiss_splash_ad 仅跳过点击）",
+  "steps": [
+    { "sleep_ms": 1200, "note": "等待广告页出现" },
+    {
+      "tap_pct": [0.915, 0.055],
+      "note": "跳过/关闭（右上角；坐标需 recalibrate 时更新）",
+      "skip_key": "dismiss_splash_ad"
+    },
+    { "sleep_ms": 4200, "note": "未点到跳过时等待约 5s 广告结束" }
+  ]
+}

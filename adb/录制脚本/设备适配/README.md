@@ -7,7 +7,7 @@
 
 | 情况 | 做法 |
 |------|------|
-| 型号已有档案 | `device info` 为 `matched` → 直接 `macro` / `flow run` |
+| 型号已有档案 | `device info` 为 `matched` → 直接 `macro` / `compose` |
 | 分辨率与基准相同、无档案 | `identity`，比例 1:1 |
 | 新型号、无档案 | 先 `device calibrate` → `set` → `commit` |
 | **操作失败**（点偏、未进页） | `device recalibrate` → 重新读图填点 → `commit --reason correction` |
@@ -40,7 +40,7 @@ python3 adb/adb_execute.py device commit --id vivo_v2245 --name "vivo V2245"
 python3 adb/adb_execute.py device info
 # matched → canRunRecordedScripts: true
 
-python3 adb/adb_execute.py flow run 发布纯文本动态 --text 5555
+python3 adb/adb_execute.py macro 发布纯文本动态 --text 5555
 ```
 
 执行结果含 `adaptation.reuseSavedTransform: true`，表示沿用档案中的 `scale/offset`，**基准 tap_pct 未改**。
@@ -49,7 +49,7 @@ python3 adb/adb_execute.py flow run 发布纯文本动态 --text 5555
 
 ## 操作失败：更正换算
 
-1. 确认仍为目标 App、页面正确（导航阶段可 `flow locate` + 截图）。
+1. 确认仍为目标 App、页面正确（不确定时可 `capture` 读图）。
 2. 强制重新校准：
 
 ```bash
@@ -61,7 +61,7 @@ python3 adb/adb_execute.py device commit --id vivo_v2245 --name "vivo V2245" --r
 
 `commit --reason correction` 会 **更新** 同 id 档案、追加 `history`，不新建文件。
 
-3. 再跑 `flow run` 验证。
+3. 再跑 `macro` / `compose` 验证。
 
 ## 换算公式（pct_linear）
 

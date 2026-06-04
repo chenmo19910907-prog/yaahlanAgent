@@ -1,0 +1,10 @@
+{
+  "id": "my-profile-compose",
+  "name": "进入个人资料详情页",
+  "description": "已在 Yaahlan 任意底栏帧时：Me → 头像 → 资料详情",
+  "kbRef": ["regression-kb/发版回归用例.md（个人主页展示）"],
+  "capture": "never",
+  "sequence": [
+    { "script": "进入个人资料详情页", "capture": "never" }
+  ]
+}

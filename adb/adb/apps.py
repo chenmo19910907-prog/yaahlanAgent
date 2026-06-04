@@ -11,6 +11,8 @@ class AppTarget(TypedDict, total=False):
     activity: str
     launch_wait_ms: int
     launch_mode: str  # "activity" | "launcher"
+    splash_ad_max_ms: int
+    splash_ad_script_id: str
 
 
 # Firebase / 截图文件名中的正式包名均为 com.immomo.biz.yaahlan
@@ -19,7 +21,10 @@ YAAHLAN: AppTarget = {
     "package": "com.immomo.biz.yaahlan",
     "activity": ".personalityIcon4",
     "launch_mode": "launcher",
-    "launch_wait_ms": 6000,
+    # 冷启动后先等壳加载；开屏广告另由 launchPostLaunch 片段处理（约 5s）
+    "launch_wait_ms": 2500,
+    "splash_ad_max_ms": 5500,
+    "splash_ad_script_id": "dismiss-splash-ad",
 }
 
 # 桌面图标常为「Yaha」，与 Yaahlan 为不同产品

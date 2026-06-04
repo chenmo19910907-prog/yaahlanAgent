@@ -1,0 +1,16 @@
+{
+  "id": "login-verify-code",
+  "name": "登录-输入验证码",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Verify Phone Number 页：输入 6 位验证码",
+  "kbRef": ["documents/登录注册.md（验证码页面）"],
+  "params": ["text"],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.500, 0.349], "note": "input_code" },
+    { "sleep_ms": 300 },
+    { "text": "{{text}}", "note": "验证码" },
+    { "sleep_ms": 3500, "note": "等待进入首页" }
+  ]
+}

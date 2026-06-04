@@ -19,7 +19,9 @@ from .screenshot import capture_screenshot
 
 CaptureMode = Literal["never", "start", "end", "both"]
 
-_STEP_TYPES = frozenset({"sleep", "tap", "tap_pct", "swipe", "key", "text", "capture"})
+_STEP_TYPES = frozenset(
+    {"sleep", "tap", "tap_pct", "swipe", "key", "text", "capture", "launch_app", "run_script"}
+)
 
 
 def _resolve_tap(
@@ -49,6 +51,8 @@ def run_chain(
     screenshot_dir: Path,
     max_screenshots: int,
     use_adaptation: bool = True,
+    text: str | None = None,
+    skip: set[str] | None = None,
 ) -> dict[str, Any]:
     if not steps:
         raise ValueError("steps 不能为空")
@@ -58,6 +62,10 @@ def run_chain(
         raise AdbError(adapt_ctx.message)
     if adapt_ctx:
         steps = adapt_steps(steps, adapt_ctx)
+
+    from .macros import apply_skip_flags
+
+    steps = apply_skip_flags(steps, skip=skip or set())
 
     width, height = display_size(serial)
     executed: list[dict[str, Any]] = []
@@ -89,7 +97,11 @@ def run_chain(
             raise ValueError(f"步骤 {index} 须为 object")
         kind = step.get("type")
         if kind is None:
-            if "sleep" in step or "sleep_ms" in step:
+            if "run_script" in step:
+                kind = "run_script"
+            elif "launch_app" in step:
+                kind = "launch_app"
+            elif "sleep" in step or "sleep_ms" in step:
                 kind = "sleep"
             elif "tap" in step or "tap_pct" in step:
                 kind = "tap"
@@ -151,6 +163,33 @@ def run_chain(
         elif kind == "capture":
             cap = _do_capture(f"step_{index}")
             entry["screenshot"] = cap["path"]
+        elif kind == "launch_app":
+            from .launch import launch_app as do_launch
+
+            app_key = str(step.get("launch_app", "yaahlan"))
+            launch_info = do_launch(serial=serial, app_key=app_key)
+            entry["launchApp"] = app_key
+            entry["launch"] = launch_info
+        elif kind == "run_script":
+            from .recorded_scripts import load_fragment
+
+            script_key = str(step["run_script"])
+            block_skip = set(step.get("skip") or []) | (skip or set())
+            frag = load_fragment(script_key, text=text)
+            nested = apply_skip_flags(list(frag.get("steps", [])), skip=block_skip)
+            sub = run_chain(
+                serial=serial,
+                steps=nested,
+                capture="never",
+                screenshot_dir=screenshot_dir,
+                max_screenshots=max_screenshots,
+                use_adaptation=use_adaptation,
+                text=text,
+                skip=block_skip,
+            )
+            entry["runScript"] = frag.get("name", script_key)
+            entry["scriptId"] = frag.get("id", script_key)
+            entry["nestedSteps"] = sub.get("stepsExecuted")
 
         executed.append(entry)
 
