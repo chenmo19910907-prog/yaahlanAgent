@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""一键同步 regression-kb / bug-kb / online-kb（路径可通过参数或环境变量覆盖）。"""
+"""一键同步 bug-kb / online-kb（路径可通过参数或环境变量覆盖）。"""
 
 from __future__ import annotations
 
@@ -42,8 +42,9 @@ def main() -> int:
         help="任务信息表 xlsx（bug-kb + online-kb）",
     )
     parser.add_argument(
-        "--skip-regression",
+        "--with-regression",
         action="store_true",
+        help="额外同步发版回归 xlsx → regression-kb/（目录已移除时勿用）",
     )
     parser.add_argument(
         "--skip-bug",
@@ -61,7 +62,7 @@ def main() -> int:
     args = parser.parse_args()
 
     steps: list[tuple[str, list[str]]] = []
-    if not args.skip_regression:
+    if args.with_regression:
         steps.append(
             (
                 "regression_kb_from_xlsx.py",

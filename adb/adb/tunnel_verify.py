@@ -179,10 +179,37 @@ def _url_matches(item: dict[str, Any], keyword: str) -> bool:
     return keyword.lower() in url
 
 
-def _response_ec(item: dict[str, Any]) -> Any:
+def _response_dict(item: dict[str, Any]) -> dict[str, Any]:
     response = item.get("response")
-    if isinstance(response, dict):
-        return response.get("ec")
+    return response if isinstance(response, dict) else {}
+
+
+def _response_ec(item: dict[str, Any]) -> Any:
+    return _response_dict(item).get("ec")
+
+
+def _response_em(item: dict[str, Any]) -> Any:
+    return _response_dict(item).get("em")
+
+
+def _failure_reason(item: dict[str, Any]) -> str | None:
+    """业务失败说明：优先 response.em，其次 data 内 reason/msg。"""
+    resp = _response_dict(item)
+    ec = resp.get("ec")
+    try:
+        if int(ec) == 200:
+            return None
+    except (TypeError, ValueError):
+        pass
+    em = str(resp.get("em") or "").strip()
+    if em:
+        return em
+    data = resp.get("data")
+    if isinstance(data, dict):
+        for key in ("reason", "msg", "message", "errorMsg", "toast"):
+            val = data.get(key)
+            if val:
+                return str(val).strip()
     return None
 
 
@@ -212,7 +239,9 @@ def _item_matches(
 
 
 def _summarize_item(item: dict[str, Any]) -> dict[str, Any]:
-    return {
+    resp = _response_dict(item)
+    data = resp.get("data")
+    out: dict[str, Any] = {
         "_id": item.get("_id"),
         "time": item.get("time"),
         "method": item.get("method"),
@@ -220,7 +249,22 @@ def _summarize_item(item: dict[str, Any]) -> dict[str, Any]:
         "time_cost": item.get("time_cost"),
         "url": item.get("url"),
         "responseEc": _response_ec(item),
+        "responseEm": _response_em(item),
+        "failureReason": _failure_reason(item),
     }
+    if isinstance(data, dict):
+        out["responseData"] = data
+    return out
+
+
+def _items_by_keyword(
+    items: list[dict[str, Any]],
+    keyword: str,
+) -> list[dict[str, Any]]:
+    if not keyword:
+        return list(items)
+    matched = [item for item in items if _url_matches(item, keyword)]
+    return sorted(matched, key=lambda x: str(x.get("time", "")), reverse=True)
 
 
 def filter_tunnel_items(
@@ -275,30 +319,65 @@ def wait_for_tunnel(
             continue
 
         latest_items = normalize_request_list(payload)
-        matched = filter_tunnel_items(latest_items, options)
-        if len(matched) >= options.min_matches:
+        keyword_hits = _items_by_keyword(latest_items, options.keyword)
+        if len(keyword_hits) >= options.min_matches:
+            summaries = [_summarize_item(x) for x in keyword_hits[:10]]
+            latest = summaries[0]
+            if options.expect_response_ec is not None:
+                try:
+                    ec_ok = int(latest.get("responseEc")) == int(options.expect_response_ec)
+                except (TypeError, ValueError):
+                    ec_ok = False
+                if ec_ok:
+                    return {
+                        "ok": True,
+                        "momoid": options.momoid,
+                        "keyword": options.keyword,
+                        "startTime": start_time,
+                        "polls": polls,
+                        "matchedCount": len(keyword_hits),
+                        "matches": summaries,
+                        "screenshotHint": "抓包已通过；不必读图",
+                    }
+                reason = latest.get("failureReason") or latest.get("responseEm")
+                return {
+                    "ok": False,
+                    "momoid": options.momoid,
+                    "keyword": options.keyword,
+                    "startTime": start_time,
+                    "polls": polls,
+                    "matchedCount": len(keyword_hits),
+                    "matches": summaries,
+                    "businessFailure": True,
+                    "error": (
+                        f"已抓到请求但 response.ec={latest.get('responseEc')}；"
+                        f"失败原因: {reason or '（见 matches[0].responseData）'}"
+                    ),
+                    "screenshotHint": "优先读 matches[0].failureReason / responseEm，再读图",
+                }
             return {
                 "ok": True,
                 "momoid": options.momoid,
                 "keyword": options.keyword,
                 "startTime": start_time,
                 "polls": polls,
-                "matchedCount": len(matched),
-                "matches": [_summarize_item(x) for x in matched[:10]],
-                "screenshotHint": "结合 result.screenshot.path 读图核对 UI",
+                "matchedCount": len(keyword_hits),
+                "matches": summaries,
+                "screenshotHint": "读 matches[0].responseEc / failureReason 判定业务成败",
             }
 
         time.sleep(options.poll_interval_ms / 1000.0)
 
-    matched = filter_tunnel_items(latest_items, options)
+    keyword_hits = _items_by_keyword(latest_items, options.keyword)
+    summaries = [_summarize_item(x) for x in keyword_hits[:10]]
     return {
         "ok": False,
         "momoid": options.momoid,
         "keyword": options.keyword,
         "startTime": start_time,
         "polls": polls,
-        "matchedCount": len(matched),
-        "matches": [_summarize_item(x) for x in matched[:10]],
+        "matchedCount": len(keyword_hits),
+        "matches": summaries,
         "recentUrls": [
             str(x.get("url", ""))
             for x in sorted(
@@ -308,7 +387,77 @@ def wait_for_tunnel(
             )[:8]
         ],
         "error": last_error or f"等待 {options.wait_seconds}s 内未匹配到期望请求",
-        "screenshotHint": "结合 result.screenshot.path 读图核对 UI",
+        "screenshotHint": "未发出请求时读图排查；已发出则 tunnel last 读 failureReason",
+    }
+
+
+def fetch_latest_tunnel_match(
+    *,
+    momoid: str,
+    keyword: str,
+    since_seconds: int = 300,
+    g_appid: str = "All",
+    g_env: str = "alpha",
+    base_url: str = "https://tunnel.wemomo.com",
+) -> dict[str, Any]:
+    """读取最近一条 URL 匹配关键字的抓包，含 response.em 等业务失败原因。"""
+    list_requests, normalize_request_list, tunnel_success = _ensure_tunnel_import()
+    start_time = int(time.time()) - max(1, since_seconds)
+    payload = list_requests(
+        base_url=base_url,
+        momoid=momoid,
+        start_time=start_time,
+        keyword="",
+        g_appid=g_appid,
+        g_env=g_env,
+    )
+    meta = {
+        "tunnelEc": payload.get("ec"),
+        "tunnelEm": payload.get("em"),
+        "tunnelOk": tunnel_success(payload.get("ec")),
+        "startTime": start_time,
+        "itemCount": 0,
+    }
+    if not tunnel_success(payload.get("ec")):
+        return {
+            "ok": False,
+            "momoid": momoid,
+            "keyword": keyword,
+            "sinceSeconds": since_seconds,
+            "tunnelMeta": meta,
+            "error": f"Tunnel ec={payload.get('ec')} em={payload.get('em')}",
+        }
+    items = normalize_request_list(payload)
+    meta["itemCount"] = len(items)
+    hits = _items_by_keyword(items, keyword)
+    if not hits:
+        return {
+            "ok": False,
+            "momoid": momoid,
+            "keyword": keyword,
+            "sinceSeconds": since_seconds,
+            "tunnelMeta": meta,
+            "matchedCount": 0,
+            "error": f"最近 {since_seconds}s 内无 URL 含 {keyword!r} 的请求",
+        }
+    summary = _summarize_item(hits[0])
+    ec = summary.get("responseEc")
+    try:
+        business_ok = int(ec) == 200
+    except (TypeError, ValueError):
+        business_ok = False
+    return {
+        "ok": business_ok,
+        "momoid": momoid,
+        "keyword": keyword,
+        "sinceSeconds": since_seconds,
+        "tunnelMeta": meta,
+        "matchedCount": len(hits),
+        "latest": summary,
+        "failureReason": summary.get("failureReason"),
+        "agentHint": (
+            "送礼等写操作：读 latest.responseEc；非 200 时 failureReason / responseEm 即失败原因。"
+        ),
     }
 
 

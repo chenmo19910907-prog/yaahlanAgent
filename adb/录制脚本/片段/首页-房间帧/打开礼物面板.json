@@ -1,12 +1,23 @@
 {
   "id": "open-gift-panel",
   "name": "打开礼物面板",
-  "recordedOn": { "width": 1080, "height": 2340 },
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
   "capture": "end",
   "description": "房内点底部橙色礼物盒打开礼物面板（勿点右侧紫色快捷礼物）",
-  "kbRef": ["regression-kb/发版回归用例.md（首页-房间帧）"],
   "steps": [
-    { "tap_pct": [0.574, 0.974], "note": "橙色礼物盒（非快捷礼物）" },
-    { "sleep_ms": 1500, "note": "等待 getGiftTabListV3 与面板展开" }
+    {
+      "tap_pct": [
+        0.574,
+        0.974
+      ],
+      "note": "橙色礼物盒（非快捷礼物）"
+    },
+    {
+      "sleep_ms": 1500,
+      "note": "等待 getGiftTabListV3 与面板展开"
+    }
   ]
 }

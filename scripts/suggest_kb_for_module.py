@@ -17,7 +17,6 @@ KIND_LABEL = {
     "bug_kb": "bug-kb",
     "online_kb": "online-kb",
     "templates": "templates",
-    "regression_kb": "regression-kb",
 }
 
 
@@ -34,11 +33,6 @@ def main() -> int:
         "--file",
         type=Path,
         help="每行一个模块/关键词的文本文件",
-    )
-    parser.add_argument(
-        "--version",
-        action="store_true",
-        help="版本需求：额外推荐 regression-kb",
     )
     args = parser.parse_args()
 
@@ -65,7 +59,7 @@ def main() -> int:
         print("未匹配到模块，请换关键词或查阅 rules/version_testcase_generation_rules.md §1.2")
         return 1
 
-    hits = resolve_hits(keys, version=args.version)
+    hits = resolve_hits(keys)
     print(f"匹配模块键: {', '.join(keys)}\n")
     by_kind: dict[str, list[KbHit]] = {}
     for hit in hits:
@@ -74,7 +68,6 @@ def main() -> int:
     order = (
         "documents",
         "testcase_kb",
-        "regression_kb",
         "bug_kb",
         "online_kb",
         "templates",
@@ -92,7 +85,7 @@ def main() -> int:
             print(f"  - {rel}  ({hit.note})")
         print()
 
-    print("建议阅读顺序: documents → testcase-kb → regression-kb(版本) → bug-kb/online-kb → templates")
+    print("建议阅读顺序: documents → testcase-kb → bug-kb/online-kb → templates")
     return 0
 
 

@@ -59,7 +59,7 @@
    **【知识库参考（所有需求，推荐）】**：
    - 生成前运行 `python3 scripts/suggest_kb_for_module.py <模块关键词>`（或 `--file modules.txt`）获取应读的 `documents/`、`testcase-kb/`、`bug-kb/`、`online-kb/`、`templates/` 路径
    - **活动/营收需求**：在 `bug-kb/`、`online-kb/` 查阅同模块历史缺陷与线上问题，优先补充严重/阻碍与现网翻车场景（不必等版本需求才读）
-   - **版本需求**：另读 `regression-kb/发版回归用例.md` 与 `rules/version_testcase_generation_rules.md` §1
+   - **版本需求**：另读 `rules/version_testcase_generation_rules.md` §1
 
    **通用步骤（所有需求）**：
    - **【模块提取】从需求文档开发需求表格中提取所有模块**：逐行遍历表格，不遗漏任何一行（头图、规则、奖励、一级tab、各业务模块、预热模块、活动条等）。用户若只列举部分模块，仍需覆盖文档中的全部模块。
@@ -111,7 +111,7 @@ python3 scripts/doctor.py
 python3 scripts/doctor.py --run-moa-probe --check-testcases
 
 # 生成前：推荐读哪些知识库
-python3 scripts/suggest_kb_for_module.py 礼物 榜单 --version
+python3 scripts/suggest_kb_for_module.py 礼物 榜单
 
 # 生成后：校验用例 Markdown
 python3 scripts/check_testcase_md.py

@@ -1,13 +1,26 @@
 {
   "id": "logout-from-settings",
   "name": "设置页退出登录",
-  "recordedOn": { "width": 1080, "height": 2340 },
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
   "capture": "end",
   "description": "已在 Settings 页：点底部 Log out → 登录页（无二次确认弹窗）",
-  "kbRef": ["regression-kb/发版回归用例.md（设置页）"],
   "steps": [
-    { "sleep_ms": 400 },
-    { "tap_pct": [0.500, 0.942], "note": "Log out" },
-    { "sleep_ms": 2500, "note": "等待回到登录页" }
+    {
+      "sleep_ms": 400
+    },
+    {
+      "tap_pct": [
+        0.5,
+        0.942
+      ],
+      "note": "Log out"
+    },
+    {
+      "sleep_ms": 2500,
+      "note": "等待回到登录页"
+    }
   ]
 }

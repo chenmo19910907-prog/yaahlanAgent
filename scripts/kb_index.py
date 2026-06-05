@@ -220,14 +220,4 @@ def resolve_hits(keys: list[str], *, version: bool = False) -> list[KbHit]:
                 seen.add(tag)
                 note = "存在" if path.is_file() or path.is_dir() else "缺失"
                 out.append(KbHit(kind=kind, path=path, note=note))
-    if version:
-        reg = ROOT / "regression-kb" / "发版回归用例.md"
-        if str(reg) not in seen:
-            out.append(
-                KbHit(
-                    kind="regression_kb",
-                    path=reg,
-                    note="存在" if reg.is_file() else "缺失",
-                )
-            )
     return out

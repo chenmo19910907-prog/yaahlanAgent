@@ -1,0 +1,31 @@
+{
+  "id": "cold-start-home",
+  "name": "冷启动回首页",
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
+  "capture": "end",
+  "description": "杀进程重启 Yaahlan → 跳过开屏广告 → 关登录后弹窗；已登录时回到首页底栏（不确定当前页时用）",
+  "steps": [
+    {
+      "launch_app": "yaahlan",
+      "note": "force-stop 后 LAUNCHER 冷启"
+    },
+    {
+      "run_script": "跳过开屏广告",
+      "note": "约 5s 开屏",
+      "skip_key": "dismiss_splash_ad"
+    },
+    {
+      "sleep_ms": 800
+    },
+    {
+      "run_script": "关闭常见弹窗",
+      "note": "登录后偶发运营/账号安全弹窗"
+    },
+    {
+      "sleep_ms": 500
+    }
+  ]
+}

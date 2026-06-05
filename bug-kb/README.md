@@ -12,8 +12,6 @@
 - 生成测试用例时补充异常/边界参考
 - 排查相似现象是否已有历史记录
 
-相关：**发版回归基线用例**见 [`regression-kb/发版回归用例.md`](../regression-kb/发版回归用例.md)。
-
 每条缺陷保留：**任务ID、标题、端、严重度、状态、迭代、缺陷分类、版本归属、人员、现象/期望**（缺陷分类含版本线/线上问题等路径；人员含提交/处理/参与等；现象从备注解析）。
 模块文件按标题与备注关键词自动推断（`所属模块` 字段在源表中几乎为空）。
 
@@ -94,8 +92,7 @@
 python3 scripts/bug_kb_from_tasks_xlsx.py \
   --source '/Users/user/Desktop/【yaahlan】任务信息表_20260529 15.37.14.xlsx'
 
-# 一键同步 regression-kb + bug-kb + online-kb
+# 一键同步 bug-kb + online-kb
 export YAAHLAN_TASKS_XLSX=~/Desktop/【yaahlan】任务信息表_xxx.xlsx
-export YAAHLAN_REGRESSION_XLSX=~/Desktop/发版回归case.xlsx
 python3 scripts/sync_all_kb.py
 ```

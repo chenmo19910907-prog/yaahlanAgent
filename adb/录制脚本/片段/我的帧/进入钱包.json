@@ -1,15 +1,38 @@
 {
   "id": "wallet",
   "name": "进入钱包",
-  "recordedOn": { "width": 1080, "height": 2340 },
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
   "capture": "end",
   "description": "我的帧 → Wallet（id/wallet）",
-  "kbRef": ["regression-kb/发版回归用例.md（我的帧-钱包）", "documents/币商.md"],
+  "kbRef": [
+    "documents/币商.md"
+  ],
   "steps": [
-    { "sleep_ms": 400 },
-    { "tap_pct": [0.900, 0.956], "note": "Me" },
-    { "sleep_ms": 700 },
-    { "tap_pct": [0.153, 0.852], "note": "wallet" },
-    { "sleep_ms": 1000 }
+    {
+      "sleep_ms": 400
+    },
+    {
+      "tap_pct": [
+        0.9,
+        0.956
+      ],
+      "note": "Me"
+    },
+    {
+      "sleep_ms": 700
+    },
+    {
+      "tap_pct": [
+        0.153,
+        0.852
+      ],
+      "note": "wallet"
+    },
+    {
+      "sleep_ms": 1000
+    }
   ]
 }

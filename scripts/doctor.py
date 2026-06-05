@@ -111,7 +111,6 @@ def main() -> int:
     for sub, label in (
         ("testcase-kb", "testcase-kb"),
         ("bug-kb", "bug-kb"),
-        ("regression-kb", "regression-kb"),
     ):
         p = ROOT / sub
         _check(label, p.is_dir(), "存在" if p.is_dir() else "缺失")

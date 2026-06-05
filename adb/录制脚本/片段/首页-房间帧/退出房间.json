@@ -1,0 +1,50 @@
+{
+  "id": "room-exit",
+  "name": "退出房间",
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
+  "capture": "end",
+  "description": "已在语音房内：右上角菜单 → Close → Room Reminder 点 Exit Now。若从搜索进房，退出后常落在 Search 页（非底栏主页）——跑完本片段后须 capture 验收，必要时再 macro 搜索页返回房间帧",
+  "kbRef": [
+    "testcase-kb/主题房.md"
+  ],
+  "steps": [
+    {
+      "sleep_ms": 300,
+      "note": "若 Mic invitation 等遮挡，先 macro 关闭常见弹窗"
+    },
+    {
+      "tap_pct": [
+        0.94,
+        0.053
+      ],
+      "note": "右上角 X，打开房间功能面板（Report/Minimize/Share/Close）"
+    },
+    {
+      "sleep_ms": 800
+    },
+    {
+      "tap_pct": [
+        0.875,
+        0.145
+      ],
+      "note": "Close 电源图标（面板第一行第 4 个）"
+    },
+    {
+      "sleep_ms": 800
+    },
+    {
+      "tap_pct": [
+        0.284,
+        0.588
+      ],
+      "note": "Room Reminder 二次确认 → Exit Now（左钮 [90,1285][524,1465]）"
+    },
+    {
+      "sleep_ms": 1500,
+      "note": "等待退出 RoomChatActivity"
+    }
+  ]
+}

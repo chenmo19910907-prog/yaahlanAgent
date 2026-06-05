@@ -1,44 +1,91 @@
 {
   "id": "dismiss-common-popups",
   "name": "关闭常见弹窗",
-  "recordedOn": { "width": 1080, "height": 2340 },
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
   "capture": "never",
   "description": "登录/切页后偶发弹窗：运营全屏(BACK)、账号安全 Cancel、众测邀请 Cancel、双按钮对话框左侧 Cancel。Cancel 坐标步可用 --skip dismiss_popup_taps 跳过（无弹窗时避免误点）",
   "kbRef": [
-    "documents/登录注册.md",
-    "regression-kb/发版回归用例.md"
+    "documents/登录注册.md"
   ],
   "popups": [
-    { "name": "运营/礼包全屏", "dismiss": "BACK×2" },
-    { "name": "Account Security 绑定手机/邮箱", "dismiss": "Cancel 约 (0.32, 0.56)" },
-    { "name": "Crowd Testing Invitation 众测", "dismiss": "Cancel 约 (0.296, 0.479)" },
-    { "name": "退出 Yaahlan 等双按钮", "dismiss": "左侧 Cancel 约 (0.35, 0.52)" }
+    {
+      "name": "运营/礼包全屏",
+      "dismiss": "BACK×2"
+    },
+    {
+      "name": "Account Security 绑定手机/邮箱",
+      "dismiss": "Cancel 约 (0.32, 0.56)"
+    },
+    {
+      "name": "Crowd Testing Invitation 众测",
+      "dismiss": "Cancel 约 (0.296, 0.479)"
+    },
+    {
+      "name": "退出 Yaahlan 等双按钮",
+      "dismiss": "左侧 Cancel 约 (0.35, 0.52)"
+    }
   ],
   "steps": [
-    { "sleep_ms": 500, "note": "等待弹窗动画" },
-    { "key": 4, "note": "BACK 关全屏运营/礼包" },
-    { "sleep_ms": 400 },
-    { "key": 4, "note": "BACK 再关一层" },
-    { "sleep_ms": 400 },
     {
-      "tap_pct": [0.320, 0.560],
+      "sleep_ms": 500,
+      "note": "等待弹窗动画"
+    },
+    {
+      "key": 4,
+      "note": "BACK 关全屏运营/礼包"
+    },
+    {
+      "sleep_ms": 400
+    },
+    {
+      "key": 4,
+      "note": "BACK 再关一层"
+    },
+    {
+      "sleep_ms": 400
+    },
+    {
+      "tap_pct": [
+        0.32,
+        0.56
+      ],
       "note": "Account Security → Cancel",
       "skip_key": "dismiss_popup_taps"
     },
-    { "sleep_ms": 350 },
     {
-      "tap_pct": [0.296, 0.479],
+      "sleep_ms": 350
+    },
+    {
+      "tap_pct": [
+        0.296,
+        0.479
+      ],
       "note": "Crowd Testing → Cancel",
       "skip_key": "dismiss_popup_taps"
     },
-    { "sleep_ms": 350 },
     {
-      "tap_pct": [0.350, 0.520],
+      "sleep_ms": 350
+    },
+    {
+      "tap_pct": [
+        0.35,
+        0.52
+      ],
       "note": "双按钮对话框左侧 Cancel",
       "skip_key": "dismiss_popup_taps"
     },
-    { "sleep_ms": 300 },
-    { "key": 4, "note": "收尾 BACK" },
-    { "sleep_ms": 300 }
+    {
+      "sleep_ms": 300
+    },
+    {
+      "key": 4,
+      "note": "收尾 BACK"
+    },
+    {
+      "sleep_ms": 300
+    }
   ]
 }

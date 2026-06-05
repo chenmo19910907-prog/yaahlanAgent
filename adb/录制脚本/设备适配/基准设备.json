@@ -1,7 +1,7 @@
 {
   "id": "reference",
   "name": "录制基准机",
-  "description": "当前片段/流程内 tap_pct 均按此分辨率比例录制",
+  "description": "当前片段/流程内 tap_pct 均按此分辨率比例、英文 LTR 布局录制；阿语/中文等 RTL 语言下原生页须镜像 x（见 adb/README.md）",
   "model": "",
   "width": 1080,
   "height": 2340,

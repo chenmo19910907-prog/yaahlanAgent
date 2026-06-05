@@ -46,6 +46,7 @@ from .tunnel_verify import (
     TunnelVerifyOptions,
     add_tunnel_arguments,
     attach_tunnel_verify,
+    fetch_latest_tunnel_match,
     resolve_momoid,
     tunnel_options_from_args,
     wait_for_tunnel,
@@ -360,6 +361,17 @@ def build_parser() -> argparse.ArgumentParser:
     p_tunnel_wait.add_argument("--expect-ec", type=int, dest="tunnel_expect_ec")
     p_tunnel_wait.add_argument("--g-appid", default="All", dest="tunnel_g_appid")
     p_tunnel_wait.add_argument("--g-env", default="alpha", dest="tunnel_g_env")
+
+    p_tunnel_last = tunnel_sub.add_parser(
+        "last",
+        help="读取最近一条匹配 URL 的抓包（含 response.em 失败原因）",
+    )
+    p_tunnel_last.add_argument("--momoid", help="userId")
+    p_tunnel_last.add_argument("--account", help="索引 testAccounts 键名")
+    p_tunnel_last.add_argument("--keyword", required=True, help="URL 关键字，如 gift/send")
+    p_tunnel_last.add_argument("--since", type=int, default=300, help="回溯秒数")
+    p_tunnel_last.add_argument("--g-appid", default="All", dest="tunnel_g_appid")
+    p_tunnel_last.add_argument("--g-env", default="alpha", dest="tunnel_g_env")
 
     p_gift = sub.add_parser(
         "gift",
@@ -950,6 +962,21 @@ def main(argv: list[str] | None = None) -> int:
                 verify = wait_for_tunnel(opts, start_time=start_time)
                 _emit({"tunnelVerify": verify})
                 return 0 if verify.get("ok") else 3
+            if args.tunnel_command == "last":
+                if not getattr(args, "momoid", None) and not getattr(args, "account", None):
+                    raise ValueError("tunnel last 须指定 --momoid 或 --account")
+                out = fetch_latest_tunnel_match(
+                    momoid=resolve_momoid(
+                        momoid=getattr(args, "momoid", None),
+                        account=getattr(args, "account", None),
+                    ),
+                    keyword=str(args.keyword),
+                    since_seconds=max(1, int(args.since)),
+                    g_appid=str(args.tunnel_g_appid),
+                    g_env=str(args.tunnel_g_env),
+                )
+                _emit(out)
+                return 0 if out.get("ok") else 3
             print(f"未知 tunnel 子命令: {args.tunnel_command}", file=sys.stderr)
             return 2
 

@@ -57,6 +57,13 @@
       "file": "片段/注册登录/跳过开屏广告.json"
     },
     {
+      "id": "cold-start-home",
+      "name": "冷启动回首页",
+      "kind": "fragment",
+      "module": "注册登录",
+      "file": "片段/注册登录/冷启动回首页.json"
+    },
+    {
       "id": "login-lang-next",
       "name": "登录-语言下一步",
       "kind": "fragment",
@@ -156,6 +163,20 @@
       "kind": "fragment",
       "module": "首页-房间帧",
       "file": "片段/首页-房间帧/礼物面板送Trophy.json"
+    },
+    {
+      "id": "room-exit",
+      "name": "退出房间",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/退出房间.json"
+    },
+    {
+      "id": "room-search-back",
+      "name": "搜索页返回房间帧",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/搜索页返回房间帧.json"
     },
     {
       "id": "family-search-guild-room",

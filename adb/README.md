@@ -13,6 +13,33 @@
 
 路径不确定时：Agent **读图** 判断当前页，再选一块积木或一条组合；不要对每个 `tap` 都截图。
 
+### 片段间验收（串联多个 macro 时）
+
+**粒度**：跑完**一个脚本片段**（一次 `macro` / `compose` 里的一块）后再验收；**片段内部的各个 tap 不必逐步验证**。
+
+```text
+macro A  →  验收 A 的落点  →  确认 OK  →  macro B  →  验收 B  →  …
+```
+
+| 验收方式 | 适用 |
+|----------|------|
+| `tunnel wait` / 片段 `tunnelVerify` | 有接口信号（登录、进房、送礼、发动态等） |
+| `capture` 读图 | 无抓包信号、需确认当前页（底栏、弹窗、是否在房内等） |
+| `dumpsys activity` | 快速判断 Activity（如是否仍在 `RoomChatActivity`） |
+
+落点与下一段脚本**前置条件不符**时，先纠偏（补跑片段或 `BACK`），**不要盲连下一段**。
+
+**不确定当前在哪个页面**时，可 **杀进程冷启** 回到已知状态（已登录 → 首页底栏）：
+
+```bash
+python3 adb/adb_execute.py macro 冷启动回首页
+# 等价：启动Yaahlan（force-stop）→ 跳过开屏广告 → 关闭常见弹窗
+```
+
+片段跑完后 `capture` 确认底栏可见，再执行下一段。未登录时会落在登录页，改跑 `公会长手机号登录` 等。
+
+**示例**：`搜索进房` → `退出房间` 后，常落在 **Search 页** 而非房间列表/底栏主页；此时不能直接 `退出登录`（Me 底栏不可达），须先 `macro 搜索页返回房间帧`、或 `macro 冷启动回首页` 重置。
+
 **验证成功 → 自动录制**：探索出新路径后，经验收通过，Agent 自动将步骤落库到 `录制脚本/`（不写进本 README）。流程见 [验证成功自动录制](#验证成功自动录制)。
 
 ### 验收策略（抓包优先）
@@ -39,7 +66,7 @@
 |------|----------------|
 | 登录 | `login` |
 | 发动态 | `feed` |
-| 礼物面板送礼 | `gift/send` |
+| 礼物面板送礼 | `gift/send`（**读 `response.em`**，`ec=200` 才算成功） |
 | 编辑资料保存 | `updateUserBase` |
 | 进房 | `heartbeat` |
 
@@ -115,6 +142,28 @@ python3 adb/adb_execute.py capture                          # 读图确认年份
 4. **操作失败** → `device recalibrate` → `commit --reason correction`  
 
 详见 [`录制脚本/设备适配/README.md`](录制脚本/设备适配/README.md)。
+
+## App 语言与 RTL 镜像
+
+部分语言下，**原生 UI**（非 WebView）会按 **RTL（从右到左）** 布局镜像，常见如 **阿拉伯语**、**中文** 等；**WebView / H5 页** 往往仍按 LTR 或独立排版，**不要假定与原生页一致**。
+
+| 影响 | 说明 |
+|------|------|
+| **水平坐标** | 返回键、设置、关闭、底栏 Tab 等左右对调；LTR 下 `tap_pct` 的 **x 须镜像**：`x' = 1 − x`（y 不变） |
+| **底栏顺序** | Room / Me 等 Tab 左右顺序可能反转，勿死记英文环境下的 x |
+| **录制基准** | 片段默认在 **英文 LTR** 下录制；换语言后片段间 **capture 读图**，确认控件在左还是右 |
+| **WebView** | 活动页、部分运营 H5 等可能不镜像；以读图为准，不能套用原生页的镜像规则 |
+
+**Agent 流程**：
+
+```text
+片段跑完 → capture 读图
+  ├─ 布局与录制时一致 → 继续下一段
+  ├─ 原生页 RTL 镜像   → 对下一步 tap 的 x 做 1−x，或补跑 RTL 专用片段
+  └─ WebView / 混合页  → 单独读图定坐标，勿盲目镜像
+```
+
+操作失败且已排除弹窗、分辨率问题时，**优先怀疑语言 RTL**，读图看主操作按钮是否跑到对侧。
 
 ## 前置条件
 
@@ -214,12 +263,21 @@ python3 adb/adb_execute.py macro 手机号登录 \
 | `--tunnel-wait` | 最长等待秒数（默认 30） |
 | `--tunnel-expect-ec` | 可选，校验 `response.ec` |
 
-退出码：`0` = tunnel 匹配成功；`3` = 未匹配（**先判失败**，再读图排查）。已实现脚本的能力：**抓包通过即成功，不读图**；抓包失败才读 `screenshot.path`。
+退出码：`0` = 业务成功（含 `response.ec` 符合 `--expect-ec`）；`3` = 未抓到请求或 **已抓到但 ec≠200**。
 
-### 仅 Tunnel 等待
+写操作（送礼、登录、发动态）须读响应体：**`response.em` 即失败原因**，不要只看请求是否发出。
+
+| 情形 | 判定 |
+|------|------|
+| 未抓到 `gift/send` | Send 未生效或网络未发出 → 读图排查 |
+| 抓到且 `ec=200` | 成功，不必读图 |
+| 抓到且 `ec≠200` | 失败，读 `failureReason` / `responseEm` |
+
+### Tunnel 等待 / 读取最近结果
 
 ```bash
-python3 adb/adb_execute.py tunnel wait --account familyLeader --keyword gift --since 300
+python3 adb/adb_execute.py tunnel wait --account guildLeader --keyword gift/send --since 30 --wait 25 --expect-ec 200
+python3 adb/adb_execute.py tunnel last --account guildLeader --keyword gift/send --since 120
 ```
 
 ### 弹窗：先抓包再决定是否关（login / home / me / room / mic）

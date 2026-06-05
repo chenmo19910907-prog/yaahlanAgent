@@ -2,15 +2,25 @@
   "id": "cold-start-login",
   "name": "冷启动登录",
   "description": "桌面 → 启动 Yaahlan → 开屏广告 → QA 登录（+86 13311111115 / 验证码 000000）",
-  "kbRef": ["documents/登录注册.md", "regression-kb/发版回归用例.md（登录注册）"],
+  "kbRef": [
+    "documents/登录注册.md"
+  ],
   "capture": "end",
   "sequence": [
-    { "script": "启动Yaahlan", "capture": "never" },
-    { "script": "跳过开屏广告", "capture": "never" },
+    {
+      "script": "启动Yaahlan",
+      "capture": "never"
+    },
+    {
+      "script": "跳过开屏广告",
+      "capture": "never"
+    },
     {
       "script": "手机号登录",
       "capture": "never",
-      "skip": ["login_lang"]
+      "skip": [
+        "login_lang"
+      ]
     }
   ]
 }

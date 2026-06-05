@@ -1,6 +1,6 @@
 # 知识库 ↔ 录制脚本对照
 
-真机验收（1080×2340，vivo V1838A）后落库。片段按 **发版回归一级模块** 分目录（与 `regression-kb` 一致）。
+真机验收（1080×2340，vivo V1838A）后落库。片段按 **发版回归一级模块** 分目录。
 
 ## 注册登录 · `片段/注册登录/`
 
@@ -10,6 +10,7 @@
 |--------|------|-----|
 | 启动 Yaahlan | 启动Yaahlan | launch-yaahlan |
 | 冷启动开屏广告 | 跳过开屏广告 | dismiss-splash-ad |
+| **不确定当前页 → 回首页** | **冷启动回首页** | cold-start-home |
 | 语言选择 Next | 登录-语言下一步 | login-lang-next |
 | 勾选协议 + 手机入口 | 登录-勾选协议打开手机 | login-agree-phone |
 | 输入手机号 + Get via SMS | 登录-手机号发短信 | login-phone-sms（默认 QA 号） |
@@ -26,6 +27,7 @@
 
 ```bash
 python3 adb/adb_execute.py compose 冷启动登录
+python3 adb/adb_execute.py macro 冷启动回首页   # 已登录：杀进程回首页底栏
 python3 adb/adb_execute.py compose 公会长冷启动登录
 python3 adb/adb_execute.py compose 家族长发布图片动态
 python3 adb/adb_execute.py macro 关闭常见弹窗
@@ -49,6 +51,8 @@ python3 adb/adb_execute.py macro 登录-手机号发短信        # 默认 13311
 | 搜索 roomId 进房 | **搜索进房**（点结果行房间信息，**勿点输入框**） | room-search-enter |
 | 房内开礼物面板 | **打开礼物面板**（橙色礼物盒，勿点快捷礼物） | open-gift-panel |
 | 礼物面板送 99 钻 Trophy | **礼物面板送Trophy**（Gift Tab + 上下滑） | gift-panel-send-trophy |
+| 退出语音房 | **退出房间**（菜单 → Close → Exit Now） | room-exit |
+| 退出后落在 Search 页 | **搜索页返回房间帧**（返回 ×2 → 房间列表） | room-search-back |
 
 公会长房 roomId **38826842**（Sheikh's Cottage，账号 13311111111）：
 

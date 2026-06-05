@@ -1,0 +1,36 @@
+{
+  "id": "room-search-back",
+  "name": "搜索页返回房间帧",
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
+  "capture": "end",
+  "description": "退出房间后若落在 Search / 搜索结果页（RoomSearch*Activity），点左上角返回 ×2 回到房间列表（MainActivity + 底栏 Room）",
+  "steps": [
+    {
+      "sleep_ms": 400
+    },
+    {
+      "tap_pct": [
+        0.05,
+        0.049
+      ],
+      "note": "Search 页左上角返回（第 1 次：搜索结果 → 搜索入口）"
+    },
+    {
+      "sleep_ms": 600
+    },
+    {
+      "tap_pct": [
+        0.05,
+        0.049
+      ],
+      "note": "第 2 次：搜索入口 → 房间列表 Explore"
+    },
+    {
+      "sleep_ms": 800,
+      "note": "等待 MainActivity 房间帧"
+    }
+  ]
+}

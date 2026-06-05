@@ -22,9 +22,12 @@ def launch_app(
     wait_ms = int(target["launch_wait_ms"])
     launch_mode = str(target.get("launch_mode", "activity"))
 
-    force_stop: list[str] = []
-    if app_key == "yaahlan" and YAHA["package"] not in force_stop:
-        force_stop = [str(YAHA["package"])]
+    # 冷启：先 force-stop 目标包（及易混用的 Yaha），再 LAUNCHER 启动
+    force_stop: list[str] = [pkg]
+    if app_key == "yaahlan":
+        yaha_pkg = str(YAHA["package"])
+        if yaha_pkg not in force_stop:
+            force_stop.append(yaha_pkg)
 
     stopped: list[str] = []
     for stop_pkg in force_stop:

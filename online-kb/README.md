@@ -21,8 +21,6 @@
 
 与 [`bug-kb/`](../bug-kb/README.md) 的关系：bug-kb 含全部缺陷；online-kb 为其中 **线上问题** 子集。
 
-相关：**发版回归基线用例**见 [`regression-kb/发版回归用例.md`](../regression-kb/发版回归用例.md)。
-
 ## 统计
 
 | 指标 | 值 |
