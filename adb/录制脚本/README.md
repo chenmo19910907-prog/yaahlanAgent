@@ -46,6 +46,9 @@
 |------|--------|-----|
 | 首页-游戏帧 | 切换游戏底栏 | game-tab |
 | 首页-房间帧 | 切换房间底栏 | room-tab |
+| 首页-房间帧 | 搜索进房 | room-search-enter（`--text` roomId） |
+| 首页-房间帧 | 打开礼物面板 | open-gift-panel |
+| 首页-房间帧 | 礼物面板送Trophy | gift-panel-send-trophy |
 | 消息帧 | 切换消息底栏 | msg-tab |
 
 ### 动态帧
@@ -76,6 +79,8 @@
 | 模块 | 中文名 | id | 积木顺序 |
 |------|--------|-----|----------|
 | 注册登录 | 冷启动登录 | cold-start-login | 启动Yaahlan → 跳过开屏广告 → 手机号登录 |
+| 首页-房间帧 | 家族长搜索进公会长房 | family-search-guild-room | 搜索进房 → 关闭常见弹窗 |
+| 首页-房间帧 | 家族长房内送Trophy99钻 | family-send-trophy-99 | 礼物面板送Trophy → 关闭常见弹窗 |
 | 动态帧 | 发布纯文本动态 | post-moment-compose | 发布纯文本动态 |
 | 动态帧 | 发布视频动态 | post-video-moment-compose | 发布视频动态 |
 | 我的帧 | 进入个人资料详情页 | my-profile-compose | 进入个人资料详情页 |
@@ -84,9 +89,11 @@
 
 ## 成功即落库（Agent 必做）
 
+**触发条件**：真机操作验收通过且退出码为 **0**。**已实现脚本/有接口：先抓包，失败再读图**；**未实现脚本：抓包+读图并用**；**提交表单优先抓包**。详见 [`../README.md`](../README.md#验收策略抓包优先)。
+
 1. **片段** `片段/<一级模块>/<中文名>.json`（`module` 与目录名一致）
 2. **登记** `索引.json`：`kind: fragment`、`module`、`file`
-3. **组合**（可选）`组合/<一级模块>/<中文名>.json`，索引登记 `module`
+3. **组合**（端到端）`组合/<一级模块>/<中文名>.json` + `tunnelVerify`，索引登记 `module`
 4. 更新本 README 与 `KB对照.md`
 
 ## 命令示例

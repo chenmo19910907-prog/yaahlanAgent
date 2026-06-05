@@ -11,6 +11,7 @@
   ],
   "composeModules": [
     "注册登录",
+    "首页-房间帧",
     "动态帧",
     "我的帧"
   ],
@@ -133,6 +134,42 @@
       "kind": "fragment",
       "module": "首页-房间帧",
       "file": "片段/首页-房间帧/切换房间底栏.json"
+    },
+    {
+      "id": "room-search-enter",
+      "name": "搜索进房",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "params": ["text"],
+      "file": "片段/首页-房间帧/搜索进房.json"
+    },
+    {
+      "id": "open-gift-panel",
+      "name": "打开礼物面板",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/打开礼物面板.json"
+    },
+    {
+      "id": "gift-panel-send-trophy",
+      "name": "礼物面板送Trophy",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/礼物面板送Trophy.json"
+    },
+    {
+      "id": "family-search-guild-room",
+      "name": "家族长搜索进公会长房",
+      "kind": "compose",
+      "module": "首页-房间帧",
+      "file": "组合/首页-房间帧/家族长搜索进公会长房.json"
+    },
+    {
+      "id": "family-send-trophy-99",
+      "name": "家族长房内送Trophy99钻",
+      "kind": "compose",
+      "module": "首页-房间帧",
+      "file": "组合/首页-房间帧/家族长房内送Trophy99钻.json"
     },
     {
       "id": "msg-tab",

@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "generated_index_path": "Tunnel/使用方法.md",
+  "items": [
+    {
+      "id": "list_requests",
+      "name": "抓包-查询用户请求列表",
+      "category": "Tunnel 抓包",
+      "description": "按 userId（momoid）查询最近 HTTP 请求列表；支持 keyword、g_appid、g_env 过滤；列表项已含 request/response 体",
+      "prompts": [
+        "查用户 <userId> 最近抓包",
+        "tunnel 查 <userId> 最近 1 小时请求",
+        "抓包看 <userId> 送了什么礼物接口"
+      ],
+      "command": "python3 Tunnel/tunnel_execute.py --momoid <userId> --since 3600"
+    },
+    {
+      "id": "list_requests_keyword",
+      "name": "抓包-按关键字过滤",
+      "category": "Tunnel 抓包",
+      "description": "在请求 URL 中按关键字过滤（如 gift、sendGift、heartbeat）",
+      "prompts": [
+        "抓包查 <userId> 送礼接口",
+        "tunnel keyword gift <userId>",
+        "看 <userId> 最近 login 相关请求"
+      ],
+      "command": "python3 Tunnel/tunnel_execute.py --momoid <userId> --keyword gift --since 3600"
+    },
+    {
+      "id": "request_detail",
+      "name": "抓包-单条请求详情",
+      "category": "Tunnel 抓包",
+      "description": "按 _id 输出单条请求的 request/response JSON（需先从列表拿到 _id）",
+      "prompts": [
+        "tunnel 详情 <requestId>",
+        "展开抓包 <requestId> 的请求响应"
+      ],
+      "command": "python3 Tunnel/tunnel_execute.py --momoid <userId> --request-id <requestId> --since 7200"
+    },
+    {
+      "id": "list_requests_json",
+      "name": "抓包-完整 JSON 输出",
+      "category": "Tunnel 抓包",
+      "description": "输出完整列表 JSON，便于 Agent 解析 ec/em/data 与每条 request/response",
+      "prompts": [
+        "tunnel json <userId>",
+        "抓包原始数据 <userId>"
+      ],
+      "command": "python3 Tunnel/tunnel_execute.py --momoid <userId> --since 3600 --output json"
+    }
+  ]
+}

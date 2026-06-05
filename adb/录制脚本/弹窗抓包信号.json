@@ -1,0 +1,176 @@
+{
+  "version": 1,
+  "description": "关键操作后结合 Tunnel 抓包判断可能出现的弹窗；抓包无法覆盖的 UI 弹窗见各 scene.weakUiPopups，须配合截图读图。",
+  "scenes": {
+    "login": {
+      "label": "登录后进首页",
+      "weakUiPopups": [
+        "Account Security 绑定手机/邮箱",
+        "Crowd Testing 众测邀请",
+        "运营/礼包全屏（部分无独立接口）"
+      ],
+      "signals": [
+        {
+          "id": "first-recharge-entrance",
+          "urlPatterns": ["first-recharge/rechargeEntrance"],
+          "uiPopup": "首充/充值运营弹窗",
+          "rules": [
+            { "path": "response.data.isFirstRecharge", "op": "eq", "value": 1 },
+            { "path": "response.data.rechargeAlertV2CountDownSeconds", "op": "gt", "value": 0 }
+          ],
+          "ruleMode": "any",
+          "dismissScript": "关闭常见弹窗",
+          "confidence": "high"
+        },
+        {
+          "id": "first-recharge-wheel",
+          "urlPatterns": ["firstRechargeWheelInfo"],
+          "uiPopup": "首充转盘/运营 H5",
+          "rules": [
+            { "path": "response.data.alertWebUrl", "op": "notEmpty" },
+            { "path": "response.data.status", "op": "ne", "value": 0 }
+          ],
+          "ruleMode": "any",
+          "dismissScript": "关闭常见弹窗",
+          "confidence": "medium"
+        },
+        {
+          "id": "recharge-page-banner",
+          "urlPatterns": ["recharge/rechargePageData"],
+          "uiPopup": "钱包/充值页 Banner（误点 + 会进 Top up）",
+          "rules": [
+            { "path": "response.data.rechargeBannerInfo", "op": "notEmpty" }
+          ],
+          "ruleMode": "any",
+          "dismissScript": "关闭常见弹窗",
+          "confidence": "low"
+        }
+      ]
+    },
+    "home": {
+      "label": "首页/底栏切换后",
+      "weakUiPopups": [
+        "运营全屏广告",
+        "签到/任务半屏",
+        "版本更新提示"
+      ],
+      "signals": [
+        {
+          "id": "first-recharge-entrance",
+          "urlPatterns": ["first-recharge/rechargeEntrance"],
+          "uiPopup": "首充/充值运营弹窗",
+          "rules": [
+            { "path": "response.data.isFirstRecharge", "op": "eq", "value": 1 },
+            { "path": "response.data.rechargeAlertV2CountDownSeconds", "op": "gt", "value": 0 }
+          ],
+          "ruleMode": "any",
+          "dismissScript": "关闭常见弹窗",
+          "confidence": "high"
+        },
+        {
+          "id": "companion-chat-task",
+          "urlPatterns": ["companion-task"],
+          "uiPopup": "陪聊/任务相关引导",
+          "rules": [
+            { "path": "response.data.taskUserIds", "op": "notEmpty" }
+          ],
+          "ruleMode": "any",
+          "dismissScript": "关闭常见弹窗",
+          "confidence": "low"
+        }
+      ]
+    },
+    "me": {
+      "label": "进入 Me/个人页",
+      "weakUiPopups": [
+        "Crowd Testing Invitation 众测",
+        "Account Security 绑定提示",
+        "真人认证半屏"
+      ],
+      "signals": [
+        {
+          "id": "personal-homepage",
+          "urlPatterns": ["personalHomePageUserInfo", "homepage/personal"],
+          "uiPopup": "个人主页数据加载（随后易叠 UI 弹窗）",
+          "rules": [],
+          "ruleMode": "any",
+          "dismissScript": "关闭常见弹窗",
+          "confidence": "info"
+        },
+        {
+          "id": "first-recharge-entrance",
+          "urlPatterns": ["first-recharge/rechargeEntrance"],
+          "uiPopup": "首充/充值运营弹窗",
+          "rules": [
+            { "path": "response.data.isFirstRecharge", "op": "eq", "value": 1 }
+          ],
+          "ruleMode": "any",
+          "dismissScript": "关闭常见弹窗",
+          "confidence": "high"
+        }
+      ]
+    },
+    "room": {
+      "label": "进入语音房",
+      "weakUiPopups": [
+        "Lucky Wish 全屏广告",
+        "Mic invitation 上麦邀请",
+        "Join 加入房间",
+        "房间设置/更多菜单误开",
+        "录音权限系统弹窗（非 HTTP）"
+      ],
+      "signals": [
+        {
+          "id": "room-entrance-v3",
+          "urlPatterns": ["entranceV3", "room/profile/get"],
+          "uiPopup": "房间挂件/宝箱入口（Lucky Wish、Gift Challenge 等）",
+          "rules": [
+            { "path": "response.data.entranceList", "op": "notEmpty" }
+          ],
+          "ruleMode": "any",
+          "dismissScript": "关闭常见弹窗",
+          "confidence": "medium"
+        },
+        {
+          "id": "room-heartbeat",
+          "urlPatterns": ["room/heart/heartbeat"],
+          "uiPopup": "已在房内（heartbeat 仅作进房佐证，不表示无弹窗）",
+          "rules": [],
+          "ruleMode": "any",
+          "dismissScript": null,
+          "confidence": "info"
+        },
+        {
+          "id": "room-gift-rank",
+          "urlPatterns": ["rank/room/gift"],
+          "uiPopup": "礼物榜/小时榜数据（可能伴随机房 PK 提示）",
+          "rules": [],
+          "ruleMode": "any",
+          "dismissScript": "关闭常见弹窗",
+          "confidence": "low"
+        }
+      ]
+    },
+    "mic": {
+      "label": "开麦/上麦",
+      "weakUiPopups": [
+        "Mic invitation（Reject/Accept）",
+        "录音权限系统弹窗",
+        "上麦协议/风险提示"
+      ],
+      "signals": [
+        {
+          "id": "room-heartbeat",
+          "urlPatterns": ["room/heart/heartbeat"],
+          "uiPopup": "房内心跳（开麦前后应有 heartbeat；无则可能未进房）",
+          "rules": [],
+          "ruleMode": "any",
+          "dismissScript": null,
+          "confidence": "info"
+        }
+      ]
+    }
+  },
+  "defaultDismissScript": "关闭常见弹窗",
+  "dismissSkipWhenNoPopup": "dismiss_popup_taps"
+}

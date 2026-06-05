@@ -13,14 +13,51 @@
 
 路径不确定时：Agent **读图** 判断当前页，再选一块积木或一条组合；不要对每个 `tap` 都截图。
 
-**成功即落库**：真机探索并最终验收成功的操作，须写入 `录制脚本/`（片段 + 索引 + 必要时组合）。细则见 [`录制脚本/README.md`](录制脚本/README.md#成功即落库agent-必做)。
+**验证成功 → 自动录制**：探索出新路径后，经验收通过，Agent 自动将步骤落库到 `录制脚本/`（不写进本 README）。流程见 [验证成功自动录制](#验证成功自动录制)。
+
+### 验收策略（抓包优先）
+
+**原则**：能抓包验证的，**不要依赖读图**。Toast、提交成功提示、公屏一闪等短反馈，截图极易漏抓；以 Tunnel 接口 `ec=200` 为准。
+
+#### ① 脚本已实现的能力 → **先抓包，失败再读图**
+
+组合/片段已内嵌 `tunnelVerify`，或已知有关键字（如 `gift/send`、`feed`、`updateUserBase`、`heartbeat`）时：
+
+1. **先** `run` / `compose` / `macro` + `tunnel wait`（可用 `--no-capture`）
+2. `tunnelVerify.ok === true` 且退出码 **0** → 判成功，**不必读图**
+3. 抓包失败（退出码 **3**）→ **再**读结束截图排查（点位偏了？请求未发出？关键字不对？）
+
+#### ② 脚本尚未覆盖的能力 → **抓包 + 读图并用**
+
+探索新流程、尚无录制脚本时，**同时**用 Tunnel 辅助定位/验收 + 截图分析当前页（定坐标、确认页面状态）。
+
+#### ③ 提交表单类操作 → **优先抓包**
+
+点 **Save / Post / Send / 登录** 等提交后，优先等对应写接口而非读 Toast：
+
+| 操作 | 抓包关键字示例 |
+|------|----------------|
+| 登录 | `login` |
+| 发动态 | `feed` |
+| 礼物面板送礼 | `gift/send` |
+| 编辑资料保存 | `updateUserBase` |
+| 进房 | `heartbeat` |
+
+#### 读图适用场景
+
+| 场景 | 做法 |
+|------|------|
+| **探索定坐标** | `capture` 读图 → `tap`（与结果验收无关） |
+| **抓包失败后排查** | 读 `screenshot.path` 分析 UI 异常 |
+| **无抓包信号** | `popup analyze` + `weakUiPopups` 读图（见 `弹窗抓包信号.json`） |
 
 ### 截图策略
 
 | 场景 | 做法 |
 |------|------|
 | **路径确定** | `macro` / `compose` + `--no-capture`（0 张） |
-| **需要核对结果** | 默认 `capture: end` 或 `--verify`（结束时 1 张） |
+| **有 tunnelVerify 的验收** | `--no-capture` 即可；以 `tunnelVerify.ok` 判定 |
+| **仅弱 UI / 无接口** | `capture: end` 或 `--verify`（结束时 1 张） |
 | **探索新页面** | `capture` → 读图 → `tap` → … |
 
 ### 截图次数对照（示例：发一条动态）
@@ -30,6 +67,35 @@
 | 逐步 `capture` + `tap`（旧） | 约 4 次 |
 | `macro 发布纯文本动态 --text 1234` | **1 次**（结束时，可 `--no-capture` 为 0） |
 | `compose 发布纯文本动态 --text 1234 --no-capture` | **0 次** |
+
+### 波轮 / 滚动列表：先标定步长，再算距离
+
+年龄、生日、日期等 **滚轮选择器**，以及礼物面板 **上下滑** 礼物格，不要一次盲滑到底。应先 **滑动固定距离 → 读图确认变化量 → 再计算剩余滑动次数**。
+
+```text
+① 记录当前值（读图或 uiautomator，如年份 2003、礼物 Tab 内 index）
+② 在目标列/区域做一次固定 swipe（如 Δy=350px，duration≈300ms）→ capture 读图
+③ 标定：每滑 1 次变化几步（如年份 −2/次、礼物列表约 4 项/次）
+④ 计算：剩余步数 = ⌈|目标 − 当前| / 每步变化⌉，按同方向、同距离重复
+⑤ 接近目标后改为小步滑动，读图微调；提交后优先 tunnel 验收（如 updateUserBase）
+```
+
+**注意**：
+
+| 要点 | 说明 |
+|------|------|
+| **滑在列中心** | 日期波轮有 Day / Month / Year 三列，x 须落在对应列中心，勿滑错列 |
+| **方向先试探** | 上下滑方向因控件而异；先 1 次固定滑动看数值变大还是变小，再定正向 |
+| **步长因屏而异** | 换机或换弹窗后重新标定；落库时在 `note` 写列序、方向、标定出的步数 |
+| **与抓包结合** | 编辑资料保存 → `updateUserBase`；礼物选择 → `getGiftTabListV3` + `gift/send` |
+
+示例（生日年份 2003 → 1998，标定每滑 1 次约 −2 年）：
+
+```bash
+# 标定后：差 5 年 ≈ 3 次同参数 swipe，再 capture 确认 → 点 Save → tunnel wait updateUserBase
+adb -s <serial> shell input swipe 900 2050 900 2280 300   # 在 Year 列中心，固定距离
+python3 adb/adb_execute.py capture                          # 读图确认年份变化量
+```
 
 ## 目标 App
 
@@ -112,6 +178,112 @@ python3 adb/adb_execute.py chain adb/录制脚本/片段/我的帧/进入个人�
 python3 adb/adb_execute.py compose 冷启动登录
 python3 adb/adb_execute.py macro post-moment --text 1234 --no-capture
 ```
+
+## ADB + Tunnel 抓包校验（推荐）
+
+将 **UI 操作** 与 **Tunnel 接口核对** 串成一条命令；**以抓包为验收主依据**，避免靠读图判断 Toast、公屏或动效是否成功。
+
+### 一体化 `run`
+
+```bash
+python3 adb/adb_execute.py run \
+  --macro 切换房间底栏 \
+  --tunnel-account familyLeader \
+  --tunnel-keyword heartbeat \
+  --tunnel-wait 20
+```
+
+流程：记录 `start_time` → 执行 ADB → 轮询 [tunnel.wemomo.com](../Tunnel/README.md) 直到 URL 匹配（有 `--tunnel-*` 时仍会结束截图，但**判定以 tunnel 为准**）。
+
+### 挂在 compose / macro 上
+
+```bash
+python3 adb/adb_execute.py compose 发布纯文本动态 --text 1234
+# 组合 JSON 内可写 tunnelVerify（见 组合/动态帧/发布纯文本动态.json）
+
+python3 adb/adb_execute.py macro 手机号登录 \
+  --tunnel-account familyLeader \
+  --tunnel-keyword login
+```
+
+| 参数 | 说明 |
+|------|------|
+| `--tunnel-account` | `索引.json` → `testAccounts`（`guildLeader` / `familyLeader`） |
+| `--tunnel-momoid` | 直接指定 userId |
+| `--tunnel-keyword` | URL 子串过滤（如 `sendGift`、`heartbeat`） |
+| `--tunnel-wait` | 最长等待秒数（默认 30） |
+| `--tunnel-expect-ec` | 可选，校验 `response.ec` |
+
+退出码：`0` = tunnel 匹配成功；`3` = 未匹配（**先判失败**，再读图排查）。已实现脚本的能力：**抓包通过即成功，不读图**；抓包失败才读 `screenshot.path`。
+
+### 仅 Tunnel 等待
+
+```bash
+python3 adb/adb_execute.py tunnel wait --account familyLeader --keyword gift --since 300
+```
+
+### 弹窗：先抓包再决定是否关（login / home / me / room / mic）
+
+```bash
+python3 adb/adb_execute.py popup analyze --scene me --account familyLeader --since 120 --capture
+python3 adb/adb_execute.py run --compose 家族长冷启动登录 \
+  --tunnel-account familyLeader --popup-scene login --popup-auto-dismiss
+```
+
+抓包规则见 `录制脚本/弹窗抓包信号.json`；UI 说明见 `录制脚本/弹窗说明.md`。
+
+### 礼物面板：Tunnel 解析 Tab / 礼物列表
+
+打开橙色礼物盒后：
+
+```bash
+python3 adb/adb_execute.py gift panel analyze --account familyLeader --since 120
+python3 adb/adb_execute.py gift panel find --account familyLeader --price 99 --tab Gift
+```
+
+数据源：`getGiftTabListV3`。Tab **左右滑**、礼物格 **上下滑**，见 `录制脚本/礼物面板抓包.md`。
+
+Cookie 复用 `MOA/.env.local`。Agent Skill：`.cursor/skills/adb-tunnel-verify/SKILL.md`。
+
+## 验证成功自动录制
+
+Agent 在真机上探索 UI 操作时，**验收通过后才落库**；脚本内容写入 `录制脚本/`，本 README 只描述流程。
+
+### 流程总览
+
+```text
+① 探索    无脚本：抓包+读图并用定坐标；有 gift panel find / popup analyze 可辅助
+② 验收    有脚本/有接口：先 tunnel（--no-capture）→ 失败再读图；无脚本：抓包+读图并用
+③ 落库    写片段 / 索引 / 组合（含 tunnelVerify）→ 更新 录制脚本/README.md、KB对照.md
+④ 回放    compose/macro --no-capture，以 tunnel 验收；失败再读图
+```
+
+未通过验收时回到 ①。**勿因截图「看起来对了」就判成功**（尤其 Toast、表单提交成功提示）。
+
+### ② 验收标准
+
+| 情形 | 顺序 |
+|------|------|
+| **脚本已实现**（含 `tunnelVerify` 或已知 API） | ① 抓包通过 → 成功；② 抓包失败 → 读图排查 → 调步骤 |
+| **脚本未实现**（探索新能力） | 抓包 + 读图**同时**用于定位与验收 |
+| **提交表单**（Save/Post/Send/登录） | **先**等写接口（`updateUserBase`、`feed`、`gift/send` 等），**后**读图 |
+
+共同要求：退出码 **0**；退出码 **3** 不算成功。组合落库时**应写 `tunnelVerify`**。
+
+### ③ 落库清单（写入 `录制脚本/`，非本文件）
+
+| 产物 | 路径 / 动作 |
+|------|-------------|
+| 片段 | `片段/<一级模块>/<中文名>.json`（`tap_pct`、`swipe`、`run_script`；`recordedOn` 对齐基准机） |
+| 索引 | `索引.json` 登记 `kind`、`module`、`file`、可选 `params` |
+| 组合 | 端到端流程写 `组合/<模块>/<中文名>.json`，可内嵌 `tunnelVerify` |
+| 文档 | 更新 [`录制脚本/README.md`](录制脚本/README.md)、[`KB对照.md`](录制脚本/KB对照.md) |
+
+细则见 [`录制脚本/README.md#成功即落库`](录制脚本/README.md#成功即落库agent-必做)。
+
+### ④ 回放验证
+
+落库后用 `macro` / `compose --no-capture` 无人工干预再执行一次；以 **tunnel 验收** 为准，才算录制完成。
 
 ## 说明
 

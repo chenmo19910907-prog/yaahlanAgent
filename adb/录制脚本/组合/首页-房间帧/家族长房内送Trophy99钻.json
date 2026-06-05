@@ -1,0 +1,18 @@
+{
+  "id": "family-send-trophy-99",
+  "name": "家族长房内送Trophy99钻",
+  "description": "已在语音房内：礼物面板选 Trophy（99 钻）送出；Tunnel 校验 v2/gift/send",
+  "capture": "end",
+  "tunnelVerify": {
+    "account": "familyLeader",
+    "keyword": "gift/send",
+    "waitSeconds": 25,
+    "expectHttpStatus": 200,
+    "expectResponseEc": 200,
+    "minMatches": 1
+  },
+  "sequence": [
+    { "script": "礼物面板送Trophy", "capture": "end" },
+    { "script": "关闭常见弹窗", "capture": "never" }
+  ]
+}

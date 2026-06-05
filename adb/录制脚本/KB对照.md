@@ -46,6 +46,18 @@ python3 adb/adb_execute.py macro 登录-手机号发短信        # 默认 13311
 | 知识库 | 脚本 | id |
 |--------|------|-----|
 | 底栏 Room | 切换房间底栏 | room-tab |
+| 搜索 roomId 进房 | **搜索进房**（点结果行房间信息，**勿点输入框**） | room-search-enter |
+| 房内开礼物面板 | **打开礼物面板**（橙色礼物盒，勿点快捷礼物） | open-gift-panel |
+| 礼物面板送 99 钻 Trophy | **礼物面板送Trophy**（Gift Tab + 上下滑） | gift-panel-send-trophy |
+
+公会长房 roomId **38826842**（Sheikh's Cottage，账号 13311111111）：
+
+```bash
+python3 adb/adb_execute.py macro 搜索进房 --text 38826842
+python3 adb/adb_execute.py compose 家族长搜索进公会长房
+python3 adb/adb_execute.py compose 家族长房内送Trophy99钻   # 已在房内；Tunnel gift/send
+python3 adb/adb_execute.py gift panel find --account familyLeader --price 99 --tab Gift
+```
 
 ## 消息帧 · `片段/消息帧/`
 
@@ -82,10 +94,12 @@ python3 adb/adb_execute.py macro 登录-手机号发短信        # 默认 13311
 |------|------|--------|------|
 | 注册登录 | 冷启动 + 登录 | 冷启动登录 | `组合/注册登录/` |
 | 注册登录 | 公会长冷启动 | 公会长冷启动登录 | `组合/注册登录/` |
+| 首页-房间帧 | 家族长搜索进公会长房 | 家族长搜索进公会长房 | `组合/首页-房间帧/` |
+| 首页-房间帧 | 房内送 Trophy 99 钻 | 家族长房内送Trophy99钻 | `组合/首页-房间帧/` |
 | 动态帧 | 发动态（已在 App） | 发布纯文本 / 视频 / **图片** 动态 | `组合/动态帧/` |
 | 动态帧 | 公会长冷启动并发图 | 公会长发布图片动态 | `组合/动态帧/` |
 | 我的帧 | 进资料页（已在 App） | 进入个人资料详情页 | `组合/我的帧/` |
 
 ## 暂不可 ADB 固化
 
-- 第三方授权、完善资料多步、支付、进房深度操作等（待补模块目录：语音房、支付、公会…）
+- 第三方授权、完善资料多步、支付等（待补模块目录：支付、公会…）
