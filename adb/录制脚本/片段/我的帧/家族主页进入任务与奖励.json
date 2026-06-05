@@ -1,0 +1,15 @@
+{
+  "id": "family-home-tasks-rewards",
+  "name": "家族主页进入任务与奖励",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "家族主页 WebView 底部 Tasks & Rewards → Tasks 页（Family Check-in / 送礼任务等）；前置：资料页进入家族主页",
+  "kbRef": [
+    "documents/家族改版.md（十、家族主页 · Tasks & Rewards）"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.250, 0.940], "note": "底部 Tasks & Rewards 橙色按钮" },
+    { "sleep_ms": 1200 }
+  ]
+}

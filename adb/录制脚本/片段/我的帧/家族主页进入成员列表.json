@@ -1,0 +1,17 @@
+{
+  "id": "family-home-members-list",
+  "name": "家族主页进入成员列表",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "家族主页 Family Members 行右侧 More → 成员列表(50/400)；含搜索/This week·This month/角色徽章；前置：资料页进入家族主页",
+  "kbRef": [
+    "documents/家族改版.md（十、家族主页 · Family Members）"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "run_script": "家族主页下滑浏览", "note": "露出 Family Members 区块" },
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.926, 0.667], "note": "Family Members 标题行 More >" },
+    { "sleep_ms": 1200 }
+  ]
+}

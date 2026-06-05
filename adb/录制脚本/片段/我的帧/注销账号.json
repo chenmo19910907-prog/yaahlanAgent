@@ -1,0 +1,89 @@
+{
+  "id": "cancel-account",
+  "name": "注销账号",
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
+  "capture": "end",
+  "description": "Me → 设置 → Account security → Delete account → 注销说明页等 15s 冷静期 → 勾选余额清空 → Delete Account → 二次确认。成功：activity hint=login。若 toast 提示账号无法注销（钱包未清空等），流程到此结束。",
+  "kbRef": [
+    "testcase-kb/注册登录.md（注销账号）",
+    "documents/账号安全.md"
+  ],
+  "steps": [
+    {
+      "sleep_ms": 400
+    },
+    {
+      "tap_pct": [0.9, 0.956],
+      "note": "Me 底栏"
+    },
+    {
+      "sleep_ms": 700
+    },
+    {
+      "popup_gate": { "scene": "me" },
+      "note": "Me 页弹窗 Cancel，再点设置"
+    },
+    {
+      "tap_pct": [0.922, 0.068],
+      "note": "iv_setting（bounds 996,159）"
+    },
+    {
+      "sleep_ms": 800
+    },
+    {
+      "tap_pct": [0.493, 0.215],
+      "note": "Settings → Account security（bounds 532,504）"
+    },
+    {
+      "sleep_ms": 1200,
+      "note": "WebView 账号安全页"
+    },
+    {
+      "tap_pct": [0.5, 0.919],
+      "note": "Account security 底部 Delete account（bounds 540,2150）"
+    },
+    {
+      "sleep_ms": 1000,
+      "note": "Deactivation Instructions 页；按钮初始 Delete Account(15s)"
+    },
+    {
+      "sleep_ms": 15000,
+      "note": "15s 冷静期倒计时"
+    },
+    {
+      "tap_pct": [0.111, 0.547],
+      "note": "勾选「钱包钻石/金币余额须清空」条件行（bounds 120,1280）"
+    },
+    {
+      "sleep_ms": 400
+    },
+    {
+      "tap_pct": [0.5, 0.932],
+      "note": "Delete Account 申请按钮（bounds 540,2180）"
+    },
+    {
+      "sleep_ms": 1200,
+      "note": "等待温馨提示弹窗"
+    },
+    {
+      "tap_pct": [0.726, 0.576],
+      "note": "温馨提示 → Sure（bounds 784,1348）",
+      "skip_key": "cancel_confirm_dialogs"
+    },
+    {
+      "sleep_ms": 800
+    },
+    {
+      "tap_pct": [0.726, 0.600],
+      "note": "再次确认 → Confirm and Exit（bounds 784,1404）",
+      "skip_key": "cancel_confirm_dialogs"
+    },
+    {
+      "sleep_ms": 2500,
+      "note": "等待回到登录页；blocked 时仍 webview/toast"
+    }
+  ]
+}

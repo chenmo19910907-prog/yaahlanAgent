@@ -1,0 +1,17 @@
+{
+  "id": "profile-enter-voice-room",
+  "name": "资料页进入VoiceRoom",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Profile Tab → 点 Dialogue Arena 卡片 → RoomChatActivity 语音房；前置：进入个人资料详情页",
+  "kbRef": [
+    "testcase-kb/个人主页.md（Voice Room）"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.109, 0.172], "note": "切回 Profile Tab" },
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.500, 0.299], "note": "Dialogue Arena Voice Room 卡片" },
+    { "sleep_ms": 2000 }
+  ]
+}

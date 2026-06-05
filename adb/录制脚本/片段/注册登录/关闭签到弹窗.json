@@ -1,0 +1,20 @@
+{
+  "id": "dismiss-sign-in-popup",
+  "name": "关闭签到弹窗",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "登录后签到半屏/WebView（sign/signInList.signInPopupUrl）：BACK 关闭，勿点 Cancel 坐标",
+  "kbRef": ["documents/登录注册.md"],
+  "popups": [
+    {
+      "name": "签到半屏 / surprise H5",
+      "dismiss": "BACK×2",
+      "tunnel": "sign/signInList → data.signInPopupUrl"
+    }
+  ],
+  "steps": [
+    { "sleep_ms": 500, "note": "等待签到弹窗动画" },
+    { "key": 4, "note": "BACK 关签到 WebView（仅 webview 时有效；home 上勿连按 BACK）" },
+    { "sleep_ms": 500, "note": "等待回到 MainActivity" }
+  ]
+}

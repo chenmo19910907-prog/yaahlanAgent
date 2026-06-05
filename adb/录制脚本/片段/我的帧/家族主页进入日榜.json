@@ -1,0 +1,15 @@
+{
+  "id": "family-home-daily-ranking",
+  "name": "家族主页进入日榜",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "家族主页 Daily Ranking 卡片 → WebView 家族日榜(Family Tab)；页内可切 Weekly list；前置：资料页进入家族主页",
+  "kbRef": [
+    "documents/家族改版.md（十、家族主页 · Ranking）"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.250, 0.321], "note": "Daily Ranking 金色卡片" },
+    { "sleep_ms": 1200 }
+  ]
+}

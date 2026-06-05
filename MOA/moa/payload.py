@@ -240,6 +240,18 @@ def _op_query_user_by_phone(args: argparse.Namespace, payload: dict[str, Any]) -
     )
 
 
+def _op_cancel_user(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    """注销账号（voga-mts-user-backdoor execute；userCancelService.cancelUserReal）。"""
+    payload["url"] = "/service/voga-mts-user-backdoor"
+    payload["method"] = "execute"
+    user_id = str(args.cancel_user_id).strip()
+    if not user_id:
+        raise ValueError("注销账号时 userId 不能为空")
+    expr = f'context.getBean("userCancelService").cancelUserReal("{user_id}")'
+    print(f"注销账号 userId={user_id}", file=sys.stderr)
+    set_backdoor_execute_expr(payload, expr)
+
+
 def _op_diamond_query(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     payload["url"] = "/service/voga-base-service-middle-pay-stage"
     payload["method"] = "queryUserAccount"
@@ -498,6 +510,7 @@ def _op_vip(args: argparse.Namespace, payload: dict[str, Any]) -> None:
 # (predicate, handler) — 按优先级匹配首个操作
 OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = [
     (lambda a: a.change_user_area_user_id is not None, _op_change_user_area),
+    (lambda a: a.cancel_user_id is not None, _op_cancel_user),
     (lambda a: a.query_user_by_phone is not None, _op_query_user_by_phone),
     (lambda a: a.id_auth_user_id is not None, _op_id_auth_query),
     (lambda a: a.id_auth_reset_expire_user_id is not None, _op_id_auth_reset_expire),

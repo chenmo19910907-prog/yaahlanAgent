@@ -21,9 +21,9 @@ YAAHLAN: AppTarget = {
     "package": "com.immomo.biz.yaahlan",
     "activity": ".personalityIcon4",
     "launch_mode": "launcher",
-    # 冷启动后先等壳加载；开屏广告另由 launchPostLaunch 片段处理（约 5s）
-    "launch_wait_ms": 2500,
-    "splash_ad_max_ms": 5500,
+    # 冷启动后先等壳加载；开屏广告另由「跳过开屏广告」片段处理（约 5s，须晚于按钮出现再点）
+    "launch_wait_ms": 4000,
+    "splash_ad_max_ms": 8000,
     "splash_ad_script_id": "dismiss-splash-ad",
 }
 

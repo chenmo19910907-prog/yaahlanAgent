@@ -1,0 +1,17 @@
+{
+  "id": "game-profile",
+  "name": "游戏帧进入个人资料",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Game 帧 → 点头像(iv_my_avatar) → ProfileActivity；页含 Profile/Honor/Relationship Tab、Voice Room 卡片",
+  "kbRef": [
+    "testcase-kb/个人主页.md（Profile页 / mini资料卡、资料页）"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.100, 0.956], "note": "tab_game" },
+    { "sleep_ms": 600 },
+    { "tap_pct": [0.086, 0.087], "note": "iv_my_avatar" },
+    { "sleep_ms": 900 }
+  ]
+}

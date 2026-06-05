@@ -1,0 +1,15 @@
+{
+  "id": "game-enter-task-pack",
+  "name": "游戏帧进入任务礼包",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Game 帧右上角 game_task → WebViewActivity 任务/礼包页；前置：切换游戏底栏",
+  "kbRef": [
+    "testcase-kb/游戏帧.md"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.922, 0.087], "note": "右上角 game_task（bounds 942,150-1050,258）" },
+    { "sleep_ms": 1200 }
+  ]
+}

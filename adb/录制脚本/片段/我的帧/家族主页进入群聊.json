@@ -1,0 +1,15 @@
+{
+  "id": "family-home-group-chat",
+  "name": "家族主页进入群聊",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "家族主页底部 Group Chat → GroupChatActivity（Dialogue Arena 家族房聊天；Say Hi / 礼物 / 游戏入口）；前置：资料页进入家族主页",
+  "kbRef": [
+    "documents/家族改版.md（十、家族主页 · Group Chat）"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.750, 0.940], "note": "底部 Group Chat 蓝色按钮" },
+    { "sleep_ms": 1500 }
+  ]
+}

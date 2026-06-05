@@ -1,0 +1,15 @@
+{
+  "id": "game-enter-event-center",
+  "name": "游戏帧进入活动中心",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Game 帧右上角 iv_event_center → EventActivity(Activity Lobby)；前置：切换游戏底栏",
+  "kbRef": [
+    "testcase-kb/活动中心.md"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.801, 0.087], "note": "右上角活动中心图标（bounds 819,158-912,251）" },
+    { "sleep_ms": 1200 }
+  ]
+}

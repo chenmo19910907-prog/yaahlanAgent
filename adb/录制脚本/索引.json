@@ -15,6 +15,12 @@
     "动态帧",
     "我的帧"
   ],
+  "aiOperateModules": [
+    "首页-游戏帧",
+    "首页-房间帧",
+    "我的帧"
+  ],
+  "aiOperateNote": "以上模块禁止 macro/compose（须 ai prepare 读图操作）；调试加 --force-script",
   "loginDefaults": {
     "countryCode": "+86",
     "phone": "13311111115",
@@ -27,8 +33,7 @@
       "phone": "13311111111",
       "verifyCode": "000000",
       "userId": "100465989",
-      "guild": "cm",
-      "loginScript": "公会长手机号登录"
+      "guild": "cm"
     },
     "familyLeader": {
       "role": "家族长",
@@ -37,8 +42,7 @@
       "verifyCode": "000000",
       "userId": "100486375",
       "familyId": "101435",
-      "familyName": "CCVC",
-      "loginScript": "家族长手机号登录"
+      "familyName": "CCVC"
     }
   },
   "items": [
@@ -55,6 +59,13 @@
       "kind": "fragment",
       "module": "注册登录",
       "file": "片段/注册登录/跳过开屏广告.json"
+    },
+    {
+      "id": "verify-splash-ad",
+      "name": "验收开屏广告",
+      "kind": "fragment",
+      "module": "注册登录",
+      "file": "片段/注册登录/验收开屏广告.json"
     },
     {
       "id": "cold-start-home",
@@ -98,21 +109,16 @@
       "name": "手机号登录",
       "kind": "fragment",
       "module": "注册登录",
+      "params": ["text"],
       "file": "片段/注册登录/手机号登录.json"
     },
     {
-      "id": "login-guild-leader",
-      "name": "公会长手机号登录",
+      "id": "register-profile",
+      "name": "完成注册",
       "kind": "fragment",
       "module": "注册登录",
-      "file": "片段/注册登录/公会长手机号登录.json"
-    },
-    {
-      "id": "login-family-leader",
-      "name": "家族长手机号登录",
-      "kind": "fragment",
-      "module": "注册登录",
-      "file": "片段/注册登录/家族长手机号登录.json"
+      "params": ["text"],
+      "file": "片段/注册登录/完成注册.json"
     },
     {
       "id": "login-dismiss-popup",
@@ -129,11 +135,39 @@
       "file": "片段/注册登录/关闭常见弹窗.json"
     },
     {
+      "id": "dismiss-me-popups",
+      "name": "关闭Me页弹窗",
+      "kind": "fragment",
+      "module": "注册登录",
+      "file": "片段/注册登录/关闭Me页弹窗.json"
+    },
+    {
+      "id": "dismiss-sign-in-popup",
+      "name": "关闭签到弹窗",
+      "kind": "fragment",
+      "module": "注册登录",
+      "file": "片段/注册登录/关闭签到弹窗.json"
+    },
+    {
+      "id": "login-post-popups",
+      "name": "登录后处理弹窗",
+      "kind": "fragment",
+      "module": "注册登录",
+      "file": "片段/注册登录/登录后处理弹窗.json"
+    },
+    {
       "id": "game-tab",
       "name": "切换游戏底栏",
       "kind": "fragment",
       "module": "首页-游戏帧",
       "file": "片段/首页-游戏帧/切换游戏底栏.json"
+    },
+    {
+      "id": "game-profile",
+      "name": "游戏帧进入个人资料",
+      "kind": "fragment",
+      "module": "首页-游戏帧",
+      "file": "片段/首页-游戏帧/游戏帧进入个人资料.json"
     },
     {
       "id": "room-tab",
@@ -170,6 +204,13 @@
       "kind": "fragment",
       "module": "首页-房间帧",
       "file": "片段/首页-房间帧/退出房间.json"
+    },
+    {
+      "id": "room-minimize-third-party-game",
+      "name": "房内三方游戏最小化",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/房内三方游戏最小化.json"
     },
     {
       "id": "room-search-back",
@@ -256,6 +297,13 @@
       "file": "片段/我的帧/设置页退出登录.json"
     },
     {
+      "id": "cancel-account",
+      "name": "注销账号",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/注销账号.json"
+    },
+    {
       "id": "me-tab",
       "name": "切换我的底栏",
       "kind": "fragment",
@@ -275,6 +323,125 @@
       "kind": "fragment",
       "module": "我的帧",
       "file": "片段/我的帧/我的页进入个人资料详情.json"
+    },
+    {
+      "id": "me-friends-list",
+      "name": "进入好友列表",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/进入好友列表.json"
+    },
+    {
+      "id": "me-following-list",
+      "name": "进入关注列表",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/进入关注列表.json"
+    },
+    {
+      "id": "me-followers-list",
+      "name": "进入粉丝列表",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/进入粉丝列表.json"
+    },
+    {
+      "id": "profile-scroll-profile-tab",
+      "name": "资料页ProfileTab下滑浏览",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/资料页ProfileTab下滑浏览.json"
+    },
+    {
+      "id": "profile-enter-family",
+      "name": "资料页进入家族主页",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/资料页进入家族主页.json"
+    },
+    {
+      "id": "family-home-scroll",
+      "name": "家族主页下滑浏览",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/家族主页下滑浏览.json"
+    },
+    {
+      "id": "family-home-tasks-rewards",
+      "name": "家族主页进入任务与奖励",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/家族主页进入任务与奖励.json"
+    },
+    {
+      "id": "family-tasks-browse",
+      "name": "家族任务页浏览",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/家族任务页浏览.json"
+    },
+    {
+      "id": "family-home-group-chat",
+      "name": "家族主页进入群聊",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/家族主页进入群聊.json"
+    },
+    {
+      "id": "family-home-members-list",
+      "name": "家族主页进入成员列表",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/家族主页进入成员列表.json"
+    },
+    {
+      "id": "family-home-daily-ranking",
+      "name": "家族主页进入日榜",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/家族主页进入日榜.json"
+    },
+    {
+      "id": "profile-honor-tab",
+      "name": "资料页切换HonorTab",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/资料页切换HonorTab.json"
+    },
+    {
+      "id": "profile-honor-tab-scroll",
+      "name": "资料页HonorTab下滑浏览",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/资料页HonorTab下滑浏览.json"
+    },
+    {
+      "id": "profile-relationship-tab",
+      "name": "资料页切换RelationshipTab",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/资料页切换RelationshipTab.json"
+    },
+    {
+      "id": "profile-enter-voice-room",
+      "name": "资料页进入VoiceRoom",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/资料页进入VoiceRoom.json"
+    },
+    {
+      "id": "profile-enter-edit",
+      "name": "资料页进入编辑页",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/资料页进入编辑页.json"
+    },
+    {
+      "id": "profile-open-moment-compose",
+      "name": "资料页打开发布动态",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/资料页打开发布动态.json"
     },
     {
       "id": "post-moment",
@@ -304,20 +471,6 @@
       "kind": "compose",
       "module": "注册登录",
       "file": "组合/注册登录/冷启动登录.json"
-    },
-    {
-      "id": "guild-leader-cold-login",
-      "name": "公会长冷启动登录",
-      "kind": "compose",
-      "module": "注册登录",
-      "file": "组合/注册登录/公会长冷启动登录.json"
-    },
-    {
-      "id": "family-leader-cold-login",
-      "name": "家族长冷启动登录",
-      "kind": "compose",
-      "module": "注册登录",
-      "file": "组合/注册登录/家族长冷启动登录.json"
     },
     {
       "id": "post-moment-compose",

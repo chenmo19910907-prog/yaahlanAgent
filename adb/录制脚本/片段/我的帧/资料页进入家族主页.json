@@ -1,0 +1,18 @@
+{
+  "id": "profile-enter-family",
+  "name": "资料页进入家族主页",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Profile Tab 下滑 → 点 Family 卡片(CCVC) → WebView 家族主页 LV.5；含基金/排行/Tasks&Rewards/Group Chat",
+  "kbRef": [
+    "documents/家族改版.md（十、家族主页）",
+    "testcase-kb/个人主页.md（Profile页 Family 区块）"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "run_script": "资料页ProfileTab下滑浏览", "note": "露出 Family 卡片" },
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.500, 0.547], "note": "Family 卡片 CCVC" },
+    { "sleep_ms": 1200 }
+  ]
+}

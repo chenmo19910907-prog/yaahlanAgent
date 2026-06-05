@@ -177,6 +177,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--query-user-by-phone",
         help="按手机号查询 userId（queryLoginStatusV2；data 为空表示未注册）",
     )
+    parser.add_argument(
+        "--cancel-user",
+        dest="cancel_user_id",
+        metavar="USER_ID",
+        help="注销账号 userId（voga-mts-user-backdoor；userCancelService.cancelUserReal）",
+    )
     parser.add_argument("--phone-area-code", default="86", help="手机号区号（默认 86；也可在号码中带 +86）")
     parser.add_argument("--phone-app-id", type=int, help="queryLoginStatusV2 的 appId（默认 config.json 中 2005）")
     parser.add_argument(

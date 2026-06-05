@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import platform
+import shutil
 import struct
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -50,11 +53,25 @@ def prune_screenshots(
     return removed
 
 
+def _resize_png_max_edge(path: Path, max_edge: int) -> None:
+    """将 PNG 最长边缩至 max_edge（仅 macOS + sips，失败则保留原图）。"""
+    if max_edge < 1:
+        return
+    if platform.system() != "Darwin" or not shutil.which("sips"):
+        return
+    subprocess.run(
+        ["sips", "-Z", str(max_edge), str(path), "--out", str(path)],
+        check=False,
+        capture_output=True,
+    )
+
+
 def capture_screenshot(
     *,
     serial: str | None,
     directory: Path | None = None,
     max_keep: int = DEFAULT_MAX_SCREENSHOTS,
+    max_edge: int | None = None,
 ) -> dict[str, object]:
     """截屏到本地目录，并 prune 为仅保留最新 max_keep 张。"""
     out_dir = directory or DEFAULT_SCREENSHOT_DIR
@@ -68,11 +85,14 @@ def capture_screenshot(
         raise RuntimeError("screencap 返回空数据")
     path.write_bytes(proc.stdout)
 
+    if max_edge is not None:
+        _resize_png_max_edge(path, max_edge)
+
     width, height = png_dimensions(path)
     removed = prune_screenshots(out_dir, max_keep=max_keep)
     kept = sorted(out_dir.glob("screen_*.png"), key=lambda p: p.stat().st_mtime)
 
-    return {
+    payload: dict[str, object] = {
         "path": str(path.resolve()),
         "width": width,
         "height": height,
@@ -81,6 +101,9 @@ def capture_screenshot(
         "kept": [str(p.resolve()) for p in kept],
         "maxKeep": max_keep,
     }
+    if max_edge is not None:
+        payload["maxEdge"] = max_edge
+    return payload
 
 
 def latest_screenshot(directory: Path | None = None) -> Path | None:

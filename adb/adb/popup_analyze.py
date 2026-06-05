@@ -178,8 +178,10 @@ def analyze_popup_signals(
         script = str(entry.get("dismissScript") or "").strip()
         if script and script not in dismiss_scripts:
             dismiss_scripts.append(script)
-    if has_popup_signals and not dismiss_scripts and default_dismiss:
-        dismiss_scripts.append(default_dismiss)
+    if (has_popup_signals or weak_list) and not dismiss_scripts and default_dismiss:
+        dismiss_scripts.append(default_dismiss if scene != "me" else "关闭Me页弹窗")
+    if scene == "me" and "关闭Me页弹窗" not in dismiss_scripts:
+        dismiss_scripts = ["关闭Me页弹窗"]
 
     recommendation = "continue"
     if has_popup_signals or weak_list:
@@ -270,6 +272,60 @@ def fetch_recent_tunnel_items(
     items = normalize_request_list(payload)
     meta["itemCount"] = len(items)
     return items, meta
+
+
+def dismiss_scripts_for_analysis(
+    *,
+    serial: str,
+    analysis: dict[str, Any],
+    screenshot_dir: Path,
+    max_screenshots: int,
+    use_adaptation: bool = True,
+) -> list[dict[str, Any]]:
+    """按场景执行关弹窗：login/home 无抓包信号时跳过 Cancel；me 保留 Cancel。"""
+    from .chain import run_chain
+    from .macros import apply_skip_flags, resolve_macro
+
+    scripts = analysis.get("dismissScripts")
+    if not isinstance(scripts, list) or not scripts:
+        return []
+
+    skip_keys: set[str] = set()
+    scene = str(analysis.get("scene", ""))
+    if scene == "me":
+        skip_keys = set()
+    elif not analysis.get("hasPopupSignals"):
+        if scene in ("login", "home"):
+            skip_keys.add(str(analysis.get("dismissSkipWhenNoPopup", "dismiss_popup_taps")))
+        if scene == "home":
+            skip_keys.add("dismiss_popup_back")
+
+    blocks: list[dict[str, Any]] = []
+    for name in scripts:
+        script_name = (
+            "关闭Me页弹窗"
+            if scene == "me" and str(name) in ("关闭常见弹窗", "关闭Me页弹窗")
+            else str(name)
+        )
+        frag = resolve_macro(script_name)
+        steps = apply_skip_flags(list(frag.get("steps", [])), skip=skip_keys)
+        out = run_chain(
+            serial=serial,
+            steps=steps,
+            capture="never",
+            screenshot_dir=screenshot_dir,
+            max_screenshots=max_screenshots,
+            use_adaptation=use_adaptation,
+        )
+        blocks.append(
+            {
+                "script": frag.get("name", name),
+                "scriptId": frag.get("id", name),
+                "skipKeys": sorted(skip_keys),
+                "stepsExecuted": out.get("stepsExecuted"),
+            }
+        )
+    return blocks
 
 
 def analyze_scene_from_tunnel(

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -132,6 +133,30 @@ def login_defaults() -> dict[str, str]:
     }
 
 
+def load_test_accounts() -> dict[str, Any]:
+    raw = _load_index().get("testAccounts") or {}
+    return raw if isinstance(raw, dict) else {}
+
+
+def resolve_login_phone(*, text: str | None = None, account: str | None = None) -> str:
+    """登录用手机号：显式 text > testAccounts.account > loginDefaults。"""
+    if text is not None and str(text).strip():
+        return str(text).strip()
+    if account is not None and str(account).strip():
+        key = str(account).strip()
+        entry = load_test_accounts().get(key)
+        if isinstance(entry, dict):
+            phone = str(entry.get("phone", "")).strip()
+            if phone:
+                return phone
+        known = "、".join(sorted(load_test_accounts().keys())) or "（无）"
+        raise ValueError(f"未知 account {key!r}，可选: {known}")
+    return login_defaults()["phone"]
+
+
+PHONE_LOGIN_KEYS = frozenset({"手机号登录", "login-phone-full"})
+
+
 def _default_text_for_script(spec: dict[str, Any]) -> str | None:
     defaults = spec.get("defaults")
     if isinstance(defaults, dict) and defaults.get("text") is not None:
@@ -142,6 +167,8 @@ def _default_text_for_script(spec: dict[str, Any]) -> str | None:
         return login["verifyCode"]
     if spec_id == "login-phone-sms":
         return login["phone"]
+    if spec_id == "login-phone-full":
+        return login["phone"]
     return None
 
 
@@ -151,6 +178,23 @@ def _format_known(kind: str | None) -> str:
         if isinstance(entry, dict) and (not kind or entry.get("kind") == kind):
             names.append(str(entry.get("name", entry.get("id"))))
     return "可选: " + "、".join(dict.fromkeys(names)) if names else "（索引为空）"
+
+
+def _phone_text_templates(phone: str) -> dict[str, str]:
+    digits = re.sub(r"\D", "", str(phone).strip())
+    last3 = digits[-3:] if len(digits) >= 3 else digits
+    return {
+        "{{text}}": digits,
+        "{{text_last3}}": last3,
+        "{{nickname}}": f"C{last3}",
+    }
+
+
+def _substitute_phone_templates(raw: str, templates: dict[str, str]) -> str:
+    out = raw
+    for key, value in templates.items():
+        out = out.replace(key, value)
+    return out
 
 
 def _apply_params(spec: dict[str, Any], *, text: str | None) -> dict[str, Any]:
@@ -168,6 +212,7 @@ def _apply_params(spec: dict[str, Any], *, text: str | None) -> dict[str, Any]:
             )
     else:
         content = None
+    templates = _phone_text_templates(content) if content else {}
     steps_out: list[dict[str, Any]] = []
     for step in spec.get("steps", []):
         if not isinstance(step, dict):
@@ -176,7 +221,7 @@ def _apply_params(spec: dict[str, Any], *, text: str | None) -> dict[str, Any]:
         step_copy = dict(step)
         if "text" in step_copy and content is not None:
             raw = str(step_copy["text"])
-            step_copy["text"] = raw.replace("{{text}}", content)
+            step_copy["text"] = _substitute_phone_templates(raw, templates)
         steps_out.append(step_copy)
     out = dict(spec)
     out["steps"] = steps_out

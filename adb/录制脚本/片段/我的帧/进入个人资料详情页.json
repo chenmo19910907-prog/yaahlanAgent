@@ -3,12 +3,12 @@
   "name": "进入个人资料详情页",
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
-  "description": "从任意底栏页进入个人资料详情页（Me → 关众测弹窗 → 点头像）",
+  "description": "Me → 自动 Cancel 关弹窗 → 点头像进资料详情",
   "steps": [
     { "sleep_ms": 400 },
     { "tap_pct": [0.900, 0.956], "note": "tab_profile" },
     { "sleep_ms": 600 },
-    { "run_script": "关闭常见弹窗", "note": "Me 页众测/账号安全等" },
+    { "popup_gate": { "scene": "me" }, "note": "Me 页弹窗自动 Cancel" },
     { "sleep_ms": 300 },
     { "tap_pct": [0.111, 0.162], "note": "我的帧头像 → 资料详情" },
     { "sleep_ms": 800 }

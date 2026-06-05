@@ -1,0 +1,15 @@
+{
+  "id": "profile-honor-tab",
+  "name": "资料页切换HonorTab",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "ProfileActivity → 点 Honor Tab；展示 My Level(VIP/Nobility/Wealth) 与 Gift/Medal/Treasure Exhibition",
+  "kbRef": [
+    "testcase-kb/个人主页.md（Honor Tab）"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.324, 0.172], "note": "Honor Tab（bounds 265,369-434,435）" },
+    { "sleep_ms": 800 }
+  ]
+}

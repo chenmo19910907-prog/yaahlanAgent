@@ -6,7 +6,7 @@
     "height": 2340
   },
   "capture": "end",
-  "description": "杀进程重启 Yaahlan → 跳过开屏广告 → 关登录后弹窗；已登录时回到首页底栏（不确定当前页时用）",
+  "description": "杀进程重启 Yaahlan → 跳过开屏广告 → 验收开屏；已登录回首页。勿在 home 盲 BACK 关弹窗（会连弹退出确认）；登录后弹窗用 login verify / popup analyze。",
   "steps": [
     {
       "launch_app": "yaahlan",
@@ -18,14 +18,11 @@
       "skip_key": "dismiss_splash_ad"
     },
     {
+      "run_script": "验收开屏广告",
+      "note": "未过则 BACK+重跑跳过，避免后续步骤全偏"
+    },
+    {
       "sleep_ms": 800
-    },
-    {
-      "run_script": "关闭常见弹窗",
-      "note": "登录后偶发运营/账号安全弹窗"
-    },
-    {
-      "sleep_ms": 500
     }
   ]
 }

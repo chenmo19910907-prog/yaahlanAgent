@@ -1,4 +1,6 @@
-.cursor/
+.cursor/*
+!.cursor/skills/
+!.cursor/skills/**
 .venv-xlsx/
 .DS_Store
 
@@ -21,6 +23,9 @@ MOA/.venv/
 MOA/config/moa.yaml
 Report/__pycache__/
 adb/screenshots/
+adb/.script_abandon.json
+adb/.sweep*.json
+adb/.me_sweep*.json
 adb/__pycache__/
 **/__pycache__/
 *.pyc

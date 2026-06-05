@@ -1,0 +1,30 @@
+{
+  "id": "dismiss-me-popups",
+  "name": "关闭Me页弹窗",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "Me 页专用：仅点 Cancel 关众测/账号安全/双按钮对话框。勿 BACK（MainActivity 上会触发退出 App 二次确认）。",
+  "popups": [
+    { "name": "Account Security", "dismiss": "Cancel 约 (0.32, 0.56)" },
+    { "name": "Crowd Testing Invitation", "dismiss": "Cancel 约 (0.296, 0.479)" },
+    { "name": "双按钮对话框", "dismiss": "左侧 Cancel 约 (0.35, 0.52)" }
+  ],
+  "steps": [
+    { "sleep_ms": 600, "note": "等待 Me 页众测/安全弹窗动画" },
+    {
+      "tap_pct": [0.32, 0.56],
+      "note": "Account Security → Cancel"
+    },
+    { "sleep_ms": 350 },
+    {
+      "tap_pct": [0.296, 0.479],
+      "note": "Crowd Testing → Cancel"
+    },
+    { "sleep_ms": 350 },
+    {
+      "tap_pct": [0.35, 0.52],
+      "note": "双按钮对话框左侧 Cancel"
+    },
+    { "sleep_ms": 300 }
+  ]
+}

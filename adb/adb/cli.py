@@ -8,7 +8,34 @@ import sys
 import time
 from pathlib import Path
 
-from .actions import input_text, keyevent, swipe, tap
+from .account_cancel import confirm_cancel_via_moa, prepare_client_cancel
+from .login_or_register import enter_account
+from .phone_login_status import query_phone_login_status
+from .account_sweep import parse_phone_range, sweep_accounts
+from .script_abandon import (
+    failure_reason_from_result,
+    get_script_failure_info,
+    list_abandoned_scripts,
+    record_script_run_outcome,
+    restore_script,
+)
+from .ai_operate import (
+    AI_OPERATE_MODULES,
+    AiOperateRequired,
+    GOAL_SPECS,
+    assert_fragment_script_allowed,
+    compose_module,
+    fragment_module,
+    list_goals,
+    max_consecutive_failures,
+    prepare_vision_cycle,
+)
+from .learn_cli import add_learn_subparsers, handle_learn_command
+from .vip_cli import add_vip_subparsers, handle_vip_command
+from .post_login_verify import verify_and_dismiss_post_login
+from .splash_verify import verify_and_recover_splash, verify_splash_landing
+from .actions import clear_input_field, input_text, keyevent, swipe, tap
+from .activity import get_foreground_activity
 from .chain import load_steps_file, run_chain
 from .device import AdbError, display_size, list_devices, require_device
 from .device_calibrate import (
@@ -41,7 +68,8 @@ from .screenshot import (
     screenshot_dir,
 )
 from .gift_panel_analyze import analyze_gift_panel_from_tunnel, find_gifts_from_tunnel
-from .popup_analyze import analyze_scene_from_tunnel
+from .popup_analyze import analyze_scene_from_tunnel, dismiss_scripts_for_analysis
+from .popup_gate import ensure_popups_cleared, resolve_gate_scene
 from .tunnel_verify import (
     TunnelVerifyOptions,
     add_tunnel_arguments,
@@ -55,6 +83,14 @@ from .tunnel_verify import (
 
 def _emit(payload: dict[str, object]) -> None:
     print(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+def _attach_foreground_activity(*, serial: str, result: dict[str, object]) -> None:
+    """片段执行后附带前台 Activity（~100ms），供片段间验收，免读图。"""
+    try:
+        result["foregroundActivity"] = get_foreground_activity(serial=serial)
+    except AdbError as exc:
+        result["foregroundActivity"] = {"ok": False, "error": str(exc)}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -86,6 +122,17 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="仅打印截图路径（默认输出 JSON 含宽高与保留列表）",
     )
+    p_cap.add_argument(
+        "--max-edge",
+        type=int,
+        metavar="PX",
+        help="缩略图最长边像素（macOS 用 sips，如 1170≈半分辨率，加快 Agent 读图）",
+    )
+
+    p_act = sub.add_parser(
+        "activity",
+        help="当前前台 Activity（dumpsys JSON，片段间验收用，比读图快）",
+    )
 
     p_latest = sub.add_parser("latest", help="输出最新截图路径（若无则 exit 2）")
 
@@ -107,6 +154,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_text = sub.add_parser("text", help="输入文本")
     p_text.add_argument("content")
+    p_text.add_argument(
+        "--no-clear",
+        action="store_true",
+        help="不清空输入框直接输入（默认先清空焦点输入框）",
+    )
 
     p_cycle = sub.add_parser(
         "cycle",
@@ -127,7 +179,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=[],
         metavar="KEY",
-        help="跳过带 skip_key 的步骤，如 dismiss_popup_taps、dismiss_splash_ad、login_lang",
+        help="跳过带 skip_key 的步骤，如 dismiss_popup_taps、dismiss_splash_ad、verify_splash_ad、login_lang",
     )
     p_macro.add_argument(
         "--text",
@@ -147,6 +199,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-adapt",
         action="store_true",
         help="跳过设备换算（仅调试用；换机未校准时不要用）",
+    )
+    p_macro.add_argument(
+        "--no-popup-gate",
+        action="store_true",
+        help="macro 结束时不自动跑首页/Me/房内弹窗截图门禁",
+    )
+    p_macro.add_argument(
+        "--force-script",
+        action="store_true",
+        help="强制执行首页/Me/房间固定脚本（默认已禁用，改 AI 读图操作）",
     )
     add_tunnel_arguments(p_macro)
 
@@ -170,6 +232,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="等同 --capture never",
     )
     p_chain.add_argument("--no-adapt", action="store_true", help="跳过设备换算")
+    p_chain.add_argument(
+        "--no-popup-gate",
+        action="store_true",
+        help="chain 结束时不自动跑弹窗截图门禁",
+    )
     add_tunnel_arguments(p_chain)
 
     p_device = sub.add_parser("device", help="设备型号与坐标换算（换机先校准）")
@@ -265,6 +332,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="最后一块结束时截一张图核对",
     )
     p_compose.add_argument("--no-adapt", action="store_true", help="跳过设备换算")
+    p_compose.add_argument(
+        "--no-popup-gate",
+        action="store_true",
+        help="组合每块结束时不自动跑弹窗截图门禁",
+    )
+    p_compose.add_argument(
+        "--force-script",
+        action="store_true",
+        help="强制执行首页/Me/房间固定脚本（默认已禁用）",
+    )
     add_tunnel_arguments(p_compose)
 
     p_run = sub.add_parser(
@@ -290,8 +367,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_run.add_argument("--no-adapt", action="store_true", help="跳过设备换算")
     p_run.add_argument(
+        "--no-popup-gate",
+        action="store_true",
+        help="run 结束时不自动跑弹窗截图门禁",
+    )
+    p_run.add_argument(
         "--popup-scene",
-        choices=("login", "home", "me", "room", "mic"),
+        choices=("login", "splash", "home", "me", "room", "mic"),
         help="操作后按场景分析 Tunnel 弹窗信号并给出处置建议",
     )
     p_run.add_argument(
@@ -314,7 +396,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_popup_analyze.add_argument(
         "--scene",
         required=True,
-        choices=("login", "home", "me", "room", "mic"),
+        choices=("login", "splash", "home", "me", "room", "mic"),
         help="操作场景",
     )
     p_popup_analyze.add_argument("--momoid", help="userId")
@@ -333,6 +415,30 @@ def build_parser() -> argparse.ArgumentParser:
         help="存在 actionable 信号时自动执行关闭常见弹窗等脚本",
     )
     p_popup_analyze.add_argument("--no-adapt", action="store_true")
+
+    p_popup_gate = popup_sub.add_parser(
+        "gate",
+        help="截图门禁：首页/Me/房内关弹窗并再截图，确认后再继续",
+    )
+    p_popup_gate.add_argument(
+        "--scene",
+        default="auto",
+        choices=("auto", "home", "me", "room"),
+        help="落点场景；auto 由 activity + currentTab 推断",
+    )
+    p_popup_gate.add_argument("--momoid", help="userId（Tunnel 辅助判断）")
+    p_popup_gate.add_argument("--account", help="testAccounts 键名")
+    p_popup_gate.add_argument("--since", type=int, default=120, help="Tunnel 回溯秒数")
+    p_popup_gate.add_argument("--rounds", type=int, default=2, help="--dismiss 时最多轮数（保留）")
+    p_popup_gate.add_argument(
+        "--dismiss",
+        action="store_true",
+        help="读图确认有弹窗后再执行关弹窗（默认仅截图，不点任何坐标）",
+    )
+    p_popup_gate.add_argument("--no-adapt", action="store_true")
+
+    add_learn_subparsers(sub)
+    add_vip_subparsers(sub)
 
     p_tunnel = sub.add_parser(
         "tunnel",
@@ -394,6 +500,164 @@ def build_parser() -> argparse.ArgumentParser:
     p_panel_find.add_argument("--price", type=int, help="钻石价格，如 99")
     p_panel_find.add_argument("--tab", dest="tab_name", help="Tab 名称子串，如 Gift / nation")
     p_panel_find.add_argument("--name", dest="name_contains", help="礼物名称子串")
+
+    p_accounts = sub.add_parser(
+        "accounts",
+        help="批量账号操作（登录巡检 + 每账号 Tunnel 验收）",
+    )
+    accounts_sub = p_accounts.add_subparsers(dest="accounts_command", required=True)
+
+    p_account = sub.add_parser("account", help="单账号操作")
+    account_sub = p_account.add_subparsers(dest="account_command", required=True)
+    p_account_cancel = account_sub.add_parser(
+        "cancel",
+        help="MOA 确认注销 userId（提示词「确认注销」即执行，不校验 App）",
+    )
+    p_account_cancel.add_argument("--user-id", required=True, help="userId / momoid")
+    p_account_cancel_prepare = account_sub.add_parser(
+        "cancel-prepare",
+        help="AI 读图走 App 内注销预申请（与 MOA 无关）",
+    )
+    p_account_cancel_prepare.add_argument("--note", help="附加说明")
+    p_sweep = accounts_sub.add_parser(
+        "sweep",
+        help="按手机号批量登录：每账号 tunnel 验登录 → 进 Me 抓包关弹窗 → tunnel 验 Me",
+    )
+    p_sweep.add_argument(
+        "--phones",
+        help="逗号分隔手机号，如 13311111111,13311111112",
+    )
+    p_sweep.add_argument("--from", dest="from_phone", help="范围起始手机号")
+    p_sweep.add_argument("--to", dest="to_phone", help="范围结束手机号（含）")
+    p_sweep.add_argument(
+        "--random",
+        type=int,
+        metavar="N",
+        help="从 --from/--to 范围随机抽 N 个账号（与 --phones 互斥时优先范围）",
+    )
+    p_sweep.add_argument(
+        "--seed",
+        type=int,
+        help="随机抽样种子（调试用，默认非确定）",
+    )
+    p_sweep.add_argument(
+        "--me",
+        action="store_true",
+        help="登录后再进 Me 验收关弹窗（默认仅验登录，避免批量时操作错乱）",
+    )
+    p_sweep.add_argument(
+        "--no-me",
+        action="store_true",
+        help="（已废弃，默认不进 Me）",
+    )
+    p_sweep.add_argument(
+        "--login-keyword",
+        default="simpleUserInfo",
+        help="登录成功抓包关键字（默认 simpleUserInfo）",
+    )
+    p_sweep.add_argument(
+        "--me-keyword",
+        default="personalHomePageUserInfo",
+        help="进 Me 后抓包关键字（默认 personalHomePageUserInfo）",
+    )
+    p_sweep.add_argument(
+        "--tunnel-wait",
+        type=int,
+        default=25,
+        help="每步 tunnel 最长等待秒数",
+    )
+    p_enter = accounts_sub.add_parser(
+        "enter",
+        help="MOA 查手机号 userId：有 ID 登录，无 ID 注册",
+    )
+    p_enter.add_argument("--text", required=True, help="手机号（不含区号）")
+    p_enter.add_argument(
+        "--force-route",
+        choices=("login", "register"),
+        help="跳过 MOA，强制走登录或注册（调试用）",
+    )
+    p_enter.add_argument(
+        "--skip-moa",
+        action="store_true",
+        help="跳过 MOA 查号（须配合 --force-route）",
+    )
+    p_status = accounts_sub.add_parser(
+        "status",
+        help="MOA 查手机号是否已注册 / 关联 userId",
+    )
+    p_status.add_argument("--text", required=True, help="手机号（不含区号）")
+
+    p_splash = sub.add_parser(
+        "splash",
+        help="冷启动开屏广告验收（activity + Tunnel getOpenScreenAd/getUserConfigs）",
+    )
+    splash_sub = p_splash.add_subparsers(dest="splash_command", required=True)
+    p_splash_verify = splash_sub.add_parser(
+        "verify",
+        help="验收开屏是否结束、是否误进广告 WebView",
+    )
+    p_splash_verify.add_argument("--momoid", help="userId（用于 Tunnel 验收）")
+    p_splash_verify.add_argument("--account", help="testAccounts 键名")
+    p_splash_verify.add_argument(
+        "--since",
+        type=int,
+        default=60,
+        help="回溯秒数（冷启 start_time = now - since）",
+    )
+    p_splash_verify.add_argument(
+        "--recover",
+        action="store_true",
+        help="验收失败时 BACK 并重跑跳过开屏广告",
+    )
+    p_splash_verify.add_argument("--tunnel-wait", type=int, default=20)
+    p_splash_verify.add_argument("--no-adapt", action="store_true")
+
+    p_login = sub.add_parser(
+        "login",
+        help="登录后弹窗验收（签到半屏 + Tunnel sign/signInList）",
+    )
+    login_sub = p_login.add_subparsers(dest="login_command", required=True)
+    p_login_verify = login_sub.add_parser(
+        "verify",
+        help="验收登录后是否卡在签到 WebView，并按抓包关弹窗",
+    )
+    p_login_verify.add_argument("--momoid", help="userId")
+    p_login_verify.add_argument("--account", help="testAccounts 键名")
+    p_login_verify.add_argument(
+        "--since",
+        type=int,
+        default=90,
+        help="登录 start_time = now - since（秒）",
+    )
+    p_login_verify.add_argument(
+        "--force-dismiss",
+        action="store_true",
+        help="无视抓包强制执行登录后处理弹窗",
+    )
+    p_login_verify.add_argument("--no-adapt", action="store_true")
+
+    p_ai = sub.add_parser(
+        "ai",
+        help="首页/个人页/房间：AI 读图操作（固定 macro 已禁用）",
+    )
+    ai_sub = p_ai.add_subparsers(dest="ai_command", required=True)
+    p_ai_goals = ai_sub.add_parser("goals", help="列出可用 goal")
+    p_ai_abandoned = ai_sub.add_parser("abandoned", help="列出已废弃的固定脚本")
+    p_ai_restore = ai_sub.add_parser("restore", help="恢复脚本（清零连续失败计数）")
+    p_ai_restore.add_argument("name", help="片段/组合中文名或 id")
+    p_ai_failures = ai_sub.add_parser("failures", help="查看脚本失败计数")
+    p_ai_failures.add_argument("name", help="片段/组合中文名或 id")
+    p_ai_prepare = ai_sub.add_parser(
+        "prepare",
+        help="截图 + activity + 工作流，供 Agent 读图后 tap/key",
+    )
+    p_ai_prepare.add_argument(
+        "--goal",
+        required=True,
+        choices=tuple(GOAL_SPECS.keys()),
+        help="操作目标",
+    )
+    p_ai_prepare.add_argument("--note", help="附加说明写入 agentHint")
 
     return parser
 
@@ -488,16 +752,11 @@ def _attach_popup_analysis(
 
     dismiss_blocks: list[dict[str, object]] = []
     if auto_dismiss and analysis.get("dismissScripts"):
-        skip_key = str(analysis.get("dismissSkipWhenNoPopup", "dismiss_popup_taps"))
-        skip_keys: set[str] = set()
-        if not analysis.get("hasPopupSignals"):
-            skip_keys.add(skip_key)
-        dismiss_blocks = _run_dismiss_scripts(
+        dismiss_blocks = dismiss_scripts_for_analysis(
             serial=serial,
-            script_names=[str(x) for x in analysis["dismissScripts"]],
-            shot_dir=shot_dir,
+            analysis=analysis,  # type: ignore[arg-type]
+            screenshot_dir=shot_dir,
             max_screenshots=max_screenshots,
-            skip_keys=skip_keys,
             use_adaptation=_use_adaptation(args),
         )
 
@@ -546,6 +805,68 @@ def _finalize_with_tunnel(
     return 0 if ok else 3
 
 
+def _splash_verify_exit_code(result: dict[str, object]) -> int:
+    splash = result.get("splashVerify")
+    if isinstance(splash, dict) and not splash.get("ok"):
+        return 3
+    if result.get("splashVerifyFailed"):
+        return 3
+    return 0
+
+
+def _popup_gate_exit_code(result: dict[str, object]) -> int:
+    gate = result.get("popupGate")
+    if isinstance(gate, dict) and (gate.get("blocked") or not gate.get("ok")):
+        return 3
+    if result.get("popupGateFailed"):
+        return 3
+    return 0
+
+
+def _optional_momoid_from_args(args: argparse.Namespace) -> str | None:
+    if not getattr(args, "tunnel_momoid", None) and not getattr(args, "tunnel_account", None):
+        return None
+    return resolve_momoid(
+        momoid=getattr(args, "tunnel_momoid", None),
+        account=getattr(args, "tunnel_account", None),
+    )
+
+
+def _popup_gate_auto_enabled(args: argparse.Namespace) -> bool:
+    return not bool(getattr(args, "no_popup_gate", False))
+
+
+def _track_script_outcome(
+    *,
+    name: str,
+    kind: str,
+    result: dict[str, object],
+    exit_code: int,
+    module: str | None = None,
+    script_id: str | None = None,
+) -> None:
+    reason = failure_reason_from_result(result, exit_code)  # type: ignore[arg-type]
+    track = record_script_run_outcome(
+        name=name,
+        kind=kind,
+        ok=exit_code == 0,
+        exit_code=exit_code,
+        reason=None if exit_code == 0 else reason,
+        module=module,
+        script_id=script_id,
+    )
+    result["scriptFailureTrack"] = track
+    if track.get("abandoned"):
+        result["scriptAbandoned"] = True
+        entry = track.get("entry")
+        if isinstance(entry, dict) and entry.get("abandonReason"):
+            result["agentHint"] = (
+                f"{entry.get('abandonReason')}。"
+                "该脚本已废弃，请 ai prepare + tunnel 抓包继续；"
+                f"调试可用 ai restore {name} 或 --force-script。"
+            )
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     shot_dir = screenshot_dir(args.screenshot_dir)
@@ -564,11 +885,17 @@ def main(argv: list[str] | None = None) -> int:
 
         serial = require_device(args.serial)
 
+        if args.command == "activity":
+            _emit(get_foreground_activity(serial=serial))
+            return 0
+
         if args.command == "capture" or args.command == "cycle":
+            max_edge = getattr(args, "max_edge", None)
             result = capture_screenshot(
                 serial=serial,
                 directory=shot_dir,
                 max_keep=args.max_screenshots,
+                max_edge=max_edge,
             )
             if args.no_json:
                 print(result["path"])
@@ -636,8 +963,10 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         if args.command == "text":
-            input_text(text=args.content, serial=serial)
-            _emit({"action": "text", "serial": serial})
+            if not getattr(args, "no_clear", False):
+                clear_input_field(serial=serial)
+            input_text(text=args.content, serial=serial, clear_first=False)
+            _emit({"action": "text", "serial": serial, "cleared": not getattr(args, "no_clear", False)})
             return 0
 
         if args.command == "scripts":
@@ -662,6 +991,10 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         if args.command == "macro":
+            assert_fragment_script_allowed(
+                args.name,
+                force_script=bool(getattr(args, "force_script", False)),
+            )
             spec = resolve_macro(args.name, text=args.text)
             tunnel_opts = tunnel_options_from_args(args)
             since_buffer = tunnel_opts.since_buffer_seconds if tunnel_opts else 5
@@ -677,6 +1010,11 @@ def main(argv: list[str] | None = None) -> int:
                 list(spec.get("steps", [])),
                 skip=set(args.skip),
             )
+            gate_momoid: str | None = None
+            try:
+                gate_momoid = _optional_momoid_from_args(args)
+            except ValueError:
+                pass
             out = run_chain(
                 serial=serial,
                 steps=steps,
@@ -686,6 +1024,9 @@ def main(argv: list[str] | None = None) -> int:
                 use_adaptation=_use_adaptation(args),
                 text=args.text,
                 skip=set(args.skip),
+                popup_gate_auto=_popup_gate_auto_enabled(args),
+                popup_gate_momoid=gate_momoid,
+                capture_max_edge=getattr(args, "max_edge", 1170),
             )
             out["script"] = spec.get("name", args.name)
             out["scriptId"] = spec.get("id", args.name)
@@ -699,6 +1040,16 @@ def main(argv: list[str] | None = None) -> int:
                 shot_dir=shot_dir,
                 max_screenshots=args.max_screenshots,
                 start_time=start_time,
+            )
+            code = max(code, _splash_verify_exit_code(out), _popup_gate_exit_code(out))
+            _attach_foreground_activity(serial=serial, result=out)
+            _track_script_outcome(
+                name=str(out.get("script", args.name)),
+                kind="fragment",
+                result=out,
+                exit_code=code,
+                module=fragment_module(args.name),
+                script_id=str(out.get("scriptId", "")),
             )
             _emit(out)
             return code
@@ -724,6 +1075,11 @@ def main(argv: list[str] | None = None) -> int:
                 default=str(spec.get("capture", "end")),
             )
             verify_end = args.verify or tunnel_opts is not None
+            gate_momoid: str | None = None
+            try:
+                gate_momoid = _optional_momoid_from_args(args)
+            except ValueError:
+                pass
             out = run_compose(
                 name=args.name,
                 serial=serial,
@@ -734,6 +1090,10 @@ def main(argv: list[str] | None = None) -> int:
                 capture=capture,  # type: ignore[arg-type]
                 verify_end=verify_end,
                 use_adaptation=_use_adaptation(args),
+                popup_gate_auto=_popup_gate_auto_enabled(args),
+                popup_gate_momoid=gate_momoid,
+                capture_max_edge=getattr(args, "max_edge", 1170),
+                force_script=bool(getattr(args, "force_script", False)),
             )
             code = _finalize_with_tunnel(
                 args=args,
@@ -744,8 +1104,57 @@ def main(argv: list[str] | None = None) -> int:
                 start_time=start_time,
                 compose_spec=spec,
             )
+            code = max(code, _splash_verify_exit_code(out), _popup_gate_exit_code(out))
+            _attach_foreground_activity(serial=serial, result=out)
+            _track_script_outcome(
+                name=str(out.get("compose", args.name)),
+                kind="compose",
+                result=out,
+                exit_code=code,
+                module=compose_module(args.name),
+                script_id=str(out.get("composeId", "")),
+            )
             _emit(out)
             return code
+
+        if args.command == "ai":
+            if args.ai_command == "goals":
+                _emit({"goals": list_goals(), "blockedModules": sorted(AI_OPERATE_MODULES)})
+                return 0
+            if args.ai_command == "abandoned":
+                _emit(
+                    {
+                        "abandoned": list_abandoned_scripts(),
+                        "threshold": max_consecutive_failures(),
+                        "stateFile": str(
+                            Path(__file__).resolve().parent.parent / ".script_abandon.json"
+                        ),
+                    }
+                )
+                return 0
+            if args.ai_command == "restore":
+                _emit(restore_script(str(args.name)))
+                return 0
+            if args.ai_command == "failures":
+                info = get_script_failure_info(str(args.name))
+                if info is None:
+                    _emit({"name": args.name, "found": False, "consecutiveFailures": 0})
+                else:
+                    _emit({"name": args.name, "found": True, **info})
+                return 0
+            if args.ai_command == "prepare":
+                out = prepare_vision_cycle(
+                    goal=str(args.goal),
+                    serial=serial,
+                    screenshot_dir=shot_dir,
+                    max_screenshots=args.max_screenshots,
+                    max_edge=getattr(args, "max_edge", 1170),
+                    note=getattr(args, "note", None),
+                )
+                _emit(out)
+                return 0 if out.get("ok") else 3
+            print(f"未知 ai 子命令: {args.ai_command}", file=sys.stderr)
+            return 2
 
         if args.command == "chain":
             steps, file_capture = load_steps_file(args.steps_file)
@@ -759,6 +1168,11 @@ def main(argv: list[str] | None = None) -> int:
             )
             if tunnel_opts is not None and capture == "never":
                 capture = "end"
+            gate_momoid: str | None = None
+            try:
+                gate_momoid = _optional_momoid_from_args(args)
+            except ValueError:
+                pass
             out = run_chain(
                 serial=serial,
                 steps=steps,
@@ -766,6 +1180,9 @@ def main(argv: list[str] | None = None) -> int:
                 screenshot_dir=shot_dir,
                 max_screenshots=args.max_screenshots,
                 use_adaptation=_use_adaptation(args),
+                popup_gate_auto=_popup_gate_auto_enabled(args),
+                popup_gate_momoid=gate_momoid,
+                capture_max_edge=getattr(args, "max_edge", 1170),
             )
             out["stepsFile"] = str(args.steps_file.resolve())
             code = _finalize_with_tunnel(
@@ -776,6 +1193,8 @@ def main(argv: list[str] | None = None) -> int:
                 max_screenshots=args.max_screenshots,
                 start_time=start_time,
             )
+            code = max(code, _splash_verify_exit_code(out), _popup_gate_exit_code(out))
+            _attach_foreground_activity(serial=serial, result=out)
             _emit(out)
             return code
 
@@ -795,6 +1214,11 @@ def main(argv: list[str] | None = None) -> int:
             out: dict[str, object]
             compose_spec: dict[str, object] | None = None
 
+            gate_momoid: str | None = None
+            try:
+                gate_momoid = _optional_momoid_from_args(args)
+            except ValueError:
+                pass
             if args.compose:
                 compose_spec = load_compose(args.compose)
                 out = run_compose(
@@ -807,9 +1231,17 @@ def main(argv: list[str] | None = None) -> int:
                     capture="end",
                     verify_end=True,
                     use_adaptation=_use_adaptation(args),
+                    popup_gate_auto=_popup_gate_auto_enabled(args),
+                    popup_gate_momoid=gate_momoid,
+                    capture_max_edge=getattr(args, "max_edge", 1170),
+                    force_script=bool(getattr(args, "force_script", False)),
                 )
                 out["runMode"] = "compose"
             elif args.macro:
+                assert_fragment_script_allowed(
+                    args.macro,
+                    force_script=bool(getattr(args, "force_script", False)),
+                )
                 spec = resolve_macro(args.macro, text=args.text)
                 steps = apply_skip_flags(
                     list(spec.get("steps", [])),
@@ -824,6 +1256,9 @@ def main(argv: list[str] | None = None) -> int:
                     use_adaptation=_use_adaptation(args),
                     text=args.text,
                     skip=set(args.skip),
+                    popup_gate_auto=_popup_gate_auto_enabled(args),
+                    popup_gate_momoid=gate_momoid,
+                    capture_max_edge=getattr(args, "max_edge", 1170),
                 )
                 out["runMode"] = "macro"
                 out["script"] = spec.get("name", args.macro)
@@ -836,6 +1271,9 @@ def main(argv: list[str] | None = None) -> int:
                     screenshot_dir=shot_dir,
                     max_screenshots=args.max_screenshots,
                     use_adaptation=_use_adaptation(args),
+                    popup_gate_auto=_popup_gate_auto_enabled(args),
+                    popup_gate_momoid=gate_momoid,
+                    capture_max_edge=getattr(args, "max_edge", 1170),
                 )
                 out["runMode"] = "chain"
                 out["stepsFile"] = str(args.chain.resolve())
@@ -851,6 +1289,7 @@ def main(argv: list[str] | None = None) -> int:
                     start_time=start_time,
                     compose_spec=compose_spec,
                 )
+            code = max(code, _splash_verify_exit_code(out), _popup_gate_exit_code(out))
             if popup_scene:
                 _attach_popup_analysis(
                     args=args,
@@ -861,10 +1300,44 @@ def main(argv: list[str] | None = None) -> int:
                     scene=popup_scene,
                     auto_dismiss=bool(getattr(args, "popup_auto_dismiss", False)),
                 )
+            _attach_foreground_activity(serial=serial, result=out)
             _emit(out)
             return code
 
         if args.command == "popup":
+            if args.popup_command == "gate":
+                momoid: str | None = None
+                if getattr(args, "momoid", None) or getattr(args, "account", None):
+                    momoid = resolve_momoid(
+                        momoid=getattr(args, "momoid", None),
+                        account=getattr(args, "account", None),
+                    )
+                fa = get_foreground_activity(serial=serial)
+                scene = resolve_gate_scene(
+                    hint=str(fa.get("hint", "")),
+                    current_tab=None,
+                    explicit=str(args.scene),
+                )
+                if scene is None:
+                    raise ValueError(
+                        f"无法推断 popup gate scene（hint={fa.get('hint')}），"
+                        "请 --scene home|me|room"
+                    )
+                out = ensure_popups_cleared(
+                    serial=serial,
+                    scene=scene,
+                    screenshot_dir=shot_dir,
+                    max_screenshots=args.max_screenshots,
+                    momoid=momoid,
+                    since_seconds=int(args.since),
+                    max_rounds=int(args.rounds),
+                    use_adaptation=_use_adaptation(args),
+                    auto_dismiss=bool(getattr(args, "dismiss", False)),
+                )
+                _emit(out)
+                if out.get("blocked") or not out.get("ok"):
+                    return 3
+                return 0
             if args.popup_command == "analyze":
                 if not getattr(args, "momoid", None) and not getattr(args, "account", None):
                     raise ValueError("popup analyze 须指定 --momoid 或 --account")
@@ -881,16 +1354,11 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 dismiss_blocks: list[dict[str, object]] = []
                 if args.auto_dismiss and out.get("dismissScripts"):
-                    skip_key = str(out.get("dismissSkipWhenNoPopup", "dismiss_popup_taps"))
-                    skip_keys: set[str] = set()
-                    if not out.get("hasPopupSignals"):
-                        skip_keys.add(skip_key)
-                    dismiss_blocks = _run_dismiss_scripts(
+                    dismiss_blocks = dismiss_scripts_for_analysis(
                         serial=serial,
-                        script_names=[str(x) for x in out["dismissScripts"]],
-                        shot_dir=shot_dir,
+                        analysis=out,  # type: ignore[arg-type]
+                        screenshot_dir=shot_dir,
                         max_screenshots=args.max_screenshots,
-                        skip_keys=skip_keys,
                         use_adaptation=_use_adaptation(args),
                     )
                     out["dismissExecuted"] = dismiss_blocks
@@ -936,6 +1404,138 @@ def main(argv: list[str] | None = None) -> int:
                 return 0 if out.get("matchedCount", 0) > 0 else 3
             print(f"未知 gift 子命令: {args.gift_command}", file=sys.stderr)
             return 2
+
+        if args.command == "splash":
+            if args.splash_command == "verify":
+                momoid: str | None = None
+                if getattr(args, "momoid", None) or getattr(args, "account", None):
+                    momoid = resolve_momoid(
+                        momoid=getattr(args, "momoid", None),
+                        account=getattr(args, "account", None),
+                    )
+                start_time = int(time.time()) - max(1, int(args.since))
+                if args.recover:
+                    out = verify_and_recover_splash(
+                        serial=serial,
+                        screenshot_dir=shot_dir,
+                        max_screenshots=args.max_screenshots,
+                        momoid=momoid,
+                        start_time=start_time,
+                        recover=True,
+                        tunnel_wait=int(args.tunnel_wait),
+                        use_adaptation=_use_adaptation(args),
+                    )
+                else:
+                    out = verify_splash_landing(
+                        serial=serial,
+                        momoid=momoid,
+                        start_time=start_time,
+                        tunnel_wait=int(args.tunnel_wait),
+                    )
+                _emit(out)
+                return 0 if out.get("ok") else 3
+            print(f"未知 splash 子命令: {args.splash_command}", file=sys.stderr)
+            return 2
+
+        if args.command == "login":
+            if args.login_command == "verify":
+                momoid: str | None = None
+                if getattr(args, "momoid", None) or getattr(args, "account", None):
+                    momoid = resolve_momoid(
+                        momoid=getattr(args, "momoid", None),
+                        account=getattr(args, "account", None),
+                    )
+                login_start = int(time.time()) - max(1, int(args.since))
+                out = verify_and_dismiss_post_login(
+                    serial=serial,
+                    screenshot_dir=shot_dir,
+                    max_screenshots=args.max_screenshots,
+                    momoid=momoid,
+                    login_start=login_start,
+                    use_adaptation=_use_adaptation(args),
+                    force_dismiss=bool(getattr(args, "force_dismiss", False)),
+                )
+                _emit(out)
+                return 0 if out.get("ok") else 3
+            print(f"未知 login 子命令: {args.login_command}", file=sys.stderr)
+            return 2
+
+        if args.command == "account":
+            if args.account_command == "cancel":
+                out = confirm_cancel_via_moa(str(args.user_id))
+                _emit(out)
+                return 0 if out.get("ok") else 3
+            if args.account_command == "cancel-prepare":
+                out = prepare_client_cancel(
+                    serial=serial,
+                    screenshot_dir=shot_dir,
+                    max_screenshots=args.max_screenshots,
+                    max_edge=getattr(args, "max_edge", 1170),
+                    note=getattr(args, "note", None),
+                )
+                _emit(out)
+                return 0 if out.get("ok") else 3
+            print(f"未知 account 子命令: {args.account_command}", file=sys.stderr)
+            return 2
+
+        if args.command == "accounts":
+            if args.accounts_command == "status":
+                out = query_phone_login_status(str(args.text).strip())
+                _emit(out)
+                return 0
+            if args.accounts_command == "enter":
+                if getattr(args, "skip_moa", False) and not getattr(
+                    args, "force_route", None
+                ):
+                    print(
+                        "--skip-moa 须配合 --force-route login|register",
+                        file=sys.stderr,
+                    )
+                    return 2
+                out = enter_account(
+                    str(args.text).strip(),
+                    serial=serial,
+                    shot_dir=screenshot_dir(args.screenshot_dir),
+                    max_screenshots=args.max_screenshots,
+                    skip_moa_check=bool(getattr(args, "skip_moa", False)),
+                    force_route=getattr(args, "force_route", None),
+                )
+                _emit(out)
+                return 0 if out.get("ok") else 3
+            if args.accounts_command == "sweep":
+                phone_list = (
+                    [p.strip() for p in str(args.phones or "").split(",") if p.strip()]
+                    if args.phones
+                    else None
+                )
+                phones = parse_phone_range(
+                    phones=phone_list,
+                    from_phone=args.from_phone,
+                    to_phone=args.to_phone,
+                    random_count=getattr(args, "random", None),
+                    seed=getattr(args, "seed", None),
+                )
+                out = sweep_accounts(
+                    phones,
+                    serial=serial,
+                    check_me=bool(getattr(args, "me", False)),
+                    login_keyword=str(args.login_keyword),
+                    me_keyword=str(args.me_keyword),
+                    tunnel_wait=int(args.tunnel_wait),
+                )
+                _emit(out)
+                return 0 if out.get("failed", 0) == 0 else 3
+            print(f"未知 accounts 子命令: {args.accounts_command}", file=sys.stderr)
+            return 2
+
+        if args.command == "learn":
+            _emit(handle_learn_command(args, serial=serial))
+            return 0
+
+        if args.command == "vip":
+            vip_out = handle_vip_command(args)
+            _emit(vip_out)
+            return 0 if vip_out.get("ok", True) else 3
 
         if args.command == "tunnel":
             if args.tunnel_command == "wait":
@@ -1059,6 +1659,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"未知命令: {args.command}", file=sys.stderr)
         return 2
 
+    except AiOperateRequired as e:
+        _emit(e.payload)
+        return 3
     except (AdbError, ValueError, RuntimeError, OSError) as e:
         print(f"错误: {e}", file=sys.stderr)
         return 1

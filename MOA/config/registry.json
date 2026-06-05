@@ -371,6 +371,19 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-按手机号查userId.json \\\n  --query-user-by-phone <phone>\n"
     },
     {
+      "id": "user_cancel_real",
+      "name": "用户-注销账号",
+      "category": "用户后门（voga-mts-user-backdoor）",
+      "description": "MOA 确认正式注销（cancelUserReal）；提示词「确认注销」即执行，不校验 App 客户端状态",
+      "prompts": [
+        "确认注销 <userId>",
+        "MOA 确认注销 <userId>",
+        "注销用户 <userId>",
+        "cancelUserReal <userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-注销账号.json \\\n  --cancel-user <userId>\n"
+    },
+    {
       "id": "user_area_change",
       "name": "用户-修改大区",
       "category": "用户大区（yaahlan/components/callback/user-area）",

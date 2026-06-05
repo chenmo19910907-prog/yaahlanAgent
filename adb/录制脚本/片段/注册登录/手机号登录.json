@@ -6,8 +6,12 @@
     "height": 2340
   },
   "capture": "end",
-  "description": "冷启动登录全流程：语言 Next → 协议+手机 → +86 13311111115 → SMS → 验证码 000000（QA 测试号）",
+  "description": "手机号登录全流程：语言 Next → 协议+手机 → SMS → 验证码（QA 默认 +86 13311111115 / 000000）。身份由 testAccounts/Tunnel 判断，与 UI 流程无关；换号用 --text 或组合 account。",
   "countryCode": "+86",
+  "params": ["text"],
+  "defaults": {
+    "text": "13311111115"
+  },
   "loginDefaults": {
     "countryCode": "+86",
     "phone": "13311111115",
@@ -62,8 +66,8 @@
       "sleep_ms": 300
     },
     {
-      "text": "13311111115",
-      "note": "QA 手机号"
+      "text": "{{text}}",
+      "note": "手机号（不含区号）"
     },
     {
       "sleep_ms": 500
@@ -94,11 +98,12 @@
     },
     {
       "sleep_ms": 3000,
-      "note": "进入首页"
+      "note": "进入首页或注册页"
     },
     {
-      "run_script": "关闭常见弹窗",
-      "note": "关登录后偶发弹窗"
+      "run_script": "登录后处理弹窗",
+      "note": "已注册账号：等待签到；注册流程请 --skip login_post",
+      "skip_key": "login_post"
     },
     {
       "sleep_ms": 300

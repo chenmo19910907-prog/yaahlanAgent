@@ -1,0 +1,15 @@
+{
+  "id": "game-enter-game-list",
+  "name": "游戏帧进入游戏列表",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Casual games 行 More 箭头 → GameListActivity；前置：切换游戏底栏",
+  "kbRef": [
+    "testcase-kb/游戏帧.md"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.937, 0.154], "note": "Casual games More 箭头 iv_game_more_arrow" },
+    { "sleep_ms": 1200 }
+  ]
+}

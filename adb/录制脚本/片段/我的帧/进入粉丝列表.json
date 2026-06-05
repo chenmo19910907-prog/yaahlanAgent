@@ -1,0 +1,19 @@
+{
+  "id": "me-followers-list",
+  "name": "进入粉丝列表",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Me → 点 Followers 统计区 → RelationActivity Followers tab",
+  "kbRef": [
+    "testcase-kb/个人主页.md（Friends/Following/Followers 统计入口）"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.900, 0.956], "note": "tab_profile Me" },
+    { "sleep_ms": 700 },
+    { "popup_gate": { "scene": "me" }, "note": "Me 页弹窗 Cancel" },
+    { "sleep_ms": 300 },
+    { "tap_pct": [0.854, 0.236], "note": "fans_ll Followers" },
+    { "sleep_ms": 800 }
+  ]
+}

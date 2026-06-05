@@ -5,11 +5,45 @@
     "login": {
       "label": "登录后进首页",
       "weakUiPopups": [
+        "签到半屏/WebView（signInPopupUrl，部分账号登录即有）",
         "Account Security 绑定手机/邮箱",
         "Crowd Testing 众测邀请",
         "运营/礼包全屏（部分无独立接口）"
       ],
       "signals": [
+        {
+          "id": "sign-in-popup",
+          "urlPatterns": ["sign/signInList"],
+          "uiPopup": "登录后签到半屏（surprise H5 / WebView）",
+          "rules": [
+            { "path": "response.data.signInPopupUrl", "op": "notEmpty" }
+          ],
+          "ruleMode": "any",
+          "dismissScript": "关闭签到弹窗",
+          "confidence": "high"
+        },
+        {
+          "id": "sign-in-task-flag",
+          "urlPatterns": ["task/checkTaskCanReward"],
+          "uiPopup": "任务可领奖（常伴随签到引导）",
+          "rules": [
+            { "path": "response.data.flag", "op": "eq", "value": 1 }
+          ],
+          "ruleMode": "any",
+          "dismissScript": "关闭签到弹窗",
+          "confidence": "medium"
+        },
+        {
+          "id": "popup-config-sign-in",
+          "urlPatterns": ["config/getPopupConfig"],
+          "uiPopup": "首页弹窗队列含 signIn（order 40）",
+          "rules": [
+            { "path": "response.data.home", "op": "notEmpty" }
+          ],
+          "ruleMode": "any",
+          "dismissScript": "登录后处理弹窗",
+          "confidence": "info"
+        },
         {
           "id": "first-recharge-entrance",
           "urlPatterns": ["first-recharge/rechargeEntrance"],
@@ -44,6 +78,38 @@
           "ruleMode": "any",
           "dismissScript": "关闭常见弹窗",
           "confidence": "low"
+        }
+      ]
+    },
+    "splash": {
+      "label": "冷启动开屏广告（约 5s）",
+      "weakUiPopups": [
+        "全屏开屏广告（跳过按钮右上角）",
+        "广告未结束就点击 → 进入广告 H5 WebView",
+        "开屏期间误点导致后续步骤全偏"
+      ],
+      "signals": [
+        {
+          "id": "open-screen-ad",
+          "urlPatterns": ["ad/getOpenScreenAd"],
+          "uiPopup": "开屏广告配置（有 data.url / gotoUrl 时会展示）",
+          "rules": [
+            { "path": "response.data.url", "op": "notEmpty" }
+          ],
+          "ruleMode": "any",
+          "dismissScript": "跳过开屏广告",
+          "confidence": "high"
+        },
+        {
+          "id": "splash-home-ready",
+          "urlPatterns": ["getUserConfigs", "simpleUserInfo", "app-config/redCount"],
+          "uiPopup": "主页接口已拉取（开屏应已结束，可继续操作）",
+          "rules": [
+            { "path": "response.ec", "op": "eq", "value": 200 }
+          ],
+          "ruleMode": "any",
+          "dismissScript": null,
+          "confidence": "info"
         }
       ]
     },
@@ -94,7 +160,7 @@
           "uiPopup": "个人主页数据加载（随后易叠 UI 弹窗）",
           "rules": [],
           "ruleMode": "any",
-          "dismissScript": "关闭常见弹窗",
+          "dismissScript": "关闭Me页弹窗",
           "confidence": "info"
         },
         {
@@ -105,7 +171,7 @@
             { "path": "response.data.isFirstRecharge", "op": "eq", "value": 1 }
           ],
           "ruleMode": "any",
-          "dismissScript": "关闭常见弹窗",
+          "dismissScript": "关闭Me页弹窗",
           "confidence": "high"
         }
       ]
@@ -172,5 +238,6 @@
     }
   },
   "defaultDismissScript": "关闭常见弹窗",
+  "meDismissScript": "关闭Me页弹窗",
   "dismissSkipWhenNoPopup": "dismiss_popup_taps"
 }

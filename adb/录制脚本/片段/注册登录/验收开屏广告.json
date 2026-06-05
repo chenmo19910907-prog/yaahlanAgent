@@ -1,0 +1,14 @@
+{
+  "id": "verify-splash-ad",
+  "name": "验收开屏广告",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "冷启跳过开屏后验收：activity 应为 home/login；误进广告 H5 时 BACK 并重跑跳过开屏。须在本段之前有 launch_app。",
+  "steps": [
+    {
+      "verify_splash": { "recover": true },
+      "note": "开屏落点验收（activity + 可选 Tunnel）",
+      "skip_key": "verify_splash_ad"
+    }
+  ]
+}

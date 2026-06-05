@@ -2,6 +2,50 @@
 
 通过 **adb 连手机 → 截图 → Agent 读图算坐标 → 点击** 完成 UI 操作。截图目录默认只保留**最新 2 张**。
 
+## 首页 / 个人页(Me) / 房间 → **AI 读图，禁用固定脚本**
+
+模块 `首页-游戏帧`、`首页-房间帧`、`我的帧` 的 **macro/compose 默认拒绝执行**（固定 `tap_pct` 一步错步步错）。
+
+| 做法 | 命令 |
+|------|------|
+| 准备一步 | `ai prepare --goal logout\|enter_me\|enter_room\|exit_room\|recover` |
+| 读图 | `capture --max-edge 1170` |
+| 点击 | `tap X Y` / `key 4`（BACK 慎用，Me/home 上会弹退出确认） |
+| 快验 | `activity`（`hint=home/in_room/login`） |
+| 调试旧脚本 | macro/compose 加 **`--force-script`** |
+
+```bash
+python3 adb/adb_execute.py ai goals
+python3 adb/adb_execute.py ai prepare --goal enter_me
+# 读 screenshot → tap → activity / capture 验收 → 下一步
+```
+
+**仍用固定脚本**：`注册登录`（含手机号登录）、`动态帧`、`消息帧` 等；有 Tunnel 时优先抓包验收。
+
+### 脚本连续失败 → 自动废弃
+
+同一脚本（macro/compose）**连续失败 3 次**（默认）后写入 `adb/.script_abandon.json` 并 **禁止再跑**，改 AI 读图 + Tunnel：
+
+| 命令 | 说明 |
+|------|------|
+| `ai failures 手机号登录` | 查看连续失败次数 |
+| `ai abandoned` | 列出已废弃脚本 |
+| `ai restore 手机号登录` | 恢复（清零计数） |
+| `macro … --force-script` | 仅调试时强制执行 |
+
+废弃后：`ai prepare --goal …` + `capture` + `tap` + `tunnel wait` / `login verify` 验收。
+
+**MOA 确认注销**（与 App 操作无关；提示词「确认注销」即执行）：
+
+```bash
+python3 MOA/moa_execute.py --payload-file MOA/templates/用户-注销账号.json --cancel-user <userId>
+# 或：python3 adb/adb_execute.py account cancel --user-id <userId>
+```
+
+App 内预注销（72h 申请）用 AI：`ai prepare --goal cancel_account` 读图操作，与 MOA 分开。
+
+见 [`MOA/使用方法.md`](../MOA/使用方法.md#user_cancel_real)。
+
 ## 协作原则（Agent / 人工）
 
 ### 积木 + 组合
@@ -11,7 +55,7 @@
 | **片段（积木）** | `录制脚本/片段/<一级模块>/` | `macro <中文名>` | 按发版回归模块分子目录；调用仍用中文名 |
 | **组合（配方）** | `录制脚本/组合/<一级模块>/` | `compose <中文名>` | 按模块分子目录；调用仍用中文名 |
 
-路径不确定时：Agent **读图** 判断当前页，再选一块积木或一条组合；不要对每个 `tap` 都截图。
+路径不确定时：Agent **读图** 判断当前页；**首页/Me/房间勿 macro**，用 `ai prepare`。
 
 ### 片段间验收（串联多个 macro 时）
 
@@ -25,20 +69,17 @@ macro A  →  验收 A 的落点  →  确认 OK  →  macro B  →  验收 B  �
 |----------|------|
 | `tunnel wait` / 片段 `tunnelVerify` | 有接口信号（登录、进房、送礼、发动态等） |
 | `capture` 读图 | 无抓包信号、需确认当前页（底栏、弹窗、是否在房内等） |
-| `dumpsys activity` | 快速判断 Activity（如是否仍在 `RoomChatActivity`） |
+| `activity` / `foregroundActivity` | 快速判断 Activity（如 `in_room` / `search` / `home`），比读图快一个数量级 |
 
-落点与下一段脚本**前置条件不符**时，先纠偏（补跑片段或 `BACK`），**不要盲连下一段**。
-
-**不确定当前在哪个页面**时，可 **杀进程冷启** 回到已知状态（已登录 → 首页底栏）：
+落点与下一段脚本**前置条件不符**时，先 **截图读图** → 补跑片段或 `BACK` 纠偏，**不要盲连下一段，也不要 force-stop 杀 App**（除非用户明确要求冷启测试）。
 
 ```bash
-python3 adb/adb_execute.py macro 冷启动回首页
-# 等价：启动Yaahlan（force-stop）→ 跳过开屏广告 → 关闭常见弹窗
+python3 adb/adb_execute.py capture --max-edge 1170
+python3 adb/adb_execute.py activity
+# 仍不符：ai prepare --goal recover / exit_room 等（勿 macro 首页/Me/房间片段）
 ```
 
-片段跑完后 `capture` 确认底栏可见，再执行下一段。未登录时会落在登录页，改跑 `公会长手机号登录` 等。
-
-**示例**：`搜索进房` → `退出房间` 后，常落在 **Search 页** 而非房间列表/底栏主页；此时不能直接 `退出登录`（Me 底栏不可达），须先 `macro 搜索页返回房间帧`、或 `macro 冷启动回首页` 重置。
+**示例**：退出房间后常落在 Search 页；须 **AI 读图点返回**，再切 Me / 退出（勿 macro 搜索页返回房间帧，除非 `--force-script`）。
 
 **验证成功 → 自动录制**：探索出新路径后，经验收通过，Agent 自动将步骤落库到 `录制脚本/`（不写进本 README）。流程见 [验证成功自动录制](#验证成功自动录制)。
 
@@ -87,6 +128,46 @@ python3 adb/adb_execute.py macro 冷启动回首页
 | **仅弱 UI / 无接口** | `capture: end` 或 `--verify`（结束时 1 张） |
 | **探索新页面** | `capture` → 读图 → `tap` → … |
 
+### 读图提速
+
+慢的主要不是 `screencap`（通常不到 1 秒），而是 **Agent 读 1080×2340 PNG**。原则：**少读图、用更快信号代替、仅失败时读图**。
+
+| 优先级 | 做法 |
+|--------|------|
+| 1 | 路径已定时 `macro` / `compose` + `--no-capture`（0 张） |
+| 2 | 有接口时用 `tunnel wait` / `tunnelVerify`；`ok` 且退出码 0 → **不读图** |
+| 3 | 片段间判页用 `activity` 或 JSON 里的 `foregroundActivity`（macro/compose/chain/run 自动附带） |
+| 4 | 必须读图时用 `capture --max-edge 1170` 缩略图（macOS `sips`，约半分辨率） |
+| 5 | 退出码 3 / `foregroundActivity.hint` 不符预期 → 再 `capture` 读 1 张排查 |
+| 6 | 落点不符 → `ai prepare` + capture 读图 tap 纠偏；**勿 force-stop** |
+
+```bash
+# 片段间验收（不读图）
+python3 adb/adb_execute.py macro 搜索进房 --text 38826842 --no-capture
+# 输出含 foregroundActivity.hint=in_room 即进房成功
+
+python3 adb/adb_execute.py activity
+# {"ok":true,"shortName":"RoomChatActivity","hint":"in_room",...}
+
+# 必须读图时缩略
+python3 adb/adb_execute.py capture --max-edge 1170
+```
+
+| `hint` | 常见 Activity | 含义 |
+|--------|---------------|------|
+| `in_room` | `RoomChatActivity` | 在语音房内 |
+| `search` | `RoomSearch*Activity` | 搜索页（退出房间后常见） |
+| `home` | `MainActivity` | 首页底栏 |
+| `login` | `LoginActivity` | 登录页 |
+
+推荐流程：
+
+```text
+注册登录 / 动态帧：macro/compose + tunnel 验收
+首页 / Me / 房间：ai prepare → capture 读图 → tap/key → activity 验收
+弹窗：读 screenshot 后点 Cancel（Me 勿 BACK）
+```
+
 ### 截图次数对照（示例：发一条动态）
 
 | 方式 | 截图次数 |
@@ -128,7 +209,20 @@ python3 adb/adb_execute.py capture                          # 读图确认年份
 
 自动化默认 **Yaahlan**（`com.immomo.biz.yaahlan`），不是 **Yaha**（`com.immomo.yaha`）。片段 **启动Yaahlan** 会 force-stop Yaha 后以 LAUNCHER 启动前者。
 
-**开屏广告**：组合 **冷启动登录** 含 **跳过开屏广告**。无跳过按钮时用 `--skip dismiss_splash_ad`。详见 [`录制脚本/README.md`](录制脚本/README.md#开屏广告约-5s)。
+**开屏广告（约 5s）**：冷启后**须等跳过按钮出现再点**（`launch_app` 4s + 片段内 7s，约 **11s** 后再 tap）；过早点击会进广告 H5。冷启宏/组合在「跳过开屏广告」后**自动跑「验收开屏广告」**（activity 验收，失败 BACK+重跑跳过，CLI exit 3）。
+
+```bash
+python3 adb/adb_execute.py macro 冷启动回首页 --no-capture
+# 或单独：splash verify --account guildLeader --since 45 --recover
+```
+
+| 项 | 说明 |
+|------|------|
+| 宏/组合内 | **`验收开屏广告`**（activity；失败 BACK+重跑跳过，exit 3） |
+| `foregroundActivity.hint` | 应为 `home` / `login`，**勿** `webview` |
+| Tunnel（可选） | `splash verify --account …` 查 `getUserConfigs` / `simpleUserInfo` |
+
+无跳过按钮：`--skip dismiss_splash_ad`（仅等 5s）。详见 [`录制脚本/README.md`](录制脚本/README.md#开屏广告约-5s)。
 
 **未登录**：`compose 冷启动登录` 或 `macro 手机号登录`。默认 **+86**、验证码 **000000**、QA 手机 **13311111115**（见 [`录制脚本/KB对照.md`](录制脚本/KB对照.md)）。
 
@@ -175,11 +269,51 @@ python3 adb/adb_execute.py capture                          # 读图确认年份
 
 ```bash
 python3 adb/adb_execute.py devices
-python3 adb/adb_execute.py capture
+python3 adb/adb_execute.py activity          # 当前页（JSON，片段间验收）
+python3 adb/adb_execute.py capture           # 全分辨率
+python3 adb/adb_execute.py capture --max-edge 1170   # 缩略图（加快读图）
 python3 adb/adb_execute.py tap 540 1200
 python3 adb/adb_execute.py key 4    # BACK
 python3 adb/adb_execute.py info
 ```
+
+## 页面学习（截图读图 → 点击 → 对照 KB → 落片段）
+
+**主流程**（Agent / 人工均适用，禁止盲扫乱点）：
+
+```text
+capture 读图确认当前页
+  → 【本页内】上/下滑若干次，每次 swipe 后再 capture，直到内容穷尽
+  → 列出可点入口（一级 + 二级 Tab/卡片）
+  → tap 单个入口 → activity + capture 验收
+  → 对照 testcase-kb / documents 写 kbRef、description
+  → 落 片段/<模块>/*.json，更新 索引.json、KB对照.md
+  → 子页同样：滑动读全 → 落片段 → BACK 回上一层
+  → 下一入口
+```
+
+```bash
+python3 adb/adb_execute.py swipe 540 1700 540 800 --duration 350   # 上滑看下方内容
+python3 adb/adb_execute.py swipe 540 800 540 1700 --duration 300   # 滑回顶部
+
+```bash
+python3 adb/adb_execute.py capture --max-edge 1170   # 操作前/后各一张
+python3 adb/adb_execute.py activity                  # 快验 Activity
+python3 adb/adb_execute.py tap X Y                   # 读图算坐标后再点
+python3 adb/adb_execute.py key 4                     # 返回（Me/home 慎用）
+# VIP 门控：python3 adb/adb_execute.py vip try --account familyLeader --level N --days 1 --clear-first
+```
+
+**辅助工具**（仅作入口清单参考，不能替代读图）：
+
+Agent 技能：`.cursor/skills/adb-page-learn/SKILL.md`（完整主循环、落库模板、特殊场景）。
+
+| 命令 | 用途 |
+|------|------|
+| `learn scan --tab me` | uiautomator 列候选坐标，**须 capture 读图确认后再 tap** |
+| `vip try / query / clear` | MOA VIP 体验卡 |
+
+沉淀片段须含：`recordedOn`、`steps`（含 tab 切换 + 必要 swipe）、`kbRef`、`description`（写清验收 activity/页面特征）。
 
 ## 录制脚本库 `录制脚本/`
 
@@ -284,11 +418,32 @@ python3 adb/adb_execute.py tunnel last --account guildLeader --keyword gift/send
 
 ```bash
 python3 adb/adb_execute.py popup analyze --scene me --account familyLeader --since 120 --capture
-python3 adb/adb_execute.py run --compose 家族长冷启动登录 \
+python3 adb/adb_execute.py run --compose 冷启动登录 \
+  --text 13311111112 \
   --tunnel-account familyLeader --popup-scene login --popup-auto-dismiss
 ```
 
 抓包规则见 `录制脚本/弹窗抓包信号.json`；UI 说明见 `录制脚本/弹窗说明.md`。
+
+### 登录后签到弹窗
+
+部分账号登录后会弹签到半屏（Tunnel：`sign/signInList` → `signInPopupUrl`），不关掉会卡在 `webview`。登录 macro 已改用 **登录后处理弹窗**（BACK，不用 Cancel）。
+
+```bash
+python3 adb/adb_execute.py login verify --account guildLeader --since 90
+python3 adb/adb_execute.py popup analyze --scene login --account guildLeader --auto-dismiss
+```
+
+### 批量账号巡检（每账号抓包验收 + Me 弹窗）
+
+多账号轮换时，**每登完一个账号**用 Tunnel + `postLogin` 验收；默认**不进 Me**（加 `--me` 才验 Me 弹窗）：
+
+```bash
+python3 adb/adb_execute.py accounts sweep --from 13311111111 --to 13311111122
+python3 adb/adb_execute.py accounts sweep --phones 13311111111,13311111112 --me
+```
+
+输出 `results[]` 含 `loginTunnel` / `postLogin`；失败看 `agentHint`。操作错乱时 `capture` 读图 + 片段纠偏，**勿 force-stop**；Me 弹窗已自动 Cancel。
 
 ### 礼物面板：Tunnel 解析 Tab / 礼物列表
 

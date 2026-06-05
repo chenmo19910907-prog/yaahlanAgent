@@ -9,9 +9,11 @@ from typing import Any, Literal
 from .chain import run_chain
 from .macros import apply_skip_flags
 from .recorded_scripts import (
+    PHONE_LOGIN_KEYS,
     list_catalog,
     load_compose_spec,
     load_fragment,
+    resolve_login_phone,
     scripts_root,
 )
 
@@ -134,7 +136,14 @@ def run_compose(
     capture: CaptureMode = "end",
     verify_end: bool = False,
     use_adaptation: bool = True,
+    popup_gate_auto: bool = True,
+    popup_gate_momoid: str | None = None,
+    capture_max_edge: int | None = 1170,
+    force_script: bool = False,
 ) -> dict[str, Any]:
+    from .ai_operate import assert_compose_script_allowed, assert_fragment_script_allowed
+
+    assert_compose_script_allowed(name, force_script=force_script)
     spec = load_compose(name)
     global_skip = skip or set()
     cap: CaptureMode = "end" if verify_end else str(spec.get("capture", capture))  # type: ignore[assignment]
@@ -162,9 +171,27 @@ def run_compose(
         if not script_key:
             raise ValueError(f"sequence[{index}] 缺少 script")
 
+        assert_fragment_script_allowed(script_key, force_script=force_script)
+
         block_skip = set(block.get("skip") or []) | global_skip
         block_text = block.get("text")
-        frag_text = str(block_text).strip() if block_text is not None else text
+        script_is_phone_login = script_key in PHONE_LOGIN_KEYS
+        if script_is_phone_login:
+            block_account = block.get("account") or spec.get("account")
+            frag_text = resolve_login_phone(
+                text=(
+                    str(block_text).strip()
+                    if block_text is not None
+                    else (str(text).strip() if text else None)
+                ),
+                account=str(block_account).strip() if block_account else None,
+            )
+        else:
+            frag_text = (
+                str(block_text).strip()
+                if block_text is not None
+                else text
+            )
         frag = load_fragment(script_key, text=frag_text)
         steps = apply_skip_flags(list(frag.get("steps", [])), skip=block_skip)
         block_capture: CaptureMode = str(block.get("capture", "never"))  # type: ignore[assignment]
@@ -181,6 +208,9 @@ def run_compose(
             max_screenshots=max_screenshots,
             use_adaptation=use_adaptation,
             text=text,
+            popup_gate_auto=popup_gate_auto,
+            popup_gate_momoid=popup_gate_momoid,
+            capture_max_edge=capture_max_edge,
         )
         last_chain = chain_out
         result["blocks"].append(
@@ -192,6 +222,17 @@ def run_compose(
                 "stepsExecuted": chain_out.get("stepsExecuted"),
             }
         )
+
+        if chain_out.get("coldStartTime"):
+            result["coldStartTime"] = chain_out["coldStartTime"]
+        if chain_out.get("splashVerify"):
+            result["splashVerify"] = chain_out["splashVerify"]
+        if chain_out.get("popupGate"):
+            result["popupGate"] = chain_out["popupGate"]
+        if chain_out.get("popupGateFailed"):
+            result["popupGateFailed"] = True
+        if chain_out.get("currentTab"):
+            result["currentTab"] = chain_out["currentTab"]
 
     if last_chain:
         result["serial"] = last_chain.get("serial")

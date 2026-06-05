@@ -35,14 +35,16 @@
     },
     {
       "key": 4,
-      "note": "BACK 关全屏运营/礼包"
+      "note": "BACK 关全屏运营/礼包",
+      "skip_key": "dismiss_popup_back"
     },
     {
       "sleep_ms": 400
     },
     {
       "key": 4,
-      "note": "BACK 再关一层"
+      "note": "BACK 再关一层",
+      "skip_key": "dismiss_popup_back"
     },
     {
       "sleep_ms": 400
@@ -82,7 +84,8 @@
     },
     {
       "key": 4,
-      "note": "收尾 BACK"
+      "note": "收尾 BACK",
+      "skip_key": "dismiss_popup_back"
     },
     {
       "sleep_ms": 300

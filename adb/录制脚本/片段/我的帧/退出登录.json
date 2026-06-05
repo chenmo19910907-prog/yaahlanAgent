@@ -25,6 +25,10 @@
       "sleep_ms": 700
     },
     {
+      "popup_gate": { "scene": "me" },
+      "note": "Me 页弹窗自动 Cancel，再点设置"
+    },
+    {
       "tap_pct": [
         0.922,
         0.068

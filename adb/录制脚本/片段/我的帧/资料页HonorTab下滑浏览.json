@@ -1,0 +1,18 @@
+{
+  "id": "profile-honor-tab-scroll",
+  "name": "资料页HonorTab下滑浏览",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Honor Tab 上滑露出 Medal/Treasure Exhibition 等；前置：资料页切换HonorTab",
+  "kbRef": [
+    "testcase-kb/个人主页.md（Honor Tab）"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    {
+      "swipe": { "x1": 540, "y1": 1700, "x2": 540, "y2": 900, "duration_ms": 350 },
+      "note": "Honor Tab 上滑浏览"
+    },
+    { "sleep_ms": 800 }
+  ]
+}

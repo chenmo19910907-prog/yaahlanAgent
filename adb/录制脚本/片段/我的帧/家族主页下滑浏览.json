@@ -1,0 +1,18 @@
+{
+  "id": "family-home-scroll",
+  "name": "家族主页下滑浏览",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "已在家族主页 WebView → 上滑露出 Family Room、Family Members(50/400) 等；前置：资料页进入家族主页",
+  "kbRef": [
+    "documents/家族改版.md（十、家族主页）"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    {
+      "swipe": { "x1": 540, "y1": 1700, "x2": 540, "y2": 900, "duration_ms": 350 },
+      "note": "上滑浏览家族主页"
+    },
+    { "sleep_ms": 800 }
+  ]
+}

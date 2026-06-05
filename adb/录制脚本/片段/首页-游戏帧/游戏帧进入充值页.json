@@ -1,0 +1,16 @@
+{
+  "id": "game-enter-wallet",
+  "name": "游戏帧进入充值页",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Game 帧顶部钻石余额区 → PayActivity(My wallet)；前置：切换游戏底栏",
+  "kbRef": [
+    "documents/币商.md",
+    "testcase-kb/钱包.md"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.273, 0.103], "note": "顶部钻石余额 8.15M 区域" },
+    { "sleep_ms": 1200 }
+  ]
+}

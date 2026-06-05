@@ -1,0 +1,15 @@
+{
+  "id": "profile-open-moment-compose",
+  "name": "资料页打开发布动态",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Profile Tab My Moments 行末「+」→ PostActivity 发布页；与 open-moment-compose 同页不同入口",
+  "kbRef": [
+    "testcase-kb/个人主页.md（My Moments）"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.882, 0.670], "note": "My Moments 末尾 + 按钮" },
+    { "sleep_ms": 1200 }
+  ]
+}

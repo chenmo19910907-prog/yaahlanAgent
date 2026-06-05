@@ -1,0 +1,10 @@
+{
+  "id": "login-post-popups",
+  "name": "登录后处理弹窗",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "已废弃盲 BACK：请用 login verify（仅 webview 时 BACK）。本片段仅等待签到弹出，不按键",
+  "steps": [
+    { "sleep_ms": 800, "note": "等待签到半屏出现" }
+  ]
+}

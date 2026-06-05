@@ -1,0 +1,82 @@
+{
+  "id": "register-profile",
+  "name": "完成注册",
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
+  "capture": "end",
+  "description": "已在 RegisterInfoActivity：昵称 C+手机号后三位 → 生日 Save → 性别 → Submit → 头像引导 Skip。--text 传完整手机号。",
+  "params": ["text"],
+  "defaults": {
+    "text": "13311111115"
+  },
+  "kbRef": [
+    "documents/登录注册.md（完善个人资料页）",
+    "testcase-kb/注册登录.md（注册资料简化）"
+  ],
+  "steps": [
+    {
+      "sleep_ms": 600
+    },
+    {
+      "tap_pct": [0.5, 0.344],
+      "note": "nickname EditText（bounds 540,806）"
+    },
+    {
+      "sleep_ms": 300
+    },
+    {
+      "text": "{{nickname}}",
+      "note": "昵称 C+后三位，如 13311111157 → C157"
+    },
+    {
+      "sleep_ms": 400
+    },
+    {
+      "key": 4,
+      "note": "收起键盘"
+    },
+    {
+      "sleep_ms": 300
+    },
+    {
+      "tap_pct": [0.5, 0.434],
+      "note": "Birth date（bounds 540,1016）"
+    },
+    {
+      "sleep_ms": 800
+    },
+    {
+      "tap_pct": [0.915, 0.634],
+      "note": "日期选择器 Save（bounds 988,1484）"
+    },
+    {
+      "sleep_ms": 400
+    },
+    {
+      "tap_pct": [0.295, 0.521],
+      "note": "Male（默认；Female 0.705,0.521）"
+    },
+    {
+      "sleep_ms": 400
+    },
+    {
+      "tap_pct": [0.5, 0.918],
+      "note": "Submit（bounds 540,2148）"
+    },
+    {
+      "sleep_ms": 1200,
+      "note": "头像引导弹窗 Personalize your avatar"
+    },
+    {
+      "tap_pct": [0.284, 0.588],
+      "note": "Skip（bounds 307,1375；无弹窗时 --skip register_avatar_skip）",
+      "skip_key": "register_avatar_skip"
+    },
+    {
+      "sleep_ms": 2500,
+      "note": "等待进入首页 activity hint=home"
+    }
+  ]
+}

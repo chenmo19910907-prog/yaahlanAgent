@@ -3,9 +3,10 @@
   "name": "切换我的底栏",
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "never",
-  "description": "点击底部 Me（我的帧）",
+  "description": "点击 Me 底栏 → 自动点 Cancel 关弹窗（勿 BACK / 杀进程）",
   "steps": [
-    { "sleep_ms": 300 },
-    { "tap_pct": [0.900, 0.956], "note": "tab_profile" }
+    { "sleep_ms": 600 },
+    { "tap_pct": [0.900, 0.956], "note": "tab_profile" },
+    { "popup_gate": { "scene": "me" }, "note": "Me 页弹窗自动 Cancel" }
   ]
 }

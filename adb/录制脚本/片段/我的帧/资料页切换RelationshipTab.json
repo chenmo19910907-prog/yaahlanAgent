@@ -1,0 +1,15 @@
+{
+  "id": "profile-relationship-tab",
+  "name": "资料页切换RelationshipTab",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "ProfileActivity → 点 Relationship Tab；展示 My CP(Lv.3) / My Friends 网格与 Invite",
+  "kbRef": [
+    "testcase-kb/个人主页.md（Relationship Tab）"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.616, 0.172], "note": "Relationship Tab（bounds 494,369-836,435）" },
+    { "sleep_ms": 800 }
+  ]
+}
