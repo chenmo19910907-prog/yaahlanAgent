@@ -1,0 +1,13 @@
+{
+  "id": "moment-discover-feed-detail",
+  "name": "动态帧Discover进入动态详情",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Moment Discover 首条动态 → 评论图标 → FeedDetailsActivity",
+  "kbRef": ["documents/moments/basic module.md（Discover 动态详情）"],
+  "steps": [
+    { "run_script": "动态帧切换DiscoverTab" },
+    { "tap_pct": [0.712, 0.424], "note": "首条 iv_feed_comment（769,993）" },
+    { "sleep_ms": 1200 }
+  ]
+}

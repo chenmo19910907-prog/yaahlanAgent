@@ -49,6 +49,16 @@ python3 adb/adb_execute.py login verify --account guildLeader --since 90   # 身
 |--------|------|-----|
 | 底栏 Game | 切换游戏底栏 | game-tab |
 | Game 点头像 → 资料页 | 游戏帧进入个人资料 | game-profile |
+| 余额区 → 充值 | 游戏帧进入充值页 | game-enter-wallet |
+| 活动中心 | 游戏帧进入活动中心 | game-enter-event-center |
+| 任务礼包 | 游戏帧进入任务礼包 | game-enter-task-pack |
+| Ludo King | 游戏帧进入Ludo | game-enter-ludo |
+| Casual More | 游戏帧CasualGamesMore / 游戏帧进入游戏列表 | game-casual-more / game-enter-game-list |
+| Snakes and Ladders | 游戏帧进入SnakesLadders | game-enter-snakes-ladders |
+| Domino | 游戏帧进入Domino | game-enter-domino |
+| Activities 横幅 | 游戏帧进入ActivitiesBanner | game-enter-activities-banner |
+| Online players 私聊 | 游戏帧进入OnlinePlayer聊天 | game-enter-online-player-chat |
+| Online Visit 进房 | 游戏帧OnlinePlayerVisit进房 | game-enter-visit-room |
 
 ## 首页-房间帧 · `片段/首页-房间帧/`
 
@@ -59,6 +69,15 @@ python3 adb/adb_execute.py login verify --account guildLeader --since 90   # 身
 | 房内开礼物面板 | **打开礼物面板**（橙色礼物盒，勿点快捷礼物） | open-gift-panel |
 | 礼物面板送 99 钻 Trophy | **礼物面板送Trophy**（Gift Tab + 上下滑） | gift-panel-send-trophy |
 | 退出房间 | 退出房间 | room-exit |
+| 网络诊断 Excellent | 关闭网络诊断弹窗 | room-dismiss-network-diagnostic |
+| Mic invitation | 拒绝Mic邀请 | room-reject-mic-invitation |
+| Wealth Ranking | 房间帧进入财富榜 | room-wealth-ranking |
+| Egypt tab | 房间帧切换EgyptTab | room-egypt-tab |
+| Mine tab | 房间帧切换MineTab | room-mine-tab |
+| Hot 分类 | 房间帧切换Hot分类 | room-hot-chip |
+| 列表首卡进房 | 房间帧点击首个房间卡片 | room-tap-first-card |
+| Mine Follow/Joined/Family/Viewed | 房间帧Mine切换Follow 等 | room-mine-follow 等 |
+| 创建房间菜单 | 房间帧打开创建房间菜单 | room-open-create-menu |
 | 搜索页返回 Room 帧 | 搜索页返回房间帧 | room-search-back |
 
 公会长房 roomId **38826842**（Sheikh's Cottage，账号 13311111111）：
@@ -90,6 +109,17 @@ python3 adb/adb_execute.py gift panel find --account familyLeader --price 99 --t
 | Followers 统计 | 进入粉丝列表 | me-followers-list |
 | 钱包 | 进入钱包 | wallet |
 | 设置 | 进入设置 | settings |
+| 设置 · Language | 设置页进入语言 | settings-language |
+| 设置 · 切换语言（默认 English） | 设置页切换语言 | settings-switch-language |
+| 设置 · Notifications | 设置页进入通知 | settings-notifications |
+| 设置 · Blacklist | 设置页进入黑名单 | settings-blacklist |
+| 设置 · Account Management | 设置页进入账号管理 | settings-account-management |
+| 设置 · Stealth | 设置页进入隐身设置 | settings-stealth |
+| 设置 · Clear cache | 设置页清除缓存 | settings-clear-cache |
+| 设置 · Help（进客服房） | 设置页进入帮助 | settings-help |
+| 设置 · Game Support | 设置页进入游戏支持 | settings-game-support |
+| 设置 · About | 设置页进入关于 | settings-about |
+| 设置页 Log out | 设置页退出登录 | logout-from-settings |
 | 退出登录 | 退出登录 | logout |
 | 注销账号（Me→设置→账号安全→Delete account） | 注销账号 | cancel-account |
 
@@ -107,12 +137,32 @@ python3 adb/adb_execute.py gift panel find --account familyLeader --price 99 --t
 | 知识库 | 脚本 | id |
 |--------|------|-----|
 | 底栏 Message | 切换消息底栏 | msg-tab |
+| Everyone 子 tab | 消息帧切换EveryoneTab | msg-everyone-tab |
+| Friends 子 tab | 消息帧切换FriendsTab | msg-friends-tab |
+| Tasks 子 tab | 消息帧切换TasksTab | msg-tasks-tab |
+| Transfer 子 tab | 消息帧切换TransferTab | msg-transfer-tab |
+| Transfer 空态 Refresh | 消息帧Transfer空态刷新 | msg-transfer-refresh |
+| Daily Task Rewards | 消息帧进入DailyTaskRewards | msg-daily-task-rewards |
+| 家族群聊 CCVC | 消息帧进入家族群聊 | msg-enter-group-chat |
+| Super like | 消息帧进入SuperLike | msg-enter-super-like |
+| Friend request | 消息帧进入FriendRequest | msg-enter-friend-request |
+| 右上角好友入口 | 消息帧进入好友入口 | msg-friend-entrance |
+| Tasks Acquire | 消息帧Tasks切换Acquire | msg-tasks-acquire |
+| Tasks Ongoing | 消息帧Tasks切换Ongoing | msg-tasks-ongoing |
+| Tasks Say hi | 消息帧TasksSayHi | msg-tasks-say-hi |
 
 ## 动态帧 · `片段/动态帧/`（补充）
 
 | 知识库 | 脚本 | id |
 |--------|------|-----|
 | 关注 tab | 切换动态关注tab | moment-follow-tab |
+| 发现 tab | 动态帧切换DiscoverTab | moment-discover-tab |
+| Topics More | 动态帧进入TopicsMore | moment-topics-more |
+| 话题详情 #My Family | 动态帧进入话题详情 | moment-enter-topic-detail |
+| Discover 横滑话题卡片 | 动态帧Discover进入话题详情 | moment-discover-topic-detail |
+| 话题 Popular | 动态帧话题切换PopularTab | moment-topic-popular-tab |
+| 话题 Most liked | 动态帧话题切换MostLikedTab | moment-topic-most-liked-tab |
+| 动态详情（评论入口） | 动态帧进入动态详情 / 动态帧Discover进入动态详情 | moment-enter-feed-detail / moment-discover-feed-detail |
 | 发布【➕】/ 编辑页 | 打开动态发布页 | open-moment-compose |
 | 发布纯文本 | 发布纯文本动态 | post-moment |
 | 发布视频 | 发布视频动态 | post-video-moment |
@@ -139,6 +189,25 @@ python3 adb/adb_execute.py gift panel find --account familyLeader --price 99 --t
 | 设置页 Log out | 设置页退出登录 | logout-from-settings |
 | 退出登录（Me→设置→Log out） | 退出登录 | logout |
 | 注销预申请（15s+确认；blocked 则 toast 结束） | 注销账号 | cancel-account |
+| Me 上滑露出下半菜单 | 我的页下滑浏览 | me-scroll-lower-menu |
+| My Room | 我的页进入MyRoom | me-enter-my-room |
+| My Relationship | 我的页进入MyRelationship | me-enter-relationship |
+| Viewed me | 我的页进入ViewedMe | me-enter-viewed-me |
+| Check-in 签到 | 我的页签到 | me-check-in |
+| Redeem | 我的页进入Redeem | me-enter-redeem |
+| Family（Me 入口） | 我的页进入Family | me-enter-family |
+| Privilege VIP | 我的页进入Privilege | me-enter-privilege |
+| Nobility 贵族 | 我的页进入Nobility | me-enter-nobility |
+| Level 等级 | 我的页进入Level | me-enter-level |
+| Collection Exhibition | 我的页进入CollectionExhibition | me-enter-collection |
+| Badge 徽章 | 我的页进入Badge | me-enter-badge |
+| Outfit store | 我的页进入OutfitStore | me-enter-outfit-store |
+| Invite Friends | 我的页进入InviteFriends | me-enter-invite-friends |
+| Prize Collection | 我的页进入PrizeCollection | me-enter-prize-collection |
+| My Agency | 我的页进入MyAgency | me-enter-my-agency |
+| My Outfits | 我的页进入MyOutfits | me-enter-my-outfits |
+| Yaahlan star | 我的页进入YaahlanStar | me-enter-yaahlan-star |
+| Wallet（坐标已校正） | 进入钱包 | wallet |
 
 ## 组合（按模块）
 

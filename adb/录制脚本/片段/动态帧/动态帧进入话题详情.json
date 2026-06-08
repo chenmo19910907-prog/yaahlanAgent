@@ -1,0 +1,13 @@
+{
+  "id": "moment-enter-topic-detail",
+  "name": "动态帧进入话题详情",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "All topics → 点 #My Family 卡片 → FeedTopicDetailActivity",
+  "kbRef": ["documents/moments/basic module.md（话题详情）"],
+  "steps": [
+    { "run_script": "动态帧进入TopicsMore" },
+    { "tap_pct": [0.500, 0.164], "note": "#My Family 卡片（540,384）" },
+    { "sleep_ms": 1200 }
+  ]
+}

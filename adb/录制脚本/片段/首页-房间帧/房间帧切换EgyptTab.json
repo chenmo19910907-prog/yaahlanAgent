@@ -1,0 +1,13 @@
+{
+  "id": "room-egypt-tab",
+  "name": "房间帧切换EgyptTab",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "Room → Egypt 国家 tab（仍 MainActivity）",
+  "kbRef": ["documents/房间.md（国家 tab）"],
+  "steps": [
+    { "run_script": "切换房间底栏" },
+    { "tap_pct": [0.355, 0.344], "note": "Egypt（383,804）" },
+    { "sleep_ms": 600 }
+  ]
+}

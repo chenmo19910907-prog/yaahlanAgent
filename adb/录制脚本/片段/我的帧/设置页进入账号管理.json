@@ -1,0 +1,15 @@
+{
+  "id": "settings-account-management",
+  "name": "设置页进入账号管理",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "已在 SettingComposeActivity 且列表在顶部 → Account Management → AccountManagerActivity",
+  "steps": [
+    { "sleep_ms": 400 },
+    {
+      "tap_pct": [0.493, 0.138],
+      "note": "Account Management 行（中心 532,324）"
+    },
+    { "sleep_ms": 800 }
+  ]
+}

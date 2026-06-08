@@ -13,7 +13,7 @@
   "steps": [
     {
       "sleep_ms": 300,
-      "note": "若三方游戏全屏遮挡，先 run 房内三方游戏最小化；若 Mic invitation 等遮挡，先 macro 关闭常见弹窗"
+      "note": "若网络诊断 Excellent 遮挡：先 run 关闭网络诊断弹窗；Mic invitation：先 run 拒绝Mic邀请；三方游戏全屏：先 run 房内三方游戏最小化"
     },
     {
       "tap_pct": [

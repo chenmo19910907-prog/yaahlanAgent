@@ -1,0 +1,13 @@
+{
+  "id": "room-mine-tab",
+  "name": "房间帧切换MineTab",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "Room → Mine 我的房间 tab",
+  "kbRef": ["documents/房间.md（Mine）"],
+  "steps": [
+    { "run_script": "切换房间底栏" },
+    { "tap_pct": [0.568, 0.344], "note": "Mine（613,804）" },
+    { "sleep_ms": 600 }
+  ]
+}

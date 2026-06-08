@@ -1,0 +1,13 @@
+{
+  "id": "msg-enter-super-like",
+  "name": "消息帧进入SuperLike",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "消息帧 Everyone → Super like 系统通知 → SuperLikeComposeActivity",
+  "kbRef": ["documents/消息.md（Super like）"],
+  "steps": [
+    { "run_script": "消息帧切换EveryoneTab" },
+    { "tap_pct": [0.500, 0.424], "note": "Super like（540,993）" },
+    { "sleep_ms": 1200 }
+  ]
+}

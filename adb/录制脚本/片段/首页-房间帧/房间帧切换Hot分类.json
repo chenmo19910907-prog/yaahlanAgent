@@ -1,0 +1,13 @@
+{
+  "id": "room-hot-chip",
+  "name": "房间帧切换Hot分类",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "Room Explore → Hot 分类 chip",
+  "kbRef": ["documents/房间.md（Hot 分类）"],
+  "steps": [
+    { "run_script": "切换房间底栏" },
+    { "tap_pct": [0.326, 0.405], "note": "Hot chip（352,948）" },
+    { "sleep_ms": 600 }
+  ]
+}

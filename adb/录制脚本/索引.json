@@ -170,6 +170,83 @@
       "file": "片段/首页-游戏帧/游戏帧进入个人资料.json"
     },
     {
+      "id": "game-enter-wallet",
+      "name": "游戏帧进入充值页",
+      "kind": "fragment",
+      "module": "首页-游戏帧",
+      "file": "片段/首页-游戏帧/游戏帧进入充值页.json"
+    },
+    {
+      "id": "game-enter-event-center",
+      "name": "游戏帧进入活动中心",
+      "kind": "fragment",
+      "module": "首页-游戏帧",
+      "file": "片段/首页-游戏帧/游戏帧进入活动中心.json"
+    },
+    {
+      "id": "game-enter-task-pack",
+      "name": "游戏帧进入任务礼包",
+      "kind": "fragment",
+      "module": "首页-游戏帧",
+      "file": "片段/首页-游戏帧/游戏帧进入任务礼包.json"
+    },
+    {
+      "id": "game-enter-ludo",
+      "name": "游戏帧进入Ludo",
+      "kind": "fragment",
+      "module": "首页-游戏帧",
+      "file": "片段/首页-游戏帧/游戏帧进入Ludo.json"
+    },
+    {
+      "id": "game-enter-game-list",
+      "name": "游戏帧进入游戏列表",
+      "kind": "fragment",
+      "module": "首页-游戏帧",
+      "file": "片段/首页-游戏帧/游戏帧进入游戏列表.json"
+    },
+    {
+      "id": "game-enter-activities-banner",
+      "name": "游戏帧进入ActivitiesBanner",
+      "kind": "fragment",
+      "module": "首页-游戏帧",
+      "file": "片段/首页-游戏帧/游戏帧进入ActivitiesBanner.json"
+    },
+    {
+      "id": "game-enter-online-player-chat",
+      "name": "游戏帧进入OnlinePlayer聊天",
+      "kind": "fragment",
+      "module": "首页-游戏帧",
+      "file": "片段/首页-游戏帧/游戏帧进入OnlinePlayer聊天.json"
+    },
+    {
+      "id": "game-enter-snakes-ladders",
+      "name": "游戏帧进入SnakesLadders",
+      "kind": "fragment",
+      "module": "首页-游戏帧",
+      "file": "片段/首页-游戏帧/游戏帧进入SnakesLadders.json"
+    },
+    {
+      "id": "game-enter-domino",
+      "name": "游戏帧进入Domino",
+      "kind": "fragment",
+      "module": "首页-游戏帧",
+      "file": "片段/首页-游戏帧/游戏帧进入Domino.json"
+    },
+    {
+      "id": "game-casual-more",
+      "name": "游戏帧CasualGamesMore",
+      "kind": "fragment",
+      "module": "首页-游戏帧",
+      "file": "片段/首页-游戏帧/游戏帧CasualGamesMore.json"
+    },
+    {
+      "id": "game-enter-visit-room",
+      "name": "游戏帧OnlinePlayerVisit进房",
+      "kind": "fragment",
+      "module": "首页-游戏帧",
+      "file": "片段/首页-游戏帧/游戏帧OnlinePlayerVisit进房.json"
+    },
+    {
       "id": "room-tab",
       "name": "切换房间底栏",
       "kind": "fragment",
@@ -204,6 +281,111 @@
       "kind": "fragment",
       "module": "首页-房间帧",
       "file": "片段/首页-房间帧/退出房间.json"
+    },
+    {
+      "id": "room-dismiss-network-diagnostic",
+      "name": "关闭网络诊断弹窗",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/关闭网络诊断弹窗.json"
+    },
+    {
+      "id": "room-reject-mic-invitation",
+      "name": "拒绝Mic邀请",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/拒绝Mic邀请.json"
+    },
+    {
+      "id": "room-wealth-ranking",
+      "name": "房间帧进入财富榜",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/房间帧进入财富榜.json"
+    },
+    {
+      "id": "room-egypt-tab",
+      "name": "房间帧切换EgyptTab",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/房间帧切换EgyptTab.json"
+    },
+    {
+      "id": "room-mine-tab",
+      "name": "房间帧切换MineTab",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/房间帧切换MineTab.json"
+    },
+    {
+      "id": "room-mine-follow",
+      "name": "房间帧Mine切换Follow",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/房间帧Mine切换Follow.json"
+    },
+    {
+      "id": "room-mine-joined",
+      "name": "房间帧Mine切换Joined",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/房间帧Mine切换Joined.json"
+    },
+    {
+      "id": "room-mine-family",
+      "name": "房间帧Mine切换Family",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/房间帧Mine切换Family.json"
+    },
+    {
+      "id": "room-mine-viewed",
+      "name": "房间帧Mine切换Viewed",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/房间帧Mine切换Viewed.json"
+    },
+    {
+      "id": "room-open-create-menu",
+      "name": "房间帧打开创建房间菜单",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/房间帧打开创建房间菜单.json"
+    },
+    {
+      "id": "room-hot-chip",
+      "name": "房间帧切换Hot分类",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/房间帧切换Hot分类.json"
+    },
+    {
+      "id": "room-pk-chip",
+      "name": "房间帧切换PK分类",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/房间帧切换PK分类.json"
+    },
+    {
+      "id": "room-game-chip",
+      "name": "房间帧切换Game分类",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/房间帧切换Game分类.json"
+    },
+    {
+      "id": "room-chat-chip",
+      "name": "房间帧切换Chat分类",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/房间帧切换Chat分类.json"
+    },
+    {
+      "id": "room-tap-first-card",
+      "name": "房间帧点击首个房间卡片",
+      "kind": "fragment",
+      "module": "首页-房间帧",
+      "file": "片段/首页-房间帧/房间帧点击首个房间卡片.json"
     },
     {
       "id": "room-minimize-third-party-game",
@@ -241,6 +423,97 @@
       "file": "片段/消息帧/切换消息底栏.json"
     },
     {
+      "id": "msg-everyone-tab",
+      "name": "消息帧切换EveryoneTab",
+      "kind": "fragment",
+      "module": "消息帧",
+      "file": "片段/消息帧/消息帧切换EveryoneTab.json"
+    },
+    {
+      "id": "msg-friends-tab",
+      "name": "消息帧切换FriendsTab",
+      "kind": "fragment",
+      "module": "消息帧",
+      "file": "片段/消息帧/消息帧切换FriendsTab.json"
+    },
+    {
+      "id": "msg-tasks-tab",
+      "name": "消息帧切换TasksTab",
+      "kind": "fragment",
+      "module": "消息帧",
+      "file": "片段/消息帧/消息帧切换TasksTab.json"
+    },
+    {
+      "id": "msg-transfer-tab",
+      "name": "消息帧切换TransferTab",
+      "kind": "fragment",
+      "module": "消息帧",
+      "file": "片段/消息帧/消息帧切换TransferTab.json"
+    },
+    {
+      "id": "msg-transfer-refresh",
+      "name": "消息帧Transfer空态刷新",
+      "kind": "fragment",
+      "module": "消息帧",
+      "file": "片段/消息帧/消息帧Transfer空态刷新.json"
+    },
+    {
+      "id": "msg-daily-task-rewards",
+      "name": "消息帧进入DailyTaskRewards",
+      "kind": "fragment",
+      "module": "消息帧",
+      "file": "片段/消息帧/消息帧进入DailyTaskRewards.json"
+    },
+    {
+      "id": "msg-enter-group-chat",
+      "name": "消息帧进入家族群聊",
+      "kind": "fragment",
+      "module": "消息帧",
+      "file": "片段/消息帧/消息帧进入家族群聊.json"
+    },
+    {
+      "id": "msg-enter-super-like",
+      "name": "消息帧进入SuperLike",
+      "kind": "fragment",
+      "module": "消息帧",
+      "file": "片段/消息帧/消息帧进入SuperLike.json"
+    },
+    {
+      "id": "msg-enter-friend-request",
+      "name": "消息帧进入FriendRequest",
+      "kind": "fragment",
+      "module": "消息帧",
+      "file": "片段/消息帧/消息帧进入FriendRequest.json"
+    },
+    {
+      "id": "msg-friend-entrance",
+      "name": "消息帧进入好友入口",
+      "kind": "fragment",
+      "module": "消息帧",
+      "file": "片段/消息帧/消息帧进入好友入口.json"
+    },
+    {
+      "id": "msg-tasks-acquire",
+      "name": "消息帧Tasks切换Acquire",
+      "kind": "fragment",
+      "module": "消息帧",
+      "file": "片段/消息帧/消息帧Tasks切换Acquire.json"
+    },
+    {
+      "id": "msg-tasks-ongoing",
+      "name": "消息帧Tasks切换Ongoing",
+      "kind": "fragment",
+      "module": "消息帧",
+      "file": "片段/消息帧/消息帧Tasks切换Ongoing.json"
+    },
+    {
+      "id": "msg-tasks-say-hi",
+      "name": "消息帧TasksSayHi",
+      "kind": "fragment",
+      "module": "消息帧",
+      "file": "片段/消息帧/消息帧TasksSayHi.json"
+    },
+    {
       "id": "moment-tab",
       "name": "切换动态底栏",
       "kind": "fragment",
@@ -253,6 +526,62 @@
       "kind": "fragment",
       "module": "动态帧",
       "file": "片段/动态帧/切换动态关注tab.json"
+    },
+    {
+      "id": "moment-discover-tab",
+      "name": "动态帧切换DiscoverTab",
+      "kind": "fragment",
+      "module": "动态帧",
+      "file": "片段/动态帧/动态帧切换DiscoverTab.json"
+    },
+    {
+      "id": "moment-topics-more",
+      "name": "动态帧进入TopicsMore",
+      "kind": "fragment",
+      "module": "动态帧",
+      "file": "片段/动态帧/动态帧进入TopicsMore.json"
+    },
+    {
+      "id": "moment-enter-topic-detail",
+      "name": "动态帧进入话题详情",
+      "kind": "fragment",
+      "module": "动态帧",
+      "file": "片段/动态帧/动态帧进入话题详情.json"
+    },
+    {
+      "id": "moment-discover-topic-detail",
+      "name": "动态帧Discover进入话题详情",
+      "kind": "fragment",
+      "module": "动态帧",
+      "file": "片段/动态帧/动态帧Discover进入话题详情.json"
+    },
+    {
+      "id": "moment-topic-popular-tab",
+      "name": "动态帧话题切换PopularTab",
+      "kind": "fragment",
+      "module": "动态帧",
+      "file": "片段/动态帧/动态帧话题切换PopularTab.json"
+    },
+    {
+      "id": "moment-topic-most-liked-tab",
+      "name": "动态帧话题切换MostLikedTab",
+      "kind": "fragment",
+      "module": "动态帧",
+      "file": "片段/动态帧/动态帧话题切换MostLikedTab.json"
+    },
+    {
+      "id": "moment-enter-feed-detail",
+      "name": "动态帧进入动态详情",
+      "kind": "fragment",
+      "module": "动态帧",
+      "file": "片段/动态帧/动态帧进入动态详情.json"
+    },
+    {
+      "id": "moment-discover-feed-detail",
+      "name": "动态帧Discover进入动态详情",
+      "kind": "fragment",
+      "module": "动态帧",
+      "file": "片段/动态帧/动态帧Discover进入动态详情.json"
     },
     {
       "id": "open-moment-compose",
@@ -302,6 +631,76 @@
       "kind": "fragment",
       "module": "我的帧",
       "file": "片段/我的帧/注销账号.json"
+    },
+    {
+      "id": "settings-language",
+      "name": "设置页进入语言",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/设置页进入语言.json"
+    },
+    {
+      "id": "settings-switch-language",
+      "name": "设置页切换语言",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/设置页切换语言.json"
+    },
+    {
+      "id": "settings-notifications",
+      "name": "设置页进入通知",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/设置页进入通知.json"
+    },
+    {
+      "id": "settings-blacklist",
+      "name": "设置页进入黑名单",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/设置页进入黑名单.json"
+    },
+    {
+      "id": "settings-account-management",
+      "name": "设置页进入账号管理",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/设置页进入账号管理.json"
+    },
+    {
+      "id": "settings-stealth",
+      "name": "设置页进入隐身设置",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/设置页进入隐身设置.json"
+    },
+    {
+      "id": "settings-clear-cache",
+      "name": "设置页清除缓存",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/设置页清除缓存.json"
+    },
+    {
+      "id": "settings-help",
+      "name": "设置页进入帮助",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/设置页进入帮助.json"
+    },
+    {
+      "id": "settings-game-support",
+      "name": "设置页进入游戏支持",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/设置页进入游戏支持.json"
+    },
+    {
+      "id": "settings-about",
+      "name": "设置页进入关于",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/设置页进入关于.json"
     },
     {
       "id": "me-tab",
@@ -442,6 +841,132 @@
       "kind": "fragment",
       "module": "我的帧",
       "file": "片段/我的帧/资料页打开发布动态.json"
+    },
+    {
+      "id": "me-scroll-lower-menu",
+      "name": "我的页下滑浏览",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/我的页下滑浏览.json"
+    },
+    {
+      "id": "me-enter-my-room",
+      "name": "我的页进入MyRoom",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/我的页进入MyRoom.json"
+    },
+    {
+      "id": "me-enter-relationship",
+      "name": "我的页进入MyRelationship",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/我的页进入MyRelationship.json"
+    },
+    {
+      "id": "me-enter-viewed-me",
+      "name": "我的页进入ViewedMe",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/我的页进入ViewedMe.json"
+    },
+    {
+      "id": "me-check-in",
+      "name": "我的页签到",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/我的页签到.json"
+    },
+    {
+      "id": "me-enter-redeem",
+      "name": "我的页进入Redeem",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/我的页进入Redeem.json"
+    },
+    {
+      "id": "me-enter-family",
+      "name": "我的页进入Family",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/我的页进入Family.json"
+    },
+    {
+      "id": "me-enter-privilege",
+      "name": "我的页进入Privilege",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/我的页进入Privilege.json"
+    },
+    {
+      "id": "me-enter-nobility",
+      "name": "我的页进入Nobility",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/我的页进入Nobility.json"
+    },
+    {
+      "id": "me-enter-level",
+      "name": "我的页进入Level",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/我的页进入Level.json"
+    },
+    {
+      "id": "me-enter-collection",
+      "name": "我的页进入CollectionExhibition",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/我的页进入CollectionExhibition.json"
+    },
+    {
+      "id": "me-enter-badge",
+      "name": "我的页进入Badge",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/我的页进入Badge.json"
+    },
+    {
+      "id": "me-enter-outfit-store",
+      "name": "我的页进入OutfitStore",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/我的页进入OutfitStore.json"
+    },
+    {
+      "id": "me-enter-invite-friends",
+      "name": "我的页进入InviteFriends",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/我的页进入InviteFriends.json"
+    },
+    {
+      "id": "me-enter-prize-collection",
+      "name": "我的页进入PrizeCollection",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/我的页进入PrizeCollection.json"
+    },
+    {
+      "id": "me-enter-my-agency",
+      "name": "我的页进入MyAgency",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/我的页进入MyAgency.json"
+    },
+    {
+      "id": "me-enter-my-outfits",
+      "name": "我的页进入MyOutfits",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/我的页进入MyOutfits.json"
+    },
+    {
+      "id": "me-enter-yaahlan-star",
+      "name": "我的页进入YaahlanStar",
+      "kind": "fragment",
+      "module": "我的帧",
+      "file": "片段/我的帧/我的页进入YaahlanStar.json"
     },
     {
       "id": "post-moment",

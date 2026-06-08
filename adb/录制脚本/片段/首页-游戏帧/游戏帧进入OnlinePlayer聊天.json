@@ -1,0 +1,13 @@
+{
+  "id": "game-enter-online-player-chat",
+  "name": "游戏帧进入OnlinePlayer聊天",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Game 帧 Online players 首条 → ChatActivity 私聊",
+  "kbRef": ["testcase-kb/游戏帧.md（Online players）"],
+  "steps": [
+    { "run_script": "切换游戏底栏" },
+    { "tap_pct": [0.500, 0.610], "note": "Online players 首条 item_root（540,1429）" },
+    { "sleep_ms": 1500 }
+  ]
+}

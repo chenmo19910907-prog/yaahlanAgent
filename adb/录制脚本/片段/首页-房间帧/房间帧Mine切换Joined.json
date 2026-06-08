@@ -1,0 +1,13 @@
+{
+  "id": "room-mine-joined",
+  "name": "房间帧Mine切换Joined",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "Room Mine tab → Joined 子分类",
+  "kbRef": ["documents/房间.md（Mine Joined）"],
+  "steps": [
+    { "run_script": "房间帧切换MineTab" },
+    { "tap_pct": [0.334, 0.405], "note": "Joined chip（361,948）" },
+    { "sleep_ms": 600 }
+  ]
+}

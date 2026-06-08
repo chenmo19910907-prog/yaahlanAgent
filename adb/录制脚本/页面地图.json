@@ -1,0 +1,553 @@
+{
+  "title": "Yaahlan App 页面地图（自动扫描）",
+  "note": "learn scan 列入口；learn probe 补 activity。结合 KB 写 kbRef 后落片段。",
+  "tabs": {
+    "game": "首页-游戏帧",
+    "room": "首页-房间帧",
+    "msg": "消息帧",
+    "moment": "动态帧",
+    "me": "我的帧"
+  },
+  "entries": [
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "top_layout",
+      "resourceId": "top_layout",
+      "tap_pct": [
+        0.5,
+        0.151
+      ],
+      "scrollDown": 0,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "badge_layout",
+      "resourceId": "badge_layout",
+      "tap_pct": [
+        0.496,
+        0.158
+      ],
+      "scrollDown": 0,
+      "clickable": false,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "noble_top_badge",
+      "resourceId": "noble_top_badge",
+      "tap_pct": [
+        0.432,
+        0.158
+      ],
+      "scrollDown": 0,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "wealth_badge",
+      "resourceId": "wealth_badge",
+      "tap_pct": [
+        0.557,
+        0.158
+      ],
+      "scrollDown": 0,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "charm_badge",
+      "resourceId": "charm_badge",
+      "tap_pct": [
+        0.665,
+        0.158
+      ],
+      "scrollDown": 0,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "profile_custom_user_id_layout",
+      "resourceId": "profile_custom_user_id_layout",
+      "tap_pct": [
+        0.43,
+        0.186
+      ],
+      "scrollDown": 0,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "friend_ll",
+      "resourceId": "friend_ll",
+      "tap_pct": [
+        0.123,
+        0.271
+      ],
+      "scrollDown": 0,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "follow_ll",
+      "resourceId": "follow_ll",
+      "tap_pct": [
+        0.5,
+        0.271
+      ],
+      "scrollDown": 0,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "fans_ll",
+      "resourceId": "fans_ll",
+      "tap_pct": [
+        0.826,
+        0.271
+      ],
+      "scrollDown": 0,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "Отметиться",
+      "resourceId": "check_in",
+      "tap_pct": [
+        0.806,
+        0.369
+      ],
+      "scrollDown": 0,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "cl_visitor",
+      "resourceId": "cl_visitor",
+      "tap_pct": [
+        0.5,
+        0.6
+      ],
+      "scrollDown": 0,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "room_layout",
+      "resourceId": "room_layout",
+      "tap_pct": [
+        0.5,
+        0.689
+      ],
+      "scrollDown": 0,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "cp_layout",
+      "resourceId": "cp_layout",
+      "tap_pct": [
+        0.5,
+        0.766
+      ],
+      "scrollDown": 0,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "wallet_layout",
+      "resourceId": "wallet_layout",
+      "tap_pct": [
+        0.5,
+        0.843
+      ],
+      "scrollDown": 0,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "fortune_layout",
+      "resourceId": "fortune_layout",
+      "tap_pct": [
+        0.5,
+        0.856
+      ],
+      "scrollDown": 0,
+      "clickable": false,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "redeem_layout",
+      "resourceId": "redeem_layout",
+      "tap_pct": [
+        0.5,
+        0.147
+      ],
+      "scrollDown": 1,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "family_layout",
+      "resourceId": "family_layout",
+      "tap_pct": [
+        0.5,
+        0.126
+      ],
+      "scrollDown": 5,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "family_level_view",
+      "resourceId": "family_level_view",
+      "tap_pct": [
+        0.815,
+        0.126
+      ],
+      "scrollDown": 5,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "vip_layout",
+      "resourceId": "vip_layout",
+      "tap_pct": [
+        0.5,
+        0.203
+      ],
+      "scrollDown": 5,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "noble_layout",
+      "resourceId": "noble_layout",
+      "tap_pct": [
+        0.5,
+        0.279
+      ],
+      "scrollDown": 5,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "level_layout",
+      "resourceId": "level_layout",
+      "tap_pct": [
+        0.5,
+        0.356
+      ],
+      "scrollDown": 5,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "gift_wall_layout",
+      "resourceId": "gift_wall_layout",
+      "tap_pct": [
+        0.5,
+        0.433
+      ],
+      "scrollDown": 5,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "nameplate_layout",
+      "resourceId": "nameplate_layout",
+      "tap_pct": [
+        0.5,
+        0.51
+      ],
+      "scrollDown": 5,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "costume_layout",
+      "resourceId": "costume_layout",
+      "tap_pct": [
+        0.5,
+        0.587
+      ],
+      "scrollDown": 5,
+      "clickable": false,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "costume_store_layout",
+      "resourceId": "costume_store_layout",
+      "tap_pct": [
+        0.5,
+        0.587
+      ],
+      "scrollDown": 5,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "invite_layout",
+      "resourceId": "invite_layout",
+      "tap_pct": [
+        0.5,
+        0.664
+      ],
+      "scrollDown": 5,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "collection_layout",
+      "resourceId": "collection_layout",
+      "tap_pct": [
+        0.257,
+        0.754
+      ],
+      "scrollDown": 5,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "guild_layout",
+      "resourceId": "guild_layout",
+      "tap_pct": [
+        0.743,
+        0.754
+      ],
+      "scrollDown": 5,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "my_costumes_layout",
+      "resourceId": "my_costumes_layout",
+      "tap_pct": [
+        0.257,
+        0.844
+      ],
+      "scrollDown": 5,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    },
+    {
+      "tab": "me",
+      "module": "我的帧",
+      "label": "layout_star",
+      "resourceId": "layout_star",
+      "tap_pct": [
+        0.743,
+        0.844
+      ],
+      "scrollDown": 5,
+      "clickable": true,
+      "activity": null,
+      "uiSample": "",
+      "vipRequired": null,
+      "fragmentId": null,
+      "kbRef": [],
+      "probed": false
+    }
+  ]
+}

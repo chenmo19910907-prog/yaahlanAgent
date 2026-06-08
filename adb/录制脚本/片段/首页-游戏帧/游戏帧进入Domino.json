@@ -1,0 +1,13 @@
+{
+  "id": "game-enter-domino",
+  "name": "游戏帧进入Domino",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Game 帧 Casual games → Domino 卡片（item_root 847,601）→ RoomGameActivity(Domino Room)；退出：左上角 X（非 voice room-exit）",
+  "kbRef": ["testcase-kb/游戏帧.md（Casual games）"],
+  "steps": [
+    { "run_script": "切换游戏底栏" },
+    { "tap_pct": [0.785, 0.257], "note": "Domino 卡片 item_root（847,601）" },
+    { "sleep_ms": 2500 }
+  ]
+}

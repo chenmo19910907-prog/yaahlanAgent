@@ -1,0 +1,13 @@
+{
+  "id": "room-mine-family",
+  "name": "房间帧Mine切换Family",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "Room Mine tab → Family 子分类",
+  "kbRef": ["documents/房间.md（Mine Family）"],
+  "steps": [
+    { "run_script": "房间帧切换MineTab" },
+    { "tap_pct": [0.558, 0.405], "note": "Family chip（602,948）" },
+    { "sleep_ms": 600 }
+  ]
+}

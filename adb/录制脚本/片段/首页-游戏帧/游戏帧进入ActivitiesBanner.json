@@ -1,0 +1,13 @@
+{
+  "id": "game-enter-activities-banner",
+  "name": "游戏帧进入ActivitiesBanner",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Game 帧 Activities 轮播横幅 → WebViewAggActivity",
+  "kbRef": ["testcase-kb/游戏帧.md（Activities 横幅）"],
+  "steps": [
+    { "run_script": "切换游戏底栏" },
+    { "tap_pct": [0.500, 0.452], "note": "activity_bg 横幅（540,1059）" },
+    { "sleep_ms": 1200 }
+  ]
+}

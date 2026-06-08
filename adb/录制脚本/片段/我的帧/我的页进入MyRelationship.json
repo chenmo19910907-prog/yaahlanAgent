@@ -1,0 +1,15 @@
+{
+  "id": "me-enter-relationship",
+  "name": "我的页进入MyRelationship",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Me → My Relationship（cp_layout）→ ProfileActivity Relationship tab",
+  "kbRef": ["testcase-kb/个人主页.md（My Relationship / CP）"],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.900, 0.956], "note": "Me 底栏" },
+    { "sleep_ms": 700 },
+    { "tap_pct": [0.500, 0.761], "note": "cp_layout My Relationship（540,1780）" },
+    { "sleep_ms": 1200 }
+  ]
+}

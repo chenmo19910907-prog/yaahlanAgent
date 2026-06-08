@@ -1,0 +1,13 @@
+{
+  "id": "msg-friend-entrance",
+  "name": "消息帧进入好友入口",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "消息帧 → 右上角好友入口（friend_entrance）→ RelationActivity",
+  "kbRef": ["documents/消息.md（好友入口）"],
+  "steps": [
+    { "run_script": "切换消息底栏" },
+    { "tap_pct": [0.922, 0.096], "note": "friend_entrance（996,224）" },
+    { "sleep_ms": 1000 }
+  ]
+}

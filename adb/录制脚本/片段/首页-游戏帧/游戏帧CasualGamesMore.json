@@ -1,0 +1,13 @@
+{
+  "id": "game-casual-more",
+  "name": "游戏帧CasualGamesMore",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Game 帧 Casual games 区 More> → GameListActivity",
+  "kbRef": ["testcase-kb/游戏帧.md（Casual More）"],
+  "steps": [
+    { "run_script": "切换游戏底栏" },
+    { "tap_pct": [0.874, 0.152], "note": "More>（944,356）" },
+    { "sleep_ms": 1000 }
+  ]
+}

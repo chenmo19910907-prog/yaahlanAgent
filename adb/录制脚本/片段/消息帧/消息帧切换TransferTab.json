@@ -1,0 +1,13 @@
+{
+  "id": "msg-transfer-tab",
+  "name": "消息帧切换TransferTab",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "消息帧 → Transfer 子 tab",
+  "kbRef": ["documents/消息.md（Transfer）"],
+  "steps": [
+    { "run_script": "切换消息底栏" },
+    { "tap_pct": [0.850, 0.160], "note": "Transfer（918,374）" },
+    { "sleep_ms": 600 }
+  ]
+}

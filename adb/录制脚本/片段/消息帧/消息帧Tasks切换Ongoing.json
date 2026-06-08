@@ -1,0 +1,13 @@
+{
+  "id": "msg-tasks-ongoing",
+  "name": "消息帧Tasks切换Ongoing",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Message Tasks tab → Ongoing 列表",
+  "kbRef": ["documents/消息.md（Tasks Ongoing）"],
+  "steps": [
+    { "run_script": "消息帧切换TasksTab" },
+    { "tap_pct": [0.383, 0.312], "note": "Ongoing（414,730）" },
+    { "sleep_ms": 800 }
+  ]
+}

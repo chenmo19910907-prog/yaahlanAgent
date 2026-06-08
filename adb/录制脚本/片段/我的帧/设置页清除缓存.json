@@ -1,0 +1,15 @@
+{
+  "id": "settings-clear-cache",
+  "name": "设置页清除缓存",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "已在 SettingComposeActivity 且列表在顶部 → Clear cache：停留本页，Toast 提示已清理；右侧 MB 归零",
+  "steps": [
+    { "sleep_ms": 400 },
+    {
+      "tap_pct": [0.493, 0.523],
+      "note": "Clear cache 行（中心 532,1224）"
+    },
+    { "sleep_ms": 1200, "note": "等待 Toast" }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "me-check-in",
+  "name": "我的页签到",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Me → Check-in 按钮（check_in）→ WebViewActivity 签到页",
+  "kbRef": ["待补 KB（每日签到）"],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.900, 0.956], "note": "Me 底栏" },
+    { "sleep_ms": 700 },
+    { "tap_pct": [0.827, 0.363], "note": "check_in Check-in（893,849）" },
+    { "sleep_ms": 1200 }
+  ]
+}

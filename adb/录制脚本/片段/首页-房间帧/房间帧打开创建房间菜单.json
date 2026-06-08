@@ -1,0 +1,13 @@
+{
+  "id": "room-open-create-menu",
+  "name": "房间帧打开创建房间菜单",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Room 右上角 im_create_room → 弹出 My voice room / Voice rooms I manage / Event rooms 菜单",
+  "kbRef": ["documents/房间.md（创建房间）"],
+  "steps": [
+    { "run_script": "切换房间底栏" },
+    { "tap_pct": [0.922, 0.088], "note": "im_create_room（996,207）" },
+    { "sleep_ms": 800 }
+  ]
+}

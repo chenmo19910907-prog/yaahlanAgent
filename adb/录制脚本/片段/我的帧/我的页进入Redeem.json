@@ -1,0 +1,13 @@
+{
+  "id": "me-enter-redeem",
+  "name": "我的页进入Redeem",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Me 下滑后 → Redeem（redeem_layout）→ WebViewActivity",
+  "kbRef": ["待补 KB（Redeem 兑换）"],
+  "steps": [
+    { "run_script": "我的页下滑浏览", "note": "露出 Redeem 行" },
+    { "tap_pct": [0.500, 0.070], "note": "redeem_layout（540,163）" },
+    { "sleep_ms": 1200 }
+  ]
+}

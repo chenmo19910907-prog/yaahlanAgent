@@ -1,0 +1,13 @@
+{
+  "id": "room-tap-first-card",
+  "name": "房间帧点击首个房间卡片",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Room Explore 列表 → 点首条房间卡片 → RoomChatActivity（退出须 run 退出房间）",
+  "kbRef": ["documents/房间.md（进房）"],
+  "steps": [
+    { "run_script": "切换房间底栏" },
+    { "tap_pct": [0.500, 0.497], "note": "首条房间卡片（540,1162）" },
+    { "sleep_ms": 2500 }
+  ]
+}

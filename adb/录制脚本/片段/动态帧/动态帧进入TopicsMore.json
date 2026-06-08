@@ -1,0 +1,15 @@
+{
+  "id": "moment-topics-more",
+  "name": "动态帧进入TopicsMore",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Moment Discover → Topics More> → FeedAllTopicActivity",
+  "kbRef": ["documents/moments/basic module.md（Topics）"],
+  "steps": [
+    { "run_script": "切换动态底栏" },
+    { "tap_pct": [0.119, 0.087], "note": "Discover tab（129,204）" },
+    { "sleep_ms": 600 },
+    { "tap_pct": [0.909, 0.158], "note": "More>（982,370）" },
+    { "sleep_ms": 1000 }
+  ]
+}

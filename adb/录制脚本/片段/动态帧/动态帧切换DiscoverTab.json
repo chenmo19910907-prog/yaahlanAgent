@@ -1,0 +1,13 @@
+{
+  "id": "moment-discover-tab",
+  "name": "动态帧切换DiscoverTab",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "Moment → Discover 发现 tab",
+  "kbRef": ["documents/moments/basic module.md（Discover tab）"],
+  "steps": [
+    { "run_script": "切换动态底栏" },
+    { "tap_pct": [0.119, 0.087], "note": "Discover（129,204）" },
+    { "sleep_ms": 600 }
+  ]
+}

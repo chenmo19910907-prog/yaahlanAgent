@@ -1,0 +1,13 @@
+{
+  "id": "me-enter-prize-collection",
+  "name": "我的页进入PrizeCollection",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Me 下滑后 → Prize Collection 卡片 → WebViewActivity",
+  "kbRef": ["待补 KB（Prize Collection）"],
+  "steps": [
+    { "run_script": "我的页下滑浏览", "note": "露出底部网格" },
+    { "tap_pct": [0.257, 0.770], "note": "collection_layout Prize（277,1802）" },
+    { "sleep_ms": 1200 }
+  ]
+}

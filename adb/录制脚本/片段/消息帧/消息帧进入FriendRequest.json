@@ -1,0 +1,13 @@
+{
+  "id": "msg-enter-friend-request",
+  "name": "消息帧进入FriendRequest",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "消息帧 Everyone → Friend request 系统通知 → FriendBoxActivity",
+  "kbRef": ["documents/消息.md（Friend request）"],
+  "steps": [
+    { "run_script": "消息帧切换EveryoneTab" },
+    { "tap_pct": [0.500, 0.521], "note": "Friend request（540,1218）" },
+    { "sleep_ms": 1200 }
+  ]
+}

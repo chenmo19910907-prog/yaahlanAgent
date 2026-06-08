@@ -1,0 +1,13 @@
+{
+  "id": "moment-topic-most-liked-tab",
+  "name": "动态帧话题切换MostLikedTab",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "FeedTopicDetailActivity → Most liked tab",
+  "kbRef": ["documents/moments/basic module.md（话题 Most liked）"],
+  "steps": [
+    { "run_script": "动态帧进入话题详情" },
+    { "tap_pct": [0.746, 0.126], "note": "Most liked（805,294）" },
+    { "sleep_ms": 600 }
+  ]
+}

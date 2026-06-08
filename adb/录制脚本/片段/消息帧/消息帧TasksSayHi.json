@@ -1,0 +1,13 @@
+{
+  "id": "msg-tasks-say-hi",
+  "name": "消息帧TasksSayHi",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Message Tasks Acquire → 首条 Say hi → ChatActivity",
+  "kbRef": ["documents/消息.md（Tasks Say hi）"],
+  "steps": [
+    { "run_script": "消息帧Tasks切换Acquire" },
+    { "tap_pct": [0.879, 0.420], "note": "Say hi 首条（949,982）" },
+    { "sleep_ms": 1500 }
+  ]
+}

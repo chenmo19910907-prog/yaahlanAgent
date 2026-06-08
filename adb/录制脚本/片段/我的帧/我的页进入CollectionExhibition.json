@@ -1,0 +1,13 @@
+{
+  "id": "me-enter-collection",
+  "name": "我的页进入CollectionExhibition",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Me 下滑后 → Collection Exhibition → ExhibitionHallComposeActivity",
+  "kbRef": ["待补 KB（Collection Exhibition）"],
+  "steps": [
+    { "run_script": "我的页下滑浏览", "note": "露出 Collection 行" },
+    { "tap_pct": [0.500, 0.450], "note": "Collection Exhibition（540,1052）" },
+    { "sleep_ms": 1200 }
+  ]
+}

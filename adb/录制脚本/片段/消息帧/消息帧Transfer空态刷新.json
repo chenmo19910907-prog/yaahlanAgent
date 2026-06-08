@@ -1,0 +1,13 @@
+{
+  "id": "msg-transfer-refresh",
+  "name": "消息帧Transfer空态刷新",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "消息帧 Transfer 子 tab 空态（No data）→ 点 Refresh（540,1516）重新拉取；本账号仍可能无转账记录",
+  "kbRef": ["documents/消息.md（Transfer）"],
+  "steps": [
+    { "run_script": "消息帧切换TransferTab" },
+    { "tap_pct": [0.5, 0.648], "note": "Refresh 按钮（540,1516）" },
+    { "sleep_ms": 1500 }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "me-enter-my-agency",
+  "name": "我的页进入MyAgency",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Me 下滑后 → My Agency 卡片 → WebViewActivity",
+  "kbRef": ["待补 KB（My Agency 公会）"],
+  "steps": [
+    { "run_script": "我的页下滑浏览", "note": "露出底部网格" },
+    { "tap_pct": [0.743, 0.770], "note": "My Agency（802,1802）" },
+    { "sleep_ms": 1200 }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "msg-daily-task-rewards",
+  "name": "消息帧进入DailyTaskRewards",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "消息帧 → Daily Task Rewards 横幅 → WebViewActivity",
+  "kbRef": ["documents/消息.md（Daily Task Rewards）"],
+  "steps": [
+    { "run_script": "切换消息底栏" },
+    { "tap_pct": [0.500, 0.236], "note": "Daily Task Rewards（540,551）" },
+    { "sleep_ms": 1200 }
+  ]
+}

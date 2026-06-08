@@ -29,11 +29,24 @@
       "note": "Me 页弹窗自动 Cancel，再点设置"
     },
     {
+      "swipe": {
+        "x1": 540,
+        "y1": 800,
+        "x2": 540,
+        "y2": 1700,
+        "duration_ms": 300
+      },
+      "note": "Me 页滑到顶部"
+    },
+    {
+      "sleep_ms": 400
+    },
+    {
       "tap_pct": [
-        0.922,
-        0.068
+        0.894,
+        0.073
       ],
-      "note": "iv_setting"
+      "note": "iv_setting（勿误触 Redeem 行）"
     },
     {
       "sleep_ms": 800

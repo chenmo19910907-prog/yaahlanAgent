@@ -1,0 +1,13 @@
+{
+  "id": "game-enter-snakes-ladders",
+  "name": "游戏帧进入SnakesLadders",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Game 帧 Casual games → Snakes and Ladders 卡片 → RoomGameActivity",
+  "kbRef": ["testcase-kb/游戏帧.md（Casual games）"],
+  "steps": [
+    { "run_script": "切换游戏底栏" },
+    { "tap_pct": [0.479, 0.221], "note": "Snakes 卡片 item_root（517,601）" },
+    { "sleep_ms": 2500 }
+  ]
+}

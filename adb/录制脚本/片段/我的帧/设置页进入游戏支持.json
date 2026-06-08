@@ -1,0 +1,15 @@
+{
+  "id": "settings-game-support",
+  "name": "设置页进入游戏支持",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "已在 SettingComposeActivity 且列表在顶部 → Game Support → ServiceChatActivity；BACK 可回设置",
+  "steps": [
+    { "sleep_ms": 400 },
+    {
+      "tap_pct": [0.493, 0.831],
+      "note": "Game Support 行（中心 532,1944）"
+    },
+    { "sleep_ms": 1200 }
+  ]
+}

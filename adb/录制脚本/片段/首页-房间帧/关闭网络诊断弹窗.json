@@ -1,0 +1,13 @@
+{
+  "id": "room-dismiss-network-diagnostic",
+  "name": "关闭网络诊断弹窗",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "语音房内 Excellent 网络诊断弹窗 → 点右上角 Close（content-desc=Close）",
+  "kbRef": ["adb/录制脚本/弹窗说明.md（网络诊断 Excellent）"],
+  "steps": [
+    { "sleep_ms": 300 },
+    { "tap_pct": [0.866, 0.253], "note": "Close 按钮（935,591）" },
+    { "sleep_ms": 600 }
+  ]
+}

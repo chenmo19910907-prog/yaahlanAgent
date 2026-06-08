@@ -27,8 +27,13 @@
       "note": "Me 页弹窗 Cancel，再点设置"
     },
     {
-      "tap_pct": [0.922, 0.068],
-      "note": "iv_setting（bounds 996,159）"
+      "swipe": { "x1": 540, "y1": 800, "x2": 540, "y2": 1700, "duration_ms": 300 },
+      "note": "Me 页滑到顶部"
+    },
+    { "sleep_ms": 400 },
+    {
+      "tap_pct": [0.894, 0.073],
+      "note": "iv_setting（bounds 966,170；勿误触 Redeem）"
     },
     {
       "sleep_ms": 800

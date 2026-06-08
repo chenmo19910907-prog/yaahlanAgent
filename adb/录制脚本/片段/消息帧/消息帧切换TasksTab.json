@@ -1,0 +1,13 @@
+{
+  "id": "msg-tasks-tab",
+  "name": "消息帧切换TasksTab",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "消息帧 → Tasks 子 tab",
+  "kbRef": ["documents/消息.md（Tasks）"],
+  "steps": [
+    { "run_script": "切换消息底栏" },
+    { "tap_pct": [0.628, 0.160], "note": "Tasks（678,374）" },
+    { "sleep_ms": 600 }
+  ]
+}

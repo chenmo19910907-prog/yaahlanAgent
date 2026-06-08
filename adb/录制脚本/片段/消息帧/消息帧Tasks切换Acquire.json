@@ -1,0 +1,13 @@
+{
+  "id": "msg-tasks-acquire",
+  "name": "消息帧Tasks切换Acquire",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "Message Tasks tab → Acquire 列表",
+  "kbRef": ["documents/消息.md（Tasks Acquire）"],
+  "steps": [
+    { "run_script": "消息帧切换TasksTab" },
+    { "tap_pct": [0.132, 0.312], "note": "Acquire（143,730）" },
+    { "sleep_ms": 600 }
+  ]
+}

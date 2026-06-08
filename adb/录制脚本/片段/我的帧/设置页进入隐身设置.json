@@ -1,0 +1,15 @@
+{
+  "id": "settings-stealth",
+  "name": "设置页进入隐身设置",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "已在 SettingComposeActivity 且列表在顶部 → Stealth/Invisibility → VisitorActivity",
+  "steps": [
+    { "sleep_ms": 400 },
+    {
+      "tap_pct": [0.493, 0.600],
+      "note": "Stealth 行（中心 532,1404）"
+    },
+    { "sleep_ms": 800 }
+  ]
+}
