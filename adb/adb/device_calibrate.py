@@ -56,7 +56,7 @@ def device_info_payload(serial: str) -> dict[str, Any]:
     }
     if ctx.status == "matched":
         out["nextStep"] = (
-            "直接 macro/compose；若操作失败再 device recalibrate --script <片段> 更正换算"
+            "直接 macro；若操作失败再 device recalibrate --script <片段> 更正换算"
         )
     elif ctx.status == "uncalibrated":
         out["nextStep"] = "device calibrate --script 发布纯文本动态 → set → commit"

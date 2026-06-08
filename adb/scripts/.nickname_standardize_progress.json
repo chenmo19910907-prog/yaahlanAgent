@@ -1,0 +1,75 @@
+{
+  "done": {
+    "13311111131": {
+      "result": "fail",
+      "reason": "未进入 ProfileActivity",
+      "nickname": "C131",
+      "expected": "C31"
+    },
+    "13311111151": {
+      "result": "fail",
+      "reason": "未进入 ProfileActivity",
+      "nickname": "تتب تبوبوبوبوC51",
+      "expected": "C51"
+    },
+    "13311111152": {
+      "result": "fail",
+      "reason": "未进入 ProfileActivity",
+      "nickname": "C52 ddhgggggghhhh",
+      "expected": "C52"
+    },
+    "13311111157": {
+      "result": "fail",
+      "reason": "未进入 ProfileActivity",
+      "nickname": null,
+      "expected": "C57"
+    },
+    "13311111160": {
+      "result": "fail",
+      "reason": "未进入 ProfileActivity",
+      "nickname": "YaGirl100472115",
+      "expected": "C60"
+    },
+    "13311111170": {
+      "result": "fail",
+      "reason": "未进入 NicknameEditActivity",
+      "nickname": "这几",
+      "expected": "C70"
+    },
+    "13311111176": {
+      "result": "fail",
+      "reason": "Submit 未启用 field='C131' submit=('true', 540, 2130)",
+      "nickname": null,
+      "expected": "C76"
+    },
+    "13311111179": {
+      "result": "fail",
+      "reason": "未进入 ProfileActivity",
+      "nickname": "飞飞哥",
+      "expected": "C79"
+    },
+    "13311111180": {
+      "result": "fail",
+      "reason": "Submit 未启用 field='C131' submit=('true', 540, 2130)",
+      "nickname": "是的",
+      "expected": "C80"
+    },
+    "13311111187": {
+      "result": "fail",
+      "reason": "未进入 ProfileActivity",
+      "nickname": "yg",
+      "expected": "C87"
+    },
+    "13311111195": {
+      "result": "fail",
+      "reason": "未进入 ProfileActivity",
+      "nickname": null,
+      "expected": "C95"
+    },
+    "13311111212": {
+      "result": "fail",
+      "reason": "login_failed"
+    }
+  },
+  "pending": []
+}

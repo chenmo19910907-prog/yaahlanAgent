@@ -10,13 +10,14 @@ from typing import Any, Literal
 from .actions import clear_input_field, input_text, keyevent, swipe, tap
 from .activity import get_foreground_activity
 from .coords import pct_to_pixel
+from .rtl import RtlMode, mirror_x_pct, mirror_x_pixel, resolve_step_mirror
 from .device import AdbError, display_size
 from .device_profile import (
     adapt_steps,
     adaptation_payload,
     resolve_adaptation,
 )
-from .screenshot import capture_screenshot
+from .screenshot import DEFAULT_CAPTURE_MAX_EDGE, capture_screenshot
 
 CaptureMode = Literal["never", "start", "end", "both"]
 
@@ -33,6 +34,7 @@ _STEP_TYPES = frozenset(
         "run_script",
         "verify_splash",
         "popup_gate",
+        "logcat_check",
     }
 )
 
@@ -42,17 +44,24 @@ def _resolve_tap(
     *,
     width: int,
     height: int,
+    mirror_x: bool = False,
 ) -> tuple[int, int]:
     if "tap" in step:
         xy = step["tap"]
         if not isinstance(xy, (list, tuple)) or len(xy) != 2:
             raise ValueError(f"tap 须为 [x, y]: {step}")
-        return int(xy[0]), int(xy[1])
+        x, y = int(xy[0]), int(xy[1])
+        if mirror_x:
+            x = mirror_x_pixel(x, width=width)
+        return x, y
     if "tap_pct" in step:
         pct = step["tap_pct"]
         if not isinstance(pct, (list, tuple)) or len(pct) != 2:
             raise ValueError(f"tap_pct 须为 [x, y] 比例 0~1: {step}")
-        return pct_to_pixel(width, height, float(pct[0]), float(pct[1]))
+        x_pct, y_pct = float(pct[0]), float(pct[1])
+        if mirror_x:
+            x_pct = mirror_x_pct(x_pct)
+        return pct_to_pixel(width, height, x_pct, y_pct)
     raise ValueError(f"步骤缺少 tap 或 tap_pct: {step}")
 
 
@@ -68,7 +77,8 @@ def run_chain(
     skip: set[str] | None = None,
     popup_gate_auto: bool = False,
     popup_gate_momoid: str | None = None,
-    capture_max_edge: int | None = 1170,
+    capture_max_edge: int | None = DEFAULT_CAPTURE_MAX_EDGE,
+    rtl_mode: RtlMode = "off",
 ) -> dict[str, Any]:
     if not steps:
         raise ValueError("steps 不能为空")
@@ -100,6 +110,12 @@ def run_chain(
     }
     if adapt_ctx:
         result["adaptation"] = adaptation_payload(adapt_ctx)
+    if rtl_mode == "on":
+        result["rtlMode"] = rtl_mode
+
+    def _current_hint() -> str:
+        fa = get_foreground_activity(serial=serial)
+        return str(fa.get("hint", "unknown"))
 
     def _do_capture(label: str) -> dict[str, Any]:
         cap = capture_screenshot(
@@ -126,6 +142,8 @@ def run_chain(
                 kind = "verify_splash"
             elif "popup_gate" in step:
                 kind = "popup_gate"
+            elif "logcat_check" in step:
+                kind = "logcat_check"
             elif "launch_app" in step:
                 kind = "launch_app"
             elif "sleep" in step or "sleep_ms" in step:
@@ -157,10 +175,17 @@ def run_chain(
                 time.sleep(ms / 1000.0)
             entry["sleepMs"] = ms
         elif kind == "tap":
-            x, y = _resolve_tap(step, width=width, height=height)
+            hint = _current_hint()
+            mirror_x = resolve_step_mirror(step, hint=hint, rtl_mode=rtl_mode)
+            x, y = _resolve_tap(
+                step, width=width, height=height, mirror_x=mirror_x
+            )
             tap(x=x, y=y, serial=serial)
             entry["x"] = x
             entry["y"] = y
+            if mirror_x:
+                entry["rtlMirrored"] = True
+                entry["activityHint"] = hint
             if step.get("tap_pct_ref"):
                 entry["tapPctRef"] = step["tap_pct_ref"]
                 entry["tapPct"] = step.get("tap_pct")
@@ -171,15 +196,31 @@ def run_chain(
             sw = step["swipe"]
             if not isinstance(sw, dict):
                 raise ValueError(f"swipe 须为 object: {step}")
+            hint = _current_hint()
+            mirror_x = resolve_step_mirror(step, hint=hint, rtl_mode=rtl_mode)
+            x1, y1, x2, y2 = (
+                int(sw["x1"]),
+                int(sw["y1"]),
+                int(sw["x2"]),
+                int(sw["y2"]),
+            )
+            if mirror_x:
+                x1 = mirror_x_pixel(x1, width=width)
+                x2 = mirror_x_pixel(x2, width=width)
+                entry["rtlMirrored"] = True
+                entry["activityHint"] = hint
             swipe(
-                x1=int(sw["x1"]),
-                y1=int(sw["y1"]),
-                x2=int(sw["x2"]),
-                y2=int(sw["y2"]),
+                x1=x1,
+                y1=y1,
+                x2=x2,
+                y2=y2,
                 duration_ms=int(sw.get("duration_ms", 300)),
                 serial=serial,
             )
-            entry["swipe"] = sw
+            entry["swipe"] = dict(sw)
+            if mirror_x:
+                entry["swipe"]["x1"] = x1
+                entry["swipe"]["x2"] = x2
         elif kind == "key":
             code = int(step["key"])
             keyevent(code=code, serial=serial)
@@ -284,6 +325,18 @@ def run_chain(
                 result["screenshot"] = gate["screenshot"]
             if gate.get("blocked") or not gate.get("ok"):
                 result["popupGateFailed"] = True
+        elif kind == "logcat_check":
+            from .logcat_check import parse_logcat_check_spec, wait_for_logcat
+
+            raw = step.get("logcat_check", True)
+            opts = parse_logcat_check_spec(raw)
+            if opts is None:
+                raise ValueError(f"logcat_check 须指定 grep/pattern: {step}")
+            logcat_out = wait_for_logcat(opts, serial=serial)
+            entry["logcatCheck"] = logcat_out
+            result["logcatVerify"] = logcat_out
+            if not logcat_out.get("ok"):
+                result["logcatVerifyFailed"] = True
         elif kind == "run_script":
             from .recorded_scripts import load_fragment
 
@@ -301,6 +354,7 @@ def run_chain(
                 text=text,
                 skip=block_skip,
                 popup_gate_auto=False,
+                rtl_mode=rtl_mode,
             )
             entry["runScript"] = frag.get("name", script_key)
             entry["scriptId"] = frag.get("id", script_key)

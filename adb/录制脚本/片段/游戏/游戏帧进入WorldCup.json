@@ -1,0 +1,13 @@
+{
+  "id": "game-enter-world-cup",
+  "name": "游戏帧进入WorldCup",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Game 帧 Casual games → World Cup（كأس العالم Hot）卡片 → RoomChatActivity 内 World Cup 竞猜层；首进常弹 Game Prizes（WebView close-icon 约 80,587）。阿语 RTL 卡片在物理左侧，须 --rtl。若游戏全屏遮挡：macro 房内三方游戏最小化（顶部 Minimize），不必学习竞猜玩法。退出：先关 Game Prizes → 最小化 → room-exit",
+  "kbRef": ["testcase-kb/游戏帧.md（Casual games / World Cup）"],
+  "steps": [
+    { "run_script": "切换游戏底栏" },
+    { "tap_pct": [0.880, 0.214], "note": "World Cup 卡片（RTL 物理左 ~130,500；LTR 录右端 0.88）" },
+    { "sleep_ms": 2500 }
+  ]
+}

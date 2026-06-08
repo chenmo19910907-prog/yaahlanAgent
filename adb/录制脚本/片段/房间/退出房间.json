@@ -1,0 +1,59 @@
+{
+  "id": "room-exit",
+  "name": "退出房间",
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
+  "capture": "end",
+  "description": "已在语音房内：先 run 拒绝Mic邀请（进他人房 2～5s 后 Mic invitation）→ 若小游戏全屏 run 房内三方游戏最小化 → 右上 X → Close → 若有 Room Reminder 再 Exit Now。Close 已回 Room 列表时可忽略末步。搜索进房退出后常落 Search 页，须 capture 验收",
+  "kbRef": [
+    "testcase-kb/主题房.md"
+  ],
+  "steps": [
+    {
+      "sleep_ms": 2000,
+      "note": "进他人房后等 Mic invitation 横幅（约 2～5s）"
+    },
+    {
+      "run_script": "拒绝Mic邀请",
+      "note": "Mic invitation；无弹窗时 swipe 落在顶部空白，一般无害"
+    },
+    {
+      "sleep_ms": 400,
+      "note": "若网络诊断 Excellent：run 关闭网络诊断弹窗；小游戏全屏：run 房内三方游戏最小化"
+    },
+    {
+      "tap_pct": [
+        0.94,
+        0.053
+      ],
+      "note": "右上角 X，打开房间功能面板（Report/Minimize/Share/Close）"
+    },
+    {
+      "sleep_ms": 800
+    },
+    {
+      "tap_pct": [
+        0.875,
+        0.086
+      ],
+      "note": "Close 电源图标（面板第一行第 4 个，≈945,200；旧 0.145/y=339 常 miss）"
+    },
+    {
+      "sleep_ms": 800
+    },
+    {
+      "tap_pct": [
+        0.284,
+        0.588
+      ],
+      "optional": true,
+      "note": "Room Reminder 二次确认 → Exit Now（左钮）；无弹窗时可跳过"
+    },
+    {
+      "sleep_ms": 1500,
+      "note": "等待退出 RoomChatActivity"
+    }
+  ]
+}

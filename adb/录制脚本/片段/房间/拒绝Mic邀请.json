@@ -1,0 +1,16 @@
+{
+  "id": "room-reject-mic-invitation",
+  "name": "拒绝Mic邀请",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "语音房内 Mic invitation 邀请上麦弹窗 → Reject 左钮（约 270,460）。进**他人**房约 2～5s 后出现。须 swipe 短按 80ms（input tap 无效）；勿用顶部 90,300（会误触标题区）",
+  "kbRef": ["adb/录制脚本/弹窗说明.md（Mic invitation）"],
+  "steps": [
+    { "sleep_ms": 500, "note": "等弹窗动画稳定" },
+    {
+      "swipe": { "x1": 270, "y1": 460, "x2": 270, "y2": 460, "duration_ms": 80 },
+      "note": "Reject 左钮 swipe 短按（270,460 ≈ 0.25,0.197；网格确认 180,420 亦可）"
+    },
+    { "sleep_ms": 600 }
+  ]
+}

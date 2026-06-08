@@ -1,0 +1,13 @@
+{
+  "id": "moment-follow-feed-detail",
+  "name": "动态帧Follow进入动态详情",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Moment Follow 首条动态 → iv_feed_comment（769,1124）→ FeedDetailsActivity",
+  "kbRef": ["documents/moments/basic module.md（Follow 动态详情）"],
+  "steps": [
+    { "run_script": "切换动态关注tab" },
+    { "tap_pct": [0.712, 0.480], "note": "iv_feed_comment（769,1124）" },
+    { "sleep_ms": 1200 }
+  ]
+}

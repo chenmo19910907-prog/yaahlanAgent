@@ -119,7 +119,7 @@ python3 Admin/admin_execute.py --save-cs-data \
 ```bash
 python3 adb/adb_execute.py macro 退出登录 --force-script --no-popup-gate
 python3 adb/adb_execute.py macro 手机号登录 --text 13311111113 --force-script --no-popup-gate
-# 或 compose 冷启动登录 --text 13311111113（须先退出到 LoginActivity）
+# 或逐段：macro 启动Yaahlan → macro 跳过开屏广告 → macro 手机号登录 --text 13311111113
 ```
 
 ## 特殊场景清单

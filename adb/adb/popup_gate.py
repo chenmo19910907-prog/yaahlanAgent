@@ -23,7 +23,7 @@ _SCENE_FOR_HINT = {
     "in_room": "room",
 }
 _ME_DISMISS = "关闭Me页弹窗"
-_DEFAULT_CAPTURE_MAX_EDGE = 1170
+from .screenshot import DEFAULT_CAPTURE_MAX_EDGE
 
 
 def infer_tab_from_step(step: dict[str, Any]) -> str | None:
@@ -180,7 +180,7 @@ def ensure_popups_cleared(
     momoid: str | None = None,
     since_seconds: int = 120,
     max_rounds: int = 2,
-    max_edge: int | None = _DEFAULT_CAPTURE_MAX_EDGE,
+    max_edge: int | None = DEFAULT_CAPTURE_MAX_EDGE,
     use_adaptation: bool = True,
     auto_dismiss: bool = False,
 ) -> dict[str, Any]:
@@ -303,7 +303,7 @@ def auto_popup_gate_after_chain(
     max_screenshots: int,
     momoid: str | None = None,
     since_seconds: int = 120,
-    max_edge: int | None = _DEFAULT_CAPTURE_MAX_EDGE,
+    max_edge: int | None = DEFAULT_CAPTURE_MAX_EDGE,
     use_adaptation: bool = True,
     auto_dismiss: bool = False,
 ) -> dict[str, Any] | None:

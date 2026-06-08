@@ -1,0 +1,16 @@
+{
+  "id": "room-minimize-third-party-game",
+  "name": "房内三方游戏最小化",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "进房后若遇弹窗类/全屏小游戏（Ludo、7up7down、World Cup 竞猜等）遮挡语音房 UI：点顶部居中收起（Minimize / تصغير），不必学习或操作游戏内玩法。露出语音房后再 macro 退出房间。Game Prizes 等运营弹窗另关，见弹窗说明",
+  "kbRef": [
+    "testcase-kb/主题房.md",
+    "adb/录制脚本/弹窗说明.md"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.500, 0.171], "note": "游戏层最上方居中收起（Minimize / تصغير；Ludo / 7up7down / World Cup 等通用）" },
+    { "sleep_ms": 1200 }
+  ]
+}

@@ -6,11 +6,18 @@ from typing import Any
 
 from .activity import get_foreground_activity
 from .device import AdbError
-from .recorded_scripts import list_catalog, resolve_key
+from .recorded_scripts import _load_index, list_catalog, resolve_key
 from .screenshot import capture_screenshot
 
-AI_OPERATE_MODULES = frozenset({"首页-游戏帧", "首页-房间帧", "我的帧"})
-_CAPTURE_MAX_EDGE = 1170
+
+def ai_operate_modules() -> frozenset[str]:
+    """须 AI 读图、禁用固定脚本的 testcase-kb 模块（见 索引.json aiOperateModules）。"""
+    raw = _load_index().get("aiOperateModules", [])
+    return frozenset(str(m) for m in raw if m)
+
+
+AI_OPERATE_MODULES = ai_operate_modules()
+from .screenshot import DEFAULT_CAPTURE_MAX_EDGE as _CAPTURE_MAX_EDGE
 
 GOAL_SPECS: dict[str, dict[str, Any]] = {
     "logout": {
@@ -29,10 +36,42 @@ GOAL_SPECS: dict[str, dict[str, Any]] = {
         "label": "进入 Me 个人页",
         "successHints": ["home"],
         "workflow": [
-            "capture 读图确认底栏",
-            "读图点 Me 底栏",
-            "有弹窗读图点 Cancel（勿 BACK）",
-            "再 capture 确认 Me 页内容可见",
+            "capture 读图确认底栏、当前 Tab、是否有弹窗",
+            "【Game 帧·无弹窗】不要进行任何点击；需要进 Me 时仅点底栏 Me（约 tap_pct 0.90,0.956）",
+            "【Game 帧·有弹窗】仅读图处理该弹窗（如 Cancel）；禁止点 Banner/游戏格/Online players/顶栏头像",
+            "【Game 帧禁区】无弹窗时禁止盲点 Cancel/BACK/内容区（易误触 Banner→WebView 或他人私聊）",
+            "Me 页有弹窗再读图点 Cancel（勿 BACK，home/Game 上 BACK 会弹退出 App）",
+            "再 capture 确认 Me 页顶部 Profile 标题与本人头像区可见",
+        ],
+    },
+    "enter_profile": {
+        "label": "进入个人资料详情 ProfileActivity",
+        "successHints": ["profile"],
+        "workflow": [
+            "capture 读图：确认在 Me 页且无遮挡弹窗",
+            "若有弹窗读图点 Cancel（勿 BACK）",
+            "仅点 Me 页顶部本人头像+昵称行（约 tap_pct 0.11,0.16）；禁止点 Viewed me 小头像、Wallet/Family 列表项",
+            "activity 验收 shortName=ProfileActivity 且资料页有编辑铅笔（非 Chat/Follow 他人页）",
+            "落点正确后再 macro 资料页进入编辑页 --force-script",
+        ],
+    },
+    "enter_edit_profile": {
+        "label": "资料页进入编辑 EditProfileActivity",
+        "successHints": ["profile_edit"],
+        "workflow": [
+            "activity 须已在 ProfileActivity",
+            "capture 读图点右上角编辑铅笔",
+            "activity 验收 shortName 含 EditProfileActivity",
+        ],
+    },
+    "set_standard_nickname": {
+        "label": "修改昵称为 QA 标准名",
+        "successHints": ["profile", "profile_edit", "home"],
+        "workflow": [
+            "activity 须已在 EditProfileActivity（否则 ai prepare --goal enter_profile 读图导航）",
+            "macro 资料页修改昵称为标准昵称 --text <完整手机号> --force-script --no-capture",
+            "Admin --query-user-id 验收 nickname（133111111XX→CXX，133111112XX→C2XX）",
+            "capture 读图确认 Me/资料页展示新昵称",
         ],
     },
     "dismiss_me_popup": {
@@ -48,8 +87,9 @@ GOAL_SPECS: dict[str, dict[str, Any]] = {
         "label": "切首页底栏（Game/Room 等）",
         "successHints": ["home"],
         "workflow": [
-            "capture 读图确认当前 Tab",
-            "读图点目标底栏 Tab",
+            "capture 读图确认当前 Tab 与是否有弹窗",
+            "无弹窗且已在目标 Tab：不点击，直接验收",
+            "需切 Tab 时仅点底栏图标/文字（y≈0.95）；Game 帧禁止点 Banner/游戏格/Online players",
             "activity 或 capture 验收",
         ],
     },
@@ -128,29 +168,14 @@ def fragment_module(name: str) -> str | None:
     return None
 
 
-def compose_module(name: str) -> str | None:
-    key = name.strip()
-    for item in list_catalog():
-        if item.get("kind") != "compose":
-            continue
-        if str(item.get("id")) == key or str(item.get("name")) == key:
-            return str(item.get("module") or "")
-    return None
-
-
 def is_ai_operate_fragment(name: str) -> bool:
     mod = fragment_module(name)
-    return mod in AI_OPERATE_MODULES if mod else False
-
-
-def is_ai_operate_compose(name: str) -> bool:
-    mod = compose_module(name)
-    return mod in AI_OPERATE_MODULES if mod else False
+    return mod in ai_operate_modules() if mod else False
 
 
 def goal_for_script_name(name: str, *, module: str | None = None) -> str:
     text = name.strip()
-    mod = module or fragment_module(name) or compose_module(name) or ""
+    mod = module or fragment_module(name) or ""
     pairs = (
         ("退出登录", "logout"),
         ("退出房间", "exit_room"),
@@ -199,35 +224,6 @@ def assert_fragment_script_allowed(name: str, *, force_script: bool = False) -> 
             module=mod,
         )
     )
-
-
-def assert_compose_script_allowed(name: str, *, force_script: bool = False) -> None:
-    from .script_abandon import get_script_failure_info, is_script_abandoned
-
-    if force_script:
-        return
-    if is_script_abandoned(name):
-        info = get_script_failure_info(name) or {}
-        mod = compose_module(name) or str(info.get("module", "?"))
-        goal = goal_for_script_name(name, module=mod)
-        raise AiOperateRequired(
-            build_abandoned_response(
-                kind="compose",
-                name=name,
-                module=mod,
-                goal=goal,
-                failure_info=info,
-            )
-        )
-    mod = compose_module(name)
-    if mod in AI_OPERATE_MODULES:
-        raise AiOperateRequired(
-            build_blocked_response(
-                kind="compose",
-                name=name,
-                module=mod or "?",
-            )
-        )
 
 
 def build_abandoned_response(
@@ -298,14 +294,16 @@ def build_blocked_response(
 
 
 def _default_goal_for_module(module: str) -> str:
-    if module == "我的帧":
+    if module in {"个人主页", "家族", "充值提现转账", "特权VIP", "贵族", "财富等级", "收藏展馆", "装扮", "公会", "CP好友关系", "客服", "榜单与活动"}:
         return "enter_me"
-    if module == "首页-房间帧":
+    if module in {"房间", "房间PK", "礼物"}:
         return "enter_room"
     if module == "注册登录":
         return "login"
-    if module == "动态帧":
+    if module == "动态":
         return "recover"
+    if module == "游戏":
+        return "home_tab"
     return "home_tab"
 
 
@@ -363,7 +361,7 @@ def prepare_vision_cycle(
         "screenshot": cap,
         "workflow": spec.get("workflow", []),
         "successHints": success_hints,
-        "blockedModules": sorted(AI_OPERATE_MODULES),
+        "blockedModules": sorted(ai_operate_modules()),
         "agentHint": agent_hint,
         "nextCommands": [
             "python3 adb/adb_execute.py tap <x> <y>",

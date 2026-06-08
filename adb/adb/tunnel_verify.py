@@ -127,7 +127,7 @@ def parse_tunnel_verify_spec(spec: dict[str, Any] | None) -> TunnelVerifyOptions
 def tunnel_options_from_args(
     args: Any,
     *,
-    compose_spec: dict[str, Any] | None = None,
+    script_spec: dict[str, Any] | None = None,
 ) -> TunnelVerifyOptions | None:
     cli_enabled = bool(
         getattr(args, "tunnel_momoid", None)
@@ -167,8 +167,8 @@ def tunnel_options_from_args(
             min_matches=max(1, int(getattr(args, "tunnel_min_matches", 1))),
         )
 
-    if compose_spec is not None:
-        return parse_tunnel_verify_spec(compose_spec.get("tunnelVerify"))
+    if script_spec is not None:
+        return parse_tunnel_verify_spec(script_spec.get("tunnelVerify"))
     return None
 
 

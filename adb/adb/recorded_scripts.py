@@ -1,4 +1,4 @@
-"""从 adb/录制脚本 加载片段（支持中文名与英文 id）；组合见 compose 模块。"""
+"""从 adb/录制脚本 加载片段（支持中文名与英文 id）。"""
 
 from __future__ import annotations
 
@@ -6,6 +6,8 @@ import json
 import re
 from pathlib import Path
 from typing import Any
+
+from .standard_nickname import standard_nickname
 
 _SCRIPTS_ROOT = Path(__file__).resolve().parent.parent / "录制脚本"
 _INDEX_PATH = _SCRIPTS_ROOT / "索引.json"
@@ -47,37 +49,8 @@ def list_catalog() -> list[dict[str, Any]]:
     return items
 
 
-def load_compose_spec(
-    key: str,
-) -> dict[str, Any]:
-    _id, _name, path = resolve_key(key, kind="compose")
-    spec = _read_json(path)
-    spec.setdefault("id", _id)
-    spec.setdefault("name", _name)
-    spec["_file"] = str(path)
-    return spec
-
-
-def list_composes_by_module() -> dict[str, list[dict[str, Any]]]:
-    """按一级模块分组组合（与 索引.json composeModules 顺序一致）。"""
-    index = _load_index()
-    order = [str(m) for m in index.get("composeModules", []) if m]
-    grouped: dict[str, list[dict[str, Any]]] = {m: [] for m in order}
-    other_key = "其他"
-    for item in list_catalog():
-        if item.get("kind") != "compose":
-            continue
-        mod = str(item.get("module") or other_key)
-        if mod not in grouped:
-            grouped[mod] = []
-        grouped[mod].append(item)
-    if grouped.get(other_key):
-        order = order + [other_key]
-    return {k: grouped[k] for k in order if grouped.get(k)}
-
-
 def list_fragments_by_module() -> dict[str, list[dict[str, Any]]]:
-    """按发版回归一级模块分组片段（与 索引.json fragmentModules 顺序一致）。"""
+    """按 testcase-kb 模块分组片段（与 索引.json fragmentModules 顺序一致）。"""
     index = _load_index()
     order = [str(m) for m in index.get("fragmentModules", []) if m]
     grouped: dict[str, list[dict[str, Any]]] = {m: [] for m in order}
@@ -182,11 +155,13 @@ def _format_known(kind: str | None) -> str:
 
 def _phone_text_templates(phone: str) -> dict[str, str]:
     digits = re.sub(r"\D", "", str(phone).strip())
+    last2 = digits[-2:] if len(digits) >= 2 else digits
     last3 = digits[-3:] if len(digits) >= 3 else digits
     return {
         "{{text}}": digits,
+        "{{text_last2}}": last2,
         "{{text_last3}}": last3,
-        "{{nickname}}": f"C{last3}",
+        "{{nickname}}": standard_nickname(digits),
     }
 
 
@@ -243,7 +218,4 @@ def load_fragment(
 
 
 def load_flow_file(key: str) -> dict[str, Any]:
-    raise ValueError(
-        f"已移除流程脚本，请用 macro {key!r} 或 compose <组合名>；"
-        "组合见 adb/录制脚本/组合/"
-    )
+    raise ValueError(f"已移除流程脚本，请用 macro {key!r} 执行录制片段")

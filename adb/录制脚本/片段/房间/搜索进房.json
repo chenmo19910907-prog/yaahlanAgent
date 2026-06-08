@@ -1,0 +1,76 @@
+{
+  "id": "room-search-enter",
+  "name": "搜索进房",
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
+  "capture": "end",
+  "description": "Room 底栏 → 搜索 → 聚焦输入框 → 清空 → 输入 roomId → 点 Search → 点搜索结果首条进房。进**他人**房约 2～5s 后常弹 Mic invitation，capture 后 run 拒绝Mic邀请",
+  "params": [
+    "text"
+  ],
+  "steps": [
+    {
+      "sleep_ms": 300
+    },
+    {
+      "run_script": "切换房间底栏",
+      "note": "确保在 Room 底栏"
+    },
+    {
+      "sleep_ms": 500
+    },
+    {
+      "tap_pct": [
+        0.833,
+        0.085
+      ],
+      "note": "右上角搜索入口"
+    },
+    {
+      "sleep_ms": 800
+    },
+    {
+      "tap_pct": [
+        0.417,
+        0.128
+      ],
+      "note": "搜索页输入框（聚焦后再清空输入）"
+    },
+    {
+      "sleep_ms": 400
+    },
+    {
+      "text": "{{text}}",
+      "clear_before_text": true,
+      "clear_max_chars": 32,
+      "note": "roomId；输入前 MOVE_END + 退格清空残留（勿手敲 key 67）"
+    },
+    {
+      "sleep_ms": 500
+    },
+    {
+      "tap_pct": [
+        0.861,
+        0.161
+      ],
+      "note": "输入框右侧 Search 按钮（930,377；勿点键盘右下角搜索）"
+    },
+    {
+      "sleep_ms": 1500,
+      "note": "等待搜索结果列表"
+    },
+    {
+      "tap_pct": [
+        0.35,
+        0.222
+      ],
+      "note": "搜索结果首条：点 Sheikh's Cottage 行（头像/房间名/ID），勿点顶部输入框 y≈0.13"
+    },
+    {
+      "sleep_ms": 4000,
+      "note": "等待进房加载；Mic invitation 横幅约 2～5s 后出现，后续操作前 capture + 拒绝Mic邀请"
+    }
+  ]
+}

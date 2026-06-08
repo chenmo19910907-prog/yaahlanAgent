@@ -85,7 +85,7 @@ python3 adb/adb_execute.py learn scan --tab me
 | 阶段 | 做法 |
 |------|------|
 | **探索定坐标** | capture 读图 + tap（本技能） |
-| **落库后回放** | macro/compose + tunnel（`adb-tunnel-verify`） |
+| **落库后回放** | macro + tunnel（`adb-tunnel-verify`）；多步逐段 macro |
 | **提交类**（Save/Post/登录） | 落库时写 `tunnelVerify`；验收优先抓包 |
 
 探索阶段 **不以 Toast 读图判成功**；有已知 API 时可并行 `tunnel wait` 辅助。
@@ -109,7 +109,7 @@ python3 adb/adb_execute.py learn scan --tab me
 1. **片段** `片段/<一级模块>/<中文名>.json`（含 `id`、`name`、`recordedOn`、`steps`、`kbRef`、`description`）
 2. **索引** `索引.json` 登记 `kind: fragment`、`module`、`file`
 3. **KB对照** `KB对照.md` 增一行映射
-4. 端到端流程再写 **组合** + `tunnelVerify`（可选）
+4. 端到端流程：拆成多个片段，逐段 macro + 片段间验收（可选 `tunnelVerify` 写在片段 JSON）
 
 片段 JSON 模板与 `id` 命名见 [reference.md](reference.md#片段-json-模板)。
 

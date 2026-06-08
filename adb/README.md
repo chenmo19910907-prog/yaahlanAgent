@@ -2,9 +2,11 @@
 
 通过 **adb 连手机 → 截图 → Agent 读图算坐标 → 点击** 完成 UI 操作。截图目录默认只保留**最新 2 张**。
 
+**命令速查**：[使用方法.md](使用方法.md)（提示词 ↔ 可执行命令，与 Admin/MOA/Tunnel 同风格）。
+
 ## 首页 / 个人页(Me) / 房间 → **AI 读图，禁用固定脚本**
 
-模块 `首页-游戏帧`、`首页-房间帧`、`我的帧` 的 **macro/compose 默认拒绝执行**（固定 `tap_pct` 一步错步步错）。
+模块 `游戏`、`房间`、`礼物`、`个人主页` 等（见 `索引.json` → `aiOperateModules`）的 **macro 默认拒绝执行**（固定 `tap_pct` 一步错步步错）。
 
 | 做法 | 命令 |
 |------|------|
@@ -12,7 +14,7 @@
 | 读图 | `capture --max-edge 1170` |
 | 点击 | `tap X Y` / `key 4`（BACK 慎用，Me/home 上会弹退出确认） |
 | 快验 | `activity`（`hint=home/in_room/login`） |
-| 调试旧脚本 | macro/compose 加 **`--force-script`** |
+| 调试旧脚本 | macro 加 **`--force-script`** |
 
 ```bash
 python3 adb/adb_execute.py ai goals
@@ -20,11 +22,11 @@ python3 adb/adb_execute.py ai prepare --goal enter_me
 # 读 screenshot → tap → activity / capture 验收 → 下一步
 ```
 
-**仍用固定脚本**：`注册登录`（含手机号登录）、`动态帧`、`消息帧` 等；有 Tunnel 时优先抓包验收。
+**仍用固定脚本**：`注册登录`、`消息`、`动态` 等；有 Tunnel 时优先抓包验收。
 
 ### 脚本连续失败 → 自动废弃
 
-同一脚本（macro/compose）**连续失败 3 次**（默认）后写入 `adb/.script_abandon.json` 并 **禁止再跑**，改 AI 读图 + Tunnel：
+同一脚本（macro）**连续失败 3 次**（默认）后写入 `adb/.script_abandon.json` 并 **禁止再跑**，改 AI 读图 + Tunnel：
 
 | 命令 | 说明 |
 |------|------|
@@ -48,18 +50,19 @@ App 内预注销（72h 申请）用 AI：`ai prepare --goal cancel_account` 读�
 
 ## 协作原则（Agent / 人工）
 
-### 积木 + 组合
+### 片段化自动化（只用 macro）
 
 | 层级 | 目录 | 命令 | 说明 |
 |------|------|------|------|
-| **片段（积木）** | `录制脚本/片段/<一级模块>/` | `macro <中文名>` | 按发版回归模块分子目录；调用仍用中文名 |
-| **组合（配方）** | `录制脚本/组合/<一级模块>/` | `compose <中文名>` | 按模块分子目录；调用仍用中文名 |
+| **片段（积木）** | `录制脚本/片段/<testcase-kb模块>/` | `macro <中文名>` | 目录名与 `testcase-kb/*.md` 一致 |
+
+多步流程：**逐段 `macro` + 片段间验收**（`capture` / `activity` / Tunnel / Admin），**不用组合脚本、不用长命令串联**。
 
 路径不确定时：Agent **读图** 判断当前页；**首页/Me/房间勿 macro**，用 `ai prepare`。
 
 ### 片段间验收（串联多个 macro 时）
 
-**粒度**：跑完**一个脚本片段**（一次 `macro` / `compose` 里的一块）后再验收；**片段内部的各个 tap 不必逐步验证**。
+**粒度**：跑完**一个 macro 片段**后再验收；**片段内部的各个 tap 不必逐步验证**。
 
 ```text
 macro A  →  验收 A 的落点  →  确认 OK  →  macro B  →  验收 B  →  …
@@ -81,6 +84,10 @@ python3 adb/adb_execute.py activity
 
 **示例**：退出房间后常落在 Search 页；须 **AI 读图点返回**，再切 Me / 退出（勿 macro 搜索页返回房间帧，除非 `--force-script`）。
 
+**进房遇弹窗类小游戏**（Ludo / World Cup 等全屏层）：点顶部居中 **Minimize** 收起即可（`macro 房内三方游戏最小化`），**不必学习游戏内 UI**；详见 `录制脚本/弹窗说明.md`。
+
+**进他人房约 2～5s 后**常弹 **Mic invitation（邀请上麦）** 顶部横幅，会挡右上角操作；须 `capture` 读图后 `macro 拒绝Mic邀请`，勿盲点 Reject 坐标。
+
 **验证成功 → 自动录制**：探索出新路径后，经验收通过，Agent 自动将步骤落库到 `录制脚本/`（不写进本 README）。流程见 [验证成功自动录制](#验证成功自动录制)。
 
 ### 验收策略（抓包优先）
@@ -89,9 +96,9 @@ python3 adb/adb_execute.py activity
 
 #### ① 脚本已实现的能力 → **先抓包，失败再读图**
 
-组合/片段已内嵌 `tunnelVerify`，或已知有关键字（如 `gift/send`、`feed`、`updateUserBase`、`heartbeat`）时：
+片段已内嵌 `tunnelVerify`，或已知有关键字（如 `gift/send`、`feed`、`updateUserBase`、`heartbeat`）时：
 
-1. **先** `run` / `compose` / `macro` + `tunnel wait`（可用 `--no-capture`）
+1. **先** `run` / `macro` + `tunnel wait`（可用 `--no-capture`）
 2. `tunnelVerify.ok === true` 且退出码 **0** → 判成功，**不必读图**
 3. 抓包失败（退出码 **3**）→ **再**读结束截图排查（点位偏了？请求未发出？关键字不对？）
 
@@ -123,7 +130,7 @@ python3 adb/adb_execute.py activity
 
 | 场景 | 做法 |
 |------|------|
-| **路径确定** | `macro` / `compose` + `--no-capture`（0 张） |
+| **路径确定** | `macro` + `--no-capture`（0 张） |
 | **有 tunnelVerify 的验收** | `--no-capture` 即可；以 `tunnelVerify.ok` 判定 |
 | **仅弱 UI / 无接口** | `capture: end` 或 `--verify`（结束时 1 张） |
 | **探索新页面** | `capture` → 读图 → `tap` → … |
@@ -134,12 +141,13 @@ python3 adb/adb_execute.py activity
 
 | 优先级 | 做法 |
 |--------|------|
-| 1 | 路径已定时 `macro` / `compose` + `--no-capture`（0 张） |
+| 1 | 路径已定时 `macro` + `--no-capture`（0 张） |
 | 2 | 有接口时用 `tunnel wait` / `tunnelVerify`；`ok` 且退出码 0 → **不读图** |
-| 3 | 片段间判页用 `activity` 或 JSON 里的 `foregroundActivity`（macro/compose/chain/run 自动附带） |
-| 4 | 必须读图时用 `capture --max-edge 1170` 缩略图（macOS `sips`，约半分辨率） |
-| 5 | 退出码 3 / `foregroundActivity.hint` 不符预期 → 再 `capture` 读 1 张排查 |
-| 6 | 落点不符 → `ai prepare` + capture 读图 tap 纠偏；**勿 force-stop** |
+| 3 | 片段间判页用 `activity` 或 JSON 里的 `foregroundActivity`（macro/chain/run 自动附带） |
+| 4 | 必须读图时用缩略图（**默认** `max-edge=1170`，约半分辨率）；JSON 含 `scaleX`/`scaleY`/`deviceWidth` |
+| 5 | 读图定坐标：`coords 270 460` 或 `tap 270 460 --from-image`（自动按压缩比换算设备像素） |
+| 6 | 退出码 3 / `foregroundActivity.hint` 不符预期 → 再 `capture` 读 1 张排查 |
+| 7 | 落点不符 → `ai prepare` + capture 读图 tap 纠偏；**勿 force-stop** |
 
 ```bash
 # 片段间验收（不读图）
@@ -149,8 +157,16 @@ python3 adb/adb_execute.py macro 搜索进房 --text 38826842 --no-capture
 python3 adb/adb_execute.py activity
 # {"ok":true,"shortName":"RoomChatActivity","hint":"in_room",...}
 
-# 必须读图时缩略
-python3 adb/adb_execute.py capture --max-edge 1170
+# 读图（默认缩略 + 比例元数据）
+python3 adb/adb_execute.py capture
+# → width/height=缩略图尺寸, deviceWidth/deviceHeight=1080×2340, scaleX/scaleY≈2
+
+# 读缩略图上的 Reject 钮 (270,460) → 设备 tap
+python3 adb/adb_execute.py coords 270 460
+python3 adb/adb_execute.py tap 270 460 --from-image
+
+# 校准坐标时需要原图
+python3 adb/adb_execute.py capture --full-res
 ```
 
 | `hint` | 常见 Activity | 含义 |
@@ -163,7 +179,7 @@ python3 adb/adb_execute.py capture --max-edge 1170
 推荐流程：
 
 ```text
-注册登录 / 动态帧：macro/compose + tunnel 验收
+注册登录 / 动态：macro + tunnel 验收
 首页 / Me / 房间：ai prepare → capture 读图 → tap/key → activity 验收
 弹窗：读 screenshot 后点 Cancel（Me 勿 BACK）
 ```
@@ -173,8 +189,7 @@ python3 adb/adb_execute.py capture --max-edge 1170
 | 方式 | 截图次数 |
 |------|----------|
 | 逐步 `capture` + `tap`（旧） | 约 4 次 |
-| `macro 发布纯文本动态 --text 1234` | **1 次**（结束时，可 `--no-capture` 为 0） |
-| `compose 发布纯文本动态 --text 1234 --no-capture` | **0 次** |
+| `macro 发布纯文本动态 --text 1234 --no-capture` | **0 次** |
 
 ### 波轮 / 滚动列表：先标定步长，再算距离
 
@@ -209,7 +224,7 @@ python3 adb/adb_execute.py capture                          # 读图确认年份
 
 自动化默认 **Yaahlan**（`com.immomo.biz.yaahlan`），不是 **Yaha**（`com.immomo.yaha`）。片段 **启动Yaahlan** 会 force-stop Yaha 后以 LAUNCHER 启动前者。
 
-**开屏广告（约 5s）**：冷启后**须等跳过按钮出现再点**（`launch_app` 4s + 片段内 7s，约 **11s** 后再 tap）；过早点击会进广告 H5。冷启宏/组合在「跳过开屏广告」后**自动跑「验收开屏广告」**（activity 验收，失败 BACK+重跑跳过，CLI exit 3）。
+**开屏广告（约 5s）**：冷启后**须等跳过按钮出现再点**（`launch_app` 4s + 片段内 7s，约 **11s** 后再 tap）；过早点击会进广告 H5。冷启片段在「跳过开屏广告」后**自动跑「验收开屏广告」**（activity 验收，失败 BACK+重跑跳过，CLI exit 3）。
 
 ```bash
 python3 adb/adb_execute.py macro 冷启动回首页 --no-capture
@@ -218,20 +233,20 @@ python3 adb/adb_execute.py macro 冷启动回首页 --no-capture
 
 | 项 | 说明 |
 |------|------|
-| 宏/组合内 | **`验收开屏广告`**（activity；失败 BACK+重跑跳过，exit 3） |
+| 宏/片段内 | **`验收开屏广告`**（activity；失败 BACK+重跑跳过，exit 3） |
 | `foregroundActivity.hint` | 应为 `home` / `login`，**勿** `webview` |
 | Tunnel（可选） | `splash verify --account …` 查 `getUserConfigs` / `simpleUserInfo` |
 
 无跳过按钮：`--skip dismiss_splash_ad`（仅等 5s）。详见 [`录制脚本/README.md`](录制脚本/README.md#开屏广告约-5s)。
 
-**未登录**：`compose 冷启动登录` 或 `macro 手机号登录`。默认 **+86**、验证码 **000000**、QA 手机 **13311111115**（见 [`录制脚本/KB对照.md`](录制脚本/KB对照.md)）。
+**未登录**：逐段 `macro`（如 `启动Yaahlan` → `手机号登录`）或单跑 `macro 手机号登录`。默认 **+86**、验证码 **000000**、QA 手机 **13311111115**（见 [`录制脚本/KB对照.md`](录制脚本/KB对照.md)）。
 
 ## 设备型号适配（换机必读）
 
 `tap_pct` 按 **基准设备.json**（默认 1080×2340）录制。
 
 1. `device info` — 查是否已有档案  
-2. **已有** → 直接 `macro` / `compose`  
+2. **已有** → 直接 `macro`  
 3. **无档案** → `device calibrate` → `commit`  
 4. **操作失败** → `device recalibrate` → `commit --reason correction`  
 
@@ -258,6 +273,14 @@ python3 adb/adb_execute.py macro 冷启动回首页 --no-capture
 ```
 
 操作失败且已排除弹窗、分辨率问题时，**优先怀疑语言 RTL**，读图看主操作按钮是否跑到对侧。
+
+**CLI 自动镜像**（2026-06）：阿语等 RTL 下跑 LTR 录制的片段时加 **`--rtl`**，引擎对原生页（非 WebView）的 `tap_pct` / `tap` / 水平 `swipe` 做 **x'=1−x**；**底栏 Tab、Me 顶栏齿轮** 等内容帧为 WebView 时仍镜像；步骤可设 `"rtl_mirror": false` Opt-out（如语言列表居中项）。
+
+```bash
+# 切阿语后验收五底栏+设置（逐段 macro，片段间 capture 验收）
+python3 adb/adb_execute.py macro 设置页切换语言阿语 --force-script --rtl --no-popup-gate
+python3 adb/adb_execute.py macro 进入设置 --force-script --rtl --no-popup-gate
+```
 
 ## 前置条件
 
@@ -318,12 +341,10 @@ Agent 技能：`.cursor/skills/adb-page-learn/SKILL.md`（完整主循环、落�
 ## 录制脚本库 `录制脚本/`
 
 ```bash
-python3 adb/adb_execute.py scripts      # 片段 + 组合目录
-python3 adb/adb_execute.py composes     # 仅组合
+python3 adb/adb_execute.py scripts      # 按模块列出片段
 
 python3 adb/adb_execute.py macro 发布纯文本动态 --text 5555 --no-capture
-python3 adb/adb_execute.py compose 冷启动登录
-python3 adb/adb_execute.py compose 发布纯文本动态 --text 5555 --no-capture
+python3 adb/adb_execute.py macro 手机号登录 --text 13311111115 --no-capture
 ```
 
 ## 连续操作
@@ -336,17 +357,10 @@ python3 adb/adb_execute.py macro 发布纯文本动态 --text 1234 --no-capture
 python3 adb/adb_execute.py macro 手机号登录 --skip login_lang
 ```
 
-### 组合 `compose`
-
-```bash
-python3 adb/adb_execute.py compose 冷启动登录
-python3 adb/adb_execute.py compose 进入个人资料详情页 --verify
-```
-
 ### 自定义 `chain`
 
 ```bash
-python3 adb/adb_execute.py chain adb/录制脚本/片段/我的帧/进入个人资料详情页.json
+python3 adb/adb_execute.py chain adb/录制脚本/片段/个人主页/进入个人资料详情页.json
 ```
 
 步骤类型：`sleep_ms`、`tap` / `tap_pct`、`swipe`、`key`、`text`、`launch_app`、`run_script`（嵌套片段）。
@@ -355,11 +369,12 @@ python3 adb/adb_execute.py chain adb/录制脚本/片段/我的帧/进入个人�
 
 **探索新页面**：`capture` → 读图 → `tap` → …
 
-**已知路径**：
+**已知路径**（逐段 macro + 片段间验收）：
 
 ```bash
-python3 adb/adb_execute.py compose 冷启动登录
-python3 adb/adb_execute.py macro post-moment --text 1234 --no-capture
+python3 adb/adb_execute.py macro 启动Yaahlan --no-capture
+python3 adb/adb_execute.py macro 手机号登录 --text 13311111115 --no-capture
+python3 adb/adb_execute.py macro 发布纯文本动态 --text 1234 --no-capture
 ```
 
 ## ADB + Tunnel 抓包校验（推荐）
@@ -378,11 +393,11 @@ python3 adb/adb_execute.py run \
 
 流程：记录 `start_time` → 执行 ADB → 轮询 [tunnel.wemomo.com](../Tunnel/README.md) 直到 URL 匹配（有 `--tunnel-*` 时仍会结束截图，但**判定以 tunnel 为准**）。
 
-### 挂在 compose / macro 上
+### 挂在 macro 上
 
 ```bash
-python3 adb/adb_execute.py compose 发布纯文本动态 --text 1234
-# 组合 JSON 内可写 tunnelVerify（见 组合/动态帧/发布纯文本动态.json）
+python3 adb/adb_execute.py macro 发布纯文本动态 --text 1234 \
+  --tunnel-account familyLeader --tunnel-keyword feed
 
 python3 adb/adb_execute.py macro 手机号登录 \
   --tunnel-account familyLeader \
@@ -414,11 +429,48 @@ python3 adb/adb_execute.py tunnel wait --account guildLeader --keyword gift/send
 python3 adb/adb_execute.py tunnel last --account guildLeader --keyword gift/send --since 120
 ```
 
+### logcat 客户端信号验收（麦位渲染、RTC、崩溃等）
+
+业务写接口仍以 **Tunnel** 为准；logcat 补 HTTP 抓不到的客户端日志。
+
+```bash
+# 节点前清缓冲 → 操作 → 等日志出现
+python3 adb/adb_execute.py logcat clear
+python3 adb/adb_execute.py macro 搜索进房 --text 38826842 --no-capture \
+  --logcat-clear-first --logcat-grep RoomNormalModeSeatView --logcat-wait 15
+
+# 仅查最近缓冲
+python3 adb/adb_execute.py logcat last --grep RoomNormalModeSeatView --tail 300
+
+# 与 tunnel 同时挂在一轮 run 上
+python3 adb/adb_execute.py run --macro 搜索进房 --text 38826842 \
+  --tunnel-account familyLeader --tunnel-keyword heartbeat --tunnel-wait 20 \
+  --logcat-grep RoomNormalModeSeatView --logcat-wait 15
+```
+
+| 参数 | 说明 |
+|------|------|
+| `--logcat-grep` | 行匹配子串（`--logcat-regex` 时按正则） |
+| `--logcat-wait` | 最长等待秒数（默认 10） |
+| `--logcat-tail` | 每次 dump 最近行数（默认 300） |
+| `--logcat-clear-first` | 验收前先 `adb logcat -c` |
+| `--logcat-invert` | 期望**不出现**匹配行（如无 `Exception`） |
+| `--logcat-no-app-filter` | 不按 Yaahlan pid 过滤 |
+
+**chain 步骤**（段内验收）：
+
+```json
+{ "logcat_check": { "grep": "RoomNormalModeSeatView", "waitSeconds": 15, "clearBefore": true } }
+```
+
+**片段 JSON**（段内验收）：内嵌 `logcatVerify`（字段同 `logcat_check` 对象）。
+
 ### 弹窗：先抓包再决定是否关（login / home / me / room / mic）
 
 ```bash
 python3 adb/adb_execute.py popup analyze --scene me --account familyLeader --since 120 --capture
-python3 adb/adb_execute.py run --compose 冷启动登录 \
+python3 adb/adb_execute.py run \
+  --macro 手机号登录 \
   --text 13311111112 \
   --tunnel-account familyLeader --popup-scene login --popup-auto-dismiss
 ```
@@ -467,8 +519,8 @@ Agent 在真机上探索 UI 操作时，**验收通过后才落库**；脚本内
 ```text
 ① 探索    无脚本：抓包+读图并用定坐标；有 gift panel find / popup analyze 可辅助
 ② 验收    有脚本/有接口：先 tunnel（--no-capture）→ 失败再读图；无脚本：抓包+读图并用
-③ 落库    写片段 / 索引 / 组合（含 tunnelVerify）→ 更新 录制脚本/README.md、KB对照.md
-④ 回放    compose/macro --no-capture，以 tunnel 验收；失败再读图
+③ 落库    写片段 / 索引（含 tunnelVerify）→ 更新 录制脚本/README.md、KB对照.md
+④ 回放    macro --no-capture，以 tunnel 验收；失败再读图
 ```
 
 未通过验收时回到 ①。**勿因截图「看起来对了」就判成功**（尤其 Toast、表单提交成功提示）。
@@ -481,22 +533,21 @@ Agent 在真机上探索 UI 操作时，**验收通过后才落库**；脚本内
 | **脚本未实现**（探索新能力） | 抓包 + 读图**同时**用于定位与验收 |
 | **提交表单**（Save/Post/Send/登录） | **先**等写接口（`updateUserBase`、`feed`、`gift/send` 等），**后**读图 |
 
-共同要求：退出码 **0**；退出码 **3** 不算成功。组合落库时**应写 `tunnelVerify`**。
+共同要求：退出码 **0**；退出码 **3** 不算成功。片段落库时**可写 `tunnelVerify`**。
 
 ### ③ 落库清单（写入 `录制脚本/`，非本文件）
 
 | 产物 | 路径 / 动作 |
 |------|-------------|
-| 片段 | `片段/<一级模块>/<中文名>.json`（`tap_pct`、`swipe`、`run_script`；`recordedOn` 对齐基准机） |
-| 索引 | `索引.json` 登记 `kind`、`module`、`file`、可选 `params` |
-| 组合 | 端到端流程写 `组合/<模块>/<中文名>.json`，可内嵌 `tunnelVerify` |
+| 片段 | `片段/<testcase-kb模块>/<中文名>.json`（`tap_pct`、`swipe`、`run_script`；`recordedOn` 对齐基准机） |
+| 索引 | `索引.json` 登记 `kind: fragment`、`module`、`file`、可选 `params` |
 | 文档 | 更新 [`录制脚本/README.md`](录制脚本/README.md)、[`KB对照.md`](录制脚本/KB对照.md) |
 
 细则见 [`录制脚本/README.md#成功即落库`](录制脚本/README.md#成功即落库agent-必做)。
 
 ### ④ 回放验证
 
-落库后用 `macro` / `compose --no-capture` 无人工干预再执行一次；以 **tunnel 验收** 为准，才算录制完成。
+落库后用 `macro --no-capture` 无人工干预再执行一次；以 **tunnel 验收** 为准，才算录制完成。
 
 ## 说明
 

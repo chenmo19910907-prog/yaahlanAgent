@@ -1,0 +1,18 @@
+{
+  "id": "game-activities-star-ambassador",
+  "name": "游戏帧Activities进入StarAmbassador",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Game Activities 横幅左滑 1 次 → Yaahlan Star Ambassador 页 → WebViewActivity；首屏 PK ATM 见 游戏帧进入ActivitiesBanner",
+  "kbRef": ["testcase-kb/游戏帧.md（Activities 横幅）"],
+  "steps": [
+    { "run_script": "切换游戏底栏" },
+    {
+      "swipe": { "x1": 900, "y1": 1059, "x2": 180, "y2": 1059, "duration_ms": 350 },
+      "note": "banner_pager 切到 Star Ambassador"
+    },
+    { "sleep_ms": 500 },
+    { "tap_pct": [0.500, 0.453], "note": "activity_bg（540,1059）" },
+    { "sleep_ms": 1200 }
+  ]
+}

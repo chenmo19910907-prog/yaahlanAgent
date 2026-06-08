@@ -22,6 +22,9 @@ _ACTIVITY_HINTS: dict[str, str] = {
     "WebViewActivity": "webview",
     "NormalFlutterActivity": "flutter",
     "PersonalityIconActivity": "profile_edit",
+    "ProfileActivity": "profile",
+    "EditProfileActivity": "profile_edit",
+    "NicknameEditActivity": "profile_edit",
     "UserProfileActivity": "profile",
     "SettingActivity": "settings",
     "FeedPublishActivity": "feed_publish",
@@ -32,6 +35,7 @@ _RESUMED_PATTERNS = (
     re.compile(r"mResumedActivity:\s*ActivityRecord\{[^}]*\s+(\S+)/(\S+)\s"),
     re.compile(r"topResumedActivity=ActivityRecord\{[^}]*\s+(\S+)/(\S+)\s"),
     re.compile(r"mFocusedActivity:\s*ActivityRecord\{[^}]*\s+(\S+)/(\S+)\s"),
+    re.compile(r"ResumedActivity:?\s*ActivityRecord\{[^}]*\s+(\S+)/(\S+)\s"),
 )
 
 

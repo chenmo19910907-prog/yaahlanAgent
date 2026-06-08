@@ -8,7 +8,7 @@ description: ADB 真机操作 + Tunnel 抓包校验。已实现脚本的能力�
 ## 原则
 
 1. **操作前**记录 `start_time`（CLI 自动回溯 5s）
-2. **执行** `macro` / `compose` / `chain`
+2. **执行** `macro`（逐段）或 `chain`（低层步骤 JSON，调试慎用）
 3. **关键节点弹窗** → `popup analyze` 或 `run --popup-scene`（先抓包再决定是否关）
 4. **验收分情形**：
    - **脚本已实现**（`tunnelVerify` / 已知 API）→ **先** `tunnel wait` 或看 `tunnelVerify.ok`（可 `--no-capture`）；**失败再**读 `screenshot.path` 排查
@@ -43,7 +43,8 @@ python3 adb/adb_execute.py popup analyze \
 
 ```bash
 python3 adb/adb_execute.py run \
-  --compose 家族长冷启动登录 \
+  --macro 手机号登录 \
+  --text 13311111112 \
   --tunnel-account familyLeader \
   --popup-scene login \
   --popup-auto-dismiss
@@ -60,22 +61,18 @@ python3 adb/adb_execute.py run \
 
 ```bash
 python3 adb/adb_execute.py run \
-  --compose 发布纯文本动态 \
+  --macro 发布纯文本动态 \
   --text 1234 \
   --tunnel-account familyLeader \
   --tunnel-keyword feed
 ```
 
-组合 JSON 可内嵌 `tunnelVerify`（见 `adb/录制脚本/组合/动态帧/发布纯文本动态.json`），则直接：
+多步流程：**逐段 macro + 片段间验收**，禁止长命令串联或已移除的 `compose`。
+
+## 在 macro 上挂 Tunnel 参数
 
 ```bash
-python3 adb/adb_execute.py compose 发布纯文本动态 --text 1234
-```
-
-## 在 macro/compose 上挂 Tunnel 参数
-
-```bash
-python3 adb/adb_execute.py compose 冷启动登录 \
+python3 adb/adb_execute.py macro 手机号登录 \
   --tunnel-account familyLeader \
   --tunnel-keyword login \
   --tunnel-wait 30

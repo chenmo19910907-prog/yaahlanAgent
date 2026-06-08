@@ -1,17 +1,17 @@
 {
   "title": "Yaahlan App 页面地图（自动扫描）",
-  "note": "learn scan 列入口；learn probe 补 activity。结合 KB 写 kbRef 后落片段。",
+  "note": "learn scan 列入口；learn probe 补 activity。结合 KB 写 kbRef 后落片段。 module 字段对齐 testcase-kb。",
   "tabs": {
-    "game": "首页-游戏帧",
-    "room": "首页-房间帧",
-    "msg": "消息帧",
-    "moment": "动态帧",
-    "me": "我的帧"
+    "game": "游戏",
+    "room": "房间",
+    "msg": "消息",
+    "moment": "动态",
+    "me": "个人主页"
   },
   "entries": [
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "top_layout",
       "resourceId": "top_layout",
       "tap_pct": [
@@ -29,7 +29,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "badge_layout",
       "resourceId": "badge_layout",
       "tap_pct": [
@@ -47,7 +47,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "noble_top_badge",
       "resourceId": "noble_top_badge",
       "tap_pct": [
@@ -65,7 +65,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "wealth_badge",
       "resourceId": "wealth_badge",
       "tap_pct": [
@@ -83,7 +83,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "charm_badge",
       "resourceId": "charm_badge",
       "tap_pct": [
@@ -101,7 +101,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "profile_custom_user_id_layout",
       "resourceId": "profile_custom_user_id_layout",
       "tap_pct": [
@@ -119,7 +119,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "friend_ll",
       "resourceId": "friend_ll",
       "tap_pct": [
@@ -137,7 +137,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "follow_ll",
       "resourceId": "follow_ll",
       "tap_pct": [
@@ -155,7 +155,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "fans_ll",
       "resourceId": "fans_ll",
       "tap_pct": [
@@ -173,7 +173,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "Отметиться",
       "resourceId": "check_in",
       "tap_pct": [
@@ -191,7 +191,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "cl_visitor",
       "resourceId": "cl_visitor",
       "tap_pct": [
@@ -209,7 +209,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "room_layout",
       "resourceId": "room_layout",
       "tap_pct": [
@@ -227,7 +227,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "cp_layout",
       "resourceId": "cp_layout",
       "tap_pct": [
@@ -245,7 +245,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "wallet_layout",
       "resourceId": "wallet_layout",
       "tap_pct": [
@@ -263,7 +263,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "fortune_layout",
       "resourceId": "fortune_layout",
       "tap_pct": [
@@ -281,7 +281,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "redeem_layout",
       "resourceId": "redeem_layout",
       "tap_pct": [
@@ -299,7 +299,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "family_layout",
       "resourceId": "family_layout",
       "tap_pct": [
@@ -317,7 +317,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "family_level_view",
       "resourceId": "family_level_view",
       "tap_pct": [
@@ -335,7 +335,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "vip_layout",
       "resourceId": "vip_layout",
       "tap_pct": [
@@ -353,7 +353,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "noble_layout",
       "resourceId": "noble_layout",
       "tap_pct": [
@@ -371,7 +371,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "level_layout",
       "resourceId": "level_layout",
       "tap_pct": [
@@ -389,7 +389,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "gift_wall_layout",
       "resourceId": "gift_wall_layout",
       "tap_pct": [
@@ -407,7 +407,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "nameplate_layout",
       "resourceId": "nameplate_layout",
       "tap_pct": [
@@ -425,7 +425,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "costume_layout",
       "resourceId": "costume_layout",
       "tap_pct": [
@@ -443,7 +443,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "costume_store_layout",
       "resourceId": "costume_store_layout",
       "tap_pct": [
@@ -461,7 +461,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "invite_layout",
       "resourceId": "invite_layout",
       "tap_pct": [
@@ -479,7 +479,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "collection_layout",
       "resourceId": "collection_layout",
       "tap_pct": [
@@ -497,7 +497,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "guild_layout",
       "resourceId": "guild_layout",
       "tap_pct": [
@@ -515,7 +515,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "my_costumes_layout",
       "resourceId": "my_costumes_layout",
       "tap_pct": [
@@ -533,7 +533,7 @@
     },
     {
       "tab": "me",
-      "module": "我的帧",
+      "module": "个人主页",
       "label": "layout_star",
       "resourceId": "layout_star",
       "tap_pct": [

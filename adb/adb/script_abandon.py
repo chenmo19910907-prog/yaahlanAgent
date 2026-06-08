@@ -40,7 +40,7 @@ def _save_state(state: dict[str, Any]) -> None:
 def _script_keys(name: str) -> set[str]:
     key = name.strip()
     keys = {key}
-    for kind in ("fragment", "compose"):
+    for kind in ("fragment",):
         try:
             sid, sname, _ = resolve_key(key, kind=kind)
             keys.add(sid)
@@ -194,6 +194,11 @@ def failure_reason_from_result(result: dict[str, Any], exit_code: int) -> str:
     tv = result.get("tunnelVerify")
     if isinstance(tv, dict) and not tv.get("ok"):
         parts.append(f"tunnel:{tv.get('keyword', 'verify')}")
+    if result.get("logcatVerifyFailed"):
+        parts.append("logcatVerifyFailed")
+    lv = result.get("logcatVerify")
+    if isinstance(lv, dict) and not lv.get("ok"):
+        parts.append(f"logcat:{lv.get('grep', 'verify')}")
     fa = result.get("foregroundActivity")
     if isinstance(fa, dict) and fa.get("hint") in ("webview", "unknown", "visitor"):
         parts.append(f"hint={fa.get('hint')}")

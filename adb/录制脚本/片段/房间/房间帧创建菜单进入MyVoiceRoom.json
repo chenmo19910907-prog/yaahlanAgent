@@ -1,0 +1,13 @@
+{
+  "id": "room-create-my-voice-room",
+  "name": "房间帧创建菜单进入MyVoiceRoom",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Room + 创建菜单 → My voice room（760,377）；前置：macro 房间帧打开创建房间菜单",
+  "kbRef": ["documents/房间.md（创建房间）"],
+  "steps": [
+    { "run_script": "房间帧打开创建房间菜单" },
+    { "tap_pct": [0.704, 0.161], "note": "My voice room（760,377）" },
+    { "sleep_ms": 1500 }
+  ]
+}

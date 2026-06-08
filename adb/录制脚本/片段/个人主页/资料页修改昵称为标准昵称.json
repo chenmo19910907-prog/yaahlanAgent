@@ -1,0 +1,28 @@
+{
+  "id": "profile-set-standard-nickname",
+  "name": "资料页修改昵称为标准昵称",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "both",
+  "description": "已在 EditProfileActivity：点 Nickname 行 → 输入标准昵称（133111111XX→CXX、133111112XX→C2XX）→ 收键盘 → Submit → 资料页 Save。--text 传完整手机号。",
+  "params": ["text"],
+  "kbRef": [
+    "片段/注册登录/完成注册.json（昵称规则）"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.5, 0.455], "note": "Nickname 行（bounds 540,1065）" },
+    { "sleep_ms": 1000 },
+    { "tap_pct": [0.5, 0.171], "note": "nickname_edit 输入框（bounds 540,399）" },
+    { "sleep_ms": 300 },
+    { "text": "{{nickname}}", "note": "标准昵称" },
+    { "sleep_ms": 2000, "note": "等待昵称可用性校验" },
+    { "tap_pct": [0.5, 0.068], "note": "标题区失焦" },
+    { "sleep_ms": 300 },
+    { "key": 4, "note": "收起键盘露出 Submit" },
+    { "sleep_ms": 600 },
+    { "tap_pct": [0.5, 0.91], "note": "Nickname Submit（bounds 540,2130）" },
+    { "sleep_ms": 2000 },
+    { "tap_pct": [0.5, 0.918], "note": "EditProfile Save（bounds 540,2148）" },
+    { "sleep_ms": 2000 }
+  ]
+}

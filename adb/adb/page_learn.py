@@ -21,31 +21,31 @@ TabFilter = TabName | Literal["all"]
 
 TAB_META: dict[TabName, dict[str, Any]] = {
     "game": {
-        "module": "首页-游戏帧",
+        "module": "游戏",
         "label": "Game",
         "tap_pct": [0.1, 0.956],
         "resourceId": "tab_game",
     },
     "room": {
-        "module": "首页-房间帧",
+        "module": "房间",
         "label": "Room",
         "tap_pct": [0.3, 0.956],
         "resourceId": "tab_room",
     },
     "msg": {
-        "module": "消息帧",
+        "module": "消息",
         "label": "Message",
         "tap_pct": [0.5, 0.956],
         "resourceId": "tab_msg",
     },
     "moment": {
-        "module": "动态帧",
+        "module": "动态",
         "label": "Moment",
         "tap_pct": [0.7, 0.956],
         "resourceId": "tab_feed",
     },
     "me": {
-        "module": "我的帧",
+        "module": "个人主页",
         "label": "Me",
         "tap_pct": [0.9, 0.956],
         "resourceId": "tab_profile",

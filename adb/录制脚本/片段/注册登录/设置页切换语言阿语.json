@@ -1,0 +1,16 @@
+{
+  "id": "settings-switch-language-ar",
+  "name": "设置页切换语言阿语",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "已在 SettingComposeActivity（或先跑 设置页切换语言 归 English）→ Language → العربية；语言列表居中 rtl_mirror:false",
+  "steps": [
+    { "run_script": "设置页进入语言" },
+    {
+      "tap_pct": [0.5, 0.239],
+      "rtl_mirror": false,
+      "note": "العربية（540,559）"
+    },
+    { "sleep_ms": 1500 }
+  ]
+}

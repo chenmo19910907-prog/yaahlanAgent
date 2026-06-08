@@ -180,7 +180,7 @@
       "label": "进入语音房",
       "weakUiPopups": [
         "Lucky Wish 全屏广告",
-        "Mic invitation 上麦邀请",
+        "Mic invitation 上麦邀请（进他人房约 2～5s 后顶部横幅）",
         "Join 加入房间",
         "房间设置/更多菜单误开",
         "录音权限系统弹窗（非 HTTP）"

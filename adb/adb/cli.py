@@ -24,7 +24,6 @@ from .ai_operate import (
     AiOperateRequired,
     GOAL_SPECS,
     assert_fragment_script_allowed,
-    compose_module,
     fragment_module,
     list_goals,
     max_consecutive_failures,
@@ -52,24 +51,34 @@ from .device_profile import (
     list_profile_paths,
     load_profile,
 )
-from .compose import load_compose, list_compose_summary, run_compose
 from .macros import apply_skip_flags, list_macros, resolve_macro
 from .recorded_scripts import (
     list_catalog,
-    list_composes_by_module,
     list_fragments_by_module,
     scripts_root,
 )
 from .screenshot import (
+    DEFAULT_CAPTURE_MAX_EDGE,
     DEFAULT_MAX_SCREENSHOTS,
     capture_screenshot,
     latest_screenshot,
     png_dimensions,
+    resolve_image_to_device,
     screenshot_dir,
 )
 from .gift_panel_analyze import analyze_gift_panel_from_tunnel, find_gifts_from_tunnel
 from .popup_analyze import analyze_scene_from_tunnel, dismiss_scripts_for_analysis
 from .popup_gate import ensure_popups_cleared, resolve_gate_scene
+from .apps import YAAHLAN
+from .logcat_check import (
+    LogcatCheckOptions,
+    add_logcat_arguments,
+    attach_logcat_verify,
+    clear_logcat_buffer,
+    fetch_latest_logcat_match,
+    logcat_options_from_args,
+    wait_for_logcat,
+)
 from .tunnel_verify import (
     TunnelVerifyOptions,
     add_tunnel_arguments,
@@ -91,6 +100,27 @@ def _attach_foreground_activity(*, serial: str, result: dict[str, object]) -> No
         result["foregroundActivity"] = get_foreground_activity(serial=serial)
     except AdbError as exc:
         result["foregroundActivity"] = {"ok": False, "error": str(exc)}
+
+
+def _resolve_screenshot_path(args, shot_dir: Path) -> Path:
+    custom = getattr(args, "screenshot", None)
+    if custom:
+        path = Path(custom)
+        if not path.is_absolute():
+            path = Path.cwd() / path
+        if not path.is_file():
+            raise AdbError(f"截图不存在: {path}")
+        return path
+    path = latest_screenshot(shot_dir)
+    if path is None:
+        raise AdbError("尚无截图，请先执行 capture")
+    return path
+
+
+def _capture_max_edge_from_args(args) -> int | None:
+    if getattr(args, "full_res", False):
+        return None
+    return getattr(args, "max_edge", DEFAULT_CAPTURE_MAX_EDGE)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -126,7 +156,28 @@ def build_parser() -> argparse.ArgumentParser:
         "--max-edge",
         type=int,
         metavar="PX",
-        help="缩略图最长边像素（macOS 用 sips，如 1170≈半分辨率，加快 Agent 读图）",
+        default=DEFAULT_CAPTURE_MAX_EDGE,
+        help=(
+            f"缩略图最长边像素（macOS 用 sips，默认 {DEFAULT_CAPTURE_MAX_EDGE}；"
+            "JSON 含 scaleX/scaleY 供读图坐标换算）"
+        ),
+    )
+    p_cap.add_argument(
+        "--full-res",
+        action="store_true",
+        help="不缩略，保留设备原始分辨率（耗 token，仅校准坐标时用）",
+    )
+
+    p_coords = sub.add_parser(
+        "coords",
+        help="读缩略图上的像素坐标，换算为设备 tap 坐标与 tap_pct",
+    )
+    p_coords.add_argument("x", type=int, help="截图上的 x（读图像素）")
+    p_coords.add_argument("y", type=int, help="截图上的 y（读图像素）")
+    p_coords.add_argument(
+        "--screenshot",
+        metavar="PATH",
+        help="截图路径（默认 adb/screenshots/ 最新一张）",
     )
 
     p_act = sub.add_parser(
@@ -141,6 +192,16 @@ def build_parser() -> argparse.ArgumentParser:
     p_tap = sub.add_parser("tap", help="点击坐标（视觉循环：读图后算出的 x y）")
     p_tap.add_argument("x", type=int)
     p_tap.add_argument("y", type=int)
+    p_tap.add_argument(
+        "--from-image",
+        action="store_true",
+        help="x/y 为读图（缩略图）像素，按截图与屏幕尺寸比例换算后再 tap",
+    )
+    p_tap.add_argument(
+        "--screenshot",
+        metavar="PATH",
+        help="配合 --from-image：截图路径（默认最新一张）",
+    )
 
     p_swipe = sub.add_parser("swipe", help="滑动")
     p_swipe.add_argument("x1", type=int)
@@ -210,7 +271,14 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="强制执行首页/Me/房间固定脚本（默认已禁用，改 AI 读图操作）",
     )
+    p_macro.add_argument(
+        "--rtl",
+        action="store_true",
+        help="阿语等 RTL 语言：原生页 tap/swipe 水平镜像 x'=1−x（WebView 除外）",
+    )
+    p_macro.add_argument("--no-rtl", action="store_true", help="禁用 RTL 镜像")
     add_tunnel_arguments(p_macro)
+    add_logcat_arguments(p_macro)
 
     p_chain = sub.add_parser(
         "chain",
@@ -233,11 +301,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_chain.add_argument("--no-adapt", action="store_true", help="跳过设备换算")
     p_chain.add_argument(
+        "--rtl",
+        action="store_true",
+        help="RTL 原生页水平镜像",
+    )
+    p_chain.add_argument("--no-rtl", action="store_true", help="禁用 RTL 镜像")
+    p_chain.add_argument(
         "--no-popup-gate",
         action="store_true",
         help="chain 结束时不自动跑弹窗截图门禁",
     )
     add_tunnel_arguments(p_chain)
+    add_logcat_arguments(p_chain)
 
     p_device = sub.add_parser("device", help="设备型号与坐标换算（换机先校准）")
     dev_sub = p_device.add_subparsers(dest="device_command", required=True)
@@ -302,57 +377,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_dev_show = dev_sub.add_parser("show", help="查看某档案详情")
     p_dev_show.add_argument("profile_id", help="档案 id")
 
-    p_compose_list = sub.add_parser(
-        "composes",
-        help="列出组合搭建方案（按模块分子目录）",
-    )
-
-    p_compose = sub.add_parser(
-        "compose",
-        help="按顺序执行多个片段（积木搭建）",
-    )
-    p_compose.add_argument("name", help="组合中文名或文件名（无 .json）")
-    p_compose.add_argument("--text", help="传给带 params.text 的片段")
-    p_compose.add_argument(
-        "--skip",
-        action="append",
-        default=[],
-        metavar="KEY",
-        help="全局跳过 skip_key（各块可再在组合 JSON 里单独 skip）",
-    )
-    p_compose.add_argument(
-        "--capture",
-        choices=("never", "start", "end", "both"),
-        help="覆盖组合内 capture（默认取组合文件）",
-    )
-    p_compose.add_argument("--no-capture", action="store_true", help="等同 --capture never")
-    p_compose.add_argument(
-        "--verify",
-        action="store_true",
-        help="最后一块结束时截一张图核对",
-    )
-    p_compose.add_argument("--no-adapt", action="store_true", help="跳过设备换算")
-    p_compose.add_argument(
-        "--no-popup-gate",
-        action="store_true",
-        help="组合每块结束时不自动跑弹窗截图门禁",
-    )
-    p_compose.add_argument(
-        "--force-script",
-        action="store_true",
-        help="强制执行首页/Me/房间固定脚本（默认已禁用）",
-    )
-    add_tunnel_arguments(p_compose)
-
     p_run = sub.add_parser(
         "run",
         help="自动化执行：ADB 操作 + 结束截图 + Tunnel 抓包校验（推荐 Agent 使用）",
     )
     run_src = p_run.add_mutually_exclusive_group(required=True)
-    run_src.add_argument("--compose", metavar="NAME", help="执行组合")
     run_src.add_argument("--macro", metavar="NAME", help="执行片段")
     run_src.add_argument("--chain", type=Path, metavar="FILE", help="执行 chain JSON")
-    p_run.add_argument("--text", help="片段/组合文本参数")
+    p_run.add_argument("--text", help="片段文本参数")
     p_run.add_argument(
         "--skip",
         action="append",
@@ -372,6 +404,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="run 结束时不自动跑弹窗截图门禁",
     )
     p_run.add_argument(
+        "--force-script",
+        action="store_true",
+        help="强制执行首页/Me/房间固定脚本（默认已禁用）",
+    )
+    p_run.add_argument(
+        "--rtl",
+        action="store_true",
+        help="RTL 原生页水平镜像",
+    )
+    p_run.add_argument("--no-rtl", action="store_true", help="禁用 RTL 镜像")
+    p_run.add_argument(
         "--popup-scene",
         choices=("login", "splash", "home", "me", "room", "mic"),
         help="操作后按场景分析 Tunnel 弹窗信号并给出处置建议",
@@ -383,6 +426,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_run.add_argument("--popup-since", type=int, default=120, help="弹窗分析回溯秒数")
     add_tunnel_arguments(p_run)
+    add_logcat_arguments(p_run)
 
     p_popup = sub.add_parser(
         "popup",
@@ -478,6 +522,41 @@ def build_parser() -> argparse.ArgumentParser:
     p_tunnel_last.add_argument("--since", type=int, default=300, help="回溯秒数")
     p_tunnel_last.add_argument("--g-appid", default="All", dest="tunnel_g_appid")
     p_tunnel_last.add_argument("--g-env", default="alpha", dest="tunnel_g_env")
+
+    p_logcat = sub.add_parser(
+        "logcat",
+        help="adb logcat 关键字等待/查询（客户端渲染、RTC、崩溃等）",
+    )
+    logcat_sub = p_logcat.add_subparsers(dest="logcat_command", required=True)
+    p_logcat_clear = logcat_sub.add_parser("clear", help="清空 logcat 缓冲（adb logcat -c）")
+    p_logcat_wait = logcat_sub.add_parser(
+        "wait",
+        help="轮询直到 logcat 出现/不出现匹配行或超时",
+    )
+    p_logcat_last = logcat_sub.add_parser(
+        "last",
+        help="读取最近 logcat 是否含匹配行",
+    )
+    for p in (p_logcat_wait, p_logcat_last):
+        p.add_argument("--grep", required=True, help="行匹配子串或正则")
+        p.add_argument("--tail", type=int, default=300, dest="logcat_tail", help="dump 最近行数")
+        p.add_argument("--regex", action="store_true", dest="logcat_regex")
+        p.add_argument("--invert", action="store_true", dest="logcat_invert")
+        p.add_argument(
+            "--no-app-filter",
+            action="store_true",
+            dest="logcat_no_app_filter",
+            help="不按 Yaahlan pid 过滤",
+        )
+        p.add_argument("--min-matches", type=int, default=1, dest="logcat_min_matches")
+    p_logcat_wait.add_argument("--wait", type=int, default=10, dest="logcat_wait")
+    p_logcat_wait.add_argument("--poll-ms", type=int, default=1000, dest="logcat_poll_ms")
+    p_logcat_wait.add_argument(
+        "--clear-first",
+        action="store_true",
+        dest="logcat_clear_first",
+        help="轮询前先 adb logcat -c",
+    )
 
     p_gift = sub.add_parser(
         "gift",
@@ -666,6 +745,14 @@ def _use_adaptation(args: argparse.Namespace) -> bool:
     return not getattr(args, "no_adapt", False)
 
 
+def _rtl_mode(args: argparse.Namespace) -> str:
+    if getattr(args, "no_rtl", False):
+        return "off"
+    if getattr(args, "rtl", False):
+        return "on"
+    return "off"
+
+
 def _resolve_capture_mode(
     *,
     explicit: str | None,
@@ -780,11 +867,11 @@ def _finalize_with_tunnel(
     shot_dir: Path,
     max_screenshots: int,
     start_time: int,
-    compose_spec: dict[str, object] | None = None,
+    script_spec: dict[str, object] | None = None,
 ) -> int:
     tunnel_opts = tunnel_options_from_args(
         args,
-        compose_spec=compose_spec,  # type: ignore[arg-type]
+        script_spec=script_spec,  # type: ignore[arg-type]
     )
     if tunnel_opts is None:
         return 0
@@ -803,6 +890,38 @@ def _finalize_with_tunnel(
     result.clear()
     result.update(merged)
     return 0 if ok else 3
+
+
+def _finalize_with_logcat(
+    *,
+    args: argparse.Namespace,
+    result: dict[str, object],
+    serial: str,
+    script_spec: dict[str, object] | None = None,
+) -> int:
+    logcat_opts = logcat_options_from_args(
+        args,
+        script_spec=script_spec,  # type: ignore[arg-type]
+    )
+    if logcat_opts is None:
+        return 0
+    merged, ok = attach_logcat_verify(
+        result,  # type: ignore[arg-type]
+        logcat_opts,
+        serial=serial,
+    )
+    result.clear()
+    result.update(merged)
+    return 0 if ok else 3
+
+
+def _logcat_exit_code(result: dict[str, object]) -> int:
+    verify = result.get("logcatVerify")
+    if isinstance(verify, dict) and not verify.get("ok"):
+        return 3
+    if result.get("logcatVerifyFailed"):
+        return 3
+    return 0
 
 
 def _splash_verify_exit_code(result: dict[str, object]) -> int:
@@ -890,7 +1009,7 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         if args.command == "capture" or args.command == "cycle":
-            max_edge = getattr(args, "max_edge", None)
+            max_edge = _capture_max_edge_from_args(args)
             result = capture_screenshot(
                 serial=serial,
                 directory=shot_dir,
@@ -901,6 +1020,19 @@ def main(argv: list[str] | None = None) -> int:
                 print(result["path"])
             else:
                 _emit(result)
+            return 0
+
+        if args.command == "coords":
+            shot_path = _resolve_screenshot_path(args, shot_dir)
+            dev_w, dev_h = display_size(serial)
+            out = resolve_image_to_device(
+                args.x,
+                args.y,
+                screenshot_path=shot_path,
+                device_width=dev_w,
+                device_height=dev_h,
+            )
+            _emit(out)
             return 0
 
         if args.command == "latest":
@@ -933,8 +1065,35 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         if args.command == "tap":
-            tap(x=args.x, y=args.y, serial=serial)
-            _emit({"action": "tap", "x": args.x, "y": args.y, "serial": serial})
+            tap_x, tap_y = args.x, args.y
+            coord_meta: dict[str, object] | None = None
+            if getattr(args, "from_image", False):
+                shot_path = _resolve_screenshot_path(args, shot_dir)
+                dev_w, dev_h = display_size(serial)
+                coord_meta = resolve_image_to_device(
+                    args.x,
+                    args.y,
+                    screenshot_path=shot_path,
+                    device_width=dev_w,
+                    device_height=dev_h,
+                )
+                tap_x = int(coord_meta["deviceX"])
+                tap_y = int(coord_meta["deviceY"])
+            tap(x=tap_x, y=tap_y, serial=serial)
+            payload: dict[str, object] = {
+                "action": "tap",
+                "x": tap_x,
+                "y": tap_y,
+                "serial": serial,
+            }
+            if coord_meta:
+                payload["fromImage"] = {
+                    "imageX": coord_meta["imageX"],
+                    "imageY": coord_meta["imageY"],
+                    "scaleX": coord_meta["scaleX"],
+                    "scaleY": coord_meta["scaleY"],
+                }
+            _emit(payload)
             return 0
 
         if args.command == "swipe":
@@ -970,18 +1129,14 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         if args.command == "scripts":
-            catalog = [e for e in list_catalog() if e.get("kind") != "compose"]
-            composes = [e for e in list_catalog() if e.get("kind") == "compose"]
+            fragments = [e for e in list_catalog() if e.get("kind") == "fragment"]
             _emit(
                 {
                     "root": str(scripts_root().resolve()),
                     "fragmentModules": list(list_fragments_by_module().keys()),
                     "fragmentsByModule": list_fragments_by_module(),
-                    "fragments": catalog,
-                    "composeModules": list(list_composes_by_module().keys()),
-                    "composesByModule": list_composes_by_module(),
-                    "composes": composes,
-                    "catalog": list_catalog(),
+                    "fragments": fragments,
+                    "catalog": fragments,
                 }
             )
             return 0
@@ -996,7 +1151,8 @@ def main(argv: list[str] | None = None) -> int:
                 force_script=bool(getattr(args, "force_script", False)),
             )
             spec = resolve_macro(args.name, text=args.text)
-            tunnel_opts = tunnel_options_from_args(args)
+            tunnel_opts = tunnel_options_from_args(args, script_spec=spec)
+            logcat_opts = logcat_options_from_args(args, script_spec=spec)
             since_buffer = tunnel_opts.since_buffer_seconds if tunnel_opts else 5
             start_time = int(time.time()) - since_buffer
             capture = _resolve_capture_mode(
@@ -1004,7 +1160,7 @@ def main(argv: list[str] | None = None) -> int:
                 no_capture=args.no_capture,
                 default=spec.get("capture", "end"),
             )
-            if tunnel_opts is not None and capture == "never":
+            if (tunnel_opts is not None or logcat_opts is not None) and capture == "never":
                 capture = "end"
             steps = apply_skip_flags(
                 list(spec.get("steps", [])),
@@ -1026,7 +1182,8 @@ def main(argv: list[str] | None = None) -> int:
                 skip=set(args.skip),
                 popup_gate_auto=_popup_gate_auto_enabled(args),
                 popup_gate_momoid=gate_momoid,
-                capture_max_edge=getattr(args, "max_edge", 1170),
+                capture_max_edge=getattr(args, "max_edge", DEFAULT_CAPTURE_MAX_EDGE),
+                rtl_mode=_rtl_mode(args),  # type: ignore[arg-type]
             )
             out["script"] = spec.get("name", args.name)
             out["scriptId"] = spec.get("id", args.name)
@@ -1040,8 +1197,15 @@ def main(argv: list[str] | None = None) -> int:
                 shot_dir=shot_dir,
                 max_screenshots=args.max_screenshots,
                 start_time=start_time,
+                script_spec=spec,
             )
-            code = max(code, _splash_verify_exit_code(out), _popup_gate_exit_code(out))
+            code = max(
+                code,
+                _finalize_with_logcat(args=args, result=out, serial=serial, script_spec=spec),
+                _splash_verify_exit_code(out),
+                _popup_gate_exit_code(out),
+                _logcat_exit_code(out),
+            )
             _attach_foreground_activity(serial=serial, result=out)
             _track_script_outcome(
                 name=str(out.get("script", args.name)),
@@ -1050,69 +1214,6 @@ def main(argv: list[str] | None = None) -> int:
                 exit_code=code,
                 module=fragment_module(args.name),
                 script_id=str(out.get("scriptId", "")),
-            )
-            _emit(out)
-            return code
-
-        if args.command == "composes":
-            _emit(
-                {
-                    "composes": list_compose_summary(),
-                    "composesByModule": list_composes_by_module(),
-                    "root": str(scripts_root() / "组合"),
-                }
-            )
-            return 0
-
-        if args.command == "compose":
-            spec = load_compose(args.name)
-            tunnel_opts = tunnel_options_from_args(args, compose_spec=spec)
-            since_buffer = tunnel_opts.since_buffer_seconds if tunnel_opts else 5
-            start_time = int(time.time()) - since_buffer
-            capture = _resolve_capture_mode(
-                explicit=args.capture,
-                no_capture=args.no_capture,
-                default=str(spec.get("capture", "end")),
-            )
-            verify_end = args.verify or tunnel_opts is not None
-            gate_momoid: str | None = None
-            try:
-                gate_momoid = _optional_momoid_from_args(args)
-            except ValueError:
-                pass
-            out = run_compose(
-                name=args.name,
-                serial=serial,
-                screenshot_dir=shot_dir,
-                max_screenshots=args.max_screenshots,
-                text=args.text,
-                skip=set(args.skip),
-                capture=capture,  # type: ignore[arg-type]
-                verify_end=verify_end,
-                use_adaptation=_use_adaptation(args),
-                popup_gate_auto=_popup_gate_auto_enabled(args),
-                popup_gate_momoid=gate_momoid,
-                capture_max_edge=getattr(args, "max_edge", 1170),
-                force_script=bool(getattr(args, "force_script", False)),
-            )
-            code = _finalize_with_tunnel(
-                args=args,
-                result=out,
-                serial=serial,
-                shot_dir=shot_dir,
-                max_screenshots=args.max_screenshots,
-                start_time=start_time,
-                compose_spec=spec,
-            )
-            code = max(code, _splash_verify_exit_code(out), _popup_gate_exit_code(out))
-            _attach_foreground_activity(serial=serial, result=out)
-            _track_script_outcome(
-                name=str(out.get("compose", args.name)),
-                kind="compose",
-                result=out,
-                exit_code=code,
-                module=compose_module(args.name),
-                script_id=str(out.get("composeId", "")),
             )
             _emit(out)
             return code
@@ -1148,7 +1249,7 @@ def main(argv: list[str] | None = None) -> int:
                     serial=serial,
                     screenshot_dir=shot_dir,
                     max_screenshots=args.max_screenshots,
-                    max_edge=getattr(args, "max_edge", 1170),
+                    max_edge=getattr(args, "max_edge", DEFAULT_CAPTURE_MAX_EDGE),
                     note=getattr(args, "note", None),
                 )
                 _emit(out)
@@ -1159,6 +1260,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "chain":
             steps, file_capture = load_steps_file(args.steps_file)
             tunnel_opts = tunnel_options_from_args(args)
+            logcat_opts = logcat_options_from_args(args)
             since_buffer = tunnel_opts.since_buffer_seconds if tunnel_opts else 5
             start_time = int(time.time()) - since_buffer
             capture = _resolve_capture_mode(
@@ -1166,7 +1268,7 @@ def main(argv: list[str] | None = None) -> int:
                 no_capture=args.no_capture,
                 default=file_capture,
             )
-            if tunnel_opts is not None and capture == "never":
+            if (tunnel_opts is not None or logcat_opts is not None) and capture == "never":
                 capture = "end"
             gate_momoid: str | None = None
             try:
@@ -1182,7 +1284,8 @@ def main(argv: list[str] | None = None) -> int:
                 use_adaptation=_use_adaptation(args),
                 popup_gate_auto=_popup_gate_auto_enabled(args),
                 popup_gate_momoid=gate_momoid,
-                capture_max_edge=getattr(args, "max_edge", 1170),
+                capture_max_edge=getattr(args, "max_edge", DEFAULT_CAPTURE_MAX_EDGE),
+                rtl_mode=_rtl_mode(args),  # type: ignore[arg-type]
             )
             out["stepsFile"] = str(args.steps_file.resolve())
             code = _finalize_with_tunnel(
@@ -1193,17 +1296,25 @@ def main(argv: list[str] | None = None) -> int:
                 max_screenshots=args.max_screenshots,
                 start_time=start_time,
             )
-            code = max(code, _splash_verify_exit_code(out), _popup_gate_exit_code(out))
+            code = max(
+                code,
+                _finalize_with_logcat(args=args, result=out, serial=serial),
+                _splash_verify_exit_code(out),
+                _popup_gate_exit_code(out),
+                _logcat_exit_code(out),
+            )
             _attach_foreground_activity(serial=serial, result=out)
             _emit(out)
             return code
 
         if args.command == "run":
+            fragment_spec: dict[str, object] | None = None
             tunnel_opts = tunnel_options_from_args(args)
+            logcat_opts = logcat_options_from_args(args)
             popup_scene = getattr(args, "popup_scene", None)
-            if tunnel_opts is None and not popup_scene:
+            if tunnel_opts is None and not popup_scene and logcat_opts is None:
                 raise ValueError(
-                    "run 须指定 --tunnel-keyword，或指定 --popup-scene 做弹窗抓包分析"
+                    "run 须指定 --tunnel-keyword、--logcat-grep 或 --popup-scene"
                 )
             if popup_scene and not (
                 getattr(args, "tunnel_momoid", None) or getattr(args, "tunnel_account", None)
@@ -1212,37 +1323,19 @@ def main(argv: list[str] | None = None) -> int:
             since_buffer = tunnel_opts.since_buffer_seconds if tunnel_opts else 5
             start_time = int(time.time()) - since_buffer
             out: dict[str, object]
-            compose_spec: dict[str, object] | None = None
 
             gate_momoid: str | None = None
             try:
                 gate_momoid = _optional_momoid_from_args(args)
             except ValueError:
                 pass
-            if args.compose:
-                compose_spec = load_compose(args.compose)
-                out = run_compose(
-                    name=args.compose,
-                    serial=serial,
-                    screenshot_dir=shot_dir,
-                    max_screenshots=args.max_screenshots,
-                    text=args.text,
-                    skip=set(args.skip),
-                    capture="end",
-                    verify_end=True,
-                    use_adaptation=_use_adaptation(args),
-                    popup_gate_auto=_popup_gate_auto_enabled(args),
-                    popup_gate_momoid=gate_momoid,
-                    capture_max_edge=getattr(args, "max_edge", 1170),
-                    force_script=bool(getattr(args, "force_script", False)),
-                )
-                out["runMode"] = "compose"
-            elif args.macro:
+            if args.macro:
                 assert_fragment_script_allowed(
                     args.macro,
                     force_script=bool(getattr(args, "force_script", False)),
                 )
                 spec = resolve_macro(args.macro, text=args.text)
+                fragment_spec = spec
                 steps = apply_skip_flags(
                     list(spec.get("steps", [])),
                     skip=set(args.skip),
@@ -1258,7 +1351,8 @@ def main(argv: list[str] | None = None) -> int:
                     skip=set(args.skip),
                     popup_gate_auto=_popup_gate_auto_enabled(args),
                     popup_gate_momoid=gate_momoid,
-                    capture_max_edge=getattr(args, "max_edge", 1170),
+                    capture_max_edge=getattr(args, "max_edge", DEFAULT_CAPTURE_MAX_EDGE),
+                    rtl_mode=_rtl_mode(args),  # type: ignore[arg-type]
                 )
                 out["runMode"] = "macro"
                 out["script"] = spec.get("name", args.macro)
@@ -1273,7 +1367,8 @@ def main(argv: list[str] | None = None) -> int:
                     use_adaptation=_use_adaptation(args),
                     popup_gate_auto=_popup_gate_auto_enabled(args),
                     popup_gate_momoid=gate_momoid,
-                    capture_max_edge=getattr(args, "max_edge", 1170),
+                    capture_max_edge=getattr(args, "max_edge", DEFAULT_CAPTURE_MAX_EDGE),
+                    rtl_mode=_rtl_mode(args),  # type: ignore[arg-type]
                 )
                 out["runMode"] = "chain"
                 out["stepsFile"] = str(args.chain.resolve())
@@ -1287,9 +1382,20 @@ def main(argv: list[str] | None = None) -> int:
                     shot_dir=shot_dir,
                     max_screenshots=args.max_screenshots,
                     start_time=start_time,
-                    compose_spec=compose_spec,
+                    script_spec=fragment_spec,
                 )
-            code = max(code, _splash_verify_exit_code(out), _popup_gate_exit_code(out))
+            code = max(
+                code,
+                _finalize_with_logcat(
+                    args=args,
+                    result=out,
+                    serial=serial,
+                    script_spec=fragment_spec,
+                ),
+                _splash_verify_exit_code(out),
+                _popup_gate_exit_code(out),
+                _logcat_exit_code(out),
+            )
             if popup_scene:
                 _attach_popup_analysis(
                     args=args,
@@ -1470,7 +1576,7 @@ def main(argv: list[str] | None = None) -> int:
                     serial=serial,
                     screenshot_dir=shot_dir,
                     max_screenshots=args.max_screenshots,
-                    max_edge=getattr(args, "max_edge", 1170),
+                    max_edge=getattr(args, "max_edge", DEFAULT_CAPTURE_MAX_EDGE),
                     note=getattr(args, "note", None),
                 )
                 _emit(out)
@@ -1536,6 +1642,41 @@ def main(argv: list[str] | None = None) -> int:
             vip_out = handle_vip_command(args)
             _emit(vip_out)
             return 0 if vip_out.get("ok", True) else 3
+
+        if args.command == "logcat":
+            if args.logcat_command == "clear":
+                out = clear_logcat_buffer(serial=serial)
+                _emit(out)
+                return 0
+            if args.logcat_command == "wait":
+                opts = LogcatCheckOptions(
+                    grep=str(args.grep),
+                    wait_seconds=max(1, int(args.logcat_wait)),
+                    poll_interval_ms=max(300, int(args.logcat_poll_ms)),
+                    tail_lines=max(50, int(args.logcat_tail)),
+                    clear_before=bool(getattr(args, "logcat_clear_first", False)),
+                    app_package=None if args.logcat_no_app_filter else YAAHLAN["package"],
+                    min_matches=max(1, int(args.logcat_min_matches)),
+                    regex=bool(args.logcat_regex),
+                    invert=bool(args.logcat_invert),
+                )
+                verify = wait_for_logcat(opts, serial=serial)
+                _emit({"logcatVerify": verify})
+                return 0 if verify.get("ok") else 3
+            if args.logcat_command == "last":
+                out = fetch_latest_logcat_match(
+                    serial=serial,
+                    grep=str(args.grep),
+                    tail_lines=max(50, int(args.logcat_tail)),
+                    app_package=None if args.logcat_no_app_filter else YAAHLAN["package"],
+                    regex=bool(args.logcat_regex),
+                    invert=bool(args.logcat_invert),
+                    min_matches=max(1, int(args.logcat_min_matches)),
+                )
+                _emit(out)
+                return 0 if out.get("ok") else 3
+            print(f"未知 logcat 子命令: {args.logcat_command}", file=sys.stderr)
+            return 2
 
         if args.command == "tunnel":
             if args.tunnel_command == "wait":

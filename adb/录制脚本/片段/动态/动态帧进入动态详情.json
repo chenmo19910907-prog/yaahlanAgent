@@ -1,0 +1,13 @@
+{
+  "id": "moment-enter-feed-detail",
+  "name": "动态帧进入动态详情",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "话题详情页首条动态 → 点评论图标 → FeedDetailsActivity",
+  "kbRef": ["documents/moments/basic module.md（动态详情/评论）"],
+  "steps": [
+    { "run_script": "动态帧进入话题详情" },
+    { "tap_pct": [0.724, 0.828], "note": "iv_feed_comment（782,1939；话题详情首条）" },
+    { "sleep_ms": 1200 }
+  ]
+}

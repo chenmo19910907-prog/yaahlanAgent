@@ -7,7 +7,7 @@
 
 | 情况 | 做法 |
 |------|------|
-| 型号已有档案 | `device info` 为 `matched` → 直接 `macro` / `compose` |
+| 型号已有档案 | `device info` 为 `matched` → 直接 `macro` |
 | 分辨率与基准相同、无档案 | `identity`，比例 1:1 |
 | 新型号、无档案 | 先 `device calibrate` → `set` → `commit` |
 | **操作失败**（点偏、未进页） | `device recalibrate` → 重新读图填点 → `commit --reason correction` |
@@ -78,7 +78,7 @@ python3 adb/adb_execute.py device commit --id vivo_v2245 --name "vivo V2245" --r
 
 `commit --reason correction` 会 **更新** 同 id 档案、追加 `history`，不新建文件。
 
-3. 再跑 `macro` / `compose` 验证。
+3. 再跑 `macro` 验证。
 
 ## 换算公式（pct_linear）
 

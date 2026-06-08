@@ -1,0 +1,25 @@
+{
+  "id": "settings-switch-language",
+  "name": "设置页切换语言",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "SettingComposeActivity（列表在顶）→ Language → SelectLanguageActivity；点选后立即生效并自动回设置。可选语言与 tap（中心）：English 540,364 | العربية 540,559（RTL 镜像布局）| Türkçe 540,754 | Русский 540,949。本片段默认切 English；改 note 坐标即可切其他语言",
+  "steps": [
+    {
+      "run_script": "进入设置",
+      "note": "任意底栏 → 设置（English LTR，勿 --rtl）"
+    },
+    {
+      "run_script": "设置页进入语言",
+      "note": "进入 SelectLanguageActivity"
+    },
+    {
+      "tap_pct": [0.5, 0.156],
+      "note": "English（540,364）；阿语 0.239/559，土语 0.322/754，俄语 0.406/949"
+    },
+    {
+      "sleep_ms": 1500,
+      "note": "等待回 SettingComposeActivity"
+    }
+  ]
+}
