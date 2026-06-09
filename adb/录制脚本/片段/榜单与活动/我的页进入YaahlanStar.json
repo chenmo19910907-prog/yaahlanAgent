@@ -4,7 +4,7 @@
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
   "description": "Me 下滑后 → Yaahlan star 卡片 → WebViewActivity",
-  "kbRef": ["待补 KB（Yaahlan star）"],
+  "kbRef": ["testcase-kb/榜单与活动.md（Yaahlan star）"],
   "steps": [
     { "run_script": "我的页下滑浏览", "note": "露出底部网格" },
     { "tap_pct": [0.743, 0.860], "note": "layout_star（802,2012）" },

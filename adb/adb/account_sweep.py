@@ -9,14 +9,14 @@ from typing import Any
 
 from .activity import get_foreground_activity
 from .ai_operate import AiOperateRequired, prepare_vision_cycle
+from .auth.runner import (
+    run_phone_auth_only,
+    run_phone_login,
+    run_register_profile,
+)
 from .chain import run_chain
 from .device import AdbError, require_device
 from .popup_analyze import analyze_scene_from_tunnel, fetch_recent_tunnel_items
-from .phone_auth_steps import (
-    build_phone_auth_steps,
-    build_phone_login_steps,
-    build_register_profile_steps,
-)
 from .phone_login_status import query_phone_login_status
 from .post_login_verify import verify_and_dismiss_post_login
 from .recorded_scripts import login_defaults
@@ -226,14 +226,11 @@ def sweep_one_account(
         row["route"] = route
 
         if route == "register":
-            run_chain(
+            run_phone_auth_only(
+                phone,
                 serial=serial,
-                steps=build_phone_auth_steps(phone),
-                capture="never",
-                screenshot_dir=shot_dir,
+                shot_dir=shot_dir,
                 max_screenshots=max_screenshots,
-                use_adaptation=True,
-                popup_gate_auto=False,
             )
             fa_reg = get_foreground_activity(serial=serial)
             row["afterVerifyActivity"] = fa_reg
@@ -243,14 +240,11 @@ def sweep_one_account(
                     f"当前 {fa_reg.get('shortName')}。"
                 )
                 return row
-            run_chain(
+            run_register_profile(
+                phone,
                 serial=serial,
-                steps=build_register_profile_steps(phone),
-                capture="end",
-                screenshot_dir=shot_dir,
+                shot_dir=shot_dir,
                 max_screenshots=max_screenshots,
-                use_adaptation=True,
-                popup_gate_auto=False,
             )
             reg_end = int(time.time())
             reg_status = query_phone_login_status(phone)
@@ -278,13 +272,12 @@ def sweep_one_account(
             )
             return row
 
-        run_chain(
+        run_phone_login(
+            phone,
             serial=serial,
-            steps=build_phone_login_steps(phone),
-            capture="never",
-            screenshot_dir=shot_dir,
+            shot_dir=shot_dir,
             max_screenshots=max_screenshots,
-            use_adaptation=True,
+            include_post_login_popup=False,
             popup_gate_auto=False,
         )
 

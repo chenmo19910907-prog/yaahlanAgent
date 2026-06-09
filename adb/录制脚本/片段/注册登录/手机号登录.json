@@ -80,7 +80,12 @@
       "note": "Get via SMS"
     },
     {
-      "sleep_ms": 2000
+      "wait_activity": {
+        "hint": "login",
+        "timeout_ms": 2500,
+        "poll_ms": 200,
+        "note": "等待验证码页"
+      }
     },
     {
       "tap_pct": [
@@ -97,8 +102,12 @@
       "note": "QA 验证码"
     },
     {
-      "sleep_ms": 3000,
-      "note": "进入首页或注册页"
+      "wait_activity": {
+        "hints": ["home", "register"],
+        "timeout_ms": 3500,
+        "poll_ms": 250,
+        "note": "进入首页或注册页"
+      }
     },
     {
       "run_script": "登录后处理弹窗",

@@ -2,6 +2,7 @@
   "title": "Yaahlan ADB 录制脚本库",
   "app": "yaahlan",
   "fragmentModules": [
+    "通用",
     "注册登录",
     "游戏",
     "房间",
@@ -444,6 +445,13 @@
       "kind": "fragment",
       "module": "房间",
       "file": "片段/房间/房间帧点击首个房间卡片.json"
+    },
+    {
+      "id": "dismiss-charm-pk-banner",
+      "name": "CharmPK横幅收起拖走",
+      "kind": "fragment",
+      "module": "通用",
+      "file": "片段/通用/CharmPK横幅收起拖走.json"
     },
     {
       "id": "room-minimize-third-party-game",

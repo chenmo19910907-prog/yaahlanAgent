@@ -3,13 +3,10 @@
   "name": "设置页进入语言",
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
-  "description": "已在 SettingComposeActivity 且列表在顶部 → Language → SelectLanguageActivity。子页四项：English 540,364 | العربية 540,559 | Türkçe 540,754 | Русский 540,949",
+  "description": "SettingComposeActivity → Language → SelectLanguageActivity",
   "steps": [
     { "sleep_ms": 400 },
-    {
-      "tap_pct": [0.493, 0.292],
-      "note": "Language 行（中心 532,684）"
-    },
-    { "sleep_ms": 800 }
+    { "tap_pct": [0.247, 0.293], "note": "Language（266,684）" },
+    { "wait_activity": { "short_name": "SelectLanguageActivity", "timeout_ms": 3000 } }
   ]
 }

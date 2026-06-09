@@ -8,6 +8,7 @@
 录制脚本/
   索引.json              # 总目录；片段 module 对齐 testcase-kb
   片段/
+    通用/                # 跨模块全局操作（如 CharmPK 横幅）
     注册登录/            # testcase-kb/注册登录.md
     游戏/                # testcase-kb/游戏.md
     房间/                # testcase-kb/房间.md
@@ -45,6 +46,8 @@ python3 adb/adb_execute.py macro 手机号登录 --text 13311111115
 ```
 
 调用 **macro 只用片段中文名或 id**；步骤间 `capture` 读图或 Tunnel/Admin 验收。
+
+**Charm/PK 横幅 / 奖杯挂件**（`Still missing XXk` 或 trophy+00:00）：任意页最高优先级 → `macro CharmPK横幅收起拖走`（见 [`弹窗说明.md`](弹窗说明.md) §最高优先级）。
 
 ## 成功即落库（Agent 必做）
 

@@ -9,8 +9,21 @@ from typing import Any
 
 from .recorded_scripts import resolve_key, scripts_root
 
+from .paths import ensure_state_dir, script_abandon_path
+
 DEFAULT_MAX_CONSECUTIVE_FAILURES = 3
-_STATE_FILE = scripts_root().parent / ".script_abandon.json"
+
+
+def _state_file_path() -> Path:
+    legacy = Path(__file__).resolve().parent.parent / ".script_abandon.json"
+    current = script_abandon_path()
+    if legacy.is_file() and not current.is_file():
+        ensure_state_dir()
+        current.write_text(legacy.read_text(encoding="utf-8"), encoding="utf-8")
+    return current
+
+
+_STATE_FILE = _state_file_path()
 
 
 def _load_state() -> dict[str, Any]:

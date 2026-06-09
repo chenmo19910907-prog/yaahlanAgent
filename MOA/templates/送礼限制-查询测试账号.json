@@ -1,0 +1,29 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/pay-middle/test",
+  "method": "getAllPayTest",
+  "header": "",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "202401241150003",
+      "json": "",
+      "type": "string",
+      "value": "202401241150003"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad"
+}

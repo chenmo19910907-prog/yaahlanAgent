@@ -3,11 +3,11 @@
   "name": "我的页进入Family",
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
-  "description": "Me 下滑后 → Family（family_layout）→ 家族主页 WebViewActivity",
+  "description": "Me 下滑后 → Family 行（540,500）→ 家族主页 WebView CCVC Lv5",
   "kbRef": ["documents/家族.md（家族主页）"],
   "steps": [
     { "run_script": "我的页下滑浏览", "note": "露出 Family 行" },
-    { "tap_pct": [0.500, 0.142], "note": "family_layout（540,332）" },
-    { "sleep_ms": 2000 }
+    { "tap_pct": [0.500, 0.214], "note": "family_layout（540,500）" },
+    { "wait_activity": { "hint": "webview", "timeout_ms": 3000 } }
   ]
 }

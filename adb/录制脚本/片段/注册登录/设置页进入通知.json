@@ -3,13 +3,10 @@
   "name": "设置页进入通知",
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
-  "description": "已在 SettingComposeActivity 且列表在顶部 → Notifications → NotificationManagerActivity",
+  "description": "SettingComposeActivity → Notifications → NotificationManagerActivity",
   "steps": [
     { "sleep_ms": 400 },
-    {
-      "tap_pct": [0.493, 0.369],
-      "note": "Notifications 行（中心 532,864）"
-    },
-    { "sleep_ms": 800 }
+    { "tap_pct": [0.272, 0.369], "note": "Notifications（294,864）" },
+    { "wait_activity": { "short_name": "NotificationManagerActivity", "timeout_ms": 3000 } }
   ]
 }

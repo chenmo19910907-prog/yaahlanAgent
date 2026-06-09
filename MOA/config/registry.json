@@ -418,6 +418,18 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/钻石-发放.json \\\n  --diamond-user-id <userId> \\\n  --diamond-num <num>\n"
     },
     {
+      "id": "pay_test_query_all",
+      "name": "送礼限制-查询测试账号",
+      "category": "支付测试（pay-middle/test）",
+      "description": "查询送礼/支付限制测试账号配置（getAllPayTest；params[0]=测试场景 ID，如 202401241150003）",
+      "prompts": [
+        "查询送礼限制测试账号 <scenarioId>",
+        "查看 pay 测试场景 <scenarioId>",
+        "getAllPayTest <scenarioId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/送礼限制-查询测试账号.json \\\n  --expr <scenarioId>\n"
+    },
+    {
       "id": "package_gift_add",
       "name": "背包礼物-下发",
       "category": "背包礼物（voga-base-service-middle-gift-stage）",

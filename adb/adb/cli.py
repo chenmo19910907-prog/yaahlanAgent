@@ -13,18 +13,14 @@ from .login_or_register import enter_account
 from .phone_login_status import query_phone_login_status
 from .account_sweep import parse_phone_range, sweep_accounts
 from .script_abandon import (
-    failure_reason_from_result,
     get_script_failure_info,
     list_abandoned_scripts,
-    record_script_run_outcome,
     restore_script,
 )
 from .ai_operate import (
     AI_OPERATE_MODULES,
     AiOperateRequired,
     GOAL_SPECS,
-    assert_fragment_script_allowed,
-    fragment_module,
     list_goals,
     max_consecutive_failures,
     prepare_vision_cycle,
@@ -35,7 +31,6 @@ from .post_login_verify import verify_and_dismiss_post_login
 from .splash_verify import verify_and_recover_splash, verify_splash_landing
 from .actions import clear_input_field, input_text, keyevent, swipe, tap
 from .activity import get_foreground_activity
-from .chain import load_steps_file, run_chain
 from .device import AdbError, display_size, list_devices, require_device
 from .device_calibrate import (
     calibrate_commit,
@@ -51,7 +46,7 @@ from .device_profile import (
     list_profile_paths,
     load_profile,
 )
-from .macros import apply_skip_flags, list_macros, resolve_macro
+from .macros import list_macros
 from .recorded_scripts import (
     list_catalog,
     list_fragments_by_module,
@@ -79,6 +74,9 @@ from .logcat_check import (
     logcat_options_from_args,
     wait_for_logcat,
 )
+from .cli_args import use_adaptation
+from .cli_runner import run_chain_command, run_integrated_command, run_macro_command
+from .paths import script_abandon_path
 from .tunnel_verify import (
     TunnelVerifyOptions,
     add_tunnel_arguments,
@@ -92,14 +90,6 @@ from .tunnel_verify import (
 
 def _emit(payload: dict[str, object]) -> None:
     print(json.dumps(payload, ensure_ascii=False, indent=2))
-
-
-def _attach_foreground_activity(*, serial: str, result: dict[str, object]) -> None:
-    """片段执行后附带前台 Activity（~100ms），供片段间验收，免读图。"""
-    try:
-        result["foregroundActivity"] = get_foreground_activity(serial=serial)
-    except AdbError as exc:
-        result["foregroundActivity"] = {"ok": False, "error": str(exc)}
 
 
 def _resolve_screenshot_path(args, shot_dir: Path) -> Path:
@@ -257,6 +247,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="等同 --capture never，全程不截图（最连贯）",
     )
     p_macro.add_argument(
+        "--fast",
+        action="store_true",
+        help="提速：默认不截图 + Tunnel 轮询 1500ms；仍保留弹窗门禁与 activity 验收",
+    )
+    p_macro.add_argument(
         "--no-adapt",
         action="store_true",
         help="跳过设备换算（仅调试用；换机未校准时不要用）",
@@ -298,6 +293,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-capture",
         action="store_true",
         help="等同 --capture never",
+    )
+    p_chain.add_argument(
+        "--fast",
+        action="store_true",
+        help="提速：默认不截图 + Tunnel 轮询 1500ms；仍保留弹窗门禁",
     )
     p_chain.add_argument("--no-adapt", action="store_true", help="跳过设备换算")
     p_chain.add_argument(
@@ -398,6 +398,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="结束时强制截图（tunnel 校验时默认也会截图）",
     )
     p_run.add_argument("--no-adapt", action="store_true", help="跳过设备换算")
+    p_run.add_argument(
+        "--fast",
+        action="store_true",
+        help="提速：默认不截图 + Tunnel 轮询 1500ms；仍保留弹窗门禁",
+    )
     p_run.add_argument(
         "--no-popup-gate",
         action="store_true",
@@ -501,7 +506,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_tunnel_wait.add_argument("--keyword", default="", help="URL 关键字")
     p_tunnel_wait.add_argument("--since", type=int, default=300, help="回溯秒数")
     p_tunnel_wait.add_argument("--wait", type=int, default=30, dest="tunnel_wait")
-    p_tunnel_wait.add_argument("--poll-ms", type=int, default=2000, dest="tunnel_poll_ms")
+    p_tunnel_wait.add_argument("--poll-ms", type=int, default=1500, dest="tunnel_poll_ms")
     p_tunnel_wait.add_argument(
         "--expect-status",
         type=int,
@@ -741,251 +746,6 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _use_adaptation(args: argparse.Namespace) -> bool:
-    return not getattr(args, "no_adapt", False)
-
-
-def _rtl_mode(args: argparse.Namespace) -> str:
-    if getattr(args, "no_rtl", False):
-        return "off"
-    if getattr(args, "rtl", False):
-        return "on"
-    return "off"
-
-
-def _resolve_capture_mode(
-    *,
-    explicit: str | None,
-    no_capture: bool,
-    default: str,
-) -> str:
-    if no_capture:
-        return "never"
-    return explicit or default
-
-
-def _ensure_end_screenshot(
-    *,
-    serial: str,
-    result: dict[str, object],
-    shot_dir: Path,
-    max_screenshots: int,
-) -> None:
-    if result.get("screenshot"):
-        return
-    cap = capture_screenshot(
-        serial=serial,
-        directory=shot_dir,
-        max_keep=max_screenshots,
-    )
-    result["screenshot"] = cap
-
-
-def _run_dismiss_scripts(
-    *,
-    serial: str,
-    script_names: list[str],
-    shot_dir: Path,
-    max_screenshots: int,
-    skip_keys: set[str],
-    use_adaptation: bool,
-) -> list[dict[str, object]]:
-    blocks: list[dict[str, object]] = []
-    for name in script_names:
-        frag = resolve_macro(name)
-        steps = apply_skip_flags(list(frag.get("steps", [])), skip=skip_keys)
-        out = run_chain(
-            serial=serial,
-            steps=steps,
-            capture="never",
-            screenshot_dir=shot_dir,
-            max_screenshots=max_screenshots,
-            use_adaptation=use_adaptation,
-        )
-        blocks.append(
-            {
-                "script": frag.get("name", name),
-                "scriptId": frag.get("id", name),
-                "stepsExecuted": out.get("stepsExecuted"),
-            }
-        )
-    return blocks
-
-
-def _attach_popup_analysis(
-    *,
-    args: argparse.Namespace,
-    result: dict[str, object],
-    serial: str,
-    shot_dir: Path,
-    max_screenshots: int,
-    scene: str,
-    auto_dismiss: bool,
-) -> None:
-    momoid = resolve_momoid(
-        momoid=getattr(args, "tunnel_momoid", None),
-        account=getattr(args, "tunnel_account", None),
-    )
-    since_seconds = int(
-        getattr(args, "popup_since", None) or getattr(args, "since", 120)
-    )
-    analysis = analyze_scene_from_tunnel(
-        momoid=momoid,
-        scene=scene,
-        since_seconds=since_seconds,
-        g_appid=str(getattr(args, "tunnel_g_appid", "All") or "All"),
-        g_env=str(getattr(args, "tunnel_g_env", "alpha") or "alpha"),
-    )
-
-    dismiss_blocks: list[dict[str, object]] = []
-    if auto_dismiss and analysis.get("dismissScripts"):
-        dismiss_blocks = dismiss_scripts_for_analysis(
-            serial=serial,
-            analysis=analysis,  # type: ignore[arg-type]
-            screenshot_dir=shot_dir,
-            max_screenshots=max_screenshots,
-            use_adaptation=_use_adaptation(args),
-        )
-
-    if analysis.get("needScreenshot") or dismiss_blocks:
-        _ensure_end_screenshot(
-            serial=serial,
-            result=result,
-            shot_dir=shot_dir,
-            max_screenshots=max_screenshots,
-        )
-
-    analysis["dismissExecuted"] = dismiss_blocks
-    result["popupAnalysis"] = analysis
-
-
-def _finalize_with_tunnel(
-    *,
-    args: argparse.Namespace,
-    result: dict[str, object],
-    serial: str,
-    shot_dir: Path,
-    max_screenshots: int,
-    start_time: int,
-    script_spec: dict[str, object] | None = None,
-) -> int:
-    tunnel_opts = tunnel_options_from_args(
-        args,
-        script_spec=script_spec,  # type: ignore[arg-type]
-    )
-    if tunnel_opts is None:
-        return 0
-
-    _ensure_end_screenshot(
-        serial=serial,
-        result=result,
-        shot_dir=shot_dir,
-        max_screenshots=max_screenshots,
-    )
-    merged, ok = attach_tunnel_verify(
-        result,  # type: ignore[arg-type]
-        tunnel_opts,
-        start_time=start_time,
-    )
-    result.clear()
-    result.update(merged)
-    return 0 if ok else 3
-
-
-def _finalize_with_logcat(
-    *,
-    args: argparse.Namespace,
-    result: dict[str, object],
-    serial: str,
-    script_spec: dict[str, object] | None = None,
-) -> int:
-    logcat_opts = logcat_options_from_args(
-        args,
-        script_spec=script_spec,  # type: ignore[arg-type]
-    )
-    if logcat_opts is None:
-        return 0
-    merged, ok = attach_logcat_verify(
-        result,  # type: ignore[arg-type]
-        logcat_opts,
-        serial=serial,
-    )
-    result.clear()
-    result.update(merged)
-    return 0 if ok else 3
-
-
-def _logcat_exit_code(result: dict[str, object]) -> int:
-    verify = result.get("logcatVerify")
-    if isinstance(verify, dict) and not verify.get("ok"):
-        return 3
-    if result.get("logcatVerifyFailed"):
-        return 3
-    return 0
-
-
-def _splash_verify_exit_code(result: dict[str, object]) -> int:
-    splash = result.get("splashVerify")
-    if isinstance(splash, dict) and not splash.get("ok"):
-        return 3
-    if result.get("splashVerifyFailed"):
-        return 3
-    return 0
-
-
-def _popup_gate_exit_code(result: dict[str, object]) -> int:
-    gate = result.get("popupGate")
-    if isinstance(gate, dict) and (gate.get("blocked") or not gate.get("ok")):
-        return 3
-    if result.get("popupGateFailed"):
-        return 3
-    return 0
-
-
-def _optional_momoid_from_args(args: argparse.Namespace) -> str | None:
-    if not getattr(args, "tunnel_momoid", None) and not getattr(args, "tunnel_account", None):
-        return None
-    return resolve_momoid(
-        momoid=getattr(args, "tunnel_momoid", None),
-        account=getattr(args, "tunnel_account", None),
-    )
-
-
-def _popup_gate_auto_enabled(args: argparse.Namespace) -> bool:
-    return not bool(getattr(args, "no_popup_gate", False))
-
-
-def _track_script_outcome(
-    *,
-    name: str,
-    kind: str,
-    result: dict[str, object],
-    exit_code: int,
-    module: str | None = None,
-    script_id: str | None = None,
-) -> None:
-    reason = failure_reason_from_result(result, exit_code)  # type: ignore[arg-type]
-    track = record_script_run_outcome(
-        name=name,
-        kind=kind,
-        ok=exit_code == 0,
-        exit_code=exit_code,
-        reason=None if exit_code == 0 else reason,
-        module=module,
-        script_id=script_id,
-    )
-    result["scriptFailureTrack"] = track
-    if track.get("abandoned"):
-        result["scriptAbandoned"] = True
-        entry = track.get("entry")
-        if isinstance(entry, dict) and entry.get("abandonReason"):
-            result["agentHint"] = (
-                f"{entry.get('abandonReason')}。"
-                "该脚本已废弃，请 ai prepare + tunnel 抓包继续；"
-                f"调试可用 ai restore {name} 或 --force-script。"
-            )
-
-
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     shot_dir = screenshot_dir(args.screenshot_dir)
@@ -1146,75 +906,7 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         if args.command == "macro":
-            assert_fragment_script_allowed(
-                args.name,
-                force_script=bool(getattr(args, "force_script", False)),
-            )
-            spec = resolve_macro(args.name, text=args.text)
-            tunnel_opts = tunnel_options_from_args(args, script_spec=spec)
-            logcat_opts = logcat_options_from_args(args, script_spec=spec)
-            since_buffer = tunnel_opts.since_buffer_seconds if tunnel_opts else 5
-            start_time = int(time.time()) - since_buffer
-            capture = _resolve_capture_mode(
-                explicit=args.capture,
-                no_capture=args.no_capture,
-                default=spec.get("capture", "end"),
-            )
-            if (tunnel_opts is not None or logcat_opts is not None) and capture == "never":
-                capture = "end"
-            steps = apply_skip_flags(
-                list(spec.get("steps", [])),
-                skip=set(args.skip),
-            )
-            gate_momoid: str | None = None
-            try:
-                gate_momoid = _optional_momoid_from_args(args)
-            except ValueError:
-                pass
-            out = run_chain(
-                serial=serial,
-                steps=steps,
-                capture=capture,
-                screenshot_dir=shot_dir,
-                max_screenshots=args.max_screenshots,
-                use_adaptation=_use_adaptation(args),
-                text=args.text,
-                skip=set(args.skip),
-                popup_gate_auto=_popup_gate_auto_enabled(args),
-                popup_gate_momoid=gate_momoid,
-                capture_max_edge=getattr(args, "max_edge", DEFAULT_CAPTURE_MAX_EDGE),
-                rtl_mode=_rtl_mode(args),  # type: ignore[arg-type]
-            )
-            out["script"] = spec.get("name", args.name)
-            out["scriptId"] = spec.get("id", args.name)
-            out["description"] = spec.get("description", "")
-            if args.text is not None:
-                out["text"] = args.text
-            code = _finalize_with_tunnel(
-                args=args,
-                result=out,
-                serial=serial,
-                shot_dir=shot_dir,
-                max_screenshots=args.max_screenshots,
-                start_time=start_time,
-                script_spec=spec,
-            )
-            code = max(
-                code,
-                _finalize_with_logcat(args=args, result=out, serial=serial, script_spec=spec),
-                _splash_verify_exit_code(out),
-                _popup_gate_exit_code(out),
-                _logcat_exit_code(out),
-            )
-            _attach_foreground_activity(serial=serial, result=out)
-            _track_script_outcome(
-                name=str(out.get("script", args.name)),
-                kind="fragment",
-                result=out,
-                exit_code=code,
-                module=fragment_module(args.name),
-                script_id=str(out.get("scriptId", "")),
-            )
+            out, code = run_macro_command(args=args, serial=serial, shot_dir=shot_dir)
             _emit(out)
             return code
 
@@ -1227,9 +919,7 @@ def main(argv: list[str] | None = None) -> int:
                     {
                         "abandoned": list_abandoned_scripts(),
                         "threshold": max_consecutive_failures(),
-                        "stateFile": str(
-                            Path(__file__).resolve().parent.parent / ".script_abandon.json"
-                        ),
+                        "stateFile": str(script_abandon_path()),
                     }
                 )
                 return 0
@@ -1258,155 +948,14 @@ def main(argv: list[str] | None = None) -> int:
             return 2
 
         if args.command == "chain":
-            steps, file_capture = load_steps_file(args.steps_file)
-            tunnel_opts = tunnel_options_from_args(args)
-            logcat_opts = logcat_options_from_args(args)
-            since_buffer = tunnel_opts.since_buffer_seconds if tunnel_opts else 5
-            start_time = int(time.time()) - since_buffer
-            capture = _resolve_capture_mode(
-                explicit=args.capture,
-                no_capture=args.no_capture,
-                default=file_capture,
-            )
-            if (tunnel_opts is not None or logcat_opts is not None) and capture == "never":
-                capture = "end"
-            gate_momoid: str | None = None
-            try:
-                gate_momoid = _optional_momoid_from_args(args)
-            except ValueError:
-                pass
-            out = run_chain(
-                serial=serial,
-                steps=steps,
-                capture=capture,
-                screenshot_dir=shot_dir,
-                max_screenshots=args.max_screenshots,
-                use_adaptation=_use_adaptation(args),
-                popup_gate_auto=_popup_gate_auto_enabled(args),
-                popup_gate_momoid=gate_momoid,
-                capture_max_edge=getattr(args, "max_edge", DEFAULT_CAPTURE_MAX_EDGE),
-                rtl_mode=_rtl_mode(args),  # type: ignore[arg-type]
-            )
-            out["stepsFile"] = str(args.steps_file.resolve())
-            code = _finalize_with_tunnel(
-                args=args,
-                result=out,
-                serial=serial,
-                shot_dir=shot_dir,
-                max_screenshots=args.max_screenshots,
-                start_time=start_time,
-            )
-            code = max(
-                code,
-                _finalize_with_logcat(args=args, result=out, serial=serial),
-                _splash_verify_exit_code(out),
-                _popup_gate_exit_code(out),
-                _logcat_exit_code(out),
-            )
-            _attach_foreground_activity(serial=serial, result=out)
+            out, code = run_chain_command(args=args, serial=serial, shot_dir=shot_dir)
             _emit(out)
             return code
 
         if args.command == "run":
-            fragment_spec: dict[str, object] | None = None
-            tunnel_opts = tunnel_options_from_args(args)
-            logcat_opts = logcat_options_from_args(args)
-            popup_scene = getattr(args, "popup_scene", None)
-            if tunnel_opts is None and not popup_scene and logcat_opts is None:
-                raise ValueError(
-                    "run 须指定 --tunnel-keyword、--logcat-grep 或 --popup-scene"
-                )
-            if popup_scene and not (
-                getattr(args, "tunnel_momoid", None) or getattr(args, "tunnel_account", None)
-            ):
-                raise ValueError("run 使用 --popup-scene 时须同时指定 --tunnel-account 或 --tunnel-momoid")
-            since_buffer = tunnel_opts.since_buffer_seconds if tunnel_opts else 5
-            start_time = int(time.time()) - since_buffer
-            out: dict[str, object]
-
-            gate_momoid: str | None = None
-            try:
-                gate_momoid = _optional_momoid_from_args(args)
-            except ValueError:
-                pass
-            if args.macro:
-                assert_fragment_script_allowed(
-                    args.macro,
-                    force_script=bool(getattr(args, "force_script", False)),
-                )
-                spec = resolve_macro(args.macro, text=args.text)
-                fragment_spec = spec
-                steps = apply_skip_flags(
-                    list(spec.get("steps", [])),
-                    skip=set(args.skip),
-                )
-                out = run_chain(
-                    serial=serial,
-                    steps=steps,
-                    capture="end",
-                    screenshot_dir=shot_dir,
-                    max_screenshots=args.max_screenshots,
-                    use_adaptation=_use_adaptation(args),
-                    text=args.text,
-                    skip=set(args.skip),
-                    popup_gate_auto=_popup_gate_auto_enabled(args),
-                    popup_gate_momoid=gate_momoid,
-                    capture_max_edge=getattr(args, "max_edge", DEFAULT_CAPTURE_MAX_EDGE),
-                    rtl_mode=_rtl_mode(args),  # type: ignore[arg-type]
-                )
-                out["runMode"] = "macro"
-                out["script"] = spec.get("name", args.macro)
-            else:
-                steps, _file_capture = load_steps_file(args.chain)
-                out = run_chain(
-                    serial=serial,
-                    steps=steps,
-                    capture="end",
-                    screenshot_dir=shot_dir,
-                    max_screenshots=args.max_screenshots,
-                    use_adaptation=_use_adaptation(args),
-                    popup_gate_auto=_popup_gate_auto_enabled(args),
-                    popup_gate_momoid=gate_momoid,
-                    capture_max_edge=getattr(args, "max_edge", DEFAULT_CAPTURE_MAX_EDGE),
-                    rtl_mode=_rtl_mode(args),  # type: ignore[arg-type]
-                )
-                out["runMode"] = "chain"
-                out["stepsFile"] = str(args.chain.resolve())
-
-            code = 0
-            if tunnel_opts is not None:
-                code = _finalize_with_tunnel(
-                    args=args,
-                    result=out,
-                    serial=serial,
-                    shot_dir=shot_dir,
-                    max_screenshots=args.max_screenshots,
-                    start_time=start_time,
-                    script_spec=fragment_spec,
-                )
-            code = max(
-                code,
-                _finalize_with_logcat(
-                    args=args,
-                    result=out,
-                    serial=serial,
-                    script_spec=fragment_spec,
-                ),
-                _splash_verify_exit_code(out),
-                _popup_gate_exit_code(out),
-                _logcat_exit_code(out),
+            out, code = run_integrated_command(
+                args=args, serial=serial, shot_dir=shot_dir
             )
-            if popup_scene:
-                _attach_popup_analysis(
-                    args=args,
-                    result=out,
-                    serial=serial,
-                    shot_dir=shot_dir,
-                    max_screenshots=args.max_screenshots,
-                    scene=popup_scene,
-                    auto_dismiss=bool(getattr(args, "popup_auto_dismiss", False)),
-                )
-            _attach_foreground_activity(serial=serial, result=out)
             _emit(out)
             return code
 
@@ -1437,7 +986,7 @@ def main(argv: list[str] | None = None) -> int:
                     momoid=momoid,
                     since_seconds=int(args.since),
                     max_rounds=int(args.rounds),
-                    use_adaptation=_use_adaptation(args),
+                    use_adaptation=use_adaptation(args),
                     auto_dismiss=bool(getattr(args, "dismiss", False)),
                 )
                 _emit(out)
@@ -1465,7 +1014,7 @@ def main(argv: list[str] | None = None) -> int:
                         analysis=out,  # type: ignore[arg-type]
                         screenshot_dir=shot_dir,
                         max_screenshots=args.max_screenshots,
-                        use_adaptation=_use_adaptation(args),
+                        use_adaptation=use_adaptation(args),
                     )
                     out["dismissExecuted"] = dismiss_blocks
                 if args.capture or out.get("needScreenshot") or dismiss_blocks:
@@ -1529,7 +1078,7 @@ def main(argv: list[str] | None = None) -> int:
                         start_time=start_time,
                         recover=True,
                         tunnel_wait=int(args.tunnel_wait),
-                        use_adaptation=_use_adaptation(args),
+                        use_adaptation=use_adaptation(args),
                     )
                 else:
                     out = verify_splash_landing(
@@ -1558,7 +1107,7 @@ def main(argv: list[str] | None = None) -> int:
                     max_screenshots=args.max_screenshots,
                     momoid=momoid,
                     login_start=login_start,
-                    use_adaptation=_use_adaptation(args),
+                    use_adaptation=use_adaptation(args),
                     force_dismiss=bool(getattr(args, "force_dismiss", False)),
                 )
                 _emit(out)

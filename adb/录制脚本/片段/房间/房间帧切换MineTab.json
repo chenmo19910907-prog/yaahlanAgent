@@ -7,7 +7,7 @@
   "kbRef": ["documents/房间.md（Mine）"],
   "steps": [
     { "run_script": "切换房间底栏" },
-    { "tap_pct": [0.568, 0.344], "note": "Mine（613,804）" },
+    { "tap_pct": [0.552, 0.344], "note": "Mine 顶栏（dump bounds 529,771-664,837 → 596,804）" },
     { "sleep_ms": 600 }
   ]
 }

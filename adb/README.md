@@ -86,6 +86,8 @@ python3 adb/adb_execute.py activity
 
 **进房遇弹窗类小游戏**（Ludo / World Cup 等全屏层）：点顶部居中 **Minimize** 收起即可（`macro 房内三方游戏最小化`），**不必学习游戏内 UI**；详见 `录制脚本/弹窗说明.md`。
 
+**Charm/PK 横幅 / 奖杯挂件**（`Still missing XXk` 或右上角 trophy+00:00）：**与房间无关**；任意页 `capture` 一见即 **最高优先级** 执行 `macro CharmPK横幅收起拖走`（收起 + 拖走挂件），再继续原任务。详见 `录制脚本/弹窗说明.md` §最高优先级。
+
 **进他人房约 2～5s 后**常弹 **Mic invitation（邀请上麦）** 顶部横幅，会挡右上角操作；须 `capture` 读图后 `macro 拒绝Mic邀请`，勿盲点 Reject 坐标。
 
 **验证成功 → 自动录制**：探索出新路径后，经验收通过，Agent 自动将步骤落库到 `录制脚本/`（不写进本 README）。流程见 [验证成功自动录制](#验证成功自动录制)。
@@ -141,7 +143,7 @@ python3 adb/adb_execute.py activity
 
 | 优先级 | 做法 |
 |--------|------|
-| 1 | 路径已定时 `macro` + `--no-capture`（0 张） |
+| 1 | 路径已定时 `macro --fast` 或 `macro --no-capture`（0 张；**仍保留弹窗门禁**） |
 | 2 | 有接口时用 `tunnel wait` / `tunnelVerify`；`ok` 且退出码 0 → **不读图** |
 | 3 | 片段间判页用 `activity` 或 JSON 里的 `foregroundActivity`（macro/chain/run 自动附带） |
 | 4 | 必须读图时用缩略图（**默认** `max-edge=1170`，约半分辨率）；JSON 含 `scaleX`/`scaleY`/`deviceWidth` |
@@ -363,7 +365,15 @@ python3 adb/adb_execute.py macro 手机号登录 --skip login_lang
 python3 adb/adb_execute.py chain adb/录制脚本/片段/个人主页/进入个人资料详情页.json
 ```
 
-步骤类型：`sleep_ms`、`tap` / `tap_pct`、`swipe`、`key`、`text`、`launch_app`、`run_script`（嵌套片段）。
+步骤类型：`sleep_ms`、`tap` / `tap_pct`、`swipe`、`key`、`text`、`launch_app`、`run_script`（嵌套片段）、**`wait_activity`**（轮询 Activity，比固定 sleep 更快且超时仍报错）。
+
+`wait_activity` 示例：
+
+```json
+{ "wait_activity": { "hint": "login", "timeout_ms": 3000, "poll_ms": 200 } }
+{ "wait_activity": { "hints": ["home", "register"], "timeout_ms": 3500 } }
+{ "wait_activity": { "short_name": "SettingComposeActivity", "timeout_ms": 2500 } }
+```
 
 ## 与 Agent 协作示例
 

@@ -55,7 +55,12 @@
       "note": "iv_setting 中心 996,159（勿用 966 左缘，RTL 镜像会偏到 Dev）"
     },
     {
-      "sleep_ms": 800
+      "wait_activity": {
+        "short_name": "SettingComposeActivity",
+        "timeout_ms": 2500,
+        "poll_ms": 200,
+        "note": "等待进入设置页"
+      }
     }
   ]
 }

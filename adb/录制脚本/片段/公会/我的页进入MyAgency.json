@@ -4,7 +4,7 @@
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
   "description": "Me 下滑后 → My Agency 卡片 → WebViewActivity",
-  "kbRef": ["待补 KB（My Agency 公会）"],
+  "kbRef": ["testcase-kb/公会.md（My Agency）"],
   "steps": [
     { "run_script": "我的页下滑浏览", "note": "露出底部网格" },
     { "tap_pct": [0.743, 0.770], "note": "My Agency（802,1802）" },

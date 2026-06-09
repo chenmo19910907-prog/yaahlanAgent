@@ -4,7 +4,7 @@
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "never",
   "description": "Me 页上滑一次，露出 Redeem/Family/Privilege 及以下菜单（须已在 Me 顶栏区域）",
-  "kbRef": ["待补 KB（Me 页菜单列表）"],
+  "kbRef": ["testcase-kb/个人主页.md（Me 页菜单）"],
   "steps": [
     { "sleep_ms": 400 },
     { "tap_pct": [0.900, 0.956], "note": "Me 底栏" },

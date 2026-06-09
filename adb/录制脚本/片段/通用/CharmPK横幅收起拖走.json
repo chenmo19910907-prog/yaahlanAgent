@@ -1,0 +1,36 @@
+{
+  "id": "dismiss-charm-pk-banner",
+  "name": "CharmPK横幅收起拖走",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "【全局最高优先级·与房间无关】capture 见 Charm/PK 大横幅（Still missing XXk）或右上角奖杯挂件（pk_small、trophy+00:00）须立即处理，优先于一切其它操作。**禁止 key BACK**（无效且可能误触退出 App）。① 见大横幅时点 iv_switch_small 收起钮（≈980,200，Charm 右侧向内双箭头；勿点 Charm）。若弹出 Report/Minimize/Share/Close 大面板，再点一次收起钮。② 拖走奖杯挂件：按住 pk_small 向下拖（976,180→976,520，1s）。若仅见已收起的小挂件、无大横幅，可只执行步骤②。capture 验收后再继续原任务",
+  "kbRef": [
+    "testcase-kb/榜单与活动.md",
+    "adb/录制脚本/弹窗说明.md"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    {
+      "tap_pct": [0.908, 0.085],
+      "note": "① 见大横幅时点 iv_switch_small 收起钮（≈980,200；勿 BACK、勿点 Charm）"
+    },
+    { "sleep_ms": 800 },
+    {
+      "tap_pct": [0.908, 0.085],
+      "optional": true,
+      "note": "若仍见 Report/Minimize/Share/Close 大面板：再点一次收起钮（仍勿 BACK）"
+    },
+    { "sleep_ms": 400 },
+    {
+      "swipe": {
+        "x1": 976,
+        "y1": 180,
+        "x2": 976,
+        "y2": 520,
+        "duration_ms": 1000
+      },
+      "note": "② 拖走奖杯挂件（pk_small 右上角 trophy+00:00 向下拖）"
+    },
+    { "sleep_ms": 600 }
+  ]
+}

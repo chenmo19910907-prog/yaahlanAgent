@@ -4,10 +4,10 @@
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
   "description": "Me 下滑后 → Level 等级 → WebViewActivity",
-  "kbRef": ["待补 KB（用户等级）"],
+  "kbRef": ["testcase-kb/财富等级.md"],
   "steps": [
     { "run_script": "我的页下滑浏览", "note": "露出 Level 行" },
-    { "tap_pct": [0.500, 0.373], "note": "level_layout（540,872）" },
-    { "sleep_ms": 1200 }
+    { "tap_pct": [0.500, 0.363], "note": "level_layout（540,850）" },
+    { "wait_activity": { "hint": "webview", "timeout_ms": 3000 } }
   ]
 }

@@ -4,7 +4,7 @@
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
   "description": "Me 下滑后 → My Outfits 卡片 → WebViewActivity",
-  "kbRef": ["待补 KB（My Outfits）"],
+  "kbRef": ["testcase-kb/装扮.md（My Outfits）"],
   "steps": [
     { "run_script": "我的页下滑浏览", "note": "露出底部网格" },
     { "tap_pct": [0.257, 0.860], "note": "My Outfits（277,2012）" },

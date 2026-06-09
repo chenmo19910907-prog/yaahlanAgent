@@ -6,7 +6,7 @@
     "height": 2340
   },
   "capture": "end",
-  "description": "已在语音房内：先 run 拒绝Mic邀请（进他人房 2～5s 后 Mic invitation）→ 若小游戏全屏 run 房内三方游戏最小化 → 右上 X → Close → 若有 Room Reminder 再 Exit Now。Close 已回 Room 列表时可忽略末步。搜索进房退出后常落 Search 页，须 capture 验收",
+  "description": "已在语音房内：先 run 拒绝Mic邀请 → 若 Charm/PK 横幅：run CharmPK横幅收起拖走（全局最高优先级，任意页亦同）→ 若小游戏全屏 run 房内三方游戏最小化 → 右上 X → Close → Room Reminder 再 Exit Now。搜索进房退出后常落 Search 页，须 capture 验收",
   "kbRef": [
     "testcase-kb/主题房.md"
   ],
@@ -21,24 +21,32 @@
     },
     {
       "sleep_ms": 400,
-      "note": "若网络诊断 Excellent：run 关闭网络诊断弹窗；小游戏全屏：run 房内三方游戏最小化"
+      "note": "若网络诊断 Excellent：run 关闭网络诊断弹窗；Charm/PK 横幅：run CharmPK横幅收起拖走；小游戏全屏：run 房内三方游戏最小化"
+    },
+    {
+      "run_script": "CharmPK横幅收起拖走",
+      "optional": true,
+      "note": "capture 见 Still missing XXk 横幅时执行；无横幅时 tap/swipe 一般无害，可 skip"
+    },
+    {
+      "sleep_ms": 400
     },
     {
       "tap_pct": [
-        0.94,
-        0.053
+        0.922,
+        0.064
       ],
-      "note": "右上角 X，打开房间功能面板（Report/Minimize/Share/Close）"
+      "note": "右上角 X（iv_room_close ≈996,150），打开房间功能面板"
     },
     {
       "sleep_ms": 800
     },
     {
       "tap_pct": [
-        0.875,
-        0.086
+        0.813,
+        0.151
       ],
-      "note": "Close 电源图标（面板第一行第 4 个，≈945,200；旧 0.145/y=339 常 miss）"
+      "note": "Close 电源图标（grid_view 第 1 行第 4 格 ≈878,354；旧 0.875/0.086≈945,201 偏上误触 Hourly Ranking）"
     },
     {
       "sleep_ms": 800

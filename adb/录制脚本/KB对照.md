@@ -5,6 +5,12 @@
 **默认登录**（`loginDefaults`）：+86 / 13311111115 / 000000。
 **测试账号**：guildLeader 13311111111、familyLeader 13311111112（见 `索引.json` → `testAccounts`）。
 
+## 通用 · `片段/通用/`
+
+| 脚本 | id |
+|------|-----|
+| CharmPK横幅收起拖走 | dismiss-charm-pk-banner |
+
 ## 注册登录 · `片段/注册登录/`
 
 | 脚本 | id |

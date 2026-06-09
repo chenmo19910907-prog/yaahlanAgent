@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from .actions import clear_input_field, input_text, keyevent, swipe, tap
-from .activity import get_foreground_activity
+from .activity import get_foreground_activity, wait_for_activity
 from .coords import pct_to_pixel
 from .rtl import RtlMode, mirror_x_pct, mirror_x_pixel, resolve_step_mirror
 from .device import AdbError, display_size
@@ -35,6 +35,7 @@ _STEP_TYPES = frozenset(
         "verify_splash",
         "popup_gate",
         "logcat_check",
+        "wait_activity",
     }
 )
 
@@ -144,6 +145,8 @@ def run_chain(
                 kind = "popup_gate"
             elif "logcat_check" in step:
                 kind = "logcat_check"
+            elif "wait_activity" in step:
+                kind = "wait_activity"
             elif "launch_app" in step:
                 kind = "launch_app"
             elif "sleep" in step or "sleep_ms" in step:
@@ -325,6 +328,42 @@ def run_chain(
                 result["screenshot"] = gate["screenshot"]
             if gate.get("blocked") or not gate.get("ok"):
                 result["popupGateFailed"] = True
+        elif kind == "wait_activity":
+            raw = step.get("wait_activity")
+            if isinstance(raw, str):
+                spec: dict[str, Any] = {"hint": raw.strip()}
+            elif isinstance(raw, dict):
+                spec = dict(raw)
+            else:
+                raise ValueError(f"wait_activity 须为 hint 字符串或 object: {step}")
+
+            hints_raw = spec.get("hints")
+            hints_list: list[str] | None = None
+            if isinstance(hints_raw, list):
+                hints_list = [str(h).strip() for h in hints_raw if str(h).strip()]
+
+            wait_out = wait_for_activity(
+                serial=serial,
+                timeout_ms=int(spec.get("timeout_ms", spec.get("timeoutMs", 3000))),
+                poll_ms=int(spec.get("poll_ms", spec.get("pollMs", 250))),
+                hint=str(spec["hint"]).strip() if spec.get("hint") else None,
+                hints=hints_list,
+                short_name=str(spec.get("short_name", spec.get("shortName", ""))).strip()
+                or None,
+                package=str(spec.get("package", "")).strip() or None,
+            )
+            entry["waitActivity"] = wait_out
+            entry["elapsedMs"] = wait_out.get("elapsedMs")
+            result["lastWaitActivity"] = wait_out
+            required = spec.get("required", True)
+            if required is not False and not wait_out.get("matched"):
+                expected = wait_out.get("expected", {})
+                fa = wait_out.get("foregroundActivity")
+                got = fa.get("hint") if isinstance(fa, dict) else "?"
+                raise AdbError(
+                    f"wait_activity 超时：期望 {expected}，当前 hint={got!r} "
+                    f"（{wait_out.get('elapsedMs')}ms）"
+                )
         elif kind == "logcat_check":
             from .logcat_check import parse_logcat_check_spec, wait_for_logcat
 

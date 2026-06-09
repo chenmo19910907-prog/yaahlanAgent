@@ -20,6 +20,7 @@ description: >-
 
 | 必须 | 禁止 |
 |------|------|
+| **capture 见 Charm/PK 横幅**（Still missing XXk）**或右上角奖杯挂件**（00:00）→ **立即** `macro CharmPK横幅收起拖走`，再继续 | 横幅/挂件未处理就 tap 其它按钮 / 跑下一 macro |
 | 每页 **先 swipe 读全** 再点下一项 | Python/`learn scan` **批量乱点** 代替读图 |
 | **一次只探一个入口**：tap → activity → capture | 未读图就写坐标 |
 | 探完 **立刻落片段** + 更新索引，再下一项 | 攒一堆操作最后才落库 |
@@ -33,6 +34,7 @@ description: >-
 
 ```text
 ① capture --max-edge 1170 读图 → 确认当前页与可点入口
+①b 【最高优先级】见 Charm/PK 横幅或奖杯挂件 → macro CharmPK横幅收起拖走 → capture 验收后再继续
 ② 【本页】上滑若干次（每次 swipe 后再 capture），直到内容穷尽；必要时滑回顶部
 ③ 选一个未落库入口
 ④ tap（读图算坐标；Tab 等可 uiautomator dump 精确定位）
@@ -94,6 +96,7 @@ python3 adb/adb_execute.py learn scan --tab me
 
 | 场景 | 处理 |
 |------|------|
+| **Charm/PK 横幅 / 奖杯挂件**（任意页·Still missing XXk 或 trophy+00:00） | **最高优先级** → `macro CharmPK横幅收起拖走`（① `iv_switch_small` `0.908,0.085`；② 拖挂件 `976,180→976,520` 1s；**勿点 Charm**；仅小挂件时只执行②）；capture 验收后再继续 |
 | **房内三方游戏全屏**（Ludo / 7up7down） | 先 `macro 房内三方游戏最小化`（顶部 **Minimize**，约 `0.500, 0.171`）；Game Rewards 弹窗用 `key 4`；再 `macro 退出房间 --force-script --no-popup-gate` |
 | **退出房间后落 Search 页** | capture 读图 → AI 点返回或 `搜索页返回房间帧` |
 | **Profile Tab 切换** | Honor/Relationship 用 dump 取 bounds，勿盲 y≈520 |

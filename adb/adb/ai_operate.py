@@ -107,6 +107,7 @@ GOAL_SPECS: dict[str, dict[str, Any]] = {
         "successHints": ["home", "search"],
         "workflow": [
             "capture 读图确认在房内",
+            "若有 Charm/PK 横幅（Still missing XXk）或右上角奖杯挂件（00:00）：macro CharmPK横幅收起拖走 --force-script --no-popup-gate",
             "读图点退出/关闭房间",
             "若在 Search 页：读图点返回至 Room 列表",
             "activity 验收 hint=home 或 search",
@@ -117,6 +118,7 @@ GOAL_SPECS: dict[str, dict[str, Any]] = {
         "successHints": ["home", "login", "in_room"],
         "workflow": [
             "capture 读图分析当前页",
+            "若有 Charm/PK 横幅（Still missing XXk）或右上角奖杯挂件（00:00）：macro CharmPK横幅收起拖走 --force-script --no-popup-gate；capture 验收后再纠偏",
             "按目标用 tap / key BACK / 输入，逐步纠偏",
             "每步后 activity 或 capture 验收；勿 force-stop",
         ],

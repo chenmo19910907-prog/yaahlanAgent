@@ -3,13 +3,12 @@
   "name": "设置页进入帮助",
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
-  "description": "已在 SettingComposeActivity 且列表在顶部 → Help → 客服/support 语音房 RoomChatActivity；离开须 macro 退出房间",
+  "description": "SettingComposeActivity 下滑后 → Help → WebViewActivity（客服页；若进房见历史 RoomChatActivity 版本）",
   "steps": [
     { "sleep_ms": 400 },
-    {
-      "tap_pct": [0.493, 0.677],
-      "note": "Help 行（中心 532,1584）"
-    },
-    { "sleep_ms": 1500, "note": "等待进房" }
+    { "swipe": { "x1": 540, "y1": 1700, "x2": 540, "y2": 900, "duration_ms": 350 }, "note": "露出 Help 行" },
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.194, 0.603], "note": "Help（209,1410）" },
+    { "wait_activity": { "hint": "webview", "timeout_ms": 4000 } }
   ]
 }

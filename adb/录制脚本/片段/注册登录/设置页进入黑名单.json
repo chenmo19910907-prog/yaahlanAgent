@@ -3,13 +3,10 @@
   "name": "设置页进入黑名单",
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
-  "description": "已在 SettingComposeActivity 且列表在顶部 → Blacklist → BlockListActivity",
+  "description": "SettingComposeActivity → Blacklist → BlockListActivity",
   "steps": [
     { "sleep_ms": 400 },
-    {
-      "tap_pct": [0.493, 0.446],
-      "note": "Blacklist 行（中心 532,1044）"
-    },
-    { "sleep_ms": 800 }
+    { "tap_pct": [0.228, 0.446], "note": "Blacklist（246,1044）" },
+    { "wait_activity": { "short_name": "BlockListActivity", "timeout_ms": 3000 } }
   ]
 }

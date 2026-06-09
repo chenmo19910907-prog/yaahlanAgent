@@ -3,13 +3,11 @@
   "name": "游戏帧进入Ludo",
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
-  "description": "Casual games Ludo King 卡片 → RoomGameActivity(Ludo King Room)；退出：左上角 X（非 voice room-exit）",
-  "kbRef": [
-    "testcase-kb/游戏帧.md"
-  ],
+  "description": "Casual games Ludo King → RoomGameActivity；退出：左上角 X",
+  "kbRef": ["testcase-kb/游戏帧.md"],
   "steps": [
-    { "sleep_ms": 400 },
-    { "tap_pct": [0.120, 0.311], "note": "Ludo King 卡片" },
-    { "sleep_ms": 2500 }
+    { "run_script": "切换游戏底栏" },
+    { "tap_pct": [0.120, 0.311], "note": "Ludo King 卡片（130,728）" },
+    { "wait_activity": { "hint": "room_game", "timeout_ms": 5000 } }
   ]
 }

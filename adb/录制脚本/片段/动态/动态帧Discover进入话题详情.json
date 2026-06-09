@@ -3,11 +3,11 @@
   "name": "动态帧Discover进入话题详情",
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
-  "description": "Moment Discover → Topics 横滑卡片 #My Family（348,489）→ FeedTopicDetailActivity；More 入口见 动态帧进入TopicsMore",
+  "description": "Moment Discover → Topics 横滑 #My Family（348,489）→ FeedTopicDetailActivity",
   "kbRef": ["documents/moments/basic module.md（话题详情）"],
   "steps": [
     { "run_script": "动态帧切换DiscoverTab" },
     { "tap_pct": [0.322, 0.209], "note": "#My Family 横滑卡片（348,489）" },
-    { "sleep_ms": 1200 }
+    { "wait_activity": { "short_name": "FeedTopicDetailActivity", "timeout_ms": 3000 } }
   ]
 }

@@ -154,7 +154,7 @@ def tunnel_options_from_args(
             ),
             keyword=keyword,
             wait_seconds=max(1, int(getattr(args, "tunnel_wait", 30))),
-            poll_interval_ms=max(500, int(getattr(args, "tunnel_poll_ms", 2000))),
+            poll_interval_ms=max(500, int(getattr(args, "tunnel_poll_ms", 1500))),
             expect_http_status=http_status,
             expect_response_ec=(
                 None
@@ -491,7 +491,7 @@ def add_tunnel_arguments(parser: argparse.ArgumentParser) -> None:
         help="URL 关键字（客户端过滤；如 sendGift、heartbeat、moment）",
     )
     group.add_argument("--tunnel-wait", type=int, default=30, help="最长等待秒数（默认 30）")
-    group.add_argument("--tunnel-poll-ms", type=int, default=2000, help="轮询间隔毫秒")
+    group.add_argument("--tunnel-poll-ms", type=int, default=1500, help="轮询间隔毫秒（默认 1500）")
     group.add_argument(
         "--tunnel-expect-status",
         type=int,

@@ -7,13 +7,12 @@ from pathlib import Path
 from typing import Any
 
 from .activity import get_foreground_activity
-from .chain import run_chain
-from .device import AdbError, require_device
-from .phone_auth_steps import (
-    build_phone_auth_steps,
-    build_phone_login_steps,
-    build_register_profile_steps,
+from .auth.runner import (
+    run_phone_auth_only,
+    run_phone_login,
+    run_register_profile,
 )
+from .device import AdbError, require_device
 from .phone_login_status import query_phone_login_status
 from .post_login_verify import verify_and_dismiss_post_login
 from .screenshot import screenshot_dir
@@ -68,13 +67,11 @@ def enter_account(
     login_start = int(time.time())
 
     if route == "login":
-        run_chain(
+        run_phone_login(
+            mobile,
             serial=serial,
-            steps=build_phone_login_steps(mobile),
-            capture="end",
-            screenshot_dir=shot_dir,
+            shot_dir=shot_dir,
             max_screenshots=max_screenshots,
-            use_adaptation=True,
             popup_gate_auto=False,
         )
         momoid = status.get("userId")
@@ -101,14 +98,11 @@ def enter_account(
     if route != "register":
         raise AdbError(f"未知 route: {route!r}")
 
-    run_chain(
+    run_phone_auth_only(
+        mobile,
         serial=serial,
-        steps=build_phone_auth_steps(mobile),
-        capture="never",
-        screenshot_dir=shot_dir,
+        shot_dir=shot_dir,
         max_screenshots=max_screenshots,
-        use_adaptation=True,
-        popup_gate_auto=False,
     )
     fa_after_code = get_foreground_activity(serial=serial)
     out["afterVerifyActivity"] = fa_after_code
@@ -120,14 +114,11 @@ def enter_account(
         )
         return out
 
-    run_chain(
+    run_register_profile(
+        mobile,
         serial=serial,
-        steps=build_register_profile_steps(mobile),
-        capture="end",
-        screenshot_dir=shot_dir,
+        shot_dir=shot_dir,
         max_screenshots=max_screenshots,
-        use_adaptation=True,
-        popup_gate_auto=False,
     )
     reg_end = int(time.time())
     reg_status = query_phone_login_status(mobile)

@@ -8,6 +8,6 @@
   "steps": [
     { "run_script": "切换房间底栏" },
     { "tap_pct": [0.808, 0.088], "note": "搜索入口（873,207）" },
-    { "sleep_ms": 800 }
+    { "wait_activity": { "short_name": "RoomSearchActivity", "timeout_ms": 3000 } }
   ]
 }

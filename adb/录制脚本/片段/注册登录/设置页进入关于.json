@@ -3,18 +3,12 @@
   "name": "设置页进入关于",
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
-  "description": "已在 SettingComposeActivity → 列表上滑露出 About → AboutUsActivity；勿在列表未滚到底时盲点 y≈2277（易误触）",
+  "description": "SettingComposeActivity 下滑后 → About → AboutUsActivity",
   "steps": [
     { "sleep_ms": 400 },
-    {
-      "swipe": { "x1": 540, "y1": 1700, "x2": 540, "y2": 800, "duration_ms": 350 },
-      "note": "设置列表上滑，露出 About / Log out"
-    },
-    { "sleep_ms": 500 },
-    {
-      "tap_pct": [0.493, 0.831],
-      "note": "About 行（滚到底后中心约 532,1944）"
-    },
-    { "sleep_ms": 800 }
+    { "swipe": { "x1": 540, "y1": 1700, "x2": 540, "y2": 900, "duration_ms": 350 }, "note": "露出 About 行" },
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.207, 0.833], "note": "About（223,1950）" },
+    { "wait_activity": { "short_name": "AboutUsActivity", "timeout_ms": 3000 } }
   ]
 }

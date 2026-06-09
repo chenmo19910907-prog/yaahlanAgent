@@ -3,7 +3,7 @@
   "name": "游戏帧进入ActivitiesBanner",
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
-  "description": "Game 帧 Activities 轮播横幅 → WebViewAggActivity",
+  "description": "Game 帧 Activities 轮播横幅 → WebViewAggActivity（活动结束时会 Toast Event has ended，须换有效 Banner）",
   "kbRef": ["testcase-kb/游戏帧.md（Activities 横幅）"],
   "steps": [
     { "run_script": "切换游戏底栏" },

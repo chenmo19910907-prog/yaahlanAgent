@@ -3,11 +3,11 @@
   "name": "我的页进入CollectionExhibition",
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
-  "description": "Me 下滑后 → Collection Exhibition → ExhibitionHallComposeActivity",
-  "kbRef": ["待补 KB（Collection Exhibition）"],
+  "description": "Me 下滑后 → Collection Exhibition → ExhibitionHallComposeActivity（Gift/Medal/Treasure 三展区）",
+  "kbRef": ["testcase-kb/收藏展馆.md"],
   "steps": [
     { "run_script": "我的页下滑浏览", "note": "露出 Collection 行" },
-    { "tap_pct": [0.500, 0.450], "note": "Collection Exhibition（540,1052）" },
-    { "sleep_ms": 1200 }
+    { "tap_pct": [0.500, 0.453], "note": "Collection Exhibition（540,1060）" },
+    { "wait_activity": { "short_name": "ExhibitionHallComposeActivity", "timeout_ms": 3000 } }
   ]
 }

@@ -19,8 +19,12 @@
       "note": "Log out"
     },
     {
-      "sleep_ms": 2500,
-      "note": "等待回到登录页"
+      "wait_activity": {
+        "hint": "login",
+        "timeout_ms": 3000,
+        "poll_ms": 200,
+        "note": "等待回到登录页"
+      }
     }
   ]
 }

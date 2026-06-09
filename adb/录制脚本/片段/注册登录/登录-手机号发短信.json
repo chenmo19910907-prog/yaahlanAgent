@@ -15,6 +15,13 @@
     { "text": "{{text}}", "note": "手机号（不含区号）" },
     { "sleep_ms": 500 },
     { "tap_pct": [0.500, 0.504], "note": "Get via SMS ll_phone_sms" },
-    { "sleep_ms": 2000 }
+    {
+      "wait_activity": {
+        "hint": "login",
+        "timeout_ms": 2500,
+        "poll_ms": 200,
+        "note": "等待验证码页"
+      }
+    }
   ]
 }
