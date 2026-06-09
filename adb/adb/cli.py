@@ -11,6 +11,13 @@ from pathlib import Path
 from .account_cancel import confirm_cancel_via_moa, prepare_client_cancel
 from .login_or_register import enter_account
 from .phone_login_status import query_phone_login_status
+from .account_availability import (
+    check_account,
+    check_all_index_accounts,
+    list_index_account_candidates,
+    login_idle_account,
+    pick_idle_account,
+)
 from .account_sweep import parse_phone_range, sweep_accounts
 from .script_abandon import (
     get_script_failure_info,
@@ -74,7 +81,7 @@ from .logcat_check import (
     logcat_options_from_args,
     wait_for_logcat,
 )
-from .cli_args import use_adaptation
+from .cli_args import add_learn_locator_arguments, use_adaptation
 from .cli_runner import run_chain_command, run_integrated_command, run_macro_command
 from .paths import script_abandon_path
 from .tunnel_verify import (
@@ -193,6 +200,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="配合 --from-image：截图路径（默认最新一张）",
     )
 
+    p_locate = sub.add_parser(
+        "locate",
+        help="uiautomator 定位元素，输出 tap 坐标（Resource-ID / Accessibility-ID / XPath）",
+    )
+    p_locate.add_argument("--resource-id", dest="resource_id", help="resource-id（短名或全名）")
+    p_locate.add_argument(
+        "--accessibility-id",
+        dest="accessibility_id",
+        help="Accessibility-ID（Android content-desc）",
+    )
+    p_locate.add_argument("--xpath", help="XPath（uiautomator dump XML）")
+    p_locate.add_argument("--index", type=int, default=0, help="多匹配时取第 N 个，默认 0")
+    p_locate.add_argument(
+        "--tap",
+        action="store_true",
+        help="定位成功后立即点击",
+    )
+
     p_swipe = sub.add_parser("swipe", help="滑动")
     p_swipe.add_argument("x1", type=int)
     p_swipe.add_argument("y1", type=int)
@@ -274,6 +299,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_macro.add_argument("--no-rtl", action="store_true", help="禁用 RTL 镜像")
     add_tunnel_arguments(p_macro)
     add_logcat_arguments(p_macro)
+    add_learn_locator_arguments(p_macro)
 
     p_chain = sub.add_parser(
         "chain",
@@ -313,6 +339,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_tunnel_arguments(p_chain)
     add_logcat_arguments(p_chain)
+    add_learn_locator_arguments(p_chain)
 
     p_device = sub.add_parser("device", help="设备型号与坐标换算（换机先校准）")
     dev_sub = p_device.add_subparsers(dest="device_command", required=True)
@@ -432,6 +459,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_run.add_argument("--popup-since", type=int, default=120, help="弹窗分析回溯秒数")
     add_tunnel_arguments(p_run)
     add_logcat_arguments(p_run)
+    add_learn_locator_arguments(p_run)
 
     p_popup = sub.add_parser(
         "popup",
@@ -671,6 +699,51 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_status.add_argument("--text", required=True, help="手机号（不含区号）")
 
+    p_check = accounts_sub.add_parser(
+        "check",
+        help="Tunnel 检测账号是否在用（近 N 秒有活跃接口 → 占用）",
+    )
+    p_check.add_argument("--account", help="testAccounts 键名，如 familyLeader")
+    p_check.add_argument("--text", help="手机号（不含区号）")
+    p_check.add_argument(
+        "--all",
+        action="store_true",
+        dest="check_all",
+        help="检测索引中全部 testAccounts",
+    )
+    p_check.add_argument(
+        "--since",
+        type=int,
+        default=300,
+        help="回溯秒数，默认 300（5 分钟内有活跃流量视为在用）",
+    )
+
+    p_pick = accounts_sub.add_parser(
+        "pick",
+        help="从候选中选取空闲账号（仅检测，不登录）",
+    )
+    p_pick.add_argument("--preferred", help="优先尝试的 testAccounts 键名")
+    p_pick.add_argument("--phones", help="逗号分隔手机号，扩展候选池")
+    p_pick.add_argument("--from", dest="from_phone", help="范围起始手机号")
+    p_pick.add_argument("--to", dest="to_phone", help="范围结束手机号（含）")
+    p_pick.add_argument("--since", type=int, default=300, help="占用检测回溯秒数")
+
+    p_login_idle = accounts_sub.add_parser(
+        "login-idle",
+        help="先检测占用 → 选空闲账号 → 退出到登录页 → 登录",
+    )
+    p_login_idle.add_argument("--preferred", help="优先尝试的 testAccounts 键名")
+    p_login_idle.add_argument("--phones", help="逗号分隔手机号，扩展候选池")
+    p_login_idle.add_argument("--from", dest="from_phone", help="范围起始手机号")
+    p_login_idle.add_argument("--to", dest="to_phone", help="范围结束手机号（含）")
+    p_login_idle.add_argument("--since", type=int, default=300, help="占用检测回溯秒数")
+    p_login_idle.add_argument(
+        "--me",
+        action="store_true",
+        help="登录后再进 Me 验收（默认仅验登录）",
+    )
+    p_login_idle.add_argument("--tunnel-wait", type=int, default=25, help="tunnel 最长等待秒数")
+
     p_splash = sub.add_parser(
         "splash",
         help="冷启动开屏广告验收（activity + Tunnel getOpenScreenAd/getUserConfigs）",
@@ -822,6 +895,40 @@ def main(argv: list[str] | None = None) -> int:
                     "height": ph,
                 }
             _emit(payload)
+            return 0
+
+        if args.command == "locate":
+            from .device import display_size
+            from .ui_locator import LocatorNotFoundError, resolve_tap_from_step
+
+            step: dict[str, object] = {"index": int(args.index)}
+            if args.resource_id:
+                step["resourceId"] = args.resource_id
+            if args.accessibility_id:
+                step["accessibilityId"] = args.accessibility_id
+            if args.xpath:
+                step["xpath"] = args.xpath
+            if not any(step.get(k) for k in ("resourceId", "accessibilityId", "xpath")):
+                print(
+                    "locate 须指定 --resource-id、--accessibility-id 或 --xpath 之一",
+                    file=sys.stderr,
+                )
+                return 2
+            width, height = display_size(serial)
+            try:
+                hit = resolve_tap_from_step(
+                    step,  # type: ignore[arg-type]
+                    serial=serial,
+                    width=width,
+                    height=height,
+                )
+            except LocatorNotFoundError as exc:
+                print(str(exc), file=sys.stderr)
+                return 3
+            if args.tap:
+                tap(x=int(hit["x"]), y=int(hit["y"]), serial=serial)
+                hit["tapped"] = True
+            _emit(hit)
             return 0
 
         if args.command == "tap":
@@ -1154,6 +1261,80 @@ def main(argv: list[str] | None = None) -> int:
                     max_screenshots=args.max_screenshots,
                     skip_moa_check=bool(getattr(args, "skip_moa", False)),
                     force_route=getattr(args, "force_route", None),
+                )
+                _emit(out)
+                return 0 if out.get("ok") else 3
+            if args.accounts_command == "check":
+                if getattr(args, "check_all", False):
+                    out = check_all_index_accounts(since_seconds=int(args.since))
+                elif getattr(args, "account", None) or getattr(args, "text", None):
+                    out = check_account(
+                        account=getattr(args, "account", None),
+                        phone=getattr(args, "text", None),
+                        since_seconds=int(args.since),
+                    )
+                else:
+                    print(
+                        "accounts check 须指定 --account、--text 或 --all",
+                        file=sys.stderr,
+                    )
+                    return 2
+                _emit(out)
+                return 0
+            if args.accounts_command == "pick":
+                phone_list = (
+                    [p.strip() for p in str(args.phones or "").split(",") if p.strip()]
+                    if getattr(args, "phones", None)
+                    else None
+                )
+                extra_phones = (
+                    parse_phone_range(
+                        phones=phone_list,
+                        from_phone=getattr(args, "from_phone", None),
+                        to_phone=getattr(args, "to_phone", None),
+                    )
+                    if phone_list or getattr(args, "from_phone", None)
+                    else []
+                )
+                candidates = list_index_account_candidates()
+                known_phones = {c["phone"] for c in candidates}
+                for p in extra_phones:
+                    if p not in known_phones:
+                        candidates.append({"account": None, "phone": p, "userId": None})
+                out = pick_idle_account(
+                    candidates=candidates,
+                    preferred=getattr(args, "preferred", None),
+                    since_seconds=int(args.since),
+                )
+                _emit(out)
+                return 0 if out.get("ok") else 3
+            if args.accounts_command == "login-idle":
+                phone_list = (
+                    [p.strip() for p in str(args.phones or "").split(",") if p.strip()]
+                    if getattr(args, "phones", None)
+                    else None
+                )
+                extra_phones = (
+                    parse_phone_range(
+                        phones=phone_list,
+                        from_phone=getattr(args, "from_phone", None),
+                        to_phone=getattr(args, "to_phone", None),
+                    )
+                    if phone_list or getattr(args, "from_phone", None)
+                    else []
+                )
+                candidates = list_index_account_candidates()
+                known_phones = {c["phone"] for c in candidates}
+                for p in extra_phones:
+                    if p not in known_phones:
+                        candidates.append({"account": None, "phone": p, "userId": None})
+                out = login_idle_account(
+                    serial=serial,
+                    preferred=getattr(args, "preferred", None),
+                    candidates=candidates,
+                    since_seconds=int(args.since),
+                    check_me=bool(getattr(args, "me", False)),
+                    tunnel_wait=int(args.tunnel_wait),
                 )
                 _emit(out)
                 return 0 if out.get("ok") else 3

@@ -7,7 +7,7 @@
   "kbRef": ["documents/moments/basic module.md（Discover 动态详情）"],
   "steps": [
     { "run_script": "动态帧切换DiscoverTab" },
-    { "tap_pct": [0.712, 0.424], "note": "首条 iv_feed_comment（769,993）" },
+    { "tap_pct": [0.712, 0.603], "note": "首条 iv_feed_comment（769,1412）；有 Topics 区时旧 0.424 偏上" },
     { "sleep_ms": 1200 }
   ]
 }

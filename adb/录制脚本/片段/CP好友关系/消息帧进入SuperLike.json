@@ -7,7 +7,7 @@
   "kbRef": ["documents/消息.md（Super like）"],
   "steps": [
     { "run_script": "消息帧切换EveryoneTab" },
-    { "tap_pct": [0.500, 0.424], "note": "Super like（540,993）" },
+    { "tap_pct": [0.500, 0.521], "note": "Super like root_layout（540,1218）；993 为 System Notification" },
     { "sleep_ms": 1200 }
   ]
 }

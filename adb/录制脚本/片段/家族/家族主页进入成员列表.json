@@ -11,7 +11,7 @@
     { "sleep_ms": 400 },
     { "run_script": "家族主页下滑浏览", "note": "露出 Family Members 区块" },
     { "sleep_ms": 400 },
-    { "tap_pct": [0.926, 0.667], "note": "Family Members 标题行 More >" },
+    { "tap_pct": [0.898, 0.658], "note": "Family Members 标题行 More >（970,1540）；勿点头像行(≈1620)/Dialogue Arena 卡(≈1330)；旧 0.553/0.667 均偏" },
     { "sleep_ms": 1200 }
   ]
 }

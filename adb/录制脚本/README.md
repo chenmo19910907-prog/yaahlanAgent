@@ -36,6 +36,8 @@
 
 知识库映射见 [`KB对照.md`](KB对照.md)（按 `testcase-kb/` 模块列出全部片段）。
 
+**真机跑通功能验收**（功能路径、验收要点，体例对齐用例库）见根目录 [`verified-kb/`](../../verified-kb/README.md)。坐标与步骤以本目录片段 JSON + [`索引.json`](索引.json) 为准。
+
 ## 命令示例
 
 ```bash

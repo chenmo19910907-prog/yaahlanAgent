@@ -342,6 +342,11 @@ Agent 技能：`.cursor/skills/adb-page-learn/SKILL.md`（完整主循环、落�
 
 ## 录制脚本库 `录制脚本/`
 
+| 文档 | 用途 |
+|------|------|
+| [`KB对照.md`](录制脚本/KB对照.md) | 全部片段 id ↔ 中文名 |
+| [`verified-kb/`](../verified-kb/README.md) | **真机验收通过**功能路径与验收要点（体例对齐 `testcase-kb/`） |
+
 ```bash
 python3 adb/adb_execute.py scripts      # 按模块列出片段
 
@@ -495,6 +500,17 @@ python3 adb/adb_execute.py run \
 python3 adb/adb_execute.py login verify --account guildLeader --since 90
 python3 adb/adb_execute.py popup analyze --scene login --account guildLeader --auto-dismiss
 ```
+
+### 登录前检测账号占用（自动化必做）
+
+多 Agent / 多人共用测试机时，**登录前必须先查账号是否在用**，再登录空闲账号：
+
+```bash
+python3 adb/adb_execute.py accounts check --all
+python3 adb/adb_execute.py accounts login-idle --preferred familyLeader
+```
+
+占用判定：Tunnel 近 5 分钟（`--since 300`）内有 `heartbeat`、`enterRoom`、`simpleUserInfo` 等活跃接口。详见 [使用方法.md §登录前检测](使用方法.md#adb-login)。
 
 ### 批量账号巡检（每账号抓包验收 + Me 弹窗）
 

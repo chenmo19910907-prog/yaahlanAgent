@@ -1,0 +1,16 @@
+{
+  "id": "room-viewed-enter-quran",
+  "name": "房间帧Viewed进古兰经房间",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Room Mine→Viewed 列表点首条「古兰经的芳香」（Lv.7）→ RoomChatActivity。进他人房约 2～5s 后常弹 Mic invitation，capture 后 run 拒绝Mic邀请",
+  "kbRef": [
+    "testcase-kb/房间.md",
+    "adb/录制脚本/弹窗说明.md（Mic invitation）"
+  ],
+  "steps": [
+    { "run_script": "房间帧Mine切换Viewed" },
+    { "tap_pct": [0.500, 0.497], "note": "Viewed 首条 古兰经的芳香（540,1162）" },
+    { "sleep_ms": 4000, "note": "等待进房 + Mic invitation 横幅（约 2～5s 后出现）" }
+  ]
+}

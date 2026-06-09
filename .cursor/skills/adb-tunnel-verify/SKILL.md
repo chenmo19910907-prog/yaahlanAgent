@@ -7,6 +7,7 @@ description: ADB 真机操作 + Tunnel 抓包校验。已实现脚本的能力�
 
 ## 原则
 
+0. **登录前必查账号占用**：禁止直接 `macro 手机号登录` 盲登。先 `accounts check --account <名>` 或 `accounts login-idle`（Tunnel 近 300s 有 `heartbeat`/`enterRoom`/`simpleUserInfo` → 在用，换空闲号）
 1. **操作前**记录 `start_time`（CLI 自动回溯 5s）
 2. **执行** `macro`（逐段）或 `chain`（低层步骤 JSON，调试慎用）
 3. **关键节点弹窗** → `popup analyze` 或 `run --popup-scene`（先抓包再决定是否关）

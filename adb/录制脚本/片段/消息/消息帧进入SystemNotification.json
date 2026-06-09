@@ -1,0 +1,13 @@
+{
+  "id": "msg-enter-system-notification",
+  "name": "消息帧进入SystemNotification",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "消息帧 Everyone → System Notification 行 → SystemListActivity",
+  "kbRef": ["documents/消息.md（System Notification）"],
+  "steps": [
+    { "run_script": "消息帧切换EveryoneTab" },
+    { "tap_pct": [0.500, 0.425], "note": "System Notification root_layout（540,993）；768 为 CCVC" },
+    { "sleep_ms": 1200 }
+  ]
+}

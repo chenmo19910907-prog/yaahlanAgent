@@ -49,6 +49,18 @@ def popup_gate_auto_enabled(args: argparse.Namespace) -> bool:
     return not bool(getattr(args, "no_popup_gate", False))
 
 
+def learn_locators_enabled(args: argparse.Namespace) -> bool:
+    return not bool(getattr(args, "no_learn_locators", False))
+
+
+def add_learn_locator_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--no-learn-locators",
+        action="store_true",
+        help="不探测点击处元素属性、不回写片段 JSON（默认开启学习）",
+    )
+
+
 def optional_momoid_from_args(args: argparse.Namespace) -> str | None:
     if not getattr(args, "tunnel_momoid", None) and not getattr(
         args, "tunnel_account", None

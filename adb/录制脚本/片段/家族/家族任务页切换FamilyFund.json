@@ -1,0 +1,15 @@
+{
+  "id": "family-tasks-family-fund-tab",
+  "name": "家族任务页切换FamilyFund",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Tasks 页顶栏 Family Fund Tab → 贡献榜/倒计时页；前置：家族主页进入任务与奖励",
+  "kbRef": [
+    "documents/家族改版.md（Tasks & Rewards · Family Fund）"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.602, 0.068], "note": "Family Fund Tab（650,159）" },
+    { "sleep_ms": 1000 }
+  ]
+}

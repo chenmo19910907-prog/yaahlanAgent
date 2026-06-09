@@ -7,13 +7,16 @@ import re
 import time
 import xml.etree.ElementTree as ET
 from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
 
 from .actions import keyevent, swipe, tap
 from .activity import get_foreground_activity
 from .device import display_size, run_adb
+from .fragment_locator import locator_fields_from_probe
 from .recorded_scripts import list_catalog, load_test_accounts, scripts_root
+from .ui_locator import find_element_at_point, probe_locator_at_point
 from .vip_grant import dispatch_vip_try
 
 TabName = Literal["game", "room", "msg", "moment", "me"]
@@ -70,6 +73,11 @@ class PageEntry:
     tap_pct: list[float]
     scrollDown: int = 0
     clickable: bool = True
+    accessibilityId: str = ""
+    bounds: str = ""
+    uiText: str = ""
+    className: str = ""
+    locatorLearnedAt: str = ""
     activity: dict[str, Any] | None = None
     uiSample: str = ""
     vipRequired: int | None = None
@@ -81,6 +89,69 @@ class PageEntry:
 def entry_from_dict(raw: dict[str, Any]) -> PageEntry:
     fields = PageEntry.__dataclass_fields__
     return PageEntry(**{k: raw[k] for k in raw if k in fields})
+
+
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def apply_probe_to_entry(
+    entry: PageEntry,
+    probe: dict[str, Any] | None,
+    *,
+    stamp: bool = True,
+) -> PageEntry:
+    """将点击处探测到的元素属性合并进页面地图条目。"""
+    if not probe:
+        return entry
+    fields = locator_fields_from_probe(probe)
+    if fields.get("resourceId"):
+        entry.resourceId = fields["resourceId"]
+    if fields.get("accessibilityId"):
+        entry.accessibilityId = fields["accessibilityId"]
+    if fields.get("bounds"):
+        entry.bounds = fields["bounds"]
+    if fields.get("uiText"):
+        entry.uiText = fields["uiText"]
+    if fields.get("className"):
+        entry.className = fields["className"]
+    if fields.get("tap_pct"):
+        entry.tap_pct = list(fields["tap_pct"])
+    if "clickable" in fields:
+        entry.clickable = bool(fields["clickable"])
+    label = (
+        fields.get("uiText")
+        or fields.get("accessibilityId")
+        or fields.get("resourceId")
+        or entry.label
+    )
+    if label and (not entry.label or entry.label == entry.resourceId):
+        entry.label = str(label)
+    if stamp:
+        entry.locatorLearnedAt = _utc_now()
+    return entry
+
+
+def entry_to_tap_step(entry: PageEntry) -> dict[str, Any]:
+    """将页面地图条目转为片段 tap 步骤（优先元素属性，坐标作 fallback）。"""
+    step: dict[str, Any] = {"tap_pct": list(entry.tap_pct)}
+    if entry.resourceId:
+        step["resourceId"] = entry.resourceId
+    if entry.accessibilityId:
+        step["accessibilityId"] = entry.accessibilityId
+    if entry.bounds:
+        step["bounds"] = entry.bounds
+    if entry.uiText:
+        step["uiText"] = entry.uiText
+    if entry.className:
+        step["className"] = entry.className
+    if entry.resourceId or entry.accessibilityId:
+        step["fallback_tap_pct"] = list(entry.tap_pct)
+    if entry.label:
+        step["note"] = entry.label
+    if entry.locatorLearnedAt:
+        step["locatorLearnedAt"] = entry.locatorLearnedAt
+    return step
 
 
 def _dump_ui_xml(serial: str) -> str:
@@ -115,6 +186,10 @@ def _parse_nodes(xml_text: str, *, width: int, height: int) -> list[dict[str, An
                     "desc": desc,
                     "label": label,
                     "resourceId": rid,
+                    "accessibilityId": desc,
+                    "uiText": text,
+                    "className": (attrs.get("class") or "").strip(),
+                    "bounds": bounds,
                     "clickable": clickable,
                     "x1": x1,
                     "y1": y1,
@@ -186,7 +261,8 @@ def scan_tab_entries(
 
     seen: dict[tuple[str, str], PageEntry] = {}
     for scroll_idx in range(scroll_passes):
-        nodes = _parse_nodes(_dump_ui_xml(serial), width=width, height=height)
+        xml_text = _dump_ui_xml(serial)
+        nodes = _parse_nodes(xml_text, width=width, height=height)
         for node in nodes:
             y1 = node["y1"]
             if y1 < y_min or y1 > y_max:
@@ -208,6 +284,11 @@ def scan_tab_entries(
             ):
                 continue
             key = (label or rid, rid)
+            cx = (node["x1"] + node["x2"]) // 2
+            cy = (node["y1"] + node["y2"]) // 2
+            probe = find_element_at_point(
+                xml_text, cx, cy, width=width, height=height
+            )
             entry = PageEntry(
                 tab=tab,
                 module=meta["module"],
@@ -216,7 +297,12 @@ def scan_tab_entries(
                 tap_pct=node["tap_pct"],
                 scrollDown=scroll_idx,
                 clickable=node["clickable"],
+                accessibilityId=node.get("accessibilityId") or "",
+                bounds=node.get("bounds") or "",
+                uiText=node.get("uiText") or "",
+                className=node.get("className") or "",
             )
+            apply_probe_to_entry(entry, probe, stamp=True)
             if key not in seen or y1 < seen[key].tap_pct[1] * height:
                 seen[key] = entry
         scroll_tab(serial, "down", times=1)
@@ -259,6 +345,14 @@ def _tap_entry(serial: str, entry: PageEntry) -> None:
     switch_tab(serial, entry.tab)
     scroll_tab(serial, "up", times=4)
     scroll_tab(serial, "down", times=entry.scrollDown)
+    probe = probe_locator_at_point(
+        serial=serial,
+        x=int(entry.tap_pct[0] * width),
+        y=int(entry.tap_pct[1] * height),
+        width=width,
+        height=height,
+    )
+    apply_probe_to_entry(entry, probe, stamp=True)
     tap(
         x=int(entry.tap_pct[0] * width),
         y=int(entry.tap_pct[1] * height),
@@ -329,7 +423,7 @@ def save_catalog(entries: list[PageEntry], *, path: Path | None = None) -> Path:
     target = path or CATALOG_PATH
     payload = {
         "title": "Yaahlan App 页面地图（自动扫描）",
-        "note": "learn scan 列入口；learn probe 补 activity。结合 KB 写 kbRef 后落片段。",
+        "note": "learn scan 列入口并探测 resourceId/accessibilityId/bounds；learn probe 补 activity。落片段可用 entry_to_tap_step。",
         "tabs": {k: v["module"] for k, v in TAB_META.items()},
         "entries": [asdict(e) for e in entries],
     }
@@ -359,6 +453,15 @@ def merge_catalog(
             entry.kbRef = list(old.kbRef)
             entry.probed = True
             entry.fragmentId = old.fragmentId
+            for attr in (
+                "accessibilityId",
+                "bounds",
+                "uiText",
+                "className",
+                "locatorLearnedAt",
+            ):
+                if not getattr(entry, attr) and getattr(old, attr):
+                    setattr(entry, attr, getattr(old, attr))
         merged.append(entry)
     return merged
 

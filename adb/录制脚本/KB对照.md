@@ -69,6 +69,9 @@
 | 房内三方游戏最小化 | room-minimize-third-party-game |
 | 房间帧Mine切换Family | room-mine-family |
 | 房间帧Mine切换Follow | room-mine-follow |
+| 房间帧Follow进Sheikh房间 | room-follow-enter-sheikh |
+| 房间帧Joined进Sheikh房间 | room-joined-enter-sheikh |
+| 房间帧Viewed进古兰经房间 | room-viewed-enter-quran |
 | 房间帧Mine切换Joined | room-mine-joined |
 | 房间帧Mine切换Viewed | room-mine-viewed |
 | 房间帧切换Chat分类 | room-chat-chip |
@@ -121,6 +124,7 @@
 | 切换动态关注tab | moment-follow-tab |
 | 切换动态底栏 | moment-tab |
 | 动态帧Discover进入动态详情 | moment-discover-feed-detail |
+| 动态帧Discover点赞首条 | moment-discover-like-first |
 | 动态帧Discover进入话题详情 | moment-discover-topic-detail |
 | 动态帧Follow进入动态详情 | moment-follow-feed-detail |
 | 动态帧切换DiscoverTab | moment-discover-tab |
@@ -134,6 +138,8 @@
 | 发布视频动态 | post-video-moment |
 | 打开动态发布页 | open-moment-compose |
 | 进入我的动态列表 | my-moments-list |
+| 我的动态列表进入互动通知 | my-moments-notifications |
+| 我的动态列表打开发布动态 | my-moments-open-compose |
 
 ## 个人主页 · `片段/个人主页/`
 
@@ -160,8 +166,11 @@
 |------|-----|
 | 家族主页下滑浏览 | family-home-scroll |
 | 家族主页进入任务与奖励 | family-home-tasks-rewards |
+| 家族任务页切换FamilyFund | family-tasks-family-fund-tab |
 | 家族主页进入成员列表 | family-home-members-list |
 | 家族主页进入日榜 | family-home-daily-ranking |
+| 家族主页进入周榜 | family-home-weekly-ranking |
+| 消息帧 System Notification | msg-enter-system-notification |
 | 家族主页进入群聊 | family-home-group-chat |
 | 家族任务页浏览 | family-tasks-browse |
 | 我的页进入Family | me-enter-family |
@@ -256,6 +265,12 @@ python3 adb/adb_execute.py macro 手机号登录 --text 13311111115
 
 见 `索引.json` → `aiOperateModules`：`游戏`、`房间`、`礼物`、`个人主页` 等。
 调试旧坐标加 `--force-script`。
+
+## 真机跑通功能知识库
+
+真机验收通过的功能路径与验收要点见根目录 **[`verified-kb/`](../../verified-kb/README.md)**（体例对齐 `testcase-kb/`）。
+
+本文件（KB对照）列**全部**片段 id；`verified-kb/` 列**已验收**功能子集。坐标与步骤见片段 JSON。
 
 ## 暂不可 ADB 固化
 

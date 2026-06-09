@@ -1,6 +1,6 @@
 {
   "title": "Yaahlan App 页面地图（自动扫描）",
-  "note": "learn scan 列入口；learn probe 补 activity。结合 KB 写 kbRef 后落片段。 module 字段对齐 testcase-kb。",
+  "note": "learn scan 列入口并探测 resourceId/accessibilityId/bounds；learn probe 补 activity。落片段可用 entry_to_tap_step。",
   "tabs": {
     "game": "游戏",
     "room": "房间",
@@ -12,14 +12,19 @@
     {
       "tab": "me",
       "module": "个人主页",
-      "label": "top_layout",
-      "resourceId": "top_layout",
+      "label": "67686209",
+      "resourceId": "search_view",
       "tap_pct": [
         0.5,
-        0.151
+        0.161
       ],
       "scrollDown": 0,
       "clickable": true,
+      "accessibilityId": "",
+      "bounds": "[30,294][1050,459]",
+      "uiText": "67686209",
+      "className": "android.widget.EditText",
+      "locatorLearnedAt": "2026-06-09T06:43:43Z",
       "activity": null,
       "uiSample": "",
       "vipRequired": null,
@@ -30,32 +35,19 @@
     {
       "tab": "me",
       "module": "个人主页",
-      "label": "badge_layout",
-      "resourceId": "badge_layout",
+      "label": "Search",
+      "resourceId": "search_btn",
       "tap_pct": [
-        0.496,
-        0.158
-      ],
-      "scrollDown": 0,
-      "clickable": false,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "noble_top_badge",
-      "resourceId": "noble_top_badge",
-      "tap_pct": [
-        0.432,
-        0.158
+        0.861,
+        0.161
       ],
       "scrollDown": 0,
       "clickable": true,
+      "accessibilityId": "",
+      "bounds": "[840,323][1020,431]",
+      "uiText": "Search",
+      "className": "android.widget.TextView",
+      "locatorLearnedAt": "2026-06-09T06:43:43Z",
       "activity": null,
       "uiSample": "",
       "vipRequired": null,
@@ -66,482 +58,19 @@
     {
       "tab": "me",
       "module": "个人主页",
-      "label": "wealth_badge",
-      "resourceId": "wealth_badge",
+      "label": "count_layout",
+      "resourceId": "count_layout",
       "tap_pct": [
-        0.557,
-        0.158
-      ],
-      "scrollDown": 0,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "charm_badge",
-      "resourceId": "charm_badge",
-      "tap_pct": [
-        0.665,
-        0.158
-      ],
-      "scrollDown": 0,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "profile_custom_user_id_layout",
-      "resourceId": "profile_custom_user_id_layout",
-      "tap_pct": [
-        0.43,
-        0.186
-      ],
-      "scrollDown": 0,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "friend_ll",
-      "resourceId": "friend_ll",
-      "tap_pct": [
-        0.123,
-        0.271
-      ],
-      "scrollDown": 0,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "follow_ll",
-      "resourceId": "follow_ll",
-      "tap_pct": [
-        0.5,
-        0.271
-      ],
-      "scrollDown": 0,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "fans_ll",
-      "resourceId": "fans_ll",
-      "tap_pct": [
-        0.826,
-        0.271
-      ],
-      "scrollDown": 0,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "Отметиться",
-      "resourceId": "check_in",
-      "tap_pct": [
-        0.806,
-        0.369
-      ],
-      "scrollDown": 0,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "cl_visitor",
-      "resourceId": "cl_visitor",
-      "tap_pct": [
-        0.5,
-        0.6
-      ],
-      "scrollDown": 0,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "room_layout",
-      "resourceId": "room_layout",
-      "tap_pct": [
-        0.5,
-        0.689
-      ],
-      "scrollDown": 0,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "cp_layout",
-      "resourceId": "cp_layout",
-      "tap_pct": [
-        0.5,
-        0.766
-      ],
-      "scrollDown": 0,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "wallet_layout",
-      "resourceId": "wallet_layout",
-      "tap_pct": [
-        0.5,
-        0.843
-      ],
-      "scrollDown": 0,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "fortune_layout",
-      "resourceId": "fortune_layout",
-      "tap_pct": [
-        0.5,
-        0.856
+        0.935,
+        0.257
       ],
       "scrollDown": 0,
       "clickable": false,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "redeem_layout",
-      "resourceId": "redeem_layout",
-      "tap_pct": [
-        0.5,
-        0.147
-      ],
-      "scrollDown": 1,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "family_layout",
-      "resourceId": "family_layout",
-      "tap_pct": [
-        0.5,
-        0.126
-      ],
-      "scrollDown": 5,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "family_level_view",
-      "resourceId": "family_level_view",
-      "tap_pct": [
-        0.815,
-        0.126
-      ],
-      "scrollDown": 5,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "vip_layout",
-      "resourceId": "vip_layout",
-      "tap_pct": [
-        0.5,
-        0.203
-      ],
-      "scrollDown": 5,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "noble_layout",
-      "resourceId": "noble_layout",
-      "tap_pct": [
-        0.5,
-        0.279
-      ],
-      "scrollDown": 5,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "level_layout",
-      "resourceId": "level_layout",
-      "tap_pct": [
-        0.5,
-        0.356
-      ],
-      "scrollDown": 5,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "gift_wall_layout",
-      "resourceId": "gift_wall_layout",
-      "tap_pct": [
-        0.5,
-        0.433
-      ],
-      "scrollDown": 5,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "nameplate_layout",
-      "resourceId": "nameplate_layout",
-      "tap_pct": [
-        0.5,
-        0.51
-      ],
-      "scrollDown": 5,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "costume_layout",
-      "resourceId": "costume_layout",
-      "tap_pct": [
-        0.5,
-        0.587
-      ],
-      "scrollDown": 5,
-      "clickable": false,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "costume_store_layout",
-      "resourceId": "costume_store_layout",
-      "tap_pct": [
-        0.5,
-        0.587
-      ],
-      "scrollDown": 5,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "invite_layout",
-      "resourceId": "invite_layout",
-      "tap_pct": [
-        0.5,
-        0.664
-      ],
-      "scrollDown": 5,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "collection_layout",
-      "resourceId": "collection_layout",
-      "tap_pct": [
-        0.257,
-        0.754
-      ],
-      "scrollDown": 5,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "guild_layout",
-      "resourceId": "guild_layout",
-      "tap_pct": [
-        0.743,
-        0.754
-      ],
-      "scrollDown": 5,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "my_costumes_layout",
-      "resourceId": "my_costumes_layout",
-      "tap_pct": [
-        0.257,
-        0.844
-      ],
-      "scrollDown": 5,
-      "clickable": true,
-      "activity": null,
-      "uiSample": "",
-      "vipRequired": null,
-      "fragmentId": null,
-      "kbRef": [],
-      "probed": false
-    },
-    {
-      "tab": "me",
-      "module": "个人主页",
-      "label": "layout_star",
-      "resourceId": "layout_star",
-      "tap_pct": [
-        0.743,
-        0.844
-      ],
-      "scrollDown": 5,
-      "clickable": true,
+      "accessibilityId": "",
+      "bounds": "[969,575][1050,629]",
+      "uiText": "",
+      "className": "android.widget.LinearLayout",
+      "locatorLearnedAt": "",
       "activity": null,
       "uiSample": "",
       "vipRequired": null,

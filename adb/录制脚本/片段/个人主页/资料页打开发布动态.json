@@ -9,7 +9,7 @@
   ],
   "steps": [
     { "sleep_ms": 400 },
-    { "tap_pct": [0.882, 0.670], "note": "My Moments 末尾 + 按钮" },
+    { "tap_pct": [0.881, 0.670], "note": "My Moments 末尾 + pic（952,1567）；前置：Profile Tab 上滑露出 My Moments" },
     { "sleep_ms": 1200 }
   ]
 }

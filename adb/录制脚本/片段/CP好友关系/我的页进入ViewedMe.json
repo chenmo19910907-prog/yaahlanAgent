@@ -9,7 +9,7 @@
     { "sleep_ms": 400 },
     { "tap_pct": [0.900, 0.956], "note": "Me 底栏" },
     { "sleep_ms": 700 },
-    { "tap_pct": [0.500, 0.594], "note": "cl_visitor Viewed me（540,1390）" },
+    { "tap_pct": [0.500, 0.600], "note": "cl_visitor Viewed me（540,1403）" },
     { "sleep_ms": 1000 }
   ]
 }

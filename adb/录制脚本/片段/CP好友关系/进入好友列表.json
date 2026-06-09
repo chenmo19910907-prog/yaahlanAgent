@@ -13,7 +13,7 @@
     { "sleep_ms": 700 },
     { "popup_gate": { "scene": "me" }, "note": "Me 页弹窗 Cancel" },
     { "sleep_ms": 300 },
-    { "tap_pct": [0.126, 0.265], "note": "friend_ll Friends（136,620）" },
+    { "tap_pct": [0.126, 0.271], "note": "friend_ll Friends（136,633）" },
     { "sleep_ms": 800 }
   ]
 }

@@ -27,9 +27,9 @@
     {
       "tap_pct": [
         0.500,
-        0.838
+        0.843
       ],
-      "note": "wallet_layout（540,1960）"
+      "note": "wallet_layout（540,1973）"
     },
     {
       "sleep_ms": 1000

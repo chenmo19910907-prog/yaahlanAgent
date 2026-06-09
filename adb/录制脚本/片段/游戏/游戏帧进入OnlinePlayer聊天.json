@@ -3,11 +3,13 @@
   "name": "游戏帧进入OnlinePlayer聊天",
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
-  "description": "Game 帧 Online players 首条 → ChatActivity 私聊",
-  "kbRef": ["testcase-kb/游戏帧.md（Online players）"],
+  "description": "Game 帧 Online players 首条 → ProfileActivity → Chat 钮 → ChatActivity 私聊",
+  "kbRef": ["testcase-kb/游戏帧.md（Online players）", "弹窗说明.md（Online players 列表项）"],
   "steps": [
     { "run_script": "切换游戏底栏" },
-    { "tap_pct": [0.500, 0.610], "note": "Online players 首条 item_root（540,1429）" },
-    { "sleep_ms": 1500 }
+    { "tap_pct": [0.097, 0.611], "note": "首条 iv_game_user_avtar（105,1429）；item_root 中心有时不跳转" },
+    { "sleep_ms": 1200, "note": "等待 ProfileActivity" },
+    { "tap_pct": [0.261, 0.942], "note": "底部 Chat 钮（281,2205）" },
+    { "sleep_ms": 1000 }
   ]
 }

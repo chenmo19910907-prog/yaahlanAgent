@@ -12,12 +12,14 @@ from .chain import load_steps_file, run_chain
 from .cli_args import (
     apply_fast_tunnel_args,
     is_fast_mode,
+    learn_locators_enabled,
     optional_momoid_from_args,
     popup_gate_auto_enabled,
     resolve_capture_mode,
     rtl_mode,
     use_adaptation,
 )
+from .recorded_scripts import resolve_key
 from .cli_finalize import finalize_chain_execution, track_script_outcome
 from .logcat_check import logcat_options_from_args
 from .macros import apply_skip_flags, resolve_macro
@@ -63,6 +65,7 @@ def run_macro_command(
         force_script=bool(getattr(args, "force_script", False)),
     )
     spec = resolve_macro(args.name, text=args.text)
+    _fid, _fname, fragment_path = resolve_key(args.name, kind="fragment")
     apply_fast_tunnel_args(args)
     tunnel_opts = tunnel_options_from_args(args, script_spec=spec)
     logcat_opts = logcat_options_from_args(args, script_spec=spec)
@@ -75,6 +78,7 @@ def run_macro_command(
         logcat_active=logcat_opts is not None,
     )
     steps = apply_skip_flags(list(spec.get("steps", [])), skip=set(args.skip))
+    locator_updates: dict[int, dict[str, object]] = {}
     out = run_chain(
         serial=serial,
         steps=steps,
@@ -88,6 +92,9 @@ def run_macro_command(
         popup_gate_momoid=_resolve_gate_momoid(args),
         capture_max_edge=getattr(args, "max_edge", DEFAULT_CAPTURE_MAX_EDGE),
         rtl_mode=rtl_mode(args),  # type: ignore[arg-type]
+        fragment_path=fragment_path,
+        learn_locators=learn_locators_enabled(args),
+        locator_updates=locator_updates,  # type: ignore[arg-type]
     )
     out["script"] = spec.get("name", args.name)
     out["scriptId"] = spec.get("id", args.name)
@@ -144,6 +151,7 @@ def run_chain_command(
         popup_gate_momoid=_resolve_gate_momoid(args),
         capture_max_edge=getattr(args, "max_edge", DEFAULT_CAPTURE_MAX_EDGE),
         rtl_mode=rtl_mode(args),  # type: ignore[arg-type]
+        learn_locators=learn_locators_enabled(args),
     )
     out["stepsFile"] = str(args.steps_file.resolve())
     code = finalize_chain_execution(
@@ -186,8 +194,10 @@ def run_integrated_command(
             force_script=bool(getattr(args, "force_script", False)),
         )
         spec = resolve_macro(args.macro, text=args.text)
+        _fid, _fname, fragment_path = resolve_key(args.macro, kind="fragment")
         fragment_spec = spec
         steps = apply_skip_flags(list(spec.get("steps", [])), skip=set(args.skip))
+        locator_updates: dict[int, dict[str, object]] = {}
         out: dict[str, object] = run_chain(
             serial=serial,
             steps=steps,
@@ -201,6 +211,9 @@ def run_integrated_command(
             popup_gate_momoid=gate_momoid,
             capture_max_edge=getattr(args, "max_edge", DEFAULT_CAPTURE_MAX_EDGE),
             rtl_mode=rtl_mode(args),  # type: ignore[arg-type]
+            fragment_path=fragment_path,
+            learn_locators=learn_locators_enabled(args),
+            locator_updates=locator_updates,  # type: ignore[arg-type]
         )
         out["runMode"] = "macro"
         out["script"] = spec.get("name", args.macro)
@@ -217,6 +230,7 @@ def run_integrated_command(
             popup_gate_momoid=gate_momoid,
             capture_max_edge=getattr(args, "max_edge", DEFAULT_CAPTURE_MAX_EDGE),
             rtl_mode=rtl_mode(args),  # type: ignore[arg-type]
+            learn_locators=learn_locators_enabled(args),
         )
         out["runMode"] = "chain"
         out["stepsFile"] = str(args.chain.resolve())

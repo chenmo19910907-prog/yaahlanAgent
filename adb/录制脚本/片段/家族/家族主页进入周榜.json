@@ -1,0 +1,15 @@
+{
+  "id": "family-home-weekly-ranking",
+  "name": "家族主页进入周榜",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "家族主页 Weekly Ranking 蓝色卡片 → WebView 家族榜 Weekly list（CCVC 等）；前置：Me→Family 且页在顶部",
+  "kbRef": [
+    "documents/家族改版.md（十、家族主页 · Ranking）"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.685, 0.803], "note": "Weekly Ranking 蓝色卡片（740,1880）" },
+    { "sleep_ms": 1200 }
+  ]
+}

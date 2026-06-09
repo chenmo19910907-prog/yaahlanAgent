@@ -9,7 +9,7 @@
   ],
   "steps": [
     { "sleep_ms": 400 },
-    { "tap_pct": [0.250, 0.940], "note": "底部 Tasks & Rewards 橙色按钮" },
+    { "tap_pct": [0.250, 0.920], "note": "底部 Tasks & Rewards 橙色按钮（270,2153；旧 0.940 仍可用）" },
     { "sleep_ms": 1200 }
   ]
 }

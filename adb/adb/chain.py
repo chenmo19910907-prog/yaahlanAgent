@@ -7,10 +7,13 @@ import time
 from pathlib import Path
 from typing import Any, Literal
 
+from .fragment_locator import build_locator_patch, persist_fragment_locator_updates
+from .ui_locator import probe_locator_at_point
+
 from .actions import clear_input_field, input_text, keyevent, swipe, tap
 from .activity import get_foreground_activity, wait_for_activity
-from .coords import pct_to_pixel
-from .rtl import RtlMode, mirror_x_pct, mirror_x_pixel, resolve_step_mirror
+from .ui_locator import LocatorNotFoundError, is_locator_step, resolve_tap_from_step
+from .rtl import RtlMode, mirror_x_pixel, resolve_step_mirror
 from .device import AdbError, display_size
 from .device_profile import (
     adapt_steps,
@@ -43,27 +46,23 @@ _STEP_TYPES = frozenset(
 def _resolve_tap(
     step: dict[str, Any],
     *,
+    serial: str,
     width: int,
     height: int,
     mirror_x: bool = False,
-) -> tuple[int, int]:
-    if "tap" in step:
-        xy = step["tap"]
-        if not isinstance(xy, (list, tuple)) or len(xy) != 2:
-            raise ValueError(f"tap 须为 [x, y]: {step}")
-        x, y = int(xy[0]), int(xy[1])
-        if mirror_x:
-            x = mirror_x_pixel(x, width=width)
-        return x, y
-    if "tap_pct" in step:
-        pct = step["tap_pct"]
-        if not isinstance(pct, (list, tuple)) or len(pct) != 2:
-            raise ValueError(f"tap_pct 须为 [x, y] 比例 0~1: {step}")
-        x_pct, y_pct = float(pct[0]), float(pct[1])
-        if mirror_x:
-            x_pct = mirror_x_pct(x_pct)
-        return pct_to_pixel(width, height, x_pct, y_pct)
-    raise ValueError(f"步骤缺少 tap 或 tap_pct: {step}")
+) -> tuple[int, int, dict[str, Any] | None]:
+    if is_locator_step(step):
+        hit = resolve_tap_from_step(
+            step,
+            serial=serial,
+            width=width,
+            height=height,
+            mirror_x=mirror_x,
+        )
+        return int(hit["x"]), int(hit["y"]), hit
+    raise ValueError(
+        f"步骤缺少定位字段（tap/tap_pct/resourceId/accessibilityId/xpath/tap_locate）: {step}"
+    )
 
 
 def run_chain(
@@ -80,6 +79,9 @@ def run_chain(
     popup_gate_momoid: str | None = None,
     capture_max_edge: int | None = DEFAULT_CAPTURE_MAX_EDGE,
     rtl_mode: RtlMode = "off",
+    fragment_path: Path | None = None,
+    learn_locators: bool = False,
+    locator_updates: dict[int, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     if not steps:
         raise ValueError("steps 不能为空")
@@ -113,6 +115,11 @@ def run_chain(
         result["adaptation"] = adaptation_payload(adapt_ctx)
     if rtl_mode == "on":
         result["rtlMode"] = rtl_mode
+    if learn_locators:
+        result["learnLocators"] = True
+    pending_locators: dict[int, dict[str, Any]] = (
+        locator_updates if locator_updates is not None else {}
+    )
 
     def _current_hint() -> str:
         fa = get_foreground_activity(serial=serial)
@@ -151,7 +158,7 @@ def run_chain(
                 kind = "launch_app"
             elif "sleep" in step or "sleep_ms" in step:
                 kind = "sleep"
-            elif "tap" in step or "tap_pct" in step:
+            elif is_locator_step(step):
                 kind = "tap"
             elif "swipe" in step:
                 kind = "swipe"
@@ -180,12 +187,51 @@ def run_chain(
         elif kind == "tap":
             hint = _current_hint()
             mirror_x = resolve_step_mirror(step, hint=hint, rtl_mode=rtl_mode)
-            x, y = _resolve_tap(
-                step, width=width, height=height, mirror_x=mirror_x
-            )
+            try:
+                x, y, locate_meta = _resolve_tap(
+                    step,
+                    serial=serial,
+                    width=width,
+                    height=height,
+                    mirror_x=mirror_x,
+                )
+            except LocatorNotFoundError as exc:
+                if step.get("optional"):
+                    entry["skipped"] = True
+                    entry["locatorError"] = str(exc)
+                    executed.append(entry)
+                    continue
+                raise
+            used_kind = locate_meta.get("locatorKind") if locate_meta else None
+            if learn_locators and step.get("learn_locators") is not False:
+                should_probe = used_kind in ("tap_pct", "tap") or not step.get(
+                    "resourceId"
+                )
+                if should_probe:
+                    probe = probe_locator_at_point(
+                        serial=serial, x=x, y=y, width=width, height=height
+                    )
+                    if probe:
+                        patch = build_locator_patch(
+                            step, probe, used_locator_kind=used_kind
+                        )
+                        if patch:
+                            pending_locators[index] = patch
+                            entry["locatorLearned"] = patch
             tap(x=x, y=y, serial=serial)
             entry["x"] = x
             entry["y"] = y
+            if locate_meta:
+                entry["locatorKind"] = locate_meta.get("locatorKind")
+                entry["locatorValue"] = locate_meta.get("locatorValue")
+                if locate_meta.get("resourceIdShort"):
+                    entry["resourceId"] = locate_meta.get("resourceIdShort")
+                if locate_meta.get("accessibilityId"):
+                    entry["accessibilityId"] = locate_meta.get("accessibilityId")
+                if locate_meta.get("bounds"):
+                    entry["bounds"] = locate_meta.get("bounds")
+                if locate_meta.get("attempts"):
+                    entry["locatorAttempts"] = locate_meta.get("attempts")
             if mirror_x:
                 entry["rtlMirrored"] = True
                 entry["activityHint"] = hint
@@ -377,12 +423,16 @@ def run_chain(
             if not logcat_out.get("ok"):
                 result["logcatVerifyFailed"] = True
         elif kind == "run_script":
-            from .recorded_scripts import load_fragment
+            from .recorded_scripts import load_fragment, resolve_key
 
             script_key = str(step["run_script"])
             block_skip = set(step.get("skip") or []) | (skip or set())
             frag = load_fragment(script_key, text=text)
             nested = apply_skip_flags(list(frag.get("steps", [])), skip=block_skip)
+            _nested_id, _nested_name, nested_path = resolve_key(
+                script_key, kind="fragment"
+            )
+            nested_updates: dict[int, dict[str, Any]] = {}
             sub = run_chain(
                 serial=serial,
                 steps=nested,
@@ -394,10 +444,19 @@ def run_chain(
                 skip=block_skip,
                 popup_gate_auto=False,
                 rtl_mode=rtl_mode,
+                fragment_path=nested_path,
+                learn_locators=learn_locators,
+                locator_updates=nested_updates,
             )
             entry["runScript"] = frag.get("name", script_key)
             entry["scriptId"] = frag.get("id", script_key)
             entry["nestedSteps"] = sub.get("stepsExecuted")
+            if learn_locators and nested_updates:
+                nested_persist = persist_fragment_locator_updates(
+                    nested_path, nested_updates
+                )
+                entry["nestedLocatorPersist"] = nested_persist
+                result.setdefault("locatorPersistNested", []).append(nested_persist)
             if sub.get("coldStartTime") and "coldStartTime" not in result:
                 result["coldStartTime"] = sub["coldStartTime"]
             if sub.get("splashVerify"):
@@ -434,6 +493,14 @@ def run_chain(
         _do_capture("end")
     elif capture == "never":
         result["screenshot"] = None
+
+    if learn_locators and fragment_path is not None and pending_locators:
+        persist_out = persist_fragment_locator_updates(
+            fragment_path, pending_locators
+        )
+        result["locatorPersist"] = persist_out
+        if persist_out.get("changed"):
+            result["locatorLearnedSteps"] = persist_out.get("changedSteps", [])
 
     return result
 

@@ -7,7 +7,7 @@
   "kbRef": ["documents/消息.md（Friend request）"],
   "steps": [
     { "run_script": "消息帧切换EveryoneTab" },
-    { "tap_pct": [0.500, 0.521], "note": "Friend request（540,1218）" },
+    { "tap_pct": [0.500, 0.617], "note": "Friend request root_layout（540,1443）" },
     { "sleep_ms": 1200 }
   ]
 }

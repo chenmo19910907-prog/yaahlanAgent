@@ -26,9 +26,7 @@
     { "sleep_ms": 500 },
     { "tap_pct": [0.880, 0.952], "note": "preview_select_finish Select" },
     { "sleep_ms": 1500, "note": "回到编辑页" },
-    { "key": 4, "note": "收起键盘以免挡住 Post" },
-    { "sleep_ms": 400 },
-    { "tap_pct": [0.881, 0.068], "note": "Post" },
+    { "tap_pct": [0.881, 0.068], "note": "Post；无键盘时勿 BACK 会清空已选图" },
     { "sleep_ms": 8000, "note": "等待上传与发布" }
   ]
 }

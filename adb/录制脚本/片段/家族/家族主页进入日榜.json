@@ -9,7 +9,7 @@
   ],
   "steps": [
     { "sleep_ms": 400 },
-    { "tap_pct": [0.250, 0.321], "note": "Daily Ranking 金色卡片" },
+    { "tap_pct": [0.250, 0.803], "note": "Daily Ranking 金色卡片（270,1880）；旧 0.321 已失效" },
     { "sleep_ms": 1200 }
   ]
 }

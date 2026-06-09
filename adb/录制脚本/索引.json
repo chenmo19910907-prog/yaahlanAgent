@@ -370,6 +370,27 @@
       "file": "片段/房间/房间帧Mine切换Follow.json"
     },
     {
+      "id": "room-follow-enter-sheikh",
+      "name": "房间帧Follow进Sheikh房间",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房间帧Follow进Sheikh房间.json"
+    },
+    {
+      "id": "room-joined-enter-sheikh",
+      "name": "房间帧Joined进Sheikh房间",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房间帧Joined进Sheikh房间.json"
+    },
+    {
+      "id": "room-viewed-enter-quran",
+      "name": "房间帧Viewed进古兰经房间",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房间帧Viewed进古兰经房间.json"
+    },
+    {
       "id": "room-mine-joined",
       "name": "房间帧Mine切换Joined",
       "kind": "fragment",
@@ -538,6 +559,13 @@
       "file": "片段/CP好友关系/消息帧进入FriendRequest.json"
     },
     {
+      "id": "msg-enter-system-notification",
+      "name": "消息帧进入SystemNotification",
+      "kind": "fragment",
+      "module": "消息帧",
+      "file": "片段/消息/消息帧进入SystemNotification.json"
+    },
+    {
       "id": "msg-friend-entrance",
       "name": "消息帧进入好友入口",
       "kind": "fragment",
@@ -636,6 +664,13 @@
       "file": "片段/动态/动态帧Discover进入动态详情.json"
     },
     {
+      "id": "moment-discover-like-first",
+      "name": "动态帧Discover点赞首条",
+      "kind": "fragment",
+      "module": "动态",
+      "file": "片段/动态/动态帧Discover点赞首条.json"
+    },
+    {
       "id": "moment-follow-feed-detail",
       "name": "动态帧Follow进入动态详情",
       "kind": "fragment",
@@ -655,6 +690,20 @@
       "kind": "fragment",
       "module": "动态",
       "file": "片段/动态/进入我的动态列表.json"
+    },
+    {
+      "id": "my-moments-notifications",
+      "name": "我的动态列表进入互动通知",
+      "kind": "fragment",
+      "module": "动态",
+      "file": "片段/动态/我的动态列表进入互动通知.json"
+    },
+    {
+      "id": "my-moments-open-compose",
+      "name": "我的动态列表打开发布动态",
+      "kind": "fragment",
+      "module": "动态",
+      "file": "片段/动态/我的动态列表打开发布动态.json"
     },
     {
       "id": "wallet",
@@ -839,6 +888,13 @@
       "file": "片段/家族/家族主页进入任务与奖励.json"
     },
     {
+      "id": "family-tasks-family-fund-tab",
+      "name": "家族任务页切换FamilyFund",
+      "kind": "fragment",
+      "module": "家族",
+      "file": "片段/家族/家族任务页切换FamilyFund.json"
+    },
+    {
       "id": "family-tasks-browse",
       "name": "家族任务页浏览",
       "kind": "fragment",
@@ -865,6 +921,13 @@
       "kind": "fragment",
       "module": "家族",
       "file": "片段/家族/家族主页进入日榜.json"
+    },
+    {
+      "id": "family-home-weekly-ranking",
+      "name": "家族主页进入周榜",
+      "kind": "fragment",
+      "module": "家族",
+      "file": "片段/家族/家族主页进入周榜.json"
     },
     {
       "id": "profile-honor-tab",

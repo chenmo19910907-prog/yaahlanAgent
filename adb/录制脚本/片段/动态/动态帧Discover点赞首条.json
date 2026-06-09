@@ -1,0 +1,13 @@
+{
+  "id": "moment-discover-like-first",
+  "name": "动态帧Discover点赞首条",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Moment Discover 首条动态 → iv_feed_like 点赞（计数 +1，心形高亮）；有 Topics 区时 y 与评论同为 0.603",
+  "kbRef": ["documents/moments/basic module.md（点赞）"],
+  "steps": [
+    { "run_script": "动态帧切换DiscoverTab" },
+    { "tap_pct": [0.893, 0.603], "note": "iv_feed_like 首条（964,1412）" },
+    { "sleep_ms": 800 }
+  ]
+}

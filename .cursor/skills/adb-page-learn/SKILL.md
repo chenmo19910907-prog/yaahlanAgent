@@ -20,6 +20,8 @@ description: >-
 
 | 必须 | 禁止 |
 |------|------|
+| **登录前** `accounts check` / `accounts login-idle` 选空闲测试号（Tunnel 检测占用） | 不经检测直接 `macro 手机号登录` 指定 familyLeader 等 |
+| **macro 默认 `--learn-locators`**：坐标点击时探测 resourceId/content-desc 并回写片段，下次优先元素定位 | 手改片段坐标却不跑 macro 验收 |
 | **capture 见 Charm/PK 横幅**（Still missing XXk）**或右上角奖杯挂件**（00:00）→ **立即** `macro CharmPK横幅收起拖走`，再继续 | 横幅/挂件未处理就 tap 其它按钮 / 跑下一 macro |
 | 每页 **先 swipe 读全** 再点下一项 | Python/`learn scan` **批量乱点** 代替读图 |
 | **一次只探一个入口**：tap → activity → capture | 未读图就写坐标 |
@@ -28,7 +30,7 @@ description: >-
 | Me/home 弹窗 **读图点 Cancel** | Me/home 上盲 **BACK**（会出退出确认） |
 | 落点不对 **capture 纠偏**，勿 force-stop | 除非用户明确要求冷启，否则 **force-stop 杀 App** |
 
-辅助：`learn scan --tab me` 仅作 **坐标参考**，tap 前仍须 **capture 读图确认**。
+辅助：`learn scan --tab me` 列入口并写 **元素属性**（`resourceId` / `accessibilityId` / `bounds` 等到 `页面地图.json`），tap 前仍须 **capture 读图确认**；落片段优先元素定位，坐标作 `fallback_tap_pct`。
 
 ## 主循环（每个入口）
 
@@ -112,7 +114,8 @@ python3 adb/adb_execute.py learn scan --tab me
 1. **片段** `片段/<一级模块>/<中文名>.json`（含 `id`、`name`、`recordedOn`、`steps`、`kbRef`、`description`）
 2. **索引** `索引.json` 登记 `kind: fragment`、`module`、`file`
 3. **KB对照** `KB对照.md` 增一行映射
-4. 端到端流程：拆成多个片段，逐段 macro + 片段间验收（可选 `tunnelVerify` 写在片段 JSON）
+4. **功能验收知识库**：在根目录 `verified-kb/<模块>.md` 增 **场景** 与验收要点（体例对齐 `testcase-kb/`，写功能路径不写坐标）
+5. 端到端流程：拆成多个片段，逐段 macro + 片段间验收（可选 `tunnelVerify` 写在片段 JSON）
 
 片段 JSON 模板与 `id` 命名见 [reference.md](reference.md#片段-json-模板)。
 

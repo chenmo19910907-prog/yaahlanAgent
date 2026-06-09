@@ -88,7 +88,7 @@ python3 adb/adb_execute.py learn scan --tab me
 python3 adb/adb_execute.py learn probe --limit 10   # 仅调试，不可替代读图
 ```
 
-产出 **不得** 直接写入 `页面地图.json` 当正式片段；须读图确认后手写片段。
+`页面地图.json` 每条含 `resourceId`、`accessibilityId`、`bounds`、`uiText`、`className`、`tap_pct`、`locatorLearnedAt`。**不得**直接当正式片段；读图确认后落片段，字段对齐 `entry_to_tap_step`（元素优先 + `fallback_tap_pct`）。
 
 ## 账号与 MOA / Admin
 

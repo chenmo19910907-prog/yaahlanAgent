@@ -1,0 +1,15 @@
+{
+  "id": "my-moments-open-compose",
+  "name": "我的动态列表打开发布动态",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "My Moments 列表顶栏 publish「+」→ PostActivity；与资料页 My Moments「+」、Moment 帧 publish_feed 同页不同入口",
+  "kbRef": [
+    "documents/moments/basic module.md（发布入口）"
+  ],
+  "steps": [
+    { "sleep_ms": 400 },
+    { "tap_pct": [0.922, 0.068], "note": "publish +（996,159）" },
+    { "sleep_ms": 1200 }
+  ]
+}

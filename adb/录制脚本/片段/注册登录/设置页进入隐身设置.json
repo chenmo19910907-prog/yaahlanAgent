@@ -3,7 +3,7 @@
   "name": "设置页进入隐身设置",
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
-  "description": "已在 SettingComposeActivity 且列表在顶部 → Stealth/Invisibility → VisitorActivity",
+  "description": "已在 SettingComposeActivity 且列表在顶部 → Stealth setting → HideActivity",
   "steps": [
     { "sleep_ms": 400 },
     {
