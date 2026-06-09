@@ -613,6 +613,31 @@ def build_parser() -> argparse.ArgumentParser:
     p_panel_find.add_argument("--tab", dest="tab_name", help="Tab 名称子串，如 Gift / nation")
     p_panel_find.add_argument("--name", dest="name_contains", help="礼物名称子串")
 
+    p_room = sub.add_parser(
+        "room",
+        help="房间内操作（Close the room 开关读图判态等）",
+    )
+    room_sub = p_room.add_subparsers(dest="room_command", required=True)
+    p_room_close_switch = room_sub.add_parser(
+        "close-switch",
+        help="Close the room 开关：按圆钮白/灰读图判态（勿信 checked）",
+    )
+    close_switch_sub = p_room_close_switch.add_subparsers(
+        dest="close_switch_command",
+        required=True,
+    )
+    close_switch_sub.add_parser("probe", help="读图探测当前开关态")
+    p_close_switch_set = close_switch_sub.add_parser("set", help="切换至目标态")
+    state_group = p_close_switch_set.add_mutually_exclusive_group(required=True)
+    state_group.add_argument("--on", action="store_true", help="确保开关为 ON（圆钮白）")
+    state_group.add_argument("--off", action="store_true", help="确保开关为 OFF（圆钮灰）")
+    p_close_switch_set.add_argument(
+        "--max-attempts",
+        type=int,
+        default=3,
+        help="最多点击切换次数，默认 3",
+    )
+
     p_accounts = sub.add_parser(
         "accounts",
         help="批量账号操作（登录巡检 + 每账号 Tunnel 验收）",
@@ -1165,6 +1190,32 @@ def main(argv: list[str] | None = None) -> int:
                 _emit(out)
                 return 0 if out.get("matchedCount", 0) > 0 else 3
             print(f"未知 gift 子命令: {args.gift_command}", file=sys.stderr)
+            return 2
+
+        if args.command == "room":
+            from .room_close_switch import (
+                detect_close_switch_state,
+                ensure_close_switch_state,
+                open_room_panel_if_needed,
+            )
+
+            if args.room_command == "close-switch":
+                if args.close_switch_command == "probe":
+                    panel = open_room_panel_if_needed(serial=serial)
+                    out = detect_close_switch_state(serial=serial)
+                    out["panel"] = panel
+                    _emit(out)
+                    return 0 if out.get("ok") else 3
+                if args.close_switch_command == "set":
+                    desired = "on" if getattr(args, "on", False) else "off"
+                    out = ensure_close_switch_state(
+                        serial=serial,
+                        desired=desired,  # type: ignore[arg-type]
+                        max_attempts=max(1, int(args.max_attempts)),
+                    )
+                    _emit(out)
+                    return 0 if out.get("ok") else 3
+            print(f"未知 room 子命令: {args.room_command}", file=sys.stderr)
             return 2
 
         if args.command == "splash":

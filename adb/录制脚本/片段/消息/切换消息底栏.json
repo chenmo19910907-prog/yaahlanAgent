@@ -19,7 +19,19 @@
         0.5,
         0.956
       ],
-      "note": "tab_msg"
+      "note": "tab_msg",
+      "resourceId": "tab_msg",
+      "bounds": "[432,2151][648,2325]",
+      "className": "android.widget.FrameLayout",
+      "fallback_tap_pct": [
+        0.5,
+        0.909366
+      ],
+      "fallback_tap": [
+        540,
+        2237
+      ],
+      "locatorLearnedAt": "2026-06-09T09:26:27Z"
     }
   ]
 }

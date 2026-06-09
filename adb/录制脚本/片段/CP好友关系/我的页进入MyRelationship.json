@@ -1,15 +1,62 @@
 {
   "id": "me-enter-relationship",
   "name": "我的页进入MyRelationship",
-  "recordedOn": { "width": 1080, "height": 2340 },
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
   "capture": "end",
   "description": "Me → My Relationship（cp_layout）→ ProfileActivity Relationship tab",
-  "kbRef": ["testcase-kb/个人主页.md（My Relationship / CP）"],
+  "kbRef": [
+    "testcase-kb/个人主页.md（My Relationship / CP）"
+  ],
   "steps": [
-    { "sleep_ms": 400 },
-    { "tap_pct": [0.900, 0.956], "note": "Me 底栏" },
-    { "sleep_ms": 700 },
-    { "tap_pct": [0.500, 0.766], "note": "cp_layout My Relationship（540,1793）" },
-    { "sleep_ms": 1200 }
+    {
+      "sleep_ms": 400
+    },
+    {
+      "tap_pct": [
+        0.9,
+        0.956
+      ],
+      "note": "Me 底栏",
+      "resourceId": "tab_profile",
+      "bounds": "[864,2151][1080,2325]",
+      "className": "android.widget.FrameLayout",
+      "fallback_tap_pct": [
+        0.9,
+        0.956
+      ],
+      "fallback_tap": [
+        972,
+        2237
+      ],
+      "locatorLearnedAt": "2026-06-09T07:55:46Z"
+    },
+    {
+      "sleep_ms": 700
+    },
+    {
+      "tap_pct": [
+        0.5,
+        0.766
+      ],
+      "note": "cp_layout My Relationship（540,1793）",
+      "resourceId": "cp_layout",
+      "bounds": "[30,1703][1050,1883]",
+      "className": "android.view.ViewGroup",
+      "fallback_tap_pct": [
+        0.5,
+        0.766
+      ],
+      "fallback_tap": [
+        540,
+        1792
+      ],
+      "locatorLearnedAt": "2026-06-09T07:55:49Z"
+    },
+    {
+      "sleep_ms": 1200
+    }
   ]
 }

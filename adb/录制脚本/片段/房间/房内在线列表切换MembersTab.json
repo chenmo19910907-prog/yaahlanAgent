@@ -1,0 +1,19 @@
+{
+  "id": "room-online-list-members-tab",
+  "name": "房内在线列表切换MembersTab",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Current Room 面板 → Members(6/3000) 标签（684,1050）；前置 run 房内打开在线用户列表",
+  "kbRef": ["testcase-kb/财富等级.md（房间成员列表）"],
+  "steps": [
+    { "run_script": "房内打开在线用户列表" },
+    { "sleep_ms": 500 },
+    {
+      "tap_pct": [0.633, 0.449],
+      "note": "tv_tab Members（684,1050）",
+      "fallback_tap_pct": [0.633, 0.449],
+      "fallback_tap": [684, 1050]
+    },
+    { "sleep_ms": 800 }
+  ]
+}

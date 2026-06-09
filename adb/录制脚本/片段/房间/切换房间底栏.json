@@ -19,7 +19,19 @@
         0.3,
         0.956
       ],
-      "note": "tab_room"
+      "note": "tab_room",
+      "resourceId": "tab_room",
+      "bounds": "[216,2151][432,2325]",
+      "className": "android.widget.FrameLayout",
+      "fallback_tap_pct": [
+        0.3,
+        0.956
+      ],
+      "fallback_tap": [
+        324,
+        2237
+      ],
+      "locatorLearnedAt": "2026-06-09T06:58:25Z"
     }
   ]
 }

@@ -36,7 +36,19 @@
         0.922,
         0.064
       ],
-      "note": "右上角 X（iv_room_close ≈996,150），打开房间功能面板"
+      "note": "右上角 X（iv_room_close ≈996,150），打开房间功能面板",
+      "resourceId": "change_bg",
+      "bounds": "[704,107][1050,215]",
+      "className": "android.widget.LinearLayout",
+      "fallback_tap_pct": [
+        0.922,
+        0.064
+      ],
+      "fallback_tap": [
+        995,
+        149
+      ],
+      "locatorLearnedAt": "2026-06-09T07:48:28Z"
     },
     {
       "sleep_ms": 800
@@ -46,7 +58,19 @@
         0.813,
         0.151
       ],
-      "note": "Close 电源图标（grid_view 第 1 行第 4 格 ≈878,354；旧 0.875/0.086≈945,201 偏上误触 Hourly Ranking）"
+      "note": "Close 电源图标（grid_view 第 1 行第 4 格 ≈878,354；旧 0.875/0.086≈945,201 偏上误触 Hourly Ranking）",
+      "resourceId": "blank_view",
+      "bounds": "[0,84][1080,861]",
+      "className": "android.view.View",
+      "fallback_tap_pct": [
+        0.813,
+        0.151
+      ],
+      "fallback_tap": [
+        878,
+        353
+      ],
+      "locatorLearnedAt": "2026-06-09T07:48:33Z"
     },
     {
       "sleep_ms": 800
@@ -57,7 +81,20 @@
         0.588
       ],
       "optional": true,
-      "note": "Room Reminder 二次确认 → Exit Now（左钮）；无弹窗时可跳过"
+      "note": "Room Reminder 二次确认 → Exit Now（左钮）；无弹窗时可跳过",
+      "resourceId": "tv_product_expiry",
+      "bounds": "[233,1362][353,1419]",
+      "uiText": "7 days",
+      "className": "android.widget.TextView",
+      "fallback_tap_pct": [
+        0.284,
+        0.588
+      ],
+      "fallback_tap": [
+        306,
+        1375
+      ],
+      "locatorLearnedAt": "2026-06-09T09:39:32Z"
     },
     {
       "sleep_ms": 1500,

@@ -1,0 +1,19 @@
+{
+  "id": "room-function-background",
+  "name": "房内RoomFunction打开Background",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "底栏 more → Room function（默认滚至 Truth or Dare 行可见时）第 2 行第 4 格 Background（927,1426）→ 背景选择底 sheet；BACK 关闭",
+  "kbRef": ["testcase-kb/主题房.md"],
+  "steps": [
+    { "run_script": "房内打开RoomFunction菜单" },
+    { "sleep_ms": 500 },
+    {
+      "tap_pct": [0.858, 0.609],
+      "note": "Room function Background 格中心（927,1426）",
+      "fallback_tap_pct": [0.858, 0.609],
+      "fallback_tap": [927, 1426]
+    },
+    { "sleep_ms": 1000 }
+  ]
+}

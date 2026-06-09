@@ -1,0 +1,20 @@
+{
+  "id": "room-open-settings-panel",
+  "name": "房内打开房间功能面板",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "已在语音房内：点右上 X（iv_room_close）打开功能面板（Mute/Minimize/Share/Close、Floating message、Network Speed、Close the room 等）；勿与 Hourly Ranking（room_rank_container≈811,150）混淆",
+  "kbRef": ["testcase-kb/主题房.md"],
+  "steps": [
+    { "sleep_ms": 400 },
+    {
+      "tap_pct": [0.922, 0.064],
+      "note": "iv_room_close 打开面板（996,150）",
+      "resourceId": "iv_room_close",
+      "bounds": "[942,96][1050,204]",
+      "fallback_tap_pct": [0.922, 0.064],
+      "fallback_tap": [996, 150]
+    },
+    { "sleep_ms": 800 }
+  ]
+}

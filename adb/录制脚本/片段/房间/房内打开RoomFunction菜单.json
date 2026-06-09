@@ -1,0 +1,19 @@
+{
+  "id": "room-open-function-menu",
+  "name": "房内打开RoomFunction菜单",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "房内底栏右侧 more（≈1011,2256）→ Room function 底 sheet（Mysterious/Red Packet/PK ATM/…）；上滑可见 Room entertainment 游戏格；BACK 关闭",
+  "kbRef": ["testcase-kb/主题房.md"],
+  "steps": [
+    { "sleep_ms": 400 },
+    {
+      "tap_pct": [0.936, 0.964],
+      "note": "底栏 more 三横线（1011,2256）",
+      "resourceId": "more",
+      "fallback_tap_pct": [0.936, 0.964],
+      "fallback_tap": [1011, 2256]
+    },
+    { "sleep_ms": 1000 }
+  ]
+}

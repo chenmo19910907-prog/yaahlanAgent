@@ -1,13 +1,40 @@
 {
   "id": "room-open-create-menu",
   "name": "房间帧打开创建房间菜单",
-  "recordedOn": { "width": 1080, "height": 2340 },
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
   "capture": "end",
   "description": "Room 右上角 im_create_room → 弹出 My voice room / Voice rooms I manage / Event rooms 菜单",
-  "kbRef": ["documents/房间.md（创建房间）"],
+  "kbRef": [
+    "documents/房间.md（创建房间）"
+  ],
   "steps": [
-    { "run_script": "切换房间底栏" },
-    { "tap_pct": [0.922, 0.088], "note": "im_create_room（996,207）" },
-    { "sleep_ms": 800 }
+    {
+      "run_script": "切换房间底栏"
+    },
+    {
+      "tap_pct": [
+        0.922,
+        0.088
+      ],
+      "note": "im_create_room（996,207）",
+      "resourceId": "im_create_room",
+      "bounds": "[942,153][1050,261]",
+      "className": "android.widget.ImageView",
+      "fallback_tap_pct": [
+        0.922,
+        0.088
+      ],
+      "fallback_tap": [
+        995,
+        205
+      ],
+      "locatorLearnedAt": "2026-06-09T06:58:27Z"
+    },
+    {
+      "sleep_ms": 800
+    }
   ]
 }

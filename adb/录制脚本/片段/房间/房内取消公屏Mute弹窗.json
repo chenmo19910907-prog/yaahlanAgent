@@ -1,0 +1,19 @@
+{
+  "id": "room-dismiss-mute-public",
+  "name": "房内取消公屏Mute弹窗",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "房内功能面板 Mute →「Only Admins Can Send Public Messages. Please Select Mute」时长选择弹窗；点 Cancel 关闭（296,1521）",
+  "kbRef": ["testcase-kb/主题房.md"],
+  "steps": [
+    { "sleep_ms": 300 },
+    {
+      "tap_pct": [0.274, 0.650],
+      "note": "Cancel 左钮（296,1521）",
+      "resourceId": "cancel",
+      "fallback_tap_pct": [0.274, 0.650],
+      "fallback_tap": [296, 1521]
+    },
+    { "sleep_ms": 600 }
+  ]
+}

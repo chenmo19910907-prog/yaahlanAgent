@@ -13,7 +13,8 @@
         0.574,
         0.974
       ],
-      "note": "橙色礼物盒（非快捷礼物）"
+      "note": "橙色礼物盒（非快捷礼物；底栏勿学 scroll_view/bottom_bar）",
+      "learn_locators": false
     },
     {
       "sleep_ms": 1500,

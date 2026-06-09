@@ -1,0 +1,37 @@
+{
+  "id": "mi_23077rabdc",
+  "name": "Xiaomi 23077RABDC",
+  "deviceModel": "23077RABDC",
+  "calibratedAt": "2026-06-09T08:06:00+00:00",
+  "updatedAt": "2026-06-09T08:06:00+00:00",
+  "notes": "同宽 1080；高度 2460 vs 基准 2340，Y 按 2340/2460 比例初算（未逐点读图校准）",
+  "lastChangeReason": "initial",
+  "match": {
+    "models": ["23077RABDC"],
+    "serials": ["818b814b23d9"]
+  },
+  "device": {
+    "serial": "818b814b23d9",
+    "model": "23077RABDC",
+    "manufacturer": "Xiaomi",
+    "brand": "Redmi",
+    "productDevice": "river",
+    "width": 1080,
+    "height": 2460
+  },
+  "reference": {
+    "id": "reference",
+    "width": 1080,
+    "height": 2340,
+    "name": "录制基准机",
+    "model": ""
+  },
+  "reusePolicy": "use_saved_transform",
+  "transform": {
+    "type": "pct_linear",
+    "x": { "scale": 1.0, "offset": 0.0 },
+    "y": { "scale": 0.951219512195122, "offset": 0.0 }
+  },
+  "anchors": [],
+  "history": []
+}

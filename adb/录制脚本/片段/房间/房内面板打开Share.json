@@ -1,0 +1,19 @@
+{
+  "id": "room-open-share-panel",
+  "name": "房内面板打开Share",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "房内功能面板第 1 行 Share → 底部分享页（Whatsapp/Facebook/Copy Link + Invite friends 列表）；返回点 back（84,985）",
+  "kbRef": ["testcase-kb/主题房.md"],
+  "steps": [
+    { "run_script": "房内打开房间功能面板" },
+    { "sleep_ms": 500 },
+    {
+      "tap_pct": [0.605, 0.185],
+      "note": "grid_view 第 1 行 Share（653,432）",
+      "fallback_tap_pct": [0.605, 0.185],
+      "fallback_tap": [653, 432]
+    },
+    { "sleep_ms": 1000 }
+  ]
+}

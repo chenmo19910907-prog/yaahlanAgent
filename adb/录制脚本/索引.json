@@ -335,6 +335,104 @@
       "file": "片段/房间/关闭网络诊断弹窗.json"
     },
     {
+      "id": "room-open-settings-panel",
+      "name": "房内打开房间功能面板",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内打开房间功能面板.json"
+    },
+    {
+      "id": "room-open-network-speed",
+      "name": "房内面板打开网络测速",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内面板打开网络测速.json"
+    },
+    {
+      "id": "room-open-share-panel",
+      "name": "房内面板打开Share",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内面板打开Share.json"
+    },
+    {
+      "id": "room-dismiss-mute-public",
+      "name": "房内取消公屏Mute弹窗",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内取消公屏Mute弹窗.json"
+    },
+    {
+      "id": "room-hourly-ranking",
+      "name": "房内进入HourlyRanking",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内进入HourlyRanking.json"
+    },
+    {
+      "id": "room-open-function-menu",
+      "name": "房内打开RoomFunction菜单",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内打开RoomFunction菜单.json"
+    },
+    {
+      "id": "room-close-switch-toggle",
+      "name": "房内切换CloseTheRoom开关",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内切换CloseTheRoom开关.json"
+    },
+    {
+      "id": "room-function-bgm",
+      "name": "房内RoomFunction打开BGM",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内RoomFunction打开BGM.json"
+    },
+    {
+      "id": "room-open-online-users",
+      "name": "房内打开在线用户列表",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内打开在线用户列表.json"
+    },
+    {
+      "id": "room-online-list-members-tab",
+      "name": "房内在线列表切换MembersTab",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内在线列表切换MembersTab.json"
+    },
+    {
+      "id": "room-function-background",
+      "name": "房内RoomFunction打开Background",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内RoomFunction打开Background.json"
+    },
+    {
+      "id": "room-function-collection-exhibition",
+      "name": "房内RoomFunction打开CollectionExhibition",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内RoomFunction打开CollectionExhibition.json"
+    },
+    {
+      "id": "room-function-scroll-entertainment",
+      "name": "房内RoomFunction上滑至娱乐游戏",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内RoomFunction上滑至娱乐游戏.json"
+    },
+    {
+      "id": "room-entertainment-goldminer",
+      "name": "房内RoomEntertainment打开GoldMiner",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内RoomEntertainment打开GoldMiner.json"
+    },
+    {
       "id": "room-reject-mic-invitation",
       "name": "拒绝Mic邀请",
       "kind": "fragment",

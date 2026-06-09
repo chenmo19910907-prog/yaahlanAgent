@@ -7,7 +7,13 @@
   "kbRef": ["testcase-kb/个人主页.md（Badge 徽章墙）"],
   "steps": [
     { "run_script": "我的页下滑浏览", "note": "露出 Badge 行" },
-    { "tap_pct": [0.500, 0.527], "note": "Badge（540,1232）" },
+    {
+      "resourceId": "nameplate_layout",
+      "bounds": "[30,1104][1050,1284]",
+      "tap_pct": [0.500, 0.511],
+      "fallback_tap_pct": [0.500, 0.527],
+      "note": "Badge 行 nameplate_layout（540,1194）"
+    },
     { "sleep_ms": 1200 }
   ]
 }

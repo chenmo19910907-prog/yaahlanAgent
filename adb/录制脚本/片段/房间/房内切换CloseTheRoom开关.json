@@ -1,0 +1,21 @@
+{
+  "id": "room-close-switch-toggle",
+  "name": "房内切换CloseTheRoom开关",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "房内功能面板 Close the room 开关（close_switch_btn bounds [855,1208][990,1280]）。验收须读图判态：圆钮白=on、灰=off；勿信 checked。推荐 probe：`python3 adb/adb_execute.py room close-switch probe`；设目标态用 `room close-switch set --on|--off`",
+  "kbRef": ["testcase-kb/主题房.md", "adb/使用方法.md（Close the room 开关）"],
+  "steps": [
+    { "run_script": "房内打开房间功能面板" },
+    { "sleep_ms": 500 },
+    {
+      "tap_pct": [0.861, 0.532],
+      "note": "close_switch_btn 偏左点击避 Dev 角标（929,1244）；圆钮在右时仍点轨道左半",
+      "resourceId": "close_switch_btn",
+      "bounds": "[855,1208][990,1280]",
+      "fallback_tap_pct": [0.861, 0.532],
+      "fallback_tap": [929, 1244]
+    },
+    { "sleep_ms": 900 }
+  ]
+}

@@ -10,7 +10,13 @@
   ],
   "steps": [
     { "sleep_ms": 400 },
-    { "tap_pct": [0.273, 0.103], "note": "顶部钻石余额 8.15M 区域" },
+    {
+      "resourceId": "ll_my_account",
+      "bounds": "[183,215][411,269]",
+      "tap_pct": [0.275, 0.103],
+      "fallback_tap_pct": [0.273, 0.103],
+      "note": "顶部钻石余额 ll_my_account（297,242）→ PayActivity"
+    },
     { "sleep_ms": 1200 }
   ]
 }

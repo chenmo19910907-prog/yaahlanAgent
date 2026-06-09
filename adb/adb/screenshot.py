@@ -14,7 +14,7 @@ from .device import run_adb
 
 _MODULE_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_SCREENSHOT_DIR = _MODULE_ROOT / "screenshots"
-DEFAULT_MAX_SCREENSHOTS = 2
+DEFAULT_MAX_SCREENSHOTS = 10
 DEFAULT_CAPTURE_MAX_EDGE = 1170
 
 

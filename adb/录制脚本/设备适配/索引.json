@@ -10,6 +10,14 @@
       "deviceModel": "SM-A805F",
       "width": 1080,
       "height": 2400
+    },
+    {
+      "id": "mi_23077rabdc",
+      "name": "Xiaomi 23077RABDC",
+      "file": "档案/mi_23077rabdc.json",
+      "deviceModel": "23077RABDC",
+      "width": 1080,
+      "height": 2460
     }
   ]
 }

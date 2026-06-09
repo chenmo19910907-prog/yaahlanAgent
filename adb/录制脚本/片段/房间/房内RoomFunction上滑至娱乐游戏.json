@@ -1,0 +1,17 @@
+{
+  "id": "room-function-scroll-entertainment",
+  "name": "房内RoomFunction上滑至娱乐游戏",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "never",
+  "description": "Room function 底 sheet 内上滑（540,2100→1300）露出 Room entertainment 游戏格（GoldMiner/TeenPatti 等）；下滑（1600→2200）可回到 function 区",
+  "kbRef": ["testcase-kb/主题房.md"],
+  "steps": [
+    { "run_script": "房内打开RoomFunction菜单" },
+    { "sleep_ms": 400 },
+    {
+      "swipe": { "x1": 540, "y1": 2100, "x2": 540, "y2": 1300, "duration_ms": 350 },
+      "note": "上滑露出 Room entertainment"
+    },
+    { "sleep_ms": 600 }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "room-hourly-ranking",
+  "name": "房内进入HourlyRanking",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "房内顶栏 Hourly Ranking（room_rank_container≈811,150）→ WebView Contribution 榜（Daily/Monthly list）；勿与面板 Close（878,354）混淆",
+  "kbRef": ["testcase-kb/主题房.md"],
+  "steps": [
+    { "sleep_ms": 400 },
+    {
+      "tap_pct": [0.751, 0.064],
+      "note": "room_rank_container（811,150）",
+      "resourceId": "room_rank_container",
+      "bounds": "[703,96][919,204]",
+      "fallback_tap_pct": [0.751, 0.064],
+      "fallback_tap": [811, 150]
+    },
+    { "sleep_ms": 1200 }
+  ]
+}

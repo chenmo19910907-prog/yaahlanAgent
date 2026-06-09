@@ -1,0 +1,19 @@
+{
+  "id": "room-entertainment-goldminer",
+  "name": "房内RoomEntertainment打开GoldMiner",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Room entertainment 区 GoldMiner（≈410,1100）→ WebView/房内分屏 TeenPatti；可能出现 Game Rewards 弹窗（key 4 关）；分屏时 run 房内三方游戏最小化",
+  "kbRef": ["testcase-kb/主题房.md", "adb/录制脚本/弹窗说明.md"],
+  "steps": [
+    { "run_script": "房内RoomFunction上滑至娱乐游戏" },
+    { "sleep_ms": 500 },
+    {
+      "tap_pct": [0.380, 0.470],
+      "note": "GoldMiner 格（410,1100；title y≈924 时点上移点图标）",
+      "fallback_tap_pct": [0.380, 0.470],
+      "fallback_tap": [410, 1100]
+    },
+    { "sleep_ms": 1500 }
+  ]
+}

@@ -88,6 +88,20 @@
 | 搜索页返回房间帧 | room-search-back |
 | 游戏帧OnlinePlayerVisit进房 | game-enter-visit-room |
 | 退出房间 | room-exit |
+| 房内打开房间功能面板 | room-open-settings-panel |
+| 房内面板打开网络测速 | room-open-network-speed |
+| 房内面板打开Share | room-open-share-panel |
+| 房内取消公屏Mute弹窗 | room-dismiss-mute-public |
+| 房内进入HourlyRanking | room-hourly-ranking |
+| 房内打开RoomFunction菜单 | room-open-function-menu |
+| 房内切换CloseTheRoom开关 | room-close-switch-toggle |
+| 房内RoomFunction打开BGM | room-function-bgm |
+| 房内打开在线用户列表 | room-open-online-users |
+| 房内在线列表切换MembersTab | room-online-list-members-tab |
+| 房内RoomFunction打开Background | room-function-background |
+| 房内RoomFunction打开CollectionExhibition | room-function-collection-exhibition |
+| 房内RoomFunction上滑至娱乐游戏 | room-function-scroll-entertainment |
+| 房内RoomEntertainment打开GoldMiner | room-entertainment-goldminer |
 
 ## 房间PK · `片段/房间PK/`
 

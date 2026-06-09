@@ -1,0 +1,19 @@
+{
+  "id": "room-open-network-speed",
+  "name": "房内面板打开网络测速",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "房内功能面板 → Network Speed（≈878,1014）弹出网络诊断（Testing/Excellent）；结束后 run 关闭网络诊断弹窗",
+  "kbRef": ["adb/录制脚本/弹窗说明.md（网络诊断）"],
+  "steps": [
+    { "run_script": "房内打开房间功能面板" },
+    { "sleep_ms": 500 },
+    {
+      "tap_pct": [0.813, 0.433],
+      "note": "Network Speed 图标（878,1014）；title 节点中心",
+      "fallback_tap_pct": [0.813, 0.433],
+      "fallback_tap": [878, 1014]
+    },
+    { "sleep_ms": 1200 }
+  ]
+}

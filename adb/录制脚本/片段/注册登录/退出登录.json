@@ -19,13 +19,28 @@
         0.9,
         0.956
       ],
-      "note": "Me"
+      "note": "Me",
+      "resourceId": "tab_profile",
+      "bounds": "[864,2151][1080,2325]",
+      "uiText": "Send",
+      "className": "android.widget.FrameLayout",
+      "fallback_tap_pct": [
+        0.9,
+        0.956
+      ],
+      "fallback_tap": [
+        972,
+        2237
+      ],
+      "locatorLearnedAt": "2026-06-09T08:55:55Z"
     },
     {
       "sleep_ms": 700
     },
     {
-      "popup_gate": { "scene": "me" },
+      "popup_gate": {
+        "scene": "me"
+      },
       "note": "Me 页弹窗自动 Cancel，再点设置"
     },
     {
@@ -46,7 +61,19 @@
         0.922,
         0.068
       ],
-      "note": "iv_setting 中心 996,159（勿用 966 左缘）"
+      "note": "iv_setting 中心 996,159（勿用 966 左缘）",
+      "resourceId": "iv_setting",
+      "bounds": "[953,123][1052,222]",
+      "className": "android.widget.ImageView",
+      "fallback_tap_pct": [
+        0.922,
+        0.068
+      ],
+      "fallback_tap": [
+        995,
+        159
+      ],
+      "locatorLearnedAt": "2026-06-09T09:08:29Z"
     },
     {
       "sleep_ms": 800
@@ -56,7 +83,20 @@
         0.5,
         0.942
       ],
-      "note": "Log out（bounds 中心 540,2205）"
+      "note": "Log out（bounds 中心 540,2205）",
+      "resourceId": "private_service",
+      "bounds": "[258,2106][990,2205]",
+      "uiText": "I have read and agreed Terms of Service & Privacy Policy",
+      "className": "android.widget.TextView",
+      "fallback_tap_pct": [
+        0.5,
+        0.942
+      ],
+      "fallback_tap": [
+        540,
+        2204
+      ],
+      "locatorLearnedAt": "2026-06-09T08:56:09Z"
     },
     {
       "sleep_ms": 2500,
