@@ -84,10 +84,10 @@
         0.942
       ],
       "note": "Log out（bounds 中心 540,2205）",
-      "resourceId": "private_service",
-      "bounds": "[258,2106][990,2205]",
+      "resourceId": "tab_msg",
+      "bounds": "[432,2151][648,2325]",
       "uiText": "I have read and agreed Terms of Service & Privacy Policy",
-      "className": "android.widget.TextView",
+      "className": "android.widget.FrameLayout",
       "fallback_tap_pct": [
         0.5,
         0.942
@@ -96,7 +96,7 @@
         540,
         2204
       ],
-      "locatorLearnedAt": "2026-06-09T08:56:09Z"
+      "locatorLearnedAt": "2026-06-09T11:06:03Z"
     },
     {
       "sleep_ms": 2500,

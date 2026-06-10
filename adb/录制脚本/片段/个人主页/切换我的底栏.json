@@ -1,12 +1,40 @@
 {
   "id": "me-tab",
   "name": "切换我的底栏",
-  "recordedOn": { "width": 1080, "height": 2340 },
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
   "capture": "never",
   "description": "点击 Me 底栏 → 自动点 Cancel 关弹窗（勿 BACK / 杀进程）",
   "steps": [
-    { "sleep_ms": 600 },
-    { "tap_pct": [0.900, 0.956], "note": "tab_profile" },
-    { "popup_gate": { "scene": "me" }, "note": "Me 页弹窗自动 Cancel" }
+    {
+      "sleep_ms": 600
+    },
+    {
+      "tap_pct": [
+        0.9,
+        0.956
+      ],
+      "note": "tab_profile",
+      "resourceId": "send_iv",
+      "bounds": "[953,2190][1014,2246]",
+      "className": "android.widget.ImageView",
+      "fallback_tap_pct": [
+        0.9,
+        0.909366
+      ],
+      "fallback_tap": [
+        972,
+        2237
+      ],
+      "locatorLearnedAt": "2026-06-09T10:34:33Z"
+    },
+    {
+      "popup_gate": {
+        "scene": "me"
+      },
+      "note": "Me 页弹窗自动 Cancel"
+    }
   ]
 }

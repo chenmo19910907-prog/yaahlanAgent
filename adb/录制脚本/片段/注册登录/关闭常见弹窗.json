@@ -55,7 +55,20 @@
         0.56
       ],
       "note": "Account Security → Cancel",
-      "skip_key": "dismiss_popup_taps"
+      "skip_key": "dismiss_popup_taps",
+      "resourceId": "bg",
+      "bounds": "[28,820][1052,1700]",
+      "className": "android.widget.ImageView",
+      "fallback_tap_pct": [
+        0.32,
+        0.532683
+      ],
+      "fallback_tap": [
+        345,
+        1310
+      ],
+      "locatorLearnedAt": "2026-06-09T14:00:24Z",
+      "uiText": "Cancel"
     },
     {
       "sleep_ms": 350
@@ -66,7 +79,19 @@
         0.479
       ],
       "note": "Crowd Testing → Cancel",
-      "skip_key": "dismiss_popup_taps"
+      "skip_key": "dismiss_popup_taps",
+      "resourceId": "bg",
+      "bounds": "[28,820][1052,1700]",
+      "className": "android.widget.ImageView",
+      "fallback_tap_pct": [
+        0.296,
+        0.455634
+      ],
+      "fallback_tap": [
+        319,
+        1120
+      ],
+      "locatorLearnedAt": "2026-06-09T14:00:30Z"
     },
     {
       "sleep_ms": 350
@@ -77,7 +102,20 @@
         0.52
       ],
       "note": "双按钮对话框左侧 Cancel",
-      "skip_key": "dismiss_popup_taps"
+      "skip_key": "dismiss_popup_taps",
+      "resourceId": "avatar_bg",
+      "bounds": "[372,1068][708,1404]",
+      "className": "android.widget.ImageView",
+      "fallback_tap_pct": [
+        0.35,
+        0.494634
+      ],
+      "fallback_tap": [
+        378,
+        1216
+      ],
+      "locatorLearnedAt": "2026-06-09T14:00:35Z",
+      "uiText": "Online players"
     },
     {
       "sleep_ms": 300

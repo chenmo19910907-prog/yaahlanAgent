@@ -1,13 +1,43 @@
 {
   "id": "room-open-search",
   "name": "房间帧打开搜索页",
-  "recordedOn": { "width": 1080, "height": 2340 },
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
   "capture": "end",
   "description": "Room 右上角搜索（873,207）→ RoomSearchActivity；进房见 搜索进房",
-  "kbRef": ["documents/房间.md（搜索）"],
+  "kbRef": [
+    "documents/房间.md（搜索）"
+  ],
   "steps": [
-    { "run_script": "切换房间底栏" },
-    { "tap_pct": [0.808, 0.088], "note": "搜索入口（873,207）" },
-    { "wait_activity": { "short_name": "RoomSearchActivity", "timeout_ms": 3000 } }
+    {
+      "run_script": "切换房间底栏"
+    },
+    {
+      "tap_pct": [
+        0.808,
+        0.088
+      ],
+      "note": "搜索入口（873,207）",
+      "resourceId": "search_room",
+      "bounds": "[819,153][927,261]",
+      "className": "android.widget.ImageView",
+      "fallback_tap_pct": [
+        0.808,
+        0.088
+      ],
+      "fallback_tap": [
+        872,
+        205
+      ],
+      "locatorLearnedAt": "2026-06-09T09:50:41Z"
+    },
+    {
+      "wait_activity": {
+        "short_name": "RoomSearchActivity",
+        "timeout_ms": 3000
+      }
+    }
   ]
 }
