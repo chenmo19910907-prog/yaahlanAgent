@@ -22,7 +22,7 @@
 - **Risk**（`Risk/`）：调用海外风控开放接口 `/open/menu/operate`，支持解除设备/手机号风控、充值/活动风控加白加黑；默认读取 `testcase-kb/test_devices.json` 按平台自动选取 mmuid 或 mmuidv3 值；详见 [Risk/README.md](Risk/README.md)
 - **Admin**（`Admin/`）：调用 Yaahlan 测试后台，支持 **按 userId 查询用户全量详情**（`queryUserDetail`）；详见 [Admin/README.md](Admin/README.md)
 - **Tunnel**（`Tunnel/`）：查询 [tunnel.wemomo.com](https://tunnel.wemomo.com) 抓包记录，按 userId 拉 HTTP 请求列表与 request/response；Cookie 可复用 MOA；详见 [Tunnel/README.md](Tunnel/README.md)
-- **Report**（`Report/`）：从版本用例 xlsx 生成内网/外网测试总结 HTML；详见 [Report/README.md](Report/README.md)
+- **Report**（`Report/`）：从版本用例 xlsx 生成内网/外网测试总结 HTML；详见 [Report/README.md](Report/README.md)、[Report/使用方法.md](Report/使用方法.md)
 - **adb**（`adb/`）：真机 UI 自动化（截屏 → 读图算坐标 → 点击，仅保留最新 10 张截图）；支持与 **Tunnel** 联动的 `run`（操作 + 截图 + 抓包校验）；**录制脚本库**按发版回归一级模块存放 **片段**，命令 `macro`；详见 [adb/README.md](adb/README.md)、[adb/使用方法.md](adb/使用方法.md)、[adb/录制脚本/README.md](adb/录制脚本/README.md)
 
 ## 项目结构
@@ -56,6 +56,7 @@ auto-generate-testcase/
 │   └── 使用方法.md
 ├── Report/                            # 版本用例 xlsx → 内网/外网测试总结 HTML
 │   ├── README.md
+│   ├── 使用方法.md                    # 命令速查（提示词 ↔ CLI）
 │   ├── report_execute.py              # 入口
 │   └── requirements.txt
 ├── adb/                               # ADB 真机 UI 自动化（读图坐标点击）
