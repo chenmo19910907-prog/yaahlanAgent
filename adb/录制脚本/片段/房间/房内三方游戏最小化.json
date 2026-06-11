@@ -16,21 +16,43 @@
       "sleep_ms": 400
     },
     {
-      "tap_pct": [0.459, 0.419],
+      "tap_pct": [
+        0.459,
+        0.419
+      ],
       "optional": true,
       "note": "分屏游戏 Minimize 药丸（495,979；TeenPatti/GoldMiner 等）",
-      "fallback_tap_pct": [0.459, 0.419],
-      "fallback_tap": [495, 979]
+      "fallback_tap_pct": [
+        0.459,
+        0.419
+      ],
+      "fallback_tap": [
+        495,
+        979
+      ],
+      "resourceId": "content",
+      "bounds": "[0,967][1080,1456]",
+      "className": "android.widget.FrameLayout",
+      "locatorLearnedAt": "2026-06-11T05:44:18Z"
     },
     {
       "sleep_ms": 400
     },
     {
-      "tap_pct": [0.5, 0.171],
+      "tap_pct": [
+        0.5,
+        0.171
+      ],
       "optional": true,
       "note": "全屏游戏顶部居中 Minimize（540,400）",
-      "fallback_tap_pct": [0.5, 0.171],
-      "fallback_tap": [540, 400]
+      "fallback_tap_pct": [
+        0.5,
+        0.171
+      ],
+      "fallback_tap": [
+        540,
+        400
+      ]
     },
     {
       "sleep_ms": 1200

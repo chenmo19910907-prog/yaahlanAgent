@@ -1,0 +1,19 @@
+{
+  "id": "room-function-red-packet",
+  "name": "房内RoomFunction打开RedPacket",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "底栏 more → Room function 第 1 行第 3 格 Lucky Red Packet（669,1110）→ WebView Lucky Envelope（Distributed Amount/Quantity + Send red packet）；BACK 关闭",
+  "kbRef": ["testcase-kb/主题房.md"],
+  "steps": [
+    { "run_script": "房内打开RoomFunction菜单" },
+    { "sleep_ms": 500 },
+    {
+      "tap_pct": [0.619, 0.474],
+      "note": "Room function Lucky Red Packet 格中心（669,1110）",
+      "fallback_tap_pct": [0.619, 0.474],
+      "fallback_tap": [669, 1110]
+    },
+    { "sleep_ms": 1200 }
+  ]
+}

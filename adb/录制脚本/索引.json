@@ -405,6 +405,13 @@
       "file": "片段/房间/房内在线列表切换MembersTab.json"
     },
     {
+      "id": "room-online-list-nobility-tab",
+      "name": "房内在线列表切换NobilityTab",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内在线列表切换NobilityTab.json"
+    },
+    {
       "id": "room-function-background",
       "name": "房内RoomFunction打开Background",
       "kind": "fragment",
@@ -419,6 +426,90 @@
       "file": "片段/房间/房内RoomFunction打开CollectionExhibition.json"
     },
     {
+      "id": "room-function-truth-or-dare",
+      "name": "房内RoomFunction打开TruthOrDare",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内RoomFunction打开TruthOrDare.json"
+    },
+    {
+      "id": "room-function-mysterious",
+      "name": "房内RoomFunction打开Mysterious",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内RoomFunction打开Mysterious.json"
+    },
+    {
+      "id": "room-function-red-packet",
+      "name": "房内RoomFunction打开RedPacket",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内RoomFunction打开RedPacket.json"
+    },
+    {
+      "id": "room-function-pk-atm",
+      "name": "房内RoomFunction打开PKATM",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内RoomFunction打开PKATM.json"
+    },
+    {
+      "id": "room-function-ludo",
+      "name": "房内RoomFunction打开Ludo",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内RoomFunction打开Ludo.json"
+    },
+    {
+      "id": "room-function-billiards",
+      "name": "房内RoomFunction打开Billiards",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内RoomFunction打开Billiards.json"
+    },
+    {
+      "id": "room-function-popularity-challenge",
+      "name": "房内RoomFunction打开PopularityChallenge",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内RoomFunction打开PopularityChallenge.json"
+    },
+    {
+      "id": "room-function-cp-ferris-wheel",
+      "name": "房内RoomFunction打开CPFerrisWheel",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内RoomFunction打开CPFerrisWheel.json"
+    },
+    {
+      "id": "room-panel-close-game",
+      "name": "房内功能面板关闭游戏",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内功能面板关闭游戏.json"
+    },
+    {
+      "id": "room-function-lucky-winner",
+      "name": "房内RoomFunction打开LuckyWinner",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内RoomFunction打开LuckyWinner.json"
+    },
+    {
+      "id": "room-function-pk",
+      "name": "房内RoomFunction打开PK",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内RoomFunction打开PK.json"
+    },
+    {
+      "id": "room-function-academy",
+      "name": "房内RoomFunction打开RoomLeadersAcademy",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内RoomFunction打开RoomLeadersAcademy.json"
+    },
+    {
       "id": "room-function-scroll-entertainment",
       "name": "房内RoomFunction上滑至娱乐游戏",
       "kind": "fragment",
@@ -431,6 +522,27 @@
       "kind": "fragment",
       "module": "房间",
       "file": "片段/房间/房内RoomEntertainment打开GoldMiner.json"
+    },
+    {
+      "id": "room-entertainment-matchnight",
+      "name": "房内RoomEntertainment打开MatchNight",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内RoomEntertainment打开MatchNight.json"
+    },
+    {
+      "id": "room-entertainment-megajackpot",
+      "name": "房内RoomEntertainment打开MegaJackpot",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内RoomEntertainment打开MegaJackpot.json"
+    },
+    {
+      "id": "room-entertainment-crashrocket",
+      "name": "房内RoomEntertainment打开CrashRocket",
+      "kind": "fragment",
+      "module": "房间",
+      "file": "片段/房间/房内RoomEntertainment打开CrashRocket.json"
     },
     {
       "id": "room-reject-mic-invitation",

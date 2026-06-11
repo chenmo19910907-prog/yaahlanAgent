@@ -20,8 +20,8 @@
         0.088
       ],
       "note": "im_create_room（996,207）",
-      "resourceId": "im_create_room",
-      "bounds": "[942,153][1050,261]",
+      "resourceId": "iv_setting",
+      "bounds": "[942,105][1050,213]",
       "className": "android.widget.ImageView",
       "fallback_tap_pct": [
         0.922,
@@ -31,7 +31,7 @@
         995,
         205
       ],
-      "locatorLearnedAt": "2026-06-09T06:58:27Z"
+      "locatorLearnedAt": "2026-06-11T05:00:16Z"
     },
     {
       "sleep_ms": 800

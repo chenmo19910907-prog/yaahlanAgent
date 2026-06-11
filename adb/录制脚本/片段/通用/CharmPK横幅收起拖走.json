@@ -21,9 +21,9 @@
         0.085
       ],
       "note": "① 见大横幅时点 iv_switch_small 收起钮（≈980,200；勿 BACK、勿点 Charm）",
-      "resourceId": "friend_entrance",
-      "bounds": "[942,170][1050,278]",
-      "className": "android.widget.ImageView",
+      "resourceId": "blank_view",
+      "bounds": "[0,84][1080,729]",
+      "className": "android.view.View",
       "fallback_tap_pct": [
         0.908,
         0.085
@@ -32,7 +32,7 @@
         980,
         198
       ],
-      "locatorLearnedAt": "2026-06-09T14:09:08Z"
+      "locatorLearnedAt": "2026-06-11T04:27:55Z"
     },
     {
       "sleep_ms": 800
@@ -44,9 +44,9 @@
       ],
       "optional": true,
       "note": "若仍见 Report/Minimize/Share/Close 大面板：再点一次收起钮（仍勿 BACK）",
-      "resourceId": "add_friend_apply",
-      "bounds": "[912,114][1050,222]",
-      "className": "android.widget.ImageView",
+      "resourceId": "blank_view",
+      "bounds": "[0,84][1080,729]",
+      "className": "android.view.View",
       "fallback_tap_pct": [
         0.908,
         0.085
@@ -55,7 +55,7 @@
         980,
         198
       ],
-      "locatorLearnedAt": "2026-06-09T14:09:13Z"
+      "locatorLearnedAt": "2026-06-11T04:28:18Z"
     },
     {
       "sleep_ms": 400

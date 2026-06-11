@@ -1,0 +1,19 @@
+{
+  "id": "room-entertainment-matchnight",
+  "name": "房内RoomEntertainment打开MatchNight",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Room entertainment 上滑后第 2 行第 1 格 MatchNight（135,1120；顶行 Crash Rocket 可见时）→ WebView 足球竞猜；首进 Game Rewards（key 4）；退出 BACK 或面板返回",
+  "kbRef": ["testcase-kb/主题房.md", "adb/录制脚本/弹窗说明.md"],
+  "steps": [
+    { "run_script": "房内RoomFunction上滑至娱乐游戏" },
+    { "sleep_ms": 500 },
+    {
+      "tap_pct": [0.125, 0.479],
+      "note": "MatchNight 格（135,1120）",
+      "fallback_tap_pct": [0.125, 0.479],
+      "fallback_tap": [135, 1120]
+    },
+    { "sleep_ms": 1500 }
+  ]
+}

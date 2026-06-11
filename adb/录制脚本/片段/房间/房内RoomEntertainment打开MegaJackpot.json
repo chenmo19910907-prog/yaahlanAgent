@@ -1,0 +1,19 @@
+{
+  "id": "room-entertainment-megajackpot",
+  "name": "房内RoomEntertainment打开MegaJackpot",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Room entertainment 上滑后第 2 行第 2 格 MegaJackpot（405,1120）→ WebView 老虎机（SCATTER/TUMBLE/BET/AUTO）；首进 Game Rewards（key 4）；收起 macro 房内三方游戏最小化 或顶部 Minimize",
+  "kbRef": ["testcase-kb/主题房.md", "adb/录制脚本/弹窗说明.md"],
+  "steps": [
+    { "run_script": "房内RoomFunction上滑至娱乐游戏" },
+    { "sleep_ms": 500 },
+    {
+      "tap_pct": [0.375, 0.479],
+      "note": "MegaJackpot 格（405,1120；entertainment 顶行 Crash Rocket 时第 2 行）",
+      "fallback_tap_pct": [0.375, 0.479],
+      "fallback_tap": [405, 1120]
+    },
+    { "sleep_ms": 1500 }
+  ]
+}

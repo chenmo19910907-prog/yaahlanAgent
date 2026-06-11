@@ -1,0 +1,101 @@
+{
+  "id": "room-panel-close-game",
+  "name": "房内功能面板关闭游戏",
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
+  "capture": "end",
+  "description": "Ludo/台球/MatchNight 等房内游戏：右上 X（996,150）→ Close game（675,500）→ Done；台球 UI 时 Done≈（780,1080），功能面板态≈（780,680）；勿点 Share（653,432）",
+  "kbRef": [
+    "testcase-kb/主题房.md"
+  ],
+  "steps": [
+    {
+      "tap_pct": [
+        0.922,
+        0.064
+      ],
+      "note": "右上 X 打开功能面板（996,150）",
+      "fallback_tap_pct": [
+        0.922,
+        0.064
+      ],
+      "fallback_tap": [
+        996,
+        150
+      ],
+      "resourceId": "title_bar",
+      "bounds": "[0,0][1080,269]",
+      "className": "android.view.ViewGroup",
+      "locatorLearnedAt": "2026-06-11T05:51:23Z"
+    },
+    {
+      "sleep_ms": 800
+    },
+    {
+      "tap_pct": [
+        0.625,
+        0.214
+      ],
+      "note": "Close game 格（675,500）",
+      "fallback_tap_pct": [
+        0.625,
+        0.214
+      ],
+      "fallback_tap": [
+        675,
+        500
+      ],
+      "resourceId": "item_root",
+      "bounds": "[360,429][675,774]",
+      "className": "android.widget.RelativeLayout",
+      "locatorLearnedAt": "2026-06-11T05:51:35Z"
+    },
+    {
+      "sleep_ms": 1500
+    },
+    {
+      "tap_pct": [
+        0.722,
+        0.291
+      ],
+      "note": "确认 Done（780,680；功能面板/POOL 态）",
+      "fallback_tap_pct": [
+        0.722,
+        0.291
+      ],
+      "fallback_tap": [
+        780,
+        680
+      ]
+    },
+    {
+      "sleep_ms": 400
+    },
+    {
+      "tap_pct": [
+        0.722,
+        0.462
+      ],
+      "optional": true,
+      "note": "台球/MatchNight 遮罩时 Done 下移（780,1080）；无弹窗时无害",
+      "fallback_tap_pct": [
+        0.722,
+        0.462
+      ],
+      "fallback_tap": [
+        780,
+        1080
+      ],
+      "resourceId": "tips",
+      "bounds": "[90,1057][990,1126]",
+      "uiText": "This process will expel all game players",
+      "className": "android.widget.TextView",
+      "locatorLearnedAt": "2026-06-11T05:31:14Z"
+    },
+    {
+      "sleep_ms": 1500
+    }
+  ]
+}

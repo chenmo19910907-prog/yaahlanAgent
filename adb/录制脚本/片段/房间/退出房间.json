@@ -37,9 +37,9 @@
         0.064
       ],
       "note": "右上角 X（iv_room_close ≈996,150），打开房间功能面板",
-      "resourceId": "change_bg",
-      "bounds": "[704,107][1050,215]",
-      "className": "android.widget.LinearLayout",
+      "resourceId": "blank_view",
+      "bounds": "[0,84][1080,729]",
+      "className": "android.view.View",
       "fallback_tap_pct": [
         0.922,
         0.064
@@ -48,7 +48,7 @@
         995,
         149
       ],
-      "locatorLearnedAt": "2026-06-09T07:48:28Z"
+      "locatorLearnedAt": "2026-06-11T04:28:45Z"
     },
     {
       "sleep_ms": 800
@@ -82,10 +82,10 @@
       ],
       "optional": true,
       "note": "Room Reminder 二次确认 → Exit Now（左钮）；无弹窗时可跳过",
-      "resourceId": "tv_product_expiry",
-      "bounds": "[233,1362][353,1419]",
+      "resourceId": "content",
+      "bounds": "[0,967][1080,1456]",
       "uiText": "7 days",
-      "className": "android.widget.TextView",
+      "className": "android.widget.FrameLayout",
       "fallback_tap_pct": [
         0.284,
         0.588
@@ -94,7 +94,7 @@
         306,
         1375
       ],
-      "locatorLearnedAt": "2026-06-09T09:39:32Z"
+      "locatorLearnedAt": "2026-06-11T05:18:58Z"
     },
     {
       "sleep_ms": 1500,

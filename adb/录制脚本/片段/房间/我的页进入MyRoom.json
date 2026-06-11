@@ -42,9 +42,9 @@
         0.689
       ],
       "note": "room_layout My Room（540,1613）",
-      "resourceId": "invite_layout",
-      "bounds": "[30,1464][1050,1644]",
-      "className": "android.view.ViewGroup",
+      "resourceId": "item_root",
+      "bounds": "[15,1543][1065,1725]",
+      "className": "android.widget.LinearLayout",
       "fallback_tap_pct": [
         0.5,
         0.689
@@ -53,7 +53,7 @@
         540,
         1612
       ],
-      "locatorLearnedAt": "2026-06-09T07:09:28Z"
+      "locatorLearnedAt": "2026-06-11T05:47:44Z"
     },
     {
       "sleep_ms": 2000

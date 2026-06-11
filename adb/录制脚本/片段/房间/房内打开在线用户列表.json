@@ -1,20 +1,36 @@
 {
   "id": "room-open-online-users",
   "name": "房内打开在线用户列表",
-  "recordedOn": { "width": 1080, "height": 2340 },
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
   "capture": "end",
   "description": "房内麦位下方 online_user_count（≈844,1002）→ Current Room 底 sheet（Online/Nobility/Members）；勿点 CRO/国旗行（≈200,256 误进 Hourly Ranking WebView）",
-  "kbRef": ["testcase-kb/财富等级.md（在线用户列表）"],
+  "kbRef": [
+    "testcase-kb/财富等级.md（在线用户列表）"
+  ],
   "steps": [
-    { "sleep_ms": 400 },
     {
-      "tap_pct": [0.782, 0.428],
-      "note": "online_user_count 人数徽标（844,1002）",
-      "resourceId": "online_user_count",
-      "bounds": "[789,947][900,1058]",
-      "fallback_tap_pct": [0.782, 0.428],
-      "fallback_tap": [844, 1002]
+      "sleep_ms": 400
     },
-    { "sleep_ms": 1000 }
+    {
+      "tap_pct": [
+        0.782,
+        0.428
+      ],
+      "note": "online_user_count 人数徽标（844,1002）",
+      "fallback_tap_pct": [
+        0.782,
+        0.428
+      ],
+      "fallback_tap": [
+        844,
+        1002
+      ]
+    },
+    {
+      "sleep_ms": 1000
+    }
   ]
 }

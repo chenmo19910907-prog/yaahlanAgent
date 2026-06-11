@@ -1,0 +1,19 @@
+{
+  "id": "room-online-list-nobility-tab",
+  "name": "房内在线列表切换NobilityTab",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Current Room 面板 → Nobility(0) 标签（450,1050）；空态 There's nothing here + Send gifts；前置 run 房内打开在线用户列表",
+  "kbRef": ["testcase-kb/财富等级.md（在线用户列表）"],
+  "steps": [
+    { "run_script": "房内打开在线用户列表" },
+    { "sleep_ms": 500 },
+    {
+      "tap_pct": [0.417, 0.449],
+      "note": "tv_tab Nobility（450,1050）；y 与 Members 同高，勿用 y≈519（会误点麦位）",
+      "fallback_tap_pct": [0.417, 0.449],
+      "fallback_tap": [450, 1050]
+    },
+    { "sleep_ms": 800 }
+  ]
+}

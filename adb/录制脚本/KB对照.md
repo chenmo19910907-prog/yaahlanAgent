@@ -98,10 +98,26 @@
 | 房内RoomFunction打开BGM | room-function-bgm |
 | 房内打开在线用户列表 | room-open-online-users |
 | 房内在线列表切换MembersTab | room-online-list-members-tab |
+| 房内在线列表切换NobilityTab | room-online-list-nobility-tab |
 | 房内RoomFunction打开Background | room-function-background |
 | 房内RoomFunction打开CollectionExhibition | room-function-collection-exhibition |
+| 房内RoomFunction打开TruthOrDare | room-function-truth-or-dare |
+| 房内RoomFunction打开Mysterious | room-function-mysterious |
+| 房内RoomFunction打开RedPacket | room-function-red-packet |
+| 房内RoomFunction打开PKATM | room-function-pk-atm |
+| 房内RoomFunction打开Ludo | room-function-ludo |
+| 房内RoomFunction打开Billiards | room-function-billiards |
+| 房内RoomFunction打开PopularityChallenge | room-function-popularity-challenge |
+| 房内RoomFunction打开CPFerrisWheel | room-function-cp-ferris-wheel |
+| 房内功能面板关闭游戏 | room-panel-close-game |
+| 房内RoomFunction打开LuckyWinner | room-function-lucky-winner |
+| 房内RoomFunction打开PK | room-function-pk |
+| 房内RoomFunction打开RoomLeadersAcademy | room-function-academy |
 | 房内RoomFunction上滑至娱乐游戏 | room-function-scroll-entertainment |
 | 房内RoomEntertainment打开GoldMiner | room-entertainment-goldminer |
+| 房内RoomEntertainment打开MatchNight | room-entertainment-matchnight |
+| 房内RoomEntertainment打开MegaJackpot | room-entertainment-megajackpot |
+| 房内RoomEntertainment打开CrashRocket | room-entertainment-crashrocket |
 
 ## 房间PK · `片段/房间PK/`
 

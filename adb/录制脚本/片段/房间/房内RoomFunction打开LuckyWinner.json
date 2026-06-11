@@ -1,0 +1,19 @@
+{
+  "id": "room-function-lucky-winner",
+  "name": "房内RoomFunction打开LuckyWinner",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "底栏 more → Room function 第 3 行第 2 格 lucky winner（405,1742）→ WebView 加载层（Loading…）；左上角电源（130,560）可关闭；测试环境可能落 POOL Join game",
+  "kbRef": ["testcase-kb/主题房.md"],
+  "steps": [
+    { "run_script": "房内打开RoomFunction菜单" },
+    { "sleep_ms": 500 },
+    {
+      "tap_pct": [0.375, 0.744],
+      "note": "lucky winner 格中心（405,1742）",
+      "fallback_tap_pct": [0.375, 0.744],
+      "fallback_tap": [405, 1742]
+    },
+    { "sleep_ms": 2000 }
+  ]
+}

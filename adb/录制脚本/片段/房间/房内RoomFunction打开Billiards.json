@@ -1,0 +1,19 @@
+{
+  "id": "room-function-billiards",
+  "name": "房内RoomFunction打开Billiards",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "底栏 more → Room function 第 4 行第 2 格 Billiards（405,2058）→ 房内台球（Result 排名弹窗 + OK）；BACK/OK 关闭",
+  "kbRef": ["testcase-kb/主题房.md"],
+  "steps": [
+    { "run_script": "房内打开RoomFunction菜单" },
+    { "sleep_ms": 500 },
+    {
+      "tap_pct": [0.375, 0.879],
+      "note": "Room function Billiards 格中心（405,2058）",
+      "fallback_tap_pct": [0.375, 0.879],
+      "fallback_tap": [405, 2058]
+    },
+    { "sleep_ms": 2000 }
+  ]
+}

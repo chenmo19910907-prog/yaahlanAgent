@@ -1,0 +1,19 @@
+{
+  "id": "room-entertainment-crashrocket",
+  "name": "房内RoomEntertainment打开CrashRocket",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "Room entertainment 上滑后第 1 行第 1 格 Crash Rocket（135,1050）→ Cocos/WebView 火箭倍率（Auto/Cash out）；首进 Game Rewards（key 4）；收起 macro 房内三方游戏最小化 或 Minimize 药丸",
+  "kbRef": ["testcase-kb/主题房.md", "adb/录制脚本/弹窗说明.md", "verified-kb/房间.md"],
+  "steps": [
+    { "run_script": "房内RoomFunction上滑至娱乐游戏" },
+    { "sleep_ms": 500 },
+    {
+      "tap_pct": [0.125, 0.449],
+      "note": "Crash Rocket 格（135,1050；entertainment 标题可见时顶行中心）",
+      "fallback_tap_pct": [0.125, 0.449],
+      "fallback_tap": [135, 1050]
+    },
+    { "sleep_ms": 1500 }
+  ]
+}

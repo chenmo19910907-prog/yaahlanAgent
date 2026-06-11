@@ -1,0 +1,19 @@
+{
+  "id": "room-function-ludo",
+  "name": "房内RoomFunction打开Ludo",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "底栏 more → Room function 第 4 行第 1 格 Ludo（135,2058）→ 房内 Ludo 等待页（Waiting + Exit the game）；**注意**：倒计时结束后会自动开局并拉机器人；未退出时右上 X 面板 → Close game（675,500）→ Done",
+  "kbRef": ["testcase-kb/主题房.md"],
+  "steps": [
+    { "run_script": "房内打开RoomFunction菜单" },
+    { "sleep_ms": 500 },
+    {
+      "tap_pct": [0.125, 0.879],
+      "note": "Room function Ludo 格中心（135,2058）",
+      "fallback_tap_pct": [0.125, 0.879],
+      "fallback_tap": [135, 2058]
+    },
+    { "sleep_ms": 2500 }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "room-function-mysterious",
+  "name": "房内RoomFunction打开Mysterious",
+  "recordedOn": { "width": 1080, "height": 2340 },
+  "capture": "end",
+  "description": "底栏 more → Room function 第 1 行第 2 格 Mysterious（405,1110）→ WebView Mysterious Person Outfit（7/15/30 天购买 + Voice Changer 权益）；BACK 关闭",
+  "kbRef": ["testcase-kb/主题房.md"],
+  "steps": [
+    { "run_script": "房内打开RoomFunction菜单" },
+    { "sleep_ms": 500 },
+    {
+      "tap_pct": [0.375, 0.474],
+      "note": "Room function Mysterious 格中心（405,1110）",
+      "fallback_tap_pct": [0.375, 0.474],
+      "fallback_tap": [405, 1110]
+    },
+    { "sleep_ms": 1200 }
+  ]
+}
