@@ -29,6 +29,13 @@ _E2_REGRESSION_URL_RE = re.compile(r"回归用例链接\s*[:：]\s*(https?://\S+
 _E2_DEFECT_LEVEL_LINE_RE = re.compile(r"(阻碍|严重|一般|轻微)\s*[:：]\s*(\d+)")
 _E2_UNFINISHED_BLOCK_RE = re.compile(r"未完成缺陷\s*[:：]?\s*(.*?)(?=已完成缺陷)", re.DOTALL)
 _E2_FINISHED_BLOCK_RE = re.compile(r"已完成缺陷\s*[:：]?\s*(.*)", re.DOTALL)
+# 钉钉报告：缺陷 / 回归链接写死；版本用例链接由 REPORT_VERSION_CASE_URL 传入表格 URL
+DEFAULT_DEFECT_TB_URL = (
+    "https://teambition.wemomo.com/project/603c619f128c30001daff853/bug"
+)
+DEFAULT_REGRESSION_CASE_URL = (
+    "https://alidocs.dingtalk.com/i/nodes/a9E05BDRVQ6AzGLGtYyogmmmJ63zgkYA"
+)
 # xlsx 文件名常见「v2.4.4版本用例（…）」：标题里只保留【v2.4.4版本】，去掉用例说明与重复「版本」
 _TITLE_USE_CASE_RE = re.compile(r"用例[（(][^）)]*[）)]")
 # 标题行「【Yaahlan2.4.6版本】」：从文件名中取 x.y.z
@@ -57,6 +64,203 @@ def _normalize_subitem(s: str) -> str:
     s = s.strip()
     s = _SUBITEM_PREFIX_RE.sub("", s)
     return s.strip()
+
+
+# 版本用例表 D2：与 Excel 中公式一致，按 D/E 列第 7 行起统计用例条数与执行率
+_D2_STATS_TITLE_EXPR = (
+    'IF(ISERROR(FIND("（",SHEETSNAME(A1)&"（")),SHEETSNAME(A1),'
+    'LEFT(SHEETSNAME(A1),FIND("（",SHEETSNAME(A1)&"（")-1))'
+)
+D2_STATS_FORMULA = (
+    '=IF(COUNTA(D7:D10000)=0,'
+    f'{_D2_STATS_TITLE_EXPR}&"：用例条数0条，实际执行"&COUNTA(E7:E10000)&"条，执行率0.00%",'
+    'IF(COUNTA(E7:E10000)>COUNTA(D7:D10000),'
+    f'{_D2_STATS_TITLE_EXPR}&"：用例条数"&COUNTA(E7:E10000)&"条，实际执行"&COUNTA(E7:E10000)&"条，执行率100.00%",'
+    f'{_D2_STATS_TITLE_EXPR}&"：用例条数"&COUNTA(D7:D10000)&"条，实际执行"&COUNTA(E7:E10000)&"条，执行率"&TEXT(COUNTA(E7:E10000)/COUNTA(D7:D10000),"0.00%")))'
+)
+_D2_STATS_LINE_RE = re.compile(
+    r"^(.+)：用例条数(\d+)条，实际执行(\d+)条，执行率([\d.]+%)$"
+)
+_D2_STATS_ROW_START = 7
+_D2_STATS_ROW_END = 10000
+_D2_TECH_OPT_ROW_START = 7
+_D2_TECH_OPT_ROW_END = 990
+_TECH_OPT_SHEET_NAMES = frozenset({"优化需求", "技术优化"})
+_D2_TECH_OPT_FILTER = (
+    '(B7:B990<>"")*(C7:C990="")*(D7:D990="")'
+)
+D2_TECH_OPT_FORMULA = (
+    '="技术优化需求："&CHAR(10)&TEXTJOIN(CHAR(10),TRUE,'
+    f"SEQUENCE(ROWS(FILTER(B7:B990,{_D2_TECH_OPT_FILTER})))&\") \"&"
+    f'IF(IFERROR(FIND("【",FILTER(B7:B990,{_D2_TECH_OPT_FILTER})),9999)'
+    f'<IFERROR(FIND("（",FILTER(B7:B990,{_D2_TECH_OPT_FILTER})),9999),'
+    f'IF(IFERROR(FIND("【",FILTER(B7:B990,{_D2_TECH_OPT_FILTER})),9999)>=9999,'
+    f'FILTER(B7:B990,{_D2_TECH_OPT_FILTER}),'
+    f'LEFT(FILTER(B7:B990,{_D2_TECH_OPT_FILTER}),'
+    f'IFERROR(FIND("【",FILTER(B7:B990,{_D2_TECH_OPT_FILTER})),9999)-1)),'
+    f'IF(IFERROR(FIND("（",FILTER(B7:B990,{_D2_TECH_OPT_FILTER})),9999)>=9999,'
+    f'FILTER(B7:B990,{_D2_TECH_OPT_FILTER}),'
+    f'LEFT(FILTER(B7:B990,{_D2_TECH_OPT_FILTER}),'
+    f'IFERROR(FIND("（",FILTER(B7:B990,{_D2_TECH_OPT_FILTER})),9999)-1))))'
+)
+
+
+def _sheet_title_from_name(sheet_name: str) -> str:
+    idx = sheet_name.find("（")
+    if idx < 0:
+        return sheet_name
+    return sheet_name[:idx]
+
+
+def _count_nonempty_column(ws, col: int, *, start_row: int, end_row: int) -> int:
+    count = 0
+    for row in ws.iter_rows(
+        min_row=start_row,
+        max_row=end_row,
+        min_col=col,
+        max_col=col,
+        values_only=True,
+    ):
+        v = row[0]
+        if v is not None and str(v).strip() != "":
+            count += 1
+    return count
+
+
+def _cell_is_empty(value: object | None) -> bool:
+    return value is None or str(value).strip() == ""
+
+
+def _trim_tech_opt_item_title(text: str) -> str:
+    """与优化需求 D2 公式一致：优先在【、（ 处截断标题。"""
+    s = text.strip()
+    idx_open_square = s.find("【")
+    idx_open_paren = s.find("（")
+    if idx_open_square >= 0 and (idx_open_paren < 0 or idx_open_square < idx_open_paren):
+        return s[:idx_open_square].strip()
+    if idx_open_paren >= 0:
+        return s[:idx_open_paren].strip()
+    return s
+
+
+def _is_tech_opt_header_row(b: object | None, c: object | None, d: object | None) -> bool:
+    return not _cell_is_empty(b) and _cell_is_empty(c) and _cell_is_empty(d)
+
+
+def compute_d2_tech_opt_text(ws) -> str:
+    """按 D2_TECH_OPT_FORMULA 规则汇总 B 列分组标题行。"""
+    headers: list[str] = []
+    for row in ws.iter_rows(
+        min_row=_D2_TECH_OPT_ROW_START,
+        max_row=_D2_TECH_OPT_ROW_END,
+        min_col=2,
+        max_col=4,
+        values_only=True,
+    ):
+        b, c, d = row
+        if _is_tech_opt_header_row(b, c, d):
+            headers.append(_trim_tech_opt_item_title(str(b)))
+    lines = ["技术优化需求："]
+    for i, title in enumerate(headers, start=1):
+        lines.append(f"{i}) {title}")
+    return "\n".join(lines)
+
+
+def _format_d2_stats_line(title: str, case_count: int, executed_count: int) -> str:
+    """执行率 >100% 时用实际执行数对齐两项并固定 100.00%。"""
+    if case_count == 0:
+        return f"{title}：用例条数0条，实际执行{executed_count}条，执行率0.00%"
+    if executed_count > case_count:
+        n = executed_count
+        return f"{title}：用例条数{n}条，实际执行{n}条，执行率100.00%"
+    rate = executed_count / case_count
+    return (
+        f"{title}：用例条数{case_count}条，实际执行{executed_count}条，执行率{rate:.2%}"
+    )
+
+
+def _cap_d2_stats_text(text: str) -> str:
+    """已缓存的 D2 文案若执行率超 100%，与公式规则对齐。"""
+    lines = text.splitlines()
+    if not lines:
+        return text
+    m = _D2_STATS_LINE_RE.match(lines[0].strip())
+    if not m:
+        return text
+    title, case_s, exec_s, _rate_s = m.groups()
+    capped = _format_d2_stats_line(title, int(case_s), int(exec_s))
+    if len(lines) == 1:
+        return capped
+    return capped + "\n" + "\n".join(lines[1:])
+
+
+def compute_d2_stats_text(ws, sheet_name: str) -> str:
+    """按 D2_STATS_FORMULA 规则从 D/E 列统计，供报告生成或公式未缓存时回退。"""
+    title = _sheet_title_from_name(sheet_name)
+    case_count = _count_nonempty_column(
+        ws, 4, start_row=_D2_STATS_ROW_START, end_row=_D2_STATS_ROW_END
+    )
+    executed_count = _count_nonempty_column(
+        ws, 5, start_row=_D2_STATS_ROW_START, end_row=_D2_STATS_ROW_END
+    )
+    return _format_d2_stats_line(title, case_count, executed_count)
+
+
+def _is_tech_opt_sheet_name(sheet_name: str) -> bool:
+    name = sheet_name.strip()
+    if name in _TECH_OPT_SHEET_NAMES:
+        return True
+    return "技术优化" in name or name.endswith("优化需求")
+
+
+def _d2_needs_compute(raw: object | None) -> bool:
+    if raw is None:
+        return True
+    if not isinstance(raw, str):
+        return False
+    s = raw.strip()
+    return not s or s.startswith("=")
+
+
+def _d2_looks_like_tech_opt_text(raw: str) -> bool:
+    lines = [p.strip() for p in raw.splitlines() if p.strip()]
+    if not lines:
+        return False
+    return _is_tech_opt_need(lines[0])
+
+
+def resolve_sheet_d2_text(ws, sheet_name: str, d2_raw: object | None) -> str | None:
+    """读取 D2；为空或为公式且无缓存时，按 sheet 类型回退统计。"""
+    if _is_tech_opt_sheet_name(sheet_name):
+        if _d2_needs_compute(d2_raw):
+            return compute_d2_tech_opt_text(ws)
+        if isinstance(d2_raw, str) and _d2_looks_like_tech_opt_text(d2_raw):
+            return str(d2_raw)
+        return compute_d2_tech_opt_text(ws)
+    if _d2_needs_compute(d2_raw):
+        return compute_d2_stats_text(ws, sheet_name)
+    return _cap_d2_stats_text(str(d2_raw))
+
+
+def _report_link_overrides_from_env() -> tuple[str | None, str | None, str | None]:
+    def _env(name: str) -> str | None:
+        value = os.environ.get(name, "").strip()
+        return value or None
+
+    return (
+        _env("REPORT_DEFECT_TB_URL"),
+        _env("REPORT_VERSION_CASE_URL"),
+        _env("REPORT_REGRESSION_CASE_URL"),
+    )
+
+
+def resolve_report_links(
+    i2_raw: str | None,
+) -> tuple[str | None, str | None, str | None]:
+    """解析 I2 链接，环境变量非空时覆盖对应项。"""
+    tb, ver, reg = _parse_sheet1_e2_urls(i2_raw)
+    o_tb, o_ver, o_reg = _report_link_overrides_from_env()
+    return (o_tb or tb, o_ver or ver, o_reg or reg)
 
 
 def _parse_sheet1_e2_urls(raw: str | None) -> tuple[str | None, str | None, str | None]:
@@ -677,10 +881,9 @@ def main() -> int:
         ws = wb[name]
         if getattr(ws, "sheet_state", "visible") != "visible":
             continue
-        v = ws["D2"].value
-        if v is None:
+        raw = resolve_sheet_d2_text(ws, name, ws["D2"].value)
+        if raw is None:
             continue
-        raw = str(v)
         if not raw.strip():
             continue
 
@@ -722,7 +925,7 @@ def main() -> int:
     )
     defect_stats = _parse_sheet1_e2_defect_stats(i2_raw)
     out_html = _inject_defect_stats(out_html, defect_stats)
-    defect_tb_url, version_case_url, regression_case_url = _parse_sheet1_e2_urls(i2_raw)
+    defect_tb_url, version_case_url, regression_case_url = resolve_report_links(i2_raw)
     out_html = _inject_report_links(
         out_html,
         defect_tb_url=defect_tb_url,
