@@ -2,7 +2,7 @@
 
 通过 MSE httpproxy 在本地（Cursor 终端）复现 MOA 请求。
 
-> 首次使用或换电脑：请先阅读 [docs/新手上手.md](../docs/新手上手.md) 配置 `MOA/.env.local`。
+> 首次使用或换电脑：请先阅读 [新手上手.md](../新手上手.md) 配置 `MOA/.env.local`。
 
 ## 目录结构
 
@@ -84,4 +84,4 @@ python3 MOA/moa_execute.py \
 ## 相关文档
 
 - [使用方法.md](使用方法.md) — 全部能力口令与命令
-- [docs/新手上手.md](../docs/新手上手.md) — 新机器配置引导
+- [新手上手.md](../新手上手.md) — 新机器配置引导

@@ -157,7 +157,7 @@ def main() -> int:
     if ok_all:
         print("自检通过（可选项未计入 FAIL）")
         return 0
-    print("存在 FAIL 项，请按 docs/新手上手.md 处理")
+    print("存在 FAIL 项，请按 新手上手.md 处理")
     return 1
 
 

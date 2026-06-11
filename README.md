@@ -2,7 +2,7 @@
 
 基于 Cursor Agent Skills 与钉钉 MCP，从钉钉需求文档与项目规则生成结构化测试用例，并可同步到钉钉 Excel。本仓库 **`yaahlan`** 分支主要用于 **Yaahlan** 用例自动化，并附带 **MOA**、**Risk**、**Admin** 等本地测试辅助脚本；其他业务可在同流程下扩展。
 
-> **新同事 / 新电脑**：`git pull` 后 MOA 不能直接用是正常的（Cookie 不入库）。请按 **[docs/新手上手.md](docs/新手上手.md)** 配置 `MOA/.env.local` 等本地文件（约 10 分钟）。
+> **新同事 / 新电脑**：`git pull` 后 MOA 不能直接用是正常的（Cookie 不入库）。请按 **[新手上手.md](新手上手.md)** 配置 `MOA/.env.local` 等本地文件（约 10 分钟）。
 
 ## 功能特性
 
@@ -30,8 +30,7 @@
 ```
 auto-generate-testcase/
 ├── README.md                          # 本文件
-├── docs/
-│   └── 新手上手.md                    # 新机器本地配置：MOA/Admin/Risk/Tunnel/Report/adb/MCP
+├── 新手上手.md                        # 新机器本地配置：MOA/Admin/Risk/Tunnel/Report/adb/MCP
 ├── SKILL.md                           # 主流程：营收活动用例自动生成（模块提取与钉钉解析）
 ├── MOA/                               # MOA httpproxy 本地调用
 │   ├── README.md
@@ -228,7 +227,7 @@ python3 adb/adb_execute.py macro 发布纯文本动态 --text 5555 --no-capture
 | `prd-review` | 生成前 PRD 理解与审查维度 |
 | `testpoints-to-testcases` | 测试点扩写为用例 |
 | `dingtalk_historical_testcase_to_md.md` | 历史用例导出 Markdown 等（按需） |
-| [docs/新手上手.md](docs/新手上手.md) | **新电脑必看**：MOA/Admin/Tunnel/Report/adb/MCP 本地配置与验证 |
+| [新手上手.md](新手上手.md) | **新电脑必看**：MOA/Admin/Tunnel/Report/adb/MCP 本地配置与验证 |
 | [MOA/README.md](MOA/README.md) | MOA 本地调用与目录说明 |
 | [Risk/README.md](Risk/README.md) | 海外风控开放接口与测试机解除 |
 | [adb/README.md](adb/README.md) | ADB 设计原则、协作流程、自动录制 |
