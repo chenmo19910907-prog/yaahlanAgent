@@ -34,6 +34,10 @@ from .params import (
     set_noble_params,
     set_package_gift_params,
     set_change_user_area_params,
+    normalize_cp_pair_key,
+    parse_cp_pair_keys,
+    set_cp_ferris_wheel_area_params,
+    set_cp_ferris_wheel_tier_params,
     set_query_login_status_params,
     set_room_bot_params,
     set_room_member_lv_params,
@@ -212,6 +216,29 @@ def _op_custom_gift_rank_active(args: argparse.Namespace, payload: dict[str, Any
         f"period={period} area={area}",
         file=sys.stderr,
     )
+
+
+def _cp_ferris_tier_mode(args: argparse.Namespace) -> bool:
+    return args.cp_ferris_tier is not None
+
+
+def _cp_ferris_area_mode(args: argparse.Namespace) -> bool:
+    return args.cp_ferris_area is not None
+
+
+def _op_cp_ferris_tier(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    pair_keys: list[str] = []
+    if args.cp_pairs:
+        pair_keys.extend(parse_cp_pair_keys(args.cp_pairs))
+    if args.cp_pair_left is not None and args.cp_pair_right is not None:
+        pair_keys.append(normalize_cp_pair_key(args.cp_pair_left, args.cp_pair_right))
+    if not pair_keys:
+        raise ValueError("设置 CP 档位需提供 --cp-pairs 或同时提供 --cp-pair-left 与 --cp-pair-right")
+    set_cp_ferris_wheel_tier_params(payload, tier=args.cp_ferris_tier, pair_keys=pair_keys)
+
+
+def _op_cp_ferris_area(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    set_cp_ferris_wheel_area_params(payload, args.cp_ferris_area)
 
 
 def _op_change_user_area(args: argparse.Namespace, payload: dict[str, Any]) -> None:
@@ -509,6 +536,8 @@ def _op_vip(args: argparse.Namespace, payload: dict[str, Any]) -> None:
 
 # (predicate, handler) — 按优先级匹配首个操作
 OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = [
+    (lambda a: _cp_ferris_tier_mode(a), _op_cp_ferris_tier),
+    (lambda a: _cp_ferris_area_mode(a), _op_cp_ferris_area),
     (lambda a: a.change_user_area_user_id is not None, _op_change_user_area),
     (lambda a: a.cancel_user_id is not None, _op_cancel_user),
     (lambda a: a.query_user_by_phone is not None, _op_query_user_by_phone),

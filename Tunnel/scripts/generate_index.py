@@ -45,6 +45,23 @@ def _item_anchor(item: dict[str, Any]) -> str:
     raise ValueError("registry item 缺少可用 id")
 
 
+def _render_toc(
+    lines: list[str],
+    sorted_cats: list[str],
+    by_cat: dict[str, list[dict[str, Any]]],
+) -> None:
+    lines.append("### 能力清单")
+    lines.append("")
+    for idx, cat in enumerate(sorted_cats, start=1):
+        cat_anchor = f"tunnel-cat-{idx}"
+        lines.append(f"- [{idx}) {cat}](#{cat_anchor})")
+        for item in sorted(by_cat[cat], key=lambda x: str(x.get("name", ""))):
+            name = _require_str(item, "name")
+            anchor = _item_anchor(item)
+            lines.append(f"  - [{name}](#{anchor})")
+    lines.append("")
+
+
 def _render(registry: dict[str, Any]) -> str:
     items = registry.get("items")
     if not isinstance(items, list):
@@ -63,6 +80,9 @@ def _render(registry: dict[str, Any]) -> str:
         "> 本文件由 `Tunnel/scripts/generate_index.py` 根据 `Tunnel/config/registry.json` 自动生成，请勿手动编辑。"
     )
     lines.append("")
+    sorted_cats = sorted(by_cat.keys())
+    _render_toc(lines, sorted_cats, by_cat)
+
     lines.append("### 使用说明")
     lines.append("")
     lines.append("- **提示词**：自然语言口令")
@@ -71,7 +91,10 @@ def _render(registry: dict[str, Any]) -> str:
     lines.append("- **完整响应**：追加 `--output json`")
     lines.append("")
 
-    for idx, cat in enumerate(sorted(by_cat.keys()), start=1):
+    for idx, cat in enumerate(sorted_cats, start=1):
+        cat_anchor = f"tunnel-cat-{idx}"
+        lines.append(f'<a id="{cat_anchor}"></a>')
+        lines.append("")
         lines.append(f"## {idx}) {cat}")
         lines.append("")
         for item in sorted(by_cat[cat], key=lambda x: str(x.get("name", ""))):

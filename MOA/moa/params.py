@@ -540,3 +540,47 @@ def set_room_member_lv_params(payload: dict[str, Any], room_id: str, user_id: st
         _param("参数2", "2", user_id, ptype="string", txt=user_id),
         _param("参数3", "3", str(exp_delta), ptype="int", txt=str(exp_delta)),
     ]
+
+
+def normalize_cp_pair_key(uid_a: str, uid_b: str) -> str:
+    a = int(str(uid_a).strip())
+    b = int(str(uid_b).strip())
+    small, large = (a, b) if a < b else (b, a)
+    return f"{small}-{large}"
+
+
+def parse_cp_pair_keys(raw: str) -> list[str]:
+    text = str(raw).strip()
+    if not text:
+        raise ValueError("cp-pairs 不能为空")
+    keys: list[str] = []
+    for part in text.split(","):
+        key = part.strip()
+        if not key:
+            continue
+        if "-" not in key:
+            raise ValueError(f"CP 对格式错误（应为小uid-大uid）: {key}")
+        left, right = key.split("-", 1)
+        keys.append(normalize_cp_pair_key(left, right))
+    if not keys:
+        raise ValueError("cp-pairs 不能为空")
+    return keys
+
+
+def set_cp_ferris_wheel_tier_params(payload: dict[str, Any], tier: int, pair_keys: list[str]) -> None:
+    if tier < 1 or tier > 5:
+        raise ValueError("cp-ferris-tier 必须在 1–5 之间（1=D、2=C、3=B、4=A、5=S）")
+    if not pair_keys:
+        raise ValueError("cp-pairs 不能为空")
+    cp_json = json.dumps(pair_keys, ensure_ascii=False, separators=(",", ":"))
+    payload["params"] = [
+        _param("参数1", "1", str(tier), ptype="string", txt=str(tier)),
+        _param("参数2", "2", pair_keys, ptype="json", txt=pair_keys, json_str=cp_json),
+    ]
+
+
+def set_cp_ferris_wheel_area_params(payload: dict[str, Any], area: str) -> None:
+    area_code = str(area).strip().upper()
+    if not area_code:
+        raise ValueError("cp-ferris-area 不能为空")
+    payload["params"] = [_param("参数1", "1", area_code, ptype="string", txt=area_code)]

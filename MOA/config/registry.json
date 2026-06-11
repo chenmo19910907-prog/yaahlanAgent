@@ -148,6 +148,42 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/VIP-下发体验卡.json \\\n  --vip-try-user-id <userId> \\\n  --vip-try-level <level> \\\n  --vip-try-duration-seconds <durationSeconds>\n"
     },
     {
+      "id": "cp_ferris_wheel_set_tier",
+      "name": "CP摩天轮-设置档位",
+      "category": "CP摩天轮（vas/external/cp-stage）",
+      "description": "批量设置 CP 对摩天轮档位（batchSetCpFerrisWheelTierLevel；档位 1=D…5=S；CP 对格式小uid-大uid）",
+      "prompts": [
+        "设置 CP <smallUid>-<largeUid> 摩天轮档位为 <tier>",
+        "把 CP 对 <smallUid>-<largeUid> 设为摩天轮 <tier> 档",
+        "榜单所有 CP 设为摩天轮 5 档"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/CP摩天轮-设置档位.json \\\n  --cp-ferris-tier <tier> \\\n  --cp-pairs <smallUid-largeUid>[,<smallUid-largeUid>...]\n"
+    },
+    {
+      "id": "cp_ferris_wheel_distribute_bonus",
+      "name": "CP摩天轮-发放档位积分返奖",
+      "category": "CP摩天轮（vas/external/cp-stage）",
+      "description": "发放 CP 摩天轮档位积分返奖钻石（distributeCpFerrisWheelBonusDiamonds；params=大区）",
+      "prompts": [
+        "下发 CP 摩天轮档位积分返奖",
+        "发放 CP 摩天轮积分返奖钻石",
+        "MENA 区下发 CP 摩天轮档位奖"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/CP摩天轮-发放档位积分返奖.json \\\n  --cp-ferris-area MENA\n"
+    },
+    {
+      "id": "cp_ferris_wheel_week_prize",
+      "name": "CP摩天轮-发放周榜奖励",
+      "category": "CP摩天轮（vas/external/cp-stage）",
+      "description": "结算并发放 CP 摩天轮周榜 TOP30 奖池钻石（calculateAndDistributeCpFerrisWheelWeekPrize；params=大区）",
+      "prompts": [
+        "下发 CP 摩天轮周榜 TOP30 奖励",
+        "结算 CP 摩天轮周榜奖池",
+        "MENA 区发放 CP 摩天轮周榜奖励"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/CP摩天轮-发放周榜奖励.json \\\n  --cp-ferris-area MENA\n"
+    },
+    {
       "id": "custom_gift_reset_upload",
       "name": "定制礼物-重置上传次数",
       "category": "定制礼物（voga-components/gateway/custom-gift-stage）",

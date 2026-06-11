@@ -222,6 +222,24 @@ def build_parser() -> argparse.ArgumentParser:
         default="min",
         help="按等级升级时的目标经验：min=该等级最低阈值（默认）；max=该等级最高经验（下一级阈值-1）",
     )
+
+    parser.add_argument(
+        "--cp-ferris-tier",
+        type=int,
+        choices=[1, 2, 3, 4, 5],
+        help="CP摩天轮档位（batchSetCpFerrisWheelTierLevel；1=D、2=C、3=B、4=A、5=S）",
+    )
+    parser.add_argument(
+        "--cp-pairs",
+        help="CP 对列表，逗号分隔，格式小uid-大uid（配合 --cp-ferris-tier）",
+    )
+    parser.add_argument("--cp-pair-left", help="单对 CP 左位 userId（小 uid，配合 --cp-pair-right）")
+    parser.add_argument("--cp-pair-right", help="单对 CP 右位 userId（大 uid，配合 --cp-pair-left）")
+    parser.add_argument(
+        "--cp-ferris-area",
+        choices=sorted(USER_AREA_CODES),
+        help="CP摩天轮大区（distributeCpFerrisWheelBonusDiamonds / calculateAndDistributeCpFerrisWheelWeekPrize；仅 params[0]）",
+    )
     return parser
 
 
