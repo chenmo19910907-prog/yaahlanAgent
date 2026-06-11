@@ -31,7 +31,7 @@
 auto-generate-testcase/
 ├── README.md                          # 本文件
 ├── docs/
-│   └── 新手上手.md                    # 新机器配置 MOA/Admin/Risk/MCP 引导
+│   └── 新手上手.md                    # 新机器本地配置：MOA/Admin/Risk/Tunnel/Report/adb/MCP
 ├── SKILL.md                           # 主流程：营收活动用例自动生成（模块提取与钉钉解析）
 ├── MOA/                               # MOA httpproxy 本地调用
 │   ├── README.md
@@ -228,7 +228,7 @@ python3 adb/adb_execute.py macro 发布纯文本动态 --text 5555 --no-capture
 | `prd-review` | 生成前 PRD 理解与审查维度 |
 | `testpoints-to-testcases` | 测试点扩写为用例 |
 | `dingtalk_historical_testcase_to_md.md` | 历史用例导出 Markdown 等（按需） |
-| [docs/新手上手.md](docs/新手上手.md) | **新电脑必看**：本地 `.env.local` 与验证步骤 |
+| [docs/新手上手.md](docs/新手上手.md) | **新电脑必看**：MOA/Admin/Tunnel/Report/adb/MCP 本地配置与验证 |
 | [MOA/README.md](MOA/README.md) | MOA 本地调用与目录说明 |
 | [Risk/README.md](Risk/README.md) | 海外风控开放接口与测试机解除 |
 | [adb/README.md](adb/README.md) | ADB 设计原则、协作流程、自动录制 |
