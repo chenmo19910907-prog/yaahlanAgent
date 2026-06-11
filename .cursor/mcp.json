@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "dingtalk-doc": {
-      "command": ".cursor/skills/dingtalk-doc-read/mcp_dingtalk_doc/venv/bin/python3.12",
+      "command": ".cursor/skills/dingtalk-doc-read/mcp_dingtalk_doc/venv/bin/python3.13",
       "args": [
         ".cursor/skills/dingtalk-doc-read/mcp_dingtalk_doc/server.py"
       ],
@@ -10,7 +10,7 @@
       }
     },
     "dingtalk-excel-read": {
-      "command": ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/venv/bin/python3",
+      "command": ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/venv/bin/python3.13",
       "args": [
         ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/server_read.py"
       ],
@@ -21,7 +21,7 @@
       }
     },
     "dingtalk-excel-write": {
-      "command": ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/venv/bin/python3",
+      "command": ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/venv/bin/python3.13",
       "args": [
         ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/server_write.py"
       ],

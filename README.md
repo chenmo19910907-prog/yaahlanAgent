@@ -163,8 +163,8 @@ python3 MOA/scripts/test_all.py   # 可选：批量自测全部模板
 ### 4. 风控名单操作
 
 ```bash
-cp Risk/.env.example Risk/.env.local
-# 可选：SEC_RISK_TOKEN、RISK_TEST_DEVICE_KB
+# 可选：仅当需覆盖 token / 域名时
+# cp Risk/.env.example Risk/.env.local
 
 python3 Risk/risk_execute.py --list-test-devices
 python3 Risk/risk_execute.py --release-test-device --device-name "GalaxyA80" --reason 测试

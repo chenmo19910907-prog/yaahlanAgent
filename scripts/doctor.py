@@ -86,7 +86,7 @@ def main() -> int:
     risk_env = ROOT / "Risk" / ".env.local"
     print(
         f"  [{'OK' if risk_env.is_file() else 'SKIP'}] Risk/.env.local: "
-        f"{'存在' if risk_env.is_file() else '按需配置，非必须'}"
+        f"{'存在' if risk_env.is_file() else '非必须，默认 Risk/config.json'}"
     )
 
     print("\n=== Cursor MCP ===")
