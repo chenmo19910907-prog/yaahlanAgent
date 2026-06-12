@@ -176,9 +176,16 @@ MODULE_FILES = {
     },
 }
 
+# prd-kb 模块文件名与 testcase-kb 对齐
+MODULE_FILES = {
+    k: ({**v, "prd_kb": v["testcase_kb"]} if "testcase_kb" in v else v)
+    for k, v in MODULE_FILES.items()
+}
+
 DIR_KIND = {
     "documents": ROOT / "documents",
     "testcase_kb": ROOT / "testcase-kb",
+    "prd_kb": ROOT / "prd-kb",
     "bug_kb": ROOT / "bug-kb",
     "online_kb": ROOT / "online-kb",
     "templates": ROOT / "templates",

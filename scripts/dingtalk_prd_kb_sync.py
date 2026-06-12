@@ -5,7 +5,7 @@
 
 推荐入口：DingTalk/prd_sync_execute.py
 
-通过 dingtalk-doc MCP 解析 .adoc / .dlink 正文，转为 Markdown 写入 prd-kb/。
+通过 dingtalk-doc MCP 解析 .adoc / .dlink 正文，写入 prd-kb/.raw/ 后整理为业务模块知识库。
 """
 
 from __future__ import annotations
@@ -35,6 +35,7 @@ if (
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
+from prd_kb_build import build_from_dir  # noqa: E402
 from dingtalk_kb_source import (  # noqa: E402
     _ALIDOCS_BASE,
     extract_node_id_from_url,
@@ -254,67 +255,8 @@ def render_prd_md(
     return "\n".join(lines)
 
 
-def list_synced_md_files(output_dir: Path) -> List[str]:
-    """输出目录内已落库的 PRD Markdown（不含 README）。"""
-    return sorted(
-        p.name for p in output_dir.glob("*.md") if p.is_file() and p.name != "README.md"
-    )
-
-
-def write_index_readme(
-    output_dir: Path,
-    *,
-    docs: List[PrdDocument],
-    synced: List[str],
-    failed: List[Tuple[str, str]],
-    folder_url: str,
-) -> None:
-    on_disk = set(list_synced_md_files(output_dir))
-    synced_set = on_disk | set(synced)
-    now = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M:%S %z")
-    lines = [
-        "# prd-kb · 产品需求知识库",
-        "",
-        "> **文档类型**：由钉钉 alidocs 产品需求目录同步的 PRD 正文（Markdown 摘录）",
-        f"> **来源目录**：[产品需求文档]({folder_url})",
-        f"> **最近同步**：{now}",
-        "",
-        "与 `testcase-kb/`（验收用例要点）互补：本目录保留**产品侧需求原文结构**，供 `prd-review`、用例生成前理解需求。",
-        "",
-        "## 同步命令",
-        "",
-        "```bash",
-        "python3 DingTalk/prd_sync_execute.py --folder-id yaahlan-prd",
-        "python3 DingTalk/prd_sync_execute.py --folder-id yaahlan-prd --only-version 2.5.4",
-        "python3 DingTalk/prd_sync_execute.py --document-url <PRD文档URL>",
-        "```",
-        "",
-        "## 统计",
-        "",
-        f"| 指标 | 值 |",
-        f"|------|-----|",
-        f"| 目录登记 id | `yaahlan-prd` |",
-        f"| 已同步文件 | {len(synced_set)} |",
-        f"| 同步失败 | {len(failed)} |",
-        "",
-        "## 文档索引",
-        "",
-        "| 版本 | 文档 | 本地文件 |",
-        "|------|------|----------|",
-    ]
-    for doc in docs:
-        out_name = safe_output_name(doc.name)
-        if out_name not in synced_set:
-            continue
-        ver = doc.version_label if doc.version_label != "—" else ""
-        lines.append(f"| {ver} | [{doc.name}]({doc.url}) | [`{out_name}`]({out_name}) |")
-    if failed:
-        lines.extend(["", "## 同步失败", ""])
-        for name, err in failed:
-            lines.append(f"- **{name}**：{err}")
-    lines.append("")
-    output_dir.mkdir(parents=True, exist_ok=True)
-    (output_dir / "README.md").write_text("\n".join(lines), encoding="utf-8")
+def raw_output_dir(output_dir: Path) -> Path:
+    return output_dir / ".raw"
 
 
 def main() -> int:
@@ -332,9 +274,9 @@ def main() -> int:
     ap.add_argument("--only-version", default="", help="仅同步文件名含该版本号的文档，如 2.5.4")
     ap.add_argument("--list-only", action="store_true")
     ap.add_argument(
-        "--reindex-only",
+        "--build-only",
         action="store_true",
-        help="仅根据目录清单与 prd-kb 已有文件重建 README，不拉取正文",
+        help="仅从 prd-kb/.raw 整理模块知识库，不拉取钉钉正文",
     )
     ap.add_argument("--max-documents", type=int, default=int(prd_cfg.get("maxDocuments", 200)))
     ap.add_argument(
@@ -421,23 +363,13 @@ def main() -> int:
         return 0
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
+    raw_dir = raw_output_dir(args.output_dir)
+    raw_dir.mkdir(parents=True, exist_ok=True)
 
-    if args.reindex_only:
-        on_disk = set(list_synced_md_files(args.output_dir))
-        missing = [
-            (d.name, "本地无对应 .md")
-            for d in docs
-            if safe_output_name(d.name) not in on_disk
-        ]
-        write_index_readme(
-            args.output_dir,
-            docs=docs,
-            synced=list(on_disk),
-            failed=missing,
-            folder_url=folder_url,
-        )
-        print(f"已重建索引: {args.output_dir / 'README.md'}（本地 {len(on_disk)} 篇，缺失 {len(missing)} 篇）")
-        return 1 if missing else 0
+    if args.build_only:
+        modules, _ = build_from_dir(raw_dir, args.output_dir, folder_url=folder_url, remove_raw=False)
+        print(f"已整理 {len(modules)} 个模块 → {args.output_dir}")
+        return 0
 
     synced_names: List[str] = []
     failed: List[Tuple[str, str]] = []
@@ -448,7 +380,7 @@ def main() -> int:
         try:
             title, body = asyncio.run(fetch_prd_markdown(doc.url, cookie=cookie))
             out_name = safe_output_name(doc.name)
-            out_path = args.output_dir / out_name
+            out_path = raw_dir / out_name
             out_path.write_text(
                 render_prd_md(doc, title=title, body=body, synced_at=synced_at),
                 encoding="utf-8",
@@ -459,15 +391,9 @@ def main() -> int:
             failed.append((doc.name, str(exc)))
             print(f"    失败: {exc}", file=sys.stderr)
 
-    write_index_readme(
-        args.output_dir,
-        docs=docs,
-        synced=synced_names,
-        failed=failed,
-        folder_url=folder_url,
-    )
-    print(f"\n同步统计: 成功 {len(synced_names)}，失败 {len(failed)}，合计 {len(docs)}")
-    print(f"索引: {args.output_dir / 'README.md'}")
+    modules, _ = build_from_dir(raw_dir, args.output_dir, folder_url=folder_url, remove_raw=False)
+    print(f"\n同步统计: 原始 {len(synced_names)} 篇，失败 {len(failed)}，模块 {len(modules)} 个")
+    print(f"知识库: {args.output_dir / 'README.md'}")
     return 1 if failed else 0
 
 

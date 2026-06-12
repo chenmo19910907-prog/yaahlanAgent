@@ -28,5 +28,6 @@ adb/.state/
 adb/.sweep*.json
 adb/.me_sweep*.json
 adb/__pycache__/
+prd-kb/.raw/
 **/__pycache__/
 *.pyc

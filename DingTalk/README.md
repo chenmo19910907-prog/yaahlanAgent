@@ -71,8 +71,9 @@ python3 DingTalk/kb_sync_execute.py
 python3 DingTalk/kb_sync_execute.py \
   --workbook-url "https://alidocs.dingtalk.com/i/nodes/XXXX"
 
-# 同步产品需求 → prd-kb/
+# 同步产品需求 → prd-kb/（.raw 摘录后按模块整理）
 python3 DingTalk/prd_sync_execute.py --folder-id yaahlan-prd
+python3 scripts/prd_kb_build.py --input-dir prd-kb/.raw --output-dir prd-kb
 ```
 
 ## 维护

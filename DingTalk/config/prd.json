@@ -4,5 +4,5 @@
   "outputDir": "prd-kb",
   "maxDocuments": 200,
   "includeSpreadsheets": false,
-  "skipNamePatterns": ["^test\\.axls$", "^cursor生成"]
+  "skipNamePatterns": ["^test\\.axls$", "^cursor生成", "待排期"]
 }

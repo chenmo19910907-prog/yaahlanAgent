@@ -11,7 +11,7 @@
 - **需求解析**：钉钉普通文档 / Excel 需求读取（`dingtalk-doc-read` + `parse_document` 等）
 - **PRD 理解**：生成用例前可按 `prd-review` Skill 做需求摘要与边界梳理（见 `.cursor/skills/prd-review/SKILL.md`）
 - **规则驱动**：参考 `rules/testcase_generation_rules.md`（榜单、抽奖、兑换、礼包等通用规则）补充用例
-- **业务参考**：`documents/` 下按模块维护说明；**用例知识库**见 `testcase-kb/`，**需求知识库**见 `prd-kb/`，**Bug 知识库**见 `bug-kb/`，**线上问题**见 `online-kb/`；动态用例生成流程见 `moments/`
+- **业务参考**：`documents/` 下按模块维护说明；**用例知识库**见 `testcase-kb/`，**需求知识库**见 `prd-kb/`（按模块整理的产品需求要点），**Bug 知识库**见 `bug-kb/`，**线上问题**见 `online-kb/`；动态用例生成流程见 `moments/`
 - **模板对齐**：相似模块参考 `templates/`（如榜单类对齐 `templates/榜单.md`）
 - **用例输出**：Markdown 表格等写入 `temporary_testcase/`，经 `testcase-to-excel` 分批写入钉钉 Excel
 - **质量工具**：`scripts/check_testcase_md.py` 格式校验、`suggest_kb_for_module.py` 知识库推荐、`doctor.py` 环境自检（见根目录 `SKILL.md`「常用命令」）
@@ -66,7 +66,7 @@ auto-generate-testcase/
 │       ├── folders.json               # 已登记目录（用例/活动/PRD）
 │       ├── kb.json                    # 用例同步选项
 │       └── prd.json                   # PRD 同步选项
-├── prd-kb/                            # 产品需求文档知识库（钉钉 PRD 同步）
+├── prd-kb/                            # 产品需求知识库（按业务模块整理，非逐篇 PRD）
 │   └── README.md
 ├── Report/                            # 版本用例 xlsx → 内网/外网测试总结 HTML
 │   ├── README.md
