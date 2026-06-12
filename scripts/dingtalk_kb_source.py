@@ -220,6 +220,29 @@ def is_case_workbook_name(name: str) -> bool:
     return ext in _SPREADSHEET_EXT
 
 
+def _entry_extension(entry: Dict[str, Any], name: str) -> str:
+    ext = str(entry.get("extension") or "").strip().lower()
+    if not ext and "." in name:
+        ext = name.rsplit(".", 1)[-1].lower()
+    return ext
+
+
+def is_spreadsheet_entry(entry: Dict[str, Any]) -> bool:
+    """Box API 子项是否为可同步的表格文档（含运营活动表等无版本号文件）。"""
+    name = str(entry.get("name") or "").strip()
+    if not name:
+        return False
+    ext = _entry_extension(entry, name)
+    if ext in _SPREADSHEET_EXT:
+        return True
+    return is_case_workbook_name(name)
+
+
+def is_folder_entry(entry: Dict[str, Any]) -> bool:
+    dtype = str(entry.get("dentryType") or "").lower()
+    return dtype == "folder" or bool(entry.get("hasChildren"))
+
+
 async def _list_folder_children_box_async(
     folder_node_id: str,
     *,
@@ -511,56 +534,63 @@ def discover_workbooks(
         aegis_secret = aegis_secret or sec
         workid = workid or wid
 
-    folder_id = extract_node_id_from_url(folder_url)
-    entries = asyncio.run(_list_folder_children_box_async(folder_id, cookie=ck))
-
     if verify_fetch:
         _import_server_read()
 
+    root_id = extract_node_id_from_url(folder_url)
+    folder_queue: List[str] = [root_id]
+    visited_folders: set[str] = set()
     found: Dict[str, DingtalkWorkbook] = {}
-    for entry in entries:
-        if len(found) >= max_documents:
-            break
-        dtype = str(entry.get("dentryType") or "").lower()
-        if dtype == "folder" or entry.get("hasChildren"):
-            if recursive:
-                # 子文件夹暂不在此展开；版本迭代用例目录子项即全部表格
-                pass
+
+    while folder_queue and len(visited_folders) < max_folder_fetches:
+        folder_id = folder_queue.pop(0)
+        if folder_id in visited_folders:
             continue
-        name = str(entry.get("name") or "").strip()
-        nid = str(entry.get("dentryUuid") or "").strip()
-        if not name or not nid:
-            continue
-        if not is_case_workbook_name(name):
-            continue
-        url = f"{_ALIDOCS_BASE}/i/nodes/{nid}"
-        ver = parse_version_from_name(name) or (0, 0, 0)
-        vlabel = (
-            version_label_from_tuple(ver)
-            if parse_version_from_name(name)
-            else "—"
-        )
-        if verify_fetch:
-            try:
-                asyncio.run(
-                    _fetch_workbook_sheets_async(
-                        url,
-                        aegis_key=aegis_key,
-                        aegis_secret=aegis_secret,
-                        workid=workid,
+        visited_folders.add(folder_id)
+
+        entries = asyncio.run(_list_folder_children_box_async(folder_id, cookie=ck))
+        for entry in entries:
+            if len(found) >= max_documents:
+                break
+            if is_folder_entry(entry):
+                child_id = str(entry.get("dentryUuid") or "").strip()
+                if recursive and child_id and child_id not in visited_folders:
+                    folder_queue.append(child_id)
+                continue
+            if not is_spreadsheet_entry(entry):
+                continue
+            name = str(entry.get("name") or "").strip()
+            nid = str(entry.get("dentryUuid") or "").strip()
+            if not name or not nid:
+                continue
+            url = f"{_ALIDOCS_BASE}/i/nodes/{nid}"
+            ver = parse_version_from_name(name) or (0, 0, 0)
+            vlabel = (
+                version_label_from_tuple(ver)
+                if parse_version_from_name(name)
+                else "—"
+            )
+            if verify_fetch:
+                try:
+                    asyncio.run(
+                        _fetch_workbook_sheets_async(
+                            url,
+                            aegis_key=aegis_key,
+                            aegis_secret=aegis_secret,
+                            workid=workid,
+                        )
                     )
-                )
-            except Exception as exc:
-                if _is_workbook_fetch_error(exc):
-                    continue
-                raise RuntimeError(f"拉取工作簿失败 {name} ({url}): {exc}") from exc
-        found[nid] = DingtalkWorkbook(
-            name=name,
-            url=url,
-            node_id=nid,
-            version_tuple=ver,
-            version_label=vlabel,
-        )
+                except Exception as exc:
+                    if _is_workbook_fetch_error(exc):
+                        continue
+                    raise RuntimeError(f"拉取工作簿失败 {name} ({url}): {exc}") from exc
+            found[nid] = DingtalkWorkbook(
+                name=name,
+                url=url,
+                node_id=nid,
+                version_tuple=ver,
+                version_label=vlabel,
+            )
 
     return sorted(found.values(), key=lambda w: (w.version_tuple, w.name))
 

@@ -10,6 +10,7 @@
       "folderUrl": "https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldCZEEZ3n1VGXn6lpz",
       "nodeId": "jb9Y4gmKWr7wodldCZEEZ3n1VGXn6lpz",
       "default": true,
+      "recursive": true,
       "aliases": [
         "版本迭代用例",
         "yaahlan用例",
@@ -22,6 +23,51 @@
         "列举版本迭代用例里的表格",
         "找 2.5.4 版本用例表",
         "Yaahlan 用例目录里有哪些文件"
+      ]
+    },
+    {
+      "id": "yaahlan-activity-cases",
+      "name": "运营活动用例",
+      "shortName": "活动用例",
+      "description": "Yaahlan 运营活动测试用例目录（2026活动 + 2026之前活动相关，约 56 张表，含子文件夹）",
+      "app": "Yaahlan",
+      "folderUrl": "https://alidocs.dingtalk.com/i/nodes/YndMj49yWjPeojvjC74mGPn0J3pmz5aA",
+      "nodeId": "YndMj49yWjPeojvjC74mGPn0J3pmz5aA",
+      "recursive": true,
+      "aliases": [
+        "运营活动",
+        "活动用例",
+        "活动目录",
+        "2026活动",
+        "活动用例目录"
+      ],
+      "prompts": [
+        "打开运营活动用例目录",
+        "列举活动用例表格",
+        "找古尔邦节活动用例",
+        "同步活动用例到知识库"
+      ]
+    },
+    {
+      "id": "yaahlan-prd",
+      "name": "产品需求文档",
+      "shortName": "PRD 目录",
+      "description": "Yaahlan 全部版本产品需求文档（.adoc / .dlink，约 120 篇）",
+      "app": "Yaahlan",
+      "folderUrl": "https://alidocs.dingtalk.com/i/nodes/14lgGw3P8vveoPlPC2PdN56v85daZ90D",
+      "nodeId": "14lgGw3P8vveoPlPC2PdN56v85daZ90D",
+      "recursive": false,
+      "aliases": [
+        "产品需求",
+        "PRD目录",
+        "需求文档",
+        "版本需求"
+      ],
+      "prompts": [
+        "打开产品需求文档目录",
+        "找 2.5.4 版本需求",
+        "同步 PRD 到需求知识库",
+        "读取版本需求文档"
       ]
     }
   ]

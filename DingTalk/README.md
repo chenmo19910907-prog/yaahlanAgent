@@ -19,10 +19,12 @@ DingTalk/
 ├── collect_execute.py        # 列举目录链接
 ├── kb_sync_execute.py        # 同步 testcase-kb
 ├── lookup_execute.py         # 按关键词查目录内文件链接
+├── prd_sync_execute.py       # 同步 PRD → prd-kb
 ├── config/
 │   ├── registry.json         # 能力登记
-│   ├── folders.json          # 已登记钉钉目录（Yaahlan 测试用例等）
-│   └── kb.json               # 默认目录 id、同步选项
+│   ├── folders.json          # 已登记钉钉目录（用例/活动/PRD）
+│   ├── kb.json               # 用例同步选项
+│   └── prd.json              # PRD 同步选项
 └── scripts/
     └── generate_index.py     # 生成 使用方法.md
 
@@ -68,6 +70,9 @@ python3 DingTalk/kb_sync_execute.py
 # 单表同步
 python3 DingTalk/kb_sync_execute.py \
   --workbook-url "https://alidocs.dingtalk.com/i/nodes/XXXX"
+
+# 同步产品需求 → prd-kb/
+python3 DingTalk/prd_sync_execute.py --folder-id yaahlan-prd
 ```
 
 ## 维护
@@ -83,5 +88,6 @@ python3 DingTalk/kb_sync_execute.py \
 |------|------|------|
 | 读单篇需求文档正文 | `dingtalk-doc-read` Skill / MCP | `parse_document` |
 | **列举目录 + 批量同步用例** | `DingTalk/` | 本模块 |
-| 用例知识库 | `testcase-kb/` | 同步输出目录 |
+| 用例知识库 | `testcase-kb/` | 用例同步输出 |
+| 需求知识库 | `prd-kb/` | PRD 同步输出 |
 | Agent 技能 | `.cursor/skills/dingtalk-folder-list/` | 编排说明 |

@@ -480,6 +480,29 @@ def extract_document_content(document_data: Dict[str, Any]) -> Optional[Dict[str
         return None
 
 
+def resolve_link_target_node_id(mainsite_content: Dict[str, Any]) -> Optional[str]:
+    """
+    .dlink 短链节点指向真实文档；从 linkSourceInfo.resourceId 解析目标 node id。
+    """
+    dentry_info = mainsite_content.get("dentryInfo")
+    if not isinstance(dentry_info, dict):
+        return None
+    dentry = dentry_info.get("data")
+    if not isinstance(dentry, dict):
+        return None
+    ext = str(dentry.get("extension") or "").lower()
+    content_type = str(dentry.get("contentType") or "").lower()
+    if ext != "dlink" and content_type != "link":
+        return None
+    link = dentry.get("linkSourceInfo")
+    if not isinstance(link, dict):
+        return None
+    resource_id = link.get("resourceId")
+    if isinstance(resource_id, str) and resource_id.strip():
+        return resource_id.strip()
+    return None
+
+
 def extract_dentry_key(mainsite_content: Dict[str, Any]) -> str:
     """
     从mainsite_content中提取dentryKey
@@ -1275,6 +1298,16 @@ async def get_complete_document_data(
             ))
         raise
     
+    # 步骤2.4: .dlink 短链 → 跟随 linkSourceInfo.resourceId 拉取真实文档
+    link_target = resolve_link_target_node_id(mainsite_content)
+    if link_target and link_target != node_id:
+        return await get_complete_document_data(
+            link_target,
+            cookie,
+            save_files=save_files,
+            output_dir=output_dir,
+        )
+
     # 步骤2.5: 从mainsite_content中提取文档标题
     doc_title = _get_document_title_from_mainsite(mainsite_content)
     

@@ -12,7 +12,7 @@ from typing import Any
 
 _DINGTALK = Path(__file__).resolve().parent.parent
 _ROOT = _DINGTALK.parent
-_CATEGORY_ORDER = ["已登记目录", "钉钉目录", "testcase-kb 同步"]
+_CATEGORY_ORDER = ["已登记目录", "钉钉目录", "testcase-kb 同步", "prd-kb 同步"]
 
 
 def _read_json(path: Path) -> dict[str, Any]:
