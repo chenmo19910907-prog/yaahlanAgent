@@ -431,14 +431,26 @@ def extract_mainsite_content(html: str) -> Dict[str, Any]:
     soup = BeautifulSoup(html, 'html.parser')
     script = soup.find('script', {'id': 'mainsite_server_content'})
     
-    if not script or not script.string:
+    if not script:
         raise McpError(ErrorData(
             code=INTERNAL_ERROR,
             message="未找到mainsite_server_content"
         ))
-    
+
+    raw = (script.string or script.get_text() or "").strip()
+    if not raw:
+        raise McpError(ErrorData(
+            code=INTERNAL_ERROR,
+            message="未找到mainsite_server_content"
+        ))
+    if raw.startswith("#if") or "$!{" in raw or "$spaPageContext" in raw:
+        raise McpError(ErrorData(
+            code=INTERNAL_ERROR,
+            message="mainsite_server_content 未渲染（Velocity 模板页）"
+        ))
+
     try:
-        return json.loads(script.string.strip())
+        return json.loads(raw)
     except json.JSONDecodeError as e:
         raise McpError(ErrorData(
             code=INTERNAL_ERROR,
@@ -687,8 +699,11 @@ async def collect_documents_under_folder(
             continue
         visited_folders.add(fid)
 
-        html = await fetch_node_by_get(fid, cookie)
-        mainsite = extract_mainsite_content(html)
+        try:
+            html = await fetch_node_by_get(fid, cookie)
+            mainsite = extract_mainsite_content(html)
+        except McpError:
+            continue
         children = extract_child_entries_from_mainsite(mainsite, fid)
 
         for ch in children:

@@ -12,7 +12,7 @@ from .chain import load_steps_file, run_chain
 from .cli_args import (
     apply_fast_tunnel_args,
     is_fast_mode,
-    learn_locators_enabled,
+    learn_locators_for_run,
     optional_momoid_from_args,
     popup_gate_auto_enabled,
     resolve_capture_mode,
@@ -93,8 +93,9 @@ def run_macro_command(
         capture_max_edge=getattr(args, "max_edge", DEFAULT_CAPTURE_MAX_EDGE),
         rtl_mode=rtl_mode(args),  # type: ignore[arg-type]
         fragment_path=fragment_path,
-        learn_locators=learn_locators_enabled(args),
+        learn_locators=learn_locators_for_run(args),
         locator_updates=locator_updates,  # type: ignore[arg-type]
+        fast_mode=is_fast_mode(args),
     )
     out["script"] = spec.get("name", args.name)
     out["scriptId"] = spec.get("id", args.name)
@@ -151,7 +152,8 @@ def run_chain_command(
         popup_gate_momoid=_resolve_gate_momoid(args),
         capture_max_edge=getattr(args, "max_edge", DEFAULT_CAPTURE_MAX_EDGE),
         rtl_mode=rtl_mode(args),  # type: ignore[arg-type]
-        learn_locators=learn_locators_enabled(args),
+        learn_locators=learn_locators_for_run(args),
+        fast_mode=is_fast_mode(args),
     )
     out["stepsFile"] = str(args.steps_file.resolve())
     code = finalize_chain_execution(
@@ -212,7 +214,8 @@ def run_integrated_command(
             capture_max_edge=getattr(args, "max_edge", DEFAULT_CAPTURE_MAX_EDGE),
             rtl_mode=rtl_mode(args),  # type: ignore[arg-type]
             fragment_path=fragment_path,
-            learn_locators=learn_locators_enabled(args),
+            learn_locators=learn_locators_for_run(args),
+        fast_mode=is_fast_mode(args),
             locator_updates=locator_updates,  # type: ignore[arg-type]
         )
         out["runMode"] = "macro"
@@ -230,7 +233,8 @@ def run_integrated_command(
             popup_gate_momoid=gate_momoid,
             capture_max_edge=getattr(args, "max_edge", DEFAULT_CAPTURE_MAX_EDGE),
             rtl_mode=rtl_mode(args),  # type: ignore[arg-type]
-            learn_locators=learn_locators_enabled(args),
+            learn_locators=learn_locators_for_run(args),
+        fast_mode=is_fast_mode(args),
         )
         out["runMode"] = "chain"
         out["stepsFile"] = str(args.chain.resolve())

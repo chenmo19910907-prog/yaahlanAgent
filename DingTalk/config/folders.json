@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "folders": [
+    {
+      "id": "yaahlan-testcases",
+      "name": "Yaahlan 测试用例",
+      "shortName": "版本迭代用例",
+      "description": "Yaahlan App 全部版本测试用例 Excel 存放目录（约 144 张表）",
+      "app": "Yaahlan",
+      "folderUrl": "https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldCZEEZ3n1VGXn6lpz",
+      "nodeId": "jb9Y4gmKWr7wodldCZEEZ3n1VGXn6lpz",
+      "default": true,
+      "aliases": [
+        "版本迭代用例",
+        "yaahlan用例",
+        "yaahlan测试用例",
+        "测试用例目录",
+        "用例目录"
+      ],
+      "prompts": [
+        "打开 Yaahlan 测试用例目录",
+        "列举版本迭代用例里的表格",
+        "找 2.5.4 版本用例表",
+        "Yaahlan 用例目录里有哪些文件"
+      ]
+    }
+  ]
+}

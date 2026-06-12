@@ -22,6 +22,7 @@
 - **Risk**（`Risk/`）：调用海外风控开放接口 `/open/menu/operate`，支持解除设备/手机号风控、充值/活动风控加白加黑；默认读取 `testcase-kb/test_devices.json` 按平台自动选取 mmuid 或 mmuidv3 值；详见 [Risk/README.md](Risk/README.md)
 - **Admin**（`Admin/`）：调用 Yaahlan 测试后台，支持 **按 userId 查询用户全量详情**（`queryUserDetail`）；详见 [Admin/README.md](Admin/README.md)
 - **Tunnel**（`Tunnel/`）：查询 [tunnel.wemomo.com](https://tunnel.wemomo.com) 抓包记录，按 userId 拉 HTTP 请求列表与 request/response；Cookie 可复用 MOA；详见 [Tunnel/README.md](Tunnel/README.md)
+- **DingTalk**（`DingTalk/`）：列举钉钉 alidocs 目录下全部版本用例表链接，并同步到 `testcase-kb/`；详见 [DingTalk/README.md](DingTalk/README.md)
 - **Report**（`Report/`）：从版本用例 xlsx 生成内网/外网测试总结 HTML；详见 [Report/README.md](Report/README.md)、[Report/使用方法.md](Report/使用方法.md)
 - **adb**（`adb/`）：真机 UI 自动化（截屏 → 读图算坐标 → 点击，仅保留最新 10 张截图）；支持与 **Tunnel** 联动的 `run`（操作 + 截图 + 抓包校验）；**录制脚本库**按发版回归一级模块存放 **片段**，命令 `macro`；详见 [adb/README.md](adb/README.md)、[adb/使用方法.md](adb/使用方法.md)、[adb/录制脚本/README.md](adb/录制脚本/README.md)
 
@@ -53,6 +54,16 @@ auto-generate-testcase/
 │   ├── tunnel_execute.py              # 入口
 │   ├── config/registry.json
 │   └── 使用方法.md
+├── DingTalk/                          # 钉钉目录列举 + testcase-kb 同步
+│   ├── README.md
+│   ├── 使用方法.md                    # 能力清单（自动生成）
+│   ├── lookup_execute.py              # 按关键词查目录内文件链接
+│   ├── collect_execute.py             # 列举目录表格链接
+│   ├── kb_sync_execute.py             # 同步 testcase-kb
+│   └── config/
+│       ├── registry.json
+│       ├── folders.json               # 已登记目录（Yaahlan 测试用例）
+│       └── kb.json                    # 默认 folderId / 同步选项
 ├── Report/                            # 版本用例 xlsx → 内网/外网测试总结 HTML
 │   ├── README.md
 │   ├── 使用方法.md                    # 命令速查（提示词 ↔ CLI）
@@ -222,6 +233,7 @@ python3 adb/adb_execute.py macro 发布纯文本动态 --text 5555 --no-capture
 |--------------|------|
 | 根目录 `SKILL.md` | 营收活动用例主流程与模块提取要求 |
 | `dingtalk-doc-read` | 读钉钉文档、Cookie 处理 |
+| `dingtalk-folder-list` | 列举钉钉目录下全部用例表链接、驱动 testcase-kb 全量同步（入口 `DingTalk/`） |
 | `testcase-generator` | 用例生成约定与参数 |
 | `testcase-to-excel` | 解析临时用例并写入钉钉 Excel |
 | `prd-review` | 生成前 PRD 理解与审查维度 |

@@ -22,6 +22,7 @@ STEP_RE = re.compile(r"^- \*\*步骤\*\*：(.+)$", re.M)
 EXPECT_RE = re.compile(r"^  - \*\*预期\*\*：(.+)$", re.M)
 VER_LINE_RE = re.compile(r"^> \*\*来源版本\*\*：`([^`]*)`")
 VER_LINE_KB_RE = re.compile(r"^> \*\*版本\*\*：")
+PERSONNEL_LINE_KB_RE = re.compile(r"^> \*\*人员\*\*：")
 FILE_LINE_RE = re.compile(r"^> \*\*来源文件\*\*：`([^`]*)`")
 VARIANT_H_RE = re.compile(r"^#### 变体：")
 
@@ -53,6 +54,13 @@ def _short_filename(path: str) -> str:
     if not p:
         return "—"
     return Path(p).name if ("/" in p or "\\" in p) else p
+
+
+def _emit_pending_source(out: List[str], pending_source: Optional[str]) -> None:
+    if not pending_source:
+        return
+    out.extend(pending_source.splitlines())
+    out.append("")
 
 
 def _step_to_heading(step: str) -> str:
@@ -96,6 +104,9 @@ def transform_body(body: str) -> str:
             pending_source = f"> **版本**：`{ver}`" + (
                 f" · **摘录自**：`{sf}`" if sf else ""
             )
+            if i + 1 < len(lines) and PERSONNEL_LINE_KB_RE.match(lines[i + 1]):
+                pending_source += "\n" + lines[i + 1].rstrip()
+                i += 1
             i += 1
             continue
 
@@ -103,6 +114,14 @@ def transform_body(body: str) -> str:
             pending_source = line.rstrip()
             if i + 1 < len(lines) and FILE_LINE_RE.match(lines[i + 1]):
                 i += 1
+            if i + 1 < len(lines) and PERSONNEL_LINE_KB_RE.match(lines[i + 1]):
+                pending_source += "\n" + lines[i + 1].rstrip()
+                i += 1
+            i += 1
+            continue
+
+        if PERSONNEL_LINE_KB_RE.match(line):
+            pending_source = (pending_source + "\n" + line.rstrip()) if pending_source else line.rstrip()
             i += 1
             continue
 
@@ -113,8 +132,7 @@ def transform_body(body: str) -> str:
         sm = STEP_RE.match(line)
         if sm:
             if pending_source:
-                out.append(pending_source)
-                out.append("")
+                _emit_pending_source(out, pending_source)
                 pending_source = None
             step = sm.group(1).strip()
             i += 1
@@ -137,14 +155,13 @@ def transform_body(body: str) -> str:
 
         if line.strip():
             if pending_source:
-                out.append(pending_source)
-                out.append("")
+                _emit_pending_source(out, pending_source)
                 pending_source = None
             out.append(line.rstrip())
         i += 1
 
     if pending_source:
-        out.append(pending_source)
+        _emit_pending_source(out, pending_source)
 
     return "\n".join(out).strip()
 
@@ -161,7 +178,8 @@ def build_kb_doc_meta(title: str, scope_line: Optional[str] = None) -> str:
             "| 项 | 说明 |",
             "|---|---|",
             "| 组织方式 | `## 业务主题` → `### 功能点` → 场景小节与规则列表 |",
-            "| 版本口径 | 各条目标注上传时的来源版本号；同功能点冲突时保留较新条目 |",
+            "| 版本口径 | 各条目标注来源版本号；同功能点冲突时保留较新条目 |",
+            "| 人员口径 | 各场景可选标注设计/测试/产品/开发（来自 xlsx 表头上方） |",
             "| 索引 | 下方目录为文内业务主题，便于跳转 |",
             "",
         ]
@@ -237,6 +255,7 @@ def transform_document(text: str) -> str:
     merged = f"{prefix}---\n\n{toc_text}\n\n---\n\n{main}"
     merged = re.sub(r"^(## .+)\n(### )", r"\1\n\n\2", merged, flags=re.M)
     merged = re.sub(r"^(### .+)\n(> \*\*版本\*\*)", r"\1\n\n\2", merged, flags=re.M)
+    merged = re.sub(r"^(> \*\*版本\*\*[^\n]*)\n(> \*\*人员\*\*)", r"\1\n\2", merged, flags=re.M)
     merged = re.sub(r"\n{4,}", "\n\n\n", merged)
     return merged.strip() + "\n"
 

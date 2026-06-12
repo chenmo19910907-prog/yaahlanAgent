@@ -119,7 +119,8 @@
     },
     {
       "text": "{{text}}",
-      "note": "手机号（不含区号）"
+      "clear_before_text": false,
+      "note": "手机号（不含区号）；空框无需先清空"
     },
     {
       "sleep_ms": 500
@@ -171,11 +172,13 @@
       "locatorLearnedAt": "2026-06-09T07:53:27Z"
     },
     {
-      "sleep_ms": 300
+      "sleep_ms": 400,
+      "note": "等验证码框就绪（勿再缩短）"
     },
     {
       "text": "000000",
-      "note": "QA 验证码"
+      "clear_before_text": false,
+      "note": "QA 验证码；空框无需先清空"
     },
     {
       "wait_activity": {

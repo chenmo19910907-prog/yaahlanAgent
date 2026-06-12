@@ -45,6 +45,13 @@ def apply_fast_tunnel_args(args: argparse.Namespace) -> None:
         args.tunnel_poll_ms = 1000
 
 
+def learn_locators_for_run(args: argparse.Namespace) -> bool:
+    """--fast 时跳过 uiautomator 探测回写，避免每步 dump 拖慢登录。"""
+    if is_fast_mode(args):
+        return False
+    return learn_locators_enabled(args)
+
+
 def popup_gate_auto_enabled(args: argparse.Namespace) -> bool:
     return not bool(getattr(args, "no_popup_gate", False))
 

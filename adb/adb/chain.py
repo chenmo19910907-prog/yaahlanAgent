@@ -50,6 +50,7 @@ def _resolve_tap(
     width: int,
     height: int,
     mirror_x: bool = False,
+    prefer_coords: bool = False,
 ) -> tuple[int, int, dict[str, Any] | None]:
     if is_locator_step(step):
         hit = resolve_tap_from_step(
@@ -58,6 +59,7 @@ def _resolve_tap(
             width=width,
             height=height,
             mirror_x=mirror_x,
+            prefer_coords=prefer_coords,
         )
         return int(hit["x"]), int(hit["y"]), hit
     raise ValueError(
@@ -82,6 +84,7 @@ def run_chain(
     fragment_path: Path | None = None,
     learn_locators: bool = False,
     locator_updates: dict[int, dict[str, Any]] | None = None,
+    fast_mode: bool = False,
 ) -> dict[str, Any]:
     if not steps:
         raise ValueError("steps 不能为空")
@@ -117,6 +120,8 @@ def run_chain(
         result["rtlMode"] = rtl_mode
     if learn_locators:
         result["learnLocators"] = True
+    if fast_mode:
+        result["fastMode"] = True
     pending_locators: dict[int, dict[str, Any]] = (
         locator_updates if locator_updates is not None else {}
     )
@@ -181,6 +186,8 @@ def run_chain(
 
         if kind == "sleep":
             ms = int(step.get("sleep_ms", step.get("sleep", 0)))
+            if fast_mode and ms > 0 and not step.get("fast_sleep") is False:
+                ms = max(100, ms // 2)
             if ms > 0:
                 time.sleep(ms / 1000.0)
             entry["sleepMs"] = ms
@@ -194,6 +201,7 @@ def run_chain(
                     width=width,
                     height=height,
                     mirror_x=mirror_x,
+                    prefer_coords=fast_mode,
                 )
             except LocatorNotFoundError as exc:
                 if step.get("optional"):
@@ -278,9 +286,13 @@ def run_chain(
             content = str(step["text"])
             if not content:
                 raise ValueError(f"text 不能为空: {step}")
-            clear_first = step.get("clear_before_text", True)
+            if "clear_before_text" in step:
+                clear_first = bool(step["clear_before_text"])
+            else:
+                clear_first = not fast_mode
             if clear_first:
-                max_chars = int(step.get("clear_max_chars", 64))
+                default_max = 12 if fast_mode else 64
+                max_chars = int(step.get("clear_max_chars", default_max))
                 clear_input_field(serial=serial, max_chars=max_chars)
                 entry["cleared"] = True
             input_text(text=content, serial=serial, clear_first=False)
@@ -447,6 +459,7 @@ def run_chain(
                 fragment_path=nested_path,
                 learn_locators=learn_locators,
                 locator_updates=nested_updates,
+                fast_mode=fast_mode,
             )
             entry["runScript"] = frag.get("name", script_key)
             entry["scriptId"] = frag.get("id", script_key)

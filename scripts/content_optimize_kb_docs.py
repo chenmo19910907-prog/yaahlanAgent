@@ -16,7 +16,7 @@ import argparse
 import re
 import sys
 import unicodedata
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -30,10 +30,12 @@ HASH5_RE = re.compile(r"^#####\s+(.+?)\s+·\s+(.+?)\s*$")
 from kb_version import (  # noqa: E402
     VERSION_TABLE_BLURB,
     effective_version_label,
+    merge_personnel,
+    parse_personnel_meta_line,
     parse_version_meta_line,
     parse_version_tuple,
     peel_version_prefix_from_body,
-    render_version_header,
+    render_meta_header,
 )
 GONGNENG_PREFIX_RE = re.compile(r"^功能模块\s*[:：]\s*(.+?)\s*$", re.UNICODE)
 
@@ -54,6 +56,7 @@ class CaseBlock:
     source_file: str
     body: str
     parent_module: str = ""  # ## 功能模块：父模块 下的子模块时使用
+    personnel: Dict[str, str] = field(default_factory=dict)
 
     @property
     def is_variant(self) -> bool:
@@ -87,6 +90,7 @@ def body_fingerprint(body: str) -> str:
             "来源版本" in ln
             or "来源文件" in ln
             or ln.startswith("> **版本**")
+            or ln.startswith("> **人员**")
             or (ln.startswith("> ") and "**摘录自**" in ln)
         ):
             continue
@@ -122,19 +126,21 @@ def extract_blocks(md: str) -> List[CaseBlock]:
     is_variant_line = False
     version_label = ""
     source_file = ""
+    personnel: Dict[str, str] = {}
     body_lines: List[str] = []
 
     def flush() -> None:
-        nonlocal body_lines, version_label, source_file, current_module, pending_parent, is_variant_line
+        nonlocal body_lines, version_label, source_file, personnel, current_module, pending_parent, is_variant_line
         if not current_module and not body_lines:
             return
         sheet = current_sheet or "未归类需求"
         body = normalize_lines("\n".join(body_lines))
-        ver_from_body, file_from_body, body = peel_version_prefix_from_body(body)
+        ver_from_body, file_from_body, pers_from_body, body = peel_version_prefix_from_body(body)
         if ver_from_body and not version_label:
             version_label = ver_from_body
         if file_from_body and not source_file:
             source_file = file_from_body
+        personnel = merge_personnel(personnel, pers_from_body)
         if not body and not version_label:
             return
         resolved_ver = effective_version_label(version_label, source_file)
@@ -147,11 +153,13 @@ def extract_blocks(md: str) -> List[CaseBlock]:
                 source_file=source_file,
                 body=body,
                 parent_module=pending_parent if pending_parent and pending_parent != current_module else "",
+                personnel=dict(personnel),
             )
         )
         body_lines = []
         version_label = ""
         source_file = ""
+        personnel = {}
         is_variant_line = False
 
     for raw_line in md.splitlines():
@@ -205,11 +213,14 @@ def extract_blocks(md: str) -> List[CaseBlock]:
             continue
 
         ver_upd, file_upd = parse_version_meta_line(line)
-        if ver_upd is not None or file_upd is not None:
+        pers_upd = parse_personnel_meta_line(line)
+        if ver_upd is not None or file_upd is not None or pers_upd is not None:
             if ver_upd:
                 version_label = ver_upd
             if file_upd:
                 source_file = file_upd
+            if pers_upd:
+                personnel = merge_personnel(personnel, pers_upd)
             continue
 
         if line.startswith("- **步骤**") or line.startswith("  - **预期**") or line.startswith("- "):
@@ -265,7 +276,7 @@ def group_blocks(latest: Dict[Tuple[str, str, str], CaseBlock]) -> Dict[str, Dic
 
 
 def render_block_header(b: CaseBlock) -> str:
-    return render_version_header(b.version_label, b.source_file) + "\n"
+    return render_meta_header(b.version_label, b.source_file, b.personnel) + "\n"
 
 
 def render_body_kb(body: str) -> str:
@@ -322,6 +333,7 @@ def build_document(title: str, sheets: Dict[str, Dict[str, List[CaseBlock]]]) ->
         "|---|---|",
         "| 组织方式 | `## 业务主题` → `### 功能点` → 场景小节与规则列表 |",
         f"| 版本口径 | {VERSION_TABLE_BLURB} |",
+        "| 人员口径 | 各场景可选标注设计/测试/产品/开发（来自 xlsx 表头上方） |",
         "",
         "---",
         "",

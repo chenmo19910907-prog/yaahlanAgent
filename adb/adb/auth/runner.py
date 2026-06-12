@@ -28,6 +28,7 @@ def run_steps(
     skip: set[str] | None = None,
     popup_gate_auto: bool = False,
     rtl_mode: str = "off",
+    fast_mode: bool = True,
 ) -> dict[str, Any]:
     """底层：对步骤列表跑 chain（login / sweep / macro 共用）。"""
     return run_chain(
@@ -41,6 +42,8 @@ def run_steps(
         skip=skip,
         popup_gate_auto=popup_gate_auto,
         rtl_mode=rtl_mode,  # type: ignore[arg-type]
+        learn_locators=False,
+        fast_mode=fast_mode,
     )
 
 

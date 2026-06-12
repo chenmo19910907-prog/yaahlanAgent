@@ -274,7 +274,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_macro.add_argument(
         "--fast",
         action="store_true",
-        help="提速：默认不截图 + Tunnel 轮询 1500ms；仍保留弹窗门禁与 activity 验收",
+        help="提速：不截图、跳过定位学习、优先坐标、缩短 sleep、输入不清空；Tunnel 轮询 1000ms",
     )
     p_macro.add_argument(
         "--no-adapt",

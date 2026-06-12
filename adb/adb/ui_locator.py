@@ -181,7 +181,11 @@ def _normalize_strategy(raw: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-def build_strategy_chain(step: dict[str, Any]) -> list[dict[str, Any]]:
+def build_strategy_chain(
+    step: dict[str, Any],
+    *,
+    prefer_coords: bool = False,
+) -> list[dict[str, Any]]:
     """从片段步骤解析定位策略链（按优先级顺序尝试）。"""
     if "tap_locate" in step:
         raw_chain = step["tap_locate"]
@@ -190,13 +194,19 @@ def build_strategy_chain(step: dict[str, Any]) -> list[dict[str, Any]]:
         return [_normalize_strategy(item) for item in raw_chain]
 
     chain: list[dict[str, Any]] = []
+    if prefer_coords:
+        if "tap_pct" in step:
+            chain.append({"tap_pct": step["tap_pct"]})
+        if "tap" in step:
+            chain.append({"tap": step["tap"]})
     for key in ("resourceId", "accessibilityId", "xpath"):
         if step.get(key):
             chain.append({key: step[key], "index": step.get("index", 0)})
-    if "tap_pct" in step:
-        chain.append({"tap_pct": step["tap_pct"]})
-    if "tap" in step:
-        chain.append({"tap": step["tap"]})
+    if not prefer_coords:
+        if "tap_pct" in step:
+            chain.append({"tap_pct": step["tap_pct"]})
+        if "tap" in step:
+            chain.append({"tap": step["tap"]})
     if "fallback_tap_pct" in step:
         chain.append({"tap_pct": step["fallback_tap_pct"]})
     if "fallback_tap" in step:
@@ -246,12 +256,13 @@ def resolve_tap_from_step(
     height: int,
     mirror_x: bool = False,
     prefer_clickable: bool = True,
+    prefer_coords: bool = False,
 ) -> dict[str, Any]:
     """
     按策略链解析点击坐标。
     支持：tap_locate 数组，或 resourceId/accessibilityId/xpath + fallback_tap(_pct)。
     """
-    strategies = build_strategy_chain(step)
+    strategies = build_strategy_chain(step, prefer_coords=prefer_coords)
     if not strategies:
         raise LocatorNotFoundError("步骤未提供任何定位策略")
 

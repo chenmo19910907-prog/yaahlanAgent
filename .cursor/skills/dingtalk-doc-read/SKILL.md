@@ -31,6 +31,8 @@ description: 使用 MCP dingtalk-doc 读取钉钉需求文档（含目录列举 
 - **`list_folder_contents`**：传入 **文件夹/目录** 节点的 `url_or_node_id`，返回 JSON 列表（每项含 `name`、`node_id`、`kind`：`folder` | `document`、`url`）。用于先看目录再决定解析哪些单篇。
 - **`parse_folder_documents`**：在同一 MCP 上批量执行与 `parse_document` 相同的拉取与落盘；可调 `recursive`、`max_documents`、`max_folder_fetches`。子项解析依赖页面内嵌数据，若返回空列表，可对该目录节点执行一次 `parse_document`（保存 `*_mainsite.json`）对照结构是否变更。
 
+**版本用例目录子项不全时**：MCP 只能解析 mainsite 内嵌的空间根子项（通常几十个），**拿不到**「版本迭代用例」这类文件夹内的全部表格（如 144 个）。改用 **`DingTalk/`** 模块或技能 **`dingtalk-folder-list`**：`DingTalk/collect_execute.py` / `DingTalk/kb_sync_execute.py`（Box API `/box/api/v2/dentry/list`）。
+
 ### 2. 权限过期时的处理
 
 当返回以下任一情况时，视为权限/Cookie 过期：
