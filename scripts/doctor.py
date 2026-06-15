@@ -90,18 +90,25 @@ def main() -> int:
     )
 
     print("\n=== Cursor MCP ===")
-    mcp_json = ROOT / ".cursor" / "mcp.json"
-    if not mcp_json.is_file():
-        ok_all &= _check("mcp.json", False, "缺失 .cursor/mcp.json")
-    else:
+    from mcp_paths import MCP_EXAMPLE, MCP_LOCAL, MCP_SECRETS
+
+    ok_all &= _check("mcp.example.json", MCP_EXAMPLE.is_file(), "存在" if MCP_EXAMPLE.is_file() else "缺失模板")
+    if MCP_LOCAL.is_file():
         try:
-            data = json.loads(mcp_json.read_text(encoding="utf-8"))
+            data = json.loads(MCP_LOCAL.read_text(encoding="utf-8"))
             servers = data.get("mcpServers") or data.get("servers") or {}
             for name in ("dingtalk-doc", "dingtalk-excel-read", "dingtalk-excel-write"):
                 present = name in servers or any(name in k for k in servers)
                 _check(f"MCP:{name}", present, "已登记" if present else "未找到")
         except json.JSONDecodeError as exc:
             ok_all &= _check("mcp.json", False, f"JSON 解析失败: {exc}")
+    else:
+        ok_all &= _check("mcp.json", False, f"缺失 {MCP_LOCAL}（可运行 python3 DingTalk/.cookie_sync_execute.py --merge-mcp）")
+    _check(
+        ".mcp.secrets.json",
+        MCP_SECRETS.is_file(),
+        "已配置" if MCP_SECRETS.is_file() else "未填写（Cookie/Token 本地文件）",
+    )
 
     print("\n=== 用例工作区 ===")
     tmp = ROOT / "temporary_testcase"

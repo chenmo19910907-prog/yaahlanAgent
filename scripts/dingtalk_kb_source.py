@@ -132,23 +132,29 @@ def resolve_folder_url(
 
 
 def _load_mcp_env(server_key: str) -> dict[str, str]:
-    """从仓库 .cursor/mcp.json 或 ~/.cursor/mcp.json 读取 MCP env。"""
-    candidates = [
-        ROOT / ".cursor/mcp.json",
-        Path.home() / ".cursor/mcp.json",
-    ]
-    for p in candidates:
-        if not p.is_file():
-            continue
-        try:
-            data = json.loads(p.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            continue
-        srv = (data.get("mcpServers") or {}).get(server_key) or {}
-        env = srv.get("env") or {}
-        if isinstance(env, dict) and env:
-            return {str(k): str(v) for k, v in env.items()}
-    return {}
+    """从 .mcp.secrets.json / mcp.json 读取 MCP env。"""
+    try:
+        from mcp_paths import load_mcp_env
+
+        return load_mcp_env(server_key)
+    except ImportError:
+        candidates = [
+            ROOT / ".cursor" / ".mcp.secrets.json",
+            ROOT / ".cursor" / "mcp.json",
+            Path.home() / ".cursor" / "mcp.json",
+        ]
+        for p in candidates:
+            if not p.is_file():
+                continue
+            try:
+                data = json.loads(p.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                continue
+            srv = (data.get("mcpServers") or {}).get(server_key) or {}
+            env = srv.get("env") or {}
+            if isinstance(env, dict) and env:
+                return {str(k): str(v) for k, v in env.items()}
+        return {}
 
 
 def resolve_dingtalk_cookie() -> str:
@@ -163,8 +169,8 @@ def resolve_dingtalk_cookie() -> str:
     if cookie_file.is_file():
         return cookie_file.read_text(encoding="utf-8").strip()
     raise RuntimeError(
-        "缺少 DINGTALK_COOKIE：请在 .cursor/mcp.json 配置 dingtalk-doc，"
-        "或 export DINGTALK_COOKIE / 使用 refresh_cookie 写入 ~/.dingtalk_doc_cookie"
+        "缺少 DINGTALK_COOKIE：请写入 .cursor/.mcp.secrets.json、"
+        "~/.dingtalk_doc_cookie，或运行 python3 DingTalk/.cookie_sync_execute.py"
     )
 
 

@@ -36,25 +36,21 @@ def _venv_python() -> str:
 
 
 def _apply_dingtalk_env_from_cursor_mcp() -> None:
-    """未显式设置时，从 ~/.cursor/mcp.json 的 dingtalk-excel-read 读取鉴权。"""
+    """未显式设置时，从 .mcp.secrets.json / mcp.json 读取 dingtalk-excel-read 鉴权。"""
     keys = ("DINGTALK_AEGIS_KEY", "DINGTALK_AEGIS_SECRET", "DINGTALK_WORKID")
     if all(os.environ.get(k) for k in keys):
         return
-    mcp_path = Path.home() / ".cursor" / "mcp.json"
-    if not mcp_path.is_file():
-        return
+    scripts_dir = _REPORT_ROOT.parent / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
     try:
-        data = json.loads(mcp_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return
-    servers = data.get("mcpServers") or {}
-    for name in ("dingtalk-excel-read", "user-dingtalk-excel-read"):
-        env = (servers.get(name) or {}).get("env") or {}
-        if not env:
-            continue
+        from mcp_paths import load_mcp_env
+
+        env = load_mcp_env("dingtalk-excel-read")
         for k in keys:
             if not os.environ.get(k) and env.get(k):
                 os.environ[k] = str(env[k])
+    except ImportError:
         return
 
 
