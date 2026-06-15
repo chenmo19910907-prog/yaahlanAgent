@@ -39,6 +39,19 @@
       "command": "python3 Admin/admin_execute.py --query-device-history-users --history-device-mmuidv3 <mmuidv3>"
     },
     {
+      "id": "query_device_current_account",
+      "name": "设备-查询当前登录账号",
+      "category": "用户（yaahlan-admin）",
+      "description": "按测试机名称或 mmuidv3 查当前登录 userId：test_devices.json 取 mmuidv3 → queryHistoryUserListByDeviceId 取最近 updateTime → queryUserDetail 校验 loginDevice（详见 .cursor/skills/device-current-account/SKILL.md）",
+      "prompts": [
+        "红米12当前登录的账号是什么",
+        "这台设备登录的是哪个账号",
+        "后台查询设备当前登录用户",
+        "查测试机当前 userId"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-device-history-users --history-device-mmuidv3 <mmuidv3> && python3 Admin/admin_execute.py --query-user-id <userId>"
+    },
+    {
       "id": "query_prop_info",
       "name": "道具-查询配置列表",
       "category": "道具（mdp-nova / propAdmin）",
