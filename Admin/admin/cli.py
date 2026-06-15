@@ -19,6 +19,8 @@ from .custom_gift import (
     parse_custom_gift_list_summary,
     parse_reset_custom_gift_upload_summary,
 )
+from .gift import mdp_gift_success, parse_query_gift_list_summary
+from .prop import mdp_prop_success, parse_query_prop_info_summary
 from .custom_prop import DEFAULT_PROP_TYPE, parse_reset_custom_prop_cooldown_summary
 from .custom_vehicle import parse_reset_custom_vehicle_cooldown_summary
 from .customer_service import (
@@ -37,7 +39,11 @@ from .guild import (
     parse_query_trade_union_summary,
     parse_remove_guild_member_summary,
 )
-from .user import parse_user_detail_summary
+from .user import (
+    parse_history_user_list_by_device_summary,
+    parse_user_detail_summary,
+    parse_user_history_device_summary,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -55,6 +61,49 @@ def build_parser() -> argparse.ArgumentParser:
     src.add_argument("--payload", help="完整请求 JSON 字符串")
 
     parser.add_argument("--query-user-id", help="查询用户详情 userId（queryUserDetail）")
+    parser.add_argument(
+        "--query-user-history-devices",
+        action="store_true",
+        help="查询用户历史登录设备列表（deviceHistory/queryUserHistoryDeviceList；需 --history-device-user-id）",
+    )
+    parser.add_argument("--history-device-user-id", help="历史设备查询 userId（配合 --query-user-history-devices）")
+    parser.add_argument(
+        "--query-device-history-users",
+        action="store_true",
+        help="查询设备历史登录账号列表（deviceHistory/queryHistoryUserListByDeviceId；需 --history-device-mmuidv3）",
+    )
+    parser.add_argument("--history-device-mmuidv3", help="历史账号查询设备 mmuidv3（配合 --query-device-history-users）")
+    parser.add_argument("--history-device-page", type=int, help="设备历史列表页码 page（默认 1）")
+    parser.add_argument("--history-device-page-size", type=int, help="设备历史列表每页条数 pageSize（默认 20）")
+    parser.add_argument(
+        "--query-prop-list",
+        action="store_true",
+        help="查询 MDP Nova 道具配置列表（propAdmin/queryPropInfo；可按 propId、名称、类型筛选）",
+    )
+    parser.add_argument("--prop-app-id", type=int, help="道具查询 appId（默认 2005=Yaahlan）")
+    parser.add_argument("--prop-type-code", help="道具类型 propTypeCode（如 10043 头框）")
+    parser.add_argument("--prop-name", help="道具名称 propName 模糊筛选")
+    parser.add_argument("--prop-id", help="道具 ID propId 精确筛选")
+    parser.add_argument("--prop-obtain-way-entry-id", help="获取方式 obtainWayEntryId")
+    parser.add_argument("--prop-sync-prod-status", help="同步正式环境状态 syncProdStatus")
+    parser.add_argument("--prop-identifier", help="标识符 identifier")
+    parser.add_argument("--prop-page-no", type=int, help="道具列表页码 pageNo（默认 1）")
+    parser.add_argument("--prop-page-size", type=int, help="道具列表每页条数 pageSize（默认 20）")
+    parser.add_argument(
+        "--query-gift-list",
+        action="store_true",
+        help="查询 MDP Nova 礼物列表（giftAdmin/queryGiftList；可按 baseId、名称筛选）",
+    )
+    parser.add_argument("--gift-app-id", type=int, help="礼物查询 appId（默认 2005=Yaahlan）")
+    parser.add_argument("--gift-base-id", help="礼物 baseId 精确筛选")
+    parser.add_argument("--gift-product-name", help="礼物名称模糊筛选 productName")
+    parser.add_argument("--gift-type", help="礼物类型 giftType")
+    parser.add_argument("--gift-sub-type", help="礼物子类型 giftSubType")
+    parser.add_argument("--gift-status", help="礼物状态 giftStatus")
+    parser.add_argument("--gift-effect-cate", help="礼物特效分类 giftEffectCate")
+    parser.add_argument("--gift-create-source", help="创建来源 createSource")
+    parser.add_argument("--gift-page-no", type=int, help="礼物列表页码 pageNo（默认 1）")
+    parser.add_argument("--gift-page-size", type=int, help="礼物列表每页条数 pageSize（默认 20）")
     parser.add_argument(
         "--query-custom-gift-list",
         action="store_true",
@@ -230,6 +279,17 @@ def _resolve_base_url(args: argparse.Namespace) -> str:
     return base_url
 
 
+def _resolve_mdp_base_url(cfg: dict[str, object]) -> str:
+    base_url = (
+        os.environ.get("MDP_ADMIN_BASE_URL")
+        or cfg.get("baseUrl")
+        or ""
+    ).strip().rstrip("/")
+    if not base_url:
+        raise ValueError("缺少 MDP Admin 域名：请设置 MDP_ADMIN_BASE_URL 或 config.json 中 query_gift_list.baseUrl")
+    return base_url
+
+
 def _resolve_gateway_base_url(cfg: dict[str, object]) -> str:
     base_url = (
         os.environ.get("ADMIN_GATEWAY_BASE_URL")
@@ -239,6 +299,79 @@ def _resolve_gateway_base_url(cfg: dict[str, object]) -> str:
     if not base_url:
         raise ValueError("缺少 Gateway 域名：请设置 ADMIN_GATEWAY_BASE_URL 或 config.json 中对应 baseUrl")
     return base_url
+
+
+def _resolve_query_prop_info_request(args: argparse.Namespace) -> tuple[str, dict[str, object]]:
+    cfg = defaults("query_prop_info")
+    base_url = _resolve_mdp_base_url(cfg)
+    path = str(cfg.get("path", "/propAdmin/queryPropInfo"))
+
+    app_id = args.prop_app_id
+    if app_id is None:
+        app_id = int(cfg.get("defaultAppId", 2005))
+    page_no = args.prop_page_no
+    if page_no is None:
+        page_no = int(cfg.get("defaultPageNo", 1))
+    page_size = args.prop_page_size
+    if page_size is None:
+        page_size = int(cfg.get("defaultPageSize", 20))
+    if page_no <= 0:
+        raise ValueError("prop-page-no 必须为正整数")
+    if page_size <= 0:
+        raise ValueError("prop-page-size 必须为正整数")
+
+    identifier = args.prop_identifier
+    if identifier is not None and str(identifier).strip() == "":
+        identifier = None
+
+    body: dict[str, object] = {
+        "appId": app_id,
+        "propTypeCode": str(args.prop_type_code or "").strip(),
+        "propName": str(args.prop_name or "").strip(),
+        "propId": str(args.prop_id or "").strip(),
+        "obtainWayEntryId": str(args.prop_obtain_way_entry_id or "").strip(),
+        "syncProdStatus": str(args.prop_sync_prod_status or "").strip(),
+        "identifier": identifier,
+        "pageNo": page_no,
+        "pageSize": page_size,
+    }
+    return f"{base_url}{path}", body
+
+
+def _resolve_query_gift_list_request(args: argparse.Namespace) -> tuple[str, dict[str, object]]:
+    cfg = defaults("query_gift_list")
+    base_url = _resolve_mdp_base_url(cfg)
+    path = str(cfg.get("path", "/giftAdmin/queryGiftList"))
+
+    app_id = args.gift_app_id
+    if app_id is None:
+        app_id = int(cfg.get("defaultAppId", 2005))
+    page_no = args.gift_page_no
+    if page_no is None:
+        page_no = int(cfg.get("defaultPageNo", 1))
+    page_size = args.gift_page_size
+    if page_size is None:
+        page_size = int(cfg.get("defaultPageSize", 20))
+    if page_no <= 0:
+        raise ValueError("gift-page-no 必须为正整数")
+    if page_size <= 0:
+        raise ValueError("gift-page-size 必须为正整数")
+
+    body: dict[str, object] = {
+        "appId": app_id,
+        "baseId": str(args.gift_base_id or "").strip(),
+        "createTimeBegin": "",
+        "createTimeEnd": "",
+        "giftType": str(args.gift_type or "").strip(),
+        "productName": str(args.gift_product_name or "").strip(),
+        "giftStatus": str(args.gift_status or "").strip(),
+        "giftEffectCate": str(args.gift_effect_cate or "").strip(),
+        "giftSubType": str(args.gift_sub_type or "").strip(),
+        "createSource": str(args.gift_create_source or "").strip(),
+        "pageSize": page_size,
+        "pageNo": page_no,
+    }
+    return f"{base_url}{path}", body
 
 
 def _resolve_custom_gift_list_url(args: argparse.Namespace) -> str:
@@ -591,6 +724,51 @@ def _resolve_reset_custom_prop_cooldown_request(args: argparse.Namespace) -> tup
     return url, body
 
 
+def _resolve_device_history_pagination(args: argparse.Namespace, cfg_key: str) -> tuple[int, int]:
+    cfg = defaults(cfg_key)
+    page = args.history_device_page
+    if page is None:
+        page = int(cfg.get("defaultPage", 1))
+    page_size = args.history_device_page_size
+    if page_size is None:
+        page_size = int(cfg.get("defaultPageSize", 20))
+    if page <= 0:
+        raise ValueError("history-device-page 必须为正整数")
+    if page_size <= 0:
+        raise ValueError("history-device-page-size 必须为正整数")
+    return page, page_size
+
+
+def _resolve_query_history_user_list_by_device_request(
+    args: argparse.Namespace,
+) -> tuple[str, dict[str, object]]:
+    mmuidv3 = str(args.history_device_mmuidv3 or "").strip()
+    if not mmuidv3:
+        raise ValueError("必须提供 --history-device-mmuidv3")
+
+    page, page_size = _resolve_device_history_pagination(args, "query_history_user_list_by_device_id")
+    cfg = defaults("query_history_user_list_by_device_id")
+    base_url = _resolve_base_url(args)
+    path = str(cfg.get("path", "/yaahlan/backend/deviceHistory/queryHistoryUserListByDeviceId"))
+    url = f"{base_url}{path}"
+    body = {"mmuidv3": mmuidv3, "page": page, "pageSize": page_size}
+    return url, body
+
+
+def _resolve_query_user_history_device_request(args: argparse.Namespace) -> tuple[str, dict[str, object]]:
+    user_id = str(args.history_device_user_id or "").strip()
+    if not user_id:
+        raise ValueError("必须提供 --history-device-user-id")
+
+    page, page_size = _resolve_device_history_pagination(args, "query_user_history_device_list")
+    cfg = defaults("query_user_history_device_list")
+    base_url = _resolve_base_url(args)
+    path = str(cfg.get("path", "/yaahlan/backend/deviceHistory/queryUserHistoryDeviceList"))
+    url = f"{base_url}{path}"
+    body = {"userId": user_id, "page": page, "pageSize": page_size}
+    return url, body
+
+
 def _apply_query_user_detail(args: argparse.Namespace, body: dict[str, object]) -> tuple[str, dict[str, object]]:
     user_id = str(args.query_user_id).strip()
     if not user_id:
@@ -605,7 +783,29 @@ def main() -> int:
 
     args = build_parser().parse_args()
     try:
-        if args.query_custom_gift_list:
+        if args.query_prop_list:
+            url, body = _resolve_query_prop_info_request(args)
+            if args.dump_body:
+                print(f"POST {url}", file=sys.stderr)
+                print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
+            resp = http_post_json(
+                url,
+                body,
+                timeout_s=max(args.timeout_ms, 1000) / 1000.0,
+                auth="mdp_nova",
+            )
+        elif args.query_gift_list:
+            url, body = _resolve_query_gift_list_request(args)
+            if args.dump_body:
+                print(f"POST {url}", file=sys.stderr)
+                print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
+            resp = http_post_json(
+                url,
+                body,
+                timeout_s=max(args.timeout_ms, 1000) / 1000.0,
+                auth="mdp_nova",
+            )
+        elif args.query_custom_gift_list:
             url = _resolve_custom_gift_list_url(args)
             if args.dump_body:
                 print(f"GET {url}", file=sys.stderr)
@@ -700,6 +900,18 @@ def main() -> int:
                 print(f"POST {url}", file=sys.stderr)
                 print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
             resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
+        elif args.query_device_history_users:
+            url, body = _resolve_query_history_user_list_by_device_request(args)
+            if args.dump_body:
+                print(f"POST {url}", file=sys.stderr)
+                print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
+            resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
+        elif args.query_user_history_devices:
+            url, body = _resolve_query_user_history_device_request(args)
+            if args.dump_body:
+                print(f"POST {url}", file=sys.stderr)
+                print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
+            resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
         elif args.query_user_id is not None:
             base_url = _resolve_base_url(args)
             path, body = _apply_query_user_detail(args, {})
@@ -723,6 +935,20 @@ def main() -> int:
 
     if args.output == "json":
         print(json.dumps(resp, ensure_ascii=False, indent=2))
+    elif args.query_prop_list:
+        if not mdp_prop_success(resp.get("ec")):
+            print(f"MDP 道具后台返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
+            print(json.dumps(resp, ensure_ascii=False, indent=2))
+            return 3
+        summary = parse_query_prop_info_summary(resp.get("data"))
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+    elif args.query_gift_list:
+        if not mdp_gift_success(resp.get("ec")):
+            print(f"MDP 礼物后台返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
+            print(json.dumps(resp, ensure_ascii=False, indent=2))
+            return 3
+        summary = parse_query_gift_list_summary(resp.get("data"))
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
     elif args.query_custom_gift_list:
         if not gateway_success(resp.get("status")):
             print(f"Gateway 返回失败: status={resp.get('status')}, msg={resp.get('msg')}", file=sys.stderr)
@@ -856,6 +1082,22 @@ def main() -> int:
             prop_type=prop_type,
         )
         print(json.dumps(summary, ensure_ascii=False, indent=2))
+    elif args.query_device_history_users:
+        if not admin_success(resp.get("ec")):
+            print(f"Admin 返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
+            print(json.dumps(resp, ensure_ascii=False, indent=2))
+            return 3
+        summary = parse_history_user_list_by_device_summary(resp.get("data"))
+        summary["mmuidv3"] = str(args.history_device_mmuidv3).strip()
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+    elif args.query_user_history_devices:
+        if not admin_success(resp.get("ec")):
+            print(f"Admin 返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
+            print(json.dumps(resp, ensure_ascii=False, indent=2))
+            return 3
+        summary = parse_user_history_device_summary(resp.get("data"))
+        summary["userId"] = str(args.history_device_user_id).strip()
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
     elif args.query_user_id is not None:
         if not admin_success(resp.get("ec")):
             print(f"Admin 返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
@@ -866,7 +1108,15 @@ def main() -> int:
     else:
         print(json.dumps(resp, ensure_ascii=False, indent=2))
 
-    if (
+    if args.query_prop_list:
+        if not mdp_prop_success(resp.get("ec")):
+            print(f"MDP 道具后台返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
+            return 3
+    elif args.query_gift_list:
+        if not mdp_gift_success(resp.get("ec")):
+            print(f"MDP 礼物后台返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
+            return 3
+    elif (
         args.query_custom_gift_list
         or args.add_family_member
         or args.query_family
@@ -885,6 +1135,8 @@ def main() -> int:
         args.reset_custom_gift_upload
         or args.reset_custom_vehicle_cooldown
         or args.reset_custom_prop_cooldown
+        or args.query_device_history_users
+        or args.query_user_history_devices
         or args.query_user_id is not None
     ):
         if not admin_success(resp.get("ec")):

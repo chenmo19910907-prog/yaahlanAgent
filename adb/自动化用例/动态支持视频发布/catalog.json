@@ -1,0 +1,52 @@
+{
+  "requirementId": "req-动态支持视频发布",
+  "folder": "动态支持视频发布",
+  "name": "动态支持视频发布",
+  "module": "动态",
+  "prdRef": "https://alidocs.dingtalk.com/i/nodes/NZQYprEoWoe2owrwTrjwQnmZJ1waOeDk",
+  "manualCaseUrl": "https://alidocs.dingtalk.com/i/nodes/N7dx2rn0JbZQqA9ACQgRM0D3JMGjLRb3",
+  "manualCaseSheet": "动态支持发布视频",
+  "registry": "registry.json",
+  "suites": [
+    {
+      "id": "req-动态支持视频发布-p0",
+      "name": "动态支持视频发布 · P0 写操作",
+      "module": "动态",
+      "priority": "P0",
+      "requirementId": "req-动态支持视频发布",
+      "cases": [
+        "P0-动态-发布视频动态"
+      ]
+    },
+    {
+      "id": "req-动态支持视频发布-p1",
+      "name": "动态支持视频发布 · P1 发布与浏览",
+      "module": "动态",
+      "priority": "P1",
+      "requirementId": "req-动态支持视频发布",
+      "cases": [
+        "P1-动态-打开发布页",
+        "P1-动态-我的列表发步",
+        "P1-动态-发布图片动态",
+        "P1-动态-进入我的动态列表",
+        "P1-动态-互动通知入口",
+        "P1-动态-Discover进详情",
+        "P1-动态-Follow进详情",
+        "P1-动态-Discover点赞",
+        "P1-动态-内联Discover浏览"
+      ]
+    },
+    {
+      "id": "req-动态支持视频发布-p2",
+      "name": "动态支持视频发布 · P2 帧内浏览",
+      "module": "动态",
+      "priority": "P2",
+      "requirementId": "req-动态支持视频发布",
+      "cases": [
+        "P2-动态-进入TopicsMore",
+        "P2-动态-进入话题详情",
+        "P2-动态-关注Tab浏览"
+      ]
+    }
+  ]
+}

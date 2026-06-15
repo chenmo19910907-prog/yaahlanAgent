@@ -1,0 +1,58 @@
+{
+  "id": "P1-动态-我的列表发步",
+  "priority": "P1",
+  "name": "我的动态列表打开发布页",
+  "module": "动态",
+  "source": {
+    "scenarioRef": "发布入口回归 · 个人动态列表顶栏 + 进入编辑页（与 Moment 帧 + 不同入口）",
+    "requirementId": "req-动态支持视频发布",
+    "prdRef": "https://alidocs.dingtalk.com/i/nodes/NZQYprEoWoe2owrwTrjwQnmZJ1waOeDk",
+    "prdLocal": "documents/moments/video.md"
+  },
+  "account": {
+    "alias": "familyLeader",
+    "precondition": "设备已登录 familyLeader"
+  },
+  "operationFlowDoc": [
+    "1. 冷启动回首页",
+    "2. Me → 资料页 → My Moments 列表",
+    "3. 列表顶栏 + 打开发布编辑页"
+  ],
+  "operations": [
+    {
+      "step": 1,
+      "description": "冷启动回首页",
+      "action": "macro",
+      "script": "冷启动回首页"
+    },
+    {
+      "step": 2,
+      "description": "进入我的动态列表",
+      "action": "macro",
+      "script": "进入我的动态列表"
+    },
+    {
+      "step": 3,
+      "description": "我的动态列表打开发布动态",
+      "action": "macro",
+      "script": "我的动态列表打开发布动态"
+    }
+  ],
+  "verifyPoints": [
+    {
+      "id": "VP-ACTIVITY-COMPOSE",
+      "name": "落在发布编辑页",
+      "method": "activity",
+      "expectHint": "feed_publish"
+    },
+    {
+      "id": "VP-SCREENSHOT",
+      "name": "发布编辑页截图",
+      "method": "screenshot",
+      "captureFresh": true,
+      "required": true
+    }
+  ],
+  "stopOnFailure": true,
+  "skipVerifyOnFailure": true
+}

@@ -1,25 +1,178 @@
 {
   "id": "post-video-moment",
   "name": "发布视频动态",
-  "recordedOn": { "width": 1080, "height": 2340 },
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
   "capture": "end",
   "description": "从任意底栏页发布视频动态（Moment → + → 相册 → 选视频 → 确认 → Post）",
-  "kbRef": ["documents/moments/video.md"],
+  "kbRef": [
+    "documents/moments/video.md"
+  ],
   "steps": [
-    { "sleep_ms": 300 },
-    { "tap_pct": [0.700, 0.956], "note": "Moment" },
-    { "sleep_ms": 600 },
-    { "tap_pct": [0.922, 0.087], "note": "publish_feed" },
-    { "sleep_ms": 700 },
-    { "tap_pct": [0.198, 0.375], "note": "上传区 id/main" },
-    { "sleep_ms": 500 },
-    { "tap_pct": [0.500, 0.856], "note": "底部菜单 Ablum" },
-    { "sleep_ms": 2500, "note": "等待相册" },
-    { "tap_pct": [0.498, 0.626], "note": "相册网格默认视频格（00:26 实测位）" },
-    { "sleep_ms": 2000, "note": "视频预览" },
-    { "tap_pct": [0.878, 0.965], "note": "预览 Confirm" },
-    { "sleep_ms": 1500 },
-    { "tap_pct": [0.881, 0.068], "note": "Post" },
-    { "sleep_ms": 18000, "note": "等待上传与发布" }
+    {
+      "sleep_ms": 300
+    },
+    {
+      "tap_pct": [
+        0.7,
+        0.956
+      ],
+      "note": "Moment",
+      "resourceId": "tab_feed",
+      "bounds": "[648,2151][864,2325]",
+      "className": "android.widget.FrameLayout",
+      "fallback_tap_pct": [
+        0.7,
+        0.956
+      ],
+      "fallback_tap": [
+        756,
+        2237
+      ],
+      "locatorLearnedAt": "2026-06-12T10:59:10Z"
+    },
+    {
+      "sleep_ms": 600
+    },
+    {
+      "tap_pct": [
+        0.922,
+        0.087
+      ],
+      "note": "publish_feed",
+      "resourceId": "publish_feed",
+      "bounds": "[942,150][1050,258]",
+      "className": "android.widget.ImageView",
+      "fallback_tap_pct": [
+        0.922,
+        0.087
+      ],
+      "fallback_tap": [
+        995,
+        203
+      ],
+      "locatorLearnedAt": "2026-06-12T10:59:13Z"
+    },
+    {
+      "sleep_ms": 700
+    },
+    {
+      "tap_pct": [
+        0.198,
+        0.375
+      ],
+      "note": "上传区 id/main",
+      "resourceId": "main",
+      "bounds": "[60,723][368,1031]",
+      "className": "android.widget.ImageView",
+      "fallback_tap_pct": [
+        0.198,
+        0.375
+      ],
+      "fallback_tap": [
+        213,
+        877
+      ],
+      "locatorLearnedAt": "2026-06-12T10:59:17Z"
+    },
+    {
+      "sleep_ms": 500
+    },
+    {
+      "tap_pct": [
+        0.5,
+        0.856
+      ],
+      "note": "底部菜单 Ablum",
+      "resourceId": "select_by_album",
+      "bounds": "[45,1905][1035,2100]",
+      "uiText": "Ablum",
+      "className": "android.widget.TextView",
+      "fallback_tap_pct": [
+        0.5,
+        0.856
+      ],
+      "fallback_tap": [
+        540,
+        2003
+      ],
+      "locatorLearnedAt": "2026-06-12T11:10:13Z"
+    },
+    {
+      "sleep_ms": 2500,
+      "note": "等待相册"
+    },
+    {
+      "tap_pct": [
+        0.498,
+        0.626
+      ],
+      "note": "相册网格默认视频格（00:26 实测位）",
+      "resourceId": "icon",
+      "bounds": "[390,1457][690,1757]",
+      "className": "android.widget.ImageView",
+      "fallback_tap_pct": [
+        0.498,
+        0.626
+      ],
+      "fallback_tap": [
+        537,
+        1464
+      ],
+      "locatorLearnedAt": "2026-06-12T11:01:17Z"
+    },
+    {
+      "sleep_ms": 2000,
+      "note": "视频预览"
+    },
+    {
+      "tap_pct": [
+        0.878,
+        0.965
+      ],
+      "note": "预览 Confirm",
+      "resourceId": "preview_select_finish",
+      "bounds": "[846,2206][1050,2310]",
+      "uiText": "Confirm",
+      "className": "android.widget.TextView",
+      "fallback_tap_pct": [
+        0.878,
+        0.965
+      ],
+      "fallback_tap": [
+        948,
+        2258
+      ],
+      "locatorLearnedAt": "2026-06-12T11:10:26Z"
+    },
+    {
+      "sleep_ms": 1500
+    },
+    {
+      "tap_pct": [
+        0.881,
+        0.068
+      ],
+      "note": "Post",
+      "resourceId": "post",
+      "bounds": "[853,105][1050,213]",
+      "uiText": "Post",
+      "className": "android.widget.TextView",
+      "fallback_tap_pct": [
+        0.881,
+        0.068
+      ],
+      "fallback_tap": [
+        951,
+        159
+      ],
+      "locatorLearnedAt": "2026-06-12T11:10:32Z"
+    },
+    {
+      "sleep_ms": 18000,
+      "note": "等待上传与发布"
+    }
   ]
 }

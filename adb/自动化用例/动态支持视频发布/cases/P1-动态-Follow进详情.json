@@ -1,0 +1,51 @@
+{
+  "id": "P1-动态-Follow进详情",
+  "priority": "P1",
+  "name": "Follow 列表进入动态详情",
+  "module": "动态",
+  "source": {
+    "scenarioRef": "列表浏览回归 · 关注 Tab 首条进详情",
+    "requirementId": "req-动态支持视频发布",
+    "prdRef": "https://alidocs.dingtalk.com/i/nodes/NZQYprEoWoe2owrwTrjwQnmZJ1waOeDk",
+    "prdLocal": "documents/moments/video.md"
+  },
+  "account": {
+    "alias": "familyLeader",
+    "precondition": "设备已登录；关注列表有动态"
+  },
+  "operationFlowDoc": [
+    "1. 冷启动回首页",
+    "2. Moment Follow 首条 → 评论图标 → 动态详情页"
+  ],
+  "operations": [
+    {
+      "step": 1,
+      "description": "冷启动回首页",
+      "action": "macro",
+      "script": "冷启动回首页"
+    },
+    {
+      "step": 2,
+      "description": "Follow 进入动态详情",
+      "action": "macro",
+      "script": "动态帧Follow进入动态详情"
+    }
+  ],
+  "verifyPoints": [
+    {
+      "id": "VP-ACTIVITY-DETAIL",
+      "name": "落在动态详情页",
+      "method": "activity",
+      "expectShortName": "FeedDetailsActivity"
+    },
+    {
+      "id": "VP-SCREENSHOT",
+      "name": "详情页截图",
+      "method": "screenshot",
+      "captureFresh": true,
+      "required": true
+    }
+  ],
+  "stopOnFailure": true,
+  "skipVerifyOnFailure": true
+}

@@ -1,0 +1,51 @@
+{
+  "id": "P2-动态-进入话题详情",
+  "priority": "P2",
+  "name": "话题详情页浏览",
+  "module": "动态",
+  "source": {
+    "scenarioRef": "动态帧浏览 · All topics → #My Family 话题详情（可继续点动态进详情）",
+    "requirementId": "req-动态支持视频发布",
+    "prdRef": "https://alidocs.dingtalk.com/i/nodes/NZQYprEoWoe2owrwTrjwQnmZJ1waOeDk",
+    "prdLocal": "documents/moments/video.md"
+  },
+  "account": {
+    "alias": "familyLeader",
+    "precondition": "设备已登录；#My Family 话题存在"
+  },
+  "operationFlowDoc": [
+    "1. 冷启动回首页",
+    "2. Topics More → 点 #My Family 卡片"
+  ],
+  "operations": [
+    {
+      "step": 1,
+      "description": "冷启动回首页",
+      "action": "macro",
+      "script": "冷启动回首页"
+    },
+    {
+      "step": 2,
+      "description": "进入话题详情",
+      "action": "macro",
+      "script": "动态帧进入话题详情"
+    }
+  ],
+  "verifyPoints": [
+    {
+      "id": "VP-ACTIVITY-TOPIC",
+      "name": "落在话题详情页",
+      "method": "activity",
+      "expectHint": "feed_topic"
+    },
+    {
+      "id": "VP-SCREENSHOT",
+      "name": "话题详情截图",
+      "method": "screenshot",
+      "captureFresh": true,
+      "required": true
+    }
+  ],
+  "stopOnFailure": true,
+  "skipVerifyOnFailure": true
+}

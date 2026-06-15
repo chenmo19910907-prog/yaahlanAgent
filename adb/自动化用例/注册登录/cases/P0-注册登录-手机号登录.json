@@ -1,0 +1,70 @@
+{
+  "id": "P0-注册登录-手机号登录",
+  "priority": "P0",
+  "name": "手机号登录成功",
+  "module": "注册登录",
+  "source": {
+    "manualCaseRef": "注册登录-手机号登录成功",
+    "prdRef": "documents/登录注册.md"
+  },
+  "account": {
+    "alias": "familyLeader",
+    "precondition": "账号空闲（Tunnel 近 300s 无 heartbeat）；真机 adb devices=device"
+  },
+  "operationFlowDoc": [
+    "1. 确认 familyLeader 账号空闲",
+    "2. 冷启动 Yaahlan",
+    "3. 手机号登录（+86 13311111112 / 验证码 000000）",
+    "4. 抓包验收 login 接口 ec=200",
+    "5. Activity 验收处于首页",
+    "6. 留存登录后截图"
+  ],
+  "operations": [
+    {
+      "step": 1,
+      "description": "确认测试账号空闲",
+      "action": "account_check",
+      "account": "familyLeader",
+      "expectInUse": false,
+      "sinceSeconds": 300
+    },
+    {
+      "step": 2,
+      "description": "冷启动 Yaahlan",
+      "action": "macro",
+      "script": "启动Yaahlan",
+      "noCapture": true
+    },
+    {
+      "step": 3,
+      "description": "手机号登录全流程",
+      "action": "macro",
+      "script": "手机号登录",
+      "textFrom": "account.phone",
+      "popupScene": "login",
+      "popupAutoDismiss": true,
+      "tunnel": {
+        "account": "familyLeader",
+        "keyword": "login",
+        "waitSeconds": 30,
+        "expectEc": 200
+      }
+    }
+  ],
+  "verifyPoints": [
+    {
+      "id": "VP-ACTIVITY-HOME",
+      "name": "登录后处于首页",
+      "method": "activity",
+      "expectHint": "home"
+    },
+    {
+      "id": "VP-SCREENSHOT",
+      "name": "留存登录后截图",
+      "method": "screenshot",
+      "required": true
+    }
+  ],
+  "stopOnFailure": true,
+  "skipVerifyOnFailure": true
+}

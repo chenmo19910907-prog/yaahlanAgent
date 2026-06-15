@@ -9,6 +9,36 @@ import urllib.request
 from typing import Any
 
 
+def build_mdp_nova_headers() -> dict[str, str]:
+    """MDP Nova 礼物后台（Cookie 鉴权）。"""
+    aegis_token = os.environ.get("MDP_AEGIS_TOKEN", "").strip()
+    cloud_token = os.environ.get("MDP_CLOUD_AEGIS_TOKEN", "").strip()
+    if not aegis_token:
+        raise ValueError("缺少 MDP_AEGIS_TOKEN（请写入 Admin/.env.local，抓包 alpha_mdp_aegis_token）")
+    if not cloud_token:
+        raise ValueError("缺少 MDP_CLOUD_AEGIS_TOKEN（请写入 Admin/.env.local，抓包 CLOUD-AEGIS-TOKEN）")
+
+    cookie_parts = [
+        f"alpha_mdp_aegis_token={aegis_token}",
+        f"CLOUD-AEGIS-TOKEN={cloud_token}",
+    ]
+    extra_cookie = os.environ.get("MDP_ADMIN_COOKIE_EXTRA", "").strip()
+    if extra_cookie:
+        cookie_parts.append(extra_cookie)
+
+    headers: dict[str, str] = {
+        "Cookie": "; ".join(cookie_parts),
+        "Origin": os.environ.get("MDP_ADMIN_ORIGIN", "https://mdp-nova-alpha.wemomo.com").strip()
+        or "https://mdp-nova-alpha.wemomo.com",
+        "Referer": os.environ.get("MDP_ADMIN_REFERER", "https://mdp-nova-alpha.wemomo.com/").strip()
+        or "https://mdp-nova-alpha.wemomo.com/",
+    }
+    user_agent = os.environ.get("MDP_ADMIN_USER_AGENT", "").strip()
+    if user_agent:
+        headers["User-Agent"] = user_agent
+    return headers
+
+
 def build_auth_headers() -> dict[str, str]:
     headers: dict[str, str] = {}
     sso_token = os.environ.get("ADMIN_SSO_TOKEN", "").strip()
@@ -38,12 +68,20 @@ def http_post_json(
     payload: dict[str, Any],
     *,
     timeout_s: float = 10.0,
+    auth: str = "yaahlan",
 ) -> dict[str, Any]:
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    if auth == "mdp_nova":
+        extra_headers = build_mdp_nova_headers()
+    elif auth == "yaahlan":
+        extra_headers = build_auth_headers()
+    else:
+        raise ValueError(f"未知 auth 模式: {auth}")
+
     req_headers: dict[str, str] = {
         "Content-Type": "application/json",
         "Accept": "application/json, text/plain, */*",
-        **build_auth_headers(),
+        **extra_headers,
     }
 
     req = urllib.request.Request(url=url, data=body, method="POST", headers=req_headers)

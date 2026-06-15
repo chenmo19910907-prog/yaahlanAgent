@@ -1,18 +1,48 @@
 {
   "id": "dismiss-splash-ad",
   "name": "跳过开屏广告",
-  "recordedOn": { "width": 1080, "height": 2340 },
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
   "capture": "never",
   "description": "冷启动后约 5s 全屏广告：launch 已等 4s，本片段再 sleep 7s 后点跳过。其后须跑「验收开屏广告」。无跳过按钮时 --skip dismiss_splash_ad。",
   "steps": [
-    { "sleep_ms": 3000, "note": "等开屏动画与广告主体出现" },
-    { "sleep_ms": 4000, "note": "等右上角跳过按钮可点（勿提前 tap）" },
     {
-      "tap_pct": [0.915, 0.055],
-      "note": "跳过/关闭（右上角；坐标需 recalibrate 时更新）",
-      "skip_key": "dismiss_splash_ad"
+      "sleep_ms": 3000,
+      "note": "等开屏动画与广告主体出现"
     },
-    { "sleep_ms": 2500, "note": "点击跳过后等待过渡" },
-    { "sleep_ms": 6000, "note": "未点到跳过时再等广告自然结束" }
+    {
+      "sleep_ms": 4000,
+      "note": "等右上角跳过按钮可点（勿提前 tap）"
+    },
+    {
+      "tap_pct": [
+        0.915,
+        0.055
+      ],
+      "note": "跳过/关闭（右上角；坐标需 recalibrate 时更新）",
+      "skip_key": "dismiss_splash_ad",
+      "resourceId": "title_bar",
+      "bounds": "[0,0][1080,269]",
+      "className": "android.view.ViewGroup",
+      "fallback_tap_pct": [
+        0.915,
+        0.055
+      ],
+      "fallback_tap": [
+        988,
+        128
+      ],
+      "locatorLearnedAt": "2026-06-12T10:58:52Z"
+    },
+    {
+      "sleep_ms": 2500,
+      "note": "点击跳过后等待过渡"
+    },
+    {
+      "sleep_ms": 6000,
+      "note": "未点到跳过时再等广告自然结束"
+    }
   ]
 }

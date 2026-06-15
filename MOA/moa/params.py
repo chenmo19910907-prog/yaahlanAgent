@@ -468,38 +468,51 @@ def package_gift_defaults() -> dict[str, Any]:
     )
 
 
-def set_package_gift_params(
-    payload: dict[str, Any],
+def build_package_gift_request_value(
     user_id: str,
     *,
-    product_num: int | None = None,
     give_user_id: str = "",
-) -> None:
+    base_product_id: str | None = None,
+    product_num: int | None = None,
+    out_order_id: str | None = None,
+) -> dict[str, Any]:
     user_id = str(user_id).strip()
     if not user_id:
         raise ValueError("user_id 不能为空")
 
     defaults = package_gift_defaults()
     gift_details: list[dict[str, Any]] = []
-    for item in defaults["giftDetails"]:
-        if not isinstance(item, dict) or item.get("baseProductId") is None:
-            continue
-        num = product_num if product_num is not None else item.get("productNum", 100)
+
+    if base_product_id is not None and str(base_product_id).strip():
+        num = product_num if product_num is not None else 1
         try:
             num_int = int(num)
         except (TypeError, ValueError) as e:
             raise ValueError(f"gift productNum 无效: {num}") from e
         if num_int <= 0:
             raise ValueError("gift productNum 必须为正整数")
-        gift_details.append({"baseProductId": str(item["baseProductId"]), "productNum": num_int})
+        gift_details.append({"baseProductId": str(base_product_id).strip(), "productNum": num_int})
+    else:
+        for item in defaults["giftDetails"]:
+            if not isinstance(item, dict) or item.get("baseProductId") is None:
+                continue
+            num = product_num if product_num is not None else item.get("productNum", 100)
+            try:
+                num_int = int(num)
+            except (TypeError, ValueError) as e:
+                raise ValueError(f"gift productNum 无效: {num}") from e
+            if num_int <= 0:
+                raise ValueError("gift productNum 必须为正整数")
+            gift_details.append({"baseProductId": str(item["baseProductId"]), "productNum": num_int})
 
     if not gift_details:
         raise ValueError("package_gift.giftDetails 配置为空或无效")
 
-    value = {
+    return {
         "userId": user_id,
-        "giveUserId": give_user_id,
-        "outOrderId": random_package_gift_out_order_id(
+        "giveUserId": str(give_user_id or "").strip(),
+        "outOrderId": out_order_id
+        or random_package_gift_out_order_id(
             str(defaults["outOrderIdPrefix"]),
             str(defaults["outOrderIdMiddle"]),
         ),
@@ -510,6 +523,22 @@ def set_package_gift_params(
         "expireSeconds": int(defaults["expireSeconds"]),
         "signKey": str(defaults["signKey"]),
     }
+
+
+def set_package_gift_params(
+    payload: dict[str, Any],
+    user_id: str,
+    *,
+    product_num: int | None = None,
+    give_user_id: str = "",
+    base_product_id: str | None = None,
+) -> None:
+    value = build_package_gift_request_value(
+        user_id,
+        give_user_id=give_user_id,
+        base_product_id=base_product_id,
+        product_num=product_num,
+    )
     payload["params"] = [json_param(value)]
 
 
@@ -584,3 +613,31 @@ def set_cp_ferris_wheel_area_params(payload: dict[str, Any], area: str) -> None:
     if not area_code:
         raise ValueError("cp-ferris-area 不能为空")
     payload["params"] = [_param("参数1", "1", area_code, ptype="string", txt=area_code)]
+
+
+def user_prop_query_defaults() -> dict[str, Any]:
+    return section_defaults("user_prop_query", {"appId": 2005, "lang": "en"})
+
+
+def set_user_prop_query_params(
+    payload: dict[str, Any],
+    *,
+    user_id: str,
+    prop_type_code: str,
+    lang: str | None = None,
+    app_id: int | None = None,
+) -> None:
+    user_id = str(user_id).strip()
+    prop_type_code = str(prop_type_code).strip()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    if not prop_type_code:
+        raise ValueError("prop_type_code 不能为空")
+    defaults = user_prop_query_defaults()
+    value = {
+        "appId": int(app_id if app_id is not None else defaults.get("appId", 2005)),
+        "userId": user_id,
+        "propTypeCode": prop_type_code,
+        "lang": str(lang or defaults.get("lang", "en")),
+    }
+    payload["params"] = [json_param(value)]

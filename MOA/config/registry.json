@@ -477,6 +477,18 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/背包礼物-下发.json \\\n  --package-gift-user-id <userId>\n"
     },
     {
+      "id": "package_gift_send",
+      "name": "背包礼物-送礼",
+      "category": "背包礼物（voga-base-service-middle-gift-stage）",
+      "description": "MOA 可 addPackageGift 下发背包礼到送礼方；sendMiddlePackageGift 返回 true 通常不触发 v2/gift/send。真实送礼须 ADB 背包面板送出 + Tunnel gift/send。加 --package-gift-add-only 仅下发。",
+      "prompts": [
+        "给用户 <userId> 下发背包礼物",
+        "MOA 背包下发 Ocean Gem",
+        "背包送礼 Tunnel 验收 gift/send"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --package-gift-send \\\n  --package-gift-add-only \\\n  --package-gift-user-id <fromUserId> \\\n  --package-gift-base-id 2005001272 \\\n  --package-gift-num 1"
+    },
+    {
       "id": "user_active_days_query",
       "name": "用户-查询登录天数",
       "category": "用户活跃（yaahlan/user/internal/area-moa）",
@@ -497,6 +509,18 @@
         "查询 <userId> 的语言设置"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file \"MOA/templates/查看用户app语言.json\"\n"
+    },
+    {
+      "id": "user_prop_query_own",
+      "name": "装扮-查询用户拥有道具",
+      "category": "用户装扮（mdp-prop/user-prop-api-service-test）",
+      "description": "查询用户指定 propTypeCode 的已拥有装扮（queryOwnPropList）；类型对照见 MOA/config/prop_types.json",
+      "prompts": [
+        "查询用户 <userId> 的 <propTypeCode> 装扮",
+        "查 <userId> 资料页背景装扮",
+        "获取 <userId> 10144 类型装扮"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/装扮-查询用户拥有道具.json \\\n  --user-prop-query-user-id <userId> \\\n  --user-prop-type-code <propTypeCode>\n"
     }
   ]
 }

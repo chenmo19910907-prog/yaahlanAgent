@@ -1,0 +1,46 @@
+{
+  "id": "P1-动态-Discover点赞",
+  "priority": "P1",
+  "name": "Discover 首条动态点赞",
+  "module": "动态",
+  "source": {
+    "scenarioRef": "互动回归 · Discover 首条点赞（视频动态点赞链路 smoke）",
+    "requirementId": "req-动态支持视频发布",
+    "prdRef": "https://alidocs.dingtalk.com/i/nodes/NZQYprEoWoe2owrwTrjwQnmZJ1waOeDk",
+    "prdLocal": "documents/moments/video.md"
+  },
+  "account": {
+    "alias": "familyLeader",
+    "precondition": "设备已登录；Discover 有可点赞动态"
+  },
+  "operationFlowDoc": [
+    "1. 冷启动回首页",
+    "2. Discover 首条点心形点赞",
+    "3. 截图留存点赞后状态"
+  ],
+  "operations": [
+    {
+      "step": 1,
+      "description": "冷启动回首页",
+      "action": "macro",
+      "script": "冷启动回首页"
+    },
+    {
+      "step": 2,
+      "description": "Discover 点赞首条",
+      "action": "macro",
+      "script": "动态帧Discover点赞首条"
+    }
+  ],
+  "verifyPoints": [
+    {
+      "id": "VP-SCREENSHOT",
+      "name": "点赞后列表截图",
+      "method": "screenshot",
+      "captureFresh": true,
+      "required": true
+    }
+  ],
+  "stopOnFailure": true,
+  "skipVerifyOnFailure": true
+}

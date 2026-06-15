@@ -1,0 +1,51 @@
+{
+  "id": "P2-动态-进入TopicsMore",
+  "priority": "P2",
+  "name": "Discover 进入全部话题",
+  "module": "动态",
+  "source": {
+    "scenarioRef": "动态帧浏览 · Topics More 列表页",
+    "requirementId": "req-动态支持视频发布",
+    "prdRef": "https://alidocs.dingtalk.com/i/nodes/NZQYprEoWoe2owrwTrjwQnmZJ1waOeDk",
+    "prdLocal": "documents/moments/video.md"
+  },
+  "account": {
+    "alias": "familyLeader",
+    "precondition": "设备已登录"
+  },
+  "operationFlowDoc": [
+    "1. 冷启动回首页",
+    "2. Moment Discover → Topics More>"
+  ],
+  "operations": [
+    {
+      "step": 1,
+      "description": "冷启动回首页",
+      "action": "macro",
+      "script": "冷启动回首页"
+    },
+    {
+      "step": 2,
+      "description": "进入 Topics More",
+      "action": "macro",
+      "script": "动态帧进入TopicsMore"
+    }
+  ],
+  "verifyPoints": [
+    {
+      "id": "VP-ACTIVITY-TOPICS",
+      "name": "落在全部话题页",
+      "method": "activity",
+      "expectHint": "feed_topics"
+    },
+    {
+      "id": "VP-SCREENSHOT",
+      "name": "话题列表截图",
+      "method": "screenshot",
+      "captureFresh": true,
+      "required": true
+    }
+  ],
+  "stopOnFailure": true,
+  "skipVerifyOnFailure": true
+}

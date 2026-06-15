@@ -50,6 +50,7 @@ from .params import (
     set_vip_info_query_params,
     set_vip_params,
     set_vip_try_dispatch_params,
+    set_user_prop_query_params,
 )
 from .time_utils import resolve_expire_ms, resolve_family_fund_week_key
 from .user_area import describe_user_area, normalize_user_area
@@ -277,6 +278,20 @@ def _op_cancel_user(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     expr = f'context.getBean("userCancelService").cancelUserReal("{user_id}")'
     print(f"注销账号 userId={user_id}", file=sys.stderr)
     set_backdoor_execute_expr(payload, expr)
+
+
+def _op_user_prop_query(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/mdp-prop/user-prop-api-service-test"
+    payload["method"] = "queryOwnPropList"
+    if args.user_prop_type_code is None:
+        raise ValueError("查询用户装扮时必须提供 --user-prop-type-code")
+    set_user_prop_query_params(
+        payload,
+        user_id=args.user_prop_query_user_id,
+        prop_type_code=args.user_prop_type_code,
+        lang=args.user_prop_lang,
+        app_id=args.user_prop_app_id,
+    )
 
 
 def _op_diamond_query(args: argparse.Namespace, payload: dict[str, Any]) -> None:
@@ -549,6 +564,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.custom_gift_reset_user_id is not None, _op_custom_gift_reset_expire),
     (lambda a: _custom_gift_rank_delete_mode(a), _op_custom_gift_rank_delete),
     (lambda a: _custom_gift_rank_add_mode(a), _op_custom_gift_rank_active),
+    (lambda a: a.user_prop_query_user_id is not None, _op_user_prop_query),
     (lambda a: a.diamond_query_user_id is not None, _op_diamond_query),
     (lambda a: a.diamond_user_id is not None, _op_diamond),
     (lambda a: _room_set_level_mode(a), _op_room_set_level),

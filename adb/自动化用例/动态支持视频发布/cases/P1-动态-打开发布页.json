@@ -1,0 +1,76 @@
+{
+  "id": "P1-动态-打开发布页",
+  "priority": "P1",
+  "name": "动态编辑页唤起上传菜单",
+  "module": "动态",
+  "source": {
+    "scenarioRef": "内联 steps · Moment 帧 + 进发布编辑页（不依赖命名片段）",
+    "requirementId": "req-动态支持视频发布",
+    "prdRef": "https://alidocs.dingtalk.com/i/nodes/NZQYprEoWoe2owrwTrjwQnmZJ1waOeDk",
+    "prdLocal": "documents/moments/video.md"
+  },
+  "account": {
+    "alias": "familyLeader",
+    "precondition": "设备已登录 familyLeader；adb devices=device"
+  },
+  "operationFlowDoc": [
+    "1. 冷启动回首页（macro，通用冷启）",
+    "2. 内联 tap：Moment 底栏 → 右上角 +"
+  ],
+  "operations": [
+    {
+      "step": 1,
+      "description": "冷启动回首页",
+      "action": "macro",
+      "script": "冷启动回首页"
+    },
+    {
+      "step": 2,
+      "description": "内联步骤：切动态并打开发布页",
+      "action": "steps",
+      "capture": "end",
+      "steps": [
+        {
+          "sleep_ms": 300
+        },
+        {
+          "tap_pct": [
+            0.7,
+            0.956
+          ],
+          "note": "Moment 底栏"
+        },
+        {
+          "sleep_ms": 700
+        },
+        {
+          "tap_pct": [
+            0.922,
+            0.087
+          ],
+          "note": "publish_feed +"
+        },
+        {
+          "sleep_ms": 800
+        }
+      ]
+    }
+  ],
+  "verifyPoints": [
+    {
+      "id": "VP-ACTIVITY-COMPOSE",
+      "name": "落在发布编辑页",
+      "method": "activity",
+      "expectHint": "feed_publish"
+    },
+    {
+      "id": "VP-SCREENSHOT",
+      "name": "发布编辑页截图",
+      "method": "screenshot",
+      "captureFresh": true,
+      "required": true
+    }
+  ],
+  "stopOnFailure": true,
+  "skipVerifyOnFailure": true
+}

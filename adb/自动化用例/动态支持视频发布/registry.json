@@ -1,0 +1,1179 @@
+{
+  "requirementId": "req-动态支持视频发布",
+  "name": "动态支持视频发布",
+  "module": "动态",
+  "manualCaseUrl": "https://alidocs.dingtalk.com/i/nodes/N7dx2rn0JbZQqA9ACQgRM0D3JMGjLRb3",
+  "manualCaseSheet": "动态支持发布视频",
+  "prdRef": "https://alidocs.dingtalk.com/i/nodes/NZQYprEoWoe2owrwTrjwQnmZJ1waOeDk",
+  "prdLocal": "documents/moments/video.md",
+  "totalPoints": 115,
+  "summary": {
+    "byPriority": {
+      "P1": 37,
+      "P3": 17,
+      "P2": 50,
+      "P0": 1,
+      "P4": 10
+    },
+    "byAutomationStatus": {
+      "auto": 2,
+      "manual": 86,
+      "semi": 17,
+      "blocked": 10
+    },
+    "autoLinked": 14
+  },
+  "cases": [
+    {
+      "seq": 1,
+      "secondaryModule": "在动态编辑页，点击“+”上传按钮",
+      "expect": "唤起底部菜单：相册、拍照、取消",
+      "priority": "P1",
+      "automationStatus": "auto",
+      "autoCaseId": "P1-动态-打开发布页",
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 2,
+      "secondaryModule": "在动态编辑页，点击“+”上传按钮",
+      "expect": "首次点击相册按钮唤起权限弹窗",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 3,
+      "secondaryModule": "权限弹窗",
+      "expect": "完全访问，正常跳转相册",
+      "priority": "P3",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 4,
+      "secondaryModule": "权限弹窗",
+      "expect": "设置页关闭权限，点相册唤起app申请弹窗",
+      "priority": "P3",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 5,
+      "secondaryModule": "权限弹窗",
+      "expect": "限制访问，正常跳转系统相册",
+      "priority": "P3",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 6,
+      "secondaryModule": "权限弹窗",
+      "expect": "可点选系统相册视频/照片，确认后跳转",
+      "priority": "P3",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 7,
+      "secondaryModule": "权限弹窗",
+      "expect": "设置页关闭权限，点相册弹申请弹窗",
+      "priority": "P3",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 8,
+      "secondaryModule": "权限弹窗",
+      "expect": "拒绝访问，无法跳转，弹弹窗",
+      "priority": "P3",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 9,
+      "secondaryModule": "权限弹窗",
+      "expect": "“取消”正常关闭，再次点击唤起申请弹窗",
+      "priority": "P3",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 10,
+      "secondaryModule": "权限弹窗",
+      "expect": "“确认”正常跳转，无操作返回点击 唤起申请弹窗",
+      "priority": "P3",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 11,
+      "secondaryModule": "权限弹窗",
+      "expect": "“确认”正常跳转，开权限后返回点击 跳转相册",
+      "priority": "P3",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 12,
+      "secondaryModule": "相册",
+      "expect": "ios最近项目、个人收藏、自拍等均展示视频",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": null,
+      "ios": "pass"
+    },
+    {
+      "seq": 13,
+      "secondaryModule": "相册",
+      "expect": "安卓所有图片等均展示视频",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": null
+    },
+    {
+      "seq": 14,
+      "secondaryModule": "相册",
+      "expect": "无视频/照片时，展示正常",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 15,
+      "secondaryModule": "相册",
+      "expect": "有视频/照片时，不足一页展示正常 翻页正常",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 16,
+      "secondaryModule": "相册",
+      "expect": "照片展示选中框，点击照片可预览",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 17,
+      "secondaryModule": "相册",
+      "expect": "视频展示预览图、时长",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 18,
+      "secondaryModule": "相册",
+      "expect": "视频无选中框，点击视频可预览",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 19,
+      "secondaryModule": "相册",
+      "expect": "低于2秒超出1分钟的视频不展示",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 20,
+      "secondaryModule": "相册",
+      "expect": "大于等于2秒 小于等于1分钟的视频展示",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 21,
+      "secondaryModule": "相册",
+      "expect": "顶部增加“视频”选项",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 22,
+      "secondaryModule": "相册",
+      "expect": "点击按钮可展开所有选项，视频选项栏图、标题、数量展示正确",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 23,
+      "secondaryModule": "相册",
+      "expect": "切换到视频选项，顶部标题变更正确",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 24,
+      "secondaryModule": "相册",
+      "expect": "选项频繁切换无异常",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 25,
+      "secondaryModule": "相册",
+      "expect": "纯照片的选项中，不包含视频",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 26,
+      "secondaryModule": "相册",
+      "expect": "无视频时，展示空页面",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": null
+    },
+    {
+      "seq": 27,
+      "secondaryModule": "相册",
+      "expect": "有视频时，展示视频，由近到远排序",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 28,
+      "secondaryModule": "相册",
+      "expect": "视频可翻页时展示正常，无重复",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 29,
+      "secondaryModule": "相册",
+      "expect": "低于2秒超出1分钟的视频不展示",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 30,
+      "secondaryModule": "相册",
+      "expect": "大于等于2秒 小于等于1分钟的视频展示",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 31,
+      "secondaryModule": "相册",
+      "expect": "切换到视频选项，关闭再次进入默认“最近项目”",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 32,
+      "secondaryModule": "相册中--预览",
+      "expect": "点击视频/照片跳转预览页面",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 33,
+      "secondaryModule": "相册中--预览",
+      "expect": "照片预览展示内容：照片、返回按钮、点选按钮、已选择按钮(已有功能回测)",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 34,
+      "secondaryModule": "相册中--预览",
+      "expect": "视频预览展示内容：视频、返回按钮、确认按钮",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 35,
+      "secondaryModule": "相册中--预览",
+      "expect": "视频跳转预览页，自动播放视频",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 36,
+      "secondaryModule": "相册中--预览",
+      "expect": "播放视频，点击任意区域暂停播放视频",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 37,
+      "secondaryModule": "相册中--预览",
+      "expect": "暂停视频，点击任意区域继续播放视频",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 38,
+      "secondaryModule": "相册中--预览",
+      "expect": "频繁点击，视频播放无异常",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 39,
+      "secondaryModule": "相册中--预览",
+      "expect": "视频播放结束后，暂停播放 不会重复播放",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 40,
+      "secondaryModule": "相册中--预览",
+      "expect": "相册预览不展示进度条",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 41,
+      "secondaryModule": "相册中--预览",
+      "expect": "视频播放时，弱网等情况下，屏幕中间会有个loading状态",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 42,
+      "secondaryModule": "相册中--预览",
+      "expect": "带有声音的视频，播放视频的声音",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 43,
+      "secondaryModule": "相册中--预览",
+      "expect": "声音可通过音量键调整大小",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 44,
+      "secondaryModule": "相册中--预览",
+      "expect": "视频清晰度确认：与相册原视频相比，不模糊、播放不卡顿",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 45,
+      "secondaryModule": "选中",
+      "expect": "在相册页面先点选一张照片，再选择视频时，视频置灰，toast提示：不可以同时选择照片和视频---换提示",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 46,
+      "secondaryModule": "选中",
+      "expect": "反之，先选择一个视频，再选择一张照片时，照片置灰，也toast提示：不可以同时选择照片和视频",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": null,
+      "ios": null
+    },
+    {
+      "seq": 47,
+      "secondaryModule": "选中",
+      "expect": "选择照片后取消，再次点击视频，进入视频预览页面",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 48,
+      "secondaryModule": "选中",
+      "expect": "在视频预览页面点击返回按钮，则返回之前的照片选取页面，默认不选择该视频，可继续浏览选择其他视频",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 49,
+      "secondaryModule": "选中",
+      "expect": "在视频预览页面选择“确认”进入动态编辑页",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 50,
+      "secondaryModule": "选中",
+      "expect": "确认编辑页添加的该视频为自己选择的视频，时长跟原视频时长一致",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 51,
+      "secondaryModule": "选中",
+      "expect": "选择视频返回编辑页后，编辑页不再不展示上传按钮",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 52,
+      "secondaryModule": "选中",
+      "expect": "相册页面选中一张照片，点击确认返回编辑页，可继续点击“+”添加照片，最多添加9张照片",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 53,
+      "secondaryModule": "选中",
+      "expect": "已添加一张照片后，再次点击“+”进入相册，此时不可选择视频，视频置灰，点击视频toast提示：不可以同时选择照片和视频（iOS直接不展示视频）",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 54,
+      "secondaryModule": "选中",
+      "expect": "用户在视频预览页时，去相册删除了该视频，返回app点确认toast提示“media not available”，并返回照片选取页面，不在展示该视频-----安卓只有在发布时拦截，iOS删除后还是能发布",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 55,
+      "secondaryModule": "选中",
+      "expect": "在视频选项下，录制了一个新视频 返回app要展示最新视频，看实现",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 56,
+      "secondaryModule": "选取视频返回编辑页",
+      "expect": "视频预览图上展示播放按钮，点击播放按钮进入全屏播放视频",
+      "priority": "P1",
+      "automationStatus": "semi",
+      "autoCaseId": "P0-动态-发布视频动态",
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 57,
+      "secondaryModule": "选取视频返回编辑页",
+      "expect": "预览图的右下角展示视频时长，时长与选择时的时长一致",
+      "priority": "P1",
+      "automationStatus": "semi",
+      "autoCaseId": "P0-动态-发布视频动态",
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 58,
+      "secondaryModule": "选取视频返回编辑页",
+      "expect": "预览图对比原图，要清晰 不模糊，展示完整",
+      "priority": "P1",
+      "automationStatus": "semi",
+      "autoCaseId": "P0-动态-发布视频动态",
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 59,
+      "secondaryModule": "选取视频返回编辑页",
+      "expect": "全屏预览页左上角返回按钮，点击返回动态编辑页",
+      "priority": "P1",
+      "automationStatus": "semi",
+      "autoCaseId": "P0-动态-发布视频动态",
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 60,
+      "secondaryModule": "选取视频返回编辑页",
+      "expect": "在编辑页，用户压后台去删除视频，再返回app点击发布，toast提示“media not available”，不会发布停留在编辑页，被删除的视频还在展示---安卓发布拦截，iOS直接发布成功",
+      "priority": "P1",
+      "automationStatus": "semi",
+      "autoCaseId": "P0-动态-发布视频动态",
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 61,
+      "secondaryModule": "选取视频返回编辑页",
+      "expect": "视频预览图右上角展示“x”按钮",
+      "priority": "P1",
+      "automationStatus": "semi",
+      "autoCaseId": "P0-动态-发布视频动态",
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 62,
+      "secondaryModule": "选取视频返回编辑页",
+      "expect": "点击x删除视频，并重新显示添加照片视频按钮入口，可重新添加照片或者视频",
+      "priority": "P1",
+      "automationStatus": "semi",
+      "autoCaseId": "P0-动态-发布视频动态",
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 63,
+      "secondaryModule": "选取视频返回编辑页",
+      "expect": "发布视频时也可选择仅好友可见",
+      "priority": "P1",
+      "automationStatus": "semi",
+      "autoCaseId": "P0-动态-发布视频动态",
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 64,
+      "secondaryModule": "选取视频返回编辑页",
+      "expect": "发布视频时也可添加语音房",
+      "priority": "P1",
+      "automationStatus": "semi",
+      "autoCaseId": "P0-动态-发布视频动态",
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 65,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "视频预览图上增加播放键",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 66,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "点击视频整体，包括播放键，进入视频全屏页面，视频自动播放",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 67,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "播放一半返回关闭视频，再次点击视频，视频从头播放",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 68,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "视频清晰度确认：与原视频相比，不模糊、播放不卡顿",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 69,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "有声音的视频，播放声音",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 70,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "视频播放过程中，底部播放进度条进度正确，可手动拖动进程",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 71,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "视频播放时，弱网等情况下，屏幕中间会有个loading状态",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 72,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "点击返回按钮，关闭视频全屏，返回动态列表，需要定位在该视屏动态处",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 73,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "点击该条动态卡片除视频以外的位置进入动态详情页",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 74,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "详情页内视频预览图上增加播放键（同列表页）",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 75,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "点击视频整体，包括播放键，进入视频全屏页面，视频自动播放（同列表页）",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 76,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "播放一半返回关闭视频，再次点击视频，视频从头播放（同列表页）",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 77,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "点击返回按钮，关闭视频全屏，返回动态详情页",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 78,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "冲突处理1：用户在语音房间内小窗（麦上&麦下），点击播放视频，不支持全屏观看且toast“In a voice room, cannot view video”",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 79,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "冲突处理2：用户正在1v1语音通话中，点击播放视频，拦截提示",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 80,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "冲突处理3：用户在其他app使用媒体相关，打开本app的视频，不影响查看--看实现",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": null,
+      "ios": null
+    },
+    {
+      "seq": 81,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "可发布纯视频动态",
+      "priority": "P0",
+      "automationStatus": "auto",
+      "autoCaseId": "P0-动态-发布视频动态",
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 82,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "文字+视频动态",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 83,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "文字+视频+语音房动态",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 84,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "视频+语音房动态",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 85,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "列表滑动，翻页，视频动态不重复，视频翻页后预览正常",
+      "priority": "P1",
+      "automationStatus": "semi",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 86,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "视频动态可关注",
+      "priority": "P1",
+      "automationStatus": "semi",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 87,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "视频动态可点赞",
+      "priority": "P1",
+      "automationStatus": "semi",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 88,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "视频动态可评论",
+      "priority": "P1",
+      "automationStatus": "semi",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 89,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "关注列表视频相关回测",
+      "priority": "P1",
+      "automationStatus": "semi",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 90,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "个人动态列表视频相关回测",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 91,
+      "secondaryModule": "发布页浏览：推荐列表、关注列表、个人动态列表、他人动态列表",
+      "expect": "他人动态列表视屏相关回测",
+      "priority": "P1",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 92,
+      "secondaryModule": "互动通知",
+      "expect": "视频动态被点赞、评论后，查看互动通知收到的消息，视频缩略图展示播放按钮",
+      "priority": "P2",
+      "automationStatus": "semi",
+      "autoCaseId": "P1-动态-互动通知入口",
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 93,
+      "secondaryModule": "互动通知",
+      "expect": "点击视频缩略图，进入视频动态详情页",
+      "priority": "P2",
+      "automationStatus": "semi",
+      "autoCaseId": "P1-动态-互动通知入口",
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 94,
+      "secondaryModule": "互动通知",
+      "expect": "查看视频等操作，同视频动态详情页",
+      "priority": "P2",
+      "automationStatus": "semi",
+      "autoCaseId": "P1-动态-互动通知入口",
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 95,
+      "secondaryModule": "游戏帧-用户推荐",
+      "expect": "若推荐的用户有视频动态，则展示视频缩略图？图片上有个播放按钮？",
+      "priority": "P3",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 96,
+      "secondaryModule": "游戏帧-今日缘分",
+      "expect": "若推荐的用户有视频动态，则展示视频缩略图？图片上有个播放按钮？",
+      "priority": "P3",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 97,
+      "secondaryModule": "1v1动态推荐",
+      "expect": "关注面板上，该用户有视频动态，则展示视频缩略图？图片上有个播放按钮？",
+      "priority": "P3",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 98,
+      "secondaryModule": "个人主页",
+      "expect": "展示视频缩略图",
+      "priority": "P3",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 99,
+      "secondaryModule": "他人主页",
+      "expect": "展示视频缩略图",
+      "priority": "P3",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 100,
+      "secondaryModule": "push通知",
+      "expect": "带视频小缩略图的",
+      "priority": "P3",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": null,
+      "ios": null
+    },
+    {
+      "seq": 101,
+      "secondaryModule": "异常",
+      "expect": "支持的视频格式有哪些：MP4、MKV、mov等（1v1支持的都支持）",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 102,
+      "secondaryModule": "异常",
+      "expect": "视频发布失败，返回页面可重新发布",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 103,
+      "secondaryModule": "异常",
+      "expect": "视频较大时，或弱网时，发布视频时间较长，发布中状态无异常，不能继续发动态，需要等发布结束",
+      "priority": "P2",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 104,
+      "secondaryModule": "老版本不支持视频",
+      "expect": "在老版本上看到新版本发布的视频动态，动态视频展示一个特殊封面，封面上展示让用户升级版本的文案，见设计稿",
+      "priority": "P4",
+      "automationStatus": "blocked",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 105,
+      "secondaryModule": "老版本不支持视频",
+      "expect": "图片能点击查看，查看大图",
+      "priority": "P4",
+      "automationStatus": "blocked",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 106,
+      "secondaryModule": "老版本不支持视频",
+      "expect": "详情页展示同列表页",
+      "priority": "P4",
+      "automationStatus": "blocked",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 107,
+      "secondaryModule": "老版本不支持视频",
+      "expect": "个人他人页展示缩略图，带文字",
+      "priority": "P4",
+      "automationStatus": "blocked",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 108,
+      "secondaryModule": "老版本不支持视频",
+      "expect": "游戏帧可查看缩略图的地方，都展示一个小缩略图加升级版本的文字",
+      "priority": "P4",
+      "automationStatus": "blocked",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 109,
+      "secondaryModule": "老版本不支持视频",
+      "expect": "push",
+      "priority": "P4",
+      "automationStatus": "blocked",
+      "autoCaseId": null,
+      "android": null,
+      "ios": null
+    },
+    {
+      "seq": 110,
+      "secondaryModule": "老版本不支持视频",
+      "expect": "互动通知",
+      "priority": "P4",
+      "automationStatus": "blocked",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 111,
+      "secondaryModule": "发布一个敏感视频",
+      "expect": "审核不通过后，也只仅自己可见，一直在",
+      "priority": "P4",
+      "automationStatus": "blocked",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 112,
+      "secondaryModule": "发布一个敏感视频",
+      "expect": "违规提醒",
+      "priority": "P4",
+      "automationStatus": "blocked",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 113,
+      "secondaryModule": "可删除视频动态",
+      "expect": "有违规提醒",
+      "priority": "P3",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 114,
+      "secondaryModule": "管理员动态列表",
+      "expect": "怎么将带图片或视频的动态弄进超管的审核列表？",
+      "priority": "P4",
+      "automationStatus": "blocked",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    },
+    {
+      "seq": 115,
+      "secondaryModule": "1v1",
+      "expect": "查看互发视频，正确播放",
+      "priority": "P3",
+      "automationStatus": "manual",
+      "autoCaseId": null,
+      "android": "pass",
+      "ios": "pass"
+    }
+  ],
+  "folder": "动态支持视频发布"
+}

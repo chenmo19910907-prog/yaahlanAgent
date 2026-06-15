@@ -1,0 +1,41 @@
+{
+  "version": 3,
+  "description": "自动化用例根索引；每个需求独立文件夹，内含 catalog / registry / cases",
+  "requirements": [
+    {
+      "id": "req-注册登录",
+      "folder": "注册登录",
+      "name": "注册登录",
+      "module": "注册登录"
+    },
+    {
+      "id": "req-动态-基础",
+      "folder": "动态-基础",
+      "name": "动态基础能力",
+      "module": "动态",
+      "prdLocal": "documents/moments/basic module.md"
+    },
+    {
+      "id": "req-动态支持视频发布",
+      "folder": "动态支持视频发布",
+      "name": "动态支持视频发布",
+      "module": "动态",
+      "prdRef": "https://alidocs.dingtalk.com/i/nodes/NZQYprEoWoe2owrwTrjwQnmZJ1waOeDk",
+      "manualCaseUrl": "https://alidocs.dingtalk.com/i/nodes/N7dx2rn0JbZQqA9ACQgRM0D3JMGjLRb3",
+      "manualCaseSheet": "动态支持发布视频",
+      "registry": "registry.json"
+    }
+  ],
+  "suites": [
+    {
+      "id": "p0-动态",
+      "name": "P0 动态（跨需求冒烟）",
+      "module": "动态",
+      "priority": "P0",
+      "cases": [
+        "P0-动态-发布纯文本动态",
+        "P0-动态-发布视频动态"
+      ]
+    }
+  ]
+}

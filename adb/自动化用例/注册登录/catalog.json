@@ -1,0 +1,18 @@
+{
+  "requirementId": "req-注册登录",
+  "folder": "注册登录",
+  "name": "注册登录",
+  "module": "注册登录",
+  "suites": [
+    {
+      "id": "p0-注册登录",
+      "name": "P0 注册登录",
+      "module": "注册登录",
+      "priority": "P0",
+      "requirementId": "req-注册登录",
+      "cases": [
+        "P0-注册登录-手机号登录"
+      ]
+    }
+  ]
+}

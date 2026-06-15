@@ -1,0 +1,45 @@
+{
+  "id": "P2-动态-关注Tab浏览",
+  "priority": "P2",
+  "name": "动态关注 Tab 浏览",
+  "module": "动态",
+  "source": {
+    "scenarioRef": "动态帧浏览 · 切换关注 Tab 查看列表（视频动态缩略图/播放键截图复核）",
+    "requirementId": "req-动态支持视频发布",
+    "prdRef": "https://alidocs.dingtalk.com/i/nodes/NZQYprEoWoe2owrwTrjwQnmZJ1waOeDk",
+    "prdLocal": "documents/moments/video.md"
+  },
+  "account": {
+    "alias": "familyLeader",
+    "precondition": "设备已登录"
+  },
+  "operationFlowDoc": [
+    "1. 冷启动回首页",
+    "2. 切动态底栏 → 切换关注 Tab"
+  ],
+  "operations": [
+    {
+      "step": 1,
+      "description": "冷启动回首页",
+      "action": "macro",
+      "script": "冷启动回首页"
+    },
+    {
+      "step": 2,
+      "description": "切换动态关注 tab",
+      "action": "macro",
+      "script": "切换动态关注tab"
+    }
+  ],
+  "verifyPoints": [
+    {
+      "id": "VP-SCREENSHOT",
+      "name": "关注列表截图",
+      "method": "screenshot",
+      "captureFresh": true,
+      "required": true
+    }
+  ],
+  "stopOnFailure": true,
+  "skipVerifyOnFailure": true
+}

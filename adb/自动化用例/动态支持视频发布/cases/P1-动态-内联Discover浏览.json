@@ -1,0 +1,66 @@
+{
+  "id": "P1-动态-内联Discover浏览",
+  "priority": "P1",
+  "name": "内联步骤浏览 Discover 列表",
+  "module": "动态",
+  "source": {
+    "scenarioRef": "纯内联 steps · 不切命名片段；Moment → Discover Tab",
+    "requirementId": "req-动态支持视频发布",
+    "prdRef": "https://alidocs.dingtalk.com/i/nodes/NZQYprEoWoe2owrwTrjwQnmZJ1waOeDk"
+  },
+  "account": {
+    "alias": "familyLeader",
+    "precondition": "设备已登录"
+  },
+  "operationFlowDoc": [
+    "1. 冷启动回首页",
+    "2. 内联：Moment 底栏 → Discover Tab"
+  ],
+  "operations": [
+    {
+      "step": 1,
+      "description": "冷启动回首页",
+      "action": "macro",
+      "script": "冷启动回首页"
+    },
+    {
+      "step": 2,
+      "description": "内联浏览 Discover",
+      "action": "steps",
+      "capture": "end",
+      "steps": [
+        {
+          "tap_pct": [
+            0.7,
+            0.956
+          ],
+          "note": "Moment"
+        },
+        {
+          "sleep_ms": 500
+        },
+        {
+          "tap_pct": [
+            0.119,
+            0.087
+          ],
+          "note": "Discover Tab"
+        },
+        {
+          "sleep_ms": 800
+        }
+      ]
+    }
+  ],
+  "verifyPoints": [
+    {
+      "id": "VP-SCREENSHOT",
+      "name": "Discover 列表截图",
+      "method": "screenshot",
+      "captureFresh": true,
+      "required": true
+    }
+  ],
+  "stopOnFailure": true,
+  "skipVerifyOnFailure": true
+}

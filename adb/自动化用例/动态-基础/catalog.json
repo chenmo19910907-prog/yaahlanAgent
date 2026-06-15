@@ -1,0 +1,18 @@
+{
+  "requirementId": "req-动态-基础",
+  "folder": "动态-基础",
+  "name": "动态基础能力",
+  "module": "动态",
+  "suites": [
+    {
+      "id": "p0-动态-基础",
+      "name": "P0 动态基础",
+      "module": "动态",
+      "priority": "P0",
+      "requirementId": "req-动态-基础",
+      "cases": [
+        "P0-动态-发布纯文本动态"
+      ]
+    }
+  ]
+}

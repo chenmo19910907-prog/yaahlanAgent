@@ -1,0 +1,83 @@
+{
+  "id": "P0-动态-发布视频动态",
+  "priority": "P0",
+  "name": "发布纯视频动态成功",
+  "module": "动态",
+  "source": {
+    "manualCaseRef": "动态支持发布视频 / 可发布纯视频动态；选取视频→确认→Post 主链路",
+    "manualCaseUrl": "https://alidocs.dingtalk.com/i/nodes/N7dx2rn0JbZQqA9ACQgRM0D3JMGjLRb3",
+    "manualCaseSheet": "动态支持发布视频",
+    "prdRef": "https://alidocs.dingtalk.com/i/nodes/NZQYprEoWoe2owrwTrjwQnmZJ1waOeDk",
+    "prdTitle": "Yaahlan-2.3.6 版本需求 · 动态支持发布视频",
+    "prdLocal": "documents/moments/video.md"
+  },
+  "account": {
+    "alias": "familyLeader",
+    "precondition": "设备已登录 familyLeader（或先跑 P0-注册登录-手机号登录）；相册有 2s～1min 测试视频；adb devices=device"
+  },
+  "operationFlowDoc": [
+    "1. 检查 familyLeader 账号状态（可选）",
+    "2. 冷启动回首页（已登录态）",
+    "3. 切动态底栏 → 打开发布页 → 相册 → 选视频 → 预览 Confirm → Post",
+    "5. 等待视频上传与发布完成（片段内约 18s）",
+    "6. Tunnel 验收 feed 写接口 response.ec=200",
+    "7. 留存发布后截图"
+  ],
+  "testPoints": [
+    {
+      "id": "TP-MAIN",
+      "name": "可发布纯视频动态",
+      "manualExpect": "发布成功，动态出现在推荐/关注列表（本自动化以 feed 接口成功为准）",
+      "verifyMethod": "tunnel"
+    },
+    {
+      "id": "TP-EDIT",
+      "name": "选取视频返回编辑页",
+      "manualExpect": "编辑页展示所选视频预览与时长",
+      "verifyMethod": "screenshot",
+      "note": "由 macro 步骤覆盖，报告留存截图人工复核"
+    }
+  ],
+  "operations": [
+    {
+      "step": 1,
+      "description": "检查 familyLeader 账号状态（已占用也继续，后续登录 macro 会处理）",
+      "action": "account_check",
+      "account": "familyLeader",
+      "sinceSeconds": 300,
+      "optional": true
+    },
+    {
+      "step": 2,
+      "description": "冷启动回首页（须已登录 familyLeader）",
+      "action": "macro",
+      "script": "冷启动回首页"
+    },
+    {
+      "step": 3,
+      "description": "发布视频动态（相册选片→确认→Post；抓包在验收点统一等待）",
+      "action": "macro",
+      "script": "发布视频动态"
+    }
+  ],
+  "verifyPoints": [
+    {
+      "id": "VP-TUNNEL-FEED",
+      "name": "动态发布 feed 接口成功",
+      "method": "tunnel",
+      "account": "familyLeader",
+      "keyword": "feed/publish",
+      "expectEc": 200,
+      "waitSeconds": 60
+    },
+    {
+      "id": "VP-SCREENSHOT",
+      "name": "留存发布后截图",
+      "method": "screenshot",
+      "captureFresh": true,
+      "required": true
+    }
+  ],
+  "stopOnFailure": true,
+  "skipVerifyOnFailure": true
+}

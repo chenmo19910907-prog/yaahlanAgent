@@ -100,6 +100,10 @@
     "loginType": "MOBILE",
     "areaCode": "86"
   },
+  "user_prop_query": {
+    "appId": 2005,
+    "lang": "en"
+  },
   "custom_gift_rank": {
     "defaultUserId": "100493343",
     "defaultPeriod": "PRE",
@@ -135,6 +139,7 @@
     "signKey": "76b26f6deb1e4851b728e3b0770629db",
     "realFee": "0",
     "expireSeconds": 86339,
+    "sendDefaultBaseProductId": "2005001494",
     "giftDetails": [
       {"baseProductId": "2005001272", "productNum": 100},
       {"baseProductId": "2005001282", "productNum": 100}

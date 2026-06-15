@@ -29,9 +29,11 @@ from .flows import (
     run_family_fund_reward_setup,
     run_id_auth_fix_failure,
 )
+from .package_gift import run_package_gift_send
 from .time_utils import resolve_family_fund_week_key
 from .user_area import USER_AREA_CODES
 from .user_login import normalize_mobile_login, parse_login_status_summary
+from .user_prop import parse_user_prop_summary
 from .vip import parse_vip_info_summary
 from .payload import load_payload
 
@@ -160,6 +162,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--id-auth-delete-user-id", help="清除用户认证信息")
     parser.add_argument("--id-auth-fix-failure-user-id", help="解决认证失败（清 reason 关联账号）")
 
+    parser.add_argument("--user-prop-query-user-id", help="查询用户拥有装扮 userId（queryOwnPropList）")
+    parser.add_argument("--user-prop-type-code", help="装扮 propTypeCode，如 10144=资料页背景")
+    parser.add_argument("--user-prop-lang", default="en", help="queryOwnPropList lang（默认 en）")
+    parser.add_argument("--user-prop-app-id", type=int, help="queryOwnPropList appId（默认 2005）")
+    parser.add_argument(
+        "--user-prop-output",
+        choices=["summary", "json"],
+        default="summary",
+        help="装扮查询输出格式：summary=摘要（默认）；json=完整响应 JSON",
+    )
+
     parser.add_argument("--diamond-user-id", help="发放钻石 userId")
     parser.add_argument("--diamond-num", type=int, help="发放钻石数量")
     parser.add_argument("--diamond-query-user-id", help="查询用户钻石余额 userId（queryUserAccount）")
@@ -197,9 +210,34 @@ def build_parser() -> argparse.ArgumentParser:
         default="summary",
         help="钻石查询输出格式：summary=摘要（默认）；json=完整响应 JSON",
     )
-    parser.add_argument("--package-gift-user-id", help="下发背包礼物 userId")
-    parser.add_argument("--package-gift-num", type=int, help="每种礼物 productNum")
-    parser.add_argument("--package-gift-give-user-id", help="giveUserId")
+    parser.add_argument("--package-gift-user-id", help="背包礼物 userId（下发）或送礼方（--package-gift-send）")
+    parser.add_argument("--package-gift-num", type=int, help="每种礼物 productNum（默认 1）")
+    parser.add_argument("--package-gift-give-user-id", help="giveUserId（addPackageGift 可选）")
+    parser.add_argument(
+        "--package-gift-send",
+        action="store_true",
+        help="背包礼物流程：默认 addPackageGift + sendMiddlePackageGift，但 success 以真实到账为准（见 --package-gift-add-only）",
+    )
+    parser.add_argument(
+        "--package-gift-add-only",
+        action="store_true",
+        help="仅 addPackageGift 下发到送礼方背包（MOA 可稳定完成的部分）",
+    )
+    parser.add_argument(
+        "--package-gift-accept-moa-send",
+        action="store_true",
+        help="信任 sendMiddlePackageGift 的 result=true（不推荐；通常未触发 v2/gift/send）",
+    )
+    parser.add_argument("--package-gift-to-user-id", help="背包送礼收礼方 userId")
+    parser.add_argument(
+        "--package-gift-base-id",
+        help="背包礼物 baseProductId（默认 config package_gift.sendDefaultBaseProductId=2005001494 Chocolate 99钻）",
+    )
+    parser.add_argument(
+        "--package-gift-skip-add",
+        action="store_true",
+        help="背包送礼时跳过 addPackageGift（送礼方背包已有该礼物时使用）",
+    )
 
     parser.add_argument(
         "--room-set-level-room-id",
@@ -240,6 +278,7 @@ def build_parser() -> argparse.ArgumentParser:
         choices=sorted(USER_AREA_CODES),
         help="CP摩天轮大区（distributeCpFerrisWheelBonusDiamonds / calculateAndDistributeCpFerrisWheelWeekPrize；仅 params[0]）",
     )
+
     return parser
 
 
@@ -326,6 +365,19 @@ def _print_response(args: argparse.Namespace, resp: dict[str, object]) -> None:
 
     if args.id_auth_user_id is not None and args.id_auth_output == "latest-reason":
         _print_id_auth_latest_reason(resp)
+        return
+
+    if args.user_prop_query_user_id is not None and args.user_prop_output == "summary":
+        inner_ec, inner_em, inner_result = extract_inner_result(resp)
+        if inner_ec != 0:
+            print(f"业务返回失败: ec={inner_ec}, em={inner_em}", file=sys.stderr)
+            raise SystemExit(4)
+        summary = parse_user_prop_summary(
+            args.user_prop_query_user_id,
+            args.user_prop_type_code or "",
+            inner_result,
+        )
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
         return
 
     if args.diamond_query_user_id is not None and args.diamond_output == "summary":
@@ -417,6 +469,7 @@ def main() -> int:
     load_local_env(base_dir)
 
     args = build_parser().parse_args()
+
     if not args.entry_url:
         print("缺少入口 URL：请传 --entry-url 或设置环境变量 MOA_ENTRY_URL", file=sys.stderr)
         return 2
@@ -428,6 +481,9 @@ def main() -> int:
     client = MoaClient(args.entry_url, args.cookie, args.timeout_ms)
 
     try:
+        if args.package_gift_send:
+            return run_package_gift_send(args, client)
+
         if args.id_auth_fix_failure_user_id is not None and args.expr is None:
             return run_id_auth_fix_failure(args, client)
 

@@ -638,6 +638,73 @@ def build_parser() -> argparse.ArgumentParser:
         help="最多点击切换次数，默认 3",
     )
 
+    p_autotest = sub.add_parser(
+        "autotest",
+        help="自动化用例：按需求/等级生成、执行、输出测试报告（JSON+HTML）",
+    )
+    autotest_sub = p_autotest.add_subparsers(dest="autotest_command", required=True)
+    p_autotest_list = autotest_sub.add_parser("list", help="列出套件、需求或用例")
+    p_autotest_list.add_argument("--suite", help="仅列出某套件内 cases")
+    p_autotest_list.add_argument("--requirement", help="按需求 id 筛选，如 req-动态支持视频发布")
+    p_autotest_list.add_argument(
+        "--priority",
+        help="按等级筛选，逗号分隔，如 P0,P1",
+    )
+    p_autotest_map = autotest_sub.add_parser("map", help="查看需求全量测试点映射（含手工项）")
+    p_autotest_map.add_argument(
+        "--requirement",
+        required=True,
+        help="需求 id，如 req-动态支持视频发布",
+    )
+    p_autotest_map.add_argument("--priority", help="仅显示指定等级，如 P0,P1")
+    p_autotest_show = autotest_sub.add_parser("show", help="查看用例 JSON")
+    p_autotest_show.add_argument("--case", required=True, help="用例 id")
+    p_autotest_run = autotest_sub.add_parser("run", help="执行用例、套件或需求并生成报告")
+    run_target = p_autotest_run.add_mutually_exclusive_group(required=True)
+    run_target.add_argument("--case", help="执行单条用例 id")
+    run_target.add_argument("--suite", help="执行 catalog 套件 id")
+    run_target.add_argument(
+        "--requirement",
+        help="执行某需求下已登记的自动化用例（可配合 --priority）",
+    )
+    p_autotest_run.add_argument(
+        "--priority",
+        help="与 --requirement 联用，仅执行指定等级套件",
+    )
+    p_autotest_run.add_argument("--prd-ref", default="", help="写入报告 meta 的 PRD 引用")
+    p_autotest_run.add_argument(
+        "--force-script",
+        action="store_true",
+        help="允许 aiOperateModules 片段（调试用）",
+    )
+    p_autotest_report = autotest_sub.add_parser("report", help="查看测试报告")
+    p_autotest_report.add_argument("--latest", action="store_true", help="最近一次报告")
+    p_autotest_report.add_argument("--dir", type=Path, help="指定报告目录")
+    p_autotest_gen = autotest_sub.add_parser("generate", help="从信息生成用例 JSON 模板")
+    p_autotest_gen.add_argument("--id", required=True, dest="case_id", help="用例 id")
+    p_autotest_gen.add_argument("--name", required=True, help="用例名称")
+    p_autotest_gen.add_argument("--module", required=True, help="模块名")
+    p_autotest_gen.add_argument("--account", required=True, help="testAccounts 别名")
+    p_autotest_gen.add_argument(
+        "--macros",
+        required=True,
+        help="逗号分隔 macro 片段名，如 启动Yaahlan,手机号登录",
+    )
+    p_autotest_gen.add_argument("--tunnel-keyword", help="抓包 keyword")
+    p_autotest_gen.add_argument("--activity-hint", help="Activity 验收 hint")
+    p_autotest_gen.add_argument("--manual-ref", default="", help="手工用例引用")
+    p_autotest_gen.add_argument("--prd-ref", default="", help="PRD 引用")
+    p_autotest_gen.add_argument("--priority", default="P0", help="用例等级，默认 P0")
+    p_autotest_gen.add_argument(
+        "--requirement",
+        help="写入对应需求文件夹，如 req-动态支持视频发布",
+    )
+    p_autotest_gen.add_argument(
+        "--folder",
+        help="直接指定需求文件夹名，如 动态支持视频发布",
+    )
+    p_autotest_gen.add_argument("--overwrite", action="store_true", help="覆盖已有文件")
+
     p_accounts = sub.add_parser(
         "accounts",
         help="批量账号操作（登录巡检 + 每账号 Tunnel 验收）",
@@ -1289,6 +1356,70 @@ def main(argv: list[str] | None = None) -> int:
                 _emit(out)
                 return 0 if out.get("ok") else 3
             print(f"未知 account 子命令: {args.account_command}", file=sys.stderr)
+            return 2
+
+        if args.command == "autotest":
+            from .autotest.cli import (
+                cmd_generate,
+                cmd_list,
+                cmd_map,
+                cmd_report,
+                cmd_run,
+                cmd_show,
+            )
+
+            if args.autotest_command == "list":
+                return cmd_list(
+                    suite_id=getattr(args, "suite", None),
+                    requirement_id=getattr(args, "requirement", None),
+                    priority=getattr(args, "priority", None),
+                )
+            if args.autotest_command == "map":
+                return cmd_map(
+                    requirement_id=str(args.requirement),
+                    priority=getattr(args, "priority", None),
+                )
+            if args.autotest_command == "show":
+                return cmd_show(case_id=str(args.case))
+            if args.autotest_command == "run":
+                return cmd_run(
+                    case_id=getattr(args, "case", None),
+                    suite_id=getattr(args, "suite", None),
+                    requirement_id=getattr(args, "requirement", None),
+                    priority=getattr(args, "priority", None),
+                    serial=args.serial,
+                    screenshot_dir_arg=args.screenshot_dir,
+                    max_screenshots=args.max_screenshots,
+                    force_script=bool(getattr(args, "force_script", False)),
+                    prd_ref=str(getattr(args, "prd_ref", "") or ""),
+                )
+            if args.autotest_command == "report":
+                return cmd_report(
+                    latest=bool(getattr(args, "latest", False)),
+                    report_dir=getattr(args, "dir", None),
+                )
+            if args.autotest_command == "generate":
+                macros = [
+                    m.strip()
+                    for m in str(args.macros).split(",")
+                    if m.strip()
+                ]
+                return cmd_generate(
+                    case_id=str(args.case_id),
+                    name=str(args.name),
+                    module=str(args.module),
+                    account_alias=str(args.account),
+                    macros=macros,
+                    tunnel_keyword=getattr(args, "tunnel_keyword", None),
+                    activity_hint=getattr(args, "activity_hint", None),
+                    manual_case_ref=str(getattr(args, "manual_ref", "") or ""),
+                    prd_ref=str(getattr(args, "prd_ref", "") or ""),
+                    priority=str(getattr(args, "priority", "P0") or "P0"),
+                    requirement_id=getattr(args, "requirement", None),
+                    folder=getattr(args, "folder", None),
+                    overwrite=bool(getattr(args, "overwrite", False)),
+                )
+            print(f"未知 autotest 子命令: {args.autotest_command}", file=sys.stderr)
             return 2
 
         if args.command == "accounts":

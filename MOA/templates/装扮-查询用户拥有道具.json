@@ -1,0 +1,39 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/mdp-prop/user-prop-api-service-test",
+  "method": "queryOwnPropList",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": {
+        "appId": 2005,
+        "userId": "100465989",
+        "propTypeCode": "10144",
+        "lang": "en"
+      },
+      "json": "{\"appId\":2005,\"userId\":\"100465989\",\"propTypeCode\":\"10144\",\"lang\":\"en\"}",
+      "type": "json",
+      "value": {
+        "appId": 2005,
+        "userId": "100465989",
+        "propTypeCode": "10144",
+        "lang": "en"
+      }
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad"
+}

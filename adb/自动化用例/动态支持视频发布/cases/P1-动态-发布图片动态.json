@@ -1,0 +1,55 @@
+{
+  "id": "P1-动态-发布图片动态",
+  "priority": "P1",
+  "name": "发布单图动态成功",
+  "module": "动态",
+  "source": {
+    "scenarioRef": "媒体发布回归 · 相册选首张图发布（与视频链路共用入口，验证图片路径未破坏）",
+    "requirementId": "req-动态支持视频发布",
+    "prdRef": "https://alidocs.dingtalk.com/i/nodes/NZQYprEoWoe2owrwTrjwQnmZJ1waOeDk",
+    "prdLocal": "documents/moments/video.md"
+  },
+  "account": {
+    "alias": "familyLeader",
+    "precondition": "设备已登录 familyLeader；相册有至少一张图片"
+  },
+  "operationFlowDoc": [
+    "1. 冷启动回首页",
+    "2. Moment → + → 相册选首图 → Select → Post",
+    "3. Tunnel 验收 feed 写接口"
+  ],
+  "operations": [
+    {
+      "step": 1,
+      "description": "冷启动回首页",
+      "action": "macro",
+      "script": "冷启动回首页"
+    },
+    {
+      "step": 2,
+      "description": "发布图片动态",
+      "action": "macro",
+      "script": "发布图片动态"
+    }
+  ],
+  "verifyPoints": [
+    {
+      "id": "VP-TUNNEL-FEED",
+      "name": "动态发布 feed 接口成功",
+      "method": "tunnel",
+      "account": "familyLeader",
+      "keyword": "feed/publish",
+      "expectEc": 200,
+      "waitSeconds": 60
+    },
+    {
+      "id": "VP-SCREENSHOT",
+      "name": "发布后截图",
+      "method": "screenshot",
+      "captureFresh": true,
+      "required": true
+    }
+  ],
+  "stopOnFailure": true,
+  "skipVerifyOnFailure": true
+}

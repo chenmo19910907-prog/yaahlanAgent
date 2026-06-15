@@ -15,6 +15,57 @@
       "command": "python3 Admin/admin_execute.py --query-user-id <userId>"
     },
     {
+      "id": "query_user_history_device_list",
+      "name": "用户-查询历史登录设备",
+      "category": "用户（yaahlan-admin）",
+      "description": "按 userId 查询账号历史登录设备列表（deviceHistory/queryUserHistoryDeviceList；mmuidv3、IP、UA、最近登录时间等）",
+      "prompts": [
+        "查询用户 <userId> 历史登录设备",
+        "查 <userId> 登录过的设备",
+        "用户 <userId> 设备 mmuidv3 列表"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-user-history-devices --history-device-user-id <userId>"
+    },
+    {
+      "id": "query_history_user_list_by_device_id",
+      "name": "用户-查询设备历史登录账号",
+      "category": "用户（yaahlan-admin）",
+      "description": "按 mmuidv3 查询该设备历史登录过的账号列表（deviceHistory/queryHistoryUserListByDeviceId；userId、昵称、是否主播、公会等）",
+      "prompts": [
+        "查询设备 <mmuidv3> 登录过的账号",
+        "查 mmuidv3 <mmuidv3> 历史用户列表",
+        "这台设备登录过哪些 userId"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-device-history-users --history-device-mmuidv3 <mmuidv3>"
+    },
+    {
+      "id": "query_prop_info",
+      "name": "道具-查询配置列表",
+      "category": "道具（mdp-nova / propAdmin）",
+      "description": "查询 Yaahlan 全量装扮/道具后台配置（propAdmin/queryPropInfo；可按 propId、propName、propTypeCode 筛选；与 MOA queryOwnPropList 互补：本接口查配置，MOA 查用户拥有）",
+      "prompts": [
+        "查询道具配置列表",
+        "查道具 propId <propId> 信息",
+        "道具 <propName> 的 propId 是多少",
+        "头框道具配置有哪些",
+        "后台道具 queryPropInfo"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-prop-list --prop-page-no 1 --prop-page-size 20"
+    },
+    {
+      "id": "query_gift_list",
+      "name": "礼物-查询列表",
+      "category": "礼物（mdp-nova / giftAdmin）",
+      "description": "查询 Yaahlan 全量礼物配置（giftAdmin/queryGiftList；可按 baseId、productName、giftType 等筛选；返回 baseId、名称、价格、状态）",
+      "prompts": [
+        "查询礼物列表",
+        "查礼物 baseId <baseId> 信息",
+        "礼物 <productName> 的 baseId 是多少",
+        "后台礼物配置 queryGiftList"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-gift-list --gift-page-no 1 --gift-page-size 20"
+    },
+    {
       "id": "query_custom_gift_list",
       "name": "定制礼物-查询列表",
       "category": "定制礼物（melon-gateway）",

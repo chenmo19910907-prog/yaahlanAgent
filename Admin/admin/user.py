@@ -1,4 +1,4 @@
-"""用户详情解析。"""
+"""用户详情与设备历史解析。"""
 
 from __future__ import annotations
 
@@ -107,3 +107,88 @@ def parse_user_detail_summary(data: Any) -> dict[str, Any]:
         ],
     }
     return summary
+
+
+def _normalize_history_device_row(row: dict[str, Any]) -> dict[str, Any]:
+    item: dict[str, Any] = {}
+    for key in (
+        "mmuidv3",
+        "mmuid",
+        "ip",
+        "ipCountry",
+        "ua",
+        "count",
+        "anchorCount",
+        "userCount",
+        "multiTradeUnion",
+    ):
+        value = row.get(key)
+        if value is not None:
+            item[key] = value
+    create_time = _ms_to_iso(row.get("createTime"))
+    if create_time:
+        item["createTime"] = create_time
+    return item
+
+
+def parse_user_history_device_summary(data: Any) -> dict[str, Any]:
+    if not isinstance(data, dict):
+        raise RuntimeError("无法解析历史设备 data（不是 object）")
+    raw_list = data.get("list")
+    if not isinstance(raw_list, list):
+        raise RuntimeError("无法解析历史设备 list（不是 array）")
+
+    items = [_normalize_history_device_row(row) for row in raw_list if isinstance(row, dict)]
+    return {
+        "total": data.get("total"),
+        "returnedCount": len(items),
+        "items": items,
+    }
+
+
+def _anchor_label(value: Any) -> str | None:
+    if value is None:
+        return None
+    try:
+        return "是" if int(value) == 1 else "否"
+    except (TypeError, ValueError):
+        return str(value)
+
+
+def _normalize_history_user_by_device_row(row: dict[str, Any]) -> dict[str, Any]:
+    item: dict[str, Any] = {}
+    for key in (
+        "userId",
+        "nickName",
+        "vipLevel",
+        "tradeUnionName",
+        "lastPeriodSalary",
+    ):
+        value = row.get(key)
+        if value is not None:
+            item[key] = value
+
+    is_anchor = _anchor_label(row.get("isAnchor"))
+    if is_anchor is not None:
+        item["isAnchor"] = is_anchor
+
+    for time_key in ("createTime", "updateTime", "anchorCreateTime"):
+        iso_time = _ms_to_iso(row.get(time_key))
+        if iso_time:
+            item[time_key] = iso_time
+    return item
+
+
+def parse_history_user_list_by_device_summary(data: Any) -> dict[str, Any]:
+    if not isinstance(data, dict):
+        raise RuntimeError("无法解析设备历史账号 data（不是 object）")
+    raw_list = data.get("list")
+    if not isinstance(raw_list, list):
+        raise RuntimeError("无法解析设备历史账号 list（不是 array）")
+
+    items = [_normalize_history_user_by_device_row(row) for row in raw_list if isinstance(row, dict)]
+    return {
+        "total": data.get("total"),
+        "returnedCount": len(items),
+        "items": items,
+    }
