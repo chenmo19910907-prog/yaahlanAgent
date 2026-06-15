@@ -56,7 +56,8 @@ PARENT_FILES = frozenset(
         "超管.md",
         "游戏.md",
         "公会.md",
-        "榜单与活动.md",
+        "榜单.md",
+        "活动.md",
         "人脸认证.md",
     },
 )
@@ -82,7 +83,8 @@ VIP_EXCLUDE_PARENTS = frozenset(
         "theme_room",
         "game",
         "agency",
-        "rank_activity",
+        "rank",
+        "activity",
         "face_auth",
     }
 )
@@ -317,12 +319,33 @@ def _title_blob(sheet: str, module: str) -> str:
 
 def should_extract_vip(block: CaseBlock) -> bool:
     """仅 Sheet/路径以 VIP 能力为主时拆入 特权VIP.md；合订需求与业务域内 VIP 提及保留父模块。"""
-    parent = csm.classify_target(block)
-    if parent in VIP_EXCLUDE_PARENTS:
-        return False
     sheet = (block.sheet or "").strip()
     module = (block.module or "").strip()
-    if not sheet or VIP_SHEET_WEAK_RE.search(sheet) or SHEET_COMPOSITE_WEAK_RE.search(sheet):
+    if not sheet or SHEET_COMPOSITE_WEAK_RE.search(sheet):
+        return False
+    if VIP_SHEET_WEAK_RE.search(sheet):
+        return False
+    leaf = _sheet_leaf(sheet)
+    # Sheet 名以 VIP 为主体时优先拆出（不受父域 room 等 exclude 影响）
+    if re.match(r"^VIP|^vip", sheet, re.I) or re.match(r"^VIP|^vip", leaf, re.I):
+        return True
+    if VIP_CORE_SHEET_RE.search(sheet) and re.search(r"(?:^|·)VIP|(?:^|·)vip", sheet, re.I):
+        return True
+    if VIP_CORE_SHEET_RE.search(leaf) and re.search(r"VIP|vip", leaf, re.I):
+        return True
+    # 合订 Sheet 下模块名以 VIP 为主体
+    weak_sheet = bool(
+        csm.WEAK_AGGREGATE_SHEET_RE.search(sheet)
+        or csm.WEAK_AGGREGATE_SHEET_RE.search(leaf)
+        or GENERIC_WEAK_LEAF_RE.search(leaf)
+        or leaf in ("优化部分", "优化需求", "优化点", "优化功能", "优化点需求")
+    )
+    if weak_sheet and (
+        re.match(r"^VIP|^vip", module, re.I) or VIP_CORE_SHEET_RE.search(module)
+    ):
+        return True
+    parent = csm.classify_target(block)
+    if parent in VIP_EXCLUDE_PARENTS:
         return False
     if VIP_CORE_SHEET_RE.search(sheet):
         return True
@@ -571,6 +594,8 @@ def normalize_feature_sheet(origin_parent: str, block: CaseBlock, feat: str) -> 
             "消息",
             "礼物",
             "超管",
+            "榜单",
+            "活动",
             "榜单与活动",
             "房间",
             "其他模块",
@@ -610,6 +635,8 @@ def normalize_feature_sheet(origin_parent: str, block: CaseBlock, feat: str) -> 
             "消息",
             "礼物",
             "超管",
+            "榜单",
+            "活动",
             "榜单与活动",
             "房间",
             "其他模块",
@@ -643,6 +670,8 @@ def normalize_feature_sheet(origin_parent: str, block: CaseBlock, feat: str) -> 
             "消息",
             "礼物",
             "超管",
+            "榜单",
+            "活动",
             "榜单与活动",
             "房间",
             "其他模块",
@@ -777,7 +806,8 @@ def main() -> None:
                     "room_pk": "房间PK.md",
                     "game": "游戏.md",
                     "agency": "公会.md",
-                    "rank_activity": "榜单与活动.md",
+                    "rank": "榜单.md",
+                    "activity": "活动.md",
                     "face_auth": "人脸认证.md",
                     "auth_login": AUTH_LOGIN_MD,
                 }

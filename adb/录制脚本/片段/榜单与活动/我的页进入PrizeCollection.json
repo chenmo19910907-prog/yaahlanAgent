@@ -4,7 +4,7 @@
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
   "description": "Me 下滑后 → Prize Collection 卡片 → WebViewActivity",
-  "kbRef": ["testcase-kb/榜单与活动.md（Prize Collection）"],
+  "kbRef": ["testcase-kb/活动.md（Prize Collection）"],
   "steps": [
     { "run_script": "我的页下滑浏览", "note": "露出底部网格" },
     { "tap_pct": [0.257, 0.770], "note": "collection_layout Prize（277,1802）" },

@@ -52,7 +52,8 @@ KB_FILES: Dict[str, str] = {
     "agency": "公会.md",
     "coin": "币商.md",
     "game": "游戏.md",
-    "rank_activity": "榜单与活动.md",
+    "rank": "榜单.md",
+    "activity": "活动.md",
 }
 
 
@@ -257,8 +258,10 @@ def classify_big_module(file_name: str, sheet_title: str, module_name: str, step
         return "coin"
     if has("游戏", "pk", "大冒险", "battle"):
         return "game"
-    if has("榜", "活动", "排名", "排行", "banner"):
-        return "rank_activity"
+    if has("榜", "排名", "排行", "打榜", "揭榜", "荣誉墙"):
+        return "rank"
+    if has("活动", "banner", "摩天轮", "年末盛典"):
+        return "activity"
     return "room"
 
 

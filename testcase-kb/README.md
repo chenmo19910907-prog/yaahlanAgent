@@ -52,7 +52,7 @@ python3 DingTalk/kb_sync_execute.py --no-optimize
 
 本地 xlsx 回退（可选）：`python3 scripts/xlsx_kb_sync.py --file /path/to/2.5.2版本用例.xlsx`
 
-## 文件列表（25 个）
+## 文件列表（26 个）
 
 ### 独立功能（跨模块抽取，强相关才拆出）
 
@@ -92,7 +92,8 @@ python3 DingTalk/kb_sync_execute.py --no-optimize
 | `超管.md` | 超管后台、审核、设备拉黑、工单等 |
 | `游戏.md` | 游戏 |
 | `公会.md` | 公会、公会长、预提等 |
-| `榜单与活动.md` | 榜单与活动 |
+| `榜单.md` | 榜单（全服榜、房间榜、打榜冲刺等） |
+| `活动.md` | 运营活动（节日活动、活动入口、每日任务等） |
 | `人脸认证.md` | 真人认证 |
 | [`测试机.md`](测试机.md) | 团队测试机台账（mmuid/mmuidv3、资产编号、持有人；数据源为 `test_devices.json`） |
 

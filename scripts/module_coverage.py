@@ -44,7 +44,7 @@ def _match_expected(expected: str, modules: set[str]) -> bool:
     for mod in modules:
         if any(kw in mod for kw in ("礼物", "榜单", "房间", "动态", "vip", "公会")):
             for key in keys:
-                if key in ("gift", "rank_activity", "room", "moments", "vip", "agency"):
+                if key in ("gift", "rank", "activity", "room", "moments", "vip", "agency"):
                     return True
     return False
 

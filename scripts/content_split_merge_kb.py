@@ -51,10 +51,17 @@ KB_FILE_NAMES: Dict[str, str] = {
     "agency": "公会.md",
     "coin": "币商.md",
     "game": "游戏.md",
-    "rank_activity": "榜单与活动.md",
+    "rank": "榜单.md",
+    "activity": "活动.md",
 }
 
 DEFAULT_FALLBACK_TARGET = "room"
+
+# 版本合订 xlsx 中 Sheet 名泛化、需靠模块名二次路由
+WEAK_AGGREGATE_SHEET_RE = re.compile(
+    r"^优化(?:部分|需求|点|功能|逻辑)|^未归类需求$|^新增需求$|^优化点需求$",
+    re.I,
+)
 
 def _title_blob(sheet: str, module: str) -> str:
     """Sheet / 子域·Sheet / 模块名合并，用于按标题判定业务域。"""
@@ -62,6 +69,11 @@ def _title_blob(sheet: str, module: str) -> str:
     if "·" in (sheet or ""):
         parts.extend((sheet or "").split("·"))
     return " ".join(p.strip() for p in parts if p.strip())
+
+
+def _sheet_leaf(sheet: str) -> str:
+    parts = [p.strip() for p in (sheet or "").split("·") if p.strip()]
+    return parts[-1] if parts else (sheet or "").strip()
 
 
 # Sheet/模块标题优先（高于正文宽泛关键词，避免混合 xlsx 误划入礼物）
@@ -79,7 +91,7 @@ TITLE_DOMAIN_RULES: List[Tuple[re.Pattern[str], str]] = [
     (re.compile(r"发言飘屏", re.I), "room"),
     (re.compile(r"礼物播放器", re.I), "gift"),
     (re.compile(r"游戏bridge|游戏客服", re.I), "game"),
-    (re.compile(r"活动大入口|内嵌web", re.I), "rank_activity"),
+    (re.compile(r"活动大入口|内嵌web", re.I), "activity"),
     (re.compile(r"房间管理员权限", re.I), "room"),
     (re.compile(r"自定义接收通知", re.I), "message"),
     (re.compile(r"^支付验证|^支付验证重构", re.I), "auth_login"),
@@ -116,7 +128,7 @@ TITLE_DOMAIN_RULES: List[Tuple[re.Pattern[str], str]] = [
     (re.compile(r"改名卡", re.I), "message"),
     (re.compile(r"定制礼物违规|定制礼物", re.I), "gift"),
     (re.compile(r"平台标签调整", re.I), "gift"),
-    (re.compile(r"每日任务改版|每日任务", re.I), "rank_activity"),
+    (re.compile(r"每日任务改版|每日任务", re.I), "activity"),
     (re.compile(r"房间小时榜|房间操作优化", re.I), "room"),
     (re.compile(r"^客服后台$|^客服评价$|访客记录剔除客服", re.I), "customer_service"),
 ]
@@ -170,7 +182,8 @@ CROSS_DOMAIN_PREFIX_RULES: List[Tuple[re.Pattern[str], str]] = [
     (re.compile(r"提现与转账·贵族|·贵族$", re.I), "gift"),
     (re.compile(r"关系链·|关系改版|CP好友|组成关系", re.I), "message"),
     (re.compile(r"活动·主题房|主题房活动", re.I), "theme_room"),
-    (re.compile(r"榜单与活动·|活动运营·|^活动·", re.I), "rank_activity"),
+    (re.compile(r"榜单与活动·", re.I), "activity"),
+    (re.compile(r"活动运营·|^活动·", re.I), "activity"),
     (re.compile(r"个人数据请求|我的公会", re.I), "agency"),
     (re.compile(r"其他模块·礼物|iOS我的页面", re.I), "gift"),
     (re.compile(r"背包·每日任务", re.I), "gift"),
@@ -236,10 +249,17 @@ DOMAIN_ROUTING_RULES: List[Tuple[re.Pattern[str], str]] = [
     ),
     (
         re.compile(
-            r"榜单|活动条|摩天轮|年末盛典|活动运营|活动支持|活动·[^·]*活动(?!房)",
+            r"榜单|排行榜|全服榜|打榜|揭榜|荣誉墙|榜种|room页榜单",
             re.I,
         ),
-        "rank_activity",
+        "rank",
+    ),
+    (
+        re.compile(
+            r"活动条|摩天轮|年末盛典|活动运营|活动支持|活动·[^·]*活动(?!房)",
+            re.I,
+        ),
+        "activity",
     ),
     (
         re.compile(
@@ -302,7 +322,7 @@ NON_MESSAGE_TITLE_RULES: List[Tuple[re.Pattern[str], str]] = [
     (re.compile(r"账号与注册·语音通话", re.I), "message"),
     (re.compile(r"账号与注册·幸运祈愿", re.I), "gift"),
     (re.compile(r"账号与注册·(?:网络请求|缓存|iOS我的页面)", re.I), "room"),
-    (re.compile(r"账号与注册·(?:自定义表情|活动分享)", re.I), "rank_activity"),
+    (re.compile(r"账号与注册·(?:自定义表情|活动分享)", re.I), "activity"),
     (re.compile(r"账号与注册·(?:分区策略|个人数据)", re.I), "agency"),
     (re.compile(r"账号与注册·(?:拉黑|标签UI)", re.I), "gift"),
     (re.compile(r"账号与注册·谁看过我", re.I), "auth_login"),
@@ -330,6 +350,34 @@ GIFT_TITLE_RE = re.compile(
     re.I,
 )
 
+# Sheet 名直达（优先于「含房间」宽泛规则与 DEFAULT_FALLBACK）
+EARLY_SHEET_RULES: List[Tuple[re.Pattern[str], str]] = [
+    (re.compile(r"^test111$|^App分享$", re.I), "rank"),
+    (
+        re.compile(
+            r"CP活动|cp活动|cp玩法|世界杯|周年庆|万圣节|开斋|大乐透|"
+            r"盲盒|宝藏猎人|年末盛典|幸运之王|Recharge offer|"
+            r"星座联盟|礼物代言人|谁是大赢家|房主挑战赛|支持球队|"
+            r"俄罗斯轮盘|古尔邦|斋月|情人节|活动改版|活动线|"
+            r"充值大转盘|充值活动|双向礼物|幸运VISA|星光大使",
+            re.I,
+        ),
+        "activity",
+    ),
+    (re.compile(r"PK相关活动", re.I), "activity"),
+    (re.compile(r"^优化送礼", re.I), "gift"),
+    (re.compile(r"^优化薪资", re.I), "agency"),
+    (re.compile(r"登陆注册|登录注册|注册登录|短信风控|设备安全|账号安全", re.I), "auth_login"),
+    (re.compile(r"客服转工单|语音房客服|帮助中心", re.I), "customer_service"),
+    (re.compile(r"^admin|多语言后台|审核后台", re.I), "super_admin"),
+    (re.compile(r"ludo|游戏接入|ya party游戏|概率游戏|游戏bridge|游戏开发平台", re.I), "game"),
+    (re.compile(r"访客记录|push召回|^push$|PUSH", re.I), "message"),
+    (re.compile(r"Checkout支付|稳定币充值|三方支付", re.I), "coin"),
+    (re.compile(r"分区策略|个人数据请求|子母公会|公会长", re.I), "agency"),
+    (re.compile(r"发布与浏览|moment|动态发布", re.I), "moments"),
+    (re.compile(r"主题房活动|活动主题房", re.I), "theme_room"),
+]
+
 # Sheet 名优先（避免「送礼」把 IM Sheet 划进礼物）
 SHEET_TARGET_RULES: List[Tuple[re.Pattern[str], str]] = [
     (re.compile(r"主题房|活动主题", re.I), "theme_room"),
@@ -350,7 +398,17 @@ SHEET_TARGET_RULES: List[Tuple[re.Pattern[str], str]] = [
     ),
     (re.compile(r"退出账号|注销账号|设置about|账号绑定|账号密码", re.I), "auth_login"),
     (re.compile(r"^游戏|大冒险|bridge", re.I), "game"),
-    (re.compile(r"摩天轮|活动条|榜单|排行|年末盛典|提款机", re.I), "rank_activity"),
+    (
+        re.compile(
+            r"摩天轮|活动条|年末盛典|提款机|周年庆|世界杯|开斋|大乐透|"
+            r"CP活动|cp活动|cp玩法|盲盒|宝藏猎人|幸运之王|"
+            r"Recharge offer|星座联盟|礼物代言人|谁是大赢家|"
+            r"房主挑战赛|支持球队|俄罗斯轮盘|活动改版",
+            re.I,
+        ),
+        "activity",
+    ),
+    (re.compile(r"榜单|排行|打榜|揭榜|荣誉墙|全服榜", re.I), "rank"),
     (re.compile(r"麦位体验卡|20麦", re.I), "room"),
 ]
 
@@ -407,13 +465,16 @@ def _sheet_implies_non_gift(sheet: str, module: str = "") -> bool:
 
 # 房间 PK / 跨房 PK（仅按 Excel Sheet 名判定，避免正文含「PK」误迁入）
 ROOM_PK_SHEET_RE = re.compile(
-    r"^(PK|pk)(邀请和匹配|邀请|准备|流程|关闭|房间操作|房间|活动|提款机)|"
+    r"^(PK|pk)(\s|邀请和匹配|邀请|准备|流程|关闭|房间操作|房间|活动|提款机|功能|模式|胜利|首杀|增加)|"
+    r"^pk$|"
+    r"PK增加|PK胜利|PK首杀|PK模式|"
     r"跨房\s*PK|跨房PK|跨房pk优化|跨房PK优化|跨房PK分区|"
     r"乱斗\s*PK|乱斗PK|"
     r"团战\s*PK|团战PK|"
     r"团队\s*PK|团队PK|"
     r"推荐帧.*PK|PK.*推荐帧|"
-    r"PK提款机|PK分区",
+    r"PK提款机|PK分区|"
+    r"1v1\s*PK|1v1\s*pk",
     re.I,
 )
 
@@ -421,9 +482,12 @@ ROOM_PK_SHEET_RE = re.compile(
 def is_room_pk_domain(sheet: str, module: str, text: str) -> bool:
     """仅当 Excel Sheet 名属于房间/跨房 PK 域时归入 房间PK.md。"""
     sn = (sheet or "").strip()
+    mn = (module or "").strip()
     if not sn:
         return False
     if ROOM_PK_SHEET_RE.search(sn):
+        return True
+    if re.match(r"^pk", sn, re.I):
         return True
     # 精确匹配常见 Sheet 标题
     if sn in {
@@ -441,7 +505,19 @@ def is_room_pk_domain(sheet: str, module: str, text: str) -> bool:
         "跨房PK分区策略优化",
         "PK提款机优化（丁亮）",
         "推荐帧增加PK+房间列表背景镜像",
+        "PK 模式增加进房特效",
+        "PK 胜利展示信息修改",
+        "PK 首杀",
+        "PK增加贡献榜",
+        "pk",
+        "pk时间效果优化",
     }:
+        return True
+    if WEAK_AGGREGATE_SHEET_RE.search(sn) and re.search(
+        r"PK|1v1\s*pk|开启PK|pk时间", mn, re.I
+    ):
+        return True
+    if re.search(r"房间PK|房间\s*PK", sn, re.I):
         return True
     return False
 
@@ -504,6 +580,10 @@ def classify_target(b: CaseBlock) -> str:
 
     title = _title_blob(sheet, mod)
 
+    for pat, target in EARLY_SHEET_RULES:
+        if pat.search(sheet):
+            return target
+
     for pat, target in MODULE_DOMAIN_RULES:
         if pat.search(mod) or pat.search(title):
             return target
@@ -527,10 +607,6 @@ def classify_target(b: CaseBlock) -> str:
         if pat.search(title):
             return target
 
-    # Sheet 名强约束（避免「房间*」Sheet 因正文含送礼落入礼物）
-    if re.search(r"房间", sheet, re.I) and not re.search(r"礼物", sheet, re.I):
-        return "room"
-
     # Sheet 名优先（高置信）；消息域需标题含消息核心语义，避免「私聊与群聊·礼物*」误入
     for pat, target in SHEET_TARGET_RULES:
         if not pat.search(sheet):
@@ -538,6 +614,13 @@ def classify_target(b: CaseBlock) -> str:
         if target == "message" and not MESSAGE_CORE_RE.search(title):
             continue
         return target
+
+    # Sheet 名强约束：明显房间域（须在活动/榜单等规则之后，避免「房间内活动」误留房间）
+    if re.search(r"^房间|进房·|麦位·|成员与等级·|界面与运营·", sheet, re.I):
+        if not re.search(r"礼物", sheet, re.I):
+            return "room"
+    if re.search(r"房间", sheet, re.I) and not re.search(r"礼物|活动|客服|游戏", sheet, re.I):
+        return "room"
 
     # 模块级强规则
     if re.search(r"^回复.+消息", mn):
@@ -574,6 +657,23 @@ def classify_target(b: CaseBlock) -> str:
     for pat, target in DOMAIN_ROUTING_RULES:
         if pat.search(text):
             return target
+
+    # 合订 Sheet：模块名优先于默认落房间
+    leaf = _sheet_leaf(sheet)
+    if WEAK_AGGREGATE_SHEET_RE.search(sheet) or WEAK_AGGREGATE_SHEET_RE.search(leaf):
+        for pat, target in MODULE_DOMAIN_RULES:
+            if pat.search(mod):
+                return target
+        if re.search(r"^VIP|^vip", mod, re.I) or re.search(r"VIP\d|vip\d", mod, re.I):
+            return "gift"
+        if re.search(r"送礼|礼物动效|盲盒", mod, re.I):
+            return "gift"
+        if re.search(r"薪资|公会", mod, re.I):
+            return "agency"
+        if re.search(r"家族", mod, re.I):
+            return "family"
+        if is_room_pk_domain(sheet, mod, text):
+            return "room_pk"
 
     return DEFAULT_FALLBACK_TARGET
 

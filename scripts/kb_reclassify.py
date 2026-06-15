@@ -60,7 +60,8 @@ PARENT_MAP = {
     "super_admin": "超管.md",
     "game": "游戏.md",
     "agency": "公会.md",
-    "rank_activity": "榜单与活动.md",
+    "rank": "榜单.md",
+    "activity": "活动.md",
     "face_auth": "人脸认证.md",
     "auth_login": "注册登录.md",
 }
@@ -81,6 +82,8 @@ PARENT_LABELS = (
     "游戏",
     "公会",
     "公会与AM",
+    "榜单",
+    "活动",
     "榜单与活动",
     "账号与安全",
     "注册登录",
@@ -159,7 +162,8 @@ STANDALONE_OUTPUT = frozenset(
         "公会.md",
         "客服.md",
         "超管.md",
-        "榜单与活动.md",
+        "榜单.md",
+        "活动.md",
         "注册登录.md",
         "人脸认证.md",
     }

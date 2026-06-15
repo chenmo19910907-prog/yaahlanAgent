@@ -73,7 +73,8 @@ PARENT_CN: Dict[str, str] = {
     "agency": "公会",
     "coin": "币商",
     "game": "游戏",
-    "rank_activity": "榜单与活动",
+    "rank": "榜单",
+    "activity": "活动",
     "other": "其他",
 }
 
@@ -102,7 +103,8 @@ PRESERVE_FILES = frozenset(
         "房间成员.md",
         "游戏.md",
         "公会.md",
-        "榜单与活动.md",
+        "榜单.md",
+        "活动.md",
         "注册登录.md",
         "人脸认证.md",
         "客服.md",
@@ -176,7 +178,8 @@ SINGLE_FILE: Dict[str, str] = {
     "room_pk": "房间PK.md",
     "game": "游戏.md",
     "agency": "公会.md",
-    "rank_activity": "榜单与活动.md",
+    "rank": "榜单.md",
+    "activity": "活动.md",
     "face_auth": "人脸认证.md",
     "auth_login": "注册登录.md",
 }

@@ -18,7 +18,7 @@ python3 scripts/prd_kb_build.py --input-dir prd-kb/.raw --output-dir prd-kb
 
 | 指标 | 值 |
 |------|-----|
-| 模块文件 | 22 |
+| 模块文件 | 23 |
 | 来源 PRD 篇数 | 114（不含待排期） |
 
 ## 模块索引
@@ -36,7 +36,8 @@ python3 scripts/prd_kb_build.py --input-dir prd-kb/.raw --output-dir prd-kb
 | 家族 | [`家族.md`](家族.md) |
 | 房间 | [`房间.md`](房间.md) |
 | 房间PK | [`房间PK.md`](房间PK.md) |
-| 榜单与活动 | [`榜单与活动.md`](榜单与活动.md) |
+| 榜单 | [`榜单.md`](榜单.md) |
+| 活动 | [`活动.md`](活动.md) |
 | 注册登录 | [`注册登录.md`](注册登录.md) |
 | 消息 | [`消息.md`](消息.md) |
 | 游戏 | [`游戏.md`](游戏.md) |

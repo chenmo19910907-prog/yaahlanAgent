@@ -20,7 +20,8 @@ MODULE_KEYWORDS: dict[str, tuple[str, ...]] = {
     "gift": ("礼物", "送礼", "背包", "gift", "勋章", "定制礼物"),
     "room": ("房间", "麦位", "进房", "语音房", "room"),
     "room_pk": ("pk", "跨房", "房间pk"),
-    "rank_activity": ("榜单", "排行", "活动条", "抽奖", "兑换", "榜单与活动"),
+    "rank": ("榜单", "排行", "打榜", "荣誉墙", "全服榜", "room页榜单"),
+    "activity": ("活动", "活动条", "抽奖", "兑换", "年末盛典", "摩天轮", "周年庆"),
     "family": ("家族", "声望", "基金"),
     "theme_room": ("主题房",),
     "moments": ("动态", "moment", "moments", "发布动态"),
@@ -63,11 +64,17 @@ MODULE_FILES = {
         "bug_kb": ("房间PK.md",),
         "online_kb": ("房间PK.md",),
     },
-    "rank_activity": {
-        "testcase_kb": ("榜单与活动.md",),
-        "bug_kb": ("榜单与活动.md",),
-        "online_kb": ("榜单与活动.md",),
-        "templates": ("抽奖.md", "奖励领取.md", "yaahlan榜单.md"),
+    "rank": {
+        "testcase_kb": ("榜单.md",),
+        "bug_kb": ("榜单.md",),
+        "online_kb": ("榜单.md",),
+        "templates": ("yaahlan榜单.md",),
+    },
+    "activity": {
+        "testcase_kb": ("活动.md",),
+        "bug_kb": ("活动.md",),
+        "online_kb": ("活动.md",),
+        "templates": ("抽奖.md", "奖励领取.md"),
     },
     "family": {
         "documents": ("家族改版.md",),

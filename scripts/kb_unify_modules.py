@@ -117,7 +117,8 @@ SINGLE_CANONICAL: Dict[str, str] = {
     "room_pk": "房间PK",
     "game": "游戏",
     "agency": "公会",
-    "rank_activity": "榜单与活动",
+    "rank": "榜单",
+    "activity": "活动",
     "face_auth": "人脸认证",
 }
 
