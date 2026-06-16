@@ -1,0 +1,274 @@
+{
+  "ec": 200,
+  "em": "success",
+  "timestamp": 1781599494849,
+  "data": {
+    "intimateInfo": {
+      "intimateId": "100079102-100486375",
+      "level": 7,
+      "likeCount": 1,
+      "blessValue": 83594,
+      "nextLoveValue": 2529261,
+      "levelBadge": null,
+      "days": 51
+    },
+    "fromInfo": {
+      "userId": "100486375",
+      "nickName": "C2哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈1",
+      "avatar": "https://yaahlan.momocdn.com/picture/17/73/177349D6-3706-9769-7E68-117037EFBFFC20260525_S.webp",
+      "staticAvatar": null,
+      "intimateHide": 0,
+      "gender": null
+    },
+    "toInfo": {
+      "userId": "100079102",
+      "nickName": "C3تستاسعصعطتتي",
+      "avatar": "https://yaahlan.momocdn.com/picture/89/00/8900CA8A-E661-01B0-5FDE-BDF7081E1DA820260427_S.webp",
+      "staticAvatar": null,
+      "intimateHide": 0,
+      "gender": null
+    },
+    "cpGiftList": [
+      {
+        "giftId": "2005002147",
+        "giftBid": "2005002145",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/ce/be/cebe3ce9-9146-492c-bfeb-61ee8a279c7920240305_L.jpg",
+        "giftName": "love bow",
+        "diamondPrice": "15999",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005055247",
+        "giftBid": "2005055245",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/88/3a/883ad659-9859-43e8-ad66-0c154034a75820260402_L.jpg",
+        "giftName": "Sweet Hot Air Balloon",
+        "diamondPrice": "9999",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005001979",
+        "giftBid": "2005001977",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/77/19/mock-2005001977_L.jpg",
+        "giftName": "love beyond time",
+        "diamondPrice": "9999",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005000209",
+        "giftBid": "2005000185",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/c5/2f/c52fea55-338d-41da-8bfd-4bb3e433091c20230512_L.jpg",
+        "giftName": "Love Balloon",
+        "diamondPrice": "5200",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005000187",
+        "giftBid": "2005000185",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/85/01/mock-2005000185_L.jpg",
+        "giftName": "Love Balloon",
+        "diamondPrice": "5200",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005005879",
+        "giftBid": "2005005877",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/77/58/mock-2005005877_L.jpg",
+        "giftName": "Flower of Love",
+        "diamondPrice": "5000",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005000184",
+        "giftBid": "2005000182",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/82/01/mock-2005000182_L.jpg",
+        "giftName": "Wonderful Love Sea",
+        "diamondPrice": "5000",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005000244",
+        "giftBid": "2005000226",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/2d/cb/2dcb5989-7058-48b3-a655-867b9f270c3820230512_L.jpg",
+        "giftName": "Fizzy Grape Candy",
+        "diamondPrice": "2999",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005002319",
+        "giftBid": "2005002317",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/17/23/mock-2005002317_L.jpg",
+        "giftName": "CP ring",
+        "diamondPrice": "2999",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005005876",
+        "giftBid": "2005005874",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/74/58/mock-2005005874_L.jpg",
+        "giftName": "Heart Balloon",
+        "diamondPrice": "2500",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005001229",
+        "giftBid": "2005001223",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/8e/c8/8ec8230f-9ccd-4dfe-9f6c-cc2c9e1dec9520231110_L.jpg",
+        "giftName": "Neon Heart",
+        "diamondPrice": "1500",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005000057",
+        "giftBid": "2005000055",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/55/00/mock-2005000055_L.jpg",
+        "giftName": "love rocket",
+        "diamondPrice": "1500",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005000220",
+        "giftBid": "2005000218",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/18/02/mock-2005000218_L.jpg",
+        "giftName": "Sweetheart Candy",
+        "diamondPrice": "1500",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005001225",
+        "giftBid": "2005001223",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/23/12/mock-2005001223_L.jpg",
+        "giftName": "Neon Heart",
+        "diamondPrice": "1500",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005005873",
+        "giftBid": "2005005871",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/71/58/mock-2005005871_L.jpg",
+        "giftName": "Diamond Ring",
+        "diamondPrice": "1500",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005000181",
+        "giftBid": "2005000179",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/79/01/mock-2005000179_L.jpg",
+        "giftName": "Love Carriage",
+        "diamondPrice": "1388",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005001952",
+        "giftBid": "2005001950",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/50/19/mock-2005001950_L.jpg",
+        "giftName": "love bow",
+        "diamondPrice": "999",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005001984",
+        "giftBid": "2005001982",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/82/19/mock-2005001982_L.jpg",
+        "giftName": "love bow",
+        "diamondPrice": "999",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005013363",
+        "giftBid": "2005013244",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/6d/98/6d988c3a-27ec-4ca2-8bf3-8552fa73e9ae20251103_L.jpg",
+        "giftName": "丘比特",
+        "diamondPrice": "500",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005000170",
+        "giftBid": "2005000168",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/68/01/mock-2005000168_L.jpg",
+        "giftName": "Endless Love",
+        "diamondPrice": "500",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005013246",
+        "giftBid": "2005013244",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/44/32/mock-2005013244_L.jpg",
+        "giftName": "丘比特",
+        "diamondPrice": "500",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005000178",
+        "giftBid": "2005000176",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/76/01/mock-2005000176_L.jpg",
+        "giftName": "Goddess Ring",
+        "diamondPrice": "500",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005055253",
+        "giftBid": "2005055252",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/8c/67/8c679869-9998-47dd-b4cf-0ecd26ac3dea20260403_L.jpg",
+        "giftName": "Luxury cars arrive",
+        "diamondPrice": "100",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005055262",
+        "giftBid": "2005055261",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/dc/5b/dc5b6db9-b573-4b10-9c38-0f97f629b20720260407_L.jpg",
+        "giftName": "CP Hot Air Balloon",
+        "diamondPrice": "100",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005055263",
+        "giftBid": "2005055261",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/61/52/mock-2005055261_L.jpg",
+        "giftName": "CP热气球",
+        "diamondPrice": "100",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005055254",
+        "giftBid": "2005055252",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/52/52/mock-2005055252_L.jpg",
+        "giftName": "CP头像版豪车入场",
+        "diamondPrice": "100",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005001708",
+        "giftBid": "2005001706",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/06/17/mock-2005001706_L.jpg",
+        "giftName": "crystal heart",
+        "diamondPrice": "99",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005003519",
+        "giftBid": "2005003517",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/17/35/mock-2005003517_L.jpg",
+        "giftName": "Endless Love(复制)",
+        "diamondPrice": "49",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005000169",
+        "giftBid": "2005000167",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/67/01/mock-2005000167_L.jpg",
+        "giftName": "Heartbeat Brooch",
+        "diamondPrice": "49",
+        "mutualCount": 1
+      },
+      {
+        "giftId": "2005001491",
+        "giftBid": "2005001489",
+        "giftImg": "https://yaahlan.momocdn.com/mdp_giftimg/mock/89/14/mock-2005001489_L.jpg",
+        "giftName": "love heart",
+        "diamondPrice": "39",
+        "mutualCount": 1
+      }
+    ]
+  }
+}

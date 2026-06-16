@@ -16,7 +16,19 @@
         0.5,
         0.942
       ],
-      "note": "Log out"
+      "note": "Log out",
+      "resourceId": "profile_extra_info_tab_viewpager",
+      "bounds": "[0,1660][1080,2340]",
+      "className": "androidx.viewpager.widget.ViewPager",
+      "fallback_tap_pct": [
+        0.5,
+        0.942
+      ],
+      "fallback_tap": [
+        540,
+        2204
+      ],
+      "locatorLearnedAt": "2026-06-16T10:53:50Z"
     },
     {
       "wait_activity": {

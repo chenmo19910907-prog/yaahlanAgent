@@ -33,10 +33,10 @@
       ],
       "note": "语言 Next（无语言页时可 --skip login_lang）",
       "skip_key": "login_lang",
-      "resourceId": "private_service",
-      "bounds": "[258,2106][990,2205]",
+      "resourceId": "profile_extra_info_tab_viewpager",
+      "bounds": "[0,1660][1080,2340]",
       "uiText": "I have read and agreed Terms of Service & Privacy Policy",
-      "className": "android.widget.TextView",
+      "className": "androidx.viewpager.widget.ViewPager",
       "fallback_tap_pct": [
         0.5,
         0.918
@@ -45,7 +45,7 @@
         540,
         2148
       ],
-      "locatorLearnedAt": "2026-06-09T07:52:41Z"
+      "locatorLearnedAt": "2026-06-16T10:46:11Z"
     },
     {
       "sleep_ms": 1200
@@ -56,9 +56,9 @@
         0.921
       ],
       "note": "勾选协议",
-      "resourceId": "img_check_terms",
-      "bounds": "[165,2109][258,2202]",
-      "className": "android.widget.ImageView",
+      "resourceId": "profile_extra_info_tab_viewpager",
+      "bounds": "[0,1660][1080,2340]",
+      "className": "androidx.viewpager.widget.ViewPager",
       "fallback_tap_pct": [
         0.195,
         0.921
@@ -67,7 +67,7 @@
         210,
         2155
       ],
-      "locatorLearnedAt": "2026-06-09T07:52:44Z"
+      "locatorLearnedAt": "2026-06-16T10:46:15Z"
     },
     {
       "sleep_ms": 300
@@ -78,9 +78,9 @@
         0.855
       ],
       "note": "手机入口",
-      "resourceId": "phone",
-      "bounds": "[262,1926][412,2076]",
-      "className": "android.widget.ImageView",
+      "resourceId": "av_left_avatar",
+      "bounds": "[150,1868][342,2060]",
+      "className": "android.widget.FrameLayout",
       "fallback_tap_pct": [
         0.312,
         0.855
@@ -89,7 +89,7 @@
         336,
         2000
       ],
-      "locatorLearnedAt": "2026-06-09T07:52:47Z"
+      "locatorLearnedAt": "2026-06-16T10:46:17Z"
     },
     {
       "sleep_ms": 800
@@ -100,10 +100,10 @@
         0.317
       ],
       "note": "input_phone",
-      "resourceId": "input_phone",
-      "bounds": "[236,655][1080,829]",
+      "resourceId": "avatar",
+      "bounds": "[366,487][714,835]",
       "uiText": "Phone number",
-      "className": "android.widget.EditText",
+      "className": "android.widget.FrameLayout",
       "fallback_tap_pct": [
         0.609,
         0.317
@@ -112,7 +112,7 @@
         657,
         741
       ],
-      "locatorLearnedAt": "2026-06-09T07:52:50Z"
+      "locatorLearnedAt": "2026-06-16T10:46:19Z"
     },
     {
       "sleep_ms": 300
@@ -131,9 +131,9 @@
         0.504
       ],
       "note": "Get via SMS",
-      "resourceId": "ll_phone_sms",
-      "bounds": "[113,1090][967,1270]",
-      "className": "android.widget.RelativeLayout",
+      "resourceId": "sign",
+      "bounds": "[51,1155][1029,1219]",
+      "className": "android.widget.TextView",
       "fallback_tap_pct": [
         0.5,
         0.504
@@ -142,7 +142,8 @@
         540,
         1179
       ],
-      "locatorLearnedAt": "2026-06-09T07:53:24Z"
+      "locatorLearnedAt": "2026-06-16T10:46:23Z",
+      "uiText": "She is very mysterious, nothing left"
     },
     {
       "wait_activity": {
@@ -158,9 +159,9 @@
         0.349
       ],
       "note": "input_code",
-      "resourceId": "input_code",
-      "bounds": "[45,739][1035,895]",
-      "className": "android.widget.EditText",
+      "resourceId": "avatar",
+      "bounds": "[366,487][714,835]",
+      "className": "android.widget.FrameLayout",
       "fallback_tap_pct": [
         0.5,
         0.349
@@ -169,7 +170,7 @@
         540,
         816
       ],
-      "locatorLearnedAt": "2026-06-09T07:53:27Z"
+      "locatorLearnedAt": "2026-06-16T10:46:25Z"
     },
     {
       "sleep_ms": 400,

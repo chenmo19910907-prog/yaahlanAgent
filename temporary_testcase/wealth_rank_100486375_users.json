@@ -1,0 +1,1332 @@
+{
+  "tunnelId": "5D_ez54B_1006Fv6tupx",
+  "time": "2026/06/16 17:58:59",
+  "api": "getTotalUserGiftRankList",
+  "rankType": 1,
+  "rankName": "财富榜",
+  "cycle": "1",
+  "timeType": "1",
+  "residueTime": 39661000,
+  "tunnelUrl": "https://tunnel.wemomo.com/request/5D_ez54B_1006Fv6tupx?req_time=2026-06-16 17:58:59&g_appid=All&g_env=alpha",
+  "totalUsers": 38,
+  "currentUserRank": {
+    "id": "100486375",
+    "rank": 3,
+    "value": 3426970,
+    "rankChange": 0,
+    "isNew": false,
+    "prizeValue": 19040,
+    "diffValue": null,
+    "totalSendCount": null,
+    "totalDiamonds": null,
+    "hidden": 0
+  },
+  "users": [
+    {
+      "rank": 1,
+      "uid": "100210227",
+      "nickname": "安卓",
+      "gender": "女",
+      "age": 18,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/tinypng/F2/BB/F2BB931E-D445-432A-848C-7EE4ACA5DD4A20250916_L.png",
+      "staticAvatar": "https://yaahlan.momocdn.com/tinypng/F2/BB/F2BB931E-D445-432A-848C-7EE4ACA5DD4A20250916_L.png",
+      "value": 21913390,
+      "prizeValue": 76160,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 10,
+        "lv": 3,
+        "value": 0
+      },
+      "noble": {
+        "lv": 3,
+        "lvTitle": "Viscount",
+        "consumeValue": 2191339,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 14,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 4,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 2,
+      "uid": "100052782",
+      "nickname": "hihi",
+      "gender": "女",
+      "age": 18,
+      "initLang": "zh",
+      "avatar": "https://yaahlan.momocdn.com/tinypng/A3/13/A313FDB0-DCDB-44AA-A667-EE23B6C3E51320250916_L.png",
+      "staticAvatar": "https://yaahlan.momocdn.com/tinypng/A3/13/A313FDB0-DCDB-44AA-A667-EE23B6C3E51320250916_L.png",
+      "value": 7180190,
+      "prizeValue": 38080,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 1380
+      },
+      "noble": {
+        "lv": 2,
+        "lvTitle": "Baron",
+        "consumeValue": 718049,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 12,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 14,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 3,
+      "uid": "100486375",
+      "nickname": "C2哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈哈1",
+      "gender": "男",
+      "age": 28,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/17/73/177349D6-3706-9769-7E68-117037EFBFFC20260525_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/17/73/177349D6-3706-9769-7E68-117037EFBFFC20260525_L.jpg",
+      "value": 3426970,
+      "prizeValue": 19040,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 1020
+      },
+      "noble": {
+        "lv": 5,
+        "lvTitle": "Marquis",
+        "consumeValue": 1316324,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 35,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 34,
+        "hide": 0
+      },
+      "avatarFrame": {
+        "id": 30006314,
+        "name": "CP 头像框"
+      }
+    },
+    {
+      "rank": 4,
+      "uid": "100381218",
+      "nickname": "alex",
+      "gender": "男",
+      "age": 33,
+      "initLang": "zh",
+      "avatar": "https://yaahlan.momocdn.com/picture/BB/91/BB910484-F6FE-91F1-AB23-0E79900FB43B20260526_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/BB/91/BB910484-F6FE-91F1-AB23-0E79900FB43B20260526_S.webp",
+      "value": 3216980,
+      "prizeValue": 9520,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 0
+      },
+      "noble": {
+        "lv": 2,
+        "lvTitle": "Baron",
+        "consumeValue": 471678,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 16,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 14,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 5,
+      "uid": "100349865",
+      "nickname": "Jvjiv",
+      "gender": "女",
+      "age": 18,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/tinypng/E1/4E/E14E9D33-F86C-400C-A845-2EBEA1B50DDA20250916_L.png",
+      "staticAvatar": "https://yaahlan.momocdn.com/tinypng/E1/4E/E14E9D33-F86C-400C-A845-2EBEA1B50DDA20250916_L.png",
+      "value": 2682400,
+      "prizeValue": 4760,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 0
+      },
+      "noble": {
+        "lv": 1,
+        "lvTitle": "Knight",
+        "consumeValue": 268240,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 10,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 1,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 6,
+      "uid": "100466844",
+      "nickname": "186111111112🐯",
+      "gender": "女",
+      "age": 20,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/9C/EA/9CEA1E88-28A6-8684-4A5F-EBC3ED2D235020260615_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/9C/EA/9CEA1E88-28A6-8684-4A5F-EBC3ED2D235020260615_L.jpg",
+      "value": 1030500,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 800
+      },
+      "noble": {
+        "lv": 2,
+        "lvTitle": "Baron",
+        "consumeValue": 741201,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 12,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 13,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 7,
+      "uid": "100193373",
+      "nickname": "44444一二三提五六七八九十日日日日日日日",
+      "gender": "女",
+      "age": 19,
+      "initLang": "ar",
+      "avatar": "https://yaahlan.momocdn.com/picture/F9/D5/F9D5F9B3-F584-1729-AAD2-225FCF45B15220260402_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/F9/D5/F9D5F9B3-F584-1729-AAD2-225FCF45B15220260402_S.webp",
+      "value": 560100,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 0
+      },
+      "noble": {
+        "lv": 3,
+        "lvTitle": "Viscount",
+        "consumeValue": 2426533,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 14,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 14,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 8,
+      "uid": "100383253",
+      "nickname": "🐸 🐸",
+      "gender": "女",
+      "age": 18,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/CF/85/CF851F68-5B2D-D215-E5CB-C087A780664B20260518_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/CF/85/CF851F68-5B2D-D215-E5CB-C087A780664B20260518_S.webp",
+      "value": 516990,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 0
+      },
+      "noble": {
+        "lv": 6,
+        "lvTitle": "Duke",
+        "consumeValue": 79969,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 23,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 18,
+        "hide": 0
+      },
+      "avatarFrame": {
+        "id": 30000850,
+        "name": "斋月签到宝箱4"
+      }
+    },
+    {
+      "rank": 9,
+      "uid": "100142559",
+      "nickname": "111111",
+      "gender": "男",
+      "age": 0,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/tinypng/0D/36/0D362F6B-D88F-4484-A893-A4CD8917568B20250916_L.png",
+      "staticAvatar": "https://yaahlan.momocdn.com/tinypng/0D/36/0D362F6B-D88F-4484-A893-A4CD8917568B20250916_L.png",
+      "value": 516000,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 0
+      },
+      "noble": {
+        "lv": 2,
+        "lvTitle": "Baron",
+        "consumeValue": 421396,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 11,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 13,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 10,
+      "uid": "100100952",
+      "nickname": "哈哈哈哈",
+      "gender": "男",
+      "age": 21,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/tinypng/B4/18/B4181494-B824-4BC0-B42D-A4AD721343B620250916_L.png",
+      "staticAvatar": "https://yaahlan.momocdn.com/tinypng/B4/18/B4181494-B824-4BC0-B42D-A4AD721343B620250916_L.png",
+      "value": 502990,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 0
+      },
+      "noble": {
+        "lv": 0,
+        "lvTitle": "",
+        "consumeValue": 8889,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 1,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 13,
+        "hide": 0
+      },
+      "avatarFrame": {
+        "id": 30006318,
+        "name": "CP"
+      }
+    },
+    {
+      "rank": 11,
+      "uid": "2434",
+      "nickname": "قطه صغيرة105",
+      "gender": "男",
+      "age": 22,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/E1/B0/E1B0D273-629C-5E60-2BD8-6B59EDE487C520250529_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/E1/B0/E1B0D273-629C-5E60-2BD8-6B59EDE487C520250529_S.webp",
+      "value": 353970,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 1142
+      },
+      "noble": {
+        "lv": 1,
+        "lvTitle": "Knight",
+        "consumeValue": 35397,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 35,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 18,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 12,
+      "uid": "100461128",
+      "nickname": "âmâşîmôwnddjndmdmdmxmf",
+      "gender": "男",
+      "age": 43,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/76/1D/761D4420-03C3-4E88-A157-FD3D5E4F0E9420260427.gif",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/76/1D/761D4420-03C3-4E88-A157-FD3D5E4F0E9420260427_S.jpg",
+      "value": 336660,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 10,
+        "lv": 3,
+        "value": 0
+      },
+      "noble": {
+        "lv": 6,
+        "lvTitle": "Duke",
+        "consumeValue": 104903,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 20,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 20,
+        "hide": 0
+      },
+      "avatarFrame": {
+        "id": 30000850,
+        "name": "斋月签到宝箱4"
+      }
+    },
+    {
+      "rank": 13,
+      "uid": "100478695",
+      "nickname": "222看看唠唠嗑写作业写作业京津冀看看u剧哦",
+      "gender": "男",
+      "age": 18,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/BE/AF/BEAF6C36-6FA4-2701-3426-FBD272D830F420260521_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/BE/AF/BEAF6C36-6FA4-2701-3426-FBD272D830F420260521_L.jpg",
+      "value": 310000,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 336
+      },
+      "noble": {
+        "lv": 1,
+        "lvTitle": "Knight",
+        "consumeValue": 212440,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 18,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 17,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 14,
+      "uid": "5001",
+      "nickname": "User-5001",
+      "gender": "男",
+      "age": 20,
+      "initLang": "zh",
+      "avatar": "https://yaahlan.momocdn.com/picture/76/9B/769BA234-D7C0-4C91-B5FA-7852287784ED20250926_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/76/9B/769BA234-D7C0-4C91-B5FA-7852287784ED20250926_L.jpg",
+      "value": 293100,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 0
+      },
+      "noble": {
+        "lv": 1,
+        "lvTitle": "Knight",
+        "consumeValue": 63042,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 11,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 13,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 15,
+      "uid": "100407930",
+      "nickname": "na liu🙃haha🙄🙄🙄",
+      "gender": "男",
+      "age": 21,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/4F/67/4F6794BD-7D8E-4DFF-952F-3CACD5BB26CB20250731_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/4F/67/4F6794BD-7D8E-4DFF-952F-3CACD5BB26CB20250731_S.webp",
+      "value": 228970,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 2,
+        "lv": 2,
+        "value": 203
+      },
+      "noble": {
+        "lv": 3,
+        "lvTitle": "Viscount",
+        "consumeValue": 2983395,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 16,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 32,
+        "hide": 0
+      },
+      "avatarFrame": {
+        "id": 100000398,
+        "name": "kkkkkk"
+      }
+    },
+    {
+      "rank": 16,
+      "uid": "100465989",
+      "nickname": "C1哈哈哈哈哈哈哈哈哈哈哈😄哈哈哈哈哈哈",
+      "gender": "女",
+      "age": 18,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/9C/6E/9C6E109D-5483-48E8-533F-9B6449FBC8FF20260428_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/9C/6E/9C6E109D-5483-48E8-533F-9B6449FBC8FF20260428_S.webp",
+      "value": 166990,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 3,
+        "lv": 3,
+        "value": 340000
+      },
+      "noble": {
+        "lv": 6,
+        "lvTitle": "Duke",
+        "consumeValue": 31599815,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 34,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 35,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 17,
+      "uid": "100259235",
+      "nickname": "hazel",
+      "gender": "女",
+      "age": 18,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/tinypng/E5/9D/E59DF341-F1EF-4DDE-B855-06CE87FCB0AF20250916_L.png",
+      "staticAvatar": "https://yaahlan.momocdn.com/tinypng/E5/9D/E59DF341-F1EF-4DDE-B855-06CE87FCB0AF20250916_L.png",
+      "value": 148440,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 10,
+        "lv": 3,
+        "value": 123
+      },
+      "noble": {
+        "lv": 6,
+        "lvTitle": "Duke",
+        "consumeValue": 21030119,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 5,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 1,
+        "hide": 0
+      },
+      "avatarFrame": {
+        "id": 30006314,
+        "name": "CP 头像框"
+      }
+    },
+    {
+      "rank": 18,
+      "uid": "100196365",
+      "nickname": "11119908",
+      "gender": "女",
+      "age": 19,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/A6/C9/A6C987B8-7FC7-486B-A877-A3FE1D015A0D20240923_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/A6/C9/A6C987B8-7FC7-486B-A877-A3FE1D015A0D20240923_L.jpg",
+      "value": 117970,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 520
+      },
+      "noble": {
+        "lv": 0,
+        "lvTitle": "",
+        "consumeValue": 11797,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 5,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 11,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 19,
+      "uid": "100336072",
+      "nickname": "trabcd主播7100",
+      "gender": "女",
+      "age": 20,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/40/84/408413D0-4B45-4059-9BDC-63B61B2CCAF120250916_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/40/84/408413D0-4B45-4059-9BDC-63B61B2CCAF120250916_L.jpg",
+      "value": 111100,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 10,
+        "lv": 3,
+        "value": 941
+      },
+      "noble": {
+        "lv": 0,
+        "lvTitle": "",
+        "consumeValue": 2570,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 9,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 10,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 20,
+      "uid": "100350014",
+      "nickname": "22222",
+      "gender": "女",
+      "age": 19,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/C0/8A/C08A171B-73A5-1CFD-1BCF-5DA21B31F8FE20251107_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/C0/8A/C08A171B-73A5-1CFD-1BCF-5DA21B31F8FE20251107_S.webp",
+      "value": 105990,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 0
+      },
+      "noble": {
+        "lv": 1,
+        "lvTitle": "Knight",
+        "consumeValue": 29682,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 12,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 12,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 21,
+      "uid": "100063731",
+      "nickname": "Apple 🍎100063731",
+      "gender": "女",
+      "age": 24,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/71/36/71365390-D23B-56F6-6575-817550E4701420260601_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/71/36/71365390-D23B-56F6-6575-817550E4701420260601_S.webp",
+      "value": 101000,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 336
+      },
+      "noble": {
+        "lv": 2,
+        "lvTitle": "Baron",
+        "consumeValue": 544951,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 35,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 35,
+        "hide": 0
+      },
+      "avatarFrame": {
+        "id": 100000394,
+        "name": "The only way"
+      }
+    },
+    {
+      "rank": 22,
+      "uid": "100025048",
+      "nickname": "momo1😂mmmmmmmmmmmmmmm",
+      "gender": "男",
+      "age": 26,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/E2/DD/E2DD9FCF-220B-7A22-5E7D-40613F0F3DC820250627_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/E2/DD/E2DD9FCF-220B-7A22-5E7D-40613F0F3DC820250627_S.webp",
+      "value": 100000,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 0
+      },
+      "noble": {
+        "lv": 0,
+        "lvTitle": "",
+        "consumeValue": 10007,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 18,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 18,
+        "hide": 0
+      },
+      "avatarFrame": {
+        "id": 30000752,
+        "name": "爱丽丝礼盒3"
+      }
+    },
+    {
+      "rank": 23,
+      "uid": "100385728",
+      "nickname": "2Abcd",
+      "gender": "男",
+      "age": 25,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/60/CC/60CC22FA-8D18-2185-B668-760F22C5C8FC20251023_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/60/CC/60CC22FA-8D18-2185-B668-760F22C5C8FC20251023_S.webp",
+      "value": 60000,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 0
+      },
+      "noble": {
+        "lv": 4,
+        "lvTitle": "Count",
+        "consumeValue": 22862,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 16,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 17,
+        "hide": 0
+      },
+      "avatarFrame": {
+        "id": 30006221,
+        "name": "古尔邦节"
+      }
+    },
+    {
+      "rank": 24,
+      "uid": "100154848",
+      "nickname": "ghh",
+      "gender": "女",
+      "age": 18,
+      "initLang": "zh",
+      "avatar": "https://yaahlan.momocdn.com/tinypng/D6/75/D6755AAB-98C3-437C-83E1-F793C94B89E720250916_L.png",
+      "staticAvatar": "https://yaahlan.momocdn.com/tinypng/D6/75/D6755AAB-98C3-437C-83E1-F793C94B89E720250916_L.png",
+      "value": 59970,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 440
+      },
+      "noble": {
+        "lv": 0,
+        "lvTitle": "",
+        "consumeValue": 5998,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 7,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 5,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 25,
+      "uid": "100234501",
+      "nickname": "Ray%10فغغقا事技术l🙀👐🏻",
+      "gender": "女",
+      "age": 28,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/E1/86/E1869DC2-3066-2CF6-3612-1ED99342525020251226_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/E1/86/E1869DC2-3066-2CF6-3612-1ED99342525020251226_L.jpg",
+      "value": 28650,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 0
+      },
+      "noble": {
+        "lv": 4,
+        "lvTitle": "Count",
+        "consumeValue": 134288,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 16,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 35,
+        "hide": 0
+      },
+      "avatarFrame": {
+        "id": 30006222,
+        "name": "古尔邦节"
+      }
+    },
+    {
+      "rank": 26,
+      "uid": "100186186",
+      "nickname": "18622222245",
+      "gender": "女",
+      "age": 18,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/tinypng/B4/18/B4181494-B824-4BC0-B42D-A4AD721343B620250916_L.png",
+      "staticAvatar": "https://yaahlan.momocdn.com/tinypng/B4/18/B4181494-B824-4BC0-B42D-A4AD721343B620250916_L.png",
+      "value": 22380,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 0
+      },
+      "noble": {
+        "lv": 0,
+        "lvTitle": "",
+        "consumeValue": 953,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 2,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 3,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 27,
+      "uid": "100029911",
+      "nickname": "714",
+      "gender": "男",
+      "age": 26,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/B5/F6/B5F64FA5-CDD4-486B-9086-FAC7D68043C620250519_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/B5/F6/B5F64FA5-CDD4-486B-9086-FAC7D68043C620250519_L.jpg",
+      "value": 12000,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 1060
+      },
+      "noble": {
+        "lv": 4,
+        "lvTitle": "Count",
+        "consumeValue": 5357200,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 21,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 16,
+        "hide": 0
+      },
+      "avatarFrame": {
+        "id": 30006318,
+        "name": "CP"
+      }
+    },
+    {
+      "rank": 28,
+      "uid": "100493343",
+      "nickname": "User-0714CG966dkv",
+      "gender": "男",
+      "age": 19,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/55/05/5505F946-95E7-461D-96DF-4BFCB92E4A3420241231_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/55/05/5505F946-95E7-461D-96DF-4BFCB92E4A3420241231_L.jpg",
+      "value": 9000,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 10,
+        "lv": 3,
+        "value": 0
+      },
+      "noble": {
+        "lv": 1,
+        "lvTitle": "Knight",
+        "consumeValue": 74006,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 13,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 14,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 29,
+      "uid": "100481112",
+      "nickname": "测试",
+      "gender": "男",
+      "age": 33,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/99/06/99063F56-861B-431D-ADCD-6B18B20EBB8E20250819_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/99/06/99063F56-861B-431D-ADCD-6B18B20EBB8E20250819_L.jpg",
+      "value": 7000,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 2,
+        "lv": 2,
+        "value": 0
+      },
+      "noble": {
+        "lv": 2,
+        "lvTitle": "Baron",
+        "consumeValue": 69424,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 14,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 11,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 30,
+      "uid": "1617",
+      "nickname": "𖣔𓄂ـᬼ⍣𓅽⍣ملاك𓅖࿐",
+      "gender": "男",
+      "age": 22,
+      "initLang": "ar",
+      "avatar": "https://yaahlan.momocdn.com/picture/B7/12/B712ECEA-6FEC-6AFD-8AE5-6A244C46239F20260527_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/B7/12/B712ECEA-6FEC-6AFD-8AE5-6A244C46239F20260527_L.jpg",
+      "value": 1000,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 0
+      },
+      "noble": {
+        "lv": 1,
+        "lvTitle": "Knight",
+        "consumeValue": 164182,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 17,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 21,
+        "hide": 0
+      },
+      "avatarFrame": {
+        "id": 30000752,
+        "name": "爱丽丝礼盒3"
+      }
+    },
+    {
+      "rank": 31,
+      "uid": "100084348",
+      "nickname": "C35",
+      "gender": "男",
+      "age": 19,
+      "initLang": "zh",
+      "avatar": "https://yaahlan.momocdn.com/picture/6B/85/6B85A1CA-FF97-A2D2-BA50-998AE043881520250609_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/6B/85/6B85A1CA-FF97-A2D2-BA50-998AE043881520250609_L.jpg",
+      "value": 1000,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 0
+      },
+      "noble": {
+        "lv": 0,
+        "lvTitle": "",
+        "consumeValue": 6110,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 4,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 3,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 32,
+      "uid": "100111647",
+      "nickname": "香蕉",
+      "gender": "女",
+      "age": 19,
+      "initLang": "zh",
+      "avatar": "https://yaahlan.momocdn.com/picture/FF/FD/FFFDFAD5-49CC-483E-92B5-0B029665EF8420250611_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/FF/FD/FFFDFAD5-49CC-483E-92B5-0B029665EF8420250611_L.jpg",
+      "value": 990,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 0
+      },
+      "noble": {
+        "lv": 0,
+        "lvTitle": "",
+        "consumeValue": 3098,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 10,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 13,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 33,
+      "uid": "100048369",
+      "nickname": "zeha",
+      "gender": "男",
+      "age": 18,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/tinypng/2C/80/2C80377C-D23F-49E2-B937-AB843EB8FE1B20250916_L.png",
+      "staticAvatar": "https://yaahlan.momocdn.com/tinypng/2C/80/2C80377C-D23F-49E2-B937-AB843EB8FE1B20250916_L.png",
+      "value": 680,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 0
+      },
+      "noble": {
+        "lv": 0,
+        "lvTitle": "",
+        "consumeValue": 68,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 1,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 2,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 34,
+      "uid": "100268476",
+      "nickname": "71",
+      "gender": "男",
+      "age": 18,
+      "initLang": "zh",
+      "avatar": "https://yaahlan.momocdn.com/picture/10/AC/10AC985C-82B4-9702-0EBC-42BB04CD6F9D20250716_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/10/AC/10AC985C-82B4-9702-0EBC-42BB04CD6F9D20250716_L.jpg",
+      "value": 300,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 0
+      },
+      "noble": {
+        "lv": 0,
+        "lvTitle": "",
+        "consumeValue": 30,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 15,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 15,
+        "hide": 0
+      },
+      "avatarFrame": {
+        "id": 30003267,
+        "name": "Wealth LV.1-5"
+      }
+    },
+    {
+      "rank": 35,
+      "uid": "100471331",
+      "nickname": "kkkk",
+      "gender": "男",
+      "age": 31,
+      "initLang": "zh",
+      "avatar": "https://yaahlan.momocdn.com/picture/4E/6B/4E6BAE70-33B8-428A-949D-B9091D8F130A20250507_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/4E/6B/4E6BAE70-33B8-428A-949D-B9091D8F130A20250507_L.jpg",
+      "value": 210,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 1455
+      },
+      "noble": {
+        "lv": 0,
+        "lvTitle": "",
+        "consumeValue": 21,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 5,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 5,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 36,
+      "uid": "100171426",
+      "nickname": "all jdjdjjxjxfk",
+      "gender": "男",
+      "age": 18,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/tinypng/F9/5A/F95A205F-5713-4748-A076-9C15662733E120250916_L.png",
+      "staticAvatar": "https://yaahlan.momocdn.com/tinypng/F9/5A/F95A205F-5713-4748-A076-9C15662733E120250916_L.png",
+      "value": 210,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 840
+      },
+      "noble": {
+        "lv": 0,
+        "lvTitle": "",
+        "consumeValue": 21,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 1,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 0,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 37,
+      "uid": "1330",
+      "nickname": "خــيـͩــͣــͤــᷤـال",
+      "gender": "女",
+      "age": 18,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/AA/A3/AAA3B1F4-EB97-4CF5-A46C-7BABB9B8E6B920250926_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/AA/A3/AAA3B1F4-EB97-4CF5-A46C-7BABB9B8E6B920250926_L.jpg",
+      "value": 30,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 1281
+      },
+      "noble": {
+        "lv": 2,
+        "lvTitle": "Baron",
+        "consumeValue": 621,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 35,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 17,
+        "hide": 0
+      }
+    },
+    {
+      "rank": 38,
+      "uid": "100308447",
+      "nickname": "333333一二三四五六七八九十哈哈哈哈哈哈",
+      "gender": "女",
+      "age": 24,
+      "initLang": "en",
+      "avatar": "https://yaahlan.momocdn.com/picture/5F/E3/5FE362A2-FA28-4D48-A5BC-6A37E7DA49A420260402_S.webp",
+      "staticAvatar": "https://yaahlan.momocdn.com/picture/5F/E3/5FE362A2-FA28-4D48-A5BC-6A37E7DA49A420260402_S.webp",
+      "value": 30,
+      "prizeValue": 72,
+      "mystery": 0,
+      "anonymous": 2,
+      "vip": {
+        "level": 0,
+        "lv": 0,
+        "value": 492
+      },
+      "noble": {
+        "lv": 1,
+        "lvTitle": "Knight",
+        "consumeValue": 162908,
+        "hide": 0
+      },
+      "wealth": {
+        "lv": 12,
+        "hide": 0
+      },
+      "charm": {
+        "lv": 12,
+        "hide": 0
+      }
+    }
+  ]
+}

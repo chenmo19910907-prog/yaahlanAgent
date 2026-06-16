@@ -20,10 +20,10 @@
         0.956
       ],
       "note": "Me",
-      "resourceId": "tab_profile",
-      "bounds": "[864,2151][1080,2325]",
+      "resourceId": "profile_extra_info_tab_viewpager",
+      "bounds": "[0,1660][1080,2340]",
       "uiText": "Send",
-      "className": "android.widget.FrameLayout",
+      "className": "androidx.viewpager.widget.ViewPager",
       "fallback_tap_pct": [
         0.9,
         0.956
@@ -32,7 +32,7 @@
         972,
         2237
       ],
-      "locatorLearnedAt": "2026-06-09T08:55:55Z"
+      "locatorLearnedAt": "2026-06-16T10:45:47Z"
     },
     {
       "sleep_ms": 700
@@ -62,8 +62,8 @@
         0.068
       ],
       "note": "iv_setting 中心 996,159（勿用 966 左缘）",
-      "resourceId": "iv_setting",
-      "bounds": "[953,123][1052,222]",
+      "resourceId": "edit",
+      "bounds": "[942,147][1050,255]",
       "className": "android.widget.ImageView",
       "fallback_tap_pct": [
         0.922,
@@ -73,7 +73,7 @@
         995,
         159
       ],
-      "locatorLearnedAt": "2026-06-09T09:08:29Z"
+      "locatorLearnedAt": "2026-06-16T10:45:54Z"
     },
     {
       "sleep_ms": 800
@@ -84,10 +84,10 @@
         0.942
       ],
       "note": "Log out（bounds 中心 540,2205）",
-      "resourceId": "tab_msg",
-      "bounds": "[432,2151][648,2325]",
+      "resourceId": "profile_extra_info_tab_viewpager",
+      "bounds": "[0,1660][1080,2340]",
       "uiText": "I have read and agreed Terms of Service & Privacy Policy",
-      "className": "android.widget.FrameLayout",
+      "className": "androidx.viewpager.widget.ViewPager",
       "fallback_tap_pct": [
         0.5,
         0.942
@@ -96,7 +96,7 @@
         540,
         2204
       ],
-      "locatorLearnedAt": "2026-06-09T11:06:03Z"
+      "locatorLearnedAt": "2026-06-16T10:45:56Z"
     },
     {
       "sleep_ms": 2500,

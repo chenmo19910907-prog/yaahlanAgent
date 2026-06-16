@@ -1,7 +1,10 @@
 {
   "id": "post-image-moment",
   "name": "发布图片动态",
-  "recordedOn": { "width": 1080, "height": 2340 },
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
   "capture": "end",
   "description": "从任意底栏发布单图动态：Moment → + → 相册选第一张图 → 勾选 → Select → Post",
   "kbRef": [
@@ -9,24 +12,147 @@
     "documents/moments/video.md（相册入口，选图非视频）"
   ],
   "steps": [
-    { "sleep_ms": 300 },
-    { "run_script": "关闭常见弹窗", "note": "切页前关挡路弹窗" },
-    { "sleep_ms": 200 },
-    { "tap_pct": [0.700, 0.956], "note": "Moment" },
-    { "sleep_ms": 600 },
-    { "tap_pct": [0.922, 0.087], "note": "publish_feed" },
-    { "sleep_ms": 700 },
-    { "tap_pct": [0.198, 0.374], "note": "上传区 id/main" },
-    { "sleep_ms": 500 },
-    { "tap_pct": [0.500, 0.856], "note": "底部菜单 Album" },
-    { "sleep_ms": 2500, "note": "等待相册列表" },
-    { "tap_pct": [0.181, 0.773], "note": "相册网格首张图片" },
-    { "sleep_ms": 800, "note": "进入预览" },
-    { "tap_pct": [0.935, 0.070], "note": "preview_checkbox 勾选" },
-    { "sleep_ms": 500 },
-    { "tap_pct": [0.880, 0.952], "note": "preview_select_finish Select" },
-    { "sleep_ms": 1500, "note": "回到编辑页" },
-    { "tap_pct": [0.881, 0.068], "note": "Post；无键盘时勿 BACK 会清空已选图" },
-    { "sleep_ms": 8000, "note": "等待上传与发布" }
+    {
+      "sleep_ms": 300
+    },
+    {
+      "run_script": "关闭常见弹窗",
+      "note": "切页前关挡路弹窗"
+    },
+    {
+      "sleep_ms": 200
+    },
+    {
+      "tap_pct": [
+        0.7,
+        0.956
+      ],
+      "note": "Moment"
+    },
+    {
+      "sleep_ms": 600
+    },
+    {
+      "tap_pct": [
+        0.922,
+        0.087
+      ],
+      "note": "publish_feed",
+      "resourceId": "title_bar",
+      "bounds": "[0,0][1080,234]",
+      "className": "android.widget.FrameLayout",
+      "fallback_tap_pct": [
+        0.922,
+        0.087
+      ],
+      "fallback_tap": [
+        995,
+        203
+      ],
+      "locatorLearnedAt": "2026-06-16T10:59:30Z"
+    },
+    {
+      "sleep_ms": 700
+    },
+    {
+      "tap_pct": [
+        0.198,
+        0.374
+      ],
+      "note": "上传区 id/main",
+      "resourceId": "input_code",
+      "bounds": "[45,739][1035,895]",
+      "className": "android.widget.EditText",
+      "fallback_tap_pct": [
+        0.198,
+        0.374
+      ],
+      "fallback_tap": [
+        213,
+        875
+      ],
+      "locatorLearnedAt": "2026-06-16T10:59:32Z"
+    },
+    {
+      "sleep_ms": 500
+    },
+    {
+      "tap_pct": [
+        0.5,
+        0.856
+      ],
+      "note": "底部菜单 Album"
+    },
+    {
+      "sleep_ms": 2500,
+      "note": "等待相册列表"
+    },
+    {
+      "tap_pct": [
+        0.181,
+        0.773
+      ],
+      "note": "相册网格首张图片"
+    },
+    {
+      "sleep_ms": 800,
+      "note": "进入预览"
+    },
+    {
+      "tap_pct": [
+        0.935,
+        0.07
+      ],
+      "note": "preview_checkbox 勾选",
+      "resourceId": "title_bar",
+      "bounds": "[0,0][1080,234]",
+      "className": "android.widget.FrameLayout",
+      "fallback_tap_pct": [
+        0.935,
+        0.07
+      ],
+      "fallback_tap": [
+        1009,
+        163
+      ],
+      "locatorLearnedAt": "2026-06-16T10:59:40Z"
+    },
+    {
+      "sleep_ms": 500
+    },
+    {
+      "tap_pct": [
+        0.88,
+        0.952
+      ],
+      "note": "preview_select_finish Select"
+    },
+    {
+      "sleep_ms": 1500,
+      "note": "回到编辑页"
+    },
+    {
+      "tap_pct": [
+        0.881,
+        0.068
+      ],
+      "note": "Post；无键盘时勿 BACK 会清空已选图",
+      "resourceId": "title_bar",
+      "bounds": "[0,0][1080,234]",
+      "className": "android.widget.FrameLayout",
+      "fallback_tap_pct": [
+        0.881,
+        0.068
+      ],
+      "fallback_tap": [
+        951,
+        159
+      ],
+      "locatorLearnedAt": "2026-06-16T10:59:45Z"
+    },
+    {
+      "sleep_ms": 8000,
+      "note": "等待上传与发布"
+    }
   ]
 }

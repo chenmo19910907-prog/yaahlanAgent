@@ -17,9 +17,9 @@
         0.956
       ],
       "note": "tab_profile",
-      "resourceId": "send_iv",
-      "bounds": "[953,2190][1014,2246]",
-      "className": "android.widget.ImageView",
+      "resourceId": "profile_extra_info_tab_viewpager",
+      "bounds": "[0,1660][1080,2340]",
+      "className": "androidx.viewpager.widget.ViewPager",
       "fallback_tap_pct": [
         0.9,
         0.909366
@@ -28,7 +28,7 @@
         972,
         2237
       ],
-      "locatorLearnedAt": "2026-06-09T10:34:33Z"
+      "locatorLearnedAt": "2026-06-16T10:47:14Z"
     },
     {
       "popup_gate": {

@@ -103,9 +103,9 @@
       ],
       "note": "双按钮对话框左侧 Cancel",
       "skip_key": "dismiss_popup_taps",
-      "resourceId": "avatar_bg",
-      "bounds": "[372,1068][708,1404]",
-      "className": "android.widget.ImageView",
+      "resourceId": "reset_code",
+      "bounds": "[60,1176][1020,1236]",
+      "className": "android.widget.TextView",
       "fallback_tap_pct": [
         0.35,
         0.494634
@@ -114,8 +114,8 @@
         378,
         1216
       ],
-      "locatorLearnedAt": "2026-06-09T14:00:35Z",
-      "uiText": "Online players"
+      "locatorLearnedAt": "2026-06-16T10:59:26Z",
+      "uiText": "Resend Code"
     },
     {
       "sleep_ms": 300

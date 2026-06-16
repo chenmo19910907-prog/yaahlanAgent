@@ -1,30 +1,97 @@
 {
   "id": "dismiss-me-popups",
   "name": "关闭Me页弹窗",
-  "recordedOn": { "width": 1080, "height": 2340 },
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
   "capture": "never",
   "description": "Me 页专用：仅点 Cancel 关众测/账号安全/双按钮对话框。勿 BACK（MainActivity 上会触发退出 App 二次确认）。",
   "popups": [
-    { "name": "Account Security", "dismiss": "Cancel 约 (0.32, 0.56)" },
-    { "name": "Crowd Testing Invitation", "dismiss": "Cancel 约 (0.296, 0.479)" },
-    { "name": "双按钮对话框", "dismiss": "左侧 Cancel 约 (0.35, 0.52)" }
+    {
+      "name": "Account Security",
+      "dismiss": "Cancel 约 (0.32, 0.56)"
+    },
+    {
+      "name": "Crowd Testing Invitation",
+      "dismiss": "Cancel 约 (0.296, 0.479)"
+    },
+    {
+      "name": "双按钮对话框",
+      "dismiss": "左侧 Cancel 约 (0.35, 0.52)"
+    }
   ],
   "steps": [
-    { "sleep_ms": 600, "note": "等待 Me 页众测/安全弹窗动画" },
     {
-      "tap_pct": [0.32, 0.56],
-      "note": "Account Security → Cancel"
+      "sleep_ms": 600,
+      "note": "等待 Me 页众测/安全弹窗动画"
     },
-    { "sleep_ms": 350 },
     {
-      "tap_pct": [0.296, 0.479],
-      "note": "Crowd Testing → Cancel"
+      "tap_pct": [
+        0.32,
+        0.56
+      ],
+      "note": "Account Security → Cancel",
+      "resourceId": "profile_extra_info_container",
+      "bounds": "[0,1110][1080,1480]",
+      "className": "android.view.ViewGroup",
+      "fallback_tap_pct": [
+        0.32,
+        0.56
+      ],
+      "fallback_tap": [
+        345,
+        1310
+      ],
+      "locatorLearnedAt": "2026-06-16T10:47:27Z"
     },
-    { "sleep_ms": 350 },
     {
-      "tap_pct": [0.35, 0.52],
-      "note": "双按钮对话框左侧 Cancel"
+      "sleep_ms": 350
     },
-    { "sleep_ms": 300 }
+    {
+      "tap_pct": [
+        0.296,
+        0.479
+      ],
+      "note": "Crowd Testing → Cancel",
+      "resourceId": "profile_extra_info_container",
+      "bounds": "[0,1110][1080,1480]",
+      "className": "android.view.ViewGroup",
+      "fallback_tap_pct": [
+        0.296,
+        0.479
+      ],
+      "fallback_tap": [
+        319,
+        1120
+      ],
+      "locatorLearnedAt": "2026-06-16T10:47:29Z"
+    },
+    {
+      "sleep_ms": 350
+    },
+    {
+      "tap_pct": [
+        0.35,
+        0.52
+      ],
+      "note": "双按钮对话框左侧 Cancel",
+      "resourceId": "sign",
+      "bounds": "[51,1155][1029,1219]",
+      "uiText": "She is very mysterious, nothing left",
+      "className": "android.widget.TextView",
+      "fallback_tap_pct": [
+        0.35,
+        0.52
+      ],
+      "fallback_tap": [
+        378,
+        1216
+      ],
+      "locatorLearnedAt": "2026-06-16T10:47:30Z"
+    },
+    {
+      "sleep_ms": 300
+    }
   ]
 }
