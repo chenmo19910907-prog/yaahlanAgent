@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "adb-screen": {
+      "command": "/Users/user/CursorProjects/auto-generate-testcase/adb/mcp_adb_screen/.venv/bin/python3",
+      "args": [
+        "/Users/user/CursorProjects/auto-generate-testcase/adb/mcp_adb_screen/server.py"
+      ],
+      "env": {}
+    }
+  }
+}

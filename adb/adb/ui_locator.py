@@ -23,9 +23,19 @@ class LocatorNotFoundError(ValueError):
 
 
 def dump_ui_xml(*, serial: str) -> str:
-    run_adb(["shell", "uiautomator", "dump", "/sdcard/ui.xml"], serial=serial, check=True)
-    proc = run_adb(["shell", "cat", "/sdcard/ui.xml"], serial=serial, check=True)
+    """uiautomator dump → XML 文本（单次 shell，减少一轮 adb 往返）。"""
+    proc = run_adb(
+        ["shell", "sh", "-c", "uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 && cat /sdcard/ui.xml"],
+        serial=serial,
+        timeout_s=20.0,
+        check=True,
+    )
     raw = proc.stdout.decode("utf-8", errors="replace")
+    if "<?xml" not in raw and "<hierarchy" not in raw:
+        # 回退：部分机型 sh -c 行为异常
+        run_adb(["shell", "uiautomator", "dump", "/sdcard/ui.xml"], serial=serial, check=True)
+        proc = run_adb(["shell", "cat", "/sdcard/ui.xml"], serial=serial, check=True)
+        raw = proc.stdout.decode("utf-8", errors="replace")
     return re.sub(r"\sxmlns[^=]*=\"[^\"]*\"", "", raw)
 
 

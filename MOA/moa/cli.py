@@ -35,6 +35,7 @@ from .user_area import USER_AREA_CODES
 from .user_login import normalize_mobile_login, parse_login_status_summary
 from .user_prop import parse_user_prop_summary
 from .vip import parse_vip_info_summary
+from .wealth_charm import parse_charm_info_summary, parse_wealth_info_summary
 from .payload import load_payload
 
 
@@ -195,6 +196,20 @@ def build_parser() -> argparse.ArgumentParser:
         dest="cancel_user_id",
         metavar="USER_ID",
         help="注销账号 userId（voga-mts-user-backdoor；userCancelService.cancelUserReal）",
+    )
+    parser.add_argument(
+        "--charm-query-user-id",
+        help="查询魅力等级 userId（getCharmInfoNoAvatar）",
+    )
+    parser.add_argument(
+        "--wealth-query-user-id",
+        help="查询财富等级 userId（getWealthInfoNoAvatar）",
+    )
+    parser.add_argument(
+        "--wealth-charm-output",
+        choices=["summary", "json"],
+        default="summary",
+        help="财富/魅力查询输出格式：summary=摘要（默认）；json=完整响应 JSON",
     )
     parser.add_argument("--phone-area-code", default="86", help="手机号区号（默认 86；也可在号码中带 +86）")
     parser.add_argument("--phone-app-id", type=int, help="queryLoginStatusV2 的 appId（默认 config.json 中 2005）")
@@ -386,6 +401,24 @@ def _print_response(args: argparse.Namespace, resp: dict[str, object]) -> None:
             print(f"业务返回失败: ec={inner_ec}, em={inner_em}", file=sys.stderr)
             raise SystemExit(4)
         summary = parse_diamond_account_summary(args.diamond_query_user_id, inner_result)
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+        return
+
+    if args.charm_query_user_id is not None and args.wealth_charm_output == "summary":
+        inner_ec, inner_em, inner_result = extract_inner_result(resp)
+        if inner_ec != 0:
+            print(f"业务返回失败: ec={inner_ec}, em={inner_em}", file=sys.stderr)
+            raise SystemExit(4)
+        summary = parse_charm_info_summary(args.charm_query_user_id, inner_result)
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+        return
+
+    if args.wealth_query_user_id is not None and args.wealth_charm_output == "summary":
+        inner_ec, inner_em, inner_result = extract_inner_result(resp)
+        if inner_ec != 0:
+            print(f"业务返回失败: ec={inner_ec}, em={inner_em}", file=sys.stderr)
+            raise SystemExit(4)
+        summary = parse_wealth_info_summary(args.wealth_query_user_id, inner_result)
         print(json.dumps(summary, ensure_ascii=False, indent=2))
         return
 

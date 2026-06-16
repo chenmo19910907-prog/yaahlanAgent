@@ -20,10 +20,10 @@
         0.161
       ],
       "note": "My voice room（760,377）",
-      "resourceId": "my_room",
-      "bounds": "[471,302][1050,452]",
+      "resourceId": "user_photo",
+      "bounds": "[0,0][1080,835]",
       "uiText": "My voice room",
-      "className": "android.widget.TextView",
+      "className": "android.widget.ImageView",
       "fallback_tap_pct": [
         0.704,
         0.161
@@ -32,7 +32,7 @@
         760,
         376
       ],
-      "locatorLearnedAt": "2026-06-09T06:58:30Z"
+      "locatorLearnedAt": "2026-06-16T04:16:55Z"
     },
     {
       "sleep_ms": 1500

@@ -420,6 +420,30 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-注销账号.json \\\n  --cancel-user <userId>\n"
     },
     {
+      "id": "charm_query_current",
+      "name": "魅力-查询等级",
+      "category": "用户后门（voga-mts-user-backdoor）",
+      "description": "查询用户魅力等级与魅力值（getCharmInfoNoAvatar；返回 lv、charmValue、nextLevelNeedScore 等）",
+      "prompts": [
+        "查询用户 <userId> 魅力等级",
+        "查询 <userId> 魅力值",
+        "getCharmInfoNoAvatar <userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/魅力-查询等级.json \\\n  --charm-query-user-id <userId>\n"
+    },
+    {
+      "id": "wealth_query_current",
+      "name": "财富-查询等级",
+      "category": "用户后门（voga-mts-user-backdoor）",
+      "description": "查询用户财富等级与财富值（getWealthInfoNoAvatar；返回 lv、userWealthValue、nextLevelNeedScore 等）",
+      "prompts": [
+        "查询用户 <userId> 财富等级",
+        "查询 <userId> 财富值",
+        "getWealthInfoNoAvatar <userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/财富-查询等级.json \\\n  --wealth-query-user-id <userId>\n"
+    },
+    {
       "id": "user_area_change",
       "name": "用户-修改大区",
       "category": "用户大区（yaahlan/components/callback/user-area）",

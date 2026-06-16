@@ -55,6 +55,7 @@ from .params import (
 from .time_utils import resolve_expire_ms, resolve_family_fund_week_key
 from .user_area import describe_user_area, normalize_user_area
 from .user_login import normalize_mobile_login
+from .wealth_charm import build_wealth_charm_query_expr
 
 PayloadBuilder = Callable[[argparse.Namespace, dict[str, Any]], None]
 
@@ -277,6 +278,22 @@ def _op_cancel_user(args: argparse.Namespace, payload: dict[str, Any]) -> None:
         raise ValueError("注销账号时 userId 不能为空")
     expr = f'context.getBean("userCancelService").cancelUserReal("{user_id}")'
     print(f"注销账号 userId={user_id}", file=sys.stderr)
+    set_backdoor_execute_expr(payload, expr)
+
+
+def _op_charm_query(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    """查询魅力等级（voga-mts-user-backdoor execute；getCharmInfoNoAvatar）。"""
+    payload["url"] = "/service/voga-mts-user-backdoor"
+    payload["method"] = "execute"
+    expr = build_wealth_charm_query_expr("getCharmInfoNoAvatar", args.charm_query_user_id)
+    set_backdoor_execute_expr(payload, expr)
+
+
+def _op_wealth_query(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    """查询财富等级（voga-mts-user-backdoor execute；getWealthInfoNoAvatar）。"""
+    payload["url"] = "/service/voga-mts-user-backdoor"
+    payload["method"] = "execute"
+    expr = build_wealth_charm_query_expr("getWealthInfoNoAvatar", args.wealth_query_user_id)
     set_backdoor_execute_expr(payload, expr)
 
 
@@ -555,6 +572,8 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: _cp_ferris_area_mode(a), _op_cp_ferris_area),
     (lambda a: a.change_user_area_user_id is not None, _op_change_user_area),
     (lambda a: a.cancel_user_id is not None, _op_cancel_user),
+    (lambda a: a.charm_query_user_id is not None, _op_charm_query),
+    (lambda a: a.wealth_query_user_id is not None, _op_wealth_query),
     (lambda a: a.query_user_by_phone is not None, _op_query_user_by_phone),
     (lambda a: a.id_auth_user_id is not None, _op_id_auth_query),
     (lambda a: a.id_auth_reset_expire_user_id is not None, _op_id_auth_reset_expire),

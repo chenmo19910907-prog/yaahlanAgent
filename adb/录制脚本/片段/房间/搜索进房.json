@@ -26,7 +26,19 @@
         0.833,
         0.085
       ],
-      "note": "右上角搜索入口"
+      "note": "右上角搜索入口",
+      "resourceId": "profile_top_nav_bar",
+      "bounds": "[0,147][1080,255]",
+      "className": "android.widget.FrameLayout",
+      "fallback_tap_pct": [
+        0.833,
+        0.085
+      ],
+      "fallback_tap": [
+        899,
+        198
+      ],
+      "locatorLearnedAt": "2026-06-16T04:05:48Z"
     },
     {
       "sleep_ms": 800
@@ -36,7 +48,19 @@
         0.417,
         0.128
       ],
-      "note": "搜索页输入框（聚焦后再清空输入）"
+      "note": "搜索页输入框（聚焦后再清空输入）",
+      "resourceId": "user_photo",
+      "bounds": "[0,0][1080,835]",
+      "className": "android.widget.ImageView",
+      "fallback_tap_pct": [
+        0.417,
+        0.128
+      ],
+      "fallback_tap": [
+        450,
+        299
+      ],
+      "locatorLearnedAt": "2026-06-16T04:05:49Z"
     },
     {
       "sleep_ms": 400
@@ -55,7 +79,19 @@
         0.861,
         0.161
       ],
-      "note": "输入框右侧 Search 按钮（930,377；勿点键盘右下角搜索）"
+      "note": "输入框右侧 Search 按钮（930,377；勿点键盘右下角搜索）",
+      "resourceId": "user_photo",
+      "bounds": "[0,0][1080,835]",
+      "className": "android.widget.ImageView",
+      "fallback_tap_pct": [
+        0.861,
+        0.161
+      ],
+      "fallback_tap": [
+        929,
+        376
+      ],
+      "locatorLearnedAt": "2026-06-16T04:06:07Z"
     },
     {
       "sleep_ms": 1500,
@@ -66,7 +102,19 @@
         0.5,
         0.222
       ],
-      "note": "搜索结果首条（540,520；yyy/67686209 等 ID 搜索行中心），勿点顶部输入框 y≈0.13"
+      "note": "搜索结果首条（540,520；yyy/67686209 等 ID 搜索行中心），勿点顶部输入框 y≈0.13",
+      "resourceId": "avatar",
+      "bounds": "[366,487][714,835]",
+      "className": "android.widget.FrameLayout",
+      "fallback_tap_pct": [
+        0.5,
+        0.222
+      ],
+      "fallback_tap": [
+        540,
+        519
+      ],
+      "locatorLearnedAt": "2026-06-16T04:06:09Z"
     },
     {
       "sleep_ms": 4000,

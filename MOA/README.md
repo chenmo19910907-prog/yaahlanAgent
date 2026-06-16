@@ -13,7 +13,8 @@ MOA/
 ├── .env.example / .env.local # 环境变量（Cookie 不入库）
 ├── config/
 │   ├── registry.json         # 能力登记（提示词 + 命令）
-│   └── thresholds.json       # 等级阈值、家族基金档位等规则
+│   ├── thresholds.json       # 等级阈值、钻石经验换算规则等
+│   └── 钻石经验值规则.md      # 送礼钻石 ↔ VIP/贵族/财富/魅力 关系（重点）
 ├── 使用方法.md                # 能力清单（自动生成）
 ├── scripts/
 │   ├── generate_index.py     # 生成 使用方法.md
@@ -66,6 +67,8 @@ python3 MOA/moa_execute.py \
 
 完整口令与命令见 **[使用方法.md](使用方法.md)**。
 
+**钻石与经验值**：送礼/充值与各等级经验的换算见 **[config/钻石经验值规则.md](config/钻石经验值规则.md)**（机器可读：`config/thresholds.json` → `diamond_exp_rules`）。
+
 ## 维护
 
 | 操作 | 命令 |
@@ -84,4 +87,5 @@ python3 MOA/moa_execute.py \
 ## 相关文档
 
 - [使用方法.md](使用方法.md) — 全部能力口令与命令
+- [config/钻石经验值规则.md](config/钻石经验值规则.md) — **送礼钻石与 VIP/贵族/财富/魅力经验值换算（重点）**
 - [新手上手.md](../新手上手.md) — 新机器配置引导

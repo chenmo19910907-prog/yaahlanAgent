@@ -155,6 +155,50 @@ def _resize_png_max_edge(path: Path, max_edge: int) -> None:
     )
 
 
+def png_dimensions_from_bytes(data: bytes) -> tuple[int, int]:
+    if len(data) < 24 or data[:8] != b"\x89PNG\r\n\x1a\n":
+        raise ValueError("不是有效 PNG 数据")
+    return struct.unpack(">II", data[16:24])
+
+
+def capture_live_png(
+    *,
+    serial: str | None,
+    dest: Path,
+    max_edge: int | None = None,
+) -> dict[str, object]:
+    """截屏直写 dest，不 prune、不生成时间戳文件（observe 专用，更快）。"""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    proc = run_adb(["exec-out", "screencap", "-p"], serial=serial, check=True)
+    if not proc.stdout:
+        raise RuntimeError("screencap 返回空数据")
+    dest.write_bytes(proc.stdout)
+    device_width, device_height = png_dimensions(dest)
+    thumbnail = False
+    if max_edge is not None:
+        before_w, before_h = device_width, device_height
+        _resize_png_max_edge(dest, max_edge)
+        width, height = png_dimensions(dest)
+        thumbnail = width != before_w or height != before_h
+    else:
+        width, height = device_width, device_height
+    scale_x = device_width / width if width else 1.0
+    scale_y = device_height / height if height else 1.0
+    out: dict[str, object] = {
+        "path": str(dest.resolve()),
+        "width": width,
+        "height": height,
+        "deviceWidth": device_width,
+        "deviceHeight": device_height,
+        "scaleX": scale_x,
+        "scaleY": scale_y,
+        "thumbnail": thumbnail,
+    }
+    if max_edge is not None:
+        out["maxEdge"] = max_edge
+    return out
+
+
 def capture_screenshot(
     *,
     serial: str | None,

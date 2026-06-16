@@ -20,9 +20,9 @@
         0.088
       ],
       "note": "im_create_room（996,207）",
-      "resourceId": "iv_setting",
-      "bounds": "[942,105][1050,213]",
-      "className": "android.widget.ImageView",
+      "resourceId": "profile_top_nav_bar",
+      "bounds": "[0,147][1080,255]",
+      "className": "android.widget.FrameLayout",
       "fallback_tap_pct": [
         0.922,
         0.088
@@ -31,7 +31,7 @@
         995,
         205
       ],
-      "locatorLearnedAt": "2026-06-11T05:00:16Z"
+      "locatorLearnedAt": "2026-06-16T04:16:52Z"
     },
     {
       "sleep_ms": 800

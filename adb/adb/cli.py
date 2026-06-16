@@ -186,6 +186,46 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_info = sub.add_parser("info", help="设备屏幕尺寸 + 最新截图信息")
 
+    p_observe = sub.add_parser(
+        "observe",
+        help="Agent 读屏：Activity + UI 树 JSON + 固定路径 live.png（供 Cursor 分析）",
+    )
+    p_observe.add_argument(
+        "--wait",
+        type=float,
+        metavar="SEC",
+        default=0,
+        help="先等待界面变化（Activity/UI 树），超时后仍返回当前屏",
+    )
+    p_observe.add_argument(
+        "--image",
+        action="store_true",
+        help="附带 PNG 截图（WebView/需看图时用；默认仅 UI 树更快）",
+    )
+    p_observe.add_argument(
+        "--fast",
+        action="store_true",
+        help="极速：无截图 + 仅 clickable 元素 + ui_limit≤45",
+    )
+    p_observe.add_argument(
+        "--no-image",
+        action="store_true",
+        help=argparse.SUPPRESS,
+    )
+    p_observe.add_argument(
+        "--max-edge",
+        type=int,
+        default=1170,
+        metavar="PX",
+        help="截图最长边（配合 --image）",
+    )
+    p_observe.add_argument(
+        "--ui-limit",
+        type=int,
+        default=50,
+        help="ui.clickables 最多条数（默认 50）",
+    )
+
     p_tap = sub.add_parser("tap", help="点击坐标（视觉循环：读图后算出的 x y）")
     p_tap.add_argument("x", type=int)
     p_tap.add_argument("y", type=int)
@@ -986,6 +1026,27 @@ def main(argv: list[str] | None = None) -> int:
                     "width": pw,
                     "height": ph,
                 }
+            _emit(payload)
+            return 0
+
+        if args.command == "observe":
+            from .screen_observe import observe_screen, wait_for_screen_change
+
+            include_image = bool(args.image) and not bool(getattr(args, "no_image", False))
+            observe_kwargs = {
+                "serial": serial,
+                "include_image": include_image,
+                "max_edge": args.max_edge,
+                "ui_limit": args.ui_limit,
+                "fast": bool(args.fast),
+            }
+            if args.wait and args.wait > 0:
+                payload = wait_for_screen_change(
+                    timeout_s=float(args.wait),
+                    **observe_kwargs,
+                )
+            else:
+                payload = observe_screen(**observe_kwargs)
             _emit(payload)
             return 0
 

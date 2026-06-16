@@ -101,6 +101,22 @@ def build_cli_cases() -> list[TestCase]:
             category="cli-variant",
         ),
         TestCase(
+            name="charm_query_cli",
+            args=[
+                "--payload-file", "MOA/templates/魅力-查询等级.json",
+                "--charm-query-user-id", "100182971",
+            ],
+            category="cli-variant",
+        ),
+        TestCase(
+            name="wealth_query_cli",
+            args=[
+                "--payload-file", "MOA/templates/财富-查询等级.json",
+                "--wealth-query-user-id", "100182971",
+            ],
+            category="cli-variant",
+        ),
+        TestCase(
             name="user_login_query_by_phone",
             args=[
                 "--payload-file", "MOA/templates/用户-按手机号查userId.json",

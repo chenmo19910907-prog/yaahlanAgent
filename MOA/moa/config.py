@@ -26,6 +26,7 @@ _VIP_THRESHOLDS: dict[int, int] | None = None
 _MEMBER_LV_THRESHOLDS: dict[int, int] | None = None
 _NOBLE_THRESHOLDS: dict[int, int] | None = None
 _FAMILY_THRESHOLDS: dict[int, int] | None = None
+_WEALTH_CHARM_THRESHOLDS: dict[int, int] | None = None
 _FAMILY_FUND_SUB_REWARDS: dict[str, list[dict[str, Any]]] | None = None
 
 
@@ -104,6 +105,24 @@ def family_level_thresholds() -> dict[int, int]:
     if _FAMILY_THRESHOLDS is None:
         _FAMILY_THRESHOLDS = _parse_thresholds("family_level_exp_thresholds", "家族")
     return _FAMILY_THRESHOLDS
+
+
+def wealth_charm_level_thresholds() -> dict[int, int]:
+    """财富/魅力等级门槛（v2.0.6 新版等级值；二者共用）。"""
+    global _WEALTH_CHARM_THRESHOLDS
+    if _WEALTH_CHARM_THRESHOLDS is None:
+        _WEALTH_CHARM_THRESHOLDS = _parse_thresholds(
+            "wealth_charm_level_exp_thresholds",
+            "财富/魅力",
+        )
+    return _WEALTH_CHARM_THRESHOLDS
+
+
+def diamond_exp_rules() -> dict[str, Any]:
+    raw = load_config().get("diamond_exp_rules")
+    if not isinstance(raw, dict):
+        raise RuntimeError("配置错误：diamond_exp_rules 必须是 object")
+    return raw
 
 
 def family_fund_sub_rewards(tier: str) -> list[dict[str, Any]]:
@@ -255,6 +274,12 @@ def build_noble_exp_delta_for_level(level: int, current_exp: int, mode: str = "m
 
 def build_family_exp_delta_for_level(level: int, current_exp: int, mode: str = "min") -> int:
     return build_exp_delta_for_level(level, current_exp, family_level_thresholds(), "家族", mode)
+
+
+def build_wealth_charm_exp_delta_for_level(level: int, current_exp: int, mode: str = "min") -> int:
+    return build_exp_delta_for_level(
+        level, current_exp, wealth_charm_level_thresholds(), "财富/魅力", mode
+    )
 
 
 def build_room_exp_expr(room_id: str, exp: int) -> str:

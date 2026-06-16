@@ -35,12 +35,12 @@ description: >-
 ## 主循环（每个入口）
 
 ```text
-① capture --max-edge 1170 读图 → 确认当前页与可点入口
-①b 【最高优先级】见 Charm/PK 横幅或奖杯挂件 → macro CharmPK横幅收起拖走 → capture 验收后再继续
-② 【本页】上滑若干次（每次 swipe 后再 capture），直到内容穷尽；必要时滑回顶部
+① observe（或 observe --wait 2）→ 读 JSON 中 ui.clickables；WebView/图像页再 Read screen.path
+①b 【最高优先级】见 Charm/PK 横幅或奖杯挂件 → macro CharmPK横幅收起拖走 → observe 验收后再继续
+② 【本页】上滑若干次（每次 swipe 后再 observe），直到内容穷尽；必要时滑回顶部
 ③ 选一个未落库入口
-④ tap（读图算坐标；Tab 等可 uiautomator dump 精确定位）
-⑤ activity 快验 + capture 验收落点（WebView / ProfileActivity / PayActivity 等）
+④ tap（优先 ui.clickables 的 center/tapPct；Tab 等可 uiautomator dump 精确定位）
+⑤ activity 快验 + observe 验收落点（WebView / ProfileActivity / PayActivity 等）
 ⑥ 子页重复 ②；对照 testcase-kb / documents 写 kbRef、description
 ⑦ 落 片段/<模块>/*.json → 更新 索引.json、KB对照.md
 ⑧ key 4 或读图点返回，回到列表页
@@ -50,7 +50,15 @@ description: >-
 ## 常用命令
 
 ```bash
-# 读图（优先缩略，加快 Agent 读图）
+# Agent 读屏（CLI，默认无截图最快）
+python3 adb/adb_execute.py observe
+python3 adb/adb_execute.py observe --fast --wait 5
+python3 adb/adb_execute.py observe --image   # WebView 需看图时
+
+# Cursor MCP：adb_observe（默认 fast、无截图）
+# 见技能 adb-screen-mcp、adb/mcp_adb_screen/mcp_config_example.json
+
+# 兼容旧流程
 python3 adb/adb_execute.py capture --max-edge 1170
 python3 adb/adb_execute.py activity
 

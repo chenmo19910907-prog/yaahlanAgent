@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from .device import run_adb
+from .screen_events import emit_event
 
 
 def tap(*, x: int, y: int, serial: str | None) -> None:
     if x < 0 or y < 0:
         raise ValueError(f"坐标不能为负: ({x}, {y})")
     run_adb(["shell", "input", "tap", str(x), str(y)], serial=serial, check=True)
+    emit_event("tap", serial=serial, x=x, y=y)
 
 
 def swipe(
@@ -35,6 +37,15 @@ def swipe(
         ],
         serial=serial,
         check=True,
+    )
+    emit_event(
+        "swipe",
+        serial=serial,
+        x1=x1,
+        y1=y1,
+        x2=x2,
+        y2=y2,
+        durationMs=duration_ms,
     )
 
 

@@ -1,4 +1,118 @@
 {
+  "_comment_diamond_exp_rules": "送礼钻石与各经验值关系；详表见 MOA/config/钻石经验值规则.md",
+  "diamond_exp_rules": {
+    "sources": [
+      "documents/财富魅力等级.md",
+      "documents/vip等级.md",
+      "documents/贵族.md"
+    ],
+    "gift_diamond_basis": "礼物面板标价钻石数（非背包扣钻、非免费礼物）",
+    "wealth": {
+      "name": "财富值",
+      "side": "sender",
+      "trigger": "送出礼物",
+      "ratio_diamond_to_exp": 1,
+      "counts_gift_types": ["普通礼物", "道具礼物", "盲盒礼物", "幸运礼物"],
+      "excludes_gift_types": ["背包礼物", "免费礼物"],
+      "legacy_ratio_diamond_to_exp": 10,
+      "legacy_free_gift_counts": true,
+      "max_level": 35,
+      "threshold_key": "wealth_charm_level_exp_thresholds"
+    },
+    "charm": {
+      "name": "魅力值",
+      "side": "receiver",
+      "trigger": "收到礼物",
+      "ratio_diamond_to_exp": 1,
+      "counts_gift_types": ["普通礼物", "道具礼物", "盲盒礼物", "幸运礼物"],
+      "excludes_gift_types": ["背包礼物", "免费礼物"],
+      "legacy_ratio_diamond_to_exp": 10,
+      "legacy_free_gift_counts": true,
+      "max_level": 35,
+      "threshold_key": "wealth_charm_level_exp_thresholds"
+    },
+    "vip_growth": {
+      "name": "VIP成长值",
+      "max_level": 10,
+      "growth_cap": 145000000,
+      "threshold_key": "vip_level_exp_thresholds",
+      "channels": {
+        "recharge": {"diamond": 1, "growth": 1, "description": "充值"},
+        "purchase": {"diamond": 1, "growth": 3, "min_diamond": 1, "description": "购买成长值"}
+      }
+    },
+    "noble_consumption": {
+      "name": "贵族消费值",
+      "max_level": 6,
+      "threshold_key": "noble_level_exp_thresholds",
+      "spend_ratio_diamond_to_consumption": 1,
+      "purchase_ratio_diamond_to_consumption": 3,
+      "purchase_min_consumption": 3,
+      "counts_spend": [
+        "赠送面板普通/道具/幸运礼物",
+        "购买道具",
+        "购买特权",
+        "购买VIP成长值"
+      ],
+      "excludes_spend": ["游戏消耗钻石", "赠送背包礼物", "购买消费值本身"]
+    },
+    "game": {
+      "name": "游戏值",
+      "trigger": "游戏内获得",
+      "ratio_diamond_to_exp": 1,
+      "max_level": 21,
+      "note": "与礼物面板送礼独立累计"
+    },
+    "gift_send_effects": {
+      "panel_gift_diamond_d": {
+        "sender": ["wealth+d", "noble_consumption+d"],
+        "receiver": ["charm+d"],
+        "not_affected": ["vip_growth"]
+      },
+      "backpack_or_free_gift": {
+        "sender": [],
+        "receiver": [],
+        "noble_consumption": false
+      }
+    }
+  },
+  "wealth_charm_level_exp_thresholds": {
+    "1": 1,
+    "2": 500,
+    "3": 2000,
+    "4": 5000,
+    "5": 10000,
+    "6": 30000,
+    "7": 50000,
+    "8": 120000,
+    "9": 180000,
+    "10": 260000,
+    "11": 350000,
+    "12": 500000,
+    "13": 800000,
+    "14": 1500000,
+    "15": 2800000,
+    "16": 4800000,
+    "17": 8000000,
+    "18": 15000000,
+    "19": 32000000,
+    "20": 55000000,
+    "21": 80000000,
+    "22": 120000000,
+    "23": 180000000,
+    "24": 250000000,
+    "25": 350000000,
+    "26": 500000000,
+    "27": 800000000,
+    "28": 1150000000,
+    "29": 1600000000,
+    "30": 2100000000,
+    "31": 2800000000,
+    "32": 3700000000,
+    "33": 5000000000,
+    "34": 6800000000,
+    "35": 9200000000
+  },
   "room_level_exp_thresholds": {
     "1": 0,
     "2": 200000,
