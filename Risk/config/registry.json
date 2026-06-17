@@ -62,6 +62,18 @@
       "command": "python3 Risk/risk_execute.py \\\n  --release-phone \\\n  --phone <phone> \\\n  --reason 测试"
     },
     {
+      "id": "release_online_login_device",
+      "name": "线上-解除最近登录手机/设备风控并落库",
+      "category": "线上环境（手机号 → 最近登录设备）",
+      "description": "线上环境：按 --phone 或 --user-id 查 Admin loginDevice → 解除手机号（若有）+设备风控；知识库无记录或字段不全时自动写入 testcase-kb/test_devices.json",
+      "prompts": [
+        "线上环境解除 <phone> 最近登录手机的风控",
+        "线上环境解除 <userId> 最近登录设备的登录风控",
+        "线上环境给 <phone> 最近登录设备加白并落库"
+      ],
+      "command": "python3 Risk/risk_execute.py \\\n  --release-online-login-device \\\n  --user-id <userId> \\\n  --reason 线上环境测试"
+    },
+    {
       "id": "add_recharge_risk",
       "name": "充值风控-添加",
       "category": "充值风控（user_id 黑名单）",

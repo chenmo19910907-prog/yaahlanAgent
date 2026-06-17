@@ -154,6 +154,26 @@ python3 Risk/risk_execute.py \
   --payload-file Risk/phone_risk_release_payload.example.json
 ```
 
+## 3.1) 线上环境：解除最近登录手机 + 设备风控并落库
+
+**业务说明：** 按线上 `--phone` 或 `--user-id` 查 Admin `loginDevice`，解除设备风控（有手机号时一并解除）；若 `testcase-kb/test_devices.json` 无记录或 mmuid/mmuidv3 不全，**自动补录**。
+
+```bash
+# 按 userId（Google 等无手机号账号）
+python3 Risk/risk_execute.py \
+  --release-online-login-device \
+  --user-id 108990429 \
+  --reason 线上环境测试
+
+# 按手机号
+python3 Risk/risk_execute.py \
+  --release-online-login-device \
+  --phone 19900007777 \
+  --reason 线上环境测试
+```
+
+跳过知识库落库时加 `--skip-record-kb`。
+
 ## 4) 充值风控（user_id 黑名单）
 
 **业务说明：** 对用户 `user_id` 操作充值风控黑名单。

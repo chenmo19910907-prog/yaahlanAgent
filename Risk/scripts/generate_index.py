@@ -88,6 +88,7 @@ def _render(registry: dict[str, Any]) -> str:
     lines.append("- **鉴权**：开放接口 `/open/menu/operate` 通常仅需 body 中的 `token`（`SEC_RISK_TOKEN`），一般不需要 Cookie")
     lines.append("- **分批**：设备/手机号/user_id 单次最多 **5** 个 element；超出时脚本默认自动分批（`--strict-limit` 可改为报错）")
     lines.append("- **测试机解除设备风控**：Android/鸿蒙取 **mmuidv3**，iOS 取 **mmuid**；接口 dimension 均为 `mmuid`")
+    lines.append("- **知识库落库**：解除线上最近登录设备风控后，未登记设备自动写入 `testcase-kb/test_devices.json`（见 `--release-online-login-device`）")
     lines.append("- **调试**：追加 `--dump-body` 可在 stderr 查看最终请求 body")
     lines.append("")
 

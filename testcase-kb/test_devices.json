@@ -1,8 +1,8 @@
 {
   "kbPath": "testcase-kb/test_devices.json",
   "importSource": "/Users/user/Desktop/团队测试机统计表.xlsx",
-  "syncedAt": "2026-05-29 10:25:11 UTC",
-  "count": 47,
+  "syncedAt": "2026-06-17 07:26:13 UTC",
+  "count": 48,
   "devices": [
     {
       "项目": "yaahlan",
@@ -608,12 +608,26 @@
       "设备品牌": "三星",
       "设备名称": "三星S25+",
       "mmuid": "353b1ba1890af3de28eed09d43ef3a6306efea49",
-      "mmuidv3": "",
+      "mmuidv3": "daad0d84ca8e6f4dbe1a0184d93a95512c2daf225b2ad6210649f09ab6585c621b",
       "设备系统": "Android",
       "系统版本": "15",
       "归属人": "史磊",
       "持有人": "史磊",
-      "备注": ""
+      "备注": "自动落库 2026-06-17；phone=19900007777；userId=101659758；ip=84.75.158.1"
+    },
+    {
+      "项目": "yaahlan",
+      "资产编号": "待补编号",
+      "设备品牌": "Xiaomi",
+      "设备名称": "M2002J9E",
+      "mmuid": "f377948165f67479d29a413f4e173392f7e9c447",
+      "mmuidv3": "0ffee7a64977c46646b9743787b3672b5352adf05c831ab23a3d07a2e855f45634",
+      "设备系统": "Android",
+      "系统版本": "12",
+      "归属人": "",
+      "持有人": "",
+      "备注": "自动落库 2026-06-17；userId=108990429；ip=84.75.158.102"
     }
-  ]
+  ],
+  "lastIncrementalUpdate": "upsert loginDevice phone= userId=108990429"
 }

@@ -18,6 +18,11 @@ from .config import (
     resolve_menu_operate_body,
 )
 from .env import load_local_env
+from .device_kb import (
+    fetch_online_login_context,
+    fetch_online_login_context_by_user_id,
+    upsert_login_device_record,
+)
 from .test_devices import (
     default_test_device_kb_path,
     find_devices,
@@ -100,6 +105,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="从团队测试机知识库按平台解除设备风控（Android/鸿蒙=mmuidv3，iOS=mmuid）",
     )
+    scenario.add_argument(
+        "--release-online-login-device",
+        action="store_true",
+        help="线上环境：按 --phone 或 --user-id 查最近登录设备，解除风控并自动落库",
+    )
     parser.add_argument(
         "--list-test-devices",
         action="store_true",
@@ -118,6 +128,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--elements", help="元素列表，逗号分隔")
     parser.add_argument("--mmuid", help="设备 mmuid 列表，逗号分隔（解除设备风控时使用）")
     parser.add_argument("--phone", help="手机号列表，逗号分隔（解除手机号风控时使用）")
+    parser.add_argument(
+        "--skip-record-kb",
+        action="store_true",
+        help="与 --release-online-login-device 配合，跳过测试机知识库落库",
+    )
+    parser.add_argument(
+        "--login-device-json",
+        help="Admin loginDevice JSON；与 --record-kb 配合手动落库",
+    )
+    parser.add_argument("--login-ua", help="User-Agent，解析机型后写入知识库（--record-kb 时）")
     parser.add_argument("--user-id", help="用户 ID 列表，逗号分隔（充值/活动风控时使用）")
     parser.add_argument("--element-file", help="元素文件，每行一个（mmuid / 手机号 / user_id）")
     parser.add_argument("--action", choices=["add", "delete", "remove", "del"], default="add", help="操作：add/delete")
@@ -134,6 +154,147 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"单次请求最大 elements 数（默认 {max_elements_per_request()}）",
     )
     return parser
+
+
+def _parse_single_phone(phone: str | None) -> str:
+    value = (phone or "").strip().split(",")[0].strip()
+    if not value:
+        raise ValueError("请提供 --phone")
+    return value
+
+
+def _release_element_for_login_device(login_device: dict[str, Any]) -> str:
+    mmuid = str(login_device.get("mmuid") or "").strip()
+    mmuidv3 = str(login_device.get("mmuidv3") or "").strip()
+    ua = str(login_device.get("ua") or "")
+    if "iphone" in ua.casefold() or "ios" in ua.casefold():
+        if not mmuid:
+            raise ValueError("iOS 最近登录设备缺少 mmuid")
+        return mmuid
+    if mmuidv3:
+        return mmuidv3
+    if mmuid:
+        return mmuid
+    raise ValueError("最近登录设备缺少 mmuid / mmuidv3")
+
+
+def _post_menu_bodies(args: argparse.Namespace, bodies: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    url = _resolve_operate_url(args.base_url)
+    if args.dump_body:
+        for index, body in enumerate(bodies, start=1):
+            prefix = f"批次 {index}/{len(bodies)} " if len(bodies) > 1 else ""
+            print(f"{prefix}POST {url}", file=sys.stderr)
+            print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
+
+    results: list[dict[str, Any]] = []
+    for index, body in enumerate(bodies, start=1):
+        if len(bodies) > 1:
+            print(
+                f"分批请求 {index}/{len(bodies)}，本批 elements 数量: {len(body.get('elements', []))}",
+                file=sys.stderr,
+            )
+        resp = http_post_json(
+            url,
+            body,
+            cookie=args.cookie,
+            timeout_s=max(args.timeout_ms, 1) / 1000.0,
+        )
+        results.append({"batch": index, "elementsCount": len(body.get("elements", [])), "response": resp})
+    return results
+
+
+def _parse_single_user_id(user_id: str | None) -> str:
+    value = (user_id or "").strip().split(",")[0].strip()
+    if not value:
+        raise ValueError("请提供 --user-id")
+    return value
+
+
+def _resolve_online_login_context(args: argparse.Namespace) -> dict[str, Any]:
+    user_id = (args.user_id or "").strip().split(",")[0].strip()
+    phone = (args.phone or "").strip().split(",")[0].strip()
+    if user_id:
+        return fetch_online_login_context_by_user_id(user_id)
+    if phone:
+        return fetch_online_login_context(phone)
+    raise ValueError("请提供 --phone 或 --user-id")
+
+
+def _handle_release_online_login_device(args: argparse.Namespace) -> int:
+    kb_path = args.device_kb or default_test_device_kb_path()
+
+    try:
+        context = _resolve_online_login_context(args)
+    except (ValueError, RuntimeError, json.JSONDecodeError) as exc:
+        print(f"查询线上登录设备失败: {exc}", file=sys.stderr)
+        return 2
+
+    login_device = context["loginDevice"]
+    user_id = context["userId"]
+    mobile = str(context.get("phone") or "").strip()
+    device_element = _release_element_for_login_device(login_device)
+
+    bodies: list[dict[str, Any]] = []
+    if mobile:
+        bodies.append(
+            resolve_menu_operate_body(
+                menu_event=args.menu_event,
+                menu_key="phone_risk_release",
+                menu_type="white",
+                dimension="phone",
+                elements=[mobile],
+                action="add",
+                reason=args.reason,
+                token=args.token,
+            )
+        )
+    bodies.append(
+        resolve_menu_operate_body(
+            menu_event=args.menu_event,
+            menu_key="device_risk_release",
+            menu_type="white",
+            dimension="mmuid",
+            elements=[device_element],
+            action="add",
+            reason=args.reason,
+            token=args.token,
+        )
+    )
+
+    try:
+        results = _post_menu_bodies(args, bodies)
+    except RuntimeError as exc:
+        print(f"执行失败: {exc}", file=sys.stderr)
+        return 1
+
+    kb_result: dict[str, Any] | None = None
+    if not args.skip_record_kb:
+        try:
+            kb_result = upsert_login_device_record(
+                kb_path,
+                login_device,
+                phone=mobile,
+                user_id=user_id,
+            )
+            print(
+                f"知识库{kb_result['action']}: {kb_result['record'].get('设备品牌')} "
+                f"{kb_result['record'].get('设备名称')} "
+                f"(mmuidv3={kb_result['record'].get('mmuidv3') or '—'})",
+                file=sys.stderr,
+            )
+        except ValueError as exc:
+            print(f"知识库落库跳过: {exc}", file=sys.stderr)
+
+    output = {
+        "phone": mobile,
+        "userId": user_id,
+        "deviceElement": device_element,
+        "loginDevice": login_device,
+        "riskResults": results,
+        "kbResult": kb_result,
+    }
+    print(json.dumps(output, ensure_ascii=False, indent=2))
+    return 0
 
 
 def _resolve_operate_url(base_url: str | None) -> str:
@@ -337,6 +498,9 @@ def main() -> int:
 
     args = build_parser().parse_args()
 
+    if args.release_online_login_device:
+        return _handle_release_online_login_device(args)
+
     if args.list_test_devices:
         try:
             _print_test_devices(args.device_kb)
@@ -358,33 +522,11 @@ def main() -> int:
         print("没有可执行的请求", file=sys.stderr)
         return 2
 
-    url = _resolve_operate_url(args.base_url)
-    if args.dump_body:
-        for index, body in enumerate(bodies, start=1):
-            prefix = f"批次 {index}/{len(bodies)} " if len(bodies) > 1 else ""
-            print(f"{prefix}POST {url}", file=sys.stderr)
-            print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
-
-    results: list[dict[str, Any]] = []
-
-    for index, body in enumerate(bodies, start=1):
-        if len(bodies) > 1:
-            print(
-                f"分批请求 {index}/{len(bodies)}，本批 elements 数量: {len(body.get('elements', []))}",
-                file=sys.stderr,
-            )
-
-        try:
-            resp = http_post_json(
-                url,
-                body,
-                cookie=args.cookie,
-                timeout_s=max(args.timeout_ms, 1) / 1000.0,
-            )
-        except RuntimeError as e:
-            print(f"执行失败(第 {index} 批): {e}", file=sys.stderr)
-            return 1
-        results.append({"batch": index, "elementsCount": len(body.get("elements", [])), "response": resp})
+    try:
+        results = _post_menu_bodies(args, bodies)
+    except RuntimeError as e:
+        print(f"执行失败: {e}", file=sys.stderr)
+        return 1
 
     if len(results) == 1:
         print(json.dumps(results[0]["response"], ensure_ascii=False, indent=2))
