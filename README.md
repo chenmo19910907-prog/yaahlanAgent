@@ -16,12 +16,13 @@
 - **用例输出**：Markdown 表格等写入 `temporary_testcase/`，经 `testcase-to-excel` 分批写入钉钉 Excel
 - **质量工具**：`scripts/check_testcase_md.py` 格式校验、`suggest_kb_for_module.py` 知识库推荐、`doctor.py` 环境自检（见根目录 `SKILL.md`「常用命令」）
 
-### 本地自动化（MOA / Risk / Admin / Tunnel）
+### 本地自动化（MOA / Risk / Admin / Tunnel / online）
 
 - **MOA**（`MOA/`）：通过 MSE httpproxy 调用 MOA 接口；JSON 模板在 `MOA/templates/`，详见 [MOA/README.md](MOA/README.md) 与 [MOA/使用方法.md](MOA/使用方法.md)
 - **Risk**（`Risk/`）：调用海外风控开放接口 `/open/menu/operate`，支持解除设备/手机号风控、充值/活动风控加白加黑；默认读取 `testcase-kb/test_devices.json` 按平台自动选取 mmuid 或 mmuidv3 值；详见 [Risk/README.md](Risk/README.md)
-- **Admin**（`Admin/`）：调用 Yaahlan 测试后台，支持 **按 userId 查询用户全量详情**（`queryUserDetail`）；详见 [Admin/README.md](Admin/README.md)
-- **Tunnel**（`Tunnel/`）：查询 [tunnel.wemomo.com](https://tunnel.wemomo.com) 抓包记录，按 userId 拉 HTTP 请求列表与 request/response；Cookie 可复用 MOA；详见 [Tunnel/README.md](Tunnel/README.md)
+- **Admin**（`Admin/`）：调用 Yaahlan 测试后台，支持 **按 userId 查询用户全量详情**（`queryUserDetail`）；详见 [Admin/README.md](Admin/README.md) 与 [Admin/使用方法.md](Admin/使用方法.md)
+- **online**（`online/`）：**线上/生产**环境统一入口（Admin + MOA overseas + Tunnel overseas）；须提示词含「线上环境」；详见 [online/README.md](online/README.md) 与 [online/使用方法.md](online/使用方法.md)
+- **Tunnel**（`Tunnel/`）：查询 [tunnel.wemomo.com](https://tunnel.wemomo.com) 抓包记录，按 userId 拉 HTTP 请求列表与 request/response；Cookie 可复用 MOA；详见 [Tunnel/README.md](Tunnel/README.md) 与 [Tunnel/使用方法.md](Tunnel/使用方法.md)
 - **DingTalk**（`DingTalk/`）：列举钉钉 alidocs 目录、同步用例到 `testcase-kb/`、同步 PRD 到 `prd-kb/`；详见 [DingTalk/README.md](DingTalk/README.md)
 - **Report**（`Report/`）：从版本用例 xlsx 生成内网/外网测试总结 HTML；详见 [Report/README.md](Report/README.md)、[Report/使用方法.md](Report/使用方法.md)
 - **adb**（`adb/`）：真机 UI 自动化（截屏 → 读图算坐标 → 点击，仅保留最新 10 张截图）；支持与 **Tunnel** 联动的 `run`（操作 + 截图 + 抓包校验）；**录制脚本库**按发版回归一级模块存放 **片段**，命令 `macro`；**P0 自动化用例**（`autotest`：PRD/手工用例 → 可执行 JSON → 真机跑测 → HTML 报告）见 [adb/自动化用例/README.md](adb/自动化用例/README.md)；详见 [adb/README.md](adb/README.md)、[adb/使用方法.md](adb/使用方法.md)、[adb/录制脚本/README.md](adb/录制脚本/README.md)
@@ -31,7 +32,7 @@
 ```
 auto-generate-testcase/
 ├── README.md                          # 本文件
-├── 新手上手.md                        # 新机器本地配置：MOA/Admin/Risk/Tunnel/Report/adb/MCP
+├── 新手上手.md                        # 新机器本地配置：MOA/Admin/online/Risk/Tunnel/Report/adb/MCP
 ├── SKILL.md                           # 主流程：营收活动用例自动生成（模块提取与钉钉解析）
 ├── MOA/                               # MOA httpproxy 本地调用
 │   ├── README.md
@@ -49,6 +50,12 @@ auto-generate-testcase/
 │   ├── README.md
 │   ├── admin_execute.py               # 入口
 │   └── config.json
+├── online/                            # 线上环境（Admin + MOA + Tunnel 统一入口）
+│   ├── README.md
+│   ├── 使用方法.md                    # 能力清单（自动生成）
+│   ├── online_execute.py              # 入口：admin | moa | tunnel
+│   ├── config.json
+│   └── config/registry.json
 ├── Tunnel/                            # tunnel.wemomo.com 抓包查询
 │   ├── README.md
 │   ├── tunnel_execute.py              # 入口
@@ -175,7 +182,22 @@ python3 MOA/scripts/test_all.py   # 可选：批量自测全部模板
 
 常用能力：钻石增减、背包礼物、VIP/贵族、实名认证、家族声望/基金档位/贡献等。完整用法见 [MOA/README.md](MOA/README.md) 与 [MOA/使用方法.md](MOA/使用方法.md)。
 
-### 4. 风控名单操作
+### 4. online 线上环境（Admin + MOA + Tunnel）
+
+须提示词含「**线上环境**」；与测试 `Admin/`、`MOA/`、`Tunnel/` 完全隔离。
+
+```bash
+cp online/.env.example online/.env.local
+# 填入 ADMIN_ONLINE_*、MOA_ONLINE_*、TUNNEL_ONLINE_*（抓包见 online/.env.example 注释）
+
+python3 online/online_execute.py admin --query-user-id <userId>
+python3 online/online_execute.py moa --query-user-by-phone <phone>   # 默认区号 +966
+python3 online/online_execute.py tunnel --momoid <userId> --since 3600
+```
+
+典型链路：**手机号 → MOA 得 userId → Admin 查详情/在线 → Tunnel 验收接口**。完整口令与命令见 [online/README.md](online/README.md) 与 [online/使用方法.md](online/使用方法.md)。
+
+### 5. 风控名单操作
 
 ```bash
 # 可选：仅当需覆盖 token / 域名时
@@ -187,7 +209,7 @@ python3 Risk/risk_execute.py --release-test-device --device-name "GalaxyA80" --r
 
 支持：解除设备/手机号风控、充值/活动风控添加与解除。设备解除默认读取 `testcase-kb/test_devices.json`，Android/鸿蒙取 **mmuidv3 字段值**，iOS 取 **mmuid 字段值**（接口 dimension 均为 `mmuid`）。详见 [Risk/README.md](Risk/README.md)。
 
-### 5. 测试报告生成
+### 6. 测试报告生成
 
 ```bash
 python3 -m venv Report/.venv && source Report/.venv/bin/activate
@@ -198,7 +220,7 @@ python3 Report/report_execute.py /path/to/v2.4.4版本用例.xlsx
 
 在同目录生成 `{文件名}_内网测试总结.html` 与 `{文件名}_外网测试总结.html`。详见 [Report/README.md](Report/README.md)。
 
-### 6. ADB 真机录制脚本（Yaahlan）
+### 7. ADB 真机录制脚本（Yaahlan）
 
 前置：`adb devices` 可见 `device`；目标 App 为 **Yaahlan**（非桌面 Yaha）。换机坐标适配见 `adb/录制脚本/设备适配/README.md`。
 
@@ -243,8 +265,10 @@ python3 adb/adb_execute.py macro 发布纯文本动态 --text 5555 --no-capture
 | `prd-review` | 生成前 PRD 理解与审查维度 |
 | `testpoints-to-testcases` | 测试点扩写为用例 |
 | `dingtalk_historical_testcase_to_md.md` | 历史用例导出 Markdown 等（按需） |
-| [新手上手.md](新手上手.md) | **新电脑必看**：MOA/Admin/Tunnel/Report/adb/MCP 本地配置与验证 |
+| [新手上手.md](新手上手.md) | **新电脑必看**：MOA/Admin/online/Tunnel/Report/adb/MCP 本地配置与验证 |
 | [MOA/README.md](MOA/README.md) | MOA 本地调用与目录说明 |
+| [online/README.md](online/README.md) | 线上环境统一入口（Admin + MOA + Tunnel） |
+| [online/使用方法.md](online/使用方法.md) | online 能力口令与命令（自动生成） |
 | [Risk/README.md](Risk/README.md) | 海外风控开放接口与测试机解除 |
 | [adb/README.md](adb/README.md) | ADB 设计原则、协作流程、自动录制 |
 | [adb/使用方法.md](adb/使用方法.md) | ADB 命令速查（提示词 ↔ CLI） |

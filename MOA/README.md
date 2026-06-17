@@ -4,6 +4,8 @@
 
 > 首次使用或换电脑：请先阅读 [新手上手.md](../新手上手.md) 配置 `MOA/.env.local`。
 
+> **线上环境**：见 [`online/`](../online/README.md) 模块；口令与命令见 [online/使用方法.md](../online/使用方法.md)（`python3 online/online_execute.py moa ...`）。
+
 ## 目录结构
 
 ```

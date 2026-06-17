@@ -21,6 +21,9 @@ Risk/.env.local
 Risk/.env
 Risk/__pycache__/
 Admin/.env.local
+online/.env.local
+Admin/.env.online.local
+**/.env.online.local
 Admin/.env
 Admin/__pycache__/
 Tunnel/.env.local

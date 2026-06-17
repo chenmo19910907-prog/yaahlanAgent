@@ -17,7 +17,8 @@ from .client import (
 from .config import level_by_exp, room_level_thresholds
 from .diamond import parse_diamond_account_summary
 from .family import parse_family_exp_summary, parse_family_fund_summary, parse_family_fund_tier_set_count
-from .env import load_local_env
+from .env import load_local_env, load_online_env
+from .online_config import online_defaults, online_query_login_status
 from .flows import (
     build_family_level_upgrade_payload,
     build_room_level_upgrade_payload,
@@ -32,7 +33,7 @@ from .flows import (
 from .package_gift import run_package_gift_send
 from .time_utils import resolve_family_fund_week_key
 from .user_area import USER_AREA_CODES
-from .user_login import normalize_mobile_login, parse_login_status_summary
+from .user_login import normalize_mobile_login, parse_login_status_summary, resolve_phone_area_code
 from .user_prop import parse_user_prop_summary
 from .vip import parse_vip_info_summary
 from .wealth_charm import parse_charm_info_summary, parse_wealth_info_summary
@@ -44,6 +45,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--entry-url", default=os.environ.get("MOA_ENTRY_URL"), help="httpproxy 入口完整 URL")
     parser.add_argument("--cookie", default=os.environ.get("MOA_COOKIE"), help="Cookie")
     parser.add_argument("--timeout-ms", type=int, default=5000, help="HTTP 超时（毫秒），默认 5000")
+    parser.add_argument(
+        "--线上环境",
+        dest="online_env",
+        action="store_true",
+        help="使用线上 MOA（overseas + .env.online.local）；仅当用户提示词含「线上环境」时由 Agent 调用；当前仅支持 --query-user-by-phone",
+    )
     parser.add_argument("--host", help='覆盖 payload.settings.host')
     parser.add_argument("--moa-time", type=int, help='覆盖 payload.settings.time（毫秒）')
     parser.add_argument("--group", help='覆盖 payload.settings.group')
@@ -211,7 +218,11 @@ def build_parser() -> argparse.ArgumentParser:
         default="summary",
         help="财富/魅力查询输出格式：summary=摘要（默认）；json=完整响应 JSON",
     )
-    parser.add_argument("--phone-area-code", default="86", help="手机号区号（默认 86；也可在号码中带 +86）")
+    parser.add_argument(
+        "--phone-area-code",
+        default=None,
+        help="手机号区号（测试默认 86；--线上环境 默认 966；也可在号码中带 +区号）",
+    )
     parser.add_argument("--phone-app-id", type=int, help="queryLoginStatusV2 的 appId（默认 config.json 中 2005）")
     parser.add_argument(
         "--phone-output",
@@ -309,6 +320,54 @@ def _apply_optional_headers(args: argparse.Namespace) -> None:
             os.environ[env_key] = value
 
 
+def _apply_online_moa_args(args: argparse.Namespace, base_dir: str) -> None:
+    """线上 MOA：overseas 集群 + .env.online.local；当前仅开放手机号查 userId。"""
+    if args.query_user_by_phone is None:
+        raise ValueError("线上环境 MOA 当前仅支持 --query-user-by-phone（须用户提示词含「线上环境」）")
+
+    load_online_env(base_dir)
+    defaults = online_defaults()
+
+    args.entry_url = os.environ.get("MOA_ONLINE_ENTRY_URL") or defaults.get("entryUrl") or args.entry_url
+    args.cookie = os.environ.get("MOA_ONLINE_COOKIE") or args.cookie
+
+    origin = os.environ.get("MOA_ONLINE_ORIGIN") or defaults.get("origin") or ""
+    referer = os.environ.get("MOA_ONLINE_REFERER") or defaults.get("referer") or ""
+    user_agent = os.environ.get("MOA_ONLINE_USER_AGENT") or ""
+    request_source = os.environ.get("MOA_ONLINE_REQUEST_SOURCE") or defaults.get("requestSource") or ""
+
+    if origin:
+        os.environ["MOA_ORIGIN"] = origin
+        args.origin = origin
+    if referer:
+        os.environ["MOA_REFERER"] = referer
+        args.referer = referer
+    if user_agent:
+        os.environ["MOA_USER_AGENT"] = user_agent
+        args.user_agent = user_agent
+    if request_source:
+        os.environ["MOA_REQUEST_SOURCE"] = request_source
+        args.request_source = request_source
+
+    for field, cfg_key in (("region", "region"), ("env", "env"), ("cluster", "cluster"), ("server", "server")):
+        if getattr(args, field, None) is None:
+            value = defaults.get(cfg_key)
+            if value is not None:
+                setattr(args, field, value)
+
+    if args.momo_id is None and defaults.get("momoId"):
+        args.momo_id = defaults.get("momoId")
+    if args.momo_name is None and defaults.get("momoName"):
+        args.momo_name = defaults.get("momoName")
+
+    if not args.payload_file and not args.payload:
+        login_cfg = online_query_login_status()
+        template_file = str(login_cfg.get("templateFile") or "").strip()
+        if template_file:
+            repo = os.path.dirname(base_dir)
+            args.payload_file = os.path.join(repo, "online", template_file)
+
+
 def _print_request_info(args: argparse.Namespace, payload: dict[str, object]) -> None:
     settings = payload.get("settings") if isinstance(payload.get("settings"), dict) else {}
     params0: object = None
@@ -364,7 +423,7 @@ def _print_response(args: argparse.Namespace, resp: dict[str, object]) -> None:
         if inner_ec != 0:
             print(f"业务返回失败: ec={inner_ec}, em={inner_em}", file=sys.stderr)
             raise SystemExit(4)
-        area_code, mobile = normalize_mobile_login(args.query_user_by_phone, args.phone_area_code or "86")
+        area_code, mobile = normalize_mobile_login(args.query_user_by_phone, resolve_phone_area_code(args))
         summary = parse_login_status_summary(area_code, mobile, inner_result)
         print(json.dumps(summary, ensure_ascii=False, indent=2))
         return
@@ -502,6 +561,13 @@ def main() -> int:
     load_local_env(base_dir)
 
     args = build_parser().parse_args()
+
+    try:
+        if getattr(args, "online_env", False):
+            _apply_online_moa_args(args, base_dir)
+    except ValueError as e:
+        print(f"参数错误: {e}", file=sys.stderr)
+        return 2
 
     if not args.entry_url:
         print("缺少入口 URL：请传 --entry-url 或设置环境变量 MOA_ENTRY_URL", file=sys.stderr)

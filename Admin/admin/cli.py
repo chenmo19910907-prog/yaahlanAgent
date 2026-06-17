@@ -29,7 +29,7 @@ from .customer_service import (
     parse_query_cs_data_summary,
     parse_save_cs_data_summary,
 )
-from .env import load_local_env
+from .env import load_local_env, load_online_env
 from .family import parse_add_family_member_summary, parse_query_family_summary
 from .guild import (
     anchor_success,
@@ -54,6 +54,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Admin 域名，默认 ADMIN_BASE_URL",
     )
     parser.add_argument("--timeout-ms", type=int, default=10000, help="HTTP 超时（毫秒）")
+    parser.add_argument(
+        "--线上环境",
+        dest="online_env",
+        action="store_true",
+        help="使用线上 Admin（config.online.json + .env.online.local）；仅当用户提示词含「线上环境」时由 Agent 调用",
+    )
     parser.add_argument("--dump-body", action="store_true", help="输出最终请求 body 到 stderr")
 
     src = parser.add_mutually_exclusive_group(required=False)
@@ -273,10 +279,25 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _resolve_base_url(args: argparse.Namespace) -> str:
+    online = bool(getattr(args, "online_env", False))
+    if online:
+        base_url = (
+            os.environ.get("ADMIN_ONLINE_BASE_URL")
+            or defaults("api", online=True).get("baseUrl")
+            or ""
+        ).strip().rstrip("/")
+        if not base_url:
+            raise ValueError("缺少线上 Admin 域名：请设置 ADMIN_ONLINE_BASE_URL 或 Admin/config.online.json")
+        return base_url
+
     base_url = (args.base_url or defaults("api").get("baseUrl") or "").strip().rstrip("/")
     if not base_url:
         raise ValueError("缺少 Admin 域名：请传 --base-url 或设置 ADMIN_BASE_URL")
     return base_url
+
+
+def _resolve_yaahlan_auth(args: argparse.Namespace) -> str:
+    return "yaahlan_online" if getattr(args, "online_env", False) else "yaahlan"
 
 
 def _resolve_mdp_base_url(cfg: dict[str, object]) -> str:
@@ -773,7 +794,10 @@ def _apply_query_user_detail(args: argparse.Namespace, body: dict[str, object]) 
     user_id = str(args.query_user_id).strip()
     if not user_id:
         raise ValueError("query_user_id 不能为空")
-    path = str(defaults("query_user_detail").get("path", "/admin/user/queryUserDetail"))
+    online = bool(getattr(args, "online_env", False))
+    path = str(
+        defaults("query_user_detail", online=online).get("path", "/admin/user/queryUserDetail")
+    )
     return path, {"userId": user_id}
 
 
@@ -782,7 +806,11 @@ def main() -> int:
     load_local_env(base_dir)
 
     args = build_parser().parse_args()
+    if getattr(args, "online_env", False):
+        load_online_env(base_dir)
     try:
+        if getattr(args, "online_env", False) and args.query_user_id is None:
+            raise ValueError("线上环境当前仅支持 --query-user-id（须用户提示词含「线上环境」）")
         if args.query_prop_list:
             url, body = _resolve_query_prop_info_request(args)
             if args.dump_body:
@@ -919,7 +947,12 @@ def main() -> int:
             if args.dump_body:
                 print(f"POST {url}", file=sys.stderr)
                 print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
-            resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
+            resp = http_post_json(
+                url,
+                body,
+                timeout_s=max(args.timeout_ms, 1000) / 1000.0,
+                auth=_resolve_yaahlan_auth(args),
+            )
         else:
             base_url = _resolve_base_url(args)
             body = _load_body(args)

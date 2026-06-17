@@ -45,3 +45,16 @@ def load_local_env(base_dir: str) -> None:
                     break
     except OSError:
         return
+
+
+def load_online_env(base_dir: str) -> None:
+    """从 online/.env.local 读取线上环境变量（兼容旧 */.env.online.local）。"""
+    import sys
+
+    repo = os.path.dirname(base_dir)
+    online_path = os.path.join(repo, "online")
+    if online_path not in sys.path:
+        sys.path.insert(0, online_path)
+    import env as online_env
+
+    online_env.load_online_env()

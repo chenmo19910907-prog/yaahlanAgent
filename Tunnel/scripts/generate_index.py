@@ -87,6 +87,7 @@ def _render(registry: dict[str, Any]) -> str:
     lines.append("")
     lines.append("- **提示词**：自然语言口令")
     lines.append("- **命令**：可执行脚本（默认复用 `MOA/.env.local` 的 Cookie）")
+    lines.append("- **线上环境**：见 `online/` 模块（`python3 online/online_execute.py tunnel ...`）")
     lines.append("- **鉴权**：请求头 `Cookie`（含 `tunnel_login_session`；从 tunnel.wemomo.com 或 MSE 抓包）")
     lines.append("- **完整响应**：追加 `--output json`")
     lines.append("")

@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "generated_index_path": "online/使用方法.md",
+  "items": [
+    {
+      "id": "admin_query_user_detail",
+      "name": "Admin-查询用户详情",
+      "category": "Admin（yaahlan-admin）",
+      "description": "线上按 userId 查询用户详情（queryUserDetail）；onlineStatus=1 为在线",
+      "prompts": [
+        "线上环境查询用户 <userId> 详情",
+        "线上环境查 userId <userId> 的资料",
+        "线上环境用户 <userId> 是否在线"
+      ],
+      "command": "python3 online/online_execute.py admin --query-user-id <userId>"
+    },
+    {
+      "id": "moa_query_user_by_phone",
+      "name": "MOA-按手机号查 userId",
+      "category": "MOA（mdp-user-login · overseas）",
+      "description": "线上按手机号查询 userId（queryLoginStatusV2；默认区号 966）",
+      "prompts": [
+        "线上环境查询手机号 <phone> 对应的 userId",
+        "线上环境手机号 <phone> 是否已注册",
+        "线上环境查 +966<phone> 的 userId"
+      ],
+      "command": "python3 online/online_execute.py moa --query-user-by-phone <phone>"
+    },
+    {
+      "id": "tunnel_list_requests",
+      "name": "Tunnel-查询用户请求列表",
+      "category": "Tunnel 抓包",
+      "description": "线上按 userId 查询 HTTP 抓包列表（g_env=overseas）",
+      "prompts": [
+        "线上环境查用户 <userId> 最近抓包",
+        "线上环境 tunnel 查 <userId> 请求"
+      ],
+      "command": "python3 online/online_execute.py tunnel --momoid <userId> --since 3600"
+    },
+    {
+      "id": "tunnel_list_requests_keyword",
+      "name": "Tunnel-按关键字过滤",
+      "category": "Tunnel 抓包",
+      "description": "线上抓包按 URL 关键字过滤",
+      "prompts": [
+        "线上环境抓包查 <userId> gift 接口",
+        "线上环境 tunnel keyword login <userId>"
+      ],
+      "command": "python3 online/online_execute.py tunnel --momoid <userId> --keyword gift --since 3600"
+    },
+    {
+      "id": "tunnel_list_requests_json",
+      "name": "Tunnel-完整 JSON 输出",
+      "category": "Tunnel 抓包",
+      "description": "线上抓包完整 JSON 输出",
+      "prompts": [
+        "线上环境 tunnel json <userId>",
+        "线上环境抓包原始数据 <userId>"
+      ],
+      "command": "python3 online/online_execute.py tunnel --momoid <userId> --since 3600 --output json"
+    }
+  ]
+}

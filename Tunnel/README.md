@@ -6,7 +6,9 @@
 
 ## 是什么
 
-Tunnel 是内部抓包平台：真机或模拟器走测试环境时，会把该 **userId（momoid）** 的网关请求记录下来。Web 端可浏览单条详情；本项目通过 **`GET /api/requests`** 在终端批量查询。
+Tunnel 是内部抓包平台：真机或模拟器走测试/线上环境时，会把该 **userId（momoid）** 的网关请求记录下来。Web 端可浏览单条详情；本项目通过 **`GET /api/requests`** 在终端批量查询。
+
+> **线上环境**：见 [`online/`](../online/README.md) 模块；口令与命令见 [online/使用方法.md](../online/使用方法.md)（`python3 online/online_execute.py tunnel ...`）。
 
 与 bug-kb / online-kb 里常见的 `https://tunnel.wemomo.com/request/...` 链接同源——那些是浏览器打开的**单条详情页**；CLI 拉列表后，每条记录的 `request` / `response` 字段已包含解析后的 JSON。
 

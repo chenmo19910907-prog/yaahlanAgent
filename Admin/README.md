@@ -4,6 +4,8 @@
 
 > 能力口令与可复制命令见 **[使用方法.md](使用方法.md)**（由 `Admin/config/registry.json` 自动生成）。
 
+> **线上环境**：见 [`online/`](../online/README.md) 模块；口令与命令见 [online/使用方法.md](../online/使用方法.md)（`python3 online/online_execute.py admin ...`）。
+
 ## 环境配置
 
 ```bash

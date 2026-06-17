@@ -1,0 +1,47 @@
+"""线上环境 MOA 配置（与测试 alpha/stage 隔离）。"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+_ONLINE_CONFIG: dict[str, Any] | None = None
+
+
+def online_config_path() -> Path:
+    return Path(__file__).resolve().parents[2] / "online" / "config.json"
+
+
+def load_online_config() -> dict[str, Any]:
+    global _ONLINE_CONFIG
+    if _ONLINE_CONFIG is not None:
+        return _ONLINE_CONFIG
+    path = online_config_path()
+    if not path.is_file():
+        raise ValueError(f"缺少线上配置: {path}")
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    if not isinstance(data, dict):
+        raise ValueError("online/config.json 必须是 object")
+    section = data.get("moa", {})
+    if not isinstance(section, dict):
+        raise ValueError("online/config.json.moa 必须是 object")
+    _ONLINE_CONFIG = section
+    return section
+
+
+def online_defaults() -> dict[str, Any]:
+    cfg = load_online_config()
+    value = cfg.get("defaults", {})
+    if not isinstance(value, dict):
+        raise ValueError("online/config.json.moa.defaults 必须是 object")
+    return value
+
+
+def online_query_login_status() -> dict[str, Any]:
+    cfg = load_online_config()
+    value = cfg.get("query_login_status", {})
+    if not isinstance(value, dict):
+        raise ValueError("online/config.json.moa.query_login_status 必须是 object")
+    return value

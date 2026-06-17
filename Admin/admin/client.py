@@ -39,28 +39,67 @@ def build_mdp_nova_headers() -> dict[str, str]:
     return headers
 
 
-def build_auth_headers() -> dict[str, str]:
+def _build_yaahlan_auth_headers(
+    *,
+    sso_env: str,
+    jwt_env: str,
+    lang_env: str,
+    origin_env: str,
+    referer_env: str,
+    user_agent_env: str,
+    env_file_hint: str,
+    default_origin: str = "",
+    default_referer: str = "",
+) -> dict[str, str]:
     headers: dict[str, str] = {}
-    sso_token = os.environ.get("ADMIN_SSO_TOKEN", "").strip()
-    yaahlan_jwt = os.environ.get("ADMIN_YAAHLAN_JWT", "").strip()
+    sso_token = os.environ.get(sso_env, "").strip()
+    yaahlan_jwt = os.environ.get(jwt_env, "").strip()
     if not sso_token:
-        raise ValueError("缺少 ADMIN_SSO_TOKEN（请写入 Admin/.env.local）")
+        raise ValueError(f"缺少 {sso_env}（请写入 {env_file_hint}）")
     if not yaahlan_jwt:
-        raise ValueError("缺少 ADMIN_YAAHLAN_JWT（请写入 Admin/.env.local）")
+        raise ValueError(f"缺少 {jwt_env}（请写入 {env_file_hint}）")
 
     headers["sso-token"] = sso_token
     headers["yaahlan-jwt"] = yaahlan_jwt
-    headers["yaahlan-lang"] = os.environ.get("ADMIN_LANG", "zh").strip() or "zh"
+    headers["yaahlan-lang"] = os.environ.get(lang_env, "zh").strip() or "zh"
 
-    for env_key, header_key in (
-        ("ADMIN_ORIGIN", "Origin"),
-        ("ADMIN_REFERER", "Referer"),
-        ("ADMIN_USER_AGENT", "User-Agent"),
-    ):
-        value = os.environ.get(env_key, "").strip()
-        if value:
-            headers[header_key] = value
+    origin = os.environ.get(origin_env, default_origin).strip() or default_origin
+    referer = os.environ.get(referer_env, default_referer).strip() or default_referer
+    if origin:
+        headers["Origin"] = origin
+    if referer:
+        headers["Referer"] = referer
+
+    user_agent = os.environ.get(user_agent_env, "").strip()
+    if user_agent:
+        headers["User-Agent"] = user_agent
     return headers
+
+
+def build_auth_headers() -> dict[str, str]:
+    return _build_yaahlan_auth_headers(
+        sso_env="ADMIN_SSO_TOKEN",
+        jwt_env="ADMIN_YAAHLAN_JWT",
+        lang_env="ADMIN_LANG",
+        origin_env="ADMIN_ORIGIN",
+        referer_env="ADMIN_REFERER",
+        user_agent_env="ADMIN_USER_AGENT",
+        env_file_hint="Admin/.env.local",
+    )
+
+
+def build_online_auth_headers() -> dict[str, str]:
+    return _build_yaahlan_auth_headers(
+        sso_env="ADMIN_ONLINE_SSO_TOKEN",
+        jwt_env="ADMIN_ONLINE_YAAHLAN_JWT",
+        lang_env="ADMIN_ONLINE_LANG",
+        origin_env="ADMIN_ONLINE_ORIGIN",
+        referer_env="ADMIN_ONLINE_REFERER",
+        user_agent_env="ADMIN_ONLINE_USER_AGENT",
+        env_file_hint="online/.env.local",
+        default_origin="https://www.yaahlan.fun",
+        default_referer="https://www.yaahlan.fun/",
+    )
 
 
 def http_post_json(
@@ -75,6 +114,8 @@ def http_post_json(
         extra_headers = build_mdp_nova_headers()
     elif auth == "yaahlan":
         extra_headers = build_auth_headers()
+    elif auth == "yaahlan_online":
+        extra_headers = build_online_auth_headers()
     else:
         raise ValueError(f"未知 auth 模式: {auth}")
 

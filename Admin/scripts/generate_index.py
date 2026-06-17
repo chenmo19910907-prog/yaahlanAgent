@@ -85,6 +85,7 @@ def _render(registry: dict[str, Any]) -> str:
     lines.append("")
     lines.append("- **提示词**：你对我说的自然语言口令")
     lines.append("- **命令**：对应可执行脚本命令（默认已配置 `Admin/.env.local`）")
+    lines.append("- **线上环境**：见 `online/` 模块（`python3 online/online_execute.py`）；本目录仅测试环境")
     lines.append("- **鉴权**：请求头 `sso-token`、`yaahlan-jwt`（从 Yaahlan 测试后台抓包）")
     lines.append("- **完整响应**：追加 `--output json`")
     lines.append("- **定制装扮**：定制头像框需 **VIP6**，定制座驾需 **VIP8**；先 MOA 升级，再 Admin 重置上传冷却（见「定制装扮工作流」）")

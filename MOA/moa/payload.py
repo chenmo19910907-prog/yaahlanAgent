@@ -54,7 +54,7 @@ from .params import (
 )
 from .time_utils import resolve_expire_ms, resolve_family_fund_week_key
 from .user_area import describe_user_area, normalize_user_area
-from .user_login import normalize_mobile_login
+from .user_login import normalize_mobile_login, resolve_phone_area_code
 from .wealth_charm import build_wealth_charm_query_expr
 
 PayloadBuilder = Callable[[argparse.Namespace, dict[str, Any]], None]
@@ -260,7 +260,7 @@ def _op_change_user_area(args: argparse.Namespace, payload: dict[str, Any]) -> N
 def _op_query_user_by_phone(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     payload["url"] = "/service/yaahlan/mdp-user-login"
     payload["method"] = "queryLoginStatusV2"
-    area_code, mobile = normalize_mobile_login(args.query_user_by_phone, args.phone_area_code or "86")
+    area_code, mobile = normalize_mobile_login(args.query_user_by_phone, resolve_phone_area_code(args))
     set_query_login_status_params(
         payload,
         area_code=area_code,

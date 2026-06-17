@@ -15,6 +15,7 @@ description: 使用 Tunnel 抓包平台查询用户 HTTP 请求列表与 request
 ## 前置条件
 
 - 已配置 `MOA/.env.local`（含 `tunnel_login_session`），或 `Tunnel/.env.local` 的 `TUNNEL_COOKIE`
+- **线上环境**：须 `online/.env.local`，命令用 `online/online_execute.py tunnel ...`；用户提示词须含「线上环境」
 - 知道目标 **userId（momoid）**
 
 ## 执行步骤
@@ -29,6 +30,13 @@ python3 Tunnel/tunnel_execute.py --momoid <userId> --since 3600
 
 ```bash
 python3 Tunnel/tunnel_execute.py --momoid <userId> --keyword gift --since 7200
+```
+
+**线上环境**（须提示词含「线上环境」）：
+
+```bash
+python3 online/online_execute.py tunnel --momoid <userId> --since 3600
+python3 online/online_execute.py tunnel --momoid <userId> --keyword gift --since 7200
 ```
 
 3. **完整 JSON**（需解析 response.ec / data）：
@@ -52,7 +60,7 @@ python3 Tunnel/tunnel_execute.py --momoid <userId> --request-id <_id> --since 72
 | `--since` | （换算为 start_time） | `3600` |
 | `--keyword` | `keyword` | 空 |
 | `--g-appid` | `g_appid` | `All` |
-| `--g-env` | `g_env` | `alpha` |
+| `--g-env` | `g_env` | `alpha`（线上用 `online/online_execute.py tunnel` → overseas） |
 
 ## 输出解读
 

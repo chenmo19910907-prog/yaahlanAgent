@@ -9,7 +9,8 @@ import sys
 import time
 
 from .client import list_requests, normalize_request_list, tunnel_success
-from .env import load_local_env
+from .env import load_local_env, load_online_env
+from .online_config import online_defaults
 from .paths import tunnel_dir
 from .summary import format_list_summary, format_request_detail
 
@@ -66,12 +67,56 @@ def build_parser() -> argparse.ArgumentParser:
         help="输出格式",
     )
     parser.add_argument("--timeout-ms", type=int, default=15000, help="HTTP 超时（毫秒）")
+    parser.add_argument(
+        "--线上环境",
+        dest="online_env",
+        action="store_true",
+        help="使用线上 Tunnel（g_env=overseas + .env.online.local）；仅当用户提示词含「线上环境」时由 Agent 调用",
+    )
     return parser
 
 
+def _apply_online_tunnel_args(args: argparse.Namespace, base_dir: str) -> None:
+    load_online_env(base_dir)
+    defaults = online_defaults()
+
+    args.base_url = os.environ.get("TUNNEL_ONLINE_BASE_URL") or defaults.get("baseUrl") or args.base_url
+    cookie = os.environ.get("TUNNEL_ONLINE_COOKIE", "").strip()
+    if cookie:
+        os.environ["TUNNEL_COOKIE"] = cookie
+
+    if os.environ.get("TUNNEL_ONLINE_G_APPID"):
+        args.g_appid = os.environ["TUNNEL_ONLINE_G_APPID"]
+    elif defaults.get("gAppid"):
+        args.g_appid = str(defaults["gAppid"])
+
+    if os.environ.get("TUNNEL_ONLINE_G_ENV"):
+        args.g_env = os.environ["TUNNEL_ONLINE_G_ENV"]
+    elif defaults.get("gEnv"):
+        args.g_env = str(defaults["gEnv"])
+
+    if defaults.get("mode"):
+        args.mode = str(defaults["mode"])
+
+    referer = os.environ.get("TUNNEL_ONLINE_REFERER") or defaults.get("referer") or ""
+    if referer:
+        os.environ["TUNNEL_REFERER"] = referer
+    user_agent = os.environ.get("TUNNEL_ONLINE_USER_AGENT", "").strip()
+    if user_agent:
+        os.environ["TUNNEL_USER_AGENT"] = user_agent
+
+
 def main(argv: list[str] | None = None) -> int:
-    load_local_env(tunnel_dir())
+    base_dir = tunnel_dir()
+    load_local_env(base_dir)
     args = build_parser().parse_args(argv)
+
+    if getattr(args, "online_env", False):
+        try:
+            _apply_online_tunnel_args(args, base_dir)
+        except ValueError as e:
+            print(f"ERROR: {e}", file=sys.stderr)
+            return 2
 
     start_time = args.start_time if args.start_time is not None else int(time.time()) - args.since
 

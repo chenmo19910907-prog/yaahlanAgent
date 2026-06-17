@@ -6,6 +6,18 @@ import re
 from typing import Any
 
 
+def resolve_phone_area_code(args: Any) -> str:
+    """测试环境默认 86；线上环境（--线上环境）默认 966，见 config.online.json。"""
+    explicit = getattr(args, "phone_area_code", None)
+    if explicit is not None and str(explicit).strip():
+        return str(explicit).strip().lstrip("+")
+    if getattr(args, "online_env", False):
+        from .online_config import online_query_login_status
+
+        return str(online_query_login_status().get("defaultAreaCode") or "966").strip()
+    return "86"
+
+
 def normalize_mobile_login(phone: str, area_code: str = "86") -> tuple[str, str]:
     """解析区号与手机号。支持 13311111150、+8613311111150、8613311111150。"""
     raw = str(phone or "").strip()
