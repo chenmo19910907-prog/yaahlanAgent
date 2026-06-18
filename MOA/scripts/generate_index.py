@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 from collections import defaultdict
 from typing import Any
@@ -122,6 +123,12 @@ def _render(registry: dict[str, Any]) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def _sync_platform_catalog(repo_root: str) -> None:
+    script = os.path.join(repo_root, "platform", "scripts", "after_registry_update.py")
+    if os.path.isfile(script):
+        subprocess.run([sys.executable, script], cwd=repo_root, check=False)
+
+
 def main() -> int:
     registry = _read_json(registry_path())
     out_rel = registry.get("generated_index_path")
@@ -134,6 +141,7 @@ def main() -> int:
     content = _render(registry)
     _write_text(out_path, content)
     print(f"generated: {out_path}")
+    _sync_platform_catalog(os.path.dirname(moa_dir()))
     return 0
 
 

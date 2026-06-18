@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -166,6 +167,12 @@ def _render(registry: dict[str, Any]) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def _sync_platform_catalog(repo_root: str) -> None:
+    script = repo_root / "platform" / "scripts" / "after_registry_update.py"
+    if script.is_file():
+        subprocess.run([sys.executable, str(script)], cwd=str(repo_root), check=False)
+
+
 def main() -> int:
     registry_path = _DINGTALK / "config" / "registry.json"
     registry = _read_json(registry_path)
@@ -173,6 +180,7 @@ def main() -> int:
     out_path = _ROOT / out_rel if isinstance(out_rel, str) and out_rel.strip() else _DINGTALK / "使用方法.md"
     out_path.write_text(_render(registry), encoding="utf-8")
     print(f"generated: {out_path}")
+    _sync_platform_catalog(_ROOT)
     return 0
 
 

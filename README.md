@@ -23,6 +23,7 @@
 - **Admin**（`Admin/`）：调用 Yaahlan 测试后台，支持 **按 userId 查询用户全量详情**（`queryUserDetail`）；详见 [Admin/README.md](Admin/README.md) 与 [Admin/使用方法.md](Admin/使用方法.md)
 - **online**（`online/`）：**线上/生产**环境统一入口（Admin + MOA overseas + Tunnel overseas）；须提示词含「线上环境」；详见 [online/README.md](online/README.md) 与 [online/使用方法.md](online/使用方法.md)
 - **Tunnel**（`Tunnel/`）：查询 [tunnel.wemomo.com](https://tunnel.wemomo.com) 抓包记录，按 userId 拉 HTTP 请求列表与 request/response；Cookie 可复用 MOA；详见 [Tunnel/README.md](Tunnel/README.md) 与 [Tunnel/使用方法.md](Tunnel/使用方法.md)
+- **platform**（`platform/`）：**工具平台能力目录**网页（汇总 Admin/MOA/Risk/Tunnel/online/DingTalk registry）；提到「**工具平台**」「**输入工作台**」「**新手引导**」「**说明书**」等时执行 `python3 platform/open_catalog.py` 打开浏览器；详见 [platform/README.md](platform/README.md)
 - **DingTalk**（`DingTalk/`）：列举钉钉 alidocs 目录、同步用例到 `testcase-kb/`、同步 PRD 到 `prd-kb/`；详见 [DingTalk/README.md](DingTalk/README.md)
 - **Report**（`Report/`）：从版本用例 xlsx 生成内网/外网测试总结 HTML；详见 [Report/README.md](Report/README.md)、[Report/使用方法.md](Report/使用方法.md)
 - **adb**（`adb/`）：真机 UI 自动化（截屏 → 读图算坐标 → 点击，仅保留最新 10 张截图）；支持与 **Tunnel** 联动的 `run`（操作 + 截图 + 抓包校验）；**录制脚本库**按发版回归一级模块存放 **片段**，命令 `macro`；**P0 自动化用例**（`autotest`：PRD/手工用例 → 可执行 JSON → 真机跑测 → HTML 报告）见 [adb/自动化用例/README.md](adb/自动化用例/README.md)；详见 [adb/README.md](adb/README.md)、[adb/使用方法.md](adb/使用方法.md)、[adb/录制脚本/README.md](adb/录制脚本/README.md)

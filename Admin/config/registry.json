@@ -246,7 +246,7 @@
       "prompts": [
         "给 <userId> 添加 VIP 客服",
         "新增客服账号 <userId>",
-        "100461563 添加 VIP 客服"
+        "<userId> 添加 VIP 客服"
       ],
       "command": "python3 Admin/admin_execute.py \\\n  --save-cs-data \\\n  --cs-user-id <userId> \\\n  --cs-role-list 1 \\\n  --cs-enable 1 \\\n  --cs-taking-order 1 \\\n  --cs-opt-type 1"
     },
@@ -257,7 +257,7 @@
       "description": "修改客服接单状态（changeTakingOrder；params=userId、takingOrder）。0 不接单；1 接单",
       "prompts": [
         "修改客服 <userId> 接单状态",
-        "100461563 停止接单",
+        "<userId> 停止接单",
         "客服 <userId> 开始接单"
       ],
       "command": "python3 Admin/admin_execute.py \\\n  --change-cs-taking-order \\\n  --cs-user-id <userId> \\\n  --cs-taking-order 0"
