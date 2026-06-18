@@ -109,5 +109,12 @@
     "defaultAppId": 2005,
     "defaultPageNo": 1,
     "defaultPageSize": 20
+  },
+  "cancel_user": {
+    "baseUrl": "https://alpha-mdp-user-admin-api-stage.wemomo.com",
+    "path": "/userAdmin/cancelUser",
+    "defaultAppId": 2005,
+    "protectedPhoneMin": 13311111111,
+    "protectedPhoneMax": 13311111130
   }
 }

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import sys
 import urllib.parse
 
@@ -39,6 +40,12 @@ from .guild import (
     parse_query_trade_union_summary,
     parse_remove_guild_member_summary,
 )
+from .cancel_user import (
+    assert_cancel_user_allowed,
+    parse_cancel_user_summary,
+    protected_phone_range_label,
+)
+from .gift import mdp_gift_success as mdp_user_admin_success
 from .user import (
     parse_history_user_list_by_device_summary,
     parse_user_detail_summary,
@@ -110,6 +117,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--gift-create-source", help="创建来源 createSource")
     parser.add_argument("--gift-page-no", type=int, help="礼物列表页码 pageNo（默认 1）")
     parser.add_argument("--gift-page-size", type=int, help="礼物列表每页条数 pageSize（默认 20）")
+    parser.add_argument(
+        "--cancel-user",
+        action="store_true",
+        help="注销用户账号（userAdmin/cancelUser；不可逆，须 --cancel-user-confirm）",
+    )
+    parser.add_argument("--cancel-user-id", help="注销账号 userId（配合 --cancel-user）")
+    parser.add_argument("--cancel-user-app-id", type=int, help="注销 appId（默认 2005=Yaahlan）")
+    parser.add_argument(
+        "--cancel-user-confirm",
+        action="store_true",
+        help="二次确认注销（必须显式传入才会调用 cancelUser）",
+    )
     parser.add_argument(
         "--query-custom-gift-list",
         action="store_true",
@@ -391,6 +410,119 @@ def _resolve_query_gift_list_request(args: argparse.Namespace) -> tuple[str, dic
         "createSource": str(args.gift_create_source or "").strip(),
         "pageSize": page_size,
         "pageNo": page_no,
+    }
+    return f"{base_url}{path}", body
+
+
+def _fetch_user_phone_for_cancel(args: argparse.Namespace, user_id: str) -> str | None:
+    base_url = _resolve_base_url(args)
+    path = str(defaults("query_user_detail").get("path", "/admin/user/queryUserDetail"))
+    url = f"{base_url}{path}"
+    resp = http_post_json(
+        url,
+        {"userId": user_id},
+        timeout_s=max(args.timeout_ms, 1000) / 1000.0,
+        auth=_resolve_yaahlan_auth(args),
+    )
+    if not admin_success(resp.get("ec")):
+        raise ValueError(
+            f"注销前查询用户详情失败: ec={resp.get('ec')}, em={resp.get('em')}"
+        )
+    summary = parse_user_detail_summary(resp.get("data"))
+    phone = summary.get("phone")
+    return str(phone).strip() if phone is not None and str(phone).strip() else None
+
+
+def _lookup_protected_user_ids_via_moa(cfg: dict[str, object]) -> set[str]:
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    moa_entry = os.path.join(repo_root, "MOA", "moa_execute.py")
+    template = os.path.join(repo_root, "MOA", "templates", "用户-按手机号查userId.json")
+    if not os.path.isfile(moa_entry) or not os.path.isfile(template):
+        raise ValueError("缺少 MOA 登录态查询脚本，无法校验受保护测试号段")
+
+    min_phone = int(cfg.get("protectedPhoneMin", 13311111111))
+    max_phone = int(cfg.get("protectedPhoneMax", 13311111130))
+    protected: set[str] = set()
+    for digits in range(min_phone, max_phone + 1):
+        phone = str(digits)
+        proc = subprocess.run(
+            [
+                sys.executable,
+                moa_entry,
+                "--payload-file",
+                template,
+                "--query-user-by-phone",
+                phone,
+            ],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+        )
+        if proc.returncode != 0:
+            continue
+        try:
+            data = json.loads(proc.stdout)
+        except json.JSONDecodeError:
+            continue
+        if data.get("registered") and data.get("userId"):
+            protected.add(str(data["userId"]).strip())
+    return protected
+
+
+def _assert_cancel_user_not_protected(
+    args: argparse.Namespace,
+    *,
+    user_id: str,
+    cfg: dict[str, object],
+) -> None:
+    phone = _fetch_user_phone_for_cancel(args, user_id)
+    if phone:
+        assert_cancel_user_allowed(
+            user_id=user_id,
+            phone=phone,
+            min_phone=int(cfg.get("protectedPhoneMin", 13311111111)),
+            max_phone=int(cfg.get("protectedPhoneMax", 13311111130)),
+        )
+        return
+
+    protected_ids = _lookup_protected_user_ids_via_moa(cfg)
+    if user_id in protected_ids:
+        label = protected_phone_range_label(
+            min_phone=int(cfg.get("protectedPhoneMin", 13311111111)),
+            max_phone=int(cfg.get("protectedPhoneMax", 13311111130)),
+        )
+        raise ValueError(
+            f"禁止注销：userId {user_id} 属于受保护测试号段 {label}（MOA 反查）"
+        )
+
+
+def _resolve_cancel_user_request(args: argparse.Namespace) -> tuple[str, dict[str, object]]:
+    cfg = defaults("cancel_user")
+    user_id = str(args.cancel_user_id or "").strip()
+    if not user_id:
+        raise ValueError("必须提供 --cancel-user-id")
+
+    if not args.cancel_user_confirm:
+        protected = protected_phone_range_label(
+            min_phone=int(cfg.get("protectedPhoneMin", 13311111111)),
+            max_phone=int(cfg.get("protectedPhoneMax", 13311111130)),
+        )
+        raise ValueError(
+            f"注销账号为不可逆操作。请先核对 userId={user_id}，"
+            f"确认不在受保护测试号段 {protected} 后追加 --cancel-user-confirm 执行。"
+        )
+
+    _assert_cancel_user_not_protected(args, user_id=user_id, cfg=cfg)
+
+    base_url = _resolve_mdp_base_url(cfg)
+    path = str(cfg.get("path", "/userAdmin/cancelUser"))
+    app_id = args.cancel_user_app_id
+    if app_id is None:
+        app_id = int(cfg.get("defaultAppId", 2005))
+
+    body: dict[str, object] = {
+        "userId": user_id,
+        "appId": app_id,
     }
     return f"{base_url}{path}", body
 
@@ -833,6 +965,17 @@ def main() -> int:
                 timeout_s=max(args.timeout_ms, 1000) / 1000.0,
                 auth="mdp_nova",
             )
+        elif args.cancel_user:
+            url, body = _resolve_cancel_user_request(args)
+            if args.dump_body:
+                print(f"POST {url}", file=sys.stderr)
+                print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
+            resp = http_post_json(
+                url,
+                body,
+                timeout_s=max(args.timeout_ms, 1000) / 1000.0,
+                auth="mdp_nova",
+            )
         elif args.query_custom_gift_list:
             url = _resolve_custom_gift_list_url(args)
             if args.dump_body:
@@ -981,6 +1124,13 @@ def main() -> int:
             print(json.dumps(resp, ensure_ascii=False, indent=2))
             return 3
         summary = parse_query_gift_list_summary(resp.get("data"))
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+    elif args.cancel_user:
+        if not mdp_user_admin_success(resp.get("ec")):
+            print(f"MDP 用户后台返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
+            print(json.dumps(resp, ensure_ascii=False, indent=2))
+            return 3
+        summary = parse_cancel_user_summary(resp, user_id=str(args.cancel_user_id).strip())
         print(json.dumps(summary, ensure_ascii=False, indent=2))
     elif args.query_custom_gift_list:
         if not gateway_success(resp.get("status")):
@@ -1148,6 +1298,10 @@ def main() -> int:
     elif args.query_gift_list:
         if not mdp_gift_success(resp.get("ec")):
             print(f"MDP 礼物后台返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
+            return 3
+    elif args.cancel_user:
+        if not mdp_user_admin_success(resp.get("ec")):
+            print(f"MDP 用户后台返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
             return 3
     elif (
         args.query_custom_gift_list

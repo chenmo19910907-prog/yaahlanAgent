@@ -52,6 +52,18 @@
       "command": "python3 Admin/admin_execute.py --query-device-history-users --history-device-mmuidv3 <mmuidv3> && python3 Admin/admin_execute.py --query-user-id <userId>"
     },
     {
+      "id": "cancel_user",
+      "name": "用户-注销账号",
+      "category": "用户（mdp-nova / userAdmin）",
+      "description": "注销用户账号（userAdmin/cancelUser；不可逆）。须 --cancel-user-confirm 二次确认；13311111111~13311111130 受保护不可注销",
+      "prompts": [
+        "注销用户 <userId> 账号",
+        "注销 userId <userId>",
+        "后台 cancelUser <userId>"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --cancel-user \\\n  --cancel-user-id <userId> \\\n  --cancel-user-confirm"
+    },
+    {
       "id": "query_prop_info",
       "name": "道具-查询配置列表",
       "category": "道具（mdp-nova / propAdmin）",
