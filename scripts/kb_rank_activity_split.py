@@ -281,7 +281,6 @@ def split_all_knowledge_bases() -> None:
     jobs = [
         ("prd-kb", split_prd_file, False),
         ("bug-kb", split_bug_archive_file, False),
-        ("online-kb", split_bug_archive_file, True),
     ]
     for folder, splitter, online in jobs:
         src = REPO_ROOT / folder / "榜单与活动.md"
@@ -440,7 +439,7 @@ def main() -> int:
     ap.add_argument(
         "--all-kbs",
         action="store_true",
-        help="拆分 prd-kb / bug-kb / online-kb 中的 榜单与活动.md",
+        help="拆分 prd-kb / bug-kb 中的 榜单与活动.md",
     )
     args = ap.parse_args()
     if args.all_kbs:

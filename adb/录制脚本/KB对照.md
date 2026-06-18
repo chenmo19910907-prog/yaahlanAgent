@@ -25,7 +25,7 @@
 | 注销账号 | cancel-account |
 | 登录-勾选协议打开手机 | login-agree-phone |
 | 登录-手机号发短信 | login-phone-sms |
-| 登录-语言下一步 | login-lang-next |
+| 登录-语言下一步 | login-lang-next | 清数据语言页：English → Next |
 | 登录-输入验证码 | login-verify-code |
 | 登录后关闭弹窗 | login-dismiss-popup |
 | 登录后处理弹窗 | login-post-popups |

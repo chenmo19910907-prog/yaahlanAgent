@@ -57,8 +57,8 @@
    - **【覆盖目标】** 按 `version_testcase_generation_rules.md` 要求覆盖：功能验收、边界值、多角色、屏幕适配（有前端变更时）、多语言（英/阿/土/俄，所有需求均需覆盖）
 
    **【知识库参考（所有需求，推荐）】**：
-   - 生成前运行 `python3 scripts/suggest_kb_for_module.py <模块关键词>`（或 `--file modules.txt`）获取应读的 `documents/`、`testcase-kb/`、`bug-kb/`、`online-kb/`、`templates/` 路径
-   - **活动/营收需求**：在 `bug-kb/`、`online-kb/` 查阅同模块历史缺陷与线上问题，优先补充严重/阻碍与现网翻车场景（不必等版本需求才读）
+   - 生成前运行 `python3 scripts/suggest_kb_for_module.py <模块关键词>`（或 `--file modules.txt`）获取应读的 `documents/`、`testcase-kb/`、`bug-kb/`、`templates/` 路径
+   - **活动/营收需求**：在 `bug-kb/` 查阅同模块历史缺陷，优先补充严重/阻碍与现网翻车场景（不必等版本需求才读）
    - **版本需求**：另读 `rules/version_testcase_generation_rules.md` §1
 
    **通用步骤（所有需求）**：

@@ -6,7 +6,7 @@
     "height": 2340
   },
   "capture": "end",
-  "description": "手机号登录全流程：语言 Next → 协议+手机 → SMS → 验证码（QA 默认 +86 13311111115 / 000000）。身份由 testAccounts/Tunnel 判断，与 UI 流程无关；换号用 --text 或组合 account。",
+  "description": "手机号登录全流程：语言页 English→Next → 协议+手机 → SMS → 验证码（QA 默认 +86 13311111115 / 000000）。身份由 testAccounts/Tunnel 判断，与 UI 流程无关；换号用 --text 或组合 account。",
   "countryCode": "+86",
   "params": [
     "text"
@@ -24,173 +24,24 @@
   ],
   "steps": [
     {
-      "sleep_ms": 500
-    },
-    {
-      "tap_pct": [
-        0.5,
-        0.918
-      ],
-      "note": "语言 Next（无语言页时可 --skip login_lang）",
+      "run_script": "登录-语言下一步",
       "skip_key": "login_lang",
-      "resourceId": "profile_extra_info_tab_viewpager",
-      "bounds": "[0,1660][1080,2340]",
-      "uiText": "I have read and agreed Terms of Service & Privacy Policy",
-      "className": "androidx.viewpager.widget.ViewPager",
-      "fallback_tap_pct": [
-        0.5,
-        0.918
-      ],
-      "fallback_tap": [
-        540,
-        2148
-      ],
-      "locatorLearnedAt": "2026-06-16T10:46:11Z"
+      "note": "清数据后语言页：English → Next（无语言页时 --skip login_lang）"
     },
     {
-      "sleep_ms": 1200
+      "sleep_ms": 600
     },
     {
-      "tap_pct": [
-        0.195,
-        0.921
-      ],
-      "note": "勾选协议",
-      "resourceId": "profile_extra_info_tab_viewpager",
-      "bounds": "[0,1660][1080,2340]",
-      "className": "androidx.viewpager.widget.ViewPager",
-      "fallback_tap_pct": [
-        0.195,
-        0.921
-      ],
-      "fallback_tap": [
-        210,
-        2155
-      ],
-      "locatorLearnedAt": "2026-06-16T10:46:15Z"
+      "run_script": "登录-勾选协议打开手机",
+      "note": "勾选协议 + 手机入口"
     },
     {
-      "sleep_ms": 300
+      "run_script": "登录-手机号发短信",
+      "note": "输入手机号 + SMS"
     },
     {
-      "tap_pct": [
-        0.312,
-        0.855
-      ],
-      "note": "手机入口",
-      "resourceId": "av_left_avatar",
-      "bounds": "[150,1868][342,2060]",
-      "className": "android.widget.FrameLayout",
-      "fallback_tap_pct": [
-        0.312,
-        0.855
-      ],
-      "fallback_tap": [
-        336,
-        2000
-      ],
-      "locatorLearnedAt": "2026-06-16T10:46:17Z"
-    },
-    {
-      "sleep_ms": 800
-    },
-    {
-      "tap_pct": [
-        0.609,
-        0.317
-      ],
-      "note": "input_phone",
-      "resourceId": "avatar",
-      "bounds": "[366,487][714,835]",
-      "uiText": "Phone number",
-      "className": "android.widget.FrameLayout",
-      "fallback_tap_pct": [
-        0.609,
-        0.317
-      ],
-      "fallback_tap": [
-        657,
-        741
-      ],
-      "locatorLearnedAt": "2026-06-16T10:46:19Z"
-    },
-    {
-      "sleep_ms": 300
-    },
-    {
-      "text": "{{text}}",
-      "clear_before_text": false,
-      "note": "手机号（不含区号）；空框无需先清空"
-    },
-    {
-      "sleep_ms": 500
-    },
-    {
-      "tap_pct": [
-        0.5,
-        0.504
-      ],
-      "note": "Get via SMS",
-      "resourceId": "sign",
-      "bounds": "[51,1155][1029,1219]",
-      "className": "android.widget.TextView",
-      "fallback_tap_pct": [
-        0.5,
-        0.504
-      ],
-      "fallback_tap": [
-        540,
-        1179
-      ],
-      "locatorLearnedAt": "2026-06-16T10:46:23Z",
-      "uiText": "She is very mysterious, nothing left"
-    },
-    {
-      "wait_activity": {
-        "hint": "login",
-        "timeout_ms": 2500,
-        "poll_ms": 200,
-        "note": "等待验证码页"
-      }
-    },
-    {
-      "tap_pct": [
-        0.5,
-        0.349
-      ],
-      "note": "input_code",
-      "resourceId": "avatar",
-      "bounds": "[366,487][714,835]",
-      "className": "android.widget.FrameLayout",
-      "fallback_tap_pct": [
-        0.5,
-        0.349
-      ],
-      "fallback_tap": [
-        540,
-        816
-      ],
-      "locatorLearnedAt": "2026-06-16T10:46:25Z"
-    },
-    {
-      "sleep_ms": 400,
-      "note": "等验证码框就绪（勿再缩短）"
-    },
-    {
-      "text": "000000",
-      "clear_before_text": false,
-      "note": "QA 验证码；空框无需先清空"
-    },
-    {
-      "wait_activity": {
-        "hints": [
-          "home",
-          "register"
-        ],
-        "timeout_ms": 3500,
-        "poll_ms": 250,
-        "note": "进入首页或注册页"
-      }
+      "run_script": "登录-输入验证码",
+      "note": "验证码"
     },
     {
       "run_script": "登录后处理弹窗",

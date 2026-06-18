@@ -299,7 +299,7 @@ def render_readme(
         "用途：",
         "",
         "- 发版/版本回归时查阅必测用例与预期",
-        "- 结合 [`bug-kb/`](../bug-kb/README.md)、[`online-kb/`](../online-kb/README.md) 对照历史问题",
+        "- 结合 [`bug-kb/`](../bug-kb/README.md) 对照历史问题",
         "- Agent 生成版本用例时参考已有回归覆盖面",
         "",
         "每条用例含：**P0/P1、一级/二级模块、步骤、预期、历史 PASS/FAIL**；曾失败用例在正文前单独列出。",

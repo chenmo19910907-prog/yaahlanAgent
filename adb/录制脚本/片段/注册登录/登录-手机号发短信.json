@@ -1,26 +1,81 @@
 {
   "id": "login-phone-sms",
   "name": "登录-手机号发短信",
-  "recordedOn": { "width": 1080, "height": 2340 },
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
   "capture": "end",
-  "description": "手机号登录页：区号默认 +86，输入手机号 → Get via SMS",
-  "kbRef": ["documents/登录注册.md（手机号注册/登陆）"],
+  "description": "手机号登录页：输入手机号 → Get via SMS",
+  "kbRef": [
+    "documents/登录注册.md（手机号注册/登陆）"
+  ],
   "countryCode": "+86",
-  "params": ["text"],
-  "defaults": { "text": "13311111115" },
+  "params": [
+    "text"
+  ],
+  "defaults": {
+    "text": "13311111115"
+  },
   "steps": [
-    { "sleep_ms": 400 },
-    { "tap_pct": [0.609, 0.317], "note": "input_phone" },
-    { "sleep_ms": 300 },
-    { "text": "{{text}}", "note": "手机号（不含区号）" },
-    { "sleep_ms": 500 },
-    { "tap_pct": [0.500, 0.504], "note": "Get via SMS ll_phone_sms" },
+    {
+      "sleep_ms": 400
+    },
+    {
+      "resourceId": "low_mian_image",
+      "tap_pct": [
+        0.359,
+        0.317
+      ],
+      "fallback_tap_pct": [
+        0.359,
+        0.317
+      ],
+      "note": "input_phone",
+      "bounds": "[0,570][1080,1534]",
+      "className": "android.widget.ImageView",
+      "fallback_tap": [
+        387,
+        741
+      ],
+      "locatorLearnedAt": "2026-06-17T12:18:39Z"
+    },
+    {
+      "sleep_ms": 300
+    },
+    {
+      "text": "{{text}}",
+      "clear_before_text": false,
+      "note": "手机号（不含区号）"
+    },
+    {
+      "sleep_ms": 500
+    },
+    {
+      "resourceId": "low_mian_image",
+      "tap_pct": [
+        0.5,
+        0.487
+      ],
+      "fallback_tap_pct": [
+        0.5,
+        0.487
+      ],
+      "note": "Get via SMS",
+      "bounds": "[0,570][1080,1534]",
+      "className": "android.widget.ImageView",
+      "fallback_tap": [
+        540,
+        1139
+      ],
+      "locatorLearnedAt": "2026-06-17T12:18:43Z"
+    },
     {
       "wait_activity": {
-        "hint": "login",
-        "timeout_ms": 2500,
+        "short_name": "LoginSendSmsCodeActivity",
+        "timeout_ms": 3500,
         "poll_ms": 200,
-        "note": "等待验证码页"
+        "note": "验证码页"
       }
     }
   ]

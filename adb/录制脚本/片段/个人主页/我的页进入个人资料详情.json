@@ -1,13 +1,43 @@
 {
   "id": "my-profile-from-me",
   "name": "我的页进入个人资料详情",
-  "recordedOn": { "width": 1080, "height": 2340 },
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
   "capture": "end",
   "description": "已在 Me 页时，点头像进入 ProfileActivity（真机 2026-06-08：108,300 / 0.100,0.128）",
-  "kbRef": ["testcase-kb/个人主页.md（资料详情 Profile Tab）"],
+  "kbRef": [
+    "testcase-kb/个人主页.md（资料详情 Profile Tab）"
+  ],
   "steps": [
-    { "sleep_ms": 300 },
-    { "tap_pct": [0.100, 0.128], "note": "头像圆心（108,300）" },
-    { "wait_activity": { "short_name": "ProfileActivity", "timeout_ms": 3000 } }
+    {
+      "sleep_ms": 300
+    },
+    {
+      "tap_pct": [
+        0.1,
+        0.128
+      ],
+      "note": "头像圆心（108,300）",
+      "resourceId": "svga",
+      "bounds": "[0,0][1080,1440]",
+      "className": "android.widget.ImageView",
+      "fallback_tap_pct": [
+        0.1,
+        0.128
+      ],
+      "fallback_tap": [
+        108,
+        299
+      ],
+      "locatorLearnedAt": "2026-06-17T12:22:44Z"
+    },
+    {
+      "wait_activity": {
+        "short_name": "ProfileActivity",
+        "timeout_ms": 3000
+      }
+    }
   ]
 }

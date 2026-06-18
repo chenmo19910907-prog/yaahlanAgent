@@ -1,8 +1,8 @@
 {
   "kbPath": "testcase-kb/test_devices.json",
   "importSource": "/Users/user/Desktop/团队测试机统计表.xlsx",
-  "syncedAt": "2026-06-17 07:26:13 UTC",
-  "count": 48,
+  "syncedAt": "2026-06-17 09:34:19 UTC",
+  "count": 49,
   "devices": [
     {
       "项目": "yaahlan",
@@ -627,7 +627,23 @@
       "归属人": "",
       "持有人": "",
       "备注": "自动落库 2026-06-17；userId=108990429；ip=84.75.158.102"
+    },
+    {
+      "项目": "yaahlan",
+      "资产编号": "待补编号",
+      "设备品牌": "vivo",
+      "设备名称": "V1838A",
+      "mmuid": "",
+      "mmuidv3": "",
+      "设备系统": "Android",
+      "系统版本": "10",
+      "归属人": "",
+      "持有人": "",
+      "adbSerial": "ba69021e",
+      "adbWireless": "172.18.212.12:5555",
+      "adbTcpPort": 5555,
+      "备注": "无线adb 2026-06-17；adbSerial=ba69021e；adbWireless=172.18.212.12:5555；重连: adb connect 172.18.212.12:5555；重启后需 USB 执行 adb tcpip 5555"
     }
   ],
-  "lastIncrementalUpdate": "upsert loginDevice phone= userId=108990429"
+  "lastIncrementalUpdate": "wireless adb 172.18.212.12:5555 serial=ba69021e"
 }

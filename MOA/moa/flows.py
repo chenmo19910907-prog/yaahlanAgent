@@ -89,7 +89,7 @@ def build_noble_level_upgrade_payload(args: argparse.Namespace, client: MoaClien
     raise RuntimeError("贵族月消费值暂不支持自动查询，请使用 --noble-current-exp 或 --noble-exp")
 
 
-def run_id_auth_fix_failure(args: argparse.Namespace, client: MoaClient) -> int:
+def _query_id_auth_reason_user_ids(args: argparse.Namespace, client: MoaClient) -> list[str]:
     q_payload = load_payload(
         _clone_args(
             args,
@@ -97,56 +97,113 @@ def run_id_auth_fix_failure(args: argparse.Namespace, client: MoaClient) -> int:
             id_auth_output="json",
             id_auth_delete_user_id=None,
             id_auth_reset_expire_user_id=None,
+            id_auth_fix_failure_user_id=None,
             diamond_user_id=None,
             package_gift_user_id=None,
         )
     )
     inner_result = client.post_expect_inner_ok(q_payload, action="查询认证记录")
-    reason_user_ids = extract_latest_id_auth_reason_list(inner_result)
-    print(
-        json.dumps({"userId": str(args.id_auth_fix_failure_user_id), "reasonUserIds": reason_user_ids}, ensure_ascii=False),
-        file=sys.stderr,
+    return extract_latest_id_auth_reason_list(inner_result)
+
+
+def _delete_id_auth_person(args: argparse.Namespace, client: MoaClient, uid: str) -> dict[str, Any]:
+    d_payload = load_payload(
+        _clone_args(
+            args,
+            id_auth_user_id=None,
+            id_auth_reset_expire_user_id=None,
+            id_auth_fix_failure_user_id=None,
+            diamond_user_id=None,
+            package_gift_user_id=None,
+            id_auth_delete_user_id=uid,
+        )
     )
-    if not reason_user_ids:
-        print("[]")
-        return 0
+    d_resp = client.post(d_payload)
+    d_ec, d_em, _ = extract_ec_em_result(d_resp)
+    ok_outer = outer_success(d_ec)
+    ok_inner = False
+    inner_err: Any = None
+    try:
+        d_inner_ec, d_inner_em, _ = extract_inner_result(d_resp)
+        ok_inner = d_inner_ec == 0
+        if not ok_inner:
+            inner_err = {"ec": d_inner_ec, "em": d_inner_em}
+    except RuntimeError as e:
+        inner_err = str(e)
 
-    results: list[dict[str, Any]] = []
-    for uid in reason_user_ids:
-        d_payload = load_payload(
-            _clone_args(
-                args,
-                id_auth_user_id=None,
-                id_auth_reset_expire_user_id=None,
-                id_auth_fix_failure_user_id=None,
-                diamond_user_id=None,
-                package_gift_user_id=None,
-                id_auth_delete_user_id=uid,
+    return {
+        "deletedUserId": uid,
+        "outer": {"ec": d_ec, "em": d_em, "ok": ok_outer},
+        "innerOk": ok_inner,
+        "innerErr": inner_err,
+    }
+
+
+def run_id_auth_fix_failure(args: argparse.Namespace, client: MoaClient) -> int:
+    user_id = str(args.id_auth_fix_failure_user_id)
+    max_rounds = 10
+    all_deletions: list[dict[str, Any]] = []
+    rounds_run = 0
+
+    for round_idx in range(1, max_rounds + 1):
+        reason_user_ids = _query_id_auth_reason_user_ids(args, client)
+        print(
+            json.dumps(
+                {"userId": user_id, "round": round_idx, "reasonUserIds": reason_user_ids},
+                ensure_ascii=False,
+            ),
+            file=sys.stderr,
+        )
+        if not reason_user_ids:
+            print(
+                json.dumps(
+                    {
+                        "ok": True,
+                        "fixedForUserId": user_id,
+                        "rounds": rounds_run,
+                        "deletions": all_deletions,
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
             )
-        )
-        d_resp = client.post(d_payload)
-        d_ec, d_em, _ = extract_ec_em_result(d_resp)
-        ok_outer = outer_success(d_ec)
-        ok_inner = False
-        inner_err: Any = None
-        try:
-            d_inner_ec, d_inner_em, _ = extract_inner_result(d_resp)
-            ok_inner = d_inner_ec == 0
-            if not ok_inner:
-                inner_err = {"ec": d_inner_ec, "em": d_inner_em}
-        except RuntimeError as e:
-            inner_err = str(e)
+            return 0
 
-        results.append(
+        rounds_run = round_idx
+        for uid in reason_user_ids:
+            all_deletions.append(_delete_id_auth_person(args, client, uid))
+
+    remaining = _query_id_auth_reason_user_ids(args, client)
+    if remaining:
+        print(
+            json.dumps(
+                {
+                    "ok": False,
+                    "fixedForUserId": user_id,
+                    "rounds": max_rounds,
+                    "remainingReasonUserIds": remaining,
+                    "deletions": all_deletions,
+                    "error": f"已达最大轮次 {max_rounds}，仍有 reason 关联账号未清干净",
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            file=sys.stderr,
+        )
+        return 1
+
+    print(
+        json.dumps(
             {
-                "deletedUserId": uid,
-                "outer": {"ec": d_ec, "em": d_em, "ok": ok_outer},
-                "innerOk": ok_inner,
-                "innerErr": inner_err,
-            }
+                "ok": True,
+                "fixedForUserId": user_id,
+                "rounds": max_rounds,
+                "deletions": all_deletions,
+            },
+            ensure_ascii=False,
+            indent=2,
         )
-
-    print(json.dumps({"fixedForUserId": str(args.id_auth_fix_failure_user_id), "deletions": results}, ensure_ascii=False, indent=2))
+    )
     return 0
 
 

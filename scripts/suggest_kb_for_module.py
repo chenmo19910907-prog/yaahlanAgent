@@ -15,7 +15,6 @@ KIND_LABEL = {
     "documents": "documents",
     "testcase_kb": "testcase-kb",
     "bug_kb": "bug-kb",
-    "online_kb": "online-kb",
     "templates": "templates",
 }
 
@@ -69,7 +68,6 @@ def main() -> int:
         "documents",
         "testcase_kb",
         "bug_kb",
-        "online_kb",
         "templates",
     )
     for kind in order:
@@ -85,7 +83,7 @@ def main() -> int:
             print(f"  - {rel}  ({hit.note})")
         print()
 
-    print("建议阅读顺序: documents → testcase-kb → bug-kb/online-kb → templates")
+    print("建议阅读顺序: documents → testcase-kb → bug-kb → templates")
     return 0
 
 

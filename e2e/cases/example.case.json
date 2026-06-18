@@ -1,0 +1,36 @@
+{
+  "id": "example-login-smoke",
+  "title": "示例：登录冒烟（占位）",
+  "module": "注册登录",
+  "priority": "P0",
+  "preconditions": [
+    "测试账号已就绪",
+    "设备 adb devices 可见"
+  ],
+  "steps": [
+    {
+      "action": "fixture.moa",
+      "note": "可选：MOA 造数"
+    },
+    {
+      "action": "ui.tap",
+      "target": "登录按钮",
+      "note": "驱动层待实现"
+    }
+  ],
+  "assertions": [
+    {
+      "type": "activity",
+      "expect": "HomeActivity"
+    },
+    {
+      "type": "tunnel",
+      "keyword": "login",
+      "optional": true
+    }
+  ],
+  "metadata": {
+    "author": "qa",
+    "created": "2026-06-17"
+  }
+}

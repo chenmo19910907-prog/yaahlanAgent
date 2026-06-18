@@ -3,11 +3,35 @@
   "name": "登录-语言下一步",
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
-  "description": "首次安装语言选择页 → Next（id/confirm）",
-  "kbRef": ["documents/登录注册.md（语言选择页 → next）"],
+  "description": "清数据后语言选择页：tv_en(English) → confirm(下一步)；勿用坐标盲点（阿语在 tv_ar）",
+  "kbRef": [
+    "documents/登录注册.md（语言选择页 → English → next）"
+  ],
   "steps": [
     { "sleep_ms": 500 },
-    { "tap_pct": [0.500, 0.918], "note": "Next" },
-    { "sleep_ms": 1200 }
+    {
+      "resourceId": "tv_en",
+      "learn_locators": false,
+      "tap_pct": [0.5, 0.356],
+      "fallback_tap_pct": [0.5, 0.356],
+      "note": "English 行 id/tv_en，中心约 (540,832)"
+    },
+    { "sleep_ms": 400 },
+    {
+      "resourceId": "confirm",
+      "learn_locators": false,
+      "tap_pct": [0.5, 0.918],
+      "fallback_tap_pct": [0.5, 0.918],
+      "note": "下一步 confirm，中心约 (540,2148)"
+    },
+    {
+      "wait_activity": {
+        "short_name": "LoginActivity",
+        "timeout_ms": 3500,
+        "poll_ms": 200,
+        "note": "进入英语登录页"
+      }
+    },
+    { "sleep_ms": 600 }
   ]
 }

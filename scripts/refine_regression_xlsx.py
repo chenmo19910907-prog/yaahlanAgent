@@ -560,7 +560,7 @@ def merge_knowledge_gaps(cases: list[ParsedCase]) -> list[ParsedCase]:
             expected=str(item.get("预期结果", "")),
             source="知识库补充",
         )
-        kb_note = str(item.get("调整说明", "bug-kb/online-kb 缺口"))
+        kb_note = str(item.get("调整说明", "bug-kb 缺口"))
         assign_pool(c)
         if c.pool != "剔除":
             c.note = f"{c.note}；{kb_note}" if kb_note else c.note
@@ -738,7 +738,7 @@ def build_workbook(source: Path, output: Path) -> dict[str, int]:
 
     ws5 = wb_out.create_sheet("使用说明")
     for line in [
-        f"发版回归用例 — 源表 {source.name} + bug-kb/online-kb 缺口补充",
+        f"发版回归用例 — 源表 {source.name} + bug-kb 缺口补充",
         "",
         "仅区分两种发版：",
         "",

@@ -11,7 +11,7 @@
 - **需求解析**：钉钉普通文档 / Excel 需求读取（`dingtalk-doc-read` + `parse_document` 等）
 - **PRD 理解**：生成用例前可按 `prd-review` Skill 做需求摘要与边界梳理（见 `.cursor/skills/prd-review/SKILL.md`）
 - **规则驱动**：参考 `rules/testcase_generation_rules.md`（榜单、抽奖、兑换、礼包等通用规则）补充用例
-- **业务参考**：`documents/` 下按模块维护说明；**用例知识库**见 `testcase-kb/`，**需求知识库**见 `prd-kb/`（按模块整理的产品需求要点），**Bug 知识库**见 `bug-kb/`，**线上问题**见 `online-kb/`；动态用例生成流程见 `moments/`
+- **业务参考**：`documents/` 下按模块维护说明；**用例知识库**见 `testcase-kb/`，**需求知识库**见 `prd-kb/`（按模块整理的产品需求要点），**Bug 知识库**见 `bug-kb/`；动态用例生成流程见 `moments/`
 - **模板对齐**：相似模块参考 `templates/`（如榜单类对齐 `templates/榜单.md`）
 - **用例输出**：Markdown 表格等写入 `temporary_testcase/`，经 `testcase-to-excel` 分批写入钉钉 Excel
 - **质量工具**：`scripts/check_testcase_md.py` 格式校验、`suggest_kb_for_module.py` 知识库推荐、`doctor.py` 环境自检（见根目录 `SKILL.md`「常用命令」）
@@ -26,6 +26,7 @@
 - **DingTalk**（`DingTalk/`）：列举钉钉 alidocs 目录、同步用例到 `testcase-kb/`、同步 PRD 到 `prd-kb/`；详见 [DingTalk/README.md](DingTalk/README.md)
 - **Report**（`Report/`）：从版本用例 xlsx 生成内网/外网测试总结 HTML；详见 [Report/README.md](Report/README.md)、[Report/使用方法.md](Report/使用方法.md)
 - **adb**（`adb/`）：真机 UI 自动化（截屏 → 读图算坐标 → 点击，仅保留最新 10 张截图）；支持与 **Tunnel** 联动的 `run`（操作 + 截图 + 抓包校验）；**录制脚本库**按发版回归一级模块存放 **片段**，命令 `macro`；**P0 自动化用例**（`autotest`：PRD/手工用例 → 可执行 JSON → 真机跑测 → HTML 报告）见 [adb/自动化用例/README.md](adb/自动化用例/README.md)；详见 [adb/README.md](adb/README.md)、[adb/使用方法.md](adb/使用方法.md)、[adb/录制脚本/README.md](adb/录制脚本/README.md)
+- **e2e**（`e2e/`）：**独立于 adb/** 的自然语言安卓自动化（**识别→思考→执行** + 知识库 + MOA/Tunnel）；详见 [e2e/README.md](e2e/README.md)
 
 ## 项目结构
 
@@ -89,6 +90,12 @@ auto-generate-testcase/
 │       ├── KB对照.md                  # 知识库 ↔ 脚本映射
 │       ├── 片段/<一级模块>/           # 积木：注册登录、动态帧、我的帧等
 │       └── 设备适配/                  # 换机坐标换算（基准设备、档案）
+├── e2e/                               # 全新 E2E 自动化（独立于 adb/，建设中）
+│   ├── README.md
+│   ├── 使用方法.md
+│   ├── e2e_execute.py                 # 入口
+│   ├── cases/                         # 声明式用例 JSON
+│   └── reports/                       # 运行报告
 ├── rules/                             # 生成规则与辅助流程说明
 │   ├── testcase_generation_rules.md   # 通用：榜单 / 抽奖 / 兑换 / 礼包等
 │   ├── version_testcase_generation_rules.md  # 版本用例生成规则（须先读 documents/ 对应模块）
@@ -99,8 +106,6 @@ auto-generate-testcase/
 ├── testcase-kb/                       # 用例知识库（由版本 xlsx 汇总的产品规则/验收要点）
 │   └── README.md
 ├── bug-kb/                            # Bug 知识库（历史缺陷归档）
-│   └── README.md
-├── online-kb/                         # 线上问题知识库（现网/生产问题子集）
 │   └── README.md
 ├── documents/                         # 业务模块参考（功能/版本用例生成前优先阅读）
 │   ├── gift.md                        # 礼物业务模块梳理
@@ -274,6 +279,7 @@ python3 adb/adb_execute.py macro 发布纯文本动态 --text 5555 --no-capture
 | [adb/使用方法.md](adb/使用方法.md) | ADB 命令速查（提示词 ↔ CLI） |
 | [adb/录制脚本/README.md](adb/录制脚本/README.md) | 录制脚本库目录与落库约定 |
 | [adb/录制脚本/KB对照.md](adb/录制脚本/KB对照.md) | 知识库路径 ↔ 片段/组合对照 |
+| [e2e/README.md](e2e/README.md) | 全新 E2E 自动化方案（独立于 adb/） |
 
 - `榜单.md`：榜单类模块完整用例维度
 - `抽奖.md`：抽奖活动用例模板

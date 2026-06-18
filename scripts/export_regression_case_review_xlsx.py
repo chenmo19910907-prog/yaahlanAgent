@@ -730,7 +730,7 @@ def write_workbook(
     # Sheet3: 说明
     ws3 = wb.create_sheet("使用说明")
     notes = [
-        "本表由 auto-generate-testcase 根据 regression-kb / bug-kb / online-kb 分析导出。",
+        "本表由 auto-generate-testcase 根据 regression-kb / bug-kb 分析导出。",
         "",
         "回归策略列含义：",
         "  每版必测 — 每个发版版本常规双端回归应执行",

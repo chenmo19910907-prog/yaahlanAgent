@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""一键同步 bug-kb / online-kb（路径可通过参数或环境变量覆盖）。"""
+"""一键同步 bug-kb（路径可通过参数或环境变量覆盖）。"""
 
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ def main() -> int:
                 / "【yaahlan】任务信息表_20260529 15.37.14.xlsx"
             ),
         ),
-        help="任务信息表 xlsx（bug-kb + online-kb）",
+        help="任务信息表 xlsx（bug-kb）",
     )
     parser.add_argument(
         "--with-regression",
@@ -48,10 +48,6 @@ def main() -> int:
     )
     parser.add_argument(
         "--skip-bug",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--skip-online",
         action="store_true",
     )
     parser.add_argument(
@@ -73,13 +69,6 @@ def main() -> int:
         steps.append(
             (
                 "bug_kb_from_tasks_xlsx.py",
-                ["--source", args.tasks_xlsx],
-            )
-        )
-    if not args.skip_online:
-        steps.append(
-            (
-                "online_kb_from_tasks_xlsx.py",
                 ["--source", args.tasks_xlsx],
             )
         )

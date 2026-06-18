@@ -22,6 +22,9 @@ Risk/.env
 Risk/__pycache__/
 Admin/.env.local
 online/.env.local
+e2e/.env.local
+e2e/reports/*
+!e2e/reports/.gitkeep
 Admin/.env.online.local
 **/.env.online.local
 Admin/.env

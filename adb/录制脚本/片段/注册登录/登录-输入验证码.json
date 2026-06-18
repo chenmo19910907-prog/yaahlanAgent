@@ -3,15 +3,32 @@
   "name": "登录-输入验证码",
   "recordedOn": { "width": 1080, "height": 2340 },
   "capture": "end",
-  "description": "Verify Phone Number 页：输入 6 位验证码（默认 000000）",
+  "description": "验证码页：输入 6 位验证码（默认 000000）",
   "kbRef": ["documents/登录注册.md（验证码页面）"],
   "params": ["text"],
   "defaults": { "text": "000000" },
   "steps": [
     { "sleep_ms": 400 },
-    { "tap_pct": [0.500, 0.349], "note": "input_code" },
+    {
+      "resourceId": "input_code",
+      "tap_pct": [0.5, 0.349],
+      "fallback_tap_pct": [0.5, 0.349],
+      "note": "input_code"
+    },
     { "sleep_ms": 300 },
-    { "text": "{{text}}", "note": "验证码" },
-    { "sleep_ms": 3500, "note": "等待进入首页" }
+    {
+      "text": "{{text}}",
+      "clear_before_text": false,
+      "note": "验证码"
+    },
+    {
+      "wait_activity": {
+        "hints": ["home", "register"],
+        "timeout_ms": 5000,
+        "poll_ms": 250,
+        "note": "进入首页"
+      }
+    },
+    { "sleep_ms": 800 }
   ]
 }

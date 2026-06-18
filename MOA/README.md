@@ -75,7 +75,8 @@ python3 MOA/moa_execute.py \
 
 | 操作 | 命令 |
 |------|------|
-| 刷新能力清单 | `python3 MOA/scripts/generate_index.py` |
+| **新模板自动入库 + 刷新清单** | `python3 MOA/scripts/sync_registry.py` |
+| 仅刷新能力清单 | `python3 MOA/scripts/generate_index.py` |
 | 批量自测 | `python3 MOA/scripts/test_all.py` |
 
 ### 新增 MOA 能力
@@ -83,8 +84,22 @@ python3 MOA/moa_execute.py \
 1. 在 **`templates/`** 新增 JSON 模板（须含 `key` 字段）
 2. 如需参数化，扩展 **`moa/`** 包中的 CLI 逻辑
 3. 规则/映射写入 **`config/thresholds.json`**
-4. 登记 **`config/registry.json`**
-5. 运行 `python3 MOA/scripts/generate_index.py`
+4. 运行 **`python3 MOA/scripts/sync_registry.py`**（自动写入 `config/registry.json` 并生成 `使用方法.md`）
+
+可选：在模板内加 **`_registry`** 块自定义入库元数据（不会发给 MOA）：
+
+```json
+"_registry": {
+  "id": "my_capability",
+  "name": "我的能力",
+  "category": "自定义分类",
+  "description": "功能说明",
+  "prompts": ["口令示例"],
+  "cli": "--expr <userId>"
+}
+```
+
+仍可直接手改 **`config/registry.json`**；`sync_registry.py` 只补「尚未登记」的模板，不覆盖已有条目。
 
 ## 相关文档
 

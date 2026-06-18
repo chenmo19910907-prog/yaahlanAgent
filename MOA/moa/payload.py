@@ -613,6 +613,9 @@ def load_payload(args: argparse.Namespace) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError("payload 必须是 JSON object")
 
+    # 模板内 _registry 仅用于 sync_registry 入库，不发给 MOA
+    payload.pop("_registry", None)
+
     apply_top_level_overrides(payload, args)
 
     for predicate, handler in OPERATIONS:

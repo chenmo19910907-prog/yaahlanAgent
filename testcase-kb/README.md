@@ -2,7 +2,7 @@
 
 > **特权 VIP**：[`特权VIP.md`](特权VIP.md)
 > **历史 Bug 归档**：[`../bug-kb/README.md`](../bug-kb/README.md)
-> **线上问题归档**：[`../online-kb/README.md`](../online-kb/README.md)
+> **Bug 归档**：[`../bug-kb/README.md`](../bug-kb/README.md)
 
 由**钉钉目录中的版本测试用例 Excel** 提炼为**产品规则 / 验收要点**知识库（非逐条执行用例）；**同父类型合并为单个 md**；**独立功能单独成库**。
 

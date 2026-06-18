@@ -365,7 +365,7 @@
       "id": "id_auth_fix_failure_by_reason",
       "name": "实名认证-解决认证失败（清 reason 关联账号）",
       "category": "实名认证（internal/user/id-auth-api）",
-      "description": "查询用户认证记录并清除最近一条 reason 中的账号认证记录（queryRealPersonRecord -> internalAuthDeletePerson）",
+      "description": "循环：查询认证记录 → 清除最近一条 reason 中的关联账号 → 再查；无 reason 则结束（最多 10 轮）",
       "prompts": [
         "解决用户 <userId> 认证失败",
         "解决 <userId> 认证失败"
