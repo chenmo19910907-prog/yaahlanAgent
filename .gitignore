@@ -47,3 +47,7 @@ adb/__pycache__/
 prd-kb/.raw/
 **/__pycache__/
 *.pyc
+
+# 用例生成临时目录（工作流落盘用，不提交具体内容）
+temporary_testcase/*
+!temporary_testcase/.gitkeep
