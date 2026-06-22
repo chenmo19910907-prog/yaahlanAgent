@@ -51,7 +51,13 @@ cp online/.env.example online/.env.local
 python3 online/online_execute.py admin --query-user-id 101352646
 python3 online/online_execute.py moa --query-user-by-phone 19900001111
 python3 online/online_execute.py tunnel --momoid 107427060 --since 3600
+
+# 礼物面板 Customize Tab 排序 / 自定义礼物周榜（须用户刚在 App 操作过）
+python3 online/online_execute.py tunnel --momoid <userId> --keyword getGiftTabListV3 --since 7200 --output json
+python3 online/online_execute.py tunnel --momoid <userId> --keyword getTotalCustomGiftRankList --since 7200 --output json
 ```
+
+解析口径见 [adb/录制脚本/礼物面板抓包.md](../adb/录制脚本/礼物面板抓包.md)。
 
 ## 维护
 

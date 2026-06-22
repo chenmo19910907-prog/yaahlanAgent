@@ -22,7 +22,7 @@
 - **Risk**（`Risk/`）：调用海外风控开放接口 `/open/menu/operate`，支持解除设备/手机号风控、充值/活动风控加白加黑；默认读取 `testcase-kb/test_devices.json` 按平台自动选取 mmuid 或 mmuidv3 值；详见 [Risk/README.md](Risk/README.md)
 - **Admin**（`Admin/`）：调用 Yaahlan 测试后台，支持 **按 userId 查询用户全量详情**（`queryUserDetail`）；详见 [Admin/README.md](Admin/README.md) 与 [Admin/使用方法.md](Admin/使用方法.md)
 - **online**（`online/`）：**线上/生产**环境统一入口（Admin + MOA overseas + Tunnel overseas）；须提示词含「线上环境」；详见 [online/README.md](online/README.md) 与 [online/使用方法.md](online/使用方法.md)
-- **Tunnel**（`Tunnel/`）：查询 [tunnel.wemomo.com](https://tunnel.wemomo.com) 抓包记录，按 userId 拉 HTTP 请求列表与 request/response；Cookie 可复用 MOA；详见 [Tunnel/README.md](Tunnel/README.md) 与 [Tunnel/使用方法.md](Tunnel/使用方法.md)
+- **Tunnel**（`Tunnel/`）：查询 [tunnel.wemomo.com](https://tunnel.wemomo.com) 抓包记录，按 userId 拉 HTTP 请求列表与 request/response；Cookie 可复用 MOA；礼物面板 Customize 排序与自定义礼物周榜见 [adb/录制脚本/礼物面板抓包.md](adb/录制脚本/礼物面板抓包.md)；详见 [Tunnel/README.md](Tunnel/README.md) 与 [Tunnel/使用方法.md](Tunnel/使用方法.md)
 - **platform**（`platform/`）：**工具平台能力目录**网页（汇总 Admin/MOA/Risk/Tunnel/online/DingTalk registry）；提到「**工具平台**」「**输入工作台**」「**新手引导**」「**说明书**」等时执行 `python3 platform/open_catalog.py` 打开浏览器；详见 [platform/README.md](platform/README.md)
 - **DingTalk**（`DingTalk/`）：列举钉钉 alidocs 目录、同步用例到 `testcase-kb/`、同步 PRD 到 `prd-kb/`；详见 [DingTalk/README.md](DingTalk/README.md)
 - **Report**（`Report/`）：从版本用例 xlsx 生成内网/外网测试总结 HTML；详见 [Report/README.md](Report/README.md)、[Report/使用方法.md](Report/使用方法.md)
@@ -75,6 +75,15 @@ auto-generate-testcase/
 │       ├── folders.json               # 已登记目录（用例/活动/PRD）
 │       ├── kb.json                    # 用例同步选项
 │       └── prd.json                   # PRD 同步选项
+├── platform/                          # 工具平台能力目录（汇总各模块 registry → catalog.html）
+│   ├── README.md
+│   ├── open_catalog.py                # 刷新目录并打开浏览器（127.0.0.1:18765）
+│   ├── export_catalog.py              # 导出离线 HTML 到桌面
+│   ├── catalog.html                   # 能力目录页（自动生成）
+│   ├── config/
+│   │   └── sources.json               # 模块来源与一级分类归并规则
+│   ├── scripts/                       # generate_catalog / cursor_bridge 等
+│   └── dingtalk_gateway/              # 钉钉机器人网关（可选）
 ├── prd-kb/                            # 产品需求知识库（按业务模块整理，非逐篇 PRD）
 │   └── README.md
 ├── Report/                            # 版本用例 xlsx → 内网/外网测试总结 HTML
@@ -201,6 +210,8 @@ python3 online/online_execute.py moa --query-user-by-phone <phone>   # 默认区
 python3 online/online_execute.py tunnel --momoid <userId> --since 3600
 ```
 
+礼物面板 **Customize Tab 排序**（`getGiftTabListV3`）与**自定义礼物周榜**（`getTotalCustomGiftRankList`，`cycle=1` 本周 / `cycle=2` 上周）的线上抓包与导出说明见 [adb/录制脚本/礼物面板抓包.md](adb/录制脚本/礼物面板抓包.md)。
+
 典型链路：**手机号 → MOA 得 userId → Admin 查详情/在线 → Tunnel 验收接口**。完整口令与命令见 [online/README.md](online/README.md) 与 [online/使用方法.md](online/使用方法.md)。
 
 ### 5. 风控名单操作
@@ -275,6 +286,7 @@ python3 adb/adb_execute.py macro 发布纯文本动态 --text 5555 --no-capture
 | [MOA/README.md](MOA/README.md) | MOA 本地调用与目录说明 |
 | [online/README.md](online/README.md) | 线上环境统一入口（Admin + MOA + Tunnel） |
 | [online/使用方法.md](online/使用方法.md) | online 能力口令与命令（自动生成） |
+| [platform/README.md](platform/README.md) | 工具平台能力目录网页（`open_catalog.py`） |
 | [Risk/README.md](Risk/README.md) | 海外风控开放接口与测试机解除 |
 | [adb/README.md](adb/README.md) | ADB 设计原则、协作流程、自动录制 |
 | [adb/使用方法.md](adb/使用方法.md) | ADB 命令速查（提示词 ↔ CLI） |

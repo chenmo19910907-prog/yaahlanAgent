@@ -49,6 +49,24 @@
       ]
     },
     {
+      "id": "agent-export",
+      "name": "Agent 导出目录",
+      "shortName": "Agent导出",
+      "description": "钉钉网关 Agent 完整表格/CSV/JSON 导出目录",
+      "app": "Yaahlan",
+      "folderUrl": "https://alidocs.dingtalk.com/i/nodes/m9bN7RYPWdlGBEgEtKPvv9gdWZd1wyK0",
+      "nodeId": "m9bN7RYPWdlGBEgEtKPvv9gdWZd1wyK0",
+      "recursive": false,
+      "aliases": [
+        "agent导出",
+        "agent export",
+        "网关导出"
+      ],
+      "prompts": [
+        "Agent 结果导出目录"
+      ]
+    },
+    {
       "id": "yaahlan-prd",
       "name": "产品需求文档",
       "shortName": "PRD 目录",

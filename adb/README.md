@@ -532,7 +532,7 @@ python3 adb/adb_execute.py gift panel analyze --account familyLeader --since 120
 python3 adb/adb_execute.py gift panel find --account familyLeader --price 99 --tab Gift
 ```
 
-数据源：`getGiftTabListV3`。Tab **左右滑**、礼物格 **上下滑**，见 `录制脚本/礼物面板抓包.md`。
+数据源：`getGiftTabListV3`（含 **Customize** Tab 面板排序；注意 hash 缓存命中时无 `gift_list`）。自定义礼物**周榜**另见 `getTotalCustomGiftRankList`（`cycle=1` 本周 / `cycle=2` 上周）。线上环境用 `online/online_execute.py tunnel` + `--g-env overseas`。详见 `录制脚本/礼物面板抓包.md`。
 
 Cookie 复用 `MOA/.env.local`。Agent Skill：`.cursor/skills/adb-tunnel-verify/SKILL.md`。
 

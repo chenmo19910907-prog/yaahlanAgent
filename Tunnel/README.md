@@ -120,10 +120,31 @@ python3 Tunnel/tunnel_execute.py --momoid 100486375 --request-id t5OnlZ4B_1006Fv
 
 | 场景 | 命令要点 |
 |------|----------|
-| 验证是否调了送礼接口 | `--keyword sendGift` 或 `--keyword gift` |
+| 验证是否调了送礼接口 | `--keyword gift/send` 或 `--keyword gift`（非 `sendGift`） |
 | 查登录/心跳 | `--keyword login` / `--keyword heartbeat` |
 | 对照公屏与接口 | 先 adb 操作，再 `--since 600` 拉最近 10 分钟 |
 | 写 bug 附 tunnel 链接 | 从列表取 `_id` + `time` 拼 `/request/<id>?req_time=...` |
+| **礼物面板 Tab/礼物排序** | `--keyword getGiftTabListV3`；解析 `gift_list[].tab_name` + `list[]`；见 [adb/录制脚本/礼物面板抓包.md](../adb/录制脚本/礼物面板抓包.md) |
+| **Customize 面板礼物排序** | 同上，取 `tab_name=Customize` 的 `list[]` 按数组下标即为展示顺序 |
+| **自定义礼物榜单（本周/上周）** | `--keyword getTotalCustomGiftRankList`；`cycle=1` 本周、`cycle=2` 上周（`timeType=2` 周榜）；`data.list[]` 最多 50 条 |
+
+### 礼物面板 / 自定义礼物榜单（线上环境）
+
+用户提示词含「**线上环境**」时，用 `online/online_execute.py tunnel`（`g_env=overseas`），勿用测试 `Tunnel/tunnel_execute.py`：
+
+```bash
+# Customize Tab 礼物排序（须 App 内刚打开过礼物面板）
+python3 online/online_execute.py tunnel --momoid <userId> --keyword getGiftTabListV3 --since 7200 --output json
+
+# 自定义礼物周榜（须 App 内刚切过「本周/上周」）
+python3 online/online_execute.py tunnel --momoid <userId> --keyword getTotalCustomGiftRankList --since 7200 --output json
+```
+
+**注意**：
+
+- `getGiftTabListV3` 同一轮打开可能出现两条：第二条若 `request.giftListHash` 与 `response.gift_list_hash` 相同，则**无 `gift_list` 字段**（缓存命中）；解析排序须取**含完整 `gift_list` 的那条**（通常时间略早）。
+- 面板排序（Customize `list[]`）与榜单排名（`getTotalCustomGiftRankList`）是**不同接口**；前者是 Tab 内展示顺序，后者是按活跃值 `value` 的排名。
+- CLI 解析礼物面板 Tab：`python3 adb/adb_execute.py gift panel analyze --momoid <userId> --g-env overseas`（测试 alpha 用默认 `alpha`）。
 
 ## 维护
 

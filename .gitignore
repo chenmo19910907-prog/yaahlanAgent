@@ -30,6 +30,14 @@ Admin/.env.online.local
 Admin/.env
 Admin/__pycache__/
 Tunnel/.env.local
+
+# 钉钉网关执行机本地登记（Step 1）
+platform/dingtalk_gateway/config/executor.local.json
+platform/dingtalk_gateway/.env.local
+platform/dingtalk_gateway/.venv/
+platform/dingtalk_gateway/exports/
+platform/dingtalk_gateway/attachments/
+platform/dingtalk_gateway/logs/
 Tunnel/.env
 Tunnel/__pycache__/
 Report/.venv/
