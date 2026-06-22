@@ -1,0 +1,7 @@
+{
+  "id": "test-report-export",
+  "name": "测试报告导出",
+  "description": "钉钉网关：版本测试总结（内网/外网 Word）上传目录",
+  "folderUrl": "https://alidocs.dingtalk.com/i/nodes/m9bN7RYPWdlGBEgEtKPvv9gdWZd1wyK0",
+  "nodeId": "m9bN7RYPWdlGBEgEtKPvv9gdWZd1wyK0"
+}

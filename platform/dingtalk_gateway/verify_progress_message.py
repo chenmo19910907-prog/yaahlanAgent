@@ -24,7 +24,7 @@ def test_heartbeat_with_remaining() -> None:
         session.begin("生成用例", conversation_id="c1", budget_s=600.0)
         msg = build_heartbeat_message(session)
     assert "已执行2分30秒" in msg
-    assert "预计还需约7分30秒" in msg
+    assert "预计还需" not in msg
     assert "中断操作" in msg
 
 
@@ -34,7 +34,8 @@ def test_heartbeat_over_budget() -> None:
         session.begin("长任务", conversation_id="c1", budget_s=120.0)
         msg = build_heartbeat_message(session)
     assert "已执行2分30秒" in msg
-    assert "可能即将完成" in msg
+    assert "预计还需" not in msg
+    assert "可能即将完成" not in msg
 
 
 def main() -> int:

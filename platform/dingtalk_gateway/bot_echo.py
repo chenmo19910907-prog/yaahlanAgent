@@ -12,6 +12,7 @@ from dingtalk_stream import AckMessage
 
 from env_loader import load_env_local, require_env
 from inbound_message import parse_inbound_message
+from quoted_reply import quote_text_from_inbound, reply_quoted
 
 logger = logging.getLogger("dingtalk-echo")
 
@@ -28,7 +29,7 @@ class EchoBotHandler(dingtalk_stream.ChatbotHandler):
             inbound.links,
         )
         if inbound.is_empty:
-            self.reply_text("收到空消息或非支持类型（仅 text / picture / richText）", incoming)
+            reply_quoted(self, "收到空消息或非支持类型（仅 text / picture / richText）", incoming)
             return AckMessage.STATUS_OK, "OK"
 
         parts = [f"类型：{incoming.message_type}", f"摘要：{inbound.summary_label()}"]
@@ -38,7 +39,7 @@ class EchoBotHandler(dingtalk_stream.ChatbotHandler):
             parts.append(f"附图：{len(inbound.image_download_codes)} 张")
         if inbound.links:
             parts.append("链接：\n" + "\n".join(inbound.links))
-        self.reply_text("\n".join(parts), incoming)
+        reply_quoted(self, "\n".join(parts), incoming, quote_text=quote_text_from_inbound(inbound))
         return AckMessage.STATUS_OK, "OK"
 
 

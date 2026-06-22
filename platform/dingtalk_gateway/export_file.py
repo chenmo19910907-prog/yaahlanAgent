@@ -61,8 +61,7 @@ def main() -> int:
         print(f"[FAIL] {exc}", file=sys.stderr)
         return 1
 
-    print(f"[OK] 已导出到目录：{cfg.folder_url}")
-    print(f"文件链接：{url}")
+    print(url)
     return 0
 
 

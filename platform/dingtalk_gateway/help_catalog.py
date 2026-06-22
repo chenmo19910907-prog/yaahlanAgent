@@ -16,12 +16,17 @@ _BUILTIN = """\
 • `环境检查` — 本机配置自检
 • `MOA检查` — 测试环境 MOA Cookie 是否有效
 • `导出 temporary_testcase/xxx.csv` — 导出到钉钉文档
+• `打开工作台` / `工具平台` — 发送复制按钮版离线 HTML（zip）到本群；执行机本地请用 `python3 platform/open_catalog.py` 打开执行版
+• `2.4.5版本生成测试报告` — 生成内/外网 HTML 并作为 zip 附件发到本群
 • `100465989升级 VIP3` — MOA VIP 升级（示例）
 • `中断操作` — 打断本群当前任务
 • `重新执行` — 重跑本群上一条任务
 • `帮助` — 显示本说明
 
-**自然语言（走 Agent）**
+**自然语言（走 Agent，每人独立 Cursor 窗口，多轮自动带上下文）**
+• 查询类结果默认**直接在群里展示**；**用户列表默认前 10 条**
+• 需要完整列表时说「**查看全部数据**」；需要写入文档时说「**导出到钉钉文档**」
+• 生成测试用例 → 写入 `temporary_testcase/` 后**自动同步**到默认钉钉文档目录并回链接
 • `@机器人 介绍一下 platform 目录`
 • `@机器人 附图 + 说明` / 带 alidocs 链接
 
@@ -80,7 +85,7 @@ def build_help_message() -> str:
             lines.append(f"• `{sample}`")
 
     lines.append("")
-    lines.append("完整能力见执行机：`python3 platform/open_catalog.py`")
+    lines.append("执行机本地执行版：`python3 platform/open_catalog.py`；群里发 `打开工作台` 获取复制按钮离线版")
     text = "\n".join(lines)
     if len(text) > 3800:
         return text[:3800] + "\n…（更多见工具台）"

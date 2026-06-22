@@ -1,0 +1,7 @@
+{
+  "description": "复制为 code_modify_allowlist.local.json 后追加授权账号（勿提交 git）",
+  "allowedStaffIds": [
+    "0834514151639181"
+  ],
+  "allowedSenderIds": []
+}

@@ -6,5 +6,6 @@
   "nodeId": "m9bN7RYPWdlGBEgEtKPvv9gdWZd1wyK0",
   "inlineMaxChars": 3500,
   "inlineMaxTableRows": 8,
+  "inlineMaxUserListRows": 10,
   "preferOnlineSpreadsheetForTable": true
 }

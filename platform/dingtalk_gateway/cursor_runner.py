@@ -11,6 +11,7 @@ from cursor_sdk import Agent, AgentOptions, CursorAgentError, LocalAgentOptions,
 from cursor_sdk.errors import NetworkError
 
 from bridge_manager import is_bridge_connection_error, reset_sdk_bridge
+from user_agent_pool import get_user_agent_pool, reset_user_agent_pool
 
 from env_loader import GATEWAY_DIR, load_env_local, require_env
 from gateway_prompt import build_gateway_prompt
@@ -34,6 +35,43 @@ def repo_cwd() -> str:
     return str(REPO_ROOT)
 
 
+def _build_prompt_text(
+    text: str,
+    *,
+    image_count: int,
+    links: list[str],
+    use_gateway_rules: bool,
+    is_new_session: bool,
+    allow_code_modify: bool = True,
+) -> str:
+    link_list = [str(link).strip() for link in links if str(link).strip()]
+    if use_gateway_rules and is_new_session:
+        return build_gateway_prompt(
+            text,
+            image_count=image_count,
+            links=link_list or None,
+            allow_code_modify=allow_code_modify,
+        )
+    if use_gateway_rules:
+        extras: list[str] = []
+        if not allow_code_modify:
+            extras.append(
+                "【只读模式】当前用户无代码修改权限：禁止改动仓库源代码与网关逻辑；"
+                "仅允许查询脚本、导出与 temporary_testcase/ 用例写入。"
+            )
+        if image_count > 0:
+            extras.append(
+                f"用户附带了 {image_count} 张图片（已随消息传入），请结合附图理解需求并作答。"
+            )
+        if link_list:
+            extras.append("用户消息中的链接：\n" + "\n".join(f"- {url}" for url in link_list))
+        body = text.strip()
+        if extras:
+            body = "\n\n".join([body, *extras]) if body else "\n\n".join(extras)
+        return f"用户消息（钉钉群 @，延续当前 Agent 对话）：\n{body}"
+    return text
+
+
 def run_agent_prompt(
     prompt: str,
     *,
@@ -45,6 +83,9 @@ def run_agent_prompt(
     use_gateway_rules: bool = True,
     enable_mcp: bool = True,
     session: TaskSession | None = None,
+    user_key: str | None = None,
+    sender_name: str | None = None,
+    allow_code_modify: bool = True,
 ) -> str:
     """运行本地 Agent，返回 assistant 最终文本。支持附图（最多 5 张）与链接上下文。"""
     text = prompt.strip()
@@ -59,31 +100,13 @@ def run_agent_prompt(
         raise FileNotFoundError(f"仓库路径不存在: {workdir}")
 
     link_list = [str(link).strip() for link in (links or []) if str(link).strip()]
-    if use_gateway_rules:
-        full_prompt = build_gateway_prompt(
-            text,
-            image_count=len(paths),
-            links=link_list or None,
-        )
-    else:
-        full_prompt = text
-
     mcp_servers = build_stdio_mcp_servers() if enable_mcp else None
-
     local_opts = LocalAgentOptions(
         cwd=workdir,
         setting_sources=["all"],
     )
-
-    if paths:
-        images = []
-        for path in paths[:5]:
-            if not path.is_file():
-                raise FileNotFoundError(f"附图不存在: {path}")
-            images.append(SDKImage.from_file(path))
-        message: str | UserMessage = UserMessage(text=full_prompt, images=images)
-    else:
-        message = full_prompt
+    use_pool = bool(user_key)
+    pool = get_user_agent_pool() if use_pool else None
 
     if session:
         session.check_cancelled()
@@ -92,18 +115,57 @@ def run_agent_prompt(
     interrupted = False
     result = None
     last_error: Exception | None = None
+    keep_agent_open = False
+    is_new_session = not use_pool
 
     for attempt in range(2):
         agent = None
+        keep_agent_open = False
         try:
-            agent = Agent.create(
-                AgentOptions(
+            if use_pool and pool is not None:
+                agent, is_new_session = pool.acquire(
+                    user_key,
                     api_key=api_key,
+                    workdir=workdir,
                     model=model,
-                    local=local_opts,
-                    mcp_servers=mcp_servers or None,
-                ),
+                    sender_name=sender_name or "",
+                    mcp_servers=mcp_servers,
+                )
+                keep_agent_open = True
+            else:
+                agent = Agent.create(
+                    AgentOptions(
+                        api_key=api_key,
+                        model=model,
+                        local=local_opts,
+                        mcp_servers=mcp_servers or None,
+                    ),
+                )
+                is_new_session = True
+                keep_agent_open = False
+
+            full_prompt = _build_prompt_text(
+                text,
+                image_count=len(paths),
+                links=link_list,
+                use_gateway_rules=use_gateway_rules,
+                is_new_session=is_new_session,
+                allow_code_modify=allow_code_modify,
             )
+
+            if paths:
+                images = []
+                for path in paths[:5]:
+                    if not path.is_file():
+                        raise FileNotFoundError(f"附图不存在: {path}")
+                    images.append(SDKImage.from_file(path))
+                message: str | UserMessage = UserMessage(text=full_prompt, images=images)
+            else:
+                message = full_prompt
+
+            if session:
+                session.check_cancelled()
+
             run = agent.send(message)
             if session:
                 session.register_run(agent, run)
@@ -113,16 +175,21 @@ def run_agent_prompt(
             break
         except TaskInterrupted:
             interrupted = True
+            keep_agent_open = use_pool
             raise
         except (CursorAgentError, NetworkError) as exc:
             last_error = exc
+            if use_pool and pool is not None and user_key:
+                pool.invalidate(user_key)
+                keep_agent_open = False
             if attempt == 0 and is_bridge_connection_error(exc):
                 reset_sdk_bridge()
+                reset_user_agent_pool()
                 continue
             raise RuntimeError(f"Agent 启动失败: {exc.message if hasattr(exc, 'message') else exc}") from exc
         finally:
             skip_close = interrupted or (session is not None and session.cancel_requested())
-            if agent is not None and not skip_close:
+            if agent is not None and not keep_agent_open and not skip_close:
                 try:
                     agent.close()
                 except Exception:  # noqa: BLE001
@@ -149,13 +216,13 @@ def run_agent_prompt(
     output = (result.result or "").strip()
     if not output:
         raise RuntimeError("Agent 未返回文本结果")
-    return truncate_for_dingtalk(output)
+    return output
 
 
 def truncate_for_dingtalk(text: str, max_chars: int = DINGTALK_MAX_REPLY_CHARS) -> str:
-    if len(text) <= max_chars:
-        return text
-    return text[: max_chars - 20] + "\n\n…（已截断，完整结果见执行机日志）"
+    from export_delivery import _truncate_inline
+
+    return _truncate_inline(text, max_chars)
 
 
 def main() -> int:

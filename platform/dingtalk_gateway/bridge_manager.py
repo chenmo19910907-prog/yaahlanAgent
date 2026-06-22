@@ -8,6 +8,8 @@ import threading
 
 from cursor_sdk._client import _default_client, close_default_client
 
+from user_agent_pool import reset_user_agent_pool
+
 logger = logging.getLogger("dingtalk-gateway")
 
 _lock = threading.Lock()
@@ -33,6 +35,7 @@ def reset_sdk_bridge() -> None:
         close_default_client()
         os.chdir(workspace)
         _default_client()
+    reset_user_agent_pool()
 
 
 def is_bridge_connection_error(exc: BaseException) -> bool:

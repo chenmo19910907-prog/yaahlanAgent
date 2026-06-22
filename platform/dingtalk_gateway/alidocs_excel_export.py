@@ -168,6 +168,45 @@ def _read_csv(path: Path) -> list[list[str]]:
         return list(csv.reader(f))
 
 
+async def export_rows_to_folder_async(
+    rows: list[list[str]],
+    *,
+    parent_node_id: str,
+    workbook_name: str,
+) -> str:
+    if not rows:
+        raise ValueError("用例表格为空")
+    env = _excel_env()
+    token, operator = await _get_token_and_operator(env)
+    workspace_id = _get_workspace_id(parent_node_id, "")
+    workbook_id = await _create_workbook(
+        token=token,
+        operator=operator,
+        workspace_id=workspace_id,
+        parent_node_id=parent_node_id,
+        name=workbook_name,
+    )
+    await _write_rows(token=token, operator=operator, workbook_id=workbook_id, rows=rows)
+    return ALIDOCS_NODE.format(node_id=workbook_id)
+
+
+def export_rows_to_folder(
+    rows: list[list[str]],
+    *,
+    parent_node_id: str,
+    workbook_name: str,
+) -> str:
+    import asyncio
+
+    return asyncio.run(
+        export_rows_to_folder_async(
+            rows,
+            parent_node_id=parent_node_id,
+            workbook_name=workbook_name,
+        )
+    )
+
+
 async def export_csv_to_folder_async(
     csv_path: Path | str,
     *,

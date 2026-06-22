@@ -7,7 +7,7 @@ import re
 from inbound_message import strip_at_mentions
 
 REPLAY_RE = re.compile(
-    r"^(?:重新执行|重试|再来一次|replay|retry)$",
+    r"^(?:重新执行|重试|再来一次|再试一次|replay|retry)$",
     re.I,
 )
 

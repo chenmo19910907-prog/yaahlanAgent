@@ -7,9 +7,11 @@ import re
 
 from natural_language import (
     naturalize_agent_reply,
+    naturalize_catalog,
     naturalize_doctor,
     naturalize_export,
     naturalize_moa_check,
+    naturalize_report,
     naturalize_vip_failure,
     naturalize_vip_success,
 )
@@ -23,6 +25,20 @@ EXPORT_FILE_RE = re.compile(
     re.I,
 )
 ENV_CHECK_RE = re.compile(r"^(?:环境检查|检查环境|doctor)\s*$", re.I)
+REPORT_VERSION_RE = re.compile(
+    r"^(?:生成\s*)?(?:v)?(\d+\.\d+\.\d+)\s*版本\s*(?:生成\s*)?测试报告\s*$",
+    re.I,
+)
+REPORT_URL_RE = re.compile(
+    r"^(?:生成\s*)?测试报告\s+(https://alidocs\.dingtalk\.com/\S+)\s*$",
+    re.I,
+)
+CATALOG_OPEN_RE = re.compile(
+    r"^(?:打开|刷新|生成)?\s*"
+    r"(?:工具平台|工具工作台|工具台|输入工作台|智能工具平台|平台目录|能力目录|工作台|catalog)"
+    r"\s*(?:html|HTML)?\s*$",
+    re.I,
+)
 
 BUSINESS_FAIL_RE = re.compile(r"业务返回失败: ec=(\d+), em=(.+)")
 MOA_OUTER_FAIL_RE = re.compile(r"MOA 返回失败: ec=(\d+), em=(.+)")
@@ -110,6 +126,26 @@ def _format_vip_upgrade(raw: str, prompt: str) -> str:
     if _is_html_blob(detail):
         return _moa_auth_expired_message()
     return naturalize_vip_failure(user_id, level, detail)
+
+
+def _format_catalog(raw: str, prompt: str) -> str:
+    if not (
+        CATALOG_OPEN_RE.match(prompt.strip())
+        or raw.strip().startswith("[OK] 工具平台离线版已生成")
+    ):
+        return ""
+    return _truncate(naturalize_catalog(raw))
+
+
+def _format_report(raw: str, prompt: str) -> str:
+    if not (
+        REPORT_VERSION_RE.match(prompt.strip())
+        or REPORT_URL_RE.match(prompt.strip())
+        or raw.strip().startswith("[OK]")
+        or raw.strip().startswith("[FAIL]")
+    ):
+        return ""
+    return _truncate(naturalize_report(raw))
 
 
 def _format_export(raw: str, prompt: str) -> str:
@@ -202,6 +238,14 @@ def format_group_reply(
     export_msg = _format_export(text, normalized_prompt)
     if export_msg:
         return export_msg
+
+    catalog_msg = _format_catalog(text, normalized_prompt)
+    if catalog_msg:
+        return catalog_msg
+
+    report_msg = _format_report(text, normalized_prompt)
+    if report_msg:
+        return report_msg
 
     vip_msg = _format_vip_upgrade(text, normalized_prompt)
     if vip_msg:

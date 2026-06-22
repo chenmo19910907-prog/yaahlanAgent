@@ -126,12 +126,13 @@ def naturalize_doctor(raw: str) -> str:
 
 
 def naturalize_export(rel: str, raw: str, url: str | None) -> str:
+    del rel
     if url:
-        return f"✅ 已将 {rel} 导出到钉钉文档，点击链接查看：{url}"
+        return url.strip()
     extra = raw.strip()
     if extra:
-        return f"✅ 文件 {rel} 已处理完成。{extra[:200]}"
-    return f"✅ 文件 {rel} 已处理完成。"
+        return f"导出失败：{extra[:200]}"
+    return "导出失败，未能生成在线表格链接。"
 
 
 def naturalize_moa_check(ok: bool, detail: str) -> str:
@@ -216,3 +217,77 @@ def _field_label(key: str) -> str:
         "nickname": "昵称",
     }
     return mapping.get(key, key)
+
+
+REPORT_OK_RE = re.compile(
+    r"^\[OK\]\s*(?P<version>\d+\.\d+\.\d+)\s*版本测试报告已生成",
+    re.M,
+)
+
+
+def naturalize_report(raw: str) -> str:
+    text = (raw or "").strip()
+    if not text.startswith("[OK]"):
+        if text.startswith("[FAIL]"):
+            detail = text.replace("[FAIL]", "", 1).strip()
+            return f"❌ 测试报告生成失败。{detail}"
+        return text
+
+    version_match = REPORT_OK_RE.search(text)
+    version = version_match.group("version") if version_match else ""
+
+    lines = [
+        f"✅ {version or '该'} 版本测试报告已生成，HTML 报告已作为 zip 附件发送到本群。"
+        "请下载解压后用浏览器打开内网/外网 HTML 文件。",
+    ]
+
+    summary_start = False
+    summary_lines: list[str] = []
+    for line in text.splitlines():
+        if line.startswith("本次版本共"):
+            summary_start = True
+        if summary_start:
+            summary_lines.append(line)
+
+    if summary_lines:
+        lines.append("")
+        lines.extend(summary_lines[:12])
+
+    return "\n".join(lines)
+
+
+CATALOG_OK_RE = re.compile(
+    r"^\[OK\]\s*工具平台离线版已生成",
+    re.M,
+)
+
+
+def naturalize_catalog(raw: str) -> str:
+    text = (raw or "").strip()
+    if not text.startswith("[OK]"):
+        if text.startswith("[FAIL]"):
+            detail = text.replace("[FAIL]", "", 1).strip()
+            return f"❌ 工具平台导出失败。{detail}"
+        return text
+
+    lines = [
+        "✅ 工具平台复制按钮版已生成，zip 附件已发到本群。",
+        "请下载解压后用浏览器打开；提示语为「复制」按钮，粘贴到 Cursor 即可使用。",
+        "执行机本地如需「执行」按钮版，请运行 python3 platform/open_catalog.py。",
+    ]
+
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("共 ") and "一级模块" in stripped:
+            lines.append(stripped)
+            break
+
+    extra: list[str] = []
+    for line in text.splitlines():
+        if "离线版提示语" in line or "粘贴到 Cursor" in line:
+            extra.append(line.strip())
+    if extra:
+        lines.append("")
+        lines.extend(extra[:2])
+
+    return "\n".join(lines)

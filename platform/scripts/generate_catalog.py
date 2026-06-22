@@ -210,13 +210,37 @@ def _catalog_exclude_registries(sources: dict[str, Any]) -> set[str]:
     return {str(item).strip() for item in raw if str(item).strip()}
 
 
-def refresh_catalog(*, quiet: bool = False) -> int:
+def _prepare_catalog_data() -> dict[str, Any]:
     sources = _read_json(SOURCES_PATH)
     modules_cfg = sources.get("modules")
     if isinstance(modules_cfg, list):
         _warn_unlisted_registries(modules_cfg, _catalog_exclude_registries(sources))
+    return _load_catalog_data()
 
-    data = _load_catalog_data()
+
+def refresh_catalog_interactive(*, quiet: bool = False) -> int:
+    """本地工作台：执行按钮 + Cursor bridge（catalog.html）。"""
+    data = _prepare_catalog_data()
+    OUT_HTML.write_text(_render_html(data, export_mode=False), encoding="utf-8")
+    if not quiet:
+        print(
+            f"generated: {OUT_HTML} ({data['total_items']} items, {data['module_count']} modules)"
+        )
+    return 0
+
+
+def refresh_catalog_standalone(*, quiet: bool = False) -> int:
+    """离线/钉钉分发：复制按钮（catalog-standalone.html）。"""
+    data = _prepare_catalog_data()
+    OUT_HTML_STANDALONE.write_text(_render_html(data, export_mode=True), encoding="utf-8")
+    if not quiet:
+        print(f"generated: {OUT_HTML_STANDALONE} (standalone copy)")
+    return 0
+
+
+def refresh_catalog(*, quiet: bool = False) -> int:
+    """registry 同步等场景：同时生成交互版与离线版。"""
+    data = _prepare_catalog_data()
     OUT_HTML.write_text(_render_html(data, export_mode=False), encoding="utf-8")
     OUT_HTML_STANDALONE.write_text(_render_html(data, export_mode=True), encoding="utf-8")
     if not quiet:
@@ -720,7 +744,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    refresh_catalog(quiet=False)
+    refresh_catalog_interactive(quiet=False)
 
     if not args.no_open:
         server_script = PLATFORM_DIR / "scripts" / "catalog_server.py"
