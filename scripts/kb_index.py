@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -69,7 +70,7 @@ MODULE_FILES = {
     "activity": {
         "testcase_kb": ("活动.md",),
         "bug_kb": ("活动.md",),
-        "templates": ("抽奖.md", "奖励领取.md"),
+        "templates": ("**/",),
     },
     "family": {
         "documents": ("家族改版.md",),
@@ -178,6 +179,37 @@ DIR_KIND = {
     "templates": ROOT / "templates",
 }
 
+# templates 条目为 "**/" 或 "@all/" 时，递归收录该目录下全部 .md
+TEMPLATES_ALL_MARKERS = frozenset({"**/", "@all/"})
+
+
+def iter_template_markdown(base: Path | None = None) -> list[Path]:
+    root = base or DIR_KIND["templates"]
+    if not root.is_dir():
+        return []
+    return sorted(p for p in root.rglob("*.md") if p.is_file())
+
+
+def score_template_relevance(path: Path, queries: list[str]) -> int:
+    """按文件名/相对路径与查询词的匹配度打分，供活动模板推荐排序。"""
+    templates_root = DIR_KIND["templates"]
+    try:
+        rel = path.relative_to(templates_root)
+    except ValueError:
+        rel = path
+    haystack = f"{rel} {path.stem}".lower()
+    score = 0
+    for raw in queries:
+        q = raw.strip().lower()
+        if not q or len(q) < 2:
+            continue
+        if q in haystack:
+            score += 10
+        for token in re.split(r"[\s_\-/]+", q):
+            if len(token) >= 2 and token in haystack:
+                score += 3
+    return score
+
 
 def match_module_keys(text: str) -> list[str]:
     lowered = text.lower()
@@ -198,6 +230,22 @@ def resolve_hits(keys: list[str], *, version: bool = False) -> list[KbHit]:
         for kind, names in spec.items():
             base = DIR_KIND[kind]
             for name in names:
+                if kind == "templates" and name in TEMPLATES_ALL_MARKERS:
+                    for path in iter_template_markdown(base):
+                        tag = str(path)
+                        if tag in seen:
+                            continue
+                        seen.add(tag)
+                        try:
+                            rel = path.relative_to(base)
+                        except ValueError:
+                            rel = path
+                        if len(rel.parts) == 1:
+                            note = "通用模块模板"
+                        else:
+                            note = "历史活动参考"
+                        out.append(KbHit(kind=kind, path=path, note=note))
+                    continue
                 if name.endswith("/"):
                     path = base / name.rstrip("/")
                     tag = f"{kind}:{key}"

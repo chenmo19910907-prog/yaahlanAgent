@@ -58,6 +58,14 @@
 
    **【知识库参考（所有需求，推荐）】**：
    - 生成前运行 `python3 scripts/suggest_kb_for_module.py <模块关键词>`（或 `--file modules.txt`）获取应读的 `documents/`、`testcase-kb/`、`bug-kb/`、`templates/` 路径
+   - **活动/营收需求**：使用活动模式列出全部历史模板并做相似度排序：
+     ```bash
+     python3 scripts/suggest_kb_for_module.py --activity 世界杯 榜单 抽奖
+     # 或仅要全量模板索引
+     python3 scripts/suggest_kb_for_module.py --all-templates
+     ```
+     - 脚本会递归收录 `templates/**/*.md`（含 `templates/2026活动/`、`templates/2026之前活动相关/` 等子目录）
+     - **阅读策略**：不必全文读入所有模板；优先读输出中标注「推荐」的相似活动 + 根目录通用模块模板（如 `抽奖.md`、`yaahlan榜单.md`），其余按 PRD 模块结构对齐参考
    - **活动/营收需求**：在 `bug-kb/` 查阅同模块历史缺陷，优先补充严重/阻碍与现网翻车场景（不必等版本需求才读）
    - **版本需求**：另读 `rules/version_testcase_generation_rules.md` §1
 
@@ -113,6 +121,8 @@ python3 scripts/doctor.py --run-moa-probe --check-testcases
 
 # 生成前：推荐读哪些知识库
 python3 scripts/suggest_kb_for_module.py 礼物 榜单
+# 活动用例：全量 templates 索引 + 相似活动推荐
+python3 scripts/suggest_kb_for_module.py --activity 世界杯 榜单
 
 # 生成后：校验用例 Markdown
 python3 scripts/check_testcase_md.py
