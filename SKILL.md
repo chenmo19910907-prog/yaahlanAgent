@@ -102,6 +102,7 @@
    - 使用 `testcase-to-excel` 技能：读取 `temporary_testcase` 文件夹下的用例，通过 MCP `dingtalk-excel-write` 写入 `testcase_file_path`（钉钉 Excel URL）
    - 分批写入或一次性写入，确保 `testcase_file_path` 包含完整的全部测试用例
    - 写入前确认用户没有手动改动 Excel，若有需提前告知否则会被覆盖
+   - ⚠️ **严禁**跳过本地文件步骤、直接在 MCP 工具调用参数里手写中文或 Unicode 转义码（`\uXXXX`）。手写 Unicode 转义码极易产生错别字（如 `\u5237` 刷 vs `\u5353` 卓），且难以肉眼发现。**必须先将用例写入本地 `.md` 文件，再通过 `testcase-to-excel` 技能读取写入 Excel。**
 
 ### 常用命令
 
