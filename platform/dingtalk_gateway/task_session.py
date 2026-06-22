@@ -23,16 +23,26 @@ class TaskSession:
         self._conversation_id = ""
         self._cancel_requested = threading.Event()
         self._current_prompt = ""
+        self._started_at = 0.0
+        self._budget_s = 600.0
         self._active_run: Any | None = None
         self._active_agent: Any | None = None
         self._active_subprocess: subprocess.Popen[str] | None = None
 
-    def begin(self, prompt: str, *, conversation_id: str = "") -> None:
+    def begin(
+        self,
+        prompt: str,
+        *,
+        conversation_id: str = "",
+        budget_s: float = 600.0,
+    ) -> None:
         with self._lock:
             self._busy = True
             self._conversation_id = conversation_id or ""
             self._cancel_requested.clear()
             self._current_prompt = prompt
+            self._started_at = time.monotonic()
+            self._budget_s = max(1.0, budget_s)
 
     def end(self) -> None:
         with self._lock:
@@ -40,6 +50,8 @@ class TaskSession:
             self._conversation_id = ""
             self._cancel_requested.clear()
             self._current_prompt = ""
+            self._started_at = 0.0
+            self._budget_s = 600.0
             self._active_run = None
             self._active_agent = None
             self._active_subprocess = None
@@ -55,6 +67,18 @@ class TaskSession:
     def current_prompt(self) -> str:
         with self._lock:
             return self._current_prompt
+
+    def elapsed_s(self) -> float:
+        with self._lock:
+            if not self._busy or self._started_at <= 0:
+                return 0.0
+            return time.monotonic() - self._started_at
+
+    def estimated_remaining_s(self) -> float | None:
+        with self._lock:
+            if not self._busy or self._started_at <= 0:
+                return None
+            return max(0.0, self._budget_s - (time.monotonic() - self._started_at))
 
     def check_cancelled(self) -> None:
         if self._cancel_requested.is_set():

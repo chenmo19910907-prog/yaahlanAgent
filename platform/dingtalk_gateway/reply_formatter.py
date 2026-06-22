@@ -1,4 +1,4 @@
-"""将脚本/Agent 原始输出转为钉钉群可读的「结论 + 具体问题」。"""
+"""将脚本/Agent 原始输出转为钉钉群可读消息（结论 + 具体内容）。"""
 
 from __future__ import annotations
 
@@ -20,6 +20,28 @@ MOA_OUTER_FAIL_RE = re.compile(r"MOA 返回失败: ec=(\d+), em=(.+)")
 EXEC_FAIL_RE = re.compile(r"执行失败:\s*(.+)", re.S)
 DOCTOR_LINE_RE = re.compile(r"^\s*\[(OK|FAIL|WARN)\]\s+(.+)$", re.M)
 
+DINGTALK_REPLY_MAX_CHARS = 3800
+_INTERESTING_JSON_KEYS = frozenset({
+    "userId",
+    "vipLevel",
+    "level",
+    "trueLevel",
+    "tryLevel",
+    "value",
+    "currentExp",
+    "roomId",
+    "phone",
+    "momoid",
+    "onlineStatus",
+    "nick",
+    "nickname",
+    "result",
+    "em",
+    "ec",
+    "remainingToNextLevel",
+    "nextLevelThreshold",
+})
+
 
 def _is_html_blob(text: str) -> bool:
     lower = text.lower()
@@ -32,11 +54,17 @@ def _looks_raw_dump(text: str) -> bool:
         return True
     if "返回不是合法 JSON" in stripped:
         return True
-    if stripped.startswith("{") and len(stripped) > 280:
+    if stripped.startswith("{") and len(stripped) > 1200:
         return True
     if "HTTP Request:" in stripped or "请求信息:" in stripped:
         return True
     return False
+
+
+def _truncate(text: str, max_chars: int = DINGTALK_REPLY_MAX_CHARS) -> str:
+    if len(text) <= max_chars:
+        return text
+    return text[: max_chars - 24] + "\n\n…（部分内容已截断）"
 
 
 def _moa_auth_expired_message() -> str:
@@ -56,15 +84,47 @@ def _parse_moa_business_error(raw: str) -> str | None:
     return f"业务错误 ec={ec}：{em}" if em else f"业务错误 ec={ec}"
 
 
-def _moa_vip_success(raw: str, user_id: str, level: str) -> bool:
+def _compact_json_detail(raw: str) -> str:
+    stripped = raw.strip()
+    if not stripped:
+        return ""
+    try:
+        obj = json.loads(stripped)
+    except json.JSONDecodeError:
+        if _looks_raw_dump(stripped):
+            return ""
+        return stripped[:800]
+
+    lines: list[str] = []
+
+    def walk(node: object, prefix: str = "") -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                full_key = f"{prefix}.{key}" if prefix else str(key)
+                if isinstance(value, (dict, list)):
+                    if key in {"result", "data"} or full_key.count(".") < 2:
+                        walk(value, full_key)
+                elif value is not None and (
+                    key in _INTERESTING_JSON_KEYS or full_key.split(".")[-1] in _INTERESTING_JSON_KEYS
+                ):
+                    lines.append(f"- {full_key} = {value}")
+        elif isinstance(node, list) and node and len(lines) < 20:
+            for index, item in enumerate(node[:5]):
+                walk(item, f"{prefix}[{index}]")
+
+    walk(obj)
+    if lines:
+        return "\n".join(lines[:20])
+    return json.dumps(obj, ensure_ascii=False, indent=2)[:1000]
+
+
+def _moa_vip_success(raw: str) -> bool:
     if '"ec": 0' in raw or '"ec": 200' in raw or '"ec":0' in raw:
         return True
     try:
         obj = json.loads(raw.strip())
-        if isinstance(obj, dict):
-            ec = obj.get("ec")
-            if ec in (0, 200, "0", "200"):
-                return True
+        if isinstance(obj, dict) and obj.get("ec") in (0, 200, "0", "200"):
+            return True
     except json.JSONDecodeError:
         pass
     return "addVipValue" in raw and "失败" not in raw
@@ -77,7 +137,7 @@ def _format_vip_upgrade(raw: str, prompt: str) -> str:
     user_id, level = match.group(1), match.group(2)
     action = f"用户 {user_id} 升级到 VIP{level}"
 
-    if "缺少 Cookie" in raw or "MOA_COOKIE" in raw and "缺少" in raw:
+    if "缺少 Cookie" in raw or ("MOA_COOKIE" in raw and "缺少" in raw):
         return (
             f"❌ {action} 失败\n"
             "问题：未配置 MOA Cookie\n"
@@ -90,47 +150,41 @@ def _format_vip_upgrade(raw: str, prompt: str) -> str:
     if business_error:
         return f"❌ {action} 失败\n原因：{business_error}"
 
-    if not raw.strip() or raw.strip() == "exit=0":
-        return f"✅ {action} 成功"
-
-    if _moa_vip_success(raw, user_id, level):
-        return f"✅ {action} 成功"
+    if not raw.strip() or raw.strip() == "exit=0" or _moa_vip_success(raw):
+        lines = [f"✅ {action} 成功"]
+        detail = _compact_json_detail(raw)
+        if detail:
+            lines.extend(["", "接口返回：", detail])
+        return _truncate("\n".join(lines))
 
     fail = EXEC_FAIL_RE.search(raw)
-    detail = fail.group(1).strip() if fail else raw.strip()[:200]
+    detail = fail.group(1).strip() if fail else raw.strip()
     if _is_html_blob(detail):
         return _moa_auth_expired_message().replace("执行失败", f"{action} 失败", 1)
-    return f"❌ {action} 失败\n原因：{detail[:300]}"
+    return _truncate(f"❌ {action} 失败\n原因：{detail[:600]}")
 
 
 def _format_doctor(raw: str) -> str:
-    fails: list[str] = []
-    warns: list[str] = []
-    oks = 0
+    items: list[str] = []
+    sections: list[str] = []
     for line in raw.splitlines():
-        match = DOCTOR_LINE_RE.match(line)
-        if not match:
+        if line.startswith("==="):
+            sections.append(line.strip("= ").strip())
             continue
-        status, detail = match.group(1), match.group(2).strip()
-        if status == "FAIL":
-            fails.append(detail)
-        elif status == "WARN":
-            warns.append(detail)
-        else:
-            oks += 1
+        match = DOCTOR_LINE_RE.match(line)
+        if match:
+            items.append(f"[{match.group(1)}] {match.group(2).strip()}")
 
-    if fails:
-        lines = ["❌ 环境检查未通过", "问题："]
-        lines.extend(f"- {item}" for item in fails[:6])
-        if warns:
-            lines.append("提示：")
-            lines.extend(f"- {item}" for item in warns[:4])
-        lines.append(f"（其余 {oks} 项正常）")
-        return "\n".join(lines)
+    if not items:
+        return _truncate(raw)
 
-    if warns:
-        return "⚠️ 环境检查通过，但有提示\n" + "\n".join(f"- {w}" for w in warns[:6])
-    return f"✅ 环境检查通过（{oks} 项正常）"
+    has_fail = any(item.startswith("[FAIL]") for item in items)
+    header = "❌ 环境检查未通过" if has_fail else "✅ 环境检查通过"
+    lines = [header, ""]
+    if sections:
+        lines.append("检查项：")
+    lines.extend(items)
+    return _truncate("\n".join(lines))
 
 
 def _format_export(raw: str, prompt: str) -> str:
@@ -140,56 +194,71 @@ def _format_export(raw: str, prompt: str) -> str:
     rel = match.group(1).strip()
     if "文件不存在" in raw:
         return f"❌ 导出失败\n问题：文件不存在\n路径：{rel}"
-    if "https://alidocs.dingtalk.com" in raw:
-        url = re.search(r"https://alidocs\.dingtalk\.com/\S+", raw)
-        link = url.group(0) if url else raw.strip()
-        return f"✅ 已导出 {rel}\n链接：{link}"
-    if "失败" in raw or "FAIL" in raw or "error" in raw.lower():
-        return f"❌ 导出 {rel} 失败\n原因：{raw.strip()[:300]}"
-    return f"✅ 已导出 {rel}\n{raw.strip()[:200]}"
+    lines = [f"✅ 已导出：{rel}"]
+    url_match = re.search(r"https://alidocs\.dingtalk\.com/\S+", raw)
+    if url_match:
+        lines.append(f"链接：{url_match.group(0)}")
+    extra = raw.strip()
+    if extra and url_match:
+        extra = extra.replace(url_match.group(0), "").strip()
+    if extra:
+        lines.extend(["", "详情：", extra[:600]])
+    return _truncate("\n".join(lines))
 
 
-def _summarize_agent_reply(raw: str) -> str:
-    text = raw.strip()
+def _clean_agent_reply(raw: str) -> str:
+    lines: list[str] = []
+    in_code = False
+    code_buf: list[str] = []
+
+    def flush_code() -> None:
+        nonlocal code_buf
+        if not code_buf:
+            return
+        block = "\n".join(code_buf).strip()
+        if block and len(block) <= 600 and not _is_html_blob(block):
+            lines.append("```")
+            lines.extend(code_buf)
+            lines.append("```")
+        code_buf = []
+
+    for line in raw.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            if in_code:
+                in_code = False
+                flush_code()
+            else:
+                in_code = True
+            continue
+        if in_code:
+            code_buf.append(line)
+            continue
+        if stripped.startswith("请求信息:") or "HTTP Request:" in line:
+            continue
+        if _is_html_blob(line):
+            continue
+        lines.append(line.rstrip())
+
+    if in_code:
+        flush_code()
+    return "\n".join(lines).strip()
+
+
+def _format_agent_reply(raw: str) -> str:
+    text = _clean_agent_reply(raw)
     if not text:
         return "⚠️ Agent 未返回内容"
 
-    if _looks_raw_dump(text):
-        if _is_html_blob(text) or "返回不是合法 JSON" in text:
-            return _moa_auth_expired_message()
-        business_error = _parse_moa_business_error(text)
-        if business_error:
-            return f"❌ 执行失败\n原因：{business_error}"
+    if _is_html_blob(text) or ("返回不是合法 JSON" in text and _looks_raw_dump(text)):
+        return _moa_auth_expired_message()
 
-    for marker in ("## 结论", "**结论**", "结论：", "总结：", "### 结论"):
-        idx = text.find(marker)
-        if idx >= 0:
-            section = text[idx:].split("\n\n", 1)[0]
-            section = re.sub(r"^#+\s*", "", section)
-            section = section.replace("**", "").strip()
-            if len(section) > 20:
-                return section[:1200]
+    business_error = _parse_moa_business_error(text)
+    if business_error and _looks_raw_dump(text):
+        return f"❌ 执行失败\n原因：{business_error}"
 
-    if len(text) <= 900 and not _looks_raw_dump(text):
-        return text
-
-    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
-    picked: list[str] = []
-    for line in lines:
-        if line.startswith("```"):
-            continue
-        if line.startswith("请求信息:") or line.startswith("HTTP Request:"):
-            continue
-        if line.startswith("{") and line.endswith("}"):
-            continue
-        picked.append(line)
-        if len("\n".join(picked)) > 700 or len(picked) >= 8:
-            break
-    if picked:
-        body = "\n".join(picked)
-        return body[:1200] + ("\n…（详细日志见执行机）" if len(text) > len(body) else "")
-
-    return text[:800] + "\n…（已截断，详细见执行机日志）"
+    # 保留完整结构化内容（表格、列表、步骤），不只摘「结论」段
+    return _truncate(text)
 
 
 def format_group_reply(
@@ -198,13 +267,12 @@ def format_group_reply(
     prompt: str = "",
     source: str = "agent",
 ) -> str:
-    """把原始执行输出整理成群消息。"""
     text = (raw or "").strip()
     if not text:
         return "⚠️ 执行完成，但没有可展示的结果"
 
     if text.startswith("**Yaahlan 智能工具") or text.startswith("✅ MOA") or text.startswith("❌ MOA"):
-        return text[:3800]
+        return _truncate(text)
 
     normalized_prompt = (prompt or "").strip()
 
@@ -219,20 +287,24 @@ def format_group_reply(
     if vip_msg:
         return vip_msg
 
-    if source == "agent":
-        return _summarize_agent_reply(text)
-
-    if _looks_raw_dump(text):
+    if _looks_raw_dump(text) and not text.startswith("|"):
         if _is_html_blob(text):
             return _moa_auth_expired_message()
         business_error = _parse_moa_business_error(text)
         if business_error:
-            return f"❌ 执行失败\n原因：{business_error}"
+            detail = _compact_json_detail(text)
+            body = f"❌ 执行失败\n原因：{business_error}"
+            if detail:
+                body += f"\n\n接口返回：\n{detail}"
+            return _truncate(body)
         fail = EXEC_FAIL_RE.search(text)
         if fail:
-            return f"❌ 执行失败\n原因：{fail.group(1).strip()[:400]}"
+            return _truncate(f"❌ 执行失败\n原因：{fail.group(1).strip()[:600]}")
+        detail = _compact_json_detail(text)
+        if detail:
+            return _truncate(f"执行结果：\n{detail}")
 
-    return _summarize_agent_reply(text)
+    return _format_agent_reply(text)
 
 
 def format_exception(exc: BaseException) -> str:
@@ -248,6 +320,4 @@ def format_exception(exc: BaseException) -> str:
     business_error = _parse_moa_business_error(message)
     if business_error:
         return f"❌ 执行失败\n原因：{business_error}"
-    if len(message) > 500:
-        message = message[:500] + "…"
-    return f"❌ 执行失败\n原因：{message}"
+    return _truncate(f"❌ 执行失败\n原因：{message}")

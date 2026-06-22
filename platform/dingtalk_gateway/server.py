@@ -15,7 +15,8 @@ from dingtalk_stream import AckMessage
 from bridge_manager import init_sdk_bridge
 from command_router import try_route
 from conversation_store import ConversationStore
-from cursor_runner import repo_cwd, run_agent_prompt
+from cursor_runner import DEFAULT_TIMEOUT_S, repo_cwd, run_agent_prompt
+from progress_message import build_heartbeat_message
 from dingtalk_media import download_message_images
 from env_loader import load_env_local, require_env
 from moa_health import probe_moa_cookie
@@ -117,10 +118,7 @@ def _start_heartbeat(
             if session.busy_conversation_id() != conversation_id:
                 return
             try:
-                handler.reply_text(
-                    "⏳ 仍在执行中… 可发「中断操作」打断本群当前任务。",
-                    incoming,
-                )
+                handler.reply_text(build_heartbeat_message(session), incoming)
             except Exception as exc:  # noqa: BLE001
                 logger.warning("心跳回复失败: %s", exc)
 
@@ -139,8 +137,8 @@ def worker_loop(
         prompt = inbound.prompt_text()
         conv_id = handler._conversation_id(incoming)
         started = time.monotonic()
+        session.begin(prompt, conversation_id=conv_id, budget_s=DEFAULT_TIMEOUT_S)
         heartbeat_stop = _start_heartbeat(handler, incoming, session, conv_id)
-        session.begin(prompt, conversation_id=conv_id)
         status = "error"
         try:
             logger.info(

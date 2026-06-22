@@ -18,10 +18,11 @@ def test_vip_cookie_expired() -> None:
 
 
 def test_vip_success_json() -> None:
-    raw = '{"ec": 0, "em": "ok", "result": {"ec": 0, "em": "success"}}'
+    raw = '{"ec": 0, "em": "ok", "result": {"ec": 0, "em": "success", "result": {"userId": "100465989", "level": 3, "value": 12000}}}'
     msg = format_group_reply(raw, prompt="100465989升级 VIP3", source="route")
     assert "成功" in msg
     assert "100465989" in msg
+    assert "level" in msg or "value" in msg
 
 
 def main() -> int:

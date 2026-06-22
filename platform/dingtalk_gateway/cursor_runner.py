@@ -21,7 +21,7 @@ REPO_ROOT = GATEWAY_DIR.parent.parent
 EXECUTOR_CONFIG = GATEWAY_DIR / "config" / "executor.local.json"
 DEFAULT_MODEL = "composer-2.5"
 DEFAULT_TIMEOUT_S = 600
-DINGTALK_MAX_REPLY_CHARS = 4000
+DINGTALK_MAX_REPLY_CHARS = 3800
 
 
 def repo_cwd() -> str:
