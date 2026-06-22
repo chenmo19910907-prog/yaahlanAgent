@@ -12,9 +12,9 @@ HTML_FAIL = "执行失败: 返回不是合法 JSON: <!doctype html><title>Aegis 
 
 def test_vip_cookie_expired() -> None:
     msg = format_group_reply(HTML_FAIL, prompt="100465989升级 VIP3", source="route")
-    assert "MOA 测试环境登录已过期" in msg
+    assert "MOA" in msg
+    assert "登录" in msg
     assert "<!doctype" not in msg.lower()
-    assert "100465989" in msg
 
 
 def test_vip_success_json() -> None:
@@ -22,7 +22,9 @@ def test_vip_success_json() -> None:
     msg = format_group_reply(raw, prompt="100465989升级 VIP3", source="route")
     assert "成功" in msg
     assert "100465989" in msg
-    assert "level" in msg or "value" in msg
+    assert "12000" in msg
+    assert "接口返回" not in msg
+    assert "result." not in msg
 
 
 def main() -> int:

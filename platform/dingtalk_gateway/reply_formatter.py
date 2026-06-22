@@ -1,9 +1,18 @@
-"""将脚本/Agent 原始输出转为钉钉群可读消息（结论 + 具体内容）。"""
+"""将脚本/Agent 原始输出转为钉钉群自然语言消息。"""
 
 from __future__ import annotations
 
 import json
 import re
+
+from natural_language import (
+    naturalize_agent_reply,
+    naturalize_doctor,
+    naturalize_export,
+    naturalize_moa_check,
+    naturalize_vip_failure,
+    naturalize_vip_success,
+)
 
 VIP_UPGRADE_RE = re.compile(
     r"^(?:用户\s*)?(\d{5,})\s*(?:升级|升到|升级到)\s*VIP?\s*(\d+)\s*$",
@@ -18,29 +27,8 @@ ENV_CHECK_RE = re.compile(r"^(?:环境检查|检查环境|doctor)\s*$", re.I)
 BUSINESS_FAIL_RE = re.compile(r"业务返回失败: ec=(\d+), em=(.+)")
 MOA_OUTER_FAIL_RE = re.compile(r"MOA 返回失败: ec=(\d+), em=(.+)")
 EXEC_FAIL_RE = re.compile(r"执行失败:\s*(.+)", re.S)
-DOCTOR_LINE_RE = re.compile(r"^\s*\[(OK|FAIL|WARN)\]\s+(.+)$", re.M)
 
 DINGTALK_REPLY_MAX_CHARS = 3800
-_INTERESTING_JSON_KEYS = frozenset({
-    "userId",
-    "vipLevel",
-    "level",
-    "trueLevel",
-    "tryLevel",
-    "value",
-    "currentExp",
-    "roomId",
-    "phone",
-    "momoid",
-    "onlineStatus",
-    "nick",
-    "nickname",
-    "result",
-    "em",
-    "ec",
-    "remainingToNextLevel",
-    "nextLevelThreshold",
-})
 
 
 def _is_html_blob(text: str) -> bool:
@@ -69,10 +57,10 @@ def _truncate(text: str, max_chars: int = DINGTALK_REPLY_MAX_CHARS) -> str:
 
 def _moa_auth_expired_message() -> str:
     return (
-        "❌ 执行失败\n"
-        "问题：MOA 测试环境登录已过期（返回 Aegis 登录页，不是接口 JSON）\n"
-        "处理：浏览器登录 https://mse.wemomo.com → 复制 Cookie → 更新 MOA/.env.local 的 MOA_COOKIE → "
-        "执行 ./gateway_ctl.sh restart"
+        "❌ 任务执行失败。"
+        "原因是 MOA 测试环境登录已过期，接口返回了登录页而不是业务数据。"
+        "请先在浏览器登录 https://mse.wemomo.com ，更新 MOA/.env.local 中的 MOA_COOKIE，"
+        "然后执行 ./gateway_ctl.sh restart 后重试。"
     )
 
 
@@ -81,41 +69,7 @@ def _parse_moa_business_error(raw: str) -> str | None:
     if not match:
         return None
     ec, em = match.group(1), match.group(2).strip()
-    return f"业务错误 ec={ec}：{em}" if em else f"业务错误 ec={ec}"
-
-
-def _compact_json_detail(raw: str) -> str:
-    stripped = raw.strip()
-    if not stripped:
-        return ""
-    try:
-        obj = json.loads(stripped)
-    except json.JSONDecodeError:
-        if _looks_raw_dump(stripped):
-            return ""
-        return stripped[:800]
-
-    lines: list[str] = []
-
-    def walk(node: object, prefix: str = "") -> None:
-        if isinstance(node, dict):
-            for key, value in node.items():
-                full_key = f"{prefix}.{key}" if prefix else str(key)
-                if isinstance(value, (dict, list)):
-                    if key in {"result", "data"} or full_key.count(".") < 2:
-                        walk(value, full_key)
-                elif value is not None and (
-                    key in _INTERESTING_JSON_KEYS or full_key.split(".")[-1] in _INTERESTING_JSON_KEYS
-                ):
-                    lines.append(f"- {full_key} = {value}")
-        elif isinstance(node, list) and node and len(lines) < 20:
-            for index, item in enumerate(node[:5]):
-                walk(item, f"{prefix}[{index}]")
-
-    walk(obj)
-    if lines:
-        return "\n".join(lines[:20])
-    return json.dumps(obj, ensure_ascii=False, indent=2)[:1000]
+    return f"业务返回 ec={ec}，错误信息为「{em}」" if em else f"业务返回 ec={ec}"
 
 
 def _moa_vip_success(raw: str) -> bool:
@@ -135,56 +89,27 @@ def _format_vip_upgrade(raw: str, prompt: str) -> str:
     if not match:
         return ""
     user_id, level = match.group(1), match.group(2)
-    action = f"用户 {user_id} 升级到 VIP{level}"
 
     if "缺少 Cookie" in raw or ("MOA_COOKIE" in raw and "缺少" in raw):
         return (
-            f"❌ {action} 失败\n"
-            "问题：未配置 MOA Cookie\n"
-            "处理：填写 MOA/.env.local 中的 MOA_COOKIE"
+            f"❌ 用户 {user_id} 升级到 VIP{level} 未成功。"
+            "原因是未配置 MOA Cookie，请在 MOA/.env.local 中补充后重试。"
         )
     if _is_html_blob(raw) or "返回不是合法 JSON" in raw:
-        return _moa_auth_expired_message().replace("执行失败", f"{action} 失败", 1)
+        return _moa_auth_expired_message()
 
     business_error = _parse_moa_business_error(raw)
     if business_error:
-        return f"❌ {action} 失败\n原因：{business_error}"
+        return naturalize_vip_failure(user_id, level, business_error)
 
     if not raw.strip() or raw.strip() == "exit=0" or _moa_vip_success(raw):
-        lines = [f"✅ {action} 成功"]
-        detail = _compact_json_detail(raw)
-        if detail:
-            lines.extend(["", "接口返回：", detail])
-        return _truncate("\n".join(lines))
+        return naturalize_vip_success(user_id, level, raw)
 
     fail = EXEC_FAIL_RE.search(raw)
-    detail = fail.group(1).strip() if fail else raw.strip()
+    detail = fail.group(1).strip() if fail else raw.strip()[:600]
     if _is_html_blob(detail):
-        return _moa_auth_expired_message().replace("执行失败", f"{action} 失败", 1)
-    return _truncate(f"❌ {action} 失败\n原因：{detail[:600]}")
-
-
-def _format_doctor(raw: str) -> str:
-    items: list[str] = []
-    sections: list[str] = []
-    for line in raw.splitlines():
-        if line.startswith("==="):
-            sections.append(line.strip("= ").strip())
-            continue
-        match = DOCTOR_LINE_RE.match(line)
-        if match:
-            items.append(f"[{match.group(1)}] {match.group(2).strip()}")
-
-    if not items:
-        return _truncate(raw)
-
-    has_fail = any(item.startswith("[FAIL]") for item in items)
-    header = "❌ 环境检查未通过" if has_fail else "✅ 环境检查通过"
-    lines = [header, ""]
-    if sections:
-        lines.append("检查项：")
-    lines.extend(items)
-    return _truncate("\n".join(lines))
+        return _moa_auth_expired_message()
+    return naturalize_vip_failure(user_id, level, detail)
 
 
 def _format_export(raw: str, prompt: str) -> str:
@@ -193,17 +118,10 @@ def _format_export(raw: str, prompt: str) -> str:
         return ""
     rel = match.group(1).strip()
     if "文件不存在" in raw:
-        return f"❌ 导出失败\n问题：文件不存在\n路径：{rel}"
-    lines = [f"✅ 已导出：{rel}"]
+        return f"❌ 导出失败，文件不存在：{rel}。"
     url_match = re.search(r"https://alidocs\.dingtalk\.com/\S+", raw)
-    if url_match:
-        lines.append(f"链接：{url_match.group(0)}")
-    extra = raw.strip()
-    if extra and url_match:
-        extra = extra.replace(url_match.group(0), "").strip()
-    if extra:
-        lines.extend(["", "详情：", extra[:600]])
-    return _truncate("\n".join(lines))
+    url = url_match.group(0) if url_match else None
+    return _truncate(naturalize_export(rel, raw, url))
 
 
 def _clean_agent_reply(raw: str) -> str:
@@ -216,10 +134,8 @@ def _clean_agent_reply(raw: str) -> str:
         if not code_buf:
             return
         block = "\n".join(code_buf).strip()
-        if block and len(block) <= 600 and not _is_html_blob(block):
-            lines.append("```")
-            lines.extend(code_buf)
-            lines.append("```")
+        if block and len(block) <= 400 and not _is_html_blob(block):
+            lines.append("补充信息：" + block.replace("\n", "；") + "。")
         code_buf = []
 
     for line in raw.splitlines():
@@ -248,17 +164,16 @@ def _clean_agent_reply(raw: str) -> str:
 def _format_agent_reply(raw: str) -> str:
     text = _clean_agent_reply(raw)
     if not text:
-        return "⚠️ Agent 未返回内容"
+        return "⚠️ 任务已完成，但没有返回可展示的内容。"
 
     if _is_html_blob(text) or ("返回不是合法 JSON" in text and _looks_raw_dump(text)):
         return _moa_auth_expired_message()
 
     business_error = _parse_moa_business_error(text)
     if business_error and _looks_raw_dump(text):
-        return f"❌ 执行失败\n原因：{business_error}"
+        return f"❌ 任务执行失败，{business_error}。"
 
-    # 保留完整结构化内容（表格、列表、步骤），不只摘「结论」段
-    return _truncate(text)
+    return _truncate(naturalize_agent_reply(text))
 
 
 def format_group_reply(
@@ -269,15 +184,20 @@ def format_group_reply(
 ) -> str:
     text = (raw or "").strip()
     if not text:
-        return "⚠️ 执行完成，但没有可展示的结果"
+        return "⚠️ 任务已完成，但没有返回可展示的内容。"
 
-    if text.startswith("**Yaahlan 智能工具") or text.startswith("✅ MOA") or text.startswith("❌ MOA"):
+    if text.startswith("**Yaahlan 智能工具"):
         return _truncate(text)
+
+    if text.startswith("✅ MOA") or text.startswith("❌ MOA"):
+        ok = text.startswith("✅")
+        detail = text.split("，", 1)[-1].strip() if "，" in text else text[2:].strip()
+        return _truncate(naturalize_moa_check(ok, detail))
 
     normalized_prompt = (prompt or "").strip()
 
     if ENV_CHECK_RE.match(normalized_prompt):
-        return _format_doctor(text)
+        return _truncate(naturalize_doctor(text))
 
     export_msg = _format_export(text, normalized_prompt)
     if export_msg:
@@ -292,17 +212,10 @@ def format_group_reply(
             return _moa_auth_expired_message()
         business_error = _parse_moa_business_error(text)
         if business_error:
-            detail = _compact_json_detail(text)
-            body = f"❌ 执行失败\n原因：{business_error}"
-            if detail:
-                body += f"\n\n接口返回：\n{detail}"
-            return _truncate(body)
+            return _truncate(f"❌ 任务执行失败，{business_error}。")
         fail = EXEC_FAIL_RE.search(text)
         if fail:
-            return _truncate(f"❌ 执行失败\n原因：{fail.group(1).strip()[:600]}")
-        detail = _compact_json_detail(text)
-        if detail:
-            return _truncate(f"执行结果：\n{detail}")
+            return _truncate(f"❌ 任务执行失败。原因：{fail.group(1).strip()[:500]}")
 
     return _format_agent_reply(text)
 
@@ -313,11 +226,11 @@ def format_exception(exc: BaseException) -> str:
         return _moa_auth_expired_message()
     if "connection refused" in message.lower() or "bridge request failed" in message.lower():
         return (
-            "❌ 执行失败\n"
-            "问题：Cursor Agent 桥接进程未就绪（可能刚被中断任务影响）\n"
-            "处理：网关会自动重试；若仍失败，请执行 ./gateway_ctl.sh restart 后再 @机器人"
+            "❌ 任务执行失败。"
+            "原因是 Cursor Agent 桥接进程暂时不可用，可能刚被中断任务影响。"
+            "网关会自动重试；若仍失败，请执行 ./gateway_ctl.sh restart 后再 @机器人。"
         )
     business_error = _parse_moa_business_error(message)
     if business_error:
-        return f"❌ 执行失败\n原因：{business_error}"
-    return _truncate(f"❌ 执行失败\n原因：{message}")
+        return f"❌ 任务执行失败，{business_error}。"
+    return _truncate(f"❌ 任务执行失败。原因：{message}")
