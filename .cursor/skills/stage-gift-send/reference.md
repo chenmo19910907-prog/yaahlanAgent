@@ -7,7 +7,7 @@
 | appId | `2005` |
 | CMDB appkey | `momo.ibt.yaahlan.service.yaahlan-web` |
 | CMDB corp/env | `alpha` / `stage` |
-| CMDB Token | 环境变量 `CMDB_TOKEN`（`Gift/.env.local`） |
+| CMDB Token | 环境变量 `CMDB_TOKEN`，fallback `61430279892c78e0587d58b338288ac06e7641fb`（`Gift/.env.local` 可覆盖） |
 | 默认 package-id | `12321312` |
 | MOA lookup | `moa_lookup_alpha.momo.com:10010` |
 | 礼物 MOA | `/service/mdp-gift/gift-query-service` |

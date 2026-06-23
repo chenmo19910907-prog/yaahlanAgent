@@ -85,7 +85,7 @@ def _render(registry: dict[str, Any]) -> str:
     lines.append("### 使用说明")
     lines.append("")
     lines.append("- **环境**：仅 Stage（alpha/stage），禁止用于线上")
-    lines.append("- **鉴权**：复制 `Gift/.env.example` 为 `Gift/.env.local`，填入 `CMDB_TOKEN`")
+    lines.append("- **鉴权**：`CMDB_TOKEN`（可选 `Gift/.env.local` 覆盖；未配置时使用内置 fallback）")
     lines.append("- **与 MOA 背包区别**：本模块直连 `/v2/gift/send`；MOA `addPackageGift` 仅下发背包，`sendMiddlePackageGift` 通常不触发真实送礼")
     lines.append("- **UI 验收**：客户端流程仍须 ADB 礼物面板 + Tunnel `gift/send ec=200`")
     lines.append("- **输出**：stdout 为 JSON；`response.ec != 0` 时读 `error` / `response.em`")

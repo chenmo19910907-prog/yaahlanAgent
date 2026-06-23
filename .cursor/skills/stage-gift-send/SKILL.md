@@ -21,7 +21,7 @@ python3 Gift/gift_execute.py \
   [--probe]
 ```
 
-鉴权：复制 `Gift/.env.example` 为 `Gift/.env.local`，填入 `CMDB_TOKEN`。
+鉴权：`CMDB_TOKEN` 可选（`Gift/.env.local` 覆盖）；未配置时使用内置 fallback。
 
 ## Agent 工作流（2 步）
 

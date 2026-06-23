@@ -18,6 +18,7 @@ CMDB_URL = (
     "http://cmdb.momo.com/open/hubble-app-instances/"
     "?appkey=momo.ibt.yaahlan.service.yaahlan-web&corp=alpha&env=stage"
 )
+DEFAULT_CMDB_TOKEN = "61430279892c78e0587d58b338288ac06e7641fb"
 DEFAULT_PACKAGE_ID = "12321312"
 MOA_LOOKUP_HOST = "moa_lookup_alpha.momo.com"
 MOA_LOOKUP_PORT = 10010
@@ -147,13 +148,7 @@ def call_moa(service_uri: str, method: str, args: List[Any], headers: str = "", 
 
 
 def get_cmdb_token() -> str:
-    token = (os.environ.get("CMDB_TOKEN") or "").strip()
-    if not token:
-        raise StageGiftError(
-            "cmdb",
-            "未配置 CMDB_TOKEN；请复制 Gift/.env.example 为 Gift/.env.local 并填入 Token",
-        )
-    return token
+    return (os.environ.get("CMDB_TOKEN") or DEFAULT_CMDB_TOKEN).strip()
 
 
 def get_instance_ip() -> str:
