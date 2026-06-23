@@ -75,10 +75,18 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
         store_kwargs = self._store_lookup_kwargs(incoming)
 
         if is_interrupt_command(inbound.text):
-            cancel_result = self._dispatcher.request_cancel(user_key)
-            if cancel_result is True:
-                self._reply("✅ 已中断你正在执行的任务。", incoming, inbound)
-            elif cancel_result is False:
+            outcome = self._dispatcher.request_cancel(user_key)
+            if outcome.status is True:
+                if outcome.cancelled_running and outcome.drained > 0:
+                    body = (
+                        f"✅ 已中断你正在执行的任务，并取消了排队中的 {outcome.drained} 个任务。"
+                    )
+                elif outcome.cancelled_running:
+                    body = "✅ 已中断你正在执行的任务。"
+                else:
+                    body = f"✅ 已取消排队中的 {outcome.drained} 个任务。"
+                self._reply(body, incoming, inbound)
+            elif outcome.status is False:
                 self._reply("中断请求未能生效，请稍后重试。", incoming, inbound)
             else:
                 self._reply("你当前没有正在执行的任务。", incoming, inbound)
@@ -108,7 +116,8 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
         ahead = self._dispatcher.pending_ahead(user_key)
         if ahead > 0:
             self._reply(
-                f"已收到（{inbound.summary_label()}），{build_queue_message(ahead)}…\n"
+                f"已收到（{inbound.summary_label()}），"
+                f"{build_queue_message(ahead, prompt=inbound.prompt_text())}…\n"
                 "执行中可发「中断操作」打断你的任务。",
                 incoming,
                 inbound,

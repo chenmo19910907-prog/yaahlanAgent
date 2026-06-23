@@ -33,8 +33,9 @@ _GATEWAY_RULES = f"""\
 12. {_GIFT_DEFAULT_RULE}
 13. **禁止 ADB / 真机 UI**：钉钉消息**不得**经 ADB 或真机自动化执行。禁止调用 `adb/`、`adb_execute.py`、`macro`、`flow run`、`observe`/`capture`/`locate`/`tap`、`autotest`、adb-screen MCP 等。查数用 MOA/Admin；抓包用 Tunnel **只读**查询。用户要求真机点按、礼物面板 UI、截图验收时，说明「钉钉机器人不支持真机操作，请在 Cursor 本机执行」。
 14. **失败处理**：用自然语言说明问题与下一步，不要编造结果。
+15. **排期表**：`documents/schedule_links.json` **只登记链接**，禁止把排期行数据写入知识库 Markdown。用户查排期时说「Q2排期」「查排期表」等 → 执行 `python3 scripts/schedule_fetch.py <关键词>` **实时拉取**钉钉最新数据并在群内展示；失败则回链接并说明原因。
 
-可用能力：各模块 execute 脚本（含 Gift Stage 送礼）、钉钉 MCP（文档/Excel）、Tunnel 只读抓包；**不含** ADB 真机操作。
+可用能力：各模块 execute 脚本（含 Gift Stage 送礼）、钉钉 MCP（文档/Excel）、Tunnel 只读抓包、排期实时查询；**不含** ADB 真机操作。
 """
 
 _READONLY_GATEWAY_RULES = f"""\
@@ -52,8 +53,9 @@ _READONLY_GATEWAY_RULES = f"""\
 9. {_GIFT_DEFAULT_RULE}
 10. **禁止 ADB / 真机 UI**：不得调用 `adb/`、macro、flow、observe/capture/locate/tap、autotest、adb-screen MCP。抓包用 Tunnel 只读。真机 UI 需求请引导至 Cursor 本机。
 11. **代码改动请求**：若用户要求改网关/Agent/Cursor 逻辑，说明「需管理员授权」，不要擅自改仓库。
+12. **排期表**：只从 `documents/schedule_links.json` 读链接并实时拉取，禁止缓存排期正文到知识库。
 
-可用能力：各模块 execute 查询/脚本（含 Gift Stage 送礼）、钉钉 MCP、Tunnel 只读抓包；**不含** ADB 真机操作。
+可用能力：各模块 execute 查询/脚本（含 Gift Stage 送礼）、钉钉 MCP、Tunnel 只读抓包、排期实时查询；**不含** ADB 真机操作。
 """
 
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -18,6 +19,7 @@ from route_patterns import (
     REPORT_NL_RE,
     REPORT_URL_RE,
     REPORT_VERSION_RE,
+    SCHEDULE_QUERY_RE,
     VIP_UPGRADE_RE,
     normalize_report_prompt,
 )
@@ -32,6 +34,7 @@ class RoutedResult:
     handled: bool
     output: str = ""
     files: list[Path] = field(default_factory=list)
+    task_kind: str = ""
 
 
 def try_route(user_text: str, session: TaskSession | None = None) -> RoutedResult:
@@ -44,7 +47,7 @@ def try_route(user_text: str, session: TaskSession | None = None) -> RoutedResul
         text = normalized
 
     if HELP_RE.match(text):
-        return RoutedResult(handled=True, output=build_help_message())
+        return RoutedResult(handled=True, output=build_help_message(), task_kind="help")
 
     if CATALOG_OPEN_RE.match(text):
         code, stdout, stderr = run_subprocess_cancellable(
@@ -86,13 +89,13 @@ def try_route(user_text: str, session: TaskSession | None = None) -> RoutedResul
             lines.extend(["", summary])
         zip_path = Path(str(data.get("zip") or ""))
         files = [zip_path] if zip_path.is_file() else []
-        return RoutedResult(handled=True, output="\n".join(lines), files=files)
+        return RoutedResult(handled=True, output="\n".join(lines), files=files, task_kind="catalog")
 
     if MOA_CHECK_RE.match(text):
         ok, detail = probe_moa_cookie()
         if ok:
-            return RoutedResult(handled=True, output=f"✅ {detail}")
-        return RoutedResult(handled=True, output=f"❌ {detail}")
+            return RoutedResult(handled=True, output=f"✅ {detail}", task_kind="moa_check")
+        return RoutedResult(handled=True, output=f"❌ {detail}", task_kind="moa_check")
 
     m = EXPORT_FILE_RE.match(text)
     if m:
@@ -116,6 +119,7 @@ def try_route(user_text: str, session: TaskSession | None = None) -> RoutedResul
         return RoutedResult(
             handled=True,
             output=out or f"导出结束 exit={code}",
+            task_kind="export_file",
         )
 
     if ENV_CHECK_RE.match(text):
@@ -125,7 +129,11 @@ def try_route(user_text: str, session: TaskSession | None = None) -> RoutedResul
             session=session,
             timeout_s=120,
         )
-        return RoutedResult(handled=True, output=(stdout or stderr or "").strip())
+        return RoutedResult(
+            handled=True,
+            output=(stdout or stderr or "").strip(),
+            task_kind="env_check",
+        )
 
     m = VIP_UPGRADE_RE.match(text)
     if m:
@@ -149,6 +157,7 @@ def try_route(user_text: str, session: TaskSession | None = None) -> RoutedResul
         return RoutedResult(
             handled=True,
             output=out or f"exit={code}",
+            task_kind="vip_upgrade",
         )
 
     report_version = REPORT_VERSION_RE.match(text) or REPORT_NL_RE.match(text)
@@ -195,6 +204,25 @@ def try_route(user_text: str, session: TaskSession | None = None) -> RoutedResul
             lines.extend(["", summary])
         zip_path = Path(str(data.get("zip") or ""))
         files = [zip_path] if zip_path.is_file() else []
-        return RoutedResult(handled=True, output="\n".join(lines), files=files)
+        return RoutedResult(handled=True, output="\n".join(lines), files=files, task_kind="report")
+
+    if SCHEDULE_QUERY_RE.search(text):
+        cmd = [sys.executable, str(REPO_ROOT / "scripts" / "schedule_fetch.py")]
+        if re.search(r"(链接|列表)\s*$|排期链接|list", text, re.I):
+            cmd.append("--list")
+        else:
+            cmd.append(text)
+        code, stdout, stderr = run_subprocess_cancellable(
+            cmd,
+            cwd=str(REPO_ROOT),
+            session=session,
+            timeout_s=180,
+        )
+        out = (stdout or stderr or "").strip()
+        return RoutedResult(
+            handled=True,
+            output=out or f"排期查询失败 exit={code}",
+            task_kind="schedule",
+        )
 
     return RoutedResult(handled=False)

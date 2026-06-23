@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "description": "排期表链接登记（仅 URL 与读取参数；不缓存行数据，查询时实时拉取）",
+  "schedules": [
+    {
+      "id": "yaahlan-2026q2",
+      "label": "2026 Q2 版本需求排期",
+      "aliases": ["2026Q2", "2026-Q2", "Q2排期", "Q2 排期", "版本排期", "需求排期"],
+      "url": "https://alidocs.dingtalk.com/i/nodes/Qnp9zOoBVBZxdQzQCnRMpYMzV1DK0g6l?iframeQuery=entrance%3Ddata%26sheetId%3DAfRittZ%26viewId%3DcaaUsJp",
+      "format": "able",
+      "docKey": "vBPlN5jDD6ALPOdG",
+      "sheetId": "AfRittZ"
+    }
+  ]
+}

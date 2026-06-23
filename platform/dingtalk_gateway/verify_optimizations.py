@@ -200,6 +200,33 @@ def test_gateway_status_notify() -> None:
                 os.environ["DINGTALK_NOTIFY_CONVERSATION_ID"] = old
 
 
+def test_duration_history() -> None:
+    import tempfile
+    from pathlib import Path
+
+    from duration_history import DurationHistoryStore, classify_task_kind
+
+    assert classify_task_kind("MOA检查") == "fast:moa_check"
+    assert classify_task_kind("查询用户 100465989") == "agent:query"
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "duration_history.json"
+        store = DurationHistoryStore(path=path)
+        store.record("agent:query", 80.0, status="ok")
+        store.record("agent:query", 120.0, status="ok")
+        store.record("agent:query", 999.0, status="error")
+        assert store.estimate_seconds("agent:query") == 100.0
+        reloaded = DurationHistoryStore(path=path)
+        assert reloaded.estimate_seconds("agent:query") == 100.0
+
+
+def test_schedule_query_route() -> None:
+    from route_patterns import SCHEDULE_QUERY_RE
+
+    assert SCHEDULE_QUERY_RE.search("查 Q2 排期")
+    result = try_route("查询排期表")
+    assert result.handled
+
+
 def test_gateway_code_restart() -> None:
     import json
     import time
@@ -264,6 +291,10 @@ def main() -> int:
     print("[OK] test_adb_execution_guard")
     test_gateway_status_notify()
     print("[OK] test_gateway_status_notify")
+    test_duration_history()
+    print("[OK] test_duration_history")
+    test_schedule_query_route()
+    print("[OK] test_schedule_query_route")
     test_gateway_code_restart()
     print("[OK] test_gateway_code_restart")
     print("[PASS] gateway optimizations")

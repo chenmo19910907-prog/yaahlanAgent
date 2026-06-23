@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import threading
 from dataclasses import dataclass
-from queue import Queue
+from queue import Empty, Queue
 from typing import Any
 
 import dingtalk_stream
@@ -26,6 +26,15 @@ class QueuedTask:
     inbound: InboundMessage
     user_key: str
     lane: str
+
+
+@dataclass(frozen=True)
+class CancelOutcome:
+    """中断请求结果：status None=空闲 False=不匹配 True=成功。"""
+
+    status: bool | None
+    drained: int = 0
+    cancelled_running: bool = False
 
 
 class TaskDispatcher:
@@ -68,11 +77,92 @@ class TaskDispatcher:
                 self._user_sessions[user_key] = TaskSession()
             return self._user_sessions[user_key]
 
-    def request_cancel(self, user_key: str) -> bool | None:
-        session = self._user_sessions.get(user_key)
-        if session is None or not session.is_busy():
-            return None
-        return session.request_cancel(user_key)
+    def _drain_agent_queue(self, user_key: str) -> int:
+        persist = get_queue_persist()
+        drained = 0
+        while True:
+            with self._lock:
+                queue = self._user_queues.get(user_key)
+                if queue is None:
+                    break
+                try:
+                    task = queue.get_nowait()
+                except Empty:
+                    break
+            persist.remove(
+                user_key=task.user_key,
+                prompt=task.inbound.prompt_text(),
+            )
+            queue.task_done()
+            drained += 1
+        if drained:
+            logger.info("已清空 agent 排队 user=%s count=%d", user_key, drained)
+        return drained
+
+    def _drain_fast_queue_for_user(self, user_key: str) -> int:
+        persist = get_queue_persist()
+        kept: list[QueuedTask] = []
+        drained = 0
+        while True:
+            try:
+                task = self._fast_queue.get_nowait()
+            except Empty:
+                break
+            if task.user_key == user_key:
+                persist.remove(
+                    user_key=task.user_key,
+                    prompt=task.inbound.prompt_text(),
+                )
+                self._fast_queue.task_done()
+                drained += 1
+            else:
+                kept.append(task)
+        for task in kept:
+            self._fast_queue.put(task)
+        if drained:
+            logger.info("已清空 fast 排队 user=%s count=%d", user_key, drained)
+        return drained
+
+    def request_cancel(self, user_key: str) -> CancelOutcome:
+        user_session = self._user_sessions.get(user_key)
+        user_busy = user_session is not None and user_session.is_busy()
+        fast_busy = (
+            self._fast_session.is_busy()
+            and self._fast_session.busy_conversation_id() == user_key
+        )
+        drained = self._drain_agent_queue(user_key) + self._drain_fast_queue_for_user(
+            user_key
+        )
+
+        if not user_busy and not fast_busy:
+            if drained > 0:
+                return CancelOutcome(status=True, drained=drained, cancelled_running=False)
+            return CancelOutcome(status=None)
+
+        results: list[bool | None] = []
+        if user_busy and user_session is not None:
+            results.append(user_session.request_cancel(user_key))
+        if fast_busy:
+            results.append(self._fast_session.request_cancel(user_key))
+
+        if any(result is False for result in results):
+            return CancelOutcome(status=False, drained=drained, cancelled_running=False)
+        if any(result is True for result in results):
+            logger.info(
+                "中断已分发 user=%s agent_lane=%s fast_lane=%s drained=%s",
+                user_key,
+                user_busy,
+                fast_busy,
+                drained,
+            )
+            return CancelOutcome(
+                status=True,
+                drained=drained,
+                cancelled_running=True,
+            )
+        if drained > 0:
+            return CancelOutcome(status=True, drained=drained, cancelled_running=False)
+        return CancelOutcome(status=None)
 
     def pending_ahead(self, user_key: str) -> int:
         with self._lock:
@@ -80,7 +170,13 @@ class TaskDispatcher:
             pending = queue.qsize() if queue is not None else 0
             session = self._user_sessions.get(user_key)
             busy = 1 if session is not None and session.is_busy() else 0
-        return pending + busy
+            fast_busy = (
+                1
+                if self._fast_session.is_busy()
+                and self._fast_session.busy_conversation_id() == user_key
+                else 0
+            )
+        return pending + busy + fast_busy
 
     def enqueue(
         self,
@@ -136,6 +232,7 @@ class TaskDispatcher:
                     task.inbound,
                     session=self._fast_session,
                     user_key=task.user_key,
+                    lane="fast",
                 )
             finally:
                 self._fast_queue.task_done()
@@ -156,6 +253,7 @@ class TaskDispatcher:
                     task.inbound,
                     session=session,
                     user_key=task.user_key,
+                    lane="agent",
                 )
             finally:
                 queue.task_done()

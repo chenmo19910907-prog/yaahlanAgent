@@ -87,6 +87,28 @@
         "同步 PRD 到需求知识库",
         "读取版本需求文档"
       ]
+    },
+    {
+      "id": "yaahlan-schedule-2026q2",
+      "name": "2026 Q2 版本排期",
+      "shortName": "Q2排期",
+      "description": "Yaahlan 2026 Q2 版本需求排期表（Notable .able）",
+      "app": "Yaahlan",
+      "folderUrl": "https://alidocs.dingtalk.com/i/nodes/Qnp9zOoBVBZxdQzQCnRMpYMzV1DK0g6l",
+      "nodeId": "Qnp9zOoBVBZxdQzQCnRMpYMzV1DK0g6l",
+      "recursive": false,
+      "aliases": [
+        "2026Q2排期",
+        "Q2排期",
+        "版本排期",
+        "需求排期",
+        "2026-Q2"
+      ],
+      "prompts": [
+        "打开 2026 Q2 排期表",
+        "查 Q2 版本排期",
+        "查询排期表内容"
+      ]
     }
   ]
 }

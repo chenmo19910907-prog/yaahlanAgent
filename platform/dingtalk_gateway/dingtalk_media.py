@@ -10,6 +10,7 @@ import requests
 from dingtalk_stream import ChatbotHandler
 
 from env_loader import GATEWAY_DIR
+from task_session import TaskSession
 
 logger = logging.getLogger("dingtalk-gateway")
 
@@ -40,6 +41,7 @@ def download_message_images(
     download_codes: list[str],
     *,
     session_id: str,
+    session: TaskSession | None = None,
 ) -> list[Path]:
     if not download_codes:
         return []
@@ -53,6 +55,8 @@ def download_message_images(
 
     saved: list[Path] = []
     for index, code in enumerate(codes):
+        if session:
+            session.check_cancelled()
         download_url = handler.get_image_download_url(code)
         if not download_url:
             raise RuntimeError(f"获取图片下载地址失败（downloadCode={code[:16]}…）")

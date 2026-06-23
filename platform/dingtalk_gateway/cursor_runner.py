@@ -18,7 +18,7 @@ from user_agent_pool import get_user_agent_pool
 from env_loader import GATEWAY_DIR, load_env_local, require_env
 from gateway_prompt import build_gateway_prompt
 from mcp_config import build_stdio_mcp_servers, inject_scripts_path
-from task_session import TaskInterrupted, TaskSession
+from task_session import TaskInterrupted, TaskSession, safe_cancel_run
 
 REPO_ROOT = GATEWAY_DIR.parent.parent
 EXECUTOR_CONFIG = GATEWAY_DIR / "config" / "executor.local.json"
@@ -75,13 +75,14 @@ def _build_prompt_text(
 
 
 def _wait_run(run, *, timeout_s: float, session: TaskSession | None):
-    """带超时与中断检查的 run.wait()。"""
+    """带超时与中断检查的 run.wait()；中断时不阻塞等待 run 自然结束。"""
     if timeout_s <= 0:
         return run.wait()
 
     deadline = time.monotonic() + timeout_s
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-        future = pool.submit(run.wait)
+    pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+    future = pool.submit(run.wait)
+    try:
         while True:
             if session:
                 session.check_cancelled()
@@ -98,6 +99,11 @@ def _wait_run(run, *, timeout_s: float, session: TaskSession | None):
                 return future.result(timeout=min(0.5, remaining))
             except concurrent.futures.TimeoutError:
                 continue
+    except TaskInterrupted:
+        safe_cancel_run(run)
+        raise
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
 
 
 def run_agent_prompt(
@@ -145,10 +151,12 @@ def run_agent_prompt(
     last_error: Exception | None = None
     keep_agent_open = False
     is_new_session = not use_pool
+    active_run = None
 
     for attempt in range(2):
         agent = None
         keep_agent_open = False
+        active_run = None
         try:
             if use_pool and pool is not None:
                 agent, is_new_session = pool.acquire(
@@ -160,6 +168,8 @@ def run_agent_prompt(
                     mcp_servers=mcp_servers,
                 )
                 keep_agent_open = True
+                if session:
+                    session.register_agent(agent)
             else:
                 agent = Agent.create(
                     AgentOptions(
@@ -171,6 +181,8 @@ def run_agent_prompt(
                 )
                 is_new_session = True
                 keep_agent_open = False
+                if session:
+                    session.register_agent(agent)
 
             full_prompt = _build_prompt_text(
                 text,
@@ -195,6 +207,7 @@ def run_agent_prompt(
                 session.check_cancelled()
 
             run = agent.send(message)
+            active_run = run
             if session:
                 session.register_run(agent, run)
                 session.check_cancelled()
@@ -203,10 +216,14 @@ def run_agent_prompt(
             break
         except TaskInterrupted:
             interrupted = True
-            keep_agent_open = use_pool
+            keep_agent_open = False
+            safe_cancel_run(active_run)
+            if use_pool and pool is not None and user_key:
+                pool.invalidate(user_key)
             raise
         except (CursorAgentError, NetworkError) as exc:
             last_error = exc
+            safe_cancel_run(active_run)
             if use_pool and pool is not None and user_key:
                 pool.invalidate(user_key)
                 keep_agent_open = False
@@ -215,8 +232,9 @@ def run_agent_prompt(
                 continue
             raise RuntimeError(f"Agent 启动失败: {exc.message if hasattr(exc, 'message') else exc}") from exc
         finally:
-            skip_close = interrupted or (session is not None and session.cancel_requested())
-            if agent is not None and not keep_agent_open and not skip_close:
+            should_close = agent is not None and (interrupted or not keep_agent_open)
+            if should_close:
+                safe_cancel_run(active_run)
                 try:
                     agent.close()
                 except Exception:  # noqa: BLE001

@@ -1,4 +1,4 @@
-"""网关任务会话：支持按群中断、子进程可取消。"""
+"""网关任务会话：支持按用户中断、子进程与 Agent run 可取消。"""
 
 from __future__ import annotations
 
@@ -12,6 +12,20 @@ from typing import Any
 from log_redact import redact_for_log
 
 logger = logging.getLogger("dingtalk-gateway")
+
+
+def safe_cancel_run(run: Any | None) -> bool:
+    """尽力取消 Agent run；run.id 尚未就绪时可能失败，由 agent.close 兜底。"""
+    if run is None:
+        return False
+    run_id = getattr(run, "id", "") or ""
+    try:
+        run.cancel()
+        logger.info("已取消 Agent run id=%s", run_id or "(pending)")
+        return True
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("取消 Agent run 失败 id=%s: %s", run_id or "(pending)", exc)
+        return False
 
 
 class TaskInterrupted(Exception):
@@ -100,6 +114,10 @@ class TaskSession:
     def cancel_requested(self) -> bool:
         return self._cancel_requested.is_set()
 
+    def register_agent(self, agent: Any) -> None:
+        with self._lock:
+            self._active_agent = agent
+
     def register_run(self, agent: Any, run: Any) -> None:
         with self._lock:
             self._active_agent = agent
@@ -118,22 +136,29 @@ class TaskSession:
                 return False
             self._cancel_requested.set()
             run = self._active_run
+            agent = self._active_agent
             proc = self._active_subprocess
             prompt = self._current_prompt
             active_conv = self._conversation_id
+            phase = self._phase
 
         logger.info(
-            "收到中断请求 conv=%s active_conv=%s prompt=%s",
+            "收到中断请求 conv=%s active_conv=%s phase=%s prompt=%s",
             conversation_id or "-",
             active_conv or "-",
+            phase or "-",
             redact_for_log(prompt),
         )
 
-        if run is not None:
+        safe_cancel_run(run)
+
+        if agent is not None:
+            agent_id = getattr(agent, "agent_id", "") or ""
             try:
-                run.cancel()
+                agent.close()
+                logger.info("已关闭 Agent agent_id=%s", agent_id or "(unknown)")
             except Exception as exc:  # noqa: BLE001
-                logger.warning("取消 Agent run 失败: %s", exc)
+                logger.warning("关闭 Agent 失败 agent_id=%s: %s", agent_id or "(unknown)", exc)
 
         if proc is not None and proc.poll() is None:
             proc.kill()

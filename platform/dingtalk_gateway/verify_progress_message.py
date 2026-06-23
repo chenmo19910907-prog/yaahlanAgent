@@ -7,6 +7,8 @@ import sys
 from unittest.mock import patch
 
 from progress_message import (
+    append_duration_footer,
+    build_duration_footer,
     build_heartbeat_message,
     build_queue_message,
     format_duration,
@@ -25,7 +27,28 @@ def test_format_duration() -> None:
 def test_queue_message() -> None:
     msg = build_queue_message(2)
     assert "前面约 2 个" in msg
-    assert "预计等待约 6 分钟" in msg
+    assert "预计等待约" in msg
+
+
+def test_duration_footer() -> None:
+    import tempfile
+    from pathlib import Path
+    from unittest.mock import patch
+
+    from duration_history import DurationHistoryStore
+
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "duration_history.json"
+        store = DurationHistoryStore(path=path)
+        store.record("agent:query", 90.0, status="ok")
+        store.record("agent:query", 110.0, status="ok")
+        with patch("progress_message.get_duration_store", return_value=store):
+            footer = build_duration_footer(45.0, task_kind="agent:query")
+            assert "本次耗时 45秒" in footer
+            assert "同类任务通常约" in footer
+            body = append_duration_footer("查询完成", 45.0, task_kind="agent:query")
+            assert body.startswith("查询完成")
+            assert "本次耗时 45秒" in body
 
 
 def test_heartbeat_elapsed_only() -> None:
@@ -45,6 +68,8 @@ def main() -> int:
     print("[OK] test_format_duration")
     test_queue_message()
     print("[OK] test_queue_message")
+    test_duration_footer()
+    print("[OK] test_duration_footer")
     test_heartbeat_elapsed_only()
     print("[OK] test_heartbeat_elapsed_only")
     print("[PASS] progress_message")

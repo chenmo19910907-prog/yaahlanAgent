@@ -45,6 +45,11 @@ CATALOG_OPEN_RE = re.compile(
     r"\s*(?:html|HTML)?\s*$",
     re.I,
 )
+SCHEDULE_QUERY_RE = re.compile(
+    r"(?:2026\s*[- ]?Q2|Q2\s*排期|版本排期|需求排期|排期表|查\s*排期|查询\s*排期|"
+    r"同步\s*排期|排期\s*内容|排期\s*链接|schedule)",
+    re.I,
+)
 
 _FAST_ROUTE_RES = (
     HELP_RE,
@@ -76,5 +81,7 @@ def is_likely_fast_route(text: str) -> bool:
     if is_view_all_follow_up(t):
         return True
     if normalize_report_prompt(t):
+        return True
+    if SCHEDULE_QUERY_RE.search(t):
         return True
     return any(pattern.match(t) for pattern in _FAST_ROUTE_RES)
