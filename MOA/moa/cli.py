@@ -305,6 +305,20 @@ def build_parser() -> argparse.ArgumentParser:
         help="CP摩天轮大区（distributeCpFerrisWheelBonusDiamonds / calculateAndDistributeCpFerrisWheelWeekPrize；仅 params[0]）",
     )
 
+    parser.add_argument("--activity-gift-from-user-id", help="活动模拟送礼：送礼方 userId")
+    parser.add_argument("--activity-gift-to-user-id", help="活动模拟送礼：收礼方 userId")
+    parser.add_argument(
+        "--activity-gift-method",
+        help="活动模拟送礼：MOA 方法名（如 handleGiftRamadan2026）；也可用 --moa-method",
+    )
+    parser.add_argument("--activity-gift-flag", help="活动模拟送礼：params[0]，默认 test")
+    parser.add_argument("--activity-gift-product-id", help="活动模拟送礼：product_id")
+    parser.add_argument("--activity-gift-product-num", type=int, help="活动模拟送礼：product_num")
+    parser.add_argument("--activity-gift-price", type=int, help="活动模拟送礼：price")
+    parser.add_argument("--activity-gift-real-fee", type=int, help="活动模拟送礼：real_fee")
+    parser.add_argument("--activity-gift-total-fee", type=int, help="活动模拟送礼：total_fee")
+    parser.add_argument("--activity-gift-room-id", default="", help="活动模拟送礼：room_id（房内送礼时填写）")
+
     return parser
 
 

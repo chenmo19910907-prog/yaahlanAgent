@@ -545,6 +545,17 @@
         "获取 <userId> 10144 类型装扮"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/装扮-查询用户拥有道具.json \\\n  --user-prop-query-user-id <userId> \\\n  --user-prop-type-code <propTypeCode>\n"
+    },
+    {
+      "id": "activity_mock_gift",
+      "name": "活动-模拟送礼",
+      "category": "活动（vas/gift-call-back）",
+      "description": "模拟送礼回调增加活动数据；--activity-gift-method 指定各活动方法名，order_id/时间戳自动生成",
+      "prompts": [
+        "活动模拟送礼 <fromUserId> 送给 <toUserId>",
+        "handleGiftRamadan2026 造活动送礼数据"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/活动-模拟送礼.json \\\n  --activity-gift-method handleGiftRamadan2026 \\\n  --activity-gift-from-user-id <fromUserId> \\\n  --activity-gift-to-user-id <toUserId>\n"
     }
   ]
 }

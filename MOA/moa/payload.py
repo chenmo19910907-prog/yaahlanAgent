@@ -20,6 +20,7 @@ from .config import (
     room_level_thresholds,
     vip_level_thresholds,
 )
+from .activity_gift import set_activity_mock_gift_params
 from .params import (
     family_member_fund_api_value,
     set_diamond_provide_params,
@@ -566,8 +567,28 @@ def _op_vip(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     raise ValueError("提供了 --vip-user-id 时，必须同时提供 --vip-exp 或 --vip-level 或 --vip-query-current")
 
 
+def _op_activity_mock_gift(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if not args.activity_gift_to_user_id:
+        raise ValueError("活动模拟送礼需提供 --activity-gift-to-user-id")
+    method = args.activity_gift_method or args.moa_method
+    set_activity_mock_gift_params(
+        payload,
+        args.activity_gift_from_user_id,
+        args.activity_gift_to_user_id,
+        flag=args.activity_gift_flag,
+        method=method,
+        product_id=args.activity_gift_product_id,
+        product_num=args.activity_gift_product_num,
+        price=args.activity_gift_price,
+        real_fee=args.activity_gift_real_fee,
+        total_fee=args.activity_gift_total_fee,
+        room_id=args.activity_gift_room_id or "",
+    )
+
+
 # (predicate, handler) — 按优先级匹配首个操作
 OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = [
+    (lambda a: a.activity_gift_from_user_id is not None, _op_activity_mock_gift),
     (lambda a: _cp_ferris_tier_mode(a), _op_cp_ferris_tier),
     (lambda a: _cp_ferris_area_mode(a), _op_cp_ferris_area),
     (lambda a: a.change_user_area_user_id is not None, _op_change_user_area),

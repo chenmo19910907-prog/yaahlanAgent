@@ -1,0 +1,48 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/vas/gift-call-back",
+  "method": "handleGiftRamadan2026",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "test",
+      "json": "",
+      "type": "string",
+      "value": "test"
+    },
+    {
+      "title": "参数2",
+      "name": "2",
+      "txt": "{\"app_id\":2005,\"userid\":\"100193373\",\"order_id\":\"20266149184211111111334001110009911\",\"out_order_id\":\"2026012619261491121870080009911\",\"order_status\":20,\"create_time\":1769426774000,\"update_time\":1769426774000,\"receive_userid\":\"100308447\",\"pay_order_id\":\"20260126192614932927702009911\",\"channel\":2,\"group_id\":2005000187,\"business_id\":2005000186,\"category\":2005000189,\"product_id\":2005000200,\"product_type\":\"0_0\",\"product_num\":1,\"price\":2000,\"total_fee\":1,\"real_fee\":1,\"pay_source\":0,\"room_id\":\"\",\"pay_time\":1769426774000,\"confirm_time\":1769426774000,\"extra\":\"{\\\"timeZone\\\":\\\"Asia/Shanghai\\\",\\\"localTime\\\":\\\"1769426774342\\\",\\\"source\\\":\\\"p2p\\\",\\\"role\\\":\\\"user\\\",\\\"receiveUser\\\":{\\\"receiveUserId\\\":\\\"100308447\\\",\\\"extra\\\":null,\\\"shareRoleList\\\":[{\\\"shareUserId\\\":\\\"100193373\\\",\\\"roleId\\\":0,\\\"settleType\\\":0,\\\"guildId\\\":null}]},\\\"giftNum\\\":1}\"}",
+      "json": "",
+      "type": "string",
+      "value": "{\"app_id\":2005,\"userid\":\"100193373\",\"order_id\":\"20266149184211111111334001110009911\",\"out_order_id\":\"2026012619261491121870080009911\",\"order_status\":20,\"create_time\":1769426774000,\"update_time\":1769426774000,\"receive_userid\":\"100308447\",\"pay_order_id\":\"20260126192614932927702009911\",\"channel\":2,\"group_id\":2005000187,\"business_id\":2005000186,\"category\":2005000189,\"product_id\":2005000200,\"product_type\":\"0_0\",\"product_num\":1,\"price\":2000,\"total_fee\":1,\"real_fee\":1,\"pay_source\":0,\"room_id\":\"\",\"pay_time\":1769426774000,\"confirm_time\":1769426774000,\"extra\":\"{\\\"timeZone\\\":\\\"Asia/Shanghai\\\",\\\"localTime\\\":\\\"1769426774342\\\",\\\"source\\\":\\\"p2p\\\",\\\"role\\\":\\\"user\\\",\\\"receiveUser\\\":{\\\"receiveUserId\\\":\\\"100308447\\\",\\\"extra\\\":null,\\\"shareRoleList\\\":[{\\\"shareUserId\\\":\\\"100193373\\\",\\\"roleId\\\":0,\\\"settleType\\\":0,\\\"guildId\\\":null}]},\\\"giftNum\\\":1}\"}"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "activity_mock_gift",
+    "name": "活动-模拟送礼",
+    "category": "活动（vas/gift-call-back）",
+    "description": "模拟送礼回调增加活动数据；--activity-gift-method 指定各活动方法名，order_id/时间戳自动生成",
+    "prompts": [
+      "活动模拟送礼 <fromUserId> 送给 <toUserId>",
+      "handleGiftRamadan2026 造活动送礼数据"
+    ],
+    "cli": "--activity-gift-method handleGiftRamadan2026 --activity-gift-from-user-id <fromUserId> --activity-gift-to-user-id <toUserId>"
+  }
+}

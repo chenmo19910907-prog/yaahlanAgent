@@ -245,6 +245,34 @@
       "mmuid": "ea8836506ad680281c27e5e90dbb8e57b8f9af1717515355460f"
     }
   },
+  "activity_mock_gift": {
+    "appId": 2005,
+    "flag": "test",
+    "orderStatus": 20,
+    "channel": 2,
+    "groupId": 2005000187,
+    "businessId": 2005000186,
+    "category": 2005000189,
+    "productId": 2005000200,
+    "productType": "0_0",
+    "productNum": 1,
+    "price": 2000,
+    "totalFee": 1,
+    "realFee": 1,
+    "paySource": 0,
+    "extraSource": "p2p",
+    "extraRole": "user",
+    "giftNum": 1,
+    "timeZone": "Asia/Shanghai",
+    "methods": {
+      "handleGiftRamadan2026": {
+        "productId": 2005003503,
+        "price": 99,
+        "realFee": 99,
+        "totalFee": 99
+      }
+    }
+  },
   "package_gift": {
     "outOrderIdPrefix": "PACKAGE_GIFT",
     "outOrderIdMiddle": "100328136",
