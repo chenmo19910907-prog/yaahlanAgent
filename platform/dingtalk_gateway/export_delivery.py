@@ -22,6 +22,10 @@ TABLE_SEP_RE = re.compile(r"^\|[\s:\-|]+\|\s*$", re.MULTILINE)
 DINGTALK_REPLY_MAX_CHARS = 3800
 DEFAULT_USER_LIST_ROWS = 10
 TRUNCATE_HINT = "…（正文过长已截断）"
+TRUNCATE_GUIDE = (
+    f"{TRUNCATE_HINT}\n"
+    "💡 回复「查看全部数据」看完整内容，或「导出到钉钉文档」写入钉钉。"
+)
 USER_LIST_LIMIT_HINT = (
     "…（用户列表共 {total} 条，已展示前 {shown} 条；"
     "回复「查看全部数据」可看完整列表，回复「导出到钉钉文档」可导出）"
@@ -218,8 +222,11 @@ def limit_user_list_reply(
 def _truncate_inline(text: str, max_chars: int = DINGTALK_REPLY_MAX_CHARS) -> str:
     if len(text) <= max_chars:
         return text
-    budget = max_chars - len(TRUNCATE_HINT) - 2
-    return text[:budget].rstrip() + "\n\n" + TRUNCATE_HINT
+    budget = max_chars - len(TRUNCATE_GUIDE) - 2
+    if budget < 200:
+        budget = max_chars - len(TRUNCATE_HINT) - 2
+        return text[:budget].rstrip() + "\n\n" + TRUNCATE_HINT
+    return text[:budget].rstrip() + "\n\n" + TRUNCATE_GUIDE
 
 
 def _prepare_inline_reply(text: str, prompt: str, cfg: ExportConfig | None = None) -> str:

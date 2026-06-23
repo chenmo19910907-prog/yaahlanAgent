@@ -13,7 +13,7 @@ LOG_DIR="$DIR/logs"
 
 usage() {
   cat <<EOF
-用法: $0 <install|uninstall|start|stop|restart|status|logs|health>
+用法: $0 <install|uninstall|start|stop|restart|status|logs|health|health-deep>
 
   install    安装 launchd 并启动（开机自启 + 崩溃重启）
   uninstall  停止并移除 launchd
@@ -23,6 +23,7 @@ usage() {
   status     查看运行状态
   logs       跟踪 gateway.log
   health     Bridge / MOA / 凭证健康检查
+  health-deep  同上，且 server 未运行时做 SDK pong
 EOF
 }
 
@@ -101,5 +102,6 @@ case "$cmd" in
   status) show_status ;;
   logs) follow_logs ;;
   health) run_health ;;
+  health-deep) "$DIR/run.sh" health_check.py --deep ;;
   *) usage; exit 1 ;;
 esac

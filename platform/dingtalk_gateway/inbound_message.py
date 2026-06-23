@@ -10,7 +10,11 @@ from dingtalk_stream import ChatbotMessage
 AT_BOT_PATTERN = re.compile(r"@[^\s@]+\s*")
 URL_PATTERN = re.compile(r"https?://[^\s<>\"']+", re.IGNORECASE)
 
-SUPPORTED_MESSAGE_TYPES = frozenset({"text", "picture", "richText"})
+SUPPORTED_MESSAGE_TYPES = frozenset({"text", "picture", "richText", "file", "audio"})
+UNSUPPORTED_TYPE_HINT = (
+    "暂不支持该消息类型，请改用文字、图片或 alidocs 链接。"
+    "若需传文件，可先上传到钉钉文档后把链接发给机器人。"
+)
 PICTURE_ONLY_DEFAULT = "请根据附图理解并完成任务。"
 
 
@@ -79,6 +83,8 @@ def _extract_links_from_rich_item(item: dict) -> list[str]:
 def parse_inbound_message(incoming: ChatbotMessage) -> InboundMessage:
     message_type = incoming.message_type or "text"
     if message_type not in SUPPORTED_MESSAGE_TYPES:
+        if message_type in {"file", "audio"}:
+            return InboundMessage(text=UNSUPPORTED_TYPE_HINT)
         return InboundMessage()
 
     texts: list[str] = []

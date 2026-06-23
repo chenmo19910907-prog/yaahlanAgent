@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import threading
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -19,6 +20,9 @@ logger = logging.getLogger("dingtalk-gateway")
 
 DATA_DIR = GATEWAY_DIR / "data"
 AGENT_INDEX = DATA_DIR / "user_agents.json"
+AGENT_IDLE_TTL_S = 30 * 60
+AGENT_MAX_LIVE = 20
+SWEEPER_INTERVAL_S = 300
 
 
 @dataclass
@@ -33,6 +37,7 @@ class UserAgentPool:
         self._index_path = index_path
         self._lock = threading.Lock()
         self._live: dict[str, Agent] = {}
+        self._last_used: dict[str, float] = {}
         self._records: dict[str, UserAgentRecord] = self._load()
 
     @staticmethod
@@ -105,12 +110,79 @@ class UserAgentPool:
         )
         self._save()
 
-    def _drop_live(self, user_key: str) -> None:
-        self._live.pop(user_key, None)
+    def _touch_locked(self, user_key: str) -> None:
+        if user_key in self._live:
+            self._last_used[user_key] = time.monotonic()
+
+    def touch(self, user_key: str) -> None:
+        with self._lock:
+            self._touch_locked(user_key)
+
+    def _close_live_locked(self, user_key: str) -> None:
+        agent = self._live.pop(user_key, None)
+        self._last_used.pop(user_key, None)
+        if agent is None:
+            return
+        try:
+            agent.close()
+            logger.info("已关闭 idle Agent user=%s", user_key)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("关闭 idle Agent 失败 user=%s: %s", user_key, exc)
+
+    def _evict_if_idle_locked(self, user_key: str) -> bool:
+        """True 表示已因超时空闲而关闭。"""
+        if user_key not in self._live:
+            return False
+        last = self._last_used.get(user_key, 0.0)
+        if time.monotonic() - last <= AGENT_IDLE_TTL_S:
+            return False
+        self._close_live_locked(user_key)
+        return True
+
+    def _evict_lru_if_full_locked(self) -> None:
+        if len(self._live) < AGENT_MAX_LIVE:
+            return
+        if not self._last_used:
+            return
+        lru_key = min(self._last_used, key=self._last_used.get)
+        logger.info("Agent 池已满(%s)，淘汰最久未用 user=%s", AGENT_MAX_LIVE, lru_key)
+        self._close_live_locked(lru_key)
+
+    def evict_idle(self) -> int:
+        """关闭超过 TTL 的空闲 Agent，返回关闭数量。"""
+        with self._lock:
+            stale = [
+                key
+                for key in list(self._live)
+                if time.monotonic() - self._last_used.get(key, 0.0) > AGENT_IDLE_TTL_S
+            ]
+        closed = 0
+        for key in stale:
+            with self._lock:
+                if key in self._live and time.monotonic() - self._last_used.get(key, 0.0) > AGENT_IDLE_TTL_S:
+                    self._close_live_locked(key)
+                    closed += 1
+        if closed:
+            logger.info("空闲 sweep 关闭 %s 个 Agent", closed)
+        return closed
+
+    def start_idle_sweeper(self, interval_s: float = SWEEPER_INTERVAL_S) -> None:
+        def loop() -> None:
+            while True:
+                time.sleep(interval_s)
+                try:
+                    self.evict_idle()
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning("Agent 空闲 sweep 失败: %s", exc)
+
+        threading.Thread(target=loop, daemon=True, name="agent-pool-sweeper").start()
+        logger.info("Agent 空闲 sweep 已启动（TTL=%ss，间隔=%ss）", AGENT_IDLE_TTL_S, interval_s)
 
     def clear_live_agents(self) -> None:
         with self._lock:
-            self._live.clear()
+            keys = list(self._live)
+            for key in keys:
+                self._close_live_locked(key)
         logger.info("已清空内存中的用户 Agent 句柄（下次消息将 ResumeAgent）")
 
     def acquire(
@@ -134,15 +206,21 @@ class UserAgentPool:
         display = self.display_name(sender_name, user_key)
 
         with self._lock:
+            if self._evict_if_idle_locked(user_key):
+                pass
             live = self._live.get(user_key)
             if live is not None:
+                self._touch_locked(user_key)
                 return live, False
+
+            self._evict_lru_if_full_locked()
 
             record = self._records.get(user_key)
             if record is not None:
                 try:
                     agent = Agent.resume(record.agent_id, options)
                     self._live[user_key] = agent
+                    self._touch_locked(user_key)
                     logger.info("ResumeAgent user=%s agent_id=%s", user_key, agent.agent_id)
                     return agent, False
                 except Exception as exc:  # noqa: BLE001
@@ -156,13 +234,14 @@ class UserAgentPool:
 
             agent = Agent.create(options, name=display)
             self._live[user_key] = agent
+            self._touch_locked(user_key)
             self._persist(user_key, agent.agent_id, sender_name)
             logger.info("CreateAgent user=%s name=%s agent_id=%s", user_key, display, agent.agent_id)
             return agent, True
 
     def invalidate(self, user_key: str) -> None:
         with self._lock:
-            self._drop_live(user_key)
+            self._close_live_locked(user_key)
             self._records.pop(user_key, None)
         self._save()
 

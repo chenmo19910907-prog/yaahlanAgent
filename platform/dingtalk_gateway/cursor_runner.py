@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
+import concurrent.futures
 import json
 import sys
+import time
 from collections.abc import Sequence
 from pathlib import Path
 
 from cursor_sdk import Agent, AgentOptions, CursorAgentError, LocalAgentOptions, SDKImage, UserMessage
 from cursor_sdk.errors import NetworkError
 
-from bridge_manager import is_bridge_connection_error, reset_sdk_bridge
-from user_agent_pool import get_user_agent_pool, reset_user_agent_pool
+from bridge_manager import is_transient_sdk_error, reset_sdk_bridge
+from user_agent_pool import get_user_agent_pool
 
 from env_loader import GATEWAY_DIR, load_env_local, require_env
 from gateway_prompt import build_gateway_prompt
@@ -70,6 +72,32 @@ def _build_prompt_text(
             body = "\n\n".join([body, *extras]) if body else "\n\n".join(extras)
         return f"用户消息（钉钉群 @，延续当前 Agent 对话）：\n{body}"
     return text
+
+
+def _wait_run(run, *, timeout_s: float, session: TaskSession | None):
+    """带超时与中断检查的 run.wait()。"""
+    if timeout_s <= 0:
+        return run.wait()
+
+    deadline = time.monotonic() + timeout_s
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(run.wait)
+        while True:
+            if session:
+                session.check_cancelled()
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                try:
+                    run.cancel()
+                except Exception:  # noqa: BLE001
+                    pass
+                raise RuntimeError(
+                    f"Agent 执行超时（>{int(timeout_s)}s），可发「重新执行」重试"
+                )
+            try:
+                return future.result(timeout=min(0.5, remaining))
+            except concurrent.futures.TimeoutError:
+                continue
 
 
 def run_agent_prompt(
@@ -170,7 +198,7 @@ def run_agent_prompt(
             if session:
                 session.register_run(agent, run)
                 session.check_cancelled()
-            result = run.wait()
+            result = _wait_run(run, timeout_s=float(timeout_s), session=session)
             last_error = None
             break
         except TaskInterrupted:
@@ -182,9 +210,8 @@ def run_agent_prompt(
             if use_pool and pool is not None and user_key:
                 pool.invalidate(user_key)
                 keep_agent_open = False
-            if attempt == 0 and is_bridge_connection_error(exc):
+            if attempt == 0 and is_transient_sdk_error(exc):
                 reset_sdk_bridge()
-                reset_user_agent_pool()
                 continue
             raise RuntimeError(f"Agent 启动失败: {exc.message if hasattr(exc, 'message') else exc}") from exc
         finally:

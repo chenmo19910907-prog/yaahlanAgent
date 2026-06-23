@@ -9,6 +9,8 @@ import time
 from collections.abc import Sequence
 from typing import Any
 
+from log_redact import redact_for_log
+
 logger = logging.getLogger("dingtalk-gateway")
 
 
@@ -25,6 +27,7 @@ class TaskSession:
         self._current_prompt = ""
         self._started_at = 0.0
         self._budget_s = 600.0
+        self._phase = ""
         self._active_run: Any | None = None
         self._active_agent: Any | None = None
         self._active_subprocess: subprocess.Popen[str] | None = None
@@ -43,6 +46,15 @@ class TaskSession:
             self._current_prompt = prompt
             self._started_at = time.monotonic()
             self._budget_s = max(1.0, budget_s)
+            self._phase = "prepare"
+
+    def set_phase(self, phase: str) -> None:
+        with self._lock:
+            self._phase = (phase or "").strip()
+
+    def phase(self) -> str:
+        with self._lock:
+            return self._phase
 
     def end(self) -> None:
         with self._lock:
@@ -52,6 +64,7 @@ class TaskSession:
             self._current_prompt = ""
             self._started_at = 0.0
             self._budget_s = 600.0
+            self._phase = ""
             self._active_run = None
             self._active_agent = None
             self._active_subprocess = None
@@ -113,7 +126,7 @@ class TaskSession:
             "收到中断请求 conv=%s active_conv=%s prompt=%s",
             conversation_id or "-",
             active_conv or "-",
-            prompt[:120],
+            redact_for_log(prompt),
         )
 
         if run is not None:

@@ -4,7 +4,7 @@
     { "group": "用户", "prefixes": ["用户", "实名认证"] },
     { "group": "VIP", "names": ["VIP 经验值", "贵族"] },
     { "group": "房间", "prefixes": ["房间"] },
-    { "group": "礼物", "names": ["礼物", "背包礼物"] },
+    { "group": "礼物", "names": ["礼物", "背包礼物", "Stage送礼", "Gift"] },
     { "group": "定制", "prefixes": ["定制"] },
     { "group": "道具", "names": ["道具"] },
     { "group": "家族", "prefixes": ["家族"] },
@@ -64,6 +64,15 @@
       "registry": "MOA/config/registry.json",
       "usage_doc": "MOA/使用方法.md",
       "entry": "python3 MOA/moa_execute.py"
+    },
+    {
+      "id": "gift",
+      "label": "Stage送礼",
+      "subtitle": "HTTP /v2/gift/send · stage",
+      "env": "test",
+      "registry": "Gift/config/registry.json",
+      "usage_doc": "Gift/使用方法.md",
+      "entry": "python3 Gift/gift_execute.py"
     },
     {
       "id": "risk",

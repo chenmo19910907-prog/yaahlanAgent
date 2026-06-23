@@ -47,3 +47,14 @@ def is_bridge_connection_error(exc: BaseException) -> bool:
         "bridge request failed",
     )
     return any(needle in message for needle in needles)
+
+
+def is_transient_sdk_error(exc: BaseException) -> bool:
+    """Bridge 断连或 SDK 内部瞬态错误，可 invalidate + 重建后重试一次。"""
+    if is_bridge_connection_error(exc):
+        return True
+    name = type(exc).__name__
+    if name in {"InternalServerError", "APITimeoutError", "NetworkError"}:
+        return True
+    message = str(exc).lower()
+    return "internal error" in message or "internal:" in message

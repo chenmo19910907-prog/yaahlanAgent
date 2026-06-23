@@ -3,43 +3,28 @@
 from __future__ import annotations
 
 import json
-import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from help_catalog import build_help_message
 from moa_health import probe_moa_cookie
+from route_patterns import (
+    CATALOG_OPEN_RE,
+    ENV_CHECK_RE,
+    EXPORT_FILE_RE,
+    HELP_RE,
+    MOA_CHECK_RE,
+    REPORT_NL_RE,
+    REPORT_URL_RE,
+    REPORT_VERSION_RE,
+    VIP_UPGRADE_RE,
+    normalize_report_prompt,
+)
 from task_session import TaskSession, run_subprocess_cancellable
 
 GATEWAY_DIR = Path(__file__).resolve().parent
 REPO_ROOT = GATEWAY_DIR.parent.parent
-
-EXPORT_FILE_RE = re.compile(
-    r"^(?:导出|export)\s+(.+\.(?:csv|json|md))\s*$",
-    re.I,
-)
-ENV_CHECK_RE = re.compile(r"^(?:环境检查|检查环境|doctor)\s*$", re.I)
-MOA_CHECK_RE = re.compile(r"^(?:MOA检查|检查MOA|moa检查|moa\s*check)\s*$", re.I)
-HELP_RE = re.compile(r"^(?:帮助|使用说明|help|\?|？)\s*$", re.I)
-VIP_UPGRADE_RE = re.compile(
-    r"^(?:用户\s*)?(\d{5,})\s*(?:升级|升到|升级到)\s*VIP?\s*(\d+)\s*$",
-    re.I,
-)
-REPORT_VERSION_RE = re.compile(
-    r"^(?:生成\s*)?(?:v)?(\d+\.\d+\.\d+)\s*版本\s*(?:生成\s*)?测试报告\s*$",
-    re.I,
-)
-REPORT_URL_RE = re.compile(
-    r"^(?:生成\s*)?测试报告\s+(https://alidocs\.dingtalk\.com/\S+)\s*$",
-    re.I,
-)
-CATALOG_OPEN_RE = re.compile(
-    r"^(?:打开|刷新|生成)?\s*"
-    r"(?:工具平台|工具工作台|工具台|输入工作台|智能工具平台|平台目录|能力目录|工作台|catalog)"
-    r"\s*(?:html|HTML)?\s*$",
-    re.I,
-)
 
 
 @dataclass
@@ -53,6 +38,10 @@ def try_route(user_text: str, session: TaskSession | None = None) -> RoutedResul
     text = (user_text or "").strip()
     if not text:
         return RoutedResult(handled=False)
+
+    normalized = normalize_report_prompt(text)
+    if normalized:
+        text = normalized
 
     if HELP_RE.match(text):
         return RoutedResult(handled=True, output=build_help_message())
@@ -162,7 +151,7 @@ def try_route(user_text: str, session: TaskSession | None = None) -> RoutedResul
             output=out or f"exit={code}",
         )
 
-    report_version = REPORT_VERSION_RE.match(text)
+    report_version = REPORT_VERSION_RE.match(text) or REPORT_NL_RE.match(text)
     report_url = REPORT_URL_RE.match(text)
     if report_version or report_url:
         cmd = [

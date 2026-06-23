@@ -22,7 +22,6 @@ def main() -> int:
         print("[OK] 开放平台凭证格式正常")
     else:
         print("[WARN] DINGTALK_CLIENT_ID 可能仍是占位符，请填开放平台 Client ID（ding 开头）")
-        print("[WARN] 若只有 Webhook，请用 verify_webhook.py / ask_and_notify.py")
 
     print()
     print("下一步（Stream @ 双向）：")

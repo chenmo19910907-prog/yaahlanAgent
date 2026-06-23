@@ -15,29 +15,14 @@ from natural_language import (
     naturalize_vip_failure,
     naturalize_vip_success,
 )
-
-VIP_UPGRADE_RE = re.compile(
-    r"^(?:用户\s*)?(\d{5,})\s*(?:升级|升到|升级到)\s*VIP?\s*(\d+)\s*$",
-    re.I,
-)
-EXPORT_FILE_RE = re.compile(
-    r"^(?:导出|export)\s+(.+\.(?:csv|json|md))\s*$",
-    re.I,
-)
-ENV_CHECK_RE = re.compile(r"^(?:环境检查|检查环境|doctor)\s*$", re.I)
-REPORT_VERSION_RE = re.compile(
-    r"^(?:生成\s*)?(?:v)?(\d+\.\d+\.\d+)\s*版本\s*(?:生成\s*)?测试报告\s*$",
-    re.I,
-)
-REPORT_URL_RE = re.compile(
-    r"^(?:生成\s*)?测试报告\s+(https://alidocs\.dingtalk\.com/\S+)\s*$",
-    re.I,
-)
-CATALOG_OPEN_RE = re.compile(
-    r"^(?:打开|刷新|生成)?\s*"
-    r"(?:工具平台|工具工作台|工具台|输入工作台|智能工具平台|平台目录|能力目录|工作台|catalog)"
-    r"\s*(?:html|HTML)?\s*$",
-    re.I,
+from export_delivery import TRUNCATE_GUIDE
+from route_patterns import (
+    CATALOG_OPEN_RE,
+    ENV_CHECK_RE,
+    EXPORT_FILE_RE,
+    REPORT_URL_RE,
+    REPORT_VERSION_RE,
+    VIP_UPGRADE_RE,
 )
 
 BUSINESS_FAIL_RE = re.compile(r"业务返回失败: ec=(\d+), em=(.+)")
@@ -68,7 +53,10 @@ def _looks_raw_dump(text: str) -> bool:
 def _truncate(text: str, max_chars: int = DINGTALK_REPLY_MAX_CHARS) -> str:
     if len(text) <= max_chars:
         return text
-    return text[: max_chars - 24] + "\n\n…（部分内容已截断）"
+    budget = max_chars - len(TRUNCATE_GUIDE) - 2
+    if budget < 200:
+        return text[: max_chars - 24] + "\n\n…（部分内容已截断）"
+    return text[:budget].rstrip() + "\n\n" + TRUNCATE_GUIDE
 
 
 def _moa_auth_expired_message() -> str:
@@ -266,14 +254,27 @@ def format_group_reply(
 
 def format_exception(exc: BaseException) -> str:
     message = str(exc).strip() or exc.__class__.__name__
+    lower = message.lower()
     if _is_html_blob(message) or "返回不是合法 JSON" in message:
         return _moa_auth_expired_message()
-    if "connection refused" in message.lower() or "bridge request failed" in message.lower():
+    if "connection refused" in lower or "bridge request failed" in lower:
         return (
             "❌ 任务执行失败。"
             "原因是 Cursor Agent 桥接进程暂时不可用，可能刚被中断任务影响。"
-            "网关会自动重试；若仍失败，请执行 ./gateway_ctl.sh restart 后再 @机器人。"
+            "请发「重新执行」重试；仍失败请发「环境检查」或执行 ./gateway_ctl.sh restart。"
         )
+    if "internal error" in lower or "internal:" in lower:
+        return (
+            "❌ 任务执行失败，Agent 服务暂不可用。\n"
+            "请发「重新执行」重试；仍失败请发「环境检查」或 ./gateway_ctl.sh restart。"
+        )
+    if "执行超时" in message or "timeout" in lower:
+        return (
+            "❌ 任务执行超时（已超过允许时长）。\n"
+            "请发「重新执行」重试，或拆成更小的子任务。"
+        )
+    if "agent 未返回" in lower:
+        return "❌ Agent 未返回结果，请发「重新执行」重试。"
     business_error = _parse_moa_business_error(message)
     if business_error:
         return f"❌ 任务执行失败，{business_error}。"
