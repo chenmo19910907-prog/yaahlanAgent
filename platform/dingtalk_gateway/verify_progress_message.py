@@ -28,25 +28,16 @@ def test_queue_message() -> None:
     assert "预计等待约 6 分钟" in msg
 
 
-def test_heartbeat_with_remaining() -> None:
+def test_heartbeat_elapsed_only() -> None:
     session = TaskSession()
-    with patch("task_session.time.monotonic", side_effect=[1000.0, 1150.0, 1150.0, 1150.0]):
+    with patch("task_session.time.monotonic", side_effect=[1000.0, 1150.0]):
         session.begin("生成用例", conversation_id="c1", budget_s=600.0)
-        session.set_phase("agent")
         msg = build_heartbeat_message(session)
-    assert "Agent 执行中" in msg
+    assert "仍在执行中" in msg
     assert "已执行2分30秒" in msg
-    assert "预计还需" in msg
+    assert "Agent 执行中" not in msg
+    assert "预计还需" not in msg
     assert "中断操作" in msg
-
-
-def test_heartbeat_over_budget() -> None:
-    session = TaskSession()
-    with patch("task_session.time.monotonic", side_effect=[2000.0, 2150.0, 2150.0, 2150.0]):
-        session.begin("长任务", conversation_id="c1", budget_s=120.0)
-        msg = build_heartbeat_message(session)
-    assert "已执行2分30秒" in msg
-    assert "可能即将完成" in msg
 
 
 def main() -> int:
@@ -54,10 +45,8 @@ def main() -> int:
     print("[OK] test_format_duration")
     test_queue_message()
     print("[OK] test_queue_message")
-    test_heartbeat_with_remaining()
-    print("[OK] test_heartbeat_with_remaining")
-    test_heartbeat_over_budget()
-    print("[OK] test_heartbeat_over_budget")
+    test_heartbeat_elapsed_only()
+    print("[OK] test_heartbeat_elapsed_only")
     print("[PASS] progress_message")
     return 0
 

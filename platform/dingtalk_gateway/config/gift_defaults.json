@@ -1,0 +1,14 @@
+{
+  "description": "钉钉网关送礼默认路径（未强调背包时走 Gift HTTP）",
+  "defaultMethod": "gift_http",
+  "defaultExecute": "Gift/gift_execute.py",
+  "backpackKeywords": [
+    "背包送礼",
+    "背包下发",
+    "MOA背包",
+    "addPackageGift",
+    "sendMiddlePackageGift",
+    "背包礼物-下发",
+    "背包礼物-送礼"
+  ]
+}

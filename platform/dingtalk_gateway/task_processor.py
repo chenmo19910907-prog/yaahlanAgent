@@ -9,6 +9,7 @@ from typing import Any
 
 import dingtalk_stream
 
+from adb_execution_guard import adb_execution_denial_message, looks_like_adb_execution_request
 from bridge_manager import reset_sdk_bridge
 from command_hints import suggest_command_hint
 from command_router import try_route
@@ -19,6 +20,11 @@ from code_modify_permission import (
     looks_like_code_modify_request,
 )
 from cursor_runner import DEFAULT_TIMEOUT_S, repo_cwd, run_agent_prompt, truncate_for_dingtalk
+from gateway_restart import (
+    format_code_update_restart_note,
+    list_gateway_files_changed_since,
+    schedule_gateway_restart_after_code_change,
+)
 from dingtalk_group_file import send_group_file
 from dingtalk_media import download_message_images
 from export_delivery import deliver_reply, is_view_all_follow_up
@@ -89,6 +95,7 @@ def process_inbound_task(
     session.begin(prompt, conversation_id=user_key, budget_s=DEFAULT_TIMEOUT_S)
     heartbeat_stop = _start_heartbeat(handler, incoming, session, user_key)
     status = "error"
+    code_modify_session = False
     persist = get_queue_persist()
     try:
         logger.info(
@@ -161,6 +168,7 @@ def process_inbound_task(
                 sender_staff_id=incoming.sender_staff_id,
                 sender_id=incoming.sender_id,
             )
+            code_modify_session = code_allowed
             if looks_like_code_modify_request(prompt) and not code_allowed:
                 logger.warning(
                     "代码修改权限拒绝 conv=%s staff=%s sender=%s prompt=%s",
@@ -172,6 +180,16 @@ def process_inbound_task(
                 handler._reply(code_modify_denial_message(), incoming, inbound)
                 store.save(incoming.conversation_id, prompt, **store_kwargs)
                 return "denied"
+
+            if looks_like_adb_execution_request(prompt):
+                logger.info(
+                    "ADB 执行拒绝 conv=%s prompt=%s",
+                    user_key,
+                    redact_for_log(prompt),
+                )
+                handler._reply(adb_execution_denial_message(), incoming, inbound)
+                store.save(incoming.conversation_id, prompt, **store_kwargs)
+                return "adb_denied"
 
             session.set_phase("agent")
             raw_result = run_agent_prompt(
@@ -202,6 +220,16 @@ def process_inbound_task(
                         f"{reply_message}\n\n{tc_message}"
                         if reply_message.strip()
                         else tc_message
+                    )
+            if code_modify_session:
+                changed_files = list_gateway_files_changed_since(started_wall)
+                if changed_files:
+                    schedule_gateway_restart_after_code_change(
+                        operator=sender_name,
+                        changed_files=changed_files,
+                    )
+                    reply_message = (
+                        f"{reply_message}{format_code_update_restart_note(changed_files)}"
                     )
             handler._reply(truncate_for_dingtalk(reply_message), incoming, inbound)
             if delivery.exported:

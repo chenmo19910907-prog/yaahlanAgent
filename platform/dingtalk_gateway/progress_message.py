@@ -1,16 +1,8 @@
-"""执行进度文案：排队估算、心跳阶段与剩余时间。"""
+"""执行进度文案：排队估算与心跳已执行时长。"""
 
 from __future__ import annotations
 
 from task_session import TaskSession
-
-PHASE_LABELS: dict[str, str] = {
-    "prepare": "准备中",
-    "route": "快捷指令",
-    "agent": "Agent 执行中",
-    "export": "导出处理中",
-    "reply": "整理回复中",
-}
 
 # 排队时按任务数粗估等待（分钟）
 QUEUE_ESTIMATE_MIN_PER_TASK = 3
@@ -41,17 +33,7 @@ def build_queue_message(ahead: int) -> str:
 
 def build_heartbeat_message(session: TaskSession) -> str:
     elapsed_str = format_duration(session.elapsed_s())
-    phase_label = PHASE_LABELS.get(session.phase(), "")
-    parts: list[str] = ["⏳ 仍在执行中"]
-    if phase_label:
-        parts.append(f"（{phase_label}）")
-    parts.append(f"已执行{elapsed_str}")
-
-    remaining = session.estimated_remaining_s()
-    if remaining is not None and remaining > 30:
-        parts.append(f"预计还需{format_duration(remaining)}")
-    elif remaining is not None and remaining <= 30:
-        parts.append("已接近时限，可能即将完成")
-
-    body = "，".join(parts)
-    return f"{body}… 可发「中断操作」打断本群当前任务。"
+    return (
+        f"⏳ 仍在执行中，已执行{elapsed_str}… "
+        "可发「中断操作」打断本群当前任务。"
+    )

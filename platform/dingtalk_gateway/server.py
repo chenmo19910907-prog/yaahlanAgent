@@ -11,6 +11,7 @@ from dingtalk_stream import AckMessage
 
 from bridge_manager import init_sdk_bridge
 from conversation_store import ConversationStore
+from gateway_status_notify import register_lifecycle_hooks, touch_notify_group
 from inbound_message import InboundMessage, parse_inbound_message
 from interrupt import is_interrupt_command
 from log_redact import redact_for_log
@@ -68,6 +69,7 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
 
     async def process(self, callback: dingtalk_stream.CallbackMessage):
         incoming = dingtalk_stream.ChatbotMessage.from_dict(callback.data)
+        touch_notify_group(incoming)
         inbound = parse_inbound_message(incoming)
         user_key = self._user_session_key(incoming)
         store_kwargs = self._store_lookup_kwargs(incoming)
@@ -159,6 +161,7 @@ def main() -> int:
         dingtalk_stream.chatbot.ChatbotMessage.TOPIC,
         handler,
     )
+    register_lifecycle_hooks(client)
     logger.info(
         "Yaahlan 钉钉网关已启动（fast 队列 + 按用户并行 Agent / 帮助 / MOA / 中断 / 持久化）"
     )

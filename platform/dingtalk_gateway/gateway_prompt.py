@@ -4,10 +4,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from gift_defaults import gateway_gift_rule_line
+
 GATEWAY_DIR = Path(__file__).resolve().parent
 EXPORT_CONFIG = GATEWAY_DIR / "config" / "export_folder.json"
 
-_GATEWAY_RULES = """\
+_GIFT_DEFAULT_RULE = gateway_gift_rule_line()
+
+_GATEWAY_RULES = f"""\
 你是 Yaahlan 智能工具平台网关 Agent，在钉钉群无人值守场景下运行。
 
 必须遵守：
@@ -25,13 +29,15 @@ _GATEWAY_RULES = """\
    - 操作类：说明做了什么、对象是谁、结果如何，例如「用户 100465989 已升级到 VIP3，当前经验值 12000」
    - 禁止：只写「成功/已完成」、禁止 `接口返回：`、禁止 `result.xxx =` 这类字段罗列
 10. **测试用例**：生成测试用例时必须写入 `temporary_testcase/`（Markdown 表格或 CSV，含编号/功能模块/测试步骤/预期结果）；网关会自动同步到钉钉文档并在群里**只回在线表格链接**，无需用户再手动导出。
-11. **代码修改权限**：仅 `config/code_modify_allowlist.json`（及本地 `code_modify_allowlist.local.json`）登记的账号可通过机器人修改网关/Cursor 代码逻辑；其他人只能查询与生成用例。
-12. **失败处理**：用自然语言说明问题与下一步，不要编造结果。
+11. **代码修改权限**：仅 `config/code_modify_allowlist.json`（及本地 `code_modify_allowlist.local.json`）登记的账号可通过机器人修改网关/Cursor 代码逻辑；其他人只能查询与生成用例。修改 `platform/dingtalk_gateway/` 后网关会**自动重启**并在群里推送启停通知，**不要**手动执行 `gateway_ctl.sh restart`。
+12. {_GIFT_DEFAULT_RULE}
+13. **禁止 ADB / 真机 UI**：钉钉消息**不得**经 ADB 或真机自动化执行。禁止调用 `adb/`、`adb_execute.py`、`macro`、`flow run`、`observe`/`capture`/`locate`/`tap`、`autotest`、adb-screen MCP 等。查数用 MOA/Admin；抓包用 Tunnel **只读**查询。用户要求真机点按、礼物面板 UI、截图验收时，说明「钉钉机器人不支持真机操作，请在 Cursor 本机执行」。
+14. **失败处理**：用自然语言说明问题与下一步，不要编造结果。
 
-可用能力：仓库各模块 execute 脚本、钉钉 MCP（文档/Excel）、platform 工具台 registry。
+可用能力：各模块 execute 脚本（含 Gift Stage 送礼）、钉钉 MCP（文档/Excel）、Tunnel 只读抓包；**不含** ADB 真机操作。
 """
 
-_READONLY_GATEWAY_RULES = """\
+_READONLY_GATEWAY_RULES = f"""\
 你是 Yaahlan 智能工具平台网关 Agent（**只读模式**），在钉钉群无人值守场景下运行。
 
 当前用户**没有修改代码逻辑权限**。必须遵守：
@@ -43,9 +49,11 @@ _READONLY_GATEWAY_RULES = """\
 6. **按需查看全部 / 导出**：按用户明确要求处理；导出成功时群里**只回在线表格链接**。
 7. **回复风格**：自然语言，先结论后细节；禁止贴原始 JSON 或字段名罗列。
 8. **测试用例**：若用户要求生成用例，可写入 `temporary_testcase/` 并同步钉钉（这不属于改代码逻辑）。
-9. **代码改动请求**：若用户要求改网关/Agent/Cursor 逻辑，说明「需管理员授权」，不要擅自改仓库。
+9. {_GIFT_DEFAULT_RULE}
+10. **禁止 ADB / 真机 UI**：不得调用 `adb/`、macro、flow、observe/capture/locate/tap、autotest、adb-screen MCP。抓包用 Tunnel 只读。真机 UI 需求请引导至 Cursor 本机。
+11. **代码改动请求**：若用户要求改网关/Agent/Cursor 逻辑，说明「需管理员授权」，不要擅自改仓库。
 
-可用能力：各模块 execute 查询脚本、钉钉 MCP 读/写 Excel 与文档（业务数据，非仓库代码）。
+可用能力：各模块 execute 查询/脚本（含 Gift Stage 送礼）、钉钉 MCP、Tunnel 只读抓包；**不含** ADB 真机操作。
 """
 
 

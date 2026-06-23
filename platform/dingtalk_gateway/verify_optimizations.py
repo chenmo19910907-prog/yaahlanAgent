@@ -46,11 +46,12 @@ def test_queue_and_progress() -> None:
     assert "预计等待" in build_queue_message(1)
     session = TaskSession()
     session.begin("x", budget_s=600)
-    session.set_phase("agent")
     from progress_message import build_heartbeat_message
 
     msg = build_heartbeat_message(session)
-    assert "Agent 执行中" in msg
+    assert "仍在执行中" in msg
+    assert "Agent 执行中" not in msg
+    assert "预计还需" not in msg
 
 
 def test_log_redact() -> None:
@@ -116,6 +117,122 @@ def test_code_modify_guard() -> None:
     assert "只读模式" in out
 
 
+def test_gift_default_route() -> None:
+    from gift_defaults import is_backpack_gift_request, should_use_gift_http
+
+    assert should_use_gift_http("用户 8250 给 100465989 送礼物 2005004730")
+    assert not should_use_gift_http("背包送礼 8250 给 100465989")
+    assert is_backpack_gift_request("MOA背包下发 Ocean Gem")
+
+
+def test_adb_execution_guard() -> None:
+    from adb_execution_guard import looks_like_adb_execution_request
+
+    assert looks_like_adb_execution_request("python3 adb/adb_execute.py macro 切换我的底栏")
+    assert looks_like_adb_execution_request("真机打开礼物面板送礼")
+    assert looks_like_adb_execution_request("flow run 进房送礼")
+    assert not looks_like_adb_execution_request("Stage 用户 8250 私聊给 100465989 送礼物 2005056028")
+    assert not looks_like_adb_execution_request("tunnel 查 100465989 gift/send")
+    assert not looks_like_adb_execution_request("查询用户 100465989 详情")
+
+
+def test_gateway_status_notify() -> None:
+    import os
+    from unittest.mock import patch
+
+    from gateway_status_notify import (
+        notify_gateway_started,
+        notify_gateway_stopping,
+        resolve_notify_conversation_id,
+        touch_notify_group,
+    )
+
+    class FakeIncoming:
+        conversation_type = "2"
+        conversation_id = "cidTestGroup=="
+        conversation_title = "测试群"
+
+    with tempfile.TemporaryDirectory() as tmp:
+        notify_path = Path(tmp) / "notify_group.json"
+        restart_path = Path(tmp) / "restart_context.json"
+        with patch("gateway_status_notify.NOTIFY_DATA", notify_path):
+            with patch("gateway_restart.RESTART_CONTEXT", restart_path):
+                touch_notify_group(FakeIncoming())  # type: ignore[arg-type]
+                assert resolve_notify_conversation_id() == "cidTestGroup=="
+
+                sent: list[str] = []
+
+                def fake_send(text: str, *, client=None) -> bool:  # noqa: ARG001
+                    sent.append(text)
+                    return True
+
+                restart_path.write_text(
+                    json.dumps(
+                        {
+                            "trigger": "code_update",
+                            "operator": "陈墨",
+                            "changedFiles": ["platform/dingtalk_gateway/server.py"],
+                        },
+                        ensure_ascii=False,
+                    ),
+                    encoding="utf-8",
+                )
+                with patch("gateway_status_notify.send_proactive_group_text", fake_send):
+                    with patch("gateway_status_notify._executor_hostname", return_value="test-host"):
+                        notify_gateway_started()
+                        notify_gateway_stopping(reason="测试停止")
+                        notify_gateway_stopping(reason="重复")
+                assert len(sent) == 2
+                assert "代码更新后重启" in sent[0]
+                assert "陈墨" in sent[0]
+                assert "server.py" in sent[0]
+                assert "已关闭" in sent[1]
+                assert "测试停止" in sent[1]
+                assert not restart_path.is_file()
+
+        old = os.environ.pop("DINGTALK_NOTIFY_CONVERSATION_ID", None)
+        try:
+            os.environ["DINGTALK_NOTIFY_CONVERSATION_ID"] = "cidFromEnv=="
+            assert resolve_notify_conversation_id() == "cidFromEnv=="
+        finally:
+            os.environ.pop("DINGTALK_NOTIFY_CONVERSATION_ID", None)
+            if old is not None:
+                os.environ["DINGTALK_NOTIFY_CONVERSATION_ID"] = old
+
+
+def test_gateway_code_restart() -> None:
+    import json
+    import time
+    from unittest.mock import patch
+
+    from gateway_restart import (
+        list_gateway_files_changed_since,
+        read_and_clear_restart_context,
+        write_restart_context,
+    )
+
+    with tempfile.TemporaryDirectory() as tmp:
+        gateway_dir = Path(tmp) / "platform" / "dingtalk_gateway"
+        gateway_dir.mkdir(parents=True)
+        sample = gateway_dir / "server.py"
+        sample.write_text("# test\n", encoding="utf-8")
+        now = time.time()
+        with patch("gateway_restart.GATEWAY_DIR", gateway_dir):
+            with patch("gateway_restart.REPO_ROOT", Path(tmp)):
+                changed = list_gateway_files_changed_since(now - 5)
+                assert any(p.endswith("server.py") for p in changed)
+                assert not list_gateway_files_changed_since(now + 60)
+
+        ctx_path = Path(tmp) / "restart_context.json"
+        with patch("gateway_restart.RESTART_CONTEXT", ctx_path):
+            write_restart_context(operator="测试", changed_files=["platform/dingtalk_gateway/server.py"])
+            ctx = read_and_clear_restart_context()
+            assert ctx is not None
+            assert ctx.get("trigger") == "code_update"
+            assert ctx.get("operator") == "测试"
+            assert read_and_clear_restart_context() is None
+
+
 def main() -> int:
     test_env_check_fuzzy()
     print("[OK] test_env_check_fuzzy")
@@ -141,6 +258,14 @@ def main() -> int:
     print("[OK] test_report_nl_route")
     test_code_modify_guard()
     print("[OK] test_code_modify_guard")
+    test_gift_default_route()
+    print("[OK] test_gift_default_route")
+    test_adb_execution_guard()
+    print("[OK] test_adb_execution_guard")
+    test_gateway_status_notify()
+    print("[OK] test_gateway_status_notify")
+    test_gateway_code_restart()
+    print("[OK] test_gateway_code_restart")
     print("[PASS] gateway optimizations")
     return 0
 
