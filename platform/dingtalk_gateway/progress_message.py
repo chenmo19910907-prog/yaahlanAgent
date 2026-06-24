@@ -81,9 +81,11 @@ def _estimate_wait_seconds(ahead: int, *, prompt: str | None = None) -> tuple[in
 
 
 def format_eta_remaining(seconds: float | None, *, min_show_s: float = 0) -> str:
-    """格式化为「预计还需…」；超过 3 分钟显示「3分钟以上」。"""
-    if seconds is None or seconds <= 0:
+    """格式化为「预计还需…」；超过 3 分钟显示「3分钟以上」；四舍五入为 0 秒时提示即将完成。"""
+    if seconds is None:
         return ""
+    if seconds <= 0 or int(round(max(0.0, seconds))) <= 0:
+        return "，即将完成"
     if seconds < min_show_s:
         return ""
     if seconds > ETA_DISPLAY_CAP_S:

@@ -94,6 +94,10 @@ def test_eta_cap() -> None:
     short = format_batch_eta_remaining(45.0)
     assert short == "，预计还需约 45秒"
 
+    assert format_batch_eta_remaining(0.0) == "，即将完成"
+    assert format_batch_eta_remaining(0.4) == "，即将完成"
+    assert "预计还需0秒" not in format_batch_eta_remaining(0.4)
+
     msg = build_batch_progress_message(state)
     assert "3分钟以上" in msg
 
