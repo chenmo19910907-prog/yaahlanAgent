@@ -47,6 +47,8 @@ class TaskDispatcher:
         self._user_queues: dict[str, Queue[QueuedTask]] = {}
         self._user_sessions: dict[str, TaskSession] = {}
         self._user_workers_started: set[str] = set()
+        self._user_inflight: set[str] = set()
+        self._fast_inflight_user: str | None = None
         self._persist = get_queue_persist()
         self._fast_worker_started = False
 
@@ -58,6 +60,8 @@ class TaskDispatcher:
         self._user_queues = {}
         self._user_sessions = {}
         self._user_workers_started = set()
+        self._user_inflight = set()
+        self._fast_inflight_user = None
         self._persist = get_queue_persist()
 
         if not self._fast_worker_started:
@@ -120,36 +124,58 @@ class TaskDispatcher:
             logger.info("已清空 fast 排队 user=%s count=%d", user_key, drained)
         return drained
 
-    def request_cancel(self, user_key: str) -> CancelOutcome:
-        user_session = self._user_sessions.get(user_key)
-        user_busy = user_session is not None and user_session.is_busy()
+    def _lane_active_locked(self, user_key: str) -> tuple[bool, bool, bool, bool]:
+        """返回 (agent_busy, agent_inflight, fast_busy, fast_inflight)。"""
+        session = self._user_sessions.get(user_key)
+        agent_busy = session is not None and session.is_busy()
+        agent_inflight = user_key in self._user_inflight
         fast_busy = (
             self._fast_session.is_busy()
             and self._fast_session.busy_conversation_id() == user_key
         )
+        fast_inflight = self._fast_inflight_user == user_key
+        return agent_busy, agent_inflight, fast_busy, fast_inflight
+
+    def request_cancel(self, user_key: str) -> CancelOutcome:
+        with self._lock:
+            user_session = self._user_sessions.get(user_key)
+            agent_busy, agent_inflight, fast_busy, fast_inflight = (
+                self._lane_active_locked(user_key)
+            )
         drained = self._drain_agent_queue(user_key) + self._drain_fast_queue_for_user(
             user_key
         )
 
-        if not user_busy and not fast_busy:
+        agent_active = agent_busy or agent_inflight
+        fast_active = fast_busy or fast_inflight
+        if not agent_active and not fast_active:
             if drained > 0:
                 return CancelOutcome(status=True, drained=drained, cancelled_running=False)
             return CancelOutcome(status=None)
 
         results: list[bool | None] = []
-        if user_busy and user_session is not None:
-            results.append(user_session.request_cancel(user_key))
-        if fast_busy:
-            results.append(self._fast_session.request_cancel(user_key))
+        if agent_active:
+            session = user_session or self._user_session(user_key)
+            if agent_inflight and not agent_busy:
+                session.arm_cancel()
+                results.append(True)
+            elif agent_busy:
+                results.append(session.request_cancel(user_key))
+        if fast_active:
+            if fast_inflight and not fast_busy:
+                self._fast_session.arm_cancel()
+                results.append(True)
+            elif fast_busy:
+                results.append(self._fast_session.request_cancel(user_key))
 
         if any(result is False for result in results):
             return CancelOutcome(status=False, drained=drained, cancelled_running=False)
         if any(result is True for result in results):
             logger.info(
-                "中断已分发 user=%s agent_lane=%s fast_lane=%s drained=%s",
+                "中断已分发 user=%s agent_active=%s fast_active=%s drained=%s",
                 user_key,
-                user_busy,
-                fast_busy,
+                agent_active,
+                fast_active,
                 drained,
             )
             return CancelOutcome(
@@ -161,26 +187,27 @@ class TaskDispatcher:
             return CancelOutcome(status=True, drained=drained, cancelled_running=False)
         return CancelOutcome(status=None)
 
+    def _pending_ahead_locked(self, user_key: str) -> int:
+        queue = self._user_queues.get(user_key)
+        pending = queue.qsize() if queue is not None else 0
+        agent_busy, agent_inflight, fast_busy, fast_inflight = (
+            self._lane_active_locked(user_key)
+        )
+        agent_active = 1 if agent_busy or agent_inflight else 0
+        fast_active = 1 if fast_busy or fast_inflight else 0
+        return pending + agent_active + fast_active
+
     def pending_ahead(self, user_key: str) -> int:
         with self._lock:
-            queue = self._user_queues.get(user_key)
-            pending = queue.qsize() if queue is not None else 0
-            session = self._user_sessions.get(user_key)
-            busy = 1 if session is not None and session.is_busy() else 0
-            fast_busy = (
-                1
-                if self._fast_session.is_busy()
-                and self._fast_session.busy_conversation_id() == user_key
-                else 0
-            )
-        return pending + busy + fast_busy
+            return self._pending_ahead_locked(user_key)
 
     def enqueue(
         self,
         incoming: dingtalk_stream.ChatbotMessage,
         inbound: InboundMessage,
         user_key: str,
-    ) -> None:
+    ) -> int:
+        """入队并返回本任务前面的任务数（含执行中 / 已出队未 begin）。"""
         prompt = inbound.prompt_text()
         lane = "fast" if is_likely_fast_route(prompt) else "agent"
         task = QueuedTask(incoming=incoming, inbound=inbound, user_key=user_key, lane=lane)
@@ -191,21 +218,23 @@ class TaskDispatcher:
             conversation_id=incoming.conversation_id,
             sender_staff_id=incoming.sender_staff_id,
         )
-        if lane == "fast":
-            self._fast_queue.put(task)
-            return
         with self._lock:
-            if user_key not in self._user_queues:
-                self._user_queues[user_key] = Queue()
-            self._user_queues[user_key].put(task)
-            if user_key not in self._user_workers_started:
-                self._user_workers_started.add(user_key)
-                threading.Thread(
-                    target=self._agent_worker_loop,
-                    args=(user_key,),
-                    daemon=True,
-                    name=f"gateway-agent-{user_key[:20]}",
-                ).start()
+            ahead = self._pending_ahead_locked(user_key)
+            if lane == "fast":
+                self._fast_queue.put(task)
+            else:
+                if user_key not in self._user_queues:
+                    self._user_queues[user_key] = Queue()
+                self._user_queues[user_key].put(task)
+                if user_key not in self._user_workers_started:
+                    self._user_workers_started.add(user_key)
+                    threading.Thread(
+                        target=self._agent_worker_loop,
+                        args=(user_key,),
+                        daemon=True,
+                        name=f"gateway-agent-{user_key[:20]}",
+                    ).start()
+            return ahead
 
     def log_stale_pending_on_startup(self) -> None:
         stale = self._persist.drain_stale_on_startup()
@@ -218,6 +247,8 @@ class TaskDispatcher:
     def _fast_worker_loop(self) -> None:
         while True:
             task = self._fast_queue.get()
+            with self._lock:
+                self._fast_inflight_user = task.user_key
             try:
                 handler = self._handler
                 if handler is None:
@@ -232,6 +263,9 @@ class TaskDispatcher:
                     lane="fast",
                 )
             finally:
+                with self._lock:
+                    if self._fast_inflight_user == task.user_key:
+                        self._fast_inflight_user = None
                 self._fast_queue.task_done()
 
     def _agent_worker_loop(self, user_key: str) -> None:
@@ -239,6 +273,8 @@ class TaskDispatcher:
         session = self._user_session(user_key)
         while True:
             task = queue.get()
+            with self._lock:
+                self._user_inflight.add(user_key)
             try:
                 handler = self._handler
                 if handler is None:
@@ -253,4 +289,6 @@ class TaskDispatcher:
                     lane="agent",
                 )
             finally:
+                with self._lock:
+                    self._user_inflight.discard(user_key)
                 queue.task_done()

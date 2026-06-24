@@ -46,6 +46,10 @@ class TaskSession:
         self._active_agent: Any | None = None
         self._active_subprocess: subprocess.Popen[str] | None = None
 
+    def arm_cancel(self) -> None:
+        """在 begin 之前也可预置中断（worker 已取任务但尚未 begin）。"""
+        self._cancel_requested.set()
+
     def begin(
         self,
         prompt: str,
@@ -54,9 +58,11 @@ class TaskSession:
         budget_s: float = 600.0,
     ) -> None:
         with self._lock:
+            preserve_cancel = self._cancel_requested.is_set()
             self._busy = True
             self._conversation_id = conversation_id or ""
-            self._cancel_requested.clear()
+            if not preserve_cancel:
+                self._cancel_requested.clear()
             self._current_prompt = prompt
             self._started_at = time.monotonic()
             self._budget_s = max(1.0, budget_s)

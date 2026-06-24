@@ -103,7 +103,14 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
                 incoming,
                 inbound,
             )
-            self._dispatcher.enqueue(incoming, inbound, user_key)
+            ahead = self._dispatcher.enqueue(incoming, inbound, user_key)
+            if ahead > 0:
+                self._reply(
+                    build_queue_message(ahead, prompt=last_prompt),
+                    incoming,
+                    inbound,
+                    quote=False,
+                )
             return AckMessage.STATUS_OK, "OK"
 
         if inbound.is_empty:
@@ -117,7 +124,7 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
             )
             return AckMessage.STATUS_OK, "OK"
 
-        ahead = self._dispatcher.pending_ahead(user_key)
+        ahead = self._dispatcher.enqueue(incoming, inbound, user_key)
         if ahead > 0:
             self._reply(
                 f"{build_task_ack_message(inbound.summary_label(), prompt=inbound.prompt_text())}\n"
@@ -135,7 +142,6 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
                 incoming,
                 inbound,
             )
-        self._dispatcher.enqueue(incoming, inbound, user_key)
         return AckMessage.STATUS_OK, "OK"
 
 

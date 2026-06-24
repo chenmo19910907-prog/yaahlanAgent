@@ -73,6 +73,32 @@ def main() -> int:
             return 1
         print(f"[OK] pending_ahead includes fast busy ({ahead})")
 
+        # pending_ahead / 中断 计入 agent inflight（已出队未 begin）
+        with dispatcher._lock:
+            dispatcher._user_inflight.add(user_a)
+        ahead = dispatcher.pending_ahead(user_a)
+        got = dispatcher.request_cancel(user_a)
+        with dispatcher._lock:
+            dispatcher._user_inflight.discard(user_a)
+        if ahead < 1:
+            print(f"[FAIL] pending_ahead with agent inflight => {ahead}", file=sys.stderr)
+            return 1
+        if got != CancelOutcome(status=True, cancelled_running=True):
+            print(f"[FAIL] inflight-only cancel => {got!r}", file=sys.stderr)
+            return 1
+        print("[OK] agent inflight pending + cancel")
+
+        # busy + 队列各 1 条 => pending_ahead 为 2
+        agent_session.begin("占用中", conversation_id=user_a)
+        dispatcher._user_queues[user_a] = Queue()
+        dispatcher._user_queues[user_a].put(_fake_task(user_a, "排队任务A"))
+        ahead = dispatcher.pending_ahead(user_a)
+        agent_session.end()
+        if ahead != 2:
+            print(f"[FAIL] pending_ahead busy+queued => {ahead}", file=sys.stderr)
+            return 1
+        print("[OK] pending_ahead busy + queued")
+
         # 仅 agent 排队、未执行时也可取消
         dispatcher._user_queues[user_a] = Queue()
         dispatcher._user_queues[user_a].put(_fake_task(user_a, "排队任务1"))
