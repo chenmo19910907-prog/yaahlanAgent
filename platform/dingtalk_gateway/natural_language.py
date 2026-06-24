@@ -6,7 +6,7 @@ import json
 import re
 from typing import Any
 
-DOCTOR_LINE_RE = re.compile(r"^\s*\[(OK|FAIL|WARN)\]\s+(.+)$", re.M)
+DOCTOR_LINE_RE = re.compile(r"^\s*\[(OK|FAIL|WARN|SKIP)\]\s+(.+)$", re.M)
 KV_BULLET_RE = re.compile(r"^[-*]\s*(?:[\w.\[\]]+\s*)?(\w+)\s*=\s*(.+?)\s*$")
 
 _INTERESTING_KEYS = frozenset({
@@ -87,40 +87,96 @@ def naturalize_vip_failure(user_id: str, level: str, reason: str) -> str:
     return f"❌ 用户 {user_id} 升级到 VIP{level} 未成功。原因：{reason}"
 
 
+_CREDENTIAL_PROBE_NAMES = (
+    "钉钉文档 Cookie",
+    "钉钉 Excel Aegis",
+    "MOA Cookie",
+    "Admin Token",
+    "Tunnel Cookie",
+    "钉钉开放平台",
+)
+
+
+def _split_probe_name(detail: str) -> tuple[str, str]:
+    if ": " in detail:
+        name, msg = detail.split(": ", 1)
+        return name.strip(), msg.strip()
+    return detail.strip(), ""
+
+
+def _credential_status_label(status: str, msg: str) -> str:
+    if status == "SKIP":
+        return "未配置"
+    if status == "FAIL":
+        return msg or "无效"
+    if status == "WARN":
+        return msg or "异常"
+    return msg or "有效"
+
+
 def naturalize_doctor(raw: str) -> str:
-    oks: list[str] = []
-    fails: list[str] = []
-    warns: list[str] = []
+    parsed: dict[str, tuple[str, str]] = {}
+    other_oks: list[str] = []
+    other_fails: list[str] = []
+    other_warns: list[str] = []
 
     for line in raw.splitlines():
         match = DOCTOR_LINE_RE.match(line)
         if not match:
             continue
         status, detail = match.group(1), match.group(2).strip()
+        name, msg = _split_probe_name(detail)
+        if name in _CREDENTIAL_PROBE_NAMES:
+            parsed[name] = (status, msg)
+            continue
         if status == "FAIL":
-            fails.append(detail)
+            other_fails.append(detail)
         elif status == "WARN":
-            warns.append(detail)
-        else:
-            oks.append(detail)
+            other_warns.append(detail)
+        elif status != "SKIP":
+            other_oks.append(detail)
 
-    if not oks and not fails and not warns:
+    cred_lines: list[str] = []
+    cred_fails = 0
+    for name in _CREDENTIAL_PROBE_NAMES:
+        if name not in parsed:
+            continue
+        status, msg = parsed[name]
+        label = _credential_status_label(status, msg)
+        if status == "FAIL":
+            cred_fails += 1
+            cred_lines.append(f"• {name}：❌ {label}")
+        elif status == "WARN":
+            cred_lines.append(f"• {name}：⚠️ {label}")
+        elif status == "SKIP":
+            cred_lines.append(f"• {name}：— {label}")
+        else:
+            cred_lines.append(f"• {name}：✅ {label}")
+
+    if not cred_lines and not other_oks and not other_fails and not other_warns:
         return raw
 
     parts: list[str] = []
-    if fails:
+    has_cred = bool(cred_lines)
+    all_fail = cred_fails > 0 or bool(other_fails)
+
+    if all_fail:
         parts.append("❌ 环境检查未通过。")
-        parts.append("以下项目异常：" + "；".join(fails) + "。")
     else:
         parts.append("✅ 环境检查已通过。")
 
-    if oks:
-        shown = "；".join(oks[:12])
-        suffix = " 等。" if len(oks) > 12 else "。"
-        parts.append("以下项目正常：" + shown + suffix)
+    if has_cred:
+        parts.append("【凭证有效性】")
+        parts.extend(cred_lines)
 
-    if warns:
-        parts.append("以下项目需注意：" + "；".join(warns) + "。")
+    if other_fails:
+        parts.append("以下配置项异常：" + "；".join(other_fails) + "。")
+    if other_warns:
+        parts.append("以下配置项需注意：" + "；".join(other_warns) + "。")
+    if other_oks:
+        shown = "；".join(other_oks[:8])
+        suffix = " 等。" if len(other_oks) > 8 else "。"
+        parts.append("【本地配置】" + shown + suffix)
 
     return "\n".join(parts)
 

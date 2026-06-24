@@ -30,6 +30,7 @@ from .params import (
     set_family_member_fund_contrib_params,
     set_backdoor_execute_expr,
     set_id_auth_delete_person_params,
+    set_id_auth_del_relation_by_scene_params,
     set_id_auth_params,
     set_id_auth_reset_expire_params,
     set_noble_params,
@@ -143,6 +144,20 @@ def _op_id_auth_reset_expire(args: argparse.Namespace, payload: dict[str, Any]) 
     payload["method"] = "resetRelationPersonExpireTime"
     expire_ms = resolve_expire_ms(expire_ms=args.id_auth_expire_ms, expire_at=args.id_auth_expire_at)
     set_id_auth_reset_expire_params(payload, user_id=args.id_auth_reset_expire_user_id, expire_ms=expire_ms)
+
+
+def _op_id_auth_del_relation_by_scene(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if not args.id_auth_relation_scene:
+        raise ValueError(
+            "按场景删除真人认证须指定 --id-auth-relation-scene（DEALER=币商，ANCHOR=普通/主播）"
+        )
+    payload["url"] = "/service/internal/user/id-auth-api"
+    payload["method"] = "delRelationPersonInfoByScene"
+    set_id_auth_del_relation_by_scene_params(
+        payload,
+        user_id=args.id_auth_del_relation_user_id,
+        scene=args.id_auth_relation_scene,
+    )
 
 
 def _op_id_auth_delete(args: argparse.Namespace, payload: dict[str, Any]) -> None:
@@ -598,6 +613,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.query_user_by_phone is not None, _op_query_user_by_phone),
     (lambda a: a.id_auth_user_id is not None, _op_id_auth_query),
     (lambda a: a.id_auth_reset_expire_user_id is not None, _op_id_auth_reset_expire),
+    (lambda a: a.id_auth_del_relation_user_id is not None, _op_id_auth_del_relation_by_scene),
     (lambda a: a.id_auth_delete_user_id is not None, _op_id_auth_delete),
     (lambda a: a.vip_del_user_id is not None, _op_vip_del),
     (lambda a: _vip_try_mode(a), _op_vip_try_dispatch),

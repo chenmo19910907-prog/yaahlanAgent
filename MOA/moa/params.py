@@ -364,6 +364,20 @@ def set_id_auth_delete_person_params(payload: dict[str, Any], user_id: str) -> N
     payload["params"] = [string_param(user_id)]
 
 
+def set_id_auth_del_relation_by_scene_params(
+    payload: dict[str, Any],
+    user_id: str,
+    scene: str,
+) -> None:
+    user_id = str(user_id).strip()
+    scene = str(scene).strip().upper()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    if scene not in ("DEALER", "ANCHOR"):
+        raise ValueError("scene 须为 DEALER（币商）或 ANCHOR（普通/主播）")
+    payload["params"] = two_params(user_id, scene, second_type="string")
+
+
 def diamond_provide_defaults() -> dict[str, str]:
     return section_defaults(
         "diamond_provide",

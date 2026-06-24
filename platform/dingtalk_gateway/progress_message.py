@@ -9,6 +9,47 @@ from task_session import TaskSession
 QUEUE_ESTIMATE_MIN_PER_TASK = 3
 DEFAULT_AGENT_ESTIMATE_S = QUEUE_ESTIMATE_MIN_PER_TASK * 60
 
+# 自适应心跳：首次延迟与后续间隔的 clamp 范围（秒）
+HEARTBEAT_INITIAL_MIN_S = 40
+HEARTBEAT_INITIAL_MAX_S = 90
+HEARTBEAT_INTERVAL_MIN_S = 45
+HEARTBEAT_INTERVAL_MAX_S = 120
+HEARTBEAT_INITIAL_DEFAULT_S = 50
+HEARTBEAT_INTERVAL_DEFAULT_S = 60
+HEARTBEAT_MAX_COUNT = 4
+HEARTBEAT_REMAINING_MIN_S = 30
+# 预估剩余超过该值（秒）时，群内统一显示「3分钟以上」
+ETA_DISPLAY_CAP_S = 180
+
+
+def resolve_task_estimate_seconds(
+    task_kind: str | None = None,
+    *,
+    prompt: str | None = None,
+) -> float | None:
+    """同类任务预计总耗时（秒）；Agent 无历史时用 DEFAULT_AGENT_ESTIMATE_S。"""
+    kind = (task_kind or "").strip()
+    if not kind and prompt is not None:
+        kind = classify_task_kind(prompt)
+    store = get_duration_store()
+    estimate: float | None = None
+    if kind:
+        estimate = store.estimate_seconds(kind)
+        if estimate is None and kind.startswith("agent:"):
+            estimate = store.estimate_agent_seconds()
+    if estimate is None and (not kind or kind.startswith("agent:")):
+        return float(DEFAULT_AGENT_ESTIMATE_S)
+    return estimate
+
+
+def format_eta_total(seconds: float | None) -> str:
+    """任务开始时的总耗时预估（「预计约…」）。"""
+    if seconds is None or seconds <= 0:
+        return ""
+    if seconds > ETA_DISPLAY_CAP_S:
+        return "，预计约3分钟以上"
+    return f"，预计约 {format_duration(seconds)}"
+
 
 def format_duration(seconds: float) -> str:
     """将秒数格式化为钉钉群可读的中文时长。"""
@@ -37,6 +78,29 @@ def _estimate_wait_seconds(ahead: int, *, prompt: str | None = None) -> tuple[in
     if per_task is None:
         per_task = float(DEFAULT_AGENT_ESTIMATE_S)
     return count, max(30, int(round(count * per_task)))
+
+
+def format_eta_remaining(seconds: float | None, *, min_show_s: float = 0) -> str:
+    """格式化为「预计还需…」；超过 3 分钟显示「3分钟以上」。"""
+    if seconds is None or seconds <= 0:
+        return ""
+    if seconds < min_show_s:
+        return ""
+    if seconds > ETA_DISPLAY_CAP_S:
+        return "，预计还需3分钟以上"
+    return f"，预计还需约 {format_duration(seconds)}"
+
+
+def build_task_ack_message(summary: str, *, prompt: str | None = None) -> str:
+    """「已收到，执行中」确认语，含同类任务预估耗时。"""
+    label = (summary or "").strip() or "任务"
+    task_kind = classify_task_kind(prompt or "")
+    estimate = resolve_task_estimate_seconds(task_kind, prompt=prompt)
+    eta_part = format_eta_total(estimate)
+    body = f"已收到（{label}），执行中"
+    if eta_part:
+        body += eta_part
+    return f"{body}…"
 
 
 def build_queue_message(ahead: int, *, prompt: str | None = None) -> str:
@@ -70,9 +134,44 @@ def append_duration_footer(
     return f"{body}\n\n{footer}"
 
 
-def build_heartbeat_message(session: TaskSession) -> str:
-    elapsed_str = format_duration(session.elapsed_s())
-    return (
-        f"⏳ 仍在执行中，已执行{elapsed_str}… "
-        "可发「中断操作」打断你当前正在执行的任务。"
+def _clamp_heartbeat_seconds(value: float, lo: float, hi: float) -> float:
+    return max(lo, min(hi, value))
+
+
+def compute_heartbeat_schedule(task_kind: str | None) -> tuple[float, float]:
+    """返回 (首次心跳延迟秒, 后续间隔秒)，基于同类任务历史中位数。"""
+    kind = (task_kind or "").strip()
+    estimate = resolve_task_estimate_seconds(kind)
+    if estimate is None:
+        return HEARTBEAT_INITIAL_DEFAULT_S, HEARTBEAT_INTERVAL_DEFAULT_S
+    initial = _clamp_heartbeat_seconds(
+        estimate * 0.4,
+        HEARTBEAT_INITIAL_MIN_S,
+        HEARTBEAT_INITIAL_MAX_S,
     )
+    interval = _clamp_heartbeat_seconds(
+        estimate * 0.5,
+        HEARTBEAT_INTERVAL_MIN_S,
+        HEARTBEAT_INTERVAL_MAX_S,
+    )
+    return initial, interval
+
+
+def build_heartbeat_message(
+    session: TaskSession,
+    *,
+    estimate_s: float | None = None,
+) -> str:
+    elapsed_s = session.elapsed_s()
+    elapsed_str = format_duration(elapsed_s)
+    parts = [f"⏳ 仍在执行中，已执行{elapsed_str}"]
+    if estimate_s is not None and estimate_s > 0:
+        remaining = max(0.0, estimate_s - elapsed_s)
+        eta_part = format_eta_remaining(
+            remaining,
+            min_show_s=HEARTBEAT_REMAINING_MIN_S,
+        )
+        if eta_part:
+            parts.append(eta_part)
+    parts.append("… 可发「中断操作」打断你当前正在执行的任务。")
+    return "".join(parts)

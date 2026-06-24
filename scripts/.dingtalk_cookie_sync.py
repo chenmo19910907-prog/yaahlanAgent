@@ -22,11 +22,10 @@ from mcp_paths import (
     MCP_SECRETS,
     merge_mcp_local,
 )
+from credential_probe import probe_dingtalk_doc_cookie, validate_dingtalk_doc_cookie_format
 
 MCP_SERVER_KEYS = ("dingtalk-doc", "user-dingtalk-doc")
 _DEFAULT_PROBE_NODE = "jb9Y4gmKWr7wodldCZEEZ3n1VGXn6lpz"
-_ALIDOCS_BASE = "https://alidocs.dingtalk.com"
-_BOX_LIST_API = f"{_ALIDOCS_BASE}/box/api/v2/dentry/list"
 
 
 @dataclass
@@ -193,77 +192,11 @@ def _sync_to_all(cookie: str, *, dry_run: bool) -> None:
 
 
 def _validate_format(cookie: str) -> List[str]:
-    text = _normalize_cookie(cookie)
-    issues: List[str] = []
-    if not text:
-        issues.append("Cookie 为空")
-        return issues
-    if "doc_atoken=" not in text:
-        issues.append("缺少 doc_atoken（请从 alidocs.dingtalk.com 业务请求复制完整 Cookie）")
-    if "XSRF-TOKEN=" not in text:
-        issues.append("缺少 XSRF-TOKEN")
-    if len(text) < 80:
-        issues.append("Cookie 过短，可能复制不完整")
-    return issues
+    return validate_dingtalk_doc_cookie_format(cookie)
 
 
 def _probe_cookie(cookie: str, *, node_id: str) -> tuple[bool, str]:
-    import ssl
-    import urllib.error
-    import urllib.parse
-    import urllib.request
-
-    xsrf_m = re.search(r"XSRF-TOKEN=([^;]+)", cookie)
-    xsrf = xsrf_m.group(1) if xsrf_m else ""
-
-    params = urllib.parse.urlencode(
-        {
-            "dentryUuid": node_id,
-            "orderType": "SORT_KEY",
-            "sortType": "desc",
-            "listDentrySource": "2",
-            "pageSize": 1,
-        }
-    )
-    url = f"{_BOX_LIST_API}?{params}"
-    req = urllib.request.Request(
-        url,
-        headers={
-            "cookie": cookie,
-            "user-agent": (
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-            ),
-            "accept": "application/json, text/plain, */*",
-            "referer": f"{_ALIDOCS_BASE}/i/nodes/{node_id}",
-            "x-xsrf-token": xsrf,
-        },
-        method="GET",
-    )
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-
-    try:
-        with urllib.request.urlopen(req, context=ctx, timeout=30) as response:
-            status = response.status
-            body = response.read().decode("utf-8", errors="replace")
-    except urllib.error.HTTPError as exc:
-        if exc.code in (401, 403):
-            return False, f"HTTP {exc.code}，Cookie 无效或已过期"
-        return False, f"HTTP {exc.code}"
-    except urllib.error.URLError as exc:
-        return False, f"网络错误: {exc.reason}"
-
-    if status >= 400:
-        return False, f"HTTP {status}"
-    try:
-        payload = json.loads(body)
-    except json.JSONDecodeError:
-        return False, "响应非 JSON，可能已跳转登录页"
-    if not payload.get("isSuccess", True) and payload.get("status") not in (200, None):
-        return False, f"API 返回失败: {payload.get('status')}"
-    return True, "Box API 探测通过"
+    return probe_dingtalk_doc_cookie(cookie, node_id=node_id)
 
 
 def _print_status(sources: List[CookieSource]) -> int:

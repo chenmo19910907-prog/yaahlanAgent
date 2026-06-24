@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -35,9 +34,14 @@ def _check(name: str, ok: bool, detail: str) -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser(description="环境自检（MOA / MCP / 用例目录）")
     parser.add_argument(
+        "--skip-probe",
+        action="store_true",
+        help="跳过各 Cookie/Token 在线探活（仅检查文件与变量是否配置）",
+    )
+    parser.add_argument(
         "--run-moa-probe",
         action="store_true",
-        help="尝试执行 MOA VIP 查询探活（需有效 Cookie）",
+        help="（已废弃，默认会探活）仅执行 MOA VIP 查询探活",
     )
     parser.add_argument(
         "--check-testcases",
@@ -122,33 +126,17 @@ def main() -> int:
         p = ROOT / sub
         _check(label, p.is_dir(), "存在" if p.is_dir() else "缺失")
 
-    if args.run_moa_probe and moa_vars.get("MOA_COOKIE"):
+    if not args.skip_probe:
+        from credential_probe import print_credential_probes
+
+        print()
+        ok_all &= print_credential_probes()
+    elif args.run_moa_probe and moa_vars.get("MOA_COOKIE"):
+        from credential_probe import probe_moa_cookie
+
         print("\n=== MOA 探活 ===")
-        cmd = [
-            sys.executable,
-            str(ROOT / "MOA" / "moa_execute.py"),
-            "--payload-file",
-            str(ROOT / "MOA" / "templates" / "VIP-增加经验值.json"),
-            "--vip-user-id",
-            "100465989",
-            "--vip-query-current",
-        ]
-        env = {**os.environ, **moa_vars}
-        try:
-            proc = subprocess.run(
-                cmd,
-                cwd=str(ROOT),
-                env=env,
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
-            ok = proc.returncode == 0 and "vipLevel" in (proc.stdout or "")
-            ok_all &= _check("MOA 查询", ok, "成功" if ok else (proc.stderr or proc.stdout)[:200])
-        except subprocess.TimeoutExpired:
-            ok_all &= _check("MOA 查询", False, "超时")
-        except OSError as exc:
-            ok_all &= _check("MOA 查询", False, str(exc))
+        moa_ok, moa_detail = probe_moa_cookie()
+        ok_all &= _check("MOA 查询", moa_ok, moa_detail)
 
     if args.check_testcases and md_count:
         print("\n=== 用例格式校验 ===")

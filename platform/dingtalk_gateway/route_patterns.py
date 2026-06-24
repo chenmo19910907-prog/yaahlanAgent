@@ -45,9 +45,11 @@ CATALOG_OPEN_RE = re.compile(
     r"\s*(?:html|HTML)?\s*$",
     re.I,
 )
-SCHEDULE_QUERY_RE = re.compile(
-    r"(?:2026\s*[- ]?Q2|Q2\s*排期|版本排期|需求排期|排期表|查\s*排期|查询\s*排期|"
-    r"同步\s*排期|排期\s*内容|排期\s*链接|schedule)",
+
+# 含这些特征视为自然语言任务，不做模糊口令归一
+_NL_TASK_RE = re.compile(
+    r"(https?://|alidocs\.dingtalk|\d{5,}|查|查询|生成|介绍|分析|"
+    r"user\s*id|userid|用例|报告|升级\s*VIP?\s*\d|导出\s+\S+\.(csv|json|md))",
     re.I,
 )
 
@@ -73,6 +75,26 @@ def normalize_report_prompt(text: str) -> str | None:
     return None
 
 
+def normalize_fuzzy_fast_command(text: str) -> str | None:
+    """模糊快捷口令 → 标准 fast 路由口令（如「帮我 MOA 探活」→「MOA检查」）。"""
+    t = (text or "").strip()
+    if not t or len(t) > 48:
+        return None
+    if any(pattern.match(t) for pattern in _FAST_ROUTE_RES):
+        return None
+    if _NL_TASK_RE.search(t):
+        return None
+    if re.search(r"moa|探活", t, re.I):
+        return "MOA检查"
+    if re.search(r"环境|doctor|配置检查", t, re.I):
+        return "环境检查"
+    if re.search(r"工具|工作台|catalog|平台清单|说明书", t, re.I):
+        return "工具平台"
+    if re.search(r"帮助|说明|help|怎么用|用法", t, re.I):
+        return "帮助"
+    return None
+
+
 def is_likely_fast_route(text: str) -> bool:
     """入队时判断是否走 fast 队列（不与 Agent 任务互斥）。"""
     t = (text or "").strip()
@@ -82,6 +104,6 @@ def is_likely_fast_route(text: str) -> bool:
         return True
     if normalize_report_prompt(t):
         return True
-    if SCHEDULE_QUERY_RE.search(t):
+    if normalize_fuzzy_fast_command(t):
         return True
     return any(pattern.match(t) for pattern in _FAST_ROUTE_RES)

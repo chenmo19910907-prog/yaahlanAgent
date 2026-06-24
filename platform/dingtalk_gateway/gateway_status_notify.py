@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("dingtalk-gateway")
 
 NOTIFY_DATA = GATEWAY_DIR / "data" / "notify_group.json"
+SILENT_RESTART_FLAG = GATEWAY_DIR / "data" / "silent_restart.flag"
 EXECUTOR_CONFIG = GATEWAY_DIR / "config" / "executor.local.json"
 
 _client: Any | None = None
@@ -65,6 +66,14 @@ def _save_notify_data(payload: dict[str, str]) -> None:
         json.dumps(payload, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+
+
+def _skip_lifecycle_notify() -> bool:
+    return SILENT_RESTART_FLAG.is_file()
+
+
+def _clear_silent_restart_flag() -> None:
+    SILENT_RESTART_FLAG.unlink(missing_ok=True)
 
 
 def resolve_notify_conversation_id() -> str | None:
@@ -166,6 +175,11 @@ def _format_changed_files_summary(changed_files: object) -> str:
 
 
 def notify_gateway_started(*, client: Any | None = None) -> None:
+    if _skip_lifecycle_notify():
+        _clear_silent_restart_flag()
+        logger.info("静默重启，跳过启动通知")
+        return
+
     from gateway_restart import read_and_clear_restart_context
 
     host = _executor_hostname()
@@ -190,6 +204,10 @@ def notify_gateway_started(*, client: Any | None = None) -> None:
 
 
 def notify_gateway_stopping(*, reason: str = "服务停止", client: Any | None = None) -> None:
+    if _skip_lifecycle_notify():
+        logger.info("静默重启，跳过关闭通知")
+        return
+
     global _stop_notified
     with _lock:
         if _stop_notified:

@@ -66,8 +66,6 @@ def classify_task_kind(
         return "agent:gift"
     if re.search(r"抓包|tunnel", text, re.I):
         return "agent:tunnel"
-    if re.search(r"排期|schedule", text, re.I):
-        return "fast:schedule"
     if re.search(r"查询|查\s*user|用户\s*\d{5,}|\d{6,}", text, re.I):
         return "agent:query"
     if re.search(r"修改|代码|网关", text):

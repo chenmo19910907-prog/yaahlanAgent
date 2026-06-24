@@ -384,6 +384,19 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/实名认证-设置认证过期时间.json \\\n  --id-auth-reset-expire-user-id <userId> \\\n  --id-auth-expire-at tomorrow\n"
     },
     {
+      "id": "id_auth_del_relation_by_scene",
+      "name": "实名认证-按场景删除真人认证",
+      "category": "实名认证（internal/user/id-auth-api）",
+      "description": "按场景删除真人认证（delRelationPersonInfoByScene；DEALER=币商，ANCHOR=普通/主播）",
+      "prompts": [
+        "删除用户 <userId> 币商真人认证",
+        "清除用户 <userId> 币商真人认证",
+        "删除用户 <userId> 普通真人认证",
+        "删除用户 <userId> 主播真人认证"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/实名认证-按场景删除真人认证.json \\\n  --id-auth-del-relation-user-id <userId> \\\n  --id-auth-relation-scene DEALER\n"
+    },
+    {
       "id": "id_auth_delete_person",
       "name": "实名认证-清除认证信息",
       "category": "实名认证（internal/user/id-auth-api）",

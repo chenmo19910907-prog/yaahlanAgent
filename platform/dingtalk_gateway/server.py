@@ -18,7 +18,7 @@ from log_redact import redact_for_log
 from moa_health import probe_moa_cookie
 from moa_watch import start_moa_watch
 from process_guard import ensure_single_gateway_process
-from progress_message import build_queue_message
+from progress_message import build_queue_message, build_task_ack_message
 from quoted_reply import quote_text_from_inbound, reply_quoted
 from replay import is_replay_command
 from task_dispatcher import TaskDispatcher
@@ -98,7 +98,11 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
                 self._reply("您暂无上次任务，无法重新执行。", incoming, inbound)
                 return AckMessage.STATUS_OK, "OK"
             inbound = InboundMessage(text=last_prompt)
-            self._reply(f"已收到（重新执行：{last_prompt[:50]}…），执行中…", incoming, inbound)
+            self._reply(
+                f"{build_task_ack_message(f'重新执行：{last_prompt[:50]}…', prompt=last_prompt)}",
+                incoming,
+                inbound,
+            )
             self._dispatcher.enqueue(incoming, inbound, user_key)
             return AckMessage.STATUS_OK, "OK"
 
@@ -116,14 +120,21 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
         ahead = self._dispatcher.pending_ahead(user_key)
         if ahead > 0:
             self._reply(
-                f"已收到（{inbound.summary_label()}），"
-                f"{build_queue_message(ahead, prompt=inbound.prompt_text())}…\n"
+                f"{build_task_ack_message(inbound.summary_label(), prompt=inbound.prompt_text())}\n"
+                f"{build_queue_message(ahead, prompt=inbound.prompt_text())}\n"
                 "执行中可发「中断操作」打断你的任务。",
                 incoming,
                 inbound,
             )
         else:
-            self._reply(f"已收到（{inbound.summary_label()}），执行中…", incoming, inbound)
+            self._reply(
+                build_task_ack_message(
+                    inbound.summary_label(),
+                    prompt=inbound.prompt_text(),
+                ),
+                incoming,
+                inbound,
+            )
         self._dispatcher.enqueue(incoming, inbound, user_key)
         return AckMessage.STATUS_OK, "OK"
 

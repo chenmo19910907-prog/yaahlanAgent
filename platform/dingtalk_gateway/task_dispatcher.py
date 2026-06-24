@@ -48,28 +48,25 @@ class TaskDispatcher:
         self._user_sessions: dict[str, TaskSession] = {}
         self._user_workers_started: set[str] = set()
         self._persist = get_queue_persist()
-
-        threading.Thread(
-            target=self._fast_worker_loop,
-            daemon=True,
-            name="gateway-fast-worker",
-        ).start()
+        self._fast_worker_started = False
 
     def bind_handler(self, handler: Any) -> None:
         self._handler = handler
         self._lock = threading.Lock()
-        self._fast_queue: Queue[QueuedTask] = Queue()
+        self._fast_queue = Queue()
         self._fast_session = TaskSession()
-        self._user_queues: dict[str, Queue[QueuedTask]] = {}
-        self._user_sessions: dict[str, TaskSession] = {}
-        self._user_workers_started: set[str] = set()
+        self._user_queues = {}
+        self._user_sessions = {}
+        self._user_workers_started = set()
         self._persist = get_queue_persist()
 
-        threading.Thread(
-            target=self._fast_worker_loop,
-            daemon=True,
-            name="gateway-fast-worker",
-        ).start()
+        if not self._fast_worker_started:
+            self._fast_worker_started = True
+            threading.Thread(
+                target=self._fast_worker_loop,
+                daemon=True,
+                name="gateway-fast-worker",
+            ).start()
 
     def _user_session(self, user_key: str) -> TaskSession:
         with self._lock:

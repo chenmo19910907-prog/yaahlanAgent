@@ -13,16 +13,17 @@ LOG_DIR="$DIR/logs"
 
 usage() {
   cat <<EOF
-用法: $0 <install|uninstall|start|stop|restart|status|logs|health|health-deep>
+用法: $0 <install|uninstall|start|stop|restart|silent-restart|status|logs|health|health-deep>
 
-  install    安装 launchd 并启动（开机自启 + 崩溃重启）
-  uninstall  停止并移除 launchd
-  start      启动服务
-  stop       停止服务
-  restart    重启服务
+  install         安装 launchd 并启动（开机自启 + 崩溃重启）
+  uninstall       停止并移除 launchd
+  start           启动服务
+  stop            停止服务
+  restart         重启服务（推送启停通知）
+  silent-restart  重启服务（不推送启停通知）
   status     查看运行状态
   logs       跟踪 gateway.log
-  health     Bridge / MOA / 凭证健康检查
+  health     Bridge / MOA / 各 Cookie·Token 有效性检查
   health-deep  同上，且 server 未运行时做 SDK pong
 EOF
 }
@@ -67,6 +68,20 @@ restart_service() {
   echo "[OK] 已重启 $LABEL"
 }
 
+silent_restart_service() {
+  ensure_logs
+  mkdir -p "$DIR/data"
+  date -u +"%Y-%m-%dT%H:%M:%SZ" > "$DIR/data/silent_restart.flag"
+  pkill -9 -f "dingtalk_gateway/server.py" 2>/dev/null || true
+  pkill -9 -f "dingtalk_gateway/bot_echo.py" 2>/dev/null || true
+  sleep 0.5
+  launchctl kickstart "$SERVICE" 2>/dev/null || {
+    launchctl bootstrap "$DOMAIN" "$PLIST_DST"
+    launchctl kickstart "$SERVICE"
+  }
+  echo "[OK] 已静默重启 ${LABEL} (未推送启停通知)"
+}
+
 show_status() {
   echo "=== launchd ==="
   launchctl print "$SERVICE" 2>/dev/null | rg -n "state =|pid =|last exit|runs =|path =" || echo "服务未安装或未运行"
@@ -99,6 +114,7 @@ case "$cmd" in
   start) start_service ;;
   stop) stop_service ;;
   restart) restart_service ;;
+  silent-restart) silent_restart_service ;;
   status) show_status ;;
   logs) follow_logs ;;
   health) run_health ;;

@@ -11,11 +11,16 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from env_loader import ENV_LOCAL, load_env_local, require_env
-from moa_health import probe_moa_cookie
-
 GATEWAY_DIR = Path(__file__).resolve().parent
 REPO_ROOT = GATEWAY_DIR.parent.parent
+
+from env_loader import ENV_LOCAL, load_env_local, require_env
+
+_SCRIPTS = REPO_ROOT / "scripts"
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from credential_probe import print_credential_probes  # noqa: E402
 ERR_LOG = GATEWAY_DIR / "logs" / "gateway.err.log"
 ERR_LOG_MAX_AGE_H = 24
 
@@ -145,10 +150,10 @@ def main() -> int:
     moa_env = REPO_ROOT / "MOA" / ".env.local"
     ok_all &= _check("MOA/.env.local", moa_env.is_file(), "存在" if moa_env.is_file() else "缺失")
 
-    moa_ok, moa_detail = probe_moa_cookie()
-    ok_all &= _check("MOA Cookie", moa_ok, moa_detail)
-
     ok_all &= _check(".env.local", ENV_LOCAL.is_file(), str(ENV_LOCAL))
+
+    print()
+    ok_all &= print_credential_probes()
 
     print()
     if ok_all:

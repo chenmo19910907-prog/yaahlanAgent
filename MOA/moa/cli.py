@@ -168,6 +168,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="认证过期时间（自然语言/日期），如 tomorrow/明天、+1d、2026-05-30 23:59:59",
     )
     parser.add_argument("--id-auth-delete-user-id", help="清除用户认证信息")
+    parser.add_argument("--id-auth-del-relation-user-id", help="按场景删除真人认证 userId")
+    parser.add_argument(
+        "--id-auth-relation-scene",
+        choices=["DEALER", "ANCHOR"],
+        help="真人认证场景：DEALER=币商，ANCHOR=普通/主播",
+    )
     parser.add_argument("--id-auth-fix-failure-user-id", help="解决认证失败（清 reason 关联账号）")
 
     parser.add_argument("--user-prop-query-user-id", help="查询用户拥有装扮 userId（queryOwnPropList）")

@@ -10,6 +10,15 @@ from typing import Any
 import dingtalk_stream
 
 from adb_execution_guard import adb_execution_denial_message, looks_like_adb_execution_request
+from batch_progress import (
+    PUSH_POLL_INTERVAL_S,
+    build_batch_progress_message,
+    clear_batch_progress,
+    is_batch_progress_active,
+    read_batch_progress,
+    should_push_batch_progress,
+)
+from batch_result import choose_final_reply_source, clear_batch_result, pop_batch_result
 from command_hints import suggest_command_hint
 from command_router import try_route
 from code_modify_guard import guard_readonly_agent_reply
@@ -30,10 +39,16 @@ from dingtalk_media import download_message_images
 from export_delivery import deliver_reply, is_view_all_follow_up
 from inbound_message import InboundMessage
 from log_redact import redact_for_log
-from progress_message import append_duration_footer, build_heartbeat_message
+from progress_message import (
+    HEARTBEAT_MAX_COUNT,
+    append_duration_footer,
+    build_heartbeat_message,
+    compute_heartbeat_schedule,
+    resolve_task_estimate_seconds,
+)
 from queue_persist import get_queue_persist
 from reply_formatter import format_exception, format_group_reply
-from route_patterns import normalize_report_prompt
+from route_patterns import normalize_fuzzy_fast_command, normalize_report_prompt
 from task_session import TaskInterrupted, TaskSession
 from testcase_auto_export import (
     export_generated_testcases_safe,
@@ -42,7 +57,6 @@ from testcase_auto_export import (
 from user_agent_pool import get_user_agent_pool
 
 logger = logging.getLogger("dingtalk-gateway")
-HEARTBEAT_INTERVAL_S = 55
 
 
 def _reply_final(
@@ -60,27 +74,150 @@ def _reply_final(
     handler._reply(body, incoming, inbound, quote=quote)
 
 
+def _heartbeat_estimate_seconds(task_kind: str) -> float | None:
+    return resolve_task_estimate_seconds(task_kind)
+
+
 def _start_heartbeat(
     handler: Any,
     incoming: dingtalk_stream.ChatbotMessage,
     session: TaskSession,
     conversation_id: str,
+    *,
+    lane: str,
+    task_kind: str,
+    user_key: str = "",
 ) -> threading.Event:
     stop = threading.Event()
+    if lane == "fast":
+        return stop
+
+    initial_delay, interval = compute_heartbeat_schedule(task_kind)
 
     def loop() -> None:
-        while not stop.wait(HEARTBEAT_INTERVAL_S):
+        if stop.wait(initial_delay):
+            return
+        sent = 0
+        while sent < HEARTBEAT_MAX_COUNT:
             if not session.is_busy():
                 return
             if session.busy_conversation_id() != conversation_id:
                 return
+            if user_key and is_batch_progress_active(user_key):
+                if stop.wait(interval):
+                    return
+                continue
             try:
-                handler._reply(build_heartbeat_message(session), incoming, quote=False)
+                estimate = _heartbeat_estimate_seconds(task_kind)
+                handler._reply(
+                    build_heartbeat_message(session, estimate_s=estimate),
+                    incoming,
+                    quote=False,
+                )
             except Exception as exc:  # noqa: BLE001
                 logger.warning("心跳回复失败: %s", exc)
+            sent += 1
+            if sent >= HEARTBEAT_MAX_COUNT or stop.wait(interval):
+                return
 
     threading.Thread(target=loop, daemon=True, name="gateway-heartbeat").start()
     return stop
+
+
+def _start_batch_progress_watcher(
+    handler: Any,
+    incoming: dingtalk_stream.ChatbotMessage,
+    inbound: InboundMessage | None,
+    session: TaskSession,
+    user_key: str,
+    *,
+    lane: str,
+) -> threading.Event:
+    """轮询 batch_progress 文件，向群内推送 N/M 进度。"""
+    stop = threading.Event()
+    if lane == "fast" or not user_key:
+        return stop
+
+    def loop() -> None:
+        last_pushed = 0
+        last_push_at = 0.0
+        while not stop.wait(PUSH_POLL_INTERVAL_S):
+            if not session.is_busy():
+                return
+            if session.busy_conversation_id() != user_key:
+                return
+            state = read_batch_progress(user_key)
+            if state is None:
+                continue
+            now = time.monotonic()
+            if not should_push_batch_progress(
+                state,
+                last_pushed_current=last_pushed,
+                last_push_at=last_push_at,
+                now=now,
+            ):
+                continue
+            try:
+                handler._reply(
+                    build_batch_progress_message(state),
+                    incoming,
+                    inbound,
+                    quote=False,
+                )
+                last_pushed = state.current
+                last_push_at = now
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("批量进度推送失败: %s", exc)
+            if state.current >= state.total:
+                return
+
+    threading.Thread(
+        target=loop,
+        daemon=True,
+        name="gateway-batch-progress",
+    ).start()
+    return stop
+
+
+def _schedule_testcase_export_followup(
+    handler: Any,
+    incoming: dingtalk_stream.ChatbotMessage,
+    inbound: InboundMessage | None,
+    *,
+    prompt: str,
+    started_wall: float,
+) -> None:
+    """后台同步测试用例到钉钉，完成后单独发一条链接消息。"""
+
+    def worker() -> None:
+        try:
+            tc_items = export_generated_testcases_safe(
+                repo_root=repo_cwd(),
+                prompt=prompt,
+                since_wall_ts=started_wall,
+            )
+            if not tc_items:
+                return
+            tc_message = format_testcase_export_message(tc_items)
+            if not tc_message:
+                return
+            handler._reply(
+                truncate_for_dingtalk(tc_message),
+                incoming,
+                inbound,
+                quote=False,
+            )
+            for item in tc_items:
+                if item.url:
+                    logger.info("测试用例已同步 %s url=%s", item.name, item.url)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("后台用例导出失败: %s", exc)
+
+    threading.Thread(
+        target=worker,
+        daemon=True,
+        name="gateway-tc-export",
+    ).start()
 
 
 def process_inbound_task(
@@ -104,15 +241,42 @@ def process_inbound_task(
             image_download_codes=inbound.image_download_codes,
             links=inbound.links,
         )
+    else:
+        fuzzy = normalize_fuzzy_fast_command(prompt)
+        if fuzzy:
+            prompt = fuzzy
+            inbound = InboundMessage(
+                text=fuzzy,
+                image_download_codes=inbound.image_download_codes,
+                links=inbound.links,
+            )
 
     sender_name = incoming.sender_nick or incoming.sender_staff_id or incoming.sender_id or ""
+    task_kind = classify_task_kind(prompt)
     started = time.monotonic()
     started_wall = time.time()
     session.begin(prompt, conversation_id=user_key, budget_s=DEFAULT_TIMEOUT_S)
-    heartbeat_stop = _start_heartbeat(handler, incoming, session, user_key)
+    clear_batch_progress(user_key)
+    clear_batch_result(user_key)
+    heartbeat_stop = _start_heartbeat(
+        handler,
+        incoming,
+        session,
+        user_key,
+        lane=lane,
+        task_kind=task_kind,
+        user_key=user_key,
+    )
+    batch_progress_stop = _start_batch_progress_watcher(
+        handler,
+        incoming,
+        inbound,
+        session,
+        user_key,
+        lane=lane,
+    )
     status = "error"
     code_modify_session = False
-    task_kind = classify_task_kind(prompt)
     persist = get_queue_persist()
     try:
         logger.info(
@@ -264,28 +428,19 @@ def process_inbound_task(
             session.check_cancelled()
             raw_result = guard_readonly_agent_reply(raw_result, allow_code_modify=code_allowed)
             session.check_cancelled()
-            result = format_group_reply(raw_result, prompt=prompt, source="agent")
-            store.save_full_reply(incoming.conversation_id, result, **store_kwargs)
+            agent_formatted = format_group_reply(raw_result, prompt=prompt, source="agent")
+            batch_result = pop_batch_result(user_key)
+            final_body, final_source = choose_final_reply_source(
+                agent_formatted=agent_formatted,
+                batch_result=batch_result,
+            )
+            if final_source == "batch":
+                logger.info("批量任务使用 --result-text 作为最终群消息 conv=%s", user_key)
+            store.save_full_reply(incoming.conversation_id, final_body, **store_kwargs)
             session.set_phase("reply")
             session.check_cancelled()
-            delivery = deliver_reply(result, prompt)
+            delivery = deliver_reply(final_body, prompt)
             reply_message = delivery.message
-            session.set_phase("export")
-            session.check_cancelled()
-            tc_items = export_generated_testcases_safe(
-                repo_root=repo_cwd(),
-                prompt=prompt,
-                since_wall_ts=started_wall,
-            )
-            session.check_cancelled()
-            if tc_items:
-                tc_message = format_testcase_export_message(tc_items)
-                if tc_message:
-                    reply_message = (
-                        f"{reply_message}\n\n{tc_message}"
-                        if reply_message.strip()
-                        else tc_message
-                    )
             if code_modify_session:
                 session.check_cancelled()
                 changed_files = list_gateway_files_changed_since(started_wall)
@@ -308,9 +463,13 @@ def process_inbound_task(
             )
             if delivery.exported:
                 logger.info("已导出 %s url=%s", delivery.local_path, delivery.file_url)
-            for item in tc_items:
-                if item.url:
-                    logger.info("测试用例已同步 %s url=%s", item.name, item.url)
+            _schedule_testcase_export_followup(
+                handler,
+                incoming,
+                inbound,
+                prompt=prompt,
+                started_wall=started_wall,
+            )
 
         store.save(incoming.conversation_id, prompt, **store_kwargs)
         status = "ok"
@@ -346,6 +505,9 @@ def process_inbound_task(
         store.save(incoming.conversation_id, prompt, **store_kwargs)
     finally:
         heartbeat_stop.set()
+        batch_progress_stop.set()
+        clear_batch_progress(user_key)
+        clear_batch_result(user_key)
         get_user_agent_pool().touch(user_key)
         session.end()
         persist.remove(user_key=user_key, prompt=prompt)

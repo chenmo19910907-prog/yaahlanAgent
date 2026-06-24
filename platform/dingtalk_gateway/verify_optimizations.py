@@ -103,10 +103,17 @@ def test_truncate_guide() -> None:
 
 
 def test_report_nl_route() -> None:
-    from route_patterns import normalize_report_prompt, is_likely_fast_route
+    from route_patterns import (
+        is_likely_fast_route,
+        normalize_fuzzy_fast_command,
+        normalize_report_prompt,
+    )
 
     assert normalize_report_prompt("帮我生成2.5.4版本测试报告") == "2.5.4版本生成测试报告"
     assert is_likely_fast_route("帮我生成2.5.4版本测试报告")
+    assert normalize_fuzzy_fast_command("帮我 MOA 探活") == "MOA检查"
+    assert is_likely_fast_route("帮我 MOA 探活")
+    assert normalize_fuzzy_fast_command("平台说明书在哪") == "工具平台"
 
 
 def test_code_modify_guard() -> None:
@@ -219,14 +226,6 @@ def test_duration_history() -> None:
         assert reloaded.estimate_seconds("agent:query") == 100.0
 
 
-def test_schedule_query_route() -> None:
-    from route_patterns import SCHEDULE_QUERY_RE
-
-    assert SCHEDULE_QUERY_RE.search("查 Q2 排期")
-    result = try_route("查询排期表")
-    assert result.handled
-
-
 def test_gateway_code_restart() -> None:
     import json
     import time
@@ -293,8 +292,6 @@ def main() -> int:
     print("[OK] test_gateway_status_notify")
     test_duration_history()
     print("[OK] test_duration_history")
-    test_schedule_query_route()
-    print("[OK] test_schedule_query_route")
     test_gateway_code_restart()
     print("[OK] test_gateway_code_restart")
     print("[PASS] gateway optimizations")

@@ -24,6 +24,9 @@ def _load_env_file(env_path: str) -> None:
 
 def load_local_env(base_dir: str) -> None:
     """从 MOA/.env.local 读取环境变量（不覆盖已有变量）。"""
+    from .venv_bootstrap import ensure_moa_venv
+
+    ensure_moa_venv()
     _load_env_file(os.path.join(base_dir, ".env.local"))
 
     from .runtime_config import load_runtime_config

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,10 @@ DEFAULT_SERVER_KEYS = (
     "dingtalk-excel-read",
     "dingtalk-excel-write",
 )
+
+_cache_lock = threading.Lock()
+_cached_servers: dict[str, StdioMcpServerConfig] | None = None
+_cache_signature: tuple[float, float] | None = None
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -86,10 +91,19 @@ def _env_ready(server_key: str, env: dict[str, str]) -> bool:
     return bool(env)
 
 
-def build_stdio_mcp_servers(
-  server_keys: tuple[str, ...] = DEFAULT_SERVER_KEYS,
+def _mcp_files_signature() -> tuple[float, float]:
+    def mtime(path: Path) -> float:
+        try:
+            return path.stat().st_mtime if path.is_file() else 0.0
+        except OSError:
+            return 0.0
+
+    return (mtime(MCP_EXAMPLE), mtime(MCP_SECRETS))
+
+
+def _build_stdio_mcp_servers_uncached(
+    server_keys: tuple[str, ...],
 ) -> dict[str, StdioMcpServerConfig]:
-    """构建 SDK 可用的 stdio MCP 配置；凭证缺失的服务器会跳过。"""
     all_servers = _merge_mcp_servers()
     result: dict[str, StdioMcpServerConfig] = {}
     for key in server_keys:
@@ -111,6 +125,22 @@ def build_stdio_mcp_servers(
             cwd=str(REPO_ROOT),
         )
     return result
+
+
+def build_stdio_mcp_servers(
+  server_keys: tuple[str, ...] = DEFAULT_SERVER_KEYS,
+) -> dict[str, StdioMcpServerConfig]:
+    """构建 SDK 可用的 stdio MCP 配置；凭证缺失的服务器会跳过。"""
+    global _cached_servers, _cache_signature
+    signature = _mcp_files_signature()
+    with _cache_lock:
+        if _cached_servers is not None and _cache_signature == signature:
+            return _cached_servers
+    built = _build_stdio_mcp_servers_uncached(server_keys)
+    with _cache_lock:
+        _cached_servers = built
+        _cache_signature = signature
+    return built
 
 
 def inject_scripts_path() -> None:

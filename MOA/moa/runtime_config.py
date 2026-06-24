@@ -93,6 +93,9 @@ def _load_cookie_from_redis(redis_cfg: dict[str, Any]) -> None:
 
 def load_runtime_config() -> None:
     """加载 MOA 运行时配置（YAML + 可选 Redis），不覆盖已有环境变量。"""
+    from .venv_bootstrap import ensure_moa_venv
+
+    ensure_moa_venv()
     cfg_path = _yaml_config_path()
     if not os.path.exists(cfg_path):
         return

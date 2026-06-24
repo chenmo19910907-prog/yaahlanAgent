@@ -16,7 +16,7 @@ from bridge_manager import is_transient_sdk_error, reset_sdk_bridge
 from user_agent_pool import get_user_agent_pool
 
 from env_loader import GATEWAY_DIR, load_env_local, require_env
-from gateway_prompt import build_gateway_prompt
+from gateway_prompt import batch_progress_instruction, build_gateway_prompt
 from mcp_config import build_stdio_mcp_servers, inject_scripts_path
 from task_session import TaskInterrupted, TaskSession, safe_cancel_run
 
@@ -45,6 +45,7 @@ def _build_prompt_text(
     use_gateway_rules: bool,
     is_new_session: bool,
     allow_code_modify: bool = True,
+    batch_progress_key: str = "",
 ) -> str:
     link_list = [str(link).strip() for link in links if str(link).strip()]
     if use_gateway_rules and is_new_session:
@@ -53,6 +54,7 @@ def _build_prompt_text(
             image_count=image_count,
             links=link_list or None,
             allow_code_modify=allow_code_modify,
+            batch_progress_key=batch_progress_key,
         )
     if use_gateway_rules:
         extras: list[str] = []
@@ -61,6 +63,9 @@ def _build_prompt_text(
                 "【只读模式】当前用户无代码修改权限：禁止改动仓库源代码与网关逻辑；"
                 "仅允许查询脚本、导出与 temporary_testcase/ 用例写入。"
             )
+        batch_note = batch_progress_instruction(batch_progress_key)
+        if batch_note:
+            extras.append(batch_note)
         if image_count > 0:
             extras.append(
                 f"用户附带了 {image_count} 张图片（已随消息传入），请结合附图理解需求并作答。"
@@ -191,6 +196,7 @@ def run_agent_prompt(
                 use_gateway_rules=use_gateway_rules,
                 is_new_session=is_new_session,
                 allow_code_modify=allow_code_modify,
+                batch_progress_key=user_key or "",
             )
 
             if paths:
