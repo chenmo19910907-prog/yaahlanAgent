@@ -1,0 +1,31 @@
+{
+  "defaults": {
+    "base_url": "https://mse.wemomo.com",
+    "region": "alpha",
+    "env": "alpha",
+    "cluster": "stage",
+    "app_key": "momo.bpm.biz.gameplatform.overseas-voga-mts-vas",
+    "name_space": "voga-common",
+    "server": "config"
+  },
+  "namespaces": {
+    "voga-common": "公有通用配置",
+    "voga-activity": "公有活动配置（MSE 控制台「公有/voga-activity」）",
+    "Application": "私有应用配置（MSE 控制台「私有/application」；API nameSpace 为空）"
+  },
+  "api": {
+    "path": "/apirest/httpproxy/config/getConfigsByAppKeyAndNameSpace",
+    "method": "POST",
+    "content_type": "application/x-www-form-urlencoded",
+    "form_fields": [
+      "region",
+      "appKey",
+      "nameSpace",
+      "cluster",
+      "key",
+      "order",
+      "env",
+      "server"
+    ]
+  }
+}

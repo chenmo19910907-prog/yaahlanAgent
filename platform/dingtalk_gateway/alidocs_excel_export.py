@@ -123,6 +123,7 @@ async def _write_rows(
     operator: str,
     workbook_id: str,
     rows: list[list[str]],
+    auto_wrap: bool = False,
 ) -> None:
     if not rows:
         raise ValueError("CSV 为空")
@@ -149,13 +150,16 @@ async def _write_rows(
                 f"{DOC_API}/workbooks/{workbook_id}/sheets/{sheet_id}"
                 f"/ranges/{range_str}?operatorId={operator}"
             )
+            payload: dict[str, object] = {"values": chunk}
+            if auto_wrap:
+                payload["wordWrap"] = "autoWrap"
             wr = await client.put(
                 write_url,
                 headers={
                     "x-acs-dingtalk-access-token": token,
                     "Content-Type": "application/json",
                 },
-                json={"values": chunk},
+                json=payload,
             )
             if wr.status_code >= 400:
                 raise RuntimeError(
@@ -173,6 +177,7 @@ async def export_rows_to_folder_async(
     *,
     parent_node_id: str,
     workbook_name: str,
+    auto_wrap: bool = False,
 ) -> str:
     if not rows:
         raise ValueError("用例表格为空")
@@ -186,7 +191,13 @@ async def export_rows_to_folder_async(
         parent_node_id=parent_node_id,
         name=workbook_name,
     )
-    await _write_rows(token=token, operator=operator, workbook_id=workbook_id, rows=rows)
+    await _write_rows(
+        token=token,
+        operator=operator,
+        workbook_id=workbook_id,
+        rows=rows,
+        auto_wrap=auto_wrap,
+    )
     return ALIDOCS_NODE.format(node_id=workbook_id)
 
 
@@ -195,6 +206,7 @@ def export_rows_to_folder(
     *,
     parent_node_id: str,
     workbook_name: str,
+    auto_wrap: bool = False,
 ) -> str:
     import asyncio
 
@@ -203,6 +215,7 @@ def export_rows_to_folder(
             rows,
             parent_node_id=parent_node_id,
             workbook_name=workbook_name,
+            auto_wrap=auto_wrap,
         )
     )
 

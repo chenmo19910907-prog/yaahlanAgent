@@ -299,7 +299,7 @@ def _handle_release_online_login_device(args: argparse.Namespace) -> int:
 
 def _resolve_operate_url(base_url: str | None) -> str:
     cfg = defaults()
-    root = (base_url or cfg.get("base_url") or "https://sec-risk-admin-oversea.wemomo.com").rstrip("/")
+    root = (base_url or cfg.get("base_url") or "https://risk-backend-oversea.wemomo.com").rstrip("/")
     path = cfg.get("menu_operate_path") or "/open/menu/operate"
     if not path.startswith("/"):
         path = f"/{path}"

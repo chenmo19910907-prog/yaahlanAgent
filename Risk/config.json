@@ -1,7 +1,7 @@
 {
   "defaults": {
-    "base_url": "https://sec-risk-admin-oversea.wemomo.com",
-    "menu_operate_path": "/open/menu/operate",
+    "base_url": "https://risk-backend-oversea.wemomo.com",
+    "menu_operate_path": "/api/sec_risk/open/menu/operate",
     "token": "sec_risk_IHAH",
     "menu_type": "white",
     "dimension": "mmuid",

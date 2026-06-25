@@ -13,7 +13,7 @@
     { "group": "抓包", "names": ["Tunnel 抓包"] },
     { "group": "支付", "names": ["钻石", "支付测试"] },
     { "group": "知识库", "prefixes": ["testcase-kb", "prd-kb"], "names": ["钉钉目录"] },
-    { "group": "平台", "names": ["Admin", "MOA"] }
+    { "group": "平台", "names": ["Admin", "MOA", "MSE"] }
   ],
   "top_level_order": [
     "用户",
@@ -64,6 +64,15 @@
       "registry": "MOA/config/registry.json",
       "usage_doc": "MOA/使用方法.md",
       "entry": "python3 MOA/moa_execute.py"
+    },
+    {
+      "id": "mse",
+      "label": "MSE配置",
+      "subtitle": "服务配置 · voga-common / stage",
+      "env": "test",
+      "registry": "MSE/config/registry.json",
+      "usage_doc": "MSE/使用方法.md",
+      "entry": "python3 MSE/mse_execute.py"
     },
     {
       "id": "gift",

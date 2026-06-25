@@ -15,7 +15,7 @@ cp Risk/.env.example Risk/.env.local
 在 `Risk/.env.local` 可选填入：
 
 - `SEC_RISK_TOKEN`：开放接口 token（默认 `sec_risk_IHAH`）
-- `SEC_RISK_BASE_URL`：默认 `https://sec-risk-admin-oversea.wemomo.com`
+- `SEC_RISK_BASE_URL`：默认 `https://risk-backend-oversea.wemomo.com`（路径 `/api/sec_risk/open/menu/operate` 见 `config.json`）
 - `SEC_RISK_COOKIE`：可选；开放接口 `/open/menu/operate` 通常**不需要** Cookie，仅需 body 中的 `token`
 - `RISK_TEST_DEVICE_KB`：团队测试机知识库 JSON 路径（默认 `testcase-kb/test_devices.json`）
 
