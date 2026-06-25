@@ -1,0 +1,74 @@
+# TC-GAME-GREEDY-LUCKYFRUIT | P1 | Android LuckyFruit → 水果下注 → 退出至游戏中心即结束
+# 前提：App 已登录且当前停留在「游戏中心」页面（可先执行 game-center-p1.yaml 或手动进入）
+# 备注：Greedy 类玩法；界面可能显示为 Lucky Fruit、LuckyFruit 或 Lucky / Fruit 分行，以界面文字为准识别为同一入口。
+
+android: {}
+
+agent:
+  testId: "TC-GAME-GREEDY-LUCKYFRUIT-ANDROID"
+  groupName: "游戏中心 Greedy P1 (Android)"
+  generateReport: true
+  reportFileName: "android-game-greedy-luckyfruit-bet-p1-report"
+  aiActContext: >
+    本用例全程只允许「在游戏中心点击 LuckyFruit 入口一次」；进入 LuckyFruit 游戏后禁止再点游戏中心里的 LuckyFruit 或其它游戏入口。
+    进入游戏后只允许「下注一次」：仅点水果图标/水果入口，禁止重复下注、禁止点多个水果。
+    下注完成后立即 Minimize 退出，不等待开奖、不等待开奖结果弹窗。
+    若界面已是游戏中心多游戏列表：除关闭弹窗外禁止任何点击，尤其禁止再次进入 LuckyFruit。
+    退出路径：Minimize → 语音房点右上角❌ → 面板点 Close → 关闭 Game Chest 等活动弹窗。游戏内禁止返回/侧滑。
+
+tasks:
+  - name: "P1 - LuckyFruit 进入、水果下注、退出至游戏中心"
+    flow:
+      - sleep: 1000
+
+      - aiAct: >
+          【仅执行一次进入 LuckyFruit】在游戏中心列表/网格中查找「LuckyFruit」（含 Lucky Fruit、Lucky / Fruit 等同义展示）。
+          若当前屏已可见目标入口：只点击一次，不要滑动。
+          若当前屏没有，在游戏列表区域内查找（不要点其它游戏）：先反复向下滑动（手指从上往下拖，列表向上滚），每次滑动后观察；
+          若已向下滑动到底部仍看不到「LuckyFruit」，再改为向上滑动（手指从下往上拖）继续找；
+          若上下滑动后仍找不到则失败。找到后只点击该目标游戏入口一次。
+          不要点其它游戏，不要点第二次。本步只做「点击进入」，不要做下注或退出。
+      - sleep: 2000
+
+      - aiWaitFor: 已进入 LuckyFruit 游戏内，可见多个水果图标/水果下注选项或 Greedy 下注盘面，且不再是游戏中心多游戏列表页
+
+      - aiAct: >
+          【仅执行一次水果下注，禁止再进游戏】
+          若当前界面是游戏中心多游戏列表（可见多个不同游戏入口）：本步零操作，不要点 LuckyFruit，不要滑动查找游戏，直接结束本步（视为失败场景，不要补救性点击任何游戏）。
+          若已在 LuckyFruit 游戏内且处于可下注状态：任选页面中一个水果图标/水果入口点击一次完成下注，全程只点这一次。
+          若已在 LuckyFruit 游戏内但暂不可下注（开奖动画/结算中/倒计时结束）：本步仅等待，不要点水果、不要点 Minimize、不要点游戏中心 LuckyFruit；最多等待约 30 秒后若仍不可下注则结束本步。
+          禁止重复下注、禁止点 Spin/返回/侧滑。
+      - sleep: 1000
+
+      - aiAct: >
+          【收起遮挡，不进入游戏】若有 Collect/OK/Continue/Got it 等浮层，只点关闭按钮直到主界面可见。
+          若当前已是游戏中心列表（可见多个不同游戏入口），本步零操作，禁止点 LuckyFruit 或任何游戏。
+      - sleep: 1000
+
+      - aiAct: >
+          【Minimize 退出游戏】
+          下注完成后不要等待开奖或开奖弹窗。
+          若当前已是游戏中心（多游戏列表/网格）：本步不做任何操作。
+          若仍在 LuckyFruit 全屏玩法内：只点击顶部「Minimize」或「最小化」一次；不要点返回、不要侧滑。
+      - sleep: 2000
+
+      - aiAct: >
+          【语音房：点右上角❌】
+          若当前已是游戏中心列表：本步零操作。
+          若当前为语音房界面（麦位/观众/语音相关 UI）：点击右上角「❌」关闭按钮一次。
+      - sleep: 1000
+
+      - aiAct: >
+          【弹窗：点 Close 回游戏中心】
+          若出现弹窗/面板：在面板内点击「Close」或「关闭」，不要点遮罩。
+          若当前已是游戏中心：本步零操作。完成后应回到游戏中心列表。
+      - sleep: 1500
+
+      - aiAct: >
+          【关闭活动弹窗】
+          若页面出现「Game Chest」或其它活动/宝箱/促销类弹窗遮挡游戏列表：点击弹窗上的关闭控件（X、Close、关闭、×、Got it、知道了 等），直到弹窗关闭。
+          若无此类遮挡弹窗则本步零操作。不要点击游戏列表中的游戏图标。
+      - sleep: 1000
+
+      - aiAssert: 当前在游戏中心列表（可见多个游戏入口），且不在 LuckyFruit/Lucky Fruit 全屏玩法内，无阻塞活动弹窗或 Close 弹窗
+        errorMessage: "TC-GAME-GREEDY-LUCKYFRUIT Android 失败：未回到游戏中心或仍停留在 LuckyFruit/语音房"

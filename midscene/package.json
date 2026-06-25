@@ -1,0 +1,51 @@
+{
+  "name": "midscene-e2e",
+  "version": "1.0.0",
+  "description": "SoulChill App Midscene.js AI 自动化测试工程（iOS + Android）",
+  "type": "module",
+  "scripts": {
+    "test:ios": "vitest run testcases-ts/ios",
+    "test:android": "vitest run testcases-ts/android",
+    "test:ios:login": "vitest run testcases-ts/ios/01-login",
+    "test:ios:live": "vitest run testcases-ts/ios/02-live-room",
+    "test:ios:recharge": "vitest run testcases-ts/ios/03-recharge",
+    "test:ios:profile": "vitest run testcases-ts/ios/04-profile",
+    "test:android:login": "vitest run testcases-ts/android/01-login",
+    "test:android:live": "vitest run testcases-ts/android/02-live-room",
+    "test:android:recharge": "vitest run testcases-ts/android/03-recharge",
+    "test:android:profile": "vitest run testcases-ts/android/04-profile",
+    "test:all": "vitest run testcases-ts/",
+    "yaml:android:login": "node scripts/midscene-run.mjs './testcases-yaml/android/login-p1.yaml'",
+    "yaml:android:recharge": "node scripts/midscene-run.mjs './testcases-yaml/android/recharge-p1.yaml'",
+    "yaml:android:p1": "node scripts/midscene-run.mjs './testcases-yaml/android/*-p1.yaml'",
+    "yaml:android:p2": "node scripts/midscene-run.mjs './testcases-yaml/android/*-p2.yaml'",
+    "yaml:android:all": "node scripts/midscene-run.mjs './testcases-yaml/android/*.yaml' --continue-on-error",
+    "yaml:ios:login": "node scripts/midscene-run.mjs --platform=ios './testcases-yaml/ios/login/login-p1-trigger.yaml' './testcases-yaml/ios/login/login-p1-complete.yaml'",
+    "yaml:ios:game:all": "node scripts/run-ios-game-ordered.mjs",
+    "yaml:ios:game-slots:all": "node scripts/run-ios-game-slots-ordered.mjs",
+    "yaml:ios:games-from-list": "node game.env/run-ios-games-from-list.mjs",
+    "yaml:ios:games-from-list:resume": "node game.env/run-ios-games-from-list.mjs --from=Mines",
+    "yaml:ios:recharge": "node scripts/midscene-run.mjs --platform=ios './testcases-yaml/ios/recharge-p1.yaml'",
+    "yaml:web:eid2026": "npx midscene ./testcases-yaml/web/run-eid2026.yaml",
+    "test:eid2026:app": "npx tsx testcases-ts/web/run-eid2026.ts",
+    "test:eid2026:app:smoke": "npx tsx testcases-ts/web/run-eid2026.ts --smoke"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@midscene/android": "^1.6.0",
+    "@midscene/cli": "^1.7.0",
+    "@midscene/ios": "^1.6.0",
+    "@types/node": "^25.5.0",
+    "dotenv": "^17.3.1",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "dependencies": {
+    "@midscene/core": "^1.10.0",
+    "@midscene/web": "^1.10.0",
+    "@playwright/test": "^1.61.1",
+    "playwright": "^1.61.1"
+  }
+}

@@ -1,0 +1,49 @@
+# TC-LOGIN-001 | P1 | iOS 手机号验证码登录 — 阶段1：触发发送验证码
+# 本 YAML 负责：冷启动 App → 进入手机号登录 → 输入手机号 → 点击"下一步"触发 SMS
+# 执行完成后，midscene-run.mjs 会自动获取动态验证码，再接着运行 login-p1-complete.yaml
+
+ios:
+  wdaHost: "${WDA_HOST}"
+  launch: "${IOS_APP_ID}"
+
+agent:
+  testId: "TC-LOGIN-001-TRIGGER"
+  groupName: "登录模块 P1 (iOS) - Phase1"
+  generateReport: true
+  reportFileName: "ios-login-p1-trigger-report"
+  aiActContext: >
+    遇到权限申请弹窗（通知、位置、麦克风、摄像头）时，点击"允许"或"同意"。
+    遇到隐私协议弹窗时，点击"同意"或"接受"。
+    遇到新功能引导蒙层时，点击"跳过"或蒙层外任意区域关闭。
+    遇到广告弹窗时，点击右上角关闭按钮。
+    当前测试手机号为 ${TEST_PHONE}。
+
+tasks:
+  - name: "Phase1 - 进入登录页并触发 SMS"
+    flow:
+      # 等待 App 启动完成
+      - sleep: 5000
+
+      # 进入手机号登录入口
+      - aiAct: 点击"手机号登录"或"验证码登录"或"Phone"入口按钮
+      - sleep: 1500
+
+      # 如果页面有区号选择按钮（如 +1、+86、+966 等），点击它并选择 +966（Saudi Arabia）
+      - aiAct: >
+          观察页面是否有区号/国家码选择按钮（通常显示为 +数字 或国旗图标）。
+          如果有，点击该按钮，在弹出的列表中找到并选择 Saudi Arabia（+966）；
+          如果没有区号选择控件或已显示为 +966，则跳过此步。
+      - sleep: 1000
+
+      # 输入手机号（纯数字，不含区号）
+      - aiInput: 手机号输入框
+        value: "${TEST_PHONE}"
+      - sleep: 1000
+
+      # 点击下一步/发送验证码，触发 App 发送短信
+      - aiAct: 点击"下一步"或"发送验证码"或"Send"或"Next"按钮，触发向手机号发送短信验证码
+      - sleep: 5000
+
+      # 确认已进入验证码输入页（留给 Phase2 继续操作）
+      - aiAssert: 当前页面已显示验证码输入框，等待用户输入验证码
+        errorMessage: "TC-LOGIN-001 iOS Phase1 失败：未出现验证码输入框"

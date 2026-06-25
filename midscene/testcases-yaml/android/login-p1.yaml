@@ -1,0 +1,58 @@
+# TC-LOGIN-001 | P1 | 手机号验证码登录（正常流程）
+# 运行: npx midscene ./testcases/android/login-p1.yaml
+# 前提: 设备已连接 ADB，.env 中填写好账号和模型配置
+
+android: {}
+
+agent:
+  testId: "TC-LOGIN-001"
+  groupName: "登录模块 P1"
+  generateReport: true
+  reportFileName: "login-p1-report"
+  aiActContext: >
+    遇到权限申请弹窗（通知、位置、麦克风、摄像头）时，点击"允许"或"同意"。
+    遇到隐私协议弹窗时，点击"同意"或"接受"。
+    遇到新功能引导蒙层时，点击"跳过"或蒙层外任意区域关闭。
+    遇到广告弹窗时，点击右上角关闭按钮。
+    当前测试手机号为 ${TEST_PHONE}。
+
+tasks:
+  - name: "TC-LOGIN-001 手机号验证码登录"
+    flow:
+      # 强制停止 App（不需要 root，适用所有设备）
+      - runAdbShell: "am force-stop ${ANDROID_APP_ID}"
+      - sleep: 1000
+
+      # 冷启动 App
+      - launch: "${ANDROID_APP_ID}/${ANDROID_MAIN_ACTIVITY}"
+      - sleep: 3000
+
+      # 进入手机号登录入口
+      - aiAct: 点击"手机号登录"或"验证码登录"入口按钮
+      - sleep: 1000
+
+      # 输入手机号
+      - aiInput: 手机号输入框
+        value: "${TEST_PHONE}"
+      - sleep: 500
+      # 点击下一步，App 内部触发发送短信验证码
+      - aiAct: 点击"下一步"按钮
+      - sleep: 12000  # 等待：SMS 发送 + HOST 侧轮询取码写入设备文件（约 5-10s）
+
+      # 用 AI 定位验证码输入框并聚焦
+      - aiTap: 验证码输入框
+      - sleep: 500
+
+      # 从设备临时文件读取动态验证码（由 scripts/midscene-run.mjs 写入 /data/local/tmp/vcode.txt）
+      # sh 执行时 $() 在设备 shell 展开，不受 midscene 的引号包裹影响
+      - runAdbShell: "sh /data/local/tmp/run_input.sh"
+      - sleep: 500
+
+      # 点击登录
+      - aiAct: 点击"下一步"按钮
+      - sleep: 1000
+      
+
+      # 断言：成功进入首页
+      - aiAssert: 当前页面已进入 SoulChill 首页，底部导航栏可见，不再停留在登录页面
+        errorMessage: "TC-LOGIN-001 失败：登录后未进入首页"

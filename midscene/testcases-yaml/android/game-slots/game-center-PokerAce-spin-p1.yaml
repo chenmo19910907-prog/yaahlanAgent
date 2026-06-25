@@ -1,0 +1,67 @@
+# TC-GAME-POKERACE | P1 | Android PokerAce → Spin → 退出至游戏中心即结束
+# 前提：App 已登录且当前停留在「游戏中心」页面（可先执行 game-center-p1.yaml 或手动进入）
+# 备注：界面可能显示为 Poker Ace、PokerAce 或 Poker / Ace 分行，以界面文字为准识别为同一入口。
+
+android: {}
+
+agent:
+  testId: "TC-GAME-POKERACE-ANDROID"
+  groupName: "游戏中心模块 P1 (Android)"
+  generateReport: true
+  reportFileName: "android-game-pokerace-spin-p1-report"
+  aiActContext: >
+    本用例全程只允许「进入 PokerAce 一次」：在游戏中心对目标游戏图标/名称的点击进入有且仅有一次（含 Poker Ace 等等价展示）。
+    一旦界面已是「游戏中心」多游戏列表/网格，本用例立即结束：禁止任何后续点击、滑动、再次进入本游戏或其它游戏。
+    退出游戏只点顶部 Minimize；Minimize 后通常会进入语音房，再点右上角❌，在弹出面板点 Close，最终回到游戏中心；若仍有 Game Chest 等活动弹窗须点击关闭。游戏内禁止点返回/侧滑；已到游戏中心后禁止再点本目标游戏、Minimize 或其它游戏。
+    除步骤明确要求外，不要点广告、其它游戏、Spin（退出阶段）。
+
+tasks:
+  - name: "P1 - PokerAce 进入、Spin、退出至游戏中心"
+    flow:
+      - sleep: 1000
+
+      - aiAct: >
+          【仅执行一次进入】在游戏中心列表/网格中查找「PokerAce」（也可能显示为「Poker Ace」或分行 Poker / Ace，以界面文字为准）。
+          若当前屏已可见目标入口：只点击一次，不要滑动。
+          若当前屏没有，在游戏列表区域内查找（不要点其它游戏）：先反复向下滑动（手指从上往下拖，列表向上滚），每次滑动后观察；
+          若已向下滑动到底部仍看不到「PokerAce」（或 Poker Ace 等等价展示），再改为向上滑动（手指从下往上拖）继续找；
+          若上下滑动后仍找不到则失败。找到后只点击该目标游戏入口一次。
+          进入游戏后本段结束，禁止第二次点击同一入口或任何游戏名称。
+      - sleep: 2000
+
+      - aiAct: >
+          【仅执行一次 Spin】在 PokerAce（或 Poker Ace 等价）游戏内点击「Spin」（或主操作 Spin 按钮）一次。
+          不要点其它下注区。若误回到游戏中心，不要再次点本目标游戏，直接失败。
+      - sleep: 10000
+
+      - aiAct: >
+          【收起遮挡，不进入游戏】若有 Collect/OK/Continue/Got it 等中奖或引导浮层，只点这些关闭按钮直到主界面可见。
+          若当前已是游戏中心列表（可见多个不同游戏入口），本步零操作并结束，禁止点本目标游戏或任何游戏。
+      - sleep: 1000
+
+      - aiAct: >
+          【Minimize 退出游戏】
+          若当前已是游戏中心（多游戏列表/网格）：本步不做任何操作。
+          若仍在本游戏全屏玩法内：只点击顶部「Minimize」或「最小化」一次；不要点返回、不要侧滑。
+      - sleep: 2000
+
+      - aiAct: >
+          【语音房：点右上角❌】
+          若当前已是游戏中心列表：本步零操作。
+          若当前为语音房界面（麦位/观众/语音相关 UI）：点击右上角「❌」关闭按钮一次。
+      - sleep: 1000
+
+      - aiAct: >
+          【弹窗：点 Close 回游戏中心】
+          若出现弹窗/面板：在面板内点击「Close」或「关闭」，不要点遮罩。
+          若当前已是游戏中心：本步零操作。完成后应回到游戏中心列表。
+      - sleep: 1500
+
+      - aiAct: >
+          【关闭活动弹窗】
+          若页面出现「Game Chest」或其它活动/宝箱/促销类弹窗遮挡游戏列表：点击弹窗上的关闭控件（X、Close、关闭、×、Got it、知道了 等），直到弹窗关闭。
+          若无此类遮挡弹窗则本步零操作。不要点击游戏列表中的游戏图标。
+      - sleep: 1000
+
+      - aiAssert: 当前在游戏中心列表（可见多个游戏入口），且不在 PokerAce/Poker Ace 全屏玩法内，无阻塞活动弹窗或 Close 弹窗
+        errorMessage: "TC-GAME-POKERACE Android 失败：未回到游戏中心或仍停留在目标游戏/语音房"

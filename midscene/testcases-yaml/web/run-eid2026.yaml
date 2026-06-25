@@ -1,0 +1,47 @@
+# TC-WEB-EID2026-001 | P1 | Eid 2026 活动页内容验证
+# 验证活动页能正常加载，并识别页面状态（活动时间 或 地区限制提示）
+# 运行: npx midscene ./testcases-yaml/web/run-eid2026.yaml
+
+web:
+  url: "https://fproject.immomo.com/fep/momo/fe-fproject/soulchill-activity-projects/eid2026/index.html?_bid=1006530&lang=zh&tab=receive"
+  waitForNetworkIdle:
+    timeout: 10000
+    continueOnNetworkIdleError: true
+
+agent:
+  testId: "TC-WEB-EID2026-001"
+  groupName: "Eid 2026 活动页"
+  generateReport: true
+  reportFileName: "eid2026-web-report"
+
+tasks:
+  - name: "TC-WEB-EID2026-001 验证活动页加载及内容识别"
+    flow:
+      # 等待页面加载完成
+      - sleep: 5000
+
+      # 提取页面状态与活动信息
+      - aiQuery: >
+          {
+            pageStatus: "activity_available" | "region_restricted" | "loading" | "error",
+            startTime: string | null,
+            endTime: string | null,
+            restrictionMessage: string | null,
+            pageTitle: string | null,
+            visibleText: string
+          },
+          识别当前页面状态：
+          - pageStatus 为 "activity_available" 表示页面展示活动内容（含时间信息）；
+          - pageStatus 为 "region_restricted" 表示显示地区限制提示（如 "not open for this area"）；
+          - pageStatus 为 "loading" 表示页面仍在加载；
+          - pageStatus 为 "error" 表示出现错误页；
+          startTime / endTime 为活动开始/结束时间（若有），
+          restrictionMessage 为地区限制的原始提示文字（若有），
+          visibleText 为页面上所有可见的主要文字内容
+
+      # 断言：页面必须正常加载（活动展示 或 地区限制提示均为正常，错误页或空白页为异常）
+      - aiAssert: >
+          页面已正常加载，显示了活动相关内容（活动图片、时间、奖励说明等）
+          或者显示了明确的地区限制提示（如 "This event is not open for this area"）。
+          页面不是空白，也没有出现网络错误或服务器错误。
+        errorMessage: "TC-WEB-EID2026-001 失败：活动页加载异常，既无活动内容也无地区提示"

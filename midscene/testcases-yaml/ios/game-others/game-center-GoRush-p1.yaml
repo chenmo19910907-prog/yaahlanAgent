@@ -1,0 +1,64 @@
+# TC-GAME-GORUSH | P1 | iOS GoRush → 绿色 BET → 退出至游戏中心即结束
+# 前提：App 已登录且当前停留在「游戏中心」页面（可先执行 game-center-p1.yaml 或手动进入）
+
+ios:
+  wdaHost: "${WDA_HOST}"
+
+agent:
+  testId: "TC-GAME-GORUSH-IOS"
+  groupName: "游戏中心 Others P1 (iOS)"
+  generateReport: true
+  reportFileName: "ios-game-gorush-p1-report"
+  aiActContext: >
+    本用例全程只允许「在游戏中心点击 GoRush 入口一次」；进入 GoRush 后禁止再点游戏中心里的 GoRush 或其它游戏。
+    游戏内只点绿色的 BET 按钮一次，不要点 CASHOUT。勿点灰色/不可用的 BET。
+    BET 后只点顶部 Minimize 退出；Minimize 后通常会进入语音房，再点右上角❌，在弹出面板点 Close，最终回到游戏中心。
+    若界面已是游戏中心多游戏列表：除关闭弹窗外禁止任何点击。游戏内禁止返回/侧滑。
+
+tasks:
+  - name: "P1 - GoRush 进入 BET、退出至游戏中心"
+    flow:
+      - sleep: 1000
+
+      - aiAct: >
+          【仅执行一次进入 GoRush】在游戏中心列表/网格中查找「GoRush」或「Go Rush」。
+          若当前屏已可见目标入口：只点击一次，不要滑动。
+          若当前屏没有，在游戏列表区域内查找（不要点其它游戏）：先反复向下滑动（手指从上往下拖，列表向上滚），每次滑动后观察；
+          若已向下滑动到底部仍看不到「GoRush」，再改为向上滑动（手指从下往上拖）继续找；
+          若上下滑动后仍找不到则失败。找到后只点击该目标游戏入口一次。
+          不要点其它游戏，不要点第二次。本步只做「点击进入」，不要点 BET 或退出。
+      - sleep: 1000
+
+
+      - aiAct: >
+          【点击绿色 BET】在 GoRush 游戏页面内只点击黄色的的「Betting」按钮一次（通常为绿色底/绿色高亮的可下注按钮，如「BET 100」）。
+          不要点灰色、半透明或不可用的 BET；不要点 CASHOUT、Minimize 或其它按钮。
+          若当前仍是游戏中心列表：本步零操作，不要点 GoRush。
+      - sleep: 1000
+
+      - aiAct: >
+          【Minimize 退出游戏】
+          若当前已是游戏中心（多游戏列表/网格）：本步不做任何操作。
+          若仍在 GoRush 游戏页面内：只点击游戏页面顶部「Minimize」或「最小化」一次；不要点返回、不要侧滑。
+      - sleep: 2000
+
+      - aiAct: >
+          【语音房：点右上角❌】
+          若当前已是游戏中心列表：本步零操作。
+          若当前为语音房界面（麦位/观众/语音相关 UI）：点击右上角「❌」关闭按钮一次。
+      - sleep: 1000
+
+      - aiAct: >
+          【弹窗：点 Close 回游戏中心】
+          若出现弹窗/面板：在面板内点击「Close」或「关闭」，不要点遮罩。
+          若当前已是游戏中心：本步零操作。完成后应回到游戏中心列表。
+      - sleep: 1000
+
+      - aiAct: >
+          【关闭活动弹窗】
+          若页面出现「Game Chest」或其它活动/宝箱/促销类弹窗遮挡游戏列表：点击弹窗上的关闭控件（X、Close、关闭、×、Got it、知道了 等），直到弹窗关闭。
+          若无此类遮挡弹窗则本步零操作。不要点击游戏列表中的游戏图标。
+      - sleep: 1000
+
+      - aiAssert: 当前在游戏中心列表（可见多个游戏入口），且不在 GoRush 全屏玩法内，无阻塞活动弹窗或 Close 弹窗
+        errorMessage: "TC-GAME-GORUSH iOS 失败：未回到游戏中心或仍停留在 GoRush/语音房"

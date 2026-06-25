@@ -1,0 +1,65 @@
+# TC-LOGIN-002 | P2 | 退出登录后重新登录
+# 前提: 处于已登录首页（建议接续 P1 用例执行）
+
+android: {}
+
+agent:
+  testId: "TC-LOGIN-002"
+  groupName: "登录模块 P2"
+  generateReport: true
+  reportFileName: "login-p2-report"
+  aiActContext: >
+    遇到权限申请弹窗（通知、位置、麦克风、摄像头）时，点击"允许"或"同意"。
+    遇到隐私协议弹窗时，点击"同意"或"接受"。
+    遇到新功能引导蒙层时，点击"跳过"或蒙层外任意区域关闭。
+    遇到广告弹窗时，点击右上角关闭按钮。
+    当前测试手机号为 ${TEST_PHONE}。
+
+tasks:
+  - name: "TC-LOGIN-002 退出登录后重新登录"
+    flow:
+      # 进入「我的」Tab
+      - aiTap: 底部导航栏最右侧「我的」或「个人中心」Tab
+      - sleep: 1500
+
+      # 进入设置
+      - aiTap: 右上角设置图标或齿轮按钮
+      - sleep: 1500
+
+      # 下滑找到退出登录
+      - aiScroll: 页面
+        direction: down
+        scrollType: scrollToBottom
+      - sleep: 500
+
+      - aiTap: 退出登录 或 注销账号 按钮
+      - sleep: 1000
+
+      # 确认退出弹窗
+      - aiTap: 确认退出 或 确定 按钮（弹窗中）
+      - sleep: 3000
+
+      - aiAssert: 当前页面已返回登录页面，可见手机号输入框或登录入口
+        errorMessage: "TC-LOGIN-002 失败：退出后未返回登录页"
+
+      # 重新登录
+      - aiAct: 点击"手机号登录"或"验证码登录"入口按钮
+      - sleep: 1000
+
+      - aiInput: 手机号输入框
+        value: "${TEST_PHONE}"
+      - sleep: 500
+
+      - aiTap: 获取验证码 或 发送验证码 或 下一步 按钮
+      - sleep: 12000
+
+      - aiTap: 验证码输入框
+      - sleep: 500
+
+      - runAdbShell: "sh /data/local/tmp/run_input.sh"
+      - sleep: 500
+
+      - aiTap: 登录 或 确认 或 下一步 按钮
+      - sleep: 4000
+
+      - aiAssert: 重新登录成功，当前在首页，底部导航栏可见

@@ -1,0 +1,68 @@
+# TC-RECHARGE-001 | P1 | 钱包充值流程（埃及地区 EGP50.60）
+# 运行: npm run yaml:recharge
+# 前提: 设备已连接 ADB，App 处于已登录状态，.env 中填写好模型配置
+
+android: {}
+
+agent:
+  testId: "TC-RECHARGE-001"
+  groupName: "充值模块 P1"
+  generateReport: true
+  reportFileName: "recharge-p1-report"
+  aiActContext: >
+    如果出现权限弹窗、用户协议、青少年模式或登录弹窗，优先关闭或同意后继续测试流程。
+    当前测试设备包名为 ${ANDROID_APP_ID}。
+
+tasks:
+  - name: "TC-RECHARGE-001 钱包充值（埃及 EGP50.60）"
+    flow:
+      # 启动 App（不强制停止，保留登录态）
+      - runAdbShell: "am start -n ${SOULCHILL_LAUNCH_ACTIVITY}"
+      - sleep: 5000
+
+      # 进入「我」页
+      - aiAct: 点击底部导航栏中的"我"tab
+      - sleep: 1000
+
+      # 进入钱包
+      - aiAct: 点击"我的钱包"入口
+      - sleep: 1500
+
+      - aiWaitFor: 进入钱包页面，页面中可见充值金额或地区相关选项
+
+      # 切换地区到埃及（如果当前已是埃及则跳过）
+      - aiAct: >
+          查看页面上是否存在地区切换按钮且当前显示的地区不是"埃及"。
+          如果是，则点击该地区切换按钮，等待地区选择弹窗出现，
+          在列表中向下滑动直到找到"埃及"选项，然后点击"埃及"；
+          如果当前已是"埃及"则不做任何操作。
+      - sleep: 1000
+
+      # 选择充值金额
+      - aiAct: 点击充值金额"EGP50.60"
+      - sleep: 1000
+
+      # 填写 CVV
+      - aiAct: 在 CVV 输入框中输入"111"
+      - sleep: 500
+
+      # 确认支付（最多等 60s）
+      - aiAct: 点击"支付"按钮
+      - sleep: 15000
+
+      # 断言支付成功
+      - aiAssert: 页面上显示"付款成功"或类似支付成功的提示
+        errorMessage: "TC-RECHARGE-001 失败：未出现付款成功提示"
+
+      # 返回
+      - aiAct: 点击"返回"按钮
+      - sleep: 1500
+
+      # 识别返回后的页面状态（结果记录在报告中）
+      - aiQuery: >
+          {pageType: string, hasChatInput: boolean, visibleTabs: string[]},
+          识别当前页面类型、是否有输入框、以及底部可见标签
+
+      # 最终断言：页面无崩溃或网络错误
+      - aiAssert: 当前页面没有崩溃提示，也没有明显网络错误提示
+        errorMessage: "TC-RECHARGE-001 失败：返回后页面出现异常"

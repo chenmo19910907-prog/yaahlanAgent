@@ -1,0 +1,35 @@
+# TC-LOGIN-001 | P1 | iOS 手机号验证码登录 — 阶段2：输入验证码完成登录
+# 前提：App 已停在验证码输入页（由 login-p1-trigger.yaml 完成）
+# TEST_VERIFY_CODE 由 midscene-run.mjs 在两阶段之间从接口获取后注入
+
+ios:
+  wdaHost: "${WDA_HOST}"
+  # 不重新 launch，直接操作当前页面（验证码输入页）
+
+agent:
+  testId: "TC-LOGIN-001-COMPLETE"
+  groupName: "登录模块 P1 (iOS) - Phase2"
+  generateReport: true
+  reportFileName: "ios-login-p1-complete-report"
+  aiActContext: >
+    遇到权限申请弹窗（通知、位置、麦克风、摄像头）时，点击"允许"或"同意"。
+    遇到隐私协议弹窗时，点击"同意"或"接受"。
+    遇到新功能引导蒙层时，点击"跳过"或蒙层外任意区域关闭。
+    遇到广告弹窗时，点击右上角关闭按钮。
+    当前测试手机号为 ${TEST_PHONE}。
+
+tasks:
+  - name: "Phase2 - 填入验证码完成登录"
+    flow:
+      # 输入动态验证码（由 midscene-run.mjs 注入 TEST_VERIFY_CODE）
+      - aiInput: 验证码输入框
+        value: "${TEST_VERIFY_CODE}"
+      - sleep: 500
+
+      # 点击登录/确认
+      - aiAct: 点击"下一步"或"登录"或"确认"按钮
+      - sleep: 4000
+
+      # 断言：成功进入首页
+      - aiAssert: 当前页面已进入 yaahlan 首页，底部导航栏可见，不再停留在登录页面
+        errorMessage: "TC-LOGIN-001 iOS 失败：登录后未进入首页"

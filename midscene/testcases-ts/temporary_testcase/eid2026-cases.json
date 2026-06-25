@@ -1,0 +1,65 @@
+[
+  {
+    "id": "EID-001",
+    "module": "头图",
+    "steps": "打开活动页，查看顶部头图区域",
+    "expected": "顶部头图/Banner 正常显示，无错位或空白",
+    "priority": "P1"
+  },
+  {
+    "id": "EID-002",
+    "module": "一级tab-展示",
+    "steps": "打开活动页，查看底部一级导航 tab 栏",
+    "expected": "底部导航 tab 可见，包含旅行/礼包/榜单等入口",
+    "priority": "P1"
+  },
+  {
+    "id": "EID-003",
+    "module": "一级tab-展示-旅行",
+    "steps": "点击开斋旅行tab，查看旅行页面内容",
+    "expected": "旅行 tab 页面正常展示，内容无空白",
+    "priority": "P1"
+  },
+  {
+    "id": "EID-004",
+    "module": "一级tab-展示-礼包",
+    "steps": "点击开斋礼包tab，查看礼包页面内容",
+    "expected": "礼包 tab 页面正常展示",
+    "priority": "P1"
+  },
+  {
+    "id": "EID-005",
+    "module": "一级tab-展示-榜单",
+    "steps": "点击开斋榜单tab，查看榜单页面内容",
+    "expected": "榜单 tab 页面正常展示",
+    "priority": "P2"
+  },
+  {
+    "id": "EID-006",
+    "module": "规则弹窗-展示",
+    "steps": "点击规则按钮，查看规则弹窗",
+    "expected": "规则弹窗正常弹出，内容可读",
+    "priority": "P1"
+  },
+  {
+    "id": "EID-007",
+    "module": "规则弹窗-关闭",
+    "steps": "点击规则按钮打开弹窗，再点击关闭弹窗",
+    "expected": "弹窗正常关闭，返回活动主页",
+    "priority": "P1"
+  },
+  {
+    "id": "EID-008",
+    "module": "奖励页面-展示",
+    "steps": "点击奖励按钮，进入奖励页面",
+    "expected": "奖励页面正常展示，奖励列表可见",
+    "priority": "P1"
+  },
+  {
+    "id": "EID-009",
+    "module": "tab切换-稳定性",
+    "steps": "频繁切换不同tab，验证页面稳定性",
+    "expected": "多次切换后页面不崩溃，内容正常显示",
+    "priority": "P2"
+  }
+]

@@ -1,0 +1,70 @@
+# TC-GAME-CHEESECHASE | P1 | iOS CheeseChase → 点击 TOM 下方区域 → 退出至游戏中心即结束
+# 前提：App 已登录且当前停留在「游戏中心」页面（可先执行 game-center-p1.yaml 或手动进入）
+
+ios:
+  wdaHost: "${WDA_HOST}"
+
+agent:
+  testId: "TC-GAME-CHEESECHASE-IOS"
+  groupName: "游戏中心 Others P1 (iOS)"
+  generateReport: true
+  reportFileName: "ios-game-cheesechase-p1-report"
+  aiActContext: >
+    本用例全程只允许「在游戏中心点击 CheeseChase 入口一次」；进入 CheeseChase 后禁止再点游戏中心里的 CheeseChase 或其它游戏。
+    游戏内只点击「TOM」文字/标识正下方的可交互区域一次，不要重复点击。
+    点击完成后只点顶部 Minimize 退出；Minimize 后通常会进入语音房，再点右上角❌，在弹出面板点 Close，最终回到游戏中心。
+    若界面已是游戏中心多游戏列表：除关闭弹窗外禁止任何点击。游戏内禁止返回/侧滑。
+
+tasks:
+  - name: "P1 - CheeseChase 进入、TOM 下方点击、退出至游戏中心"
+    flow:
+      - sleep: 1000
+
+      - aiAct: >
+          【仅执行一次进入 CheeseChase】在游戏中心列表/网格中查找「CheeseChase」或「Cheese Chase」。
+          若当前屏已可见目标入口：只点击一次，不要滑动。
+          若当前屏没有，在游戏列表区域内查找（不要点其它游戏）：先反复向下滑动（手指从上往下拖，列表向上滚），每次滑动后观察；
+          若已向下滑动到底部仍看不到「CheeseChase」，再改为向上滑动（手指从下往上拖）继续找；
+          若上下滑动后仍找不到则失败。找到后只点击该目标游戏入口一次。
+          不要点其它游戏，不要点第二次。本步只做「点击进入」，不要点 TOM 区域或退出。
+      - sleep: 1000
+
+      - aiWaitFor: 已进入 CheeseChase 游戏页面（可见「TOM」或游戏主界面），且不再是游戏中心多游戏列表页
+
+      - aiAct: >
+          【点击 TOM 下方区域】在 CheeseChase 游戏页面内，定位「TOM」文字/标识，只点击其正下方紧邻的可交互区域一次（下注/玩法区域，通常在 TOM 标签下方）。
+          不要点 TOM 文字本身以外的无关按钮；不要点 Minimize 或其它游戏控件。
+          若当前仍是游戏中心列表：本步零操作，不要点 CheeseChase。
+      - sleep: 1000
+
+      - aiAct: >
+          【收起遮挡】若有 Collect/OK/Continue/Got it 等浮层遮挡，只点关闭按钮直到主界面可见。
+          若当前已是游戏中心列表：本步零操作。
+      - sleep: 1000
+
+      - aiAct: >
+          【Minimize 退出游戏】
+          若当前已是游戏中心（多游戏列表/网格）：本步不做任何操作。
+          若仍在 CheeseChase 游戏页面内：只点击游戏页面顶部「Minimize」或「最小化」一次；不要点返回、不要侧滑。
+      - sleep: 1000
+
+      - aiAct: >
+          【语音房：点右上角❌】
+          若当前已是游戏中心列表：本步零操作。
+          若当前为语音房界面（麦位/观众/语音相关 UI）：点击右上角「❌」关闭按钮一次。
+      - sleep: 1000
+
+      - aiAct: >
+          【弹窗：点 Close 回游戏中心】
+          若出现弹窗/面板：在面板内点击「Close」或「关闭」，不要点遮罩。
+          若当前已是游戏中心：本步零操作。完成后应回到游戏中心列表。
+      - sleep: 1500
+
+      - aiAct: >
+          【关闭活动弹窗】
+          若页面出现「Game Chest」或其它活动/宝箱/促销类弹窗遮挡游戏列表：点击弹窗上的关闭控件（X、Close、关闭、×、Got it、知道了 等），直到弹窗关闭。
+          若无此类遮挡弹窗则本步零操作。不要点击游戏列表中的游戏图标。
+      - sleep: 1000
+
+      - aiAssert: 当前在游戏中心列表（可见多个游戏入口），且不在 CheeseChase 全屏玩法内，无阻塞活动弹窗或 Close 弹窗
+        errorMessage: "TC-GAME-CHEESECHASE iOS 失败：未回到游戏中心或仍停留在 CheeseChase/语音房"
