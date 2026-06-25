@@ -1,0 +1,11 @@
+{
+  "devices": [
+    {
+      "asset_id": "GZ3025010018",
+      "name": "Galaxy A80",
+      "mmuidv3": "在此填写 mmuidv3，便于按 mmuid 查找",
+      "wireless": "192.168.1.100:5555",
+      "note": "设置-开发者选项-无线调试；首次需 adb pair IP:PAIR_PORT PAIRING_CODE"
+    }
+  ]
+}

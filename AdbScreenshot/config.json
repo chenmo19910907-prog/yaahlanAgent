@@ -1,0 +1,11 @@
+{
+  "defaults": {
+    "screenshot_dir": "~/Desktop/adb-screenshots",
+    "connect_timeout_sec": 15,
+    "screenshot_timeout_sec": 45
+  },
+  "wireless_device_registry": {
+    "json_path": "AdbScreenshot/wireless_devices.json",
+    "description": "测试机无线 adb 地址登记表；复制 wireless_devices.example.json 为 wireless_devices.json"
+  }
+}

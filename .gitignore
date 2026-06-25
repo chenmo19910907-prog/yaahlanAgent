@@ -29,6 +29,10 @@ Admin/.env.online.local
 **/.env.online.local
 Admin/.env
 Admin/__pycache__/
+AdbScreenshot/.env.local
+AdbScreenshot/.env
+AdbScreenshot/wireless_devices.json
+AdbScreenshot/__pycache__/
 Tunnel/.env.local
 
 # 钉钉网关执行机本地登记（Step 1）
