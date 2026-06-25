@@ -6,6 +6,15 @@ import re
 
 from export_delivery import is_view_all_follow_up
 
+_MOA_REGISTRY_INTENT_RE = re.compile(
+    r"(?:"
+    r"(?:入库|登记|注册|同步).{0,24}(?:MOA|moa|模板|registry|能力清单)|"
+    r"(?:MOA|moa).{0,32}(?:入库|登记|注册|sync_registry)|"
+    r"sync_registry|generate_index\.py"
+    r")",
+    re.I,
+)
+
 EXPORT_FILE_RE = re.compile(
     r"^(?:导出|export)\s+(.+\.(?:csv|json|md))\s*$",
     re.I,
@@ -49,7 +58,8 @@ CATALOG_OPEN_RE = re.compile(
 # 含这些特征视为自然语言任务，不做模糊口令归一
 _NL_TASK_RE = re.compile(
     r"(https?://|alidocs\.dingtalk|\d{5,}|查|查询|生成|介绍|分析|"
-    r"user\s*id|userid|用例|报告|升级\s*VIP?\s*\d|导出\s+\S+\.(csv|json|md))",
+    r"user\s*id|userid|用例|报告|升级\s*VIP?\s*\d|导出\s+\S+\.(csv|json|md)|"
+    r"入库|登记|sync_registry|registry\.json)",
     re.I,
 )
 
@@ -76,7 +86,10 @@ def normalize_report_prompt(text: str) -> str | None:
 
 
 def normalize_fuzzy_fast_command(text: str) -> str | None:
-    """模糊快捷口令 → 标准 fast 路由口令（如「帮我 MOA 探活」→「MOA检查」）。"""
+    """模糊快捷口令 → 标准 fast 路由口令（如「打开工具平台」→「工具平台」）。
+
+    MOA 探活**不做**模糊归一：仅整条消息完全匹配 MOA_CHECK_RE 时才走探活（见 command_router）。
+    """
     t = (text or "").strip()
     if not t or len(t) > 48:
         return None
@@ -84,8 +97,8 @@ def normalize_fuzzy_fast_command(text: str) -> str | None:
         return None
     if _NL_TASK_RE.search(t):
         return None
-    if re.search(r"moa|探活", t, re.I):
-        return "MOA检查"
+    if _MOA_REGISTRY_INTENT_RE.search(t):
+        return None
     if re.search(r"环境|doctor|配置检查", t, re.I):
         return "环境检查"
     if re.search(r"工具|工作台|catalog|平台清单|说明书", t, re.I):

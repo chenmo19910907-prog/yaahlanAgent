@@ -10,12 +10,12 @@ from pathlib import Path
 
 from help_catalog import build_help_message
 from moa_health import probe_moa_cookie
+from moa_registry_guard import should_route_moa_check
 from route_patterns import (
     CATALOG_OPEN_RE,
     ENV_CHECK_RE,
     EXPORT_FILE_RE,
     HELP_RE,
-    MOA_CHECK_RE,
     REPORT_NL_RE,
     REPORT_URL_RE,
     REPORT_VERSION_RE,
@@ -90,7 +90,7 @@ def try_route(user_text: str, session: TaskSession | None = None) -> RoutedResul
         files = [zip_path] if zip_path.is_file() else []
         return RoutedResult(handled=True, output="\n".join(lines), files=files, task_kind="catalog")
 
-    if MOA_CHECK_RE.match(text):
+    if should_route_moa_check(text):
         ok, detail = probe_moa_cookie()
         if ok:
             return RoutedResult(handled=True, output=f"✅ {detail}", task_kind="moa_check")

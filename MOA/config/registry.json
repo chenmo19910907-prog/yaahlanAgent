@@ -351,6 +351,54 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-增加声望值.json \\\n  --family-id <familyId> \\\n  --family-query-current\n"
     },
     {
+      "id": "family_query_members",
+      "name": "家族-查询成员userId",
+      "category": "家族（internal/user/family-moa）",
+      "description": "按家族 ID 查询全部成员 userId（getFamilyMembers；params=familyId string）。可配合 Admin `--query-family` 查名称/等级/人数；或使用 `--family-detail` 一次返回详情+成员",
+      "prompts": [
+        "查询家族 <familyId> 全部成员 userId",
+        "家族 <familyId> 成员列表",
+        "根据家族 id <familyId> 获取所有家族成员 id"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-查询成员userId.json \\\n  --family-id <familyId> \\\n  --family-query-members\n"
+    },
+    {
+      "id": "family_query_joined_by_user",
+      "name": "家族-按userId查家族id",
+      "category": "家族（internal/user/family-moa）",
+      "description": "按 userId 查询所属家族 ID（getUserJoinedFamily；params=userId string）。可配合 Admin `--query-family` 查家族详情；或使用 `--family-detail-by-user-id` 一次返回",
+      "prompts": [
+        "查询用户 <userId> 所属家族 id",
+        "用户 <userId> 在哪个家族",
+        "根据用户 id <userId> 查询家族 id"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-按userId查家族id.json \\\n  --family-query-joined-user-id <userId>\n"
+    },
+    {
+      "id": "family_detail_by_id",
+      "name": "家族-按familyId查详情",
+      "category": "家族（internal/user/family-moa）",
+      "description": "组合查询：Admin 家族管理（名称/等级/族长/人数等）+ MOA 成员 userId 列表",
+      "prompts": [
+        "查询家族 <familyId> 详情",
+        "家族 <familyId> 详细信息",
+        "查家族 <familyId> 成员和管理信息"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --family-id <familyId> \\\n  --family-detail\n"
+    },
+    {
+      "id": "family_detail_by_user",
+      "name": "家族-按userId查详情",
+      "category": "家族（internal/user/family-moa）",
+      "description": "组合查询：MOA 查所属家族 id → Admin 家族详情 + MOA 成员 userId 列表",
+      "prompts": [
+        "查询用户 <userId> 所在家族详情",
+        "用户 <userId> 家族详细信息",
+        "查用户 <userId> 的家族和成员"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --family-detail-by-user-id <userId>\n"
+    },
+    {
       "id": "id_auth_query_real_person_record",
       "name": "实名认证-查询认证记录",
       "category": "实名认证（internal/user/id-auth-api）",
@@ -569,6 +617,18 @@
         "handleGiftRamadan2026 造活动送礼数据"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/活动-模拟送礼.json \\\n  --activity-gift-method handleGiftRamadan2026 \\\n  --activity-gift-from-user-id <fromUserId> \\\n  --activity-gift-to-user-id <toUserId>\n"
+    },
+    {
+      "id": "family_member_leave",
+      "name": "家族-移除成员",
+      "category": "家族（external/user/family-api）",
+      "description": "把用户移出所属家族（leave；header KV 含 userId，params json 含 userId）。用户主动退出或测试环境踢人均可调用",
+      "prompts": [
+        "把用户 <userId> 移出家族",
+        "移除家族成员 <userId>",
+        "用户 <userId> 退出家族"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-移除成员.json \\\n  --family-leave-user-id <userId>\n"
     }
   ]
 }

@@ -116,6 +116,41 @@ def set_family_decrease_exp_params(payload: dict[str, Any], family_id: str, decr
     payload["params"] = two_params(family_id, -decrease_exp, second_type="long")
 
 
+def set_family_members_query_params(payload: dict[str, Any], family_id: str) -> None:
+    family_id = str(family_id).strip()
+    if not family_id:
+        raise ValueError("family_id 不能为空")
+    payload["params"] = [string_param(family_id)]
+
+
+def set_user_joined_family_query_params(payload: dict[str, Any], user_id: str) -> None:
+    user_id = str(user_id).strip()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    payload["params"] = [string_param(user_id)]
+
+
+def set_family_leave_params(payload: dict[str, Any], user_id: str) -> None:
+    user_id = str(user_id).strip()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    body = {"userId": user_id}
+    payload["header"] = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+    settings = payload.setdefault("settings", {})
+    if isinstance(settings, dict):
+        settings["headerType"] = "KV"
+    payload["params"] = [
+        {
+            "name": 0,
+            "title": "",
+            "txt": '{""}',
+            "json": json.dumps(body, ensure_ascii=False, separators=(",", ":")),
+            "type": "json",
+            "value": body,
+        }
+    ]
+
+
 FAMILY_FUND_TIERS = frozenset({"A", "B", "C"})
 FAMILY_MEMBER_FUND_API_SCALE = 2
 

@@ -24,6 +24,19 @@ def test_moa_check_fuzzy() -> None:
     for text in ("MOA检查", "检查MOA", "检查MOA环境", "MOA探活", "moa check"):
         result = try_route(text)
         assert result.handled, f"应路由: {text!r}"
+    assert not try_route("不要看到MOA就进行检查").handled
+    assert not try_route("帮我 MOA 探活").handled
+    assert not try_route("提问 MOA 检查").handled
+    for text in (
+        "这是根据家族 id 获取所有家族成员 id 的 MOA，帮我入库",
+        "帮我把MOA入库",
+        "这是发送小时榜全服通知的MOA，帮我入库",
+    ):
+        assert not try_route(text).handled, f"入库任务不应走 MOA检查: {text!r}"
+        from route_patterns import normalize_fuzzy_fast_command, is_likely_fast_route
+
+        assert normalize_fuzzy_fast_command(text) is None, text
+        assert not is_likely_fast_route(text), text
 
 
 def test_help_fuzzy() -> None:
@@ -80,8 +93,7 @@ def test_conversation_persistence() -> None:
 def test_command_hints() -> None:
     from command_hints import suggest_command_hint
 
-    hint = suggest_command_hint("帮我 MOA 探活")
-    assert hint is not None and "MOA检查" in hint
+    assert suggest_command_hint("帮我 MOA 探活") is None
     assert suggest_command_hint("查询用户 100465989 详情") is None
 
 
@@ -111,8 +123,8 @@ def test_report_nl_route() -> None:
 
     assert normalize_report_prompt("帮我生成2.5.4版本测试报告") == "2.5.4版本生成测试报告"
     assert is_likely_fast_route("帮我生成2.5.4版本测试报告")
-    assert normalize_fuzzy_fast_command("帮我 MOA 探活") == "MOA检查"
-    assert is_likely_fast_route("帮我 MOA 探活")
+    assert normalize_fuzzy_fast_command("帮我 MOA 探活") is None
+    assert not is_likely_fast_route("不要看到MOA就进行检查")
     assert normalize_fuzzy_fast_command("平台说明书在哪") == "工具平台"
 
 

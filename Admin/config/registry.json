@@ -146,7 +146,7 @@
       "id": "query_family",
       "name": "家族-查询信息",
       "category": "家族（melon-gateway）",
-      "description": "按家族 ID 或名称查询家族信息（queryFamilyByIdAndName；含头像、等级、家族长、人数、活跃人数、加入/退出总数）",
+      "description": "按家族 ID 或名称查询家族信息（queryFamilyByIdAndName；含头像、等级、家族长、人数、活跃人数、加入/退出总数）。成员 userId 列表可配合 MOA `--family-query-members` 或 `--family-detail`",
       "prompts": [
         "查询家族 <familyId> 信息",
         "查家族 <familyName> 详情",

@@ -28,6 +28,9 @@ from .params import (
     set_family_exp_params,
     set_family_decrease_exp_params,
     set_family_member_fund_contrib_params,
+    set_family_leave_params,
+    set_family_members_query_params,
+    set_user_joined_family_query_params,
     set_backdoor_execute_expr,
     set_id_auth_delete_person_params,
     set_id_auth_del_relation_by_scene_params,
@@ -428,6 +431,14 @@ def _family_member_fund_contrib_mode(args: argparse.Namespace) -> bool:
     return args.family_member_fund_user_id is not None and args.family_member_fund_contrib is not None
 
 
+def _family_query_members_mode(args: argparse.Namespace) -> bool:
+    return bool(args.family_query_members)
+
+
+def _family_query_joined_mode(args: argparse.Namespace) -> bool:
+    return args.family_query_joined_user_id is not None
+
+
 def _family_add_mode(args: argparse.Namespace) -> bool:
     return (
         args.family_id is not None
@@ -436,7 +447,32 @@ def _family_add_mode(args: argparse.Namespace) -> bool:
         and not _family_fund_contrib_mode(args)
         and not _family_fund_clear_mode(args)
         and not _family_member_fund_contrib_mode(args)
+        and not _family_query_members_mode(args)
     )
+
+
+def _op_family_query_members(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/internal/user/family-moa"
+    payload["method"] = "getFamilyMembers"
+    if not args.family_id:
+        raise ValueError("查询家族成员时，必须提供 --family-id")
+    set_family_members_query_params(payload, args.family_id)
+
+
+def _op_family_query_joined(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/internal/user/family-moa"
+    payload["method"] = "getUserJoinedFamily"
+    set_user_joined_family_query_params(payload, args.family_query_joined_user_id)
+
+
+def _op_family_leave(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/external/user/family-api"
+    payload["method"] = "leave"
+    user_id = str(args.family_leave_user_id).strip()
+    if not user_id:
+        raise ValueError("移除家族成员时 userId 不能为空")
+    print(f"移除家族成员 userId={user_id}", file=sys.stderr)
+    set_family_leave_params(payload, user_id)
 
 
 def _op_family_member_fund_contrib(args: argparse.Namespace, payload: dict[str, Any]) -> None:
@@ -632,6 +668,9 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: _family_member_fund_contrib_mode(a), _op_family_member_fund_contrib),
     (lambda a: _family_fund_contrib_mode(a), _op_family_fund_contrib),
     (lambda a: _family_decrease_mode(a), _op_family_decrease_exp),
+    (lambda a: _family_query_members_mode(a), _op_family_query_members),
+    (lambda a: _family_query_joined_mode(a), _op_family_query_joined),
+    (lambda a: a.family_leave_user_id is not None, _op_family_leave),
     (lambda a: _family_add_mode(a), _op_family_exp),
     (lambda a: a.noble_user_id is not None, _op_noble),
     (lambda a: a.vip_user_id is not None, _op_vip),

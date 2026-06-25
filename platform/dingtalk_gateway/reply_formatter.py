@@ -15,6 +15,7 @@ from natural_language import (
     naturalize_vip_failure,
     naturalize_vip_success,
 )
+from moa_registry_guard import is_explicit_moa_check_command, looks_like_moa_registry_intent
 from export_delivery import TRUNCATE_GUIDE
 from route_patterns import (
     CATALOG_OPEN_RE,
@@ -214,6 +215,13 @@ def format_group_reply(
         return _truncate(text)
 
     if text.startswith("✅ MOA") or text.startswith("❌ MOA"):
+        if looks_like_moa_registry_intent(normalized_prompt) and not is_explicit_moa_check_command(
+            normalized_prompt
+        ):
+            return _truncate(
+                "⚠️ 本次应完成 MOA 入库，但返回了探活结果。"
+                "请重新 @机器人 发送入库需求；网关不会把含「入库」的 MOA 任务当作 MOA检查。"
+            )
         ok = text.startswith("✅")
         detail = text.split("，", 1)[-1].strip() if "，" in text else text[2:].strip()
         return _truncate(naturalize_moa_check(ok, detail))

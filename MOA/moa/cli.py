@@ -16,7 +16,13 @@ from .client import (
 )
 from .config import level_by_exp, room_level_thresholds
 from .diamond import parse_diamond_account_summary
-from .family import parse_family_exp_summary, parse_family_fund_summary, parse_family_fund_tier_set_count
+from .family import (
+    parse_family_exp_summary,
+    parse_family_fund_summary,
+    parse_family_fund_tier_set_count,
+    parse_family_members_summary,
+    parse_user_joined_family_summary,
+)
 from .env import load_local_env, load_online_env
 from .online_config import online_defaults, online_query_login_status
 from .flows import (
@@ -30,6 +36,7 @@ from .flows import (
     run_family_fund_reward_setup,
     run_id_auth_fix_failure,
 )
+from .family_detail import needs_family_detail, needs_family_detail_by_user, run_family_detail
 from .package_gift import run_package_gift_send
 from .time_utils import resolve_family_fund_week_key
 from .user_area import USER_AREA_CODES
@@ -131,6 +138,24 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--family-level", type=int, help="家族等级：目标 lv1-lv10")
     parser.add_argument("--family-current-exp", type=int, help="家族声望值：当前值（配合 --family-level，默认 0）")
     parser.add_argument("--family-query-current", action="store_true", help="查询当前家族声望值与等级（增量 0）")
+    parser.add_argument("--family-query-members", action="store_true", help="查询家族全部成员 userId（getFamilyMembers）")
+    parser.add_argument(
+        "--family-query-joined-user-id",
+        help="按 userId 查询所属家族 ID（getUserJoinedFamily）",
+    )
+    parser.add_argument(
+        "--family-leave-user-id",
+        help="移除家族成员（leave；params={userId} json）",
+    )
+    parser.add_argument(
+        "--family-detail",
+        action="store_true",
+        help="查询家族详情：Admin 家族信息 + MOA 成员 userId（需 --family-id）",
+    )
+    parser.add_argument(
+        "--family-detail-by-user-id",
+        help="按 userId 查家族详情：MOA 查家族 id → Admin 家族信息 + MOA 成员列表",
+    )
     parser.add_argument("--family-fund-tier", choices=["A", "B", "C"], help="家族基金档位（FamilyFundService.batchSetFamilyFundTierForTest）")
     parser.add_argument("--family-fund-tier-flag", type=int, default=0, help="设置基金档位 flag（默认 0；result=0 表示未更新）")
     parser.add_argument("--family-fund-ids", help="家族基金档位：家族 ID 列表，逗号分隔（默认用 --family-id）")
@@ -501,6 +526,24 @@ def _print_response(args: argparse.Namespace, resp: dict[str, object]) -> None:
         print(json.dumps(summary, ensure_ascii=False, indent=2))
         return
 
+    if args.family_query_joined_user_id is not None:
+        inner_ec, inner_em, inner_result = extract_inner_result(resp)
+        if inner_ec != 0:
+            print(f"业务返回失败: ec={inner_ec}, em={inner_em}", file=sys.stderr)
+            raise SystemExit(4)
+        summary = parse_user_joined_family_summary(args.family_query_joined_user_id, inner_result)
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+        return
+
+    if args.family_query_members:
+        inner_ec, inner_em, inner_result = extract_inner_result(resp)
+        if inner_ec != 0:
+            print(f"业务返回失败: ec={inner_ec}, em={inner_em}", file=sys.stderr)
+            raise SystemExit(4)
+        summary = parse_family_members_summary(args.family_id, inner_result)
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+        return
+
     if args.family_query_current:
         inner_ec, inner_em, inner_result = extract_inner_result(resp)
         if inner_ec != 0:
@@ -608,6 +651,9 @@ def main() -> int:
 
         if needs_family_fund_reward_setup(args):
             return run_family_fund_reward_setup(args, client)
+
+        if needs_family_detail(args) or needs_family_detail_by_user(args):
+            return run_family_detail(args, client)
 
         if needs_vip_level_upgrade(args):
             payload = build_vip_level_upgrade_payload(args, client)

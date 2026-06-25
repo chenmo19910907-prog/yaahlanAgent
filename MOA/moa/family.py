@@ -67,3 +67,81 @@ def parse_family_fund_summary(
             summary["nextSubTierContributionThreshold"] = next_threshold
             summary["remainingToNextSubTier"] = next_threshold - int(current_total)
     return summary
+
+
+def _normalize_member_user_id(item: Any) -> str | None:
+    if item is None:
+        return None
+    if isinstance(item, (str, int)):
+        uid = str(item).strip()
+        return uid or None
+    if isinstance(item, dict):
+        for key in ("userId", "uid", "momoid", "id"):
+            value = item.get(key)
+            if value is not None and str(value).strip():
+                return str(value).strip()
+    return None
+
+
+def parse_family_members_summary(family_id: str, inner_result: Any) -> dict[str, Any]:
+    members: list[str] = []
+    if isinstance(inner_result, list):
+        for item in inner_result:
+            uid = _normalize_member_user_id(item)
+            if uid:
+                members.append(uid)
+    elif isinstance(inner_result, dict):
+        raw_list = inner_result.get("list") or inner_result.get("members") or inner_result.get("userIds")
+        if isinstance(raw_list, list):
+            for item in raw_list:
+                uid = _normalize_member_user_id(item)
+                if uid:
+                    members.append(uid)
+        else:
+            uid = _normalize_member_user_id(inner_result)
+            if uid:
+                members.append(uid)
+    else:
+        uid = _normalize_member_user_id(inner_result)
+        if uid:
+            members.append(uid)
+
+    # 去重保序
+    seen: set[str] = set()
+    unique_members: list[str] = []
+    for uid in members:
+        if uid not in seen:
+            seen.add(uid)
+            unique_members.append(uid)
+
+    return {
+        "familyId": str(family_id),
+        "memberCount": len(unique_members),
+        "memberUserIds": unique_members,
+    }
+
+
+def _normalize_family_id(value: Any) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, (str, int)):
+        fid = str(value).strip()
+        return fid or None
+    if isinstance(value, dict):
+        for key in ("familyId", "id", "family_id"):
+            item = value.get(key)
+            if item is not None and str(item).strip():
+                return str(item).strip()
+    return None
+
+
+def parse_user_joined_family_summary(user_id: str, inner_result: Any) -> dict[str, Any]:
+    family_id = _normalize_family_id(inner_result)
+    if family_id is None and isinstance(inner_result, dict):
+        family_id = _normalize_family_id(inner_result.get("familyInfo"))
+    joined = family_id is not None and str(family_id).strip() not in ("", "0", "null")
+    return {
+        "userId": str(user_id).strip(),
+        "joinedFamily": joined,
+        "familyId": family_id if joined else None,
+    }

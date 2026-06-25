@@ -62,6 +62,8 @@ def classify_task_kind(
         return "fast:report"
     if re.search(r"测试用例|生成用例|写用例", text):
         return "agent:testcase"
+    if re.search(r"入库|sync_registry|登记.{0,12}(MOA|模板)|MOA.{0,20}入库", text, re.I):
+        return "agent:moa_registry"
     if re.search(r"送礼|gift", text, re.I):
         return "agent:gift"
     if re.search(r"抓包|tunnel", text, re.I):

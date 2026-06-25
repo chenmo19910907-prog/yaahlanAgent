@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import random
 import socket
 import sys
 import time
@@ -24,6 +25,14 @@ MOA_LOOKUP_HOST = "moa_lookup_alpha.momo.com"
 MOA_LOOKUP_PORT = 10010
 GIFT_SERVICE_URI = "/service/mdp-gift/gift-query-service"
 USER_PROFILE_URI = "/service/voga-mts-user-profile-stage"
+PAY_SERVICE_URI = "/service/voga-base-service-middle-pay-stage"
+
+DIAMOND_PROVIDE_DEFAULTS = {
+    "activityId": "2005000496",
+    "taskId": "2005000497",
+    "signKey": "189ad0ec4e41438abf29e2f2874d94eb",
+    "outOrderIdPrefix": "system",
+}
 
 PRODUCT_TYPE_MAP = {
     (0, 0): "NORMAL_DEFAULT",
@@ -209,6 +218,8 @@ def query_gift(gift_id: str, lang: str = "en") -> Dict[str, Any]:
                 "productType": product,
                 "rawGiftType": int(dto.get("giftType", 0)),
                 "productName": dto.get("productName"),
+                "price": dto.get("price"),
+                "nominalPrice": dto.get("nominalPrice"),
                 "source": "batchQueryCategoryPropAndGifts",
             }
     except StageGiftError:
@@ -227,7 +238,109 @@ def query_gift(gift_id: str, lang: str = "en") -> Dict[str, Any]:
         "productType": "PROP_DEFAULT",
         "rawGiftType": int(dto.get("giftType", 2)),
         "productName": dto.get("productName"),
+        "price": dto.get("price"),
+        "nominalPrice": dto.get("nominalPrice"),
         "source": "batchQueryCategoryProps",
+    }
+
+
+def random_out_order_id(prefix: str = "system") -> str:
+    return f"{prefix}-{random.randint(10000, 99999)}"
+
+
+def parse_diamond_count(result: Any) -> int:
+    if not isinstance(result, dict):
+        raise StageGiftError("diamond_query", f"无法解析钻石余额: {result}")
+    diamonds = result.get("diamonds")
+    if diamonds is None:
+        raise StageGiftError("diamond_query", f"响应缺少 diamonds: {result}")
+    return int(diamonds)
+
+
+def query_diamond_balance(user_id: str) -> int:
+    result = call_moa(PAY_SERVICE_URI, "queryUserAccount", [user_id])
+    return parse_diamond_count(result)
+
+
+def provide_diamond(user_id: str, num: int) -> Dict[str, Any]:
+    if num <= 0:
+        raise StageGiftError("diamond_provide", "充值数量必须为正整数")
+    payload = {
+        "userId": user_id,
+        "num": num,
+        "activityId": DIAMOND_PROVIDE_DEFAULTS["activityId"],
+        "taskId": DIAMOND_PROVIDE_DEFAULTS["taskId"],
+        "outOrderId": random_out_order_id(DIAMOND_PROVIDE_DEFAULTS["outOrderIdPrefix"]),
+        "signKey": DIAMOND_PROVIDE_DEFAULTS["signKey"],
+    }
+    result = call_moa(PAY_SERVICE_URI, "provideDiamond", [payload])
+    return {"requested": num, "response": result}
+
+
+def gift_needs_diamond(gift_meta: Dict[str, Any]) -> bool:
+    if gift_meta.get("isPackage") == 1:
+        return False
+    price = gift_meta.get("price")
+    if price is None:
+        return True
+    return float(price) > 0
+
+
+def compute_gift_diamond_cost(
+    gift_meta: Dict[str, Any],
+    num: int,
+    receivers: List[str],
+    send_room_all: bool,
+    snap_data: Optional[Dict[str, Any]],
+) -> int:
+    if send_room_all and snap_data is not None:
+        need = snap_data.get("needDiamonds")
+        if need is not None:
+            return int(need)
+
+    price = gift_meta.get("price")
+    if price is None:
+        raise StageGiftError("gift_price", f"礼物缺少 price，无法计算钻石消耗: {gift_meta.get('productName')}")
+    unit = int(round(float(price)))
+    receiver_count = 1 if send_room_all or not receivers else len(receivers)
+    return unit * num * receiver_count
+
+
+def ensure_diamond_for_gift(sender: str, gift_cost: int) -> Dict[str, Any]:
+    balance_before = query_diamond_balance(sender)
+    topped_up = 0
+    provide_result: Optional[Dict[str, Any]] = None
+
+    if balance_before < gift_cost:
+        topped_up = gift_cost
+        provide_result = provide_diamond(sender, topped_up)
+
+    balance_before_send = query_diamond_balance(sender)
+    if balance_before_send < gift_cost:
+        raise StageGiftError(
+            "diamond_provide",
+            f"充值后余额仍不足: balance={balance_before_send} need={gift_cost}",
+        )
+
+    audit: Dict[str, Any] = {
+        "gift_cost": gift_cost,
+        "balance_before": balance_before,
+        "balance_before_send": balance_before_send,
+        "topped_up": topped_up,
+    }
+    if provide_result is not None:
+        audit["provide"] = provide_result
+    return audit
+
+
+def verify_diamond_consumed(balance_before_send: int, gift_cost: int, sender: str) -> Dict[str, Any]:
+    balance_after = query_diamond_balance(sender)
+    consumed = balance_before_send - balance_after
+    return {
+        "balance_after": balance_after,
+        "consumed": consumed,
+        "expected": gift_cost,
+        "verified": consumed == gift_cost,
     }
 
 
@@ -458,6 +571,15 @@ def run(args: argparse.Namespace) -> None:
         emit(result)
         return
 
+    diamond_audit: Optional[Dict[str, Any]] = None
+    gift_cost = 0
+    if gift_needs_diamond(gift_meta):
+        gift_cost = compute_gift_diamond_cost(
+            gift_meta, args.num, receivers, send_room_all, snap_data
+        )
+        diamond_audit = ensure_diamond_for_gift(args.sender, gift_cost)
+        result["diamond"] = diamond_audit
+
     response = post_gift(instance_ip, args.sender, args.package_id, payload)
     result["response"] = response
     result["mode"] = "execute"
@@ -466,6 +588,21 @@ def run(args: argparse.Namespace) -> None:
         result["step"] = "post_gift"
         result["error"] = response.get("em") or str(response)
         emit(result, 1)
+
+    if diamond_audit is not None:
+        verification = verify_diamond_consumed(
+            diamond_audit["balance_before_send"], gift_cost, args.sender
+        )
+        result["diamond"]["after_send"] = verification
+        if not verification["verified"]:
+            result["ok"] = False
+            result["step"] = "diamond_verify"
+            result["error"] = (
+                f"钻石消耗不符: 期望 {gift_cost}，实际消耗 {verification['consumed']}，"
+                f"送礼前 {diamond_audit['balance_before_send']} → 送礼后 {verification['balance_after']}"
+            )
+            emit(result, 1)
+
     emit(result)
 
 
