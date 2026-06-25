@@ -9,13 +9,13 @@ from task_session import TaskSession
 QUEUE_ESTIMATE_MIN_PER_TASK = 3
 DEFAULT_AGENT_ESTIMATE_S = QUEUE_ESTIMATE_MIN_PER_TASK * 60
 
-# 自适应心跳：首次延迟与后续间隔的 clamp 范围（秒）
-HEARTBEAT_INITIAL_MIN_S = 40
-HEARTBEAT_INITIAL_MAX_S = 90
-HEARTBEAT_INTERVAL_MIN_S = 45
-HEARTBEAT_INTERVAL_MAX_S = 120
-HEARTBEAT_INITIAL_DEFAULT_S = 50
-HEARTBEAT_INTERVAL_DEFAULT_S = 60
+# 自适应心跳：首次延迟与后续间隔的 clamp 范围（秒）；频率约为原配置的一半
+HEARTBEAT_INITIAL_MIN_S = 80
+HEARTBEAT_INITIAL_MAX_S = 180
+HEARTBEAT_INTERVAL_MIN_S = 90
+HEARTBEAT_INTERVAL_MAX_S = 240
+HEARTBEAT_INITIAL_DEFAULT_S = 100
+HEARTBEAT_INTERVAL_DEFAULT_S = 120
 HEARTBEAT_MAX_COUNT = 4
 HEARTBEAT_REMAINING_MIN_S = 30
 # 预估剩余超过该值（秒）时，群内统一显示「3分钟以上」
@@ -147,12 +147,12 @@ def compute_heartbeat_schedule(task_kind: str | None) -> tuple[float, float]:
     if estimate is None:
         return HEARTBEAT_INITIAL_DEFAULT_S, HEARTBEAT_INTERVAL_DEFAULT_S
     initial = _clamp_heartbeat_seconds(
-        estimate * 0.4,
+        estimate * 0.8,
         HEARTBEAT_INITIAL_MIN_S,
         HEARTBEAT_INITIAL_MAX_S,
     )
     interval = _clamp_heartbeat_seconds(
-        estimate * 0.5,
+        estimate * 1.0,
         HEARTBEAT_INTERVAL_MIN_S,
         HEARTBEAT_INTERVAL_MAX_S,
     )

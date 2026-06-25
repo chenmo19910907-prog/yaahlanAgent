@@ -28,6 +28,7 @@
 - **Report**（`Report/`）：从版本用例 xlsx 生成内网/外网测试总结 HTML；详见 [Report/README.md](Report/README.md)、[Report/使用方法.md](Report/使用方法.md)
 - **adb**（`adb/`）：真机 UI 自动化（截屏 → 读图算坐标 → 点击，仅保留最新 10 张截图）；支持与 **Tunnel** 联动的 `run`（操作 + 截图 + 抓包校验）；**录制脚本库**按发版回归一级模块存放 **片段**，命令 `macro`；**P0 自动化用例**（`autotest`：PRD/手工用例 → 可执行 JSON → 真机跑测 → HTML 报告）见 [adb/自动化用例/README.md](adb/自动化用例/README.md)；详见 [adb/README.md](adb/README.md)、[adb/使用方法.md](adb/使用方法.md)、[adb/录制脚本/README.md](adb/录制脚本/README.md)
 - **e2e**（`e2e/`）：**独立于 adb/** 的自然语言安卓自动化（**识别→思考→执行** + 知识库 + MOA/Tunnel）；详见 [e2e/README.md](e2e/README.md)
+- **midscene**（`midscene/`）：基于 [Midscene.js](https://midscenejs.com/) 的 **AI 视觉驱动**双端自动化（iOS WDA + Android ADB）；YAML / TypeScript 用例，覆盖登录、充值、游戏中心（greedy / slots / others）等；详见 [midscene/README.md](midscene/README.md)
 
 ## 项目结构
 
@@ -106,6 +107,43 @@ auto-generate-testcase/
 │   ├── e2e_execute.py                 # 入口
 │   ├── cases/                         # 声明式用例 JSON
 │   └── reports/                       # 运行报告
+├── midscene/                          # Midscene.js AI 视觉驱动双端自动化（iOS + Android）
+│   ├── README.md
+│   ├── package.json                   # npm 脚本（YAML / Vitest）
+│   ├── vitest.config.ts
+│   ├── tsconfig.json
+│   ├── .env.example                   # AI 模型、WDA、ADB 配置模板
+│   ├── scripts/
+│   │   ├── midscene-run.mjs           # YAML 执行包装器（验证码轮询 / 注入）
+│   │   ├── run-ios-game-ordered.mjs   # iOS 游戏用例有序批量执行
+│   │   └── run-ios-game-slots-ordered.mjs
+│   ├── game.env/
+│   │   ├── games.list                 # 游戏用例列表（供批量脚本读取）
+│   │   └── run-ios-games-from-list.mjs
+│   ├── utils/
+│   │   ├── env.ts                     # 环境变量 + AI_ACTION_CONTEXT
+│   │   ├── api.ts                     # getVerifyCode 等接口
+│   │   └── sc-webview.ts              # Android WebView CDP 工具
+│   ├── testcases-yaml/                # YAML 用例（Midscene 原生格式，推荐维护）
+│   │   ├── android/
+│   │   │   ├── login-p1.yaml / login-p2.yaml / recharge-p1.yaml
+│   │   │   ├── game-greedy/           # GreedyCat2、Lucky77、UEFA 等下注用例
+│   │   │   └── game-slots/            # 1001Nights、BookOfDeath 等 spin 用例
+│   │   ├── ios/
+│   │   │   ├── login/                 # login-p1-trigger / login-p1-complete
+│   │   │   ├── login-p1-complete.yaml / recharge-p1.yaml / game-center-p1.yaml
+│   │   │   ├── game-greedy/
+│   │   │   ├── game-slots/
+│   │   │   └── game-others/           # Mines、Crash、Plinko2 等
+│   │   └── web/
+│   │       └── run-eid2026.yaml
+│   └── testcases-ts/                  # TypeScript 用例（Vitest）
+│       ├── android/                   # 02-live-room、03-recharge、04-profile、planet…
+│       ├── ios/                       # 01-login ~ 04-profile
+│       ├── web/
+│       │   └── run-eid2026.ts         # Eid 2026 WebView CDP 用例
+│       └── temporary_testcase/
+│           └── eid2026-cases.json
 ├── rules/                             # 生成规则与辅助流程说明
 │   ├── testcase_generation_rules.md   # 通用：榜单 / 抽奖 / 兑换 / 礼包等
 │   ├── version_testcase_generation_rules.md  # 版本用例生成规则（须先读 documents/ 对应模块）
@@ -293,6 +331,7 @@ python3 adb/adb_execute.py macro 发布纯文本动态 --text 5555 --no-capture
 | [adb/录制脚本/README.md](adb/录制脚本/README.md) | 录制脚本库目录与落库约定 |
 | [adb/录制脚本/KB对照.md](adb/录制脚本/KB对照.md) | 知识库路径 ↔ 片段/组合对照 |
 | [e2e/README.md](e2e/README.md) | 全新 E2E 自动化方案（独立于 adb/） |
+| [midscene/README.md](midscene/README.md) | Midscene.js AI 视觉驱动双端自动化（YAML / Vitest） |
 
 - `榜单.md`：榜单类模块完整用例维度
 - `抽奖.md`：抽奖活动用例模板

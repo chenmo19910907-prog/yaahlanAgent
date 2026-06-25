@@ -48,24 +48,33 @@ Midscene.js 是一个 AI 视觉驱动的自动化测试框架：
 ## 二、工程结构
 
 ```
-midscene-e2e/
+midscene/
 ├── testcases-yaml/                     # ★ YAML 用例目录（Midscene 原生格式，推荐优先维护）
 │   ├── android/
 │   │   ├── login-p1.yaml              # 登录模块 P1（手机号验证码登录）
 │   │   ├── login-p2.yaml              # 登录模块 P2（异常场景）
-│   │   └── recharge-p1.yaml           # 充值模块 P1（EGP50.60 钱包充值）
+│   │   ├── recharge-p1.yaml           # 充值模块 P1（EGP50.60 钱包充值）
+│   │   ├── game-greedy/               # 下注类：GreedyCat2、Lucky77-II、LuckyAnimals、UEFA…
+│   │   └── game-slots/                # 老虎机 spin：1001Nights、BookOfDeath、Golden-Tree…
 │   ├── ios/
-│   │   ├── login-p1-trigger.yaml      # iOS 登录 P1 阶段1：启动 App → 触发 SMS
-│   │   ├── login-p1-complete.yaml     # iOS 登录 P1 阶段2：填入验证码 → 断言首页
-│   │   └── recharge-p1.yaml           # iOS 充值模块 P1
+│   │   ├── login/                     # iOS 登录两阶段（推荐路径）
+│   │   │   ├── login-p1-trigger.yaml  # 阶段1：启动 App → 触发 SMS
+│   │   │   ├── login-p1-complete.yaml # 阶段2：填入验证码 → 断言首页
+│   │   │   └── game-center-p1.yaml    # 游戏中心入口
+│   │   ├── login-p1-complete.yaml     # 登录完成（根目录副本，与 login/ 内文件对应）
+│   │   ├── recharge-p1.yaml           # iOS 充值模块 P1
+│   │   ├── game-greedy/               # 下注类（与 Android 对称）
+│   │   ├── game-slots/                # 老虎机 spin
+│   │   └── game-others/               # 其他游戏：Mines、Crash、Plinko2、ChickenRoad…
 │   └── web/
 │       └── run-eid2026.yaml           # Eid 2026 活动页加载验证（Midscene web 模式）
-├── testcases-ts/                       # TypeScript 用例目录
+├── testcases-ts/                       # TypeScript 用例目录（Vitest）
 │   ├── android/
 │   │   ├── 02-live-room.test.ts       # 直播间模块
 │   │   ├── 03-recharge.test.ts        # 充值模块
 │   │   ├── 04-profile.test.ts         # 个人主页模块
-│   │   └── planet.test.ts             # 星球模块
+│   │   ├── planet.test.ts             # 星球 / 底栏 Tab 切换
+│   │   └── recharge.test.ts
 │   ├── ios/
 │   │   ├── 01-login.test.ts
 │   │   ├── 02-live-room.test.ts
@@ -76,16 +85,24 @@ midscene-e2e/
 │   └── temporary_testcase/
 │       └── eid2026-cases.json         # eid2026 测试用例数据
 ├── scripts/
-│   └── midscene-run.mjs               # YAML 测试执行包装器
-│                                      #   Android：并行轮询验证码 + adb push 写入设备
-│                                      #   iOS：两阶段执行 + 动态注入 TEST_VERIFY_CODE
+│   ├── midscene-run.mjs               # YAML 测试执行包装器
+│   │                                  #   Android：并行轮询验证码 + adb push 写入设备
+│   │                                  #   iOS：两阶段执行 + 动态注入 TEST_VERIFY_CODE
+│   ├── run-ios-game-ordered.mjs       # iOS 游戏用例有序批量执行（greedy + others）
+│   └── run-ios-game-slots-ordered.mjs # iOS 老虎机用例有序批量执行
+├── game.env/
+│   ├── games.list                     # 游戏用例清单（名称 ↔ YAML 路径）
+│   └── run-ios-games-from-list.mjs    # 按 games.list 批量跑 iOS 游戏用例（支持 --from 续跑）
 ├── utils/
 │   ├── env.ts                         # 环境变量统一读取 + AI 上下文常量
 │   ├── api.ts                         # getVerifyCode 接口封装
 │   └── sc-webview.ts                  # SoulChill WebView CDP 连接工具（Android）
+├── midscene_run/                      # 运行产物（报告 / 日志，已 .gitignore）
 ├── .env                               # 本地配置（不提交 git）
 ├── .env.example                       # 配置模板（提交 git，给团队成员参考）
+├── .gitignore
 ├── vitest.config.ts                   # TypeScript 测试框架配置
+├── tsconfig.json
 └── package.json
 ```
 
@@ -490,8 +507,12 @@ npm run yaml:android:all        # 全部 Android YAML 用例（遇错继续）
 **iOS（两阶段登录 + 验证码自动注入）：**
 
 ```bash
-npm run yaml:ios:login      # iOS 登录 P1（自动触发 SMS → 拉取验证码 → 完成登录）
-npm run yaml:ios:recharge   # iOS 充值模块 P1
+npm run yaml:ios:login              # iOS 登录 P1（自动触发 SMS → 拉取验证码 → 完成登录）
+npm run yaml:ios:recharge           # iOS 充值模块 P1
+npm run yaml:ios:game:all           # iOS 游戏中心 greedy + others 有序批量
+npm run yaml:ios:game-slots:all     # iOS 老虎机 slots 有序批量
+npm run yaml:ios:games-from-list    # 按 game.env/games.list 批量执行
+npm run yaml:ios:games-from-list:resume  # 从指定游戏名续跑（默认 --from=Mines）
 ```
 
 **Web H5（Midscene web 模式，不依赖 App）：**

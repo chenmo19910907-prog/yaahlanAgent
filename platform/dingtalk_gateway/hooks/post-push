@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Git post-push：推送含 platform/dingtalk_gateway/ 变更后静默重启网关（不推送启停群通知）
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+CTL="$REPO_ROOT/platform/dingtalk_gateway/gateway_ctl.sh"
+GATEWAY_PREFIX="platform/dingtalk_gateway/"
+
+[[ -x "$CTL" ]] || exit 0
+
+_null_oid="0000000000000000000000000000000000000000"
+gateway_touched=0
+
+_push_has_gateway_changes() {
+  local old_sha="$1"
+  local new_sha="$2"
+  if [[ "$new_sha" == "$_null_oid" ]]; then
+    return 1
+  fi
+  if [[ "$old_sha" == "$_null_oid" ]]; then
+    git diff-tree --no-commit-id --name-only -r "$new_sha" | grep -q "^${GATEWAY_PREFIX}"
+    return
+  fi
+  git diff --name-only "$old_sha" "$new_sha" | grep -q "^${GATEWAY_PREFIX}"
+}
+
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+  if _push_has_gateway_changes "$remote_sha" "$local_sha"; then
+    gateway_touched=1
+    break
+  fi
+done
+
+if [[ "$gateway_touched" -eq 1 ]]; then
+  exec "$CTL" silent-restart
+fi

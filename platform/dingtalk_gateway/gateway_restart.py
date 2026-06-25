@@ -1,4 +1,4 @@
-"""代码更新后自动重启网关，并在启停时主动推送钉钉群通知。"""
+"""代码更新后自动静默重启网关（不推送钉钉群启停通知）。"""
 
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from env_loader import GATEWAY_DIR
-from gateway_status_notify import notify_gateway_stopping
 
 logger = logging.getLogger("dingtalk-gateway")
 
@@ -81,7 +80,20 @@ def read_and_clear_restart_context() -> dict | None:
 def format_code_update_restart_note(changed_files: list[str]) -> str:
     return (
         "\n\n🔄 检测到网关代码已更新，约 "
-        f"{RESTART_DELAY_S} 秒后自动重启；重启前后均会在本群推送通知。"
+        f"{RESTART_DELAY_S} 秒后自动静默重启（不向本群推送启停通知）。"
+    )
+
+
+def _run_gateway_silent_restart() -> None:
+    if not GATEWAY_CTL.is_file():
+        logger.error("未找到 gateway_ctl.sh，无法自动重启")
+        return
+    subprocess.Popen(
+        ["/bin/bash", str(GATEWAY_CTL), "silent-restart"],
+        cwd=str(GATEWAY_DIR),
+        start_new_session=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
     )
 
 
@@ -90,37 +102,22 @@ def schedule_gateway_restart_after_code_change(
     operator: str,
     changed_files: list[str],
 ) -> None:
-    """任务回复发出后延迟重启：先推送关闭通知，再 launchd restart。"""
+    """任务回复发出后延迟静默重启（gateway_ctl.sh silent-restart）。"""
     if not changed_files:
         return
-    write_restart_context(operator=operator, changed_files=changed_files)
     operator_name = (operator or "未知").strip() or "未知"
 
     def _worker() -> None:
         time.sleep(RESTART_DELAY_S)
         try:
-            notify_gateway_stopping(reason=f"代码更新（{operator_name}），正在重启")
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("代码更新重启前通知失败: %s", exc)
-        time.sleep(0.8)
-        if not GATEWAY_CTL.is_file():
-            logger.error("未找到 gateway_ctl.sh，无法自动重启")
-            return
-        try:
-            subprocess.Popen(
-                ["/bin/bash", str(GATEWAY_CTL), "restart"],
-                cwd=str(GATEWAY_DIR),
-                start_new_session=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
+            _run_gateway_silent_restart()
             logger.info(
-                "已触发代码更新重启 operator=%s files=%d",
+                "已触发代码更新静默重启 operator=%s files=%d",
                 operator_name,
                 len(changed_files),
             )
         except OSError as exc:
-            logger.error("触发 gateway_ctl restart 失败: %s", exc)
+            logger.error("触发 gateway_ctl silent-restart 失败: %s", exc)
 
     threading.Thread(
         target=_worker,

@@ -29,7 +29,7 @@ _GATEWAY_RULES = f"""\
    - 操作类：说明做了什么、对象是谁、结果如何，例如「用户 100465989 已升级到 VIP3，当前经验值 12000」
    - 禁止：只写「成功/已完成」、禁止 `接口返回：`、禁止 `result.xxx =` 这类字段罗列
 10. **测试用例**：生成测试用例时必须写入 `temporary_testcase/`（Markdown 表格或 CSV，含编号/功能模块/测试步骤/预期结果）；网关会自动同步到钉钉文档并在群里**只回在线表格链接**，无需用户再手动导出。
-11. **代码修改权限**：仅 `config/code_modify_allowlist.json`（及本地 `code_modify_allowlist.local.json`）登记的账号可通过机器人修改网关/Cursor 代码逻辑；其他人只能查询与生成用例。修改 `platform/dingtalk_gateway/` 后网关会**自动重启**并在群里推送启停通知，**不要**手动执行 `gateway_ctl.sh restart`。
+11. **代码修改权限**：仅 `config/code_modify_allowlist.json`（及本地 `code_modify_allowlist.local.json`）登记的账号可通过机器人修改网关/Cursor 代码逻辑；其他人只能查询与生成用例。修改 `platform/dingtalk_gateway/` 并提交 GitLab 后网关会**自动静默重启**（不向本群推送启停通知），**不要**手动执行 `gateway_ctl.sh restart`。
 12. {_GIFT_DEFAULT_RULE}
 13. **禁止 ADB / 真机 UI**：钉钉消息**不得**经 ADB 或真机自动化执行。禁止调用 `adb/`、`adb_execute.py`、`macro`、`flow run`、`observe`/`capture`/`locate`/`tap`、`autotest`、adb-screen MCP 等。查数用 MOA/Admin；抓包用 Tunnel **只读**查询。用户要求真机点按、礼物面板 UI、截图验收时，说明「钉钉机器人不支持真机操作，请在 Cursor 本机执行」。
 14. **失败处理**：用自然语言说明问题与下一步，不要编造结果。
