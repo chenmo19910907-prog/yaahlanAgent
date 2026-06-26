@@ -629,6 +629,54 @@
         "用户 <userId> 退出家族"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-移除成员.json \\\n  --family-leave-user-id <userId>\n"
+    },
+    {
+      "id": "family_pk_modify_receive_daily_rank",
+      "name": "家族PK-修改收礼日榜",
+      "category": "家族PK（vas/activity/family-pk-v2-api）",
+      "description": "测试环境覆盖写入家族收礼日榜（modifyReceiveDailyRankForTest）。familyReceiveScore 为家族日榜分值（覆盖写）；memberUserId + memberReceiveScore 可选，同步覆盖成员收礼明细。修改模板 params[0].value 后执行",
+      "prompts": [
+        "修改家族 <familyId> <date> 收礼日榜分值为 <score>",
+        "家族PK修改收礼日榜 familyId=<familyId> date=<date> familyReceiveScore=<score>",
+        "覆盖写入家族收礼日榜"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-修改收礼日榜.json\n"
+    },
+    {
+      "id": "family_pk_query_receive_daily_rank",
+      "name": "家族PK-查询收礼日榜",
+      "category": "家族PK（vas/activity/family-pk-v2-api）",
+      "description": "测试环境查询家族收礼日榜（queryReceivedDailyRankForTest）。params：lang、date（yyyy-MM-dd）、limit（返回条数，最大 500）。修改模板 params[0].value 后执行",
+      "prompts": [
+        "查询 <date> 家族收礼日榜",
+        "家族PK查询收礼日榜 date=<date> limit=<limit>",
+        "查收礼日榜 top <limit>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-查询收礼日榜.json\n"
+    },
+    {
+      "id": "family_pk_incr_score",
+      "name": "家族PK-增加PK值",
+      "category": "家族PK（vas/activity/family-pk-v2-api）",
+      "description": "测试环境增加家族/成员 PK 值（incrFamilyPkScoreForTest）。同步累加家族 PK 榜与成员 PK 榜；updateBattleRank 默认 true 时同步更新对战榜。成功返回 familyPkScore、memberPkScore。修改模板 params[0].value 后执行",
+      "prompts": [
+        "给家族 <familyId> 成员 <memberUserId> 增加 <pkDelta> PK值",
+        "家族PK增加PK值 familyId=<familyId> memberUserId=<memberUserId> pkDelta=<pkDelta>",
+        "增加家族PK值 date=<date> pkDelta=<pkDelta>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-增加PK值.json\n"
+    },
+    {
+      "id": "family_pk_run_match_task",
+      "name": "家族PK-结算发奖匹配",
+      "category": "家族PK（vas/activity/family-pk-v2-api）",
+      "description": "测试环境跑家族 PK 定时任务（runFamilyPkMatchTask）。入参为 yyyy-MM-dd 日期字符串：对输入日期的前一日进行结算和发奖，并对输入日期重新匹配。修改模板 params[0].value 后执行",
+      "prompts": [
+        "执行 <date> 家族PK结算发奖并匹配",
+        "家族PK结算发奖匹配 date=<date>",
+        "跑家族PK匹配任务 <date>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-结算发奖匹配.json\n"
     }
   ]
 }

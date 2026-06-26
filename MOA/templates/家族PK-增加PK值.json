@@ -1,0 +1,48 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/vas/activity/family-pk-v2-api",
+  "method": "incrFamilyPkScoreForTest",
+  "header": "",
+  "params": [
+    {
+      "name": 0,
+      "title": "",
+      "txt": "",
+      "json": "{\"userId\":\"100481112\",\"lang\":\"zh\",\"date\":\"2026-06-17\",\"familyId\":\"family123\",\"memberUserId\":\"user456\",\"pkDelta\":1000,\"updateBattleRank\":true}",
+      "type": "json",
+      "value": {
+        "userId": "100481112",
+        "lang": "zh",
+        "date": "2026-06-17",
+        "familyId": "family123",
+        "memberUserId": "user456",
+        "pkDelta": 1000,
+        "updateBattleRank": true
+      }
+    }
+  ],
+  "settings": {
+    "time": 2000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "family_pk_incr_score",
+    "name": "家族PK-增加PK值",
+    "category": "家族PK（vas/activity/family-pk-v2-api）",
+    "description": "测试环境增加家族/成员 PK 值（incrFamilyPkScoreForTest）。同步累加家族 PK 榜与成员 PK 榜；updateBattleRank 默认 true 时同步更新对战榜。成功返回 familyPkScore、memberPkScore。修改模板 params[0].value 后执行",
+    "prompts": [
+      "给家族 <familyId> 成员 <memberUserId> 增加 <pkDelta> PK值",
+      "家族PK增加PK值 familyId=<familyId> memberUserId=<memberUserId> pkDelta=<pkDelta>",
+      "增加家族PK值 date=<date> pkDelta=<pkDelta>"
+    ]
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/vas/activity/family-pk-v2-api",
+  "method": "modifyReceiveDailyRankForTest",
+  "header": "",
+  "params": [
+    {
+      "name": 0,
+      "title": "",
+      "txt": "",
+      "json": "{\"userId\":\"100481112\",\"lang\":\"zh\",\"date\":\"2026-06-17\",\"familyId\":\"family123\",\"familyReceiveScore\":50000,\"memberUserId\":\"user456\",\"memberReceiveScore\":30000}",
+      "type": "json",
+      "value": {
+        "userId": "100481112",
+        "lang": "zh",
+        "date": "2026-06-17",
+        "familyId": "family123",
+        "familyReceiveScore": 50000,
+        "memberUserId": "user456",
+        "memberReceiveScore": 30000
+      }
+    }
+  ],
+  "settings": {
+    "time": 2000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "family_pk_modify_receive_daily_rank",
+    "name": "家族PK-修改收礼日榜",
+    "category": "家族PK（vas/activity/family-pk-v2-api）",
+    "description": "测试环境覆盖写入家族收礼日榜（modifyReceiveDailyRankForTest）。familyReceiveScore 为家族日榜分值（覆盖写）；memberUserId + memberReceiveScore 可选，同步覆盖成员收礼明细。修改模板 params[0].value 后执行",
+    "prompts": [
+      "修改家族 <familyId> <date> 收礼日榜分值为 <score>",
+      "家族PK修改收礼日榜 familyId=<familyId> date=<date> familyReceiveScore=<score>",
+      "覆盖写入家族收礼日榜"
+    ]
+  }
+}

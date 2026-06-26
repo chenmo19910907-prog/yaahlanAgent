@@ -8,7 +8,6 @@ import asyncio
 import json
 import os
 import re
-import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -19,7 +18,6 @@ REPO_ROOT = GATEWAY_DIR.parents[1]
 _EXCEL_VENV = (
     REPO_ROOT / ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/venv/bin/python3.13"
 )
-_DOC_VENV = REPO_ROOT / ".cursor/skills/dingtalk-doc-read/mcp_dingtalk_doc/venv/bin/python3.13"
 
 if (
     __name__ == "__main__"
@@ -32,18 +30,23 @@ if str(GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR))
 
 from alidocs_excel_export import DOC_API, _col_letter, _excel_env, _get_token_and_operator  # noqa: E402
+from mse_workbook_utils import (  # noqa: E402
+    apply_parsed_values_to_original,
+    fetch_workbook_sheets_async,
+    find_param_sheet_name,
+    node_id,
+    parse_rank_range,
+)
+from mse_config_export import _fetch_mse_config  # noqa: E402
 
 import httpx  # noqa: E402
 
-NODE_ID_RE = re.compile(r"/i/nodes/([^?/#]+)")
 PARAM_SHEET = "参数表"
 JSON_SHEET = "configValue_JSON"
 
 
 def _node_id(url_or_id: str) -> str:
-    text = (url_or_id or "").strip()
-    match = NODE_ID_RE.search(text)
-    return match.group(1) if match else text
+    return node_id(url_or_id)
 
 
 def _cell(row: list[Any], idx: int) -> str:
@@ -98,6 +101,7 @@ def _parse_param_sheet(matrix: list[list[Any]]) -> tuple[dict[str, Any], dict[st
         "minWinPk",
         "minRewardPk",
         "minListPk",
+        "minBracketDailyAvg",
         "eventGiftProductIds",
         "familyWhiteList",
         "rewardRiskRuleId",
@@ -134,7 +138,17 @@ def _parse_param_sheet(matrix: list[list[Any]]) -> tuple[dict[str, Any], dict[st
                 raise ValueError(f"档位行解析失败: {row}") from exc
             if bracket_idx < 0 or bracket_idx >= len(config["bracketGradients"]):
                 raise ValueError(f"区间下标越界: {bracket_idx}")
-            config["bracketGradients"][bracket_idx]["gradients"].append(
+            bracket = config["bracketGradients"][bracket_idx]
+            rank_label = _cell(row, 2)
+            if rank_label:
+                rank_start, rank_end = parse_rank_range(rank_label)
+                if rank_start is not None:
+                    bracket["rankStart"] = rank_start
+                if rank_end is not None:
+                    bracket["rankEnd"] = rank_end
+                else:
+                    bracket.pop("rankEnd", None)
+            bracket["gradients"].append(
                 {"coefficient": coeff, "bonusDiamond": diamond}
             )
             continue
@@ -158,23 +172,9 @@ def _parse_param_sheet(matrix: list[list[Any]]) -> tuple[dict[str, Any], dict[st
 
 
 def _fetch_sheets_sync(workbook_url: str) -> dict[str, list[list[Any]]]:
-    code = f"""
-import json, sys
-sys.path.insert(0, {str(REPO_ROOT / "scripts")!r})
-from dingtalk_kb_source import fetch_workbook_sheets
-sheets = fetch_workbook_sheets({workbook_url!r})
-print(json.dumps(sheets))
-"""
-    proc = subprocess.run(
-        [str(_DOC_VENV), "-c", code],
-        capture_output=True,
-        text=True,
-        cwd=REPO_ROOT,
-    )
-    if proc.returncode != 0:
-        raise RuntimeError((proc.stderr or proc.stdout or "读取参数表失败").strip())
-    raw = json.loads(proc.stdout)
-    return {name: matrix for name, matrix in raw}
+    from mse_workbook_utils import fetch_workbook_sheets
+
+    return fetch_workbook_sheets(workbook_url)
 
 
 def _json_sheet_rows(*, meta: dict[str, str], config: dict[str, Any]) -> list[list[str]]:
@@ -229,13 +229,25 @@ async def _write_sheet(
             raise RuntimeError(f"写入 {sheet_name} 失败 HTTP {wr.status_code}: {wr.text[:300]}")
 
 
-async def generate_json_async(workbook_url_or_id: str) -> tuple[str, dict[str, Any]]:
+async def generate_json_async(
+    workbook_url_or_id: str,
+    *,
+    namespace: str = "voga-common",
+    config_key: str = "familyPkConfig",
+) -> tuple[str, dict[str, Any]]:
     workbook_id = _node_id(workbook_url_or_id)
     url = f"https://alidocs.dingtalk.com/i/nodes/{workbook_id}"
-    sheets = _fetch_sheets_sync(url)
-    if PARAM_SHEET not in sheets:
-        raise RuntimeError(f"缺少工作表「{PARAM_SHEET}」")
-    config, meta = _parse_param_sheet(sheets[PARAM_SHEET])
+    sheets = await fetch_workbook_sheets_async(url)
+    param_sheet = find_param_sheet_name(sheets)
+    parsed, meta = _parse_param_sheet(sheets[param_sheet])
+    original = _fetch_mse_config(namespace=namespace, config_key=config_key)["configValue"]
+    config = apply_parsed_values_to_original(original, parsed)
+    mse_meta = _fetch_mse_config(namespace=namespace, config_key=config_key)["meta"]
+    meta.setdefault("nameSpace", str(mse_meta.get("nameSpace") or namespace))
+    meta.setdefault("configKey", str(mse_meta.get("configKey") or config_key))
+    meta.setdefault("configDesc", str(mse_meta.get("configDesc") or ""))
+    if mse_meta.get("modified"):
+        meta["modified"] = str(mse_meta["modified"])
     rows = _json_sheet_rows(meta=meta, config=config)
 
     env = _excel_env()
