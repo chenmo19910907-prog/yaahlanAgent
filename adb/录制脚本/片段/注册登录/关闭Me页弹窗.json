@@ -32,9 +32,9 @@
         0.56
       ],
       "note": "Account Security → Cancel",
-      "resourceId": "profile_extra_info_container",
-      "bounds": "[0,1110][1080,1480]",
-      "className": "android.view.ViewGroup",
+      "resourceId": "low_mian_image",
+      "bounds": "[0,570][1080,1534]",
+      "className": "android.widget.ImageView",
       "fallback_tap_pct": [
         0.32,
         0.56
@@ -43,7 +43,7 @@
         345,
         1310
       ],
-      "locatorLearnedAt": "2026-06-16T10:47:27Z"
+      "locatorLearnedAt": "2026-06-25T06:52:15Z"
     },
     {
       "sleep_ms": 350
@@ -54,9 +54,9 @@
         0.479
       ],
       "note": "Crowd Testing → Cancel",
-      "resourceId": "profile_extra_info_container",
-      "bounds": "[0,1110][1080,1480]",
-      "className": "android.view.ViewGroup",
+      "resourceId": "low_mian_image",
+      "bounds": "[0,570][1080,1534]",
+      "className": "android.widget.ImageView",
       "fallback_tap_pct": [
         0.296,
         0.479
@@ -65,7 +65,7 @@
         319,
         1120
       ],
-      "locatorLearnedAt": "2026-06-16T10:47:29Z"
+      "locatorLearnedAt": "2026-06-25T06:52:17Z"
     },
     {
       "sleep_ms": 350
@@ -76,10 +76,10 @@
         0.52
       ],
       "note": "双按钮对话框左侧 Cancel",
-      "resourceId": "sign",
-      "bounds": "[51,1155][1029,1219]",
+      "resourceId": "low_mian_image",
+      "bounds": "[0,570][1080,1534]",
       "uiText": "She is very mysterious, nothing left",
-      "className": "android.widget.TextView",
+      "className": "android.widget.ImageView",
       "fallback_tap_pct": [
         0.35,
         0.52
@@ -88,7 +88,7 @@
         378,
         1216
       ],
-      "locatorLearnedAt": "2026-06-16T10:47:30Z"
+      "locatorLearnedAt": "2026-06-25T06:52:19Z"
     },
     {
       "sleep_ms": 300

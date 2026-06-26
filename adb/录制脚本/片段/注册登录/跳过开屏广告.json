@@ -23,8 +23,8 @@
       ],
       "note": "跳过/关闭（右上角；坐标需 recalibrate 时更新）",
       "skip_key": "dismiss_splash_ad",
-      "resourceId": "post",
-      "bounds": "[853,105][1050,213]",
+      "resourceId": "language",
+      "bounds": "[722,84][1020,194]",
       "className": "android.widget.TextView",
       "fallback_tap_pct": [
         0.915,
@@ -34,8 +34,8 @@
         988,
         128
       ],
-      "locatorLearnedAt": "2026-06-17T09:41:34Z",
-      "uiText": "Post"
+      "locatorLearnedAt": "2026-06-25T06:43:30Z",
+      "uiText": "English"
     },
     {
       "sleep_ms": 2500,
