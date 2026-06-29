@@ -387,6 +387,80 @@ def _op_room_set_level(args: argparse.Namespace, payload: dict[str, Any]) -> Non
     )
 
 
+def _op_user_rank_dispatch(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    area = (args.user_rank_area or "MENA").upper()
+    time_type = (args.user_rank_time_type or "WEEK").upper()
+    cycle = (args.user_rank_cycle or "NOW").upper()
+    # MONTH 使用 V2 方法，WEEK/DAY 使用原方法
+    method_name = "dispatchTotalUserRankListPrizeV2" if time_type == "MONTH" else "dispatchTotalUserRankListPrize"
+    expr = (
+        f'context.getBean("roomGiftRankListServiceImpl")'
+        f".{method_name}("
+        f"com.immomo.voga.mts.room.api.enums.rank.RoomGiftRankListTimeTypeEnum.{time_type},"
+        f"com.immomo.voga.mts.room.api.enums.rank.RoomGiftRankListCycleEnum.{cycle},"
+        f"com.immomo.yaahlan.business.utils.enums.AreaEnum.{area})"
+    )
+    payload["url"] = "/service/voga-mts-room-backdoor"
+    payload["method"] = "execute"
+    params = payload.get("params")
+    if not isinstance(params, list) or not params or not isinstance(params[0], dict):
+        raise ValueError("payload.params 必须是非空数组，才能覆盖 params[0].value/txt")
+    params[0]["value"] = expr
+    params[0]["txt"] = expr
+    print(f"用户榜单奖励下发：method={method_name} timeType={time_type} cycle={cycle} area={area}", file=sys.stderr)
+
+
+def _op_contrib_day_rank_dispatch(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    area = (args.contrib_day_rank_area or "MENA").upper()
+    expr = (
+        f'context.getBean("roomGiftRankListServiceImpl")'
+        f".dispatchTotalContributionRankListPrizeV2("
+        f"1,com.immomo.yaahlan.business.utils.enums.AreaEnum.{area})"
+    )
+    payload["url"] = "/service/voga-mts-room-backdoor"
+    payload["method"] = "execute"
+    params = payload.get("params")
+    if not isinstance(params, list) or not params or not isinstance(params[0], dict):
+        raise ValueError("payload.params 必须是非空数组，才能覆盖 params[0].value/txt")
+    params[0]["value"] = expr
+    params[0]["txt"] = expr
+    print(f"贡献日榜奖励下发：area={area}", file=sys.stderr)
+
+
+def _op_charm_day_rank_dispatch(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    area = (args.charm_day_rank_area or "MENA").upper()
+    expr = (
+        f'context.getBean("roomGiftRankListServiceImpl")'
+        f".dispatchTotalCharmRankListPrizeV2("
+        f"1,com.immomo.yaahlan.business.utils.enums.AreaEnum.{area})"
+    )
+    payload["url"] = "/service/voga-mts-room-backdoor"
+    payload["method"] = "execute"
+    params = payload.get("params")
+    if not isinstance(params, list) or not params or not isinstance(params[0], dict):
+        raise ValueError("payload.params 必须是非空数组，才能覆盖 params[0].value/txt")
+    params[0]["value"] = expr
+    params[0]["txt"] = expr
+    print(f"魅力日榜奖励下发：area={area}", file=sys.stderr)
+
+
+def _op_room_day_rank_dispatch(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    area = (args.room_day_rank_area or "MENA").upper()
+    expr = (
+        f'context.getBean("roomGiftRankListServiceImpl")'
+        f".dispatchTotalRoomDayRankListPrize("
+        f"com.immomo.yaahlan.business.utils.enums.AreaEnum.{area})"
+    )
+    payload["url"] = "/service/voga-mts-room-backdoor"
+    payload["method"] = "execute"
+    params = payload.get("params")
+    if not isinstance(params, list) or not params or not isinstance(params[0], dict):
+        raise ValueError("payload.params 必须是非空数组，才能覆盖 params[0].value/txt")
+    params[0]["value"] = expr
+    params[0]["txt"] = expr
+    print(f"房间日榜奖励下发：area={area}", file=sys.stderr)
+
+
 def _op_room_add_bots(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     payload["url"] = "/service/room/internal/room-test-stage"
     payload["method"] = "addOnlineUsersToRoom"
@@ -660,6 +734,10 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.diamond_query_user_id is not None, _op_diamond_query),
     (lambda a: a.diamond_user_id is not None, _op_diamond),
     (lambda a: _room_set_level_mode(a), _op_room_set_level),
+    (lambda a: a.user_rank_area is not None, _op_user_rank_dispatch),
+    (lambda a: a.contrib_day_rank_area is not None, _op_contrib_day_rank_dispatch),
+    (lambda a: a.charm_day_rank_area is not None, _op_charm_day_rank_dispatch),
+    (lambda a: a.room_day_rank_area is not None, _op_room_day_rank_dispatch),
     (lambda a: a.room_bot_room_id is not None, _op_room_add_bots),
     (lambda a: _member_lv_mode(a), _op_room_member_lv),
     (lambda a: a.package_gift_user_id is not None, _op_package_gift),

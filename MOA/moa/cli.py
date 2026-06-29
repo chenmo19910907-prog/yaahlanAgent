@@ -306,6 +306,39 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--room-bot-total", type=int, help="增加房间机器人：在线机器人总数")
     parser.add_argument("--room-bot-on-mic", type=int, help="增加房间机器人：麦上机器人数量")
 
+    parser.add_argument(
+        "--room-day-rank-area",
+        choices=["MENA", "TR", "RU", "SEA", "SA", "CN"],
+        help="房间日榜奖励下发：大区（dispatchTotalRoomDayRankListPrize；默认 MENA）",
+    )
+    parser.add_argument(
+        "--charm-day-rank-area",
+        choices=["MENA", "TR", "RU", "SEA", "SA", "CN"],
+        help="魅力日榜奖励下发：大区（dispatchTotalCharmRankListPrizeV2；默认 MENA）",
+    )
+    parser.add_argument(
+        "--contrib-day-rank-area",
+        choices=["MENA", "TR", "RU", "SEA", "SA", "CN"],
+        help="贡献日榜奖励下发：大区（dispatchTotalContributionRankListPrizeV2；默认 MENA）",
+    )
+    parser.add_argument(
+        "--user-rank-area",
+        choices=["MENA", "TR", "RU", "SEA", "SA", "CN"],
+        help="用户榜单奖励下发：大区（dispatchTotalUserRankListPrize；默认 MENA）",
+    )
+    parser.add_argument(
+        "--user-rank-time-type",
+        choices=["WEEK", "DAY", "MONTH"],
+        default="WEEK",
+        help="用户榜单奖励下发：周期类型（WEEK=周榜，DAY=日榜，MONTH=月榜；默认 WEEK；MONTH 自动使用 V2 方法）",
+    )
+    parser.add_argument(
+        "--user-rank-cycle",
+        choices=["NOW", "PRE"],
+        default="NOW",
+        help="用户榜单奖励下发：榜单周期（NOW=当前，PRE=上期；默认 NOW）",
+    )
+
     parser.add_argument("--member-lv-room-id", help="房间成员陪伴值：房间 ID（doorIncrMemberLv）")
     parser.add_argument("--member-lv-user-id", help="房间成员陪伴值：用户 ID")
     parser.add_argument("--member-lv-exp", type=int, help="房间成员陪伴值：增加量")

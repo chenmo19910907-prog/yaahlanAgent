@@ -68,6 +68,60 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-下发小时榜全服通知.json \\\n  --expr <roomId>\n"
     },
     {
+      "id": "user_rank_dispatch",
+      "name": "用户榜单-奖励下发（贡献/魅力 周榜/日榜/月榜）",
+      "category": "房间管理（room/external/room-admin-handle）",
+      "description": "下发用户榜单奖励（WEEK/DAY 用 dispatchTotalUserRankListPrize；MONTH 自动用 V2；覆盖贡献/魅力周榜日榜月榜；params=周期类型 WEEK|DAY|MONTH、榜单周期 NOW|PRE、大区）",
+      "prompts": [
+        "下发 <area> 区贡献周榜奖励",
+        "下发 <area> 区魅力周榜奖励",
+        "下发 <area> 区贡献月榜奖励",
+        "下发 <area> 区魅力月榜奖励",
+        "贡献周榜奖励下发 <area>",
+        "魅力周榜奖励下发 <area>",
+        "贡献月榜奖励下发 <area>",
+        "魅力月榜奖励下发 <area>",
+        "用户榜单奖励下发 <area>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户榜单奖励-下发.json \\\n  --user-rank-area <area> \\\n  --user-rank-time-type WEEK \\\n  --user-rank-cycle NOW\n"
+    },
+    {
+      "id": "contrib_day_rank_dispatch",
+      "name": "贡献日榜-奖励下发",
+      "category": "房间管理（room/external/room-admin-handle）",
+      "description": "全服贡献日榜奖励结算下发（dispatchTotalContributionRankListPrizeV2；固定参数1，params=大区枚举）",
+      "prompts": [
+        "下发 <area> 区贡献日榜奖励",
+        "贡献日榜奖励下发 <area>",
+        "全服贡献榜奖励下发 <area>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/贡献日榜奖励-下发.json \\\n  --contrib-day-rank-area <area>\n"
+    },
+    {
+      "id": "charm_day_rank_dispatch",
+      "name": "魅力日榜-奖励下发",
+      "category": "房间管理（room/external/room-admin-handle）",
+      "description": "全服魅力日榜奖励结算下发（dispatchTotalCharmRankListPrizeV2；固定参数1，params=大区枚举）",
+      "prompts": [
+        "下发 <area> 区魅力日榜奖励",
+        "魅力日榜奖励下发 <area>",
+        "全服魅力榜奖励下发 <area>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/魅力日榜奖励-下发.json \\\n  --charm-day-rank-area <area>\n"
+    },
+    {
+      "id": "room_day_rank_dispatch",
+      "name": "房间日榜-奖励下发",
+      "category": "房间管理（room/external/room-admin-handle）",
+      "description": "全服房间日榜奖励结算下发（dispatchTotalRoomDayRankListPrize；params=大区枚举）",
+      "prompts": [
+        "下发 <area> 区房间日榜奖励",
+        "房间日榜奖励下发 <area>",
+        "全服榜单奖励下发 <area>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间日榜奖励-下发.json \\\n  --room-day-rank-area <area>\n"
+    },
+    {
       "id": "room_member_lv_exp_add",
       "name": "房间成员-增加陪伴值",
       "category": "房间成员等级（room-user-active-stage）",

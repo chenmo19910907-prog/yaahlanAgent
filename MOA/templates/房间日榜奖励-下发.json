@@ -1,0 +1,29 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-room-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "context.getBean(\"roomGiftRankListServiceImpl\").dispatchTotalRoomDayRankListPrize(com.immomo.yaahlan.business.utils.enums.AreaEnum.MENA)",
+      "json": "",
+      "type": "string",
+      "value": "context.getBean(\"roomGiftRankListServiceImpl\").dispatchTotalRoomDayRankListPrize(com.immomo.yaahlan.business.utils.enums.AreaEnum.MENA)"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad"
+}
