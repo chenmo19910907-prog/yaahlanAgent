@@ -42,6 +42,7 @@ from .time_utils import resolve_family_fund_week_key
 from .user_area import USER_AREA_CODES
 from .user_login import normalize_mobile_login, parse_login_status_summary, resolve_phone_area_code
 from .user_prop import parse_user_prop_summary
+from .user_relation import run_mutual_follow
 from .vip import parse_vip_info_summary
 from .wealth_charm import parse_charm_info_summary, parse_wealth_info_summary
 from .payload import load_payload
@@ -146,6 +147,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--family-leave-user-id",
         help="移除家族成员（leave；params={userId} json）",
+    )
+    parser.add_argument("--follow-uid", help="关注好友：发起关注的 userId（addUserRelation uid）")
+    parser.add_argument("--follow-remote-uid", help="关注好友：被关注的 userId（addUserRelation remoteUid）")
+    parser.add_argument(
+        "--follow-mutual",
+        action="store_true",
+        help="双向互关成为好友（连续调用两次 addUserRelation；须配合 --follow-uid 与 --follow-remote-uid）",
     )
     parser.add_argument(
         "--family-detail",
@@ -703,6 +711,9 @@ def main() -> int:
     try:
         if args.package_gift_send:
             return run_package_gift_send(args, client)
+
+        if args.follow_mutual:
+            return run_mutual_follow(args, client)
 
         if args.id_auth_fix_failure_user_id is not None and args.expr is None:
             return run_id_auth_fix_failure(args, client)

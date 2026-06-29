@@ -1,0 +1,56 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-user-relation-stage",
+  "method": "addUserRelation",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": {
+        "uid": "100438156",
+        "remoteUid": "100361661",
+        "relationType": 1
+      },
+      "json": "{\"uid\":\"100438156\",\"remoteUid\":\"100361661\",\"relationType\":1}",
+      "type": "json",
+      "value": {
+        "uid": "100438156",
+        "remoteUid": "100361661",
+        "relationType": 1
+      }
+    },
+    {
+      "title": "参数2",
+      "name": "2",
+      "txt": "",
+      "json": "",
+      "type": "string",
+      "value": ""
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "user_follow_friend",
+    "name": "用户-关注好友",
+    "category": "用户关系（voga-mts-user-relation-stage）",
+    "description": "用户 A 关注用户 B（addUserRelation；relationType=1）。成为好友需相互关注，加 --follow-mutual 双向各调一次",
+    "prompts": [
+      "用户 <uid> 关注 <remoteUid>",
+      "让用户 <uid> 和 <remoteUid> 成为好友"
+    ],
+    "cli": "--follow-uid <uid> --follow-remote-uid <remoteUid>"
+  }
+}

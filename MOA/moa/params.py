@@ -706,3 +706,27 @@ def set_user_prop_query_params(
         "lang": str(lang or defaults.get("lang", "en")),
     }
     payload["params"] = [json_param(value)]
+
+
+def set_user_follow_params(
+    payload: dict[str, Any],
+    uid: str,
+    remote_uid: str,
+    *,
+    relation_type: int = 1,
+) -> None:
+    uid = str(uid).strip()
+    remote_uid = str(remote_uid).strip()
+    if not uid:
+        raise ValueError("uid 不能为空")
+    if not remote_uid:
+        raise ValueError("remoteUid 不能为空")
+    if relation_type != 1:
+        raise ValueError("relationType 目前仅支持 1（关注）")
+    body = {"uid": uid, "remoteUid": remote_uid, "relationType": relation_type}
+    payload["url"] = "/service/voga-mts-user-relation-stage"
+    payload["method"] = "addUserRelation"
+    payload["params"] = [
+        json_param(body),
+        _param("参数2", "2", "", ptype="string", txt=""),
+    ]

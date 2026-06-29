@@ -58,6 +58,7 @@ from .params import (
     set_vip_params,
     set_vip_try_dispatch_params,
     set_user_prop_query_params,
+    set_user_follow_params,
 )
 from .time_utils import resolve_expire_ms, resolve_family_fund_week_key
 from .user_area import describe_user_area, normalize_user_area
@@ -673,6 +674,19 @@ def _op_family_leave(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     set_family_leave_params(payload, user_id)
 
 
+def _op_user_follow(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    uid = str(args.follow_uid or "").strip()
+    remote_uid = str(args.follow_remote_uid or "").strip()
+    if not uid or not remote_uid:
+        raise ValueError("关注好友须同时提供 --follow-uid 与 --follow-remote-uid")
+    if uid == remote_uid:
+        raise ValueError("uid 与 remoteUid 不能相同")
+    if args.follow_mutual:
+        raise ValueError("互关成为好友请直接执行 --follow-mutual（会连续调用两次 addUserRelation）")
+    print(f"关注: {uid} -> {remote_uid}", file=sys.stderr)
+    set_user_follow_params(payload, uid, remote_uid)
+
+
 def _op_family_member_fund_contrib(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     payload["url"] = "/service/internal/user/family-moa"
     payload["method"] = "batchIncrFundContribution"
@@ -881,6 +895,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: _family_query_members_mode(a), _op_family_query_members),
     (lambda a: _family_query_joined_mode(a), _op_family_query_joined),
     (lambda a: a.family_leave_user_id is not None, _op_family_leave),
+    (lambda a: a.follow_uid is not None or a.follow_remote_uid is not None, _op_user_follow),
     (lambda a: _family_add_mode(a), _op_family_exp),
     (lambda a: a.noble_user_id is not None, _op_noble),
     (lambda a: a.vip_user_id is not None, _op_vip),

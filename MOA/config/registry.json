@@ -826,6 +826,17 @@
         "跑家族PK匹配任务 <date>"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-结算发奖匹配.json\n"
+    },
+    {
+      "id": "user_follow_friend",
+      "name": "用户-关注好友",
+      "category": "用户关系（voga-mts-user-relation-stage）",
+      "description": "用户 A 关注用户 B（addUserRelation；relationType=1）。成为好友需相互关注，加 --follow-mutual 双向各调一次",
+      "prompts": [
+        "用户 <uid> 关注 <remoteUid>",
+        "让用户 <uid> 和 <remoteUid> 成为好友"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-关注好友.json \\\n  --follow-uid <uid> \\\n  --follow-remote-uid <remoteUid>\n"
     }
   ]
 }

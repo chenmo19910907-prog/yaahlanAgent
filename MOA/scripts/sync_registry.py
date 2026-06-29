@@ -95,11 +95,12 @@ def _unique_id(base: str, used: set[str]) -> str:
 
 
 def _build_command(template_rel: str, cli_suffix: str) -> str:
+    suffix = cli_suffix.strip()
     lines = [
         "python3 MOA/moa_execute.py \\",
-        f"  --payload-file {template_rel}",
+        f"  --payload-file {template_rel}" + (" \\" if suffix else ""),
     ]
-    for part in cli_suffix.strip().split():
+    for part in suffix.split():
         lines.append(f"  {part} \\")
     cmd = "\n".join(lines).rstrip(" \\") + "\n"
     return cmd
