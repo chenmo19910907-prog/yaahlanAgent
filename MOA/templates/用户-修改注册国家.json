@@ -1,0 +1,29 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/mdp-user-service",
+  "method": "updateUser",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "{\"appId\":2005,\"userId\":\"100438156\",\"homeCountry\":\"EG\"}",
+      "json": "{\"appId\":2005,\"userId\":\"100438156\",\"homeCountry\":\"EG\"}",
+      "type": "json",
+      "value": {"appId": 2005, "userId": "100438156", "homeCountry": "EG"}
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad"
+}

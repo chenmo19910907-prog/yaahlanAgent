@@ -59,7 +59,7 @@
     {
       "id": "pk_rank_settle",
       "name": "PK榜-周结算发奖",
-      "category": "房间管理（room/external/room-admin-handle）",
+      "category": "全服榜单（room/external/room-admin-handle）",
       "description": "PK 榜周结算并发奖（calculateAndDistributeWeekPrize；params[0]=int 周偏移，0=本周，-1=上周）",
       "prompts": [
         "PK榜本周结算发奖",
@@ -71,7 +71,7 @@
     {
       "id": "pk_rank_query",
       "name": "PK榜-查询数值",
-      "category": "房间管理（room/external/room-admin-handle）",
+      "category": "全服榜单（room/external/room-admin-handle）",
       "description": "查询 PK 周榜 Redis 数据（roomClusterDao.get；key=new:pk:week:rank:record:YYYYMMDDweek；支持 YYYYMMDD/本周）",
       "prompts": [
         "查询本周 PK 榜数值",
@@ -83,7 +83,7 @@
     {
       "id": "pk_rank_value_add",
       "name": "PK榜-增加PK值",
-      "category": "房间管理（room/external/room-admin-handle）",
+      "category": "全服榜单（room/external/room-admin-handle）",
       "description": "给指定用户增加 PK 榜值（pkRankService.handlePkRank；仅需 userId 和增量，第3/4参数固定）",
       "prompts": [
         "给用户 <userId> 增加 <value> PK值",
@@ -95,7 +95,7 @@
     {
       "id": "room_hourly_top1_broadcast",
       "name": "房间-下发小时榜全服通知",
-      "category": "房间管理（room/external/room-admin-handle）",
+      "category": "全服榜单（room/external/room-admin-handle）",
       "description": "发送小时榜 Top1 全服 IM 广播（sendImTop1Broadcast；params[0]=roomId string）",
       "prompts": [
         "给房间 <roomId> 下发小时榜全服通知",
@@ -106,7 +106,7 @@
     {
       "id": "user_rank_dispatch",
       "name": "用户榜单-奖励下发（贡献/魅力 周榜/日榜/月榜）",
-      "category": "房间管理（room/external/room-admin-handle）",
+      "category": "全服榜单（room/external/room-admin-handle）",
       "description": "下发用户榜单奖励（WEEK/DAY 用 dispatchTotalUserRankListPrize；MONTH 自动用 V2；覆盖贡献/魅力周榜日榜月榜；params=周期类型 WEEK|DAY|MONTH、榜单周期 NOW|PRE、大区）",
       "prompts": [
         "下发 <area> 区贡献周榜奖励",
@@ -124,7 +124,7 @@
     {
       "id": "contrib_day_rank_dispatch",
       "name": "贡献日榜-奖励下发",
-      "category": "房间管理（room/external/room-admin-handle）",
+      "category": "全服榜单（room/external/room-admin-handle）",
       "description": "全服贡献日榜奖励结算下发（dispatchTotalContributionRankListPrizeV2；固定参数1，params=大区枚举）",
       "prompts": [
         "下发 <area> 区贡献日榜奖励",
@@ -136,7 +136,7 @@
     {
       "id": "charm_day_rank_dispatch",
       "name": "魅力日榜-奖励下发",
-      "category": "房间管理（room/external/room-admin-handle）",
+      "category": "全服榜单（room/external/room-admin-handle）",
       "description": "全服魅力日榜奖励结算下发（dispatchTotalCharmRankListPrizeV2；固定参数1，params=大区枚举）",
       "prompts": [
         "下发 <area> 区魅力日榜奖励",
@@ -148,7 +148,7 @@
     {
       "id": "room_day_rank_dispatch",
       "name": "房间日榜-奖励下发",
-      "category": "房间管理（room/external/room-admin-handle）",
+      "category": "全服榜单（room/external/room-admin-handle）",
       "description": "全服房间日榜奖励结算下发（dispatchTotalRoomDayRankListPrize；params=大区枚举）",
       "prompts": [
         "下发 <area> 区房间日榜奖励",
@@ -556,6 +556,54 @@
         "查 +86<phone> 的 userId"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-按手机号查userId.json \\\n  --query-user-by-phone <phone>\n"
+    },
+    {
+      "id": "ip_find",
+      "name": "IP-查询归属地",
+      "category": "用户后门（voga-mts-user-backdoor）",
+      "description": "根据 IP 地址查询归属地信息（pip-new-search-service findIp；params=ip string）",
+      "prompts": [
+        "查询 IP <ip> 归属地",
+        "查 <ip> 属于哪个国家",
+        "IP归属地 <ip>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/IP-查询归属地.json \\\n  --find-ip <ip>\n"
+    },
+    {
+      "id": "user_home_country_update",
+      "name": "用户-修改注册国家",
+      "category": "用户后门（voga-mts-user-backdoor）",
+      "description": "修改用户注册国家（mdp-user-service updateUser；appId 固定 2005；params=userId, homeCountry 国家代码）",
+      "prompts": [
+        "修改用户 <userId> 注册国家为 <country>",
+        "把用户 <userId> 注册国家改为 <country>",
+        "设置 <userId> homeCountry 为 <country>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-修改注册国家.json \\\n  --user-home-country-user-id <userId> \\\n  --user-home-country <country>\n"
+    },
+    {
+      "id": "user_set_reg_time",
+      "name": "用户-设置注册时间",
+      "category": "用户后门（voga-mts-user-backdoor）",
+      "description": "设置用户注册时间（userVipTaskDao.saveUserRegTime；params=userId, 毫秒时间戳L；支持直接传13位时间戳或 YYYY-MM-DD HH:MM:SS）",
+      "prompts": [
+        "设置用户 <userId> 注册时间为 <time>",
+        "把用户 <userId> 注册时间改为 <time>",
+        "saveUserRegTime <userId> <time>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-设置注册时间.json \\\n  --user-set-reg-time-user-id <userId> \\\n  --user-set-reg-time-at \"2024-01-01 00:00:00\"\n"
+    },
+    {
+      "id": "user_reg_time_query",
+      "name": "用户-查询注册时间",
+      "category": "用户后门（voga-mts-user-backdoor）",
+      "description": "查询用户注册时间（userVipTaskDao.getUserRegTime；params=userId string）",
+      "prompts": [
+        "查询用户 <userId> 注册时间",
+        "查 <userId> 注册时间",
+        "查询用户 <userId> 的注册日期"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-查询注册时间.json \\\n  --user-reg-time-user-id <userId>\n"
     },
     {
       "id": "user_cancel_real",

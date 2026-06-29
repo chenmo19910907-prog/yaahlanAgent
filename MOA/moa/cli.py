@@ -308,6 +308,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser.add_argument("--pk-rank-user-id", help="PK榜-增加PK值：用户 ID（handlePkRank）")
     parser.add_argument("--pk-rank-value", type=int, help="PK榜-增加PK值：增加的 PK 值")
+    parser.add_argument("--user-reg-time-user-id", help="用户-查询注册时间：用户 ID（userVipTaskDao.getUserRegTime）")
+    parser.add_argument("--user-set-reg-time-user-id", help="用户-设置注册时间：用户 ID（userVipTaskDao.saveUserRegTime）")
+    parser.add_argument(
+        "--user-set-reg-time-at",
+        help="用户-设置注册时间：目标时间（毫秒时间戳 或 YYYY-MM-DD HH:MM:SS 或 yesterday/2天前 等）",
+    )
+    parser.add_argument("--user-home-country-user-id", help="用户-修改注册国家：用户 ID（mdp-user-service updateUser）")
+    parser.add_argument("--user-home-country", help="用户-修改注册国家：国家代码（如 EG、SA、TR）")
+    parser.add_argument("--find-ip", help="IP-查询归属地：IP 地址（pip-new-search-service findIp）")
     parser.add_argument(
         "--pk-rank-query-week",
         help="PK榜-查询数值：周榜周期（周一 YYYYMMDD 或 this/本周；默认本周）",

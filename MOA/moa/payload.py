@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from collections.abc import Callable
 from typing import Any
@@ -461,6 +462,69 @@ def _op_room_day_rank_dispatch(args: argparse.Namespace, payload: dict[str, Any]
     print(f"房间日榜奖励下发：area={area}", file=sys.stderr)
 
 
+def _op_find_ip(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/pip-new-search-service"
+    payload["method"] = "findIp"
+    params = payload.get("params")
+    if not isinstance(params, list) or not params or not isinstance(params[0], dict):
+        raise ValueError("payload.params 必须是非空数组，才能覆盖 params[0].value/txt")
+    params[0]["value"] = args.find_ip
+    params[0]["txt"] = args.find_ip
+    print(f"查询 IP 归属地：ip={args.find_ip}", file=sys.stderr)
+
+
+def _op_user_home_country_update(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if args.user_home_country is None:
+        raise ValueError("修改注册国家时，必须同时提供 --user-home-country")
+    country = args.user_home_country.upper()
+    payload["url"] = "/service/mdp-user-service"
+    payload["method"] = "updateUser"
+    new_value: dict[str, Any] = {"appId": 2005, "userId": args.user_home_country_user_id, "homeCountry": country}
+    params = payload.get("params")
+    if not isinstance(params, list) or not params or not isinstance(params[0], dict):
+        raise ValueError("payload.params 必须是非空数组，才能覆盖 params[0].value/txt")
+    params[0]["value"] = new_value
+    params[0]["json"] = json.dumps(new_value, ensure_ascii=False)
+    params[0]["txt"] = json.dumps(new_value, ensure_ascii=False)
+    params[0]["type"] = "json"
+    print(f"修改用户注册国家：userId={args.user_home_country_user_id} homeCountry={country}", file=sys.stderr)
+
+
+def _op_user_set_reg_time(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if args.user_set_reg_time_at is None:
+        raise ValueError("设置注册时间时，必须同时提供 --user-set-reg-time-at")
+    # 支持直接传毫秒时间戳或自然语言日期
+    raw = args.user_set_reg_time_at.strip()
+    if re.fullmatch(r"\d{13}", raw):
+        ts_ms = int(raw)
+    else:
+        ts_ms = resolve_expire_ms(expire_at=raw)
+    expr = f'context.getBean("userVipTaskDao").saveUserRegTime("{args.user_set_reg_time_user_id}",{ts_ms}L)'
+    payload["url"] = "/service/voga-mts-user-backdoor"
+    payload["method"] = "execute"
+    params = payload.get("params")
+    if not isinstance(params, list) or not params or not isinstance(params[0], dict):
+        raise ValueError("payload.params 必须是非空数组，才能覆盖 params[0].value/txt")
+    params[0]["value"] = expr
+    params[0]["txt"] = expr
+    from datetime import datetime as _dt
+    from zoneinfo import ZoneInfo as _ZoneInfo
+    dt_str = _dt.fromtimestamp(ts_ms / 1000, tz=_ZoneInfo("Asia/Shanghai")).strftime("%Y-%m-%d %H:%M:%S")
+    print(f"设置用户注册时间：userId={args.user_set_reg_time_user_id} ts={ts_ms}（{dt_str}）", file=sys.stderr)
+
+
+def _op_user_reg_time_query(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    expr = f'context.getBean("userVipTaskDao").getUserRegTime("{args.user_reg_time_user_id}")'
+    payload["url"] = "/service/voga-mts-user-backdoor"
+    payload["method"] = "execute"
+    params = payload.get("params")
+    if not isinstance(params, list) or not params or not isinstance(params[0], dict):
+        raise ValueError("payload.params 必须是非空数组，才能覆盖 params[0].value/txt")
+    params[0]["value"] = expr
+    params[0]["txt"] = expr
+    print(f"查询用户注册时间：userId={args.user_reg_time_user_id}", file=sys.stderr)
+
+
 def _op_pk_rank_settle(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     offset = args.pk_rank_settle_week_offset  # 0=本周，-1=上周
     payload["url"] = "/service/room/internal/room-pk"
@@ -782,6 +846,10 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.contrib_day_rank_area is not None, _op_contrib_day_rank_dispatch),
     (lambda a: a.charm_day_rank_area is not None, _op_charm_day_rank_dispatch),
     (lambda a: a.room_day_rank_area is not None, _op_room_day_rank_dispatch),
+    (lambda a: a.find_ip is not None, _op_find_ip),
+    (lambda a: a.user_home_country_user_id is not None, _op_user_home_country_update),
+    (lambda a: a.user_set_reg_time_user_id is not None, _op_user_set_reg_time),
+    (lambda a: a.user_reg_time_user_id is not None, _op_user_reg_time_query),
     (lambda a: a.pk_rank_settle_week_offset is not None, _op_pk_rank_settle),
     (lambda a: a.pk_rank_query_week is not None, _op_pk_rank_query),
     (lambda a: a.pk_rank_user_id is not None, _op_pk_rank_add),
