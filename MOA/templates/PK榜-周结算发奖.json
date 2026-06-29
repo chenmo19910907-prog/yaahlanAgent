@@ -1,0 +1,29 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/room/internal/room-pk",
+  "method": "calculateAndDistributeWeekPrize",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "0",
+      "json": "",
+      "type": "int",
+      "value": "0"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad"
+}

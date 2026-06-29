@@ -57,6 +57,42 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-增加机器人.json \\\n  --room-bot-room-id <roomId> \\\n  --room-bot-total <total> \\\n  --room-bot-on-mic <onMic>\n"
     },
     {
+      "id": "pk_rank_settle",
+      "name": "PK榜-周结算发奖",
+      "category": "房间管理（room/external/room-admin-handle）",
+      "description": "PK 榜周结算并发奖（calculateAndDistributeWeekPrize；params[0]=int 周偏移，0=本周，-1=上周）",
+      "prompts": [
+        "PK榜本周结算发奖",
+        "PK榜上周结算发奖",
+        "PK榜 <week> 结算发奖"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/PK榜-周结算发奖.json \\\n  --pk-rank-settle-week-offset 0\n"
+    },
+    {
+      "id": "pk_rank_query",
+      "name": "PK榜-查询数值",
+      "category": "房间管理（room/external/room-admin-handle）",
+      "description": "查询 PK 周榜 Redis 数据（roomClusterDao.get；key=new:pk:week:rank:record:YYYYMMDDweek；支持 YYYYMMDD/本周）",
+      "prompts": [
+        "查询本周 PK 榜数值",
+        "查 PK 榜 <week> 周数据",
+        "PK榜数值查询 <week>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/PK榜-查询数值.json \\\n  --pk-rank-query-week <YYYYMMDD或本周>\n"
+    },
+    {
+      "id": "pk_rank_value_add",
+      "name": "PK榜-增加PK值",
+      "category": "房间管理（room/external/room-admin-handle）",
+      "description": "给指定用户增加 PK 榜值（pkRankService.handlePkRank；仅需 userId 和增量，第3/4参数固定）",
+      "prompts": [
+        "给用户 <userId> 增加 <value> PK值",
+        "PK榜 <userId> 加 <value>",
+        "增加 PK 榜上 <userId> 的 PK 值 <value>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/PK榜-增加PK值.json \\\n  --pk-rank-user-id <userId> \\\n  --pk-rank-value <value>\n"
+    },
+    {
       "id": "room_hourly_top1_broadcast",
       "name": "房间-下发小时榜全服通知",
       "category": "房间管理（room/external/room-admin-handle）",

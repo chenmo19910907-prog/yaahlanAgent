@@ -461,6 +461,50 @@ def _op_room_day_rank_dispatch(args: argparse.Namespace, payload: dict[str, Any]
     print(f"房间日榜奖励下发：area={area}", file=sys.stderr)
 
 
+def _op_pk_rank_settle(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    offset = args.pk_rank_settle_week_offset  # 0=本周，-1=上周
+    payload["url"] = "/service/room/internal/room-pk"
+    payload["method"] = "calculateAndDistributeWeekPrize"
+    params = payload.get("params")
+    if not isinstance(params, list) or not params or not isinstance(params[0], dict):
+        raise ValueError("payload.params 必须是非空数组，才能覆盖 params[0].value/txt")
+    params[0]["value"] = str(offset)
+    params[0]["txt"] = str(offset)
+    params[0]["type"] = "int"
+    label = "本周" if offset == 0 else (f"上周" if offset == -1 else f"偏移{offset}周")
+    print(f"PK榜周结算发奖：weekOffset={offset}（{label}）", file=sys.stderr)
+
+
+def _op_pk_rank_query(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    # 复用 family fund week key 逻辑，去掉连字符得到 YYYYMMDDweek 格式
+    raw_key = resolve_family_fund_week_key(args.pk_rank_query_week)  # -> "YYYYMMDD-week"
+    week_part = raw_key.replace("-", "")  # -> "YYYYMMDDweek"
+    redis_key = f"new:pk:week:rank:record:{week_part}"
+    expr = f'context.getBean("roomClusterDao").get("1","{redis_key}")'
+    payload["url"] = "/service/voga-mts-room-backdoor"
+    payload["method"] = "execute"
+    params = payload.get("params")
+    if not isinstance(params, list) or not params or not isinstance(params[0], dict):
+        raise ValueError("payload.params 必须是非空数组，才能覆盖 params[0].value/txt")
+    params[0]["value"] = expr
+    params[0]["txt"] = expr
+    print(f"PK榜查询数值：redisKey={redis_key}", file=sys.stderr)
+
+
+def _op_pk_rank_add(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if args.pk_rank_value is None:
+        raise ValueError("增加 PK 榜值时，必须同时提供 --pk-rank-value")
+    expr = f'context.getBean("pkRankService").handlePkRank("{args.pk_rank_user_id}",{args.pk_rank_value},"123",2)'
+    payload["url"] = "/service/voga-mts-room-backdoor"
+    payload["method"] = "execute"
+    params = payload.get("params")
+    if not isinstance(params, list) or not params or not isinstance(params[0], dict):
+        raise ValueError("payload.params 必须是非空数组，才能覆盖 params[0].value/txt")
+    params[0]["value"] = expr
+    params[0]["txt"] = expr
+    print(f"PK榜增加PK值：userId={args.pk_rank_user_id} value={args.pk_rank_value}", file=sys.stderr)
+
+
 def _op_room_add_bots(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     payload["url"] = "/service/room/internal/room-test-stage"
     payload["method"] = "addOnlineUsersToRoom"
@@ -738,6 +782,9 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.contrib_day_rank_area is not None, _op_contrib_day_rank_dispatch),
     (lambda a: a.charm_day_rank_area is not None, _op_charm_day_rank_dispatch),
     (lambda a: a.room_day_rank_area is not None, _op_room_day_rank_dispatch),
+    (lambda a: a.pk_rank_settle_week_offset is not None, _op_pk_rank_settle),
+    (lambda a: a.pk_rank_query_week is not None, _op_pk_rank_query),
+    (lambda a: a.pk_rank_user_id is not None, _op_pk_rank_add),
     (lambda a: a.room_bot_room_id is not None, _op_room_add_bots),
     (lambda a: _member_lv_mode(a), _op_room_member_lv),
     (lambda a: a.package_gift_user_id is not None, _op_package_gift),

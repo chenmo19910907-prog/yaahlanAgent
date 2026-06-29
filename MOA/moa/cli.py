@@ -306,6 +306,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--room-bot-total", type=int, help="增加房间机器人：在线机器人总数")
     parser.add_argument("--room-bot-on-mic", type=int, help="增加房间机器人：麦上机器人数量")
 
+    parser.add_argument("--pk-rank-user-id", help="PK榜-增加PK值：用户 ID（handlePkRank）")
+    parser.add_argument("--pk-rank-value", type=int, help="PK榜-增加PK值：增加的 PK 值")
+    parser.add_argument(
+        "--pk-rank-query-week",
+        help="PK榜-查询数值：周榜周期（周一 YYYYMMDD 或 this/本周；默认本周）",
+    )
+    parser.add_argument(
+        "--pk-rank-settle-week-offset",
+        type=int,
+        help="PK榜-周结算发奖：周偏移（0=本周，-1=上周；calculateAndDistributeWeekPrize）",
+    )
+
     parser.add_argument(
         "--room-day-rank-area",
         choices=["MENA", "TR", "RU", "SEA", "SA", "CN"],
