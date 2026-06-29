@@ -46,6 +46,7 @@ from .params import (
     set_cp_ferris_wheel_tier_params,
     set_query_login_status_params,
     set_room_bot_params,
+    set_room_online_params,
     set_room_member_lv_params,
     set_room_downgrade_level_params,
     set_custom_gift_reset_expire_params,
@@ -582,6 +583,21 @@ def _op_room_add_bots(args: argparse.Namespace, payload: dict[str, Any]) -> None
     )
 
 
+def _op_room_online(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    room_id = str(args.room_online_room_id).strip()
+    if not room_id:
+        raise ValueError("增加房间在线人数：--room-online-room-id 不能为空")
+    payload["url"] = "/service/room/internal/room-test-stage"
+    payload["method"] = "addOnlineUsersToRoom"
+    entry_limit = args.room_online_limit if args.room_online_limit is not None else 0
+    auto_mic = args.room_online_mic if args.room_online_mic is not None else 0
+    set_room_online_params(payload, room_id=room_id, entry_limit=entry_limit, auto_mic=auto_mic)
+    print(
+        f"增加房间在线人数：roomId={room_id} 进房上限={entry_limit}(0=不限) 自动上麦={auto_mic}(0=无)",
+        file=sys.stderr,
+    )
+
+
 def _op_package_gift(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     payload["url"] = "/service/voga-base-service-middle-gift-stage"
     payload["method"] = "addPackageGift"
@@ -854,6 +870,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.pk_rank_query_week is not None, _op_pk_rank_query),
     (lambda a: a.pk_rank_user_id is not None, _op_pk_rank_add),
     (lambda a: a.room_bot_room_id is not None, _op_room_add_bots),
+    (lambda a: a.room_online_room_id is not None, _op_room_online),
     (lambda a: _member_lv_mode(a), _op_room_member_lv),
     (lambda a: a.package_gift_user_id is not None, _op_package_gift),
     (lambda a: _family_fund_tier_mode(a), _op_family_fund_tier),

@@ -306,6 +306,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--room-bot-total", type=int, help="增加房间机器人：在线机器人总数")
     parser.add_argument("--room-bot-on-mic", type=int, help="增加房间机器人：麦上机器人数量")
 
+    parser.add_argument("--room-online-room-id", help="增加房间在线人数：房间 ID（room-test-stage addOnlineUsersToRoom）")
+    parser.add_argument("--room-online-limit", type=int, default=0, help="增加房间在线人数：进房人数上限（0=不限制，默认 0）")
+    parser.add_argument("--room-online-mic", type=int, default=0, help="增加房间在线人数：自动上麦人数（0=不自动上麦，默认 0）")
+
     parser.add_argument("--pk-rank-user-id", help="PK榜-增加PK值：用户 ID（handlePkRank）")
     parser.add_argument("--pk-rank-value", type=int, help="PK榜-增加PK值：增加的 PK 值")
     parser.add_argument("--user-reg-time-user-id", help="用户-查询注册时间：用户 ID（userVipTaskDao.getUserRegTime）")

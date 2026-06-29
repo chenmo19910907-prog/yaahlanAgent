@@ -591,6 +591,22 @@ def set_package_gift_params(
     payload["params"] = [json_param(value)]
 
 
+def set_room_online_params(payload: dict[str, Any], room_id: str, entry_limit: int, auto_mic: int) -> None:
+    room_id = str(room_id).strip()
+    if not room_id:
+        raise ValueError("room_id 不能为空")
+    if entry_limit < 0:
+        raise ValueError("entry_limit 不能为负数")
+    if auto_mic < 0:
+        raise ValueError("auto_mic 不能为负数")
+    payload["params"] = [
+        _param("参数1", "1", room_id, ptype="string", txt=room_id),
+        _param("参数2", "2", str(entry_limit), ptype="int", txt=str(entry_limit)),
+        _param("参数3", "3", str(auto_mic), ptype="int", txt=str(auto_mic)),
+        _param("参数4", "4", "", ptype="string", txt=""),
+    ]
+
+
 def set_room_bot_params(payload: dict[str, Any], room_id: str, total_bots: int, on_mic_bots: int) -> None:
     room_id = str(room_id).strip()
     if not room_id:

@@ -57,6 +57,17 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-增加机器人.json \\\n  --room-bot-room-id <roomId> \\\n  --room-bot-total <total> \\\n  --room-bot-on-mic <onMic>\n"
     },
     {
+      "id": "room_online",
+      "name": "房间-增加在线人数",
+      "category": "房间经验值（voga-mts-room-backdoor）",
+      "description": "给房间增加在线人数（room-test-stage addOnlineUsersToRoom；params=roomId, 进房上限, 自动上麦数）",
+      "prompts": [
+        "给房间 <roomId> 增加在线人数，进房上限 <limit>，自动上麦 <mic>",
+        "房间 <roomId> 在线人数上限 <limit> 自动上麦 <mic>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-增加在线人数.json \\\n  --room-online-room-id <roomId> \\\n  --room-online-limit <limit> \\\n  --room-online-mic <mic>\n"
+    },
+    {
       "id": "pk_rank_settle",
       "name": "PK榜-周结算发奖",
       "category": "全服榜单（room/external/room-admin-handle）",
