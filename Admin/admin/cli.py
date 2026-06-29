@@ -51,6 +51,11 @@ from .user import (
     parse_user_detail_summary,
     parse_user_history_device_summary,
 )
+from .user_list import (
+    build_query_user_profile_list_body,
+    parse_query_user_profile_list_summary,
+    parse_user_id_list,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -117,6 +122,29 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--gift-create-source", help="创建来源 createSource")
     parser.add_argument("--gift-page-no", type=int, help="礼物列表页码 pageNo（默认 1）")
     parser.add_argument("--gift-page-size", type=int, help="礼物列表每页条数 pageSize（默认 20）")
+    parser.add_argument(
+        "--query-user-list",
+        action="store_true",
+        help="查询 MDP Nova 用户列表（userAdmin/queryUserProfileList；同 ops-admin 用户列表页）",
+    )
+    parser.add_argument("--user-list-app-id", type=int, help="用户列表 appId（默认 2005=Yaahlan）")
+    parser.add_argument(
+        "--user-list-user-ids",
+        help="用户列表 userIdList，逗号/空格分隔（对应 ops-admin「用户ID」筛选）",
+    )
+    parser.add_argument("--user-list-nickname", help="用户列表昵称筛选")
+    parser.add_argument("--user-list-phone", help="用户列表电话筛选（配合 --user-list-area-code）")
+    parser.add_argument("--user-list-area-code", help="用户列表电话区号 areaCode")
+    parser.add_argument("--user-list-device-id", help="用户列表设备 ID deviceId")
+    parser.add_argument("--user-list-mmuidv3", help="用户列表 mmuidv3 筛选")
+    parser.add_argument("--user-list-email", help="用户列表邮箱筛选")
+    parser.add_argument("--user-list-area", help="用户列表大区 area（如 MENA）")
+    parser.add_argument("--user-list-ban-status", help="用户列表用户状态 banStatus")
+    parser.add_argument("--user-list-gender", help="用户列表性别 gender")
+    parser.add_argument("--user-list-country-code", help="用户列表 IP 国家/地区 countryCode")
+    parser.add_argument("--user-list-register-type", help="用户列表注册来源 registerType")
+    parser.add_argument("--user-list-page-no", type=int, help="用户列表页码 pageNo（默认 1）")
+    parser.add_argument("--user-list-page-size", type=int, help="用户列表每页条数 pageSize（默认 20）")
     parser.add_argument(
         "--cancel-user",
         action="store_true",
@@ -411,6 +439,41 @@ def _resolve_query_gift_list_request(args: argparse.Namespace) -> tuple[str, dic
         "pageSize": page_size,
         "pageNo": page_no,
     }
+    return f"{base_url}{path}", body
+
+
+def _resolve_query_user_profile_list_request(args: argparse.Namespace) -> tuple[str, dict[str, object]]:
+    cfg = defaults("query_user_profile_list")
+    base_url = _resolve_mdp_base_url(cfg)
+    path = str(cfg.get("path", "/userAdmin/queryUserProfileList"))
+
+    app_id = args.user_list_app_id
+    if app_id is None:
+        app_id = int(cfg.get("defaultAppId", 2005))
+    page_no = args.user_list_page_no
+    if page_no is None:
+        page_no = int(cfg.get("defaultPageNo", 1))
+    page_size = args.user_list_page_size
+    if page_size is None:
+        page_size = int(cfg.get("defaultPageSize", 20))
+
+    body = build_query_user_profile_list_body(
+        app_id=app_id,
+        page_no=page_no,
+        page_size=page_size,
+        user_ids=parse_user_id_list(args.user_list_user_ids),
+        nickname=args.user_list_nickname,
+        phone=args.user_list_phone,
+        area_code=args.user_list_area_code,
+        device_id=args.user_list_device_id,
+        mmuidv3=args.user_list_mmuidv3,
+        email=args.user_list_email,
+        area=args.user_list_area,
+        ban_status=args.user_list_ban_status,
+        gender=args.user_list_gender,
+        country_code=args.user_list_country_code,
+        register_type=args.user_list_register_type,
+    )
     return f"{base_url}{path}", body
 
 
@@ -965,6 +1028,17 @@ def main() -> int:
                 timeout_s=max(args.timeout_ms, 1000) / 1000.0,
                 auth="mdp_nova",
             )
+        elif args.query_user_list:
+            url, body = _resolve_query_user_profile_list_request(args)
+            if args.dump_body:
+                print(f"POST {url}", file=sys.stderr)
+                print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
+            resp = http_post_json(
+                url,
+                body,
+                timeout_s=max(args.timeout_ms, 1000) / 1000.0,
+                auth="mdp_nova",
+            )
         elif args.cancel_user:
             url, body = _resolve_cancel_user_request(args)
             if args.dump_body:
@@ -1124,6 +1198,13 @@ def main() -> int:
             print(json.dumps(resp, ensure_ascii=False, indent=2))
             return 3
         summary = parse_query_gift_list_summary(resp.get("data"))
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+    elif args.query_user_list:
+        if not mdp_user_admin_success(resp.get("ec")):
+            print(f"MDP 用户后台返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
+            print(json.dumps(resp, ensure_ascii=False, indent=2))
+            return 3
+        summary = parse_query_user_profile_list_summary(resp.get("data"))
         print(json.dumps(summary, ensure_ascii=False, indent=2))
     elif args.cancel_user:
         if not mdp_user_admin_success(resp.get("ec")):
@@ -1298,6 +1379,10 @@ def main() -> int:
     elif args.query_gift_list:
         if not mdp_gift_success(resp.get("ec")):
             print(f"MDP 礼物后台返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
+            return 3
+    elif args.query_user_list:
+        if not mdp_user_admin_success(resp.get("ec")):
+            print(f"MDP 用户后台返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
             return 3
     elif args.cancel_user:
         if not mdp_user_admin_success(resp.get("ec")):

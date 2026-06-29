@@ -52,6 +52,19 @@
       "command": "python3 Admin/admin_execute.py --query-device-history-users --history-device-mmuidv3 <mmuidv3> && python3 Admin/admin_execute.py --query-user-id <userId>"
     },
     {
+      "id": "query_user_profile_list",
+      "name": "用户-查询列表",
+      "category": "用户（mdp-nova / userAdmin）",
+      "description": "查询测试环境用户列表（userAdmin/queryUserProfileList；同 ops-admin 用户列表页；可按 userId/昵称/手机号/mmuidv3/设备ID 等筛选）",
+      "prompts": [
+        "查询用户列表",
+        "按 userId <userId> 查用户列表",
+        "按手机号 <phone> 查用户列表",
+        "按 mmuidv3 <mmuidv3> 查用户列表"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --query-user-list \\\n  --user-list-page-no 1 \\\n  --user-list-page-size 20\n"
+    },
+    {
       "id": "cancel_user",
       "name": "用户-注销账号",
       "category": "用户（mdp-nova / userAdmin）",

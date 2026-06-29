@@ -229,4 +229,5 @@ python3 Admin/admin_execute.py --query-guild --trade-union cm3
 | 能力 | 模块 | 输入 | 输出 |
 |------|------|------|------|
 | 手机号 → userId | `MOA/` `queryLoginStatusV2` | 手机号 | userId / 是否注册 |
+| 用户列表（筛选/分页） | `Admin/` `queryUserProfileList` | userId/昵称/手机/mmuidv3 等 | userId、昵称、大区、注册时间等 |
 | userId → 全量资料 | `Admin/` `queryUserDetail` | userId | 昵称、手机、等级、资产、设备等 |

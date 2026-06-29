@@ -116,5 +116,13 @@
     "defaultAppId": 2005,
     "protectedPhoneMin": 13311111111,
     "protectedPhoneMax": 13311111130
+  },
+  "query_user_profile_list": {
+    "baseUrl": "https://alpha-mdp-user-admin-api-stage.wemomo.com",
+    "path": "/userAdmin/queryUserProfileList",
+    "defaultAppId": 2005,
+    "defaultPageNo": 1,
+    "defaultPageSize": 20,
+    "opsAdminUrl": "https://mdp-nova-alpha.wemomo.com/fep/momo/mdp-spacey/ops-admin/index.html#/userIndex/list"
   }
 }
