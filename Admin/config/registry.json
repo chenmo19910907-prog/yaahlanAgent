@@ -65,6 +65,18 @@
       "command": "python3 Admin/admin_execute.py \\\n  --query-user-list \\\n  --user-list-page-no 1 \\\n  --user-list-page-size 20\n"
     },
     {
+      "id": "batch_mutual_friends_from_user_list",
+      "name": "用户-批量互关结好友",
+      "category": "用户（mdp-nova / userAdmin + MOA）",
+      "description": "从 ops-admin 用户列表选取 userId，通过 addUserRelation 双向互关为目标用户增加好友。须 Admin/.env.local 配置 MDP 鉴权；MOA 走 Stage Redis 直连",
+      "prompts": [
+        "给用户 <userId> 从列表互关增加 <count> 个好友",
+        "从用户列表给 <userId> 批量结好友 <count> 个",
+        "用户 <userId> 批量互关结好友"
+      ],
+      "command": "python3 Admin/scripts/batch_mutual_friends_from_user_list.py \\\n  --target-user-id <userId> \\\n  --count <count>\n"
+    },
+    {
       "id": "cancel_user",
       "name": "用户-注销账号",
       "category": "用户（mdp-nova / userAdmin）",

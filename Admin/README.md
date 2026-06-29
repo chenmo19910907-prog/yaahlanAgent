@@ -230,4 +230,5 @@ python3 Admin/admin_execute.py --query-guild --trade-union cm3
 |------|------|------|------|
 | 手机号 → userId | `MOA/` `queryLoginStatusV2` | 手机号 | userId / 是否注册 |
 | 用户列表（筛选/分页） | `Admin/` `queryUserProfileList` | userId/昵称/手机/mmuidv3 等 | userId、昵称、大区、注册时间等 |
+| 用户列表 → 批量互关结好友 | `Admin/scripts/batch_mutual_friends_from_user_list.py` | 目标 userId + 数量 | 互关成功/失败明细 |
 | userId → 全量资料 | `Admin/` `queryUserDetail` | userId | 昵称、手机、等级、资产、设备等 |
