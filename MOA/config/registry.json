@@ -464,6 +464,18 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-查询成员userId.json \\\n  --family-id <familyId> \\\n  --family-query-members\n"
     },
     {
+      "id": "family_query_create_time",
+      "name": "家族-查询创建时间",
+      "category": "家族（internal/user/family-moa）",
+      "description": "查询家族是否解散（getFamilyCreateTime；params=familyId string）。result 为创建时间毫秒时间戳；null 表示家族已解散或不存在",
+      "prompts": [
+        "查询家族 <familyId> 是否解散",
+        "家族 <familyId> 创建时间",
+        "查家族 <familyId> 是否还存在"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-查询创建时间.json \\\n  --family-id <familyId> \\\n  --family-query-create-time\n"
+    },
+    {
       "id": "family_query_joined_by_user",
       "name": "家族-按userId查家族id",
       "category": "家族（internal/user/family-moa）",
@@ -795,13 +807,13 @@
       "id": "family_pk_query_receive_daily_rank",
       "name": "家族PK-查询收礼日榜",
       "category": "家族PK（vas/activity/family-pk-v2-api）",
-      "description": "测试环境查询家族收礼日榜（queryReceivedDailyRankForTest）。params：lang、date（yyyy-MM-dd）、limit（返回条数，最大 500）。修改模板 params[0].value 后执行",
+      "description": "测试环境查询家族收礼日榜（queryReceiveDailyRankForTest）。已解散家族通过 getFamilyCreateTime 判定并排除，有效名次顺延；params：date（yyyy-MM-dd）、limit（最大 500）",
       "prompts": [
         "查询 <date> 家族收礼日榜",
         "家族PK查询收礼日榜 date=<date> limit=<limit>",
         "查收礼日榜 top <limit>"
       ],
-      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-查询收礼日榜.json\n"
+      "command": "python3 MOA/moa_execute.py \\\n  --family-pk-query-receive-rank \\\n  --family-pk-date <date> \\\n  --family-pk-limit <limit>\n"
     },
     {
       "id": "family_pk_incr_score",
@@ -819,13 +831,27 @@
       "id": "family_pk_run_match_task",
       "name": "家族PK-结算发奖匹配",
       "category": "家族PK（vas/activity/family-pk-v2-api）",
-      "description": "测试环境跑家族 PK 定时任务（runFamilyPkMatchTask）。入参为 yyyy-MM-dd 日期字符串：对输入日期的前一日进行结算和发奖，并对输入日期重新匹配。修改模板 params[0].value 后执行",
+      "description": "测试环境跑家族 PK 定时任务（runFamilyPkMatchTask）。入参为 yyyy-MM-dd 日期字符串：对输入日期的前一日进行结算和发奖，并对输入日期重新匹配。若当日已有匹配数据，须先执行「家族PK-清除匹配数据」再调用本接口。须加 --timeout-ms 180000；返回 ec=3041 等超时时禁止自动重试，原样汇报失败由用户决定是否再跑。修改模板 params[0].value 后执行",
       "prompts": [
         "执行 <date> 家族PK结算发奖并匹配",
         "家族PK结算发奖匹配 date=<date>",
-        "跑家族PK匹配任务 <date>"
+        "跑家族PK匹配任务 <date>",
+        "重置 <date> 家族PK：先清除匹配数据再结算发奖"
       ],
-      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-结算发奖匹配.json\n"
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-结算发奖匹配.json \\\n  --timeout-ms 180000\n"
+    },
+    {
+      "id": "family_pk_delete_match_data",
+      "name": "家族PK-清除匹配数据",
+      "category": "家族PK（vas/activity/family-pk-v2-api）",
+      "description": "测试环境清除指定日期的家族 PK 匹配数据（deleteMatchDataForTest）。入参 date 为 yyyy-MM-dd。重置当天匹配并结算下发前一天奖励前，须先执行本接口清除当天匹配数据，再执行「家族PK-结算发奖匹配」。修改模板 params[0].value.date 后执行",
+      "prompts": [
+        "清除 <date> 家族PK匹配数据",
+        "家族PK清除匹配数据 date=<date>",
+        "删除家族PK匹配数据 <date>",
+        "重置 <date> 家族PK前先清除匹配数据"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-清除匹配数据.json\n"
     },
     {
       "id": "user_follow_friend",
@@ -837,6 +863,18 @@
         "让用户 <uid> 和 <remoteUid> 成为好友"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-关注好友.json \\\n  --follow-uid <uid> \\\n  --follow-remote-uid <remoteUid>\n"
+    },
+    {
+      "id": "family_delete",
+      "name": "家族-解散家族",
+      "category": "家族（external/user/family-api）",
+      "description": "族长解散家族（deleteFamily；header KV 含 userId，params json 含 familyId + userId）。须传族长 userId；解散后可用「家族-查询创建时间」验收 dissolved=true",
+      "prompts": [
+        "解散家族 <familyId> 族长 <userId>",
+        "删除家族 <familyId>",
+        "族长 <userId> 解散家族 <familyId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-解散家族.json \\\n  --family-id <familyId> \\\n  --family-delete-owner-id <userId> \\\n  --family-delete\n"
     }
   ]
 }

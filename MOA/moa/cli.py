@@ -20,6 +20,8 @@ from .family import (
     parse_family_exp_summary,
     parse_family_fund_summary,
     parse_family_fund_tier_set_count,
+    parse_family_create_time_summary,
+    parse_family_delete_summary,
     parse_family_members_summary,
     parse_user_joined_family_summary,
 )
@@ -37,6 +39,7 @@ from .flows import (
     run_id_auth_fix_failure,
 )
 from .family_detail import needs_family_detail, needs_family_detail_by_user, run_family_detail
+from .family_pk_receive_rank import needs_family_pk_query_receive_rank, run_family_pk_query_receive_rank
 from .package_gift import run_package_gift_send
 from .time_utils import resolve_family_fund_week_key
 from .user_area import USER_AREA_CODES
@@ -141,12 +144,26 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--family-query-current", action="store_true", help="查询当前家族声望值与等级（增量 0）")
     parser.add_argument("--family-query-members", action="store_true", help="查询家族全部成员 userId（getFamilyMembers）")
     parser.add_argument(
+        "--family-query-create-time",
+        action="store_true",
+        help="查询家族创建时间（getFamilyCreateTime；无返回表示已解散或不存在）",
+    )
+    parser.add_argument(
         "--family-query-joined-user-id",
         help="按 userId 查询所属家族 ID（getUserJoinedFamily）",
     )
     parser.add_argument(
         "--family-leave-user-id",
         help="移除家族成员（leave；params={userId} json）",
+    )
+    parser.add_argument(
+        "--family-delete",
+        action="store_true",
+        help="解散家族（deleteFamily；须配合 --family-id 与 --family-delete-owner-id）",
+    )
+    parser.add_argument(
+        "--family-delete-owner-id",
+        help="解散家族：族长 userId（deleteFamily header/params 均须此 userId）",
     )
     parser.add_argument("--follow-uid", help="关注好友：发起关注的 userId（addUserRelation uid）")
     parser.add_argument("--follow-remote-uid", help="关注好友：被关注的 userId（addUserRelation remoteUid）")
@@ -163,6 +180,23 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--family-detail-by-user-id",
         help="按 userId 查家族详情：MOA 查家族 id → Admin 家族信息 + MOA 成员列表",
+    )
+    parser.add_argument(
+        "--family-pk-query-receive-rank",
+        action="store_true",
+        help="查询家族收礼日榜（排除已解散家族并顺延名次）",
+    )
+    parser.add_argument("--family-pk-date", help="家族收礼日榜日期 yyyy-MM-dd（配合 --family-pk-query-receive-rank）")
+    parser.add_argument(
+        "--family-pk-limit",
+        type=int,
+        default=500,
+        help="家族收礼日榜返回条数（默认 500，最大 500）",
+    )
+    parser.add_argument(
+        "--family-pk-include-dissolved",
+        action="store_true",
+        help="收礼日榜查询时保留已解散家族（默认排除并顺延名次）",
     )
     parser.add_argument("--family-fund-tier", choices=["A", "B", "C"], help="家族基金档位（FamilyFundService.batchSetFamilyFundTierForTest）")
     parser.add_argument("--family-fund-tier-flag", type=int, default=0, help="设置基金档位 flag（默认 0；result=0 表示未更新）")
@@ -610,6 +644,28 @@ def _print_response(args: argparse.Namespace, resp: dict[str, object]) -> None:
         print(json.dumps(summary, ensure_ascii=False, indent=2))
         return
 
+    if args.family_query_create_time:
+        inner_ec, inner_em, inner_result = extract_inner_result(resp)
+        if inner_ec != 0:
+            print(f"业务返回失败: ec={inner_ec}, em={inner_em}", file=sys.stderr)
+            raise SystemExit(4)
+        summary = parse_family_create_time_summary(args.family_id, inner_result)
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+        return
+
+    if args.family_delete:
+        inner_ec, inner_em, inner_result = extract_inner_result(resp)
+        if inner_ec != 0:
+            print(f"业务返回失败: ec={inner_ec}, em={inner_em}", file=sys.stderr)
+            raise SystemExit(4)
+        summary = parse_family_delete_summary(
+            args.family_id,
+            args.family_delete_owner_id,
+            inner_result,
+        )
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
+        return
+
     if args.family_query_current:
         inner_ec, inner_em, inner_result = extract_inner_result(resp)
         if inner_ec != 0:
@@ -723,6 +779,9 @@ def main() -> int:
 
         if needs_family_detail(args) or needs_family_detail_by_user(args):
             return run_family_detail(args, client)
+
+        if needs_family_pk_query_receive_rank(args):
+            return run_family_pk_query_receive_rank(args, client)
 
         if needs_vip_level_upgrade(args):
             payload = build_vip_level_upgrade_payload(args, client)

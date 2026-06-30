@@ -1,0 +1,29 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/internal/user/family-moa",
+  "method": "getFamilyCreateTime",
+  "header": "",
+  "params": [
+    {
+      "title": "家族id",
+      "name": "1",
+      "txt": "44647",
+      "json": "",
+      "type": "string",
+      "value": "44647"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88ea376b29864ad"
+}

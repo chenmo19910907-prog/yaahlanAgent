@@ -1,0 +1,44 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/external/user/family-api",
+  "method": "deleteFamily",
+  "header": "{\"userId\":\"100238565\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": "",
+      "txt": "",
+      "json": "{\"familyId\":\"43107\",\"userId\":\"100238565\"}",
+      "type": "json",
+      "value": {
+        "familyId": "43107",
+        "userId": "100238565"
+      }
+    }
+  ],
+  "settings": {
+    "time": 2000,
+    "group": "default",
+    "host": "",
+    "headerType": "KV"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "family_delete",
+    "name": "家族-解散家族",
+    "category": "家族（external/user/family-api）",
+    "description": "族长解散家族（deleteFamily；header KV 含 userId，params json 含 familyId + userId）。须传族长 userId；解散后可用「家族-查询创建时间」验收 dissolved=true",
+    "prompts": [
+      "解散家族 <familyId> 族长 <userId>",
+      "删除家族 <familyId>",
+      "族长 <userId> 解散家族 <familyId>"
+    ],
+    "cli": "--family-id <familyId> --family-delete-owner-id <userId> --family-delete"
+  }
+}

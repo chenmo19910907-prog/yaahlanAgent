@@ -30,6 +30,8 @@ from .params import (
     set_family_decrease_exp_params,
     set_family_member_fund_contrib_params,
     set_family_leave_params,
+    set_family_delete_params,
+    set_family_create_time_query_params,
     set_family_members_query_params,
     set_user_joined_family_query_params,
     set_backdoor_execute_expr,
@@ -634,6 +636,14 @@ def _family_query_members_mode(args: argparse.Namespace) -> bool:
     return bool(args.family_query_members)
 
 
+def _family_query_create_time_mode(args: argparse.Namespace) -> bool:
+    return bool(args.family_query_create_time)
+
+
+def _family_delete_mode(args: argparse.Namespace) -> bool:
+    return bool(args.family_delete)
+
+
 def _family_query_joined_mode(args: argparse.Namespace) -> bool:
     return args.family_query_joined_user_id is not None
 
@@ -647,6 +657,8 @@ def _family_add_mode(args: argparse.Namespace) -> bool:
         and not _family_fund_clear_mode(args)
         and not _family_member_fund_contrib_mode(args)
         and not _family_query_members_mode(args)
+        and not _family_query_create_time_mode(args)
+        and not _family_delete_mode(args)
     )
 
 
@@ -656,6 +668,14 @@ def _op_family_query_members(args: argparse.Namespace, payload: dict[str, Any]) 
     if not args.family_id:
         raise ValueError("查询家族成员时，必须提供 --family-id")
     set_family_members_query_params(payload, args.family_id)
+
+
+def _op_family_query_create_time(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/internal/user/family-moa"
+    payload["method"] = "getFamilyCreateTime"
+    if not args.family_id:
+        raise ValueError("查询家族创建时间时，必须提供 --family-id")
+    set_family_create_time_query_params(payload, args.family_id)
 
 
 def _op_family_query_joined(args: argparse.Namespace, payload: dict[str, Any]) -> None:
@@ -672,6 +692,18 @@ def _op_family_leave(args: argparse.Namespace, payload: dict[str, Any]) -> None:
         raise ValueError("移除家族成员时 userId 不能为空")
     print(f"移除家族成员 userId={user_id}", file=sys.stderr)
     set_family_leave_params(payload, user_id)
+
+
+def _op_family_delete(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/external/user/family-api"
+    payload["method"] = "deleteFamily"
+    if not args.family_id:
+        raise ValueError("解散家族时，必须提供 --family-id")
+    owner_user_id = str(args.family_delete_owner_id or "").strip()
+    if not owner_user_id:
+        raise ValueError("解散家族时，必须提供 --family-delete-owner-id（族长 userId）")
+    print(f"解散家族 familyId={args.family_id} ownerUserId={owner_user_id}", file=sys.stderr)
+    set_family_delete_params(payload, args.family_id, owner_user_id)
 
 
 def _op_user_follow(args: argparse.Namespace, payload: dict[str, Any]) -> None:
@@ -893,7 +925,9 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: _family_fund_contrib_mode(a), _op_family_fund_contrib),
     (lambda a: _family_decrease_mode(a), _op_family_decrease_exp),
     (lambda a: _family_query_members_mode(a), _op_family_query_members),
+    (lambda a: _family_query_create_time_mode(a), _op_family_query_create_time),
     (lambda a: _family_query_joined_mode(a), _op_family_query_joined),
+    (lambda a: _family_delete_mode(a), _op_family_delete),
     (lambda a: a.family_leave_user_id is not None, _op_family_leave),
     (lambda a: a.follow_uid is not None or a.follow_remote_uid is not None, _op_user_follow),
     (lambda a: _family_add_mode(a), _op_family_exp),

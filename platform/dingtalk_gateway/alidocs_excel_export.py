@@ -172,6 +172,87 @@ def _read_csv(path: Path) -> list[list[str]]:
         return list(csv.reader(f))
 
 
+async def update_workbook_rows_async(
+    rows: list[list[str]],
+    *,
+    workbook_id: str,
+    auto_wrap: bool = False,
+    clear_trailing: bool = True,
+) -> str:
+    """向已有钉钉表格覆盖写入（不新建文档）。"""
+    if not rows:
+        raise ValueError("表格为空")
+    env = _excel_env()
+    token, operator = await _get_token_and_operator(env)
+    workbook_id = workbook_id.strip()
+    await _write_rows(
+        token=token,
+        operator=operator,
+        workbook_id=workbook_id,
+        rows=rows,
+        auto_wrap=auto_wrap,
+    )
+    if clear_trailing:
+        async with httpx.AsyncClient(timeout=120) as client:
+            sheets_url = f"{DOC_API}/workbooks/{workbook_id}/sheets?operatorId={operator}"
+            resp = await client.get(
+                sheets_url,
+                headers={"x-acs-dingtalk-access-token": token},
+            )
+            resp.raise_for_status()
+            sheets = resp.json().get("value", [])
+            if sheets:
+                sheet_id = sheets[0]["id"]
+                cols = max(len(r) for r in rows)
+                end_col = _col_letter(cols)
+                old_end = len(rows) + 1
+                # 读 sheet 行数，清掉旧数据尾部
+                info_url = (
+                    f"{DOC_API}/workbooks/{workbook_id}/sheets/{sheet_id}"
+                    f"?select=rowCount&operatorId={operator}"
+                )
+                info_resp = await client.get(
+                    info_url,
+                    headers={"x-acs-dingtalk-access-token": token},
+                )
+                if info_resp.status_code < 400:
+                    row_count = int(info_resp.json().get("rowCount") or 0)
+                    if row_count > len(rows):
+                        blank = [[""] * cols] * (row_count - len(rows))
+                        clear_url = (
+                            f"{DOC_API}/workbooks/{workbook_id}/sheets/{sheet_id}"
+                            f"/ranges/A{old_end}:{end_col}{row_count}?operatorId={operator}"
+                        )
+                        await client.put(
+                            clear_url,
+                            headers={
+                                "x-acs-dingtalk-access-token": token,
+                                "Content-Type": "application/json",
+                            },
+                            json={"values": blank},
+                        )
+    return ALIDOCS_NODE.format(node_id=workbook_id)
+
+
+def update_workbook_rows(
+    rows: list[list[str]],
+    *,
+    workbook_id: str,
+    auto_wrap: bool = False,
+    clear_trailing: bool = True,
+) -> str:
+    import asyncio
+
+    return asyncio.run(
+        update_workbook_rows_async(
+            rows,
+            workbook_id=workbook_id,
+            auto_wrap=auto_wrap,
+            clear_trailing=clear_trailing,
+        )
+    )
+
+
 async def export_rows_to_folder_async(
     rows: list[list[str]],
     *,

@@ -123,6 +123,13 @@ def set_family_members_query_params(payload: dict[str, Any], family_id: str) -> 
     payload["params"] = [string_param(family_id)]
 
 
+def set_family_create_time_query_params(payload: dict[str, Any], family_id: str) -> None:
+    family_id = str(family_id).strip()
+    if not family_id:
+        raise ValueError("family_id 不能为空")
+    payload["params"] = [string_param(family_id)]
+
+
 def set_user_joined_family_query_params(payload: dict[str, Any], user_id: str) -> None:
     user_id = str(user_id).strip()
     if not user_id:
@@ -144,6 +151,31 @@ def set_family_leave_params(payload: dict[str, Any], user_id: str) -> None:
             "name": 0,
             "title": "",
             "txt": '{""}',
+            "json": json.dumps(body, ensure_ascii=False, separators=(",", ":")),
+            "type": "json",
+            "value": body,
+        }
+    ]
+
+
+def set_family_delete_params(payload: dict[str, Any], family_id: str, owner_user_id: str) -> None:
+    family_id = str(family_id).strip()
+    owner_user_id = str(owner_user_id).strip()
+    if not family_id:
+        raise ValueError("family_id 不能为空")
+    if not owner_user_id:
+        raise ValueError("owner_user_id 不能为空")
+    body = {"familyId": family_id, "userId": owner_user_id}
+    header = {"userId": owner_user_id}
+    payload["header"] = json.dumps(header, ensure_ascii=False, separators=(",", ":"))
+    settings = payload.setdefault("settings", {})
+    if isinstance(settings, dict):
+        settings["headerType"] = "KV"
+    payload["params"] = [
+        {
+            "name": 0,
+            "title": "",
+            "txt": "",
             "json": json.dumps(body, ensure_ascii=False, separators=(",", ":")),
             "type": "json",
             "value": body,

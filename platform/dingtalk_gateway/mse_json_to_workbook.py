@@ -37,11 +37,26 @@ from mse_param_sheet_to_json import (  # noqa: E402
     _parse_param_sheet,
     _write_sheet,
 )
-from mse_sync_to_workbook import _format_value, _sheet_cell  # noqa: E402
 from mse_config_export import _fetch_mse_config  # noqa: E402
 from mse_workbook_utils import apply_parsed_values_to_original, format_rank_range  # noqa: E402
 
 TIER_NOTE = "有效日均=max(区间日均,minBracketDailyAvg)；达标PK=有效日均×系数"
+
+
+def _sheet_cell(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (list, dict)):
+        return json.dumps(value, ensure_ascii=False)
+    if isinstance(value, (int, float)):
+        return str(value)
+    return str(value)
+
+
+def _format_value(value: Any) -> str:
+    return _sheet_cell(value)
 TITLE = (
     "家族PK服务配置 · 参数表（仅改「参数值/系数/加成钻」列，改完 @Agent 生成 JSON）；"
     "区间日均低于 minBracketDailyAvg 时按 minBracketDailyAvg 计算档位"
@@ -99,6 +114,8 @@ def build_param_sheet_rows(*, config: dict[str, Any], meta: dict[str, str]) -> l
 
     base_rows = [
         ("enabled", "是否开启"),
+        ("activityStartDate", "活动开始时间（yyyy-MM-dd HH:mm:ss）"),
+        ("activityEndDate", "活动结束时间（yyyy-MM-dd HH:mm:ss）"),
         ("pkStartHour", "PK 开始小时"),
         ("pkEndHour", "PK 结束小时"),
         ("basePoolDiamond", "0 档展示钻（999）"),
@@ -106,12 +123,16 @@ def build_param_sheet_rows(*, config: dict[str, Any], meta: dict[str, str]) -> l
         ("minRewardPk", "领奖最低 PK 值"),
         ("minListPk", "上榜最低 PK 值"),
         ("minBracketDailyAvg", "区间日均兜底：昨日收礼榜均值低于此值时，按此值参与档位达标PK计算"),
+        ("maxRewardDiamondPerUser", "单用户最高奖励钻"),
         ("eventGiftProductIds", "活动礼物 ID 列表 JSON"),
         ("familyWhiteList", "家族白名单 JSON"),
     ]
     for key, desc in base_rows:
         if key in config:
-            rows.append(["基础", key, _format_value(config[key]), desc])
+            val = config[key]
+            if key in ("activityStartDate", "activityEndDate") and val:
+                val = f"\t{val}"
+            rows.append(["基础", key, _format_value(val), desc])
 
     rows.append(["", "", "", ""])
     rows.append(["区块", "区间下标", "名次区间", "档位", "系数", "加成钻", "说明"])
@@ -148,7 +169,6 @@ def build_param_sheet_rows(*, config: dict[str, Any], meta: dict[str, str]) -> l
             "风控",
             [
                 ("rewardRiskRuleId", "发奖风控规则 ID"),
-                ("maxRewardDiamondPerUser", "单用户最高奖励钻"),
             ],
         ),
         (

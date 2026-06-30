@@ -31,7 +31,8 @@ if str(GATEWAY_DIR) not in sys.path:
 
 from alidocs_excel_export import DOC_API, _col_letter, _excel_env, _get_token_and_operator  # noqa: E402
 from mse_config_export import _fetch_mse_config  # noqa: E402
-from mse_workbook_utils import fetch_workbook_sheets, fetch_workbook_sheets_async, format_rank_range, node_id  # noqa: E402
+from mse_json_to_workbook import _merge_config, build_param_sheet_rows  # noqa: E402
+from mse_workbook_utils import fetch_workbook_sheets, fetch_workbook_sheets_async, find_param_sheet_name, format_rank_range, node_id  # noqa: E402
 
 import httpx  # noqa: E402
 
@@ -40,6 +41,8 @@ JSON_SHEET = "configValue_JSON"
 
 BASE_KEYS = {
     "enabled",
+    "activityStartDate",
+    "activityEndDate",
     "pkStartHour",
     "pkEndHour",
     "basePoolDiamond",
@@ -49,6 +52,7 @@ BASE_KEYS = {
     "minBracketDailyAvg",
     "eventGiftProductIds",
     "familyWhiteList",
+    "maxRewardDiamondPerUser",
 }
 
 DOTTED_BLOCKS = {
@@ -222,11 +226,10 @@ async def sync_mse_to_workbook_async(
     }
 
     sheets = await fetch_workbook_sheets_async(url)
-    if PARAM_SHEET not in sheets:
-        raise RuntimeError(f"缺少工作表「{PARAM_SHEET}」")
-
-    param_rows = _apply_mse_to_param_sheet(sheets[PARAM_SHEET], config=config, meta=meta)
-    json_rows = _json_sheet_rows(meta=meta, config=config)
+    param_sheet = find_param_sheet_name(sheets)
+    merged = _merge_config(config)
+    param_rows = build_param_sheet_rows(config=merged, meta=meta)
+    json_rows = _json_sheet_rows(meta=meta, config=merged)
 
     env = _excel_env()
     token, operator = await _get_token_and_operator(env)
@@ -234,7 +237,7 @@ async def sync_mse_to_workbook_async(
         token=token,
         operator=operator,
         workbook_id=workbook_id,
-        sheet_name=PARAM_SHEET,
+        sheet_name=param_sheet,
         rows=param_rows,
     )
     await _write_sheet(

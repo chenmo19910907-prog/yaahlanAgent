@@ -95,6 +95,8 @@ def _parse_param_sheet(matrix: list[list[Any]]) -> tuple[dict[str, Any], dict[st
     }
     base_keys = {
         "enabled",
+        "activityStartDate",
+        "activityEndDate",
         "pkStartHour",
         "pkEndHour",
         "basePoolDiamond",

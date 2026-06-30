@@ -1,0 +1,43 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/vas/activity/family-pk-v2-api",
+  "method": "deleteMatchDataForTest",
+  "header": "",
+  "params": [
+    {
+      "name": 0,
+      "title": "",
+      "txt": "",
+      "json": "{\"date\":\"2026-06-29\"}",
+      "type": "json",
+      "value": {
+        "date": "2026-06-29"
+      }
+    }
+  ],
+  "settings": {
+    "time": 2000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "family_pk_delete_match_data",
+    "name": "家族PK-清除匹配数据",
+    "category": "家族PK（vas/activity/family-pk-v2-api）",
+    "description": "测试环境清除指定日期的家族 PK 匹配数据（deleteMatchDataForTest）。入参 date 为 yyyy-MM-dd。重置当天匹配并结算下发前一天奖励前，须先执行本接口清除当天匹配数据，再执行「家族PK-结算发奖匹配」。修改模板 params[0].value.date 后执行",
+    "prompts": [
+      "清除 <date> 家族PK匹配数据",
+      "家族PK清除匹配数据 date=<date>",
+      "删除家族PK匹配数据 <date>",
+      "重置 <date> 家族PK前先清除匹配数据"
+    ]
+  }
+}

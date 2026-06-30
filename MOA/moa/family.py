@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any
 
 from .config import (
@@ -145,3 +146,36 @@ def parse_user_joined_family_summary(user_id: str, inner_result: Any) -> dict[st
         "joinedFamily": joined,
         "familyId": family_id if joined else None,
     }
+
+
+def parse_family_delete_summary(family_id: str, owner_user_id: str, inner_result: Any) -> dict[str, Any]:
+    deleted = False
+    if isinstance(inner_result, bool):
+        deleted = inner_result
+    elif isinstance(inner_result, dict):
+        deleted = bool(inner_result.get("data") or inner_result.get("success"))
+    return {
+        "familyId": str(family_id).strip(),
+        "ownerUserId": str(owner_user_id).strip(),
+        "deleted": deleted,
+    }
+
+
+def parse_family_create_time_summary(family_id: str, inner_result: Any) -> dict[str, Any]:
+    create_ms: int | None = None
+    if inner_result is not None:
+        try:
+            create_ms = int(inner_result)
+        except (TypeError, ValueError):
+            create_ms = None
+    dissolved = create_ms is None
+    summary: dict[str, Any] = {
+        "familyId": str(family_id).strip(),
+        "dissolved": dissolved,
+        "createTimeMs": create_ms,
+    }
+    if create_ms is not None:
+        summary["createTimeUtc"] = datetime.fromtimestamp(create_ms / 1000, tz=timezone.utc).isoformat()
+    else:
+        summary["note"] = "无创建时间，家族已解散或不存在"
+    return summary
