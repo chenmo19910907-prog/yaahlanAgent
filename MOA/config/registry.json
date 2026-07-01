@@ -794,7 +794,7 @@
     {
       "id": "family_pk_modify_receive_daily_rank",
       "name": "家族PK-修改收礼日榜",
-      "category": "家族PK（vas/activity/family-pk-v2-api）",
+      "category": "家族PK（vas/internal/family-pk-moa）",
       "description": "测试环境覆盖写入家族收礼日榜（modifyReceiveDailyRankForTest）。familyReceiveScore 为家族日榜分值（覆盖写）；memberUserId + memberReceiveScore 可选，同步覆盖成员收礼明细。修改模板 params[0].value 后执行",
       "prompts": [
         "修改家族 <familyId> <date> 收礼日榜分值为 <score>",
@@ -806,7 +806,7 @@
     {
       "id": "family_pk_query_receive_daily_rank",
       "name": "家族PK-查询收礼日榜",
-      "category": "家族PK（vas/activity/family-pk-v2-api）",
+      "category": "家族PK（vas/internal/family-pk-moa）",
       "description": "测试环境查询家族收礼日榜（queryReceiveDailyRankForTest）。已解散家族通过 getFamilyCreateTime 判定并排除，有效名次顺延；params：date（yyyy-MM-dd）、limit（最大 500）",
       "prompts": [
         "查询 <date> 家族收礼日榜",
@@ -818,7 +818,7 @@
     {
       "id": "family_pk_incr_score",
       "name": "家族PK-增加PK值",
-      "category": "家族PK（vas/activity/family-pk-v2-api）",
+      "category": "家族PK（vas/internal/family-pk-moa）",
       "description": "测试环境增加家族/成员 PK 值（incrFamilyPkScoreForTest）。同步累加家族 PK 榜与成员 PK 榜；updateBattleRank 默认 true 时同步更新对战榜。成功返回 familyPkScore、memberPkScore。修改模板 params[0].value 后执行",
       "prompts": [
         "给家族 <familyId> 成员 <memberUserId> 增加 <pkDelta> PK值",
@@ -830,7 +830,7 @@
     {
       "id": "family_pk_run_match_task",
       "name": "家族PK-结算发奖匹配",
-      "category": "家族PK（vas/activity/family-pk-v2-api）",
+      "category": "家族PK（vas/internal/family-pk-moa）",
       "description": "测试环境跑家族 PK 定时任务（runFamilyPkMatchTask）。入参为 yyyy-MM-dd 日期字符串：对输入日期的前一日进行结算和发奖，并对输入日期重新匹配。若当日已有匹配数据，须先执行「家族PK-清除匹配数据」再调用本接口。须加 --timeout-ms 180000；返回 ec=3041 等超时时禁止自动重试，原样汇报失败由用户决定是否再跑。修改模板 params[0].value 后执行",
       "prompts": [
         "执行 <date> 家族PK结算发奖并匹配",
@@ -843,7 +843,7 @@
     {
       "id": "family_pk_delete_match_data",
       "name": "家族PK-清除匹配数据",
-      "category": "家族PK（vas/activity/family-pk-v2-api）",
+      "category": "家族PK（vas/internal/family-pk-moa）",
       "description": "测试环境清除指定日期的家族 PK 匹配数据（deleteMatchDataForTest）。入参 date 为 yyyy-MM-dd。重置当天匹配并结算下发前一天奖励前，须先执行本接口清除当天匹配数据，再执行「家族PK-结算发奖匹配」。修改模板 params[0].value.date 后执行",
       "prompts": [
         "清除 <date> 家族PK匹配数据",

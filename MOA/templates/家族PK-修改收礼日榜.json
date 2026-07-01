@@ -1,7 +1,7 @@
 {
   "type": "moa",
   "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
-  "url": "/service/vas/activity/family-pk-v2-api",
+  "url": "/service/vas/internal/family-pk-moa",
   "method": "modifyReceiveDailyRankForTest",
   "header": "",
   "params": [
@@ -37,7 +37,7 @@
   "_registry": {
     "id": "family_pk_modify_receive_daily_rank",
     "name": "家族PK-修改收礼日榜",
-    "category": "家族PK（vas/activity/family-pk-v2-api）",
+    "category": "家族PK（vas/internal/family-pk-moa）",
     "description": "测试环境覆盖写入家族收礼日榜（modifyReceiveDailyRankForTest）。familyReceiveScore 为家族日榜分值（覆盖写）；memberUserId + memberReceiveScore 可选，同步覆盖成员收礼明细。修改模板 params[0].value 后执行",
     "prompts": [
       "修改家族 <familyId> <date> 收礼日榜分值为 <score>",

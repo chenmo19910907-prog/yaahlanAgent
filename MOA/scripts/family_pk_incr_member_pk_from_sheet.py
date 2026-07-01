@@ -62,7 +62,7 @@ def _incr_pk(rank_date: str, family_id: str, member_user_id: str, pk_delta: int)
     tpl = {
         "type": "moa",
         "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
-        "url": "/service/vas/activity/family-pk-v2-api",
+        "url": "/service/vas/internal/family-pk-moa",
         "method": "incrFamilyPkScoreForTest",
         "header": "",
         "params": [

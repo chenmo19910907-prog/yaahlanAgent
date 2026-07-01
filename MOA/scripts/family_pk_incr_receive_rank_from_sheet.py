@@ -77,7 +77,7 @@ def _modify_rank(rank_date: str, family_id: str, score: int) -> dict[str, Any]:
     tpl = {
         "type": "moa",
         "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
-        "url": "/service/vas/activity/family-pk-v2-api",
+        "url": "/service/vas/internal/family-pk-moa",
         "method": "modifyReceiveDailyRankForTest",
         "header": "",
         "params": [

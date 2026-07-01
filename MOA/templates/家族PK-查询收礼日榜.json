@@ -1,7 +1,7 @@
 {
   "type": "moa",
   "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
-  "url": "/service/vas/activity/family-pk-v2-api",
+  "url": "/service/vas/internal/family-pk-moa",
   "method": "queryReceiveDailyRankForTest",
   "header": "",
   "params": [
@@ -33,7 +33,7 @@
   "_registry": {
     "id": "family_pk_query_receive_daily_rank",
     "name": "家族PK-查询收礼日榜",
-    "category": "家族PK（vas/activity/family-pk-v2-api）",
+    "category": "家族PK（vas/internal/family-pk-moa）",
     "description": "测试环境查询家族收礼日榜（queryReceiveDailyRankForTest）。params：lang、date（yyyy-MM-dd）、limit（返回条数，最大 500）。默认排除已解散家族并顺延名次",
     "prompts": [
       "查询 <date> 家族收礼日榜",
