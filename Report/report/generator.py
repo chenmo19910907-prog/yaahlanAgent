@@ -60,6 +60,57 @@ def _yaahlan_version_s2_from_stem(stem: str) -> str:
     return f"Yaahlan{tp}" if tp else "Yaahlan"
 
 
+def version_s2_from_semver(semver: str) -> str:
+    """由裸版本号（如 2.4.6）或已是 Yaahlan 前缀的文案生成标题 s2。"""
+    s = semver.strip()
+    if not s:
+        return "Yaahlan"
+    if s.lower().startswith("yaahlan"):
+        return s
+    m = _YAAHLAN_SEMVER_IN_STEM.search(s)
+    if m:
+        return f"Yaahlan{m.group(2)}"
+    return f"Yaahlan{s}"
+
+
+def guess_version_from_xlsx(xlsx_path: Path) -> str | None:
+    """从版本用例表 sheet 名或前几行单元格提取 x.y.z（钉钉网关临时文件名无版本时回退）。"""
+    try:
+        from openpyxl import load_workbook
+    except ModuleNotFoundError:
+        return None
+    try:
+        wb = load_workbook(str(xlsx_path), data_only=True, read_only=True)
+    except OSError:
+        return None
+    try:
+        for name in wb.sheetnames:
+            m = _YAAHLAN_SEMVER_IN_STEM.search(name)
+            if m:
+                return m.group(2)
+            ws = wb[name]
+            for row in ws.iter_rows(min_row=1, max_row=6, values_only=True):
+                if not row:
+                    continue
+                for cell in row:
+                    if cell is None:
+                        continue
+                    m = _YAAHLAN_SEMVER_IN_STEM.search(str(cell))
+                    if m:
+                        return m.group(2)
+    finally:
+        wb.close()
+    return None
+
+
+def resolve_version_s2(xlsx_stem: str) -> str:
+    """报告标题版本：环境变量 REPORT_VERSION_S2 优先，否则从 xlsx 文件名推导。"""
+    override = os.environ.get("REPORT_VERSION_S2", "").strip()
+    if override:
+        return override
+    return _yaahlan_version_s2_from_stem(xlsx_stem)
+
+
 def _normalize_subitem(s: str) -> str:
     s = s.strip()
     s = _SUBITEM_PREFIX_RE.sub("", s)
@@ -915,7 +966,7 @@ def main() -> int:
     print("\n".join(lines))
 
     xlsx_file = Path(xlsx_path)
-    title_s2_version = _yaahlan_version_s2_from_stem(xlsx_file.stem)
+    title_s2_version = resolve_version_s2(xlsx_file.stem)
     out_html = _render_full_report_html(
         title_prefix=title_s2_version,
         new_need_count=new_need_count,

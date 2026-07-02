@@ -78,13 +78,27 @@ def _lookup_workbook_url(keyword: str) -> tuple[str, str]:
     return name, url
 
 
-def _guess_version_label(*, version: str | None, workbook_name: str, xlsx_stem: str) -> str:
+def _guess_version_label(
+    *,
+    version: str | None,
+    workbook_name: str,
+    xlsx_stem: str,
+    xlsx_path: Path | None = None,
+) -> str:
     if version:
         return version
     for text in (workbook_name, xlsx_stem):
         match = _VERSION_IN_NAME_RE.search(text)
         if match:
             return match.group(1)
+    if xlsx_path is not None:
+        if str(REPORT_ROOT) not in sys.path:
+            sys.path.insert(0, str(REPORT_ROOT))
+        from report.generator import guess_version_from_xlsx  # noqa: WPS433
+
+        from_xlsx = guess_version_from_xlsx(xlsx_path)
+        if from_xlsx:
+            return from_xlsx
     return xlsx_stem
 
 
@@ -105,7 +119,12 @@ def _download_workbook(url: str, dest: Path) -> None:
         raise RuntimeError(f"未生成 xlsx：{dest}")
 
 
-def _generate_html_reports(xlsx_path: Path, *, version_case_url: str) -> tuple[Path, Path, str]:
+def _generate_html_reports(
+    xlsx_path: Path,
+    *,
+    version_case_url: str,
+    version_s2: str | None = None,
+) -> tuple[Path, Path, str]:
     if str(REPORT_ROOT) not in sys.path:
         sys.path.insert(0, str(REPORT_ROOT))
     from report.generator import (  # noqa: WPS433
@@ -120,6 +139,8 @@ def _generate_html_reports(xlsx_path: Path, *, version_case_url: str) -> tuple[P
         "REPORT_REGRESSION_CASE_URL": DEFAULT_REGRESSION_CASE_URL,
         "REPORT_VERSION_CASE_URL": version_case_url,
     }
+    if version_s2:
+        env["REPORT_VERSION_S2"] = version_s2
     proc = subprocess.run(
         [_report_python(), str(REPORT_ROOT / "report_execute.py"), str(xlsx_path)],
         cwd=str(REPORT_ROOT),
@@ -183,15 +204,21 @@ def generate_reports(
     xlsx_path = work_dir / "version_cases.xlsx"
     _download_workbook(url, xlsx_path)
 
-    internal_html, external_html, summary = _generate_html_reports(
-        xlsx_path,
-        version_case_url=url,
-    )
-
     version_label = _guess_version_label(
         version=version,
         workbook_name=workbook_name,
         xlsx_stem=xlsx_path.stem,
+        xlsx_path=xlsx_path,
+    )
+    if str(REPORT_ROOT) not in sys.path:
+        sys.path.insert(0, str(REPORT_ROOT))
+    from report.generator import version_s2_from_semver  # noqa: WPS433
+
+    version_s2 = version_s2_from_semver(version_label)
+    internal_html, external_html, summary = _generate_html_reports(
+        xlsx_path,
+        version_case_url=url,
+        version_s2=version_s2,
     )
     zip_path = _zip_reports(
         version_label=version_label,
