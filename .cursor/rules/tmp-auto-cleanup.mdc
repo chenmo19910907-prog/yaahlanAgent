@@ -1,0 +1,38 @@
+---
+description: .tmp 临时目录自动清理
+alwaysApply: true
+---
+
+# .tmp 临时文件自动清理
+
+`.tmp/` 存放 MOA payload、工作流报告等**一次性中间产物**，不应长期堆积。
+
+## Agent 必须
+
+在以下场景**结束后**执行清理（优先 `--aggressive`，工作流场景用默认 TTL 即可）：
+
+- 跑完 `workflow_execute.py run` 或家族 PK 批量 MOA 脚本（`incr_pk` / `modify_rank` 等产生大量 payload）
+- 本轮任务已验收、不再依赖 `.tmp` 内中间文件时
+- 发现 `git status` 中 `.tmp` 未跟踪文件过多时
+
+```bash
+# 工作流 / 批量脚本跑完后：删 payload，保留近 7 天汇总报告
+python3 scripts/tmp_cleanup.py
+
+# 任务已验收、确定不再需要 payload：立即清空 ephemeral
+python3 scripts/tmp_cleanup.py --aggressive
+```
+
+## 保留策略（脚本内置）
+
+| 类型 | 示例 | 策略 |
+|------|------|------|
+| ephemeral | `incr_pk_*`、`modify_rank_*`、`*_payload.json` | 默认 1h；`--aggressive` 立即删 |
+| report | `family_pk_*_seed_*`、`*_verify_*` | 7 天 |
+| workflow_runs | `family-pk-config-*_*.json` | 最近 20 份 + 7 天 |
+| log | `*.log` | 3 天 |
+
+## 禁止
+
+- 不要把 `.tmp` 当持久数据目录或提交进 git
+- 不要在清理前删除仍被下一步工作流引用的**当日汇总报告**（ephemeral payload 可随时清）

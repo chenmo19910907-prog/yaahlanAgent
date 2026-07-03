@@ -1,8 +1,8 @@
 {
   "kbPath": "testcase-kb/test_devices.json",
   "importSource": "/Users/user/Desktop/团队测试机统计表.xlsx",
-  "syncedAt": "2026-06-17 09:34:19 UTC",
-  "count": 49,
+  "syncedAt": "2026-07-03 08:40:30 UTC",
+  "count": 50,
   "devices": [
     {
       "项目": "yaahlan",
@@ -400,12 +400,12 @@
       "设备品牌": "苹果",
       "设备名称": "iPhone11Pro",
       "mmuid": "f638c00eb21d69bcb4e49e8971811596e6a51fec17346039450a",
-      "mmuidv3": "",
+      "mmuidv3": "675ef396fe1f56b990166d7693e32bb4718749c5823e3e33a792efda609b7a84c4",
       "设备系统": "iOS",
       "系统版本": "17.0.3",
       "归属人": "丁亮",
       "持有人": "丁亮",
-      "备注": ""
+      "备注": "自动落库 2026-07-03；phone=19900004444；userId=102235996；ip=84.75.158.102"
     },
     {
       "项目": "yaahlan",
@@ -643,7 +643,20 @@
       "adbWireless": "172.18.212.12:5555",
       "adbTcpPort": 5555,
       "备注": "无线adb 2026-06-17；adbSerial=ba69021e；adbWireless=172.18.212.12:5555；重连: adb connect 172.18.212.12:5555；重启后需 USB 执行 adb tcpip 5555"
+    },
+    {
+      "项目": "yaahlan",
+      "资产编号": "待补编号",
+      "设备品牌": "Samsung",
+      "设备名称": "SM-A556E",
+      "mmuid": "99bdf0fba305ad89bc56bef812110387573ac8dc",
+      "mmuidv3": "9d72f04828a03b19ed0326f35f5aec67b27666aee2993027451e2b336143484685",
+      "设备系统": "Android",
+      "系统版本": "14",
+      "归属人": "",
+      "持有人": "",
+      "备注": "自动落库 2026-07-03；phone=19900008888；userId=105301177；ip=84.75.158.102"
     }
   ],
-  "lastIncrementalUpdate": "wireless adb 172.18.212.12:5555 serial=ba69021e"
+  "lastIncrementalUpdate": "upsert loginDevice phone=19900008888 userId=105301177"
 }

@@ -209,4 +209,24 @@ def run_workflow(workflow_id: str, cli_values: dict[str, str]) -> dict[str, Any]
     with out_path.open("w", encoding="utf-8") as f:
         json.dump(summary, f, ensure_ascii=False, indent=2)
     summary["reportPath"] = str(out_path)
+
+    _cleanup_tmp_after_workflow()
     return summary
+
+
+def _cleanup_tmp_after_workflow() -> None:
+    """工作流结束后清理过期 ephemeral 与旧报告。"""
+    cleanup_script = REPO_ROOT / "scripts" / "tmp_cleanup.py"
+    if not cleanup_script.is_file():
+        return
+    try:
+        subprocess.run(
+            [sys.executable, str(cleanup_script)],
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=120,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        pass
