@@ -22,9 +22,6 @@ Risk/.env
 Risk/__pycache__/
 Admin/.env.local
 online/.env.local
-e2e/.env.local
-e2e/reports/*
-!e2e/reports/.gitkeep
 Admin/.env.online.local
 **/.env.online.local
 Admin/.env
@@ -65,3 +62,7 @@ prd-kb/.raw/
 # 用例生成临时目录（工作流落盘用，不提交具体内容）
 temporary_testcase/*
 !temporary_testcase/.gitkeep
+
+# MOA payload / 工作流中间产物（见 scripts/tmp_cleanup.py）
+.tmp/*
+!.tmp/.gitkeep

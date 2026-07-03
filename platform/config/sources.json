@@ -37,9 +37,6 @@
     "工作流",
     "平台"
   ],
-  "catalog_exclude_registries": [
-    "e2e/config/registry.json"
-  ],
   "env_check": {
     "label": "检查环境配置",
     "prompt": "@新手上手.md 运行环境检查"

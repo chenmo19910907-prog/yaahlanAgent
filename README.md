@@ -27,7 +27,6 @@
 - **DingTalk**（`DingTalk/`）：列举钉钉 alidocs 目录、同步用例到 `testcase-kb/`、同步 PRD 到 `prd-kb/`；详见 [DingTalk/README.md](DingTalk/README.md)
 - **Report**（`Report/`）：从版本用例 xlsx 生成内网/外网测试总结 HTML；详见 [Report/README.md](Report/README.md)、[Report/使用方法.md](Report/使用方法.md)
 - **adb**（`adb/`）：真机 UI 自动化（截屏 → 读图算坐标 → 点击，仅保留最新 10 张截图）；支持与 **Tunnel** 联动的 `run`（操作 + 截图 + 抓包校验）；**录制脚本库**按发版回归一级模块存放 **片段**，命令 `macro`；**P0 自动化用例**（`autotest`：PRD/手工用例 → 可执行 JSON → 真机跑测 → HTML 报告）见 [adb/自动化用例/README.md](adb/自动化用例/README.md)；详见 [adb/README.md](adb/README.md)、[adb/使用方法.md](adb/使用方法.md)、[adb/录制脚本/README.md](adb/录制脚本/README.md)
-- **e2e**（`e2e/`）：**独立于 adb/** 的自然语言安卓自动化（**识别→思考→执行** + 知识库 + MOA/Tunnel）；详见 [e2e/README.md](e2e/README.md)
 - **midscene**（`midscene/`）：基于 [Midscene.js](https://midscenejs.com/) 的 **AI 视觉驱动**双端自动化（iOS WDA + Android ADB）；YAML / TypeScript 用例，覆盖登录、充值、游戏中心（greedy / slots / others）等；详见 [midscene/README.md](midscene/README.md)
 
 ## 项目结构
@@ -101,12 +100,6 @@ auto-generate-testcase/
 │       ├── KB对照.md                  # 知识库 ↔ 脚本映射
 │       ├── 片段/<一级模块>/           # 积木：注册登录、动态帧、我的帧等
 │       └── 设备适配/                  # 换机坐标换算（基准设备、档案）
-├── e2e/                               # 全新 E2E 自动化（独立于 adb/，建设中）
-│   ├── README.md
-│   ├── 使用方法.md
-│   ├── e2e_execute.py                 # 入口
-│   ├── cases/                         # 声明式用例 JSON
-│   └── reports/                       # 运行报告
 ├── midscene/                          # Midscene.js AI 视觉驱动双端自动化（iOS + Android）
 │   ├── README.md
 │   ├── package.json                   # npm 脚本（YAML / Vitest）
@@ -330,7 +323,6 @@ python3 adb/adb_execute.py macro 发布纯文本动态 --text 5555 --no-capture
 | [adb/使用方法.md](adb/使用方法.md) | ADB 命令速查（提示词 ↔ CLI） |
 | [adb/录制脚本/README.md](adb/录制脚本/README.md) | 录制脚本库目录与落库约定 |
 | [adb/录制脚本/KB对照.md](adb/录制脚本/KB对照.md) | 知识库路径 ↔ 片段/组合对照 |
-| [e2e/README.md](e2e/README.md) | 全新 E2E 自动化方案（独立于 adb/） |
 | [midscene/README.md](midscene/README.md) | Midscene.js AI 视觉驱动双端自动化（YAML / Vitest） |
 
 - `榜单.md`：榜单类模块完整用例维度
