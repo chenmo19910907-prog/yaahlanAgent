@@ -101,8 +101,6 @@ def _render_playbook(playbook: dict[str, Any]) -> list[str]:
     if isinstance(steps, list) and steps:
         lines.append("**六步顺序**")
         lines.append("")
-        lines.append("| 步 | 工作流 | Sheet | 说明 |")
-        lines.append("| --- | --- | --- | --- |")
         for row in sorted(steps, key=lambda x: int(x.get("order") or 0)):
             if not isinstance(row, dict):
                 continue
@@ -110,8 +108,19 @@ def _render_playbook(playbook: dict[str, Any]) -> list[str]:
             workflow_id = str(row.get("workflowId") or "")
             sheet = str(row.get("sheet") or "")
             note = str(row.get("note") or "")
-            lines.append(f"| {order} | `{workflow_id}` | {sheet} | {note} |")
-        lines.append("")
+            lines.append(f"#### 第 {order} 步 · `{workflow_id}` → Sheet「{sheet}」")
+            lines.append("")
+            if note:
+                lines.append(note)
+                lines.append("")
+            operations = row.get("operations")
+            if isinstance(operations, list) and operations:
+                lines.append("**执行操作（按顺序）**")
+                lines.append("")
+                for idx, op in enumerate(operations, start=1):
+                    if isinstance(op, str) and op.strip():
+                        lines.append(f"{idx}. {op.strip()}")
+                lines.append("")
 
     prompts = playbook.get("prompts")
     if isinstance(prompts, list) and prompts:

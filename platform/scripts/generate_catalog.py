@@ -83,6 +83,119 @@ def _parse_env_check(sources: dict[str, Any]) -> dict[str, str]:
     return {"label": label, "prompt": prompt}
 
 
+def _workflow_id_to_item_id(workflow_id: str) -> str:
+    return workflow_id.strip().replace("-", "_")
+
+
+def _load_playbooks(sources: dict[str, Any]) -> list[dict[str, Any]]:
+    """从 workflow registry 读取 playbooks，并关联各步工作流名称与命令。"""
+    modules_cfg = sources.get("modules")
+    if not isinstance(modules_cfg, list):
+        return []
+    workflow_registry_path: Path | None = None
+    for mod in modules_cfg:
+        if not isinstance(mod, dict):
+            continue
+        if str(mod.get("id", "")).strip() == "workflow":
+            rel = str(mod.get("registry", "")).strip()
+            if rel:
+                workflow_registry_path = REPO_ROOT / rel
+            break
+    if workflow_registry_path is None or not workflow_registry_path.is_file():
+        return []
+
+    registry = _read_json(workflow_registry_path)
+    playbooks_raw = registry.get("playbooks")
+    if not isinstance(playbooks_raw, list):
+        return []
+
+    items_raw = registry.get("items")
+    items_by_id: dict[str, dict[str, Any]] = {}
+    if isinstance(items_raw, list):
+        for item in items_raw:
+            if isinstance(item, dict):
+                item_id = str(item.get("id") or "").strip()
+                if item_id:
+                    items_by_id[item_id] = item
+
+    playbooks: list[dict[str, Any]] = []
+    for playbook in playbooks_raw:
+        if not isinstance(playbook, dict):
+            continue
+        title = str(playbook.get("title") or "").strip()
+        if not title:
+            continue
+        steps_out: list[dict[str, Any]] = []
+        steps_raw = playbook.get("steps")
+        if isinstance(steps_raw, list):
+            for step in sorted(steps_raw, key=lambda x: int(x.get("order") or 0)):
+                if not isinstance(step, dict):
+                    continue
+                workflow_id = str(step.get("workflowId") or "").strip()
+                item = items_by_id.get(_workflow_id_to_item_id(workflow_id), {})
+                operations: list[str] = []
+                raw_ops = step.get("operations")
+                if isinstance(raw_ops, list):
+                    for op in raw_ops:
+                        if isinstance(op, str) and op.strip():
+                            operations.append(op.strip())
+                steps_out.append(
+                    {
+                        "order": int(step.get("order") or 0),
+                        "workflowId": workflow_id,
+                        "workflowName": str(item.get("name") or workflow_id).strip(),
+                        "sheet": str(step.get("sheet") or "").strip(),
+                        "note": str(step.get("note") or "").strip(),
+                        "operations": operations,
+                        "prompts": [
+                            p.strip()
+                            for p in (item.get("prompts") or [])
+                            if isinstance(p, str) and p.strip()
+                        ],
+                    }
+                )
+        defaults: dict[str, str] = {}
+        raw_defaults = playbook.get("defaults")
+        if isinstance(raw_defaults, dict):
+            for key, value in raw_defaults.items():
+                defaults[str(key)] = str(value)
+        sheets: list[dict[str, str]] = []
+        raw_sheets = playbook.get("sheets")
+        if isinstance(raw_sheets, list):
+            for row in raw_sheets:
+                if isinstance(row, dict):
+                    name = str(row.get("name") or "").strip()
+                    content = str(row.get("content") or "").strip()
+                    if name:
+                        sheets.append({"name": name, "content": content})
+        prompts: list[str] = []
+        raw_prompts = playbook.get("prompts")
+        if isinstance(raw_prompts, list):
+            for prompt in raw_prompts:
+                if isinstance(prompt, str) and prompt.strip():
+                    prompts.append(prompt.strip())
+        notes: list[str] = []
+        raw_notes = playbook.get("notes")
+        if isinstance(raw_notes, list):
+            for note in raw_notes:
+                if isinstance(note, str) and note.strip():
+                    notes.append(note.strip())
+        playbooks.append(
+            {
+                "id": str(playbook.get("id") or title).strip(),
+                "title": title,
+                "category": str(playbook.get("category") or "工作流").strip(),
+                "summary": str(playbook.get("summary") or "").strip(),
+                "defaults": defaults,
+                "sheets": sheets,
+                "steps": steps_out,
+                "prompts": prompts,
+                "notes": notes,
+            }
+        )
+    return playbooks
+
+
 def _load_catalog_data() -> dict[str, Any]:
     sources = _read_json(SOURCES_PATH)
     modules_cfg = sources.get("modules")
@@ -182,6 +295,7 @@ def _load_catalog_data() -> dict[str, Any]:
         "total_items": total_items,
         "module_count": len(modules),
         "modules": modules,
+        "playbooks": _load_playbooks(sources),
         "cursor_bridge": cursor_bridge,
         "env_check": _parse_env_check(sources),
     }
@@ -495,6 +609,58 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
     .prompt-run:hover, .prompt-copy:hover {{ background: var(--accent); color: #fff; }}
     .empty {{ color: var(--muted); text-align: center; padding: 24px; }}
     footer {{ text-align: center; color: var(--muted); font-size: 0.8rem; padding-bottom: 24px; }}
+    .playbook-section {{
+      background: linear-gradient(180deg, #eff6ff 0%, var(--card) 120px);
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 14px;
+    }}
+    .playbook-head {{ margin-bottom: 12px; }}
+    .playbook-head h2 {{ margin: 0 0 6px; font-size: 1.12rem; color: #1e3a8a; }}
+    .playbook-summary {{ color: #334155; font-size: 0.9rem; margin: 0 0 10px; }}
+    .playbook-meta {{ display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }}
+    .playbook-tag {{
+      font-size: 0.76rem; background: #dbeafe; color: #1d4ed8;
+      padding: 2px 8px; border-radius: 999px;
+    }}
+    .playbook-defaults, .playbook-sheets {{
+      font-size: 0.84rem; color: var(--muted); margin: 8px 0;
+    }}
+    .playbook-defaults code, .playbook-sheets code {{
+      font-size: 0.8rem; background: #f1f5f9; padding: 1px 5px; border-radius: 4px;
+    }}
+    .playbook-steps {{ margin-top: 12px; }}
+    .playbook-step {{
+      border: 1px solid var(--border); border-radius: 10px;
+      margin-bottom: 8px; background: #fff; overflow: hidden;
+    }}
+    .playbook-step-head {{
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 12px; cursor: pointer; user-select: none;
+    }}
+    .playbook-step-head:hover {{ background: #f8fafc; }}
+    .playbook-step-num {{
+      flex-shrink: 0; width: 1.6rem; height: 1.6rem; border-radius: 50%;
+      background: var(--accent); color: #fff; font-size: 0.82rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }}
+    .playbook-step-title {{ font-weight: 600; font-size: 0.9rem; color: #1e293b; }}
+    .playbook-step-sub {{ font-size: 0.8rem; color: var(--muted); margin-top: 2px; }}
+    .playbook-step-body {{
+      padding: 0 12px 12px 3.1rem; border-top: 1px solid #f1f5f9;
+    }}
+    .playbook-step-body[hidden] {{ display: none; }}
+    .playbook-step-note {{ font-size: 0.84rem; color: #475569; margin: 8px 0; }}
+    .playbook-ops {{
+      margin: 6px 0 0; padding-left: 1.2rem; font-size: 0.83rem; color: #334155;
+    }}
+    .playbook-ops li {{ margin: 4px 0; }}
+    .playbook-notes {{
+      margin-top: 10px; padding: 8px 10px; background: #fffbeb;
+      border: 1px solid #fde68a; border-radius: 8px; font-size: 0.82rem; color: #92400e;
+    }}
+    .playbook-notes ul {{ margin: 4px 0 0; padding-left: 1.2rem; }}
   </style>
 </head>
 <body>
@@ -635,11 +801,88 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
       </li>`;
     }}
 
+    function renderPlaybookStep(step) {{
+      const ops = (step.operations || []).map(op => `<li>${{escapeHtml(op)}}</li>`).join('');
+      const prompts = (step.prompts || []).map(renderPromptLine).join('');
+      const wf = step.workflowId ? `<code>${{escapeHtml(step.workflowId)}}</code>` : '';
+      const sheet = step.sheet ? `Sheet「${{escapeHtml(step.sheet)}}」` : '';
+      return `<div class="playbook-step">
+        <div class="playbook-step-head" aria-expanded="false">
+          <span class="playbook-step-num">${{step.order}}</span>
+          <div>
+            <div class="playbook-step-title">${{escapeHtml(step.workflowName || step.workflowId || '')}}</div>
+            <div class="playbook-step-sub">${{wf}} ${{sheet}}</div>
+          </div>
+        </div>
+        <div class="playbook-step-body" hidden>
+          ${{step.note ? `<div class="playbook-step-note">${{escapeHtml(step.note)}}</div>` : ''}}
+          ${{ops ? `<ol class="playbook-ops">${{ops}}</ol>` : ''}}
+          ${{prompts ? `<div class="prompt-list" style="margin-top:8px">${{prompts}}</div>` : ''}}
+        </div>
+      </div>`;
+    }}
+
+    function renderPlaybook(pb) {{
+      const defaults = Object.entries(pb.defaults || {{}})
+        .map(([k, v]) => `<code>${{escapeHtml(k)}}</code>=${{escapeHtml(v)}}`)
+        .join(' · ');
+      const sheets = (pb.sheets || [])
+        .map(s => `<code>${{escapeHtml(s.name)}}</code>：${{escapeHtml(s.content)}}`)
+        .join('<br>');
+      const steps = (pb.steps || []).map(renderPlaybookStep).join('');
+      const notes = (pb.notes || []).length
+        ? `<div class="playbook-notes"><strong>注意</strong><ul>${{(pb.notes || []).map(n => `<li>${{escapeHtml(n)}}</li>`).join('')}}</ul></div>`
+        : '';
+      const topPrompts = (pb.prompts || []).map(renderPromptLine).join('');
+      return `<section class="playbook-section" id="playbook-${{escapeHtml(pb.id)}}">
+        <div class="playbook-head">
+          <h2>${{escapeHtml(pb.title)}}</h2>
+          <p class="playbook-summary">${{escapeHtml(pb.summary || '')}}</p>
+          <div class="playbook-meta">
+            <span class="playbook-tag">${{escapeHtml(pb.category || '工作流')}}</span>
+            <span class="playbook-tag">${{(pb.steps || []).length}} 步</span>
+          </div>
+          ${{defaults ? `<div class="playbook-defaults"><strong>默认参数：</strong> ${{defaults}}</div>` : ''}}
+          ${{sheets ? `<div class="playbook-sheets"><strong>钉钉 Sheet：</strong><br>${{sheets}}</div>` : ''}}
+          ${{topPrompts ? `<div class="prompt-list" style="margin-top:8px">${{topPrompts}}</div>` : ''}}
+        </div>
+        <div class="playbook-steps">${{steps}}</div>
+        ${{notes}}
+      </section>`;
+    }}
+
+    function bindPlaybookToggles(root) {{
+      root.querySelectorAll('.playbook-step-head').forEach(head => {{
+        head.addEventListener('click', () => {{
+          const body = head.nextElementSibling;
+          const open = head.getAttribute('aria-expanded') === 'true';
+          head.setAttribute('aria-expanded', open ? 'false' : 'true');
+          if (body) body.hidden = open;
+        }});
+      }});
+    }}
+
+    function renderPlaybooks(container) {{
+      const playbooks = DATA.playbooks || [];
+      if (!playbooks.length) return;
+      if (activeModule !== 'all' && activeModule !== '工作流') return;
+      const wrap = document.createElement('div');
+      wrap.innerHTML = playbooks.map(renderPlaybook).join('');
+      while (wrap.firstChild) container.appendChild(wrap.firstChild);
+      bindPlaybookToggles(container);
+      bindPromptPanels(container);
+    }}
+
     function render() {{
       const q = query.trim().toLowerCase();
       const main = document.getElementById('main');
       main.innerHTML = '';
       let any = false;
+
+      renderPlaybooks(main);
+      if ((DATA.playbooks || []).length && (activeModule === 'all' || activeModule === '工作流')) {{
+        any = true;
+      }}
 
       for (const mod of DATA.modules) {{
         if (activeModule !== 'all' && mod.id !== activeModule) continue;
@@ -687,10 +930,17 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
 
     function renderNav() {{
       const nav = document.getElementById('moduleNav');
+      const playbookCount = (DATA.playbooks || []).length;
       const buttons = [
         `<button type="button" data-id="all" class="${{activeModule === 'all' ? 'active' : ''}}">全部<span class="count">${{DATA.total_items}}</span></button>`
       ];
+      if (playbookCount > 0) {{
+        buttons.push(
+          `<button type="button" data-id="工作流" class="${{activeModule === '工作流' ? 'active' : ''}}">工作流 Playbook<span class="count">${{playbookCount}}</span></button>`
+        );
+      }}
       for (const mod of DATA.modules) {{
+        if (mod.id === '工作流' && playbookCount > 0) continue;
         buttons.push(
           `<button type="button" data-id="${{mod.id}}" class="${{activeModule === mod.id ? 'active' : ''}}">${{escapeHtml(mod.label)}}<span class="count">${{mod.item_count}}</span></button>`
         );

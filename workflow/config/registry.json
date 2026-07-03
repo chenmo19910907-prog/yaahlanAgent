@@ -25,37 +25,84 @@
           "order": 1,
           "workflowId": "family-pk-config-mse-to-dingtalk",
           "sheet": "参数表",
-          "note": "MSE voga-common/familyPkConfig → 参数表；mode=merge 可增量更新"
+          "note": "MSE voga-common/familyPkConfig → 参数表；mode=merge 可增量更新",
+          "operations": [
+            "MSE 拉取 voga-common / familyPkConfig 最新配置",
+            "解析 bracketGradients、minWinPk、minRewardPk、basePoolDiamond 等参数",
+            "merge 模式：在原「参数表」上更新数值、增删参数行（rebuild 则整表重建）",
+            "同步 configValue_JSON Sheet（原始 JSON 备份）",
+            "钉钉文档重命名为 {pkDate}家族PK数据测试"
+          ]
         },
         {
           "order": 2,
           "workflowId": "family-pk-config-pk-list-to-dingtalk",
           "sheet": "家族列表",
-          "note": "开发者后台拉家族与成员；族长大区非 MENA 的家族剔除"
+          "note": "开发者后台拉家族与成员；族长大区非 MENA 的家族剔除",
+          "operations": [
+            "Admin getAllFamilyList 分页拉取全量家族 ID/名称",
+            "Admin queryUserDetail 查族长大区，剔除非中东（MENA）族长家族",
+            "MOA 查询各家族成员 userId 列表",
+            "Admin queryUserDetail 补全成员手机号",
+            "标记是否族长，写入钉钉「家族列表」",
+            "钉钉文档重命名为 {pkDate}家族PK数据测试"
+          ]
         },
         {
           "order": 3,
           "workflowId": "family-pk-config-rank-rematch",
           "sheet": "家族PK档位",
-          "note": "收礼榜按人数分段随机：>10 人 20 万~100 万，≤10 人 0~20 万；不重匹配"
+          "note": "收礼榜按人数分段随机：>10 人 20 万~100 万，≤10 人 0~20 万；不重匹配",
+          "operations": [
+            "读「家族列表」统计各家族成员数",
+            "按人数分段随机收礼值：>10 人 20 万~100 万；≤10 人 0~20 万（0 不上榜）",
+            "MOA modifyReceiveDailyRankForTest 批量写入 rankDate 收礼日榜",
+            "MOA queryReceiveDailyRankForTest 读 rankDate 收礼榜（排除已解散家族）",
+            "按参数表 bracketGradients 计算各家族档位达标 PK 与钻石",
+            "写入钉钉「家族PK档位」"
+          ]
         },
         {
           "order": 4,
           "workflowId": "family-pk-config-match-verify",
           "sheet": "匹配验收",
-          "note": "清除并重匹配 pkDate；--fresh-capture 忽略旧抓包，须在 App 刷新 pkDate tab 后验收"
+          "note": "清除并重匹配 pkDate；--fresh-capture 忽略旧抓包，须在 App 刷新 pkDate tab 后验收",
+          "operations": [
+            "MOA clearMatchDataForTest 清除 pkDate 匹配数据",
+            "MOA runFamilyPkMatchTask(pkDate) 重新匹配家族 PK",
+            "Tunnel 抓包 getFamilyPkPage（--fresh-capture 仅用重匹配后新抓包）",
+            "等待用户在 App 刷新 PK 页（默认最长 180s）",
+            "读 rankDate 收礼榜，按 bracketGradients 验收同区间匹配",
+            "写入钉钉「匹配验收」（对战、区间、验收结果）"
+          ]
         },
         {
           "order": 5,
           "workflowId": "family-pk-config-member-pk-reward",
           "sheet": "用户发钻测试",
-          "note": "清 PK → 全员随机 0~maxScore → 按匹配验收纠偏 1 组平局 + 1 组双方低于 minWinPk（优先小家族）"
+          "note": "清 PK → 全员随机 0~maxScore → 按匹配验收纠偏 1 组平局 + 1 组双方低于 minWinPk（优先小家族）",
+          "operations": [
+            "MOA clearAllFamilyPkScoreForTest 清除 pkDate 全部成员 PK",
+            "读「家族列表」全员；读参数表 minWinPk / minRewardPk",
+            "全员随机 incrFamilyPkScoreForTest（0~maxScore，默认 5 万）",
+            "读「匹配验收」选 1 组平局 + 1 组双方低于 minWinPk（优先小家族）纠偏 PK",
+            "按对战结果与奖池规则计算各成员应得钻石",
+            "写入钉钉「用户发钻测试」"
+          ]
         },
         {
           "order": 6,
           "workflowId": "family-pk-config-dispatch-verify",
           "sheet": "用户发钻测试",
-          "note": "resetSettleDataForTest(pkDate) 清结算记录 → runFamilyPkMatchTask(次日) 重发 → 查钻验收"
+          "note": "resetSettleDataForTest(pkDate) 清结算记录 → runFamilyPkMatchTask(次日) 重发 → 查钻验收",
+          "operations": [
+            "读「用户发钻测试」汇总应得钻石与用户列表",
+            "MOA resetSettleDataForTest(pkDate) 清除结算发奖记录",
+            "MOA 批量查钻记录发奖前 baseline",
+            "MOA runFamilyPkMatchTask(pkDate+1) 下发 pkDate 奖励",
+            "MOA 批量查钻记录发奖后余额",
+            "对比应得 vs 实际增量，写回「用户发钻测试」（发奖前/后钻石、验收列）"
+          ]
         }
       ],
       "prompts": [
