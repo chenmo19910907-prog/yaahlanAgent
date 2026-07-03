@@ -1,0 +1,186 @@
+{
+  "playbooks": [
+    {
+      "id": "family_pk_data_test",
+      "title": "家族PK数据测试（六步总览）",
+      "category": "家族PK",
+      "summary": "测试环境为指定 PK 日准备家族 PK 全套造数：参数表 → 家族列表 → 收礼榜与档位 → 匹配验收 → 成员 PK 与应发钻 → 发奖实发对比。",
+      "defaults": {
+        "workbookUrl": "https://alidocs.dingtalk.com/i/nodes/N7dx2rn0JbZQqA9ACZ1MoaaRJMGjLRb3",
+        "pkDate": "2026-07-02",
+        "rankDate": "2026-07-01",
+        "momoid": "100465989",
+        "timeoutMs": "180000",
+        "captureWait": "180"
+      },
+      "sheets": [
+        { "name": "参数表", "content": "MSE familyPkConfig 参数（含 minWinPk、minRewardPk、minDailyAvg 等）" },
+        { "name": "家族列表", "content": "家族 ID/名称/成员 userId/族长；已过滤族长非 MENA 的家族" },
+        { "name": "家族PK档位", "content": "收礼榜名次、匹配区间、档位达标 PK 与钻石" },
+        { "name": "匹配验收", "content": "抓包 getFamilyPkPage 对战与同区间匹配验收" },
+        { "name": "用户发钻测试", "content": "成员 PK、场景、应得钻石；第六步补实发 delta" }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "workflowId": "family-pk-config-mse-to-dingtalk",
+          "sheet": "参数表",
+          "note": "MSE voga-common/familyPkConfig → 参数表；mode=merge 可增量更新"
+        },
+        {
+          "order": 2,
+          "workflowId": "family-pk-config-pk-list-to-dingtalk",
+          "sheet": "家族列表",
+          "note": "开发者后台拉家族与成员；族长大区非 MENA 的家族剔除"
+        },
+        {
+          "order": 3,
+          "workflowId": "family-pk-config-rank-rematch",
+          "sheet": "家族PK档位",
+          "note": "收礼榜按人数分段随机：>10 人 20 万~100 万，≤10 人 0~20 万；不重匹配"
+        },
+        {
+          "order": 4,
+          "workflowId": "family-pk-config-match-verify",
+          "sheet": "匹配验收",
+          "note": "清除并重匹配 pkDate；--fresh-capture 忽略旧抓包，须在 App 刷新 pkDate tab 后验收"
+        },
+        {
+          "order": 5,
+          "workflowId": "family-pk-config-member-pk-reward",
+          "sheet": "用户发钻测试",
+          "note": "清 PK → 全员随机 0~maxScore → 按匹配验收纠偏 1 组平局 + 1 组双方低于 minWinPk（优先小家族）"
+        },
+        {
+          "order": 6,
+          "workflowId": "family-pk-config-dispatch-verify",
+          "sheet": "用户发钻测试",
+          "note": "resetSettleDataForTest(pkDate) 清结算记录 → runFamilyPkMatchTask(次日) 重发 → 查钻验收"
+        }
+      ],
+      "prompts": [
+        "执行家族PK数据测试工作流 pkDate=<pkDate>",
+        "家族PK数据测试 六步 rankDate=<rankDate> pkDate=<pkDate>",
+        "重跑家族PK第4-5步"
+      ],
+      "notes": [
+        "钉钉表命名：{pkDate}家族PK数据测试",
+        "rankDate 默认为 pkDate 前一日；收礼榜造数写在 rankDate",
+        "收礼榜或参数变更后建议重跑第 3~6 步；仅重匹配后重跑第 4~5 步",
+        "第四步验收依赖 Tunnel 抓包 getFamilyPkPage（request.date=pkDate）",
+        "第五步对战列表读取「匹配验收」Sheet，非抓包"
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": "family_pk_config_mse_to_dingtalk",
+      "name": "家族PK配置-MSE同步到钉钉参数表",
+      "category": "家族PK",
+      "order": 1,
+      "description": "第一步：从 MSE voga-common 读取 familyPkConfig 最新配置，整理为参数表写入 Sheet「参数表」。merge 模式可在原表上更新数值、增删参数行。",
+      "prompts": [
+        "执行工作流 家族PK配置-MSE同步到钉钉参数表",
+        "工作流 family-pk-config-mse-to-dingtalk <workbookUrl> <pkDate> <namespace> <configKey> <paramSheet> <mode>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-mse-to-dingtalk --workbook-url <workbookUrl> --pk-date <pkDate> --namespace <namespace> --config-key <configKey> --param-sheet <paramSheet> --mode <mode>"
+    },
+    {
+      "id": "family_pk_config_pk_list_to_dingtalk",
+      "name": "家族PK配置-后台家族成员写入钉钉",
+      "category": "家族PK",
+      "order": 2,
+      "description": "第二步：从开发者后台 getAllFamilyList 拉取全部家族 ID/名称，补全成员 userId、手机号并标记族长；族长大区非中东（MENA）的家族剔除后写入 Sheet「家族列表」。",
+      "prompts": [
+        "执行工作流 家族PK配置-后台家族成员写入钉钉",
+        "工作流 family-pk-config-pk-list-to-dingtalk <workbookUrl> <sheetName> <pkDate>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-pk-list-to-dingtalk --workbook-url <workbookUrl> --sheet-name <sheetName> --pk-date <pkDate>"
+    },
+    {
+      "id": "family_pk_config_rank_rematch",
+      "name": "家族PK配置-收礼榜造数与档位测算",
+      "category": "家族PK",
+      "order": 3,
+      "description": "第三步：按 Sheet「家族列表」成员数分段随机写入 rankDate 收礼榜（>10 人：20 万~100 万；≤10 人：0~20 万），再按收礼榜+参数表计算 pkDate 各家族档位达标 PK 与钻石，写入 Sheet「家族PK档位」。不重匹配。",
+      "prompts": [
+        "执行工作流 家族PK配置-收礼榜造数与档位测算",
+        "工作流 family-pk-config-rank-rematch <workbookUrl> <rankDate> <pkDate>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-rank-rematch --workbook-url <workbookUrl> --rank-date <rankDate> --pk-date <pkDate>"
+    },
+    {
+      "id": "family_pk_config_match_verify",
+      "name": "家族PK配置-重匹配与验收写入钉钉",
+      "category": "家族PK",
+      "order": 4,
+      "description": "第四步：清除并重匹配 pkDate 家族 PK → Tunnel 抓包 getFamilyPkPage（--fresh-capture 仅用重匹配后新抓包）→ 按收礼榜区间验收同区间匹配，写入 Sheet「匹配验收」。默认等待用户在 App 刷新 PK 页最多 180s。",
+      "prompts": [
+        "执行工作流 家族PK配置-重匹配与验收写入钉钉",
+        "工作流 family-pk-config-match-verify <workbookUrl> <momoid> <pkDate> <captureWait>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-match-verify --workbook-url <workbookUrl> --momoid <momoid> --pk-date <pkDate> --capture-wait <captureWait>"
+    },
+    {
+      "id": "family_pk_config_member_pk_reward",
+      "name": "家族PK配置-成员PK造数与发钻测算",
+      "category": "家族PK",
+      "order": 5,
+      "description": "第五步：清除 pkDate 全部成员 PK → 全员随机 PK（0~maxScore，默认 5 万）→ 按 Sheet「匹配验收」纠偏 1 组平局 + 1 组双方家族 PK 低于 minWinPk（优先小家族）→ 测算应得钻石写入 Sheet「用户发钻测试」。",
+      "prompts": [
+        "执行工作流 家族PK配置-成员PK造数与发钻测算",
+        "工作流 family-pk-config-member-pk-reward <workbookUrl> <pkDate> <maxScore> <seed>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-member-pk-reward --workbook-url <workbookUrl> --pk-date <pkDate> --max-score <maxScore> --seed <seed>"
+    },
+    {
+      "id": "family_pk_config_dispatch_verify",
+      "name": "家族PK配置-发奖与验收",
+      "category": "家族PK",
+      "order": 6,
+      "description": "第六步：先 resetSettleDataForTest 清除 pkDate 结算发奖记录 → runFamilyPkMatchTask（入参默认次日）重新下发奖励 → 发奖前后查钻对比应得 → 实发 delta 写回 Sheet「用户发钻测试」。",
+      "prompts": [
+        "执行工作流 家族PK配置-发奖与验收",
+        "工作流 family-pk-config-dispatch-verify <workbookUrl> <pkDate> <timeoutMs>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-dispatch-verify --workbook-url <workbookUrl> --pk-date <pkDate> --timeout-ms <timeoutMs>"
+    },
+    {
+      "id": "family_pk_config_reward_calc",
+      "name": "家族PK配置-档位PK与奖励测算",
+      "category": "家族PK",
+      "order": 20,
+      "description": "辅助：仅按收礼榜与参数表重算各家族档位达标 PK 与钻石，写入 Sheet「家族PK档位」（第三步已内置，可单独重跑）。",
+      "prompts": [
+        "执行工作流 家族PK配置-档位PK与奖励测算",
+        "工作流 family-pk-config-reward-calc <workbookUrl> <rankDate> <pkDate>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-reward-calc --workbook-url <workbookUrl> --rank-date <rankDate> --pk-date <pkDate>"
+    },
+    {
+      "id": "family_pk_config_sheet_to_json",
+      "name": "家族PK配置-钉钉参数表生成JSON",
+      "category": "家族PK",
+      "order": 21,
+      "description": "辅助：读取 Sheet「参数表」中已修改的数值，合并回 MSE 原始结构，写回 configValue_JSON Sheet。改参后执行；勿直接声称已发布到 MSE。",
+      "prompts": [
+        "执行工作流 家族PK配置-钉钉参数表生成JSON",
+        "工作流 family-pk-config-sheet-to-json <workbookUrl>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-sheet-to-json --workbook-url <workbookUrl>"
+    },
+    {
+      "id": "family_pk_daily_rematch",
+      "name": "家族PK-重置匹配并下发前日奖励",
+      "category": "家族PK",
+      "order": 22,
+      "description": "独立：清除 pkDate 匹配数据 → 结算前一日并发奖 → 重新匹配 pkDate。参数 pkDate、timeoutMs（默认 180000）。",
+      "prompts": [
+        "重置 <pkDate> 家族PK匹配并下发前日奖励",
+        "工作流 family-pk-daily-rematch pkDate=<pkDate>",
+        "家族PK每日重置匹配 pkDate=<pkDate>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-daily-rematch --pk-date <pkDate> --timeout-ms <timeoutMs>"
+    }
+  ]
+}

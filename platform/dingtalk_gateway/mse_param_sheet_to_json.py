@@ -91,7 +91,7 @@ def _parse_param_sheet(matrix: list[list[Any]]) -> tuple[dict[str, Any], dict[st
     config: dict[str, Any] = {
         "eventGiftProductIds": [],
         "familyWhiteList": [],
-        "bracketGradients": [{"gradients": []} for _ in range(6)],
+        "bracketGradients": [],
     }
     base_keys = {
         "enabled",
@@ -103,6 +103,7 @@ def _parse_param_sheet(matrix: list[list[Any]]) -> tuple[dict[str, Any], dict[st
         "minWinPk",
         "minRewardPk",
         "minListPk",
+        "minDailyAvg",
         "minBracketDailyAvg",
         "eventGiftProductIds",
         "familyWhiteList",
@@ -135,11 +136,12 @@ def _parse_param_sheet(matrix: list[list[Any]]) -> tuple[dict[str, Any], dict[st
             try:
                 bracket_idx = int(_cell(row, 1))
                 coeff = float(_cell(row, 4))
-                diamond = int(float(_cell(row, 5)))
+                rebate_raw = _cell(row, 5)
+                rebate = float(rebate_raw) if rebate_raw != "" else 0.0
             except (TypeError, ValueError) as exc:
                 raise ValueError(f"档位行解析失败: {row}") from exc
-            if bracket_idx < 0 or bracket_idx >= len(config["bracketGradients"]):
-                raise ValueError(f"区间下标越界: {bracket_idx}")
+            while bracket_idx >= len(config["bracketGradients"]):
+                config["bracketGradients"].append({"gradients": []})
             bracket = config["bracketGradients"][bracket_idx]
             rank_label = _cell(row, 2)
             if rank_label:
@@ -151,7 +153,7 @@ def _parse_param_sheet(matrix: list[list[Any]]) -> tuple[dict[str, Any], dict[st
                 else:
                     bracket.pop("rankEnd", None)
             bracket["gradients"].append(
-                {"coefficient": coeff, "bonusDiamond": diamond}
+                {"coefficient": coeff, "rebateRatio": rebate}
             )
             continue
         if block in {"发钻", "风控", "节流", "H5", "资源"}:

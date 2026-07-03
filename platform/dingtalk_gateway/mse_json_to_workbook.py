@@ -40,7 +40,7 @@ from mse_param_sheet_to_json import (  # noqa: E402
 from mse_config_export import _fetch_mse_config  # noqa: E402
 from mse_workbook_utils import apply_parsed_values_to_original, format_rank_range  # noqa: E402
 
-TIER_NOTE = "有效日均=max(区间日均,minBracketDailyAvg)；达标PK=有效日均×系数"
+TIER_NOTE = "有效日均=max(区间日均,minDailyAvg)；达标PK=有效日均×系数；奖励=奖池×返利比例"
 
 
 def _sheet_cell(value: Any) -> str:
@@ -58,8 +58,8 @@ def _sheet_cell(value: Any) -> str:
 def _format_value(value: Any) -> str:
     return _sheet_cell(value)
 TITLE = (
-    "家族PK服务配置 · 参数表（仅改「参数值/系数/加成钻」列，改完 @Agent 生成 JSON）；"
-    "区间日均低于 minBracketDailyAvg 时按 minBracketDailyAvg 计算档位"
+    "家族PK服务配置 · 参数表（仅改「参数值/系数/返利比例」列，改完 @Agent 生成 JSON）；"
+    "区间日均低于 minDailyAvg 时按 minDailyAvg 计算档位；钻石奖励=奖池×返利比例"
 )
 
 DEFAULT_META = {
@@ -72,7 +72,7 @@ DEFAULT_META = {
 DEFAULT_OPTIONAL = {
     "enabled": True,
     "eventGiftProductIds": [],
-    "minBracketDailyAvg": 2000,
+    "minDailyAvg": 100000,
     "rewardRiskRuleId": "",
     "groupBarThrottleSec": 30,
     "roomBroadcastThrottleSec": 30,
@@ -122,7 +122,7 @@ def build_param_sheet_rows(*, config: dict[str, Any], meta: dict[str, str]) -> l
         ("minWinPk", "获胜最低 PK 值"),
         ("minRewardPk", "领奖最低 PK 值"),
         ("minListPk", "上榜最低 PK 值"),
-        ("minBracketDailyAvg", "区间日均兜底：昨日收礼榜均值低于此值时，按此值参与档位达标PK计算"),
+        ("minDailyAvg", "日均兜底：昨日收礼榜区间均值低于此值时，按此值参与档位达标PK计算"),
         ("maxRewardDiamondPerUser", "单用户最高奖励钻"),
         ("eventGiftProductIds", "活动礼物 ID 列表 JSON"),
         ("familyWhiteList", "家族白名单 JSON"),
@@ -135,11 +135,14 @@ def build_param_sheet_rows(*, config: dict[str, Any], meta: dict[str, str]) -> l
             rows.append(["基础", key, _format_value(val), desc])
 
     rows.append(["", "", "", ""])
-    rows.append(["区块", "区间下标", "名次区间", "档位", "系数", "加成钻", "说明"])
+    rows.append(["区块", "区间下标", "名次区间", "档位", "系数", "返利比例", "说明"])
     for bracket_idx, bracket in enumerate(config.get("bracketGradients") or []):
         rank_label = format_rank_range(bracket.get("rankStart"), bracket.get("rankEnd"))
         for tier_idx, item in enumerate(bracket.get("gradients") or [], start=1):
             note = f"{rank_label} · {tier_idx}档；{TIER_NOTE}"
+            rebate = item.get("rebateRatio")
+            if rebate is None and item.get("bonusDiamond") is not None:
+                rebate = item.get("bonusDiamond")
             rows.append(
                 [
                     "档位",
@@ -147,7 +150,7 @@ def build_param_sheet_rows(*, config: dict[str, Any], meta: dict[str, str]) -> l
                     rank_label,
                     tier_idx,
                     item.get("coefficient"),
-                    item.get("bonusDiamond"),
+                    rebate,
                     note,
                 ]
             )

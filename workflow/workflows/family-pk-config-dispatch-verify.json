@@ -1,0 +1,51 @@
+{
+  "id": "family-pk-config-dispatch-verify",
+  "name": "家族PK配置-发奖与验收",
+  "category": "家族PK",
+  "description": "第六步：先 resetSettleDataForTest 清除 pkDate 结算发奖记录 → runFamilyPkMatchTask（入参默认次日）重新下发奖励 → 发奖前后查钻对比应得 → 实发 delta 写回 Sheet「用户发钻测试」。",
+  "version": 1,
+  "params": {
+    "workbookUrl": {
+      "label": "钉钉表格",
+      "type": "string",
+      "required": true,
+      "default": "https://alidocs.dingtalk.com/i/nodes/N7dx2rn0JbZQqA9ACZ1MoaaRJMGjLRb3",
+      "prompt": "钉钉表格 URL 或 nodeId"
+    },
+    "pkDate": {
+      "label": "匹配日期",
+      "type": "date",
+      "required": true,
+      "default": "2026-07-02",
+      "prompt": "与 PK 匹配日期相同；发奖任务默认对 pkDate 次日调用以结算本日"
+    },
+    "settleDate": {
+      "label": "发奖任务日期",
+      "type": "date",
+      "required": false,
+      "default": "",
+      "prompt": "runFamilyPkMatchTask 入参，留空则 pkDate+1 天"
+    },
+    "timeoutMs": {
+      "label": "MOA超时毫秒",
+      "type": "integer",
+      "required": false,
+      "default": "180000",
+      "prompt": "runFamilyPkMatchTask 超时"
+    }
+  },
+  "steps": [
+    {
+      "id": "dispatch_and_verify",
+      "name": "发奖并验收写入Sheet5",
+      "run": {
+        "type": "shell",
+        "command": "python3 platform/dingtalk_gateway/family_pk_dispatch_verify_to_workbook.py --workbook \"{{workbookUrl}}\" --pk-date {{pkDate}} --timeout-ms {{timeoutMs}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

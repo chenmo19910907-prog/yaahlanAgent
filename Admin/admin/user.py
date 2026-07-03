@@ -48,12 +48,14 @@ def parse_user_detail_summary(data: Any) -> dict[str, Any]:
     area_code = _pick(profile, "areaCode")
     phone = _pick(profile, "phone")
     full_phone = f"+{area_code}{phone}" if area_code and phone else phone
+    user_area = _pick(profile, "area") or _pick(anchor, "area")
 
     summary: dict[str, Any] = {
         "userId": _pick(profile, "userId"),
         "nickname": _pick(profile, "nickname"),
         "phone": phone,
         "areaCode": area_code,
+        "area": user_area,
         "fullPhone": full_phone,
         "bindEmail": _pick(profile, "bindEmail", "mail"),
         "homeCountry": _pick(profile, "homeCountry"),

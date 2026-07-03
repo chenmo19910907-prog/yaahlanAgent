@@ -1,0 +1,30 @@
+{
+  "id": "family-pk-config-sheet-to-json",
+  "name": "家族PK配置-钉钉参数表生成JSON",
+  "category": "家族PK",
+  "description": "读取钉钉参数表（Sheet1/参数表）中已修改的数值，合并回 MSE 原始结构，写回 configValue_JSON Sheet。改参后执行本工作流，勿直接声称已发布到 MSE。",
+  "version": 1,
+  "params": {
+    "workbookUrl": {
+      "label": "钉钉表格",
+      "type": "string",
+      "required": true,
+      "default": "https://alidocs.dingtalk.com/i/nodes/N7dx2rn0JbZQqA9ACZ1MoaaRJMGjLRb3",
+      "prompt": "钉钉表格 URL 或 nodeId"
+    }
+  },
+  "steps": [
+    {
+      "id": "sheet_to_json",
+      "name": "参数表解析并写回JSON Sheet",
+      "run": {
+        "type": "shell",
+        "command": "python3 platform/dingtalk_gateway/mse_param_sheet_to_json.py \"{{workbookUrl}}\"",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

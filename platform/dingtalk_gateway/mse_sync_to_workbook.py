@@ -32,7 +32,15 @@ if str(GATEWAY_DIR) not in sys.path:
 from alidocs_excel_export import DOC_API, _col_letter, _excel_env, _get_token_and_operator  # noqa: E402
 from mse_config_export import _fetch_mse_config  # noqa: E402
 from mse_json_to_workbook import _merge_config, build_param_sheet_rows  # noqa: E402
-from mse_workbook_utils import fetch_workbook_sheets, fetch_workbook_sheets_async, find_param_sheet_name, format_rank_range, node_id  # noqa: E402
+from mse_workbook_utils import (
+    fetch_workbook_sheets,
+    fetch_workbook_sheets_async,
+    find_param_sheet_name,
+    format_rank_range,
+    node_id,
+    reconcile_param_sheet_rows,
+    resolve_param_sheet_name,
+)  # noqa: E402
 
 import httpx  # noqa: E402
 
@@ -49,6 +57,7 @@ BASE_KEYS = {
     "minWinPk",
     "minRewardPk",
     "minListPk",
+    "minDailyAvg",
     "minBracketDailyAvg",
     "eventGiftProductIds",
     "familyWhiteList",
@@ -150,7 +159,10 @@ def _apply_mse_to_param_sheet(
                 if 1 <= tier <= len(grads):
                     item = grads[tier - 1]
                     new_row[4] = item.get("coefficient", new_row[4] if len(new_row) > 4 else "")
-                    new_row[5] = item.get("bonusDiamond", new_row[5] if len(new_row) > 5 else "")
+                    rebate = item.get("rebateRatio")
+                    if rebate is None:
+                        rebate = item.get("bonusDiamond")
+                    new_row[5] = rebate if rebate is not None else (new_row[5] if len(new_row) > 5 else "")
         elif block in DOTTED_BLOCKS:
             key = _cell(row, 1)
             if key:
@@ -205,12 +217,59 @@ async def _write_sheet(
         if wr.status_code >= 400:
             raise RuntimeError(f"写入 {sheet_name} 失败 HTTP {wr.status_code}: {wr.text[:300]}")
 
+        info_url = (
+            f"{DOC_API}/workbooks/{workbook_id}/sheets/{sheet_id}"
+            f"?select=rowCount,columnCount&operatorId={operator}"
+        )
+        info_resp = await client.get(info_url, headers={"x-acs-dingtalk-access-token": token})
+        if info_resp.status_code < 400:
+            info = info_resp.json()
+            old_row_count = int(info.get("rowCount") or 0)
+            old_col_count = int(info.get("columnCount") or 0)
+            if old_col_count > cols:
+                blank_cols = old_col_count - cols
+                blank = [[""] * blank_cols for _ in range(max(end_row, old_row_count))]
+                clear_range = f"{_col_letter(cols + 1)}1:{_col_letter(old_col_count)}{max(end_row, old_row_count)}"
+                clear_url = (
+                    f"{DOC_API}/workbooks/{workbook_id}/sheets/{sheet_id}"
+                    f"/ranges/{clear_range}?operatorId={operator}"
+                )
+                await client.put(
+                    clear_url,
+                    headers={
+                        "x-acs-dingtalk-access-token": token,
+                        "Content-Type": "application/json",
+                    },
+                    json={"values": blank},
+                )
+            if old_row_count > end_row:
+                tail_rows = old_row_count - end_row
+                tail_cols = max(cols, old_col_count)
+                blank = [[""] * tail_cols for _ in range(tail_rows)]
+                tail_url = (
+                    f"{DOC_API}/workbooks/{workbook_id}/sheets/{sheet_id}"
+                    f"/ranges/A{end_row + 1}:{_col_letter(tail_cols)}{old_row_count}"
+                    f"?operatorId={operator}"
+                )
+                await client.put(
+                    tail_url,
+                    headers={
+                        "x-acs-dingtalk-access-token": token,
+                        "Content-Type": "application/json",
+                    },
+                    json={"values": blank},
+                )
+
 
 async def sync_mse_to_workbook_async(
     workbook_url_or_id: str,
     *,
     namespace: str = "voga-common",
     config_key: str = "familyPkConfig",
+    param_sheet: str | None = None,
+    mode: str = "merge",
+    with_json_sheet: bool = False,
+    pk_date: str | None = None,
 ) -> str:
     workbook_id = _node_id(workbook_url_or_id)
     url = f"https://alidocs.dingtalk.com/i/nodes/{workbook_id}"
@@ -226,10 +285,20 @@ async def sync_mse_to_workbook_async(
     }
 
     sheets = await fetch_workbook_sheets_async(url)
-    param_sheet = find_param_sheet_name(sheets)
+    sheet_name = resolve_param_sheet_name(sheets, preferred=param_sheet)
+    existing = sheets.get(sheet_name) or []
     merged = _merge_config(config)
-    param_rows = build_param_sheet_rows(config=merged, meta=meta)
-    json_rows = _json_sheet_rows(meta=meta, config=merged)
+    fresh_rows = build_param_sheet_rows(config=merged, meta=meta)
+
+    if mode == "rebuild":
+        param_rows = fresh_rows
+    else:
+        applied = _apply_mse_to_param_sheet(existing, config=merged, meta=meta)
+        param_rows = reconcile_param_sheet_rows(
+            existing,
+            fresh_rows,
+            applied=applied,
+        )
 
     env = _excel_env()
     token, operator = await _get_token_and_operator(env)
@@ -237,16 +306,22 @@ async def sync_mse_to_workbook_async(
         token=token,
         operator=operator,
         workbook_id=workbook_id,
-        sheet_name=param_sheet,
+        sheet_name=sheet_name,
         rows=param_rows,
     )
-    await _write_sheet(
-        token=token,
-        operator=operator,
-        workbook_id=workbook_id,
-        sheet_name=JSON_SHEET,
-        rows=json_rows,
-    )
+    if with_json_sheet:
+        json_rows = _json_sheet_rows(meta=meta, config=merged)
+        await _write_sheet(
+            token=token,
+            operator=operator,
+            workbook_id=workbook_id,
+            sheet_name=JSON_SHEET,
+            rows=json_rows,
+        )
+    if pk_date and str(pk_date).strip():
+        from family_pk_calc_utils import rename_family_pk_workbook_async  # noqa: E402
+
+        await rename_family_pk_workbook_async(url, str(pk_date).strip())
     return url
 
 
@@ -259,12 +334,33 @@ def main() -> int:
     parser.add_argument("workbook", help="钉钉表格 URL 或 nodeId")
     parser.add_argument("--namespace", default="voga-common")
     parser.add_argument("--config-key", default="familyPkConfig")
+    parser.add_argument(
+        "--param-sheet",
+        default="",
+        help="参数表工作表名（默认 参数表 或第一个非 configValue_JSON 的 sheet）",
+    )
+    parser.add_argument(
+        "--mode",
+        choices=("merge", "rebuild"),
+        default="merge",
+        help="merge=在已有表上更新数值并增删参数行；rebuild=整表重建",
+    )
+    parser.add_argument(
+        "--with-json-sheet",
+        action="store_true",
+        help="额外写入 configValue_JSON 工作表（默认仅维护参数表）",
+    )
+    parser.add_argument("--pk-date", help="匹配日期 yyyy-MM-dd，用于重命名钉钉表为 {日期}家族PK数据测试")
     args = parser.parse_args()
     try:
         url = sync_mse_to_workbook(
             args.workbook.strip(),
             namespace=args.namespace.strip(),
             config_key=args.config_key.strip(),
+            param_sheet=args.param_sheet.strip() or None,
+            mode=args.mode.strip(),
+            with_json_sheet=args.with_json_sheet,
+            pk_date=args.pk_date.strip() if args.pk_date else None,
         )
     except (ValueError, RuntimeError, OSError) as exc:
         print(f"[FAIL] {exc}", file=sys.stderr)

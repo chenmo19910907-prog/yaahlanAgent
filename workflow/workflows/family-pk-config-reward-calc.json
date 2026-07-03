@@ -1,0 +1,44 @@
+{
+  "id": "family-pk-config-reward-calc",
+  "name": "家族PK配置-档位PK与奖励测算",
+  "category": "家族PK",
+  "description": "按收礼榜与参数表计算各家族档位达标 PK 与档位钻石，写入 Sheet3「家族PK档位」（第三步已内置，可单独重跑）。",
+  "version": 2,
+  "params": {
+    "workbookUrl": {
+      "label": "钉钉表格",
+      "type": "string",
+      "required": true,
+      "default": "https://alidocs.dingtalk.com/i/nodes/N7dx2rn0JbZQqA9ACZ1MoaaRJMGjLRb3",
+      "prompt": "钉钉表格 URL 或 nodeId"
+    },
+    "rankDate": {
+      "label": "收礼榜日期",
+      "type": "date",
+      "required": true,
+      "default": "2026-07-01",
+      "prompt": "收礼日榜 yyyy-MM-dd"
+    },
+    "pkDate": {
+      "label": "匹配日期",
+      "type": "date",
+      "required": false,
+      "default": "2026-07-02",
+      "prompt": "默认 rankDate 次日；钉钉表重命名为 {pkDate}家族PK数据测试"
+    }
+  },
+  "steps": [
+    {
+      "id": "reward_calc_to_sheet3",
+      "name": "家族PK档位测算写入Sheet3",
+      "run": {
+        "type": "shell",
+        "command": "python3 platform/dingtalk_gateway/family_pk_reward_calc_to_workbook.py --workbook \"{{workbookUrl}}\" --rank-date {{rankDate}} --pk-date {{pkDate}} --sheet-name 家族PK档位",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

@@ -116,6 +116,73 @@ def resolve_package_gift_base_id(args: argparse.Namespace) -> str:
     raise ValueError("缺少 --package-gift-base-id，且 config 未配置 sendDefaultBaseProductId")
 
 
+def run_package_gift_batch_add(args: argparse.Namespace, client: MoaClient) -> int:
+    """多种背包礼物须逐个 addPackageGift（不可一次 giftDetails 塞多种）。"""
+    user_id = str(args.package_gift_user_id or "").strip()
+    if not user_id:
+        raise ValueError("批量下发须指定 --package-gift-user-id")
+
+    raw_ids = str(getattr(args, "package_gift_batch_base_ids", "") or "").strip()
+    if not raw_ids:
+        raise ValueError("批量下发须指定 --package-gift-batch-base-ids（逗号分隔 baseProductId）")
+    base_ids = [part.strip() for part in raw_ids.split(",") if part.strip()]
+    if not base_ids:
+        raise ValueError("--package-gift-batch-base-ids 为空")
+
+    product_num = args.package_gift_num if args.package_gift_num is not None else 100
+    if product_num <= 0:
+        raise ValueError("package-gift-num 必须为正整数")
+
+    summary: dict[str, Any] = {
+        "userId": user_id,
+        "productNum": product_num,
+        "serviceUrl": _SERVICE_URL,
+        "deliveryNote": _DELIVERY_NOTE,
+        "oneGiftPerCall": True,
+        "items": [],
+        "successCount": 0,
+        "failCount": 0,
+        "success": False,
+    }
+
+    for index, base_product_id in enumerate(base_ids, start=1):
+        add_value = build_package_gift_request_value(
+            user_id,
+            give_user_id="",
+            base_product_id=base_product_id,
+            product_num=product_num,
+        )
+        add_payload = _base_payload("addPackageGift", add_value)
+        print(
+            f"[{index}/{len(base_ids)}] addPackageGift: userId={user_id} "
+            f"baseId={base_product_id} x{product_num}",
+            file=sys.stderr,
+        )
+        add_resp = client.post(add_payload)
+        add_step = parse_add_package_gift_result(add_resp)
+        add_step["baseProductId"] = base_product_id
+        add_step["outOrderId"] = add_value.get("outOrderId")
+        summary["items"].append(add_step)
+        if add_step.get("ok"):
+            summary["successCount"] += 1
+        else:
+            summary["failCount"] += 1
+
+    summary["success"] = summary["failCount"] == 0
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
+    if summary["success"]:
+        print(
+            f"背包礼物已逐个下发完成：{summary['successCount']} 种 × {product_num} 个",
+            file=sys.stderr,
+        )
+        return 0
+    print(
+        f"背包礼物部分失败：成功 {summary['successCount']}，失败 {summary['failCount']}",
+        file=sys.stderr,
+    )
+    return 3
+
+
 def run_package_gift_send(args: argparse.Namespace, client: MoaClient) -> int:
     from_user_id, to_user_id = resolve_package_gift_send_ids(args)
     base_product_id = resolve_package_gift_base_id(args)

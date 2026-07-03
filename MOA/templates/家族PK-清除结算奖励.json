@@ -1,0 +1,45 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/vas/internal/family-pk-moa",
+  "method": "resetSettleDataForTest",
+  "header": "",
+  "params": [
+    {
+      "name": 0,
+      "title": "",
+      "txt": "",
+      "json": "{\"date\":\"2026-07-02\",\"area\":\"MENA\",\"rerunSettle\":false}",
+      "type": "json",
+      "value": {
+        "date": "2026-07-02",
+        "area": "MENA",
+        "rerunSettle": false
+      }
+    }
+  ],
+  "settings": {
+    "time": 2000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "family_pk_reset_settle_data",
+    "name": "家族PK-清除结算奖励",
+    "category": "家族PK（vas/internal/family-pk-moa）",
+    "description": "测试环境清除指定日期、大区的家族 PK 结算发奖数据（resetSettleDataForTest）。入参 date 为 yyyy-MM-dd，area 默认 MENA，rerunSettle 默认 false（清除后不重跑结算）。与「家族PK-清除匹配数据」「家族PK-删除全部PK值」不同：本接口仅清结算/发奖记录，便于重复发奖验收。修改模板 params[0].value 后执行",
+    "prompts": [
+      "清除 <date> 家族PK结算奖励",
+      "家族PK清除结算奖励 date=<date> area=<area>",
+      "重置 <date> 家族PK结算数据 area=MENA",
+      "清除家族PK结算发奖数据 rerunSettle=false"
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/vas/internal/family-pk-moa",
+  "method": "deleteMemberPkRankDataForTest",
+  "header": "",
+  "params": [
+    {
+      "name": 0,
+      "title": "",
+      "txt": "",
+      "json": "{\"date\":\"2026-07-02\",\"area\":\"MENA\"}",
+      "type": "json",
+      "value": {
+        "date": "2026-07-02",
+        "area": "MENA"
+      }
+    }
+  ],
+  "settings": {
+    "time": 2000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "family_pk_delete_member_pk_rank_data",
+    "name": "家族PK-删除全部PK值",
+    "category": "家族PK（vas/internal/family-pk-moa）",
+    "description": "测试环境删除指定日期、指定大区的家族 PK 全部成员 PK 榜数据（deleteMemberPkRankDataForTest）。入参 date 为 yyyy-MM-dd，area 默认 MENA。与「家族PK-清除匹配数据」不同：本接口清 PK 值/成员 PK 榜，不清匹配对手关系。修改模板 params[0].value 后执行",
+    "prompts": [
+      "删除 <date> 家族PK全部PK值",
+      "家族PK删除全部PK值 date=<date> area=<area>",
+      "清除 <date> 家族PK成员PK榜",
+      "删除指定日期家族PK全部PK值 area=MENA"
+    ]
+  }
+}

@@ -13,6 +13,7 @@
     { "group": "抓包", "names": ["Tunnel 抓包"] },
     { "group": "支付", "names": ["钻石", "支付测试"] },
     { "group": "知识库", "prefixes": ["testcase-kb", "prd-kb"], "names": ["钉钉目录"] },
+    { "group": "工作流", "names": ["工作流"] },
     { "group": "平台", "names": ["Admin", "MOA", "MSE"] }
   ],
   "top_level_order": [
@@ -33,6 +34,7 @@
     "测试机",
     "线上环境",
     "知识库",
+    "工作流",
     "平台"
   ],
   "catalog_exclude_registries": [
@@ -118,6 +120,15 @@
       "registry": "DingTalk/config/registry.json",
       "usage_doc": "DingTalk/使用方法.md",
       "entry": "python3 DingTalk/lookup_execute.py"
+    },
+    {
+      "id": "workflow",
+      "label": "工作流",
+      "subtitle": "多步流程录制与参数化复用",
+      "env": "tool",
+      "registry": "workflow/config/registry.json",
+      "usage_doc": "workflow/使用方法.md",
+      "entry": "python3 workflow/workflow_execute.py"
     }
   ]
 }

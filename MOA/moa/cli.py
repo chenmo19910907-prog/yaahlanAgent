@@ -40,7 +40,7 @@ from .flows import (
 )
 from .family_detail import needs_family_detail, needs_family_detail_by_user, run_family_detail
 from .family_pk_receive_rank import needs_family_pk_query_receive_rank, run_family_pk_query_receive_rank
-from .package_gift import run_package_gift_send
+from .package_gift import run_package_gift_batch_add, run_package_gift_send
 from .time_utils import resolve_family_fund_week_key
 from .user_area import USER_AREA_CODES
 from .user_login import normalize_mobile_login, parse_login_status_summary, resolve_phone_area_code
@@ -331,6 +331,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--package-gift-base-id",
         help="背包礼物 baseProductId（默认 config package_gift.sendDefaultBaseProductId=2005001494 Chocolate 99钻）",
+    )
+    parser.add_argument(
+        "--package-gift-batch-base-ids",
+        help="多种背包礼物 baseProductId，逗号分隔；须逐个 addPackageGift（每种单独一次 MOA 调用）",
     )
     parser.add_argument(
         "--package-gift-skip-add",
@@ -765,6 +769,9 @@ def main() -> int:
     client = MoaClient(args.entry_url, args.cookie, args.timeout_ms)
 
     try:
+        if args.package_gift_batch_base_ids:
+            return run_package_gift_batch_add(args, client)
+
         if args.package_gift_send:
             return run_package_gift_send(args, client)
 

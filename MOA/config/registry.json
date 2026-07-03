@@ -715,12 +715,13 @@
       "id": "package_gift_add",
       "name": "背包礼物-下发",
       "category": "背包礼物（voga-base-service-middle-gift-stage）",
-      "description": "给用户下发背包礼物（addPackageGift，默认两种各100个）；outOrderId 末尾每次随机13位数",
+      "description": "给用户下发背包礼物（addPackageGift）。默认模板两种各100个。多种礼物须逐个下发（每种单独一次 MOA，不可一次 giftDetails 塞多种）；用 --package-gift-batch-base-ids",
       "prompts": [
         "给用户 <userId> 下发背包礼物",
-        "给用户 <userId> 下发100个两种背包礼物"
+        "给用户 <userId> 下发100个两种背包礼物",
+        "多种背包礼物逐个下发 userId=<userId>"
       ],
-      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/背包礼物-下发.json \\\n  --package-gift-user-id <userId>\n"
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/背包礼物-下发.json \\\n  --package-gift-user-id <userId> \\\n  --package-gift-batch-base-ids <baseId1,baseId2,...> \\\n  --package-gift-num 100"
     },
     {
       "id": "package_gift_send",
@@ -875,6 +876,44 @@
         "族长 <userId> 解散家族 <familyId>"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-解散家族.json \\\n  --family-id <familyId> \\\n  --family-delete-owner-id <userId> \\\n  --family-delete\n"
+    },
+    {
+      "id": "family_pk_delete_member_pk_rank_data",
+      "name": "家族PK-删除全部PK值",
+      "category": "家族PK（vas/internal/family-pk-moa）",
+      "description": "测试环境删除指定日期、指定大区的家族 PK 全部成员 PK 榜数据（deleteMemberPkRankDataForTest）。入参 date 为 yyyy-MM-dd，area 默认 MENA。与「家族PK-清除匹配数据」不同：本接口清 PK 值/成员 PK 榜，不清匹配对手关系。修改模板 params[0].value 后执行",
+      "prompts": [
+        "删除 <date> 家族PK全部PK值",
+        "家族PK删除全部PK值 date=<date> area=<area>",
+        "清除 <date> 家族PK成员PK榜",
+        "删除指定日期家族PK全部PK值 area=MENA"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-删除全部PK值.json\n"
+    },
+    {
+      "id": "family_pk_query_receive_daily_rank_2",
+      "name": "家族PK-查询收礼日榜",
+      "category": "家族PK（vas/internal/family-pk-moa）",
+      "description": "测试环境查询家族收礼日榜（queryReceiveDailyRankForTest）。params：lang、date（yyyy-MM-dd）、limit（返回条数，最大 500）。默认排除已解散家族并顺延名次",
+      "prompts": [
+        "查询 <date> 家族收礼日榜",
+        "家族PK查询收礼日榜 date=<date> limit=<limit>",
+        "查收礼日榜 top <limit>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-查询收礼日榜.json\n"
+    },
+    {
+      "id": "family_pk_reset_settle_data",
+      "name": "家族PK-清除结算奖励",
+      "category": "家族PK（vas/internal/family-pk-moa）",
+      "description": "测试环境清除指定日期、大区的家族 PK 结算发奖数据（resetSettleDataForTest）。入参 date 为 yyyy-MM-dd，area 默认 MENA，rerunSettle 默认 false（清除后不重跑结算）。与「家族PK-清除匹配数据」「家族PK-删除全部PK值」不同：本接口仅清结算/发奖记录，便于重复发奖验收。修改模板 params[0].value 后执行",
+      "prompts": [
+        "清除 <date> 家族PK结算奖励",
+        "家族PK清除结算奖励 date=<date> area=<area>",
+        "重置 <date> 家族PK结算数据 area=MENA",
+        "清除家族PK结算发奖数据 rerunSettle=false"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-清除结算奖励.json\n"
     }
   ]
 }

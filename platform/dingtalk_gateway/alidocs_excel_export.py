@@ -23,6 +23,8 @@ ALIDOCS_NODE = "https://alidocs.dingtalk.com/i/nodes/{node_id}"
 BATCH_ROWS = 100
 
 _dentry_cache: dict[str, str] = {}
+_dentry_info_cache: dict[str, dict[str, str]] = {}
+DOC_V2_API = "https://api.dingtalk.com/v2.0/doc"
 
 
 def _excel_env() -> dict[str, str]:
@@ -52,9 +54,12 @@ async def _get_token_and_operator(env: dict[str, str]) -> tuple[str, str]:
     return token, operator
 
 
-def _get_workspace_id(parent_node_id: str, cookie: str) -> str:
-    if parent_node_id in _dentry_cache:
-        return _dentry_cache[parent_node_id]
+def fetch_dentry_info(dentry_uuid: str, *, cookie: str = "") -> dict[str, str]:
+    """读取钉钉文档节点信息（spaceId、当前名称等）。"""
+    node_id = dentry_uuid.strip()
+    if node_id in _dentry_info_cache:
+        return dict(_dentry_info_cache[node_id])
+
     from mcp_paths import resolve_dingtalk_cookie
     import re
 
@@ -62,21 +67,84 @@ def _get_workspace_id(parent_node_id: str, cookie: str) -> str:
     xsrf = re.search(r"XSRF-TOKEN=([^;]+)", ck)
     headers = {
         "cookie": ck,
-        "referer": f"https://alidocs.dingtalk.com/i/nodes/{parent_node_id}",
+        "referer": f"https://alidocs.dingtalk.com/i/nodes/{node_id}",
         "user-agent": "Mozilla/5.0",
     }
     if xsrf:
         headers["x-xsrf-token"] = xsrf.group(1)
     url = (
         f"https://alidocs.dingtalk.com/box/api/v2/dentry/info"
-        f"?dentryUuid={parent_node_id}&withParent=true"
+        f"?dentryUuid={node_id}&withParent=true"
     )
     req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req, timeout=30) as resp:
-        data = json.loads(resp.read())
-    space_id = str(data["data"]["spaceId"])
-    _dentry_cache[parent_node_id] = space_id
-    return space_id
+        payload = json.loads(resp.read())
+    data = payload.get("data") or {}
+    if not isinstance(data, dict) or not data.get("spaceId"):
+        raise RuntimeError(f"读取钉钉文档信息失败: {node_id}")
+
+    info = {
+        "dentryUuid": node_id,
+        "spaceId": str(data["spaceId"]),
+        "name": str(data.get("name") or ""),
+    }
+    _dentry_info_cache[node_id] = info
+    _dentry_cache[node_id] = info["spaceId"]
+    return dict(info)
+
+
+def _get_workspace_id(parent_node_id: str, cookie: str) -> str:
+    return fetch_dentry_info(parent_node_id, cookie=cookie)["spaceId"]
+
+
+def _workbook_title_base(name: str) -> str:
+    text = (name or "").strip()
+    if text.lower().endswith(".axls"):
+        return text[:-5]
+    return text
+
+
+async def rename_workbook_async(workbook_id: str, new_name: str) -> str:
+    """重命名钉钉在线表格（doc v2 rename）。"""
+    node_id = workbook_id.strip()
+    title = new_name.strip()
+    if not node_id or not title:
+        raise ValueError("workbook_id 与 new_name 不能为空")
+
+    info = fetch_dentry_info(node_id)
+    current = _workbook_title_base(info.get("name", ""))
+    if current == title:
+        return title
+
+    env = _excel_env()
+    token, operator = await _get_token_and_operator(env)
+    url = (
+        f"{DOC_V2_API}/spaces/{info['spaceId']}/dentries/{node_id}/rename"
+        f"?operatorId={operator}"
+    )
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.post(
+            url,
+            headers={
+                "x-acs-dingtalk-access-token": token,
+                "Content-Type": "application/json",
+            },
+            json={"name": title},
+        )
+        if resp.status_code >= 400:
+            raise RuntimeError(
+                f"重命名表格失败 HTTP {resp.status_code}: {resp.text[:300]}"
+            )
+
+    _dentry_info_cache.pop(node_id, None)
+    _dentry_cache.pop(node_id, None)
+    return title
+
+
+def rename_workbook(workbook_id: str, new_name: str) -> str:
+    import asyncio
+
+    return asyncio.run(rename_workbook_async(workbook_id, new_name))
 
 
 def _col_letter(n: int) -> str:

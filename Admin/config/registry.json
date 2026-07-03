@@ -106,14 +106,15 @@
       "id": "query_gift_list",
       "name": "礼物-查询列表",
       "category": "礼物（mdp-nova / giftAdmin）",
-      "description": "查询 Yaahlan 全量礼物配置（giftAdmin/queryGiftList；可按 baseId、productName、giftType 等筛选；返回 baseId、名称、价格、状态）",
+      "description": "查询 Yaahlan 全量礼物配置（giftAdmin/queryGiftList）。已上线背包礼物：giftType=1、giftStatus=1（giftSubType 留空）；返回 baseId、名称、价格、状态",
       "prompts": [
         "查询礼物列表",
+        "查已上线背包礼物列表",
         "查礼物 baseId <baseId> 信息",
         "礼物 <productName> 的 baseId 是多少",
         "后台礼物配置 queryGiftList"
       ],
-      "command": "python3 Admin/admin_execute.py --query-gift-list --gift-page-no 1 --gift-page-size 20"
+      "command": "python3 Admin/admin_execute.py --query-gift-list --gift-type 1 --gift-status 1 --gift-page-no 1 --gift-page-size 20"
     },
     {
       "id": "query_custom_gift_list",

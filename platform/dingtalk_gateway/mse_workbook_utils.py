@@ -201,3 +201,87 @@ def find_param_sheet_name(sheets: dict[str, list[list[Any]]]) -> str:
         if name != "configValue_JSON":
             return name
     raise RuntimeError("未找到参数表工作表")
+
+
+def resolve_param_sheet_name(
+    sheets: dict[str, list[list[Any]]],
+    preferred: str | None = None,
+) -> str:
+    if preferred:
+        pref = preferred.strip()
+        if pref in sheets:
+            return pref
+        raise RuntimeError(f"未找到工作表: {pref}")
+    return find_param_sheet_name(sheets)
+
+
+def _cell_str(row: list[Any], idx: int) -> str:
+    if idx >= len(row) or row[idx] is None:
+        return ""
+    return str(row[idx]).strip()
+
+
+def param_row_key(row: list[Any]) -> tuple[str, ...] | None:
+    block = _cell_str(row, 0)
+    if not block or block == "区块" or block.startswith("家族PK服务配置"):
+        return None
+    if block == "档位":
+        bracket = _cell_str(row, 1)
+        tier = _cell_str(row, 3)
+        if bracket and tier:
+            return (block, bracket, tier)
+        return None
+    key = _cell_str(row, 1)
+    if block in {"元数据", "基础", "发钻", "风控", "节流", "H5", "资源"} and key:
+        return (block, key)
+    return None
+
+
+def looks_like_param_sheet(matrix: list[list[Any]]) -> bool:
+    if not matrix:
+        return False
+    for row in matrix[:6]:
+        text = " ".join(_cell_str(row, i) for i in range(min(4, len(row))))
+        if "参数键" in text or "参数值" in text:
+            return True
+        if _cell_str(row, 0) == "区块":
+            return True
+    return False
+
+
+def reconcile_param_sheet_rows(
+    existing: list[list[Any]] | None,
+    fresh: list[list[Any]],
+    *,
+    applied: list[list[Any]],
+) -> list[list[Any]]:
+    """在已有参数表上合并 MSE 最新结构：更新数值、增删参数行，保留表头与说明列。"""
+    if not existing or not looks_like_param_sheet(existing):
+        return fresh
+
+    applied_by_key: dict[tuple[str, ...], list[Any]] = {}
+    for row in applied:
+        key = param_row_key(row)
+        if key:
+            applied_by_key[key] = row
+
+    out: list[list[Any]] = []
+    for row in fresh:
+        key = param_row_key(row)
+        if key is None:
+            out.append(list(row))
+            continue
+        if key in applied_by_key:
+            merged = list(applied_by_key[key])
+            cols = max(len(merged), len(row))
+            for idx in range(cols):
+                if idx < 2:
+                    merged[idx] = row[idx] if idx < len(row) else merged[idx]
+                elif idx == 2 and idx < len(row):
+                    merged[idx] = row[idx]
+                elif idx in {4, 5} and idx < len(row):
+                    merged[idx] = row[idx]
+            out.append(merged)
+        else:
+            out.append(list(row))
+    return out
