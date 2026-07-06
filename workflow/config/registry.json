@@ -1,6 +1,62 @@
 {
   "playbooks": [
     {
+      "id": "tunnel_capture_common",
+      "title": "Tunnel 抓包常用验收",
+      "category": "抓包",
+      "summary": "按场景查 Tunnel：礼物送礼/面板/背包、家族PK、进房、动态发布、资料保存、弹窗信号。索引 adb/config/tunnel_capture_catalog.json。",
+      "defaults": {
+        "userId": "100007541",
+        "sinceSeconds": "600"
+      },
+      "steps": [
+        {
+          "order": 1,
+          "catalogId": "gift_send",
+          "name": "送礼 gift/send",
+          "note": "点 Send 后验收 response.ec=200",
+          "command": "python3 adb/adb_execute.py tunnel capture run gift_send --momoid <userId>"
+        },
+        {
+          "order": 2,
+          "catalogId": "gift_panel_tabs",
+          "name": "礼物面板 Tab",
+          "note": "打开橙色礼物盒后",
+          "command": "python3 adb/adb_execute.py tunnel capture run gift_panel_tabs --momoid <userId>"
+        },
+        {
+          "order": 3,
+          "catalogId": "gift_backpack",
+          "name": "背包礼物 remain",
+          "note": "MOA 下发后开面板；bid=baseProductId",
+          "command": "python3 adb/adb_execute.py tunnel capture run gift_backpack --momoid <userId> --set baseProductId=2005001494 --set num=10"
+        },
+        {
+          "order": 4,
+          "catalogId": "family_pk_page",
+          "name": "家族PK getFamilyPkPage",
+          "note": "切日期 tab 并刷新",
+          "command": "python3 adb/adb_execute.py tunnel capture run family_pk_page --momoid <userId>"
+        },
+        {
+          "order": 5,
+          "catalogId": "popup_login",
+          "name": "登录弹窗信号",
+          "command": "python3 adb/adb_execute.py tunnel capture run popup_login --momoid <userId>"
+        }
+      ],
+      "prompts": [
+        "抓包常用验收列表",
+        "tunnel capture list",
+        "执行抓包验收 gift_send userId=<userId>"
+      ],
+      "notes": [
+        "完整目录：python3 adb/adb_execute.py tunnel capture list",
+        "文档：adb/录制脚本/Tunnel抓包常用验收.md",
+        "提交表单类须优先抓包，不以 Toast 为准"
+      ]
+    },
+    {
       "id": "family_pk_data_test",
       "title": "家族PK数据测试（六步总览）",
       "category": "家族PK",
@@ -14,11 +70,26 @@
         "captureWait": "180"
       },
       "sheets": [
-        { "name": "参数表", "content": "MSE familyPkConfig 参数（含 minWinPk、minRewardPk、minDailyAvg 等）" },
-        { "name": "家族列表", "content": "家族 ID/名称/成员 userId/族长；已过滤族长非 MENA 的家族" },
-        { "name": "家族PK档位", "content": "收礼榜名次、匹配区间、档位达标 PK 与钻石" },
-        { "name": "匹配验收", "content": "抓包 getFamilyPkPage 对战与同区间匹配验收" },
-        { "name": "用户发钻测试", "content": "成员 PK、场景、应得钻石；第六步补实发 delta" }
+        {
+          "name": "参数表",
+          "content": "MSE familyPkConfig 参数（含 minWinPk、minRewardPk、minDailyAvg 等）"
+        },
+        {
+          "name": "家族列表",
+          "content": "家族 ID/名称/成员 userId/族长；已过滤族长非 MENA 的家族"
+        },
+        {
+          "name": "家族PK档位",
+          "content": "收礼榜名次、匹配区间、档位达标 PK 与钻石"
+        },
+        {
+          "name": "匹配验收",
+          "content": "抓包 getFamilyPkPage 对战与同区间匹配验收"
+        },
+        {
+          "name": "用户发钻测试",
+          "content": "成员 PK、场景、应得钻石；第六步补实发 delta"
+        }
       ],
       "steps": [
         {
@@ -228,6 +299,28 @@
         "家族PK每日重置匹配 pkDate=<pkDate>"
       ],
       "command": "python3 workflow/workflow_execute.py run family-pk-daily-rematch --pk-date <pkDate> --timeout-ms <timeoutMs>"
+    },
+    {
+      "id": "package_gift_backpack_verify",
+      "name": "背包礼物-Tunnel背包验收",
+      "category": "背包礼物",
+      "description": "用户已在 App 打开礼物面板后，Tunnel 抓 getGiftTabListV3 → 背包 Tab 读 package.remain；按 bid 验收数量。propPackageList 仅道具不含礼物。",
+      "prompts": [
+        "执行工作流 背包礼物-Tunnel背包验收",
+        "工作流 package-gift-backpack-verify <userId> <baseProductId> <expectRemain> <sinceSeconds>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run package-gift-backpack-verify --user-id <userId> --base-product-id <baseProductId> --expect-remain <expectRemain> --since-seconds <sinceSeconds>"
+    },
+    {
+      "id": "package_gift_dispatch_verify",
+      "name": "背包礼物-下发与Tunnel验收",
+      "category": "背包礼物",
+      "description": "MOA addPackageGift 下发 → 用户在 App 打开礼物面板 → Tunnel getGiftTabListV3 背包 Tab 验收 package.remain。两步之间须手动开面板。",
+      "prompts": [
+        "执行工作流 背包礼物-下发与Tunnel验收",
+        "工作流 package-gift-dispatch-verify <userId> <baseProductId> <num> <sinceSeconds>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run package-gift-dispatch-verify --user-id <userId> --base-product-id <baseProductId> --num <num> --since-seconds <sinceSeconds>"
     }
   ]
 }

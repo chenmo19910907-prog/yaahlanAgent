@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "description": "Tunnel 抓包常用验收索引：触发操作、URL 关键字、验收字段与可执行命令。Agent 用 adb tunnel capture list/show/run。",
+  "defaults": {
+    "sinceSeconds": 600,
+    "gAppid": "All",
+    "gEnv": "alpha"
+  },
+  "items": [
+    {
+      "id": "gift_send",
+      "name": "送礼接口验收",
+      "category": "礼物",
+      "keyword": "gift/send",
+      "urlMarker": "v2/gift/send",
+      "trigger": "礼物面板点 Send；Room All 须再点 Confirm",
+      "successPath": "response.ec",
+      "successValue": 200,
+      "failPath": "response.em",
+      "handler": "tunnel_last",
+      "expectEc": 200,
+      "command": "python3 adb/adb_execute.py tunnel last --momoid <userId> --keyword gift/send --since <sinceSeconds>",
+      "waitCommand": "python3 adb/adb_execute.py tunnel wait --momoid <userId> --keyword gift/send --since 30 --wait 25 --expect-ec 200",
+      "notes": ["勿用 sendGift 关键字", "未抓到 gift/send ≠ 业务成功"]
+    },
+    {
+      "id": "gift_panel_tabs",
+      "name": "礼物面板 Tab 列表",
+      "category": "礼物",
+      "keyword": "getGiftTabListV3",
+      "urlMarker": "giftPanel/getGiftTabListV3",
+      "trigger": "房内点橙色礼物盒打开面板",
+      "successPath": "response.data.gift_list",
+      "handler": "gift_panel_analyze",
+      "command": "python3 adb/adb_execute.py gift panel analyze --momoid <userId> --since <sinceSeconds>",
+      "notes": ["hash 缓存命中时无 gift_list，须重开面板", "Customize Tab 排序见 gift_list[].tab_name=Customize"]
+    },
+    {
+      "id": "gift_panel_find",
+      "name": "礼物面板按价查找",
+      "category": "礼物",
+      "keyword": "getGiftTabListV3",
+      "trigger": "打开礼物面板后",
+      "handler": "gift_panel_find",
+      "command": "python3 adb/adb_execute.py gift panel find --momoid <userId> --price <price> --tab <tabName> --since <sinceSeconds>",
+      "params": { "price": "99", "tabName": "Gift" },
+      "notes": ["返回 index 与上下滑提示，供 macro 点选"]
+    },
+    {
+      "id": "gift_backpack",
+      "name": "背包礼物数量验收",
+      "category": "礼物",
+      "keyword": "getGiftTabListV3",
+      "urlMarker": "tab_name=背包",
+      "trigger": "MOA 下发后打开礼物面板 → 背包 Tab",
+      "successPath": "gift_list[].package.remain",
+      "handler": "gift_backpack_verify",
+      "command": "python3 MOA/scripts/package_gift_backpack_tunnel_verify.py --user-id <userId> --bid <baseProductId> --expect-remain <num> --since <sinceSeconds>",
+      "params": { "baseProductId": "2005001494", "num": "10" },
+      "notes": ["bid=baseProductId；propPackageList 仅道具不含礼物", "工作流 package-gift-backpack-verify"]
+    },
+    {
+      "id": "gift_send_check",
+      "name": "送礼前校验(CP/等级)",
+      "category": "礼物",
+      "keyword": "sendCheckInfo",
+      "urlMarker": "giftPanel/sendCheckInfo",
+      "trigger": "打开礼物面板后出现",
+      "readPaths": ["response.data.cpUserId", "response.data.buddyUserIdSet"],
+      "handler": "tunnel_last",
+      "command": "python3 adb/adb_execute.py tunnel last --momoid <userId> --keyword sendCheckInfo --since <sinceSeconds>",
+      "notes": ["cpUserId=null 不可送 CP 礼物"]
+    },
+    {
+      "id": "gift_custom_rank",
+      "name": "自定义礼物周榜",
+      "category": "礼物",
+      "keyword": "getTotalCustomGiftRankList",
+      "trigger": "礼物面板 Customize 相关页切换本周/上周",
+      "readPaths": ["response.data.list"],
+      "handler": "tunnel_last",
+      "command": "python3 Tunnel/tunnel_execute.py --momoid <userId> --keyword getTotalCustomGiftRankList --since <sinceSeconds> --output json",
+      "notes": ["request.cycle=1 本周，2 上周"]
+    },
+    {
+      "id": "family_pk_page",
+      "name": "家族PK对战列表",
+      "category": "家族PK",
+      "keyword": "getFamilyPkPage",
+      "urlMarker": "getFamilyPkPage",
+      "trigger": "家族 PK 页切换到指定日期 tab 并刷新",
+      "readPaths": ["response.data"],
+      "handler": "tunnel_last",
+      "command": "python3 Tunnel/tunnel_execute.py --momoid <userId> --keyword getFamilyPkPage --since <sinceSeconds> --output json",
+      "notes": ["工作流 family-pk-config-match-verify", "须 request.date=pkDate"]
+    },
+    {
+      "id": "room_heartbeat",
+      "name": "房内心跳(进房佐证)",
+      "category": "房间",
+      "keyword": "room/heart/heartbeat",
+      "trigger": "在语音房内停留",
+      "successPath": "response.ec",
+      "successValue": 200,
+      "handler": "tunnel_last",
+      "command": "python3 adb/adb_execute.py tunnel last --momoid <userId> --keyword heartbeat --since <sinceSeconds>",
+      "notes": ["有 heartbeat 不表示无弹窗"]
+    },
+    {
+      "id": "room_entrance",
+      "name": "房间挂件入口",
+      "category": "房间",
+      "keyword": "entranceV3",
+      "trigger": "进入语音房",
+      "readPaths": ["response.data.entranceList"],
+      "handler": "tunnel_last",
+      "command": "python3 adb/adb_execute.py tunnel last --momoid <userId> --keyword entranceV3 --since <sinceSeconds>",
+      "notes": ["Lucky Wish、Gift Challenge 等运营入口"]
+    },
+    {
+      "id": "feed_publish",
+      "name": "发布动态",
+      "category": "动态",
+      "keyword": "feed/publish",
+      "trigger": "发布图文/视频动态点发布",
+      "successPath": "response.ec",
+      "successValue": 200,
+      "handler": "tunnel_wait",
+      "expectEc": 200,
+      "command": "python3 adb/adb_execute.py tunnel wait --momoid <userId> --keyword feed/publish --since 30 --wait 25 --expect-ec 200",
+      "notes": ["P1 自动化用例常用"]
+    },
+    {
+      "id": "profile_update",
+      "name": "保存个人资料",
+      "category": "用户",
+      "keyword": "updateUserBase",
+      "trigger": "编辑资料页点 Save",
+      "successPath": "response.ec",
+      "successValue": 200,
+      "handler": "tunnel_wait",
+      "expectEc": 200,
+      "command": "python3 adb/adb_execute.py tunnel wait --momoid <userId> --keyword updateUserBase --since 30 --wait 25 --expect-ec 200",
+      "notes": ["提交表单优先抓包，不以 Toast 为准"]
+    },
+    {
+      "id": "popup_login",
+      "name": "登录后弹窗信号",
+      "category": "弹窗",
+      "keyword": "sign/signInList",
+      "trigger": "登录进首页后",
+      "handler": "popup_scene",
+      "scene": "login",
+      "command": "python3 adb/adb_execute.py popup analyze --scene login --momoid <userId> --since <sinceSeconds>",
+      "notes": ["见 弹窗抓包信号.json", "抓包不覆盖的 UI 弹窗须 capture 读图"]
+    },
+    {
+      "id": "popup_me",
+      "name": "Me页弹窗信号",
+      "category": "弹窗",
+      "keyword": "personalHomePageUserInfo",
+      "trigger": "底栏进 Me",
+      "handler": "popup_scene",
+      "scene": "me",
+      "command": "python3 adb/adb_execute.py popup analyze --scene me --momoid <userId> --since <sinceSeconds>",
+      "notes": ["众测/Account Security 等"]
+    },
+    {
+      "id": "popup_room",
+      "name": "进房弹窗信号",
+      "category": "弹窗",
+      "keyword": "entranceV3",
+      "trigger": "进入他人语音房",
+      "handler": "popup_scene",
+      "scene": "room",
+      "command": "python3 adb/adb_execute.py popup analyze --scene room --momoid <userId> --since <sinceSeconds>",
+      "notes": ["Mic invitation、Lucky Wish 等"]
+    },
+    {
+      "id": "tunnel_list",
+      "name": "原始抓包列表",
+      "category": "通用",
+      "keyword": "",
+      "trigger": "任意操作后",
+      "handler": "tunnel_list",
+      "command": "python3 Tunnel/tunnel_execute.py --momoid <userId> --since <sinceSeconds>",
+      "notes": ["加 --keyword 过滤；--output json 给 Agent 解析"]
+    }
+  ]
+}

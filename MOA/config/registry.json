@@ -736,6 +736,18 @@
       "command": "python3 MOA/moa_execute.py \\\n  --package-gift-send \\\n  --package-gift-add-only \\\n  --package-gift-user-id <fromUserId> \\\n  --package-gift-base-id 2005001272 \\\n  --package-gift-num 1"
     },
     {
+      "id": "package_gift_backpack_verify",
+      "name": "背包礼物-Tunnel背包验收",
+      "category": "背包礼物（voga-base-service-middle-gift-stage）",
+      "description": "用户打开礼物面板后，Tunnel getGiftTabListV3 背包 Tab 读 package.remain；按 bid 验收数量。propPackageList 仅道具。",
+      "prompts": [
+        "验收用户 <userId> 背包礼物 <baseProductId> 数量 <num>",
+        "Tunnel 查背包 Chocolate remain",
+        "背包礼物下发后抓包验收"
+      ],
+      "command": "python3 MOA/scripts/package_gift_backpack_tunnel_verify.py \\\n  --user-id <userId> \\\n  --bid <baseProductId> \\\n  --expect-remain <num> \\\n  --since 600"
+    },
+    {
       "id": "user_active_days_query",
       "name": "用户-查询登录天数",
       "category": "用户活跃（yaahlan/user/internal/area-moa）",

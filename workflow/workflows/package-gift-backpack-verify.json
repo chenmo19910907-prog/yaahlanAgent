@@ -1,0 +1,49 @@
+{
+  "id": "package-gift-backpack-verify",
+  "name": "背包礼物-Tunnel背包验收",
+  "category": "背包礼物",
+  "description": "用户已在 App 打开礼物面板后，Tunnel 抓 getGiftTabListV3 → 背包 Tab 读 package.remain；按 bid 验收数量。propPackageList 仅道具不含礼物。",
+  "version": 1,
+  "params": {
+    "userId": {
+      "label": "用户ID",
+      "type": "string",
+      "required": true,
+      "prompt": "momoid / userId"
+    },
+    "baseProductId": {
+      "label": "礼物baseProductId",
+      "type": "string",
+      "required": true,
+      "default": "2005001494",
+      "prompt": "下发 bid，如 2005001494（Chocolate）"
+    },
+    "expectRemain": {
+      "label": "期望背包数量",
+      "type": "integer",
+      "required": true,
+      "prompt": "验收 package.remain 是否一致"
+    },
+    "sinceSeconds": {
+      "label": "抓包回溯秒",
+      "type": "integer",
+      "required": false,
+      "default": "600",
+      "prompt": "默认 600；须覆盖打开礼物面板的时间"
+    }
+  },
+  "steps": [
+    {
+      "id": "tunnel_backpack_verify",
+      "name": "Tunnel验收背包Tab",
+      "run": {
+        "type": "shell",
+        "command": "python3 MOA/scripts/package_gift_backpack_tunnel_verify.py --user-id {{userId}} --bid {{baseProductId}} --expect-remain {{expectRemain}} --since {{sinceSeconds}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

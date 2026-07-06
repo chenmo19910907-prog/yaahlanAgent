@@ -47,6 +47,30 @@
         "抓包原始数据 <userId>"
       ],
       "command": "python3 Tunnel/tunnel_execute.py --momoid <userId> --since 3600 --output json"
+    },
+    {
+      "id": "tunnel_capture_list",
+      "name": "抓包-常用验收目录",
+      "category": "Tunnel 抓包",
+      "description": "列出已登记的常用抓包验收项（礼物/房间/弹窗/家族PK 等）；详见 adb/config/tunnel_capture_catalog.json",
+      "prompts": [
+        "抓包常用验收列表",
+        "tunnel capture list",
+        "有哪些抓包验收"
+      ],
+      "command": "python3 adb/adb_execute.py tunnel capture list"
+    },
+    {
+      "id": "tunnel_capture_run",
+      "name": "抓包-执行常用验收",
+      "category": "Tunnel 抓包",
+      "description": "按 catalog id 执行验收（如 gift_send、gift_backpack、family_pk_page）；须先完成 trigger 操作",
+      "prompts": [
+        "抓包验收 gift_send userId=<userId>",
+        "tunnel capture run gift_backpack <userId>",
+        "验收背包礼物抓包"
+      ],
+      "command": "python3 adb/adb_execute.py tunnel capture run <captureId> --momoid <userId> --since 600"
     }
   ]
 }

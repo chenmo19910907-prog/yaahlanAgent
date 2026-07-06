@@ -1,0 +1,61 @@
+{
+  "id": "package-gift-dispatch-verify",
+  "name": "背包礼物-下发与Tunnel验收",
+  "category": "背包礼物",
+  "description": "MOA addPackageGift 下发 → 用户在 App 打开礼物面板 → Tunnel getGiftTabListV3 背包 Tab 验收 package.remain。两步之间须手动开面板。",
+  "version": 1,
+  "params": {
+    "userId": {
+      "label": "用户ID",
+      "type": "string",
+      "required": true,
+      "prompt": "momoid / userId"
+    },
+    "baseProductId": {
+      "label": "礼物baseProductId",
+      "type": "string",
+      "required": false,
+      "default": "2005001494",
+      "prompt": "默认 Chocolate（2005001494）"
+    },
+    "num": {
+      "label": "下发数量",
+      "type": "integer",
+      "required": true,
+      "prompt": "addPackageGift productNum"
+    },
+    "sinceSeconds": {
+      "label": "抓包回溯秒",
+      "type": "integer",
+      "required": false,
+      "default": "600",
+      "prompt": "第二步 Tunnel 回溯窗口"
+    }
+  },
+  "steps": [
+    {
+      "id": "moa_add_package_gift",
+      "name": "MOA下发背包礼物",
+      "run": {
+        "type": "shell",
+        "command": "python3 MOA/moa_execute.py --package-gift-send --package-gift-add-only --package-gift-user-id {{userId}} --package-gift-base-id {{baseProductId}} --package-gift-num {{num}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    },
+    {
+      "id": "tunnel_backpack_verify",
+      "name": "Tunnel验收背包数量",
+      "run": {
+        "type": "shell",
+        "command": "python3 MOA/scripts/package_gift_backpack_tunnel_verify.py --user-id {{userId}} --bid {{baseProductId}} --expect-remain {{num}} --since {{sinceSeconds}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

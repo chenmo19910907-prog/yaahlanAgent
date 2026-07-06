@@ -68,7 +68,11 @@ from .screenshot import (
     resolve_image_to_device,
     screenshot_dir,
 )
-from .gift_panel_analyze import analyze_gift_panel_from_tunnel, find_gifts_from_tunnel
+from .gift_panel_analyze import (
+    analyze_gift_panel_from_tunnel,
+    find_gifts_from_tunnel,
+    verify_backpack_gift_from_tunnel,
+)
 from .popup_analyze import analyze_scene_from_tunnel, dismiss_scripts_for_analysis
 from .popup_gate import ensure_popups_cleared, resolve_gate_scene
 from .apps import YAAHLAN
@@ -84,6 +88,7 @@ from .logcat_check import (
 from .cli_args import add_learn_locator_arguments, use_adaptation
 from .cli_runner import run_chain_command, run_integrated_command, run_macro_command
 from .paths import script_abandon_path
+from .tunnel_capture import list_catalog, run_catalog_item, show_catalog_item
 from .tunnel_verify import (
     TunnelVerifyOptions,
     add_tunnel_arguments,
@@ -596,6 +601,30 @@ def build_parser() -> argparse.ArgumentParser:
     p_tunnel_last.add_argument("--g-appid", default="All", dest="tunnel_g_appid")
     p_tunnel_last.add_argument("--g-env", default="alpha", dest="tunnel_g_env")
 
+    p_tunnel_capture = tunnel_sub.add_parser(
+        "capture",
+        help="常用抓包验收目录（list/show/run）",
+    )
+    cap_sub = p_tunnel_capture.add_subparsers(dest="capture_command", required=True)
+    p_cap_list = cap_sub.add_parser("list", help="列出 catalog 项")
+    p_cap_list.add_argument("--category", default="", help="按分类筛选")
+    p_cap_show = cap_sub.add_parser("show", help="查看单项")
+    p_cap_show.add_argument("capture_id", help="如 gift_send、gift_backpack")
+    p_cap_run = cap_sub.add_parser("run", help="执行验收")
+    p_cap_run.add_argument("capture_id", help="catalog id")
+    p_cap_run.add_argument("--momoid", help="userId")
+    p_cap_run.add_argument("--account", help="testAccounts 键名")
+    p_cap_run.add_argument("--since", type=int, default=None)
+    p_cap_run.add_argument("--dry-run", action="store_true")
+    p_cap_run.add_argument("--wait", action="store_true")
+    p_cap_run.add_argument(
+        "--set",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="覆盖模板参数，如 baseProductId=2005001494 num=10",
+    )
+
     p_logcat = sub.add_parser(
         "logcat",
         help="adb logcat 关键字等待/查询（客户端渲染、RTC、崩溃等）",
@@ -643,7 +672,11 @@ def build_parser() -> argparse.ArgumentParser:
     panel_sub = p_gift_panel.add_subparsers(dest="panel_command", required=True)
     p_panel_analyze = panel_sub.add_parser("analyze", help="列出各 Tab 与礼物数量/价位")
     p_panel_find = panel_sub.add_parser("find", help="按价格/Tab/名称查找礼物")
-    for p in (p_panel_analyze, p_panel_find):
+    p_panel_backpack = panel_sub.add_parser(
+        "backpack",
+        help="验收背包礼物：getGiftTabListV3 背包 Tab 的 package.remain",
+    )
+    for p in (p_panel_analyze, p_panel_find, p_panel_backpack):
         p.add_argument("--momoid", help="userId")
         p.add_argument("--account", help="testAccounts 键名")
         p.add_argument("--since", type=int, default=300, help="回溯秒数")
@@ -652,6 +685,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_panel_find.add_argument("--price", type=int, help="钻石价格，如 99")
     p_panel_find.add_argument("--tab", dest="tab_name", help="Tab 名称子串，如 Gift / nation")
     p_panel_find.add_argument("--name", dest="name_contains", help="礼物名称子串")
+    p_panel_backpack.add_argument("--bid", dest="base_product_id", help="baseProductId（下发用 bid）")
+    p_panel_backpack.add_argument("--name", dest="gift_name", help="礼物名称子串，如 Chocolate")
+    p_panel_backpack.add_argument(
+        "--expect-remain",
+        type=int,
+        help="期望背包数量；指定则验收 remain 是否一致",
+    )
 
     p_room = sub.add_parser(
         "room",
@@ -966,6 +1006,117 @@ def main(argv: list[str] | None = None) -> int:
                 }
             )
             return 0
+
+        if args.command == "tunnel":
+            if args.tunnel_command == "capture":
+                if args.capture_command == "list":
+                    _emit(list_catalog(category=str(args.category or "").strip() or None))
+                    return 0
+                if args.capture_command == "show":
+                    _emit(show_catalog_item(args.capture_id))
+                    return 0
+                if args.capture_command == "run":
+                    extra: dict[str, str] = {}
+                    for pair in getattr(args, "set", []) or []:
+                        if "=" in pair:
+                            k, v = pair.split("=", 1)
+                            extra[k.strip()] = v.strip()
+                    out = run_catalog_item(
+                        args.capture_id,
+                        momoid=getattr(args, "momoid", None),
+                        account=getattr(args, "account", None),
+                        since_seconds=getattr(args, "since", None),
+                        extra=extra or None,
+                        mode="dry-run" if args.dry_run else ("wait" if args.wait else "run"),
+                    )
+                    _emit(out)
+                    if args.dry_run:
+                        return 0
+                    return 0 if out.get("ok") else 3
+            if args.tunnel_command == "wait":
+                if not getattr(args, "momoid", None) and not getattr(args, "account", None):
+                    raise ValueError("tunnel wait 须指定 --momoid 或 --account")
+                raw_status = args.expect_status
+                http_status: int | None = None if raw_status < 0 else int(raw_status)
+                opts = TunnelVerifyOptions(
+                    momoid=resolve_momoid(
+                        momoid=getattr(args, "momoid", None),
+                        account=getattr(args, "account", None),
+                    ),
+                    keyword=str(args.keyword or ""),
+                    wait_seconds=max(1, int(args.tunnel_wait)),
+                    poll_interval_ms=max(500, int(args.tunnel_poll_ms)),
+                    expect_http_status=http_status,
+                    expect_response_ec=getattr(args, "tunnel_expect_ec", None),
+                    since_buffer_seconds=0,
+                    g_appid=str(args.tunnel_g_appid),
+                    g_env=str(args.tunnel_g_env),
+                )
+                start_time = int(time.time()) - max(1, int(args.since))
+                verify = wait_for_tunnel(opts, start_time=start_time)
+                _emit({"tunnelVerify": verify})
+                return 0 if verify.get("ok") else 3
+            if args.tunnel_command == "last":
+                if not getattr(args, "momoid", None) and not getattr(args, "account", None):
+                    raise ValueError("tunnel last 须指定 --momoid 或 --account")
+                out = fetch_latest_tunnel_match(
+                    momoid=resolve_momoid(
+                        momoid=getattr(args, "momoid", None),
+                        account=getattr(args, "account", None),
+                    ),
+                    keyword=str(args.keyword),
+                    since_seconds=max(1, int(args.since)),
+                    g_appid=str(args.tunnel_g_appid),
+                    g_env=str(args.tunnel_g_env),
+                )
+                _emit(out)
+                return 0 if out.get("ok") else 3
+
+        if args.command == "gift" and getattr(args, "gift_command", None) == "panel":
+            if not getattr(args, "momoid", None) and not getattr(args, "account", None):
+                raise ValueError("gift panel 须指定 --momoid 或 --account")
+            momoid = resolve_momoid(
+                momoid=getattr(args, "momoid", None),
+                account=getattr(args, "account", None),
+            )
+            if args.panel_command == "analyze":
+                _emit(
+                    analyze_gift_panel_from_tunnel(
+                        momoid=momoid,
+                        since_seconds=int(args.since),
+                        g_appid=str(args.g_appid),
+                        g_env=str(args.g_env),
+                    )
+                )
+                return 0
+            if args.panel_command == "find":
+                out = find_gifts_from_tunnel(
+                    momoid=momoid,
+                    since_seconds=int(args.since),
+                    price=getattr(args, "price", None),
+                    tab_name=getattr(args, "tab_name", None),
+                    name_contains=getattr(args, "name_contains", None),
+                    g_appid=str(args.g_appid),
+                    g_env=str(args.g_env),
+                )
+                _emit(out)
+                return 0 if out.get("matchedCount", 0) > 0 else 3
+            if args.panel_command == "backpack":
+                out = verify_backpack_gift_from_tunnel(
+                    momoid=momoid,
+                    since_seconds=int(args.since),
+                    base_product_id=getattr(args, "base_product_id", None),
+                    gift_name=getattr(args, "gift_name", None),
+                    expected_remain=getattr(args, "expect_remain", None),
+                    g_appid=str(args.g_appid),
+                    g_env=str(args.g_env),
+                )
+                _emit(out)
+                if not out.get("tunnelFound"):
+                    return 3
+                if getattr(args, "expect_remain", None) is not None:
+                    return 0 if out.get("verifyOk") else 3
+                return 0 if out.get("matchedCount", 0) > 0 else 3
 
         serial = require_device(args.serial)
 
@@ -1287,37 +1438,6 @@ def main(argv: list[str] | None = None) -> int:
                 _emit(out)
                 return 0
             print(f"未知 popup 子命令: {args.popup_command}", file=sys.stderr)
-            return 2
-
-        if args.command == "gift":
-            if not getattr(args, "momoid", None) and not getattr(args, "account", None):
-                raise ValueError("gift panel 须指定 --momoid 或 --account")
-            momoid = resolve_momoid(
-                momoid=getattr(args, "momoid", None),
-                account=getattr(args, "account", None),
-            )
-            if args.gift_command == "panel" and args.panel_command == "analyze":
-                out = analyze_gift_panel_from_tunnel(
-                    momoid=momoid,
-                    since_seconds=int(args.since),
-                    g_appid=str(args.g_appid),
-                    g_env=str(args.g_env),
-                )
-                _emit(out)
-                return 0
-            if args.gift_command == "panel" and args.panel_command == "find":
-                out = find_gifts_from_tunnel(
-                    momoid=momoid,
-                    since_seconds=int(args.since),
-                    price=getattr(args, "price", None),
-                    tab_name=getattr(args, "tab_name", None),
-                    name_contains=getattr(args, "name_contains", None),
-                    g_appid=str(args.g_appid),
-                    g_env=str(args.g_env),
-                )
-                _emit(out)
-                return 0 if out.get("matchedCount", 0) > 0 else 3
-            print(f"未知 gift 子命令: {args.gift_command}", file=sys.stderr)
             return 2
 
         if args.command == "room":
@@ -1649,49 +1769,6 @@ def main(argv: list[str] | None = None) -> int:
                 _emit(out)
                 return 0 if out.get("ok") else 3
             print(f"未知 logcat 子命令: {args.logcat_command}", file=sys.stderr)
-            return 2
-
-        if args.command == "tunnel":
-            if args.tunnel_command == "wait":
-                if not getattr(args, "momoid", None) and not getattr(args, "account", None):
-                    raise ValueError("tunnel wait 须指定 --momoid 或 --account")
-
-                raw_status = args.expect_status
-                http_status: int | None = None if raw_status < 0 else int(raw_status)
-                opts = TunnelVerifyOptions(
-                    momoid=resolve_momoid(
-                        momoid=getattr(args, "momoid", None),
-                        account=getattr(args, "account", None),
-                    ),
-                    keyword=str(args.keyword or ""),
-                    wait_seconds=max(1, int(args.tunnel_wait)),
-                    poll_interval_ms=max(500, int(args.tunnel_poll_ms)),
-                    expect_http_status=http_status,
-                    expect_response_ec=getattr(args, "tunnel_expect_ec", None),
-                    since_buffer_seconds=0,
-                    g_appid=str(args.tunnel_g_appid),
-                    g_env=str(args.tunnel_g_env),
-                )
-                start_time = int(time.time()) - max(1, int(args.since))
-                verify = wait_for_tunnel(opts, start_time=start_time)
-                _emit({"tunnelVerify": verify})
-                return 0 if verify.get("ok") else 3
-            if args.tunnel_command == "last":
-                if not getattr(args, "momoid", None) and not getattr(args, "account", None):
-                    raise ValueError("tunnel last 须指定 --momoid 或 --account")
-                out = fetch_latest_tunnel_match(
-                    momoid=resolve_momoid(
-                        momoid=getattr(args, "momoid", None),
-                        account=getattr(args, "account", None),
-                    ),
-                    keyword=str(args.keyword),
-                    since_seconds=max(1, int(args.since)),
-                    g_appid=str(args.tunnel_g_appid),
-                    g_env=str(args.tunnel_g_env),
-                )
-                _emit(out)
-                return 0 if out.get("ok") else 3
-            print(f"未知 tunnel 子命令: {args.tunnel_command}", file=sys.stderr)
             return 2
 
         if args.command == "device":
