@@ -1,8 +1,8 @@
 {
   "kbPath": "testcase-kb/test_devices.json",
   "importSource": "/Users/user/Desktop/团队测试机统计表.xlsx",
-  "syncedAt": "2026-07-03 08:40:30 UTC",
-  "count": 50,
+  "syncedAt": "2026-07-03 10:53:17 UTC",
+  "count": 51,
   "devices": [
     {
       "项目": "yaahlan",
@@ -656,7 +656,20 @@
       "归属人": "",
       "持有人": "",
       "备注": "自动落库 2026-07-03；phone=19900008888；userId=105301177；ip=84.75.158.102"
+    },
+    {
+      "项目": "yaahlan",
+      "资产编号": "待补编号",
+      "设备品牌": "Xiaomi",
+      "设备名称": "25098PN5AC",
+      "mmuid": "5def262da39107a1bf58e296d1cb4c2c97946f15",
+      "mmuidv3": "8cf34c7c3e0f6ed9ec8dcd483b5352cff9524c04aebdda14a3122a5564c2038543",
+      "设备系统": "Android",
+      "系统版本": "16",
+      "归属人": "",
+      "持有人": "",
+      "备注": "自动落库 2026-07-03；phone=13011119997；userId=105871329；ip=84.75.158.104"
     }
   ],
-  "lastIncrementalUpdate": "upsert loginDevice phone=19900008888 userId=105301177"
+  "lastIncrementalUpdate": "upsert loginDevice phone=13011119997 userId=105871329"
 }
