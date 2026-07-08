@@ -10,6 +10,15 @@ from typing import Any
 import dingtalk_stream
 
 from adb_execution_guard import adb_execution_denial_message, looks_like_adb_execution_request
+from agent_stream_card import (
+    is_agent_streaming_enabled,
+    try_create_agent_stream_card,
+)
+from progress_message import (
+    build_streaming_ack,
+    build_streaming_card_title,
+    build_streaming_prompt_quote,
+)
 from batch_progress import (
     PUSH_POLL_INTERVAL_S,
     build_batch_progress_message,
@@ -27,7 +36,13 @@ from code_modify_permission import (
     is_code_modify_allowed,
     looks_like_code_modify_request,
 )
-from cursor_runner import DEFAULT_TIMEOUT_S, repo_cwd, run_agent_prompt, truncate_for_dingtalk
+from cursor_runner import (
+    DEFAULT_TIMEOUT_S,
+    repo_cwd,
+    run_agent_prompt,
+    run_agent_prompt_streaming,
+    truncate_for_dingtalk,
+)
 from duration_history import classify_task_kind, get_duration_store
 from gateway_restart import (
     format_code_update_restart_note,
@@ -57,6 +72,9 @@ from testcase_auto_export import (
 from user_agent_pool import get_user_agent_pool
 
 logger = logging.getLogger("dingtalk-gateway")
+
+# 流式卡片内批量进度轮询间隔：每秒刷新，展示最新 N/M（卡片内更新不刷屏）
+STREAMING_BATCH_POLL_INTERVAL_S = 1.0
 
 
 def _reply_final(
@@ -121,6 +139,46 @@ def _start_heartbeat(
                 return
 
     threading.Thread(target=loop, daemon=True, name="gateway-heartbeat").start()
+    return stop
+
+
+def _start_streaming_batch_progress_watcher(
+    stream_card: Any,
+    session: TaskSession,
+    user_key: str,
+    *,
+    lane: str,
+) -> threading.Event:
+    """每秒轮询 batch_progress，刷新流式卡片内的 N/M 进度行（卡片内更新无需节流）。"""
+    stop = threading.Event()
+    if lane == "fast" or not user_key or stream_card is None:
+        return stop
+
+    def loop() -> None:
+        while not stop.wait(STREAMING_BATCH_POLL_INTERVAL_S):
+            if not session.is_busy():
+                return
+            if session.busy_conversation_id() != user_key:
+                return
+            state = read_batch_progress(user_key)
+            if state is None:
+                try:
+                    stream_card.clear_batch_progress()
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning("流式卡片清理批量进度失败: %s", exc)
+                continue
+            try:
+                stream_card.set_batch_progress(build_batch_progress_message(state))
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("流式卡片批量进度更新失败: %s", exc)
+            if state.current >= state.total:
+                return
+
+    threading.Thread(
+        target=loop,
+        daemon=True,
+        name="gateway-streaming-batch-progress",
+    ).start()
     return stop
 
 
@@ -228,6 +286,7 @@ def process_inbound_task(
     session: TaskSession,
     user_key: str,
     lane: str = "agent",
+    preassigned_card: Any = None,
 ) -> str:
     """处理一条任务，返回 status 字符串。"""
     store = handler._store
@@ -255,26 +314,76 @@ def process_inbound_task(
     task_kind = classify_task_kind(prompt)
     started = time.monotonic()
     started_wall = time.time()
+    use_streaming = lane == "agent" and is_agent_streaming_enabled()
+    if preassigned_card is not None:
+        # 入队时已预投放卡片，复用同一张（禁止再 reply 新卡片）
+        stream_card = preassigned_card
+        use_streaming = True
+        try:
+            if stream_card.is_active:
+                stream_card.begin_running(
+                    build_streaming_ack(inbound.summary_label(), prompt=prompt),
+                )
+            else:
+                stream_card.start(
+                    "⏳ Agent 启动中…",
+                    header=build_streaming_ack(inbound.summary_label(), prompt=prompt),
+                    persistent_header=build_streaming_prompt_quote(prompt),
+                    card_title=build_streaming_card_title(prompt),
+                )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("流式卡片转入执行态失败，回退文本回复: %s", exc)
+            stream_card = None
+            use_streaming = False
+    else:
+        stream_card = try_create_agent_stream_card(handler, incoming) if use_streaming else None
+        if use_streaming and stream_card is None:
+            use_streaming = False
+        elif stream_card is not None:
+            try:
+                stream_card.start(
+                    "⏳ Agent 启动中…",
+                    header=build_streaming_ack(inbound.summary_label(), prompt=prompt),
+                    persistent_header=build_streaming_prompt_quote(prompt),
+                    card_title=build_streaming_card_title(prompt),
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("流式卡片启动失败，回退文本回复: %s", exc)
+                stream_card = None
+                use_streaming = False
     session.begin(prompt, conversation_id=user_key, budget_s=DEFAULT_TIMEOUT_S)
     clear_batch_progress(user_key)
     clear_batch_result(user_key)
-    heartbeat_stop = _start_heartbeat(
-        handler,
-        incoming,
-        session,
-        user_key,
-        lane=lane,
-        task_kind=task_kind,
-        user_key=user_key,
-    )
-    batch_progress_stop = _start_batch_progress_watcher(
-        handler,
-        incoming,
-        inbound,
-        session,
-        user_key,
-        lane=lane,
-    )
+    if use_streaming:
+        heartbeat_stop = threading.Event()
+        batch_progress_stop = (
+            _start_streaming_batch_progress_watcher(
+                stream_card,
+                session,
+                user_key,
+                lane=lane,
+            )
+            if stream_card is not None
+            else threading.Event()
+        )
+    else:
+        heartbeat_stop = _start_heartbeat(
+            handler,
+            incoming,
+            session,
+            user_key,
+            lane=lane,
+            task_kind=task_kind,
+            user_key=user_key,
+        )
+        batch_progress_stop = _start_batch_progress_watcher(
+            handler,
+            incoming,
+            inbound,
+            session,
+            user_key,
+            lane=lane,
+        )
     status = "error"
     code_modify_session = False
     persist = get_queue_persist()
@@ -416,19 +525,36 @@ def process_inbound_task(
                 return "adb_denied"
 
             session.set_phase("agent")
-            raw_result = run_agent_prompt(
-                prompt,
-                image_paths=image_paths,
-                links=inbound.links,
-                session=session,
-                user_key=user_key,
-                sender_name=sender_name,
-                allow_code_modify=code_allowed,
-            )
+            if use_streaming and stream_card is not None:
+                raw_result = run_agent_prompt_streaming(
+                    prompt,
+                    on_render=stream_card.push,
+                    image_paths=image_paths,
+                    links=inbound.links,
+                    session=session,
+                    user_key=user_key,
+                    sender_name=sender_name,
+                    allow_code_modify=code_allowed,
+                )
+            else:
+                raw_result = run_agent_prompt(
+                    prompt,
+                    image_paths=image_paths,
+                    links=inbound.links,
+                    session=session,
+                    user_key=user_key,
+                    sender_name=sender_name,
+                    allow_code_modify=code_allowed,
+                )
             session.check_cancelled()
             raw_result = guard_readonly_agent_reply(raw_result, allow_code_modify=code_allowed)
             session.check_cancelled()
-            agent_formatted = format_group_reply(raw_result, prompt=prompt, source="agent")
+            agent_formatted = format_group_reply(
+                raw_result,
+                prompt=prompt,
+                source="agent",
+                preserve_markdown=stream_card is not None,
+            )
             batch_result = pop_batch_result(user_key)
             final_body, final_source = choose_final_reply_source(
                 agent_formatted=agent_formatted,
@@ -453,11 +579,15 @@ def process_inbound_task(
                         f"{reply_message}{format_code_update_restart_note(changed_files)}"
                     )
             session.check_cancelled()
+            reply_text = truncate_for_dingtalk(reply_message)
+            if stream_card is not None:
+                # 流式卡片仅收尾为完成态；最终结果另发新消息（@提问人 + 提问引用 + Markdown）
+                stream_card.finish_status("✅ 执行完成，结果见下方消息 ↓")
             _reply_final(
                 handler,
                 incoming,
                 inbound,
-                truncate_for_dingtalk(reply_message),
+                reply_text,
                 started=started,
                 task_kind=task_kind,
             )
@@ -481,27 +611,47 @@ def process_inbound_task(
             user_key,
             redact_for_log(prompt),
         )
-        _reply_final(
-            handler,
-            incoming,
-            inbound,
-            "⚠️ 你的任务已被中断。",
-            started=started,
-            task_kind=task_kind,
-        )
+        interrupt_body = "⚠️ 你的任务已被中断。"
+        if stream_card is not None:
+            stream_card.finish(
+                append_duration_footer(
+                    interrupt_body,
+                    time.monotonic() - started,
+                    task_kind=task_kind,
+                )
+            )
+        else:
+            _reply_final(
+                handler,
+                incoming,
+                inbound,
+                interrupt_body,
+                started=started,
+                task_kind=task_kind,
+            )
         store.save(incoming.conversation_id, prompt, **store_kwargs)
         get_user_agent_pool().invalidate(user_key)
     except Exception as exc:  # noqa: BLE001
         status = "error"
         logger.exception("任务失败 conv=%s", user_key)
-        _reply_final(
-            handler,
-            incoming,
-            inbound,
-            format_exception(exc),
-            started=started,
-            task_kind=task_kind,
-        )
+        error_body = format_exception(exc)
+        if stream_card is not None:
+            stream_card.fail(
+                append_duration_footer(
+                    error_body,
+                    time.monotonic() - started,
+                    task_kind=task_kind,
+                )
+            )
+        else:
+            _reply_final(
+                handler,
+                incoming,
+                inbound,
+                error_body,
+                started=started,
+                task_kind=task_kind,
+            )
         store.save(incoming.conversation_id, prompt, **store_kwargs)
     finally:
         heartbeat_stop.set()

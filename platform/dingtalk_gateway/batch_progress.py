@@ -201,11 +201,11 @@ def build_batch_progress_message(state: BatchProgressState) -> str:
     detail_part = f" · 当前 {state.detail}" if state.detail else ""
     if state.current >= state.total:
         return (
-            f"📊 批量操作完成：共 {state.total} 项{label_part}{detail_part}"
+            f"批量操作完成：共 {state.total} 项{label_part}{detail_part}"
         )
     eta_part = format_batch_eta_remaining(estimate_batch_remaining_s(state))
     return (
-        f"📊 批量操作进度：已完成 {state.current}/{state.total} 项{label_part}"
+        f"批量操作进度：已完成 {state.current}/{state.total} 项{label_part}"
         f"{detail_part}{eta_part}"
     )
 

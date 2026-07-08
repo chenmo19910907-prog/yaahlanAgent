@@ -6,12 +6,18 @@ import concurrent.futures
 import json
 import sys
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from cursor_sdk import Agent, AgentOptions, CursorAgentError, LocalAgentOptions, SDKImage, UserMessage
 from cursor_sdk.errors import NetworkError
 
+from agent_stream_renderer import (
+    AgentStreamRenderer,
+    assistant_text_chunk,
+    thinking_text_from_step,
+    tool_name_from_step,
+)
 from bridge_manager import is_transient_sdk_error, reset_sdk_bridge
 from user_agent_pool import get_user_agent_pool
 
@@ -79,6 +85,112 @@ def _build_prompt_text(
     return text
 
 
+def _consume_run_stream(
+    run,
+    *,
+    timeout_s: float,
+    session: TaskSession | None,
+    on_render: Callable[[str], None] | None,
+    show_thinking: bool = True,
+    card_compact: bool = False,
+    render_min_interval_s: float = 2.0,
+) -> None:
+    """消费 run.events()，节流回调 on_render；结束后 run.wait() 可取终态。"""
+    renderer = AgentStreamRenderer(show_thinking=show_thinking)
+    deadline = time.monotonic() + timeout_s if timeout_s > 0 else None
+    rendered = False
+    seen_tool_steps: set[str] = set()
+    last_render_at = 0.0
+
+    def _render_markdown() -> str:
+        if card_compact:
+            return renderer.markdown_for_card()
+        return renderer.markdown()
+
+    def _maybe_render(*, force: bool = False) -> None:
+        nonlocal rendered, last_render_at
+        if not on_render:
+            return
+        md = _render_markdown()
+        if card_compact and not md:
+            return
+        now = time.monotonic()
+        # 卡片模式：每次增量都下推，节流与尾帧 flush 交给卡片层（_enqueue），
+        # 避免增量在节流窗口内聚集后 Agent 转入长思考/工具、导致最后文本永不刷新而冻结。
+        if not force and not card_compact and now - last_render_at < render_min_interval_s:
+            return
+        on_render(md)
+        last_render_at = now
+        rendered = True
+
+    if not card_compact:
+        renderer.set_status_hint("⏳ Agent 执行中…")
+    _maybe_render(force=True)
+
+    for event in run.events():
+        if session:
+            session.check_cancelled()
+        if deadline is not None and time.monotonic() > deadline:
+            safe_cancel_run(run)
+            raise RuntimeError(
+                f"Agent 执行超时（>{int(timeout_s)}s），可发「重新执行」重试"
+            )
+
+        changed = False
+        update = event.interaction_update
+        if update is not None:
+            changed = renderer.apply(update) or changed
+
+        sdk_message = event.sdk_message
+        if sdk_message is not None:
+            msg_type = getattr(sdk_message, "type", "")
+            if msg_type == "assistant":
+                chunk = assistant_text_chunk(sdk_message)
+                if renderer.update_answer(chunk):
+                    changed = True
+            elif msg_type == "status":
+                status = str(getattr(sdk_message, "status", "") or "")
+                if status in ("running", "in_progress", "IN_PROGRESS"):
+                    if renderer.set_status_hint("⏳ Agent 执行中…"):
+                        changed = True
+
+        step = event.step
+        if step is not None:
+            thinking = thinking_text_from_step(step)
+            if thinking and renderer.append_thinking(thinking):
+                changed = True
+            name = tool_name_from_step(step)
+            if name:
+                key = f"{getattr(step, 'type', '')}:{name}"
+                if key not in seen_tool_steps:
+                    seen_tool_steps.add(key)
+                    if renderer.append_tool_step(name):
+                        changed = True
+
+        if changed:
+            _maybe_render()
+
+        if event.done and event.result is not None and event.result_is_full:
+            break
+
+    if on_render and not rendered:
+        _maybe_render(force=True)
+
+
+def _finalize_run_result(result, *, session: TaskSession | None) -> str:
+    if session:
+        session.check_cancelled()
+    if result.status == "cancelled":
+        raise TaskInterrupted()
+    if result.status == "error":
+        detail = getattr(result, "result", None) or getattr(result, "id", "unknown")
+        raise RuntimeError(f"Agent 执行失败: {detail}")
+    output = (result.result or "").strip()
+    if not output:
+        raise RuntimeError("Agent 未返回文本结果")
+    return output
+
+
 def _wait_run(run, *, timeout_s: float, session: TaskSession | None):
     """带超时与中断检查的 run.wait()；中断时不阻塞等待 run 自然结束。"""
     if timeout_s <= 0:
@@ -125,6 +237,11 @@ def run_agent_prompt(
     user_key: str | None = None,
     sender_name: str | None = None,
     allow_code_modify: bool = True,
+    stream: bool = False,
+    on_render: Callable[[str], None] | None = None,
+    show_thinking: bool = True,
+    card_compact: bool = False,
+    render_min_interval_s: float = 2.0,
 ) -> str:
     """运行本地 Agent，返回 assistant 最终文本。支持附图（最多 5 张）与链接上下文。"""
     text = prompt.strip()
@@ -217,7 +334,19 @@ def run_agent_prompt(
             if session:
                 session.register_run(agent, run)
                 session.check_cancelled()
-            result = _wait_run(run, timeout_s=float(timeout_s), session=session)
+            if stream:
+                _consume_run_stream(
+                    run,
+                    timeout_s=float(timeout_s),
+                    session=session,
+                    on_render=on_render,
+                    show_thinking=show_thinking,
+                    card_compact=card_compact,
+                    render_min_interval_s=render_min_interval_s,
+                )
+                result = run.wait()
+            else:
+                result = _wait_run(run, timeout_s=float(timeout_s), session=session)
             last_error = None
             break
         except TaskInterrupted:
@@ -254,20 +383,48 @@ def run_agent_prompt(
     if result is None:
         raise RuntimeError("Agent 未返回结果")
 
-    if session:
-        session.check_cancelled()
+    return _finalize_run_result(result, session=session)
 
-    if result.status == "cancelled":
-        raise TaskInterrupted()
 
-    if result.status == "error":
-        detail = getattr(result, "result", None) or getattr(result, "id", "unknown")
-        raise RuntimeError(f"Agent 执行失败: {detail}")
+def run_agent_prompt_streaming(
+    prompt: str,
+    *,
+    on_render: Callable[[str], None],
+    image_paths: Sequence[str | Path] | None = None,
+    links: Sequence[str] | None = None,
+    cwd: str | None = None,
+    timeout_s: int = DEFAULT_TIMEOUT_S,
+    model: str = DEFAULT_MODEL,
+    use_gateway_rules: bool = True,
+    enable_mcp: bool = True,
+    session: TaskSession | None = None,
+    user_key: str | None = None,
+    sender_name: str | None = None,
+    allow_code_modify: bool = True,
+    show_thinking: bool = True,
+) -> str:
+    """流式运行 Agent：thinking/text/tool 事件经 on_render 推送，返回最终文本。"""
+    from agent_stream_card import DEFAULT_MIN_INTERVAL_S
 
-    output = (result.result or "").strip()
-    if not output:
-        raise RuntimeError("Agent 未返回文本结果")
-    return output
+    return run_agent_prompt(
+        prompt,
+        image_paths=image_paths,
+        links=links,
+        cwd=cwd,
+        timeout_s=timeout_s,
+        model=model,
+        use_gateway_rules=use_gateway_rules,
+        enable_mcp=enable_mcp,
+        session=session,
+        user_key=user_key,
+        sender_name=sender_name,
+        allow_code_modify=allow_code_modify,
+        stream=True,
+        on_render=on_render,
+        show_thinking=show_thinking,
+        card_compact=True,
+        render_min_interval_s=DEFAULT_MIN_INTERVAL_S,
+    )
 
 
 def truncate_for_dingtalk(text: str, max_chars: int = DINGTALK_MAX_REPLY_CHARS) -> str:

@@ -12,13 +12,20 @@ from dingtalk_stream import AckMessage
 from bridge_manager import init_sdk_bridge
 from conversation_store import ConversationStore
 from gateway_status_notify import register_lifecycle_hooks, touch_notify_group
+from inbound_dedup import InboundDedup
 from inbound_message import InboundMessage, parse_inbound_message
 from interrupt import is_interrupt_command
 from log_redact import redact_for_log
 from moa_health import probe_moa_cookie
 from moa_watch import start_moa_watch
 from process_guard import ensure_single_gateway_process
-from progress_message import build_queue_message, build_task_ack_message
+from agent_stream_card import is_streaming_agent_task, try_create_agent_stream_card
+from progress_message import (
+    build_queue_message,
+    build_streaming_card_title,
+    build_streaming_prompt_quote,
+    build_task_ack_message,
+)
 from quoted_reply import quote_text_from_inbound, reply_quoted
 from replay import is_replay_command
 from task_dispatcher import TaskDispatcher
@@ -67,6 +74,72 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
         else:
             self.reply_text(body, incoming)
 
+    def _build_task_ack(self, summary: str, *, prompt: str | None = None) -> str:
+        return build_task_ack_message(summary, prompt=prompt)
+
+    def _skip_streaming_ack(self, prompt: str | None) -> bool:
+        return bool(prompt and is_streaming_agent_task(prompt))
+
+    def _submit_task(
+        self,
+        incoming: dingtalk_stream.ChatbotMessage,
+        inbound: InboundMessage,
+        user_key: str,
+        *,
+        summary: str | None = None,
+    ) -> None:
+        """入队任务：流式任务预投放同一张卡片承载排队/待执行信息（合并原文本 ack）。
+
+        非流式任务仍走文本 ack；预投放卡片失败时回退文本，保证用户始终有反馈。
+        """
+        prompt_text = inbound.prompt_text()
+        summary = summary or inbound.summary_label()
+        streaming = self._skip_streaming_ack(prompt_text)
+        stream_card = try_create_agent_stream_card(self, incoming) if streaming else None
+        if stream_card is not None:
+            try:
+                ahead = self._dispatcher.pending_ahead(user_key)
+                if ahead > 0:
+                    body = (
+                        f"{build_queue_message(ahead, prompt=prompt_text)}\n"
+                        "可发「中断操作」打断。"
+                    )
+                else:
+                    body = "⏳ 已受理，准备执行…"
+                stream_card.start(
+                    body,
+                    header="",
+                    persistent_header=build_streaming_prompt_quote(prompt_text),
+                    card_title=build_streaming_card_title(prompt_text),
+                    start_progress=False,
+                )
+                self._dispatcher.enqueue(
+                    incoming, inbound, user_key, stream_card=stream_card
+                )
+                return
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("预投放流式卡片失败，回退文本回复: %s", exc)
+                stream_card = None
+
+        ahead = self._dispatcher.enqueue(
+            incoming, inbound, user_key, stream_card=stream_card
+        )
+
+        if ahead > 0:
+            self._reply(
+                f"{self._build_task_ack(summary, prompt=prompt_text)}\n"
+                f"{build_queue_message(ahead, prompt=prompt_text)}\n"
+                "执行中可发「中断操作」打断你的任务。",
+                incoming,
+                inbound,
+            )
+        else:
+            self._reply(
+                self._build_task_ack(summary, prompt=prompt_text),
+                incoming,
+                inbound,
+            )
+
     async def process(self, callback: dingtalk_stream.CallbackMessage):
         incoming = dingtalk_stream.ChatbotMessage.from_dict(callback.data)
         touch_notify_group(incoming)
@@ -77,6 +150,16 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
         if is_interrupt_command(inbound.text):
             outcome = self._dispatcher.request_cancel(user_key)
             if outcome.status is True:
+                if outcome.running_streaming:
+                    # 运行任务走流式卡片，卡片会显示「已被中断」，此处不重复文本；
+                    # 仅当另有排队任务被取消时补一句排队取消提示。
+                    if outcome.drained > 0:
+                        self._reply(
+                            f"✅ 已取消排队中的 {outcome.drained} 个任务。",
+                            incoming,
+                            inbound,
+                        )
+                    return AckMessage.STATUS_OK, "OK"
                 if outcome.cancelled_running and outcome.drained > 0:
                     body = (
                         f"✅ 已中断你正在执行的任务，并取消了排队中的 {outcome.drained} 个任务。"
@@ -98,19 +181,12 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
                 self._reply("您暂无上次任务，无法重新执行。", incoming, inbound)
                 return AckMessage.STATUS_OK, "OK"
             inbound = InboundMessage(text=last_prompt)
-            self._reply(
-                f"{build_task_ack_message(f'重新执行：{last_prompt[:50]}…', prompt=last_prompt)}",
+            self._submit_task(
                 incoming,
                 inbound,
+                user_key,
+                summary=f"重新执行：{last_prompt[:50]}…",
             )
-            ahead = self._dispatcher.enqueue(incoming, inbound, user_key)
-            if ahead > 0:
-                self._reply(
-                    build_queue_message(ahead, prompt=last_prompt),
-                    incoming,
-                    inbound,
-                    quote=False,
-                )
             return AckMessage.STATUS_OK, "OK"
 
         if inbound.is_empty:
@@ -124,24 +200,7 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
             )
             return AckMessage.STATUS_OK, "OK"
 
-        ahead = self._dispatcher.enqueue(incoming, inbound, user_key)
-        if ahead > 0:
-            self._reply(
-                f"{build_task_ack_message(inbound.summary_label(), prompt=inbound.prompt_text())}\n"
-                f"{build_queue_message(ahead, prompt=inbound.prompt_text())}\n"
-                "执行中可发「中断操作」打断你的任务。",
-                incoming,
-                inbound,
-            )
-        else:
-            self._reply(
-                build_task_ack_message(
-                    inbound.summary_label(),
-                    prompt=inbound.prompt_text(),
-                ),
-                incoming,
-                inbound,
-            )
+        self._submit_task(incoming, inbound, user_key)
         return AckMessage.STATUS_OK, "OK"
 
 
@@ -189,7 +248,7 @@ def main() -> int:
     )
     register_lifecycle_hooks(client)
     logger.info(
-        "Yaahlan 钉钉网关已启动（fast 队列 + 按用户并行 Agent / 帮助 / MOA / 中断 / 持久化）"
+        "Yaahlan 钉钉网关已启动（fast 队列 + 按用户并行 Agent / 流式 AI 卡片 / 帮助 / MOA / 中断 / 持久化）"
     )
     client.start_forever()
     return 0

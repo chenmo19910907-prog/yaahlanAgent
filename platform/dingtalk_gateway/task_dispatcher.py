@@ -10,6 +10,7 @@ from typing import Any
 
 import dingtalk_stream
 
+from agent_stream_card import is_agent_streaming_enabled
 from conversation_store import ConversationStore
 from inbound_message import InboundMessage
 from queue_persist import get_queue_persist
@@ -26,6 +27,8 @@ class QueuedTask:
     inbound: InboundMessage
     user_key: str
     lane: str
+    # 入队时预投放的流式卡片（承载排队信息，执行时复用），可为 None
+    stream_card: Any = None
 
 
 @dataclass(frozen=True)
@@ -35,6 +38,8 @@ class CancelOutcome:
     status: bool | None
     drained: int = 0
     cancelled_running: bool = False
+    # 被中断的运行任务是否走流式卡片（卡片会自行显示中断状态，无需重复文本回复）
+    running_streaming: bool = False
 
 
 class TaskDispatcher:
@@ -154,13 +159,17 @@ class TaskDispatcher:
             return CancelOutcome(status=None)
 
         results: list[bool | None] = []
+        agent_running_cancelled = False
         if agent_active:
             session = user_session or self._user_session(user_key)
             if agent_inflight and not agent_busy:
                 session.arm_cancel()
                 results.append(True)
             elif agent_busy:
-                results.append(session.request_cancel(user_key))
+                cancel_result = session.request_cancel(user_key)
+                results.append(cancel_result)
+                if cancel_result is True:
+                    agent_running_cancelled = True
         if fast_active:
             if fast_inflight and not fast_busy:
                 self._fast_session.arm_cancel()
@@ -178,10 +187,14 @@ class TaskDispatcher:
                 fast_active,
                 drained,
             )
+            running_streaming = (
+                agent_running_cancelled and is_agent_streaming_enabled()
+            )
             return CancelOutcome(
                 status=True,
                 drained=drained,
                 cancelled_running=True,
+                running_streaming=running_streaming,
             )
         if drained > 0:
             return CancelOutcome(status=True, drained=drained, cancelled_running=False)
@@ -206,11 +219,19 @@ class TaskDispatcher:
         incoming: dingtalk_stream.ChatbotMessage,
         inbound: InboundMessage,
         user_key: str,
+        *,
+        stream_card: Any = None,
     ) -> int:
         """入队并返回本任务前面的任务数（含执行中 / 已出队未 begin）。"""
         prompt = inbound.prompt_text()
         lane = "fast" if is_likely_fast_route(prompt) else "agent"
-        task = QueuedTask(incoming=incoming, inbound=inbound, user_key=user_key, lane=lane)
+        task = QueuedTask(
+            incoming=incoming,
+            inbound=inbound,
+            user_key=user_key,
+            lane=lane,
+            stream_card=stream_card,
+        )
         self._persist.add(
             user_key=user_key,
             prompt=prompt,
@@ -261,6 +282,7 @@ class TaskDispatcher:
                     session=self._fast_session,
                     user_key=task.user_key,
                     lane="fast",
+                    preassigned_card=task.stream_card,
                 )
             finally:
                 with self._lock:
@@ -287,6 +309,7 @@ class TaskDispatcher:
                     session=session,
                     user_key=task.user_key,
                     lane="agent",
+                    preassigned_card=task.stream_card,
                 )
             finally:
                 with self._lock:

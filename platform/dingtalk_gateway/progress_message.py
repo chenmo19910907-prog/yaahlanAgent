@@ -105,6 +105,72 @@ def build_task_ack_message(summary: str, *, prompt: str | None = None) -> str:
     return f"{body}…"
 
 
+STREAMING_HEADER_PROMPT_MAX = 120
+
+
+STREAMING_CARD_LINE_BREAK = "<br>"
+
+
+def build_streaming_prompt_quote(prompt: str | None) -> str:
+    """用户问题原文（AI 卡片 static 区 / 兼容；单行 Markdown）。"""
+    from quoted_reply import QUOTE_LABEL, _sanitize_quote_line
+
+    text = (prompt or "").strip()
+    if not text:
+        return ""
+    text = " ".join(text.split())
+    if len(text) > STREAMING_HEADER_PROMPT_MAX:
+        text = text[:STREAMING_HEADER_PROMPT_MAX].rstrip() + "…"
+    return f"{QUOTE_LABEL} {_sanitize_quote_line(text)}"
+
+
+def build_streaming_card_title(prompt: str | None) -> str:
+    """流式卡片标题区（白线上方，纯文本）。"""
+    from quoted_reply import _sanitize_quote_line
+
+    text = (prompt or "").strip()
+    if not text:
+        return ""
+    text = " ".join(text.split())
+    if len(text) > STREAMING_HEADER_PROMPT_MAX:
+        text = text[:STREAMING_HEADER_PROMPT_MAX].rstrip() + "…"
+    return f"提问：{_sanitize_quote_line(text)}"
+
+
+# 兼容旧名
+_format_prompt_quote = build_streaming_prompt_quote
+
+
+def build_streaming_ack(summary: str, *, prompt: str | None = None) -> str:
+    """执行中确认语（卡片临时区，任务完成后清除）。"""
+    label = (summary or "").strip() or "消息"
+    task_kind = classify_task_kind(prompt or "")
+    estimate = resolve_task_estimate_seconds(task_kind, prompt=prompt)
+    eta_part = format_eta_total(estimate)
+    body = f"已收到（{label}），执行中"
+    if eta_part:
+        body += eta_part
+    return f"{body}… 可发「中断操作」打断。"
+
+
+def build_streaming_card_header(summary: str, *, prompt: str | None = None) -> str:
+    """流式卡片顶部：用户问题原文 + 确认语（合并原入队 ack 文本）。"""
+    ack = build_streaming_ack(summary, prompt=prompt)
+    quote = build_streaming_prompt_quote(prompt)
+    if quote:
+        return f"{quote}{STREAMING_CARD_LINE_BREAK}{ack}"
+    return ack
+
+
+def build_streaming_task_ack_message(summary: str) -> str:
+    """流式卡片模式：简短确认（仅非卡片回退路径使用）。"""
+    label = (summary or "").strip() or "任务"
+    return (
+        f"已收到（{label}），进度见下方卡片。"
+        "可发「中断操作」打断。"
+    )
+
+
 def build_queue_message(ahead: int, *, prompt: str | None = None) -> str:
     """排队提示：前面任务数 + 预计等待（优先参考历史耗时）。"""
     count, est_s = _estimate_wait_seconds(ahead, prompt=prompt)

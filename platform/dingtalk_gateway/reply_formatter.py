@@ -149,6 +149,21 @@ def _format_export(raw: str, prompt: str) -> str:
     return _truncate(naturalize_export(rel, raw, url))
 
 
+def _preserve_markdown_clean(raw: str) -> str:
+    """流式卡片：保留 Markdown 结构，仅剔除调试/脏数据行。"""
+    lines: list[str] = []
+    for line in raw.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("请求信息:") or "HTTP Request:" in line:
+            continue
+        if _is_html_blob(line):
+            continue
+        if stripped.startswith("[OK]") or stripped.startswith("[FAIL]"):
+            continue
+        lines.append(line.rstrip())
+    return "\n".join(lines).strip()
+
+
 def _clean_agent_reply(raw: str) -> str:
     lines: list[str] = []
     in_code = False
@@ -206,6 +221,7 @@ def format_group_reply(
     *,
     prompt: str = "",
     source: str = "agent",
+    preserve_markdown: bool = False,
 ) -> str:
     text = (raw or "").strip()
     if not text:
@@ -256,6 +272,17 @@ def format_group_reply(
         fail = EXEC_FAIL_RE.search(text)
         if fail:
             return _truncate(f"❌ 任务执行失败。原因：{fail.group(1).strip()[:500]}")
+
+    if preserve_markdown:
+        cleaned = _preserve_markdown_clean(text)
+        if not cleaned:
+            return "⚠️ 任务已完成，但没有返回可展示的内容。"
+        if _is_html_blob(cleaned) or ("返回不是合法 JSON" in cleaned and _looks_raw_dump(cleaned)):
+            return _moa_auth_expired_message()
+        business_error = _parse_moa_business_error(cleaned)
+        if business_error and _looks_raw_dump(cleaned):
+            return _truncate(f"❌ 任务执行失败，{business_error}。")
+        return _truncate(cleaned)
 
     return _format_agent_reply(text)
 
