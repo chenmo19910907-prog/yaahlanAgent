@@ -132,10 +132,11 @@ class AgentStreamCard:
         self._header = ""
         self._persistent_header = ""
         self._card_title = ""
-        # 三个独立通道：Agent 文本 / 已用时 / 批量进度
+        # 三个独立通道：Agent 文本 / 批量进度 / 已用时
         self._agent_body = ""
         self._status_line = ""
         self._batch_progress_line = ""
+        self._estimate_seconds: float | None = None
 
         if self._mode == "ai":
             card = dingtalk_stream.AIMarkdownCardInstance(dingtalk_client, incoming)
@@ -159,6 +160,7 @@ class AgentStreamCard:
             ("_status_line", ""),
             ("_batch_progress_line", ""),
             ("_card_title", ""),
+            ("_estimate_seconds", None),
         ):
             if not hasattr(self, name):
                 setattr(self, name, default)
@@ -172,14 +174,14 @@ class AgentStreamCard:
         return body
 
     def _compose_body(self) -> str:
-        """白线下方正文：三通道各占一行（确认语 + Agent 文本 + 已用时 + 批量进度）。"""
+        """白线下方正文：三通道各占一行（确认语 + Agent 文本 + 批量进度 + 已用时）。"""
         parts = [
             part.strip()
             for part in (
                 self._header,
                 self._normalize_agent_text(getattr(self, "_agent_body", "")),
-                getattr(self, "_status_line", ""),
                 getattr(self, "_batch_progress_line", ""),
+                getattr(self, "_status_line", ""),
             )
             if part and part.strip()
         ]
@@ -265,11 +267,13 @@ class AgentStreamCard:
         persistent_header: str = "",
         card_title: str = "",
         start_progress: bool = True,
+        estimate_seconds: float | None = None,
     ) -> None:
         self._ensure_stream_state()
         self._header = (header or "").strip()
         self._persistent_header = (persistent_header or "").strip()
         self._card_title = (card_title or "").strip()
+        self._estimate_seconds = estimate_seconds
         text = (markdown or "").strip()
         if text and not self._is_progress_status_body(text):
             self._agent_body = text
@@ -299,14 +303,20 @@ class AgentStreamCard:
         self,
         header: str,
         markdown: str = "⏳ Agent 启动中…",
+        *,
+        estimate_seconds: float | None = None,
     ) -> None:
         """排队态卡片转入执行态：刷新确认区、重置计时并启动进度节流。"""
         self._ensure_stream_state()
         if not self._started:
             return
         self._header = (header or "").strip()
+        if estimate_seconds is not None:
+            self._estimate_seconds = estimate_seconds
         self._started_at = time.monotonic()
         self._last_content_at = self._started_at
+        # 排队态文案写入 _agent_body；转入执行态须先清空，避免与确认语/进度并存
+        self._agent_body = ""
         text = (markdown or "").strip()
         if text and not self._is_progress_status_body(text):
             self._agent_body = text
@@ -318,10 +328,13 @@ class AgentStreamCard:
         self._render(force=True)
 
     def _format_progress_markdown(self) -> str:
-        from progress_message import format_duration
+        from progress_message import build_streaming_progress_status_line
 
         elapsed = max(0.0, time.monotonic() - self._started_at)
-        return f"执行中，已用时 {format_duration(elapsed)}…"
+        return build_streaming_progress_status_line(
+            elapsed,
+            estimate_s=getattr(self, "_estimate_seconds", None),
+        )
 
     def _schedule_progress_tick(self) -> None:
         if not self._started:

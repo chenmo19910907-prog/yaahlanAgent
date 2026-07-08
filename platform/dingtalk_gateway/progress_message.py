@@ -142,15 +142,25 @@ _format_prompt_quote = build_streaming_prompt_quote
 
 
 def build_streaming_ack(summary: str, *, prompt: str | None = None) -> str:
-    """执行中确认语（卡片临时区，任务完成后清除）。"""
+    """任务开始确认语（卡片临时区，任务完成后清除）。"""
     label = (summary or "").strip() or "消息"
     task_kind = classify_task_kind(prompt or "")
     estimate = resolve_task_estimate_seconds(task_kind, prompt=prompt)
     eta_part = format_eta_total(estimate)
-    body = f"已收到（{label}），执行中"
+    body = f"已收到（{label}）"
     if eta_part:
         body += eta_part
-    return f"{body}… 可发「中断操作」打断。"
+    return f"{body}，可发「中断操作」打断。"
+
+
+def build_streaming_progress_status_line(
+    elapsed_s: float,
+    *,
+    estimate_s: float | None = None,
+) -> str:
+    """流式卡片「已用时」通道：仅展示已执行时长。"""
+    elapsed_str = format_duration(elapsed_s)
+    return f"执行中，已用时 {elapsed_str}…"
 
 
 def build_streaming_card_header(summary: str, *, prompt: str | None = None) -> str:

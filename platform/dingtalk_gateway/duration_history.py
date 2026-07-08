@@ -123,6 +123,8 @@ class DurationHistoryStore:
         )
 
     def record(self, task_kind: str, duration_s: float, *, status: str) -> None:
+        if (status or "").strip() == "interrupted":
+            return
         kind = (task_kind or DEFAULT_AGENT_KIND).strip() or DEFAULT_AGENT_KIND
         duration = max(0.0, float(duration_s))
         if duration <= 0:

@@ -17,6 +17,7 @@ logger = logging.getLogger("dingtalk-gateway")
 REPO_ROOT = GATEWAY_DIR.parent.parent
 RESTART_CONTEXT = GATEWAY_DIR / "data" / "restart_context.json"
 GATEWAY_CTL = GATEWAY_DIR / "gateway_ctl.sh"
+RESTART_LOG = GATEWAY_DIR / "logs" / "restart.log"
 RESTART_DELAY_S = 3
 
 _SKIP_DIR_NAMES = frozenset({"data", "logs", "exports", ".venv", "__pycache__"})
@@ -88,13 +89,18 @@ def _run_gateway_silent_restart() -> None:
     if not GATEWAY_CTL.is_file():
         logger.error("未找到 gateway_ctl.sh，无法自动重启")
         return
-    subprocess.Popen(
-        ["/bin/bash", str(GATEWAY_CTL), "silent-restart"],
-        cwd=str(GATEWAY_DIR),
-        start_new_session=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    RESTART_LOG.parent.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    with RESTART_LOG.open("a", encoding="utf-8") as log_f:
+        log_f.write(f"\n--- {stamp} silent-restart ---\n")
+        log_f.flush()
+        subprocess.Popen(
+            ["/bin/bash", str(GATEWAY_CTL), "silent-restart"],
+            cwd=str(GATEWAY_DIR),
+            start_new_session=True,
+            stdout=log_f,
+            stderr=subprocess.STDOUT,
+        )
 
 
 def schedule_gateway_restart_after_code_change(
@@ -106,6 +112,7 @@ def schedule_gateway_restart_after_code_change(
     if not changed_files:
         return
     operator_name = (operator or "未知").strip() or "未知"
+    write_restart_context(operator=operator_name, changed_files=changed_files)
 
     def _worker() -> None:
         time.sleep(RESTART_DELAY_S)

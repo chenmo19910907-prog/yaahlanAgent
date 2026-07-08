@@ -100,10 +100,27 @@ def test_streaming_card_header() -> None:
 
     ack = build_streaming_ack("文字", prompt="用两句话介绍 platform 目录")
     assert "预计约" in ack or "预计约3分钟以上" in ack
+    assert "已收到（文字）" in ack
+    assert "，可发「中断操作」" in ack
+    assert "，执行中" not in ack
 
     long_prompt = build_streaming_card_header("文字", prompt="A" * 200)
     assert long_prompt.count("A") <= 121
     assert "…" in long_prompt
+
+
+def test_streaming_progress_status_line() -> None:
+    from progress_message import build_streaming_progress_status_line
+
+    line = build_streaming_progress_status_line(21.0, estimate_s=180.0)
+    assert line == "执行中，已用时 21秒…"
+    assert "预计还需" not in line
+    assert "中断操作" not in line
+
+    no_eta = build_streaming_progress_status_line(10.0)
+    assert no_eta == "执行中，已用时 10秒…"
+    assert "预计还需" not in no_eta
+    assert "中断操作" not in no_eta
 
 
 def test_progress_not_double_header() -> None:
@@ -112,14 +129,18 @@ def test_progress_not_double_header() -> None:
     from agent_stream_card import AgentStreamCard
 
     card = AgentStreamCard.__new__(AgentStreamCard)
-    card._header = "已收到（文字），执行中… 可发「中断操作」打断。"
+    card._header = "已收到（文字），可发「中断操作」打断。"
     card._persistent_header = "**提问** 用两句话介绍 platform 目录"
     card._card_title = "提问：用两句话介绍 platform 目录"
     card._agent_body = ""
     card._batch_progress_line = ""
+    card._estimate_seconds = 180.0
     card._started_at = time.monotonic()
     card._status_line = card._format_progress_markdown()
     assert "已收到" not in card._status_line
+    assert "执行中，已用时" in card._status_line
+    assert "预计还需" not in card._status_line
+    assert "中断操作" not in card._status_line
     composed = card._compose_body()
     assert composed.count("已收到（文字）") == 1
     assert "**提问**" not in composed
@@ -138,6 +159,43 @@ def test_preserve_markdown_reply() -> None:
     assert "```bash" in md
     assert "ls platform" in plain
     assert "| platform |" not in plain
+
+
+def test_begin_running_clears_queue_body() -> None:
+    """排队态转入执行态时清除 _agent_body 中的排队文案。"""
+    import time
+
+    from agent_stream_card import AgentStreamCard
+
+    card = AgentStreamCard.__new__(AgentStreamCard)
+    card._mode = "markdown"
+    card._started = True
+    card._header = ""
+    card._persistent_header = "> **提问**\n> 测试"
+    card._card_title = "提问：测试"
+    card._min_interval_s = 0.0
+    card._last_push_at = 0.0
+    card._lock = __import__("threading").Lock()
+    card._pending = None
+    card._timer = None
+    card._push_count = 0
+    card._progress_timer = None
+    card._agent_body = "排队中（前面约 2 个，预计等待约 6分钟）<br>可发「中断操作」打断。"
+    card._status_line = ""
+    card._batch_progress_line = ""
+    card._estimate_seconds = 180.0
+    card._started_at = time.monotonic()
+    card._last_content_at = card._started_at
+    card._last_flushed_body = card._agent_body
+    card._card_instance_id = "id"
+    card._md_card = __import__("unittest.mock", fromlist=["MagicMock"]).MagicMock()
+    card._ai_card = None
+
+    card.begin_running("已收到（文字），可发「中断操作」打断。")
+    composed = card._compose_body()
+    assert "排队中" not in composed
+    assert "已收到（文字）" in composed
+    assert "执行中，已用时" in composed
 
 
 def test_reuse_preassigned_card_without_second_start() -> None:
@@ -166,7 +224,7 @@ def test_reuse_preassigned_card_without_second_start() -> None:
     card._md_card = __import__("unittest.mock", fromlist=["MagicMock"]).MagicMock()
     card._ai_card = None
 
-    card.begin_running("已收到（文字），执行中…")
+    card.begin_running("已收到（文字）")
     assert card._md_card.update.call_count == 1
     assert card._md_card.reply.call_count == 0
 
@@ -175,7 +233,7 @@ def test_persistent_header_survives_finish() -> None:
     from agent_stream_card import AgentStreamCard
 
     card = AgentStreamCard.__new__(AgentStreamCard)
-    card._header = "已收到（文字），执行中… 可发「中断操作」打断。"
+    card._header = "已收到（文字），可发「中断操作」打断。"
     card._persistent_header = "**提问** 用两句话介绍 platform 目录"
     card._card_title = "提问：用两句话介绍 platform 目录"
     card._agent_body = "⏳ 执行中，已用时 10秒…"
@@ -204,7 +262,7 @@ def test_finish_status_clears_agent_body() -> None:
     card = AgentStreamCard.__new__(AgentStreamCard)
     card._mode = "markdown"
     card._started = True
-    card._header = "已收到（文字），执行中…"
+    card._header = "已收到（文字）"
     card._persistent_header = ""
     card._card_title = "提问：查询登录状态"
     card._min_interval_s = 0.0
@@ -288,7 +346,7 @@ def test_three_channels_coexist() -> None:
     from agent_stream_card import AgentStreamCard
 
     card = AgentStreamCard.__new__(AgentStreamCard)
-    card._header = "已收到（文字），执行中…"
+    card._header = "已收到（文字）"
     card._card_title = "提问：批量发钻"
     card._agent_body = "正在再次执行批量发钻。"
     card._status_line = "执行中，已用时 15秒…"
@@ -296,11 +354,11 @@ def test_three_channels_coexist() -> None:
     composed = card._compose_body()
     assert "提问：" not in composed
     assert "正在再次执行批量发钻。" in composed
-    assert "执行中，已用时 15秒" in composed
+    assert "执行中，已用时 15秒…" in composed
     assert "批量操作进度：已完成 2/5 项" in composed
-    # 三通道顺序：Agent 文本 → 已用时 → 批量进度
-    assert composed.index("正在再次执行") < composed.index("执行中，已用时")
-    assert composed.index("执行中，已用时") < composed.index("批量操作进度")
+    # 三通道顺序：Agent 文本 → 批量进度 → 已用时
+    assert composed.index("正在再次执行") < composed.index("批量操作进度")
+    assert composed.index("批量操作进度") < composed.index("执行中，已用时")
 
 
 def test_streaming_card_title() -> None:
@@ -379,7 +437,9 @@ def main() -> int:
     test_ai_card_mode_downgrades_without_feedback_flag()
     test_streaming_enabled_default()
     test_streaming_card_header()
+    test_streaming_progress_status_line()
     test_progress_not_double_header()
+    test_begin_running_clears_queue_body()
     test_reuse_preassigned_card_without_second_start()
     test_persistent_header_survives_finish()
     test_finish_status_clears_agent_body()

@@ -253,9 +253,11 @@ def test_duration_history() -> None:
         store.record("agent:query", 80.0, status="ok")
         store.record("agent:query", 120.0, status="ok")
         store.record("agent:query", 999.0, status="error")
+        store.record("agent:query", 10.0, status="interrupted")
         assert store.estimate_seconds("agent:query") == 100.0
         reloaded = DurationHistoryStore(path=path)
         assert reloaded.estimate_seconds("agent:query") == 100.0
+        assert len(reloaded._records.get("agent:query", [])) == 3
 
 
 def test_gateway_code_restart() -> None:

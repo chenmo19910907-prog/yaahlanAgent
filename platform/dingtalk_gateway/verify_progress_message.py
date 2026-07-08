@@ -63,6 +63,15 @@ def test_heartbeat_elapsed_only() -> None:
     assert "中断操作" in msg
 
 
+def test_streaming_progress_status_line() -> None:
+    from progress_message import build_streaming_progress_status_line
+
+    line = build_streaming_progress_status_line(90.0, estimate_s=180.0)
+    assert line == "执行中，已用时 1分30秒…"
+    assert "预计还需" not in line
+    assert "中断操作" not in line
+
+
 def main() -> int:
     test_format_duration()
     print("[OK] test_format_duration")
@@ -72,6 +81,8 @@ def main() -> int:
     print("[OK] test_duration_footer")
     test_heartbeat_elapsed_only()
     print("[OK] test_heartbeat_elapsed_only")
+    test_streaming_progress_status_line()
+    print("[OK] test_streaming_progress_status_line")
     print("[PASS] progress_message")
     return 0
 

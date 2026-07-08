@@ -317,6 +317,7 @@ def process_inbound_task(
 
     sender_name = incoming.sender_nick or incoming.sender_staff_id or incoming.sender_id or ""
     task_kind = classify_task_kind(prompt)
+    task_estimate_s = resolve_task_estimate_seconds(task_kind, prompt=prompt)
     started = time.monotonic()
     started_wall = time.time()
     use_streaming = lane == "agent" and is_agent_streaming_enabled()
@@ -328,6 +329,7 @@ def process_inbound_task(
             if stream_card.is_active:
                 stream_card.begin_running(
                     build_streaming_ack(inbound.summary_label(), prompt=prompt),
+                    estimate_seconds=task_estimate_s,
                 )
             else:
                 stream_card.start(
@@ -335,6 +337,7 @@ def process_inbound_task(
                     header=build_streaming_ack(inbound.summary_label(), prompt=prompt),
                     persistent_header=build_streaming_prompt_quote(prompt),
                     card_title=build_streaming_card_title(prompt),
+                    estimate_seconds=task_estimate_s,
                 )
         except Exception as exc:  # noqa: BLE001
             logger.warning("流式卡片转入执行态失败，回退文本回复: %s", exc)
@@ -351,6 +354,7 @@ def process_inbound_task(
                     header=build_streaming_ack(inbound.summary_label(), prompt=prompt),
                     persistent_header=build_streaming_prompt_quote(prompt),
                     card_title=build_streaming_card_title(prompt),
+                    estimate_seconds=task_estimate_s,
                 )
             except Exception as exc:  # noqa: BLE001
                 logger.warning("流式卡片启动失败，回退文本回复: %s", exc)
@@ -632,22 +636,9 @@ def process_inbound_task(
         )
         interrupt_body = "⚠️ 你的任务已被中断。"
         if stream_card is not None:
-            stream_card.finish(
-                append_duration_footer(
-                    interrupt_body,
-                    time.monotonic() - started,
-                    task_kind=task_kind,
-                )
-            )
+            stream_card.finish(interrupt_body)
         else:
-            _reply_final(
-                handler,
-                incoming,
-                inbound,
-                interrupt_body,
-                started=started,
-                task_kind=task_kind,
-            )
+            handler._reply(interrupt_body, incoming, inbound)
         store.save(incoming.conversation_id, prompt, **store_kwargs)
         get_user_agent_pool().invalidate(user_key)
     except Exception as exc:  # noqa: BLE001
@@ -681,7 +672,8 @@ def process_inbound_task(
         session.end()
         persist.remove(user_key=user_key, prompt=prompt)
         elapsed = time.monotonic() - started
-        get_duration_store().record(task_kind, elapsed, status=status)
+        if status != "interrupted":
+            get_duration_store().record(task_kind, elapsed, status=status)
         logger.info(
             "任务结束 lane=%s conv=%s msg=%s status=%s duration=%.1fs",
             lane,

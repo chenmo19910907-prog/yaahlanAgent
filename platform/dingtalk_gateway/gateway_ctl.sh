@@ -64,21 +64,40 @@ stop_service() {
 
 restart_service() {
   pkill -f "dingtalk_gateway/bot_echo.py" 2>/dev/null || true
-  launchctl kickstart -k "$SERVICE"
+  launchctl kickstart -k "$SERVICE" 2>/dev/null || {
+    launchctl bootstrap "$DOMAIN" "$PLIST_DST" 2>/dev/null || true
+    launchctl kickstart -k "$SERVICE"
+  }
   echo "[OK] 已重启 $LABEL"
+}
+
+_wait_gateway_up() {
+  local i
+  for i in $(seq 1 24); do
+    if pgrep -f "dingtalk_gateway/server.py" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 0.25
+  done
+  return 1
 }
 
 silent_restart_service() {
   ensure_logs
   mkdir -p "$DIR/data"
   date -u +"%Y-%m-%dT%H:%M:%SZ" > "$DIR/data/silent_restart.flag"
-  pkill -9 -f "dingtalk_gateway/server.py" 2>/dev/null || true
-  pkill -9 -f "dingtalk_gateway/bot_echo.py" 2>/dev/null || true
-  sleep 0.5
-  launchctl kickstart "$SERVICE" 2>/dev/null || {
-    launchctl bootstrap "$DOMAIN" "$PLIST_DST"
-    launchctl kickstart "$SERVICE"
+  # 必须经 launchd -k 杀进程并拉起；单靠 pkill 可能杀不掉 launchd 托管的旧实例
+  launchctl kickstart -k "$SERVICE" 2>/dev/null || {
+    pkill -9 -f "dingtalk_gateway/server.py" 2>/dev/null || true
+    pkill -9 -f "dingtalk_gateway/bot_echo.py" 2>/dev/null || true
+    sleep 0.5
+    launchctl bootstrap "$DOMAIN" "$PLIST_DST" 2>/dev/null || true
+    launchctl kickstart -k "$SERVICE"
   }
+  if ! _wait_gateway_up; then
+    echo "[FAIL] 静默重启后未检测到 server.py 进程" >&2
+    exit 1
+  fi
   echo "[OK] 已静默重启 ${LABEL} (未推送启停通知)"
 }
 
