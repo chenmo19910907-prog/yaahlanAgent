@@ -260,6 +260,16 @@ def test_duration_history() -> None:
         assert len(reloaded._records.get("agent:query", [])) == 3
 
 
+def test_fast_route_skip_text_ack() -> None:
+    from route_patterns import is_likely_fast_route, should_send_text_task_ack
+
+    for text in ("查看全部数据", "帮助", "MOA检查", "工具平台"):
+        assert is_likely_fast_route(text), text
+        assert not should_send_text_task_ack(text), text
+    assert should_send_text_task_ack("查询用户 100465989")
+    assert should_send_text_task_ack("帮我写测试用例")
+
+
 def test_gateway_code_restart() -> None:
     import json
     import time
@@ -328,6 +338,8 @@ def main() -> int:
     print("[OK] test_gateway_status_notify")
     test_duration_history()
     print("[OK] test_duration_history")
+    test_fast_route_skip_text_ack()
+    print("[OK] test_fast_route_skip_text_ack")
     test_gateway_code_restart()
     print("[OK] test_gateway_code_restart")
     print("[PASS] gateway optimizations")

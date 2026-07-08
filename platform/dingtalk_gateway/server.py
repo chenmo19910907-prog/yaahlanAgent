@@ -28,6 +28,7 @@ from progress_message import (
 )
 from quoted_reply import quote_text_from_inbound, reply_quoted
 from replay import is_replay_command
+from route_patterns import should_send_text_task_ack
 from task_dispatcher import TaskDispatcher
 from temp_cleanup import cleanup_temp_files, start_temp_cleanup_sweeper
 from log_rotate import start_log_rotate_sweeper
@@ -90,7 +91,7 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
     ) -> None:
         """入队任务：流式任务预投放同一张卡片承载排队/待执行信息（合并原文本 ack）。
 
-        非流式任务仍走文本 ack；预投放卡片失败时回退文本，保证用户始终有反馈。
+        快捷指令不发「已收到，执行中」确认语；Agent 非流式回退时仍走文本 ack。
         """
         prompt_text = inbound.prompt_text()
         summary = summary or inbound.summary_label()
@@ -124,6 +125,16 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
         ahead = self._dispatcher.enqueue(
             incoming, inbound, user_key, stream_card=stream_card
         )
+
+        if not should_send_text_task_ack(prompt_text):
+            if ahead > 0:
+                self._reply(
+                    f"{build_queue_message(ahead, prompt=prompt_text)}\n"
+                    "可发「中断操作」打断。",
+                    incoming,
+                    inbound,
+                )
+            return
 
         if ahead > 0:
             self._reply(

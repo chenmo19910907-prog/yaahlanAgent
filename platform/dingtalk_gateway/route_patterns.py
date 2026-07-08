@@ -113,3 +113,8 @@ def is_likely_fast_route(text: str) -> bool:
     if normalize_fuzzy_fast_command(t):
         return True
     return any(pattern.match(t) for pattern in _FAST_ROUTE_RES)
+
+
+def should_send_text_task_ack(text: str) -> bool:
+    """入队时是否发送「已收到，执行中」文本确认；快捷指令秒回，跳过。"""
+    return not is_likely_fast_route(text)
