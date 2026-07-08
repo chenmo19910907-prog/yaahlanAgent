@@ -1,0 +1,66 @@
+# 动态 Discover 通用入口（文字/图片/视频共用）
+# 对照: documents/moments/basic module.md §1 入口、顶部 tab、发布按钮
+
+id: IT-MOM-COMMON-001
+name: 底部动态帧默认进入发现tab
+module: 动态-通用入口
+platform: android
+priority: P0
+tags: [动态, 入口, 发现]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+
+intent:
+  action: 确认当前在 Discover 发现 tab
+  expected:
+    - 顶栏 Discover tab 高亮选中
+    - 动态列表或空态区域可见
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-COMMON-002
+name: 发现与关注tab可切换
+module: 动态-通用入口
+platform: android
+priority: P1
+tags: [动态, tab, 关注]
+
+setup:
+  launchApp: false
+  include:
+    - moments-navigation/enter_moment_discover_tab
+
+intent:
+  action: 点击 Follow 关注 tab 再点回 Discover 发现 tab
+  expected:
+    - Follow 与 Discover 均可正常切换且选中 tab 高亮
+    - 切回 Discover 后列表可见，无异常空白
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-COMMON-003
+name: 右上角发布按钮进入编辑页
+module: 动态-通用入口
+platform: android
+priority: P0
+tags: [动态, 发布, 入口]
+
+setup:
+  launchApp: false
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+
+intent:
+  action: 确认已进入动态发布编辑页
+  expected:
+    - 可见文字输入区或发布占位文案
+    - 可见添加图片/视频的 + 或相机入口
+    - 右上角发布按钮存在
+
+timeoutMs: 120000

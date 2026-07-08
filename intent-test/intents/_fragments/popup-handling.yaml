@@ -1,0 +1,17 @@
+# 全局弹窗处理（intent-test 默认策略）
+#
+# compile-intent 会在每条用例 setup 前自动注入本片段（除非 setup.skipPopupDismiss: true）
+# aiActContext 也会合并 popup-handling 规则（除非 setup.popupPolicy: none）
+#
+# 例外：
+#   setup.acceptInvites: true     — 邀请弹窗可点接受进入目标场景
+#   aiContext 写明需通过某弹窗进入  — 按用例说明操作，覆盖默认拒绝
+
+dismiss_blocking_popups:
+  - act: >
+      按全局弹窗策略处理当前挡路弹窗：
+      系统权限（位置/通知/麦克风/摄像头/相册/存储）及用户协议/隐私政策点「允许」「好」或「同意」；
+      业务弹窗、广告、活动、青少年模式等若可见 X、× 或 Close 关闭按钮，优先点 X 关闭，不要点弹窗主体跳转；
+      邀请类弹窗（进房、游戏、语音房、好友、活动邀请等）默认点「拒绝」「Decline」「Reject」「不了」或 Cancel，不要点接受/Join；
+      除非本用例 aiContext 或步骤明确要求通过弹窗进入某场景。
+  - waitFor: 无挡路弹窗遮挡主界面或当前目标操作区域

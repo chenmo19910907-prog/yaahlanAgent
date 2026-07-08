@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "description": "意图测试索引；新增 intents/**/*.yaml 后运行 npm run catalog 刷新",
+  "modules": {
+    "礼物": {
+      "intents": [
+        "intents/礼物/custom-gift-uid-search.yaml",
+        "intents/礼物/custom-gift-nickname-search.yaml"
+      ]
+    },
+    "动态": {
+      "description": "当前优先文字/图片/视频回测；语音动态用例已编写但暂缓执行",
+      "intents": [
+        "intents/动态/moment-discover-common.yaml",
+        "intents/动态/text-moment-publish.yaml",
+        "intents/动态/text-moment-list-detail.yaml",
+        "intents/动态/image-moment-publish.yaml",
+        "intents/动态/image-moment-list-detail.yaml",
+        "intents/动态/video-moment-publish.yaml",
+        "intents/动态/video-moment-list-detail.yaml"
+      ],
+      "deferred": [
+        "intents/动态/voice-moment-list.yaml",
+        "intents/动态/voice-moment-publish.yaml",
+        "intents/动态/voice-moment-detail.yaml"
+      ]
+    }
+  }
+}

@@ -1,0 +1,37 @@
+# intent-test 基础测试上下文（账号 / 房间 / 设备）
+# 同步到 midscene/.env：npm run sync-profile
+version: 1
+
+account:
+  userId: "100261858"
+  tunnelMomoid: "100261858"
+  label: 当前测试账号
+
+room:
+  voiceRoomId: "80954536"
+  type: voice
+  label: 默认测试语音房
+
+device:
+  platform: android
+  androidDeviceId: "47130DLAQ012BU"
+
+app:
+  androidPackage: com.immomo.biz.yaahlan
+
+# intent-run 默认行为（applyBaseProfileEnv 注入，midscene/.env 可覆盖）
+intent:
+  requireData: true
+  continueOnError: true
+  skipTunnel: false
+
+# 写入 midscene/.env 的变量（compile / intent-run / preflight 也会自动加载为默认值）
+env:
+  TEST_ACCOUNT_USER_ID: "100261858"
+  TEST_TUNNEL_MOMOID: "100261858"
+  TEST_VOICE_ROOM_ID: "80954536"
+  ANDROID_DEVICE_ID: "47130DLAQ012BU"
+  ANDROID_APP_ID: com.immomo.biz.yaahlan
+  TUNNEL_G_APPID: yaahlan
+  INTENT_REQUIRE_DATA: "1"
+  INTENT_CONTINUE: "1"

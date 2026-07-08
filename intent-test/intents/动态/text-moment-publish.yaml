@@ -1,0 +1,95 @@
+# 纯文字 / 图文文字 · 动态发布
+# 对照: documents/moments/basic module.md §3 发布按钮状态、文本输入规则、发布成功
+
+id: IT-MOM-TXT-PUB-001
+name: 无文字无图片时发布按钮不可点
+module: 文字动态-发布
+platform: android
+priority: P0
+tags: [动态, 文字, 发布, 校验]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+
+intent:
+  action: 不输入任何文字、不上传图片，尝试点击右上角发布
+  expected:
+    - 发布按钮置灰或点击无反应
+    - 仍停留在发布编辑页
+
+timeoutMs: 90000
+
+---
+id: IT-MOM-TXT-PUB-002
+name: 纯文字动态发布成功
+module: 文字动态-发布
+platform: android
+priority: P0
+tags: [动态, 文字, 发布, 成功]
+
+setup:
+  launchApp: false
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+  steps:
+    - act: 在文字输入区输入一段测试文案（如 intent test 纯文字动态）
+    - waitFor: 输入区已展示所输文字，发布按钮变为可点击
+
+intent:
+  action: 点击右上角发布按钮提交纯文字动态
+  expected:
+    - 出现发布成功 toast 或发布中 loading 后成功提示
+    - 跳转个人动态页或返回列表且可见刚发布的文字内容
+
+timeoutMs: 240000
+
+---
+id: IT-MOM-TXT-PUB-003
+name: 仅输入空格不可发布
+module: 文字动态-发布
+platform: android
+priority: P1
+tags: [动态, 文字, 发布, 空格]
+
+setup:
+  launchApp: false
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+  steps:
+    - act: 在输入区仅输入若干空格
+    - waitFor: 输入区显示空格或占位消失
+
+intent:
+  action: 尝试点击右上角发布按钮
+  expected:
+    - 发布按钮仍为置灰或点击无法发布
+    - 仍停留在编辑页
+
+timeoutMs: 90000
+
+---
+id: IT-MOM-TXT-PUB-004
+name: 文字支持换行与emoji
+module: 文字动态-发布
+platform: android
+priority: P1
+tags: [动态, 文字, 发布, emoji]
+
+setup:
+  launchApp: false
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+
+intent:
+  action: 输入两行文字（中间换行）并附带一个 emoji，确认编辑页展示正常后点击发布
+  expected:
+    - 编辑页换行与 emoji 展示正常
+    - 发布成功 toast 或等价成功反馈
+
+timeoutMs: 240000

@@ -1,0 +1,166 @@
+# 视频动态 · 列表播放与详情全屏
+# 对照: documents/moments/video.md 发布页浏览（推荐/关注列表、详情页）
+
+id: IT-MOM-VID-LIST-001
+name: 列表视频动态展示播放键与时长
+module: 视频动态-列表页
+platform: android
+priority: P0
+tags: [动态, 视频, 列表, 展示]
+
+preconditions:
+  - Discover 存在视频动态（可先跑 IT-MOM-VID-PUB-004）
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+
+intent:
+  action: 在 Discover 找到一条视频动态
+  expected:
+    - 视频预览图上有播放键或播放 overlay
+    - 展示视频时长标识
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-VID-LIST-002
+name: 列表点击视频进入全屏自动播放
+module: 视频动态-列表页
+platform: android
+priority: P0
+tags: [动态, 视频, 列表, 全屏]
+
+aiContext: >
+  点击视频整体或播放键进入全屏，视频自动播放。若在语音房小窗可能 toast 拦截全屏。
+
+setup:
+  launchApp: false
+  include:
+    - moments-navigation/reset_moment_discover_ready
+
+intent:
+  action: 点击一条视频动态的播放键或视频预览区域
+  expected:
+    - 进入视频全屏播放页，视频开始自动播放
+    - 全屏页可见返回或关闭按钮
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-VID-LIST-003
+name: 全屏播放返回定位列表该条动态
+module: 视频动态-列表页
+platform: android
+priority: P0
+tags: [动态, 视频, 列表, 返回]
+
+setup:
+  launchApp: false
+  include:
+    - moments-navigation/reset_moment_discover_ready
+  steps:
+    - act: 点击视频动态进入全屏播放
+    - waitFor: 视频全屏页可见返回按钮
+
+intent:
+  action: 点击全屏页返回按钮关闭视频
+  expected:
+    - 返回 Discover 列表页
+    - 仍可见刚才那条视频动态卡片
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-VID-LIST-004
+name: 点击视频外区域进入详情页
+module: 视频动态-列表页
+platform: android
+priority: P0
+tags: [动态, 视频, 列表, 详情入口]
+
+setup:
+  launchApp: false
+  include:
+    - moments-navigation/reset_moment_discover_ready
+
+intent:
+  action: 点击视频动态卡片的文字或用户信息区域（非视频预览区）
+  expected:
+    - 进入动态详情页
+    - 详情页展示该视频动态预览与播放键
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-VID-DET-001
+name: 详情页视频点击全屏播放
+module: 视频动态-详情页
+platform: android
+priority: P0
+tags: [动态, 视频, 详情, 全屏]
+
+setup:
+  launchApp: false
+  include:
+    - moments-navigation/reset_moment_discover_ready
+  steps:
+    - act: 从列表进入一条视频动态详情页
+    - waitFor: 详情页视频预览可见
+
+intent:
+  action: 点击详情页视频预览或播放键
+  expected:
+    - 进入全屏播放，视频自动播放
+    - 全屏页可见返回按钮
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-VID-DET-002
+name: 详情全屏返回仍停留详情页
+module: 视频动态-详情页
+platform: android
+priority: P1
+tags: [动态, 视频, 详情, 返回]
+
+setup:
+  launchApp: false
+  include:
+    - moments-navigation/reset_moment_discover_ready
+  steps:
+    - act: 在详情页点击视频进入全屏
+    - waitFor: 全屏页可见返回按钮
+
+intent:
+  action: 点击全屏返回关闭视频
+  expected:
+    - 返回动态详情页（非直接回列表）
+    - 详情页仍展示该视频动态
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-VID-DET-003
+name: 详情页点赞视频动态
+module: 视频动态-详情页
+platform: android
+priority: P0
+tags: [动态, 视频, 详情, 点赞]
+
+setup:
+  launchApp: false
+  include:
+    - moments-navigation/reset_moment_discover_ready
+  steps:
+    - act: 进入一条未点赞的视频动态详情页
+    - waitFor: 点赞按钮可见
+
+intent:
+  action: 点击详情页点赞按钮
+  expected:
+    - 点赞图标变为已点赞状态
+    - 点赞数加 1 或从 0 变为 1
+
+timeoutMs: 120000

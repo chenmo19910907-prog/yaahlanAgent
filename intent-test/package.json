@@ -1,0 +1,23 @@
+{
+  "name": "yaahlan-intent-test",
+  "version": "1.0.0",
+  "description": "Yaahlan 意图驱动 UI 自动化（基于 Midscene AI 视觉）",
+  "type": "module",
+  "scripts": {
+    "doctor": "node runners/doctor.mjs",
+    "compile": "node runners/compile-intent.mjs",
+    "intent": "node runners/intent-run.mjs",
+    "intent:module": "node runners/intent-run.mjs --module",
+    "tunnel": "python3 runners/tunnel-verify.py",
+    "preflight": "node runners/prepare-intent-data.mjs",
+    "ensure-data": "node runners/ensure-intent-data.mjs",
+    "md2intent": "node runners/md-to-intent.mjs",
+    "catalog": "node runners/list-catalog.mjs",
+    "sync-profile": "node runners/sync-base-profile.mjs"
+  },
+  "keywords": ["midscene", "intent", "ai", "e2e"],
+  "license": "ISC",
+  "dependencies": {
+    "yaml": "^2.4.2"
+  }
+}

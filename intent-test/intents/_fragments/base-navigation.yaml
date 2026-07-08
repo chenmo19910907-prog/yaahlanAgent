@@ -1,0 +1,100 @@
+# 五底栏 + 房内礼物面板基础导航片段（intent-test setup.include 引用）
+#
+# 用法（compile-intent 展开为 aiAct / aiWaitFor）:
+#   setup:
+#     launchApp: true
+#     include:
+#       - base-navigation/enter_room_frame
+#       - base-navigation/enter_voice_room_gift_customize_tab
+#     steps:
+#       - act: 在此帧上继续业务操作
+#
+# 片段名也可简写（全局唯一时）: include: [enter_room_frame]
+#
+# 对齐 adb 录制: 片段/房间/切换房间底栏.json 等；Room≈30% Message≈50% Moment≈70% Me≈90% 屏宽
+# 礼物面板 tab 栏：先点击 Gift/Lucky Gift/…，再滑动露出 Customize（定制礼物）
+# 弹窗：全局策略见 popup-handling.yaml；compile 默认首步注入 dismiss_blocking_popups
+
+ensure_home_bottom_nav:
+  - act: 若不在 App 首页，先连续按返回直到看见底部五底栏导航（Game、Room、Message、Moment、Me）
+  - waitFor: 底部导航栏可见，含 Room 与 Message 等 tab
+
+enter_room_frame:
+  - act: 按全局弹窗策略处理挡路弹窗（X 关闭；邀请拒绝；权限允许）
+  - act: 若不在 App 首页，先回到首页直到看见底部五底栏导航
+  - act: 点击底部 Room 或 房间 tab（五底栏左起第二个）
+  - waitFor: 已进入房间帧，默认在推荐 tab，可见房间列表或推荐房间卡片
+
+enter_message_frame:
+  - act: 按全局弹窗策略处理挡路弹窗（X 关闭；邀请拒绝；权限允许）
+  - act: 若不在 App 首页，先回到首页直到看见底部五底栏导航
+  - act: 点击底部 Message 或 消息 tab（五底栏中间）
+  - waitFor: 已进入消息帧，可见会话列表或聊天列表
+
+enter_moment_frame:
+  - act: 按全局弹窗策略处理挡路弹窗（X 关闭；邀请拒绝；权限允许）
+  - act: 若不在 App 首页，先回到首页直到看见底部五底栏导航
+  - act: 点击底部 Moment 或 动态 tab（五底栏 Message 右侧）
+  - waitFor: 已进入动态帧，顶栏可见 Discover 与 Follow tab，默认在 Discover
+
+enter_me_frame:
+  - act: 按全局弹窗策略处理挡路弹窗（X 关闭；邀请拒绝；权限允许）
+  - act: 若不在 App 首页，先回到首页直到看见底部五底栏导航
+  - act: 点击底部 Me 或 我的 tab（五底栏最右侧）
+  - waitFor: 已进入我的帧，可见个人资料区或 Me 页菜单（Settings、Wallet 等）
+
+enter_voice_room:
+  - act: 按全局弹窗策略处理挡路弹窗（X 关闭；邀请拒绝；权限允许）
+  - act: 若不在 App 首页，先回到首页直到看见底部五底栏导航
+  - act: 若不在房间帧，先点击底部 Room tab 进入房间推荐列表
+  - act: 从推荐列表或房间列表点击任意一个语音房进入
+  - waitFor: 已进入语音房内，可见聊天输入区或底部礼物按钮
+
+open_gift_panel:
+  - act: 点击底部橙色礼物盒图标打开礼物面板（非快捷小礼物）
+  - waitFor: 礼物面板已弹出，顶部可见多个可点击的礼物分类 tab（Gift、Lucky Gift、Interaction 等）
+
+# 礼物面板 tab：先逐一点击 Gift/Lucky Gift/…，再滑动 tab 栏露出 Customize，最后点 Customize
+# 全程保持礼物面板打开，不要关闭或收起
+
+tap_gift_panel_to_customize_tab:
+  - act: 礼物面板须保持打开不关闭；在顶部 tab 栏依次点击 Gift → Lucky Gift → Gift → Interaction 等可见 tab
+  - act: 仍在同一礼物面板内，在顶部 tab 栏向左滑动，直到看见 Customize 或 定制礼物 tab（不要关面板）
+  - act: 点击 Customize 或 定制礼物 tab
+  - waitFor: Customize tab 已选中，定制礼物内容区已展示，且 Customize tab 同一行右侧出现搜索按钮（即定制礼物搜索入口）
+
+open_gift_panel_customize_tab:
+  - act: 若礼物面板未打开则点击底部橙色礼物盒打开；若已打开则保持展开，不要关闭
+  - waitFor: 礼物面板已打开并保持展开，顶部可见 Gift、Lucky Gift 等 tab
+  - act: 保持礼物面板打开，在顶部 tab 栏依次点击 Gift → Lucky Gift → Gift → Interaction 等可见 tab
+  - act: 仍在同一礼物面板内，在顶部 tab 栏向左滑动，直到看见 Customize 或 定制礼物 tab
+  - act: 点击 Customize 或 定制礼物 tab（不要关面板）
+  - waitFor: Customize tab 已选中，定制礼物内容区已展示，且 Customize tab 同一行右侧出现搜索按钮
+
+enter_voice_room_gift_customize_tab:
+  - act: 按全局弹窗策略处理挡路弹窗（X 关闭；邀请拒绝；权限允许）
+  - act: 若不在 App 首页，先回到首页直到看见底部五底栏导航
+  - act: 若不在房间帧，先点击底部 Room tab 进入房间推荐列表
+  - act: 从推荐列表或房间列表点击任意一个语音房进入
+  - waitFor: 已进入语音房内，可见聊天输入区或底部礼物按钮
+  - act: 点击底部橙色礼物盒图标打开礼物面板（打开后保持展开，后续切 tab 不要关闭面板）
+  - waitFor: 礼物面板已打开，顶部可见 Gift tab 及 Lucky Gift、Interaction 等 tab
+  - act: 保持礼物面板打开，在顶部 tab 栏依次点击 Gift → Lucky Gift → Gift → Interaction 等可见 tab
+  - act: 仍在同一礼物面板内，在顶部 tab 栏向左滑动，直到看见 Customize 或 定制礼物 tab
+  - act: 点击 Customize 或 定制礼物 tab（不要关面板）
+  - waitFor: Customize tab 已选中，定制礼物内容区已展示，且 Customize tab 同一行右侧出现搜索按钮（定制礼物搜索入口）
+
+# 同批次后续 case：不冷启动，从搜索页/结果页回到 Customize 搜索入口（001 已进房并开过面板时使用）
+reset_gift_customize_search_ready:
+  - act: 若当前在定制礼物搜索页或搜索结果页，连续按返回直到礼物面板仍打开且 Customize tab 已选中
+  - act: 若礼物面板已关闭但仍在语音房内，点击底部橙色礼物盒重新打开；必要时滑动 tab 栏并点击 Customize tab
+  - waitFor: Customize tab 已选中，定制礼物内容区已展示，且 Customize tab 同一行右侧出现搜索按钮
+
+# 按 base-profile 中 TEST_VOICE_ROOM_ID 搜索进房（比随机进房更稳定）
+enter_voice_room_by_room_id:
+  - act: 按全局弹窗策略处理挡路弹窗（X 关闭；邀请拒绝；权限允许）
+  - act: 若不在 App 首页，先回到首页直到看见底部五底栏导航
+  - act: 点击底部 Room tab，再点击右上角搜索入口
+  - act: 在搜索框输入房间号「${TEST_VOICE_ROOM_ID}」并点击 Search 或搜索
+  - act: 点击搜索结果中匹配该房间号的第一条进入语音房
+  - waitFor: 已进入语音房内，可见聊天输入区或底部礼物按钮

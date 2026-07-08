@@ -1,0 +1,126 @@
+id: IT-GIFT-NICK-001
+name: 定制礼物昵称完整搜索命中
+module: 定制礼物搜索-昵称
+platform: android
+priority: P1
+tags: [礼物, 定制礼物, 搜索, 昵称]
+
+preconditions:
+  - TEST_CUSTOM_GIFT_NICKNAME 为有线上定制礼物用户的完整昵称
+
+setup:
+  launchApp: true
+  include:
+    - base-navigation/enter_voice_room_gift_customize_tab
+
+aiContext: >
+  Yaahlan App。打开礼物面板后保持展开不关闭。顶部 tab 先逐一点击 Gift → Lucky Gift → Gift → Interaction 等，
+  再向左滑动 tab 栏露出 Customize；点击 Customize 后，Customize tab 同一行右侧会出现搜索按钮，即定制礼物搜索入口。
+  全程不要关闭礼物面板。1 个用户线上仅 1 款定制礼物，昵称命中时结果最多 1 条。
+
+intent:
+  action: 点击 Customize tab 同一行右侧的搜索按钮，在搜索框输入完整定制用户昵称「${TEST_CUSTOM_GIFT_NICKNAME}」并搜索
+  expected:
+    - 搜索结果展示该昵称用户线上定制礼物
+    - 结果仅 1 条
+
+tunnel:
+  catalogId: gift_custom_search
+  keyword: ${TUNNEL_KEYWORD_CUSTOM_GIFT_SEARCH}
+  momoid: ${TEST_TUNNEL_MOMOID}
+  waitSeconds: 45
+  expectResponseEc: 200
+  requestContains:
+    - ${TEST_CUSTOM_GIFT_NICKNAME}
+
+timeoutMs: 180000
+
+---
+id: IT-GIFT-NICK-002
+name: 昵称关键词模糊搜索命中
+module: 定制礼物搜索-昵称
+platform: android
+priority: P1
+tags: [礼物, 定制礼物, 搜索, 昵称, 模糊]
+
+preconditions:
+  - TEST_CUSTOM_GIFT_NICKNAME_KEYWORD 为可匹配该用户昵称的部分关键词
+
+setup:
+  launchApp: false
+  include:
+    - base-navigation/reset_gift_customize_search_ready
+
+intent:
+  action: 点击 Customize tab 行右侧搜索按钮，输入昵称关键词「${TEST_CUSTOM_GIFT_NICKNAME_KEYWORD}」并搜索
+  expected:
+    - 搜索结果展示匹配的定制礼物
+    - 结果对应该昵称用户的线上礼物
+
+tunnel:
+  catalogId: gift_custom_search
+  keyword: ${TUNNEL_KEYWORD_CUSTOM_GIFT_SEARCH}
+  momoid: ${TEST_TUNNEL_MOMOID}
+  waitSeconds: 45
+  expectResponseEc: 200
+  requestContains:
+    - ${TEST_CUSTOM_GIFT_NICKNAME_KEYWORD}
+
+timeoutMs: 180000
+
+---
+id: IT-GIFT-NICK-003
+name: 昵称不存在搜索无结果
+module: 定制礼物搜索-昵称
+platform: android
+priority: P2
+tags: [礼物, 定制礼物, 搜索, 昵称, 空态]
+
+setup:
+  launchApp: false
+  include:
+    - base-navigation/reset_gift_customize_search_ready
+  steps:
+    - act: 点击 Customize tab 同一行右侧的搜索按钮进入搜索页
+    - waitFor: 已进入定制礼物搜索页，可见搜索输入框
+
+intent:
+  action: 在搜索框输入不存在的昵称「${TEST_CUSTOM_GIFT_NICKNAME_NOT_FOUND}」并搜索
+  expected:
+    - 搜索无匹配结果
+    - 展示空态文案
+
+timeoutMs: 120000
+
+---
+id: IT-GIFT-NICK-004
+name: 昵称搜索结果点击定位礼物面板
+module: 定制礼物搜索-昵称
+platform: android
+priority: P1
+tags: [礼物, 定制礼物, 搜索, 昵称, 定位]
+
+preconditions:
+  - 昵称搜索可命中 1 条定制礼物
+
+setup:
+  launchApp: false
+  include:
+    - base-navigation/reset_gift_customize_search_ready
+  steps:
+    - act: 点击 Customize tab 行右侧搜索按钮，输入完整昵称「${TEST_CUSTOM_GIFT_NICKNAME}」并搜索
+    - waitFor: 搜索结果展示 1 条定制礼物
+
+intent:
+  action: 点击该昵称搜索结果中的定制礼物
+  expected:
+    - 关闭搜索页回到定制礼物 tab
+    - 礼物面板定位到被点击的礼物且处于选中高亮状态
+
+tunnel:
+  catalogId: gift_panel_tabs
+  momoid: ${TEST_TUNNEL_MOMOID}
+  waitSeconds: 20
+  expectResponseEc: 200
+
+timeoutMs: 180000

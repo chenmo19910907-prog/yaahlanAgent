@@ -1,0 +1,9 @@
+# 定制礼物 Tunnel 抓包种子：跑正式用例前自动生成周榜/搜索抓包，供 preflight 写入真实 uid/昵称
+#
+# 由 ensure-intent-data.mjs 自动编译执行，勿手动维护 midscene 步骤。
+
+seed_custom_gift_tunnel_capture:
+  - act: 在 Customize 定制礼物内容区查找并点击「This week」「本周」「Last week」「上周」等周榜 tab，至少切换一次
+  - waitFor: 已展示定制礼物周榜、排名列表或带 owner 信息的礼物条目
+  - act: 点击 Customize tab 同一行右侧搜索按钮；若已知 uid「${TEST_CUSTOM_GIFT_UID}」则输入完整 uid 并搜索，否则从周榜选第一个可见用户 uid 或昵称搜索
+  - waitFor: 搜索已完成（有命中结果、Not found 或空态均可）

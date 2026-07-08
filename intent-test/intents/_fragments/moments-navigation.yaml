@@ -1,0 +1,27 @@
+# 动态（Moment）帧导航片段 — 对齐 documents/moments/basic module.md §1～3
+#
+# 用法:
+#   include:
+#     - moments-navigation/enter_moment_discover_tab
+#     - moments-navigation/open_moment_publish_editor
+
+enter_moment_discover_tab:
+  - act: 按全局弹窗策略处理挡路弹窗（X 关闭；邀请拒绝；权限允许）
+  - act: 若不在 App 首页，先回到首页直到看见底部五底栏导航
+  - act: 点击底部 Moment 或 动态 tab（五底栏 Message 右侧）
+  - waitFor: 已进入动态帧，顶栏可见 Discover 与 Follow tab，默认停留在 Discover 发现 tab
+
+enter_moment_follow_tab:
+  - act: 按全局弹窗策略处理挡路弹窗（X 关闭；邀请拒绝；权限允许）
+  - act: 若不在动态帧，先点击底部 Moment tab 进入动态帧
+  - act: 点击顶栏 Follow 或 关注 tab
+  - waitFor: 已进入关注 tab，可见动态列表或空态文案
+
+open_moment_publish_editor:
+  - act: 点击动态帧右上角 + 或 发布 按钮
+  - waitFor: 已进入动态发布编辑页，可见文字输入区与添加媒体入口
+
+reset_moment_discover_ready:
+  - act: 若当前在动态详情页、发布页或搜索页，连续按返回直到动态 Discover 列表可见
+  - act: 若不在动态帧，点击底部 Moment tab 并确保在 Discover tab
+  - waitFor: Discover 发现 tab 已选中，动态列表可见

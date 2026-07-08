@@ -1,0 +1,43 @@
+id: IT-TEMPLATE-001
+name: 意图名称（一句话）
+module: 功能模块名
+platform: android
+priority: P1
+tags: []
+
+preconditions:
+  - 描述测试前必须满足的业务/账号/页面条件
+
+setup:
+  launchApp: false
+  # launchApp: true  # 冷启 Yaahlan
+  # skipPopupDismiss: true   # 跳过编译器自动注入的 dismiss_blocking_popups
+  # acceptInvites: true      # 邀请弹窗可点接受（默认拒绝）
+  # popupPolicy: none        # 不注入全局弹窗 aiContext 策略
+  # include:         # 引用 intents/_fragments/*.yaml 中的命名片段
+  #   - base-navigation/enter_room_frame
+  #   - base-navigation/enter_message_frame
+  # steps:           # 进页/setup 步骤（编译为 aiAct / aiWaitFor）
+  #   - act: 进入语音房
+  #   - waitFor: 已在语音房内
+
+intent:
+  action: 用自然语言描述用户要完成的目标（不写坐标、不写具体控件 id）
+  expected:
+    - 第一条可验证预期
+    - 第二条可验证预期
+
+aiContext: >
+  补充 AI 上下文：语言环境、特殊业务规则等。
+  弹窗默认由全局策略处理（X 关闭、邀请拒绝）；若需点接受邀请进场景，写 setup.acceptInvites: true 或在此说明。
+
+# tunnel:                      # UI 通过后 Tunnel 抓包验收（可选）
+#   catalogId: gift_custom_search
+#   keyword: ${TUNNEL_KEYWORD_CUSTOM_GIFT_SEARCH}
+#   momoid: ${TEST_TUNNEL_MOMOID}
+#   waitSeconds: 45
+#   expectResponseEc: 200
+#   requestContains:
+#     - ${TEST_CUSTOM_GIFT_UID}
+
+timeoutMs: 120000

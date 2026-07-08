@@ -1,0 +1,142 @@
+# 纯文字动态 · 列表展示与详情互动
+# 对照: documents/moments/basic module.md §1 动态文字区域；§2 详情文字/点赞/评论
+
+id: IT-MOM-TXT-LIST-001
+name: 列表纯文字动态正常展示
+module: 文字动态-列表页
+platform: android
+priority: P0
+tags: [动态, 文字, 列表, 展示]
+
+preconditions:
+  - Discover 列表存在纯文字动态（可先跑 IT-MOM-TXT-PUB-002 造数）
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+
+intent:
+  action: 在 Discover 列表找到一条纯文字动态（无图片无视频）
+  expected:
+    - 文字内容正常展示，无图片区域或视频预览
+    - 可见用户头像昵称与发布时间
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-TXT-LIST-002
+name: 超长文字列表最多三行与更多按钮
+module: 文字动态-列表页
+platform: android
+priority: P1
+tags: [动态, 文字, 列表, 省略]
+
+preconditions:
+  - 列表存在超过三行长文字动态
+
+setup:
+  launchApp: false
+  include:
+    - moments-navigation/reset_moment_discover_ready
+
+intent:
+  action: 查看长文字动态卡片文字区域
+  expected:
+    - 文字最多展示约三行并打点省略
+    - 展示「更多」或 More 按钮
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-TXT-LIST-003
+name: 点击文字区域进入详情页
+module: 文字动态-列表页
+platform: android
+priority: P0
+tags: [动态, 文字, 列表, 详情入口]
+
+setup:
+  launchApp: false
+  include:
+    - moments-navigation/reset_moment_discover_ready
+
+intent:
+  action: 点击一条纯文字动态的文字区域
+  expected:
+    - 进入动态详情页，标题为动态详情或同等文案
+    - 详情页展示该动态完整或更长文字内容
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-TXT-DET-001
+name: 详情页展示全部文案
+module: 文字动态-详情页
+platform: android
+priority: P0
+tags: [动态, 文字, 详情, 展示]
+
+setup:
+  launchApp: false
+  include:
+    - moments-navigation/reset_moment_discover_ready
+  steps:
+    - act: 进入一条文字动态详情页
+    - waitFor: 详情页文字区域可见
+
+intent:
+  action: 查看详情页文字区域
+  expected:
+    - 展示动态全部或完整文案（比列表更长时不截断为三行）
+    - 文字换行与 emoji 展示正常
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-TXT-DET-002
+name: 详情页点赞文字动态
+module: 文字动态-详情页
+platform: android
+priority: P0
+tags: [动态, 文字, 详情, 点赞]
+
+setup:
+  launchApp: false
+  include:
+    - moments-navigation/reset_moment_discover_ready
+  steps:
+    - act: 进入一条未点赞的文字动态详情页
+    - waitFor: 点赞按钮可见
+
+intent:
+  action: 点击详情页点赞按钮
+  expected:
+    - 点赞图标变为已点赞状态
+    - 点赞数加 1 或从 0 变为 1
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-TXT-DET-003
+name: 详情页评论输入框唤起键盘
+module: 文字动态-详情页
+platform: android
+priority: P0
+tags: [动态, 文字, 详情, 评论]
+
+setup:
+  launchApp: false
+  include:
+    - moments-navigation/reset_moment_discover_ready
+  steps:
+    - act: 进入一条文字动态详情页
+    - waitFor: 底部评论输入框可见
+
+intent:
+  action: 点击底部评论输入框（默认文案如「留下一条友好的评论吧」）
+  expected:
+    - 软键盘弹起
+    - 输入框处于可输入状态
+
+timeoutMs: 120000

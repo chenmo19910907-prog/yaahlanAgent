@@ -1,0 +1,96 @@
+id: IT-GIFT-UID-001
+name: 定制礼物uid精准搜索命中
+module: 定制礼物搜索-uid
+platform: android
+priority: P1
+tags: [礼物, 定制礼物, 搜索, uid]
+
+preconditions:
+  - 环境变量 TEST_CUSTOM_GIFT_UID 为有线上定制礼物的完整 uid
+
+setup:
+  launchApp: true
+  include:
+    - base-navigation/enter_voice_room_gift_customize_tab
+
+aiContext: >
+  Yaahlan App。打开礼物面板后保持展开不关闭。顶部 tab 先逐一点击 Gift → Lucky Gift → Gift → Interaction 等，
+  再向左滑动 tab 栏露出 Customize；点击 Customize 后，Customize tab 同一行右侧会出现搜索按钮，即定制礼物搜索入口。
+  全程不要关闭礼物面板。搜索 uid 须输入完整数字，不支持部分匹配。
+
+intent:
+  action: 点击 Customize tab 同一行右侧的搜索按钮，在搜索框输入完整定制用户 uid「${TEST_CUSTOM_GIFT_UID}」并搜索
+  expected:
+    - 搜索结果展示该 uid 对应线上定制礼物
+    - 结果仅 1 条且不展示其他 uid 用户礼物
+
+tunnel:
+  catalogId: gift_custom_search
+  keyword: ${TUNNEL_KEYWORD_CUSTOM_GIFT_SEARCH}
+  momoid: ${TEST_TUNNEL_MOMOID}
+  waitSeconds: 45
+  expectResponseEc: 200
+  requestContains:
+    - ${TEST_CUSTOM_GIFT_UID}
+
+timeoutMs: 180000
+
+---
+id: IT-GIFT-UID-002
+name: uid搜索结果点击定位礼物面板
+module: 定制礼物搜索-uid
+platform: android
+priority: P1
+tags: [礼物, 定制礼物, 搜索, 定位]
+
+preconditions:
+  - TEST_CUSTOM_GIFT_UID 搜索可命中 1 条定制礼物
+
+setup:
+  launchApp: false
+  include:
+    - base-navigation/reset_gift_customize_search_ready
+  steps:
+    - act: 点击 Customize tab 行右侧搜索按钮，输入完整 uid「${TEST_CUSTOM_GIFT_UID}」并搜索
+    - waitFor: 搜索结果展示 1 条定制礼物
+
+intent:
+  action: 点击该 uid 搜索结果中的定制礼物
+  expected:
+    - 关闭搜索页回到定制礼物 tab
+    - 礼物面板定位到被点击的礼物且处于选中高亮状态
+
+tunnel:
+  catalogId: gift_panel_tabs
+  momoid: ${TEST_TUNNEL_MOMOID}
+  waitSeconds: 20
+  expectResponseEc: 200
+
+timeoutMs: 180000
+
+---
+id: IT-GIFT-UID-003
+name: uid部分数字搜索无结果
+module: 定制礼物搜索-uid
+platform: android
+priority: P2
+tags: [礼物, 定制礼物, 搜索, 边界]
+
+preconditions:
+  - TEST_CUSTOM_GIFT_UID_PARTIAL 为完整 uid 的部分数字（非完整 uid）
+
+setup:
+  launchApp: false
+  include:
+    - base-navigation/reset_gift_customize_search_ready
+  steps:
+    - act: 点击 Customize tab 同一行右侧的搜索按钮进入搜索页
+    - waitFor: 已进入定制礼物搜索页，可见搜索输入框
+
+intent:
+  action: 在搜索框输入部分 uid「${TEST_CUSTOM_GIFT_UID_PARTIAL}」（非完整 uid）并点击搜索
+  expected:
+    - 搜索无匹配结果
+    - 展示空态文案
+
+timeoutMs: 120000
