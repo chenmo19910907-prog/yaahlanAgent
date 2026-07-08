@@ -19,7 +19,8 @@ def load_env_local() -> None:
         key, _, value = line.partition("=")
         key = key.strip()
         value = value.strip().strip("'\"")
-        if key and key not in os.environ:
+        # 始终以 .env.local 为准，便于运行中切换卡片模式等配置而无需重启进程
+        if key:
             os.environ[key] = value
 
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import threading
@@ -29,8 +30,9 @@ DEFAULT_MIN_INTERVAL_S = _stream_render_interval_s()
 # 内存态每秒更新；卡片 API 按 DEFAULT_MIN_INTERVAL_S 合并刷新，减轻抖动
 PROGRESS_TICK_S = 1.0
 # AI 流式卡片在部分单聊场景 streaming API 不刷新；默认用 Markdown 卡片 update
-# AI 卡片：static 在上、流式正文在下（白线分隔）
-_CARD_ORDER = ("msgTitle", "staticMsgContent", "msgContent", "msgButtons")
+# AI 卡片：msgTitle=白线上方（提问）；staticMsgContent=白线下方固定区；msgContent=流式正文
+# 不含 msgSlider / msgButtons：标准 AI 模板完成态会展示赞踩与反馈标签，order 无法可靠关闭
+_CARD_ORDER = ("msgTitle", "staticMsgContent", "msgContent")
 
 
 def is_agent_streaming_enabled() -> bool:
@@ -49,12 +51,44 @@ def is_streaming_agent_task(prompt: str) -> bool:
     return bool(text) and is_agent_streaming_enabled() and not is_likely_fast_route(text)
 
 
+def _ai_card_feedback_enabled() -> bool:
+    from env_loader import load_env_local
+
+    load_env_local()
+    raw = os.environ.get("DINGTALK_AGENT_STREAMING_CARD_FEEDBACK", "").strip().lower()
+    return raw in ("1", "true", "yes", "on")
+
+
 def _card_mode() -> str:
     from env_loader import load_env_local
 
     load_env_local()
     raw = os.environ.get("DINGTALK_AGENT_STREAMING_CARD", "markdown").strip().lower()
-    return "ai" if raw == "ai" else "markdown"
+    if raw != "ai":
+        return "markdown"
+    # 标准 AI 卡片模板完成态自带赞踩反馈；未显式开启时回退 Markdown 卡片
+    if not _ai_card_feedback_enabled():
+        return "markdown"
+    return "ai"
+
+
+def _patch_ai_card_no_feedback(card: Any) -> None:
+    """尽量从 sys_full_json_obj 去掉 msgSlider / msgButtons（模板仍可能展示反馈）。"""
+    original = card.get_card_data
+
+    def get_card_data(flow_status: Any | None = None) -> dict[str, Any]:
+        data = original(flow_status)
+        try:
+            obj = json.loads(data.get("sys_full_json_obj") or "{}")
+        except json.JSONDecodeError:
+            obj = {}
+        obj["order"] = list(_CARD_ORDER)
+        obj["msgSlider"] = []
+        obj["msgButtons"] = []
+        data["sys_full_json_obj"] = json.dumps(obj, ensure_ascii=False)
+        return data
+
+    card.get_card_data = get_card_data  # type: ignore[method-assign]
 
 
 def try_create_agent_stream_card(
@@ -106,6 +140,7 @@ class AgentStreamCard:
         if self._mode == "ai":
             card = dingtalk_stream.AIMarkdownCardInstance(dingtalk_client, incoming)
             card.set_order(list(_CARD_ORDER))
+            _patch_ai_card_no_feedback(card)
             self._ai_card = card
             self._md_card = None
         else:
@@ -158,6 +193,45 @@ class AgentStreamCard:
             return f"{top}{STREAMING_CARD_LINE_BREAK}{rest}"
         return top or rest
 
+    def _apply_ai_card_title(self) -> None:
+        if self._ai_card is None:
+            return
+        title = (getattr(self, "_card_title", "") or "").strip()
+        if title:
+            self._ai_card.set_title_and_logo(title, "")
+
+    def _compose_ai_static(self, *, extra: str = "") -> str:
+        """AI 卡片 static 区（白线下方、流式区上方）：仅放完成提示等，提问走 msgTitle。"""
+        return (extra or "").strip()
+
+    def _ai_card_bootstrap(self, body_md: str) -> None:
+        """创建 AI 卡片并携带 msgTitle（白线上方提问），避免 ai_start({}) 导致标题区空白。"""
+        assert self._ai_card is not None
+        self._apply_ai_card_title()
+        self._ai_card.static_markdown = ""
+        self._ai_card.markdown = body_md
+        initial = self._ai_card.get_card_data()
+        self._ai_card.card_instance_id = self._ai_card.start(
+            self._ai_card.card_template_id,
+            initial,
+        )
+        self._card_instance_id = self._ai_card.card_instance_id or ""
+        if self._card_instance_id:
+            self._ai_card.ai_streaming(body_md, append=False)
+
+    def _sync_ai_card_shell(self, *, flow_status: Any | None = None) -> None:
+        """刷新 AI 卡片 msgTitle（白线上方提问）；static 区不写提问。"""
+        if self._ai_card is None or not self._card_instance_id:
+            return
+        self._apply_ai_card_title()
+        self._ai_card.static_markdown = self._compose_ai_static()
+        card_data = self._ai_card.get_card_data(flow_status=flow_status)
+        self._ai_card.put_card_data(self._card_instance_id, card_data)
+
+    def _agent_body_for_finish(self) -> str:
+        """完成态不保留 Agent 流式正文（结果另发新消息，卡片仅展示完成提示）。"""
+        return ""
+
     def _is_progress_status_body(self, body: str) -> bool:
         text = (body or "").strip()
         return not text or text.startswith("⏳")
@@ -209,12 +283,7 @@ class AgentStreamCard:
             self._card_instance_id = self._md_card.card_instance_id or ""
         else:
             assert self._ai_card is not None
-            self._ai_card.static_markdown = self._persistent_header
-            self._ai_card.markdown = body_md
-            self._ai_card.ai_start()
-            self._card_instance_id = self._ai_card.card_instance_id or ""
-            if self._card_instance_id:
-                self._ai_card.ai_streaming(body_md, append=False)
+            self._ai_card_bootstrap(body_md)
         if not self._card_instance_id:
             raise RuntimeError("流式卡片创建失败（card_instance_id 为空）")
         self._started = True
@@ -244,6 +313,8 @@ class AgentStreamCard:
         self._status_line = self._format_progress_markdown()
         if self._progress_timer is None:
             self._schedule_progress_tick()
+        if self._ai_card is not None and self._card_instance_id:
+            self._sync_ai_card_shell()
         self._render(force=True)
 
     def _format_progress_markdown(self) -> str:
@@ -351,7 +422,7 @@ class AgentStreamCard:
         self._batch_progress_line = ""
         status = (markdown or "").strip()
         if keep_agent_body:
-            # 保留历史 Agent 文本，终态提示放到状态行
+            self._agent_body = self._agent_body_for_finish()
             self._status_line = status
         else:
             self._status_line = ""
@@ -364,13 +435,23 @@ class AgentStreamCard:
         final_body_md = self._compose_body()
         try:
             if self._md_card is not None:
+                if self._card_title:
+                    self._md_card.set_title_and_logo(self._card_title, "")
                 self._md_card.update(final_body_md)
             else:
                 assert self._ai_card is not None
-                self._ai_card.static_markdown = self._persistent_header
-                self._ai_card.markdown = final_body_md
-                self._ai_card.ai_streaming(final_body_md, append=False)
-                self._ai_card.ai_finish(markdown=final_body_md)
+                self._apply_ai_card_title()
+                if keep_agent_body:
+                    # 完成态：提问留在 msgTitle（白线上方），流式区仅完成提示
+                    self._apply_ai_card_title()
+                    self._ai_card.static_markdown = ""
+                    self._ai_card.markdown = status
+                    self._ai_card.ai_finish()
+                else:
+                    self._ai_card.static_markdown = self._compose_ai_static()
+                    self._ai_card.markdown = final_body_md
+                    self._ai_card.ai_streaming(final_body_md, append=False)
+                    self._ai_card.ai_finish(markdown=final_body_md)
             logger.info(
                 "卡片 finish 成功 mode=%s pushes=%d len=%d",
                 self._mode,
@@ -383,7 +464,7 @@ class AgentStreamCard:
             self._started = False
 
     def finish_status(self, status_line: str) -> None:
-        """卡片收尾为终态提示（保留历史 Agent 文本，结果另发新消息）。"""
+        """卡片收尾为终态提示（提问留标题区，正文仅完成提示；结果另发新消息）。"""
         self.finish(status_line, keep_agent_body=True)
 
     def fail(self, markdown: str) -> None:

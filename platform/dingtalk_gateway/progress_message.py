@@ -112,7 +112,7 @@ STREAMING_CARD_LINE_BREAK = "<br>"
 
 
 def build_streaming_prompt_quote(prompt: str | None) -> str:
-    """用户问题原文（AI 卡片 static 区 / 兼容；单行 Markdown）。"""
+    """用户问题原文（Markdown 卡片 static 区 / 群消息引用；AI 卡片提问走 msgTitle）。"""
     from quoted_reply import QUOTE_LABEL, _sanitize_quote_line
 
     text = (prompt or "").strip()

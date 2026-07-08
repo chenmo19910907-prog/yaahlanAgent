@@ -48,8 +48,35 @@ def test_card_order_excludes_slider() -> None:
     from agent_stream_card import _CARD_ORDER
 
     assert "msgSlider" not in _CARD_ORDER
+    assert "msgButtons" not in _CARD_ORDER
     assert "msgContent" in _CARD_ORDER
     assert _CARD_ORDER.index("staticMsgContent") < _CARD_ORDER.index("msgContent")
+
+
+def test_ai_card_mode_downgrades_without_feedback_flag() -> None:
+    import os
+    from unittest.mock import patch
+
+    from agent_stream_card import _card_mode
+
+    prev_card = os.environ.get("DINGTALK_AGENT_STREAMING_CARD")
+    prev_feedback = os.environ.get("DINGTALK_AGENT_STREAMING_CARD_FEEDBACK")
+    try:
+        with patch("env_loader.load_env_local"):
+            os.environ["DINGTALK_AGENT_STREAMING_CARD"] = "ai"
+            os.environ.pop("DINGTALK_AGENT_STREAMING_CARD_FEEDBACK", None)
+            assert _card_mode() == "markdown"
+            os.environ["DINGTALK_AGENT_STREAMING_CARD_FEEDBACK"] = "1"
+            assert _card_mode() == "ai"
+    finally:
+        if prev_card is None:
+            os.environ.pop("DINGTALK_AGENT_STREAMING_CARD", None)
+        else:
+            os.environ["DINGTALK_AGENT_STREAMING_CARD"] = prev_card
+        if prev_feedback is None:
+            os.environ.pop("DINGTALK_AGENT_STREAMING_CARD_FEEDBACK", None)
+        else:
+            os.environ["DINGTALK_AGENT_STREAMING_CARD_FEEDBACK"] = prev_feedback
 
 
 def test_streaming_enabled_default() -> None:
@@ -167,8 +194,8 @@ def test_persistent_header_survives_finish() -> None:
     assert card._card_title == "提问：用两句话介绍 platform 目录"
 
 
-def test_finish_status_keeps_agent_body() -> None:
-    """完成时保留历史 Agent 文本，终态提示作为末行状态。"""
+def test_finish_status_clears_agent_body() -> None:
+    """完成时清空 Agent 流式正文，Markdown 卡片正文仅保留完成提示。"""
     import threading
     from unittest.mock import MagicMock
 
@@ -200,10 +227,60 @@ def test_finish_status_keeps_agent_body() -> None:
     card.finish_status("✅ 执行完成，结果见下方消息 ↓")
 
     flushed = card._md_card.update.call_args[0][0]
-    assert "已完成对 13311111111 的登录状态查询。" in flushed
-    assert "执行完成" in flushed
+    assert "已完成对 13311111111 的登录状态查询。" not in flushed
+    assert flushed.strip() == "✅ 执行完成，结果见下方消息 ↓"
     assert "已收到" not in flushed  # 瞬态 header 已清
-    assert flushed.index("已完成对") < flushed.index("执行完成")
+
+
+def test_finish_status_ai_clears_truncated_body_and_sets_title() -> None:
+    """AI 卡片完成态：提问写入 static 区，流式区仅保留完成提示。"""
+    import threading
+    from unittest.mock import MagicMock
+
+    from agent_stream_card import AgentStreamCard
+
+    card = AgentStreamCard.__new__(AgentStreamCard)
+    card._mode = "ai"
+    card._started = True
+    card._header = ""
+    card._persistent_header = "**提问** 试一下效果"
+    card._card_title = "提问：试一下效果"
+    card._min_interval_s = 0.0
+    card._last_push_at = 0.0
+    card._lock = threading.Lock()
+    card._pending = "x"
+    card._timer = None
+    card._push_count = 0
+    card._progress_timer = None
+    card._agent_body = "…模式（当前） |<br>| — | — | — |"
+    card._status_line = "执行中，已用时 30秒…"
+    card._batch_progress_line = ""
+    card._started_at = 0.0
+    card._last_content_at = 0.0
+    card._last_flushed_body = ""
+    card._card_instance_id = "id"
+    card._md_card = None
+    card._ai_card = MagicMock()
+    card._ai_card.card_instance_id = "id"
+
+    card.finish_status("✅ 执行完成，结果见下方消息 ↓")
+
+    card._ai_card.set_title_and_logo.assert_called_with("提问：试一下效果", "")
+    assert card._ai_card.static_markdown == ""
+    assert card._ai_card.markdown == "✅ 执行完成，结果见下方消息 ↓"
+    assert "…模式（当前）" not in (card._ai_card.markdown or "")
+    card._ai_card.ai_finish.assert_called_once()
+    card._ai_card.ai_streaming.assert_not_called()
+
+
+def test_compose_ai_static_only_extra() -> None:
+    from agent_stream_card import AgentStreamCard
+
+    card = AgentStreamCard.__new__(AgentStreamCard)
+    card._card_title = "提问：hello"
+    card._persistent_header = "**提问** hello"
+    assert card._compose_ai_static() == ""
+    assert card._compose_ai_static(extra="✅ done") == "✅ done"
 
 
 def test_three_channels_coexist() -> None:
@@ -299,12 +376,15 @@ def main() -> int:
     test_empty_defaults()
     test_assistant_chunk()
     test_card_order_excludes_slider()
+    test_ai_card_mode_downgrades_without_feedback_flag()
     test_streaming_enabled_default()
     test_streaming_card_header()
     test_progress_not_double_header()
     test_reuse_preassigned_card_without_second_start()
     test_persistent_header_survives_finish()
-    test_finish_status_keeps_agent_body()
+    test_finish_status_clears_agent_body()
+    test_finish_status_ai_clears_truncated_body_and_sets_title()
+    test_compose_ai_static_only_extra()
     test_three_channels_coexist()
     test_ensure_stream_state_on_legacy_instance()
     test_streaming_card_title()
