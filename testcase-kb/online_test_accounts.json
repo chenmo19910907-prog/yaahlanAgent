@@ -1,0 +1,748 @@
+{
+  "sourceWorkbook": "https://alidocs.dingtalk.com/i/nodes/dQPGYqjpJYgLbY0YCxOYmbg3Wakx1Z5N",
+  "sourceSheet": "全部测试账号",
+  "syncedAt": "2026-07-06 10:20:07 UTC",
+  "count": 74,
+  "accounts": [
+    {
+      "userId": "102574370",
+      "phone": "19900001111",
+      "fullNumber": "+96619900001111",
+      "owner": "组内公用",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "币商、CP",
+      "extra": ""
+    },
+    {
+      "userId": "101313769",
+      "phone": "19900002222",
+      "fullNumber": "+96619900002222",
+      "owner": "组内公用",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "超管白名单、CP、好友",
+      "extra": ""
+    },
+    {
+      "userId": "101035935",
+      "phone": "19900003333",
+      "fullNumber": "+96619900003333",
+      "owner": "组内公用",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "102235996",
+      "phone": "19900004444",
+      "fullNumber": "+96619900004444",
+      "owner": "组内公用",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "101189449",
+      "phone": "19900005555",
+      "fullNumber": "+96619900005555",
+      "owner": "组内公用",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "101306274",
+      "phone": "19900006666",
+      "fullNumber": "+96619900006666",
+      "owner": "组内公用",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "游戏兜底房（不要关闭，不要设密码）\r\n小时榜兜底房间",
+      "extra": ""
+    },
+    {
+      "userId": "101659758",
+      "phone": "19900007777",
+      "fullNumber": "+96619900007777",
+      "owner": "组内公用",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "家族长，有钱可转账给1111的号",
+      "extra": ""
+    },
+    {
+      "userId": "105301177",
+      "phone": "19900008888",
+      "fullNumber": "+96619900008888",
+      "owner": "组内公用",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "客服",
+      "extra": ""
+    },
+    {
+      "userId": "102035766",
+      "phone": "19900009999",
+      "fullNumber": "+96619900009999",
+      "owner": "组内公用",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "102247185",
+      "phone": "13241447676",
+      "fullNumber": "+96613241447676",
+      "owner": "组内公用",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "105548132",
+      "phone": "13600009999",
+      "fullNumber": "+96613600009999",
+      "owner": "史磊",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "106817860",
+      "phone": "13600009995",
+      "fullNumber": "+96613600009995",
+      "owner": "史磊",
+      "isFreeAccount": true,
+      "canTunnel": false,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107745137",
+      "phone": "18800001111",
+      "fullNumber": "+96618800001111",
+      "owner": "史磊",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107544002",
+      "phone": "18800002222",
+      "fullNumber": "+96618800002222",
+      "owner": "史磊",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107538986",
+      "phone": "18800003333",
+      "fullNumber": "+96618800003333",
+      "owner": "陈墨",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107621334",
+      "phone": "18800004444",
+      "fullNumber": "+96618800004444",
+      "owner": "陈墨",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107763449",
+      "phone": "18800005555",
+      "fullNumber": "+96618800005555",
+      "owner": "陈墨",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107929862",
+      "phone": "18800006666",
+      "fullNumber": "+96618800006666",
+      "owner": "陈墨",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107678545",
+      "phone": "18800007777",
+      "fullNumber": "+96618800007777",
+      "owner": "刘娜",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": "Tuotuooo"
+    },
+    {
+      "userId": "107568561",
+      "phone": "18800008888",
+      "fullNumber": "+96618800008888",
+      "owner": "刘娜",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": "cococo"
+    },
+    {
+      "userId": "107740218",
+      "phone": "18800009999",
+      "fullNumber": "+96618800009999",
+      "owner": "刘娜",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": "Sum"
+    },
+    {
+      "userId": "107713666",
+      "phone": "17700001111",
+      "fullNumber": "+96617700001111",
+      "owner": "刘娜",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": "Y Emma"
+    },
+    {
+      "userId": "107912824",
+      "phone": "17700002222",
+      "fullNumber": "+96617700002222",
+      "owner": "晓东",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107712614",
+      "phone": "17700003333",
+      "fullNumber": "+96617700003333",
+      "owner": "晓东",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107510031",
+      "phone": "17700004444",
+      "fullNumber": "+96617700004444",
+      "owner": "晓东",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": "南洋区"
+    },
+    {
+      "userId": "107639288",
+      "phone": "17700005555",
+      "fullNumber": "+96617700005555",
+      "owner": "晓东",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": "土区"
+    },
+    {
+      "userId": "107661549",
+      "phone": "17700006666",
+      "fullNumber": "+96617700006666",
+      "owner": "梦强",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107733408",
+      "phone": "17700007777",
+      "fullNumber": "+96617700007777",
+      "owner": "梦强",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107774599",
+      "phone": "17700008888",
+      "fullNumber": "+96617700008888",
+      "owner": "刘健",
+      "isFreeAccount": "",
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107821150",
+      "phone": "17700009999",
+      "fullNumber": "+96617700009999",
+      "owner": "梦强",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107615269",
+      "phone": "16600001111",
+      "fullNumber": "+96616600001111",
+      "owner": "梦强",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107787705",
+      "phone": "16600002222",
+      "fullNumber": "+96616600002222",
+      "owner": "彦孝",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107719549",
+      "phone": "16600003333",
+      "fullNumber": "+96616600003333",
+      "owner": "彦孝",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107794434",
+      "phone": "16600004444",
+      "fullNumber": "+96616600004444",
+      "owner": "彦孝",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107621900",
+      "phone": "16600005555",
+      "fullNumber": "+96616600005555",
+      "owner": "彦孝",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107908728",
+      "phone": "16600006666",
+      "fullNumber": "+96616600006666",
+      "owner": "丁亮",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107708294",
+      "phone": "16600007777",
+      "fullNumber": "+96616600007777",
+      "owner": "丁亮",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": "南洋区"
+    },
+    {
+      "userId": "107961802",
+      "phone": "16600008888",
+      "fullNumber": "+96616600008888",
+      "owner": "丁亮",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": "转盘白名单"
+    },
+    {
+      "userId": "107728638",
+      "phone": "16600009999",
+      "fullNumber": "+96616600009999",
+      "owner": "丁亮",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "106529083",
+      "phone": "13600009991",
+      "fullNumber": "+96613600009991",
+      "owner": "有钻石真实账号（晓东）",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "不可注销 在这记录真实账号消费记录",
+      "extra": "真实充值账号家族长10025216"
+    },
+    {
+      "userId": "106976036",
+      "phone": "13600009992",
+      "fullNumber": "+96613600009992",
+      "owner": "有钻石真实账号（彦孝）",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "不可注销 钻石+游戏白名单+版本审核白名单",
+      "extra": ""
+    },
+    {
+      "userId": "106983189",
+      "phone": "13600009993",
+      "fullNumber": "+96613600009993",
+      "owner": "有钻石真实账号（刘娜）",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "不可注销",
+      "extra": ""
+    },
+    {
+      "userId": "106578487",
+      "phone": "13600009994",
+      "fullNumber": "+96613600009994",
+      "owner": "有钻石真实账号（梦强）",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "不可注销",
+      "extra": ""
+    },
+    {
+      "userId": "106941862",
+      "phone": "13600009996",
+      "fullNumber": "+96613600009996",
+      "owner": "有钻石真实账号（陈墨）",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "不可注销",
+      "extra": "虚拟充值账号家族长10035807"
+    },
+    {
+      "userId": "106860049",
+      "phone": "13600009997",
+      "fullNumber": "+96613600009997",
+      "owner": "有钻石真实账号（丁亮）",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "不可注销",
+      "extra": ""
+    },
+    {
+      "userId": "107685554",
+      "phone": "13600009998",
+      "fullNumber": "+96613600009998",
+      "owner": "有钻石真实账号（史磊）",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "不可注销",
+      "extra": ""
+    },
+    {
+      "userId": "108047872",
+      "phone": "13241447671",
+      "fullNumber": "+96613241447671",
+      "owner": "晓东",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "",
+      "phone": "13241447672",
+      "fullNumber": "+96613241447672",
+      "owner": "晓东",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "",
+      "phone": "13241447673",
+      "fullNumber": "+96613241447673",
+      "owner": "晓东",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "",
+      "phone": "13241447674",
+      "fullNumber": "+96613241447674",
+      "owner": "晓东",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "",
+      "phone": "13241447675",
+      "fullNumber": "+96613241447675",
+      "owner": "晓东",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "102247185",
+      "phone": "13241447676",
+      "fullNumber": "+96613241447676",
+      "owner": "晓东",
+      "isFreeAccount": true,
+      "canTunnel": true,
+      "permissions": "虚拟充值，已加前端灰度",
+      "extra": "Fakhir"
+    },
+    {
+      "userId": "107046513",
+      "phone": "13241447677",
+      "fullNumber": "+96613241447677",
+      "owner": "晓东",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "真实充值，已加前端灰度",
+      "extra": "Zero"
+    },
+    {
+      "userId": "107418961",
+      "phone": "13241447678",
+      "fullNumber": "+96613241447678",
+      "owner": "晓东",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "真实充值，已加前端灰度",
+      "extra": "Tome"
+    },
+    {
+      "userId": "106613050",
+      "phone": "13241447679",
+      "fullNumber": "+96613241447679",
+      "owner": "晓东",
+      "isFreeAccount": "已加大额充值白名单",
+      "canTunnel": "",
+      "permissions": "真实充值，已加前端灰度\r\niOS三方充值白名单",
+      "extra": "vier"
+    },
+    {
+      "userId": "107913305",
+      "phone": "18610344430",
+      "fullNumber": "+96618610344430",
+      "owner": "晓东（公会）",
+      "isFreeAccount": "土区",
+      "canTunnel": "",
+      "permissions": "",
+      "extra": "A-Max"
+    },
+    {
+      "userId": "107829900",
+      "phone": "18610344431",
+      "fullNumber": "+96618610344431",
+      "owner": "晓东（公会）",
+      "isFreeAccount": "公会长",
+      "canTunnel": "",
+      "permissions": "不可注销",
+      "extra": "A-Vito"
+    },
+    {
+      "userId": "107611500",
+      "phone": "18610344432",
+      "fullNumber": "+96618610344432",
+      "owner": "晓东（公会）",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "不可注销",
+      "extra": "A-Scott"
+    },
+    {
+      "userId": "107814926",
+      "phone": "18610344433",
+      "fullNumber": "+96618610344433",
+      "owner": "晓东（公会）",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "不可注销",
+      "extra": "A-Vania"
+    },
+    {
+      "userId": "107824463",
+      "phone": "18610344434",
+      "fullNumber": "+96618610344434",
+      "owner": "晓东（公会）",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "不可注销",
+      "extra": "B-Leo"
+    },
+    {
+      "userId": "107612527",
+      "phone": "18610344435",
+      "fullNumber": "+96618610344435",
+      "owner": "晓东（公会）",
+      "isFreeAccount": "有钱",
+      "canTunnel": "",
+      "permissions": "不可注销",
+      "extra": "B-Emile"
+    },
+    {
+      "userId": "107917454",
+      "phone": "18610344436",
+      "fullNumber": "+96618610344436",
+      "owner": "晓东（公会）",
+      "isFreeAccount": "稍稍有钱",
+      "canTunnel": "",
+      "permissions": "不可注销",
+      "extra": "B-Anja"
+    },
+    {
+      "userId": "107514851",
+      "phone": "18610344437",
+      "fullNumber": "+96618610344437",
+      "owner": "晓东（公会）",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "不可注销",
+      "extra": "B-Thompson"
+    },
+    {
+      "userId": "107704253",
+      "phone": "18610344438",
+      "fullNumber": "+96618610344438",
+      "owner": "晓东（公会）",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "不可注销",
+      "extra": "B-Ted"
+    },
+    {
+      "userId": "107705788",
+      "phone": "18610344439",
+      "fullNumber": "+96618610344439",
+      "owner": "晓东（公会）",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "不可注销",
+      "extra": "B-Caroline"
+    },
+    {
+      "userId": "107575656",
+      "phone": "18610801111",
+      "fullNumber": "+96618610801111",
+      "owner": "刘娜",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "客服",
+      "extra": ""
+    },
+    {
+      "userId": "107904078",
+      "phone": "18610801112",
+      "fullNumber": "+96618610801112",
+      "owner": "刘娜",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107711676",
+      "phone": "18610801113",
+      "fullNumber": "+96618610801113",
+      "owner": "刘娜",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107993794",
+      "phone": "18610801114",
+      "fullNumber": "+96618610801114",
+      "owner": "刘娜",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "107633026",
+      "phone": "18610801115",
+      "fullNumber": "+96618610801115",
+      "owner": "刘娜",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "108162722",
+      "phone": "18610801116",
+      "fullNumber": "+96618610801116",
+      "owner": "刘娜",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "客服",
+      "extra": ""
+    },
+    {
+      "userId": "110061594",
+      "phone": "18610801117",
+      "fullNumber": "+96618610801117",
+      "owner": "刘娜",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "",
+      "extra": ""
+    },
+    {
+      "userId": "110787267",
+      "phone": "18610801118",
+      "fullNumber": "+96618610801118",
+      "owner": "刘娜",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "",
+      "extra": "地区：尼日利亚"
+    },
+    {
+      "userId": "",
+      "phone": "18610801119",
+      "fullNumber": "+96618610801119",
+      "owner": "刘娜",
+      "isFreeAccount": "",
+      "canTunnel": "",
+      "permissions": "",
+      "extra": ""
+    }
+  ]
+}
