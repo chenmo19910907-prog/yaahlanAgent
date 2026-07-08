@@ -623,6 +623,29 @@ def set_package_gift_params(
     payload["params"] = [json_param(value)]
 
 
+def set_anniversary_egg_smash_params(
+    payload: dict[str, Any],
+    *,
+    user_id: str,
+    room_id: str,
+    smash_count: int,
+) -> None:
+    user_id = str(user_id).strip()
+    room_id = str(room_id).strip()
+    if not user_id:
+        raise ValueError("anniversary_egg userId 不能为空")
+    if not room_id:
+        raise ValueError("anniversary_egg roomId 不能为空")
+    if smash_count <= 0:
+        raise ValueError("anniversary_egg smashCount 须为正整数")
+    value = {
+        "userId": user_id,
+        "roomId": room_id,
+        "smashCount": int(smash_count),
+    }
+    payload["params"] = [json_param(value)]
+
+
 def set_room_online_params(payload: dict[str, Any], room_id: str, entry_limit: int, auto_mic: int) -> None:
     room_id = str(room_id).strip()
     if not room_id:

@@ -748,6 +748,28 @@
       "command": "python3 MOA/scripts/package_gift_backpack_tunnel_verify.py \\\n  --user-id <userId> \\\n  --bid <baseProductId> \\\n  --expect-remain <num> \\\n  --since 600"
     },
     {
+      "id": "anniversary_egg_smash_record",
+      "name": "3周年砸金蛋-造数并记录钉钉表",
+      "category": "活动（3周年砸金蛋）",
+      "description": "MOA smashAnniversaryEggForTest 一次砸 N 个金蛋；解析 userId/roomId/serverTime/roomSmashCount/userSmashCount/platformSmashCount/eggLevel/userTotalReward/rewards 追加写入钉钉「砸金蛋测试记录」。接口未就绪可用 --response-json 联调。",
+      "prompts": [
+        "3周年砸金蛋记录到钉钉表 userId=<userId> roomId=<roomId> 次数 <smashCount>",
+        "砸金蛋造数并写表 workbook=<workbookUrl>"
+      ],
+      "command": "python3 MOA/scripts/anniversary_egg_smash_record.py \\\n  --workbook <workbookUrl> \\\n  --user-id <userId> \\\n  --room-id <roomId> \\\n  --smash-count <smashCount>"
+    },
+    {
+      "id": "anniversary_egg_smash_test",
+      "name": "3周年-砸金蛋测试",
+      "category": "活动（3周年砸金蛋）",
+      "description": "测试环境房间内一次砸 N 个金蛋（smashAnniversaryEggForTest）。开发提供真实 url/method 后更新模板；配合 anniversary_egg_smash_record 写入钉钉表。",
+      "prompts": [
+        "3周年砸金蛋 userId=<userId> roomId=<roomId> 次数 <smashCount>",
+        "记录砸金蛋测试到钉钉表"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/3周年-砸金蛋测试.json \\\n  --anniversary-egg-user-id <userId> \\\n  --anniversary-egg-room-id <roomId> \\\n  --anniversary-egg-smash-count <smashCount>"
+    },
+    {
       "id": "user_active_days_query",
       "name": "用户-查询登录天数",
       "category": "用户活跃（yaahlan/user/internal/area-moa）",

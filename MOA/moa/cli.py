@@ -454,6 +454,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--activity-gift-total-fee", type=int, help="活动模拟送礼：total_fee")
     parser.add_argument("--activity-gift-room-id", default="", help="活动模拟送礼：room_id（房内送礼时填写）")
 
+    parser.add_argument("--anniversary-egg-user-id", help="3周年砸金蛋：userId")
+    parser.add_argument("--anniversary-egg-room-id", help="3周年砸金蛋：roomId")
+    parser.add_argument("--anniversary-egg-smash-count", type=int, help="3周年砸金蛋：本次砸蛋次数")
+
     return parser
 
 

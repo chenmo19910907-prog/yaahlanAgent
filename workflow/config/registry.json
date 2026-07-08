@@ -321,6 +321,17 @@
         "工作流 package-gift-dispatch-verify <userId> <baseProductId> <num> <sinceSeconds>"
       ],
       "command": "python3 workflow/workflow_execute.py run package-gift-dispatch-verify --user-id <userId> --base-product-id <baseProductId> --num <num> --since-seconds <sinceSeconds>"
+    },
+    {
+      "id": "anniversary_egg_smash_record",
+      "name": "3周年砸金蛋-造数并记录",
+      "category": "3周年活动",
+      "description": "MOA smashAnniversaryEggForTest 一次砸 N 个金蛋，解析响应字段追加写入钉钉表「砸金蛋测试记录」。",
+      "prompts": [
+        "执行工作流 3周年砸金蛋-造数并记录",
+        "工作流 anniversary-egg-smash-record <workbook> <userId> <roomId> <smashCount>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run anniversary-egg-smash-record --workbook <workbook> --user-id <userId> --room-id <roomId> --smash-count <smashCount>"
     }
   ]
 }

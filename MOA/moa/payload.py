@@ -40,6 +40,7 @@ from .params import (
     set_id_auth_params,
     set_id_auth_reset_expire_params,
     set_noble_params,
+    set_anniversary_egg_smash_params,
     set_package_gift_params,
     set_change_user_area_params,
     normalize_cp_pair_key,
@@ -612,6 +613,29 @@ def _op_package_gift(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     )
 
 
+def _anniversary_egg_mode(args: argparse.Namespace) -> bool:
+    return (
+        args.anniversary_egg_user_id is not None
+        or args.anniversary_egg_room_id is not None
+        or args.anniversary_egg_smash_count is not None
+    )
+
+
+def _op_anniversary_egg_smash(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if not args.anniversary_egg_user_id:
+        raise ValueError("3周年砸金蛋需提供 --anniversary-egg-user-id")
+    if not args.anniversary_egg_room_id:
+        raise ValueError("3周年砸金蛋需提供 --anniversary-egg-room-id")
+    if args.anniversary_egg_smash_count is None:
+        raise ValueError("3周年砸金蛋需提供 --anniversary-egg-smash-count")
+    set_anniversary_egg_smash_params(
+        payload,
+        user_id=args.anniversary_egg_user_id,
+        room_id=args.anniversary_egg_room_id,
+        smash_count=args.anniversary_egg_smash_count,
+    )
+
+
 def _family_decrease_mode(args: argparse.Namespace) -> bool:
     return args.family_id is not None and args.family_decrease_exp is not None
 
@@ -918,6 +942,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.room_bot_room_id is not None, _op_room_add_bots),
     (lambda a: a.room_online_room_id is not None, _op_room_online),
     (lambda a: _member_lv_mode(a), _op_room_member_lv),
+    (lambda a: _anniversary_egg_mode(a), _op_anniversary_egg_smash),
     (lambda a: a.package_gift_user_id is not None, _op_package_gift),
     (lambda a: _family_fund_tier_mode(a), _op_family_fund_tier),
     (lambda a: _family_fund_clear_mode(a), _op_family_fund_clear),

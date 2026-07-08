@@ -1,0 +1,47 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/vas/internal/anniversary-egg-moa",
+  "method": "smashAnniversaryEggForTest",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": {
+        "userId": "100007541",
+        "roomId": "66868184",
+        "smashCount": 1
+      },
+      "json": "{\"userId\":\"100007541\",\"roomId\":\"66868184\",\"smashCount\":1}",
+      "type": "json",
+      "value": {
+        "userId": "100007541",
+        "roomId": "66868184",
+        "smashCount": 1
+      }
+    }
+  ],
+  "settings": {
+    "time": "60000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "anniversary_egg_smash_test",
+    "name": "3周年-砸金蛋测试",
+    "category": "活动（3周年砸金蛋）",
+    "description": "测试环境房间内一次砸 N 个金蛋（smashAnniversaryEggForTest）。开发提供真实 url/method 后更新模板；配合 anniversary_egg_smash_record 写入钉钉表。",
+    "prompts": [
+      "3周年砸金蛋 userId=<userId> roomId=<roomId> 次数 <smashCount>",
+      "记录砸金蛋测试到钉钉表"
+    ]
+  }
+}
