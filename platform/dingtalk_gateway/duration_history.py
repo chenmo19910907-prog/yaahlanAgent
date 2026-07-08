@@ -14,7 +14,6 @@ from env_loader import GATEWAY_DIR
 from export_delivery import is_view_all_follow_up
 from route_patterns import (
     CATALOG_OPEN_RE,
-    ENV_CHECK_RE,
     EXPORT_FILE_RE,
     HELP_RE,
     MOA_CHECK_RE,
@@ -50,8 +49,6 @@ def classify_task_kind(
         return "fast:help"
     if MOA_CHECK_RE.match(text):
         return "fast:moa_check"
-    if ENV_CHECK_RE.match(text):
-        return "fast:env_check"
     if CATALOG_OPEN_RE.match(text):
         return "fast:catalog"
     if EXPORT_FILE_RE.match(text):

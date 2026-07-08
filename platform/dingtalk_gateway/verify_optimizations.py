@@ -13,10 +13,30 @@ from conversation_store import ConversationStore
 from log_redact import redact_for_log
 
 
-def test_env_check_fuzzy() -> None:
+def test_env_check_blocked() -> None:
+    from env_check_guard import (
+        env_check_denial_message,
+        guard_env_check_agent_reply,
+        looks_like_env_check_request,
+        looks_like_doctor_output,
+    )
+
+    for text in ("环境检查", "检查环境", "检查环境配置", "doctor", "运行环境检查"):
+        assert looks_like_env_check_request(text), text
+        assert not try_route(text).handled, f"不应走快捷路由: {text!r}"
+    assert not looks_like_env_check_request("哪些cookie需要更新")
+    assert not looks_like_env_check_request("帮我检查环境配置问题")
+    assert looks_like_doctor_output("❌ 环境检查未通过。【凭证有效性】")
+    assert guard_env_check_agent_reply("❌ 环境检查未通过", prompt="环境检查") == env_check_denial_message()
+
+
+def test_env_check_not_fast_route() -> None:
+    from route_patterns import is_likely_fast_route, normalize_fuzzy_fast_command
+
     for text in ("环境检查", "检查环境", "检查环境配置", "doctor"):
-        result = try_route(text)
-        assert result.handled, f"应路由: {text!r}"
+        assert not try_route(text).handled, f"不应走快捷路由: {text!r}"
+        assert normalize_fuzzy_fast_command(text) is None, text
+        assert not is_likely_fast_route(text), text
     assert not try_route("帮我检查环境配置问题").handled
 
 
@@ -272,8 +292,10 @@ def test_gateway_code_restart() -> None:
 
 
 def main() -> int:
-    test_env_check_fuzzy()
-    print("[OK] test_env_check_fuzzy")
+    test_env_check_blocked()
+    print("[OK] test_env_check_blocked")
+    test_env_check_not_fast_route()
+    print("[OK] test_env_check_not_fast_route")
     test_moa_check_fuzzy()
     print("[OK] test_moa_check_fuzzy")
     test_help_fuzzy()

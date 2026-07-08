@@ -19,10 +19,6 @@ EXPORT_FILE_RE = re.compile(
     r"^(?:导出|export)\s+(.+\.(?:csv|json|md))\s*$",
     re.I,
 )
-ENV_CHECK_RE = re.compile(
-    r"^(?:环境检查|检查环境(?:配置)?|doctor)\s*$",
-    re.I,
-)
 MOA_CHECK_RE = re.compile(
     r"^(?:MOA检查|检查\s*MOA(?:环境)?|MOA探活|moa探活|moa检查|moa\s*check|MOA\s*check)\s*$",
     re.I,
@@ -66,7 +62,6 @@ _NL_TASK_RE = re.compile(
 _FAST_ROUTE_RES = (
     HELP_RE,
     MOA_CHECK_RE,
-    ENV_CHECK_RE,
     CATALOG_OPEN_RE,
     EXPORT_FILE_RE,
     VIP_UPGRADE_RE,
@@ -99,8 +94,6 @@ def normalize_fuzzy_fast_command(text: str) -> str | None:
         return None
     if _MOA_REGISTRY_INTENT_RE.search(t):
         return None
-    if re.search(r"环境|doctor|配置检查", t, re.I):
-        return "环境检查"
     if re.search(r"工具|工作台|catalog|平台清单|说明书", t, re.I):
         return "工具平台"
     if re.search(r"帮助|说明|help|怎么用|用法", t, re.I):

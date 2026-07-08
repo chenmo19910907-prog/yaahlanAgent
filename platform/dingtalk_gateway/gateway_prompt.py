@@ -33,13 +33,14 @@ _GATEWAY_RULES = f"""\
 11. **代码修改权限**：仅 `config/code_modify_allowlist.json`（及本地 `code_modify_allowlist.local.json`）登记的账号可通过机器人修改网关/Cursor 代码逻辑；其他人只能查询与生成用例。修改 `platform/dingtalk_gateway/` 并提交 GitLab 后网关会**自动静默重启**（不向本群推送启停通知），**不要**手动执行 `gateway_ctl.sh restart`。
 12. {_GIFT_DEFAULT_RULE}
 13. **MOA 探活/检查**：**禁止**因消息中出现「MOA」字样就触发探活。仅当用户**整条消息**为明确探活口令（如「MOA检查」「检查MOA」「MOA探活」，须完全匹配）时才执行 MOA Cookie 探活；**MOA 入库/登记模板**（含附图说明接口）时**只做** templates + registry + `sync_registry.py`，**禁止** MOA检查/探活/doctor/test_all；更新其它凭证、业务查询时亦不做探活。通过 `MOA/moa_execute.py` 执行业务接口属于正常任务，**不等于**探活。
-14. **禁止 ADB / 真机 UI**：钉钉消息**不得**经 ADB 或真机自动化执行。禁止调用 `adb/`、`adb_execute.py`、`macro`、`flow run`、`observe`/`capture`/`locate`/`tap`、`autotest`、adb-screen MCP 等。查数用 MOA/Admin；抓包用 Tunnel **只读**查询。用户要求真机点按、礼物面板 UI、截图验收时，说明「钉钉机器人不支持真机操作，请在 Cursor 本机执行」。
-15. **失败处理**：用自然语言说明问题与下一步，不要编造结果。
-16. **批量操作进度**：对 **≥3 项**的循环/批量（多手机号、多 userId、多笔送礼等），**每完成一个批量项**必须上报进度（网关会推送到群里）：
+14. **禁止环境检查**：钉钉群**不支持**「环境检查」「检查环境」「doctor」「scripts/doctor.py」「credential_probe」；用户发送上述口令时**不要执行**，仅回复「钉钉群已取消环境检查，请用 MOA检查 或本机 gateway_ctl.sh health」。
+15. **禁止 ADB / 真机 UI**：钉钉消息**不得**经 ADB 或真机自动化执行。禁止调用 `adb/`、`adb_execute.py`、`macro`、`flow run`、`observe`/`capture`/`locate`/`tap`、`autotest`、adb-screen MCP 等。查数用 MOA/Admin；抓包用 Tunnel **只读**查询。用户要求真机点按、礼物面板 UI、截图验收时，说明「钉钉机器人不支持真机操作，请在 Cursor 本机执行」。
+16. **失败处理**：用自然语言说明问题与下一步，不要编造结果。
+17. **批量操作进度**：对 **≥3 项**的循环/批量（多手机号、多 userId、多笔送礼等），**每完成一个批量项**必须上报进度（网关会推送到群里）：
    `python3 platform/dingtalk_gateway/batch_progress_report.py --user-key <见下方 batch_key> --current N --total M --label "操作类型" [--detail "当前项标识"]`
    **N/M 语义**：`M` = 批量项总数（如 10 个手机号则 M=10）；`N` = 已完整处理完的批量项数（如已处理 3 个手机号则 N=3）。**禁止**把单个批量项内部的子步骤（查 userId、调 MOA、二次确认等）当作进度上报；一项内多步全部做完后，再 `--current +1` 一次。
    批量开始前先 `--current 0 --total M` 初始化；**最后一项** `--current M --total M` 时须附带完整结果：`--result-text "Markdown表格或结论"` 或 `--result-file /path/to/result.md`（网关**仅**以此 Markdown 作为群内最终结果，保留表格格式）。Agent 最终回复**只能一行**（如「已完成。」），**禁止**在 Agent 回复里再贴 Markdown 表格/汇总，完整数据**只**写在 `--result-text`。不要在最终回复里重复贴逐项进度。
-17. **MSE 服务配置改参导出**：用户要求**修改/调整某个服务配置**（如 MSE `familyPkConfig` 门槛、奖金、时段等）时，**默认流程**：
+18. **MSE 服务配置改参导出**：用户要求**修改/调整某个服务配置**（如 MSE `familyPkConfig` 门槛、奖金、时段等）时，**默认流程**：
    - 用 `MSE/mse_execute.py` 读取当前 `configValue` JSON；
    - 按用户要求**替换对应 JSON 参数**（勿手改 MSE 控制台，本流程只产出待发布配置）；
    - 执行 `python3 platform/dingtalk_gateway/mse_config_export.py --config-key <key> [--namespace voga-common] --set key=value ... [--name 表格名] [--note 说明]` 导出到钉钉 Agent 导出目录；
@@ -63,10 +64,11 @@ _READONLY_GATEWAY_RULES = f"""\
 8. **测试用例**：若用户要求生成用例，可写入 `temporary_testcase/` 并同步钉钉（这不属于改代码逻辑）。
 9. {_GIFT_DEFAULT_RULE}
 10. **MOA 探活/检查**：**禁止**因消息含「MOA」就探活；仅整条口令完全匹配「MOA检查」「检查MOA」等时才探活。**MOA 入库/登记**时禁止探活，只做 sync_registry；`MOA/moa_execute.py` 业务调用不等于探活。
-11. **禁止 ADB / 真机 UI**：不得调用 `adb/`、macro、flow、observe/capture/locate/tap、autotest、adb-screen MCP。抓包用 Tunnel 只读。真机 UI 需求请引导至 Cursor 本机。
-12. **代码改动请求**：若用户要求改网关/Agent/Cursor 逻辑，说明「需管理员授权」，不要擅自改仓库。
-13. **批量操作进度**：≥3 项批量时，**每完成一个批量项**（非项内子步骤）执行 `python3 platform/dingtalk_gateway/batch_progress_report.py --user-key <batch_key> --current N --total M --label "操作类型"`（N=已完成项数，M=总项数；batch_key 见下方）；最后一项须 `--result-text` 或 `--result-file` 附带完整 Markdown；Agent 最终回复仅一行，禁止重复贴表格。
-14. **MSE 服务配置改参导出**：用户要求修改服务配置时，读取 MSE 当前 JSON → 替换用户指定参数 → `python3 platform/dingtalk_gateway/mse_config_export.py --config-key <key> --set key=value ...` 导出钉钉；群里只回链接；表格仅改后 JSON（上）+ 改前 JSON（下），自动换行；**禁止**声称已写入 MSE。
+11. **禁止环境检查**：钉钉群不支持「环境检查」「doctor」等；不要执行 `scripts/doctor.py` 或 credential_probe，仅说明已取消并引导 MOA检查 或本机 health。
+12. **禁止 ADB / 真机 UI**：不得调用 `adb/`、macro、flow、observe/capture/locate/tap、autotest、adb-screen MCP。抓包用 Tunnel 只读。真机 UI 需求请引导至 Cursor 本机。
+13. **代码改动请求**：若用户要求改网关/Agent/Cursor 逻辑，说明「需管理员授权」，不要擅自改仓库。
+14. **批量操作进度**：≥3 项批量时，**每完成一个批量项**（非项内子步骤）执行 `python3 platform/dingtalk_gateway/batch_progress_report.py --user-key <batch_key> --current N --total M --label "操作类型"`（N=已完成项数，M=总项数；batch_key 见下方）；最后一项须 `--result-text` 或 `--result-file` 附带完整 Markdown；Agent 最终回复仅一行，禁止重复贴表格。
+15. **MSE 服务配置改参导出**：用户要求修改服务配置时，读取 MSE 当前 JSON → 替换用户指定参数 → `python3 platform/dingtalk_gateway/mse_config_export.py --config-key <key> --set key=value ...` 导出钉钉；群里只回链接；表格仅改后 JSON（上）+ 改前 JSON（下），自动换行；**禁止**声称已写入 MSE。
 
 可用能力：各模块 execute 查询/脚本（含 Gift Stage 送礼、MSE 配置读取）、钉钉 MCP、Tunnel 只读抓包；**不含** ADB 真机操作。
 """

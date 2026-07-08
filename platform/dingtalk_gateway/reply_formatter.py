@@ -8,7 +8,6 @@ import re
 from natural_language import (
     naturalize_agent_reply,
     naturalize_catalog,
-    naturalize_doctor,
     naturalize_export,
     naturalize_moa_check,
     naturalize_report,
@@ -19,7 +18,6 @@ from moa_registry_guard import is_explicit_moa_check_command, looks_like_moa_reg
 from export_delivery import TRUNCATE_GUIDE
 from route_patterns import (
     CATALOG_OPEN_RE,
-    ENV_CHECK_RE,
     EXPORT_FILE_RE,
     REPORT_URL_RE,
     REPORT_VERSION_RE,
@@ -244,9 +242,6 @@ def format_group_reply(
 
     normalized_prompt = (prompt or "").strip()
 
-    if ENV_CHECK_RE.match(normalized_prompt):
-        return _truncate(naturalize_doctor(text))
-
     export_msg = _format_export(text, normalized_prompt)
     if export_msg:
         return export_msg
@@ -296,12 +291,12 @@ def format_exception(exc: BaseException) -> str:
         return (
             "❌ 任务执行失败。"
             "原因是 Cursor Agent 桥接进程暂时不可用，可能刚被中断任务影响。"
-            "请发「重新执行」重试；仍失败请发「环境检查」或执行 ./gateway_ctl.sh restart。"
+            "请发「重新执行」重试；仍失败请执行 ./gateway_ctl.sh health 或 restart。"
         )
     if "internal error" in lower or "internal:" in lower:
         return (
             "❌ 任务执行失败，Agent 服务暂不可用。\n"
-            "请发「重新执行」重试；仍失败请发「环境检查」或 ./gateway_ctl.sh restart。"
+            "请发「重新执行」重试；仍失败请执行 ./gateway_ctl.sh health 或 restart。"
         )
     if "执行超时" in message or "timeout" in lower:
         return (

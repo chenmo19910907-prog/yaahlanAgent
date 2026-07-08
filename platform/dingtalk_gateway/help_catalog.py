@@ -13,7 +13,6 @@ _BUILTIN = """\
 **Yaahlan 智能工具 · 群用法**
 
 **快捷指令（不走 Agent，更快）**
-• `环境检查` — 本机配置与各 Cookie/Token 有效性自检
 • `MOA检查` — 测试环境 MOA Cookie 是否有效
 • `导出 temporary_testcase/xxx.csv` — 导出到钉钉文档
 • `打开工作台` / `工具平台` — 发送复制按钮版离线 HTML（zip）到本群；执行机本地请用 `python3 platform/open_catalog.py` 打开执行版

@@ -10,6 +10,11 @@ from typing import Any
 import dingtalk_stream
 
 from adb_execution_guard import adb_execution_denial_message, looks_like_adb_execution_request
+from env_check_guard import (
+    env_check_denial_message,
+    guard_env_check_agent_reply,
+    looks_like_env_check_request,
+)
 from agent_stream_card import (
     is_agent_streaming_enabled,
     try_create_agent_stream_card,
@@ -425,6 +430,19 @@ def process_inbound_task(
             store.save(incoming.conversation_id, prompt, **store_kwargs)
             return "no_cache"
 
+        if looks_like_env_check_request(prompt):
+            logger.info("环境检查已取消 conv=%s", user_key)
+            _reply_final(
+                handler,
+                incoming,
+                inbound,
+                env_check_denial_message(),
+                started=started,
+                task_kind=classify_task_kind(prompt),
+            )
+            store.save(incoming.conversation_id, prompt, **store_kwargs)
+            return "denied_env_check"
+
         image_paths = []
         if inbound.image_download_codes:
             session.set_phase("prepare")
@@ -548,6 +566,7 @@ def process_inbound_task(
                 )
             session.check_cancelled()
             raw_result = guard_readonly_agent_reply(raw_result, allow_code_modify=code_allowed)
+            raw_result = guard_env_check_agent_reply(raw_result, prompt=prompt)
             session.check_cancelled()
             agent_formatted = format_group_reply(
                 raw_result,

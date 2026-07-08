@@ -13,7 +13,6 @@ from moa_health import probe_moa_cookie
 from moa_registry_guard import should_route_moa_check
 from route_patterns import (
     CATALOG_OPEN_RE,
-    ENV_CHECK_RE,
     EXPORT_FILE_RE,
     HELP_RE,
     REPORT_NL_RE,
@@ -119,22 +118,6 @@ def try_route(user_text: str, session: TaskSession | None = None) -> RoutedResul
             handled=True,
             output=out or f"导出结束 exit={code}",
             task_kind="export_file",
-        )
-
-    if ENV_CHECK_RE.match(text):
-        code, stdout, stderr = run_subprocess_cancellable(
-            [sys.executable, str(REPO_ROOT / "scripts" / "doctor.py")],
-            cwd=str(REPO_ROOT),
-            session=session,
-            timeout_s=180,
-        )
-        raw = (stdout or stderr or "").strip()
-        if code != 0 and raw:
-            raw = f"{raw}\n\n（存在 FAIL 项，exit={code}）"
-        return RoutedResult(
-            handled=True,
-            output=raw,
-            task_kind="env_check",
         )
 
     m = VIP_UPGRADE_RE.match(text)
