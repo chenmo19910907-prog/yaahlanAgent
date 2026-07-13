@@ -751,24 +751,48 @@
       "id": "anniversary_egg_smash_record",
       "name": "3周年砸金蛋-造数并记录钉钉表",
       "category": "活动（3周年砸金蛋）",
-      "description": "MOA smashAnniversaryEggForTest 一次砸 N 个金蛋；解析 userId/roomId/serverTime/roomSmashCount/userSmashCount/platformSmashCount/eggLevel/userTotalReward/rewards 追加写入钉钉「砸金蛋测试记录」。接口未就绪可用 --response-json 联调。",
+      "description": "smashEgg：房间默认自己的房间；每砸一次立即写入钉钉「砸金蛋测试记录」。砸蛋时金蛋等级/神秘奖励按 MSE 配置理论计算（房间门槛升级；用户/房间/平台保底模数标注理论触发）。",
       "prompts": [
-        "3周年砸金蛋记录到钉钉表 userId=<userId> roomId=<roomId> 次数 <smashCount>",
-        "砸金蛋造数并写表 workbook=<workbookUrl>"
+        "3周年砸金蛋记录到钉钉表 userId=<userId> 次数 <smashCount>",
+        "砸金蛋造数并写表 userId=<userId>"
       ],
-      "command": "python3 MOA/scripts/anniversary_egg_smash_record.py \\\n  --workbook <workbookUrl> \\\n  --user-id <userId> \\\n  --room-id <roomId> \\\n  --smash-count <smashCount>"
+      "command": "python3 MOA/scripts/anniversary_egg_smash_record.py \\\n  --workbook https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz \\\n  --user-id <userId> \\\n  --smash-count <smashCount>"
+    },
+    {
+      "id": "anniversary_egg_mse_to_workbook",
+      "name": "3周年砸金蛋-MSE配置同步钉钉表",
+      "category": "活动（3周年砸金蛋）",
+      "description": "拉取私有 Application 配置 activityConfig.Year3Anniversary，分析基础参数/奖池/神秘保底/金蛋等级/档次加成/头像框等，写入砸金蛋表 Sheet「金蛋活动配置」。",
+      "prompts": [
+        "同步3周年金蛋MSE配置到钉钉表",
+        "分析 Year3Anniversary 配置并写入金蛋活动配置 sheet"
+      ],
+      "command": "python3 platform/dingtalk_gateway/anniversary_egg_mse_to_workbook.py \\\n  --workbook https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz \\\n  --sheet-name 金蛋活动配置 \\\n  --namespace Application \\\n  --config-key activityConfig.Year3Anniversary \\\n  --cluster alpha"
+    },
+    {
+      "id": "anniversary_egg_multi_account_verify",
+      "name": "3周年砸金蛋-多账号批量验收落表",
+      "category": "活动（3周年砸金蛋）",
+      "description": "手机号账号自送获次（随机1~11）、钻不足充100万，随机五账号房间砸一次；写入「砸金蛋测试记录」（砸蛋明细+验收列合一）。",
+      "prompts": [
+        "五账号砸金蛋批量验收 1000 组",
+        "手机号13311111121到25砸金蛋验收落表"
+      ],
+      "command": "python3 MOA/scripts/anniversary_egg_multi_account_verify.py \\\n  --workbook https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz \\\n  --phones 13311111121,13311111122,13311111123,13311111124,13311111125 \\\n  --rounds <rounds>"
     },
     {
       "id": "anniversary_egg_smash_test",
       "name": "3周年-砸金蛋测试",
       "category": "活动（3周年砸金蛋）",
-      "description": "测试环境房间内一次砸 N 个金蛋（smashAnniversaryEggForTest）。开发提供真实 url/method 后更新模板；配合 anniversary_egg_smash_record 写入钉钉表。",
+      "description": "year3GiftService.smashEgg(userId, roomId, lang)。房间默认 Admin 自己的房间；本次砸蛋次数以返回值/getRemainChance 差值为准（剩余>10 期望砸10，≤10 期望砸剩余）。",
       "prompts": [
-        "3周年砸金蛋 userId=<userId> roomId=<roomId> 次数 <smashCount>",
+        "3周年砸金蛋 userId=<userId>",
+        "砸金蛋 userId=<userId>（自己的房间）",
         "记录砸金蛋测试到钉钉表"
       ],
-      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/3周年-砸金蛋测试.json \\\n  --anniversary-egg-user-id <userId> \\\n  --anniversary-egg-room-id <roomId> \\\n  --anniversary-egg-smash-count <smashCount>"
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/3周年-砸金蛋测试.json \\\n  --anniversary-egg-user-id <userId> \\\n  --anniversary-egg-lang en"
     },
+
     {
       "id": "user_active_days_query",
       "name": "用户-查询登录天数",

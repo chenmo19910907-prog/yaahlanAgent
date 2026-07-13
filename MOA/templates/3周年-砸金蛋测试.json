@@ -1,25 +1,17 @@
 {
   "type": "moa",
   "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
-  "url": "/service/vas/internal/anniversary-egg-moa",
-  "method": "smashAnniversaryEggForTest",
+  "url": "/service/voga-mts-vas-backdoor",
+  "method": "execute",
   "header": "",
   "params": [
     {
       "title": "参数1",
       "name": "1",
-      "txt": {
-        "userId": "100007541",
-        "roomId": "66868184",
-        "smashCount": 1
-      },
-      "json": "{\"userId\":\"100007541\",\"roomId\":\"66868184\",\"smashCount\":1}",
-      "type": "json",
-      "value": {
-        "userId": "100007541",
-        "roomId": "66868184",
-        "smashCount": 1
-      }
+      "txt": "return context.getBean(\"year3GiftService\").smashEgg(\"100079102\",\"50861924\",\"en\");",
+      "json": "",
+      "type": "string",
+      "value": "return context.getBean(\"year3GiftService\").smashEgg(\"100079102\",\"50861924\",\"en\");"
     }
   ],
   "settings": {
@@ -38,9 +30,10 @@
     "id": "anniversary_egg_smash_test",
     "name": "3周年-砸金蛋测试",
     "category": "活动（3周年砸金蛋）",
-    "description": "测试环境房间内一次砸 N 个金蛋（smashAnniversaryEggForTest）。开发提供真实 url/method 后更新模板；配合 anniversary_egg_smash_record 写入钉钉表。",
+    "description": "year3GiftService.smashEgg(userId, roomId, lang)。房间默认 Admin 自己的房间；本次砸蛋次数以返回值/getRemainChance 差值为准（剩余>10 期望砸10，≤10 期望砸剩余）。",
     "prompts": [
-      "3周年砸金蛋 userId=<userId> roomId=<roomId> 次数 <smashCount>",
+      "3周年砸金蛋 userId=<userId>",
+      "砸金蛋 userId=<userId>（自己的房间）",
       "记录砸金蛋测试到钉钉表"
     ]
   }

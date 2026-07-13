@@ -623,27 +623,72 @@ def set_package_gift_params(
     payload["params"] = [json_param(value)]
 
 
+ANNIVERSARY_EGG_DEFAULT_BATCH = 10
+
+
+def resolve_anniversary_egg_batch_count(
+    *,
+    remaining: int | None = None,
+    explicit_count: int | None = None,
+) -> int:
+    """默认一次砸蛋数量：剩余 >10 → 10；剩余 ≤10 → 剩余次数。
+
+    显式传入 explicit_count 时按其值。
+    未传剩余次数时，默认按一次砸 10 个（仅日志期望值；实际次数以返回值/剩余差值为准）。
+    """
+    if explicit_count is not None:
+        count = int(explicit_count)
+        if count <= 0:
+            raise ValueError("anniversary_egg smashCount 须为正整数")
+        return count
+    if remaining is not None:
+        left = int(remaining)
+        if left <= 0:
+            raise ValueError("剩余砸蛋次数为 0，无法砸蛋")
+        return min(ANNIVERSARY_EGG_DEFAULT_BATCH, left)
+    return ANNIVERSARY_EGG_DEFAULT_BATCH
+
+
+def anniversary_egg_batch_calls_for_target(target_eggs: int) -> int:
+    """按目标砸蛋总数估算需调用 smashEgg 的次数（每次最多 DEFAULT_BATCH）。"""
+    target = int(target_eggs)
+    if target <= 0:
+        raise ValueError("anniversary_egg smashCount 须为正整数")
+    return (target + ANNIVERSARY_EGG_DEFAULT_BATCH - 1) // ANNIVERSARY_EGG_DEFAULT_BATCH
+
+
 def set_anniversary_egg_smash_params(
     payload: dict[str, Any],
     *,
     user_id: str,
     room_id: str,
-    smash_count: int,
+    smash_count: int | None = None,
+    remaining: int | None = None,
+    lang: str = "en",
 ) -> None:
+    """year3GiftService.smashEgg(userId, roomId, lang)。
+
+    房间应传用户自己的房间；本次砸蛋次数以接口返回 / 剩余次数差值为准。
+    """
     user_id = str(user_id).strip()
     room_id = str(room_id).strip()
+    lang = str(lang or "en").strip() or "en"
     if not user_id:
         raise ValueError("anniversary_egg userId 不能为空")
     if not room_id:
-        raise ValueError("anniversary_egg roomId 不能为空")
-    if smash_count <= 0:
-        raise ValueError("anniversary_egg smashCount 须为正整数")
-    value = {
-        "userId": user_id,
-        "roomId": room_id,
-        "smashCount": int(smash_count),
-    }
-    payload["params"] = [json_param(value)]
+        raise ValueError("anniversary_egg roomId 不能为空（默认取 Admin 自己的房间）")
+    batch = resolve_anniversary_egg_batch_count(
+        remaining=remaining,
+        explicit_count=smash_count,
+    )
+    expr = (
+        f'return context.getBean("year3GiftService")'
+        f'.smashEgg("{user_id}","{room_id}","{lang}");'
+    )
+    payload["url"] = "/service/voga-mts-vas-backdoor"
+    payload["method"] = "execute"
+    payload["params"] = [string_param(expr)]
+    payload["_anniversaryEggBatch"] = batch
 
 
 def set_room_online_params(payload: dict[str, Any], room_id: str, entry_limit: int, auto_mic: int) -> None:

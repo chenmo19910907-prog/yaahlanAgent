@@ -10,6 +10,9 @@
   "userTotalReward": 1500,
   "rewards": [
     {"name": "Chocolate", "num": 1},
-    {"name": "钻石", "num": 50}
+    {"name": "DIAMOND", "prizeType": "DIAMOND", "num": 50}
+  ],
+  "mysteryPrizes": [
+    {"prizeName": "DIAMOND", "prizeType": "DIAMOND", "prizeId": "5000DIA5000", "num": 5000}
   ]
 }

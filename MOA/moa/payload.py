@@ -618,21 +618,47 @@ def _anniversary_egg_mode(args: argparse.Namespace) -> bool:
         args.anniversary_egg_user_id is not None
         or args.anniversary_egg_room_id is not None
         or args.anniversary_egg_smash_count is not None
+        or getattr(args, "anniversary_egg_remaining", None) is not None
     )
 
 
 def _op_anniversary_egg_smash(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     if not args.anniversary_egg_user_id:
         raise ValueError("3周年砸金蛋需提供 --anniversary-egg-user-id")
-    if not args.anniversary_egg_room_id:
-        raise ValueError("3周年砸金蛋需提供 --anniversary-egg-room-id")
-    if args.anniversary_egg_smash_count is None:
-        raise ValueError("3周年砸金蛋需提供 --anniversary-egg-smash-count")
+    from .anniversary_egg import get_remain_chance, resolve_own_room_id
+    from .params import resolve_anniversary_egg_batch_count
+
+    lang = getattr(args, "anniversary_egg_lang", None) or "en"
+    room_id = (args.anniversary_egg_room_id or "").strip()
+    if not room_id:
+        room_id = resolve_own_room_id(args.anniversary_egg_user_id)
+        args.anniversary_egg_room_id = room_id
+        print(f"未传房间，默认自己的房间 roomId={room_id}", file=sys.stderr)
+
+    remaining = getattr(args, "anniversary_egg_remaining", None)
+    if remaining is None:
+        try:
+            remaining = get_remain_chance(args.anniversary_egg_user_id, room_id)
+            print(f"当前剩余砸蛋次数 remain={remaining}", file=sys.stderr)
+        except (RuntimeError, ValueError) as exc:
+            print(f"查询剩余次数失败（仍继续砸蛋）: {exc}", file=sys.stderr)
+
+    expected = resolve_anniversary_egg_batch_count(
+        remaining=remaining,
+        explicit_count=args.anniversary_egg_smash_count,
+    )
     set_anniversary_egg_smash_params(
         payload,
         user_id=args.anniversary_egg_user_id,
-        room_id=args.anniversary_egg_room_id,
+        room_id=room_id,
         smash_count=args.anniversary_egg_smash_count,
+        remaining=remaining,
+        lang=lang,
+    )
+    print(
+        f"3周年砸金蛋：userId={args.anniversary_egg_user_id} roomId={room_id} "
+        f"lang={lang} 期望本批≈{expected}（实际次数以返回值/剩余差值为准）",
+        file=sys.stderr,
     )
 
 

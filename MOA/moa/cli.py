@@ -455,8 +455,25 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--activity-gift-room-id", default="", help="活动模拟送礼：room_id（房内送礼时填写）")
 
     parser.add_argument("--anniversary-egg-user-id", help="3周年砸金蛋：userId")
-    parser.add_argument("--anniversary-egg-room-id", help="3周年砸金蛋：roomId")
-    parser.add_argument("--anniversary-egg-smash-count", type=int, help="3周年砸金蛋：本次砸蛋次数")
+    parser.add_argument(
+        "--anniversary-egg-room-id",
+        help="3周年砸金蛋：roomId（不传则默认 Admin 查自己的房间 ownedRoomInfo.roomId）",
+    )
+    parser.add_argument(
+        "--anniversary-egg-smash-count",
+        type=int,
+        help="3周年砸金蛋：期望本批砸蛋数（仅日志；实际次数以 smashEgg 返回值 / 剩余次数差值为准）",
+    )
+    parser.add_argument(
+        "--anniversary-egg-remaining",
+        type=int,
+        help="3周年砸金蛋：当前剩余次数（不传则自动 getRemainChance）",
+    )
+    parser.add_argument(
+        "--anniversary-egg-lang",
+        default="en",
+        help="3周年砸金蛋：语言（默认 en，对应 smashEgg 第 3 参）",
+    )
 
     return parser
 

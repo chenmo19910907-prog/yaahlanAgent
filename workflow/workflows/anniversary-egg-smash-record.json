@@ -2,14 +2,15 @@
   "id": "anniversary-egg-smash-record",
   "name": "3周年砸金蛋-造数并记录",
   "category": "3周年活动",
-  "description": "MOA smashAnniversaryEggForTest 一次砸 N 个金蛋，解析响应字段追加写入钉钉表「砸金蛋测试记录」。开发提供真实 url/method 后更新 MOA 模板。",
+  "description": "smashEgg：房间默认自己的房间；每次本次砸蛋次数按返回值/剩余差值写入钉钉「砸金蛋测试记录」。",
   "version": 1,
   "params": {
     "workbook": {
       "label": "钉钉表格",
       "type": "string",
       "required": true,
-      "prompt": "alidocs 表格 URL 或 nodeId"
+      "default": "https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz",
+      "prompt": "alidocs 表格 URL 或 nodeId（默认：3周年砸金蛋测试记录独立表）"
     },
     "userId": {
       "label": "砸蛋账号",
@@ -17,17 +18,12 @@
       "required": true,
       "prompt": "momoid / userId"
     },
-    "roomId": {
-      "label": "砸蛋房间",
-      "type": "string",
-      "required": true,
-      "prompt": "roomId"
-    },
     "smashCount": {
-      "label": "本次砸蛋次数",
+      "label": "调用次数",
       "type": "integer",
-      "required": true,
-      "prompt": "一次砸 N 个金蛋"
+      "required": false,
+      "default": "1",
+      "prompt": "调用 smashEgg 次数（每次实际砸几个看返回值/剩余差值）"
     },
     "sheetName": {
       "label": "工作表名",
@@ -48,7 +44,7 @@
       "name": "砸金蛋并写入钉钉表",
       "run": {
         "type": "shell",
-        "command": "python3 MOA/scripts/anniversary_egg_smash_record.py --workbook {{workbook}} --user-id {{userId}} --room-id {{roomId}} --smash-count {{smashCount}} --sheet-name {{sheetName}} --timeout-ms {{timeoutMs}}",
+        "command": "python3 MOA/scripts/anniversary_egg_smash_record.py --workbook {{workbook}} --user-id {{userId}} --smash-count {{smashCount}} --sheet-name {{sheetName}} --timeout-ms {{timeoutMs}}",
         "cwd": "."
       },
       "expect": {
