@@ -24,6 +24,14 @@ PUSH_MIN_INTERVAL_S = 30.0
 PUSH_POLL_INTERVAL_S = 5.0
 # ≥3 项才视为批量，与网关规则一致
 BATCH_MIN_ITEMS = 3
+
+
+def is_batch_scope(total: int) -> bool:
+    """仅 ≥3 项的账号/对象循环才走批量进度与群内 N/M 推送。"""
+    try:
+        return int(total) >= BATCH_MIN_ITEMS
+    except (TypeError, ValueError):
+        return False
 # 尚无历史/进度时，按每项默认秒数粗估
 DEFAULT_SEC_PER_ITEM = 1.0
 # 实时进度与历史单项耗时的融合权重
@@ -69,12 +77,21 @@ def report_batch_progress(
     total: int,
     label: str = "",
     detail: str = "",
-) -> BatchProgressState:
+) -> BatchProgressState | None:
     """写入/更新批量进度（供 CLI 与网关内脚本调用）。"""
     key = (user_key or "").strip()
     if not key:
         raise ValueError("user_key 不能为空")
     total_n = max(1, int(total))
+    if not is_batch_scope(total_n):
+        clear_batch_progress(key)
+        logger.info(
+            "跳过非批量进度 user=%s total=%s（<%s 项不走批量）",
+            key,
+            total_n,
+            BATCH_MIN_ITEMS,
+        )
+        return None
     current_n = max(0, min(int(current), total_n))
     now = time.time()
     started_at = now
@@ -136,7 +153,7 @@ def read_batch_progress(user_key: str) -> BatchProgressState | None:
         return None
     if not isinstance(data, dict):
         return None
-    return BatchProgressState(
+    state = BatchProgressState(
         user_key=str(data.get("user_key") or key),
         total=max(1, int(data.get("total") or 1)),
         current=max(0, int(data.get("current") or 0)),
@@ -145,6 +162,10 @@ def read_batch_progress(user_key: str) -> BatchProgressState | None:
         updated_at=float(data.get("updated_at") or 0.0),
         started_at=float(data.get("started_at") or 0.0),
     )
+    if not is_batch_scope(state.total):
+        clear_batch_progress(key)
+        return None
+    return state
 
 
 def clear_batch_progress(user_key: str) -> None:
@@ -218,6 +239,8 @@ def should_push_batch_progress(
     now: float | None = None,
 ) -> bool:
     """判断是否需要向群内推送本条进度（约 30 秒一条，完成时必推）。"""
+    if not is_batch_scope(state.total):
+        return False
     if state.current <= last_pushed_current:
         return False
     ts = now if now is not None else time.monotonic()

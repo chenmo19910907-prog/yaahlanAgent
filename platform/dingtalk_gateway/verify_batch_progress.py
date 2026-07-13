@@ -146,6 +146,25 @@ def test_batch_active() -> None:
             assert not is_batch_progress_active("cid:user:WB001")
             report_batch_progress("cid:user:WB001", current=1, total=2, label="x")
             assert not is_batch_progress_active("cid:user:WB001")
+            assert read_batch_progress("cid:user:WB001") is None
+
+
+def test_non_batch_skips_progress_file() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        progress_dir = Path(tmp) / "batch_progress"
+        with patch("batch_progress.PROGRESS_DIR", progress_dir):
+            report_batch_progress("cid:user:WB001", current=0, total=5, label="x")
+            assert read_batch_progress("cid:user:WB001") is not None
+            state = report_batch_progress("cid:user:WB001", current=2, total=2, label="砸蛋")
+            assert state is None
+            assert read_batch_progress("cid:user:WB001") is None
+
+
+def test_push_policy_rejects_small_batch() -> None:
+    state_small = BatchProgressState(user_key="k", total=2, current=2, label="砸蛋")
+    assert not should_push_batch_progress(
+        state_small, last_pushed_current=0, last_push_at=0.0, now=1.0
+    )
 
 
 def main() -> int:
@@ -161,6 +180,10 @@ def main() -> int:
     print("[OK] test_push_policy")
     test_batch_active()
     print("[OK] test_batch_active")
+    test_non_batch_skips_progress_file()
+    print("[OK] test_non_batch_skips_progress_file")
+    test_push_policy_rejects_small_batch()
+    print("[OK] test_push_policy_rejects_small_batch")
     print("[PASS] batch_progress")
     return 0
 

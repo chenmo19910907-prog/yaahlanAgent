@@ -48,6 +48,14 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    result_body = (args.result_text or "").strip()
+    if args.result_file:
+        path = Path(args.result_file)
+        if not path.is_file():
+            print(f"[FAIL] 结果文件不存在: {path}", file=sys.stderr)
+            return 1
+        result_body = path.read_text(encoding="utf-8").strip()
+
     try:
         state = report_batch_progress(
             args.user_key,
@@ -60,13 +68,9 @@ def main() -> int:
         print(f"[FAIL] {exc}", file=sys.stderr)
         return 1
 
-    result_body = (args.result_text or "").strip()
-    if args.result_file:
-        path = Path(args.result_file)
-        if not path.is_file():
-            print(f"[FAIL] 结果文件不存在: {path}", file=sys.stderr)
-            return 1
-        result_body = path.read_text(encoding="utf-8").strip()
+    if state is None:
+        return 0
+
     if result_body:
         save_batch_result(args.user_key, result_body)
 

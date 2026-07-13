@@ -266,15 +266,6 @@ def main() -> int:
             flush=True,
         )
 
-    if args.user_key and total < 3:
-        report_progress(
-            args.user_key,
-            current=total,
-            total=total,
-            detail="完成",
-            result_text=build_result_markdown(stats),
-        )
-
     print(build_result_markdown(stats))
     return 0 if stats.accounts_failed == 0 else 1
 
