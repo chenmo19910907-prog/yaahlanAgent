@@ -113,6 +113,81 @@ def _as_json_object(raw: Any) -> dict[str, Any]:
     raise RuntimeError(f"期望 JSON object，实际: {raw!r}"[:300])
 
 
+def get_mystery_count(
+    user_id: str,
+    room_id: str,
+    *,
+    type_flag: str = "1",
+    timeout_ms: int = 60000,
+) -> dict[str, int]:
+    """year3Dao.testGetMysteryCount(type, userId, roomId)。
+
+    返回用户 / 房间 / 平台砸蛋次数（神秘保底计数），例如::
+        {"user": 35, "room": 52, "platform": 71363}
+
+    type 默认 ``"1"``（与质量平台后门试调一致）。
+    """
+    user_id = str(user_id).strip()
+    room_id = str(room_id).strip()
+    type_flag = str(type_flag or "1").strip() or "1"
+    if not user_id or not room_id:
+        raise ValueError("user_id / room_id 不能为空")
+    expr = (
+        "return new com.fasterxml.jackson.databind.ObjectMapper()"
+        ".writeValueAsString(context.getBean(\"year3Dao\")"
+        f'.testGetMysteryCount("{type_flag}","{user_id}","{room_id}"));'
+    )
+    raw = _run_backdoor_expr(expr, timeout_ms=timeout_ms)
+    data = _as_json_object(raw if not isinstance(raw, str) else raw)
+
+    def _to_int(val: Any) -> int:
+        if val is None or val == "":
+            return 0
+        try:
+            return int(val)
+        except (TypeError, ValueError):
+            return 0
+
+    return {
+        "user": _to_int(data.get("user")),
+        "room": _to_int(data.get("room")),
+        "platform": _to_int(data.get("platform")),
+        "type": type_flag,
+        "userId": user_id,
+        "roomId": room_id,
+    }
+
+
+def mystery_guarantee_expected(
+    *,
+    user_before: int,
+    user_after: int,
+    room_before: int,
+    room_after: int,
+    platform_before: int,
+    platform_after: int,
+    user_mod: int = 50,
+    room_mod: int = 100,
+    platform_mod: int = 150,
+) -> list[str]:
+    """根据砸蛋前后神秘计数是否越过保底模数，返回应触发的维度标签。"""
+
+    def _crossed(before: int, after: int, mod: int) -> bool:
+        if mod <= 0 or after <= before:
+            return False
+        first = (before // mod + 1) * mod
+        return first <= after
+
+    tags: list[str] = []
+    if _crossed(user_before, user_after, user_mod):
+        tags.append(f"用户保底每{user_mod}次")
+    if _crossed(room_before, room_after, room_mod):
+        tags.append(f"房间保底每{room_mod}次")
+    if _crossed(platform_before, platform_after, platform_mod):
+        tags.append(f"平台保底每{platform_mod}次")
+    return tags
+
+
 def get_egg_home(user_id: str, room_id: str, *, timeout_ms: int = 60000) -> dict[str, Any]:
     """year3GiftService.getEggHome(userId, roomId, flag)。
 
@@ -133,7 +208,7 @@ def get_room_egg_entry(user_id: str, room_id: str, *, timeout_ms: int = 60000) -
     """year3GiftService.getRoomEggEntry(userId, roomId, true)。
 
     含 smashCount（房间当前等级内被砸次数，升级后会清零）、eggLevel、userRemainChances 等。
-    落表「房间内砸蛋次数」须按终身累计归一（见 normalize_room_smash_lifetime），勿直接当终身次数推等级。
+    落表「房间内/用户/平台砸蛋次数」改用 year3Dao.testGetMysteryCount；本接口 smashCount 仅作等级内辅助。
     """
     user_id = str(user_id).strip()
     room_id = str(room_id).strip()
@@ -275,8 +350,15 @@ def smash_egg_once(
     remain_before = int(home_before.get("remainChances") or entry_before.get("userRemainChances") or 0)
     used_before = int(home_before.get("usedSmashChances") or 0)
     room_smash_before = int(entry_before.get("smashCount") or 0)
+    try:
+        myst_before = get_mystery_count(user_id, room_id, timeout_ms=timeout_ms)
+    except Exception:
+        myst_before = None
 
     if remain_before <= 0:
+        myst_room = myst_before["room"] if myst_before else room_smash_before
+        myst_user = myst_before["user"] if myst_before else used_before
+        myst_plat = myst_before["platform"] if myst_before else None
         return {
             "userId": user_id,
             "roomId": room_id,
@@ -287,11 +369,20 @@ def smash_egg_once(
             "remainAfter": remain_before,
             "usedSmashBefore": used_before,
             "usedSmashAfter": used_before,
-            "roomSmashBefore": room_smash_before,
-            "roomSmashAfter": room_smash_before,
+            # 金蛋当前等级内计数（getRoomEggEntry）
+            "roomEggSmashBefore": room_smash_before,
+            "roomEggSmashAfter": room_smash_before,
+            # 落表三列：year3Dao.testGetMysteryCount
+            "roomSmashBefore": myst_room,
+            "roomSmashAfter": myst_room,
+            "roomSmashCount": myst_room,
+            "userSmashBefore": myst_user,
+            "userSmashCount": myst_user,
+            "platformSmashBefore": myst_plat,
+            "platformSmashCount": myst_plat,
             "eggLevel": entry_before.get("eggLevel"),
-            "roomSmashCount": room_smash_before,
-            "userSmashCount": used_before,
+            "mysteryCountBefore": myst_before,
+            "mysteryCountAfter": myst_before,
             "smashCount": 0,
             "expectedBatch": 0,
             "prizePoolPreview": True,
@@ -311,6 +402,10 @@ def smash_egg_once(
     remain_after = int(home_after.get("remainChances") or entry_after.get("userRemainChances") or 0)
     used_after = int(home_after.get("usedSmashChances") or 0)
     room_smash_after = int(entry_after.get("smashCount") or 0)
+    try:
+        myst_after = get_mystery_count(user_id, room_id, timeout_ms=timeout_ms)
+    except Exception:
+        myst_after = None
 
     out = dict(raw)
     out.setdefault("userId", user_id)
@@ -319,11 +414,10 @@ def smash_egg_once(
     out["remainAfter"] = remain_after
     out["usedSmashBefore"] = used_before
     out["usedSmashAfter"] = used_after
-    out["roomSmashBefore"] = room_smash_before
-    out["roomSmashAfter"] = room_smash_after
+    # 保留金蛋等级内计数，供 smashCount 差值与等级状态机
+    out["roomEggSmashBefore"] = room_smash_before
+    out["roomEggSmashAfter"] = room_smash_after
     out["eggLevel"] = entry_after.get("eggLevel")
-    out["roomSmashCount"] = room_smash_after
-    out["userSmashCount"] = used_after
     out["prizePoolPreview"] = _is_prize_pool_preview(out)
     out["smashCount"] = smash_count_from_result(
         out,
@@ -333,6 +427,28 @@ def smash_egg_once(
         room_smash_after=room_smash_after,
     )
     out["expectedBatch"] = expected_batch_from_remain(remain_before)
+
+    # 落表：房间内/用户/平台砸蛋次数一律 year3Dao.testGetMysteryCount
+    if myst_before and myst_after:
+        out["mysteryCountBefore"] = myst_before
+        out["mysteryCountAfter"] = myst_after
+        out["roomSmashBefore"] = myst_before["room"]
+        out["roomSmashAfter"] = myst_after["room"]
+        out["roomSmashCount"] = myst_after["room"]
+        out["mysteryRoomBefore"] = myst_before["room"]
+        out["mysteryRoomAfter"] = myst_after["room"]
+        out["userSmashBefore"] = myst_before["user"]
+        out["userSmashCount"] = myst_after["user"]
+        out["platformSmashBefore"] = myst_before["platform"]
+        out["platformSmashCount"] = myst_after["platform"]
+    else:
+        out["mysteryCountBefore"] = myst_before
+        out["mysteryCountAfter"] = myst_after
+        out["roomSmashBefore"] = room_smash_before
+        out["roomSmashAfter"] = room_smash_after
+        out["roomSmashCount"] = room_smash_after
+        out["userSmashCount"] = used_after
+
     if out["prizePoolPreview"]:
         out["smashCount"] = 0
         out["skipReason"] = "prize_pool_preview"

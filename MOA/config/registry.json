@@ -748,10 +748,21 @@
       "command": "python3 MOA/scripts/package_gift_backpack_tunnel_verify.py \\\n  --user-id <userId> \\\n  --bid <baseProductId> \\\n  --expect-remain <num> \\\n  --since 600"
     },
     {
+      "id": "anniversary_egg_mystery_count",
+      "name": "3周年砸金蛋-查神秘保底计数",
+      "category": "活动（3周年砸金蛋）",
+      "description": "year3Dao.testGetMysteryCount(type,userId,roomId) 查用户/房间/平台砸蛋次数；对照 MSE 保底模数预判再砸 N 次是否应下发神秘奖。房间默认自己的房间。",
+      "prompts": [
+        "查询砸金蛋神秘保底次数 userId=<userId>",
+        "查用户房间平台砸蛋次数判断神秘奖 userId=<userId> roomId=<roomId>"
+      ],
+      "command": "python3 MOA/scripts/anniversary_egg_mystery_count.py \\\n  --user-id <userId> \\\n  --room-id <roomId>"
+    },
+    {
       "id": "anniversary_egg_smash_record",
       "name": "3周年砸金蛋-造数并记录钉钉表",
       "category": "活动（3周年砸金蛋）",
-      "description": "smashEgg：房间默认自己的房间；每砸一次立即写入钉钉「砸金蛋测试记录」。砸蛋时金蛋等级/神秘奖励按 MSE 配置理论计算（房间门槛升级；用户/房间/平台保底模数标注理论触发）。",
+      "description": "smashEgg：房间默认自己的房间；每砸一次立即写入钉钉「砸金蛋测试记录」。房间内/用户/平台砸蛋次数来自 year3Dao.testGetMysteryCount；金蛋等级/神秘奖励按 MSE 配置理论计算。",
       "prompts": [
         "3周年砸金蛋记录到钉钉表 userId=<userId> 次数 <smashCount>",
         "砸金蛋造数并写表 userId=<userId>"
@@ -773,12 +784,12 @@
       "id": "anniversary_egg_multi_account_verify",
       "name": "3周年砸金蛋-多账号批量验收落表",
       "category": "活动（3周年砸金蛋）",
-      "description": "手机号账号自送获次（随机1~11）、钻不足充100万，随机五账号房间砸一次；写入「砸金蛋测试记录」（砸蛋明细+验收列合一）。",
+      "description": "手机号账号自送获次（随机1~15）、钻不足充100万，在账号房间中随机砸一次；写入「砸金蛋测试记录」（砸蛋明细+验收列合一）。房间内/用户/平台次数来自 year3Dao.testGetMysteryCount。",
       "prompts": [
-        "五账号砸金蛋批量验收 1000 组",
-        "手机号13311111121到25砸金蛋验收落表"
+        "多账号砸金蛋验收 rounds=<rounds>",
+        "手机号13311111141到43砸金蛋验收落表"
       ],
-      "command": "python3 MOA/scripts/anniversary_egg_multi_account_verify.py \\\n  --workbook https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz \\\n  --phones 13311111121,13311111122,13311111123,13311111124,13311111125 \\\n  --rounds <rounds>"
+      "command": "python3 MOA/scripts/anniversary_egg_multi_account_verify.py \\\n  --workbook https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz \\\n  --phones 13311111141,13311111142,13311111143 \\\n  --chance-min 1 --chance-max 15 \\\n  --rounds <rounds>"
     },
     {
       "id": "anniversary_egg_smash_test",

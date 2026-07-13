@@ -447,6 +447,7 @@ def evaluate_acceptance_verdict(
     }
 
 
+# 房间内/用户/平台砸蛋次数：year3Dao.testGetMysteryCount 的 room/user/platform（砸后快照）
 HEADER = [
     "用例序号",
     "砸蛋账号",
@@ -755,6 +756,14 @@ def record_to_row(
     room_after_raw = smash_result.get("roomSmashCount")
     if room_after_raw is None:
         room_after_raw = smash_result.get("roomSmashAfter")
+    # 金蛋等级内计数（仅状态机兜底用）
+    egg_room_after_raw = smash_result.get("roomEggSmashAfter")
+    if egg_room_after_raw is None:
+        egg_room_after_raw = room_after_raw
+    egg_room_before_raw = smash_result.get("roomEggSmashBefore")
+    if egg_room_before_raw is None:
+        egg_room_before_raw = smash_result.get("roomSmashBefore")
+
     user_after = smash_result.get("userSmashCount")
     if user_after is None:
         user_after = smash_result.get("usedSmashAfter")
@@ -765,20 +774,21 @@ def record_to_row(
     except (TypeError, ValueError):
         user_after_i = 0
 
-    room_before_raw = smash_result.get("roomSmashBefore")
-    if room_before_raw is None:
-        try:
-            room_before_raw = max(0, int(room_after_raw or 0) - batch)
-        except (TypeError, ValueError):
-            room_before_raw = 0
-    # smashCount 为当前等级内计数；升级清零时抬成 before+batch，供等级/保底使用
-    room_before_i, room_after_i, _room_reset = normalize_room_smash_lifetime(
-        room_before_raw, room_after_raw, batch
+    try:
+        egg_room_before_raw_i = (
+            max(0, int(egg_room_after_raw or 0) - batch)
+            if egg_room_before_raw is None
+            else int(egg_room_before_raw or 0)
+        )
+    except (TypeError, ValueError):
+        egg_room_before_raw_i = 0
+    egg_room_before_i, egg_room_after_i, _ = normalize_room_smash_lifetime(
+        egg_room_before_raw_i, egg_room_after_raw, batch
     )
 
-    user_before = smash_result.get("usedSmashBefore")
+    user_before = smash_result.get("userSmashBefore")
     if user_before is None:
-        user_before = smash_result.get("userSmashBefore")
+        user_before = smash_result.get("usedSmashBefore")
     if user_before is None:
         user_before = max(0, user_after_i - batch)
 
@@ -802,9 +812,35 @@ def record_to_row(
     except (TypeError, ValueError):
         platform_before_i = None
 
-    # 金蛋等级：优先接口 eggLevel（升级后仍为 2/3）；否则按房间终身累计推算
+    # 落表三列 + 神秘保底：一律 year3Dao.testGetMysteryCount
+    myst_b = smash_result.get("mysteryCountBefore")
+    myst_a = smash_result.get("mysteryCountAfter")
+    if isinstance(myst_b, dict) and isinstance(myst_a, dict):
+        try:
+            user_before = int(myst_b.get("user") or 0)
+            user_after_i = int(myst_a.get("user") or 0)
+            user_after = user_after_i
+            myst_room_before = int(myst_b.get("room") or 0)
+            myst_room_after = int(myst_a.get("room") or 0)
+            platform_before_i = int(myst_b.get("platform") or 0)
+            platform_after_i = int(myst_a.get("platform") or 0)
+            platform_after = platform_after_i
+            sheet_room_after = myst_room_after
+        except (TypeError, ValueError):
+            myst_room_before, myst_room_after = egg_room_before_i, egg_room_after_i
+            sheet_room_after = egg_room_after_i
+    else:
+        # 兼容旧数据：无 mysteryCount 时尽量用已写入的房间/用户/平台绝对值
+        try:
+            sheet_room_after = int(room_after_raw if room_after_raw not in (None, "") else egg_room_after_i)
+        except (TypeError, ValueError):
+            sheet_room_after = egg_room_after_i
+        myst_room_before = int(smash_result.get("mysteryRoomBefore") or max(0, sheet_room_after - batch))
+        myst_room_after = int(smash_result.get("mysteryRoomAfter") or sheet_room_after)
+
+    # 金蛋等级：优先接口 eggLevel；否则按神秘计数房间累计 / 等级内归一推算
     egg_level = resolve_egg_level_label(
-        room_smash_lifetime=room_after_i,
+        room_smash_lifetime=myst_room_after if isinstance(myst_a, dict) else egg_room_after_i,
         egg_level=smash_result.get("eggLevel"),
         rules=rules,
     )
@@ -816,8 +852,8 @@ def record_to_row(
     theory_tags = theory_mystery_tags(
         user_before=int(user_before or 0),
         user_after=user_after_i,
-        room_before=room_before_i,
-        room_after=room_after_i,
+        room_before=myst_room_before,
+        room_after=myst_room_after,
         platform_before=platform_before_i,
         platform_after=platform_after_i,
         rules=rules,
@@ -851,7 +887,7 @@ def record_to_row(
         _sheet_cell(room_id),
         _sheet_cell(v.get("gainedChances")),
         _sheet_cell(smash_count),
-        _sheet_cell(room_after_i),
+        _sheet_cell(sheet_room_after),
         _sheet_cell(user_after),
         _sheet_cell(platform_after),
         _sheet_cell(egg_level),
@@ -1019,9 +1055,8 @@ def _is_blank_data_row(row: list[str]) -> bool:
 def _recompute_derived_columns(data_rows: list[list[str]]) -> list[list[str]]:
     """按行序重算：
 
-    - 房间内砸蛋次数：按表内终身累加；若本行服务端值因升级清零而低于历史累计，
-      则继续累加本次次数（不用当前等级内计数覆盖终身累计）
-    - 用户/平台砸蛋次数：若本行已有服务端绝对值则保留；否则按表内累计补齐
+    - 房间内/用户/平台砸蛋次数：优先保留本行已有绝对值（来自 year3Dao.testGetMysteryCount）；
+      仅当单元格为空时按表内累计补齐（旧行兼容）
     - 砸蛋时金蛋等级：按房间状态机模拟（upgradeThreshold + expireSeconds + 记录时间掉级）
     - 神秘奖励：保留实发奖品文案，并按保底模数补「理论触发」标注
     - 验收结论：①神秘奖励是否符合预期 ②金蛋等级档次礼物是否符合预期
@@ -1081,13 +1116,11 @@ def _recompute_derived_columns(data_rows: list[list[str]]) -> list[list[str]]:
         if rid:
             prev_room = int(room_running.get(rid, 0))
             if room_existing is None:
-                room_total = prev_room + batch
-            elif room_existing < prev_room:
-                # 升级后当前等级 smashCount 清零，勿用小值覆盖终身累计
+                # 旧行无 mystery 快照：按表内累计补齐
                 room_total = prev_room + batch
             else:
-                # 同行已是终身累计（或同等级内单调递增）时取较大值，避免回退
-                room_total = max(room_existing, prev_room + batch if batch else room_existing)
+                # testGetMysteryCount.room 等服务端绝对值：原样保留，勿按升级清零改写
+                room_total = room_existing
             room_running[rid] = room_total
             cells[room_smash_idx] = str(room_total)
 

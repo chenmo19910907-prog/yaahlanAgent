@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """多账号自送获次 → 随机房间砸蛋 → 写入「砸金蛋测试记录」（含验收列）。
 
-手机号账号自送 giftIds 礼物获次（随机 1~11），钻石不足充 100 万；
-在五个账号房间中随机选房砸一次；对照配置验收并落表。
+手机号账号自送 giftIds 礼物获次（随机 1~15），钻石不足充 100 万；
+在账号房间中随机选房砸一次；对照配置验收并落表。
 """
 
 from __future__ import annotations
@@ -226,34 +226,66 @@ def evaluate_case(
     actual_smash = int(smash.get("smashCount") or 0)
     expected_smash = expected_batch_from_remain(remain_before)
 
-    room_after_raw = smash.get("roomSmashCount")
-    if room_after_raw is None:
-        room_after_raw = smash.get("roomSmashAfter")
-    room_before_raw = smash.get("roomSmashBefore")
-    room_before, room_after, _ = normalize_room_smash_lifetime(
-        room_before_raw, room_after_raw, actual_smash
-    )
-    user_after = int(smash.get("userSmashCount") or smash.get("usedSmashAfter") or 0)
-    user_before = int(smash.get("usedSmashBefore") or max(0, user_after - actual_smash))
-    plat_after = smash.get("platformSmashCount")
-    try:
-        plat_after_i = int(plat_after) if plat_after not in (None, "") else None
-    except (TypeError, ValueError):
-        plat_after_i = None
-    plat_before_i = (
-        max(0, plat_after_i - actual_smash) if plat_after_i is not None else None
-    )
+    # 房间内/用户/平台 + 神秘保底：一律 year3Dao.testGetMysteryCount
+    myst_b = smash.get("mysteryCountBefore") if isinstance(smash.get("mysteryCountBefore"), dict) else None
+    myst_a = smash.get("mysteryCountAfter") if isinstance(smash.get("mysteryCountAfter"), dict) else None
+    if myst_b and myst_a:
+        user_before = int(myst_b.get("user") or 0)
+        user_after = int(myst_a.get("user") or 0)
+        myst_room_before = int(myst_b.get("room") or 0)
+        myst_room_after = int(myst_a.get("room") or 0)
+        plat_before_i = int(myst_b.get("platform") or 0)
+        plat_after_i = int(myst_a.get("platform") or 0)
+        room_after = myst_room_after
+    else:
+        egg_before_raw = smash.get("roomEggSmashBefore")
+        if egg_before_raw is None:
+            egg_before_raw = smash.get("roomSmashBefore")
+        egg_after_raw = smash.get("roomEggSmashAfter")
+        if egg_after_raw is None:
+            egg_after_raw = smash.get("roomSmashCount")
+        if egg_after_raw is None:
+            egg_after_raw = smash.get("roomSmashAfter")
+        room_before, room_after, _ = normalize_room_smash_lifetime(
+            egg_before_raw, egg_after_raw, actual_smash
+        )
+        user_after = int(smash.get("userSmashCount") or smash.get("usedSmashAfter") or 0)
+        user_before = int(
+            smash.get("userSmashBefore")
+            or smash.get("usedSmashBefore")
+            or max(0, user_after - actual_smash)
+        )
+        myst_room_before = int(smash.get("mysteryRoomBefore") or room_before)
+        myst_room_after = int(smash.get("mysteryRoomAfter") or room_after)
+        plat_after = smash.get("platformSmashCount")
+        try:
+            plat_after_i = int(plat_after) if plat_after not in (None, "") else None
+        except (TypeError, ValueError):
+            plat_after_i = None
+        plat_before_raw = smash.get("platformSmashBefore")
+        try:
+            plat_before_i = (
+                int(plat_before_raw)
+                if plat_before_raw not in (None, "")
+                else (
+                    max(0, plat_after_i - actual_smash)
+                    if plat_after_i is not None
+                    else None
+                )
+            )
+        except (TypeError, ValueError):
+            plat_before_i = None
 
     expected_level = resolve_egg_level_label(
-        room_smash_lifetime=room_after,
+        room_smash_lifetime=myst_room_after if myst_a else room_after,
         egg_level=smash.get("eggLevel"),
         rules=rules,
     )
     tags = theory_mystery_tags(
         user_before=user_before,
         user_after=user_after,
-        room_before=room_before,
-        room_after=room_after,
+        room_before=myst_room_before,
+        room_after=myst_room_after,
         platform_before=plat_before_i,
         platform_after=plat_after_i,
         rules=rules,
@@ -309,10 +341,14 @@ def run_one(
     smash_sheet: str,
     dry_run: bool,
     rules: dict[str, Any],
+    chance_min: int = 1,
+    chance_max: int = 15,
 ) -> dict[str, Any]:
     actor = random.choice(accounts)
     smash_room = random.choice(accounts)["roomId"]
-    target = random.randint(1, 11)
+    lo = min(int(chance_min), int(chance_max))
+    hi = max(int(chance_min), int(chance_max))
+    target = random.randint(lo, hi)
     phone = actor["phone"]
     user_id = actor["userId"]
     gift_room = actor["roomId"]
@@ -415,6 +451,12 @@ def main() -> int:
     parser.add_argument("--phones", default=",".join(DEFAULT_PHONES))
     parser.add_argument("--rounds", type=int, default=1000, help="测试组数")
     parser.add_argument("--start-case", type=int, default=1, help="起始用例序号")
+    parser.add_argument(
+        "--chance-min", type=int, default=1, help="自送获次随机下限（含）"
+    )
+    parser.add_argument(
+        "--chance-max", type=int, default=15, help="自送获次随机上限（含）"
+    )
     parser.add_argument("--smash-sheet", default=DEFAULT_SHEET)
     parser.add_argument(
         "--verify-sheet",
@@ -433,6 +475,8 @@ def main() -> int:
         raise SystemExit("phones 为空")
     if args.rounds <= 0:
         raise SystemExit("rounds 须为正整数")
+    if args.chance_min <= 0 or args.chance_max <= 0:
+        raise SystemExit("chance-min/max 须为正整数")
 
     print("解析账号…", file=sys.stderr)
     accounts = [resolve_phone_user(p) for p in phones]
@@ -441,6 +485,10 @@ def main() -> int:
 
     rules = load_activity_rules(force_refresh=True)
     print(f"rules={rules}", file=sys.stderr)
+    print(
+        f"获次随机={args.chance_min}~{args.chance_max} rounds={args.rounds}",
+        file=sys.stderr,
+    )
 
     progress = Path(args.progress_file)
     progress.parent.mkdir(parents=True, exist_ok=True)
@@ -458,6 +506,8 @@ def main() -> int:
                 smash_sheet=args.smash_sheet,
                 dry_run=args.dry_run,
                 rules=rules,
+                chance_min=args.chance_min,
+                chance_max=args.chance_max,
             )
             if result.get("verdict") == "通过":
                 summary["pass"] += 1
