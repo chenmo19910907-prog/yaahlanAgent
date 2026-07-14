@@ -285,6 +285,75 @@ def _crossed_guarantee(before: int, after: int, mod: int) -> bool:
     return first <= a
 
 
+# 同一颗蛋多保底同时满足时：个人 > 房间 > 平台；未消耗的顺延到下一颗蛋
+_MYSTERY_GUARANTEE_PRIORITY = ("user", "room", "platform")
+
+
+def resolve_mystery_guarantee_triggers(
+    *,
+    user_before: int,
+    user_after: int,
+    room_before: int,
+    room_after: int,
+    platform_before: int | None = None,
+    platform_after: int | None = None,
+    user_mod: int = 0,
+    room_mod: int = 0,
+    platform_mod: int = 0,
+) -> list[str]:
+    """按颗模拟神秘保底触发（支持同砸多蛋、优先级与顺延）。
+
+    规则：
+    1. 逐颗蛋推进用户/房间/平台计数；落在模数倍则该维度本颗候选
+    2. 同一颗蛋多个候选：只消耗最高优先级（用户>房间>平台）
+    3. 同颗未消耗的候选顺延到下一颗蛋，再与新候选一起比优先级
+    4. 一次砸 N 个蛋 → 最多可触发 N 次保底（各颗独立判定）
+    """
+    try:
+        ub = int(user_before)
+        ua = int(user_after)
+        rb = int(room_before)
+        ra = int(room_after)
+    except (TypeError, ValueError):
+        return []
+    batch = max(0, ua - ub)
+    if batch <= 0:
+        batch = max(0, ra - rb)
+    if batch <= 0:
+        return []
+
+    u_mod = int(user_mod or 0)
+    r_mod = int(room_mod or 0)
+    p_mod = int(platform_mod or 0)
+    try:
+        pb = int(platform_before) if platform_before not in (None, "") else None
+    except (TypeError, ValueError):
+        pb = None
+
+    labels = {
+        "user": f"用户保底每{u_mod}次",
+        "room": f"房间保底每{r_mod}次",
+        "platform": f"平台保底每{p_mod}次",
+    }
+    pending: set[str] = set()
+    tags: list[str] = []
+    for i in range(1, batch + 1):
+        newly: set[str] = set()
+        if u_mod > 0 and (ub + i) % u_mod == 0:
+            newly.add("user")
+        if r_mod > 0 and (rb + i) % r_mod == 0:
+            newly.add("room")
+        if p_mod > 0 and pb is not None and (pb + i) % p_mod == 0:
+            newly.add("platform")
+        candidates = newly | pending
+        if not candidates:
+            continue
+        winner = next(d for d in _MYSTERY_GUARANTEE_PRIORITY if d in candidates)
+        tags.append(labels[winner])
+        pending = candidates - {winner}
+    return tags
+
+
 def theory_mystery_tags(
     *,
     user_before: int,
@@ -295,24 +364,19 @@ def theory_mystery_tags(
     platform_after: int | None = None,
     rules: dict[str, Any] | None = None,
 ) -> list[str]:
-    """按配置保底模数计算本段砸蛋理论应触发的神秘奖维度。"""
+    """按配置保底模数计算本段砸蛋理论应触发的神秘奖（含优先级/顺延）。"""
     r = rules or load_activity_rules()
-    tags: list[str] = []
-    u_mod = int(r.get("user_guarantee_mod") or 0)
-    room_mod = int(r.get("room_guarantee_mod") or 0)
-    plat_mod = int(r.get("platform_guarantee_mod") or 0)
-    if u_mod and _crossed_guarantee(user_before, user_after, u_mod):
-        tags.append(f"用户保底每{u_mod}次")
-    if room_mod and _crossed_guarantee(room_before, room_after, room_mod):
-        tags.append(f"房间保底每{room_mod}次")
-    if (
-        plat_mod
-        and platform_before is not None
-        and platform_after is not None
-        and _crossed_guarantee(platform_before, platform_after, plat_mod)
-    ):
-        tags.append(f"平台保底每{plat_mod}次")
-    return tags
+    return resolve_mystery_guarantee_triggers(
+        user_before=user_before,
+        user_after=user_after,
+        room_before=room_before,
+        room_after=room_after,
+        platform_before=platform_before,
+        platform_after=platform_after,
+        user_mod=int(r.get("user_guarantee_mod") or 0),
+        room_mod=int(r.get("room_guarantee_mod") or 0),
+        platform_mod=int(r.get("platform_guarantee_mod") or 0),
+    )
 
 
 _THEORY_SPLIT = re.compile(
@@ -377,14 +441,21 @@ def mystery_reward_meets_expectation(
 ) -> bool:
     """神秘奖励是否符合预期。
 
-    - 理论应触发保底：须有实发神秘奖（不能仅有「理论触发」文案）
+    - 理论应触发 N 次保底：须有实发神秘，且奖品段数 ≥ N
     - 理论不应触发：不得有「理论触发」标注，也不得有实发神秘奖
     """
     cell = str(mystery_cell or "").strip()
     actual = strip_theory_mystery_note(cell)
     has_theory_note = "理论触发" in cell
     if theory_tags:
-        return bool(actual)
+        if not actual:
+            return False
+        parts = [
+            p.strip()
+            for p in actual.replace(";", "；").split("；")
+            if p.strip()
+        ]
+        return len(parts) >= len(theory_tags)
     return (not has_theory_note) and (not actual)
 
 
@@ -412,6 +483,65 @@ def tier_reward_meets_expectation(
     return True
 
 
+# 与服务端 maxSmashPerClick / 产品默认一致
+DEFAULT_MAX_SMASH_PER_CLICK = 10
+
+
+def expected_smash_batch(remain_before: int | None) -> int | None:
+    """剩余>10 → 10；剩余≤10 → 剩余；剩余≤0 → 0。None 表示无法校验。"""
+    if remain_before is None:
+        return None
+    left = int(remain_before)
+    if left <= 0:
+        return 0
+    return min(DEFAULT_MAX_SMASH_PER_CLICK, left)
+
+
+def smash_count_meets_expectation(
+    *,
+    actual_batch: int,
+    expected_batch: int | None,
+) -> bool:
+    """本次砸蛋次数是否符合剩余次数规则。"""
+    if expected_batch is None:
+        return True
+    return int(actual_batch or 0) == int(expected_batch)
+
+
+def count_accumulation_meets_expectation(
+    *,
+    batch: int,
+    room_before: int | None = None,
+    room_after: int | None = None,
+    user_before: int | None = None,
+    user_after: int | None = None,
+    platform_before: int | None = None,
+    platform_after: int | None = None,
+) -> tuple[bool, list[str]]:
+    """房间/用户/平台次数累加：after == before + 本次砸蛋次数。
+
+    缺 before/after 的维度跳过；全部跳过视为通过（无法校验）。
+    """
+    b = int(batch or 0)
+    fails: list[str] = []
+    for name, before, after in (
+        ("房间内砸蛋次数", room_before, room_after),
+        ("用户砸蛋次数", user_before, user_after),
+        ("平台砸蛋次数", platform_before, platform_after),
+    ):
+        if before is None or after is None:
+            continue
+        try:
+            bf = int(before)
+            af = int(after)
+        except (TypeError, ValueError):
+            fails.append(f"{name}无法解析")
+            continue
+        if af != bf + b:
+            fails.append(f"{name}累加不符(期望{bf}+{b}={bf + b}，实际{af})")
+    return (not fails), fails
+
+
 def evaluate_acceptance_verdict(
     *,
     theory_tags: list[str],
@@ -419,8 +549,15 @@ def evaluate_acceptance_verdict(
     tier_cell: str,
     batch: int,
     egg_level: str = "",
+    expected_batch: int | None = None,
+    room_before: int | None = None,
+    room_after: int | None = None,
+    user_before: int | None = None,
+    user_after: int | None = None,
+    platform_before: int | None = None,
+    platform_after: int | None = None,
 ) -> dict[str, Any]:
-    """验收结论：①神秘奖励 ②金蛋等级礼物。"""
+    """验收结论：①神秘奖励 ②金蛋等级礼物 ③本次砸蛋次数 ④房/用/平累加。"""
     fails: list[str] = []
     myst_ok = mystery_reward_meets_expectation(
         theory_tags=theory_tags, mystery_cell=mystery_cell
@@ -428,22 +565,44 @@ def evaluate_acceptance_verdict(
     tier_ok = tier_reward_meets_expectation(
         tier_cell=tier_cell, batch=batch, egg_level=egg_level
     )
+    smash_ok = smash_count_meets_expectation(
+        actual_batch=batch, expected_batch=expected_batch
+    )
+    accum_ok, accum_fails = count_accumulation_meets_expectation(
+        batch=batch,
+        room_before=room_before,
+        room_after=room_after,
+        user_before=user_before,
+        user_after=user_after,
+        platform_before=platform_before,
+        platform_after=platform_after,
+    )
     if not myst_ok:
         fails.append("神秘奖励不符合预期")
     if not tier_ok:
         fails.append("金蛋等级礼物不符合预期")
+    if not smash_ok:
+        fails.append(
+            f"本次砸蛋次数不符合预期(期望{expected_batch}，实际{int(batch or 0)})"
+        )
+    if not accum_ok:
+        fails.extend(accum_fails)
     if not fails:
         return {
             "verdict": "通过",
             "failItems": "",
             "mysteryOk": True,
             "tierOk": True,
+            "smashCountOk": True,
+            "countAccumOk": True,
         }
     return {
         "verdict": "失败：" + "；".join(fails),
         "failItems": "；".join(fails),
         "mysteryOk": myst_ok,
         "tierOk": tier_ok,
+        "smashCountOk": smash_ok,
+        "countAccumOk": accum_ok,
     }
 
 
@@ -873,12 +1032,32 @@ def record_to_row(
         )
     recorded_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     v = verify or {}
+    remain_before_raw = smash_result.get("remainBefore")
+    try:
+        remain_before_i = (
+            int(remain_before_raw) if remain_before_raw not in (None, "") else None
+        )
+    except (TypeError, ValueError):
+        remain_before_i = None
+    expected_batch = expected_smash_batch(remain_before_i)
+    if v.get("expectedSmashCount") not in (None, ""):
+        try:
+            expected_batch = int(v["expectedSmashCount"])
+        except (TypeError, ValueError):
+            pass
     acceptance = evaluate_acceptance_verdict(
         theory_tags=theory_tags,
         mystery_cell=mystery_summary,
         tier_cell=tier_summary,
         batch=batch,
         egg_level=egg_level,
+        expected_batch=expected_batch,
+        room_before=myst_room_before,
+        room_after=myst_room_after,
+        user_before=int(user_before or 0) if user_before is not None else None,
+        user_after=user_after_i,
+        platform_before=platform_before_i,
+        platform_after=platform_after_i,
     )
     verdict = acceptance["verdict"]
     return [
@@ -1059,7 +1238,7 @@ def _recompute_derived_columns(data_rows: list[list[str]]) -> list[list[str]]:
       仅当单元格为空时按表内累计补齐（旧行兼容）
     - 砸蛋时金蛋等级：按房间状态机模拟（upgradeThreshold + expireSeconds + 记录时间掉级）
     - 神秘奖励：保留实发奖品文案，并按保底模数补「理论触发」标注
-    - 验收结论：①神秘奖励是否符合预期 ②金蛋等级档次礼物是否符合预期
+    - 验收结论：①神秘奖励 ②金蛋等级档次礼物 ③本次砸蛋次数 ④房/用/平相对上条同主体累加
     - 用户奖励汇总：该用户截至本行（含本次档次奖励 + 实发神秘）的累计
     """
     rules = load_activity_rules()
@@ -1079,11 +1258,14 @@ def _recompute_derived_columns(data_rows: list[list[str]]) -> list[list[str]]:
     rows = [list(r) for r in data_rows if not _is_blank_data_row(r)]
 
     room_running: dict[str, int] = {}
+    room_seen: set[str] = set()
+    user_seen: set[str] = set()
     # 每房间：等级、当前等级内进度、上次记录时间
     room_egg_state: dict[str, tuple[int, int, datetime | None]] = {}
     user_running: dict[str, int] = {}
     user_reward_running: dict[str, OrderedDict[str, int]] = {}
     platform_running = 0
+    platform_seen = False
     out: list[list[str]] = []
     for row in rows:
         cells = list(row)
@@ -1113,15 +1295,26 @@ def _recompute_derived_columns(data_rows: list[list[str]]) -> list[list[str]]:
             else None
         )
 
+        room_before_i: int | None = None
+        room_after_i: int | None = None
+        user_before_i: int | None = None
+        user_after_i: int | None = None
+        plat_before_i: int | None = None
+        plat_after_i: int | None = None
+
         if rid:
             prev_room = int(room_running.get(rid, 0))
+            if rid in room_seen:
+                room_before_i = prev_room
             if room_existing is None:
                 # 旧行无 mystery 快照：按表内累计补齐
                 room_total = prev_room + batch
             else:
                 # testGetMysteryCount.room 等服务端绝对值：原样保留，勿按升级清零改写
                 room_total = room_existing
+            room_after_i = room_total
             room_running[rid] = room_total
+            room_seen.add(rid)
             cells[room_smash_idx] = str(room_total)
 
             prev_lv, prev_prog, prev_ts = room_egg_state.get(rid, (1, 0, None))
@@ -1138,6 +1331,7 @@ def _recompute_derived_columns(data_rows: list[list[str]]) -> list[list[str]]:
             room_egg_state[rid] = (new_lv, new_prog, rec_ts or prev_ts)
         else:
             room_total = room_existing or 0
+            room_after_i = room_existing
             cells[room_smash_idx] = (
                 str(room_existing) if room_existing is not None else ""
             )
@@ -1148,12 +1342,17 @@ def _recompute_derived_columns(data_rows: list[list[str]]) -> list[list[str]]:
             )
 
         if uid:
+            prev_user = int(user_running.get(uid, 0))
+            if uid in user_seen:
+                user_before_i = prev_user
             if user_existing is None:
-                user_running[uid] = int(user_running.get(uid, 0)) + batch
+                user_running[uid] = prev_user + batch
                 user_total = user_running[uid]
             else:
                 user_total = user_existing
                 user_running[uid] = user_total
+            user_after_i = user_total
+            user_seen.add(uid)
             cells[user_smash_idx] = str(user_total)
             user_reward_running[uid] = merge_reward_totals(
                 user_reward_running.get(uid, OrderedDict()),
@@ -1163,6 +1362,7 @@ def _recompute_derived_columns(data_rows: list[list[str]]) -> list[list[str]]:
             cells[user_total_idx] = format_reward_totals(user_reward_running[uid])
         else:
             user_total = user_existing or 0
+            user_after_i = user_existing
             cells[user_smash_idx] = (
                 str(user_existing) if user_existing is not None else ""
             )
@@ -1170,14 +1370,18 @@ def _recompute_derived_columns(data_rows: list[list[str]]) -> list[list[str]]:
                 merge_reward_totals(tier, mystery_for_total)
             )
 
+        if platform_seen:
+            plat_before_i = platform_running
         if plat_existing is None:
-            platform_running += batch
+            platform_running = (platform_running if platform_seen else 0) + batch
             plat_total = platform_running
             cells[platform_smash_idx] = str(plat_total)
         else:
             plat_total = plat_existing
-            platform_running = max(platform_running, plat_total)
+            platform_running = plat_total
             cells[platform_smash_idx] = str(plat_total)
+        plat_after_i = plat_total
+        platform_seen = True
 
         theory_tags = theory_mystery_tags(
             user_before=max(0, user_total - batch),
@@ -1195,6 +1399,14 @@ def _recompute_derived_columns(data_rows: list[list[str]]) -> list[list[str]]:
             tier_cell=cells[tier_idx],
             batch=batch,
             egg_level=str(cells[egg_level_idx] or ""),
+            # 表内重算无 remainBefore，跳过「本次砸蛋次数 vs 剩余」校验
+            expected_batch=None,
+            room_before=room_before_i,
+            room_after=room_after_i,
+            user_before=user_before_i,
+            user_after=user_after_i,
+            platform_before=plat_before_i,
+            platform_after=plat_after_i,
         )
         cells[verdict_idx] = acceptance["verdict"]
         out.append(cells)
@@ -1212,7 +1424,12 @@ async def append_smash_record_async(
     *,
     sheet_name: str = DEFAULT_SHEET,
 ) -> str:
-    from alidocs_excel_export import _excel_env, _get_token_and_operator
+    """追加一行砸金蛋记录。
+
+    从表头向下找「第一个空行」写入（保证连续接在已有数据后），
+    禁止按 sheet rowCount / 表尾扫描（否则会写到超长空白末尾）。
+    """
+    from alidocs_excel_export import DOC_API, _col_letter, _excel_env, _get_token_and_operator
 
     import httpx
 
@@ -1220,6 +1437,10 @@ async def append_smash_record_async(
     url = f"https://alidocs.dingtalk.com/i/nodes/{workbook_id}"
     env = _excel_env()
     token, operator = await _get_token_and_operator(env)
+    cols = len(HEADER)
+    end_col = _col_letter(cols)
+    data_row = _normalize_data_row(row)
+    str_row = [_sheet_cell(c) for c in data_row]
 
     async with httpx.AsyncClient(timeout=120) as client:
         await _ensure_sheet(
@@ -1229,33 +1450,106 @@ async def append_smash_record_async(
             sheet_name=sheet_name,
             client=client,
         )
+        sheets_url = f"{DOC_API}/workbooks/{workbook_id}/sheets?operatorId={operator}"
+        resp = await client.get(
+            sheets_url, headers={"x-acs-dingtalk-access-token": token}
+        )
+        resp.raise_for_status()
+        sheet_id = None
+        for item in resp.json().get("value", []):
+            if str(item.get("name") or "") == sheet_name:
+                sheet_id = str(item.get("id") or "")
+                break
+        if not sheet_id:
+            raise RuntimeError(f"未找到工作表: {sheet_name}")
 
-    sheets = await fetch_workbook_sheets_async(url)
-    existing = sheets.get(sheet_name) or []
-    if existing and _header_compatible(existing[0]):
-        header0 = existing[0]
-        data_rows = [
-            _project_row_to_header(header0, r)
-            for r in existing[1:]
-            if any(str(c or "").strip() for c in r)
-        ]
-    elif existing:
-        # 完全不兼容的旧表头时放弃历史行，避免错位
-        data_rows = []
-    else:
-        data_rows = []
+        info_url = (
+            f"{DOC_API}/workbooks/{workbook_id}/sheets/{sheet_id}"
+            f"?select=rowCount,columnCount&operatorId={operator}"
+        )
+        info_resp = await client.get(
+            info_url, headers={"x-acs-dingtalk-access-token": token}
+        )
+        info_resp.raise_for_status()
+        info = info_resp.json()
+        old_row_count = int(info.get("rowCount") or 0)
 
-    data_rows.append(_normalize_data_row(row))
-    data_rows = _recompute_derived_columns(data_rows)
-    all_matrix = [HEADER] + data_rows
-    str_rows = _string_rows(all_matrix)
-    await _write_sheet_replace(
-        token=token,
-        operator=operator,
-        workbook_id=workbook_id,
-        sheet_name=sheet_name,
-        rows=str_rows,
-    )
+        async def _put_range(range_str: str, values: list[list[str]]) -> None:
+            write_url = (
+                f"{DOC_API}/workbooks/{workbook_id}/sheets/{sheet_id}"
+                f"/ranges/{range_str}?operatorId={operator}"
+            )
+            wr = await client.put(
+                write_url,
+                headers={
+                    "x-acs-dingtalk-access-token": token,
+                    "Content-Type": "application/json",
+                },
+                json={"values": values, "wordWrap": "autoWrap"},
+            )
+            if wr.status_code >= 400:
+                raise RuntimeError(
+                    f"写入 {sheet_name} {range_str} 失败 HTTP {wr.status_code}: {wr.text[:300]}"
+                )
+
+        async def _find_next_row_from_top() -> int:
+            """从表头向下扫描，返回第一个空数据行号（至少为 2）。"""
+            if old_row_count <= 0:
+                return 2
+            # 只扫已有 rowCount，但若全满则落到 rowCount+1；遇空洞立刻停止（优先填洞）
+            scan_limit = max(old_row_count, 1)
+            chunk = 100
+            start = 1
+            while start <= scan_limit:
+                end = min(start + chunk - 1, scan_limit)
+                scan_url = (
+                    f"{DOC_API}/workbooks/{workbook_id}/sheets/{sheet_id}"
+                    f"/ranges/A{start}:{end_col}{end}?operatorId={operator}"
+                )
+                sr = await client.get(
+                    scan_url, headers={"x-acs-dingtalk-access-token": token}
+                )
+                if sr.status_code >= 400:
+                    # 读失败时退化为「表头下一行」
+                    return 2
+                vals = sr.json().get("values") or []
+                for i, r in enumerate(vals):
+                    abs_row = start + i
+                    if abs_row == 1:
+                        # 表头行：若空则先写表头+本行在外层处理
+                        continue
+                    if not any(str(c or "").strip() for c in (r or [])):
+                        return abs_row
+                start = end + 1
+            return scan_limit + 1
+
+        if old_row_count <= 0:
+            await _put_range(
+                f"A1:{end_col}2",
+                [[_sheet_cell(c) for c in HEADER], str_row],
+            )
+        else:
+            # 确保表头存在
+            header_url = (
+                f"{DOC_API}/workbooks/{workbook_id}/sheets/{sheet_id}"
+                f"/ranges/A1:{end_col}1?operatorId={operator}"
+            )
+            hr = await client.get(
+                header_url, headers={"x-acs-dingtalk-access-token": token}
+            )
+            header_empty = True
+            if hr.status_code < 400:
+                hv = (hr.json().get("values") or [[]])[0]
+                header_empty = not any(str(c or "").strip() for c in (hv or []))
+            if header_empty:
+                await _put_range(
+                    f"A1:{end_col}1", [[_sheet_cell(c) for c in HEADER]]
+                )
+            next_row = await _find_next_row_from_top()
+            if next_row < 2:
+                next_row = 2
+            await _put_range(f"A{next_row}:{end_col}{next_row}", [str_row])
+
     return url
 
 

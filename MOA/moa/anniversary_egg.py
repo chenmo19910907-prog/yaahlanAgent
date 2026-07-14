@@ -170,21 +170,39 @@ def mystery_guarantee_expected(
     room_mod: int = 100,
     platform_mod: int = 150,
 ) -> list[str]:
-    """根据砸蛋前后神秘计数是否越过保底模数，返回应触发的维度标签。"""
-
-    def _crossed(before: int, after: int, mod: int) -> bool:
-        if mod <= 0 or after <= before:
-            return False
-        first = (before // mod + 1) * mod
-        return first <= after
-
+    """根据砸蛋前后神秘计数，按「用户>房间>平台」优先级与顺延规则给出理论触发标签。"""
+    # 与落表验收同一算法（避免 workbook 循环依赖，此处内联同等逻辑）
+    batch = max(0, int(user_after) - int(user_before))
+    if batch <= 0:
+        batch = max(0, int(room_after) - int(room_before))
+    if batch <= 0:
+        return []
+    u_mod = int(user_mod or 0)
+    r_mod = int(room_mod or 0)
+    p_mod = int(platform_mod or 0)
+    labels = {
+        "user": f"用户保底每{u_mod}次",
+        "room": f"房间保底每{r_mod}次",
+        "platform": f"平台保底每{p_mod}次",
+    }
+    priority = ("user", "room", "platform")
+    pending: set[str] = set()
     tags: list[str] = []
-    if _crossed(user_before, user_after, user_mod):
-        tags.append(f"用户保底每{user_mod}次")
-    if _crossed(room_before, room_after, room_mod):
-        tags.append(f"房间保底每{room_mod}次")
-    if _crossed(platform_before, platform_after, platform_mod):
-        tags.append(f"平台保底每{platform_mod}次")
+    ub, rb, pb = int(user_before), int(room_before), int(platform_before)
+    for i in range(1, batch + 1):
+        newly: set[str] = set()
+        if u_mod > 0 and (ub + i) % u_mod == 0:
+            newly.add("user")
+        if r_mod > 0 and (rb + i) % r_mod == 0:
+            newly.add("room")
+        if p_mod > 0 and (pb + i) % p_mod == 0:
+            newly.add("platform")
+        candidates = newly | pending
+        if not candidates:
+            continue
+        winner = next(d for d in priority if d in candidates)
+        tags.append(labels[winner])
+        pending = candidates - {winner}
     return tags
 
 

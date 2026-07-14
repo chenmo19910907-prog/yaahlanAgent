@@ -303,8 +303,36 @@ def evaluate_case(
         tier_cell=tier,
         batch=actual_smash,
         egg_level=expected_level,
+        expected_batch=expected_smash,
+        room_before=myst_room_before,
+        room_after=myst_room_after,
+        user_before=user_before,
+        user_after=user_after,
+        platform_before=plat_before_i,
+        platform_after=plat_after_i,
     )
     checks: list[dict[str, Any]] = [
+        {
+            "item": "本次砸蛋次数",
+            "pass": acceptance.get("smashCountOk", True),
+            "expected": expected_smash,
+            "actual": actual_smash,
+        },
+        {
+            "item": "房/用/平累加",
+            "pass": acceptance.get("countAccumOk", True),
+            "expected": (
+                f"房{myst_room_before}+{actual_smash}="
+                f"{myst_room_before + actual_smash}；"
+                f"用{user_before}+{actual_smash}={user_before + actual_smash}；"
+                f"平"
+                f"{(str(plat_before_i) + '+' + str(actual_smash) + '=' + str((plat_before_i or 0) + actual_smash)) if plat_before_i is not None else '跳过'}"
+            ),
+            "actual": (
+                f"房{myst_room_after}；用{user_after}；"
+                f"平{plat_after_i if plat_after_i is not None else '无'}"
+            ),
+        },
         {
             "item": "神秘奖励",
             "pass": acceptance["mysteryOk"],
@@ -330,7 +358,28 @@ def evaluate_case(
         "verdict": acceptance["verdict"],
         "failItems": acceptance["failItems"],
         "checks": checks,
+        "failCheckItems": failed,
     }
+
+
+def drain_remain_chances(
+    user_id: str,
+    room_id: str,
+    *,
+    max_calls: int = 80,
+) -> dict[str, int]:
+    """砸掉账号剩余次数（不落表），保证后续「只下发 N 次」后本次砸蛋次数≈N。"""
+    before = snap(user_id, room_id)["remain"]
+    calls = 0
+    while calls < max_calls:
+        cur = snap(user_id, room_id)
+        if cur["remain"] <= 0:
+            break
+        smash_egg_once(user_id=user_id, room_id=room_id, lang="en")
+        calls += 1
+        time.sleep(0.15)
+    after = snap(user_id, room_id)["remain"]
+    return {"remainBefore": before, "remainAfter": after, "drainCalls": calls}
 
 
 def run_one(
@@ -343,6 +392,7 @@ def run_one(
     rules: dict[str, Any],
     chance_min: int = 1,
     chance_max: int = 15,
+    drain_remain: bool = False,
 ) -> dict[str, Any]:
     actor = random.choice(accounts)
     smash_room = random.choice(accounts)["roomId"]
@@ -358,6 +408,15 @@ def run_one(
         f"smashRoom={smash_room} targetChances={target}",
         file=sys.stderr,
     )
+
+    drain_info: dict[str, int] | None = None
+    if drain_remain:
+        drain_info = drain_remain_chances(user_id, gift_room)
+        print(
+            f"  drain remain {drain_info['remainBefore']}→{drain_info['remainAfter']} "
+            f"calls={drain_info['drainCalls']}",
+            file=sys.stderr,
+        )
 
     gift_info = self_gift_for_chances(
         user_id=user_id, room_id=gift_room, target_chances=target
@@ -427,6 +486,7 @@ def run_one(
         "giftRoomId": gift_room,
         "smashRoomId": smash_room,
         "gift": gift_info,
+        "drain": drain_info,
         "smash": smash,
         "eval": eval_out,
         "verdict": eval_out["verdict"],
@@ -436,11 +496,21 @@ def run_one(
         print(f"  dry-run verdict={eval_out['verdict']}", file=sys.stderr)
         return out
 
-    _append_with_retry(
-        lambda: append_smash_record_async(
-            workbook, row_smash, sheet_name=smash_sheet
+    try:
+        _append_with_retry(
+            lambda: append_smash_record_async(
+                workbook, row_smash, sheet_name=smash_sheet
+            )
         )
-    )
+    except Exception as write_exc:
+        # 写表失败仍返回完整 smash，便于事后补写；不抛异常以免丢掉结果
+        out["writeFailed"] = True
+        out["writeError"] = str(write_exc)
+        print(
+            f"  写表失败 case={case_no}: {write_exc}",
+            file=sys.stderr,
+        )
+        return out
     print(f"  已实时落表 case={case_no} verdict={eval_out['verdict']}", file=sys.stderr)
     return out
 
@@ -456,6 +526,11 @@ def main() -> int:
     )
     parser.add_argument(
         "--chance-max", type=int, default=15, help="自送获次随机上限（含）"
+    )
+    parser.add_argument(
+        "--drain-remain",
+        action="store_true",
+        help="获次前先砸光剩余次数，保证「只下发 N 次」后本次砸蛋≈N",
     )
     parser.add_argument("--smash-sheet", default=DEFAULT_SHEET)
     parser.add_argument(
@@ -508,20 +583,31 @@ def main() -> int:
                 rules=rules,
                 chance_min=args.chance_min,
                 chance_max=args.chance_max,
+                drain_remain=bool(args.drain_remain),
             )
-            if result.get("verdict") == "通过":
+            if result.get("writeFailed"):
+                summary["error"] += 1
+            elif result.get("verdict") == "通过":
                 summary["pass"] += 1
             else:
                 summary["fail"] += 1
             with progress.open("a", encoding="utf-8") as f:
                 f.write(json.dumps(result, ensure_ascii=False, default=str) + "\n")
                 f.flush()
-            print(
-                f"  >> 已实时落表 case={case_no} verdict={result.get('verdict')} "
-                f"累计 pass={summary['pass']} fail={summary['fail']} err={summary['error']}",
-                file=sys.stderr,
-                flush=True,
-            )
+            if result.get("writeFailed"):
+                print(
+                    f"  >> 写表失败已存进度 case={case_no} verdict={result.get('verdict')} "
+                    f"累计 pass={summary['pass']} fail={summary['fail']} err={summary['error']}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+            else:
+                print(
+                    f"  >> 已实时落表 case={case_no} verdict={result.get('verdict')} "
+                    f"累计 pass={summary['pass']} fail={summary['fail']} err={summary['error']}",
+                    file=sys.stderr,
+                    flush=True,
+                )
         except Exception as exc:  # noqa: BLE001 — 单组失败继续
             summary["error"] += 1
             err = {
@@ -535,12 +621,12 @@ def main() -> int:
                 f.write(json.dumps(err, ensure_ascii=False) + "\n")
                 f.flush()
             print(
-                f"  >> 已实时落表(错误行) case={case_no} 累计 err={summary['error']}",
+                f"  >> 错误 case={case_no} 累计 err={summary['error']}",
                 file=sys.stderr,
                 flush=True,
             )
-            # 错误也尽量写入合并表
-            if not args.dry_run:
+            # 无 smash 的异常才写错误占位行；写表失败已在进度里留有完整记录
+            if not args.dry_run and "写表" not in str(exc):
                 try:
                     row = record_to_row(
                         {
