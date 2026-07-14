@@ -41,6 +41,14 @@ def test_not_code_modify_ops() -> None:
     assert not looks_like_code_modify_request("导出到钉钉文档")
 
 
+def test_moa_registry_open_to_all() -> None:
+    assert not looks_like_code_modify_request("帮我把MOA入库")
+    assert not looks_like_code_modify_request(
+        "这是根据家族 id 获取所有家族成员 id 的 MOA，帮我入库"
+    )
+    assert not looks_like_code_modify_request("查询收礼日榜的MOA，limit最多可以填入500，入库")
+
+
 def main() -> int:
     test_allowlist_owner()
     print("[OK] test_allowlist_owner")
@@ -50,6 +58,8 @@ def main() -> int:
     print("[OK] test_code_modify_intent")
     test_not_code_modify_ops()
     print("[OK] test_not_code_modify_ops")
+    test_moa_registry_open_to_all()
+    print("[OK] test_moa_registry_open_to_all")
     print("[PASS] code_modify_permission")
     return 0
 

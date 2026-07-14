@@ -12,6 +12,12 @@ GATEWAY_DIR = Path(__file__).resolve().parent
 ALLOWLIST_PATH = GATEWAY_DIR / "config" / "code_modify_allowlist.json"
 ALLOWLIST_LOCAL_PATH = GATEWAY_DIR / "config" / "code_modify_allowlist.local.json"
 
+# 延迟导入，避免与 moa_registry_guard 循环依赖
+def _looks_like_moa_registry_intent(text: str) -> bool:
+    from moa_registry_guard import looks_like_moa_registry_intent
+
+    return looks_like_moa_registry_intent(text)
+
 CODE_PATH_RE = re.compile(
     r"(dingtalk[_-]?gateway|platform/dingtalk|\bgateway\b|\.cursor/|gateway_prompt|cursor_runner|"
     r"registry\.json|SKILL\.md|command_router|code_modify|bridge_manager|"
@@ -93,9 +99,16 @@ def is_code_modify_allowed(
     return False
 
 
+def is_moa_registry_open_to_all() -> bool:
+    """MOA 能力入库对全员开放，不受代码修改白名单限制。"""
+    return True
+
+
 def looks_like_code_modify_request(prompt: str) -> bool:
     text = (prompt or "").strip()
     if not text:
+        return False
+    if is_moa_registry_open_to_all() and _looks_like_moa_registry_intent(text):
         return False
     if OPS_EXCLUDE_RE.search(text) and not CODE_PATH_RE.search(text):
         return False

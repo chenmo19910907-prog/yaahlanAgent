@@ -47,6 +47,9 @@ from anniversary_egg_smash_to_workbook import (  # noqa: E402
     compact_theory_tag_summary,
     compose_mystery_pending_in,
     evaluate_acceptance_verdict,
+    evaluate_diamond_credit,
+    expected_diamond_delta_from_smash,
+    expected_vip_exp_delta_from_smash,
     format_mystery_cell,
     load_activity_rules,
     normalize_room_smash_lifetime,
@@ -70,6 +73,7 @@ from gift.send_stage import (  # noqa: E402
     provide_diamond,
     query_diamond_balance,
     query_gift,
+    query_vip_exp,
 )
 
 DEFAULT_WORKBOOK = (
@@ -85,6 +89,25 @@ DEFAULT_PHONES = [
 GIFT_LIPSTICK = "2005057191"  # 199 钻，可堆叠折算获次
 DIAMOND_PER_CHANCE = 500
 TOP_UP_DIAMONDS = 1_000_000
+
+
+def query_balance_after_credit(
+    user_id: str,
+    *,
+    before: int,
+    expected_delta: int,
+    query_fn,
+    timeout_s: float = 8.0,
+) -> int:
+    if expected_delta <= 0:
+        return query_fn(user_id)
+    deadline = time.time() + timeout_s
+    while time.time() < deadline:
+        bal = query_fn(user_id)
+        if bal - before >= expected_delta:
+            return bal
+        time.sleep(0.35)
+    return query_fn(user_id)
 
 
 def _run_json(cmd: list[str], *, timeout: int = 120) -> dict[str, Any]:
@@ -523,6 +546,8 @@ def run_one(
     if pending_in:
         print(f"  pending_in={sorted(pending_in)}", file=sys.stderr)
 
+    diamond_before = query_diamond_balance(user_id)
+    vip_before = query_vip_exp(user_id)
     smash = smash_egg_once(user_id=user_id, room_id=smash_room, lang="en")
     # 轻量归一 prizes→rewards
     if smash.get("rewards") is None and isinstance(smash.get("prizes"), list):
@@ -542,6 +567,38 @@ def run_one(
         f"  smash remain {smash.get('remainBefore')}→{smash.get('remainAfter')} "
         f"count={smash.get('smashCount')} room={smash.get('roomSmashBefore')}→"
         f"{smash.get('roomSmashAfter')}",
+        file=sys.stderr,
+    )
+
+    expected_diamond = expected_diamond_delta_from_smash(smash)
+    expected_vip = expected_vip_exp_delta_from_smash(smash)
+    diamond_after = query_balance_after_credit(
+        user_id,
+        before=diamond_before,
+        expected_delta=expected_diamond,
+        query_fn=query_diamond_balance,
+    )
+    vip_after = query_balance_after_credit(
+        user_id,
+        before=vip_before,
+        expected_delta=expected_vip,
+        query_fn=query_vip_exp,
+    )
+    diamond_check = evaluate_diamond_credit(
+        before=diamond_before,
+        after=diamond_after,
+        expected=expected_diamond,
+    )
+    vip_check = evaluate_diamond_credit(
+        before=vip_before,
+        after=vip_after,
+        expected=expected_vip,
+    )
+    print(
+        f"  diamond expected={expected_diamond} "
+        f"{diamond_before}→{diamond_after} delta={diamond_check.get('actualDelta')} | "
+        f"vip expected={expected_vip} "
+        f"{vip_before}→{vip_after} delta={vip_check.get('actualDelta')}",
         file=sys.stderr,
     )
 
@@ -566,6 +623,14 @@ def run_one(
         "targetChances": target,
         "gainedChances": gift_info["gainedChances"],
         "topUpDiamonds": gift_info["topUpDiamonds"],
+        "diamondBefore": diamond_check.get("balanceBefore"),
+        "diamondAfter": diamond_check.get("balanceAfter"),
+        "expectedDiamond": diamond_check.get("expectedDelta"),
+        "actualDiamondDelta": diamond_check.get("actualDelta"),
+        "vipExpBefore": vip_check.get("balanceBefore"),
+        "vipExpAfter": vip_check.get("balanceAfter"),
+        "expectedVipExp": vip_check.get("expectedDelta"),
+        "actualVipExpDelta": vip_check.get("actualDelta"),
         **eval_out,
     }
     row_smash = record_to_row(
@@ -575,6 +640,7 @@ def run_one(
         fallback_smash_count=smash.get("smashCount"),
         verify=verify_payload,
     )
+    combined_verdict = str(row_smash[-2] or "").strip()
 
     out = {
         "caseNo": case_no,
@@ -586,12 +652,14 @@ def run_one(
         "drain": drain_info,
         "smash": smash,
         "eval": eval_out,
-        "verdict": eval_out["verdict"],
+        "diamond": diamond_check,
+        "vipExp": vip_check,
+        "verdict": combined_verdict,
         "pendingPlatform": pp,
     }
 
     if dry_run:
-        print(f"  dry-run verdict={eval_out['verdict']}", file=sys.stderr)
+        print(f"  dry-run verdict={combined_verdict}", file=sys.stderr)
         return out
 
     try:
@@ -648,7 +716,7 @@ def _build_batch_result_markdown(
         "",
         "### 验收说明",
         "",
-        "对照 MSE 配置验收：神秘奖励保底、金蛋等级礼物非空、砸蛋次数与累加计数。",
+        "对照 MSE 配置验收：神秘奖励保底、金蛋等级礼物非空、砸蛋次数与累加计数、钻石到账。",
     ]
     if fail_details:
         lines.extend(["", "### 未通过/异常明细（节选）", ""])

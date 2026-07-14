@@ -26,6 +26,7 @@ MOA_LOOKUP_PORT = 10010
 GIFT_SERVICE_URI = "/service/mdp-gift/gift-query-service"
 USER_PROFILE_URI = "/service/voga-mts-user-profile-stage"
 PAY_SERVICE_URI = "/service/voga-base-service-middle-pay-stage"
+VIP_SERVICE_URI = "/service/voga-mts-user-vip-stage"
 
 DIAMOND_PROVIDE_DEFAULTS = {
     "activityId": "2005000496",
@@ -260,6 +261,20 @@ def parse_diamond_count(result: Any) -> int:
 def query_diamond_balance(user_id: str) -> int:
     result = call_moa(PAY_SERVICE_URI, "queryUserAccount", [user_id])
     return parse_diamond_count(result)
+
+
+def parse_vip_exp_value(result: Any) -> int:
+    if not isinstance(result, dict):
+        raise StageGiftError("vip_query", f"无法解析 VIP 返回: {result}")
+    value = result.get("value")
+    if value is None:
+        raise StageGiftError("vip_query", f"响应缺少 value: {result}")
+    return int(value)
+
+
+def query_vip_exp(user_id: str) -> int:
+    result = call_moa(VIP_SERVICE_URI, "getVipInfo", [user_id])
+    return parse_vip_exp_value(result)
 
 
 def provide_diamond(user_id: str, num: int) -> Dict[str, Any]:

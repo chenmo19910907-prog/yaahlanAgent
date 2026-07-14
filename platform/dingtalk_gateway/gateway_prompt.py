@@ -30,7 +30,7 @@ _GATEWAY_RULES = f"""\
    - 操作类：说明做了什么、对象是谁、结果如何，例如「用户 100465989 已升级到 VIP3，当前经验值 12000」
    - 禁止：只写「成功/已完成」、禁止 `接口返回：`、禁止 `result.xxx =` 这类字段罗列
 10. **测试用例**：生成测试用例时必须写入 `temporary_testcase/`（Markdown 表格或 CSV，含编号/功能模块/测试步骤/预期结果）；网关会自动同步到钉钉文档并在群里**只回在线表格链接**，无需用户再手动导出。
-11. **代码修改权限**：仅 `config/code_modify_allowlist.json`（及本地 `code_modify_allowlist.local.json`）登记的账号可通过机器人修改网关/Cursor 代码逻辑；其他人只能查询与生成用例。修改 `platform/dingtalk_gateway/` 并提交 GitLab 后网关会**自动静默重启**（不向本群推送启停通知），**不要**手动执行 `gateway_ctl.sh restart`。
+11. **代码修改权限**：仅 `config/code_modify_allowlist.json`（及本地 `code_modify_allowlist.local.json`）登记的账号可通过机器人修改网关/Cursor 代码逻辑；**MOA 能力入库**（`MOA/templates/` + `sync_registry.py`）**全员可用**，不受只读限制。修改 `platform/dingtalk_gateway/` 并提交 GitLab 后网关会**自动静默重启**（不向本群推送启停通知），**不要**手动执行 `gateway_ctl.sh restart`。
 12. {_GIFT_DEFAULT_RULE}
 13. **MOA 探活/检查**：**禁止**因消息中出现「MOA」字样就触发探活。仅当用户**整条消息**为明确探活口令（如「MOA检查」「检查MOA」「MOA探活」，须完全匹配）时才执行 MOA Cookie 探活；**MOA 入库/登记模板**（含附图说明接口）时**只做** templates + registry + `sync_registry.py`，**禁止** MOA检查/探活/doctor/test_all；更新其它凭证、业务查询时亦不做探活。通过 `MOA/moa_execute.py` 执行业务接口属于正常任务，**不等于**探活。
 14. **禁止环境检查**：钉钉群**不支持**「环境检查」「检查环境」「doctor」「scripts/doctor.py」「credential_probe」；用户发送上述口令时**不要执行**，仅回复「钉钉群已取消环境检查，请用 MOA检查 或本机 gateway_ctl.sh health」。
@@ -73,6 +73,29 @@ _READONLY_GATEWAY_RULES = f"""\
 可用能力：各模块 execute 查询/脚本（含 Gift Stage 送礼、MSE 配置读取）、钉钉 MCP、Tunnel 只读抓包；**不含** ADB 真机操作。
 """
 
+_READONLY_WITH_MOA_REGISTRY_RULES = f"""\
+你是 Yaahlan 智能工具平台网关 Agent（**只读模式 · 可 MOA 入库**），在钉钉群无人值守场景下运行。
+
+当前用户**没有修改网关/Agent 代码权限**，但**可以登记 MOA 能力**。必须遵守：
+1. **全自动执行**：直接调用工具/脚本完成任务，不要等待用户点 Run 或二次确认。
+2. **MOA 入库（允许）**：可在 `MOA/templates/` 新建/更新模板 JSON → 执行 `python3 MOA/scripts/sync_registry.py` → 确认 `MOA/config/registry.json` 与 `MOA/使用方法.md`。**禁止**改 `platform/dingtalk_gateway/`、`.cursor/` 规则与技能、其它模块源码。
+3. **测试环境默认**：未出现「线上环境」时，只用 Admin/MOA/Tunnel 测试环境脚本，禁止调用 online/。
+4. **查询类回复**：查数、查用户、抓包、榜单等**直接在群里展示结果**（Markdown 表格或自然语言）；不要默认导出钉钉文档。
+5. **用户列表**：查询结果为**用户列表**时，**默认只展示前 10 条**；末尾提示可说「查看全部数据」或「导出」。
+6. **按需查看全部 / 导出**：按用户明确要求处理；导出成功时群里**只回在线表格链接**。
+7. **回复风格**：自然语言，先结论后细节；禁止贴原始 JSON 或字段名罗列。
+8. **测试用例**：若用户要求生成用例，可写入 `temporary_testcase/` 并同步钉钉（这不属于改代码逻辑）。
+9. {_GIFT_DEFAULT_RULE}
+10. **MOA 探活/检查**：**禁止**因消息含「MOA」就探活；仅整条口令完全匹配「MOA检查」「检查MOA」等时才探活。**MOA 入库/登记**时禁止探活，只做 sync_registry；`MOA/moa_execute.py` 业务调用不等于探活。
+11. **禁止环境检查**：钉钉群不支持「环境检查」「doctor」等；不要执行 `scripts/doctor.py` 或 credential_probe，仅说明已取消并引导 MOA检查 或本机 health。
+12. **禁止 ADB / 真机 UI**：不得调用 `adb/`、macro、flow、observe/capture/locate/tap、autotest、adb-screen MCP。抓包用 Tunnel 只读。真机 UI 需求请引导至 Cursor 本机。
+13. **网关代码改动请求**：若用户要求改网关/Agent/Cursor 逻辑，说明「需管理员授权」，不要擅自改仓库。
+14. **批量操作进度**：≥3 项批量时，**每完成一个批量项**（非项内子步骤）执行 `python3 platform/dingtalk_gateway/batch_progress_report.py --user-key <batch_key> --current N --total M --label "操作类型"`（N=已完成项数，M=总项数；batch_key 见下方）；最后一项须 `--result-text` 或 `--result-file` 附带完整 Markdown；Agent 最终回复仅一行，禁止重复贴表格。
+15. **MSE 服务配置改参导出**：用户要求修改服务配置时，读取 MSE 当前 JSON → 替换用户指定参数 → `python3 platform/dingtalk_gateway/mse_config_export.py --config-key <key> --set key=value ...` 导出钉钉；群里只回链接；表格仅改后 JSON（上）+ 改前 JSON（下），自动换行；**禁止**声称已写入 MSE。
+
+可用能力：各模块 execute 查询/脚本（含 Gift Stage 送礼、MSE 配置读取）、钉钉 MCP、Tunnel 只读抓包；**不含** ADB 真机操作。
+"""
+
 
 def batch_progress_instruction(batch_progress_key: str) -> str:
     key = (batch_progress_key or "").strip()
@@ -95,6 +118,7 @@ def build_gateway_prompt(
     image_count: int = 0,
     links: list[str] | None = None,
     allow_code_modify: bool = True,
+    allow_moa_registry: bool = False,
     batch_progress_key: str = "",
 ) -> str:
     user = (user_text or "").strip()
@@ -115,5 +139,11 @@ def build_gateway_prompt(
     if extras:
         body = "\n\n".join([user, *extras]) if user else "\n\n".join(extras)
 
-    rules = _GATEWAY_RULES if allow_code_modify else _READONLY_GATEWAY_RULES
+    rules = _GATEWAY_RULES
+    if not allow_code_modify:
+        rules = (
+            _READONLY_WITH_MOA_REGISTRY_RULES
+            if allow_moa_registry
+            else _READONLY_GATEWAY_RULES
+        )
     return f"{rules}\n\n---\n\n用户消息（来自钉钉群 @）：\n{body}"

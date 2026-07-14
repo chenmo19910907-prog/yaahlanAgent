@@ -1,5 +1,5 @@
 {
-  "description": "拥有通过钉钉机器人修改 Cursor/网关代码逻辑权限的账号（staffId 优先，senderId 兜底）",
+  "description": "拥有通过钉钉机器人修改 Cursor/网关代码逻辑权限的账号（staffId 优先，senderId 兜底）。MOA 能力入库（templates + sync_registry）对全员开放，不受本白名单限制。",
   "allowedStaffIds": [
     "32274159141215328"
   ],

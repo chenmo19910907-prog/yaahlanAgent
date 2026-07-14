@@ -803,7 +803,6 @@
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/3周年-砸金蛋测试.json \\\n  --anniversary-egg-user-id <userId> \\\n  --anniversary-egg-lang en"
     },
-
     {
       "id": "user_active_days_query",
       "name": "用户-查询登录天数",
@@ -983,6 +982,18 @@
         "清除家族PK结算发奖数据 rerunSettle=false"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-清除结算奖励.json\n"
+    },
+    {
+      "id": "anniversary_year3_exchange_item",
+      "name": "3周年-兑换道具",
+      "category": "活动（3周年）",
+      "description": "3周年活动兑换商城道具（/service/vas/year3 exchangeItem；params=userId、lang、giftId）。MOA 参数为 JSON 对象，非数组。",
+      "prompts": [
+        "3周年兑换道具 userId=<userId> giftId=<giftId>",
+        "用户 <userId> 兑换3周年道具 <giftId>",
+        "year3 exchangeItem <userId> <giftId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/3周年-兑换道具.json\n"
     }
   ]
 }

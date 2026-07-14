@@ -155,6 +155,14 @@ def test_code_modify_guard() -> None:
     out = guard_readonly_agent_reply(raw, allow_code_modify=False)
     assert "只读模式" in out
 
+    moa = "已在 MOA/templates/ 新建模板并执行 sync_registry.py，更新 registry.json"
+    out_moa = guard_readonly_agent_reply(
+        moa,
+        allow_code_modify=False,
+        allow_moa_registry=True,
+    )
+    assert "只读模式" not in out_moa
+
 
 def test_gift_default_route() -> None:
     from gift_defaults import is_backpack_gift_request, should_use_gift_http

@@ -671,6 +671,9 @@ def smash_count_meets_expectation(
     return int(actual_batch or 0) == int(expected_batch)
 
 
+_FREE_SMASH_SKIP_DIMS = frozenset({"房间内砸蛋次数", "平台砸蛋次数"})
+
+
 def count_accumulation_meets_expectation(
     *,
     batch: int,
@@ -683,6 +686,7 @@ def count_accumulation_meets_expectation(
 ) -> tuple[bool, list[str]]:
     """房间/用户/平台次数累加：after == before + 本次砸蛋次数。
 
+    免费砸蛋不累加房间/平台次数：batch>0 且该维度 before==after 时跳过校验。
     缺 before/after 的维度跳过；全部跳过视为通过（无法校验）。
     """
     b = int(batch or 0)
@@ -700,9 +704,272 @@ def count_accumulation_meets_expectation(
         except (TypeError, ValueError):
             fails.append(f"{name}无法解析")
             continue
+        if b > 0 and af == bf and name in _FREE_SMASH_SKIP_DIMS:
+            continue
         if af != bf + b:
             fails.append(f"{name}累加不符(期望{bf}+{b}={bf + b}，实际{af})")
     return (not fails), fails
+
+
+_VIP_EXP_PRIZE_TYPES = frozenset(
+    {"VIP", "VIP_EXP", "VIP_EXPERIENCE", "VIPVALUE"}
+)
+_VIP_EXP_PRIZE_IDS = frozenset({"30006354"})
+_VIP_EXP_NAME_HINTS = ("VIP经验", "VIP 经验", "vip经验", "VIP经验值")
+# 砸蛋奖池里的 VIP_VALUE / Growth points = 成长值，不是 VIP 经验值
+_VIP_EXP_EXCLUDE_NAME_HINTS = (
+    "成长值",
+    "Growth points",
+    "Growth point",
+    "VIP Growth",
+    "VIP成长",
+)
+
+
+def _is_excluded_vip_exp_reward(name: str) -> bool:
+    n = str(name or "").strip()
+    if not n:
+        return False
+    upper = n.upper()
+    return any(h in n or h.upper() in upper for h in _VIP_EXP_EXCLUDE_NAME_HINTS)
+
+
+def _is_sultan_vip_exp_name(name: str) -> bool:
+    """砸蛋展示「السلطان $」= VIP 经验值奖励（$ 为经验货币标识）。"""
+    n = str(name or "").strip()
+    if not n or _is_excluded_vip_exp_reward(n):
+        return False
+    if "السلطان" in n or "سلطان" in n:
+        return "$" in n or "＄" in n
+    return False
+
+
+def _reward_item_amount(item: dict[str, Any]) -> int:
+    try:
+        return max(0, int(item.get("num") or item.get("count") or item.get("amount") or 1))
+    except (TypeError, ValueError):
+        return 1
+
+
+def is_diamond_reward_item(item: dict[str, Any]) -> bool:
+    prize_type = str(item.get("prizeType") or "").upper()
+    name = str(item.get("prizeName") or item.get("name") or "").strip().upper()
+    return prize_type == "DIAMOND" or name == "DIAMOND"
+
+
+def is_vip_exp_reward_item(item: dict[str, Any]) -> bool:
+    """仅「السلطان $」等明确 VIP 经验奖品；排除 VIP Growth points（成长值）。"""
+    name = str(item.get("prizeName") or item.get("name") or "").strip()
+    if _is_excluded_vip_exp_reward(name):
+        return False
+    prize_id = str(item.get("prizeId") or "").strip()
+    if prize_id in _VIP_EXP_PRIZE_IDS:
+        return True
+    if _is_sultan_vip_exp_name(name):
+        return True
+    if any(hint in name for hint in _VIP_EXP_NAME_HINTS):
+        return True
+    prize_type = str(item.get("prizeType") or "").upper()
+    if prize_type in _VIP_EXP_PRIZE_TYPES and "VIP" in name.upper():
+        return True
+    return False
+
+
+def vip_exp_amount_from_item(item: dict[str, Any]) -> int:
+    """单个奖品应到账 VIP 经验（默认取 num）。"""
+    if not is_vip_exp_reward_item(item):
+        return 0
+    return _reward_item_amount(item)
+
+
+def vip_exp_delta_from_reward_summary(*texts: Any) -> int:
+    """从「档次奖励/神秘奖励」摘要解析 VIP 经验数量（含 السلطان $）。"""
+    total = 0
+    for text in texts:
+        for name, num in parse_reward_summary(text).items():
+            if name == "VIP经验" or _is_sultan_vip_exp_name(name):
+                total += int(num)
+    return max(0, total)
+
+
+def aggregate_typed_reward_delta(
+    rewards: Any,
+    *,
+    matcher,
+) -> int:
+    if not isinstance(rewards, list):
+        return 0
+    total = 0
+    for item in rewards:
+        if isinstance(item, dict) and matcher(item):
+            total += _reward_item_amount(item)
+    return total
+
+
+def aggregate_vip_exp_reward_delta(rewards: Any) -> int:
+    if not isinstance(rewards, list):
+        return 0
+    return sum(
+        vip_exp_amount_from_item(item)
+        for item in rewards
+        if isinstance(item, dict)
+    )
+
+
+def expected_diamond_delta_from_smash(smash_result: dict[str, Any]) -> int:
+    """从档次奖励 + 神秘奖励汇总本次应到账钻石数。"""
+    rewards = smash_result.get("rewards") or smash_result.get("prizes") or []
+    mystery = smash_result.get("mysteryPrizes") or smash_result.get("mysteryRewards") or []
+    totals = merge_reward_totals(
+        aggregate_rewards(rewards),
+        aggregate_rewards(mystery),
+    )
+    try:
+        return max(0, int(totals.get("钻石", 0)))
+    except (TypeError, ValueError):
+        return 0
+
+
+def expected_vip_exp_delta_from_smash(smash_result: dict[str, Any]) -> int:
+    """从档次奖励 + 神秘奖励汇总本次应到账 VIP 经验值。"""
+    rewards = smash_result.get("rewards") or smash_result.get("prizes") or []
+    mystery = smash_result.get("mysteryPrizes") or smash_result.get("mysteryRewards") or []
+    return max(
+        0,
+        aggregate_vip_exp_reward_delta(rewards)
+        + aggregate_vip_exp_reward_delta(mystery),
+    )
+
+
+def format_credit_increase_cell(
+    *,
+    expected_delta: int | None,
+    actual_delta: int | None,
+) -> str:
+    """奖励含该类型时展示实际到账增量；无该奖励或无法核验则留空。"""
+    try:
+        exp = max(0, int(expected_delta or 0))
+    except (TypeError, ValueError):
+        exp = 0
+    if exp <= 0:
+        return ""
+    if actual_delta is None:
+        return ""
+    try:
+        return str(int(actual_delta))
+    except (TypeError, ValueError):
+        return ""
+
+
+def format_combined_credit_increase_cell(
+    *,
+    expected_vip: int | None,
+    actual_vip: int | None,
+    expected_diamond: int | None,
+    actual_diamond: int | None,
+) -> str:
+    """VIP 经验与钻石到账增量合并为一格（与「用户奖励汇总」× 分隔风格一致）。"""
+    parts: list[str] = []
+    vip = format_credit_increase_cell(
+        expected_delta=expected_vip,
+        actual_delta=actual_vip,
+    )
+    if vip:
+        parts.append(f"VIP经验×{vip}")
+    diamond = format_credit_increase_cell(
+        expected_delta=expected_diamond,
+        actual_delta=actual_diamond,
+    )
+    if diamond:
+        parts.append(f"钻石×{diamond}")
+    return "；".join(parts)
+
+
+def evaluate_diamond_credit(
+    *,
+    before: int | None,
+    after: int | None,
+    expected: int | None,
+) -> dict[str, Any]:
+    """比对砸蛋前后钻石余额变动是否与奖励中钻石一致。"""
+    if before is None or after is None:
+        return {
+            "ok": None,
+            "balanceBefore": before,
+            "balanceAfter": after,
+            "expectedDelta": expected,
+            "actualDelta": None,
+            "verdictCell": "-",
+        }
+    try:
+        bf = int(before)
+        af = int(after)
+        exp = max(0, int(expected or 0))
+    except (TypeError, ValueError):
+        return {
+            "ok": None,
+            "balanceBefore": before,
+            "balanceAfter": after,
+            "expectedDelta": expected,
+            "actualDelta": None,
+            "verdictCell": "-",
+        }
+    actual_delta = af - bf
+    ok = actual_delta == exp
+    if exp == 0 and actual_delta == 0:
+        verdict_cell = "通过"
+    elif ok:
+        verdict_cell = "通过"
+    else:
+        verdict_cell = "不符"
+    return {
+        "ok": ok,
+        "balanceBefore": bf,
+        "balanceAfter": af,
+        "expectedDelta": exp,
+        "actualDelta": actual_delta,
+        "verdictCell": verdict_cell,
+    }
+
+
+def diamond_credit_from_verify(verify: dict[str, Any] | None) -> dict[str, Any]:
+    """从 verify 载荷或 smash 结果推导钻石到账验收单元格。"""
+    v = verify or {}
+    before = v.get("diamondBefore")
+    after = v.get("diamondAfter")
+    expected = v.get("expectedDiamond")
+    if expected is None and v.get("actualDiamondDelta") is not None and before is not None and after is not None:
+        try:
+            expected = int(after) - int(before)
+        except (TypeError, ValueError):
+            expected = None
+    if before is None and after is None and expected is None:
+        return evaluate_diamond_credit(before=None, after=None, expected=None)
+    return evaluate_diamond_credit(
+        before=int(before) if before not in (None, "") else None,
+        after=int(after) if after not in (None, "") else None,
+        expected=int(expected) if expected not in (None, "") else None,
+    )
+
+
+def vip_exp_credit_from_verify(verify: dict[str, Any] | None) -> dict[str, Any]:
+    """从 verify 载荷推导 VIP 经验到账验收。"""
+    v = verify or {}
+    before = v.get("vipExpBefore")
+    after = v.get("vipExpAfter")
+    expected = v.get("expectedVipExp")
+    if expected is None and v.get("actualVipExpDelta") is not None and before is not None and after is not None:
+        try:
+            expected = int(after) - int(before)
+        except (TypeError, ValueError):
+            expected = None
+    if before is None and after is None and expected is None:
+        return evaluate_diamond_credit(before=None, after=None, expected=None)
+    return evaluate_diamond_credit(
+        before=int(before) if before not in (None, "") else None,
+        after=int(after) if after not in (None, "") else None,
+        expected=int(expected) if expected not in (None, "") else None,
+    )
 
 
 def evaluate_acceptance_verdict(
@@ -719,8 +986,12 @@ def evaluate_acceptance_verdict(
     user_after: int | None = None,
     platform_before: int | None = None,
     platform_after: int | None = None,
+    diamond_ok: bool | None = None,
+    diamond_detail: str = "",
+    vip_ok: bool | None = None,
+    vip_detail: str = "",
 ) -> dict[str, Any]:
-    """验收结论：①神秘奖励 ②金蛋等级礼物 ③本次砸蛋次数 ④房/用/平累加。"""
+    """验收结论：①神秘奖励 ②金蛋等级礼物 ③本次砸蛋次数 ④房/用/平累加 ⑤钻石/VIP 到账。"""
     fails: list[str] = []
     myst_ok = mystery_reward_meets_expectation(
         theory_tags=theory_tags, mystery_cell=mystery_cell
@@ -750,6 +1021,10 @@ def evaluate_acceptance_verdict(
         )
     if not accum_ok:
         fails.extend(accum_fails)
+    if diamond_ok is False:
+        fails.append(diamond_detail or "钻石到账不符")
+    if vip_ok is False:
+        fails.append(vip_detail or "VIP经验到账不符")
     if not fails:
         return {
             "verdict": "通过",
@@ -758,6 +1033,8 @@ def evaluate_acceptance_verdict(
             "tierOk": True,
             "smashCountOk": True,
             "countAccumOk": True,
+            "diamondOk": diamond_ok,
+            "vipOk": vip_ok,
         }
     return {
         "verdict": "失败：" + "；".join(fails),
@@ -766,6 +1043,8 @@ def evaluate_acceptance_verdict(
         "tierOk": tier_ok,
         "smashCountOk": smash_ok,
         "countAccumOk": accum_ok,
+        "diamondOk": diamond_ok,
+        "vipOk": vip_ok,
     }
 
 
@@ -782,7 +1061,87 @@ HEADER = [
     "砸蛋时金蛋等级",
     "档次奖励",
     "神秘奖励",
+    "VIP经验·钻石增加",
+    "验收结论",
+    "记录写入时间",
+]
+
+# 曾含「用户奖励汇总」（读表投影兼容）
+_LEGACY_HEADER_WITH_USER_TOTAL = [
+    "用例序号",
+    "砸蛋账号",
+    "砸蛋房间",
+    "获次实得",
+    "本次砸蛋次数",
+    "房间内砸蛋次数",
+    "用户砸蛋次数",
+    "平台砸蛋次数",
+    "砸蛋时金蛋等级",
+    "档次奖励",
+    "神秘奖励",
     "用户奖励汇总",
+    "VIP经验·钻石增加",
+    "验收结论",
+    "记录写入时间",
+]
+
+# 曾分列 VIP / 钻石到账增量（读表投影兼容）
+_LEGACY_HEADER_WITH_SPLIT_CREDIT_COLS = [
+    "用例序号",
+    "砸蛋账号",
+    "砸蛋房间",
+    "获次实得",
+    "本次砸蛋次数",
+    "房间内砸蛋次数",
+    "用户砸蛋次数",
+    "平台砸蛋次数",
+    "砸蛋时金蛋等级",
+    "档次奖励",
+    "神秘奖励",
+    "用户奖励汇总",
+    "VIP经验增加",
+    "钻石增加",
+    "验收结论",
+    "记录写入时间",
+]
+
+# 无 VIP/钻石到账列（读表投影兼容）
+_LEGACY_HEADER_NO_CREDIT_COLS = [
+    "用例序号",
+    "砸蛋账号",
+    "砸蛋房间",
+    "获次实得",
+    "本次砸蛋次数",
+    "房间内砸蛋次数",
+    "用户砸蛋次数",
+    "平台砸蛋次数",
+    "砸蛋时金蛋等级",
+    "档次奖励",
+    "神秘奖励",
+    "用户奖励汇总",
+    "验收结论",
+    "记录写入时间",
+]
+
+# 曾短暂落过独立钻石列（已并入验收结论，读表投影兼容）
+_LEGACY_HEADER_WITH_DIAMOND_COLS = [
+    "用例序号",
+    "砸蛋账号",
+    "砸蛋房间",
+    "获次实得",
+    "本次砸蛋次数",
+    "房间内砸蛋次数",
+    "用户砸蛋次数",
+    "平台砸蛋次数",
+    "砸蛋时金蛋等级",
+    "档次奖励",
+    "神秘奖励",
+    "用户奖励汇总",
+    "钻石-变动前",
+    "钻石-变动后",
+    "钻石-预期变动",
+    "钻石-实际变动",
+    "钻石到账验收",
     "验收结论",
     "记录写入时间",
 ]
@@ -958,6 +1317,8 @@ _LEGACY_HEADER_ALIASES = {
 
 _REWARD_NAME_ALIASES = {
     "DIAMOND": "钻石",
+    "VIP_EXP": "VIP经验",
+    "VIP_EXPERIENCE": "VIP经验",
 }
 
 _REWARD_PAIR = re.compile(r"^(.+?)×(\d+)$")
@@ -966,6 +1327,8 @@ _REWARD_PAIR = re.compile(r"^(.+?)×(\d+)$")
 def _canonicalize_reward_name(name: str) -> str:
     raw = str(name or "").strip()
     if not raw:
+        return raw
+    if _is_sultan_vip_exp_name(raw):
         return raw
     aliased = _REWARD_NAME_ALIASES.get(raw) or _REWARD_NAME_ALIASES.get(raw.upper())
     return aliased or raw
@@ -979,6 +1342,11 @@ def reward_display_name(item: dict[str, Any]) -> str:
     prize_type = str(item.get("prizeType") or "").upper()
     if prize_type == "DIAMOND" or name.upper() == "DIAMOND":
         return "钻石"
+    if _is_excluded_vip_exp_reward(name):
+        return _canonicalize_reward_name(name) if name else "奖励"
+    # 显式 VIP 经验文案展示为 VIP经验；Sultan（السلطان $）保留原文案
+    if any(hint in name for hint in _VIP_EXP_NAME_HINTS):
+        return "VIP经验"
     if name and name not in {"1", "奖励"} and not name.isdigit():
         return _canonicalize_reward_name(name)
     icon = str(item.get("icon") or "").lower()
@@ -1200,16 +1568,6 @@ def record_to_row(
             rules=rules,
         )
 
-    # 无显式汇总时：档次 + 实发神秘一并计入本行用户汇总（写入后仍会按用户历史重算）
-    if user_total_summary:
-        user_summary = user_total_summary
-    else:
-        user_summary = format_reward_totals(
-            merge_reward_totals(
-                aggregate_rewards(rewards),
-                aggregate_rewards(mystery),
-            )
-        )
     recorded_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     v = verify or {}
     remain_before_raw = smash_result.get("remainBefore")
@@ -1225,6 +1583,41 @@ def record_to_row(
             expected_batch = int(v["expectedSmashCount"])
         except (TypeError, ValueError):
             pass
+    diamond_check = diamond_credit_from_verify(v)
+    vip_check = vip_exp_credit_from_verify(v)
+    expected_diamond = v.get("expectedDiamond")
+    if expected_diamond in (None, ""):
+        expected_diamond = expected_diamond_delta_from_smash(smash_result)
+    else:
+        try:
+            expected_diamond = int(expected_diamond)
+        except (TypeError, ValueError):
+            expected_diamond = expected_diamond_delta_from_smash(smash_result)
+    expected_vip = v.get("expectedVipExp")
+    if expected_vip in (None, ""):
+        expected_vip = expected_vip_exp_delta_from_smash(smash_result)
+        if not expected_vip:
+            expected_vip = vip_exp_delta_from_reward_summary(
+                tier_summary,
+                mystery_summary,
+            )
+    else:
+        try:
+            expected_vip = int(expected_vip)
+        except (TypeError, ValueError):
+            expected_vip = expected_vip_exp_delta_from_smash(smash_result)
+    diamond_detail = ""
+    if diamond_check.get("ok") is False:
+        diamond_detail = (
+            f"钻石到账不符(预期{diamond_check.get('expectedDelta')}钻，"
+            f"实际{diamond_check.get('actualDelta')}钻)"
+        )
+    vip_detail = ""
+    if vip_check.get("ok") is False:
+        vip_detail = (
+            f"VIP经验到账不符(预期{vip_check.get('expectedDelta')}，"
+            f"实际{vip_check.get('actualDelta')})"
+        )
     acceptance = evaluate_acceptance_verdict(
         theory_tags=theory_tags,
         mystery_cell=mystery_summary,
@@ -1238,8 +1631,18 @@ def record_to_row(
         user_after=user_after_i,
         platform_before=platform_before_i,
         platform_after=platform_after_i,
+        diamond_ok=diamond_check.get("ok"),
+        diamond_detail=diamond_detail,
+        vip_ok=vip_check.get("ok"),
+        vip_detail=vip_detail,
     )
     verdict = acceptance["verdict"]
+    credit_cell = format_combined_credit_increase_cell(
+        expected_vip=expected_vip,
+        actual_vip=vip_check.get("actualDelta"),
+        expected_diamond=expected_diamond,
+        actual_diamond=diamond_check.get("actualDelta"),
+    )
     return [
         _sheet_cell(v.get("caseNo")),
         _sheet_cell(user_id),
@@ -1252,7 +1655,7 @@ def record_to_row(
         _sheet_cell(egg_level),
         _sheet_cell(tier_summary),
         _sheet_cell(mystery_summary),
-        _sheet_cell(user_summary),
+        _sheet_cell(credit_cell),
         _sheet_cell(verdict),
         _sheet_cell(recorded_at),
     ]
@@ -1277,6 +1680,10 @@ def _header_compatible(first_row: list[Any]) -> bool:
     cells = _canonicalize_header_cells(first_row)
     if cells in (
         HEADER,
+        _LEGACY_HEADER_WITH_USER_TOTAL,
+        _LEGACY_HEADER_NO_CREDIT_COLS,
+        _LEGACY_HEADER_WITH_SPLIT_CREDIT_COLS,
+        _LEGACY_HEADER_WITH_DIAMOND_COLS,
         _LEGACY_HEADER_WITH_CHANCE_EXPECT,
         _LEGACY_HEADER_WITH_PHONE,
         _LEGACY_HEADER_WITH_MYSTERY_THEORY,
@@ -1289,6 +1696,10 @@ def _header_compatible(first_row: list[Any]) -> bool:
         return True
     if cells and cells[0] == "砸蛋时间" and cells[1:] in (
         HEADER,
+        _LEGACY_HEADER_WITH_USER_TOTAL,
+        _LEGACY_HEADER_NO_CREDIT_COLS,
+        _LEGACY_HEADER_WITH_SPLIT_CREDIT_COLS,
+        _LEGACY_HEADER_WITH_DIAMOND_COLS,
         _LEGACY_HEADER_WITH_CHANCE_EXPECT,
         _LEGACY_HEADER_WITH_PHONE,
         _LEGACY_HEADER_WITH_MYSTERY_THEORY,
@@ -1339,6 +1750,28 @@ def _project_row_to_header(
             by_name.get("神秘奖励", ""),
             by_name.get("神秘理论-预期", ""),
         )
+    if not by_name.get("VIP经验·钻石增加"):
+        merged_parts: list[str] = []
+        vip_raw = str(by_name.get("VIP经验增加") or "").strip()
+        dia_raw = str(by_name.get("钻石增加") or "").strip()
+        if vip_raw:
+            merged_parts.append(
+                vip_raw if vip_raw.startswith("VIP经验") else f"VIP经验×{vip_raw}"
+            )
+        if dia_raw:
+            merged_parts.append(
+                dia_raw if dia_raw.startswith("钻石") else f"钻石×{dia_raw}"
+            )
+        if merged_parts:
+            by_name["VIP经验·钻石增加"] = "；".join(merged_parts)
+    if "钻石-实际变动" in by_name and not by_name.get("VIP经验·钻石增加"):
+        dia_legacy = str(by_name.get("钻石-实际变动") or "").strip()
+        if dia_legacy:
+            by_name["VIP经验·钻石增加"] = (
+                dia_legacy
+                if dia_legacy.startswith("钻石")
+                else f"钻石×{dia_legacy}"
+            )
     return [by_name.get(col, "") for col in HEADER]
 
 
@@ -1350,8 +1783,8 @@ def _mystery_col_index() -> int:
     return HEADER.index("神秘奖励")
 
 
-def _user_total_col_index() -> int:
-    return HEADER.index("用户奖励汇总")
+def _credit_increase_col_index() -> int:
+    return HEADER.index("VIP经验·钻石增加")
 
 
 def _user_id_col_index() -> int:
@@ -1419,12 +1852,10 @@ def _recompute_derived_columns(data_rows: list[list[str]]) -> list[list[str]]:
     - 砸蛋时金蛋等级：按房间状态机模拟（upgradeThreshold + expireSeconds + 记录时间掉级）
     - 神秘奖励：保留实发奖品文案，并按保底模数补「理论触发」标注
     - 验收结论：①神秘奖励 ②金蛋等级档次礼物 ③本次砸蛋次数 ④房/用/平相对上条同主体累加
-    - 用户奖励汇总：该用户截至本行（含本次档次奖励 + 实发神秘）的累计
     """
     rules = load_activity_rules()
     tier_idx = _tier_col_index()
     mystery_idx = _mystery_col_index()
-    user_total_idx = _user_total_col_index()
     user_idx = _user_id_col_index()
     room_idx = _room_id_col_index()
     batch_idx = _batch_count_col_index()
@@ -1446,7 +1877,6 @@ def _recompute_derived_columns(data_rows: list[list[str]]) -> list[list[str]]:
     # 每房间：等级、当前等级内进度、上次记录时间
     room_egg_state: dict[str, tuple[int, int, datetime | None]] = {}
     user_running: dict[str, int] = {}
-    user_reward_running: dict[str, OrderedDict[str, int]] = {}
     platform_running = 0
     platform_seen = False
     out: list[list[str]] = []
@@ -1459,7 +1889,6 @@ def _recompute_derived_columns(data_rows: list[list[str]]) -> list[list[str]]:
         actual_mystery_text = strip_theory_mystery_note(cells[mystery_idx])
         if actual_mystery_text in ("无保底触发", "无"):
             actual_mystery_text = ""
-        mystery_for_total = parse_reward_summary(actual_mystery_text)
         cells[tier_idx] = format_reward_totals(tier)
 
         room_existing = (
@@ -1537,20 +1966,11 @@ def _recompute_derived_columns(data_rows: list[list[str]]) -> list[list[str]]:
             user_after_i = user_total
             user_seen.add(uid)
             cells[user_smash_idx] = str(user_total)
-            user_reward_running[uid] = merge_reward_totals(
-                user_reward_running.get(uid, OrderedDict()),
-                tier,
-                mystery_for_total,
-            )
-            cells[user_total_idx] = format_reward_totals(user_reward_running[uid])
         else:
             user_total = user_existing or 0
             user_after_i = user_existing
             cells[user_smash_idx] = (
                 str(user_existing) if user_existing is not None else ""
-            )
-            cells[user_total_idx] = format_reward_totals(
-                merge_reward_totals(tier, mystery_for_total)
             )
 
         if platform_seen:
@@ -1747,13 +2167,26 @@ async def append_smash_record_async(
                 header_url, headers={"x-acs-dingtalk-access-token": token}
             )
             header_empty = True
+            header_cells: list[Any] = []
             if hr.status_code < 400:
-                hv = (hr.json().get("values") or [[]])[0]
-                header_empty = not any(str(c or "").strip() for c in (hv or []))
+                header_cells = (hr.json().get("values") or [[]])[0]
+                header_empty = not any(str(c or "").strip() for c in (header_cells or []))
             if header_empty:
                 await _put_range(
                     f"A1:{end_col}1", [[_sheet_cell(c) for c in HEADER]]
                 )
+            elif not _rows_match_header(header_cells) and _header_compatible(header_cells):
+                await _put_range(
+                    f"A1:{end_col}1", [[_sheet_cell(c) for c in HEADER]]
+                )
+                old_len = len([c for c in (header_cells or []) if str(c or "").strip()])
+                if old_len > cols:
+                    from alidocs_excel_export import _col_letter as _col_letter_fn
+
+                    clear_end = _col_letter_fn(max(old_len, cols + 5))
+                    clear_start = _col_letter_fn(cols + 1)
+                    blanks = [[""] * (max(old_len, cols + 5) - cols)]
+                    await _put_range(f"{clear_start}1:{clear_end}1", blanks)
             next_row = await _find_next_row_from_top()
             if next_row < 2:
                 next_row = 2
@@ -1965,3 +2398,262 @@ def append_verify_record(
             workbook_url_or_id, row, sheet_name=sheet_name
         )
     )
+
+
+async def repair_smash_record_header_async(
+    workbook_url_or_id: str,
+    *,
+    sheet_name: str = DEFAULT_SHEET,
+) -> str:
+    """将「砸金蛋测试记录」表头恢复为当前 HEADER，并清空多余的旧钻石列标题。"""
+    from alidocs_excel_export import DOC_API, _col_letter, _excel_env, _get_token_and_operator
+
+    import httpx
+
+    workbook_id = node_id(workbook_url_or_id)
+    url = f"https://alidocs.dingtalk.com/i/nodes/{workbook_id}"
+    env = _excel_env()
+    token, operator = await _get_token_and_operator(env)
+    cols = len(HEADER)
+    end_col = _col_letter(cols)
+
+    async with httpx.AsyncClient(timeout=120) as client:
+        await _ensure_sheet(
+            token=token,
+            operator=operator,
+            workbook_id=workbook_id,
+            sheet_name=sheet_name,
+            client=client,
+        )
+        sheets_url = f"{DOC_API}/workbooks/{workbook_id}/sheets?operatorId={operator}"
+        resp = await client.get(
+            sheets_url, headers={"x-acs-dingtalk-access-token": token}
+        )
+        resp.raise_for_status()
+        sheet_id = None
+        for item in resp.json().get("value", []):
+            if str(item.get("name") or "") == sheet_name:
+                sheet_id = str(item.get("id") or "")
+                break
+        if not sheet_id:
+            raise RuntimeError(f"未找到工作表: {sheet_name}")
+
+        scan_end = _col_letter(max(cols + 6, 20))
+        header_url = (
+            f"{DOC_API}/workbooks/{workbook_id}/sheets/{sheet_id}"
+            f"/ranges/A1:{scan_end}1?operatorId={operator}"
+        )
+        hr = await client.get(
+            header_url, headers={"x-acs-dingtalk-access-token": token}
+        )
+        hr.raise_for_status()
+        header_cells = (hr.json().get("values") or [[]])[0] or []
+        old_len = len(header_cells)
+        while old_len > 0 and not str(header_cells[old_len - 1] or "").strip():
+            old_len -= 1
+
+        write_url = (
+            f"{DOC_API}/workbooks/{workbook_id}/sheets/{sheet_id}"
+            f"/ranges/A1:{end_col}1?operatorId={operator}"
+        )
+        wr = await client.put(
+            write_url,
+            headers={
+                "x-acs-dingtalk-access-token": token,
+                "Content-Type": "application/json",
+            },
+            json={
+                "values": [[_sheet_cell(c) for c in HEADER]],
+                "wordWrap": "autoWrap",
+            },
+        )
+        if wr.status_code >= 400:
+            raise RuntimeError(
+                f"修复表头失败 HTTP {wr.status_code}: {wr.text[:300]}"
+            )
+
+        if old_len > cols:
+            clear_start = _col_letter(cols + 1)
+            clear_end = _col_letter(old_len)
+            clear_url = (
+                f"{DOC_API}/workbooks/{workbook_id}/sheets/{sheet_id}"
+                f"/ranges/{clear_start}1:{clear_end}1?operatorId={operator}"
+            )
+            blank_count = old_len - cols
+            cr = await client.put(
+                clear_url,
+                headers={
+                    "x-acs-dingtalk-access-token": token,
+                    "Content-Type": "application/json",
+                },
+                json={"values": [[""] * blank_count], "wordWrap": "autoWrap"},
+            )
+            if cr.status_code >= 400:
+                raise RuntimeError(
+                    f"清空旧表头列失败 HTTP {cr.status_code}: {cr.text[:300]}"
+                )
+
+    return url
+
+
+async def recompute_smash_record_verdicts_async(
+    workbook_url_or_id: str,
+    *,
+    sheet_name: str = DEFAULT_SHEET,
+) -> dict[str, Any]:
+    """读取表内数据行，按当前规则重算神秘/等级/验收结论并写回。"""
+    from alidocs_excel_export import DOC_API, _col_letter, _excel_env, _get_token_and_operator
+
+    import httpx
+
+    workbook_id = node_id(workbook_url_or_id)
+    url = f"https://alidocs.dingtalk.com/i/nodes/{workbook_id}"
+    env = _excel_env()
+    token, operator = await _get_token_and_operator(env)
+    cols = len(HEADER)
+    end_col = _col_letter(cols)
+
+    async with httpx.AsyncClient(timeout=120) as client:
+        await _ensure_sheet(
+            token=token,
+            operator=operator,
+            workbook_id=workbook_id,
+            sheet_name=sheet_name,
+            client=client,
+        )
+        sheets_url = f"{DOC_API}/workbooks/{workbook_id}/sheets?operatorId={operator}"
+        resp = await client.get(
+            sheets_url, headers={"x-acs-dingtalk-access-token": token}
+        )
+        resp.raise_for_status()
+        sheet_id = None
+        for item in resp.json().get("value", []):
+            if str(item.get("name") or "") == sheet_name:
+                sheet_id = str(item.get("id") or "")
+                break
+        if not sheet_id:
+            raise RuntimeError(f"未找到工作表: {sheet_name}")
+
+        info_url = (
+            f"{DOC_API}/workbooks/{workbook_id}/sheets/{sheet_id}"
+            f"?select=rowCount,columnCount&operatorId={operator}"
+        )
+        info_resp = await client.get(
+            info_url, headers={"x-acs-dingtalk-access-token": token}
+        )
+        info_resp.raise_for_status()
+        row_count = int(info_resp.json().get("rowCount") or 0)
+        if row_count < 2:
+            return {"ok": True, "workbookUrl": url, "rows": 0, "changed": 0}
+
+        data_rows: list[list[str]] = []
+        chunk = 200
+        start = 2
+        while start <= row_count:
+            end = min(start + chunk - 1, row_count)
+            read_url = (
+                f"{DOC_API}/workbooks/{workbook_id}/sheets/{sheet_id}"
+                f"/ranges/A{start}:{end_col}{end}?operatorId={operator}"
+            )
+            rr = await client.get(
+                read_url, headers={"x-acs-dingtalk-access-token": token}
+            )
+            rr.raise_for_status()
+            for r in rr.json().get("values") or []:
+                if any(str(c or "").strip() for c in (r or [])):
+                    data_rows.append(_normalize_data_row(r))
+            start = end + 1
+
+        verdict_idx = _verdict_col_index()
+        before_verdicts = [str(r[verdict_idx] or "") for r in data_rows]
+        recomputed = _recompute_derived_columns(data_rows)
+        after_verdicts = [str(r[verdict_idx] or "") for r in recomputed]
+        changed = sum(
+            1 for b, a in zip(before_verdicts, after_verdicts, strict=False) if b != a
+        )
+
+        write_url = (
+            f"{DOC_API}/workbooks/{workbook_id}/sheets/{sheet_id}"
+            f"/ranges/A2:{end_col}{1 + len(recomputed)}?operatorId={operator}"
+        )
+        wr = await client.put(
+            write_url,
+            headers={
+                "x-acs-dingtalk-access-token": token,
+                "Content-Type": "application/json",
+            },
+            json={
+                "values": _string_rows(recomputed),
+                "wordWrap": "autoWrap",
+            },
+        )
+        if wr.status_code >= 400:
+            raise RuntimeError(
+                f"写回验收结论失败 HTTP {wr.status_code}: {wr.text[:300]}"
+            )
+
+    return {
+        "ok": True,
+        "workbookUrl": url,
+        "rows": len(recomputed),
+        "changed": changed,
+    }
+
+
+def recompute_smash_record_verdicts(
+    workbook_url_or_id: str,
+    *,
+    sheet_name: str = DEFAULT_SHEET,
+) -> dict[str, Any]:
+    return asyncio.run(
+        recompute_smash_record_verdicts_async(
+            workbook_url_or_id, sheet_name=sheet_name
+        )
+    )
+
+
+def repair_smash_record_header(
+    workbook_url_or_id: str,
+    *,
+    sheet_name: str = DEFAULT_SHEET,
+) -> str:
+    return asyncio.run(
+        repair_smash_record_header_async(
+            workbook_url_or_id, sheet_name=sheet_name
+        )
+    )
+
+
+if __name__ == "__main__":
+    import argparse
+
+    _parser = argparse.ArgumentParser(description="砸金蛋测试记录表工具")
+    _parser.add_argument(
+        "--workbook",
+        default="https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz",
+    )
+    _parser.add_argument("--sheet-name", default=DEFAULT_SHEET)
+    _parser.add_argument(
+        "--repair-header",
+        action="store_true",
+        help="将表头恢复为当前 HEADER 并清空多余钻石列标题",
+    )
+    _parser.add_argument(
+        "--recompute-verdicts",
+        action="store_true",
+        help="按当前验收规则重算表内神秘/等级/验收结论列",
+    )
+    _args = _parser.parse_args()
+    if _args.repair_header:
+        _url = repair_smash_record_header(
+            _args.workbook, sheet_name=_args.sheet_name.strip() or DEFAULT_SHEET
+        )
+        print(json.dumps({"ok": True, "workbookUrl": _url}, ensure_ascii=False))
+    elif _args.recompute_verdicts:
+        _out = recompute_smash_record_verdicts(
+            _args.workbook, sheet_name=_args.sheet_name.strip() or DEFAULT_SHEET
+        )
+        print(json.dumps(_out, ensure_ascii=False))
+    else:
+        _parser.print_help()
+        raise SystemExit(2)

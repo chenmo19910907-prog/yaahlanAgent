@@ -51,6 +51,7 @@ def _build_prompt_text(
     use_gateway_rules: bool,
     is_new_session: bool,
     allow_code_modify: bool = True,
+    allow_moa_registry: bool = False,
     batch_progress_key: str = "",
 ) -> str:
     link_list = [str(link).strip() for link in links if str(link).strip()]
@@ -60,15 +61,23 @@ def _build_prompt_text(
             image_count=image_count,
             links=link_list or None,
             allow_code_modify=allow_code_modify,
+            allow_moa_registry=allow_moa_registry,
             batch_progress_key=batch_progress_key,
         )
     if use_gateway_rules:
         extras: list[str] = []
         if not allow_code_modify:
-            extras.append(
-                "【只读模式】当前用户无代码修改权限：禁止改动仓库源代码与网关逻辑；"
-                "仅允许查询脚本、导出与 temporary_testcase/ 用例写入。"
-            )
+            if allow_moa_registry:
+                extras.append(
+                    "【MOA入库模式】当前用户无网关代码修改权限，但可登记 MOA 能力："
+                    "仅允许改动 MOA/templates/、运行 sync_registry.py、"
+                    "更新 MOA/config/registry.json 与 MOA/使用方法.md。"
+                )
+            else:
+                extras.append(
+                    "【只读模式】当前用户无代码修改权限：禁止改动仓库源代码与网关逻辑；"
+                    "仅允许查询脚本、导出与 temporary_testcase/ 用例写入。"
+                )
         batch_note = batch_progress_instruction(batch_progress_key)
         if batch_note:
             extras.append(batch_note)
@@ -237,6 +246,7 @@ def run_agent_prompt(
     user_key: str | None = None,
     sender_name: str | None = None,
     allow_code_modify: bool = True,
+    allow_moa_registry: bool = False,
     stream: bool = False,
     on_render: Callable[[str], None] | None = None,
     show_thinking: bool = True,
@@ -313,6 +323,7 @@ def run_agent_prompt(
                 use_gateway_rules=use_gateway_rules,
                 is_new_session=is_new_session,
                 allow_code_modify=allow_code_modify,
+                allow_moa_registry=allow_moa_registry,
                 batch_progress_key=user_key or "",
             )
 
@@ -401,6 +412,7 @@ def run_agent_prompt_streaming(
     user_key: str | None = None,
     sender_name: str | None = None,
     allow_code_modify: bool = True,
+    allow_moa_registry: bool = False,
     show_thinking: bool = True,
 ) -> str:
     """流式运行 Agent：thinking/text/tool 事件经 on_render 推送，返回最终文本。"""
@@ -419,6 +431,7 @@ def run_agent_prompt_streaming(
         user_key=user_key,
         sender_name=sender_name,
         allow_code_modify=allow_code_modify,
+        allow_moa_registry=allow_moa_registry,
         stream=True,
         on_render=on_render,
         show_thinking=show_thinking,
