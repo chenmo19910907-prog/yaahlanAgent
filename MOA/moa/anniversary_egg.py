@@ -169,14 +169,24 @@ def mystery_guarantee_expected(
     user_mod: int = 50,
     room_mod: int = 100,
     platform_mod: int = 150,
-) -> list[str]:
-    """根据砸蛋前后神秘计数，按「用户>房间>平台」优先级与顺延规则给出理论触发标签。"""
+    pending_in: set[str] | list[str] | None = None,
+) -> tuple[list[str], set[str]]:
+    """根据砸蛋前后神秘计数，按「用户>房间>平台」优先级与顺延规则给出理论触发。
+
+    返回 (本砸触发标签, 顺延到下次砸蛋的维度集合)。
+    pending_in：上次同帧未消耗、需作为本砸预期起点的保底维度。
+    """
     # 与落表验收同一算法（避免 workbook 循环依赖，此处内联同等逻辑）
     batch = max(0, int(user_after) - int(user_before))
     if batch <= 0:
         batch = max(0, int(room_after) - int(room_before))
+    raw_pending = {
+        str(x).strip().lower()
+        for x in (pending_in or [])
+        if str(x).strip().lower() in {"user", "room", "platform"}
+    }
     if batch <= 0:
-        return []
+        return [], raw_pending
     u_mod = int(user_mod or 0)
     r_mod = int(room_mod or 0)
     p_mod = int(platform_mod or 0)
@@ -186,7 +196,7 @@ def mystery_guarantee_expected(
         "platform": f"平台保底每{p_mod}次",
     }
     priority = ("user", "room", "platform")
-    pending: set[str] = set()
+    pending: set[str] = set(raw_pending)
     tags: list[str] = []
     ub, rb, pb = int(user_before), int(room_before), int(platform_before)
     for i in range(1, batch + 1):
@@ -203,7 +213,7 @@ def mystery_guarantee_expected(
         winner = next(d for d in priority if d in candidates)
         tags.append(labels[winner])
         pending = candidates - {winner}
-    return tags
+    return tags, pending
 
 
 def get_egg_home(user_id: str, room_id: str, *, timeout_ms: int = 60000) -> dict[str, Any]:

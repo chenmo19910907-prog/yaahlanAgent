@@ -285,8 +285,34 @@ def _crossed_guarantee(before: int, after: int, mod: int) -> bool:
     return first <= a
 
 
-# 同一颗蛋多保底同时满足时：个人 > 房间 > 平台；未消耗的顺延到下一颗蛋
+# 同一颗蛋多保底同时满足时：个人 > 房间 > 平台；未消耗的顺延到下一颗蛋 / 下一次砸蛋
 _MYSTERY_GUARANTEE_PRIORITY = ("user", "room", "platform")
+_MYSTERY_PENDING_LABEL = {
+    "user": "用户保底",
+    "room": "房间保底",
+    "platform": "平台保底",
+}
+
+
+def _normalize_mystery_pending(raw: Any) -> set[str]:
+    if not raw:
+        return set()
+    if isinstance(raw, (set, frozenset)):
+        items = raw
+    elif isinstance(raw, str):
+        items = [p.strip() for p in raw.replace("；", "+").replace(";", "+").split("+") if p.strip()]
+    else:
+        items = list(raw)
+    out: set[str] = set()
+    for item in items:
+        key = str(item or "").strip().lower()
+        if key in {"user", "u", "用户", "用户保底", "个人", "个人保底"}:
+            out.add("user")
+        elif key in {"room", "r", "房间", "房间保底"}:
+            out.add("room")
+        elif key in {"platform", "p", "plat", "平台", "平台保底"}:
+            out.add("platform")
+    return out
 
 
 def resolve_mystery_guarantee_triggers(
@@ -300,14 +326,17 @@ def resolve_mystery_guarantee_triggers(
     user_mod: int = 0,
     room_mod: int = 0,
     platform_mod: int = 0,
-) -> list[str]:
-    """按颗模拟神秘保底触发（支持同砸多蛋、优先级与顺延）。
+    pending_in: Any = None,
+) -> tuple[list[str], set[str]]:
+    """按颗模拟神秘保底触发（支持同砸多蛋、优先级与跨次顺延）。
 
     规则：
-    1. 逐颗蛋推进用户/房间/平台计数；落在模数倍则该维度本颗候选
+    1. 逐颗蛋推进计数；落在模数倍则该维度本颗候选
     2. 同一颗蛋多个候选：只消耗最高优先级（用户>房间>平台）
-    3. 同颗未消耗的候选顺延到下一颗蛋，再与新候选一起比优先级
-    4. 一次砸 N 个蛋 → 最多可触发 N 次保底（各颗独立判定）
+    3. 未消耗候选顺延到下一颗蛋；若本砸结束仍剩余，作为下一次砸蛋的 pending_in
+    4. 一次砸 N 个蛋 → 最多可触发 N 次保底
+
+    返回：(本砸触发标签列表, 顺延到下次的维度集合)
     """
     try:
         ub = int(user_before)
@@ -315,12 +344,13 @@ def resolve_mystery_guarantee_triggers(
         rb = int(room_before)
         ra = int(room_after)
     except (TypeError, ValueError):
-        return []
+        return [], set()
     batch = max(0, ua - ub)
     if batch <= 0:
         batch = max(0, ra - rb)
     if batch <= 0:
-        return []
+        # 无新砸蛋仍保留未消耗顺延
+        return [], _normalize_mystery_pending(pending_in)
 
     u_mod = int(user_mod or 0)
     r_mod = int(room_mod or 0)
@@ -335,7 +365,7 @@ def resolve_mystery_guarantee_triggers(
         "room": f"房间保底每{r_mod}次",
         "platform": f"平台保底每{p_mod}次",
     }
-    pending: set[str] = set()
+    pending = _normalize_mystery_pending(pending_in)
     tags: list[str] = []
     for i in range(1, batch + 1):
         newly: set[str] = set()
@@ -351,10 +381,10 @@ def resolve_mystery_guarantee_triggers(
         winner = next(d for d in _MYSTERY_GUARANTEE_PRIORITY if d in candidates)
         tags.append(labels[winner])
         pending = candidates - {winner}
-    return tags
+    return tags, pending
 
 
-def theory_mystery_tags(
+def theory_mystery_result(
     *,
     user_before: int,
     user_after: int,
@@ -363,8 +393,9 @@ def theory_mystery_tags(
     platform_before: int | None = None,
     platform_after: int | None = None,
     rules: dict[str, Any] | None = None,
-) -> list[str]:
-    """按配置保底模数计算本段砸蛋理论应触发的神秘奖（含优先级/顺延）。"""
+    pending_in: Any = None,
+) -> tuple[list[str], set[str]]:
+    """返回 (本砸理论触发标签, 顺延到下次的维度)。"""
     r = rules or load_activity_rules()
     return resolve_mystery_guarantee_triggers(
         user_before=user_before,
@@ -376,11 +407,100 @@ def theory_mystery_tags(
         user_mod=int(r.get("user_guarantee_mod") or 0),
         room_mod=int(r.get("room_guarantee_mod") or 0),
         platform_mod=int(r.get("platform_guarantee_mod") or 0),
+        pending_in=pending_in,
     )
 
 
+def theory_mystery_tags(
+    *,
+    user_before: int,
+    user_after: int,
+    room_before: int,
+    room_after: int,
+    platform_before: int | None = None,
+    platform_after: int | None = None,
+    rules: dict[str, Any] | None = None,
+    pending_in: Any = None,
+) -> list[str]:
+    """按配置保底模数计算本段砸蛋理论应触发的神秘奖（含优先级/顺延）。"""
+    tags, _pending = theory_mystery_result(
+        user_before=user_before,
+        user_after=user_after,
+        room_before=room_before,
+        room_after=room_after,
+        platform_before=platform_before,
+        platform_after=platform_after,
+        rules=rules,
+        pending_in=pending_in,
+    )
+    return tags
+
+
+def pending_mystery_labels(pending: Any, *, rules: dict[str, Any] | None = None) -> list[str]:
+    """把顺延维度转成展示标签（带当前模数）。"""
+    r = rules or load_activity_rules()
+    mods = {
+        "user": int(r.get("user_guarantee_mod") or 0),
+        "room": int(r.get("room_guarantee_mod") or 0),
+        "platform": int(r.get("platform_guarantee_mod") or 0),
+    }
+    labels: list[str] = []
+    for dim in _MYSTERY_GUARANTEE_PRIORITY:
+        if dim not in _normalize_mystery_pending(pending):
+            continue
+        mod = mods[dim]
+        if mod > 0:
+            labels.append(f"{_MYSTERY_PENDING_LABEL[dim]}每{mod}次")
+        else:
+            labels.append(_MYSTERY_PENDING_LABEL[dim])
+    return labels
+
+
+def compose_mystery_pending_in(
+    *,
+    user_id: str,
+    room_id: str,
+    pending_user: dict[str, bool],
+    pending_room: dict[str, bool],
+    pending_platform: bool,
+) -> set[str]:
+    """按账号/房间装配本砸开始前的顺延集合。"""
+    out: set[str] = set()
+    uid = str(user_id or "").strip()
+    rid = str(room_id or "").strip()
+    if uid and pending_user.get(uid):
+        out.add("user")
+    if rid and pending_room.get(rid):
+        out.add("room")
+    if pending_platform:
+        out.add("platform")
+    return out
+
+
+def apply_mystery_pending_out(
+    *,
+    user_id: str,
+    room_id: str,
+    pending_out: Any,
+    pending_user: dict[str, bool],
+    pending_room: dict[str, bool],
+) -> bool:
+    """写回顺延状态，返回新的平台顺延标记。"""
+    pending = _normalize_mystery_pending(pending_out)
+    uid = str(user_id or "").strip()
+    rid = str(room_id or "").strip()
+    if uid:
+        pending_user[uid] = "user" in pending
+    if rid:
+        pending_room[rid] = "room" in pending
+    return "platform" in pending
+
+
 _THEORY_SPLIT = re.compile(
-    r"（理论触发：[^）]*）|\(理论触发：[^\)]*\)|；理论触发：.*$|^理论触发：.+$"
+    r"（理论触发：[^）]*）|\(理论触发：[^\)]*\)"
+    r"|（顺延下次：[^）]*）|\(顺延下次：[^\)]*\)"
+    r"|；理论触发：.*$|^理论触发：.+$"
+    r"|；顺延下次：.*$|^顺延下次：.+$"
 )
 
 
@@ -396,14 +516,26 @@ def strip_theory_mystery_note(text: Any) -> str:
     return cleaned
 
 
-def format_mystery_cell(actual_summary: str, theory_tags: list[str]) -> str:
+def format_mystery_cell(
+    actual_summary: str,
+    theory_tags: list[str],
+    *,
+    pending_next: Any = None,
+    rules: dict[str, Any] | None = None,
+) -> str:
     actual = strip_theory_mystery_note(actual_summary)
+    parts: list[str] = []
     if theory_tags:
-        note = "理论触发：" + "+".join(theory_tags)
-        if actual:
-            return f"{actual}（{note}）"
-        return note
-    return actual
+        parts.append("理论触发：" + "+".join(theory_tags))
+    defer = pending_mystery_labels(pending_next, rules=rules)
+    if defer:
+        parts.append("顺延下次：" + "+".join(defer))
+    if not parts:
+        return actual
+    note = "；".join(parts)
+    if actual:
+        return f"{actual}（{note}）"
+    return note
 
 
 # 无次数时奖池预览名（不应算作金蛋等级档次奖励）
@@ -441,21 +573,14 @@ def mystery_reward_meets_expectation(
 ) -> bool:
     """神秘奖励是否符合预期。
 
-    - 理论应触发 N 次保底：须有实发神秘，且奖品段数 ≥ N
+    - 理论应触发保底：须有实发神秘奖（多保底钻石会合并成一段，不按段数计次）
     - 理论不应触发：不得有「理论触发」标注，也不得有实发神秘奖
     """
     cell = str(mystery_cell or "").strip()
     actual = strip_theory_mystery_note(cell)
     has_theory_note = "理论触发" in cell
     if theory_tags:
-        if not actual:
-            return False
-        parts = [
-            p.strip()
-            for p in actual.replace(";", "；").split("；")
-            if p.strip()
-        ]
-        return len(parts) >= len(theory_tags)
+        return bool(actual)
     return (not has_theory_note) and (not actual)
 
 
@@ -1008,7 +1133,11 @@ def record_to_row(
     mystery = smash_result.get("mysteryPrizes") or smash_result.get("mysteryRewards")
     tier_summary = _reward_summary(rewards)
     actual_mystery = _reward_summary(mystery)
-    theory_tags = theory_mystery_tags(
+    pending_in = _normalize_mystery_pending(
+        smash_result.get("mysteryPendingBefore")
+        or (verify or {}).get("mysteryPendingBefore")
+    )
+    theory_tags, pending_out = theory_mystery_result(
         user_before=int(user_before or 0),
         user_after=user_after_i,
         room_before=myst_room_before,
@@ -1016,9 +1145,22 @@ def record_to_row(
         platform_before=platform_before_i,
         platform_after=platform_after_i,
         rules=rules,
+        pending_in=pending_in,
     )
-    mystery_summary = format_mystery_cell(actual_mystery, theory_tags)
-    # 无实发且无理论触发：神秘奖励列留空（不写「无保底触发」）
+    mystery_summary = format_mystery_cell(
+        actual_mystery,
+        theory_tags,
+        pending_next=pending_out,
+        rules=rules,
+    )
+    # 无实发且无理论触发：神秘奖励列留空（不写「无保底触发」）；有顺延仍写顺延标注
+    if not mystery_summary and pending_out:
+        mystery_summary = format_mystery_cell(
+            "",
+            [],
+            pending_next=pending_out,
+            rules=rules,
+        )
 
     # 无显式汇总时：档次 + 实发神秘一并计入本行用户汇总（写入后仍会按用户历史重算）
     if user_total_summary:
@@ -1260,6 +1402,9 @@ def _recompute_derived_columns(data_rows: list[list[str]]) -> list[list[str]]:
     room_running: dict[str, int] = {}
     room_seen: set[str] = set()
     user_seen: set[str] = set()
+    pending_user: dict[str, bool] = {}
+    pending_room: dict[str, bool] = {}
+    pending_platform = False
     # 每房间：等级、当前等级内进度、上次记录时间
     room_egg_state: dict[str, tuple[int, int, datetime | None]] = {}
     user_running: dict[str, int] = {}
@@ -1383,16 +1528,42 @@ def _recompute_derived_columns(data_rows: list[list[str]]) -> list[list[str]]:
         plat_after_i = plat_total
         platform_seen = True
 
-        theory_tags = theory_mystery_tags(
-            user_before=max(0, user_total - batch),
-            user_after=user_total,
-            room_before=max(0, room_total - batch),
-            room_after=room_total,
-            platform_before=max(0, plat_total - batch),
-            platform_after=plat_total,
+        pending_in = compose_mystery_pending_in(
+            user_id=uid,
+            room_id=rid,
+            pending_user=pending_user,
+            pending_room=pending_room,
+            pending_platform=pending_platform,
+        )
+        theory_tags, pending_out = theory_mystery_result(
+            user_before=max(0, (user_after_i or 0) - batch)
+            if user_after_i is not None
+            else max(0, user_total - batch),
+            user_after=user_after_i if user_after_i is not None else user_total,
+            room_before=max(0, (room_after_i or 0) - batch)
+            if room_after_i is not None
+            else max(0, room_total - batch),
+            room_after=room_after_i if room_after_i is not None else room_total,
+            platform_before=max(0, (plat_after_i or 0) - batch)
+            if plat_after_i is not None
+            else max(0, plat_total - batch),
+            platform_after=plat_after_i if plat_after_i is not None else plat_total,
+            rules=rules,
+            pending_in=pending_in,
+        )
+        pending_platform = apply_mystery_pending_out(
+            user_id=uid,
+            room_id=rid,
+            pending_out=pending_out,
+            pending_user=pending_user,
+            pending_room=pending_room,
+        )
+        cells[mystery_idx] = format_mystery_cell(
+            actual_mystery_text,
+            theory_tags,
+            pending_next=pending_out,
             rules=rules,
         )
-        cells[mystery_idx] = format_mystery_cell(actual_mystery_text, theory_tags)
         acceptance = evaluate_acceptance_verdict(
             theory_tags=theory_tags,
             mystery_cell=cells[mystery_idx],

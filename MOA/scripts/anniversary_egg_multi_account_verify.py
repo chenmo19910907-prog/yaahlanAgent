@@ -43,13 +43,16 @@ if str(REPO_ROOT / "Gift") not in sys.path:
 from anniversary_egg_smash_to_workbook import (  # noqa: E402
     DEFAULT_SHEET,
     append_smash_record_async,
+    apply_mystery_pending_out,
+    compose_mystery_pending_in,
     evaluate_acceptance_verdict,
     format_mystery_cell,
     load_activity_rules,
     normalize_room_smash_lifetime,
+    pending_mystery_labels,
     record_to_row,
     resolve_egg_level_label,
-    theory_mystery_tags,
+    theory_mystery_result,
     _reward_summary,
 )
 from moa.anniversary_egg import (  # noqa: E402
@@ -221,6 +224,7 @@ def evaluate_case(
     *,
     smash: dict[str, Any],
     rules: dict[str, Any],
+    pending_in: set[str] | list[str] | None = None,
 ) -> dict[str, Any]:
     remain_before = int(smash.get("remainBefore") or 0)
     actual_smash = int(smash.get("smashCount") or 0)
@@ -281,7 +285,17 @@ def evaluate_case(
         egg_level=smash.get("eggLevel"),
         rules=rules,
     )
-    tags = theory_mystery_tags(
+    if pending_in is not None:
+        pending_before = {str(x).strip().lower() for x in pending_in if str(x).strip()}
+        pending_before &= {"user", "room", "platform"}
+    else:
+        pending_before = set(smash.get("mysteryPendingBefore") or [])
+        pending_before = {
+            str(x).strip().lower()
+            for x in pending_before
+            if str(x).strip().lower() in {"user", "room", "platform"}
+        }
+    tags, pending_after = theory_mystery_result(
         user_before=user_before,
         user_after=user_after,
         room_before=myst_room_before,
@@ -289,12 +303,27 @@ def evaluate_case(
         platform_before=plat_before_i,
         platform_after=plat_after_i,
         rules=rules,
+        pending_in=pending_before,
     )
+    smash["mysteryPendingBefore"] = sorted(pending_before)
+    smash["mysteryPendingAfter"] = sorted(pending_after)
+    defer_labels = pending_mystery_labels(pending_after, rules=rules)
     expected_mystery = "+".join(tags) if tags else ""
+    if defer_labels:
+        expected_mystery = (
+            f"{expected_mystery}；顺延下次：{'+'.join(defer_labels)}"
+            if expected_mystery
+            else f"顺延下次：{'+'.join(defer_labels)}"
+        )
     actual_mystery_prizes = _reward_summary(
         smash.get("mysteryPrizes") or smash.get("mysteryRewards") or []
     )
-    actual_mystery_cell = format_mystery_cell(actual_mystery_prizes, tags)
+    actual_mystery_cell = format_mystery_cell(
+        actual_mystery_prizes,
+        tags,
+        pending_next=pending_after,
+        rules=rules,
+    )
     tier = _reward_summary(smash.get("rewards") or smash.get("prizes") or [])
 
     acceptance = evaluate_acceptance_verdict(
@@ -354,6 +383,8 @@ def evaluate_case(
         "actualEggLevel": expected_level,
         "expectedMystery": expected_mystery,
         "actualMystery": actual_mystery_cell,
+        "mysteryPendingBefore": sorted(pending_before),
+        "mysteryPendingAfter": sorted(pending_after),
         "tierReward": tier,
         "verdict": acceptance["verdict"],
         "failItems": acceptance["failItems"],
@@ -367,19 +398,48 @@ def drain_remain_chances(
     room_id: str,
     *,
     max_calls: int = 80,
-) -> dict[str, int]:
-    """砸掉账号剩余次数（不落表），保证后续「只下发 N 次」后本次砸蛋次数≈N。"""
+    rules: dict[str, Any] | None = None,
+    pending_user: dict[str, bool] | None = None,
+    pending_room: dict[str, bool] | None = None,
+    pending_platform: bool = False,
+) -> tuple[dict[str, int], bool]:
+    """砸掉账号剩余次数（不落表），并同步跨次顺延状态。"""
+    pu = pending_user if pending_user is not None else {}
+    pr = pending_room if pending_room is not None else {}
+    pp = pending_platform
     before = snap(user_id, room_id)["remain"]
     calls = 0
     while calls < max_calls:
         cur = snap(user_id, room_id)
         if cur["remain"] <= 0:
             break
-        smash_egg_once(user_id=user_id, room_id=room_id, lang="en")
+        pending_in = compose_mystery_pending_in(
+            user_id=user_id,
+            room_id=room_id,
+            pending_user=pu,
+            pending_room=pr,
+            pending_platform=pp,
+        )
+        smash = smash_egg_once(user_id=user_id, room_id=room_id, lang="en")
+        eval_out = evaluate_case(
+            smash=smash,
+            rules=rules or {},
+            pending_in=pending_in,
+        )
+        pp = apply_mystery_pending_out(
+            user_id=user_id,
+            room_id=room_id,
+            pending_out=eval_out.get("mysteryPendingAfter") or [],
+            pending_user=pu,
+            pending_room=pr,
+        )
         calls += 1
         time.sleep(0.15)
     after = snap(user_id, room_id)["remain"]
-    return {"remainBefore": before, "remainAfter": after, "drainCalls": calls}
+    return (
+        {"remainBefore": before, "remainAfter": after, "drainCalls": calls},
+        pp,
+    )
 
 
 def run_one(
@@ -393,6 +453,9 @@ def run_one(
     chance_min: int = 1,
     chance_max: int = 15,
     drain_remain: bool = False,
+    pending_user: dict[str, bool] | None = None,
+    pending_room: dict[str, bool] | None = None,
+    pending_platform: bool = False,
 ) -> dict[str, Any]:
     actor = random.choice(accounts)
     smash_room = random.choice(accounts)["roomId"]
@@ -402,6 +465,9 @@ def run_one(
     phone = actor["phone"]
     user_id = actor["userId"]
     gift_room = actor["roomId"]
+    pu = pending_user if pending_user is not None else {}
+    pr = pending_room if pending_room is not None else {}
+    pp = pending_platform
 
     print(
         f"[{case_no}] phone={phone} user={user_id} giftRoom={gift_room} "
@@ -411,7 +477,14 @@ def run_one(
 
     drain_info: dict[str, int] | None = None
     if drain_remain:
-        drain_info = drain_remain_chances(user_id, gift_room)
+        drain_info, pp = drain_remain_chances(
+            user_id,
+            gift_room,
+            rules=rules,
+            pending_user=pu,
+            pending_room=pr,
+            pending_platform=pp,
+        )
         print(
             f"  drain remain {drain_info['remainBefore']}→{drain_info['remainAfter']} "
             f"calls={drain_info['drainCalls']}",
@@ -438,6 +511,16 @@ def run_one(
             if pre["remain"] > 0:
                 break
 
+    pending_in = compose_mystery_pending_in(
+        user_id=user_id,
+        room_id=smash_room,
+        pending_user=pu,
+        pending_room=pr,
+        pending_platform=pp,
+    )
+    if pending_in:
+        print(f"  pending_in={sorted(pending_in)}", file=sys.stderr)
+
     smash = smash_egg_once(user_id=user_id, room_id=smash_room, lang="en")
     # 轻量归一 prizes→rewards
     if smash.get("rewards") is None and isinstance(smash.get("prizes"), list):
@@ -460,7 +543,19 @@ def run_one(
         file=sys.stderr,
     )
 
-    eval_out = evaluate_case(smash=smash, rules=rules)
+    eval_out = evaluate_case(smash=smash, rules=rules, pending_in=pending_in)
+    pp = apply_mystery_pending_out(
+        user_id=user_id,
+        room_id=smash_room,
+        pending_out=eval_out.get("mysteryPendingAfter") or [],
+        pending_user=pu,
+        pending_room=pr,
+    )
+    if eval_out.get("mysteryPendingAfter"):
+        print(
+            f"  pending_out={eval_out.get('mysteryPendingAfter')}",
+            file=sys.stderr,
+        )
     verify_payload = {
         "caseNo": case_no,
         "phone": phone,
@@ -490,6 +585,7 @@ def run_one(
         "smash": smash,
         "eval": eval_out,
         "verdict": eval_out["verdict"],
+        "pendingPlatform": pp,
     }
 
     if dry_run:
@@ -570,6 +666,9 @@ def main() -> int:
 
     summary = {"pass": 0, "fail": 0, "error": 0, "total": args.rounds}
     started = datetime.now(timezone.utc).isoformat()
+    pending_user: dict[str, bool] = {}
+    pending_room: dict[str, bool] = {}
+    pending_platform = False
 
     for i in range(args.rounds):
         case_no = args.start_case + i
@@ -584,7 +683,11 @@ def main() -> int:
                 chance_min=args.chance_min,
                 chance_max=args.chance_max,
                 drain_remain=bool(args.drain_remain),
+                pending_user=pending_user,
+                pending_room=pending_room,
+                pending_platform=pending_platform,
             )
+            pending_platform = bool(result.get("pendingPlatform"))
             if result.get("writeFailed"):
                 summary["error"] += 1
             elif result.get("verdict") == "通过":

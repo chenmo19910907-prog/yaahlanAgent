@@ -62,7 +62,7 @@ def main() -> int:
     batch = max(0, int(args.batch or 0))
     user_b, room_b, plat_b = counts["user"], counts["room"], counts["platform"]
     assume = batch if batch > 0 else 1
-    tags = mystery_guarantee_expected(
+    tags, pending_next = mystery_guarantee_expected(
         user_before=user_b,
         user_after=user_b + assume,
         room_before=room_b,
@@ -102,11 +102,13 @@ def main() -> int:
         },
         "batchAssume": assume,
         "expectedMysteryIfSmashBatch": tags,
+        "mysteryPendingNext": sorted(pending_next),
         "mysteryShouldIssue": bool(tags),
         "note": (
             "counts 来自 year3Dao.testGetMysteryCount(type,userId,roomId)；"
             "默认按再砸 1 次预判是否越过用户/房间/平台保底模数；"
-            "--batch N 可改为预判再砸 N 次"
+            "--batch N 可改为预判再砸 N 次；"
+            "同帧多保底未消耗项写入 mysteryPendingNext，应作为下一次砸蛋预期起点"
         ),
     }
     print(json.dumps(out, ensure_ascii=False, indent=2))
