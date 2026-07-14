@@ -44,6 +44,7 @@ from anniversary_egg_smash_to_workbook import (  # noqa: E402
     DEFAULT_SHEET,
     append_smash_record_async,
     apply_mystery_pending_out,
+    compact_theory_tag_summary,
     compose_mystery_pending_in,
     evaluate_acceptance_verdict,
     format_mystery_cell,
@@ -308,12 +309,13 @@ def evaluate_case(
     smash["mysteryPendingBefore"] = sorted(pending_before)
     smash["mysteryPendingAfter"] = sorted(pending_after)
     defer_labels = pending_mystery_labels(pending_after, rules=rules)
-    expected_mystery = "+".join(tags) if tags else ""
+    theory_brief = compact_theory_tag_summary(tags)
+    expected_mystery = theory_brief
     if defer_labels:
         expected_mystery = (
-            f"{expected_mystery}；顺延下次：{'+'.join(defer_labels)}"
+            f"{expected_mystery}；顺延：{'+'.join(defer_labels)}"
             if expected_mystery
-            else f"顺延下次：{'+'.join(defer_labels)}"
+            else f"顺延：{'+'.join(defer_labels)}"
         )
     actual_mystery_prizes = _reward_summary(
         smash.get("mysteryPrizes") or smash.get("mysteryRewards") or []

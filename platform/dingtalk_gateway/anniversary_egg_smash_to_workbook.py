@@ -292,6 +292,11 @@ _MYSTERY_PENDING_LABEL = {
     "room": "房间保底",
     "platform": "平台保底",
 }
+_MYSTERY_SHORT_LABEL = {
+    "user": "用户",
+    "room": "房间",
+    "platform": "平台",
+}
 
 
 def _normalize_mystery_pending(raw: Any) -> set[str]:
@@ -437,23 +442,46 @@ def theory_mystery_tags(
 
 
 def pending_mystery_labels(pending: Any, *, rules: dict[str, Any] | None = None) -> list[str]:
-    """把顺延维度转成展示标签（带当前模数）。"""
-    r = rules or load_activity_rules()
-    mods = {
-        "user": int(r.get("user_guarantee_mod") or 0),
-        "room": int(r.get("room_guarantee_mod") or 0),
-        "platform": int(r.get("platform_guarantee_mod") or 0),
-    }
-    labels: list[str] = []
+    """把顺延维度转成短展示标签（用户/房间/平台）。"""
+    _ = rules  # 模数写在配置表，单元格不再逐条重复「每N次」
+    return [
+        _MYSTERY_SHORT_LABEL[dim]
+        for dim in _MYSTERY_GUARANTEE_PRIORITY
+        if dim in _normalize_mystery_pending(pending)
+    ]
+
+
+def _theory_tag_to_dim(tag: Any) -> str | None:
+    t = str(tag or "").strip()
+    if not t:
+        return None
+    low = t.lower()
+    if "用户" in t or "个人" in t or low in {"user", "u"}:
+        return "user"
+    if "房间" in t or low in {"room", "r"}:
+        return "room"
+    if "平台" in t or low in {"platform", "p", "plat"}:
+        return "platform"
+    return None
+
+
+def compact_theory_tag_summary(theory_tags: list[str] | None) -> str:
+    """同维触发合并计数：用户×4+平台+房间。"""
+    from collections import Counter
+
+    counts: Counter[str] = Counter()
+    for tag in theory_tags or []:
+        dim = _theory_tag_to_dim(tag)
+        if dim:
+            counts[dim] += 1
+    parts: list[str] = []
     for dim in _MYSTERY_GUARANTEE_PRIORITY:
-        if dim not in _normalize_mystery_pending(pending):
+        n = int(counts.get(dim) or 0)
+        if n <= 0:
             continue
-        mod = mods[dim]
-        if mod > 0:
-            labels.append(f"{_MYSTERY_PENDING_LABEL[dim]}每{mod}次")
-        else:
-            labels.append(_MYSTERY_PENDING_LABEL[dim])
-    return labels
+        name = _MYSTERY_SHORT_LABEL[dim]
+        parts.append(f"{name}×{n}" if n > 1 else name)
+    return "+".join(parts)
 
 
 def compose_mystery_pending_in(
@@ -498,9 +526,13 @@ def apply_mystery_pending_out(
 
 _THEORY_SPLIT = re.compile(
     r"（理论触发：[^）]*）|\(理论触发：[^\)]*\)"
+    r"|（理论：[^）]*）|\(理论：[^\)]*\)"
     r"|（顺延下次：[^）]*）|\(顺延下次：[^\)]*\)"
+    r"|（顺延：[^）]*）|\(顺延：[^\)]*\)"
     r"|；理论触发：.*$|^理论触发：.+$"
+    r"|；理论：.*$|^理论：.+$"
     r"|；顺延下次：.*$|^顺延下次：.+$"
+    r"|；顺延：.*$|^顺延：.+$"
 )
 
 
@@ -523,13 +555,19 @@ def format_mystery_cell(
     pending_next: Any = None,
     rules: dict[str, Any] | None = None,
 ) -> str:
+    """神秘奖励单元格：实发 + 精简理论/顺延。
+
+    例：钻石×100000（理论：用户×4+平台+房间；顺延：平台）
+    """
+    _ = rules
     actual = strip_theory_mystery_note(actual_summary)
     parts: list[str] = []
-    if theory_tags:
-        parts.append("理论触发：" + "+".join(theory_tags))
-    defer = pending_mystery_labels(pending_next, rules=rules)
+    theory = compact_theory_tag_summary(theory_tags)
+    if theory:
+        parts.append(f"理论：{theory}")
+    defer = pending_mystery_labels(pending_next)
     if defer:
-        parts.append("顺延下次：" + "+".join(defer))
+        parts.append("顺延：" + "+".join(defer))
     if not parts:
         return actual
     note = "；".join(parts)
@@ -578,7 +616,7 @@ def mystery_reward_meets_expectation(
     """
     cell = str(mystery_cell or "").strip()
     actual = strip_theory_mystery_note(cell)
-    has_theory_note = "理论触发" in cell
+    has_theory_note = ("理论触发" in cell) or ("理论：" in cell)
     if theory_tags:
         return bool(actual)
     return (not has_theory_note) and (not actual)
@@ -1275,14 +1313,14 @@ def _merge_mystery_and_theory(actual: str, theory: str) -> str:
     if not t:
         return a
     if not a:
-        return t if t.startswith("理论触发") or "保底" in t else (
-            f"理论触发：{t}" if t else ""
+        return t if t.startswith(("理论触发", "理论：")) or "保底" in t else (
+            f"理论：{t}" if t else ""
         )
     if t in a:
         return a
-    if "理论触发" in a:
+    if "理论触发" in a or "理论：" in a:
         return a
-    return f"{a}（理论触发：{t}）"
+    return f"{a}（理论：{t}）"
 
 
 def _project_row_to_header(
