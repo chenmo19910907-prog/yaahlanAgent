@@ -611,6 +611,52 @@ def run_one(
     return out
 
 
+def _build_batch_result_markdown(
+    *,
+    phones: list[str],
+    accounts: list[dict[str, str]],
+    summary: dict[str, int],
+    workbook: str,
+    chance_min: int,
+    chance_max: int,
+    fail_details: list[str],
+) -> str:
+    total = int(summary.get("total") or 0)
+    passed = int(summary.get("pass") or 0)
+    failed = int(summary.get("fail") or 0)
+    errors = int(summary.get("error") or 0)
+    pass_rate = f"{passed * 100 / total:.1f}%" if total else "0%"
+    acct_lines = [
+        f"- **{a['phone']}**（userId `{a['userId']}`，房间 `{a['roomId']}`）"
+        for a in accounts
+    ]
+    chance_desc = (
+        f"**{chance_min}**"
+        if chance_min == chance_max
+        else f"**{chance_min}~{chance_max}**"
+    )
+    lines = [
+        "## 砸金蛋批量验收结果",
+        "",
+        f"- 测试账号：{', '.join(phones)}",
+        *acct_lines,
+        f"- 测试组数：**{total}**（每组自送获次 {chance_desc} 次 → 两账号房间随机砸蛋）",
+        f"- 验收通过：**{passed}**，失败：**{failed}**，错误：**{errors}**，通过率 **{pass_rate}**",
+        f"- 记录表：[砸金蛋测试记录]({workbook})",
+        "",
+        "### 验收说明",
+        "",
+        "对照 MSE 配置验收：神秘奖励保底、金蛋等级礼物非空、砸蛋次数与累加计数。",
+    ]
+    if fail_details:
+        lines.extend(["", "### 未通过/异常明细（节选）", ""])
+        for item in fail_details[:25]:
+            lines.append(f"- {item}")
+        if len(fail_details) > 25:
+            lines.append(f"- …另有 {len(fail_details) - 25} 条")
+    return "\n".join(lines)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="多账号砸金蛋批量验收（含验收结果落表）")
     parser.add_argument("--workbook", default=DEFAULT_WORKBOOK)
@@ -635,6 +681,7 @@ def main() -> int:
         help="已废弃：验收列并入砸金蛋测试记录，此参数忽略",
     )
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--user-key", default="", help="钉钉 batch_key，用于批量进度上报")
     parser.add_argument(
         "--progress-file",
         default=str(REPO_ROOT / ".tmp" / "anniversary_egg_batch_progress.jsonl"),
@@ -669,6 +716,30 @@ def main() -> int:
     pending_user: dict[str, bool] = {}
     pending_room: dict[str, bool] = {}
     pending_platform = False
+    fail_details: list[str] = []
+
+    def _report_progress(current: int, *, result_text: str = "") -> None:
+        if not args.user_key or args.rounds < 3:
+            return
+        cmd = [
+            "python3",
+            str(REPO_ROOT / "platform/dingtalk_gateway/batch_progress_report.py"),
+            "--user-key",
+            args.user_key,
+            "--current",
+            str(current),
+            "--total",
+            str(args.rounds),
+            "--label",
+            "砸蛋验收",
+        ]
+        if current > 0:
+            cmd.extend(["--detail", f"第{current}组"])
+        if result_text:
+            cmd.extend(["--result-text", result_text])
+        subprocess.run(cmd, cwd=str(REPO_ROOT), check=False)
+
+    _report_progress(0)
 
     for i in range(args.rounds):
         case_no = args.start_case + i
@@ -690,10 +761,17 @@ def main() -> int:
             pending_platform = bool(result.get("pendingPlatform"))
             if result.get("writeFailed"):
                 summary["error"] += 1
+                fail_details.append(
+                    f"第{case_no}组：写表失败（{result.get('writeError', '')[:80]}）"
+                )
             elif result.get("verdict") == "通过":
                 summary["pass"] += 1
             else:
                 summary["fail"] += 1
+                fail_details.append(
+                    f"第{case_no}组：{result.get('verdict')} "
+                    f"({'; '.join(result.get('eval', {}).get('failItems') or [])})"
+                )
             with progress.open("a", encoding="utf-8") as f:
                 f.write(json.dumps(result, ensure_ascii=False, default=str) + "\n")
                 f.flush()
@@ -711,8 +789,10 @@ def main() -> int:
                     file=sys.stderr,
                     flush=True,
                 )
+            _report_progress(i + 1)
         except Exception as exc:  # noqa: BLE001 — 单组失败继续
             summary["error"] += 1
+            fail_details.append(f"第{case_no}组：错误（{str(exc)[:120]}）")
             err = {
                 "caseNo": case_no,
                 "verdict": "错误",
@@ -728,6 +808,7 @@ def main() -> int:
                 file=sys.stderr,
                 flush=True,
             )
+            _report_progress(i + 1)
             # 无 smash 的异常才写错误占位行；写表失败已在进度里留有完整记录
             if not args.dry_run and "写表" not in str(exc):
                 try:
@@ -752,6 +833,20 @@ def main() -> int:
                     )
                 except Exception as write_exc:  # noqa: BLE001
                     print(f"  错误行写表失败: {write_exc}", file=sys.stderr)
+
+    if args.user_key and args.rounds >= 3:
+        _report_progress(
+            args.rounds,
+            result_text=_build_batch_result_markdown(
+                phones=phones,
+                accounts=accounts,
+                summary=summary,
+                workbook=args.workbook,
+                chance_min=args.chance_min,
+                chance_max=args.chance_max,
+                fail_details=fail_details,
+            ),
+        )
 
     out = {
         "started": started,
