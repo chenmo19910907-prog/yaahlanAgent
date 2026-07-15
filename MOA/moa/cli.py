@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import sys
+from pathlib import Path
 
 from .client import (
     MoaClient,
@@ -39,6 +40,7 @@ from .flows import (
     run_id_auth_fix_failure,
 )
 from .family_detail import needs_family_detail, needs_family_detail_by_user, run_family_detail
+from .family_kick import needs_family_kick, run_family_kick_member
 from .family_pk_receive_rank import needs_family_pk_query_receive_rank, run_family_pk_query_receive_rank
 from .package_gift import run_package_gift_batch_add, run_package_gift_send
 from .time_utils import resolve_family_fund_week_key
@@ -155,6 +157,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--family-leave-user-id",
         help="移除家族成员（leave；params={userId} json）",
+    )
+    parser.add_argument(
+        "--family-kick-operator-id",
+        help="踢出成员：操作人（须为家族长）userId（removeMember）",
+    )
+    parser.add_argument(
+        "--family-kick-remote-id",
+        help="踢出成员：被踢人 userId（须在本家族且非家族长）",
     )
     parser.add_argument(
         "--family-delete",
@@ -807,6 +817,13 @@ def main() -> int:
 
         if needs_family_detail(args) or needs_family_detail_by_user(args):
             return run_family_detail(args, client)
+
+        if needs_family_kick(args):
+            if not args.payload_file and not args.payload:
+                args.payload_file = str(
+                    Path(__file__).resolve().parents[1] / "templates" / "家族-踢出成员.json"
+                )
+            return run_family_kick_member(args, client)
 
         if needs_family_pk_query_receive_rank(args):
             return run_family_pk_query_receive_rank(args, client)

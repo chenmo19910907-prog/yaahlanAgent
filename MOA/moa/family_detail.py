@@ -20,6 +20,15 @@ _JOINED_TEMPLATE = _REPO_ROOT / "MOA" / "templates" / "家族-按userId查家族
 
 def _clone_args(args: argparse.Namespace, **overrides: Any) -> argparse.Namespace:
     data = vars(args).copy()
+    # 清空可能劫持 load_payload 路由的 family kick 参数
+    data["family_kick_operator_id"] = None
+    data["family_kick_remote_id"] = None
+    data["family_leave_user_id"] = None
+    data["family_delete"] = False
+    data["family_query_members"] = False
+    data["family_query_create_time"] = False
+    data["family_query_joined_user_id"] = None
+    data["family_query_current"] = False
     data.update(overrides)
     return argparse.Namespace(**data)
 

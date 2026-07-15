@@ -158,6 +158,40 @@ def set_family_leave_params(payload: dict[str, Any], user_id: str) -> None:
     ]
 
 
+def set_family_kick_member_params(
+    payload: dict[str, Any],
+    *,
+    family_id: str,
+    operator_id: str,
+    remote_id: str,
+) -> None:
+    family_id = str(family_id).strip()
+    operator_id = str(operator_id).strip()
+    remote_id = str(remote_id).strip()
+    if not family_id:
+        raise ValueError("family_id 不能为空")
+    if not operator_id:
+        raise ValueError("operator_id 不能为空")
+    if not remote_id:
+        raise ValueError("remote_id 不能为空")
+    body = {"familyId": family_id, "userId": operator_id, "remoteId": remote_id}
+    header = {"userId": operator_id}
+    payload["header"] = json.dumps(header, ensure_ascii=False, separators=(",", ":"))
+    settings = payload.setdefault("settings", {})
+    if isinstance(settings, dict):
+        settings["headerType"] = "KV"
+    payload["params"] = [
+        {
+            "name": 0,
+            "title": "",
+            "txt": "",
+            "json": json.dumps(body, ensure_ascii=False, separators=(",", ":")),
+            "type": "json",
+            "value": body,
+        }
+    ]
+
+
 def set_family_delete_params(payload: dict[str, Any], family_id: str, owner_user_id: str) -> None:
     family_id = str(family_id).strip()
     owner_user_id = str(owner_user_id).strip()

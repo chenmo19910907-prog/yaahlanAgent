@@ -861,6 +861,18 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-移除成员.json \\\n  --family-leave-user-id <userId>\n"
     },
     {
+      "id": "family_kick_member",
+      "name": "家族-踢出成员",
+      "category": "家族（external/user/family-api）",
+      "description": "家族长踢出成员（removeMember；对齐客户端 /yaahlan/family/removeMember）。执行前强制校验：操作人=家族长；被踢人在本家族且不是家族长",
+      "prompts": [
+        "家族长 <operatorId> 踢出成员 <remoteId>",
+        "踢出家族成员 <remoteId> 操作人 <operatorId>",
+        "removeMember 家族踢人"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-踢出成员.json \\\n  --family-kick-operator-id <operatorId> \\\n  --family-kick-remote-id <remoteId> \\\n  --family-id <familyId>\n"
+    },
+    {
       "id": "family_pk_modify_receive_daily_rank",
       "name": "家族PK-修改收礼日榜",
       "category": "家族PK（vas/internal/family-pk-moa）",

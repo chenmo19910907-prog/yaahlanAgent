@@ -1,0 +1,45 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/external/user/family-api",
+  "method": "removeMember",
+  "header": "{\"userId\":\"100486375\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": "",
+      "txt": "",
+      "json": "{\"familyId\":\"101435\",\"userId\":\"100486375\",\"remoteId\":\"100383703\"}",
+      "type": "json",
+      "value": {
+        "familyId": "101435",
+        "userId": "100486375",
+        "remoteId": "100383703"
+      }
+    }
+  ],
+  "settings": {
+    "time": 2000,
+    "group": "default",
+    "host": "",
+    "headerType": "KV"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "family_kick_member",
+    "name": "家族-踢出成员",
+    "category": "家族（external/user/family-api）",
+    "description": "家族长踢出成员（removeMember；对齐客户端 /yaahlan/family/removeMember）。执行前强制校验：操作人=家族长；被踢人在本家族且不是家族长。来源抓包：100486375 踢出 100383703 familyId=101435",
+    "prompts": [
+      "家族长 <operatorId> 踢出成员 <remoteId>",
+      "踢出家族成员 <remoteId> 操作人 <operatorId>",
+      "removeMember 家族踢人"
+    ],
+    "cli": "--family-kick-operator-id <operatorId> --family-kick-remote-id <remoteId> [--family-id <familyId>]"
+  }
+}

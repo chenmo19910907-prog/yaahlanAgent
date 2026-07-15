@@ -30,6 +30,7 @@ from .params import (
     set_family_decrease_exp_params,
     set_family_member_fund_contrib_params,
     set_family_leave_params,
+    set_family_kick_member_params,
     set_family_delete_params,
     set_family_create_time_query_params,
     set_family_members_query_params,
@@ -744,6 +745,32 @@ def _op_family_leave(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     set_family_leave_params(payload, user_id)
 
 
+def _family_kick_mode(args: argparse.Namespace) -> bool:
+    return bool(
+        getattr(args, "family_kick_operator_id", None)
+        or getattr(args, "family_kick_remote_id", None)
+    )
+
+
+def _op_family_kick(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/external/user/family-api"
+    payload["method"] = "removeMember"
+    operator_id = str(getattr(args, "family_kick_operator_id", None) or "").strip()
+    remote_id = str(getattr(args, "family_kick_remote_id", None) or "").strip()
+    family_id = str(getattr(args, "family_id", None) or "").strip()
+    if not operator_id or not remote_id or not family_id:
+        raise ValueError(
+            "踢出成员须提供 --family-kick-operator-id、--family-kick-remote-id，"
+            "以及已解析的 --family-id"
+        )
+    set_family_kick_member_params(
+        payload,
+        family_id=family_id,
+        operator_id=operator_id,
+        remote_id=remote_id,
+    )
+
+
 def _op_family_delete(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     payload["url"] = "/service/external/user/family-api"
     payload["method"] = "deleteFamily"
@@ -979,6 +1006,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: _family_query_create_time_mode(a), _op_family_query_create_time),
     (lambda a: _family_query_joined_mode(a), _op_family_query_joined),
     (lambda a: _family_delete_mode(a), _op_family_delete),
+    (lambda a: _family_kick_mode(a), _op_family_kick),
     (lambda a: a.family_leave_user_id is not None, _op_family_leave),
     (lambda a: a.follow_uid is not None or a.follow_remote_uid is not None, _op_user_follow),
     (lambda a: _family_add_mode(a), _op_family_exp),
