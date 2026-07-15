@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "generated_index_path": "MOA-generative/使用方法.md",
+  "items": [
+    {
+      "id": "moa_generative_workflow_run",
+      "name": "生成式MOA-工作流执行",
+      "category": "生成式MOA（抓包转MOA）",
+      "description": "推荐入口：Tunnel 抓包 body + 调用链 ServiceUrl/Method → 双写 header+params 生成 payload 并 moa_execute。默认 strict=0（代理调通即成功，业务拒绝也算过）；strict=1 要求业务 success/ec=200。",
+      "prompts": [
+        "生成式MOA 工作流 serviceUrl=<ServiceUrl> method=<Method> bodyFile=<body.json>",
+        "抓包转MOA 执行 <ServiceUrl> <Method> <body.json>",
+        "执行工作流 moa-generative-run"
+      ],
+      "command": "python3 workflow/workflow_execute.py run moa-generative-run \\\n  --service-url <ServiceUrl> \\\n  --method <Method> \\\n  --body-file <capture-body.json> \\\n  --timeout-ms 20000 \\\n  --strict 0"
+    },
+    {
+      "id": "moa_generative_run_script",
+      "name": "生成式MOA-一键脚本",
+      "category": "生成式MOA（抓包转MOA）",
+      "description": "与工作流同逻辑的一键脚本：build_payload + moa_execute；stdout 输出 ok/proxyOk/business 摘要 JSON。",
+      "prompts": [
+        "生成式MOA 一键 --url <ServiceUrl> --method <Method> --body-file <body.json>",
+        "run_generative_moa <ServiceUrl> <Method> <body.json>"
+      ],
+      "command": "python3 MOA-generative/scripts/run_generative_moa.py \\\n  --url <ServiceUrl> \\\n  --method <Method> \\\n  --body-file <capture-body.json> \\\n  --out .tmp/generative_moa_payload.json \\\n  --timeout-ms 20000 \\\n  --strict 0"
+    },
+    {
+      "id": "moa_generative_build_only",
+      "name": "生成式MOA-仅生成payload",
+      "category": "生成式MOA（抓包转MOA）",
+      "description": "只根据抓包 body + ServiceUrl + Method 生成双写 header+params 的 payload JSON，不执行。再用 moa_execute --payload-file 试跑。",
+      "prompts": [
+        "生成式MOA 生成 payload <ServiceUrl> <Method> <body.json>",
+        "build_payload 抓包转MOA"
+      ],
+      "command": "python3 MOA-generative/scripts/build_payload.py \\\n  --url <ServiceUrl> \\\n  --method <Method> \\\n  --body-file <capture-body.json> \\\n  --out .tmp/generative_moa_payload.json \\\n  --timeout-ms 20000\n\npython3 MOA/moa_execute.py \\\n  --payload-file .tmp/generative_moa_payload.json \\\n  --timeout-ms 20000"
+    },
+    {
+      "id": "moa_generative_signin_example",
+      "name": "生成式MOA-签到示例",
+      "category": "生成式MOA（已验证示例）",
+      "description": "HTTP /yaahlan/sign/signIn → ServiceUrl /service/yaahlan-trick/external/app-task + method signIn。示例 body 见 templates/example-signIn.body.json。",
+      "prompts": [
+        "生成式MOA 签到示例",
+        "抓包转MOA 跑 signIn 示例"
+      ],
+      "command": "python3 workflow/workflow_execute.py run moa-generative-run \\\n  --service-url /service/yaahlan-trick/external/app-task \\\n  --method signIn \\\n  --body-file MOA-generative/templates/example-signIn.body.json"
+    },
+    {
+      "id": "moa_generative_like_example",
+      "name": "生成式MOA-点赞示例",
+      "category": "生成式MOA（已验证示例）",
+      "description": "HTTP /yaahlan/feed-interact/likeContent → ServiceUrl /service/feed/external/feed-interact-stage + method likeContent。contentId 须来自当前列表；示例 body 见 templates/example-likeContent.body.json。",
+      "prompts": [
+        "生成式MOA 点赞示例",
+        "抓包转MOA 跑 likeContent 示例"
+      ],
+      "command": "python3 workflow/workflow_execute.py run moa-generative-run \\\n  --service-url /service/feed/external/feed-interact-stage \\\n  --method likeContent \\\n  --body-file MOA-generative/templates/example-likeContent.body.json"
+    },
+    {
+      "id": "moa_generative_accept_intimate_example",
+      "name": "生成式MOA-同意亲密申请",
+      "category": "生成式MOA（已验证示例）",
+      "description": "HTTP /yaahlan/user/intimate/acceptIntimateInvitation → /service/yaahlan/user/intimate-api + acceptIntimateInvitation。body 需接受方 userId、intimateId、relationshipType；发起仍用 Gift --intimate-invite。",
+      "prompts": [
+        "生成式MOA 同意亲密申请",
+        "MOA 同意好友亲密关系申请 acceptIntimateInvitation"
+      ],
+      "command": "python3 workflow/workflow_execute.py run moa-generative-run \\\n  --service-url /service/yaahlan/user/intimate-api \\\n  --method acceptIntimateInvitation \\\n  --body-file MOA-generative/templates/example-acceptIntimateInvitation.body.json \\\n  --strict 1"
+    },
+    {
+      "id": "moa_generative_buddy_form",
+      "name": "生成式MOA-结挚友一键",
+      "category": "生成式MOA（已验证示例）",
+      "description": "结挚友闭环：Gift intimate-invite 发起 + MOA acceptIntimateInvitation 同意 + homepage 验收。推荐工作流 intimate-buddy-form。",
+      "prompts": [
+        "结挚友 <fromUserId> <toUserId>",
+        "100465989 和 100079102 结为挚友",
+        "生成式MOA 结挚友"
+      ],
+      "command": "python3 workflow/workflow_execute.py run intimate-buddy-form \\\n  --from-user-id <fromUserId> \\\n  --to-user-id <toUserId> \\\n  --gift-id 2005007129 \\\n  --dismiss-first 1"
+    },
+    {
+      "id": "moa_generative_cp_form",
+      "name": "生成式MOA-结CP一键",
+      "category": "生成式MOA（已验证示例）",
+      "description": "结CP闭环：Gift intimate-invite（cpGiftList，默认 2005006943）+ MOA acceptIntimateInvitation（relationshipType=1）+ homepage 验收。推荐工作流 intimate-cp-form。",
+      "prompts": [
+        "结CP <fromUserId> <toUserId>",
+        "100465989 和 100006869 结为CP",
+        "生成式MOA 结CP"
+      ],
+      "command": "python3 workflow/workflow_execute.py run intimate-cp-form \\\n  --from-user-id <fromUserId> \\\n  --to-user-id <toUserId> \\\n  --gift-id 2005006943 \\\n  --dismiss-first 1"
+    }
+  ]
+}

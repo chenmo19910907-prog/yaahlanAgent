@@ -332,6 +332,39 @@
         "工作流 anniversary-egg-smash-record <userId> <smashCount>"
       ],
       "command": "python3 workflow/workflow_execute.py run anniversary-egg-smash-record --workbook https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz --user-id <userId> --smash-count <smashCount>"
+    },
+    {
+      "id": "moa_generative_run",
+      "name": "MOA-generative-抓包转MOA执行",
+      "category": "MOA-generative",
+      "description": "将 Tunnel 抓包 body + 调用链 ServiceUrl/Method 生成双写 header+params 的 MOA payload 并执行。默认业务拒绝（已签到/已点赞）也算成功；--strict 要求业务 success。",
+      "prompts": [
+        "执行工作流 MOA-generative-抓包转MOA执行",
+        "工作流 moa-generative-run <serviceUrl> <method> <bodyFile> <timeoutMs> <payloadOut> <strict>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run moa-generative-run --service-url <serviceUrl> --method <method> --body-file <bodyFile> --timeout-ms <timeoutMs> --payload-out <payloadOut> --strict <strict>"
+    },
+    {
+      "id": "intimate_buddy_form",
+      "name": "亲密关系-结挚友",
+      "category": "亲密关系",
+      "description": "测试环境结挚友：Gift --intimate-invite 发起（默认 gift 2005007129）→ MOA acceptIntimateInvitation 同意 → intimateHomePage 验收。可选先 dismiss。relationshipType 默认 2。",
+      "prompts": [
+        "执行工作流 亲密关系-结挚友",
+        "工作流 intimate-buddy-form <fromUserId> <toUserId> <giftId> <dismissFirst> <relationshipType>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run intimate-buddy-form --from-user-id <fromUserId> --to-user-id <toUserId> --gift-id <giftId> --dismiss-first <dismissFirst> --relationship-type <relationshipType>"
+    },
+    {
+      "id": "intimate_cp_form",
+      "name": "亲密关系-结CP",
+      "category": "亲密关系",
+      "description": "测试环境结CP：Gift --intimate-invite 发起（默认 cpGiftList 特价礼 2005006943）→ MOA acceptIntimateInvitation 同意 → intimateHomePage 验收。relationshipType 固定 1；可选先 dismiss。",
+      "prompts": [
+        "执行工作流 亲密关系-结CP",
+        "工作流 intimate-cp-form <fromUserId> <toUserId> <giftId> <dismissFirst>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run intimate-cp-form --from-user-id <fromUserId> --to-user-id <toUserId> --gift-id <giftId> --dismiss-first <dismissFirst>"
     }
   ]
 }

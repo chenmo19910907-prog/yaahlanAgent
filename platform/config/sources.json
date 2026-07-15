@@ -1,7 +1,7 @@
 {
   "version": 3,
   "top_level_rules": [
-    { "group": "用户", "prefixes": ["用户", "实名认证"] },
+    { "group": "用户", "prefixes": ["用户", "实名认证"], "keywords": ["亲密", "挚友", "结挚友"] },
     { "group": "VIP", "names": ["VIP 经验值", "贵族"] },
     { "group": "房间", "prefixes": ["房间"] },
     { "group": "礼物", "names": ["礼物", "背包礼物", "Stage送礼", "Gift"] },
@@ -14,7 +14,7 @@
     { "group": "支付", "names": ["钻石", "支付测试"] },
     { "group": "知识库", "prefixes": ["testcase-kb", "prd-kb"], "names": ["钉钉目录"] },
     { "group": "工作流", "names": ["工作流"] },
-    { "group": "平台", "names": ["Admin", "MOA", "MSE"] }
+    { "group": "平台", "names": ["Admin", "MOA", "MSE", "MOA-generative", "生成式MOA"] }
   ],
   "top_level_order": [
     "用户",
@@ -63,6 +63,15 @@
       "registry": "MOA/config/registry.json",
       "usage_doc": "MOA/使用方法.md",
       "entry": "python3 MOA/moa_execute.py"
+    },
+    {
+      "id": "moa-generative",
+      "label": "MOA-generative",
+      "subtitle": "抓包 body → 双写 MOA payload · stage",
+      "env": "test",
+      "registry": "MOA-generative/config/registry.json",
+      "usage_doc": "MOA-generative/使用方法.md",
+      "entry": "python3 MOA-generative/scripts/run_generative_moa.py"
     },
     {
       "id": "mse",

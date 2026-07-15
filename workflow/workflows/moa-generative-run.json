@@ -1,0 +1,62 @@
+{
+  "id": "moa-generative-run",
+  "name": "MOA-generative-抓包转MOA执行",
+  "category": "MOA-generative",
+  "description": "将 Tunnel 抓包 body + 调用链 ServiceUrl/Method 生成双写 header+params 的 MOA payload 并执行。默认业务拒绝（已签到/已点赞）也算成功；--strict 要求业务 success。",
+  "version": 1,
+  "params": {
+    "serviceUrl": {
+      "label": "ServiceUrl",
+      "type": "string",
+      "required": true,
+      "prompt": "调用链 ServiceUrl，如 /service/feed/external/feed-interact-stage"
+    },
+    "method": {
+      "label": "Method",
+      "type": "string",
+      "required": true,
+      "prompt": "MOA method，如 likeContent / signIn"
+    },
+    "bodyFile": {
+      "label": "抓包body文件",
+      "type": "string",
+      "required": true,
+      "prompt": "Tunnel request body 的 JSON 文件路径"
+    },
+    "timeoutMs": {
+      "label": "超时毫秒",
+      "type": "integer",
+      "required": false,
+      "default": "20000",
+      "prompt": "moa_execute / settings.time"
+    },
+    "payloadOut": {
+      "label": "payload输出路径",
+      "type": "string",
+      "required": false,
+      "default": ".tmp/generative_moa_payload.json",
+      "prompt": "生成的 payload JSON 路径"
+    },
+    "strict": {
+      "label": "严格业务成功",
+      "type": "string",
+      "required": false,
+      "default": "0",
+      "prompt": "1=要求业务 success/ec=200；0=代理调通即可（默认）"
+    }
+  },
+  "steps": [
+    {
+      "id": "build_and_run",
+      "name": "生成payload并执行MOA",
+      "run": {
+        "type": "shell",
+        "command": "python3 MOA-generative/scripts/run_generative_moa.py --url '{{serviceUrl}}' --method '{{method}}' --body-file '{{bodyFile}}' --out '{{payloadOut}}' --timeout-ms {{timeoutMs}} --strict {{strict}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

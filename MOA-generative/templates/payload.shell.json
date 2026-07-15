@@ -1,0 +1,32 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/<ServiceUrl>",
+  "method": "<Method>",
+  "header": "{}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{}",
+      "type": "json",
+      "value": {}
+    }
+  ],
+  "settings": {
+    "time": 10000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_meta": {
+    "note": "header and params[0].json/value must be the same capture body; generate via scripts/build_payload.py"
+  }
+}

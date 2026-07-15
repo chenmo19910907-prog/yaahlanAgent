@@ -1,0 +1,49 @@
+{
+  "id": "intimate-cp-form",
+  "name": "亲密关系-结CP",
+  "category": "亲密关系",
+  "description": "测试环境结CP：Gift --intimate-invite 发起（默认 cpGiftList 特价礼 2005006943）→ MOA acceptIntimateInvitation 同意 → intimateHomePage 验收。relationshipType 固定 1；可选先 dismiss。",
+  "version": 1,
+  "params": {
+    "fromUserId": {
+      "label": "发起方userId",
+      "type": "string",
+      "required": true,
+      "prompt": "送礼发起 CP 申请的一方"
+    },
+    "toUserId": {
+      "label": "接受方userId",
+      "type": "string",
+      "required": true,
+      "prompt": "同意 CP 申请的一方"
+    },
+    "giftId": {
+      "label": "申请礼物giftId",
+      "type": "string",
+      "required": false,
+      "default": "2005006943",
+      "prompt": "CP 预览 cpGiftList 礼物；默认特价礼 2005006943（Middle platform）"
+    },
+    "dismissFirst": {
+      "label": "先解除已有关系",
+      "type": "string",
+      "required": false,
+      "default": "1",
+      "prompt": "1=先 intimateDismiss（默认）；0=不解除"
+    }
+  },
+  "steps": [
+    {
+      "id": "form_cp",
+      "name": "Gift发起并MOA同意结CP",
+      "run": {
+        "type": "shell",
+        "command": "python3 MOA-generative/scripts/form_intimate_pair.py --from-user '{{fromUserId}}' --to-user '{{toUserId}}' --gift-id '{{giftId}}' --dismiss-first {{dismissFirst}} --relationship-type 1",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

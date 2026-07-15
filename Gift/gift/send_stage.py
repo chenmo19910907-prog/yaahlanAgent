@@ -392,17 +392,28 @@ def query_user_device(sender: str) -> Dict[str, Any]:
     return device
 
 
-def build_ext(scene: str, scene_id: Optional[str], receivers: List[str], num: int) -> str:
-    source = SCENE_SOURCE[scene]
-    receiver_ids = ",".join(receivers)
+def build_ext(
+    scene: str,
+    scene_id: Optional[str],
+    receivers: List[str],
+    num: int,
+    *,
+    intimate_invite: bool = False,
+) -> str:
+    # Client intimate invite capture uses source=p2p + intimate_invite_gift=1
+    source = "p2p" if intimate_invite else SCENE_SOURCE[scene]
     ext: Dict[str, Any] = {
         "timeZone": "Asia/Shanghai",
         "source": source,
         "localTime": str(int(time.time() * 1000)),
-        "receiverIds": receiver_ids,
         "giftNum": num,
-        "fromCursor": 1,
     }
+    if intimate_invite:
+        ext["intimate_invite_gift"] = 1
+        ext["feedId"] = ""
+    else:
+        ext["receiverIds"] = ",".join(receivers)
+        ext["fromCursor"] = 1
     if scene == "chatroom" and scene_id:
         ext["room_id"] = scene_id
     return json.dumps(ext, ensure_ascii=False)
@@ -418,6 +429,7 @@ def build_payload(
     gift_meta: Dict[str, Any],
     user_device: Dict[str, Any],
     send_room_all_snap_id: Optional[str] = None,
+    intimate_invite: bool = False,
 ) -> Dict[str, Any]:
     payload: Dict[str, Any] = {
         "appId": APP_ID,
@@ -438,8 +450,11 @@ def build_payload(
         "giftId": gift_id,
         "num": num,
         "isPackage": gift_meta.get("isPackage", 0),
-        "isMulti": 1,
-        "ext": build_ext(scene, scene_id, receivers, num),
+        # Intimate invite capture uses isMulti=0（单人）
+        "isMulti": 0 if intimate_invite else 1,
+        "ext": build_ext(
+            scene, scene_id, receivers, num, intimate_invite=intimate_invite
+        ),
         "ua": user_device.get("ua"),
         "giftType": gift_meta.get("giftType", 0),
         "giftSubType": gift_meta.get("giftSubType", 0),
@@ -447,9 +462,16 @@ def build_payload(
     if send_room_all_snap_id:
         payload["sendRoomAllSnapId"] = send_room_all_snap_id
     else:
-        remote_ids = [int(r) if r.isdigit() else r for r in receivers]
-        payload["remoteIdList"] = json.dumps(remote_ids, separators=(",", ":"))
-    if scene in ("chatroom", "group") and scene_id:
+        # Match client intimate invite: remoteIdList as JSON string of string ids
+        if intimate_invite:
+            payload["remoteIdList"] = json.dumps(
+                [str(r) for r in receivers], separators=(",", ":")
+            )
+            payload["sceneId"] = ""
+        else:
+            remote_ids = [int(r) if r.isdigit() else r for r in receivers]
+            payload["remoteIdList"] = json.dumps(remote_ids, separators=(",", ":"))
+    if (not intimate_invite) and scene in ("chatroom", "group") and scene_id:
         payload["sceneId"] = scene_id
     return payload
 
@@ -534,13 +556,28 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="全房间送礼，自动调用 getSendRoomAllSnap 获取 snapId",
     )
+    parser.add_argument(
+        "--intimate-invite",
+        action="store_true",
+        help="亲密关系申请送礼：ext.intimate_invite_gift=1 + source=p2p（抓包复现；建议 --scene private）",
+    )
     return parser
 
 
 def run(args: argparse.Namespace) -> None:
     validate_scene(args.scene, args.scene_id)
     send_room_all = args.send_room_all
+    intimate_invite = bool(args.intimate_invite)
+    if intimate_invite and send_room_all:
+        raise StageGiftError("args", "--intimate-invite 不能与 --send-room-all 同时使用")
+    if intimate_invite and args.scene != "private":
+        raise StageGiftError(
+            "args",
+            "--intimate-invite 须配合 --scene private（端上为 p2p 私聊送礼）",
+        )
     receivers = [] if send_room_all else parse_receivers(args.receivers)
+    if intimate_invite and len(receivers) != 1:
+        raise StageGiftError("args", "--intimate-invite 仅支持 1 个收礼人")
 
     instance_ip = get_instance_ip()
     gift_meta = query_gift(args.gift_id)
@@ -564,6 +601,7 @@ def run(args: argparse.Namespace) -> None:
         gift_meta,
         user_device,
         send_room_all_snap_id=snap_id,
+        intimate_invite=intimate_invite,
     )
 
     result: Dict[str, Any] = {
@@ -572,6 +610,7 @@ def run(args: argparse.Namespace) -> None:
         "gift_meta": gift_meta,
         "user_device": user_device,
         "request": payload,
+        "intimate_invite": intimate_invite,
     }
     if snap_data:
         result["snap"] = snap_data

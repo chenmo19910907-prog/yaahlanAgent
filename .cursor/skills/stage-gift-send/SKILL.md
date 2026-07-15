@@ -42,6 +42,9 @@ python3 Gift/gift_execute.py \
 | 房间内 / 语音房 / chatroom | `--scene chatroom --scene-id <roomId>` |
 | 群组 / group | `--scene group --scene-id <groupId>` |
 | 私聊 / IM | `--scene private`（无需 scene-id） |
+| 亲密关系申请送礼 | `--scene private --intimate-invite`（`ext.intimate_invite_gift=1`） |
+| 结挚友闭环（发起+同意） | 工作流 `intimate-buddy-form` |
+| 结CP闭环（发起+同意） | 工作流 `intimate-cp-form`（`relationshipType=1`，默认 gift `2005006943`） |
 | 送礼人 / sender | `--sender` |
 | 收礼人 / receivers | `--receivers uid1,uid2` |
 | 礼物 id | `--gift-id` |

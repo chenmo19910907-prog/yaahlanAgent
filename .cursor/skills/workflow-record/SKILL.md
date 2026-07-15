@@ -125,3 +125,9 @@ python3 workflow/workflow_execute.py init my-workflow --name "我的流程"
 `family-pk-config-match-verify`：抓包 PK 列表 + 收礼榜区间验收 → Sheet3「匹配验收」。
 
 `family-pk-config-sheet-to-json`：改完参数表后 → 写回 `configValue_JSON` Sheet。
+
+`moa-generative-run`：Tunnel 抓包 body + 调用链 ServiceUrl/Method → 生成双写 payload 并 `moa_execute`（默认代理调通即成功）。
+
+`intimate-buddy-form`：结挚友（Gift `--intimate-invite` 发起 → MOA `acceptIntimateInvitation` 同意 → 主页验收）。
+
+`intimate-cp-form`：结CP（同上，`relationshipType=1`，默认礼物 `2005006943`）。

@@ -48,6 +48,18 @@
       "command": "python3 Gift/gift_execute.py \\\n  --scene chatroom \\\n  --sender <sender> \\\n  --gift-id <giftId> \\\n  --scene-id <roomId> \\\n  --num <num> \\\n  --send-room-all\n"
     },
     {
+      "id": "stage_gift_intimate_invite",
+      "name": "Stage送礼-亲密关系申请",
+      "category": "Stage HTTP 送礼（/v2/gift/send）",
+      "description": "私聊送礼并发起亲密关系申请（ext.intimate_invite_gift=1，source=p2p；CP/挚友预览页送礼同路径）。须 --scene private；giftId 取自对应预览 gift 列表。",
+      "prompts": [
+        "Stage 用户 <sender> 给 <receiver> 送礼物 <giftId> 发起亲密关系申请",
+        "测试环境亲密申请送礼 sender=<sender> receiver=<receiver> giftId=<giftId>",
+        "stage intimate-invite <sender> <receiver> <giftId>"
+      ],
+      "command": "python3 Gift/gift_execute.py \\\n  --scene private \\\n  --sender <sender> \\\n  --receivers <receiver> \\\n  --gift-id <giftId> \\\n  --num 1 \\\n  --intimate-invite\n"
+    },
+    {
       "id": "stage_gift_probe",
       "name": "Stage送礼-探测",
       "category": "Stage HTTP 送礼（/v2/gift/send）",
