@@ -192,6 +192,7 @@ async def _write_rows(
     workbook_id: str,
     rows: list[list[str]],
     auto_wrap: bool = False,
+    text_column_indexes: set[int] | None = None,
 ) -> None:
     if not rows:
         raise ValueError("CSV 为空")
@@ -233,6 +234,35 @@ async def _write_rows(
                 raise RuntimeError(
                     f"写入 {range_str} 失败 HTTP {wr.status_code}: {wr.text[:300]}"
                 )
+
+        text_cols = sorted(idx for idx in (text_column_indexes or set()) if 0 <= idx < cols)
+        for col_idx in text_cols:
+            col_letter = _col_letter(col_idx + 1)
+            for start in range(0, len(rows), BATCH_ROWS):
+                chunk = rows[start : start + BATCH_ROWS]
+                col_values = [
+                    [str(row[col_idx]) if col_idx < len(row) else ""]
+                    for row in chunk
+                ]
+                start_row = start + 1
+                end_row = start_row + len(chunk) - 1
+                range_str = f"{col_letter}{start_row}:{col_letter}{end_row}"
+                write_url = (
+                    f"{DOC_API}/workbooks/{workbook_id}/sheets/{sheet_id}"
+                    f"/ranges/{range_str}?operatorId={operator}"
+                )
+                wr = await client.put(
+                    write_url,
+                    headers={
+                        "x-acs-dingtalk-access-token": token,
+                        "Content-Type": "application/json",
+                    },
+                    json={"values": col_values, "numberFormat": "@"},
+                )
+                if wr.status_code >= 400:
+                    raise RuntimeError(
+                        f"写入文本列 {range_str} 失败 HTTP {wr.status_code}: {wr.text[:300]}"
+                    )
 
 
 def _read_csv(path: Path) -> list[list[str]]:
@@ -327,6 +357,7 @@ async def export_rows_to_folder_async(
     parent_node_id: str,
     workbook_name: str,
     auto_wrap: bool = False,
+    text_column_indexes: set[int] | None = None,
 ) -> str:
     if not rows:
         raise ValueError("用例表格为空")
@@ -346,6 +377,7 @@ async def export_rows_to_folder_async(
         workbook_id=workbook_id,
         rows=rows,
         auto_wrap=auto_wrap,
+        text_column_indexes=text_column_indexes,
     )
     return ALIDOCS_NODE.format(node_id=workbook_id)
 
@@ -356,6 +388,7 @@ def export_rows_to_folder(
     parent_node_id: str,
     workbook_name: str,
     auto_wrap: bool = False,
+    text_column_indexes: set[int] | None = None,
 ) -> str:
     import asyncio
 
@@ -365,6 +398,7 @@ def export_rows_to_folder(
             parent_node_id=parent_node_id,
             workbook_name=workbook_name,
             auto_wrap=auto_wrap,
+            text_column_indexes=text_column_indexes,
         )
     )
 
@@ -374,6 +408,7 @@ async def export_csv_to_folder_async(
     *,
     parent_node_id: str,
     workbook_name: str | None = None,
+    text_column_indexes: set[int] | None = None,
 ) -> str:
     path = Path(csv_path)
     rows = _read_csv(path)
@@ -388,7 +423,13 @@ async def export_csv_to_folder_async(
         parent_node_id=parent_node_id,
         name=name,
     )
-    await _write_rows(token=token, operator=operator, workbook_id=workbook_id, rows=rows)
+    await _write_rows(
+        token=token,
+        operator=operator,
+        workbook_id=workbook_id,
+        rows=rows,
+        text_column_indexes=text_column_indexes,
+    )
     return ALIDOCS_NODE.format(node_id=workbook_id)
 
 
@@ -397,6 +438,7 @@ def export_csv_to_folder(
     *,
     parent_node_id: str,
     workbook_name: str | None = None,
+    text_column_indexes: set[int] | None = None,
 ) -> str:
     import asyncio
 
@@ -405,5 +447,6 @@ def export_csv_to_folder(
             csv_path,
             parent_node_id=parent_node_id,
             workbook_name=workbook_name,
+            text_column_indexes=text_column_indexes,
         )
     )
