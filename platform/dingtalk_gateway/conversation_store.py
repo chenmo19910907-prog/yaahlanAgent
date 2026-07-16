@@ -90,6 +90,7 @@ class ConversationStore:
         *,
         sender_id: str | None = None,
         sender_staff_id: str | None = None,
+        sender_nick: str | None = None,
         conversation_type: str | None = None,
     ) -> None:
         text = (prompt or "").strip()
@@ -103,12 +104,26 @@ class ConversationStore:
         )
         with self._lock:
             prev = self._records.get(key)
+            reply = (prev.last_full_reply if prev else "").strip()
             self._records[key] = ConversationRecord(
                 prompt=text,
                 summary=text[:80],
-                last_full_reply=prev.last_full_reply if prev else "",
+                last_full_reply=reply,
             )
             self._save()
+        if reply:
+            try:
+                from web_agent_sync import sync_exchange_to_web_agent
+
+                sync_exchange_to_web_agent(
+                    key,
+                    text,
+                    reply,
+                    sender_name=(sender_nick or "").strip(),
+                    sender_staff_id=(sender_staff_id or sender_id or "").strip(),
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("save() 同步 Web 历史失败 key=%s: %s", key[:24], exc)
 
     def save_full_reply(
         self,

@@ -28,6 +28,19 @@ def dingtalk_session_id(dingtalk_key: str) -> str:
     return f"dt{digest}"
 
 
+def parse_dingtalk_user_id(dingtalk_key: str) -> str:
+    """从 conversation_key 解析钉钉用户标识（staff_id / sender_id）。"""
+    key = (dingtalk_key or "").strip()
+    if not key:
+        return ""
+    if key.startswith("dm:"):
+        return key[3:].strip()
+    marker = ":user:"
+    if marker in key:
+        return key.rsplit(marker, 1)[-1].strip()
+    return ""
+
+
 def _rel_time(iso: str) -> str:
     try:
         dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
@@ -65,8 +78,33 @@ class SessionMeta:
     source: str = "web"
     dingtalk_key: str = ""
     dingtalk_label: str = ""
+    dingtalk_owner_id: str = ""
 
-    def to_dict(self) -> dict[str, object]:
+    def owner_display(self, *, known_labels: dict[str, str] | None = None) -> str:
+        label = (self.dingtalk_label or "").strip()
+        owner_id = (self.dingtalk_owner_id or "").strip() or parse_dingtalk_user_id(
+            self.dingtalk_key
+        )
+        if not label and owner_id and known_labels:
+            label = (known_labels.get(owner_id) or "").strip()
+        if not label and owner_id:
+            try:
+                from dingtalk_user_lookup import resolve_dingtalk_name
+
+                label = resolve_dingtalk_name(
+                    owner_id,
+                    known=known_labels,
+                    try_api=False,
+                )
+            except Exception:  # noqa: BLE001
+                label = ""
+        if label:
+            return label
+        if owner_id:
+            return f"用户 {owner_id}"
+        return "未知用户"
+
+    def to_dict(self, *, known_labels: dict[str, str] | None = None) -> dict[str, object]:
         payload: dict[str, object] = {
             "id": self.id,
             "title": self.title,
@@ -78,8 +116,11 @@ class SessionMeta:
         }
         if self.source == "dingtalk":
             payload["read_only"] = True
+            payload["dingtalk_owner"] = self.owner_display(known_labels=known_labels)
             if self.dingtalk_label:
                 payload["dingtalk_label"] = self.dingtalk_label
+            if self.dingtalk_owner_id:
+                payload["dingtalk_owner_id"] = self.dingtalk_owner_id
         return payload
 
 
@@ -92,7 +133,27 @@ class WebSessionStore:
         self._index_path = index_path
         self._messages_dir = messages_dir
         self._lock = threading.Lock()
-        self._sessions: dict[str, SessionMeta] = self._load_index()
+        self._index_mtime: float = 0.0
+        self._sessions: dict[str, SessionMeta] = {}
+        self._reload_index_if_stale(force=True)
+
+    def _index_mtime_on_disk(self) -> float:
+        try:
+            return self._index_path.stat().st_mtime
+        except OSError:
+            return 0.0
+
+    def _reload_index_if_stale(self, *, force: bool = False) -> None:
+        mtime = self._index_mtime_on_disk()
+        if not force and mtime <= self._index_mtime:
+            return
+        self._sessions = self._load_index()
+        self._index_mtime = mtime
+
+    def reload_from_disk(self) -> None:
+        """多进程（Web 服务 / 钉钉网关）共享落盘时，读前刷新索引。"""
+        with self._lock:
+            self._reload_index_if_stale(force=True)
 
     def _load_index(self) -> dict[str, SessionMeta]:
         if not self._index_path.is_file():
@@ -117,6 +178,7 @@ class WebSessionStore:
                 source=str(item.get("source") or "web"),
                 dingtalk_key=str(item.get("dingtalk_key") or ""),
                 dingtalk_label=str(item.get("dingtalk_label") or ""),
+                dingtalk_owner_id=str(item.get("dingtalk_owner_id") or ""),
             )
         return sessions
 
@@ -131,6 +193,7 @@ class WebSessionStore:
                 "source": meta.source,
                 "dingtalk_key": meta.dingtalk_key,
                 "dingtalk_label": meta.dingtalk_label,
+                "dingtalk_owner_id": meta.dingtalk_owner_id,
             }
             for sid, meta in self._sessions.items()
         }
@@ -138,6 +201,7 @@ class WebSessionStore:
             json.dumps(payload, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
+        self._index_mtime = self._index_mtime_on_disk()
 
     def _messages_path(self, session_id: str) -> Path:
         return self._messages_dir / f"{session_id}.json"
@@ -180,9 +244,28 @@ class WebSessionStore:
             encoding="utf-8",
         )
 
-    def list_sessions(self) -> list[SessionMeta]:
+    def list_sessions(self, *, enrich_names: bool = True) -> list[SessionMeta]:
         with self._lock:
+            self._reload_index_if_stale()
+            dirty = False
+            for meta in self._sessions.values():
+                if meta.source != "dingtalk" or meta.dingtalk_owner_id:
+                    continue
+                owner_id = parse_dingtalk_user_id(meta.dingtalk_key)
+                if owner_id:
+                    meta.dingtalk_owner_id = owner_id
+                    dirty = True
             items = [s for s in self._sessions.values() if s.message_count > 0]
+            if enrich_names and items:
+                try:
+                    from dingtalk_user_lookup import enrich_session_owner_labels
+
+                    if enrich_session_owner_labels(items):
+                        dirty = True
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning("补全钉钉用户姓名失败: %s", exc)
+            if dirty:
+                self._save_index()
         items.sort(key=lambda s: s.updated_at, reverse=True)
         return items
 
@@ -191,6 +274,7 @@ class WebSessionStore:
         now = _now_iso()
         meta = SessionMeta(id=sid, title=title.strip() or "新对话", created_at=now, updated_at=now)
         with self._lock:
+            self._reload_index_if_stale()
             self._sessions[sid] = meta
             self._save_index()
         self._save_messages(sid, [])
@@ -198,10 +282,12 @@ class WebSessionStore:
 
     def get_session(self, session_id: str) -> SessionMeta | None:
         with self._lock:
+            self._reload_index_if_stale()
             return self._sessions.get(session_id)
 
     def delete_session(self, session_id: str) -> bool:
         with self._lock:
+            self._reload_index_if_stale()
             if session_id not in self._sessions:
                 return False
             del self._sessions[session_id]
@@ -213,6 +299,7 @@ class WebSessionStore:
 
     def get_messages(self, session_id: str) -> list[ChatMessage]:
         with self._lock:
+            self._reload_index_if_stale()
             if session_id not in self._sessions:
                 return []
         return self._load_messages(session_id)
@@ -223,21 +310,26 @@ class WebSessionStore:
         dingtalk_key: str,
         label: str = "",
         title_hint: str = "",
+        owner_id: str = "",
     ) -> SessionMeta:
         key = (dingtalk_key or "").strip()
         if not key:
             raise ValueError("dingtalk_key 不能为空")
         session_id = dingtalk_session_id(key)
+        nick = (label or "").strip()
+        uid = (owner_id or "").strip() or parse_dingtalk_user_id(key)
         with self._lock:
+            self._reload_index_if_stale()
             meta = self._sessions.get(session_id)
             if meta is None:
                 now = _now_iso()
                 hint = (title_hint or "").strip()
-                nick = (label or "").strip()
                 if hint:
                     title = hint[:40] + ("…" if len(hint) > 40 else "")
                 elif nick:
                     title = f"钉钉 · {nick}"
+                elif uid:
+                    title = f"钉钉 · {uid[:12]}"
                 else:
                     title = f"钉钉 · {key.rsplit(':', 1)[-1][:12]}"
                 meta = SessionMeta(
@@ -249,13 +341,21 @@ class WebSessionStore:
                     source="dingtalk",
                     dingtalk_key=key,
                     dingtalk_label=nick,
+                    dingtalk_owner_id=uid,
                 )
                 self._sessions[session_id] = meta
                 self._save_index()
                 self._save_messages(session_id, [])
-            elif label and not meta.dingtalk_label:
-                meta.dingtalk_label = label.strip()
-                self._save_index()
+            else:
+                changed = False
+                if nick and meta.dingtalk_label != nick:
+                    meta.dingtalk_label = nick
+                    changed = True
+                if uid and not meta.dingtalk_owner_id:
+                    meta.dingtalk_owner_id = uid
+                    changed = True
+                if changed:
+                    self._save_index()
         return meta
 
     def append_message_if_new(self, session_id: str, role: str, content: str) -> ChatMessage | None:
@@ -263,6 +363,7 @@ class WebSessionStore:
         if not text or role not in ("user", "assistant"):
             return None
         with self._lock:
+            self._reload_index_if_stale()
             meta = self._sessions.get(session_id)
             if meta is None:
                 return None
@@ -273,6 +374,7 @@ class WebSessionStore:
 
     def is_read_only(self, session_id: str) -> bool:
         with self._lock:
+            self._reload_index_if_stale()
             meta = self._sessions.get(session_id)
         return meta is not None and meta.source == "dingtalk"
 
@@ -281,6 +383,7 @@ class WebSessionStore:
         if not text:
             return None
         with self._lock:
+            self._reload_index_if_stale()
             meta = self._sessions.get(session_id)
             if meta is None:
                 return None

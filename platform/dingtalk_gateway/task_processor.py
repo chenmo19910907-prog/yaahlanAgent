@@ -32,7 +32,7 @@ from batch_progress import (
     read_batch_progress,
     should_push_batch_progress,
 )
-from batch_result import choose_final_reply_source, clear_batch_result, pop_batch_result
+from batch_result import choose_final_reply_source, clear_batch_result, pop_batch_attachment, pop_batch_result
 from command_hints import suggest_command_hint
 from command_router import try_route
 from code_modify_guard import guard_readonly_agent_reply
@@ -96,6 +96,7 @@ def _reply_final(
     user_key: str = "",
     user_prompt: str = "",
     sender_name: str = "",
+    sender_staff_id: str = "",
 ) -> None:
     elapsed = time.monotonic() - started
     body = append_duration_footer(message, elapsed, task_kind=task_kind)
@@ -106,6 +107,32 @@ def _reply_final(
             user_prompt,
             body,
             sender_name=sender_name,
+            sender_staff_id=sender_staff_id,
+        )
+
+
+def _send_batch_attachment_if_any(
+    handler: Any,
+    incoming: dingtalk_stream.ChatbotMessage,
+    inbound: InboundMessage | None,
+    user_key: str,
+) -> None:
+    attachment = pop_batch_attachment(user_key)
+    if attachment is None:
+        return
+    try:
+        send_group_file(
+            handler,
+            incoming,
+            attachment,
+            display_name=attachment.name,
+        )
+    except Exception as file_exc:  # noqa: BLE001
+        logger.exception("发送批量附件失败")
+        handler._reply(
+            f"⚠️ 摘要已发送，但附件 {attachment.name} 上传失败：{file_exc}",
+            incoming,
+            inbound,
         )
 
 
@@ -328,6 +355,7 @@ def process_inbound_task(
             )
 
     sender_name = incoming.sender_nick or incoming.sender_staff_id or incoming.sender_id or ""
+    sender_staff_id = incoming.sender_staff_id or incoming.sender_id or ""
     task_kind = classify_task_kind(prompt)
     task_estimate_s = resolve_task_estimate_seconds(task_kind, prompt=prompt)
     started = time.monotonic()
@@ -434,6 +462,7 @@ def process_inbound_task(
                     user_key=user_key,
                     user_prompt=prompt,
                     sender_name=sender_name,
+                    sender_staff_id=sender_staff_id,
                 )
                 store.save(incoming.conversation_id, prompt, **store_kwargs)
                 return "ok"
@@ -448,6 +477,7 @@ def process_inbound_task(
                 user_key=user_key,
                 user_prompt=prompt,
                 sender_name=sender_name,
+                sender_staff_id=sender_staff_id,
             )
             store.save(incoming.conversation_id, prompt, **store_kwargs)
             return "no_cache"
@@ -464,6 +494,7 @@ def process_inbound_task(
                 user_key=user_key,
                 user_prompt=prompt,
                 sender_name=sender_name,
+                sender_staff_id=sender_staff_id,
             )
             store.save(incoming.conversation_id, prompt, **store_kwargs)
             return "denied_env_check"
@@ -499,6 +530,7 @@ def process_inbound_task(
                 user_key=user_key,
                 user_prompt=prompt,
                 sender_name=sender_name,
+                sender_staff_id=sender_staff_id,
             )
             for attachment in routed.files:
                 try:
@@ -515,6 +547,7 @@ def process_inbound_task(
                         incoming,
                         inbound,
                     )
+            _send_batch_attachment_if_any(handler, incoming, inbound, user_key)
         else:
             hint = suggest_command_hint(prompt)
             if hint:
@@ -528,6 +561,7 @@ def process_inbound_task(
                     user_key=user_key,
                     user_prompt=prompt,
                     sender_name=sender_name,
+                    sender_staff_id=sender_staff_id,
                 )
                 store.save(incoming.conversation_id, prompt, **store_kwargs)
                 return "hint"
@@ -562,6 +596,7 @@ def process_inbound_task(
                     user_key=user_key,
                     user_prompt=prompt,
                     sender_name=sender_name,
+                    sender_staff_id=sender_staff_id,
                 )
                 store.save(incoming.conversation_id, prompt, **store_kwargs)
                 return "denied"
@@ -582,6 +617,7 @@ def process_inbound_task(
                     user_key=user_key,
                     user_prompt=prompt,
                     sender_name=sender_name,
+                    sender_staff_id=sender_staff_id,
                 )
                 store.save(incoming.conversation_id, prompt, **store_kwargs)
                 return "adb_denied"
@@ -662,7 +698,9 @@ def process_inbound_task(
                 user_key=user_key,
                 user_prompt=prompt,
                 sender_name=sender_name,
+                sender_staff_id=sender_staff_id,
             )
+            _send_batch_attachment_if_any(handler, incoming, inbound, user_key)
             if delivery.exported:
                 logger.info("已导出 %s url=%s", delivery.local_path, delivery.file_url)
             _schedule_testcase_export_followup(
@@ -699,6 +737,7 @@ def process_inbound_task(
                 prompt,
                 interrupt_with_footer,
                 sender_name=sender_name,
+                sender_staff_id=sender_staff_id,
             )
         store.save(incoming.conversation_id, prompt, **store_kwargs)
         get_user_agent_pool().invalidate(user_key)
@@ -724,6 +763,7 @@ def process_inbound_task(
                 user_key=user_key,
                 user_prompt=prompt,
                 sender_name=sender_name,
+                sender_staff_id=sender_staff_id,
             )
         if user_key and prompt and stream_card is not None:
             sync_exchange_to_web_agent(
@@ -731,6 +771,7 @@ def process_inbound_task(
                 prompt,
                 error_with_footer,
                 sender_name=sender_name,
+                sender_staff_id=sender_staff_id,
             )
         store.save(incoming.conversation_id, prompt, **store_kwargs)
     finally:

@@ -114,7 +114,20 @@
       display: inline-block; font-size: 0.68rem; padding: 1px 6px; border-radius: 4px;
       background: rgba(252, 211, 77, 0.15); color: #fcd34d; vertical-align: middle; margin-right: 4px;
     }
+    .session-owner { color: #fcd34d; }
+    .dingtalk-owner-bar {
+      flex-shrink: 0;
+      padding: 8px 24px;
+      font-size: 0.8rem;
+      color: #fcd34d;
+      background: rgba(252, 211, 77, 0.08);
+      border-bottom: 1px solid rgba(252, 211, 77, 0.2);
+    }
+    .dingtalk-owner-bar[hidden] { display: none; }
     .readonly-hint { color: #fcd34d !important; }
+    .input-wrap.readonly { border-color: rgba(252, 211, 77, 0.35); }
+    textarea.readonly-input::placeholder { color: #fcd34d; opacity: 1; }
+    textarea.readonly-input { cursor: not-allowed; color: var(--muted); }
     .chat-area {
       display: flex; flex-direction: column; min-height: 0;
     }
@@ -507,6 +520,7 @@
     </aside>
 
     <section class="chat-area">
+      <div class="dingtalk-owner-bar" id="dingtalk-owner-bar" hidden></div>
       <div class="messages" id="messages"></div>
       <div class="input-area">
         <div class="input-wrap">
@@ -567,7 +581,8 @@
     let sessionsCache = [];
     let currentSessionReadOnly = false;
 
-    marked.setOptions({ breaks: true, gfm: true });
+    const DEFAULT_PLACEHOLDER = '输入问题，Enter 发送，Shift+Enter 换行…';
+    const READONLY_PLACEHOLDER = '此会话来自钉钉同步，仅供查看；继续对话请点「+ 新对话」';
 
     function renderMarkdown(text) {
       try { return marked.parse(text || ''); }
@@ -650,30 +665,46 @@
       run.shellEl.classList.remove('streaming');
     }
 
+    function updateDingtalkOwnerBar() {
+      const bar = document.getElementById('dingtalk-owner-bar');
+      if (!bar) return;
+      const item = sessionsCache.find(s => s.id === currentSessionId);
+      if (item?.source === 'dingtalk' && item.dingtalk_owner) {
+        bar.hidden = false;
+        bar.textContent = `钉钉会话 · 归属：${item.dingtalk_owner}`;
+      } else {
+        bar.hidden = true;
+        bar.textContent = '';
+      }
+    }
+
     function updateReadOnlyState() {
       const input = document.getElementById('input');
-      input.disabled = currentSessionReadOnly;
-      updateInputState();
-      let hint = document.getElementById('readonly-hint');
+      const inputWrap = document.querySelector('.input-wrap');
+      const defaultHint = document.querySelector('.input-area .input-hint');
       if (currentSessionReadOnly) {
-        if (!hint) {
-          hint = document.createElement('div');
-          hint.id = 'readonly-hint';
-          hint.className = 'input-hint readonly-hint';
-          hint.textContent = '此会话来自钉钉同步，仅供查看；继续对话请点「+ 新对话」';
-          const inputArea = document.querySelector('.input-area');
-          const defaultHint = inputArea.querySelector('.input-hint:not(.readonly-hint)');
-          inputArea.insertBefore(hint, defaultHint);
-        }
-      } else if (hint) {
-        hint.remove();
+        input.readOnly = true;
+        input.value = '';
+        input.placeholder = READONLY_PLACEHOLDER;
+        input.classList.add('readonly-input');
+        inputWrap?.classList.add('readonly');
+        if (defaultHint) defaultHint.hidden = true;
+      } else {
+        input.readOnly = false;
+        input.placeholder = DEFAULT_PLACEHOLDER;
+        input.classList.remove('readonly-input');
+        inputWrap?.classList.remove('readonly');
+        if (defaultHint) defaultHint.hidden = false;
       }
+      document.getElementById('readonly-hint')?.remove();
+      updateInputState();
     }
 
     function syncSessionReadOnly(sessionId) {
       const item = sessionsCache.find(s => s.id === sessionId);
       currentSessionReadOnly = item?.read_only === true || item?.source === 'dingtalk';
       updateReadOnlyState();
+      updateDingtalkOwnerBar();
     }
 
     function updateInputState() {
@@ -699,10 +730,12 @@
         const sourceBadge = s.source === 'dingtalk'
           ? '<span class="session-source">钉钉</span>'
           : '';
-        const label = s.dingtalk_label ? ` · ${escapeHtml(s.dingtalk_label)}` : '';
+        const ownerLine = s.source === 'dingtalk' && s.dingtalk_owner
+          ? `<span class="session-owner">归属：${escapeHtml(s.dingtalk_owner)}</span> · `
+          : '';
         el.innerHTML = `
           <div class="session-title">${sourceBadge}${escapeHtml(s.title)}</div>
-          <div class="session-meta">${escapeHtml(s.relative_time || '')} · ${s.message_count || 0} 条${label}${running}</div>`;
+          <div class="session-meta">${ownerLine}${escapeHtml(s.relative_time || '')} · ${s.message_count || 0} 条${running}</div>`;
         el.addEventListener('click', () => selectSession(s.id));
         list.appendChild(el);
       });
@@ -727,8 +760,9 @@
       currentSessionReadOnly = false;
       localStorage.setItem('web_agent_session', currentSessionId);
       await loadSessions();
+      updateDingtalkOwnerBar();
+      updateReadOnlyState();
       await loadMessages();
-      updateInputState();
       document.getElementById('input').focus();
     }
 
@@ -1030,6 +1064,22 @@
     document.getElementById('btn-catalog').addEventListener('click', () => setCatalogOpen(!catalogOpen));
     document.getElementById('btn-catalog-close').addEventListener('click', () => setCatalogOpen(false));
 
+    let sessionPollTimer = null;
+    function startSessionPolling() {
+      if (sessionPollTimer) return;
+      sessionPollTimer = setInterval(async () => {
+        if (document.hidden) return;
+        const viewingId = currentSessionId;
+        const wasDingtalk = currentSessionReadOnly;
+        try {
+          await loadSessions();
+          if (viewingId && (wasDingtalk || activeRuns.has(viewingId)) && currentSessionId === viewingId) {
+            await loadMessages();
+          }
+        } catch { /* ignore poll errors */ }
+      }, 15000);
+    }
+
     (async () => {
       try {
         await loadMeta();
@@ -1049,6 +1099,7 @@
         } else {
           showEmptyState();
         }
+        startSessionPolling();
       } catch (err) {
         document.getElementById('messages').innerHTML =
           `<div class="empty-state"><p>无法连接 Web Agent 服务：${escapeHtml(err.message)}</p>

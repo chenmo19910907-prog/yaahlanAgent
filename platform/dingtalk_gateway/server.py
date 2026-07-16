@@ -60,6 +60,7 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
             "sender_id": incoming.sender_id,
             "sender_staff_id": incoming.sender_staff_id,
             "conversation_type": incoming.conversation_type,
+            "sender_nick": incoming.sender_nick,
         }
 
     def _reply(

@@ -23,6 +23,11 @@ def _result_path(user_key: str) -> Path:
     return RESULT_DIR / _safe_filename(user_key)
 
 
+def _attachment_path(user_key: str) -> Path:
+    digest = hashlib.sha256(user_key.encode("utf-8")).hexdigest()[:24]
+    return RESULT_DIR / f"{digest}_attachment.path"
+
+
 def save_batch_result(user_key: str, text: str) -> None:
     key = (user_key or "").strip()
     body = (text or "").strip()
@@ -64,6 +69,50 @@ def choose_final_reply_source(*, agent_formatted: str, batch_result: str | None)
     return (agent_formatted or "").strip(), "agent"
 
 
+def save_batch_attachment(user_key: str, file_path: str | Path) -> None:
+    key = (user_key or "").strip()
+    path = Path(file_path).expanduser().resolve()
+    if not key or not path.is_file():
+        return
+    RESULT_DIR.mkdir(parents=True, exist_ok=True)
+    _attachment_path(key).write_text(str(path), encoding="utf-8")
+    logger.info("批量附件已落盘 user=%s file=%s", key, path.name)
+
+
+def read_batch_attachment(user_key: str) -> Path | None:
+    key = (user_key or "").strip()
+    if not key:
+        return None
+    marker = _attachment_path(key)
+    if not marker.is_file():
+        return None
+    try:
+        raw = marker.read_text(encoding="utf-8").strip()
+    except OSError as exc:
+        logger.warning("读取批量附件失败 user=%s: %s", key, exc)
+        return None
+    if not raw:
+        return None
+    path = Path(raw)
+    return path if path.is_file() else None
+
+
+def pop_batch_attachment(user_key: str) -> Path | None:
+    path = read_batch_attachment(user_key)
+    clear_batch_attachment(user_key)
+    return path
+
+
+def clear_batch_attachment(user_key: str) -> None:
+    key = (user_key or "").strip()
+    if not key:
+        return
+    try:
+        _attachment_path(key).unlink(missing_ok=True)
+    except OSError as exc:
+        logger.warning("清理批量附件失败 user=%s: %s", key, exc)
+
+
 def clear_batch_result(user_key: str) -> None:
     key = (user_key or "").strip()
     if not key:
@@ -72,3 +121,4 @@ def clear_batch_result(user_key: str) -> None:
         _result_path(key).unlink(missing_ok=True)
     except OSError as exc:
         logger.warning("清理批量结果失败 user=%s: %s", key, exc)
+    clear_batch_attachment(key)

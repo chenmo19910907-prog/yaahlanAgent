@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from batch_progress import build_batch_progress_message, report_batch_progress
-from batch_result import save_batch_result
+from batch_result import save_batch_attachment, save_batch_result
 
 
 def main() -> int:
@@ -46,6 +46,11 @@ def main() -> int:
         default="",
         help="批量最终结果文件路径（Markdown/文本）",
     )
+    parser.add_argument(
+        "--attachment-file",
+        default="",
+        help="任务结束时发送到群的本地附件（建议 .zip）",
+    )
     args = parser.parse_args()
 
     result_body = (args.result_text or "").strip()
@@ -55,6 +60,16 @@ def main() -> int:
             print(f"[FAIL] 结果文件不存在: {path}", file=sys.stderr)
             return 1
         result_body = path.read_text(encoding="utf-8").strip()
+
+    if result_body:
+        save_batch_result(args.user_key, result_body)
+
+    if args.attachment_file:
+        attachment = Path(args.attachment_file)
+        if not attachment.is_file():
+            print(f"[FAIL] 附件不存在: {attachment}", file=sys.stderr)
+            return 1
+        save_batch_attachment(args.user_key, attachment)
 
     try:
         state = report_batch_progress(
@@ -70,9 +85,6 @@ def main() -> int:
 
     if state is None:
         return 0
-
-    if result_body:
-        save_batch_result(args.user_key, result_body)
 
     print(build_batch_progress_message(state))
     return 0

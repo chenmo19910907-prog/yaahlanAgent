@@ -46,7 +46,7 @@ from progress_message import (  # noqa: E402
     resolve_task_estimate_seconds,
 )
 from task_session import TaskInterrupted, TaskSession  # noqa: E402
-from dingtalk_web_sync import backfill_from_conversation_store  # noqa: E402
+from dingtalk_web_sync import sync_all_from_conversation_store  # noqa: E402
 from web_session_store import get_session_store  # noqa: E402
 
 logger = logging.getLogger("web-agent")
@@ -352,9 +352,17 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 return _json_response(self, {"error": str(exc)}, 500)
 
         if path == "/api/sessions":
-            backfill_from_conversation_store()
+            sync_all_from_conversation_store()
             store = get_session_store()
-            sessions = [s.to_dict() for s in store.list_sessions()]
+            store.reload_from_disk()
+            items = store.list_sessions()
+            try:
+                from dingtalk_user_lookup import collect_known_labels
+
+                known = collect_known_labels(items)
+            except Exception:  # noqa: BLE001
+                known = {}
+            sessions = [s.to_dict(known_labels=known) for s in items]
             return _json_response(self, {"sessions": sessions})
 
         m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})/messages$", path)

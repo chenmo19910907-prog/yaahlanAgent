@@ -17,6 +17,7 @@ def sync_exchange_to_web_agent(
     assistant_message: str,
     *,
     sender_name: str = "",
+    sender_staff_id: str = "",
 ) -> None:
     try:
         if str(WEB_AGENT_DIR) not in sys.path:
@@ -28,6 +29,7 @@ def sync_exchange_to_web_agent(
             user_prompt,
             assistant_message,
             sender_name=sender_name,
+            sender_staff_id=sender_staff_id,
         )
     except Exception as exc:  # noqa: BLE001
         logger.warning("同步 Web Agent 历史失败 key=%s: %s", dingtalk_key[:24], exc)
