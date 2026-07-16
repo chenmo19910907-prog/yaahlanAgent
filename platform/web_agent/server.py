@@ -125,6 +125,7 @@ def _platform_meta() -> dict[str, int | str]:
         "modules_count": modules_count,
         "capabilities_count": capabilities_count,
         "quickPrompts": cfg.get("quickPrompts") or [],
+        "quickPromptCount": int(cfg.get("quickPromptCount") or 4),
     }
 
 
