@@ -46,6 +46,7 @@ from progress_message import (  # noqa: E402
     resolve_task_estimate_seconds,
 )
 from task_session import TaskInterrupted, TaskSession  # noqa: E402
+from dingtalk_web_sync import backfill_from_conversation_store  # noqa: E402
 from web_session_store import get_session_store  # noqa: E402
 
 logger = logging.getLogger("web-agent")
@@ -56,6 +57,7 @@ CONFIG_PATH = WEB_AGENT_DIR / "config.json"
 SSE_POLL_S = 0.25
 RUN_TTL_S = 3600
 PROGRESS_TICK_S = 1.0
+SESSION_ID_PATTERN = r"[a-z0-9]+"
 
 
 def _load_config() -> dict[str, Any]:
@@ -350,11 +352,12 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 return _json_response(self, {"error": str(exc)}, 500)
 
         if path == "/api/sessions":
+            backfill_from_conversation_store()
             store = get_session_store()
             sessions = [s.to_dict() for s in store.list_sessions()]
             return _json_response(self, {"sessions": sessions})
 
-        m = re.match(r"^/api/sessions/([a-f0-9]+)/messages$", path)
+        m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})/messages$", path)
         if m:
             session_id = m.group(1)
             store = get_session_store()
@@ -436,6 +439,12 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             store = get_session_store()
             if store.get_session(session_id) is None:
                 return _json_response(self, {"error": "session not found"}, 404)
+            if store.is_read_only(session_id):
+                return _json_response(
+                    self,
+                    {"error": "钉钉同步会话只读，请在 Web 新建对话继续"},
+                    403,
+                )
             run = _start_chat_run(session_id, message)
             return _json_response(self, {"run_id": run.run_id, "session_id": session_id})
 
@@ -455,7 +464,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
 
     def do_DELETE(self) -> None:
         parsed = urlparse(self.path)
-        m = re.match(r"^/api/sessions/([a-f0-9]+)$", parsed.path.rstrip("/"))
+        m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})$", parsed.path.rstrip("/"))
         if not m:
             self.send_error(HTTPStatus.NOT_FOUND)
             return

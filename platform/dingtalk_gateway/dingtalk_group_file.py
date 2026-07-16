@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import logging
+import tempfile
+import zipfile
 from pathlib import Path
 
 import requests
@@ -160,6 +162,29 @@ def _send_via_session_webhook(
     logger.info("sessionWebhook 发文件成功 detail=%s", detail)
 
 
+def _zip_single_file(path: Path, *, display_name: str | None = None) -> tuple[Path, str, tempfile.TemporaryDirectory[str]]:
+    """将单个非 zip 文件打成临时 zip，返回 (zip路径, 发送文件名, 临时目录)。"""
+    inner_name = display_name or path.name
+    zip_stem = Path(inner_name).stem or path.stem or "attachment"
+    tmp_dir = tempfile.TemporaryDirectory(prefix="dingtalk-file-zip-")
+    zip_path = Path(tmp_dir.name) / f"{zip_stem}.zip"
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.write(path, arcname=inner_name)
+    logger.info("非 zip 附件已自动打包 %s -> %s", path.name, zip_path.name)
+    return zip_path, zip_path.name, tmp_dir
+
+
+def _prepare_attachment(
+    path: Path,
+    *,
+    display_name: str | None,
+) -> tuple[Path, str, tempfile.TemporaryDirectory[str] | None]:
+    """钉钉发文件须为 zip；非 zip 时自动打包。"""
+    if path.suffix.lower() == ".zip":
+        return path, display_name or path.name, None
+    return _zip_single_file(path, display_name=display_name)
+
+
 def send_group_file(
     handler: ChatbotHandler,
     incoming: ChatbotMessage,
@@ -167,33 +192,37 @@ def send_group_file(
     *,
     display_name: str | None = None,
 ) -> None:
-    """上传本地文件并发送到触发消息的会话（群/单聊）。"""
+    """上传本地文件并发送到触发消息的会话（群/单聊）。非 zip 会自动打包为 zip。"""
     path = Path(file_path)
     if not path.is_file():
         raise FileNotFoundError(path)
 
-    content = path.read_bytes()
-    if len(content) > MAX_FILE_BYTES:
-        raise RuntimeError(
-            f"文件过大（{len(content) // (1024 * 1024)}MB），钉钉单文件上限 20MB"
-        )
-
-    filename = display_name or path.name
-    media_id = _upload_file(handler, content, filename)
-
-    errors: list[str] = []
+    send_path, filename, tmp_dir = _prepare_attachment(path, display_name=display_name)
     try:
-        _send_via_group_api(handler, incoming, media_id=media_id, filename=filename)
-        return
-    except Exception as exc:  # noqa: BLE001
-        errors.append(f"OpenAPI: {exc}")
-        logger.warning("OpenAPI 发文件失败，尝试 sessionWebhook：%s", exc)
+        content = send_path.read_bytes()
+        if len(content) > MAX_FILE_BYTES:
+            raise RuntimeError(
+                f"文件过大（{len(content) // (1024 * 1024)}MB），钉钉单文件上限 20MB"
+            )
 
-    try:
-        _send_via_session_webhook(incoming, media_id=media_id, filename=filename)
-        return
-    except Exception as exc:  # noqa: BLE001
-        errors.append(f"sessionWebhook: {exc}")
-        logger.error("sessionWebhook 发文件也失败：%s", exc)
+        media_id = _upload_file(handler, content, filename)
 
-    raise RuntimeError("；".join(errors))
+        errors: list[str] = []
+        try:
+            _send_via_group_api(handler, incoming, media_id=media_id, filename=filename)
+            return
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"OpenAPI: {exc}")
+            logger.warning("OpenAPI 发文件失败，尝试 sessionWebhook：%s", exc)
+
+        try:
+            _send_via_session_webhook(incoming, media_id=media_id, filename=filename)
+            return
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"sessionWebhook: {exc}")
+            logger.error("sessionWebhook 发文件也失败：%s", exc)
+
+        raise RuntimeError("；".join(errors))
+    finally:
+        if tmp_dir is not None:
+            tmp_dir.cleanup()

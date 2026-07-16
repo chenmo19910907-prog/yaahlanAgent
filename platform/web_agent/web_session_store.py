@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import threading
@@ -20,6 +21,11 @@ MESSAGES_DIR = DATA_DIR / "messages"
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def dingtalk_session_id(dingtalk_key: str) -> str:
+    digest = hashlib.sha256(dingtalk_key.encode("utf-8")).hexdigest()[:16]
+    return f"dt{digest}"
 
 
 def _rel_time(iso: str) -> str:
@@ -56,16 +62,25 @@ class SessionMeta:
     created_at: str
     updated_at: str
     message_count: int = 0
+    source: str = "web"
+    dingtalk_key: str = ""
+    dingtalk_label: str = ""
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "id": self.id,
             "title": self.title,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "message_count": self.message_count,
             "relative_time": _rel_time(self.updated_at),
+            "source": self.source,
         }
+        if self.source == "dingtalk":
+            payload["read_only"] = True
+            if self.dingtalk_label:
+                payload["dingtalk_label"] = self.dingtalk_label
+        return payload
 
 
 class WebSessionStore:
@@ -99,6 +114,9 @@ class WebSessionStore:
                 created_at=str(item.get("created_at") or _now_iso()),
                 updated_at=str(item.get("updated_at") or _now_iso()),
                 message_count=int(item.get("message_count") or 0),
+                source=str(item.get("source") or "web"),
+                dingtalk_key=str(item.get("dingtalk_key") or ""),
+                dingtalk_label=str(item.get("dingtalk_label") or ""),
             )
         return sessions
 
@@ -110,6 +128,9 @@ class WebSessionStore:
                 "created_at": meta.created_at,
                 "updated_at": meta.updated_at,
                 "message_count": meta.message_count,
+                "source": meta.source,
+                "dingtalk_key": meta.dingtalk_key,
+                "dingtalk_label": meta.dingtalk_label,
             }
             for sid, meta in self._sessions.items()
         }
@@ -195,6 +216,65 @@ class WebSessionStore:
             if session_id not in self._sessions:
                 return []
         return self._load_messages(session_id)
+
+    def get_or_create_dingtalk_session(
+        self,
+        *,
+        dingtalk_key: str,
+        label: str = "",
+        title_hint: str = "",
+    ) -> SessionMeta:
+        key = (dingtalk_key or "").strip()
+        if not key:
+            raise ValueError("dingtalk_key 不能为空")
+        session_id = dingtalk_session_id(key)
+        with self._lock:
+            meta = self._sessions.get(session_id)
+            if meta is None:
+                now = _now_iso()
+                hint = (title_hint or "").strip()
+                nick = (label or "").strip()
+                if hint:
+                    title = hint[:40] + ("…" if len(hint) > 40 else "")
+                elif nick:
+                    title = f"钉钉 · {nick}"
+                else:
+                    title = f"钉钉 · {key.rsplit(':', 1)[-1][:12]}"
+                meta = SessionMeta(
+                    id=session_id,
+                    title=title,
+                    created_at=now,
+                    updated_at=now,
+                    message_count=0,
+                    source="dingtalk",
+                    dingtalk_key=key,
+                    dingtalk_label=nick,
+                )
+                self._sessions[session_id] = meta
+                self._save_index()
+                self._save_messages(session_id, [])
+            elif label and not meta.dingtalk_label:
+                meta.dingtalk_label = label.strip()
+                self._save_index()
+        return meta
+
+    def append_message_if_new(self, session_id: str, role: str, content: str) -> ChatMessage | None:
+        text = (content or "").strip()
+        if not text or role not in ("user", "assistant"):
+            return None
+        with self._lock:
+            meta = self._sessions.get(session_id)
+            if meta is None:
+                return None
+            messages = self._load_messages(session_id)
+            if messages and messages[-1].role == role and messages[-1].content == text:
+                return None
+        return self.append_message(session_id, role, text)
+
+    def is_read_only(self, session_id: str) -> bool:
+        with self._lock:
+            meta = self._sessions.get(session_id)
+        return meta is not None and meta.source == "dingtalk"
 
     def append_message(self, session_id: str, role: str, content: str) -> ChatMessage | None:
         text = (content or "").strip()

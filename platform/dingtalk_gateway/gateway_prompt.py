@@ -12,6 +12,13 @@ EXPORT_CONFIG = GATEWAY_DIR / "config" / "export_folder.json"
 
 _GIFT_DEFAULT_RULE = gateway_gift_rule_line()
 
+_DINGTALK_FILE_ZIP_BODY = (
+    "**钉钉发文件先 zip**：经机器人向群内/单聊**发送本地文件附件**（`send_group_file`）时，"
+    "**必须先打成 `.zip` 再发**；不要直接发 html/csv/xlsx/json/md 等裸文件。"
+    "多文件合并为一个 zip 或分多个 zip；群里说明「请下载 zip 解压后查看」。"
+    "**例外**：导出到钉钉文档/在线表格只回链接，不走 zip 附件；附件本身已是 `.zip` 则直接发。"
+)
+
 _GATEWAY_RULES = f"""\
 你是 Yaahlan 智能工具平台网关 Agent，在钉钉群无人值守场景下运行。
 
@@ -46,6 +53,7 @@ _GATEWAY_RULES = f"""\
    - 执行 `python3 platform/dingtalk_gateway/mse_config_export.py --config-key <key> [--namespace voga-common] --set key=value ... [--name 表格名] [--note 说明]` 导出到钉钉 Agent 导出目录；
    - 群里**只回在线表格链接**；表格**仅两行**：改后 JSON（上）、改前 JSON（下），单元格**自动换行**。
    - **禁止**声称已写入 MSE；若用户明确要求上线/发布，说明需人工在 MSE 控制台粘贴或走发布流程。
+19. {_DINGTALK_FILE_ZIP_BODY}
 
 可用能力：各模块 execute 脚本（含 Gift Stage 送礼、MSE 配置读取）、钉钉 MCP（文档/Excel）、Tunnel 只读抓包；**不含** ADB 真机操作。
 """
@@ -69,6 +77,7 @@ _READONLY_GATEWAY_RULES = f"""\
 13. **代码改动请求**：若用户要求改网关/Agent/Cursor 逻辑，说明「需管理员授权」，不要擅自改仓库。
 14. **批量操作进度**：≥3 项批量时，**每完成一个批量项**（非项内子步骤）执行 `python3 platform/dingtalk_gateway/batch_progress_report.py --user-key <batch_key> --current N --total M --label "操作类型"`（N=已完成项数，M=总项数；batch_key 见下方）；最后一项须 `--result-text` 或 `--result-file` 附带完整 Markdown；Agent 最终回复仅一行，禁止重复贴表格。
 15. **MSE 服务配置改参导出**：用户要求修改服务配置时，读取 MSE 当前 JSON → 替换用户指定参数 → `python3 platform/dingtalk_gateway/mse_config_export.py --config-key <key> --set key=value ...` 导出钉钉；群里只回链接；表格仅改后 JSON（上）+ 改前 JSON（下），自动换行；**禁止**声称已写入 MSE。
+16. {_DINGTALK_FILE_ZIP_BODY}
 
 可用能力：各模块 execute 查询/脚本（含 Gift Stage 送礼、MSE 配置读取）、钉钉 MCP、Tunnel 只读抓包；**不含** ADB 真机操作。
 """
@@ -92,6 +101,7 @@ _READONLY_WITH_MOA_REGISTRY_RULES = f"""\
 13. **网关代码改动请求**：若用户要求改网关/Agent/Cursor 逻辑，说明「需管理员授权」，不要擅自改仓库。
 14. **批量操作进度**：≥3 项批量时，**每完成一个批量项**（非项内子步骤）执行 `python3 platform/dingtalk_gateway/batch_progress_report.py --user-key <batch_key> --current N --total M --label "操作类型"`（N=已完成项数，M=总项数；batch_key 见下方）；最后一项须 `--result-text` 或 `--result-file` 附带完整 Markdown；Agent 最终回复仅一行，禁止重复贴表格。
 15. **MSE 服务配置改参导出**：用户要求修改服务配置时，读取 MSE 当前 JSON → 替换用户指定参数 → `python3 platform/dingtalk_gateway/mse_config_export.py --config-key <key> --set key=value ...` 导出钉钉；群里只回链接；表格仅改后 JSON（上）+ 改前 JSON（下），自动换行；**禁止**声称已写入 MSE。
+16. {_DINGTALK_FILE_ZIP_BODY}
 
 可用能力：各模块 execute 查询/脚本（含 Gift Stage 送礼、MSE 配置读取）、钉钉 MCP、Tunnel 只读抓包；**不含** ADB 真机操作。
 """

@@ -76,6 +76,7 @@ from testcase_auto_export import (
     format_testcase_export_message,
 )
 from user_agent_pool import get_user_agent_pool
+from web_agent_sync import sync_exchange_to_web_agent
 
 logger = logging.getLogger("dingtalk-gateway")
 
@@ -92,10 +93,20 @@ def _reply_final(
     started: float,
     task_kind: str,
     quote: bool = True,
+    user_key: str = "",
+    user_prompt: str = "",
+    sender_name: str = "",
 ) -> None:
     elapsed = time.monotonic() - started
     body = append_duration_footer(message, elapsed, task_kind=task_kind)
     handler._reply(body, incoming, inbound, quote=quote)
+    if user_key and user_prompt:
+        sync_exchange_to_web_agent(
+            user_key,
+            user_prompt,
+            body,
+            sender_name=sender_name,
+        )
 
 
 def _heartbeat_estimate_seconds(task_kind: str) -> float | None:
@@ -420,6 +431,9 @@ def process_inbound_task(
                     delivery.message,
                     started=started,
                     task_kind=task_kind,
+                    user_key=user_key,
+                    user_prompt=prompt,
+                    sender_name=sender_name,
                 )
                 store.save(incoming.conversation_id, prompt, **store_kwargs)
                 return "ok"
@@ -431,6 +445,9 @@ def process_inbound_task(
                 "请先 @机器人 执行一次查询任务，再发「查看全部数据」。",
                 started=started,
                 task_kind=task_kind,
+                user_key=user_key,
+                user_prompt=prompt,
+                sender_name=sender_name,
             )
             store.save(incoming.conversation_id, prompt, **store_kwargs)
             return "no_cache"
@@ -444,6 +461,9 @@ def process_inbound_task(
                 env_check_denial_message(),
                 started=started,
                 task_kind=classify_task_kind(prompt),
+                user_key=user_key,
+                user_prompt=prompt,
+                sender_name=sender_name,
             )
             store.save(incoming.conversation_id, prompt, **store_kwargs)
             return "denied_env_check"
@@ -476,6 +496,9 @@ def process_inbound_task(
                 delivery.message,
                 started=started,
                 task_kind=task_kind,
+                user_key=user_key,
+                user_prompt=prompt,
+                sender_name=sender_name,
             )
             for attachment in routed.files:
                 try:
@@ -502,6 +525,9 @@ def process_inbound_task(
                     hint,
                     started=started,
                     task_kind=task_kind,
+                    user_key=user_key,
+                    user_prompt=prompt,
+                    sender_name=sender_name,
                 )
                 store.save(incoming.conversation_id, prompt, **store_kwargs)
                 return "hint"
@@ -533,6 +559,9 @@ def process_inbound_task(
                     code_modify_denial_message(),
                     started=started,
                     task_kind=task_kind,
+                    user_key=user_key,
+                    user_prompt=prompt,
+                    sender_name=sender_name,
                 )
                 store.save(incoming.conversation_id, prompt, **store_kwargs)
                 return "denied"
@@ -550,6 +579,9 @@ def process_inbound_task(
                     adb_execution_denial_message(),
                     started=started,
                     task_kind=task_kind,
+                    user_key=user_key,
+                    user_prompt=prompt,
+                    sender_name=sender_name,
                 )
                 store.save(incoming.conversation_id, prompt, **store_kwargs)
                 return "adb_denied"
@@ -627,6 +659,9 @@ def process_inbound_task(
                 reply_text,
                 started=started,
                 task_kind=task_kind,
+                user_key=user_key,
+                user_prompt=prompt,
+                sender_name=sender_name,
             )
             if delivery.exported:
                 logger.info("已导出 %s url=%s", delivery.local_path, delivery.file_url)
@@ -649,24 +684,35 @@ def process_inbound_task(
             redact_for_log(prompt),
         )
         interrupt_body = "⚠️ 你的任务已被中断。"
+        interrupt_with_footer = append_duration_footer(
+            interrupt_body,
+            time.monotonic() - started,
+            task_kind=task_kind,
+        )
         if stream_card is not None:
-            stream_card.finish(interrupt_body)
+            stream_card.finish(interrupt_with_footer)
         else:
             handler._reply(interrupt_body, incoming, inbound)
+        if user_key and prompt:
+            sync_exchange_to_web_agent(
+                user_key,
+                prompt,
+                interrupt_with_footer,
+                sender_name=sender_name,
+            )
         store.save(incoming.conversation_id, prompt, **store_kwargs)
         get_user_agent_pool().invalidate(user_key)
     except Exception as exc:  # noqa: BLE001
         status = "error"
         logger.exception("任务失败 conv=%s", user_key)
         error_body = format_exception(exc)
+        error_with_footer = append_duration_footer(
+            error_body,
+            time.monotonic() - started,
+            task_kind=task_kind,
+        )
         if stream_card is not None:
-            stream_card.fail(
-                append_duration_footer(
-                    error_body,
-                    time.monotonic() - started,
-                    task_kind=task_kind,
-                )
-            )
+            stream_card.fail(error_with_footer)
         else:
             _reply_final(
                 handler,
@@ -675,6 +721,16 @@ def process_inbound_task(
                 error_body,
                 started=started,
                 task_kind=task_kind,
+                user_key=user_key,
+                user_prompt=prompt,
+                sender_name=sender_name,
+            )
+        if user_key and prompt and stream_card is not None:
+            sync_exchange_to_web_agent(
+                user_key,
+                prompt,
+                error_with_footer,
+                sender_name=sender_name,
             )
         store.save(incoming.conversation_id, prompt, **store_kwargs)
     finally:

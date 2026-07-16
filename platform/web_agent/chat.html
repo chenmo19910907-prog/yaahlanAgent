@@ -110,6 +110,11 @@
       font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .session-meta { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+    .session-source {
+      display: inline-block; font-size: 0.68rem; padding: 1px 6px; border-radius: 4px;
+      background: rgba(252, 211, 77, 0.15); color: #fcd34d; vertical-align: middle; margin-right: 4px;
+    }
+    .readonly-hint { color: #fcd34d !important; }
     .chat-area {
       display: flex; flex-direction: column; min-height: 0;
     }
@@ -559,6 +564,8 @@
     let catalogPanel = null;
     const catalogPref = localStorage.getItem('web_agent_catalog_open');
     let catalogOpen = catalogPref === null ? true : catalogPref === '1';
+    let sessionsCache = [];
+    let currentSessionReadOnly = false;
 
     marked.setOptions({ breaks: true, gfm: true });
 
@@ -643,8 +650,34 @@
       run.shellEl.classList.remove('streaming');
     }
 
+    function updateReadOnlyState() {
+      const input = document.getElementById('input');
+      input.disabled = currentSessionReadOnly;
+      updateInputState();
+      let hint = document.getElementById('readonly-hint');
+      if (currentSessionReadOnly) {
+        if (!hint) {
+          hint = document.createElement('div');
+          hint.id = 'readonly-hint';
+          hint.className = 'input-hint readonly-hint';
+          hint.textContent = '此会话来自钉钉同步，仅供查看；继续对话请点「+ 新对话」';
+          const inputArea = document.querySelector('.input-area');
+          const defaultHint = inputArea.querySelector('.input-hint:not(.readonly-hint)');
+          inputArea.insertBefore(hint, defaultHint);
+        }
+      } else if (hint) {
+        hint.remove();
+      }
+    }
+
+    function syncSessionReadOnly(sessionId) {
+      const item = sessionsCache.find(s => s.id === sessionId);
+      currentSessionReadOnly = item?.read_only === true || item?.source === 'dingtalk';
+      updateReadOnlyState();
+    }
+
     function updateInputState() {
-      document.getElementById('btn-send').disabled = isCurrentSessionStreaming();
+      document.getElementById('btn-send').disabled = currentSessionReadOnly || isCurrentSessionStreaming();
     }
 
     function finishRun(sessionId) {
@@ -655,19 +688,25 @@
 
     async function loadSessions() {
       const data = await api('/api/sessions');
+      sessionsCache = data.sessions || [];
       const list = document.getElementById('session-list');
       list.innerHTML = '';
-      (data.sessions || []).forEach(s => {
+      sessionsCache.forEach(s => {
         const el = document.createElement('div');
         el.className = 'session-item' + (s.id === currentSessionId ? ' active' : '');
         el.dataset.id = s.id;
         const running = activeRuns.has(s.id) ? ' · 思考中' : '';
+        const sourceBadge = s.source === 'dingtalk'
+          ? '<span class="session-source">钉钉</span>'
+          : '';
+        const label = s.dingtalk_label ? ` · ${escapeHtml(s.dingtalk_label)}` : '';
         el.innerHTML = `
-          <div class="session-title">${escapeHtml(s.title)}</div>
-          <div class="session-meta">${escapeHtml(s.relative_time || '')} · ${s.message_count || 0} 条${running}</div>`;
+          <div class="session-title">${sourceBadge}${escapeHtml(s.title)}</div>
+          <div class="session-meta">${escapeHtml(s.relative_time || '')} · ${s.message_count || 0} 条${label}${running}</div>`;
         el.addEventListener('click', () => selectSession(s.id));
         list.appendChild(el);
       });
+      syncSessionReadOnly(currentSessionId);
     }
 
     function escapeHtml(s) {
@@ -685,6 +724,7 @@
       }
       const s = await api('/api/sessions', { method: 'POST', body: JSON.stringify({ title: '新对话' }) });
       currentSessionId = s.id;
+      currentSessionReadOnly = false;
       localStorage.setItem('web_agent_session', currentSessionId);
       await loadSessions();
       await loadMessages();
@@ -696,6 +736,7 @@
       if (id === currentSessionId) return;
       currentSessionId = id;
       localStorage.setItem('web_agent_session', id);
+      syncSessionReadOnly(id);
       await loadSessions();
       await loadMessages();
       updateInputState();
@@ -762,7 +803,7 @@
 
     async function sendMessage(text) {
       const message = (text || document.getElementById('input').value).trim();
-      if (!message || isCurrentSessionStreaming()) return;
+      if (!message || isCurrentSessionStreaming() || currentSessionReadOnly) return;
 
       if (!currentSessionId) await createSession();
 

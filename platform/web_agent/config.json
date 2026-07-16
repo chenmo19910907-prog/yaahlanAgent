@@ -3,6 +3,7 @@
   "subtitle": "质量保障 · 工具调用 · PRD 解析 · 用例管理",
   "host": "0.0.0.0",
   "port": 18766,
+  "sync_dingtalk_chat": true,
   "quickPrompts": [
     "查一下 Gift 模块 Stage 送礼怎么用",
     "工具平台有哪些 MOA 能力？",

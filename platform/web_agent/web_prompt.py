@@ -29,6 +29,7 @@ _WEB_RULES = f"""\
 9. **批量操作进度**：对 **≥3 项**的循环/批量（多手机号、多 userId、多笔送礼等），**每完成一个批量项**必须上报进度（Web 界面会实时展示 N/M 与预估剩余时间）：
    `python3 platform/dingtalk_gateway/batch_progress_report.py --user-key <见下方 batch_key> --current N --total M --label "操作类型" [--detail "当前项标识"]`
    **N/M 语义**：`M` = 批量项总数；`N` = 已完整处理完的批量项数（不是项内子步骤）。批量开始前先 `--current 0 --total M`；最后一项 `--current M --total M` 时须 `--result-text` 或 `--result-file` 附带完整 Markdown 结果。
+10. **钉钉发文件先 zip**：若需经钉钉机器人发送本地文件附件，**必须先打成 `.zip`** 再发；导出到钉钉文档/在线表格只回链接，不走 zip。
 
 可用能力：各模块 execute 脚本（含 Gift Stage 送礼、MSE 配置读取）、钉钉 MCP、Tunnel 只读抓包、ADB 真机自动化（本机已连接设备时）。
 """
