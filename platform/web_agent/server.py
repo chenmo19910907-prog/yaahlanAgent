@@ -82,7 +82,7 @@ def _platform_meta() -> dict[str, int | str]:
     cfg = _load_config()
     title = str(cfg.get("title") or "Yaahlan 智能工具 Agent")
     subtitle = str(
-        cfg.get("subtitle") or "质量保障 · 工具调用 · PRD 解析 · 用例管理"
+        cfg.get("subtitle") or "钉钉 Agent · MOA/Admin 查数 · Tunnel 抓包 · Stage 送礼 · 用例生成"
     )
 
     mcp_count = 0

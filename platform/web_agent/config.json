@@ -1,6 +1,6 @@
 {
   "title": "Yaahlan 智能工具 Agent",
-  "subtitle": "质量保障 · 工具调用 · PRD 解析 · 用例管理",
+  "subtitle": "钉钉 Agent · MOA/Admin 查数 · Tunnel 抓包 · Stage 送礼 · 用例生成",
   "host": "0.0.0.0",
   "port": 18766,
   "sync_dingtalk_chat": true,
