@@ -87,8 +87,17 @@ def _workflow_id_to_item_id(workflow_id: str) -> str:
     return workflow_id.strip().replace("-", "_")
 
 
+def _catalog_include_playbooks(sources: dict[str, Any]) -> bool:
+    raw = sources.get("catalog_include_playbooks")
+    if isinstance(raw, bool):
+        return raw
+    return True
+
+
 def _load_playbooks(sources: dict[str, Any]) -> list[dict[str, Any]]:
     """从 workflow registry 读取 playbooks，并关联各步工作流名称与命令。"""
+    if not _catalog_include_playbooks(sources):
+        return []
     modules_cfg = sources.get("modules")
     if not isinstance(modules_cfg, list):
         return []

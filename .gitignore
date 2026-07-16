@@ -40,6 +40,7 @@ platform/dingtalk_gateway/.venv/
 platform/dingtalk_gateway/exports/
 platform/dingtalk_gateway/attachments/
 platform/dingtalk_gateway/data/
+platform/web_agent/data/
 platform/dingtalk_gateway/logs/
 Tunnel/.env
 Tunnel/__pycache__/
