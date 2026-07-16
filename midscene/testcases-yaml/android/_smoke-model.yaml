@@ -1,0 +1,17 @@
+# 模型连通 + 真机读屏冒烟（勿作正式业务用例）
+android:
+  deviceId: "818b814b23d9"
+
+agent:
+  testId: "SMOKE-MODEL"
+  groupName: "模型冒烟"
+  generateReport: true
+  reportFileName: "smoke-model-report"
+  aiActContext: >
+    遇到权限弹窗点击允许；遇到协议弹窗点击同意；不要退出当前业务页。
+
+tasks:
+  - name: "冒烟：读屏断言当前界面"
+    flow:
+      - aiAssert: 当前屏幕是 Yaahlan App 的业务界面（房间、首页或登录页任一即可），不是完全空白黑屏
+        errorMessage: "SMOKE-MODEL 失败：模型未能有效理解当前截图"

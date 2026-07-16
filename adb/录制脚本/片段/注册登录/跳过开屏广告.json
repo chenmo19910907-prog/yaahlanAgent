@@ -23,9 +23,9 @@
       ],
       "note": "跳过/关闭（右上角；坐标需 recalibrate 时更新）",
       "skip_key": "dismiss_splash_ad",
-      "resourceId": "language",
-      "bounds": "[722,84][1020,194]",
-      "className": "android.widget.TextView",
+      "resourceId": "title_bar_container",
+      "bounds": "[0,112][1080,250]",
+      "className": "android.view.ViewGroup",
       "fallback_tap_pct": [
         0.915,
         0.055
@@ -34,7 +34,7 @@
         988,
         128
       ],
-      "locatorLearnedAt": "2026-06-25T06:43:30Z",
+      "locatorLearnedAt": "2026-07-15T08:07:35Z",
       "uiText": "English"
     },
     {

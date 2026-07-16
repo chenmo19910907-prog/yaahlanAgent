@@ -2,7 +2,8 @@
 # 运行: npx midscene ./testcases/android/login-p1.yaml
 # 前提: 设备已连接 ADB，.env 中填写好账号和模型配置
 
-android: {}
+android:
+  deviceId: "818b814b23d9"
 
 agent:
   testId: "TC-LOGIN-001"
