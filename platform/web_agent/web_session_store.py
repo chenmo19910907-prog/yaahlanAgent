@@ -41,6 +41,41 @@ def parse_dingtalk_user_id(dingtalk_key: str) -> str:
     return ""
 
 
+def _title_from_text(text: str) -> str:
+    body = (text or "").strip()
+    if not body:
+        return "新对话"
+    return body[:40] + ("…" if len(body) > 40 else "")
+
+
+def _latest_user_prompt(messages: list[ChatMessage]) -> str:
+    for msg in reversed(messages):
+        if msg.role == "user":
+            content = (msg.content or "").strip()
+            if content:
+                return content
+    return ""
+
+
+def _turn_already_synced(
+    messages: list[ChatMessage], prompt: str, reply: str = ""
+) -> bool:
+    text = (prompt or "").strip()
+    body = (reply or "").strip()
+    if not text or not messages:
+        return False
+    if messages[-1].role != "assistant":
+        return False
+    for msg in reversed(messages[:-1]):
+        if msg.role == "user":
+            if msg.content != text:
+                return False
+            if body:
+                return messages[-1].content.strip() == body
+            return True
+    return False
+
+
 def _rel_time(iso: str) -> str:
     try:
         dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
@@ -256,6 +291,15 @@ class WebSessionStore:
                     meta.dingtalk_owner_id = owner_id
                     dirty = True
             items = [s for s in self._sessions.values() if s.message_count > 0]
+            for meta in items:
+                messages = self._load_messages(meta.id)
+                latest = _latest_user_prompt(messages)
+                if not latest:
+                    continue
+                new_title = _title_from_text(latest)
+                if meta.title != new_title:
+                    meta.title = new_title
+                    dirty = True
             if enrich_names and items:
                 try:
                     from dingtalk_user_lookup import enrich_session_owner_labels
@@ -372,6 +416,51 @@ class WebSessionStore:
                 return None
         return self.append_message(session_id, role, text)
 
+    def upsert_dingtalk_turn(
+        self, session_id: str, user_prompt: str, assistant_reply: str
+    ) -> bool:
+        """写入或更新一轮钉钉对话；同 prompt 重试时覆盖上一条 assistant。"""
+        prompt = (user_prompt or "").strip()
+        reply = (assistant_reply or "").strip()
+        if not prompt or not reply:
+            return False
+        with self._lock:
+            self._reload_index_if_stale()
+            meta = self._sessions.get(session_id)
+            if meta is None:
+                return False
+            messages = self._load_messages(session_id)
+
+            if _turn_already_synced(messages, prompt, reply):
+                return False
+
+            if messages and messages[-1].role == "assistant":
+                for msg in reversed(messages[:-1]):
+                    if msg.role == "user" and msg.content == prompt:
+                        messages[-1] = ChatMessage(role="assistant", content=reply)
+                        self._save_messages(session_id, messages)
+                        meta.message_count = len(messages)
+                        meta.updated_at = _now_iso()
+                        meta.title = _title_from_text(prompt)
+                        self._save_index()
+                        return True
+                    if msg.role == "user":
+                        break
+
+            if not (
+                messages
+                and messages[-1].role == "user"
+                and messages[-1].content == prompt
+            ):
+                messages.append(ChatMessage(role="user", content=prompt))
+            messages.append(ChatMessage(role="assistant", content=reply))
+            self._save_messages(session_id, messages)
+            meta.message_count = len(messages)
+            meta.updated_at = _now_iso()
+            meta.title = _title_from_text(prompt)
+            self._save_index()
+        return True
+
     def is_read_only(self, session_id: str) -> bool:
         with self._lock:
             self._reload_index_if_stale()
@@ -393,8 +482,8 @@ class WebSessionStore:
             self._save_messages(session_id, messages)
             meta.message_count = len(messages)
             meta.updated_at = _now_iso()
-            if role == "user" and (meta.title == "新对话" or len(messages) == 1):
-                meta.title = text[:40] + ("…" if len(text) > 40 else "")
+            if role == "user":
+                meta.title = _title_from_text(text)
             self._save_index()
         return msg
 

@@ -15,7 +15,13 @@ CONVERSATIONS_INDEX = GATEWAY_DIR / "data" / "conversations.json"
 if str(GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR))
 
-from web_session_store import ChatMessage, dingtalk_session_id, get_session_store, parse_dingtalk_user_id  # noqa: E402
+from web_session_store import (  # noqa: E402
+    ChatMessage,
+    _turn_already_synced,
+    dingtalk_session_id,
+    get_session_store,
+    parse_dingtalk_user_id,
+)
 
 logger = logging.getLogger("web-agent")
 
@@ -40,17 +46,11 @@ def is_sync_enabled() -> bool:
     return True
 
 
-def turn_already_synced(messages: list[ChatMessage], prompt: str) -> bool:
-    """该轮 user 提问是否已有对应 assistant 回复（避免重复同步）。"""
-    text = (prompt or "").strip()
-    if not text or not messages:
-        return False
-    if messages[-1].role != "assistant":
-        return False
-    for msg in reversed(messages[:-1]):
-        if msg.role == "user":
-            return msg.content == text
-    return False
+def turn_already_synced(
+    messages: list[ChatMessage], prompt: str, reply: str = ""
+) -> bool:
+    """该轮 user 提问是否已有相同 assistant 回复（避免重复同步）。"""
+    return _turn_already_synced(messages, prompt, reply)
 
 
 def sync_dingtalk_exchange(
@@ -81,10 +81,10 @@ def sync_dingtalk_exchange(
         owner_id=owner_id,
     )
     messages = store.get_messages(meta.id)
-    if turn_already_synced(messages, prompt):
+    if turn_already_synced(messages, prompt, reply):
         return False
-    store.append_message_if_new(meta.id, "user", prompt)
-    store.append_message_if_new(meta.id, "assistant", reply)
+    if not store.upsert_dingtalk_turn(meta.id, prompt, reply):
+        return False
     logger.info(
         "钉钉对话已同步 Web 历史 session=%s key=%s msgs=%s",
         meta.id,
