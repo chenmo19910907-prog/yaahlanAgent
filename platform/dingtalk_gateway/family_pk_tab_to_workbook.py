@@ -200,6 +200,40 @@ async def _ensure_sheet(
         )
 
 
+DEFAULT_WORKBOOK_SHEET = "Sheet1"
+
+
+async def _delete_sheet(
+    *,
+    token: str,
+    operator: str,
+    workbook_id: str,
+    sheet_name: str,
+    client: httpx.AsyncClient,
+) -> bool:
+    """删除工作表；不存在时返回 False。"""
+    sheets_url = f"{DOC_API}/workbooks/{workbook_id}/sheets?operatorId={operator}"
+    resp = await client.get(sheets_url, headers={"x-acs-dingtalk-access-token": token})
+    resp.raise_for_status()
+    for item in resp.json().get("value", []):
+        if str(item.get("name") or "") != sheet_name:
+            continue
+        sheet_ref = str(item.get("id") or sheet_name)
+        delete_url = (
+            f"{DOC_API}/workbooks/{workbook_id}/sheets/{sheet_ref}?operatorId={operator}"
+        )
+        del_resp = await client.delete(
+            delete_url,
+            headers={"x-acs-dingtalk-access-token": token},
+        )
+        if del_resp.status_code >= 400:
+            raise RuntimeError(
+                f"删除工作表 {sheet_name} 失败 HTTP {del_resp.status_code}: {del_resp.text[:300]}"
+            )
+        return True
+    return False
+
+
 async def _write_sheet_replace(
     *,
     token: str,
@@ -390,7 +424,7 @@ def export_pk_tab_to_workbook(
 def main() -> int:
     parser = argparse.ArgumentParser(description="家族PK列表 tab 抓包 → 钉钉 Sheet2")
     parser.add_argument("workbook", nargs="?", default=DEFAULT_WORKBOOK, help="钉钉表格 URL/nodeId")
-    parser.add_argument("--momoid", default="100465989", help="抓包账号 userId")
+    parser.add_argument("--momoid", default="100486375", help="MOA 请求账号 userId")
     parser.add_argument("--pk-date", default="2026-07-02", help="PK 日期 yyyy-MM-dd")
     parser.add_argument("--since", type=int, default=259200, help="Tunnel 回溯秒数")
     parser.add_argument(

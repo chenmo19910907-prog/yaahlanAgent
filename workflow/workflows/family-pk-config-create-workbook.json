@@ -1,0 +1,37 @@
+{
+  "id": "family-pk-config-create-workbook",
+  "name": "家族PK配置-新建测试钉钉表",
+  "category": "家族PK",
+  "description": "第 0 步（新测试必做）：在配置的 alidocs 目录新建钉钉表格，命名为 {pkDate}家族PK数据测试，并预建参数表/家族列表/匹配验收等 Sheet。后续步骤使用输出的 workbookUrl。",
+  "version": 1,
+  "params": {
+    "pkDate": {
+      "label": "匹配日期",
+      "type": "date",
+      "required": true,
+      "default": "2026-07-02",
+      "prompt": "表格名称 {pkDate}家族PK数据测试"
+    },
+    "parentNodeId": {
+      "label": "父目录nodeId",
+      "type": "string",
+      "required": false,
+      "default": "",
+      "prompt": "留空则读 platform/dingtalk_gateway/config/family_pk_workbook_folder.json"
+    }
+  },
+  "steps": [
+    {
+      "id": "create_workbook",
+      "name": "新建家族PK测试钉钉表",
+      "run": {
+        "type": "shell",
+        "command": "python3 platform/dingtalk_gateway/family_pk_create_workbook.py --pk-date {{pkDate}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

@@ -321,7 +321,13 @@ async def sync_mse_to_workbook_async(
     if pk_date and str(pk_date).strip():
         from family_pk_calc_utils import rename_family_pk_workbook_async  # noqa: E402
 
-        await rename_family_pk_workbook_async(url, str(pk_date).strip())
+        try:
+            await rename_family_pk_workbook_async(url, str(pk_date).strip())
+        except (OSError, RuntimeError, ValueError) as exc:
+            print(
+                f"WARN: 钉钉文档重命名为 {str(pk_date).strip()}家族PK数据测试 失败: {exc}；参数表已写入",
+                file=sys.stderr,
+            )
     return url
 
 

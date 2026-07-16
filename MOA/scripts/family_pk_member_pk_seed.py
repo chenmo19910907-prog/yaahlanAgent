@@ -19,7 +19,10 @@ _GATEWAY = _REPO / "platform" / "dingtalk_gateway"
 if str(_GATEWAY) not in sys.path:
     sys.path.insert(0, str(_GATEWAY))
 
-from family_pk_calc_utils import load_family_pk_config_from_workbook  # noqa: E402
+from family_pk_calc_utils import (  # noqa: E402
+    load_family_pk_config_from_workbook,
+    parse_battles_from_match_verify_sheet,
+)
 from mse_workbook_utils import fetch_workbook_sheets_async, node_id  # noqa: E402
 
 DEFAULT_WORKBOOK = "https://alidocs.dingtalk.com/i/nodes/N7dx2rn0JbZQqA9ACZ1MoaaRJMGjLRb3"
@@ -83,29 +86,7 @@ async def load_battles_from_workbook(
     sheets = await fetch_workbook_sheets_async(url)
     if sheet_name not in sheets:
         raise RuntimeError(f"未找到工作表: {sheet_name}，请先执行匹配验收步骤")
-    battles: list[dict[str, Any]] = []
-    bye: list[str] = []
-    seen: set[str] = set()
-    in_data = False
-    for row in sheets[sheet_name]:
-        if _cell(row, 0) == "家族ID":
-            in_data = True
-            continue
-        if not in_data:
-            continue
-        fa = _cell(row, 0)
-        if not fa.isdigit() or fa in seen:
-            continue
-        seen.add(fa)
-        fb = _cell(row, 2)
-        if fb.isdigit():
-            seen.add(fb)
-            battles.append({"familyA": fa, "familyB": fb})
-        else:
-            bye.append(fa)
-    if not battles and not bye:
-        raise RuntimeError(f"工作表 {sheet_name} 未解析到对战数据")
-    return battles, bye
+    return parse_battles_from_match_verify_sheet(sheets[sheet_name])
 
 
 def load_battles_sync(workbook: str, *, sheet_name: str) -> tuple[list[dict[str, Any]], list[str]]:

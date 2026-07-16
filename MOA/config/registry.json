@@ -885,6 +885,30 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-踢出成员.json \\\n  --family-kick-operator-id <operatorId> \\\n  --family-kick-remote-id <remoteId> \\\n  --family-id <familyId>\n"
     },
     {
+      "id": "family_pk_member_contrib_list",
+      "name": "家族PK-成员贡献列表",
+      "category": "家族PK（vas/activity/family-pk-v2-api）",
+      "description": "点击家族贡献 top3 头像打开的成员榜（getFamilyPkUserList）。对齐 /yaahlan/vas/familyPk/getFamilyPkUserList；默认自动翻页返回全部 memberList。",
+      "prompts": [
+        "家族PK成员贡献列表 familyId=<familyId> date=<date>",
+        "getFamilyPkUserList <userId> <familyId> <date>",
+        "查看家族成员贡献榜全部"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-成员贡献列表.json \\\n  --family-pk-member-list-user-id <userId> \\\n  --family-pk-member-list-family-id <familyId> \\\n  --family-pk-member-list-date <date>\n"
+    },
+    {
+      "id": "family_pk_request_page",
+      "name": "家族PK-请求页面",
+      "category": "家族PK（vas/activity/family-pk-v2-api）",
+      "description": "打开家族 PK 页主接口（getFamilyPkPage）。对齐客户端 /yaahlan/vas/familyPk/getFamilyPkPage；抓包样例 13311111118→100379555。返回 pkList/current/tierList 等页面数据。",
+      "prompts": [
+        "请求家族PK页面 userId=<userId> date=<date>",
+        "打开家族PK页 <userId> <date>",
+        "getFamilyPkPage <userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-请求页面.json \\\n  --family-pk-page-user-id <userId> \\\n  --family-pk-page-date <date>\n"
+    },
+    {
       "id": "family_pk_modify_receive_daily_rank",
       "name": "家族PK-修改收礼日榜",
       "category": "家族PK（vas/internal/family-pk-moa）",

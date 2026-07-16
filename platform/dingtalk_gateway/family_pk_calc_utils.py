@@ -8,6 +8,16 @@ from typing import Any
 
 from mse_workbook_utils import format_rank_range
 
+FAMILY_PK_SHEET_ORDER = [
+    "参数表",
+    "家族列表",
+    "家族PK档位",
+    "匹配验收",
+    "用户发钻测试",
+    "发钻实发验收",
+    "测试结果",
+]
+
 
 def family_pk_workbook_title(pk_date: str) -> str:
     """家族 PK 钉钉表文档名：{匹配日期}家族PK数据测试。"""
@@ -519,14 +529,78 @@ def _sheet_int(value: Any) -> int:
         return 0
 
 
+def _sheet_cell_str(row: list[Any], idx: int) -> str:
+    if idx >= len(row) or row[idx] is None:
+        return ""
+    return str(row[idx]).strip()
+
+
+def parse_battles_from_match_verify_sheet(
+    rows: list[list[Any]],
+    *,
+    default_scenario: str = "win",
+) -> tuple[list[dict[str, Any]], list[str]]:
+    """从钉钉「匹配验收」解析对战/轮空，兼容旧表头与 MOA pkList 新表头。"""
+    battles: list[dict[str, Any]] = []
+    bye: list[str] = []
+    seen: set[str] = set()
+    in_data = False
+    family_col = 0
+    opponent_col = 2
+    bye_col: int | None = None
+
+    for row in rows:
+        c0 = _sheet_cell_str(row, 0)
+        c1 = _sheet_cell_str(row, 1)
+        c2 = _sheet_cell_str(row, 2)
+        c3 = _sheet_cell_str(row, 3)
+        c5 = _sheet_cell_str(row, 5)
+
+        if c0 == "家族ID" and c2 == "对手家族ID":
+            in_data = True
+            family_col, opponent_col = 0, 2
+            bye_col = None
+            continue
+        if c0 == "MOA序" and c1 == "家族ID" and c3 == "对手家族ID" and c5 == "是否轮空":
+            in_data = True
+            family_col, opponent_col = 1, 3
+            bye_col = 5
+            continue
+        if c0 == "MOA序" and c1 == "家族ID" and c3 == "对手家族ID" and _sheet_cell_str(row, 11) == "配对无重复":
+            in_data = True
+            family_col, opponent_col = 1, 3
+            bye_col = None
+            continue
+        if not in_data:
+            continue
+
+        fa = _sheet_cell_str(row, family_col)
+        if not fa.isdigit() or fa in seen:
+            continue
+        seen.add(fa)
+        fb = _sheet_cell_str(row, opponent_col)
+        is_bye = bye_col is not None and _sheet_cell_str(row, bye_col) == "是"
+        if fb.isdigit() and not is_bye:
+            seen.add(fb)
+            battles.append(
+                {"familyA": fa, "familyB": fb, "scenario": default_scenario}
+            )
+        else:
+            bye.append(fa)
+
+    if not battles and not bye:
+        raise RuntimeError("工作表 匹配验收 未解析到对战数据")
+    return battles, bye
+
+
 def sort_match_verify_detail_rows(rows: list[list[Any]]) -> list[list[Any]]:
-    """匹配验收：按双方收礼值总和降序。"""
+    """匹配验收：按双方收礼值总和降序（列：家族收礼值=6，对手收礼值=9）。"""
 
     def sort_key(row: list[Any]) -> tuple[int, str]:
-        receive_total = _sheet_int(row[5] if len(row) > 5 else 0) + _sheet_int(
-            row[7] if len(row) > 7 else 0
+        receive_total = _sheet_int(row[6] if len(row) > 6 else 0) + _sheet_int(
+            row[9] if len(row) > 9 else 0
         )
-        return (-receive_total, str(row[0] if row else ""))
+        return (-receive_total, str(row[1] if len(row) > 1 else ""))
 
     return sorted(rows, key=sort_key)
 

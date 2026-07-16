@@ -12,6 +12,8 @@
 | 2026-07-15 | `/yaahlan/user/intimate/intimateHomePage` | `/service/yaahlan/user/intimate-api` | `intimateHomePage` | 关系主页；无关系时 ec=404 |
 | 2026-07-15 | `/yaahlan/room/member/apply` | `/service/room/external/room-member-stage` | `apply` | body：`userId`（申请人）、`roomId`；Tunnel 未录到 apply 包，body 由 agree 抓包推断，MOA 实测 ec=200 |
 | 2026-07-15 | `/yaahlan/room/member/agree` | `/service/room/external/room-member-stage` | `agree` | body：`userId`（房主）、`roomId`、`remoteId`（申请人）；已加入再调 ec=20210111 |
+| 2026-07-16 | `/yaahlan/vas/familyPk/getFamilyPkPage` | `/service/vas/activity/family-pk-v2-api` | `getFamilyPkPage` | body：`userId`/`uid`、`date`（tab 日期）、`area`；返回 `pkList`/`current`/`tierList`。旧版 `family-pk` + `home` 仅活动入口摘要，非本页 |
+| 2026-07-16 | `/yaahlan/vas/familyPk/getFamilyPkUserList` | `/service/vas/activity/family-pk-v2-api` | `getFamilyPkUserList` | body：`userId`、`familyId`、`date`、`limit`、`offset`；点击贡献 top3 头像弹窗；返回 `memberList`/`userInfo`/`hasNext` |
 
 ## 配套 HTTP（非 MOA，仅对照）
 

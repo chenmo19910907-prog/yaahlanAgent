@@ -192,6 +192,107 @@ def set_family_kick_member_params(
     ]
 
 
+def set_family_pk_member_list_params(
+    payload: dict[str, Any],
+    *,
+    user_id: str,
+    family_id: str,
+    date: str,
+    offset: int = 0,
+    limit: int = 20,
+    area: str = "MENA",
+) -> None:
+    user_id = str(user_id).strip()
+    family_id = str(family_id).strip()
+    date = str(date).strip()
+    area = str(area or "MENA").strip().upper()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    if not family_id:
+        raise ValueError("family_id 不能为空")
+    if not date:
+        raise ValueError("date 不能为空")
+
+    body: dict[str, Any] = {}
+    params = payload.get("params")
+    if isinstance(params, list) and params:
+        first = params[0]
+        if isinstance(first, dict) and isinstance(first.get("value"), dict):
+            body = dict(first["value"])
+    if not body:
+        raise ValueError("家族PK-成员贡献列表 payload 缺少 params[0].value")
+
+    body["userId"] = user_id
+    body["uid"] = user_id
+    body["_uid_"] = user_id
+    body["familyId"] = family_id
+    body["date"] = date
+    body["offset"] = int(offset)
+    body["limit"] = int(limit)
+    body["area"] = area
+    header_s = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+    payload["header"] = header_s
+    settings = payload.setdefault("settings", {})
+    if isinstance(settings, dict):
+        settings["headerType"] = "TXT"
+    payload["params"] = [
+        {
+            "name": 0,
+            "title": 0,
+            "txt": "",
+            "json": header_s,
+            "type": "json",
+            "value": body,
+        }
+    ]
+
+
+def set_family_pk_page_params(
+    payload: dict[str, Any],
+    *,
+    user_id: str,
+    date: str,
+    area: str = "MENA",
+) -> None:
+    user_id = str(user_id).strip()
+    date = str(date).strip()
+    area = str(area or "MENA").strip().upper()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    if not date:
+        raise ValueError("date 不能为空")
+
+    body: dict[str, Any] = {}
+    params = payload.get("params")
+    if isinstance(params, list) and params:
+        first = params[0]
+        if isinstance(first, dict) and isinstance(first.get("value"), dict):
+            body = dict(first["value"])
+    if not body:
+        raise ValueError("家族PK-请求页面 payload 缺少 params[0].value")
+
+    body["userId"] = user_id
+    body["uid"] = user_id
+    body["_uid_"] = user_id
+    body["date"] = date
+    body["area"] = area
+    header_s = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+    payload["header"] = header_s
+    settings = payload.setdefault("settings", {})
+    if isinstance(settings, dict):
+        settings["headerType"] = "TXT"
+    payload["params"] = [
+        {
+            "name": 0,
+            "title": 0,
+            "txt": "",
+            "json": header_s,
+            "type": "json",
+            "value": body,
+        }
+    ]
+
+
 def set_family_delete_params(payload: dict[str, Any], family_id: str, owner_user_id: str) -> None:
     family_id = str(family_id).strip()
     owner_user_id = str(owner_user_id).strip()

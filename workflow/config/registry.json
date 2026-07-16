@@ -58,16 +58,15 @@
     },
     {
       "id": "family_pk_data_test",
-      "title": "家族PK数据测试（六步总览）",
+      "title": "家族PK数据测试（新表+六步总览）",
       "category": "家族PK",
-      "summary": "测试环境为指定 PK 日准备家族 PK 全套造数：参数表 → 家族列表 → 收礼榜与档位 → 匹配验收 → 成员 PK 与应发钻 → 发奖实发对比。",
+      "summary": "新测试先新建钉钉表，再执行六步：参数表 → 家族列表 → 收礼榜与档位 → 匹配验收 → 成员 PK 与贡献榜验收 → 发奖实发对比。",
       "defaults": {
-        "workbookUrl": "https://alidocs.dingtalk.com/i/nodes/N7dx2rn0JbZQqA9ACZ1MoaaRJMGjLRb3",
+        "workbookUrl": "",
         "pkDate": "2026-07-02",
         "rankDate": "2026-07-01",
-        "momoid": "100465989",
-        "timeoutMs": "180000",
-        "captureWait": "180"
+        "userId": "100486375",
+        "timeoutMs": "180000"
       },
       "sheets": [
         {
@@ -84,14 +83,30 @@
         },
         {
           "name": "匹配验收",
-          "content": "抓包 getFamilyPkPage 对战与同区间匹配验收"
+          "content": "MOA getFamilyPkPage 对战与同区间匹配验收"
         },
         {
           "name": "用户发钻测试",
-          "content": "成员 PK、场景、应得钻石；第六步补实发 delta"
+          "content": "成员 PK、应得钻石测算（榜单验收在第六步结算后回写）"
+        },
+        {
+          "name": "发钻实发验收",
+          "content": "用户信息、应发钻石、实发钻石、验收结果"
         }
       ],
       "steps": [
+        {
+          "order": 0,
+          "workflowId": "family-pk-config-create-workbook",
+          "sheet": "（新建整表）",
+          "note": "新测试必做：在 family_pk_workbook_folder 目录新建 {pkDate}家族PK数据测试",
+          "operations": [
+            "读取 platform/dingtalk_gateway/config/family_pk_workbook_folder.json 父目录",
+            "创建钉钉 WORKBOOK，命名 {pkDate}家族PK数据测试",
+            "预建 Sheet：参数表、家族列表、家族PK档位、匹配验收、用户发钻测试、发钻实发验收、测试结果",
+            "输出 workbookUrl，供后续步骤 --workbook-url 使用"
+          ]
+        },
         {
           "order": 1,
           "workflowId": "family-pk-config-mse-to-dingtalk",
@@ -137,12 +152,11 @@
           "order": 4,
           "workflowId": "family-pk-config-match-verify",
           "sheet": "匹配验收",
-          "note": "清除并重匹配 pkDate；--fresh-capture 忽略旧抓包，须在 App 刷新 pkDate tab 后验收",
+          "note": "清除并重匹配 pkDate；MOA getFamilyPkPage 拉取对战列表验收",
           "operations": [
             "MOA clearMatchDataForTest 清除 pkDate 匹配数据",
             "MOA runFamilyPkMatchTask(pkDate) 重新匹配家族 PK",
-            "Tunnel 抓包 getFamilyPkPage（--fresh-capture 仅用重匹配后新抓包）",
-            "等待用户在 App 刷新 PK 页（默认最长 180s）",
+            "MOA getFamilyPkPage 拉取 pkDate 对战列表（pkList）",
             "读 rankDate 收礼榜，按 bracketGradients 验收同区间匹配",
             "写入钉钉「匹配验收」（对战、区间、验收结果）"
           ]
@@ -151,28 +165,39 @@
           "order": 5,
           "workflowId": "family-pk-config-member-pk-reward",
           "sheet": "用户发钻测试",
-          "note": "清 PK → 全员随机 0~maxScore → 按匹配验收纠偏 1 组平局 + 1 组双方低于 minWinPk（优先小家族）",
+          "note": "清 PK → 全员随机造数 → 纠偏边界 → 测算应发钻（榜单验收在第六步结算后）",
           "operations": [
             "MOA clearAllFamilyPkScoreForTest 清除 pkDate 全部成员 PK",
             "读「家族列表」全员；读参数表 minWinPk / minRewardPk",
             "全员随机 incrFamilyPkScoreForTest（0~maxScore，默认 5 万）",
             "读「匹配验收」选 1 组平局 + 1 组双方低于 minWinPk（优先小家族）纠偏 PK",
-            "按对战结果与奖池规则计算各成员应得钻石",
-            "写入钉钉「用户发钻测试」"
+            "按对战结果与奖池规则计算各成员应得钻石，写入「用户发钻测试」"
           ]
         },
         {
           "order": 6,
           "workflowId": "family-pk-config-dispatch-verify",
-          "sheet": "用户发钻测试",
-          "note": "resetSettleDataForTest(pkDate) 清结算记录 → runFamilyPkMatchTask(次日) 重发 → 查钻验收",
+          "sheet": "发钻实发验收 / 用户发钻测试",
+          "note": "清结算 → 发奖 → 实发查钻验收 → MOA 贡献榜回写用户发钻测试",
           "operations": [
-            "读「用户发钻测试」汇总应得钻石与用户列表",
+            "读测算结果汇总应得钻石与用户列表",
             "MOA resetSettleDataForTest(pkDate) 清除结算发奖记录",
             "MOA 批量查钻记录发奖前 baseline",
             "MOA runFamilyPkMatchTask(pkDate+1) 下发 pkDate 奖励",
             "MOA 批量查钻记录发奖后余额",
-            "对比应得 vs 实际增量，写回「用户发钻测试」（发奖前/后钻石、验收列）"
+            "对比应得 vs 实际增量，写入「发钻实发验收」",
+            "逐家族 MOA getFamilyPkUserList，榜单PK/榜单钻/榜单验收回写「用户发钻测试」"
+          ]
+        },
+        {
+          "order": 7,
+          "workflowId": "family-pk-config-test-result",
+          "sheet": "测试结果",
+          "note": "汇总六步验收数据，输出总体验收结论与发钻不一致明细",
+          "operations": [
+            "读取各步骤 Sheet 摘要行与验收列统计",
+            "汇总步骤 0~6 通过/失败/样本数",
+            "写入「测试结果」Sheet"
           ]
         }
       ],
@@ -182,15 +207,29 @@
         "重跑家族PK第4-5步"
       ],
       "notes": [
+        "新测试须先执行第 0 步新建钉钉表，勿复用历史 workbookUrl",
         "钉钉表命名：{pkDate}家族PK数据测试",
         "rankDate 默认为 pkDate 前一日；收礼榜造数写在 rankDate",
         "收礼榜或参数变更后建议重跑第 3~6 步；仅重匹配后重跑第 4~5 步",
-        "第四步验收依赖 Tunnel 抓包 getFamilyPkPage（request.date=pkDate）",
-        "第五步对战列表读取「匹配验收」Sheet，非抓包"
+        "第四步验收使用 MOA getFamilyPkPage（request.date=pkDate），无需 Tunnel 抓包与 App 刷新",
+        "第五步仅测算应得钻石写入「用户发钻测试」",
+        "第六步发奖后 MOA 贡献榜验收回写「用户发钻测试」榜单列，并写入「发钻实发验收」"
       ]
     }
   ],
   "items": [
+    {
+      "id": "family_pk_config_create_workbook",
+      "name": "家族PK配置-新建测试钉钉表",
+      "category": "家族PK",
+      "order": 0,
+      "description": "第 0 步（新测试必做）：在配置的 alidocs 目录新建钉钉表格 {pkDate}家族PK数据测试，预建各步骤 Sheet；输出 workbookUrl 供后续步骤使用。",
+      "prompts": [
+        "新建家族PK测试钉钉表 pkDate=<pkDate>",
+        "工作流 family-pk-config-create-workbook <pkDate>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-create-workbook --pk-date <pkDate>"
+    },
     {
       "id": "family_pk_config_mse_to_dingtalk",
       "name": "家族PK配置-MSE同步到钉钉参数表",
@@ -232,36 +271,48 @@
       "name": "家族PK配置-重匹配与验收写入钉钉",
       "category": "家族PK",
       "order": 4,
-      "description": "第四步：清除并重匹配 pkDate 家族 PK → Tunnel 抓包 getFamilyPkPage（--fresh-capture 仅用重匹配后新抓包）→ 按收礼榜区间验收同区间匹配，写入 Sheet「匹配验收」。默认等待用户在 App 刷新 PK 页最多 180s。",
+      "description": "第四步：清除并重匹配 pkDate 家族 PK → MOA getFamilyPkPage 拉取对战列表 → 按收礼榜区间验收同区间匹配，写入 Sheet「匹配验收」。",
       "prompts": [
         "执行工作流 家族PK配置-重匹配与验收写入钉钉",
-        "工作流 family-pk-config-match-verify <workbookUrl> <momoid> <pkDate> <captureWait>"
+        "工作流 family-pk-config-match-verify <workbookUrl> <userId> <pkDate>"
       ],
-      "command": "python3 workflow/workflow_execute.py run family-pk-config-match-verify --workbook-url <workbookUrl> --momoid <momoid> --pk-date <pkDate> --capture-wait <captureWait>"
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-match-verify --workbook-url <workbookUrl> --user-id <userId> --pk-date <pkDate>"
     },
     {
       "id": "family_pk_config_member_pk_reward",
       "name": "家族PK配置-成员PK造数与发钻测算",
       "category": "家族PK",
       "order": 5,
-      "description": "第五步：清除 pkDate 全部成员 PK → 全员随机 PK（0~maxScore，默认 5 万）→ 按 Sheet「匹配验收」纠偏 1 组平局 + 1 组双方家族 PK 低于 minWinPk（优先小家族）→ 测算应得钻石写入 Sheet「用户发钻测试」。",
+      "description": "第五步：清除 pkDate 全部成员 PK → 全员随机 PK → 纠偏边界场景 → 测算应得钻石写入「用户发钻测试」（榜单验收在第六步结算后）。",
       "prompts": [
         "执行工作流 家族PK配置-成员PK造数与发钻测算",
-        "工作流 family-pk-config-member-pk-reward <workbookUrl> <pkDate> <maxScore> <seed>"
+        "工作流 family-pk-config-member-pk-reward <workbookUrl> <pkDate>"
       ],
-      "command": "python3 workflow/workflow_execute.py run family-pk-config-member-pk-reward --workbook-url <workbookUrl> --pk-date <pkDate> --max-score <maxScore> --seed <seed>"
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-member-pk-reward --workbook-url <workbookUrl> --pk-date <pkDate>"
     },
     {
       "id": "family_pk_config_dispatch_verify",
       "name": "家族PK配置-发奖与验收",
       "category": "家族PK",
       "order": 6,
-      "description": "第六步：先 resetSettleDataForTest 清除 pkDate 结算发奖记录 → runFamilyPkMatchTask（入参默认次日）重新下发奖励 → 发奖前后查钻对比应得 → 实发 delta 写回 Sheet「用户发钻测试」。",
+      "description": "第六步：resetSettleDataForTest 清结算 → runFamilyPkMatchTask(次日) 发奖 → 查钻对比应发 vs 实发写入「发钻实发验收」→ MOA 贡献榜验收回写「用户发钻测试」。",
       "prompts": [
         "执行工作流 家族PK配置-发奖与验收",
-        "工作流 family-pk-config-dispatch-verify <workbookUrl> <pkDate> <timeoutMs>"
+        "工作流 family-pk-config-dispatch-verify <workbookUrl> <pkDate> <userId>"
       ],
-      "command": "python3 workflow/workflow_execute.py run family-pk-config-dispatch-verify --workbook-url <workbookUrl> --pk-date <pkDate> --timeout-ms <timeoutMs>"
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-dispatch-verify --workbook-url <workbookUrl> --pk-date <pkDate> --user-id <userId>"
+    },
+    {
+      "id": "family_pk_config_test_result",
+      "name": "家族PK配置-测试结果汇总",
+      "category": "家族PK",
+      "order": 7,
+      "description": "第七步：读取各步骤 Sheet 验收摘要，汇总写入「测试结果」（总体验收结论 + 发钻不一致明细）。",
+      "prompts": [
+        "执行工作流 家族PK配置-测试结果汇总",
+        "工作流 family-pk-config-test-result <workbookUrl> <pkDate>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-test-result --workbook-url <workbookUrl> --pk-date <pkDate> --user-id <userId>"
     },
     {
       "id": "family_pk_config_reward_calc",

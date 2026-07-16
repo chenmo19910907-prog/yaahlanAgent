@@ -1,0 +1,52 @@
+{
+  "id": "family-pk-config-test-result",
+  "name": "家族PK配置-测试结果汇总",
+  "category": "家族PK",
+  "description": "汇总六步验收数据，写入 Sheet「测试结果」（含总体验收结论与发钻不一致明细）。",
+  "version": 1,
+  "params": {
+    "workbookUrl": {
+      "label": "钉钉表格",
+      "type": "string",
+      "required": true,
+      "default": "",
+      "prompt": "钉钉表格 URL 或 nodeId"
+    },
+    "pkDate": {
+      "label": "匹配日期",
+      "type": "date",
+      "required": true,
+      "default": "2026-07-02"
+    },
+    "rankDate": {
+      "label": "收礼榜日期",
+      "type": "date",
+      "required": false,
+      "default": "",
+      "prompt": "默认 pkDate 前一日"
+    },
+    "userId": {
+      "label": "MOA账号",
+      "type": "string",
+      "required": false,
+      "default": "100486375"
+    }
+  },
+  "steps": [
+    {
+      "id": "test_result_to_sheet",
+      "name": "汇总测试结果写入钉钉",
+      "run": {
+        "type": "shell",
+        "command": "python3 platform/dingtalk_gateway/family_pk_test_result_to_workbook.py --workbook \"{{workbookUrl}}\" --pk-date {{pkDate}} --user-id {{userId}} --sheet-name 测试结果",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": [
+          0,
+          2
+        ]
+      }
+    }
+  ]
+}

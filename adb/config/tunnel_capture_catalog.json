@@ -95,6 +95,18 @@
       "notes": ["工作流 family-pk-config-match-verify", "须 request.date=pkDate"]
     },
     {
+      "id": "family_pk_member_list",
+      "name": "家族PK成员贡献列表",
+      "category": "家族PK",
+      "keyword": "getFamilyPkUserList",
+      "urlMarker": "getFamilyPkUserList",
+      "trigger": "家族 PK 页点击贡献 top3 头像打开成员榜",
+      "readPaths": ["response.data.memberList", "response.data.userInfo"],
+      "handler": "tunnel_last",
+      "command": "python3 Tunnel/tunnel_execute.py --momoid <userId> --keyword getFamilyPkUserList --since <sinceSeconds> --output json",
+      "notes": ["须 request.familyId 与 request.date", "分页 request.offset/limit"]
+    },
+    {
       "id": "room_heartbeat",
       "name": "房内心跳(进房佐证)",
       "category": "房间",

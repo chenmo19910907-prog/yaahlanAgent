@@ -94,6 +94,30 @@
       "command": "python3 workflow/workflow_execute.py run intimate-cp-form \\\n  --from-user-id <fromUserId> \\\n  --to-user-id <toUserId> \\\n  --gift-id 2005006943 \\\n  --dismiss-first 1"
     },
     {
+      "id": "moa_generative_family_pk_member_list",
+      "name": "生成式MOA-家族PK成员贡献列表",
+      "category": "生成式MOA（已验证示例）",
+      "description": "HTTP /yaahlan/vas/familyPk/getFamilyPkUserList → /service/vas/activity/family-pk-v2-api + getFamilyPkUserList。body 需 userId、familyId、date、limit、offset；返回 memberList 成员贡献榜。",
+      "prompts": [
+        "家族PK成员贡献列表 MOA",
+        "生成式MOA getFamilyPkUserList",
+        "点击top3头像成员榜抓包转MOA"
+      ],
+      "command": "python3 workflow/workflow_execute.py run moa-generative-run \\\n  --service-url /service/vas/activity/family-pk-v2-api \\\n  --method getFamilyPkUserList \\\n  --body-file MOA-generative/templates/example-familyPkUserList.body.json \\\n  --strict 1"
+    },
+    {
+      "id": "moa_generative_family_pk_page",
+      "name": "生成式MOA-家族PK请求页面",
+      "category": "生成式MOA（已验证示例）",
+      "description": "HTTP /yaahlan/vas/familyPk/getFamilyPkPage → /service/vas/activity/family-pk-v2-api + getFamilyPkPage。body 需 userId、date、area；返回 pkList/current 对战列表。",
+      "prompts": [
+        "家族PK请求页面 MOA",
+        "生成式MOA getFamilyPkPage",
+        "打开家族PK页抓包转MOA"
+      ],
+      "command": "python3 workflow/workflow_execute.py run moa-generative-run \\\n  --service-url /service/vas/activity/family-pk-v2-api \\\n  --method getFamilyPkPage \\\n  --body-file MOA-generative/templates/example-familyPkPage.body.json \\\n  --strict 1"
+    },
+    {
       "id": "moa_generative_room_member_apply",
       "name": "生成式MOA-房间成员申请",
       "category": "生成式MOA（已验证示例）",

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""抓包 PK 列表 + 收礼榜区间 → 匹配验收结果写入钉钉 Sheet3。"""
+"""MOA getFamilyPkPage PK 列表 + 收礼榜区间 → 匹配验收结果写入钉钉 Sheet4。"""
 
 from __future__ import annotations
 
@@ -9,7 +9,6 @@ import json
 import os
 import subprocess
 import sys
-import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -35,7 +34,7 @@ from family_pk_tab_to_workbook import (  # noqa: E402
     _ensure_sheet,
     _write_sheet_replace,
 )
-from family_pk_tunnel_capture import find_pk_page_capture, print_capture_user_prompt  # noqa: E402
+from family_pk_page_moa import fetch_family_pk_page_data, parse_moa_pk_pairs  # noqa: E402
 from mse_config_export import _fetch_mse_config  # noqa: E402
 from mse_json_to_workbook import _merge_config  # noqa: E402
 from mse_workbook_utils import format_rank_range, node_id  # noqa: E402
@@ -46,6 +45,7 @@ import httpx  # noqa: E402
 
 DEFAULT_SHEET = "匹配验收"
 DATA_HEADER = [
+    "MOA序",
     "家族ID",
     "家族名称",
     "对手家族ID",
@@ -56,9 +56,9 @@ DATA_HEADER = [
     "对手收礼名次",
     "对手收礼值",
     "对手匹配区间",
+    "配对无重复",
     "同区间",
     "验收",
-    "说明",
 ]
 
 
@@ -129,11 +129,8 @@ def build_verify_rows(
     *,
     pk_date: str,
     rank_date: str,
-    momoid: str,
-    since: int,
-    wait_seconds: int = 180,
-    poll_interval_ms: int = 3000,
-    fresh_capture: bool = False,
+    user_id: str,
+    area: str = "MENA",
 ) -> tuple[list[list[Any]], dict[str, Any]]:
     fetched = _fetch_mse_config(namespace="voga-common", config_key="familyPkConfig")
     config = _merge_config(fetched["configValue"])
@@ -142,64 +139,51 @@ def build_verify_rows(
         raise RuntimeError("familyPkConfig 缺少 bracketGradients")
 
     rank_map = load_receive_rank(rank_date)
-    min_capture_epoch = time.time() if fresh_capture else None
-    if wait_seconds > 0 or fresh_capture:
-        print_capture_user_prompt(
-            momoid=momoid,
-            pk_date=pk_date,
-            wait_seconds=wait_seconds,
-            reason="prepare" if not fresh_capture else "not_found",
-        )
-    capture = find_pk_page_capture(
-        momoid=momoid,
-        pk_date=pk_date,
-        since=since,
-        wait_seconds=wait_seconds,
-        poll_interval_ms=poll_interval_ms,
-        announce_wait=False,
-        min_capture_epoch=min_capture_epoch,
-    )
-    data = (capture.get("response") or {}).get("data") or {}
-    pk_list = data.get("pkList") or []
+    page_data = fetch_family_pk_page_data(user_id=user_id, pk_date=pk_date, area=area)
+    pk_list = page_data.get("pkList") or []
+    parsed = parse_moa_pk_pairs(pk_list)
+    entries = parsed["entries"]
+    if not entries:
+        raise RuntimeError("MOA pkList 为空，无法验收匹配")
 
+    response_date = str(page_data.get("date") or "").strip()
+    date_aligned = not response_date or response_date == pk_date
+
+    pair_consistent = bool(parsed["pairConsistent"])
     detail_rows: list[list[Any]] = []
     pass_count = 0
     fail_count = 0
     failures: list[str] = []
 
-    for pair in pk_list:
-        if not isinstance(pair, dict):
-            continue
-        fa_info = pair.get("familyInfo") or {}
-        opp = pair.get("opponentFamily")
-        fa = str(fa_info.get("familyId") or "").strip()
-        fan = str(fa_info.get("name") or fa_info.get("familyName") or "").strip()
-        fb = ""
-        fbn = ""
-        if isinstance(opp, dict) and opp.get("familyId"):
-            fb = str(opp.get("familyId")).strip()
-            fbn = str(opp.get("name") or opp.get("familyName") or "").strip()
+    for item in entries:
+        idx = item["index"]
+        fa = item["familyId"]
+        fan = item["familyName"]
+        fb = item["opponentId"]
+        fbn = item["opponentName"]
+        bye = item["bye"]
 
         ra, sa, la = family_bracket_info(fa, rank_map, brackets)
-        if fb:
-            rb, sb, lb = family_bracket_info(fb, rank_map, brackets)
-            same = la == lb
-            note = "同区间匹配" if same else f"跨区间：{la} vs {lb}"
-            status = "通过" if same else "失败"
-            if same:
-                pass_count += 1
-            else:
-                fail_count += 1
-                failures.append(f"{fa}({la}) vs {fb}({lb})")
-        else:
+        dup_ok = pair_consistent
+        if bye:
             rb = sb = lb = ""
             same = True
-            note = "轮空"
-            status = "通过"
+            status = "通过" if dup_ok else "失败"
+        else:
+            rb, sb, lb = family_bracket_info(fb, rank_map, brackets)
+            same = la == lb
+            status = "通过" if (same and dup_ok) else "失败"
+
+        if status == "通过":
             pass_count += 1
+        else:
+            fail_count += 1
+            if not same and fb:
+                failures.append(f"{fa}({la}) vs {fb}({lb})")
 
         detail_rows.append(
             [
+                idx,
                 fa,
                 fan,
                 fb,
@@ -210,43 +194,64 @@ def build_verify_rows(
                 rb,
                 sb,
                 lb,
+                "是" if dup_ok else "否",
                 "是" if same else "否",
                 status,
-                note,
             ]
         )
+
+    if not pair_consistent:
+        failures.extend(parsed["duplicateErrors"])
 
     detail_rows = sort_match_verify_detail_rows(detail_rows)
 
     summary = {
         "pkDate": pk_date,
         "rankDate": rank_date,
-        "momoid": momoid,
-        "captureId": capture.get("_id"),
-        "captureTime": capture.get("time"),
+        "userId": user_id,
+        "requestDate": page_data.get("_requestDate") or pk_date,
+        "responseDate": response_date or None,
+        "dateAligned": date_aligned,
+        "source": "moa",
+        "method": "getFamilyPkPage",
         "bracketCount": len(brackets),
+        "pkListEntries": parsed["entryCount"],
+        "pairCount": parsed["pairCount"],
+        "byeCount": parsed["byeCount"],
+        "uniqueFamilyCount": parsed["uniqueFamilyCount"],
+        "pairConsistent": pair_consistent,
+        "duplicateErrors": parsed["duplicateErrors"],
         "pairRows": len(detail_rows),
         "passCount": pass_count,
         "failCount": fail_count,
         "failures": failures,
-        "allPass": fail_count == 0,
+        "allPass": fail_count == 0 and pair_consistent,
     }
 
     sheet_rows: list[list[Any]] = [
         [
             "验收摘要",
             f"PK日期={pk_date}",
-            f"收礼榜日期={rank_date}",
-            f"通过={pass_count}",
-            f"失败={fail_count}",
-            f"抓包={capture.get('time')}",
-            str(capture.get("_id") or ""),
+            f"收礼榜={rank_date}",
+            f"MOA pkList={parsed['entryCount']}条",
+            f"对战={parsed['pairCount']} 轮空={parsed['byeCount']}",
+            f"家族数={parsed['uniqueFamilyCount']}",
+            f"通过={pass_count} 失败={fail_count}",
+        ],
+        [
+            "MOA来源",
+            f"userId={user_id}",
+            f"请求date={pk_date}",
+            f"响应date={response_date or '-'}",
+            f"配对无重复={'是' if pair_consistent else '否'}",
+            f"区间验收={'全通过' if fail_count == 0 else '有失败'}",
+            "",
         ],
         [
             "规则说明",
-            "按参数表 bracketGradients 区间",
-            "收礼榜有效名次定区间",
-            "对战双方须同区间",
+            "MOA getFamilyPkPage pkList 对战验收",
+            "每家族仅允许出现一次",
+            "对战双方须同收礼榜区间",
             "末位区间可轮空",
             "",
             "",
@@ -290,25 +295,19 @@ async def write_verify_sheet_async(
 def export_match_verify_to_workbook(
     *,
     workbook: str,
-    momoid: str,
+    user_id: str,
     pk_date: str,
     rank_date: str | None,
-    since: int,
-    wait_seconds: int,
-    poll_interval_ms: int,
+    area: str,
     sheet_name: str,
-    fresh_capture: bool = False,
 ) -> dict[str, Any]:
     pk_date = _normalize_date(pk_date)
     rank_date = _normalize_date(rank_date) if rank_date else _prev_day(pk_date)
     sheet_rows, summary = build_verify_rows(
         pk_date=pk_date,
         rank_date=rank_date,
-        momoid=momoid,
-        since=since,
-        wait_seconds=wait_seconds,
-        poll_interval_ms=poll_interval_ms,
-        fresh_capture=fresh_capture,
+        user_id=user_id,
+        area=area,
     )
     doc_url = asyncio.run(
         write_verify_sheet_async(workbook, sheet_rows, sheet_name=sheet_name)
@@ -325,48 +324,32 @@ def export_match_verify_to_workbook(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="家族PK匹配验收 → 钉钉 Sheet3")
+    parser = argparse.ArgumentParser(description="家族PK匹配验收（MOA getFamilyPkPage）→ 钉钉 Sheet4")
     parser.add_argument("--workbook", default=DEFAULT_WORKBOOK, help="钉钉表格 URL/nodeId")
-    parser.add_argument("--momoid", default="100465989", help="抓包账号")
+    parser.add_argument(
+        "--user-id",
+        "--momoid",
+        dest="user_id",
+        default="100486375",
+        help="MOA 请求账号 userId（--momoid 为兼容别名）",
+    )
     parser.add_argument("--pk-date", default="2026-07-02", help="PK/匹配日期 yyyy-MM-dd")
     parser.add_argument(
         "--rank-date",
         help="收礼榜日期（默认 pk-date 前一日）",
     )
-    parser.add_argument("--since", type=int, default=259200, help="Tunnel 回溯秒数")
-    parser.add_argument(
-        "--wait",
-        type=int,
-        default=180,
-        dest="wait_seconds",
-        help="未命中时最长等待秒数（0=立即失败；默认等待用户在 App 刷新 PK 页）",
-    )
-    parser.add_argument(
-        "--poll-ms",
-        type=int,
-        default=3000,
-        dest="poll_interval_ms",
-        help="抓包等待轮询间隔毫秒",
-    )
-    parser.add_argument(
-        "--fresh-capture",
-        action="store_true",
-        help="忽略脚本启动前的抓包，等待重匹配后 App 刷新产生的新 getFamilyPkPage",
-    )
-    parser.add_argument("--sheet-name", default=DEFAULT_SHEET, help="Sheet3 名称")
+    parser.add_argument("--area", default="MENA", help="请求 area（默认 MENA）")
+    parser.add_argument("--sheet-name", default=DEFAULT_SHEET, help="Sheet4 名称")
     args = parser.parse_args()
 
     try:
         summary = export_match_verify_to_workbook(
             workbook=args.workbook.strip(),
-            momoid=str(args.momoid).strip(),
+            user_id=str(args.user_id).strip(),
             pk_date=args.pk_date.strip(),
             rank_date=args.rank_date.strip() if args.rank_date else None,
-            since=args.since,
-            wait_seconds=args.wait_seconds,
-            poll_interval_ms=args.poll_interval_ms,
+            area=str(args.area).strip().upper() or "MENA",
             sheet_name=args.sheet_name.strip() or DEFAULT_SHEET,
-            fresh_capture=args.fresh_capture,
         )
     except (ValueError, RuntimeError, OSError) as exc:
         print(f"[FAIL] {exc}", file=sys.stderr)

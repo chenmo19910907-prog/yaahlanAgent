@@ -32,6 +32,8 @@ from .params import (
     set_family_member_fund_contrib_params,
     set_family_leave_params,
     set_family_kick_member_params,
+    set_family_pk_page_params,
+    set_family_pk_member_list_params,
     set_family_delete_params,
     set_family_create_time_query_params,
     set_family_members_query_params,
@@ -736,6 +738,58 @@ def _op_family_query_joined(args: argparse.Namespace, payload: dict[str, Any]) -
     set_user_joined_family_query_params(payload, args.family_query_joined_user_id)
 
 
+def _family_pk_member_list_mode(args: argparse.Namespace) -> bool:
+    return bool(
+        getattr(args, "family_pk_member_list_user_id", None)
+        or getattr(args, "family_pk_member_list_family_id", None)
+    )
+
+
+def _op_family_pk_member_list(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(getattr(args, "family_pk_member_list_user_id", None) or "").strip()
+    family_id = str(getattr(args, "family_pk_member_list_family_id", None) or "").strip()
+    date = str(getattr(args, "family_pk_member_list_date", None) or "").strip()
+    offset = int(getattr(args, "family_pk_member_list_offset", None) or 0)
+    limit = int(getattr(args, "family_pk_member_list_limit", None) or 20)
+    area = str(getattr(args, "family_pk_member_list_area", None) or "MENA").strip().upper()
+    if not date:
+        first = (payload.get("params") or [{}])[0]
+        if isinstance(first, dict) and isinstance(first.get("value"), dict):
+            date = str(first["value"].get("date") or "").strip()
+    if not user_id:
+        raise ValueError("须提供 --family-pk-member-list-user-id")
+    if not family_id:
+        raise ValueError("须提供 --family-pk-member-list-family-id")
+    if not date:
+        raise ValueError("须提供 --family-pk-member-list-date 或在模板中设置 date")
+    set_family_pk_member_list_params(
+        payload,
+        user_id=user_id,
+        family_id=family_id,
+        date=date,
+        offset=offset,
+        limit=limit,
+        area=area,
+    )
+
+
+def _family_pk_page_mode(args: argparse.Namespace) -> bool:
+    return bool(getattr(args, "family_pk_page_user_id", None))
+
+
+def _op_family_pk_page(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(getattr(args, "family_pk_page_user_id", None) or "").strip()
+    date = str(getattr(args, "family_pk_page_date", None) or "").strip()
+    area = str(getattr(args, "family_pk_page_area", None) or "MENA").strip().upper()
+    if not date:
+        first = (payload.get("params") or [{}])[0]
+        if isinstance(first, dict) and isinstance(first.get("value"), dict):
+            date = str(first["value"].get("date") or "").strip()
+    if not date:
+        raise ValueError("须提供 --family-pk-page-date 或在模板中设置 date")
+    set_family_pk_page_params(payload, user_id=user_id, date=date, area=area)
+
+
 def _room_member_add_mode(args: argparse.Namespace) -> bool:
     return bool(
         getattr(args, "room_member_room_id", None) or getattr(args, "room_member_user_id", None)
@@ -1027,6 +1081,8 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: _family_query_joined_mode(a), _op_family_query_joined),
     (lambda a: _family_delete_mode(a), _op_family_delete),
     (lambda a: _family_kick_mode(a), _op_family_kick),
+    (lambda a: _family_pk_page_mode(a), _op_family_pk_page),
+    (lambda a: _family_pk_member_list_mode(a), _op_family_pk_member_list),
     (lambda a: _room_member_add_mode(a), _op_room_member_add),
     (lambda a: a.family_leave_user_id is not None, _op_family_leave),
     (lambda a: a.follow_uid is not None or a.follow_remote_uid is not None, _op_user_follow),

@@ -29,9 +29,11 @@ if (
 if str(GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR))
 
+from family_pk_contrib_verify import format_contrib_verify_cell, verify_contrib_for_families  # noqa: E402
 from family_pk_calc_utils import (  # noqa: E402
     compute_member_expected_diamonds,
     load_family_pk_config_from_workbook,
+    parse_battles_from_match_verify_sheet,
     rename_family_pk_workbook,
     sort_member_reward_rows,
 )
@@ -49,7 +51,7 @@ DEFAULT_SHEET = "用户发钻测试"
 MEMBER_SHEET = "家族列表"
 TIER_SHEET = "家族PK档位"
 MATCH_SHEET = "匹配验收"
-DATA_HEADER = [
+CALC_HEADER = [
     "PK日期",
     "家族ID",
     "家族名称",
@@ -64,12 +66,12 @@ DATA_HEADER = [
     "应得钻石",
     "说明",
 ]
-VERIFY_EXTRA_HEADER = [
-    "发奖前钻石",
-    "发奖后钻石",
-    "实际增量",
-    "验收",
+CONTRIB_HEADER_SUFFIX = [
+    "榜单PK",
+    "榜单钻",
+    "榜单验收",
 ]
+DATA_HEADER = [*CALC_HEADER, *CONTRIB_HEADER_SUFFIX]
 
 
 def _normalize_date(text: str) -> str:
@@ -98,29 +100,7 @@ def load_battles_from_match_sheet(
     sheets = fetch_workbook_sheets(workbook)
     if sheet_name not in sheets:
         raise RuntimeError(f"未找到工作表: {sheet_name}，请先执行匹配验收步骤")
-    battles: list[dict[str, Any]] = []
-    bye: list[str] = []
-    seen: set[str] = set()
-    in_data = False
-    for row in sheets[sheet_name]:
-        if _cell(row, 0) == "家族ID":
-            in_data = True
-            continue
-        if not in_data:
-            continue
-        fa = _cell(row, 0)
-        if not fa.isdigit() or fa in seen:
-            continue
-        seen.add(fa)
-        fb = _cell(row, 2)
-        if fb.isdigit():
-            seen.add(fb)
-            battles.append({"familyA": fa, "familyB": fb, "scenario": "win"})
-        else:
-            bye.append(fa)
-    if not battles and not bye:
-        raise RuntimeError(f"工作表 {sheet_name} 未解析到对战数据")
-    return battles, bye
+    return parse_battles_from_match_verify_sheet(sheets[sheet_name], default_scenario="win")
 
 
 def load_member_directory(
@@ -289,14 +269,24 @@ def build_reward_sheet_rows(
     member_phones: dict[tuple[str, str], str],
     member_rows: list[dict[str, Any]],
     unmatched_members: list[dict[str, Any]],
+    contrib_verify: dict[str, Any] | None = None,
+    contrib_by_user: dict[tuple[str, str], dict[str, Any]] | None = None,
 ) -> list[list[Any]]:
+    contrib_by_user = contrib_by_user or {}
+    summary = contrib_verify or {}
+    include_contrib = bool(contrib_by_user)
+    header = DATA_HEADER if include_contrib else CALC_HEADER
     rows: list[list[Any]] = [
         [
             "测算摘要",
             f"PK日期={pk_date}",
             f"成员行数={len(member_rows) + len(unmatched_members)}",
             f"应发钻合计={sum(int(r.get('expectedDiamond') or 0) for r in member_rows + unmatched_members)}",
-            "",
+            (
+                f"榜单验收 通过={summary.get('passCount', '')} 失败={summary.get('failCount', '')}"
+                if include_contrib
+                else ""
+            ),
             "",
         ],
         [
@@ -305,33 +295,66 @@ def build_reward_sheet_rows(
             "平局或胜方未达标不发钻",
             "用户PK≥minRewardPk 才参与瓜分",
             "应得=(用户PK/家族PK)*奖池，向下取整",
-            "奖池=双方档位钻石之和，未达档用basePool",
+            (
+                "榜单验收：结算后 MOA getFamilyPkUserList 对比 pkValue/rewardDiamond；"
+                "用户PK<minListPk 不在榜记通过"
+                if include_contrib
+                else "榜单验收在第六步结算后发奖后执行"
+            ),
             "",
         ],
         [],
-        DATA_HEADER,
+        header,
     ]
-    for item in sort_member_reward_rows(member_rows + unmatched_members):
-        fid = str(item.get("familyId") or "")
-        uid = str(item.get("userId") or "")
-        rows.append(
-            [
-                pk_date,
-                fid,
-                family_names.get(fid, ""),
-                uid,
-                member_phones.get((fid, uid), ""),
-                item.get("memberPk", 0),
-                item.get("familyPk", 0),
-                item.get("opponentFamilyId", ""),
-                item.get("opponentFamilyPk", 0),
-                item.get("matchResult", ""),
-                item.get("poolDiamond", 0),
-                item.get("expectedDiamond", 0),
-                item.get("note", ""),
-            ]
-        )
+
+    calc_map = {
+        (str(item.get("familyId") or ""), str(item.get("userId") or "")): item
+        for item in sort_member_reward_rows(member_rows + unmatched_members)
+    }
+    extra_keys = [
+        key
+        for key in contrib_by_user
+        if key not in calc_map
+    ]
+    ordered_keys = list(calc_map.keys()) + sorted(
+        extra_keys,
+        key=lambda k: (int(k[0]) if k[0].isdigit() else 0, int(k[1]) if k[1].isdigit() else 0),
+    )
+
+    for fid, uid in ordered_keys:
+        item = calc_map.get((fid, uid), {})
+        ver = contrib_by_user.get((fid, uid), {})
+        row = [
+            pk_date,
+            fid,
+            family_names.get(fid, ""),
+            uid,
+            member_phones.get((fid, uid), ""),
+            item.get("memberPk", ""),
+            item.get("familyPk", ""),
+            item.get("opponentFamilyId", ""),
+            item.get("opponentFamilyPk", ""),
+            item.get("matchResult", ""),
+            item.get("poolDiamond", ""),
+            item.get("expectedDiamond", ""),
+            item.get("note", ""),
+        ]
+        if include_contrib:
+            row.extend(
+                [
+                    _format_api_cell(ver.get("apiPk")),
+                    _format_api_cell(ver.get("apiDiamond")),
+                    format_contrib_verify_cell(ver),
+                ]
+            )
+        rows.append(row)
     return rows
+
+
+def _format_api_cell(value: Any) -> str:
+    if value is None or value == "":
+        return ""
+    return str(value)
 
 
 def compute_member_reward_rows(
@@ -449,6 +472,8 @@ def export_member_reward_to_workbook(
     sheet_name: str,
     tier_sheet: str,
     match_sheet: str,
+    verify_contrib: bool = False,
+    area: str = "MENA",
 ) -> dict[str, Any]:
     pk_date = _normalize_date(pk_date)
     rank_date = _prev_day(pk_date)
@@ -463,12 +488,31 @@ def export_member_reward_to_workbook(
     seed_data = json.loads(report_path.read_text(encoding="utf-8"))
     battles, bye = load_battles_from_match_sheet(workbook, sheet_name=match_sheet)
 
+    contrib_summary: dict[str, Any] = {}
+    contrib_by_user: dict[tuple[str, str], dict[str, Any]] = {}
+    if verify_contrib:
+        config = load_family_pk_config_from_workbook(workbook)
+        verify_details, contrib_summary = verify_contrib_for_families(
+            pk_date=pk_date,
+            member_rows=member_rows,
+            user_id=str(momoid).strip(),
+            config=config,
+            area=str(area or "MENA").strip().upper() or "MENA",
+        )
+        for item in verify_details:
+            fid = str(item.get("familyId") or "")
+            uid = str(item.get("userId") or "")
+            if fid.isdigit() and uid.isdigit():
+                contrib_by_user[(fid, uid)] = item
+
     sheet_rows = build_reward_sheet_rows(
         pk_date=pk_date,
         family_names=family_names,
         member_phones=member_phones,
         member_rows=member_rows,
         unmatched_members=[],
+        contrib_verify=contrib_summary,
+        contrib_by_user=contrib_by_user,
     )
     doc_url = asyncio.run(write_reward_sheet_async(workbook, sheet_rows, sheet_name=sheet_name))
     workbook_title = rename_family_pk_workbook(workbook, pk_date)
@@ -486,6 +530,7 @@ def export_member_reward_to_workbook(
             s: sum(1 for r in member_rows if r.get("scenario") == s)
             for s in ["win", "tie", "pk_low", "member_low", "lose", "bye_win", "bye_pk_low"]
         },
+        "contribVerify": contrib_summary,
         "workbookUrl": doc_url,
         "workbookTitle": workbook_title,
         "sheetName": sheet_name,
@@ -499,16 +544,56 @@ def export_member_reward_to_workbook(
     return summary
 
 
+def export_user_reward_contrib_verify_to_workbook(
+    *,
+    workbook: str,
+    pk_date: str,
+    user_id: str,
+    seed_report: Path | None = None,
+    sheet_name: str = DEFAULT_SHEET,
+    tier_sheet: str = TIER_SHEET,
+    match_sheet: str = MATCH_SHEET,
+    area: str = "MENA",
+) -> dict[str, Any]:
+    """第六步结算后：MOA 贡献榜验收，回写「用户发钻测试」榜单列。"""
+    return export_member_reward_to_workbook(
+        workbook=workbook,
+        pk_date=pk_date,
+        momoid=user_id,
+        since=0,
+        seed_report=seed_report,
+        sheet_name=sheet_name,
+        tier_sheet=tier_sheet,
+        match_sheet=match_sheet,
+        verify_contrib=True,
+        area=area,
+    )
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="家族 PK 用户应得钻石测算 → 钉钉 Sheet5")
+    parser = argparse.ArgumentParser(
+        description="家族 PK 用户应得钻石测算 → 钉钉「用户发钻测试」（榜单验收见第六步）"
+    )
     parser.add_argument("--workbook", default=DEFAULT_WORKBOOK)
     parser.add_argument("--pk-date", required=True)
-    parser.add_argument("--momoid", default="100465989")
+    parser.add_argument(
+        "--user-id",
+        "--momoid",
+        dest="momoid",
+        default="100486375",
+        help="MOA getFamilyPkUserList 请求 userId",
+    )
     parser.add_argument("--since", type=int, default=259200)
     parser.add_argument("--seed-report", type=Path, help="family_pk_member_pk_seed 报告路径")
     parser.add_argument("--sheet-name", default=DEFAULT_SHEET)
     parser.add_argument("--match-sheet", default=MATCH_SHEET, help="对战来源工作表，默认匹配验收")
     parser.add_argument("--tier-sheet", default=TIER_SHEET, help="档位钻石来源 Sheet")
+    parser.add_argument("--area", default="MENA", help="MOA 贡献榜 area")
+    parser.add_argument(
+        "--skip-contrib-verify",
+        action="store_true",
+        help="仅测算应得钻石，不拉 MOA 贡献榜验收",
+    )
     args = parser.parse_args()
 
     try:
@@ -521,12 +606,17 @@ def main() -> int:
             sheet_name=args.sheet_name.strip() or DEFAULT_SHEET,
             tier_sheet=args.tier_sheet.strip() or TIER_SHEET,
             match_sheet=args.match_sheet.strip() or MATCH_SHEET,
+            verify_contrib=not args.skip_contrib_verify,
+            area=str(args.area).strip().upper() or "MENA",
         )
     except (ValueError, RuntimeError, OSError) as exc:
         print(f"[FAIL] {exc}", file=sys.stderr)
         return 1
 
     print(json.dumps(summary, ensure_ascii=False, indent=2))
+    contrib = summary.get("contribVerify") or {}
+    if contrib and not contrib.get("allPass"):
+        return 2
     return 0
 
 

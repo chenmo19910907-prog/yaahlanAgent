@@ -2,8 +2,8 @@
   "id": "family-pk-config-match-verify",
   "name": "家族PK配置-重匹配与验收写入钉钉",
   "category": "家族PK",
-  "description": "第四步：清除并重匹配 pkDate 家族 PK → Tunnel 抓包 getFamilyPkPage（--fresh-capture 仅用重匹配后新抓包）→ 按收礼榜区间验收同区间匹配，写入 Sheet「匹配验收」。默认等待用户在 App 刷新 PK 页最多 180s。",
-  "version": 2,
+  "description": "第四步：清除并重匹配 pkDate 家族 PK → MOA getFamilyPkPage 拉取对战列表 → 按收礼榜区间验收同区间匹配，写入 Sheet「匹配验收」。",
+  "version": 3,
   "params": {
     "workbookUrl": {
       "label": "钉钉表格",
@@ -12,12 +12,12 @@
       "default": "https://alidocs.dingtalk.com/i/nodes/N7dx2rn0JbZQqA9ACZ1MoaaRJMGjLRb3",
       "prompt": "钉钉表格 URL 或 nodeId"
     },
-    "momoid": {
-      "label": "抓包账号",
+    "userId": {
+      "label": "验收账号",
       "type": "string",
       "required": true,
-      "default": "100465989",
-      "prompt": "Tunnel 抓包 momoid（可更换）"
+      "default": "100486375",
+      "prompt": "MOA getFamilyPkPage 请求 userId（任意有家族账号即可）"
     },
     "pkDate": {
       "label": "匹配日期",
@@ -39,12 +39,12 @@
       "required": false,
       "default": "180000"
     },
-    "captureWait": {
-      "label": "抓包等待秒",
-      "type": "integer",
+    "area": {
+      "label": "大区",
+      "type": "string",
       "required": false,
-      "default": "180",
-      "prompt": "未命中 getFamilyPkPage 时提示用户打开 App 并最长等待该秒数"
+      "default": "MENA",
+      "prompt": "getFamilyPkPage 请求 area"
     }
   },
   "steps": [
@@ -62,10 +62,10 @@
     },
     {
       "id": "match_verify_to_sheet4",
-      "name": "抓包匹配验收写入Sheet4",
+      "name": "MOA匹配验收写入Sheet4",
       "run": {
         "type": "shell",
-        "command": "python3 platform/dingtalk_gateway/family_pk_match_verify_to_workbook.py --workbook \"{{workbookUrl}}\" --momoid {{momoid}} --pk-date {{pkDate}} --sheet-name 匹配验收 --wait {{captureWait}} --fresh-capture",
+        "command": "python3 platform/dingtalk_gateway/family_pk_match_verify_to_workbook.py --workbook \"{{workbookUrl}}\" --user-id {{userId}} --pk-date {{pkDate}} --area {{area}} --sheet-name 匹配验收",
         "cwd": "."
       },
       "expect": {

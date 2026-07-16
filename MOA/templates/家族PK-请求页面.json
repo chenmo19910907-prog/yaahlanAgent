@@ -1,0 +1,65 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 10000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/vas/activity/family-pk-v2-api",
+  "method": "getFamilyPkPage",
+  "header": "{\"userId\":\"100379555\",\"uid\":\"100379555\",\"_uid_\":\"100379555\",\"date\":\"2026-07-15\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"ios\",\"osType\":\"ios\",\"clientType\":\"2\",\"dataType\":\"json\",\"originRsp\":1,\"appVersion\":\"2.5.7\",\"osVersion\":\"26.5.2\",\"rom\":\"26.5.2\",\"model\":\"iPhone 11\",\"country\":\"B1\",\"timeZone\":\"Asia/Shanghai\",\"deviceId\":\"357f25796f6674793fd8e07d48940954462fb22f168967660412\",\"mmuid\":\"357f25796f6674793fd8e07d48940954462fb22f168967660412\",\"netQuality\":4,\"imsi\":0,\"_version_\":1000}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100379555\",\"uid\":\"100379555\",\"_uid_\":\"100379555\",\"date\":\"2026-07-15\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"ios\",\"osType\":\"ios\",\"clientType\":\"2\",\"dataType\":\"json\",\"originRsp\":1,\"appVersion\":\"2.5.7\",\"osVersion\":\"26.5.2\",\"rom\":\"26.5.2\",\"model\":\"iPhone 11\",\"country\":\"B1\",\"timeZone\":\"Asia/Shanghai\",\"deviceId\":\"357f25796f6674793fd8e07d48940954462fb22f168967660412\",\"mmuid\":\"357f25796f6674793fd8e07d48940954462fb22f168967660412\",\"netQuality\":4,\"imsi\":0,\"_version_\":1000}",
+      "type": "json",
+      "value": {
+        "userId": "100379555",
+        "uid": "100379555",
+        "_uid_": "100379555",
+        "date": "2026-07-15",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "ios",
+        "osType": "ios",
+        "clientType": "2",
+        "dataType": "json",
+        "originRsp": 1,
+        "appVersion": "2.5.7",
+        "osVersion": "26.5.2",
+        "rom": "26.5.2",
+        "model": "iPhone 11",
+        "country": "B1",
+        "timeZone": "Asia/Shanghai",
+        "deviceId": "357f25796f6674793fd8e07d48940954462fb22f168967660412",
+        "mmuid": "357f25796f6674793fd8e07d48940954462fb22f168967660412",
+        "netQuality": 4,
+        "imsi": 0,
+        "_version_": 1000
+      }
+    }
+  ],
+  "_registry": {
+    "id": "family_pk_request_page",
+    "name": "家族PK-请求页面",
+    "category": "家族PK（vas/activity/family-pk-v2-api）",
+    "description": "打开家族 PK 页主接口（getFamilyPkPage）。对齐客户端 /yaahlan/vas/familyPk/getFamilyPkPage；抓包样例 13311111118→100379555 date=2026-07-15。返回 pkList/current/tierList 等页面数据。",
+    "prompts": [
+      "请求家族PK页面 userId=<userId> date=<date>",
+      "打开家族PK页 <userId> <date>",
+      "getFamilyPkPage <userId>"
+    ],
+    "cli": "--family-pk-page-user-id <userId> [--family-pk-page-date <date>] [--family-pk-page-area MENA]"
+  }
+}

@@ -42,6 +42,7 @@ from .flows import (
 from .family_detail import needs_family_detail, needs_family_detail_by_user, run_family_detail
 from .family_kick import needs_family_kick, run_family_kick_member
 from .family_pk_receive_rank import needs_family_pk_query_receive_rank, run_family_pk_query_receive_rank
+from .family_pk_member_list import needs_family_pk_member_list, run_family_pk_member_list
 from .room_member_add import needs_room_member_add, run_room_member_add
 from .package_gift import run_package_gift_batch_add, run_package_gift_send
 from .time_utils import resolve_family_fund_week_key
@@ -208,6 +209,53 @@ def build_parser() -> argparse.ArgumentParser:
         "--family-pk-include-dissolved",
         action="store_true",
         help="收礼日榜查询时保留已解散家族（默认排除并顺延名次）",
+    )
+    parser.add_argument(
+        "--family-pk-page-user-id",
+        help="家族PK请求页面：userId（getFamilyPkPage；对齐 /yaahlan/vas/familyPk/getFamilyPkPage）",
+    )
+    parser.add_argument(
+        "--family-pk-page-date",
+        help="家族PK请求页面：日期 tab yyyy-MM-dd（默认取模板 date）",
+    )
+    parser.add_argument(
+        "--family-pk-page-area",
+        default="MENA",
+        help="家族PK请求页面：大区（默认 MENA）",
+    )
+    parser.add_argument(
+        "--family-pk-member-list-user-id",
+        help="家族PK成员贡献列表：userId（getFamilyPkUserList）",
+    )
+    parser.add_argument(
+        "--family-pk-member-list-family-id",
+        help="家族PK成员贡献列表：familyId",
+    )
+    parser.add_argument(
+        "--family-pk-member-list-date",
+        help="家族PK成员贡献列表：日期 yyyy-MM-dd",
+    )
+    parser.add_argument(
+        "--family-pk-member-list-offset",
+        type=int,
+        default=0,
+        help="家族PK成员贡献列表：分页 offset（默认 0）",
+    )
+    parser.add_argument(
+        "--family-pk-member-list-limit",
+        type=int,
+        default=20,
+        help="家族PK成员贡献列表：每页条数（默认 20）",
+    )
+    parser.add_argument(
+        "--family-pk-member-list-area",
+        default="MENA",
+        help="家族PK成员贡献列表：大区（默认 MENA）",
+    )
+    parser.add_argument(
+        "--family-pk-member-list-single-page",
+        action="store_true",
+        help="成员贡献列表仅拉取单页（默认自动翻页直至 hasNext=false）",
     )
     parser.add_argument("--family-fund-tier", choices=["A", "B", "C"], help="家族基金档位（FamilyFundService.batchSetFamilyFundTierForTest）")
     parser.add_argument("--family-fund-tier-flag", type=int, default=0, help="设置基金档位 flag（默认 0；result=0 表示未更新）")
@@ -848,6 +896,9 @@ def main() -> int:
 
         if needs_family_pk_query_receive_rank(args):
             return run_family_pk_query_receive_rank(args, client)
+
+        if needs_family_pk_member_list(args):
+            return run_family_pk_member_list(args, client)
 
         if needs_vip_level_upgrade(args):
             payload = build_vip_level_upgrade_payload(args, client)

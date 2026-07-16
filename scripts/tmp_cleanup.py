@@ -33,6 +33,7 @@ EPHEMERAL_GLOBS = (
 REPORT_GLOBS = (
     "family_pk_member_pk_seed_*.json",
     "family_pk_member_reward_*.json",
+    "family_pk_contrib_verify_*.json",
     "family_pk_reward_calc_*.json",
     "family_pk_match_verify_*.json",
     "family_pk_dispatch_verify_*.json",

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""第六步：清除结算记录 → 下发家族 PK 奖励 → 发奖前后查钻验收 → 更新 Sheet5「用户发钻测试」。"""
+"""第六步：清除结算记录 → 下发家族 PK 奖励 → 发奖前后查钻验收 → 新建 Sheet「发钻实发验收」。"""
 
 from __future__ import annotations
 
@@ -32,13 +32,32 @@ if str(GATEWAY_DIR) not in sys.path:
 
 from family_pk_calc_utils import rename_family_pk_workbook  # noqa: E402
 from family_pk_member_reward_to_workbook import (  # noqa: E402
-    DATA_HEADER,
-    DEFAULT_SHEET,
-    VERIFY_EXTRA_HEADER,
     compute_member_reward_rows,
-    write_reward_sheet_async,
+    export_user_reward_contrib_verify_to_workbook,
 )
-from family_pk_tab_to_workbook import DEFAULT_WORKBOOK  # noqa: E402
+from family_pk_tab_to_workbook import (  # noqa: E402
+    DEFAULT_WORKBOOK,
+    _ensure_sheet,
+    _write_sheet_replace,
+)
+from mse_workbook_utils import node_id  # noqa: E402
+from alidocs_excel_export import _excel_env, _get_token_and_operator  # noqa: E402
+
+import httpx  # noqa: E402
+
+DEFAULT_SHEET = "发钻实发验收"
+DISPATCH_HEADER = [
+    "PK日期",
+    "家族ID",
+    "家族名称",
+    "成员userId",
+    "手机号",
+    "应发钻石",
+    "发奖前钻石",
+    "发奖后钻石",
+    "实发钻石",
+    "验收",
+]
 
 _SETTLE_TPL = REPO_ROOT / "MOA/templates/家族PK-结算发奖匹配.json"
 _CLEAR_SETTLE_TPL = REPO_ROOT / "MOA/templates/家族PK-清除结算奖励.json"
@@ -186,7 +205,7 @@ def build_verify_sheet_rows(
             "",
         ],
         [],
-        DATA_HEADER + VERIFY_EXTRA_HEADER,
+        DISPATCH_HEADER,
     ]
     for item in member_rows:
         fid = str(item.get("familyId") or "")
@@ -202,14 +221,7 @@ def build_verify_sheet_rows(
                 family_names.get(fid, ""),
                 uid,
                 member_phones.get((fid, uid), ""),
-                item.get("memberPk", 0),
-                item.get("familyPk", 0),
-                item.get("opponentFamilyId", ""),
-                item.get("opponentFamilyPk", 0),
-                item.get("matchResult", ""),
-                item.get("poolDiamond", 0),
                 expected,
-                item.get("note", ""),
                 "" if b is None else b,
                 "" if a is None else a,
                 "" if delta is None else delta,
@@ -217,6 +229,35 @@ def build_verify_sheet_rows(
             ]
         )
     return rows
+
+
+async def write_dispatch_sheet_async(
+    workbook_url_or_id: str,
+    rows: list[list[Any]],
+    *,
+    sheet_name: str = DEFAULT_SHEET,
+) -> str:
+    workbook_id = node_id(workbook_url_or_id)
+    url = f"https://alidocs.dingtalk.com/i/nodes/{workbook_id}"
+    env = _excel_env()
+    token, operator = await _get_token_and_operator(env)
+    str_rows = [[str(c) if c is not None else "" for c in row] for row in rows]
+    async with httpx.AsyncClient(timeout=120) as client:
+        await _ensure_sheet(
+            token=token,
+            operator=operator,
+            workbook_id=workbook_id,
+            sheet_name=sheet_name,
+            client=client,
+        )
+    await _write_sheet_replace(
+        token=token,
+        operator=operator,
+        workbook_id=workbook_id,
+        sheet_name=sheet_name,
+        rows=str_rows,
+    )
+    return url
 
 
 def export_dispatch_verify_to_workbook(
@@ -231,6 +272,8 @@ def export_dispatch_verify_to_workbook(
     skip_settle: bool,
     settle_wait_sec: float,
     area: str = "MENA",
+    user_id: str = "100486375",
+    skip_contrib_verify: bool = False,
 ) -> dict[str, Any]:
     pk_date = _normalize_date(pk_date)
     settle_input = settle_date or _next_day(pk_date)
@@ -308,7 +351,9 @@ def export_dispatch_verify_to_workbook(
         after=after,
         verify_summary=verify_summary,
     )
-    doc_url = asyncio.run(write_reward_sheet_async(workbook, sheet_rows, sheet_name=sheet_name))
+    doc_url = asyncio.run(
+        write_dispatch_sheet_async(workbook, sheet_rows, sheet_name=sheet_name)
+    )
     workbook_title = rename_family_pk_workbook(workbook, pk_date)
 
     summary = {
@@ -331,11 +376,24 @@ def export_dispatch_verify_to_workbook(
     out_path = REPO_ROOT / ".tmp" / f"family_pk_dispatch_verify_{pk_date}.json"
     out_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     summary["reportPath"] = str(out_path)
+
+    if not skip_contrib_verify:
+        print("结算后发奖完成，开始 MOA 贡献榜验收并回写用户发钻测试…", file=sys.stderr)
+        contrib_summary = export_user_reward_contrib_verify_to_workbook(
+            workbook=workbook,
+            pk_date=pk_date,
+            user_id=str(user_id).strip(),
+            seed_report=seed_report,
+            area=area,
+        )
+        summary["contribVerify"] = contrib_summary.get("contribVerify")
+        summary["userRewardSheetUrl"] = contrib_summary.get("workbookUrl")
+
     return summary
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="家族 PK 发奖验收 → 钉钉 Sheet5")
+    parser = argparse.ArgumentParser(description="家族 PK 发奖验收 → 钉钉「发钻实发验收」")
     parser.add_argument("--workbook", default=DEFAULT_WORKBOOK)
     parser.add_argument("--pk-date", required=True, help="匹配日期 yyyy-MM-dd")
     parser.add_argument(
@@ -347,6 +405,14 @@ def main() -> int:
     parser.add_argument("--timeout-ms", type=int, default=180000)
     parser.add_argument("--settle-wait-sec", type=float, default=5.0, help="发奖后等待秒数再查钻")
     parser.add_argument("--area", default="MENA", help="清除结算奖励大区")
+    parser.add_argument(
+        "--user-id",
+        "--momoid",
+        dest="user_id",
+        default="100486375",
+        help="MOA getFamilyPkUserList 请求 userId（贡献榜验收）",
+    )
+    parser.add_argument("--skip-contrib-verify", action="store_true", help="跳过结算后贡献榜验收")
     parser.add_argument("--skip-clear-settle", action="store_true", help="跳过清除结算记录，直接发奖")
     parser.add_argument("--skip-settle", action="store_true", help="仅查钻对比，不调用发奖")
     args = parser.parse_args()
@@ -363,6 +429,8 @@ def main() -> int:
             skip_settle=args.skip_settle,
             settle_wait_sec=args.settle_wait_sec,
             area=args.area.strip() or "MENA",
+            user_id=str(args.user_id).strip(),
+            skip_contrib_verify=args.skip_contrib_verify,
         )
     except (ValueError, RuntimeError, OSError) as exc:
         print(f"[FAIL] {exc}", file=sys.stderr)
