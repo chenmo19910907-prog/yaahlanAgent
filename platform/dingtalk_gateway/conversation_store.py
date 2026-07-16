@@ -132,6 +132,7 @@ class ConversationStore:
         *,
         sender_id: str | None = None,
         sender_staff_id: str | None = None,
+        sender_nick: str | None = None,
         conversation_type: str | None = None,
     ) -> None:
         body = (reply or "").strip()
@@ -161,6 +162,7 @@ class ConversationStore:
         *,
         sender_id: str | None = None,
         sender_staff_id: str | None = None,
+        sender_nick: str | None = None,
         conversation_type: str | None = None,
     ) -> str | None:
         key = self.conversation_key(
@@ -181,6 +183,7 @@ class ConversationStore:
         *,
         sender_id: str | None = None,
         sender_staff_id: str | None = None,
+        sender_nick: str | None = None,
         conversation_type: str | None = None,
     ) -> str | None:
         key = self.conversation_key(
@@ -199,6 +202,7 @@ class ConversationStore:
         *,
         sender_id: str | None = None,
         sender_staff_id: str | None = None,
+        sender_nick: str | None = None,
         conversation_type: str | None = None,
     ) -> str | None:
         key = self.conversation_key(
