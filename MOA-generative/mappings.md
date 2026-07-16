@@ -10,6 +10,8 @@
 | 2026-07-15 | `/yaahlan/user/intimate/intimateDismiss` | `/service/yaahlan/user/intimate-api` | `intimateDismiss` | 解除亲密关系；同 ServiceUrl |
 | 2026-07-15 | `/yaahlan/user/intimate/intimateInvitationInfo` | `/service/yaahlan/user/intimate-api` | `intimateInvitationInfo` | 查申请状态 |
 | 2026-07-15 | `/yaahlan/user/intimate/intimateHomePage` | `/service/yaahlan/user/intimate-api` | `intimateHomePage` | 关系主页；无关系时 ec=404 |
+| 2026-07-15 | `/yaahlan/room/member/apply` | `/service/room/external/room-member-stage` | `apply` | body：`userId`（申请人）、`roomId`；Tunnel 未录到 apply 包，body 由 agree 抓包推断，MOA 实测 ec=200 |
+| 2026-07-15 | `/yaahlan/room/member/agree` | `/service/room/external/room-member-stage` | `agree` | body：`userId`（房主）、`roomId`、`remoteId`（申请人）；已加入再调 ec=20210111 |
 
 ## 配套 HTTP（非 MOA，仅对照）
 
@@ -41,3 +43,32 @@ python3 workflow/workflow_execute.py run intimate-cp-form \
 ```
 
 脚本等价：`python3 MOA-generative/scripts/form_intimate_pair.py --from-user ... --to-user ... [--relationship-type 1|2]`
+
+## 快速添加房间成员（已入库工作流）
+
+```bash
+python3 workflow/workflow_execute.py run room-member-quick-add-form \
+  --applicant-user-id <申请人userId> \
+  --owner-user-id <房主userId> \
+  --room-id <roomId>
+```
+
+脚本等价：`python3 MOA-generative/scripts/form_room_member_quick_add.py --applicant-user ... --owner-user ... --room-id ...`
+
+单步 MOA（生成式）：
+
+```bash
+# 申请
+python3 MOA-generative/scripts/run_generative_moa.py \
+  --url /service/room/external/room-member-stage \
+  --method apply \
+  --body-file MOA-generative/templates/example-room-member-apply.body.json \
+  --strict 1
+
+# 同意
+python3 MOA-generative/scripts/run_generative_moa.py \
+  --url /service/room/external/room-member-stage \
+  --method agree \
+  --body-file MOA-generative/templates/example-room-member-agree.body.json \
+  --strict 0
+```

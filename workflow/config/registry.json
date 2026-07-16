@@ -365,6 +365,18 @@
         "工作流 intimate-cp-form <fromUserId> <toUserId> <giftId> <dismissFirst>"
       ],
       "command": "python3 workflow/workflow_execute.py run intimate-cp-form --from-user-id <fromUserId> --to-user-id <toUserId> --gift-id <giftId> --dismiss-first <dismissFirst>"
+    },
+    {
+      "id": "room_member_quick_add_form",
+      "name": "房间成员-快速添加",
+      "category": "房间",
+      "description": "测试环境快速添加房间成员：MOA room-member-stage.apply（申请人）→ agree（房主）。HTTP 对应 /yaahlan/room/member/apply 与 /member/agree。",
+      "prompts": [
+        "执行工作流 房间成员-快速添加",
+        "工作流 room-member-quick-add-form <applicantUserId> <ownerUserId> <roomId>",
+        "快速添加房间成员"
+      ],
+      "command": "python3 workflow/workflow_execute.py run room-member-quick-add-form --applicant-user-id <applicantUserId> --owner-user-id <ownerUserId> --room-id <roomId>"
     }
   ]
 }

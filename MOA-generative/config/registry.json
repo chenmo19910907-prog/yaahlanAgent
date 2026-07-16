@@ -92,6 +92,40 @@
         "生成式MOA 结CP"
       ],
       "command": "python3 workflow/workflow_execute.py run intimate-cp-form \\\n  --from-user-id <fromUserId> \\\n  --to-user-id <toUserId> \\\n  --gift-id 2005006943 \\\n  --dismiss-first 1"
+    },
+    {
+      "id": "moa_generative_room_member_apply",
+      "name": "生成式MOA-房间成员申请",
+      "category": "生成式MOA（已验证示例）",
+      "description": "HTTP /yaahlan/room/member/apply → /service/room/external/room-member-stage + apply。body 需申请人 userId、roomId。",
+      "prompts": [
+        "房间成员申请 MOA",
+        "生成式MOA room member apply"
+      ],
+      "command": "python3 workflow/workflow_execute.py run moa-generative-run \\\n  --service-url /service/room/external/room-member-stage \\\n  --method apply \\\n  --body-file MOA-generative/templates/example-room-member-apply.body.json \\\n  --strict 1"
+    },
+    {
+      "id": "moa_generative_room_member_agree",
+      "name": "生成式MOA-同意房间成员申请",
+      "category": "生成式MOA（已验证示例）",
+      "description": "HTTP /yaahlan/room/member/agree → /service/room/external/room-member-stage + agree。body 需房主 userId、roomId、remoteId（申请人）。",
+      "prompts": [
+        "同意房间成员申请 MOA",
+        "生成式MOA room member agree"
+      ],
+      "command": "python3 workflow/workflow_execute.py run moa-generative-run \\\n  --service-url /service/room/external/room-member-stage \\\n  --method agree \\\n  --body-file MOA-generative/templates/example-room-member-agree.body.json \\\n  --strict 0"
+    },
+    {
+      "id": "moa_generative_room_member_quick_add",
+      "name": "生成式MOA-快速添加房间成员",
+      "category": "生成式MOA（已验证示例）",
+      "description": "快速添加房间成员：MOA apply（申请人）+ agree（房主）。推荐工作流 room-member-quick-add-form。",
+      "prompts": [
+        "快速添加房间成员 <applicantUserId> <ownerUserId> <roomId>",
+        "13311111118 加入 13311111112 房间",
+        "生成式MOA 添加房间成员"
+      ],
+      "command": "python3 workflow/workflow_execute.py run room-member-quick-add-form \\\n  --applicant-user-id <applicantUserId> \\\n  --owner-user-id <ownerUserId> \\\n  --room-id <roomId>"
     }
   ]
 }
