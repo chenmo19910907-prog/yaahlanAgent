@@ -76,6 +76,56 @@ def _turn_already_synced(
     return False
 
 
+def _latest_message_timestamp(messages: list[ChatMessage]) -> str:
+    best = ""
+    best_dt: datetime | None = None
+    for msg in messages:
+        ts = (msg.timestamp or "").strip()
+        if not ts:
+            continue
+        try:
+            dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if best_dt is None or dt > best_dt:
+            best_dt = dt
+            best = ts
+    return best or _now_iso()
+
+
+def _preview_from_messages(messages: list[ChatMessage]) -> str:
+    if not messages:
+        return ""
+    text = (messages[-1].content or "").strip().replace("\n", " ")
+    if len(text) > 56:
+        return text[:56] + "…"
+    return text
+
+
+def _apply_message_derived_meta(meta: SessionMeta, messages: list[ChatMessage]) -> bool:
+    """用消息内容刷新标题（最新提问）、排序时间与条数。"""
+    if not messages:
+        meta.latest_preview = ""
+        return False
+    changed = False
+    latest_user = _latest_user_prompt(messages)
+    if latest_user:
+        new_title = _title_from_text(latest_user)
+        if meta.title != new_title:
+            meta.title = new_title
+            changed = True
+    new_updated = _latest_message_timestamp(messages)
+    if meta.updated_at != new_updated:
+        meta.updated_at = new_updated
+        changed = True
+    count = len(messages)
+    if meta.message_count != count:
+        meta.message_count = count
+        changed = True
+    meta.latest_preview = _preview_from_messages(messages)
+    return changed
+
+
 def _rel_time(iso: str) -> str:
     try:
         dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
@@ -114,6 +164,7 @@ class SessionMeta:
     dingtalk_key: str = ""
     dingtalk_label: str = ""
     dingtalk_owner_id: str = ""
+    latest_preview: str = field(default="", repr=False)
 
     def owner_display(self, *, known_labels: dict[str, str] | None = None) -> str:
         label = (self.dingtalk_label or "").strip()
@@ -156,6 +207,9 @@ class SessionMeta:
                 payload["dingtalk_label"] = self.dingtalk_label
             if self.dingtalk_owner_id:
                 payload["dingtalk_owner_id"] = self.dingtalk_owner_id
+        preview = (self.latest_preview or "").strip()
+        if preview:
+            payload["latest_preview"] = preview
         return payload
 
 
@@ -290,16 +344,12 @@ class WebSessionStore:
                 if owner_id:
                     meta.dingtalk_owner_id = owner_id
                     dirty = True
-            items = [s for s in self._sessions.values() if s.message_count > 0]
+            items = list(self._sessions.values())
             for meta in items:
                 messages = self._load_messages(meta.id)
-                latest = _latest_user_prompt(messages)
-                if not latest:
-                    continue
-                new_title = _title_from_text(latest)
-                if meta.title != new_title:
-                    meta.title = new_title
+                if messages and _apply_message_derived_meta(meta, messages):
                     dirty = True
+            items = [s for s in items if s.message_count > 0]
             if enrich_names and items:
                 try:
                     from dingtalk_user_lookup import enrich_session_owner_labels
@@ -398,6 +448,12 @@ class WebSessionStore:
                 if uid and not meta.dingtalk_owner_id:
                     meta.dingtalk_owner_id = uid
                     changed = True
+                hint = (title_hint or "").strip()
+                if hint:
+                    new_title = _title_from_text(hint)
+                    if meta.title != new_title:
+                        meta.title = new_title
+                        changed = True
                 if changed:
                     self._save_index()
         return meta
@@ -439,9 +495,7 @@ class WebSessionStore:
                     if msg.role == "user" and msg.content == prompt:
                         messages[-1] = ChatMessage(role="assistant", content=reply)
                         self._save_messages(session_id, messages)
-                        meta.message_count = len(messages)
-                        meta.updated_at = _now_iso()
-                        meta.title = _title_from_text(prompt)
+                        _apply_message_derived_meta(meta, messages)
                         self._save_index()
                         return True
                     if msg.role == "user":
@@ -455,9 +509,7 @@ class WebSessionStore:
                 messages.append(ChatMessage(role="user", content=prompt))
             messages.append(ChatMessage(role="assistant", content=reply))
             self._save_messages(session_id, messages)
-            meta.message_count = len(messages)
-            meta.updated_at = _now_iso()
-            meta.title = _title_from_text(prompt)
+            _apply_message_derived_meta(meta, messages)
             self._save_index()
         return True
 
@@ -480,10 +532,7 @@ class WebSessionStore:
             msg = ChatMessage(role=role, content=text)
             messages.append(msg)
             self._save_messages(session_id, messages)
-            meta.message_count = len(messages)
-            meta.updated_at = _now_iso()
-            if role == "user":
-                meta.title = _title_from_text(text)
+            _apply_message_derived_meta(meta, messages)
             self._save_index()
         return msg
 
