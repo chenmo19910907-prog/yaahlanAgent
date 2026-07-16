@@ -42,6 +42,7 @@ from .flows import (
 from .family_detail import needs_family_detail, needs_family_detail_by_user, run_family_detail
 from .family_kick import needs_family_kick, run_family_kick_member
 from .family_pk_receive_rank import needs_family_pk_query_receive_rank, run_family_pk_query_receive_rank
+from .room_member_add import needs_room_member_add, run_room_member_add
 from .package_gift import run_package_gift_batch_add, run_package_gift_send
 from .time_utils import resolve_family_fund_week_key
 from .user_area import USER_AREA_CODES
@@ -425,6 +426,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--member-lv-exp", type=int, help="房间成员陪伴值：增加量")
     parser.add_argument("--member-lv-level", type=int, help="房间成员陪伴值：目标成员等级 lv1-lv20")
     parser.add_argument("--member-lv-current-exp", type=int, help="房间成员陪伴值：当前陪伴值（配合 --member-lv-level，默认 0）")
+    parser.add_argument(
+        "--room-member-room-id",
+        help="快速添加房间成员：房间 ID（RoomMemberService.joinMember）",
+    )
+    parser.add_argument(
+        "--room-member-user-id",
+        help="快速添加房间成员：用户 ID",
+    )
+    parser.add_argument(
+        "--room-member-area",
+        default="MENA",
+        help="快速添加房间成员：大区枚举（默认 MENA；可选 MENA/TR/RU/SEA/SA/CN/SAM）",
+    )
     parser.add_argument(
         "--level-exp-mode",
         choices=["min", "max"],
@@ -824,6 +838,13 @@ def main() -> int:
                     Path(__file__).resolve().parents[1] / "templates" / "家族-踢出成员.json"
                 )
             return run_family_kick_member(args, client)
+
+        if needs_room_member_add(args):
+            if not args.payload_file and not args.payload:
+                args.payload_file = str(
+                    Path(__file__).resolve().parents[1] / "templates" / "房间成员-快速添加.json"
+                )
+            return run_room_member_add(args, client)
 
         if needs_family_pk_query_receive_rank(args):
             return run_family_pk_query_receive_rank(args, client)

@@ -1,0 +1,41 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-room-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "AreaEnum = com.immomo.yaahlan.business.utils.enums.AreaEnum; return context.getBean(\"roomMemberService\").joinMember(\"31668628\",\"100379555\",AreaEnum.MENA);",
+      "json": "",
+      "type": "string",
+      "value": "AreaEnum = com.immomo.yaahlan.business.utils.enums.AreaEnum; return context.getBean(\"roomMemberService\").joinMember(\"31668628\",\"100379555\",AreaEnum.MENA);"
+    }
+  ],
+  "settings": {
+    "time": "5000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "room_member_add",
+    "name": "房间成员-快速添加",
+    "category": "房间成员（voga-mts-room-backdoor）",
+    "description": "测试环境一键把用户加入房间成员（RoomMemberService.joinMember）。对齐客户端：/yaahlan/room/member/apply + /room/member/agree 流程，跳过申请审批直接成为成员。来源抓包：100379555 申请、100486375 同意，roomId=31668628",
+    "prompts": [
+      "房间 <roomId> 快速添加成员 <userId>",
+      "把用户 <userId> 加入房间 <roomId> 成员",
+      "一键添加房间成员"
+    ],
+    "cli": "--room-member-room-id <roomId> --room-member-user-id <userId> [--room-member-area MENA]"
+  }
+}

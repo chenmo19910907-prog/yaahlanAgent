@@ -291,6 +291,35 @@ def build_room_exp_expr(room_id: str, exp: int) -> str:
     return f'context.getBean("roomProfileDao").addRoomActiveValue("{room_id}",{exp}D)'
 
 
+ROOM_MEMBER_AREA_ENUMS = frozenset({"MENA", "TR", "RU", "SEA", "SA", "CN", "SAM"})
+
+
+def build_room_member_join_expr(room_id: str, user_id: str, area: str = "MENA") -> str:
+    room_id = str(room_id).strip()
+    user_id = str(user_id).strip()
+    area = str(area or "MENA").strip().upper()
+    if not room_id:
+        raise ValueError("room_id 不能为空")
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    if area not in ROOM_MEMBER_AREA_ENUMS:
+        raise ValueError(
+            f"room_member_area 无效: {area}，可选: {', '.join(sorted(ROOM_MEMBER_AREA_ENUMS))}"
+        )
+    return (
+        "AreaEnum = com.immomo.yaahlan.business.utils.enums.AreaEnum; "
+        f'return context.getBean("roomMemberService").joinMember("{room_id}","{user_id}",AreaEnum.{area});'
+    )
+
+
+def build_room_member_is_member_expr(room_id: str, user_id: str) -> str:
+    room_id = str(room_id).strip()
+    user_id = str(user_id).strip()
+    if not room_id or not user_id:
+        raise ValueError("room_id / user_id 不能为空")
+    return f'return context.getBean("roomMemberService").isRoomMember("{room_id}","{user_id}");'
+
+
 def build_family_fund_contrib_expr(family_id: str, contrib: int, week_key: str) -> str:
     family_id = str(family_id).strip()
     if not family_id:

@@ -14,6 +14,7 @@ from .config import (
     build_family_fund_tier_set_expr,
     build_family_fund_clear_expr,
     build_room_exp_expr,
+    build_room_member_join_expr,
     describe_level_upgrade_plan,
     family_level_thresholds,
     member_level_thresholds,
@@ -735,6 +736,25 @@ def _op_family_query_joined(args: argparse.Namespace, payload: dict[str, Any]) -
     set_user_joined_family_query_params(payload, args.family_query_joined_user_id)
 
 
+def _room_member_add_mode(args: argparse.Namespace) -> bool:
+    return bool(
+        getattr(args, "room_member_room_id", None) or getattr(args, "room_member_user_id", None)
+    )
+
+
+def _op_room_member_add(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/voga-mts-room-backdoor"
+    payload["method"] = "execute"
+    room_id = str(getattr(args, "room_member_room_id", None) or "").strip()
+    user_id = str(getattr(args, "room_member_user_id", None) or "").strip()
+    area = str(getattr(args, "room_member_area", None) or "MENA").strip().upper()
+    if not room_id or not user_id:
+        raise ValueError("快速添加房间成员须提供 --room-member-room-id 与 --room-member-user-id")
+    expr = build_room_member_join_expr(room_id, user_id, area)
+    print(f"房间成员快速添加 roomId={room_id} userId={user_id} area={area}", file=sys.stderr)
+    set_backdoor_execute_expr(payload, expr)
+
+
 def _op_family_leave(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     payload["url"] = "/service/external/user/family-api"
     payload["method"] = "leave"
@@ -1007,6 +1027,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: _family_query_joined_mode(a), _op_family_query_joined),
     (lambda a: _family_delete_mode(a), _op_family_delete),
     (lambda a: _family_kick_mode(a), _op_family_kick),
+    (lambda a: _room_member_add_mode(a), _op_room_member_add),
     (lambda a: a.family_leave_user_id is not None, _op_family_leave),
     (lambda a: a.follow_uid is not None or a.follow_remote_uid is not None, _op_user_follow),
     (lambda a: _family_add_mode(a), _op_family_exp),

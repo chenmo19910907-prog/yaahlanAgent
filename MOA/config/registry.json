@@ -180,6 +180,18 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间成员-增加陪伴值.json \\\n  --member-lv-room-id <roomId> \\\n  --member-lv-user-id <userId> \\\n  --member-lv-exp <exp>\n"
     },
     {
+      "id": "room_member_add",
+      "name": "房间成员-快速添加",
+      "category": "房间成员（voga-mts-room-backdoor）",
+      "description": "测试环境一键把用户加入房间成员（RoomMemberService.joinMember）。对齐客户端 apply+agree，跳过申请审批直接成为成员",
+      "prompts": [
+        "房间 <roomId> 快速添加成员 <userId>",
+        "把用户 <userId> 加入房间 <roomId> 成员",
+        "一键添加房间成员"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间成员-快速添加.json \\\n  --room-member-room-id <roomId> \\\n  --room-member-user-id <userId> \\\n  --room-member-area MENA\n"
+    },
+    {
       "id": "room_member_lv_level_upgrade",
       "name": "房间成员-升级到目标等级",
       "category": "房间成员等级（room-user-active-stage）",
