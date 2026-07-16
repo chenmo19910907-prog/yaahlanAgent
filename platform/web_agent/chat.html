@@ -54,24 +54,34 @@
       background: transparent; border: 1px solid var(--border); color: var(--muted);
       padding: 5px 12px; border-radius: 8px; cursor: pointer; font-size: 0.82rem;
     }
-    .header-actions button:hover { border-color: var(--accent); color: var(--text); }
+    .header-actions button:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
+    .header-actions button:disabled {
+      opacity: 0.38; cursor: not-allowed;
+      border-color: var(--border); color: var(--muted);
+      background: transparent;
+    }
     .header-actions .primary {
       background: var(--accent); border-color: var(--accent); color: #fff;
     }
     .header-actions .primary:hover { background: var(--accent-hover); }
     .main {
       display: grid;
-      grid-template-columns: 240px 1fr;
+      grid-template-columns: var(--sidebar-width, 240px) 1fr;
       flex: 1;
       min-height: 0;
     }
     .main.catalog-open {
-      grid-template-columns: 240px 1fr var(--catalog-width, 380px);
+      grid-template-columns: var(--sidebar-width, 240px) 1fr var(--catalog-width, 380px);
     }
+    .main.sidebar-collapsed { grid-template-columns: 1fr; }
+    .main.sidebar-collapsed.catalog-open {
+      grid-template-columns: 1fr var(--catalog-width, 380px);
+    }
+    .main.sidebar-collapsed .left-panel { display: none; }
     body.is-resizing { cursor: col-resize !important; user-select: none !important; }
     body.is-resizing * { cursor: col-resize !important; }
     @media (max-width: 960px) {
-      .main.catalog-open { grid-template-columns: 200px 1fr; }
+      .main.catalog-open { grid-template-columns: var(--sidebar-width, 200px) 1fr; }
       .catalog-panel {
         position: fixed; top: 49px; right: 0; bottom: 0;
         width: var(--catalog-width, min(94vw, 400px));
@@ -84,21 +94,38 @@
       .left-panel { display: none; }
     }
     .left-panel {
+      position: relative;
       border-right: 1px solid var(--border);
       background: var(--bg-panel);
       display: flex;
       flex-direction: column;
       min-height: 0;
     }
+    .sidebar-resizer {
+      position: absolute; right: -3px; top: 0; bottom: 0; width: 6px;
+      cursor: col-resize; z-index: 2; touch-action: none;
+    }
+    .sidebar-resizer::after {
+      content: ''; position: absolute; right: 2px; top: 0; bottom: 0; width: 2px;
+      background: transparent; transition: background 0.15s;
+    }
+    .sidebar-resizer:hover::after,
+    body.is-resizing .sidebar-resizer::after {
+      background: rgba(59,130,246,0.55);
+    }
     .panel-head {
       padding: 12px; border-bottom: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
       font-size: 0.85rem; color: var(--muted);
     }
-    .panel-head button {
+    .panel-head button:not(.panel-head-close) {
       background: var(--accent); border: none; color: #fff;
       padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.78rem;
     }
+    .panel-head-title {
+      display: flex; align-items: center; gap: 8px; min-width: 0;
+    }
+    .panel-head-title > span { color: var(--muted); font-size: 0.85rem; }
     .session-list { overflow-y: auto; flex: 1; }
     .session-item {
       padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border);
@@ -106,6 +133,19 @@
     }
     .session-item:hover { background: var(--bg-hover); }
     .session-item.active { background: var(--bg-hover); border-left: 3px solid var(--accent); }
+    .panel-head-close {
+      flex-shrink: 0;
+      width: 16px; height: 16px; padding: 0; margin: 0;
+      border: none; border-radius: 0;
+      background: transparent; color: #8b93a7;
+      cursor: pointer; display: inline-flex;
+      align-items: center; justify-content: center;
+    }
+    .panel-head-close svg {
+      width: 12px; height: 12px; stroke: currentColor;
+      stroke-width: 1.6; stroke-linecap: round;
+    }
+    .panel-head-close:hover { color: #c4cad6; }
     .session-title {
       font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
@@ -507,6 +547,7 @@
       <h1 id="app-title">Yaahlan 智能工具 Agent</h1>
     </div>
     <div class="header-actions">
+      <button type="button" id="btn-sidebar" title="历史会话">历史会话</button>
       <button type="button" id="btn-catalog" title="工具台能力目录">能力目录</button>
       <button type="button" id="btn-new">+ 新对话</button>
       <button type="button" id="btn-clear">清空</button>
@@ -517,10 +558,18 @@
   <div class="main">
     <aside class="left-panel">
       <div class="panel-head">
-        <span>历史会话</span>
+        <div class="panel-head-title">
+          <button type="button" class="panel-head-close" id="btn-sidebar-close" title="收起侧边栏" aria-label="收起侧边栏">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18"/>
+            </svg>
+          </button>
+          <span>历史会话</span>
+        </div>
         <button type="button" id="btn-new-side">+ 新建</button>
       </div>
       <div class="session-list" id="session-list"></div>
+      <div class="sidebar-resizer" id="sidebar-resizer" title="拖动调整历史会话宽度"></div>
     </aside>
 
     <section class="chat-area">
@@ -547,7 +596,6 @@
           <span class="catalog-meta" id="catalog-meta"></span>
         </div>
         <div class="head-actions">
-          <button type="button" id="catalog-env-btn" title="环境检查">环境</button>
           <button type="button" class="btn-close" id="btn-catalog-close" title="关闭">×</button>
         </div>
       </div>
@@ -582,6 +630,8 @@
     let catalogPanel = null;
     const catalogPref = localStorage.getItem('web_agent_catalog_open');
     let catalogOpen = catalogPref === null ? true : catalogPref === '1';
+    const sidebarPref = localStorage.getItem('web_agent_sidebar_open');
+    let sidebarOpen = sidebarPref === null ? true : sidebarPref === '1';
     let sessionsCache = [];
     let currentSessionReadOnly = false;
 
@@ -712,7 +762,17 @@
     }
 
     function updateInputState() {
-      document.getElementById('btn-send').disabled = currentSessionReadOnly || isCurrentSessionStreaming();
+      const busy = isCurrentSessionStreaming();
+      document.getElementById('btn-send').disabled = currentSessionReadOnly || busy;
+      const clearBtn = document.getElementById('btn-clear');
+      if (clearBtn) clearBtn.disabled = currentSessionReadOnly || busy || !currentSessionId;
+    }
+
+    function setSidebarOpen(open) {
+      sidebarOpen = open;
+      localStorage.setItem('web_agent_sidebar_open', open ? '1' : '0');
+      document.querySelector('.main').classList.toggle('sidebar-collapsed', !open);
+      document.getElementById('btn-sidebar')?.classList.toggle('active', open);
     }
 
     function finishRun(sessionId) {
@@ -830,13 +890,22 @@
       container.scrollTop = container.scrollHeight;
     }
 
+    function userMessageLabel() {
+      const item = sessionsCache.find(s => s.id === currentSessionId);
+      if (item?.source === 'dingtalk' && item.dingtalk_owner) {
+        return item.dingtalk_owner;
+      }
+      return '你';
+    }
+
     function appendMessage(role, content, scroll = true) {
       const container = document.getElementById('messages');
       if (container.querySelector('.empty-state')) container.innerHTML = '';
       const el = document.createElement('div');
       el.className = `msg ${role}`;
+      const label = role === 'user' ? userMessageLabel() : 'Agent';
       el.innerHTML = `
-        <div class="msg-label">${role === 'user' ? '你' : 'Agent'}</div>
+        <div class="msg-label">${escapeHtml(label)}</div>
         <div class="msg-body">${role === 'assistant' ? renderMarkdown(content) : escapeHtml(content).replace(/\n/g, '<br>')}</div>`;
       container.appendChild(el);
       if (scroll) container.scrollTop = container.scrollHeight;
@@ -960,8 +1029,10 @@
     document.getElementById('btn-send').addEventListener('click', () => sendMessage());
     document.getElementById('btn-new').addEventListener('click', createSession);
     document.getElementById('btn-new-side').addEventListener('click', createSession);
+    document.getElementById('btn-sidebar-close').addEventListener('click', () => setSidebarOpen(false));
+    document.getElementById('btn-sidebar').addEventListener('click', () => setSidebarOpen(!sidebarOpen));
     document.getElementById('btn-clear').addEventListener('click', async () => {
-      if (isCurrentSessionStreaming()) return;
+      if (isCurrentSessionStreaming() || currentSessionReadOnly) return;
       if (currentSessionId && confirm('清空当前会话消息？')) {
         await api(`/api/sessions/${currentSessionId}`, { method: 'DELETE' });
         await createSession();
@@ -980,6 +1051,45 @@
       document.getElementById('catalog-panel').classList.toggle('open', open);
       document.querySelector('.main').classList.toggle('catalog-open', open);
       document.getElementById('btn-catalog').classList.toggle('active', open);
+    }
+
+    function initSidebarResize() {
+      const root = document.documentElement;
+      const SIDEBAR_KEY = 'web_agent_sidebar_width';
+      const MIN = 180;
+      const MAX = 480;
+      const DEFAULT = 240;
+
+      function clamp(n, min, max) { return Math.min(max, Math.max(min, n)); }
+
+      function applySidebarWidth(w) {
+        const width = clamp(w, MIN, MAX);
+        root.style.setProperty('--sidebar-width', width + 'px');
+        localStorage.setItem(SIDEBAR_KEY, String(width));
+        return width;
+      }
+
+      applySidebarWidth(Number(localStorage.getItem(SIDEBAR_KEY)) || DEFAULT);
+
+      const handle = document.getElementById('sidebar-resizer');
+      if (!handle) return;
+      handle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const startX = e.clientX;
+        const startWidth = parseInt(getComputedStyle(root).getPropertyValue('--sidebar-width'), 10) || DEFAULT;
+        document.body.classList.add('is-resizing');
+
+        function onMove(ev) {
+          applySidebarWidth(startWidth + (ev.clientX - startX));
+        }
+        function onUp() {
+          document.body.classList.remove('is-resizing');
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
     }
 
     function initCatalogResize() {
@@ -1057,7 +1167,6 @@
         searchEl: document.getElementById('catalog-search'),
         navEl: document.getElementById('catalog-nav'),
         mainEl: document.getElementById('catalog-main'),
-        envCheckBtn: document.getElementById('catalog-env-btn'),
         onRunPrompt: (text) => {
           if (!text) return;
           const input = document.getElementById('input');
@@ -1091,7 +1200,9 @@
     (async () => {
       try {
         await loadMeta();
+        initSidebarResize();
         initCatalogResize();
+        setSidebarOpen(sidebarOpen);
         await initCatalogPanel();
         setCatalogOpen(catalogOpen);
         await loadSessions();
