@@ -79,11 +79,26 @@ function yamlQuote(str) {
   return str;
 }
 
-/** setup.steps 支持 string | { act } | { waitFor } | { sleep: ms } */
+/** setup.steps 支持 string | { act } | { waitFor } | { sleep: ms } | { adb: "shell cmd" } | { tap: [x%, y%] } */
 function appendSetupStep(flow, step) {
   if (typeof step === 'string') {
     flow.push({ aiAct: expandTemplate(step) });
     flow.push({ sleep: DEFAULT_ACT_SLEEP_MS });
+    return;
+  }
+  if (step?.adb) {
+    flow.push({ runAdbShell: expandTemplate(String(step.adb)) });
+    flow.push({ sleep: step.afterSleep ?? DEFAULT_ACT_SLEEP_MS });
+    return;
+  }
+  if (step?.tap) {
+    const [xPct, yPct] = step.tap;
+    const w = Number(process.env.DEVICE_WIDTH ?? 1080);
+    const h = Number(process.env.DEVICE_HEIGHT ?? 2424);
+    const x = Math.round(w * xPct);
+    const y = Math.round(h * yPct);
+    flow.push({ runAdbShell: `input tap ${x} ${y}` });
+    flow.push({ sleep: step.afterSleep ?? 1500 });
     return;
   }
   if (step?.act) {

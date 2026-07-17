@@ -61,6 +61,52 @@ def _normalize_gift(raw: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+def _parse_gift_extra(raw: Any) -> dict[str, Any]:
+    if isinstance(raw, str):
+        try:
+            parsed = json.loads(raw)
+            return parsed if isinstance(parsed, dict) else {}
+        except json.JSONDecodeError:
+            return {}
+    return raw if isinstance(raw, dict) else {}
+
+
+def _is_customize_tab_name(name: str) -> bool:
+    low = name.lower()
+    return "custom" in low or "定制" in name
+
+
+def parse_customize_gift_subjects(tabs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """从 getGiftTabListV3 Customize Tab 解析定制礼物：name + extra.userId。"""
+    rows: list[dict[str, Any]] = []
+    for tab in tabs:
+        tab_name = str(tab.get("tabName") or tab.get("tab_name") or "")
+        if not _is_customize_tab_name(tab_name):
+            continue
+        for index, gift in enumerate(tab.get("gifts") or []):
+            if not isinstance(gift, dict):
+                continue
+            extra = _parse_gift_extra(gift.get("extra"))
+            uid = str(extra.get("userId") or extra.get("ownerUid") or "").strip()
+            gift_name = str(gift.get("name") or "").strip()
+            if not uid:
+                continue
+            rows.append(
+                {
+                    "ownerUid": uid,
+                    "ownerNickname": str(
+                        extra.get("ownerNickname") or extra.get("nickname") or ""
+                    ).strip(),
+                    "giftName": gift_name,
+                    "giftId": gift.get("id") or gift.get("bid"),
+                    "tabName": tab_name,
+                    "index": index,
+                    "source": "getGiftTabListV3/customize",
+                }
+            )
+    return rows
+
+
 def parse_gift_tab_list_v3(data: dict[str, Any] | None) -> list[dict[str, Any]]:
     if not isinstance(data, dict):
         return []

@@ -14,10 +14,12 @@ export const config = {
   wdaPort: parseInt(process.env.WDA_PORT ?? '8100', 10),
   iosAppId: process.env.IOS_APP_ID ?? 'live.soulchill.ios',
 
-  // Android
+  // Android（Yaahlan 正式包 com.immomo.biz.yaahlan，见 adb/adb/apps.py）
   androidDeviceId: process.env.ANDROID_DEVICE_ID ?? '',
-  androidAppId: process.env.ANDROID_APP_ID ?? 'com.live.soulchill',
-  androidMainActivity: process.env.ANDROID_MAIN_ACTIVITY ?? '.module.login.LoginActivity',
+  androidAppId: process.env.ANDROID_APP_ID ?? 'com.immomo.biz.yaahlan',
+  androidLaunchMode: process.env.ANDROID_LAUNCH_MODE ?? 'launcher',
+  androidMainActivity: process.env.ANDROID_MAIN_ACTIVITY ?? '.personalityIcon4',
+  androidForceStopYaha: process.env.ANDROID_FORCE_STOP_YAHA ?? 'com.immomo.yaha',
 
   // 测试账号
   testPhone: requireEnv('TEST_PHONE', '13800138000'),

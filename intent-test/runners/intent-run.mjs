@@ -10,11 +10,13 @@ import { fileURLToPath } from 'url';
 import { parseIntentFile, GENERATED, MIDSCENE_ROOT } from './compile-intent.mjs';
 import { applyBaseProfileEnv } from './load-base-profile.mjs';
 import { ensureIntentData } from './ensure-intent-data.mjs';
+import { generateReport } from './generate-report.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const COMPILE = resolve(ROOT, 'runners/compile-intent.mjs');
 const MIDSCENE_RUN = resolve(MIDSCENE_ROOT, 'scripts/midscene-run.mjs');
 const TUNNEL_VERIFY = resolve(ROOT, 'runners/tunnel-verify.py');
+const REPORT_DIR = resolve(ROOT, '../midscene/midscene_run/report');
 
 function loadCatalog() {
   const path = resolve(ROOT, 'intents/catalog.json');
@@ -156,6 +158,7 @@ function main() {
 
   console.log(`[intent-run] 共 ${runs.length} 条（逐条 UI${skipTunnel ? '' : ' + Tunnel'}）`);
   let failed = 0;
+  const failedIds = new Set();
 
   for (const run of runs) {
     console.log(`\n[intent-run] ▶ ${run.id}`);
@@ -163,6 +166,7 @@ function main() {
     const ui = runMidscene(run.yaml);
     if (ui.status !== 0) {
       failed += 1;
+      failedIds.add(run.id);
       console.error(`[intent-run] ✗ ${run.id} UI 失败`);
       if (!continueOnError) break;
       continue;
@@ -180,11 +184,35 @@ function main() {
     const tv = runTunnel(run.tunnel, startTime);
     if (tv.status !== 0) {
       failed += 1;
+      failedIds.add(run.id);
       console.error(`[intent-run] ✗ ${run.id} Tunnel 失败`);
       if (!continueOnError) break;
       continue;
     }
     console.log(`[intent-run] ✓ ${run.id} Tunnel 通过`);
+  }
+
+  const executedIds = new Set([...failedIds]);
+  for (const run of runs) {
+    if (!failedIds.has(run.id)) {
+      const reportExists = existsSync(
+        resolve(REPORT_DIR, run.id.toLowerCase(), 'index.html'),
+      );
+      if (reportExists) executedIds.add(run.id);
+    }
+  }
+
+  const results = runs.map((run) => ({
+    id: run.id,
+    passed: !failedIds.has(run.id) && executedIds.has(run.id),
+    skipped: !executedIds.has(run.id),
+  }));
+
+  try {
+    const reportPath = generateReport(sources, results);
+    console.log(`[intent-run] 📊 聚合报告: ${reportPath}`);
+  } catch (e) {
+    console.error(`[intent-run] 报告生成失败: ${e.message}`);
   }
 
   if (failed) {

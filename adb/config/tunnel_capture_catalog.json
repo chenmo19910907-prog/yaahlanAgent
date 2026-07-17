@@ -83,6 +83,24 @@
       "notes": ["request.cycle=1 本周，2 上周"]
     },
     {
+      "id": "gift_custom_search",
+      "name": "定制礼物搜索",
+      "category": "礼物",
+      "keyword": "searchCustomGift",
+      "urlMarker": "giftPanel/searchCustomGift",
+      "trigger": "定制礼物 tab 输入 uid/昵称并搜索",
+      "successPath": "response.ec",
+      "successValue": 200,
+      "handler": "tunnel_wait",
+      "expectEc": 200,
+      "command": "python3 intent-test/runners/tunnel-verify.py --spec <specPath> --start-time <startTime>",
+      "notes": [
+        "keyword 以实际上线接口为准，可设 TUNNEL_KEYWORD_CUSTOM_GIFT_SEARCH",
+        "暂无时可用 getGiftTabListV3 仅验收打开面板",
+        "request/response 含 uid 或昵称见 intent tunnel.requestContains"
+      ]
+    },
+    {
       "id": "family_pk_page",
       "name": "家族PK对战列表",
       "category": "家族PK",

@@ -28,8 +28,7 @@
 - **Report**（`Report/`）：从版本用例 xlsx 生成内网/外网测试总结 HTML；详见 [Report/README.md](Report/README.md)、[Report/使用方法.md](Report/使用方法.md)
 - **adb**（`adb/`）：真机 UI 自动化（截屏 → 读图算坐标 → 点击，仅保留最新 10 张截图）；支持与 **Tunnel** 联动的 `run`（操作 + 截图 + 抓包校验）；**录制脚本库**按发版回归一级模块存放 **片段**，命令 `macro`；**P0 自动化用例**（`autotest`：PRD/手工用例 → 可执行 JSON → 真机跑测 → HTML 报告）见 [adb/自动化用例/README.md](adb/自动化用例/README.md)；详见 [adb/README.md](adb/README.md)、[adb/使用方法.md](adb/使用方法.md)、[adb/录制脚本/README.md](adb/录制脚本/README.md)
 - **midscene**（`midscene/`）：基于 [Midscene.js](https://midscenejs.com/) 的 **AI 视觉驱动**双端自动化（iOS WDA + Android ADB）；YAML / TypeScript 用例，覆盖登录、充值、游戏中心（greedy / slots / others）等；详见 [midscene/README.md](midscene/README.md)
-- **intent-test**（`intent-test/`）：自然语言意图 → Midscene YAML，与步骤型用例互补；详见 [intent-test/README.md](intent-test/README.md)
-- **hermes**（`hermes/`）：[Hermes Agent](https://hermes-agent.nousresearch.com/) Skills，把 KB + 用例生成 + 意图测试接到 Hermes CLI；详见 [hermes/README.md](hermes/README.md)
+- **intent-test**（`intent-test/`）：基于 Midscene 的 **意图驱动** UI 自动化层；用 `intent.action` + `expected` 表达用户目标，编译后执行；可从 `temporary_testcase/*.md` 转化；详见 [intent-test/README.md](intent-test/README.md)
 
 ## 项目结构
 
@@ -139,11 +138,11 @@ auto-generate-testcase/
 │       │   └── run-eid2026.ts         # Eid 2026 WebView CDP 用例
 │       └── temporary_testcase/
 │           └── eid2026-cases.json
-├── intent-test/                       # 自然语言意图 → Midscene（见 intent-test/README.md）
-├── hermes/                            # Hermes Agent Skills（KB / 用例生成 / 意图）
+├── intent-test/                       # 意图驱动 UI 自动化（编译 → midscene 执行）
 │   ├── README.md
-│   ├── skills/yaahlan-gen-testcase|intent/
-│   └── scripts/setup.sh / smoke.sh
+│   ├── intents/                       # 意图 YAML（action + expected）
+│   ├── runners/                       # compile / intent-run / md-to-intent
+│   └── templates/
 ├── rules/                             # 生成规则与辅助流程说明
 │   ├── testcase_generation_rules.md   # 通用：榜单 / 抽奖 / 兑换 / 礼包等
 │   ├── version_testcase_generation_rules.md  # 版本用例生成规则（须先读 documents/ 对应模块）
