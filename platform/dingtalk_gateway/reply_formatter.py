@@ -225,6 +225,8 @@ def format_group_reply(
     if not text:
         return "⚠️ 任务已完成，但没有返回可展示的内容。"
 
+    normalized_prompt = (prompt or "").strip()
+
     if text.startswith("**Yaahlan 智能工具"):
         return _truncate(text)
 
@@ -239,8 +241,6 @@ def format_group_reply(
         ok = text.startswith("✅")
         detail = text.split("，", 1)[-1].strip() if "，" in text else text[2:].strip()
         return _truncate(naturalize_moa_check(ok, detail))
-
-    normalized_prompt = (prompt or "").strip()
 
     export_msg = _format_export(text, normalized_prompt)
     if export_msg:

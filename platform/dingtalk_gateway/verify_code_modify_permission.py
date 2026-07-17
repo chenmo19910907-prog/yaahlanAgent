@@ -6,6 +6,7 @@ from __future__ import annotations
 import sys
 
 from code_modify_permission import (
+    allow_moa_registry_in_readonly,
     is_code_modify_allowed,
     load_code_modify_allowlist,
     looks_like_code_modify_request,
@@ -49,6 +50,11 @@ def test_moa_registry_open_to_all() -> None:
     assert not looks_like_code_modify_request("查询收礼日榜的MOA，limit最多可以填入500，入库")
 
 
+def test_allow_moa_registry_in_readonly() -> None:
+    assert allow_moa_registry_in_readonly(code_modify_allowed=False)
+    assert not allow_moa_registry_in_readonly(code_modify_allowed=True)
+
+
 def main() -> int:
     test_allowlist_owner()
     print("[OK] test_allowlist_owner")
@@ -60,6 +66,8 @@ def main() -> int:
     print("[OK] test_not_code_modify_ops")
     test_moa_registry_open_to_all()
     print("[OK] test_moa_registry_open_to_all")
+    test_allow_moa_registry_in_readonly()
+    print("[OK] test_allow_moa_registry_in_readonly")
     print("[PASS] code_modify_permission")
     return 0
 

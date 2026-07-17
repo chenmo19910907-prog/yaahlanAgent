@@ -184,6 +184,17 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="双向互关成为好友（连续调用两次 addUserRelation；须配合 --follow-uid 与 --follow-remote-uid）",
     )
+    parser.add_argument("--feed-comment-user-id", help="帖子评论：评论者 userId（publishComment）")
+    parser.add_argument("--feed-comment-feed-id", help="帖子评论：帖子 feedId")
+    parser.add_argument("--feed-comment-content", help="帖子评论：评论内容")
+    parser.add_argument(
+        "--feed-comment-source",
+        default="discover",
+        help="帖子评论：source（默认 discover）",
+    )
+    parser.add_argument("--feed-comment-area", default="MENA", help="帖子评论：area（默认 MENA）")
+    parser.add_argument("--feed-comment-lang", default="en", help="帖子评论：lang（默认 en）")
+    parser.add_argument("--feed-comment-os", default="android", help="帖子评论：os/osType（默认 android）")
     parser.add_argument(
         "--family-detail",
         action="store_true",

@@ -67,6 +67,7 @@ from .params import (
     set_vip_try_dispatch_params,
     set_user_prop_query_params,
     set_user_follow_params,
+    set_feed_comment_params,
 )
 from .time_utils import resolve_expire_ms, resolve_family_fund_week_key
 from .user_area import describe_user_area, normalize_user_area
@@ -893,6 +894,35 @@ def _op_user_follow(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     set_user_follow_params(payload, uid, remote_uid)
 
 
+def _feed_comment_mode(args: argparse.Namespace) -> bool:
+    return (
+        args.feed_comment_user_id is not None
+        or args.feed_comment_feed_id is not None
+        or args.feed_comment_content is not None
+    )
+
+
+def _op_feed_comment(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(args.feed_comment_user_id or "").strip()
+    feed_id = str(args.feed_comment_feed_id or "").strip()
+    content = str(args.feed_comment_content or "").strip()
+    if not user_id or not feed_id or not content:
+        raise ValueError(
+            "帖子评论须同时提供 --feed-comment-user-id、--feed-comment-feed-id、--feed-comment-content"
+        )
+    print(f"帖子评论: userId={user_id} feedId={feed_id} content={content[:40]}", file=sys.stderr)
+    set_feed_comment_params(
+        payload,
+        user_id,
+        feed_id,
+        content,
+        source=str(args.feed_comment_source or "discover"),
+        area=str(args.feed_comment_area or "MENA"),
+        lang=str(args.feed_comment_lang or "en"),
+        os_name=str(args.feed_comment_os or "android"),
+    )
+
+
 def _op_family_member_fund_contrib(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     payload["url"] = "/service/internal/user/family-moa"
     payload["method"] = "batchIncrFundContribution"
@@ -1110,6 +1140,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: _room_member_add_mode(a), _op_room_member_add),
     (lambda a: a.family_leave_user_id is not None, _op_family_leave),
     (lambda a: a.follow_uid is not None or a.follow_remote_uid is not None, _op_user_follow),
+    (lambda a: _feed_comment_mode(a), _op_feed_comment),
     (lambda a: _family_add_mode(a), _op_family_exp),
     (lambda a: a.noble_user_id is not None, _op_noble),
     (lambda a: a.vip_user_id is not None, _op_vip),

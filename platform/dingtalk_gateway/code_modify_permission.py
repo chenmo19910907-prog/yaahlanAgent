@@ -104,6 +104,13 @@ def is_moa_registry_open_to_all() -> bool:
     return True
 
 
+def allow_moa_registry_in_readonly(*, code_modify_allowed: bool) -> bool:
+    """只读账号是否允许 MOA 能力入库（与网关代码修改权限解耦）。"""
+    if code_modify_allowed:
+        return False
+    return is_moa_registry_open_to_all()
+
+
 def looks_like_code_modify_request(prompt: str) -> bool:
     text = (prompt or "").strip()
     if not text:

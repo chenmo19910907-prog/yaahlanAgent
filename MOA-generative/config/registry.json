@@ -173,6 +173,18 @@
         "生成式MOA 添加房间成员"
       ],
       "command": "python3 workflow/workflow_execute.py run room-member-quick-add-form \\\n  --applicant-user-id <applicantUserId> \\\n  --owner-user-id <ownerUserId> \\\n  --room-id <roomId>"
+    },
+    {
+      "id": "moa_generative_feed_publish_comment",
+      "name": "生成式MOA-帖子评论",
+      "category": "生成式MOA（已验证示例）",
+      "description": "HTTP /yaahlan/feed-comment/publishComment → /service/feed/external/feed-comment-stage + publishComment。body 需 userId、feedId、content、source。",
+      "prompts": [
+        "帖子评论 MOA",
+        "用户 <userId> 给帖子 <feedId> 评论 <content>",
+        "生成式MOA publishComment"
+      ],
+      "command": "python3 MOA-generative/scripts/form_feed_publish_comment.py \\\n  --user-id <userId> \\\n  --feed-id <feedId> \\\n  --content <content>"
     }
   ]
 }

@@ -23,6 +23,7 @@ from user_agent_pool import get_user_agent_pool
 
 from env_loader import GATEWAY_DIR, load_env_local, require_env
 from gateway_prompt import batch_progress_instruction, build_gateway_prompt
+from code_modify_permission import is_moa_registry_open_to_all
 from mcp_config import build_stdio_mcp_servers, inject_scripts_path
 from task_session import TaskInterrupted, TaskSession, safe_cancel_run
 
@@ -67,11 +68,11 @@ def _build_prompt_text(
     if use_gateway_rules:
         extras: list[str] = []
         if not allow_code_modify:
-            if allow_moa_registry:
+            if allow_moa_registry or is_moa_registry_open_to_all():
                 extras.append(
-                    "【MOA入库模式】当前用户无网关代码修改权限，但可登记 MOA 能力："
+                    "【只读 · 可 MOA 入库】当前用户无网关代码修改权限，但可登记 MOA 能力："
                     "仅允许改动 MOA/templates/、运行 sync_registry.py、"
-                    "更新 MOA/config/registry.json 与 MOA/使用方法.md。"
+                    "更新 MOA/config/registry.json 与 MOA/使用方法.md；禁止改 gateway/.cursor 等。"
                 )
             else:
                 extras.append(

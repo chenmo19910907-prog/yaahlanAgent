@@ -41,7 +41,10 @@ from code_modify_permission import (
     is_code_modify_allowed,
     looks_like_code_modify_request,
 )
-from moa_registry_guard import looks_like_moa_registry_intent
+from code_modify_permission import (
+    allow_moa_registry_in_readonly,
+    is_code_modify_allowed,
+)
 from cursor_runner import (
     DEFAULT_TIMEOUT_S,
     repo_cwd,
@@ -570,15 +573,11 @@ def process_inbound_task(
                 sender_staff_id=incoming.sender_staff_id,
                 sender_id=incoming.sender_id,
             )
-            moa_registry_session = (
-                not code_allowed and looks_like_moa_registry_intent(prompt)
+            allow_moa_registry = allow_moa_registry_in_readonly(
+                code_modify_allowed=code_allowed,
             )
             code_modify_session = code_allowed
-            if (
-                looks_like_code_modify_request(prompt)
-                and not code_allowed
-                and not moa_registry_session
-            ):
+            if looks_like_code_modify_request(prompt) and not code_allowed:
                 logger.warning(
                     "代码修改权限拒绝 conv=%s staff=%s sender=%s prompt=%s",
                     user_key,
@@ -633,7 +632,7 @@ def process_inbound_task(
                     user_key=user_key,
                     sender_name=sender_name,
                     allow_code_modify=code_allowed,
-                    allow_moa_registry=moa_registry_session,
+                    allow_moa_registry=allow_moa_registry,
                 )
             else:
                 raw_result = run_agent_prompt(
@@ -644,13 +643,13 @@ def process_inbound_task(
                     user_key=user_key,
                     sender_name=sender_name,
                     allow_code_modify=code_allowed,
-                    allow_moa_registry=moa_registry_session,
+                    allow_moa_registry=allow_moa_registry,
                 )
             session.check_cancelled()
             raw_result = guard_readonly_agent_reply(
                 raw_result,
                 allow_code_modify=code_allowed,
-                allow_moa_registry=moa_registry_session,
+                allow_moa_registry=allow_moa_registry,
             )
             raw_result = guard_env_check_agent_reply(raw_result, prompt=prompt)
             session.check_cancelled()

@@ -8,8 +8,9 @@ from route_patterns import MOA_CHECK_RE
 
 _MOA_REGISTRY_INTENT_RE = re.compile(
     r"(?:"
-    r"(?:入库|登记|注册|同步).{0,24}(?:MOA|moa|模板|registry|能力清单)|"
-    r"(?:MOA|moa).{0,32}(?:入库|登记|注册|sync_registry)|"
+    r"(?:入库|登记|注册|同步|录入).{0,32}(?:MOA|moa|模板|registry|能力清单|接口)|"
+    r"(?:MOA|moa).{0,32}(?:入库|登记|注册|录入|sync_registry|模板)|"
+    r"MOA-generative|MOA/templates|"
     r"sync_registry|generate_index\.py"
     r")",
     re.I,

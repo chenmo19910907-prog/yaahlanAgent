@@ -1015,3 +1015,40 @@ def set_user_follow_params(
         json_param(body),
         _param("参数2", "2", "", ptype="string", txt=""),
     ]
+
+
+def set_feed_comment_params(
+    payload: dict[str, Any],
+    user_id: str,
+    feed_id: str,
+    content: str,
+    *,
+    source: str = "discover",
+    area: str = "MENA",
+    lang: str = "en",
+    os_name: str = "android",
+) -> None:
+    uid = str(user_id).strip()
+    fid = str(feed_id).strip()
+    text = str(content).strip()
+    if not uid:
+        raise ValueError("userId 不能为空")
+    if not fid:
+        raise ValueError("feedId 不能为空")
+    if not text:
+        raise ValueError("content 不能为空")
+    body = {
+        "userId": uid,
+        "uid": uid,
+        "feedId": fid,
+        "content": text,
+        "source": str(source or "discover").strip() or "discover",
+        "appId": "2005",
+        "area": str(area or "MENA").strip() or "MENA",
+        "lang": str(lang or "en").strip() or "en",
+        "os": str(os_name or "android").strip() or "android",
+        "osType": str(os_name or "android").strip() or "android",
+    }
+    payload["url"] = "/service/feed/external/feed-comment-stage"
+    payload["method"] = "publishComment"
+    payload["params"] = [json_param(body)]

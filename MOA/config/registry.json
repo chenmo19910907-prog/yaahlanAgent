@@ -1077,6 +1077,38 @@
         "year3 exchangeItem <userId> <giftId>"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/3周年-兑换道具.json\n"
+    },
+    {
+      "id": "feed_publish_comment",
+      "name": "动态-帖子评论",
+      "category": "动态（feed-comment-stage）",
+      "description": "测试环境给动态帖子发表评论（/service/feed/external/feed-comment-stage publishComment）。body 需 userId、feedId、content、source（默认 discover）。100 账号批量评论已验证 ec=200。",
+      "prompts": [
+        "用户 <userId> 给帖子 <feedId> 评论 <content>",
+        "动态评论 MOA publishComment",
+        "帖子评论 <feedId> <content>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/动态-帖子评论.json \\\n  --feed-comment-user-id <userId> \\\n  --feed-comment-feed-id <feedId> \\\n  --feed-comment-content <content>\n"
+    },
+    {
+      "id": "房间成员_同意申请",
+      "name": "房间成员-同意申请",
+      "category": "房间（room-member-stage）",
+      "description": "agree（/service/room/external/room-member-stage）",
+      "prompts": [
+        "执行 房间成员-同意申请"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间成员-同意申请.json\n"
+    },
+    {
+      "id": "房间成员_申请加入",
+      "name": "房间成员-申请加入",
+      "category": "房间（room-member-stage）",
+      "description": "apply（/service/room/external/room-member-stage）",
+      "prompts": [
+        "执行 房间成员-申请加入"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间成员-申请加入.json\n"
     }
   ]
 }

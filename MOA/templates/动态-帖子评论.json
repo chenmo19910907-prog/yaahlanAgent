@@ -1,0 +1,51 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/feed/external/feed-comment-stage",
+  "method": "publishComment",
+  "header": "{\"userId\":\"100011901\",\"uid\":\"100011901\",\"feedId\":\"7070612_100461128\",\"content\":\"123\",\"source\":\"discover\",\"appId\":\"2005\",\"area\":\"MENA\",\"lang\":\"en\",\"os\":\"android\",\"osType\":\"android\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100011901\",\"uid\":\"100011901\",\"feedId\":\"7070612_100461128\",\"content\":\"123\",\"source\":\"discover\",\"appId\":\"2005\",\"area\":\"MENA\",\"lang\":\"en\",\"os\":\"android\",\"osType\":\"android\"}",
+      "type": "json",
+      "value": {
+        "userId": "100011901",
+        "uid": "100011901",
+        "feedId": "7070612_100461128",
+        "content": "123",
+        "source": "discover",
+        "appId": "2005",
+        "area": "MENA",
+        "lang": "en",
+        "os": "android",
+        "osType": "android"
+      }
+    }
+  ],
+  "_registry": {
+    "id": "feed_publish_comment",
+    "name": "动态-帖子评论",
+    "category": "动态（feed-comment-stage）",
+    "description": "测试环境给动态帖子发表评论（/service/feed/external/feed-comment-stage publishComment）。body 需 userId、feedId、content、source（默认 discover）。100 账号批量评论已验证 ec=200。",
+    "prompts": [
+      "用户 <userId> 给帖子 <feedId> 评论 <content>",
+      "动态评论 MOA publishComment",
+      "帖子评论 <feedId> <content>"
+    ]
+  }
+}
