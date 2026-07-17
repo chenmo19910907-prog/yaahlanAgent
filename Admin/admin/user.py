@@ -194,3 +194,63 @@ def parse_history_user_list_by_device_summary(data: Any) -> dict[str, Any]:
         "returnedCount": len(items),
         "items": items,
     }
+
+
+def _text_preview(texts: Any) -> str | None:
+    if not isinstance(texts, list) or not texts:
+        return None
+    parts: list[str] = []
+    for item in texts:
+        if isinstance(item, str) and item.strip():
+            parts.append(item.strip())
+        elif isinstance(item, dict):
+            text = _pick(item, "text", "content")
+            if text is not None:
+                parts.append(str(text).strip())
+    if not parts:
+        return None
+    preview = " ".join(parts)
+    return preview[:200] + ("…" if len(preview) > 200 else "")
+
+
+def _normalize_user_feed_row(item: dict[str, Any]) -> dict[str, Any]:
+    feed = item.get("feed") if isinstance(item.get("feed"), dict) else item
+    source = feed.get("source") if isinstance(feed.get("source"), dict) else {}
+    content = source.get("contentData") if isinstance(source.get("contentData"), dict) else {}
+
+    pics = content.get("pics")
+    videos = content.get("videos")
+    audios = content.get("audios")
+
+    return {
+        "feedId": _pick(source, "feedId") or _pick(content, "feedId"),
+        "theme": feed.get("theme"),
+        "status": content.get("status"),
+        "createTime": _ms_to_iso(content.get("createTime")),
+        "likeCount": content.get("likeCount"),
+        "commentCount": content.get("commentCount"),
+        "rewardCount": content.get("rewardCount"),
+        "rewardDiamond": content.get("rewardDiamond"),
+        "textPreview": _text_preview(content.get("texts")),
+        "picCount": len(pics) if isinstance(pics, list) else 0,
+        "videoCount": len(videos) if isinstance(videos, list) else 0,
+        "audioCount": len(audios) if isinstance(audios, list) else 0,
+    }
+
+
+def parse_user_feed_list_summary(data: Any) -> dict[str, Any]:
+    if not isinstance(data, dict):
+        raise RuntimeError("无法解析用户动态 data（不是 object）")
+    raw_list = data.get("list")
+    if not isinstance(raw_list, list):
+        raise RuntimeError("无法解析用户动态 list（不是 array）")
+
+    items = [_normalize_user_feed_row(row) for row in raw_list if isinstance(row, dict)]
+    return {
+        "index": data.get("index"),
+        "next": data.get("next"),
+        "hasMore": data.get("hasMore"),
+        "untilTime": _ms_to_iso(data.get("untilTime")),
+        "returnedCount": len(items),
+        "items": items,
+    }

@@ -5,6 +5,11 @@
   "query_user_detail": {
     "path": "/admin/user/queryUserDetail"
   },
+  "query_user_feed_list": {
+    "path": "/admin/user/queryUserFeedList",
+    "defaultIndex": 0,
+    "defaultCount": 20
+  },
   "query_user_history_device_list": {
     "path": "/yaahlan/backend/deviceHistory/queryUserHistoryDeviceList",
     "defaultPage": 1,

@@ -8,6 +8,7 @@ import sys
 import time
 from collections.abc import Callable, Sequence
 from pathlib import Path
+from typing import Any
 
 from cursor_sdk import Agent, AgentOptions, CursorAgentError, LocalAgentOptions, SDKImage, UserMessage
 from cursor_sdk.errors import NetworkError
@@ -25,6 +26,7 @@ from env_loader import GATEWAY_DIR, load_env_local, require_env
 from gateway_prompt import batch_progress_instruction, build_gateway_prompt
 from code_modify_permission import is_moa_registry_open_to_all
 from mcp_config import build_stdio_mcp_servers, inject_scripts_path
+from batch_progress import waive_agent_timeout_deadline
 from task_session import TaskInterrupted, TaskSession, safe_cancel_run
 
 REPO_ROOT = GATEWAY_DIR.parent.parent
@@ -95,11 +97,20 @@ def _build_prompt_text(
     return text
 
 
+def _next_agent_deadline(
+    deadline: float | None,
+    *,
+    user_key: str | None,
+) -> float | None:
+    return waive_agent_timeout_deadline(deadline, user_key)
+
+
 def _consume_run_stream(
     run,
     *,
     timeout_s: float,
     session: TaskSession | None,
+    user_key: str | None = None,
     on_render: Callable[[str], None] | None,
     show_thinking: bool = True,
     card_compact: bool = False,
@@ -140,6 +151,7 @@ def _consume_run_stream(
     for event in run.events():
         if session:
             session.check_cancelled()
+        deadline = _next_agent_deadline(deadline, user_key=user_key)
         if deadline is not None and time.monotonic() > deadline:
             safe_cancel_run(run)
             raise RuntimeError(
@@ -201,20 +213,56 @@ def _finalize_run_result(result, *, session: TaskSession | None) -> str:
     return output
 
 
-def _wait_run(run, *, timeout_s: float, session: TaskSession | None):
+def _run_cancellable(
+    func: Callable[..., Any],
+    /,
+    *args: Any,
+    session: TaskSession | None = None,
+    **kwargs: Any,
+) -> Any:
+    """在子线程执行阻塞调用，主线程轮询 session 中断（如 Agent.create / pool.acquire）。"""
+    if session is None:
+        return func(*args, **kwargs)
+
+    pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+    future = pool.submit(func, *args, **kwargs)
+    try:
+        while True:
+            session.check_cancelled()
+            try:
+                return future.result(timeout=0.5)
+            except concurrent.futures.TimeoutError:
+                continue
+    except TaskInterrupted:
+        raise
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
+
+
+def _wait_run(
+    run,
+    *,
+    timeout_s: float,
+    session: TaskSession | None,
+    user_key: str | None = None,
+):
     """带超时与中断检查的 run.wait()；中断时不阻塞等待 run 自然结束。"""
     if timeout_s <= 0:
         return run.wait()
 
-    deadline = time.monotonic() + timeout_s
+    deadline: float | None = time.monotonic() + timeout_s
     pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
     future = pool.submit(run.wait)
     try:
         while True:
             if session:
                 session.check_cancelled()
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
+            deadline = _next_agent_deadline(deadline, user_key=user_key)
+            if deadline is None:
+                remaining = 0.5
+            else:
+                remaining = deadline - time.monotonic()
+            if deadline is not None and remaining <= 0:
                 try:
                     run.cancel()
                 except Exception:  # noqa: BLE001
@@ -292,8 +340,10 @@ def run_agent_prompt(
         active_run = None
         try:
             if use_pool and pool is not None:
-                agent, is_new_session = pool.acquire(
+                agent, is_new_session = _run_cancellable(
+                    pool.acquire,
                     user_key,
+                    session=session,
                     api_key=api_key,
                     workdir=workdir,
                     model=model,
@@ -304,13 +354,15 @@ def run_agent_prompt(
                 if session:
                     session.register_agent(agent)
             else:
-                agent = Agent.create(
+                agent = _run_cancellable(
+                    Agent.create,
                     AgentOptions(
                         api_key=api_key,
                         model=model,
                         local=local_opts,
                         mcp_servers=mcp_servers or None,
                     ),
+                    session=session,
                 )
                 is_new_session = True
                 keep_agent_open = False
@@ -351,14 +403,25 @@ def run_agent_prompt(
                     run,
                     timeout_s=float(timeout_s),
                     session=session,
+                    user_key=user_key,
                     on_render=on_render,
                     show_thinking=show_thinking,
                     card_compact=card_compact,
                     render_min_interval_s=render_min_interval_s,
                 )
-                result = run.wait()
+                result = _wait_run(
+                    run,
+                    timeout_s=float(timeout_s),
+                    session=session,
+                    user_key=user_key,
+                )
             else:
-                result = _wait_run(run, timeout_s=float(timeout_s), session=session)
+                result = _wait_run(
+                    run,
+                    timeout_s=float(timeout_s),
+                    session=session,
+                    user_key=user_key,
+                )
             last_error = None
             break
         except TaskInterrupted:
@@ -443,8 +506,10 @@ def run_agent_prompt_streaming(
 
 def truncate_for_dingtalk(text: str, max_chars: int = DINGTALK_MAX_REPLY_CHARS) -> str:
     from export_delivery import _truncate_inline
+    from markdown_display import enhance_markdown_list_indent
 
-    return _truncate_inline(text, max_chars)
+    body = enhance_markdown_list_indent(text or "")
+    return _truncate_inline(body, max_chars)
 
 
 def main() -> int:

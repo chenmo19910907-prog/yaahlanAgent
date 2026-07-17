@@ -49,6 +49,7 @@ from .gift import mdp_gift_success as mdp_user_admin_success
 from .user import (
     parse_history_user_list_by_device_summary,
     parse_user_detail_summary,
+    parse_user_feed_list_summary,
     parse_user_history_device_summary,
 )
 from .user_list import (
@@ -79,6 +80,13 @@ def build_parser() -> argparse.ArgumentParser:
     src.add_argument("--payload", help="完整请求 JSON 字符串")
 
     parser.add_argument("--query-user-id", help="查询用户详情 userId（queryUserDetail）")
+    parser.add_argument(
+        "--query-user-feed-list",
+        action="store_true",
+        help="查询用户动态列表（queryUserFeedList；需 --query-user-id）",
+    )
+    parser.add_argument("--feed-list-index", type=int, help="用户动态分页 index（默认 0）")
+    parser.add_argument("--feed-list-count", type=int, help="用户动态每页条数 count（默认 20）")
     parser.add_argument(
         "--query-user-history-devices",
         action="store_true",
@@ -985,6 +993,30 @@ def _resolve_query_user_history_device_request(args: argparse.Namespace) -> tupl
     return url, body
 
 
+def _resolve_query_user_feed_list_request(args: argparse.Namespace) -> tuple[str, dict[str, object]]:
+    user_id = str(args.query_user_id or "").strip()
+    if not user_id:
+        raise ValueError("必须提供 --query-user-id")
+
+    cfg = defaults("query_user_feed_list")
+    index = args.feed_list_index
+    if index is None:
+        index = int(cfg.get("defaultIndex", 0))
+    count = args.feed_list_count
+    if count is None:
+        count = int(cfg.get("defaultCount", 20))
+    if index < 0:
+        raise ValueError("feed-list-index 不能为负数")
+    if count <= 0:
+        raise ValueError("feed-list-count 必须为正整数")
+
+    base_url = _resolve_base_url(args)
+    path = str(cfg.get("path", "/admin/user/queryUserFeedList"))
+    url = f"{base_url}{path}"
+    body = {"userId": user_id, "index": index, "count": count}
+    return url, body
+
+
 def _apply_query_user_detail(args: argparse.Namespace, body: dict[str, object]) -> tuple[str, dict[str, object]]:
     user_id = str(args.query_user_id).strip()
     if not user_id:
@@ -1153,6 +1185,12 @@ def main() -> int:
             resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
         elif args.query_user_history_devices:
             url, body = _resolve_query_user_history_device_request(args)
+            if args.dump_body:
+                print(f"POST {url}", file=sys.stderr)
+                print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
+            resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
+        elif args.query_user_feed_list:
+            url, body = _resolve_query_user_feed_list_request(args)
             if args.dump_body:
                 print(f"POST {url}", file=sys.stderr)
                 print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
@@ -1362,6 +1400,14 @@ def main() -> int:
         summary = parse_user_history_device_summary(resp.get("data"))
         summary["userId"] = str(args.history_device_user_id).strip()
         print(json.dumps(summary, ensure_ascii=False, indent=2))
+    elif args.query_user_feed_list:
+        if not admin_success(resp.get("ec")):
+            print(f"Admin 返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
+            print(json.dumps(resp, ensure_ascii=False, indent=2))
+            return 3
+        summary = parse_user_feed_list_summary(resp.get("data"))
+        summary["userId"] = str(args.query_user_id).strip()
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
     elif args.query_user_id is not None:
         if not admin_success(resp.get("ec")):
             print(f"Admin 返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
@@ -1409,6 +1455,7 @@ def main() -> int:
         or args.reset_custom_prop_cooldown
         or args.query_device_history_users
         or args.query_user_history_devices
+        or args.query_user_feed_list
         or args.query_user_id is not None
     ):
         if not admin_success(resp.get("ec")):

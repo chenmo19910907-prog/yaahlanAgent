@@ -1,0 +1,50 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/feed/external/feed-interact-stage",
+  "method": "likeContent",
+  "header": "{\"userId\":\"100366772\",\"uid\":\"100366772\",\"action\":\"LIKE_COMMENT\",\"contentId\":\"3c7062710\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100366772\",\"uid\":\"100366772\",\"action\":\"LIKE_COMMENT\",\"contentId\":\"3c7062710\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\"}",
+      "type": "json",
+      "value": {
+        "userId": "100366772",
+        "uid": "100366772",
+        "action": "LIKE_COMMENT",
+        "contentId": "3c7062710",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "android",
+        "osType": "android"
+      }
+    }
+  ],
+  "_registry": {
+    "id": "feed_like_comment",
+    "name": "动态-评论点赞",
+    "category": "动态（feed-interact-stage）",
+    "description": "测试环境给动态评论点赞（/service/feed/external/feed-interact-stage likeContent；action=LIKE_COMMENT）。contentId 填 commentId（非 feedId；可先 listComment 查评论 ID）。HTTP 对照 /yaahlan/feed-interact/likeContent。ec=40002 表示已点赞。",
+    "prompts": [
+      "用户 <userId> 给评论 <commentId> 点赞",
+      "动态评论点赞 MOA LIKE_COMMENT",
+      "帖子 <feedId> 下评论点赞"
+    ]
+  }
+}

@@ -33,6 +33,7 @@ if str(WEB_AGENT_DIR) not in sys.path:
     sys.path.insert(0, str(WEB_AGENT_DIR))
 
 from chat_runner import run_web_chat  # noqa: E402
+from cursor_runner import DEFAULT_TIMEOUT_S  # noqa: E402
 from batch_progress import (  # noqa: E402
     build_batch_progress_message,
     clear_batch_progress,
@@ -47,6 +48,12 @@ from progress_message import (  # noqa: E402
 )
 from task_session import TaskInterrupted, TaskSession  # noqa: E402
 from dingtalk_web_sync import sync_all_from_conversation_store  # noqa: E402
+from web_image_store import (  # noqa: E402
+    ImageUploadError,
+    MAX_IMAGES_PER_MESSAGE,
+    local_path_from_api_path,
+    save_chat_images,
+)
 from web_session_store import get_session_store  # noqa: E402
 
 logger = logging.getLogger("web-agent")
@@ -126,6 +133,7 @@ def _platform_meta() -> dict[str, int | str]:
         "capabilities_count": capabilities_count,
         "quickPrompts": cfg.get("quickPrompts") or [],
         "quickPromptCount": int(cfg.get("quickPromptCount") or 4),
+        "maxImagesPerMessage": MAX_IMAGES_PER_MESSAGE,
     }
 
 
@@ -138,6 +146,8 @@ class ActiveRun:
     final_text: str = ""
     error: str | None = None
     task_session: TaskSession = field(default_factory=TaskSession)
+    cancel_notified: bool = False
+    _notify_lock: threading.Lock = field(default_factory=threading.Lock)
 
 
 class RunManager:
@@ -157,6 +167,16 @@ class RunManager:
         with self._lock:
             return self._runs.get(run_id)
 
+    def find_active_by_session(self, session_id: str) -> ActiveRun | None:
+        sid = (session_id or "").strip()
+        if not sid:
+            return None
+        with self._lock:
+            for run in self._runs.values():
+                if run.session_id == sid and not run.done.is_set():
+                    return run
+        return None
+
     def _purge_old(self) -> None:
         if len(self._runs) <= 50:
             return
@@ -166,6 +186,36 @@ class RunManager:
 
 
 RUN_MANAGER = RunManager()
+
+INTERRUPT_REPLY = "⚠️ 任务已中断。"
+
+
+def _notify_run_interrupted(run: ActiveRun, text: str) -> bool:
+    """立即推送 SSE 结束事件，避免前端一直等待 worker。"""
+    body = (text or INTERRUPT_REPLY).strip() or INTERRUPT_REPLY
+    with run._notify_lock:
+        if run.cancel_notified:
+            return False
+        run.cancel_notified = True
+        run.final_text = body
+    run.events.put({"type": "done", "text": body})
+    return True
+
+
+def _interrupt_active_run(run: ActiveRun) -> bool:
+    """尽力中断 Agent run，并立即通知前端。"""
+    from user_agent_pool import get_user_agent_pool
+
+    cancel_result = run.task_session.request_cancel()
+    if cancel_result is None:
+        run.task_session.arm_cancel()
+        cancel_result = run.task_session.request_cancel()
+    try:
+        get_user_agent_pool().invalidate(get_session_store().user_key(run.session_id))
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("中断时 invalidate Agent 失败 session=%s: %s", run.session_id, exc)
+    _notify_run_interrupted(run, INTERRUPT_REPLY)
+    return cancel_result is not False
 
 
 def _json_response(handler: SimpleHTTPRequestHandler, payload: object, status: int = 200) -> None:
@@ -235,12 +285,37 @@ def _start_run_progress_watcher(
     ).start()
 
 
-def _start_chat_run(session_id: str, message: str) -> ActiveRun:
+def _start_chat_run(
+    session_id: str,
+    message: str,
+    *,
+    image_api_paths: list[str] | None = None,
+    existing_run: ActiveRun | None = None,
+) -> ActiveRun:
     store = get_session_store()
     user_key = store.user_key(session_id)
     task_kind = classify_task_kind(message)
-    store.append_message(session_id, "user", message)
-    run = RUN_MANAGER.create(session_id)
+    local_image_paths = []
+    for api_path in image_api_paths or []:
+        local = local_path_from_api_path(api_path)
+        if local is None:
+            raise ValueError(f"附图不存在: {api_path}")
+        local_image_paths.append(local)
+
+    display_message = message
+    if not display_message and image_api_paths:
+        display_message = f"[附带 {len(image_api_paths)} 张图片]"
+
+    store.append_message(session_id, "user", display_message, images=image_api_paths or [])
+    if existing_run is not None:
+        run = existing_run
+    else:
+        run = RUN_MANAGER.create(session_id)
+        run.task_session.begin(
+            message or display_message,
+            conversation_id=user_key,
+            budget_s=float(DEFAULT_TIMEOUT_S),
+        )
     clear_batch_progress(user_key)
     started_at = time.monotonic()
     progress_stop = threading.Event()
@@ -265,6 +340,7 @@ def _start_chat_run(session_id: str, message: str) -> ActiveRun:
             final = run_web_chat(
                 session_id,
                 message,
+                image_paths=local_image_paths,
                 on_render=on_render,
                 session_ctrl=run.task_session,
             )
@@ -277,13 +353,14 @@ def _start_chat_run(session_id: str, message: str) -> ActiveRun:
         except TaskInterrupted:
             elapsed = time.monotonic() - started_at
             run.final_text = append_duration_footer(
-                "⚠️ 任务已中断。",
+                INTERRUPT_REPLY,
                 elapsed,
                 task_kind=task_kind,
             )
             store.append_message(session_id, "assistant", run.final_text)
+            if not run.cancel_notified:
+                run.events.put({"type": "done", "text": run.final_text})
             status = "interrupted"
-            run.events.put({"type": "done", "text": run.final_text})
         except Exception as exc:  # noqa: BLE001
             elapsed = time.monotonic() - started_at
             run.error = str(exc)
@@ -298,6 +375,7 @@ def _start_chat_run(session_id: str, message: str) -> ActiveRun:
         finally:
             progress_stop.set()
             clear_batch_progress(user_key)
+            run.task_session.end()
             if status != "interrupted":
                 get_duration_store().record(
                     task_kind,
@@ -373,10 +451,41 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             if store.get_session(session_id) is None:
                 return _json_response(self, {"error": "session not found"}, 404)
             messages = [
-                {"role": msg.role, "content": msg.content, "timestamp": msg.timestamp}
+                {
+                    "role": msg.role,
+                    "content": msg.content,
+                    "timestamp": msg.timestamp,
+                    **({"images": msg.images} if msg.images else {}),
+                }
                 for msg in store.get_messages(session_id)
             ]
             return _json_response(self, {"messages": messages})
+
+        m = re.match(rf"^/api/uploads/({SESSION_ID_PATTERN})/([a-zA-Z0-9._-]+)$", path)
+        if m:
+            from web_image_store import resolve_upload_file
+
+            file_path = resolve_upload_file(m.group(1), m.group(2))
+            if file_path is None:
+                self.send_error(HTTPStatus.NOT_FOUND)
+                return
+            suffix = file_path.suffix.lower()
+            content_types = {
+                ".png": "image/png",
+                ".jpg": "image/jpeg",
+                ".jpeg": "image/jpeg",
+                ".gif": "image/gif",
+                ".webp": "image/webp",
+            }
+            content_type = content_types.get(suffix, "application/octet-stream")
+            data = file_path.read_bytes()
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "private, max-age=86400")
+            self.end_headers()
+            self.wfile.write(data)
+            return
 
         m = re.match(r"^/api/chat/stream/([a-f0-9]+)$", path)
         if m:
@@ -443,8 +552,18 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 return _json_response(self, {"error": "invalid json"}, 400)
             session_id = str(body.get("session_id") or "").strip()
             message = str(body.get("message") or "").strip()
-            if not session_id or not message:
-                return _json_response(self, {"error": "session_id and message required"}, 400)
+            raw_images = body.get("images")
+            image_items: list[dict[str, str]] = []
+            if isinstance(raw_images, list):
+                for item in raw_images:
+                    if isinstance(item, dict):
+                        image_items.append(item)
+            if not session_id or (not message and not image_items):
+                return _json_response(
+                    self,
+                    {"error": "session_id required; message or images required"},
+                    400,
+                )
             store = get_session_store()
             if store.get_session(session_id) is None:
                 return _json_response(self, {"error": "session not found"}, 404)
@@ -454,7 +573,34 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     {"error": "钉钉同步会话只读，请在 Web 新建对话继续"},
                     403,
                 )
-            run = _start_chat_run(session_id, message)
+            user_key = store.user_key(session_id)
+            display_message = message
+            if not display_message and image_items:
+                display_message = f"[附带 {len(image_items)} 张图片]"
+            run = RUN_MANAGER.create(session_id)
+            run.task_session.begin(
+                message or display_message,
+                conversation_id=user_key,
+                budget_s=float(DEFAULT_TIMEOUT_S),
+            )
+            try:
+                image_api_paths = save_chat_images(session_id, image_items)
+            except ImageUploadError as exc:
+                run.task_session.end()
+                run.done.set()
+                return _json_response(self, {"error": str(exc)}, 400)
+            try:
+                _start_chat_run(
+                    session_id,
+                    message,
+                    image_api_paths=image_api_paths,
+                    existing_run=run,
+                )
+            except Exception as exc:  # noqa: BLE001
+                run.task_session.end()
+                run.done.set()
+                logger.exception("启动 Web chat 失败 session=%s", session_id)
+                return _json_response(self, {"error": str(exc)}, 500)
             return _json_response(self, {"run_id": run.run_id, "session_id": session_id})
 
         if path == "/api/chat/cancel":
@@ -463,10 +609,14 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             except json.JSONDecodeError:
                 return _json_response(self, {"error": "invalid json"}, 400)
             run_id = str(body.get("run_id") or "").strip()
-            run = RUN_MANAGER.get(run_id)
+            session_id = str(body.get("session_id") or "").strip()
+            run = RUN_MANAGER.get(run_id) if run_id else None
+            if run is None and session_id:
+                run = RUN_MANAGER.find_active_by_session(session_id)
             if run is None:
                 return _json_response(self, {"error": "run not found"}, 404)
-            run.task_session.request_cancel()
+            if not _interrupt_active_run(run):
+                return _json_response(self, {"error": "当前任务无法中断"}, 409)
             return _json_response(self, {"ok": True})
 
         self.send_error(HTTPStatus.NOT_FOUND)

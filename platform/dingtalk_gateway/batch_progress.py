@@ -209,11 +209,22 @@ def format_batch_eta_remaining(seconds: float | None) -> str:
 
 
 def is_batch_progress_active(user_key: str) -> bool:
-    """批量进度进行中时，抑制「仍在执行中」心跳。"""
+    """批量进度进行中时，抑制「仍在执行中」心跳并跳过 Agent 执行超时。"""
     state = read_batch_progress(user_key)
     if state is None or state.total < BATCH_MIN_ITEMS:
         return False
     return state.current < state.total
+
+
+def waive_agent_timeout_deadline(
+    deadline: float | None,
+    user_key: str | None,
+) -> float | None:
+    """批量操作进行中时不设 deadline；一旦检测到批量开始，本 run 内不再恢复超时。"""
+    key = (user_key or "").strip()
+    if key and is_batch_progress_active(key):
+        return None
+    return deadline
 
 
 def build_batch_progress_message(state: BatchProgressState) -> str:

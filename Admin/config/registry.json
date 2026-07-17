@@ -15,6 +15,18 @@
       "command": "python3 Admin/admin_execute.py --query-user-id <userId>"
     },
     {
+      "id": "query_user_feed_list",
+      "name": "用户-查询动态列表",
+      "category": "用户（yaahlan-admin）",
+      "description": "按 userId 分页查询用户全部动态（queryUserFeedList；feedId、发布时间、点赞/评论/打赏、图文视频数量等）",
+      "prompts": [
+        "查询用户 <userId> 的动态列表",
+        "查 <userId> 发了哪些动态",
+        "用户 <userId> 动态 feed 列表"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-user-feed-list --query-user-id <userId>"
+    },
+    {
       "id": "query_user_history_device_list",
       "name": "用户-查询历史登录设备",
       "category": "用户（yaahlan-admin）",

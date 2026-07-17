@@ -1109,6 +1109,30 @@
         "执行 房间成员-申请加入"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间成员-申请加入.json\n"
+    },
+    {
+      "id": "feed_like_comment",
+      "name": "动态-评论点赞",
+      "category": "动态（feed-interact-stage）",
+      "description": "测试环境给动态评论点赞（/service/feed/external/feed-interact-stage likeContent；action=LIKE_COMMENT）。contentId 填 commentId（非 feedId；可先 listComment 查评论 ID）。HTTP 对照 /yaahlan/feed-interact/likeContent。ec=40002 表示已点赞。",
+      "prompts": [
+        "用户 <userId> 给评论 <commentId> 点赞",
+        "动态评论点赞 MOA LIKE_COMMENT",
+        "帖子 <feedId> 下评论点赞"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/动态-评论点赞.json\n"
+    },
+    {
+      "id": "feed_gift_send",
+      "name": "动态-帖子送礼",
+      "category": "动态（/v2/gift/send · Stage HTTP）",
+      "description": "测试环境给动态帖子打赏送礼（HTTP /v2/gift/send；ext 含 feedId）。示例 giftId=2005001671（19 钻 New year fireworks）。无 MOA httpproxy，Agent 读模板 body + Gift/send_stage POST。",
+      "prompts": [
+        "用户 <userId> 给帖子 <feedId> 送 <giftId> 礼物",
+        "动态帖子送礼 <feedId> 价值19",
+        "帖子打赏 MOA feed gift send"
+      ],
+      "command": "python3 Gift/gift_execute.py \\\n  --scene private \\\n  --sender <userId> \\\n  --receivers <toUserId> \\\n  --gift-id 2005001671 \\\n  --num 1\n# 动态帖子须 ext.feedId=<feedId>，见 MOA/templates/动态-帖子送礼.json 抓包 body，Agent 用 Gift/send_stage POST /v2/gift/send\n"
     }
   ]
 }

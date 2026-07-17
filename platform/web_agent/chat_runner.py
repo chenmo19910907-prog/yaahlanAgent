@@ -41,25 +41,31 @@ def run_web_chat(
     session_id: str,
     message: str,
     *,
+    image_paths: list[str | Path] | None = None,
     on_render: Callable[[str], None],
     session_ctrl: TaskSession | None = None,
     timeout_s: int = DEFAULT_TIMEOUT_S,
 ) -> str:
     """在指定 Web 会话中运行 Agent，返回最终 assistant 文本。"""
     ensure_bridge()
+    if session_ctrl:
+        session_ctrl.check_cancelled()
     store = get_session_store()
     user_key = store.user_key(session_id)
     prior_messages = store.get_messages(session_id)
     is_new = not any(m.role == "assistant" for m in prior_messages)
+    paths = list(image_paths or [])
 
     prompt = build_web_prompt(
         message,
         is_new_session=is_new,
         batch_progress_key=user_key,
+        image_count=len(paths),
     )
 
     return run_agent_prompt_streaming(
         prompt,
+        image_paths=paths,
         on_render=on_render,
         user_key=user_key,
         sender_name=f"Web-{session_id[:8]}",
