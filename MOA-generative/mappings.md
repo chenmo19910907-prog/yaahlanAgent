@@ -14,6 +14,8 @@
 | 2026-07-15 | `/yaahlan/room/member/agree` | `/service/room/external/room-member-stage` | `agree` | body：`userId`（房主）、`roomId`、`remoteId`（申请人）；已加入再调 ec=20210111 |
 | 2026-07-16 | `/yaahlan/vas/familyPk/getFamilyPkPage` | `/service/vas/activity/family-pk-v2-api` | `getFamilyPkPage` | body：`userId`/`uid`、`date`（tab 日期）、`area`；返回 `pkList`/`current`/`tierList`。旧版 `family-pk` + `home` 仅活动入口摘要，非本页 |
 | 2026-07-16 | `/yaahlan/vas/familyPk/getFamilyPkUserList` | `/service/vas/activity/family-pk-v2-api` | `getFamilyPkUserList` | body：`userId`、`familyId`、`date`、`limit`、`offset`；点击贡献 top3 头像弹窗；返回 `memberList`/`userInfo`/`hasNext` |
+| 2026-07-17 | `/yaahlan/component/giftPanel/getGiftTabListV3` | `/service/yh-components/gift-panel` | `getGiftTabListV3` | MOA Redis 直连 + httpproxy；背包 Tab 读 `package.remain`；无需打开礼物面板 |
+| 2026-07-17 | `/yaahlan/component/giftPanel/propPackageList` | `/service/yh-components/gift-panel` | `propPackageList` | 背包道具列表；与 getGiftTabListV3 背包 Tab 礼物不同 |
 
 ## 配套 HTTP（非 MOA，仅对照）
 

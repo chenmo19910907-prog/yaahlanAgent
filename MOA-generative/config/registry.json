@@ -140,6 +140,29 @@
       "command": "python3 workflow/workflow_execute.py run moa-generative-run \\\n  --service-url /service/room/external/room-member-stage \\\n  --method agree \\\n  --body-file MOA-generative/templates/example-room-member-agree.body.json \\\n  --strict 0"
     },
     {
+      "id": "moa_generative_gift_panel_backpack_gifts",
+      "name": "生成式MOA-礼物面板背包礼物",
+      "category": "生成式MOA（抓包转MOA）",
+      "description": "HTTP /yaahlan/component/giftPanel/getGiftTabListV3 → ServiceUrl /service/yh-components/gift-panel + getGiftTabListV3。MOA Redis 直连可查背包 Tab（package.remain），无需打开礼物面板。",
+      "prompts": [
+        "礼物面板查看背包 MOA",
+        "生成式MOA getGiftTabListV3",
+        "13311111118 打开礼物面板背包抓包转MOA"
+      ],
+      "command": "python3 workflow/workflow_execute.py run moa-generative-run \\\n  --service-url /service/yh-components/gift-panel \\\n  --method getGiftTabListV3 \\\n  --body-file MOA-generative/templates/example-getGiftTabListV3.body.json \\\n  --strict 0"
+    },
+    {
+      "id": "moa_generative_gift_panel_backpack_props",
+      "name": "生成式MOA-礼物面板背包道具",
+      "category": "生成式MOA（抓包转MOA）",
+      "description": "HTTP /yaahlan/component/giftPanel/propPackageList → ServiceUrl /service/yh-components/gift-panel + propPackageList。",
+      "prompts": [
+        "礼物面板背包道具 MOA",
+        "生成式MOA propPackageList"
+      ],
+      "command": "python3 workflow/workflow_execute.py run moa-generative-run \\\n  --service-url /service/yh-components/gift-panel \\\n  --method propPackageList \\\n  --body-file MOA-generative/templates/example-propPackageList.body.json \\\n  --strict 0"
+    },
+    {
       "id": "moa_generative_room_member_quick_add",
       "name": "生成式MOA-快速添加房间成员",
       "category": "生成式MOA（已验证示例）",

@@ -34,6 +34,7 @@ from .params import (
     set_family_kick_member_params,
     set_family_pk_page_params,
     set_family_pk_member_list_params,
+    set_gift_panel_backpack_params,
     set_family_delete_params,
     set_family_create_time_query_params,
     set_family_members_query_params,
@@ -773,6 +774,28 @@ def _op_family_pk_member_list(args: argparse.Namespace, payload: dict[str, Any])
     )
 
 
+def _gift_panel_backpack_mode(args: argparse.Namespace) -> bool:
+    return bool(getattr(args, "gift_panel_backpack_user_id", None))
+
+
+def _op_gift_panel_backpack(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(getattr(args, "gift_panel_backpack_user_id", None) or "").strip()
+    room_id = str(getattr(args, "gift_panel_backpack_room_id", None) or "").strip() or None
+    area = str(getattr(args, "gift_panel_backpack_area", None) or "MENA").strip().upper()
+    service_url = str(getattr(args, "gift_panel_backpack_service_url", None) or "").strip() or None
+    clear_hash = bool(getattr(args, "gift_panel_backpack_clear_hash", False))
+    if not user_id:
+        raise ValueError("须提供 --gift-panel-backpack-user-id")
+    set_gift_panel_backpack_params(
+        payload,
+        user_id=user_id,
+        room_id=room_id,
+        area=area,
+        clear_hash=clear_hash,
+        service_url=service_url,
+    )
+
+
 def _family_pk_page_mode(args: argparse.Namespace) -> bool:
     return bool(getattr(args, "family_pk_page_user_id", None))
 
@@ -1081,6 +1104,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: _family_query_joined_mode(a), _op_family_query_joined),
     (lambda a: _family_delete_mode(a), _op_family_delete),
     (lambda a: _family_kick_mode(a), _op_family_kick),
+    (lambda a: _gift_panel_backpack_mode(a), _op_gift_panel_backpack),
     (lambda a: _family_pk_page_mode(a), _op_family_pk_page),
     (lambda a: _family_pk_member_list_mode(a), _op_family_pk_member_list),
     (lambda a: _room_member_add_mode(a), _op_room_member_add),

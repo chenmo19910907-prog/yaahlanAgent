@@ -1,0 +1,61 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/yh-components/gift-panel",
+  "method": "propPackageList",
+  "header": "{\"imsi\":0,\"clientType\":\"2\",\"uid\":\"100379555\",\"localTime\":1784255949070,\"rom\":\"26.5.2\",\"osVersion\":\"26.5.2\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"ios\",\"userId\":\"100379555\",\"osType\":\"ios\",\"deviceId\":\"357f25796f6674793fd8e07d48940954462fb22f168967660412\",\"timeZone\":\"Asia/Shanghai\",\"netQuality\":4,\"lang\":\"en\",\"appVersion\":\"2.5.7\",\"country\":\"B1\",\"model\":\"iPhone 11\",\"mmuid\":\"357f25796f6674793fd8e07d48940954462fb22f168967660412\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"imsi\":0,\"clientType\":\"2\",\"uid\":\"100379555\",\"localTime\":1784255949070,\"rom\":\"26.5.2\",\"osVersion\":\"26.5.2\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"ios\",\"userId\":\"100379555\",\"osType\":\"ios\",\"deviceId\":\"357f25796f6674793fd8e07d48940954462fb22f168967660412\",\"timeZone\":\"Asia/Shanghai\",\"netQuality\":4,\"lang\":\"en\",\"appVersion\":\"2.5.7\",\"country\":\"B1\",\"model\":\"iPhone 11\",\"mmuid\":\"357f25796f6674793fd8e07d48940954462fb22f168967660412\"}",
+      "type": "json",
+      "value": {
+        "imsi": 0,
+        "clientType": "2",
+        "uid": "100379555",
+        "localTime": 1784255949070,
+        "rom": "26.5.2",
+        "osVersion": "26.5.2",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "ios",
+        "userId": "100379555",
+        "osType": "ios",
+        "deviceId": "357f25796f6674793fd8e07d48940954462fb22f168967660412",
+        "timeZone": "Asia/Shanghai",
+        "netQuality": 4,
+        "lang": "en",
+        "appVersion": "2.5.7",
+        "country": "B1",
+        "model": "iPhone 11",
+        "mmuid": "357f25796f6674793fd8e07d48940954462fb22f168967660412"
+      }
+    }
+  ],
+  "_registry": {
+    "id": "gift_panel_backpack_props",
+    "name": "礼物面板-查看背包道具",
+    "category": "礼物面板（yh-components/gift-panel）",
+    "description": "MOA 快速查背包道具（propPackageList）。ServiceUrl /service/yh-components/gift-panel；对齐 /yaahlan/component/giftPanel/propPackageList。不含背包礼物。",
+    "prompts": [
+      "查看用户 <userId> 礼物面板背包道具",
+      "propPackageList userId=<userId>",
+      "13311111118 查看背包道具"
+    ],
+    "cli": "--gift-panel-backpack-user-id <userId> [--gift-panel-backpack-service-url <ServiceUrl>]"
+  }
+}

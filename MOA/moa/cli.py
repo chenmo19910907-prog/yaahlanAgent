@@ -211,6 +211,28 @@ def build_parser() -> argparse.ArgumentParser:
         help="收礼日榜查询时保留已解散家族（默认排除并顺延名次）",
     )
     parser.add_argument(
+        "--gift-panel-backpack-user-id",
+        help="礼物面板查看背包：userId（getGiftTabListV3 / propPackageList）",
+    )
+    parser.add_argument(
+        "--gift-panel-backpack-room-id",
+        help="礼物面板查看背包：roomId（房间内打开面板时必填）",
+    )
+    parser.add_argument(
+        "--gift-panel-backpack-area",
+        default="MENA",
+        help="礼物面板查看背包：大区（默认 MENA）",
+    )
+    parser.add_argument(
+        "--gift-panel-backpack-service-url",
+        help="礼物面板查看背包：覆盖 MOA ServiceUrl（默认取模板 url）",
+    )
+    parser.add_argument(
+        "--gift-panel-backpack-clear-hash",
+        action="store_true",
+        help="礼物面板查看背包：去掉 giftListHash 以拉完整 gift_list",
+    )
+    parser.add_argument(
         "--family-pk-page-user-id",
         help="家族PK请求页面：userId（getFamilyPkPage；对齐 /yaahlan/vas/familyPk/getFamilyPkPage）",
     )

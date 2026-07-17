@@ -247,6 +247,56 @@ def set_family_pk_member_list_params(
     ]
 
 
+def set_gift_panel_backpack_params(
+    payload: dict[str, Any],
+    *,
+    user_id: str,
+    room_id: str | None = None,
+    area: str = "MENA",
+    clear_hash: bool = False,
+    service_url: str | None = None,
+) -> None:
+    user_id = str(user_id).strip()
+    area = str(area or "MENA").strip().upper()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+
+    body: dict[str, Any] = {}
+    params = payload.get("params")
+    if isinstance(params, list) and params:
+        first = params[0]
+        if isinstance(first, dict) and isinstance(first.get("value"), dict):
+            body = dict(first["value"])
+    if not body:
+        raise ValueError("礼物面板背包 payload 缺少 params[0].value")
+
+    body["userId"] = user_id
+    body["uid"] = user_id
+    body["area"] = area
+    if room_id:
+        body["roomId"] = str(room_id).strip()
+    if clear_hash:
+        body.pop("giftListHash", None)
+
+    header_s = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+    payload["header"] = header_s
+    if service_url:
+        payload["url"] = str(service_url).strip()
+    settings = payload.setdefault("settings", {})
+    if isinstance(settings, dict):
+        settings["headerType"] = "TXT"
+    payload["params"] = [
+        {
+            "name": 0,
+            "title": 0,
+            "txt": "",
+            "json": header_s,
+            "type": "json",
+            "value": body,
+        }
+    ]
+
+
 def set_family_pk_page_params(
     payload: dict[str, Any],
     *,

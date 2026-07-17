@@ -1,0 +1,68 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/yh-components/gift-panel",
+  "method": "getGiftTabListV3",
+  "header": "{\"osVersion\":\"26.5.2\",\"scene\":\"room\",\"giftListHash\":\"e4f07a10ca685c97463c2ffbc36c6bd7\",\"lang\":\"en\",\"clientType\":\"2\",\"imsi\":0,\"localTime\":1784255948642,\"deviceId\":\"357f25796f6674793fd8e07d48940954462fb22f168967660412\",\"country\":\"B1\",\"ip\":\"172.18.212.199\",\"appVersion\":\"2.5.7\",\"rom\":\"26.5.2\",\"os\":\"ios\",\"show_prop\":true,\"roomId\":\"57691722\",\"innerVersion\":\"1000\",\"timeZone\":\"Asia/Shanghai\",\"uid\":\"100379555\",\"netQuality\":4,\"appId\":2005,\"model\":\"iPhone 11\",\"area\":\"MENA\",\"mmuid\":\"357f25796f6674793fd8e07d48940954462fb22f168967660412\",\"channelKey\":\"primary\",\"osType\":\"ios\",\"userId\":\"100379555\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"osVersion\":\"26.5.2\",\"scene\":\"room\",\"giftListHash\":\"e4f07a10ca685c97463c2ffbc36c6bd7\",\"lang\":\"en\",\"clientType\":\"2\",\"imsi\":0,\"localTime\":1784255948642,\"deviceId\":\"357f25796f6674793fd8e07d48940954462fb22f168967660412\",\"country\":\"B1\",\"ip\":\"172.18.212.199\",\"appVersion\":\"2.5.7\",\"rom\":\"26.5.2\",\"os\":\"ios\",\"show_prop\":true,\"roomId\":\"57691722\",\"innerVersion\":\"1000\",\"timeZone\":\"Asia/Shanghai\",\"uid\":\"100379555\",\"netQuality\":4,\"appId\":2005,\"model\":\"iPhone 11\",\"area\":\"MENA\",\"mmuid\":\"357f25796f6674793fd8e07d48940954462fb22f168967660412\",\"channelKey\":\"primary\",\"osType\":\"ios\",\"userId\":\"100379555\"}",
+      "type": "json",
+      "value": {
+        "osVersion": "26.5.2",
+        "scene": "room",
+        "giftListHash": "e4f07a10ca685c97463c2ffbc36c6bd7",
+        "lang": "en",
+        "clientType": "2",
+        "imsi": 0,
+        "localTime": 1784255948642,
+        "deviceId": "357f25796f6674793fd8e07d48940954462fb22f168967660412",
+        "country": "B1",
+        "ip": "172.18.212.199",
+        "appVersion": "2.5.7",
+        "rom": "26.5.2",
+        "os": "ios",
+        "show_prop": true,
+        "roomId": "57691722",
+        "innerVersion": "1000",
+        "timeZone": "Asia/Shanghai",
+        "uid": "100379555",
+        "netQuality": 4,
+        "appId": 2005,
+        "model": "iPhone 11",
+        "area": "MENA",
+        "mmuid": "357f25796f6674793fd8e07d48940954462fb22f168967660412",
+        "channelKey": "primary",
+        "osType": "ios",
+        "userId": "100379555"
+      }
+    }
+  ],
+  "_registry": {
+    "id": "gift_panel_backpack_gifts",
+    "name": "礼物面板-查看背包礼物",
+    "category": "礼物面板（yh-components/gift-panel）",
+    "description": "MOA 快速查背包礼物（getGiftTabListV3 → 背包 Tab，读 package.remain）。ServiceUrl /service/yh-components/gift-panel；对齐 /yaahlan/component/giftPanel/getGiftTabListV3。无需打开礼物面板。",
+    "prompts": [
+      "查看用户 <userId> 礼物面板背包",
+      "getGiftTabListV3 背包 userId=<userId> roomId=<roomId>",
+      "13311111118 查看背包礼物"
+    ],
+    "cli": "--gift-panel-backpack-user-id <userId> [--gift-panel-backpack-room-id <roomId>] [--gift-panel-backpack-clear-hash] [--gift-panel-backpack-service-url <ServiceUrl>]"
+  }
+}
