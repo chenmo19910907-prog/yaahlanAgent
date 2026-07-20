@@ -38,6 +38,7 @@ platform/dingtalk_gateway/config/code_modify_allowlist.local.json
 platform/dingtalk_gateway/.env.local
 platform/dingtalk_gateway/.venv/
 platform/dingtalk_gateway/exports/
+platform/family_pk_report/exports/
 platform/dingtalk_gateway/attachments/
 platform/dingtalk_gateway/data/
 platform/web_agent/data/

@@ -1,0 +1,156 @@
+{
+  "title": "家族 PK 数据测试自动化",
+  "subtitle": "从人工逐条核对到八步标准工作流 · 测试自动化建设成果汇报",
+  "nav": [
+    { "id": "background", "label": "项目背景" },
+    { "id": "demo", "label": "效果演示" },
+    { "id": "implementation", "label": "实现原理" }
+  ],
+  "background": {
+    "title": "一、项目背景",
+    "lead": "家族 PK 是高频周期性活动，涉及 MSE 配置、全量家族数据、收礼榜、匹配、成员 PK、结算发钻等多条链路。传统测试依赖人工造数与逐条核对，耗时长、易遗漏、难以复用。",
+    "painPoints": [
+      "配置散落在 MSE，测试同学需手工对照参数表",
+      "家族与成员规模大，人工拉表与核对效率低",
+      "匹配、PK、发钻涉及多接口串联，缺少统一验收视图",
+      "每轮活动重复劳动，经验难以沉淀为标准流程"
+    ],
+    "goals": [
+      "将家族 PK 数据测试沉淀为可重复执行的八步标准流程",
+      "MSE + Admin + MOA + 钉钉表一体化，改参后可局部重跑",
+      "单次覆盖全量家族成员，自动输出结构化验收结论",
+      "接入工具平台，降低跨部门协作与向上汇报成本"
+    ],
+    "metrics": [
+      { "label": "标准步骤", "value": "8 步" },
+      { "label": "钉钉产出 Sheet", "value": "7 张" },
+      { "label": "典型覆盖", "value": "70+ 家族 / 400+ 成员" },
+      { "label": "执行方式", "value": "工作流一键串联" }
+    ]
+  },
+  "demo": {
+    "title": "二、效果演示",
+    "lead": "以下为各步骤预录制演示素材。将图片或视频放入 platform/family_pk_report/media/ 后重新生成即可自动嵌入（支持 png / jpg / gif / mp4 / webm）。",
+    "steps": [
+      {
+        "order": 0,
+        "title": "新建钉钉测试表",
+        "description": "在配置的 alidocs 目录自动创建 {pkDate}家族PK数据测试，预建全部 Sheet，输出 workbookUrl 供后续步骤使用。",
+        "media": { "type": "image", "file": "step00-create-workbook.png", "caption": "钉钉目录下新建测试表" }
+      },
+      {
+        "order": 1,
+        "title": "MSE 参数同步",
+        "description": "从 MSE voga-common/familyPkConfig 拉取最新配置，写入钉钉「参数表」，支持 merge 增量更新。",
+        "media": { "type": "image", "file": "step01-mse-sync.png", "caption": "参数表与 configValue_JSON 同步" }
+      },
+      {
+        "order": 2,
+        "title": "全量家族列表",
+        "description": "Admin 拉取全量家族与成员，过滤非 MENA 族长，写入「家族列表」。",
+        "media": { "type": "image", "file": "step02-family-list.png", "caption": "家族 ID / 成员 / 族长标记" }
+      },
+      {
+        "order": 3,
+        "title": "收礼榜造数与档位测算",
+        "description": "按成员数分段随机写入收礼日榜，计算各家族档位达标 PK 与钻石。",
+        "media": { "type": "video", "file": "step03-rank-tier.mp4", "caption": "收礼榜造数 → 档位 Sheet 产出" }
+      },
+      {
+        "order": 4,
+        "title": "匹配验收",
+        "description": "清匹配 → 重匹配 → MOA getFamilyPkPage 拉对战列表，验收同区间匹配。",
+        "media": { "type": "image", "file": "step04-match-verify.png", "caption": "匹配验收 Sheet 通过/失败" }
+      },
+      {
+        "order": 5,
+        "title": "成员 PK 与应发钻测算",
+        "description": "清 PK → 全员随机造数 → 边界纠偏 → 计算各成员应得钻石。",
+        "media": { "type": "video", "file": "step05-member-pk.mp4", "caption": "用户发钻测试 Sheet" }
+      },
+      {
+        "order": 6,
+        "title": "发钻实发验收",
+        "description": "清结算 → 发奖 → 查钻对比应发 vs 实发，贡献榜回写「用户发钻测试」。",
+        "media": { "type": "image", "file": "step06-dispatch-verify.png", "caption": "发钻实发验收与不一致明细" }
+      },
+      {
+        "order": 7,
+        "title": "测试结果汇总",
+        "description": "汇总六步验收数据，输出总体验收结论，并生成 JSON / HTML 报告。",
+        "media": { "type": "image", "file": "step07-test-result.png", "caption": "测试结果 Sheet + 汇报页" }
+      }
+    ]
+  },
+  "implementation": {
+    "title": "三、实现原理与工具平台",
+    "lead": "底层由 Workflow 编排多模块能力，钉钉 Workbook 作为人机协作载体，工具平台提供能力发现与一键执行入口。",
+    "architecture": {
+      "layers": [
+        {
+          "name": "编排层",
+          "items": ["Workflow 工作流", "Playbook 标准流程", "参数化复跑"]
+        },
+        {
+          "name": "能力层",
+          "items": ["MSE 配置", "Admin 后台", "MOA 造数/验收", "钉钉 Excel 读写"]
+        },
+        {
+          "name": "产出层",
+          "items": ["钉钉 Workbook", "JSON 摘要", "HTML 汇报页"]
+        }
+      ],
+      "flow": "Agent / workflow_execute.py → MOA 脚本 + dingtalk_gateway → 钉钉表 → 验收 JSON → 本汇报页"
+    },
+    "platform": {
+      "title": "工具平台能力",
+      "catalogUrl": "http://127.0.0.1:18765/catalog.html",
+      "catalogHint": "python3 platform/open_catalog.py",
+      "modules": [
+        {
+          "name": "工作流",
+          "role": "八步 family-pk-config-* 工作流登记与参数化执行",
+          "entry": "python3 workflow/workflow_execute.py run <workflowId>"
+        },
+        {
+          "name": "MOA",
+          "role": "收礼榜、匹配、PK 值、结算发奖等测试接口",
+          "entry": "python3 MOA/moa_execute.py"
+        },
+        {
+          "name": "yaahlan后台",
+          "role": "全量家族列表、用户详情、大区过滤",
+          "entry": "python3 Admin/admin_execute.py"
+        },
+        {
+          "name": "MSE配置",
+          "role": "familyPkConfig 参数读取与同步",
+          "entry": "platform/dingtalk_gateway/mse_sync_to_workbook.py"
+        },
+        {
+          "name": "工具平台目录",
+          "role": "跨模块能力合并展示，提示语一键填入 Cursor 执行",
+          "entry": "python3 platform/open_catalog.py"
+        }
+      ]
+    },
+    "principles": [
+      {
+        "title": "Playbook 驱动",
+        "body": "workflow/config/registry.json 登记 family_pk_data_test，步骤、Sheet、重跑策略一处维护。"
+      },
+      {
+        "title": "Sheet 即验收面",
+        "body": "每步写入独立 Sheet，测试/开发/产品可在钉钉表直接下钻，无需翻日志。"
+      },
+      {
+        "title": "可局部重跑",
+        "body": "收礼榜或参数变更后重跑 3~6 步；仅重匹配后重跑 4~5 步，降低回归成本。"
+      },
+      {
+        "title": "结构化汇报",
+        "body": "第七步产出 JSON 摘要 + HTML，支撑向上汇报与跨部门同步。"
+      }
+    ]
+  }
+}
