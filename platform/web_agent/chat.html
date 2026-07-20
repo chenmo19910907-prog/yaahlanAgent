@@ -902,9 +902,13 @@
 
     async function api(path, opts = {}) {
       const resp = await fetch(API + path, {
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
         ...opts,
       });
+      if (resp.status === 401) {
+        throw new Error('需要登录鉴权，请刷新页面并在浏览器登录框输入账号密码');
+      }
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
         throw new Error(err.error || `HTTP ${resp.status}`);

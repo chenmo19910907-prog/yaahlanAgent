@@ -55,6 +55,7 @@ from web_image_store import (  # noqa: E402
     save_chat_images,
 )
 from web_session_store import get_session_store  # noqa: E402
+from web_auth import authorize_request, auth_enabled  # noqa: E402
 
 logger = logging.getLogger("web-agent")
 
@@ -134,6 +135,8 @@ def _platform_meta() -> dict[str, int | str]:
         "quickPrompts": cfg.get("quickPrompts") or [],
         "quickPromptCount": int(cfg.get("quickPromptCount") or 4),
         "maxImagesPerMessage": MAX_IMAGES_PER_MESSAGE,
+        "authRequired": auth_enabled(),
+        "authPublicOnly": auth_enabled(),
     }
 
 
@@ -409,10 +412,14 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_OPTIONS(self) -> None:
+        if not authorize_request(self):
+            return
         self.send_response(HTTPStatus.NO_CONTENT)
         self.end_headers()
 
     def do_GET(self) -> None:
+        if not authorize_request(self):
+            return
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
 
@@ -533,6 +540,8 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             run.task_session.request_cancel()
 
     def do_POST(self) -> None:
+        if not authorize_request(self):
+            return
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/")
 
@@ -622,6 +631,8 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         self.send_error(HTTPStatus.NOT_FOUND)
 
     def do_DELETE(self) -> None:
+        if not authorize_request(self):
+            return
         parsed = urlparse(self.path)
         m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})$", parsed.path.rstrip("/"))
         if not m:

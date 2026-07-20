@@ -3,6 +3,10 @@
   "subtitle": "钉钉 Agent · MOA/Admin 查数 · Tunnel 抓包 · Stage 送礼 · 用例生成",
   "host": "0.0.0.0",
   "port": 18766,
+  "publicExpose": {
+    "provider": "cloudflare",
+    "note": "执行 python3 platform/web_agent/expose_public.py；须先在 .env.local 配置 WEB_AGENT_AUTH_USER/PASSWORD"
+  },
   "sync_dingtalk_chat": true,
   "quickPromptCount": 4,
   "quickPrompts": [
