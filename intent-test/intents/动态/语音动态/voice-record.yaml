@@ -1,0 +1,459 @@
+# 语音条动态 · PRD: 支持发布带语音条的动态（Yaahlan-2.5.7）
+# 对照: documents/moments/basic module.md
+# 排除: 屏幕适配、多语言/RTL、纯后端逻辑、安装/升级路径
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║  模块 1：录制弹窗 — 页面展示 → 核心操作 → 边界值 → 冲突  ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+id: IT-MOM-VOICE-PUB-001
+name: 点击录制按钮打开录制弹窗
+module: 语音动态-录制弹窗
+platform: android
+priority: P0
+tags: [动态, 语音, 录制, 入口]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+
+intent:
+  action: 点击编辑页中的语音条录制按钮入口
+  expected:
+    - 弹出底部半屏录制弹窗
+    - 弹窗中央可见大圆形紫色录制按钮
+    - 弹窗左上角可见返回/关闭按钮
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-VOICE-PUB-002
+name: 点击录制按钮开始录制并实时显示秒数
+module: 语音动态-录制弹窗
+platform: android
+priority: P0
+tags: [动态, 语音, 录制, 计时]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+  steps:
+    - act: 点击语音条录制按钮入口
+    - waitFor: 出现底部录制弹窗，可见大圆形录制按钮
+
+intent:
+  action: 点击弹窗中央的大圆形录制按钮开始录制，观察3-5秒
+  expected:
+    - 录制按钮周围出现波纹动画效果
+    - 按钮上方实时显示录制秒数（如 0:03、0:04）
+    - 秒数随时间递增变化
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-VOICE-PUB-003
+name: 再次点击录制按钮暂停录制
+module: 语音动态-录制弹窗
+platform: android
+priority: P0
+tags: [动态, 语音, 录制, 暂停]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+  steps:
+    - act: 点击语音条录制按钮入口
+    - waitFor: 出现底部录制弹窗，可见大圆形录制按钮
+    - act: 点击录制按钮开始录制
+    - waitFor: 录制中，按钮周围有波纹动画，秒数递增
+
+intent:
+  action: 等待约3秒后再次点击录制按钮暂停
+  expected:
+    - 录制暂停，秒数停止递增
+    - 弹窗上方显示语音条（带波形可视化，点击可试听）
+    - 语音条下方显示「重录」「使用」两个按钮并排
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-VOICE-PUB-004
+name: 暂停后点击语音条试听录音
+module: 语音动态-录制弹窗
+platform: android
+priority: P0
+tags: [动态, 语音, 录制, 试听]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+  steps:
+    - act: 点击语音条录制按钮入口
+    - waitFor: 出现底部录制弹窗，可见大圆形录制按钮
+    - act: 点击录制开始，等待约3秒后点击暂停
+    - waitFor: 出现语音条、重录按钮、使用按钮
+
+intent:
+  action: 点击语音条（波形区域）
+  expected:
+    - 开始播放刚录制的音频
+    - 语音条上的波形动画开始流动
+    - 语音条显示录制的秒数
+    - 播放按钮图标变为暂停图标
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-VOICE-PUB-005
+name: 试听中再次点击语音条暂停
+module: 语音动态-录制弹窗
+platform: android
+priority: P1
+tags: [动态, 语音, 录制, 试听暂停]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+  steps:
+    - act: 点击语音条录制按钮入口
+    - waitFor: 出现底部录制弹窗，可见大圆形录制按钮
+    - act: 录制约3秒后暂停
+    - waitFor: 出现语音条、重录按钮、使用按钮
+    - act: 点击语音条开始试听
+    - waitFor: 音频开始播放
+
+intent:
+  action: 试听播放中再次点击语音条暂停
+  expected:
+    - 试听暂停
+    - 再次点击可继续播放
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-VOICE-PUB-006
+name: 暂停后点击重录重新开始
+module: 语音动态-录制弹窗
+platform: android
+priority: P0
+tags: [动态, 语音, 录制, 重录]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+  steps:
+    - act: 点击语音条录制按钮入口
+    - waitFor: 出现底部录制弹窗，可见大圆形录制按钮
+    - act: 录制约3秒后暂停
+    - waitFor: 出现语音条、重录按钮、使用按钮
+
+intent:
+  action: 点击「重录」按钮
+  expected:
+    - 之前的录制音频被丢弃
+    - 语音条和「重录」「使用」按钮消失
+    - 弹窗回到初始状态，重新显示大圆形录制按钮
+    - 可再次开始新的录制
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-VOICE-PUB-007
+name: 暂停后点击使用关闭弹窗
+module: 语音动态-录制弹窗
+platform: android
+priority: P0
+tags: [动态, 语音, 录制, 使用]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+  steps:
+    - act: 点击语音条录制按钮入口
+    - waitFor: 出现底部录制弹窗，可见大圆形录制按钮
+    - act: 录制约5秒后暂停
+    - waitFor: 出现语音条、重录按钮、使用按钮
+
+intent:
+  action: 点击「使用」按钮
+  expected:
+    - 录制弹窗关闭
+    - 返回动态编辑页
+    - 编辑页文字输入区下方出现语音条（带波形可视化、时长约5s、播放按钮、删除X按钮）
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-VOICE-PUB-008
+name: 未录制时点击返回直接关闭弹窗
+module: 语音动态-录制弹窗
+platform: android
+priority: P1
+tags: [动态, 语音, 录制, 返回, 无录制]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+  steps:
+    - act: 点击语音条录制按钮入口
+    - waitFor: 出现底部录制弹窗，可见大圆形录制按钮（未开始录制）
+
+intent:
+  action: 不进行任何录制，直接点击弹窗左上角返回/关闭按钮
+  expected:
+    - 底部录制弹窗直接关闭，不弹二次确认
+    - 返回编辑页，无语音条显示
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-VOICE-PUB-009
+name: 已录制后点击返回弹出二次确认弹窗
+module: 语音动态-录制弹窗
+platform: android
+priority: P0
+tags: [动态, 语音, 录制, 返回确认]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+  steps:
+    - act: 点击语音条录制按钮入口
+    - waitFor: 出现底部录制弹窗，可见大圆形录制按钮
+    - act: 录制约3秒后暂停
+    - waitFor: 出现语音条、重录按钮、使用按钮
+
+intent:
+  action: 点击弹窗左上角返回按钮
+  expected:
+    - 弹出二次确认弹窗（居中弹窗）
+    - 弹窗文案提示已有录制完成音频，返回后无法保存
+    - 弹窗包含「使用」和「返回」两个选项按钮
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-VOICE-PUB-010
+name: 二次确认弹窗点击使用保留音频
+module: 语音动态-录制弹窗
+platform: android
+priority: P0
+tags: [动态, 语音, 录制, 确认使用]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+  steps:
+    - act: 点击语音条录制按钮入口
+    - waitFor: 出现底部录制弹窗，可见大圆形录制按钮
+    - act: 录制约3秒后暂停
+    - waitFor: 出现语音条、重录按钮、使用按钮
+    - act: 点击返回按钮
+    - waitFor: 弹出二次确认弹窗
+
+intent:
+  action: 点击二次确认弹窗中的"使用"按钮
+  expected:
+    - 弹窗关闭，使用该录制音频
+    - 返回编辑页，语音条正常显示
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-VOICE-PUB-011
+name: 二次确认弹窗点击返回放弃音频
+module: 语音动态-录制弹窗
+platform: android
+priority: P1
+tags: [动态, 语音, 录制, 确认放弃]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+  steps:
+    - act: 点击语音条录制按钮入口
+    - waitFor: 出现底部录制弹窗，可见大圆形录制按钮
+    - act: 录制约3秒后暂停
+    - waitFor: 出现语音条、重录按钮、使用按钮
+    - act: 点击返回按钮
+    - waitFor: 弹出二次确认弹窗
+
+intent:
+  action: 点击二次确认弹窗中的返回/确认放弃按钮
+  expected:
+    - 录制弹窗关闭，音频被丢弃
+    - 返回编辑页，无语音条显示
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-VOICE-PUB-012
+name: 语音房内点击录制按钮 toast 提示
+module: 语音动态-录制弹窗
+platform: android
+priority: P0
+tags: [动态, 语音, 录制, 冲突, 语音房]
+preconditions: 用户当前已在语音房内（小窗或麦上状态）
+
+setup:
+  launchApp: false
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+
+intent:
+  action: 点击编辑页中的语音条录制按钮
+  expected:
+    - 弹出 toast 提示（类似"当前在语音房内无法录制"）
+    - 未打开录制弹窗
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-VOICE-PUB-013
+name: 通话中点击录制按钮 toast 提示
+module: 语音动态-录制弹窗
+platform: android
+priority: P0
+tags: [动态, 语音, 录制, 冲突, 通话]
+preconditions: 用户当前在1v1语音通话中
+
+setup:
+  launchApp: false
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+
+intent:
+  action: 点击编辑页中的语音条录制按钮
+  expected:
+    - 弹出 toast 提示当前在通话中无法录制
+    - 未打开录制弹窗
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-VOICE-PUB-014
+name: 录制时长不足1秒无法使用（边界值下方）
+module: 语音动态-录制弹窗
+platform: android
+priority: P1
+tags: [动态, 语音, 录制, 边界值, 最短下方]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+  steps:
+    - act: 点击语音条录制按钮入口
+    - waitFor: 出现底部录制弹窗，可见大圆形录制按钮
+
+intent:
+  action: 点击录制按钮后立即点击暂停（不足1秒），尝试点击使用
+  expected:
+    - 录制时长不足1秒时不允许使用或提示录制时间过短
+    - 无法将不足1秒的音频添加到编辑页
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-VOICE-PUB-015
+name: 录制恰好1秒可正常使用（边界值临界）
+module: 语音动态-录制弹窗
+platform: android
+priority: P1
+tags: [动态, 语音, 录制, 边界值, 最短]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+  steps:
+    - act: 点击语音条录制按钮入口
+    - waitFor: 出现底部录制弹窗，可见大圆形录制按钮
+
+intent:
+  action: 点击录制按钮开始，约1秒后暂停，点击使用
+  expected:
+    - 1秒时长的音频可正常使用
+    - 编辑页显示语音条，时长约1秒
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-VOICE-PUB-016
+name: 录制达到2分钟自动停止（边界值临界上限）
+module: 语音动态-录制弹窗
+platform: android
+priority: P0
+tags: [动态, 语音, 录制, 边界值, 最长]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+  steps:
+    - act: 点击语音条录制按钮入口
+    - waitFor: 出现底部录制弹窗，可见大圆形录制按钮
+
+intent:
+  action: 点击录制按钮持续录制，不主动暂停，等待达到2分钟上限
+  expected:
+    - 录制到2分钟时自动停止
+    - 自动显示语音条、重录按钮、使用按钮
+    - 显示时长为2:00或120秒
+
+timeoutMs: 300000
+
+---
+id: IT-MOM-VOICE-PUB-017
+name: 重录后可正常完成新录制并使用
+module: 语音动态-录制弹窗
+platform: android
+priority: P1
+tags: [动态, 语音, 录制, 重录后录制]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+  steps:
+    - act: 点击语音条录制按钮入口
+    - waitFor: 出现底部录制弹窗，可见大圆形录制按钮
+    - act: 录制约3秒后暂停，点击重录
+    - waitFor: 弹窗回到初始录制状态
+
+intent:
+  action: 重新点击录制按钮录制约5秒后暂停，点击使用
+  expected:
+    - 新录制的音频被使用
+    - 返回编辑页显示约5秒的语音条（非之前3秒的音频）
+
+timeoutMs: 240000
+

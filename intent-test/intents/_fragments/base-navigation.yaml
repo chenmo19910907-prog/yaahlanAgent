@@ -47,6 +47,23 @@ enter_me_frame:
   - tap: [0.90, 0.96]
   - waitFor: 已进入我的帧，可见个人资料区或 Me 页菜单（Settings、Wallet 等）
 
+enter_profile_page:
+  - tap: [0.90, 0.96]
+    afterSleep: 1500
+  - tap: [0.50, 0.15]
+    afterSleep: 2000
+  - waitFor: 已进入个人资料页，可见头像、昵称、个人信息展示区域
+
+enter_profile_edit_page:
+  - tap: [0.90, 0.96]
+    afterSleep: 1500
+  - tap: [0.50, 0.15]
+    afterSleep: 2000
+  - waitFor: 已进入个人资料页
+  - tap: [0.93, 0.05]
+    afterSleep: 2000
+  - waitFor: 已进入资料编辑页，可见各项可编辑的资料设置
+
 enter_voice_room:
   - tap: [0.30, 0.96]
     afterSleep: 2000

@@ -1,0 +1,316 @@
+# 语音条动态 · PRD: 支持发布带语音条的动态（Yaahlan-2.5.7）
+# 对照: documents/moments/basic module.md
+# 排除: 屏幕适配、多语言/RTL、纯后端逻辑、安装/升级路径
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║  模块 7：个人主页语音条 — 设置入口 → 录制 → 替换 → 展示 → 删除  ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+---
+id: IT-ME-VOICE-001
+name: 个人主页编辑页展示语音条设置入口
+module: 个人主页语音条-设置
+platform: android
+priority: P0
+tags: [个人主页, 语音, 设置入口]
+
+setup:
+  launchApp: true
+  include:
+    - base-navigation/enter_profile_edit_page
+
+intent:
+  action: 观察编辑页中是否有个人主页语音条设置栏
+  expected:
+    - 编辑页展示语音条设置入口
+    - 未设置时显示录制按钮
+
+timeoutMs: 120000
+
+---
+id: IT-ME-VOICE-002
+name: 点击语音条入口打开录制弹窗
+module: 个人主页语音条-录制
+platform: android
+priority: P0
+tags: [个人主页, 语音, 录制入口]
+
+setup:
+  launchApp: true
+  include:
+    - base-navigation/enter_profile_edit_page
+
+intent:
+  action: 点击个人主页语音条设置栏中的录制按钮
+  expected:
+    - 弹出底部半屏录制弹窗
+    - 弹窗中央可见大圆形紫色录制按钮
+
+timeoutMs: 120000
+
+---
+id: IT-ME-VOICE-003
+name: 录制语音后点击使用设置主页语音条
+module: 个人主页语音条-录制
+platform: android
+priority: P0
+tags: [个人主页, 语音, 录制, 设置]
+
+setup:
+  launchApp: true
+  include:
+    - base-navigation/enter_profile_edit_page
+  steps:
+    - act: 点击语音条录制入口
+    - waitFor: 出现底部录制弹窗，可见大圆形录制按钮
+
+intent:
+  action: 录制约5秒后暂停，点击使用
+  expected:
+    - 录制弹窗关闭
+    - 编辑页语音条设置栏显示已录制的语音条
+    - 语音条可见播放按钮和删除按钮
+
+timeoutMs: 240000
+
+---
+id: IT-ME-VOICE-004
+name: 已有语音条时替换弹出二次确认
+module: 个人主页语音条-替换
+platform: android
+priority: P0
+tags: [个人主页, 语音, 替换, 确认弹窗]
+preconditions: 用户已设置过个人主页语音条
+
+setup:
+  launchApp: true
+  include:
+    - base-navigation/enter_profile_edit_page
+  steps:
+    - waitFor: 编辑页展示已有的语音条
+    - act: 点击录制入口开始新录制
+    - waitFor: 录制弹窗出现
+    - act: 录制约3秒后暂停
+    - waitFor: 出现语音条、重录按钮、使用按钮
+
+intent:
+  action: 点击使用按钮
+  expected:
+    - 弹出二次确认弹窗，提示将替换上条语音
+    - 需要用户确认后才执行替换
+
+timeoutMs: 240000
+
+---
+id: IT-ME-VOICE-005
+name: 确认替换后新语音条生效
+module: 个人主页语音条-替换
+platform: android
+priority: P0
+tags: [个人主页, 语音, 替换, 确认]
+preconditions: 用户已设置过个人主页语音条
+
+setup:
+  launchApp: true
+  include:
+    - base-navigation/enter_profile_edit_page
+  steps:
+    - waitFor: 编辑页展示已有语音条
+    - act: 录制新的约5秒语音后暂停，点击使用
+    - waitFor: 弹出替换确认弹窗
+
+intent:
+  action: 点击确认按钮
+  expected:
+    - 旧语音条被新语音条替换
+    - 编辑页显示新的语音条时长（约5秒）
+
+timeoutMs: 240000
+
+---
+id: IT-ME-VOICE-006
+name: 仅录制未点使用直接返回不替换
+module: 个人主页语音条-替换
+platform: android
+priority: P0
+tags: [个人主页, 语音, 不替换, 返回]
+preconditions: 用户已设置过个人主页语音条
+
+setup:
+  launchApp: true
+  include:
+    - base-navigation/enter_profile_edit_page
+  steps:
+    - waitFor: 编辑页展示已有语音条
+    - act: 点击录制入口
+    - waitFor: 录制弹窗出现
+    - act: 录制约3秒后暂停
+    - waitFor: 出现语音条、重录按钮、使用按钮
+
+intent:
+  action: 不点击使用，直接点击返回关闭弹窗（确认弹窗选择放弃）
+  expected:
+    - 录制弹窗关闭
+    - 原有语音条保持不变，未被替换
+
+timeoutMs: 240000
+
+---
+id: IT-ME-VOICE-007
+name: 删除个人主页已有语音条
+module: 个人主页语音条-删除
+platform: android
+priority: P0
+tags: [个人主页, 语音, 删除]
+preconditions: 用户已设置个人主页语音条
+
+setup:
+  launchApp: true
+  include:
+    - base-navigation/enter_profile_edit_page
+  steps:
+    - waitFor: 编辑页展示已有语音条
+
+intent:
+  action: 点击语音条旁的删除按钮
+  expected:
+    - 语音条被删除
+    - 设置栏恢复为录制按钮入口状态
+
+timeoutMs: 120000
+
+---
+id: IT-ME-VOICE-008
+name: 个人资料页展示语音条可播放
+module: 个人主页语音条-展示
+platform: android
+priority: P0
+tags: [个人主页, 语音, 资料页, 展示播放]
+preconditions: 用户已设置个人主页语音条
+
+setup:
+  launchApp: true
+  include:
+    - base-navigation/enter_profile_page
+
+intent:
+  action: 找到个人资料页上的语音条区域并点击播放
+  expected:
+    - 个人资料页展示语音条
+    - 点击后正常播放语音
+
+timeoutMs: 120000
+
+---
+id: IT-ME-VOICE-009
+name: 客态查看他人主页语音条可播放
+module: 个人主页语音条-展示
+platform: android
+priority: P1
+tags: [个人主页, 语音, 客态, 播放]
+preconditions: 被查看用户已设置主页语音条且审核通过
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - act: 点击某个用户头像进入其个人资料页
+    - waitFor: 进入他人资料页
+
+intent:
+  action: 找到该用户的语音条并点击播放
+  expected:
+    - 可见该用户的主页语音条
+    - 点击播放正常
+
+timeoutMs: 120000
+
+---
+id: IT-ME-VOICE-010
+name: 主页语音条审核通过前仅自己可见
+module: 个人主页语音条-审核
+platform: android
+priority: P1
+tags: [个人主页, 语音, 审核, 自己可见]
+preconditions: 刚设置主页语音条，尚在审核中
+
+setup:
+  launchApp: true
+  include:
+    - base-navigation/enter_profile_page
+
+intent:
+  action: 查看自己主页是否可见语音条
+  expected:
+    - 自己可见刚设置的语音条
+    - 审核通过前他人不可见（需其他设备验证）
+
+timeoutMs: 120000
+
+---
+id: IT-ME-VOICE-011
+name: 首次进入个人主页浮窗提示新功能
+module: 个人主页语音条-引导
+platform: android
+priority: P1
+tags: [个人主页, 语音, 浮窗, 新功能提示]
+preconditions: 版本更新后首次进入个人主页
+
+setup:
+  launchApp: true
+  include:
+    - base-navigation/enter_profile_page
+
+intent:
+  action: 首次点入个人主页观察是否有浮窗提示
+  expected:
+    - 出现浮窗形式的提示
+    - 提示内容为新增个人主页语音设置功能
+
+timeoutMs: 120000
+
+---
+id: IT-ME-VOICE-012
+name: 编辑页已有语音条可试听播放
+module: 个人主页语音条-设置
+platform: android
+priority: P1
+tags: [个人主页, 语音, 设置, 试听]
+preconditions: 用户已设置主页语音条
+
+setup:
+  launchApp: true
+  include:
+    - base-navigation/enter_profile_edit_page
+  steps:
+    - waitFor: 编辑页展示已有语音条
+
+intent:
+  action: 点击设置栏中已有语音条的播放按钮
+  expected:
+    - 可正常播放已有的主页语音
+    - 播放状态图标变化
+
+timeoutMs: 120000
+
+---
+id: IT-ME-VOICE-013
+name: 语音房内点击主页语音条播放受限
+module: 个人主页语音条-展示
+platform: android
+priority: P1
+tags: [个人主页, 语音, 播放, 冲突, 语音房]
+preconditions: 用户在语音房内查看他人主页语音条
+
+setup:
+  launchApp: false
+
+intent:
+  action: 在语音房内查看他人主页时点击语音条播放
+  expected:
+    - toast 提示当前在语音房内无法播放
+    - 语音未播放
+
+timeoutMs: 120000
+

@@ -67,6 +67,16 @@ npm run intent -- intents/房间/admin-ludo-billiards.yaml
 # 按模块批量
 npm run intent:module -- 房间
 
+# 双端并行（Android + iOS，按 YAML platform 分流）
+npm run intent:dual -- intents/动态/moment-discover-common.yaml
+npm run intent:dual:module -- 动态
+
+# 仅跑某一端
+npm run intent:platform -- --platform ios intents/动态/moment-discover-common.yaml
+
+# 同步 iOS profile 到 midscene/.env
+npm run sync-profile -- --ios
+
 # 从 Markdown 用例表生成意图草稿
 npm run md2intent -- ../temporary_testcase/房间管理员-更多面板Ludo台球.md
 
@@ -192,14 +202,32 @@ setup:
 | `account.tunnelMomoid` | Tunnel 抓包 momoid（默认与 userId 一致） |
 | `room.voiceRoomId` | 默认语音房 roomId（如 `80954536`） |
 | `device.androidDeviceId` | ADB 设备序列号 |
+| `platforms.android` / `platforms.ios` | 双端设备、包名、WDA、分辨率 |
 | `env.*` | 同步到 `midscene/.env` 的变量名 |
 
 ```bash
 # 编辑 intent-test/config/base-profile.yaml 后，同步到 midscene/.env
-npm run sync-profile
+npm run sync-profile          # Android（默认）
+npm run sync-profile -- --ios # iOS WDA / 包名 / 分辨率
 
 # compile / intent / preflight 会自动加载 base-profile（不覆盖 midscene/.env 已有值）
 ```
+
+### 双端并行 runner
+
+`intent:dual` 会：
+
+1. **一次**跑 `ensureIntentData`（造数 / preflight）
+2. **并行** spawn Android + iOS worker（`intent-run-platform.mjs`）
+3. 各 worker 只执行 YAML 中 `platform: android|ios` 匹配的用例
+4. 产物隔离：`.generated/android/`、`.generated/ios/`
+5. 报告：各端 `midscene_run/report/<id>-android|ios/`，汇总 `*-dual-summary/index.html`
+
+```bash
+INTENT_CONTINUE=1 INTENT_TUNNEL=0 npm run intent:dual -- intents/动态/moment-discover-common.yaml
+```
+
+单端 `npm run intent` 行为不变（默认 Android，不按 platform 过滤，产物仍在 `.generated/`）。
 
 ---
 

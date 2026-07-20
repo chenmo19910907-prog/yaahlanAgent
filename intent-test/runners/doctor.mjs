@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import { getPlatformProfile, loadBaseProfile } from './load-base-profile.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MIDSCENE = resolve(ROOT, '../midscene');
@@ -25,6 +26,28 @@ try {
   check('ADB 设备', devices.length > 0, devices.length ? devices[0].split('\t')[0] : 'adb devices 无 device');
 } catch {
   check('ADB 可用', false, '安装 android-platform-tools');
+}
+
+try {
+  const profilePath = resolve(ROOT, 'config/base-profile.yaml');
+  if (existsSync(profilePath)) {
+    const ios = getPlatformProfile('ios', loadBaseProfile());
+    const host = ios?.env?.WDA_HOST ?? 'localhost';
+    const port = ios?.env?.WDA_PORT ?? '8100';
+    const wdaUrl = `http://${host}:${port}/status`;
+    let wdaOk = false;
+    try {
+      execSync(`curl -sf --max-time 3 ${wdaUrl}`, { stdio: 'pipe' });
+      wdaOk = true;
+    } catch {
+      wdaOk = false;
+    }
+    console.log(
+      `${wdaOk ? '✓' : '○'} WDA (${host}:${port})${wdaOk ? '' : ' — 双端 iOS 跑测前需启动 WebDriverAgent'}`,
+    );
+  }
+} catch {
+  /* optional */
 }
 
 try {

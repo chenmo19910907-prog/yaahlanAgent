@@ -16,11 +16,15 @@ import { applyBaseProfileEnv } from './load-base-profile.mjs';
 import { parseAllDocuments, parse } from 'yaml';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const GENERATED = resolve(ROOT, '.generated');
 const FRAGMENTS_DIR = resolve(ROOT, 'intents/_fragments');
 const MIDSCENE_ROOT = process.env.MIDSCENE_ROOT
   ? resolve(ROOT, process.env.MIDSCENE_ROOT)
   : resolve(ROOT, '../midscene');
+
+export function getGeneratedDir() {
+  const sub = process.env.INTENT_GENERATED_SUBDIR?.trim();
+  return sub ? resolve(ROOT, '.generated', sub) : resolve(ROOT, '.generated');
+}
 
 const POPUP_POLICY_AI_CONTEXT =
   '【全局弹窗策略】执行任意 aiAct 时若遇挡路弹窗：' +
@@ -278,21 +282,24 @@ function compileOne(doc) {
   const flow = [];
 
   if (setup.launchApp && platform === 'android') {
-    const pkg = process.env.ANDROID_APP_ID ?? 'com.immomo.biz.yaahlan';
-    const yaha = process.env.ANDROID_FORCE_STOP_YAHA ?? 'com.immomo.yaha';
-    const mode = process.env.ANDROID_LAUNCH_MODE ?? 'launcher';
-    flow.push({ runAdbShell: `am force-stop ${yaha}` });
-    flow.push({ runAdbShell: `am force-stop ${pkg}` });
-    flow.push({ sleep: 1000 });
-    if (mode === 'launcher') {
-      flow.push({
-        runAdbShell: `monkey -p ${pkg} -c android.intent.category.LAUNCHER 1`,
-      });
-    } else {
-      const act = process.env.ANDROID_MAIN_ACTIVITY ?? '.personalityIcon4';
-      flow.push({ launch: `${pkg}/${act}` });
+    const skipRelaunch = process.env.INTENT_SKIP_RELAUNCH === '1';
+    if (!skipRelaunch) {
+      const pkg = process.env.ANDROID_APP_ID ?? 'com.immomo.biz.yaahlan';
+      const yaha = process.env.ANDROID_FORCE_STOP_YAHA ?? 'com.immomo.yaha';
+      const mode = process.env.ANDROID_LAUNCH_MODE ?? 'launcher';
+      flow.push({ runAdbShell: `am force-stop ${yaha}` });
+      flow.push({ runAdbShell: `am force-stop ${pkg}` });
+      flow.push({ sleep: 1000 });
+      if (mode === 'launcher') {
+        flow.push({
+          runAdbShell: `monkey -p ${pkg} -c android.intent.category.LAUNCHER 1`,
+        });
+      } else {
+        const act = process.env.ANDROID_MAIN_ACTIVITY ?? '.personalityIcon4';
+        flow.push({ launch: `${pkg}/${act}` });
+      }
+      flow.push({ sleep: 4000 });
     }
-    flow.push({ sleep: 4000 });
   } else if (setup.launchApp && platform === 'ios') {
     flow.push({ launch: '${IOS_APP_ID}' }, { sleep: 3000 });
   }
@@ -325,6 +332,19 @@ function compileOne(doc) {
   flow.push({ aiAct: expandTemplate(action) });
   flow.push({ sleep: DEFAULT_ACT_SLEEP_MS });
 
+  if (doc.verify) {
+    const verifyIncludes = doc.verify.include ?? [];
+    const verifySteps = doc.verify.steps ?? [];
+    for (const ref of verifyIncludes) {
+      for (const step of resolveFragmentSteps(ref)) {
+        appendSetupStep(flow, step);
+      }
+    }
+    for (const step of verifySteps) {
+      appendSetupStep(flow, step);
+    }
+  }
+
   for (const exp of expected) {
     flow.push({
       aiAssert: expandTemplate(String(exp)),
@@ -348,7 +368,9 @@ function compileOne(doc) {
   lines.push(`  testId: "${id}"`);
   lines.push(`  groupName: "${doc.module ?? name}"`);
   lines.push('  generateReport: true');
-  lines.push(`  reportFileName: "${id.toLowerCase()}"`);
+  const reportSuffix =
+    process.env.INTENT_REPORT_PLATFORM_SUFFIX === '1' ? `-${platform}` : '';
+  lines.push(`  reportFileName: "${id.toLowerCase()}${reportSuffix}"`);
   lines.push(`  aiActContext: >`);
   for (const line of aiContext.split('\n')) {
     lines.push(`    ${line.trim()}`);
@@ -388,13 +410,24 @@ function compileOne(doc) {
   };
 }
 
-function parseIntentFile(filePath) {
+function parseIntentFile(filePath, opts = {}) {
+  const platformFilter = opts.platform
+    ? String(opts.platform).toLowerCase()
+    : null;
   const raw = readFileSync(filePath, 'utf8');
   const docs = parseAllDocuments(raw).map((d) => d.toJSON()).filter(Boolean);
   if (!docs.length) {
     throw new Error(`未解析到意图文档: ${filePath}`);
   }
-  return docs.map((doc) => ({ ...compileOne(doc), source: filePath }));
+  const filtered = docs.filter((doc) => {
+    if (!platformFilter) return true;
+    return String(doc.platform ?? 'android').toLowerCase() === platformFilter;
+  });
+  if (!filtered.length) {
+    if (platformFilter) return [];
+    throw new Error(`未解析到意图文档: ${filePath}`);
+  }
+  return filtered.map((doc) => ({ ...compileOne(doc), source: filePath }));
 }
 
 function collectIntentFiles(arg) {
@@ -420,22 +453,41 @@ function collectIntentFiles(arg) {
 function main() {
   loadEnvFromMidscene();
   const args = process.argv.slice(2);
-  if (!args.length) {
-    console.error('用法: node runners/compile-intent.mjs <intent.yaml> | --all');
+  const platformIdx = args.indexOf('--platform');
+  let platformFilter = null;
+  let fileArgs = args;
+  if (platformIdx !== -1) {
+    platformFilter = args[platformIdx + 1];
+    fileArgs = args.filter((_, i) => i !== platformIdx && i !== platformIdx + 1);
+  }
+  if (!fileArgs.length) {
+    console.error(
+      '用法: node runners/compile-intent.mjs <intent.yaml> | --all [--platform android|ios]',
+    );
     process.exit(1);
   }
 
+  if (platformFilter) {
+    process.env.INTENT_PLATFORM = platformFilter;
+    process.env.INTENT_GENERATED_SUBDIR = platformFilter;
+    process.env.INTENT_REPORT_PLATFORM_SUFFIX = '1';
+  }
+
+  const GENERATED = getGeneratedDir();
   mkdirSync(GENERATED, { recursive: true });
 
   const outputs = [];
-  for (const arg of args) {
-    const files = arg.endsWith('.yaml') || arg.endsWith('.yml') ? [resolve(process.cwd(), arg)] : collectIntentFiles(arg);
+  for (const arg of fileArgs) {
+    const files =
+      arg.endsWith('.yaml') || arg.endsWith('.yml')
+        ? [resolve(process.cwd(), arg)]
+        : collectIntentFiles(arg);
     for (const file of files) {
       if (!file.includes('/intents/') && !file.includes('\\intents\\')) {
         console.warn(`[compile-intent] 跳过非 intents 目录: ${file}`);
         continue;
       }
-      const compiled = parseIntentFile(file);
+      const compiled = parseIntentFile(file, { platform: platformFilter });
       for (const item of compiled) {
         const outPath = resolve(GENERATED, `${item.id}.midscene.yaml`);
         writeFileSync(outPath, item.content, 'utf8');
@@ -451,6 +503,10 @@ function main() {
   }
 
   if (!outputs.length) {
+    if (platformFilter) {
+      console.warn(`[compile-intent] 无 ${platformFilter} 平台用例输出`);
+      return [];
+    }
     console.error('[compile-intent] 无输出');
     process.exit(1);
   }
@@ -462,4 +518,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
 
-export { compileOne, parseIntentFile, GENERATED, MIDSCENE_ROOT };
+export { compileOne, parseIntentFile, MIDSCENE_ROOT };

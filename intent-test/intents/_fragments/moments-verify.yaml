@@ -1,0 +1,75 @@
+# 动态（Moment）常用结果验证片段
+# 用于 setup.include 或 intent 验证后续断言
+#
+# 用法:
+#   setup:
+#     include:
+#       - moments-verify/verify_publish_success
+#       - moments-verify/verify_moment_in_my_page
+#
+# 场景说明:
+#   发布动态成功 → 自动跳转"我的动态"页 → 页面中可见刚发布的内容 = 验证通过
+
+# ━━━ 发布成功验证 ━━━
+
+verify_publish_success:
+  - waitFor: 出现发布成功 toast 提示，或发布中 loading 后自动跳转到我的动态页面
+  - waitFor: 当前页面已离开发布编辑页，处于我的动态列表页（可见个人头像或动态列表）
+
+verify_moment_in_my_page:
+  - waitFor: 我的动态列表页已加载，列表中第一条即为刚发布的动态
+  - act: 查看我的动态页列表顶部第一条内容，确认包含刚才输入的文字或媒体（图片/视频/语音）
+
+# ━━━ 发布文字动态完整验证（发布 → 跳转 → 内容可见） ━━━
+
+verify_text_publish_and_visible:
+  - waitFor: 出现发布成功 toast 或 loading 后跳转
+  - waitFor: 已跳转到我的动态页面，列表顶部第一条为刚发布的文字动态
+  - act: 确认列表第一条动态中可见刚才输入的文字内容
+
+# ━━━ 发布图片动态完整验证 ━━━
+
+verify_image_publish_and_visible:
+  - waitFor: 出现发布成功 toast 或 loading 后跳转
+  - waitFor: 已跳转到我的动态页面，列表顶部可见刚发布的动态
+  - act: 确认列表第一条动态中可见图片缩略图
+
+# ━━━ 发布视频动态完整验证 ━━━
+
+verify_video_publish_and_visible:
+  - waitFor: 出现发布成功 toast 或 loading 后跳转
+  - waitFor: 已跳转到我的动态页面，列表顶部可见刚发布的动态
+  - act: 确认列表第一条动态中可见视频封面或播放按钮
+
+# ━━━ 发布语音动态完整验证 ━━━
+
+verify_voice_publish_and_visible:
+  - waitFor: 出现发布成功 toast 或 loading 后跳转
+  - waitFor: 已跳转到我的动态页面，列表顶部可见刚发布的动态
+  - act: 确认列表第一条动态中可见语音条播放图标或时长显示
+
+# ━━━ 发布失败/不可发布 验证 ━━━
+
+verify_publish_blocked:
+  - waitFor: 发布按钮保持置灰或不可点击状态
+  - waitFor: 仍停留在发布编辑页，未跳转
+
+verify_publish_toast_error:
+  - waitFor: 出现错误提示 toast（如"请输入内容""内容不能为空"等）
+  - waitFor: 仍停留在发布编辑页，未跳转
+
+# ━━━ 进入我的动态页（从 Me 帧进入） ━━━
+
+enter_my_moments_page:
+  - tap: [0.90, 0.96]
+    afterSleep: 1500
+  - act: 点击个人主页中的动态入口或"我的动态"区域
+  - waitFor: 已进入我的动态列表页，可见发布过的动态列表
+
+# ━━━ 删除刚发布的动态（清理测试数据） ━━━
+
+delete_latest_moment:
+  - act: 长按或点击列表第一条动态的更多按钮（三点或...图标）
+  - act: 在弹出菜单中点击删除
+  - act: 确认删除弹窗中点击确定
+  - waitFor: 动态已从列表中移除，或出现删除成功 toast

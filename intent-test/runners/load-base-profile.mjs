@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 加载 intent-test/config/base-profile.yaml，注入 process.env（不覆盖已存在变量）。
+ * 加载 intent-test/config/base-profile.yaml，支持单端 / 双端 profile。
  */
 
 import { existsSync, readFileSync } from 'fs';
@@ -22,13 +22,78 @@ export function loadBaseProfile(path = BASE_PROFILE_PATH) {
   return doc;
 }
 
+function mergeEnv(profile, platform) {
+  const shared = profile.env && typeof profile.env === 'object' ? profile.env : {};
+  const platformBlock = profile.platforms?.[platform];
+  const platformEnv =
+    platformBlock?.env && typeof platformBlock.env === 'object'
+      ? platformBlock.env
+      : {};
+
+  if (platform === 'android' && !Object.keys(platformEnv).length) {
+    return { ...shared };
+  }
+  return { ...shared, ...platformEnv };
+}
+
+/** 读取某平台的 device/app/env 配置（android 可回退到顶层 device/app/env） */
+export function getPlatformProfile(platform = 'android', profile = loadBaseProfile()) {
+  if (!profile) return null;
+  const key = String(platform).toLowerCase();
+  const block = profile.platforms?.[key];
+
+  if (block) {
+    return {
+      platform: key,
+      account: profile.account,
+      room: profile.room,
+      intent: profile.intent,
+      device: block.device ?? {},
+      app: block.app ?? {},
+      env: mergeEnv(profile, key),
+    };
+  }
+
+  if (key === 'android') {
+    return {
+      platform: 'android',
+      account: profile.account,
+      room: profile.room,
+      intent: profile.intent,
+      device: profile.device ?? {},
+      app: profile.app ?? {},
+      env: mergeEnv(profile, 'android'),
+    };
+  }
+
+  return {
+    platform: key,
+    account: profile.account,
+    room: profile.room,
+    intent: profile.intent,
+    device: {},
+    app: {},
+    env: mergeEnv(profile, key),
+  };
+}
+
 /** 将 profile.env 与 profile.intent 写入 process.env（已有值不覆盖） */
 export function applyBaseProfileEnv(profile = loadBaseProfile()) {
   if (!profile) {
     return { profile, applied: [] };
   }
+  return applyPlatformProfileEnv('android', profile);
+}
+
+/** 按平台注入 env；platform=android 时兼容旧版扁平 env 段 */
+export function applyPlatformProfileEnv(platform = 'android', profile = loadBaseProfile()) {
+  if (!profile) {
+    return { profile: null, platform, applied: [] };
+  }
+
+  const plat = getPlatformProfile(platform, profile);
   const applied = [];
-  const intent = profile.intent;
+  const intent = plat.intent ?? profile.intent;
   if (intent && typeof intent === 'object') {
     const intentEnv = {
       ...(intent.requireData ? { INTENT_REQUIRE_DATA: '1' } : {}),
@@ -42,29 +107,45 @@ export function applyBaseProfileEnv(profile = loadBaseProfile()) {
       }
     }
   }
-  if (!profile.env || typeof profile.env !== 'object') {
-    return { profile, applied };
-  }
-  for (const [key, value] of Object.entries(profile.env)) {
+
+  const envMap = plat.env ?? {};
+  for (const [key, value] of Object.entries(envMap)) {
     if (value == null || String(value).trim() === '') continue;
     if (process.env[key]) continue;
     process.env[key] = String(value).trim();
     applied.push(key);
   }
-  return { profile, applied };
+
+  if (!process.env.INTENT_PLATFORM) {
+    process.env.INTENT_PLATFORM = platform;
+    applied.push('INTENT_PLATFORM');
+  }
+
+  return { profile: plat, platform, applied };
 }
+
 export function dumpBaseProfileEnvJson() {
   const profile = loadBaseProfile();
-  const env = profile?.env && typeof profile.env === 'object' ? profile.env : {};
-  return JSON.stringify({ profile, env }, null, 2);
+  return JSON.stringify(
+    {
+      profile,
+      android: getPlatformProfile('android', profile),
+      ios: getPlatformProfile('ios', profile),
+    },
+    null,
+    2,
+  );
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   if (process.argv.includes('--json')) {
     console.log(dumpBaseProfileEnvJson());
   } else {
-    const { profile, applied } = applyBaseProfileEnv();
-    console.log(`[base-profile] ${profile ? '已加载' : '未找到'} ${BASE_PROFILE_PATH}`);
+    const platform = process.argv.includes('--ios') ? 'ios' : 'android';
+    const { profile, applied } = applyPlatformProfileEnv(platform);
+    console.log(
+      `[base-profile] ${profile ? '已加载' : '未找到'} ${BASE_PROFILE_PATH} (${platform})`,
+    );
     if (applied.length) {
       console.log(`[base-profile] 注入 env: ${applied.join(', ')}`);
     }

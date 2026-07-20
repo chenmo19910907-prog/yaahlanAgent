@@ -8,7 +8,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
-import { loadBaseProfile, BASE_PROFILE_PATH } from './load-base-profile.mjs';
+import { loadBaseProfile, getPlatformProfile, BASE_PROFILE_PATH } from './load-base-profile.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MIDSCENE_ENV = resolve(ROOT, '../midscene/.env');
@@ -55,20 +55,24 @@ function patchEnvFile(envVars) {
 }
 
 function main() {
+  const platform = process.argv.includes('--ios') ? 'ios' : 'android';
   const profile = loadBaseProfile();
-  if (!profile?.env) {
+  const plat = getPlatformProfile(platform, profile);
+  const envMap = { ...(profile?.env ?? {}), ...(plat?.env ?? {}) };
+
+  if (!Object.keys(envMap).length) {
     console.error(`[sync-profile] ✗ 无 env 段: ${BASE_PROFILE_PATH}`);
     process.exit(1);
   }
 
   const envVars = {};
-  for (const [key, value] of Object.entries(profile.env)) {
+  for (const [key, value] of Object.entries(envMap)) {
     if (value == null) continue;
     envVars[key] = String(value).trim();
   }
 
   const updated = patchEnvFile(envVars);
-  console.log(`[sync-profile] ✓ 已写入 midscene/.env: ${updated.join(', ')}`);
+  console.log(`[sync-profile] ✓ 已写入 midscene/.env (${platform}): ${updated.join(', ')}`);
   console.log(
     `[sync-profile] 账号 ${profile.account?.userId ?? '-'} · 房间 ${profile.room?.voiceRoomId ?? '-'}`,
   );

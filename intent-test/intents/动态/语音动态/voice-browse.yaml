@@ -1,0 +1,261 @@
+# 语音条动态 · PRD: 支持发布带语音条的动态（Yaahlan-2.5.7）
+# 对照: documents/moments/basic module.md
+# 排除: 屏幕适配、多语言/RTL、纯后端逻辑、安装/升级路径
+
+# ╔═══════════════════════════════════════════════════════════════╗
+# ║  模块 4：浏览播放 — 发现/关注/详情 × 播放/暂停/滚动 × 冲突  ║
+# ╚═══════════════════════════════════════════════════════════════╝
+
+---
+id: IT-MOM-VOICE-PUB-035
+name: 发现页语音动态展示语音条区域
+module: 语音动态-浏览
+platform: android
+priority: P0
+tags: [动态, 语音, 发现页, 展示]
+preconditions: 发现页存在带语音条的动态
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - waitFor: 发现列表已加载
+
+intent:
+  action: 找到一条带语音条的动态，观察语音条展示位置和样式
+  expected:
+    - 语音条显示在动态文字内容下方、图片上方
+    - 语音条呈横条形，左侧有播放按钮，中部有波形图案，右侧有时长数字
+    - 语音条样式与编辑页一致（深色背景横条）
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-VOICE-PUB-036
+name: 发现页点击播放语音条
+module: 语音动态-浏览
+platform: android
+priority: P0
+tags: [动态, 语音, 发现页, 播放]
+preconditions: 发现页存在带语音条的动态
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - waitFor: 发现列表可见带语音条的动态
+
+intent:
+  action: 点击语音动态中的语音条播放按钮
+  expected:
+    - 语音开始播放
+    - 播放按钮图标变为暂停图标
+    - 波形区域有播放进度动画流动
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-VOICE-PUB-037
+name: 发现页再次点击暂停播放
+module: 语音动态-浏览
+platform: android
+priority: P0
+tags: [动态, 语音, 发现页, 暂停]
+preconditions: 发现页存在带语音条的动态
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - waitFor: 发现列表可见带语音条的动态
+    - act: 点击语音条播放按钮
+    - waitFor: 语音开始播放
+
+intent:
+  action: 再次点击语音条按钮暂停播放
+  expected:
+    - 语音暂停播放
+    - 按钮变回播放状态图标
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-VOICE-PUB-038
+name: 发现页暂停后再次点击继续播放
+module: 语音动态-浏览
+platform: android
+priority: P1
+tags: [动态, 语音, 发现页, 继续播放]
+preconditions: 发现页存在带语音条的动态
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - waitFor: 发现列表可见带语音条的动态
+    - act: 点击播放后再次点击暂停
+    - waitFor: 语音已暂停
+
+intent:
+  action: 再次点击语音条按钮继续播放
+  expected:
+    - 语音从暂停位置继续播放
+    - 按钮变为暂停状态图标
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-VOICE-PUB-039
+name: 动态详情页语音条展示与播放
+module: 语音动态-浏览
+platform: android
+priority: P0
+tags: [动态, 语音, 详情页, 播放]
+preconditions: 存在带语音条的动态
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - act: 点击一条带语音条的动态文字区域进入详情页
+    - waitFor: 进入动态详情页，可见语音条
+
+intent:
+  action: 点击详情页中语音条的播放按钮
+  expected:
+    - 语音正常播放
+    - 播放状态图标变化
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-VOICE-PUB-040
+name: 详情页语音条暂停再继续
+module: 语音动态-浏览
+platform: android
+priority: P1
+tags: [动态, 语音, 详情页, 暂停继续]
+preconditions: 存在带语音条的动态
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - act: 进入带语音条的动态详情页
+    - waitFor: 可见语音条
+    - act: 点击播放
+    - waitFor: 语音播放中
+
+intent:
+  action: 点击暂停后再次点击继续播放
+  expected:
+    - 暂停后可再次继续播放
+    - 播放/暂停状态切换正常
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-VOICE-PUB-041
+name: 关注页语音动态展示语音条
+module: 语音动态-浏览
+platform: android
+priority: P1
+tags: [动态, 语音, 关注页, 展示]
+preconditions: 关注页存在关注用户发布的语音动态
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_follow_tab
+  steps:
+    - waitFor: 关注列表已加载
+
+intent:
+  action: 找到带语音条的动态并点击播放
+  expected:
+    - 关注页语音条区域正常展示
+    - 点击播放正常
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-VOICE-PUB-042
+name: 滑出屏幕后自动暂停播放
+module: 语音动态-浏览
+platform: android
+priority: P0
+tags: [动态, 语音, 浏览, 自动暂停]
+preconditions: 发现页存在带语音条的动态
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - waitFor: 发现列表可见带语音条的动态
+    - act: 点击语音条播放按钮
+    - waitFor: 语音开始播放
+
+intent:
+  action: 向下滑动列表，使该条动态完全滑出屏幕可见区域
+  expected:
+    - 语音自动暂停播放
+    - 滑回时按钮显示为未播放状态
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-VOICE-PUB-043
+name: 语音房内点击播放 toast 不可播放
+module: 语音动态-浏览
+platform: android
+priority: P0
+tags: [动态, 语音, 浏览, 冲突, 语音房]
+preconditions: 用户当前在语音房内
+
+setup:
+  launchApp: false
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - waitFor: 发现列表可见带语音条的动态
+
+intent:
+  action: 点击语音条的播放按钮
+  expected:
+    - 弹出 toast 提示当前在语音房内无法播放
+    - 语音未开始播放
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-VOICE-PUB-044
+name: 我的动态页语音条展示与播放
+module: 语音动态-浏览
+platform: android
+priority: P1
+tags: [动态, 语音, 我的动态, 播放]
+preconditions: 用户已发布过语音动态
+
+setup:
+  launchApp: true
+  steps:
+    - tap: [0.90, 0.96]
+      afterSleep: 1500
+    - act: 进入我的动态列表
+    - waitFor: 我的动态列表可见语音动态
+
+intent:
+  action: 点击语音条播放按钮
+  expected:
+    - 语音正常播放
+    - 播放暂停切换正常
+
+timeoutMs: 120000
+

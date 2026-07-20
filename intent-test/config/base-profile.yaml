@@ -1,5 +1,6 @@
 # intent-test 基础测试上下文（账号 / 房间 / 设备）
-# 同步到 midscene/.env：npm run sync-profile
+# 同步到 midscene/.env：npm run sync-profile（默认 android）
+# 双端并行：npm run intent:dual -- intents/动态/...
 version: 1
 
 account:
@@ -12,6 +13,7 @@ room:
   type: voice
   label: 默认测试语音房
 
+# 兼容旧版单端配置（等同 platforms.android）
 device:
   platform: android
   androidDeviceId: "47130DLAQ012BU"
@@ -21,21 +23,47 @@ device:
 app:
   androidPackage: com.immomo.biz.yaahlan
 
-# intent-run 默认行为（applyBaseProfileEnv 注入，midscene/.env 可覆盖）
 intent:
   requireData: true
   continueOnError: true
   skipTunnel: false
 
-# 写入 midscene/.env 的变量（compile / intent-run / preflight 也会自动加载为默认值）
 env:
   TEST_ACCOUNT_USER_ID: "100261858"
   TEST_TUNNEL_MOMOID: "100261858"
   TEST_VOICE_ROOM_ID: "80954536"
-  ANDROID_DEVICE_ID: "47130DLAQ012BU"
-  ANDROID_APP_ID: com.immomo.biz.yaahlan
   TUNNEL_G_APPID: yaahlan
-  DEVICE_WIDTH: "1080"
-  DEVICE_HEIGHT: "2424"
   INTENT_REQUIRE_DATA: "1"
   INTENT_CONTINUE: "1"
+
+platforms:
+  android:
+    device:
+      androidDeviceId: "47130DLAQ012BU"
+      width: 1080
+      height: 2424
+    app:
+      androidPackage: com.immomo.biz.yaahlan
+    env:
+      ANDROID_DEVICE_ID: "47130DLAQ012BU"
+      ANDROID_APP_ID: com.immomo.biz.yaahlan
+      DEVICE_WIDTH: "1080"
+      DEVICE_HEIGHT: "2424"
+      INTENT_PLATFORM: android
+
+  ios:
+    device:
+      wdaHost: localhost
+      wdaPort: 8100
+      width: 1179
+      height: 2556
+      label: iOS 真机（请按实际 WDA 与分辨率修改）
+    app:
+      iosAppId: com.immomo.biz.yaahlanNew
+    env:
+      WDA_HOST: localhost
+      WDA_PORT: "8100"
+      IOS_APP_ID: com.immomo.biz.yaahlanNew
+      DEVICE_WIDTH: "1179"
+      DEVICE_HEIGHT: "2556"
+      INTENT_PLATFORM: ios

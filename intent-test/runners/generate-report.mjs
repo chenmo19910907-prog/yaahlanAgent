@@ -115,16 +115,17 @@ function getLastScreenshots(htmlPath, count = 2) {
   return filtered.slice(-count);
 }
 
-function buildHtml(testModule, cases, timestamp) {
+function buildHtml(testModule, cases, timestamp, platformLabel = 'Android') {
   const passCount = cases.filter((c) => c.passed).length;
   const skipCount = cases.filter((c) => c.skipped).length;
-  const failCount = cases.length - passCount - skipCount;
+  const timeoutCount = cases.filter((c) => c.timedOut).length;
+  const failCount = cases.length - passCount - skipCount - timeoutCount;
 
   let cards = '';
   for (const tc of cases) {
-    const statusClass = tc.skipped ? 'skip' : tc.passed ? 'pass' : 'fail';
-    const statusLabel = tc.skipped ? '未执行' : tc.passed ? '通过' : '失败';
-    const statusBg = tc.skipped ? '#9E9E9E' : tc.passed ? '#4CAF50' : '#F44336';
+    const statusClass = tc.timedOut ? 'timeout' : tc.skipped ? 'skip' : tc.passed ? 'pass' : 'fail';
+    const statusLabel = tc.timedOut ? '超时' : tc.skipped ? '未执行' : tc.passed ? '通过' : '失败';
+    const statusBg = tc.timedOut ? '#FF9800' : tc.skipped ? '#9E9E9E' : tc.passed ? '#4CAF50' : '#F44336';
 
     const stepItems = (tc.steps ?? [])
       .map((s) => `<li>${escHtml(s)}</li>`)
@@ -181,11 +182,13 @@ body { font-family: -apple-system, "SF Pro", "PingFang SC", "Helvetica Neue", sa
 .num-pass { color: #4CAF50; }
 .num-fail { color: #F44336; }
 .num-skip { color: #9E9E9E; }
+.num-timeout { color: #FF9800; }
 
 .case-card { background: #fff; border-radius: 12px; margin: 20px 0; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border-left: 4px solid #e0e0e0; }
 .case-card.pass { border-left-color: #4CAF50; }
 .case-card.fail { border-left-color: #F44336; }
 .case-card.skip { border-left-color: #9E9E9E; }
+.case-card.timeout { border-left-color: #FF9800; }
 .case-header { display: flex; align-items: center; justify-content: space-between; }
 .case-id { font-size: 12px; color: #999; font-weight: 500; letter-spacing: 0.5px; }
 .case-title { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-top: 4px; }
@@ -211,12 +214,13 @@ body { font-family: -apple-system, "SF Pro", "PingFang SC", "Helvetica Neue", sa
 <body>
 <div class="header">
   <h1>${escHtml(testModule)} · 意图测试报告</h1>
-  <div class="meta">生成时间: ${timestamp} · 平台: Android</div>
+  <div class="meta">生成时间: ${timestamp} · 平台: ${escHtml(platformLabel)}</div>
 </div>
 <div class="summary-bar">
   <div class="summary-item"><div class="num num-total">${cases.length}</div><div class="label">总用例</div></div>
   <div class="summary-item"><div class="num num-pass">${passCount}</div><div class="label">通过</div></div>
   <div class="summary-item"><div class="num num-fail">${failCount}</div><div class="label">失败</div></div>
+  ${timeoutCount ? `<div class="summary-item"><div class="num num-timeout">${timeoutCount}</div><div class="label">超时</div></div>` : ''}
   ${skipCount ? `<div class="summary-item"><div class="num num-skip">${skipCount}</div><div class="label">跳过</div></div>` : ''}
 </div>
 ${cards}
@@ -240,7 +244,15 @@ function parseSourceDocs(filePath) {
     .filter((d) => d && d.id);
 }
 
-export function generateReport(sources, results) {
+export function generateReport(sources, results, opts = {}) {
+  const platformLabel = opts.platformLabel ?? (opts.platform === 'ios' ? 'iOS' : 'Android');
+  const platform = opts.platform ? String(opts.platform).toLowerCase() : '';
+  const reportSuffix =
+    platform && process.env.INTENT_REPORT_PLATFORM_SUFFIX === '1' ? `-${platform}` : '';
+
+  function reportHtmlPath(id) {
+    return resolve(REPORT_DIR, `${String(id).toLowerCase()}${reportSuffix}`, 'index.html');
+  }
   const allCases = [];
   let moduleName = '';
 
@@ -251,9 +263,10 @@ export function generateReport(sources, results) {
       const result = results?.find((r) => r.id === doc.id);
       const passed = result ? result.passed : false;
       const skipped = result?.skipped ?? false;
+      const timedOut = result?.timedOut ?? false;
 
-      const reportHtml = resolve(REPORT_DIR, doc.id.toLowerCase(), 'index.html');
-      const screenshots = skipped ? [] : getLastScreenshots(reportHtml, 2);
+      const reportHtml = reportHtmlPath(doc.id);
+      const screenshots = (skipped || timedOut) ? [] : getLastScreenshots(reportHtml, 2);
 
       const steps = [];
       if (doc.setup?.include) {
@@ -275,6 +288,7 @@ export function generateReport(sources, results) {
         name: doc.name ?? doc.id,
         passed,
         skipped,
+        timedOut,
         steps,
         expected: doc.intent?.expected ?? [],
         screenshots,
@@ -282,12 +296,13 @@ export function generateReport(sources, results) {
     }
   }
 
-  const slug = moduleName.replace(/[^a-zA-Z0-9\u4e00-\u9fff-]/g, '-').toLowerCase();
+  const slugBase = moduleName.replace(/[^a-zA-Z0-9\u4e00-\u9fff-]/g, '-').toLowerCase();
+  const slug = opts.platform ? `${slugBase}-${opts.platform}` : slugBase;
   const outDir = resolve(REPORT_DIR, `${slug}-summary`);
   mkdirSync(outDir, { recursive: true });
 
   const ts = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
-  const html = buildHtml(moduleName, allCases, ts);
+  const html = buildHtml(moduleName, allCases, ts, platformLabel);
   const outPath = resolve(outDir, 'index.html');
   writeFileSync(outPath, html, 'utf8');
   console.log(`[report] 聚合报告已生成: ${outPath}`);

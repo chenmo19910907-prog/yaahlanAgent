@@ -1,0 +1,32 @@
+{
+  "modules": {
+    "语音动态-录制弹窗": {
+      "label": "语音动态 · 录制弹窗",
+      "intents": ["intents/动态/语音动态/voice-record.yaml"]
+    },
+    "语音动态-编辑页": {
+      "label": "语音动态 · 编辑页语音条",
+      "intents": ["intents/动态/语音动态/voice-editor.yaml"]
+    },
+    "语音动态-发布组合": {
+      "label": "语音动态 · 发布组合",
+      "intents": ["intents/动态/语音动态/voice-publish-combo.yaml"]
+    },
+    "语音动态-浏览播放": {
+      "label": "语音动态 · 浏览播放",
+      "intents": ["intents/动态/语音动态/voice-browse.yaml"]
+    },
+    "语音动态-个人主页": {
+      "label": "语音动态 · 个人主页语音条",
+      "intents": ["intents/动态/语音动态/voice-profile.yaml"]
+    },
+    "语音动态-回归": {
+      "label": "语音动态 · 回归",
+      "intents": ["intents/动态/语音动态/voice-regression.yaml"]
+    },
+    "文字动态-发布": {
+      "label": "文字动态 · 发布",
+      "intents": ["intents/动态/text-moment-publish.yaml"]
+    }
+  }
+}

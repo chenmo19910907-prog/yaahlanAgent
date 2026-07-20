@@ -1,0 +1,154 @@
+# 语音条动态 · PRD: 支持发布带语音条的动态（Yaahlan-2.5.7）
+# 对照: documents/moments/basic module.md
+# 排除: 屏幕适配、多语言/RTL、纯后端逻辑、安装/升级路径
+
+# ╔══════════════════════════════════════════════════════════╗
+# ║  模块 8：回归 — 动态基础功能不受语音条影响                 ║
+# ╚══════════════════════════════════════════════════════════╝
+
+---
+id: IT-MOM-VOICE-PUB-051
+name: "[回归] 纯文字动态发布不受影响"
+module: 语音动态-回归
+platform: android
+priority: P0
+tags: [动态, 回归, 文字发布]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+  steps:
+    - act: 输入一段纯文字（regression test text only）
+    - waitFor: 文字已展示，发布按钮可点击
+
+intent:
+  action: 不添加任何语音/图片/视频，直接点击发布
+  expected:
+    - 纯文字动态发布成功
+    - 跳转我的动态页可见刚发布内容
+
+timeoutMs: 240000
+
+---
+id: IT-MOM-VOICE-PUB-052
+name: "[回归] 纯图片动态发布不受影响"
+module: 语音动态-回归
+platform: android
+priority: P0
+tags: [动态, 回归, 图片发布]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/open_moment_publish_editor
+  steps:
+    - act: 从相册选择一张图片
+    - waitFor: 图片已添加到编辑页
+
+intent:
+  action: 不添加语音条，直接点击发布
+  expected:
+    - 纯图片动态发布成功
+    - 我的动态可见图片
+
+timeoutMs: 240000
+
+---
+id: IT-MOM-VOICE-PUB-053
+name: "[回归] 动态列表页滑动正常"
+module: 语音动态-回归
+platform: android
+priority: P1
+tags: [动态, 回归, 列表滑动]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - waitFor: 发现列表已加载
+
+intent:
+  action: 上下滑动动态列表多次
+  expected:
+    - 列表上下滑动流畅
+    - 混合内容（文字/图片/视频/语音条动态）展示正常不错位
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-VOICE-PUB-054
+name: "[回归] 动态详情页评论功能正常"
+module: 语音动态-回归
+platform: android
+priority: P1
+tags: [动态, 回归, 评论]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - act: 点击一条语音动态进入详情页
+    - waitFor: 进入动态详情页
+
+intent:
+  action: 点击评论按钮，输入评论内容并发送
+  expected:
+    - 键盘弹起可输入评论
+    - 评论发送成功，评论列表可见新评论
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-VOICE-PUB-055
+name: "[回归] 动态点赞功能正常"
+module: 语音动态-回归
+platform: android
+priority: P1
+tags: [动态, 回归, 点赞]
+preconditions: 发现页存在带语音条的动态
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - waitFor: 发现列表可见带语音条的动态
+
+intent:
+  action: 点击语音动态的点赞按钮
+  expected:
+    - 点赞成功，图标变为已点赞状态
+    - 点赞数+1
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-VOICE-PUB-056
+name: "[回归] 动态删除功能正常"
+module: 语音动态-回归
+platform: android
+priority: P1
+tags: [动态, 回归, 删除]
+preconditions: 用户已发布语音动态
+
+setup:
+  launchApp: true
+  steps:
+    - tap: [0.90, 0.96]
+      afterSleep: 1500
+    - act: 进入我的动态页
+    - waitFor: 可见已发布的语音动态
+
+intent:
+  action: 点击语音动态的更多按钮，选择删除
+  expected:
+    - 弹出二次确认弹窗
+    - 确认删除后动态从列表消失
+
+timeoutMs: 180000
+
