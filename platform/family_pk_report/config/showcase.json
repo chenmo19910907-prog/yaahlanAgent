@@ -1,6 +1,6 @@
 {
   "title": "工具平台驱动的复杂活动数据造表测试工作流",
-  "subtitle": "从能力登记到 Workflow 装配，贯通造数、验收与汇报",
+  "subtitle": "从能力登记到 Workflow 装配，贯通造数、验收",
   "webAgentLocalUrl": "http://127.0.0.1:18766",
   "webAgentRemoteUrl": "http://172.18.125.90:18766",
   "nav": [

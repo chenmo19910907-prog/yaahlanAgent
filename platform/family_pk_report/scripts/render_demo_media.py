@@ -24,16 +24,17 @@ W_BASE = 960
 TOP_BAR_H = 56
 PAD_X = 16
 TABLE_TOP = TOP_BAR_H + 8
-BG = "#ffffff"
-HEADER_BAR = "#f8fafc"
-HEADER_BG = "#f1f5f9"
-ROW_BG = "#ffffff"
-ROW_ALT = "#fafbfc"
-LINE = "#e2e8f0"
-TEXT = "#334155"
-MUTED = "#64748b"
-PASS = "#059669"
-WARN = "#d97706"
+BG = "#0c0f12"
+HEADER_BAR = "#101316"
+HEADER_BG = "#15191e"
+ROW_BG = "#101316"
+ROW_ALT = "#121519"
+META_ROW_BG = "#15191e"
+LINE = "#2a3038"
+TEXT = "#e7ebf1"
+MUTED = "#8d949f"
+PASS = "#60d5a7"
+WARN = "#fbbf24"
 
 FAMILY_PK_SHEETS: list[tuple[str, str, str]] = [
     ("step01-mse-sync.svg", "参数表", "voga-common / familyPkConfig · merge 增量更新"),
@@ -161,7 +162,7 @@ def _table(rows: list[list[str]], *, x: int = PAD_X, y: int = TABLE_TOP, col_wid
         if is_header:
             fill = HEADER_BG
         elif is_meta:
-            fill = "#f8fafc"
+            fill = META_ROW_BG
         else:
             fill = ROW_BG if ri % 2 else ROW_ALT
         parts.append(f'<rect x="{x}" y="{cy}" width="{table_w}" height="{row_h}" fill="{fill}"/>')

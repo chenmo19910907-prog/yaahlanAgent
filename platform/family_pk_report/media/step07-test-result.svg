@@ -1,580 +1,580 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 570" width="960" height="570">
-<rect width="960" height="570" fill="#ffffff"/>
+<rect width="960" height="570" fill="#0c0f12"/>
 
-    <rect width="960" height="56" fill="#f8fafc"/>
-    <line x1="0" y1="56" x2="960" y2="56" stroke="#e2e8f0"/>
-    <text x="16" y="28" fill="#334155" font-size="15" font-weight="700" font-family="system-ui">测试结果 · 全量 19 行</text>
-    <text x="16" y="44" fill="#64748b" font-size="12" font-family="system-ui">2026-07-12 · 总体验收：部分通过</text>
-    <rect x="16" y="64" width="928" height="0" fill="none" stroke="#e2e8f0" stroke-width="0"/>
-<rect x="16" y="64" width="928" height="26" fill="#f8fafc"/>
-<line x1="16" y1="90" x2="944" y2="90" stroke="#e2e8f0"/>
-<line x1="16" y1="64" x2="16" y2="90" stroke="#e2e8f0"/>
+    <rect width="960" height="56" fill="#101316"/>
+    <line x1="0" y1="56" x2="960" y2="56" stroke="#2a3038"/>
+    <text x="16" y="28" fill="#e7ebf1" font-size="15" font-weight="700" font-family="system-ui">测试结果 · 全量 19 行</text>
+    <text x="16" y="44" fill="#8d949f" font-size="12" font-family="system-ui">2026-07-12 · 总体验收：部分通过</text>
+    <rect x="16" y="64" width="928" height="0" fill="none" stroke="#2a3038" stroke-width="0"/>
+<rect x="16" y="64" width="928" height="26" fill="#15191e"/>
+<line x1="16" y1="90" x2="944" y2="90" stroke="#2a3038"/>
+<line x1="16" y1="64" x2="16" y2="90" stroke="#2a3038"/>
 <clipPath id="clip_0_0"><rect x="17" y="65" width="101" height="24"/></clipPath>
-<text clip-path="url(#clip_0_0)" x="24" y="80" fill="#64748b" font-size="11" font-family="system-ui, -apple-system, sans-serif">测试摘要</text>
-<line x1="119" y1="64" x2="119" y2="90" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_0_0)" x="24" y="80" fill="#8d949f" font-size="11" font-family="system-ui, -apple-system, sans-serif">测试摘要</text>
+<line x1="119" y1="64" x2="119" y2="90" stroke="#2a3038"/>
 <clipPath id="clip_0_1"><rect x="120" y="65" width="101" height="24"/></clipPath>
-<text clip-path="url(#clip_0_1)" x="127" y="80" fill="#64748b" font-size="11" font-family="system-ui, -apple-system, sans-serif">PK日期=2026-07-12</text>
-<line x1="222" y1="64" x2="222" y2="90" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_0_1)" x="127" y="80" fill="#8d949f" font-size="11" font-family="system-ui, -apple-system, sans-serif">PK日期=2026-07-12</text>
+<line x1="222" y1="64" x2="222" y2="90" stroke="#2a3038"/>
 <clipPath id="clip_0_2"><rect x="223" y="65" width="101" height="24"/></clipPath>
-<text clip-path="url(#clip_0_2)" x="230" y="80" fill="#64748b" font-size="11" font-family="system-ui, -apple-system, sans-serif">收礼榜=2026-07-11</text>
-<line x1="325" y1="64" x2="325" y2="90" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_0_2)" x="230" y="80" fill="#8d949f" font-size="11" font-family="system-ui, -apple-system, sans-serif">收礼榜=2026-07-11</text>
+<line x1="325" y1="64" x2="325" y2="90" stroke="#2a3038"/>
 <clipPath id="clip_0_3"><rect x="326" y="65" width="101" height="24"/></clipPath>
-<text clip-path="url(#clip_0_3)" x="333" y="80" fill="#64748b" font-size="11" font-family="system-ui, -apple-system, sans-serif">MOA账号=100486375</text>
-<line x1="428" y1="64" x2="428" y2="90" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_0_3)" x="333" y="80" fill="#8d949f" font-size="11" font-family="system-ui, -apple-system, sans-serif">MOA账号=100486375</text>
+<line x1="428" y1="64" x2="428" y2="90" stroke="#2a3038"/>
 <clipPath id="clip_0_4"><rect x="429" y="65" width="101" height="24"/></clipPath>
-<text clip-path="url(#clip_0_4)" x="436" y="80" fill="#64748b" font-size="11" font-family="system-ui, -apple-system, sans-serif">执行时间=2026-07-17 17:04:30</text>
-<line x1="531" y1="64" x2="531" y2="90" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_0_4)" x="436" y="80" fill="#8d949f" font-size="11" font-family="system-ui, -apple-system, sans-serif">执行时间=2026-07-17 17:04:30</text>
+<line x1="531" y1="64" x2="531" y2="90" stroke="#2a3038"/>
 <clipPath id="clip_0_5"><rect x="532" y="65" width="101" height="24"/></clipPath>
-<text clip-path="url(#clip_0_5)" x="539" y="80" fill="#64748b" font-size="11" font-family="system-ui, -apple-system, sans-serif">总体验收=部分通过</text>
-<line x1="634" y1="64" x2="634" y2="90" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_0_5)" x="539" y="80" fill="#8d949f" font-size="11" font-family="system-ui, -apple-system, sans-serif">总体验收=部分通过</text>
+<line x1="634" y1="64" x2="634" y2="90" stroke="#2a3038"/>
 <clipPath id="clip_0_6"><rect x="635" y="65" width="101" height="24"/></clipPath>
-<text clip-path="url(#clip_0_6)" x="642" y="80" fill="#64748b" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="737" y1="64" x2="737" y2="90" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_0_6)" x="642" y="80" fill="#8d949f" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="737" y1="64" x2="737" y2="90" stroke="#2a3038"/>
 <clipPath id="clip_0_7"><rect x="738" y="65" width="101" height="24"/></clipPath>
-<text clip-path="url(#clip_0_7)" x="745" y="80" fill="#64748b" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="840" y1="64" x2="840" y2="90" stroke="#e2e8f0"/>
-<line x1="944" y1="64" x2="944" y2="90" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_0_7)" x="745" y="80" fill="#8d949f" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="840" y1="64" x2="840" y2="90" stroke="#2a3038"/>
+<line x1="944" y1="64" x2="944" y2="90" stroke="#2a3038"/>
 <clipPath id="clip_0_8"><rect x="841" y="65" width="102" height="24"/></clipPath>
-<text clip-path="url(#clip_0_8)" x="848" y="80" fill="#64748b" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<rect x="16" y="90" width="928" height="28" fill="#f1f5f9"/>
-<line x1="16" y1="118" x2="944" y2="118" stroke="#e2e8f0"/>
-<line x1="16" y1="90" x2="16" y2="118" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_0_8)" x="848" y="80" fill="#8d949f" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<rect x="16" y="90" width="928" height="28" fill="#15191e"/>
+<line x1="16" y1="118" x2="944" y2="118" stroke="#2a3038"/>
+<line x1="16" y1="90" x2="16" y2="118" stroke="#2a3038"/>
 <clipPath id="clip_1_0"><rect x="17" y="91" width="101" height="26"/></clipPath>
-<text clip-path="url(#clip_1_0)" x="24" y="106" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">步骤</text>
-<line x1="119" y1="90" x2="119" y2="118" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_1_0)" x="24" y="106" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">步骤</text>
+<line x1="119" y1="90" x2="119" y2="118" stroke="#2a3038"/>
 <clipPath id="clip_1_1"><rect x="120" y="91" width="101" height="26"/></clipPath>
-<text clip-path="url(#clip_1_1)" x="127" y="106" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">名称</text>
-<line x1="222" y1="90" x2="222" y2="118" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_1_1)" x="127" y="106" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">名称</text>
+<line x1="222" y1="90" x2="222" y2="118" stroke="#2a3038"/>
 <clipPath id="clip_1_2"><rect x="223" y="91" width="101" height="26"/></clipPath>
-<text clip-path="url(#clip_1_2)" x="230" y="106" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">产出Sheet</text>
-<line x1="325" y1="90" x2="325" y2="118" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_1_2)" x="230" y="106" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">产出Sheet</text>
+<line x1="325" y1="90" x2="325" y2="118" stroke="#2a3038"/>
 <clipPath id="clip_1_3"><rect x="326" y="91" width="101" height="26"/></clipPath>
-<text clip-path="url(#clip_1_3)" x="333" y="106" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">验收项</text>
-<line x1="428" y1="90" x2="428" y2="118" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_1_3)" x="333" y="106" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">验收项</text>
+<line x1="428" y1="90" x2="428" y2="118" stroke="#2a3038"/>
 <clipPath id="clip_1_4"><rect x="429" y="91" width="101" height="26"/></clipPath>
-<text clip-path="url(#clip_1_4)" x="436" y="106" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">样本数</text>
-<line x1="531" y1="90" x2="531" y2="118" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_1_4)" x="436" y="106" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">样本数</text>
+<line x1="531" y1="90" x2="531" y2="118" stroke="#2a3038"/>
 <clipPath id="clip_1_5"><rect x="532" y="91" width="101" height="26"/></clipPath>
-<text clip-path="url(#clip_1_5)" x="539" y="106" fill="#059669" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">通过</text>
-<line x1="634" y1="90" x2="634" y2="118" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_1_5)" x="539" y="106" fill="#60d5a7" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<line x1="634" y1="90" x2="634" y2="118" stroke="#2a3038"/>
 <clipPath id="clip_1_6"><rect x="635" y="91" width="101" height="26"/></clipPath>
-<text clip-path="url(#clip_1_6)" x="642" y="106" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">失败</text>
-<line x1="737" y1="90" x2="737" y2="118" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_1_6)" x="642" y="106" fill="#fbbf24" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">失败</text>
+<line x1="737" y1="90" x2="737" y2="118" stroke="#2a3038"/>
 <clipPath id="clip_1_7"><rect x="738" y="91" width="101" height="26"/></clipPath>
-<text clip-path="url(#clip_1_7)" x="745" y="106" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">结论</text>
-<line x1="840" y1="90" x2="840" y2="118" stroke="#e2e8f0"/>
-<line x1="944" y1="90" x2="944" y2="118" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_1_7)" x="745" y="106" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">结论</text>
+<line x1="840" y1="90" x2="840" y2="118" stroke="#2a3038"/>
+<line x1="944" y1="90" x2="944" y2="118" stroke="#2a3038"/>
 <clipPath id="clip_1_8"><rect x="841" y="91" width="102" height="26"/></clipPath>
-<text clip-path="url(#clip_1_8)" x="848" y="106" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">备注</text>
-<rect x="16" y="118" width="928" height="24" fill="#fafbfc"/>
-<line x1="16" y1="142" x2="944" y2="142" stroke="#e2e8f0"/>
-<line x1="16" y1="118" x2="16" y2="142" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_1_8)" x="848" y="106" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">备注</text>
+<rect x="16" y="118" width="928" height="24" fill="#121519"/>
+<line x1="16" y1="142" x2="944" y2="142" stroke="#2a3038"/>
+<line x1="16" y1="118" x2="16" y2="142" stroke="#2a3038"/>
 <clipPath id="clip_2_0"><rect x="17" y="119" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_2_0)" x="24" y="134" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">0</text>
-<line x1="119" y1="118" x2="119" y2="142" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_2_0)" x="24" y="134" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">0</text>
+<line x1="119" y1="118" x2="119" y2="142" stroke="#2a3038"/>
 <clipPath id="clip_2_1"><rect x="120" y="119" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_2_1)" x="127" y="134" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">新建测试表</text>
-<line x1="222" y1="118" x2="222" y2="142" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_2_1)" x="127" y="134" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">新建测试表</text>
+<line x1="222" y1="118" x2="222" y2="142" stroke="#2a3038"/>
 <clipPath id="clip_2_2"><rect x="223" y="119" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_2_2)" x="230" y="134" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">（整表）</text>
-<line x1="325" y1="118" x2="325" y2="142" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_2_2)" x="230" y="134" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">（整表）</text>
+<line x1="325" y1="118" x2="325" y2="142" stroke="#2a3038"/>
 <clipPath id="clip_2_3"><rect x="326" y="119" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_2_3)" x="333" y="134" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">Sheet 预建</text>
-<line x1="428" y1="118" x2="428" y2="142" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_2_3)" x="333" y="134" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">Sheet 预建</text>
+<line x1="428" y1="118" x2="428" y2="142" stroke="#2a3038"/>
 <clipPath id="clip_2_4"><rect x="429" y="119" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_2_4)" x="436" y="134" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">6</text>
-<line x1="531" y1="118" x2="531" y2="142" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_2_4)" x="436" y="134" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">6</text>
+<line x1="531" y1="118" x2="531" y2="142" stroke="#2a3038"/>
 <clipPath id="clip_2_5"><rect x="532" y="119" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_2_5)" x="539" y="134" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">6</text>
-<line x1="634" y1="118" x2="634" y2="142" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_2_5)" x="539" y="134" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">6</text>
+<line x1="634" y1="118" x2="634" y2="142" stroke="#2a3038"/>
 <clipPath id="clip_2_6"><rect x="635" y="119" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_2_6)" x="642" y="134" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">0</text>
-<line x1="737" y1="118" x2="737" y2="142" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_2_6)" x="642" y="134" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">0</text>
+<line x1="737" y1="118" x2="737" y2="142" stroke="#2a3038"/>
 <clipPath id="clip_2_7"><rect x="738" y="119" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_2_7)" x="745" y="134" fill="#059669" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
-<line x1="840" y1="118" x2="840" y2="142" stroke="#e2e8f0"/>
-<line x1="944" y1="118" x2="944" y2="142" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_2_7)" x="745" y="134" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<line x1="840" y1="118" x2="840" y2="142" stroke="#2a3038"/>
+<line x1="944" y1="118" x2="944" y2="142" stroke="#2a3038"/>
 <clipPath id="clip_2_8"><rect x="841" y="119" width="102" height="22"/></clipPath>
-<text clip-path="url(#clip_2_8)" x="848" y="134" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">参数表/家族列表/家族PK档位/匹配验收/用户发钻测试/发钻实发验收</text>
-<rect x="16" y="142" width="928" height="24" fill="#ffffff"/>
-<line x1="16" y1="166" x2="944" y2="166" stroke="#e2e8f0"/>
-<line x1="16" y1="142" x2="16" y2="166" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_2_8)" x="848" y="134" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">参数表/家族列表/家族PK档位/匹配验收/用户发钻测试/发钻实发验收</text>
+<rect x="16" y="142" width="928" height="24" fill="#101316"/>
+<line x1="16" y1="166" x2="944" y2="166" stroke="#2a3038"/>
+<line x1="16" y1="142" x2="16" y2="166" stroke="#2a3038"/>
 <clipPath id="clip_3_0"><rect x="17" y="143" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_3_0)" x="24" y="158" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">1</text>
-<line x1="119" y1="142" x2="119" y2="166" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_3_0)" x="24" y="158" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">1</text>
+<line x1="119" y1="142" x2="119" y2="166" stroke="#2a3038"/>
 <clipPath id="clip_3_1"><rect x="120" y="143" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_3_1)" x="127" y="158" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">MSE同步参数表</text>
-<line x1="222" y1="142" x2="222" y2="166" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_3_1)" x="127" y="158" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">MSE同步参数表</text>
+<line x1="222" y1="142" x2="222" y2="166" stroke="#2a3038"/>
 <clipPath id="clip_3_2"><rect x="223" y="143" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_3_2)" x="230" y="158" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">参数表</text>
-<line x1="325" y1="142" x2="325" y2="166" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_3_2)" x="230" y="158" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">参数表</text>
+<line x1="325" y1="142" x2="325" y2="166" stroke="#2a3038"/>
 <clipPath id="clip_3_3"><rect x="326" y="143" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_3_3)" x="333" y="158" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">familyPkConfig</text>
-<line x1="428" y1="142" x2="428" y2="166" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_3_3)" x="333" y="158" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">familyPkConfig</text>
+<line x1="428" y1="142" x2="428" y2="166" stroke="#2a3038"/>
 <clipPath id="clip_3_4"><rect x="429" y="143" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_3_4)" x="436" y="158" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">4</text>
-<line x1="531" y1="142" x2="531" y2="166" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_3_4)" x="436" y="158" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">4</text>
+<line x1="531" y1="142" x2="531" y2="166" stroke="#2a3038"/>
 <clipPath id="clip_3_5"><rect x="532" y="143" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_3_5)" x="539" y="158" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">4</text>
-<line x1="634" y1="142" x2="634" y2="166" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_3_5)" x="539" y="158" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">4</text>
+<line x1="634" y1="142" x2="634" y2="166" stroke="#2a3038"/>
 <clipPath id="clip_3_6"><rect x="635" y="143" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_3_6)" x="642" y="158" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">0</text>
-<line x1="737" y1="142" x2="737" y2="166" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_3_6)" x="642" y="158" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">0</text>
+<line x1="737" y1="142" x2="737" y2="166" stroke="#2a3038"/>
 <clipPath id="clip_3_7"><rect x="738" y="143" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_3_7)" x="745" y="158" fill="#059669" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
-<line x1="840" y1="142" x2="840" y2="166" stroke="#e2e8f0"/>
-<line x1="944" y1="142" x2="944" y2="166" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_3_7)" x="745" y="158" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<line x1="840" y1="142" x2="840" y2="166" stroke="#2a3038"/>
+<line x1="944" y1="142" x2="944" y2="166" stroke="#2a3038"/>
 <clipPath id="clip_3_8"><rect x="841" y="143" width="102" height="22"/></clipPath>
-<text clip-path="url(#clip_3_8)" x="848" y="158" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">minWinPk=2000, minListPk=1000</text>
-<rect x="16" y="166" width="928" height="24" fill="#fafbfc"/>
-<line x1="16" y1="190" x2="944" y2="190" stroke="#e2e8f0"/>
-<line x1="16" y1="166" x2="16" y2="190" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_3_8)" x="848" y="158" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">minWinPk=2000, minListPk=1000</text>
+<rect x="16" y="166" width="928" height="24" fill="#121519"/>
+<line x1="16" y1="190" x2="944" y2="190" stroke="#2a3038"/>
+<line x1="16" y1="166" x2="16" y2="190" stroke="#2a3038"/>
 <clipPath id="clip_4_0"><rect x="17" y="167" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_4_0)" x="24" y="182" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">2</text>
-<line x1="119" y1="166" x2="119" y2="190" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_4_0)" x="24" y="182" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">2</text>
+<line x1="119" y1="166" x2="119" y2="190" stroke="#2a3038"/>
 <clipPath id="clip_4_1"><rect x="120" y="167" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_4_1)" x="127" y="182" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">家族列表</text>
-<line x1="222" y1="166" x2="222" y2="190" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_4_1)" x="127" y="182" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">家族列表</text>
+<line x1="222" y1="166" x2="222" y2="190" stroke="#2a3038"/>
 <clipPath id="clip_4_2"><rect x="223" y="167" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_4_2)" x="230" y="182" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">家族列表</text>
-<line x1="325" y1="166" x2="325" y2="190" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_4_2)" x="230" y="182" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">家族列表</text>
+<line x1="325" y1="166" x2="325" y2="190" stroke="#2a3038"/>
 <clipPath id="clip_4_3"><rect x="326" y="167" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_4_3)" x="333" y="182" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">MENA族长家族+成员</text>
-<line x1="428" y1="166" x2="428" y2="190" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_4_3)" x="333" y="182" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">MENA族长家族+成员</text>
+<line x1="428" y1="166" x2="428" y2="190" stroke="#2a3038"/>
 <clipPath id="clip_4_4"><rect x="429" y="167" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_4_4)" x="436" y="182" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">436</text>
-<line x1="531" y1="166" x2="531" y2="190" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_4_4)" x="436" y="182" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">436</text>
+<line x1="531" y1="166" x2="531" y2="190" stroke="#2a3038"/>
 <clipPath id="clip_4_5"><rect x="532" y="167" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_4_5)" x="539" y="182" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">436</text>
-<line x1="634" y1="166" x2="634" y2="190" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_4_5)" x="539" y="182" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">436</text>
+<line x1="634" y1="166" x2="634" y2="190" stroke="#2a3038"/>
 <clipPath id="clip_4_6"><rect x="635" y="167" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_4_6)" x="642" y="182" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">0</text>
-<line x1="737" y1="166" x2="737" y2="190" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_4_6)" x="642" y="182" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">0</text>
+<line x1="737" y1="166" x2="737" y2="190" stroke="#2a3038"/>
 <clipPath id="clip_4_7"><rect x="738" y="167" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_4_7)" x="745" y="182" fill="#059669" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
-<line x1="840" y1="166" x2="840" y2="190" stroke="#e2e8f0"/>
-<line x1="944" y1="166" x2="944" y2="190" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_4_7)" x="745" y="182" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<line x1="840" y1="166" x2="840" y2="190" stroke="#2a3038"/>
+<line x1="944" y1="166" x2="944" y2="190" stroke="#2a3038"/>
 <clipPath id="clip_4_8"><rect x="841" y="167" width="102" height="22"/></clipPath>
-<text clip-path="url(#clip_4_8)" x="848" y="182" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">76 家族 / 436 成员</text>
-<rect x="16" y="190" width="928" height="24" fill="#ffffff"/>
-<line x1="16" y1="214" x2="944" y2="214" stroke="#e2e8f0"/>
-<line x1="16" y1="190" x2="16" y2="214" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_4_8)" x="848" y="182" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">76 家族 / 436 成员</text>
+<rect x="16" y="190" width="928" height="24" fill="#101316"/>
+<line x1="16" y1="214" x2="944" y2="214" stroke="#2a3038"/>
+<line x1="16" y1="190" x2="16" y2="214" stroke="#2a3038"/>
 <clipPath id="clip_5_0"><rect x="17" y="191" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_5_0)" x="24" y="206" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">3</text>
-<line x1="119" y1="190" x2="119" y2="214" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_5_0)" x="24" y="206" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">3</text>
+<line x1="119" y1="190" x2="119" y2="214" stroke="#2a3038"/>
 <clipPath id="clip_5_1"><rect x="120" y="191" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_5_1)" x="127" y="206" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">收礼榜与档位</text>
-<line x1="222" y1="190" x2="222" y2="214" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_5_1)" x="127" y="206" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">收礼榜与档位</text>
+<line x1="222" y1="190" x2="222" y2="214" stroke="#2a3038"/>
 <clipPath id="clip_5_2"><rect x="223" y="191" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_5_2)" x="230" y="206" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">家族PK档位</text>
-<line x1="325" y1="190" x2="325" y2="214" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_5_2)" x="230" y="206" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">家族PK档位</text>
+<line x1="325" y1="190" x2="325" y2="214" stroke="#2a3038"/>
 <clipPath id="clip_5_3"><rect x="326" y="191" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_5_3)" x="333" y="206" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">档位达标PK测算</text>
-<line x1="428" y1="190" x2="428" y2="214" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_5_3)" x="333" y="206" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">档位达标PK测算</text>
+<line x1="428" y1="190" x2="428" y2="214" stroke="#2a3038"/>
 <clipPath id="clip_5_4"><rect x="429" y="191" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_5_4)" x="436" y="206" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">304</text>
-<line x1="531" y1="190" x2="531" y2="214" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_5_4)" x="436" y="206" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">304</text>
+<line x1="531" y1="190" x2="531" y2="214" stroke="#2a3038"/>
 <clipPath id="clip_5_5"><rect x="532" y="191" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_5_5)" x="539" y="206" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">304</text>
-<line x1="634" y1="190" x2="634" y2="214" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_5_5)" x="539" y="206" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">304</text>
+<line x1="634" y1="190" x2="634" y2="214" stroke="#2a3038"/>
 <clipPath id="clip_5_6"><rect x="635" y="191" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_5_6)" x="642" y="206" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">0</text>
-<line x1="737" y1="190" x2="737" y2="214" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_5_6)" x="642" y="206" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">0</text>
+<line x1="737" y1="190" x2="737" y2="214" stroke="#2a3038"/>
 <clipPath id="clip_5_7"><rect x="738" y="191" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_5_7)" x="745" y="206" fill="#059669" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
-<line x1="840" y1="190" x2="840" y2="214" stroke="#e2e8f0"/>
-<line x1="944" y1="190" x2="944" y2="214" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_5_7)" x="745" y="206" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<line x1="840" y1="190" x2="840" y2="214" stroke="#2a3038"/>
+<line x1="944" y1="190" x2="944" y2="214" stroke="#2a3038"/>
 <clipPath id="clip_5_8"><rect x="841" y="191" width="102" height="22"/></clipPath>
-<text clip-path="url(#clip_5_8)" x="848" y="206" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">收礼榜日期=2026-07-11</text>
-<rect x="16" y="214" width="928" height="24" fill="#fafbfc"/>
-<line x1="16" y1="238" x2="944" y2="238" stroke="#e2e8f0"/>
-<line x1="16" y1="214" x2="16" y2="238" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_5_8)" x="848" y="206" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">收礼榜日期=2026-07-11</text>
+<rect x="16" y="214" width="928" height="24" fill="#121519"/>
+<line x1="16" y1="238" x2="944" y2="238" stroke="#2a3038"/>
+<line x1="16" y1="214" x2="16" y2="238" stroke="#2a3038"/>
 <clipPath id="clip_6_0"><rect x="17" y="215" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_6_0)" x="24" y="230" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">4</text>
-<line x1="119" y1="214" x2="119" y2="238" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_6_0)" x="24" y="230" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">4</text>
+<line x1="119" y1="214" x2="119" y2="238" stroke="#2a3038"/>
 <clipPath id="clip_6_1"><rect x="120" y="215" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_6_1)" x="127" y="230" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">匹配验收</text>
-<line x1="222" y1="214" x2="222" y2="238" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_6_1)" x="127" y="230" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">匹配验收</text>
+<line x1="222" y1="214" x2="222" y2="238" stroke="#2a3038"/>
 <clipPath id="clip_6_2"><rect x="223" y="215" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_6_2)" x="230" y="230" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">匹配验收</text>
-<line x1="325" y1="214" x2="325" y2="238" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_6_2)" x="230" y="230" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">匹配验收</text>
+<line x1="325" y1="214" x2="325" y2="238" stroke="#2a3038"/>
 <clipPath id="clip_6_3"><rect x="326" y="215" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_6_3)" x="333" y="230" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">同区间对战匹配</text>
-<line x1="428" y1="214" x2="428" y2="238" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_6_3)" x="333" y="230" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">同区间对战匹配</text>
+<line x1="428" y1="214" x2="428" y2="238" stroke="#2a3038"/>
 <clipPath id="clip_6_4"><rect x="429" y="215" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_6_4)" x="436" y="230" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">38</text>
-<line x1="531" y1="214" x2="531" y2="238" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_6_4)" x="436" y="230" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">38</text>
+<line x1="531" y1="214" x2="531" y2="238" stroke="#2a3038"/>
 <clipPath id="clip_6_5"><rect x="532" y="215" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_6_5)" x="539" y="230" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">38</text>
-<line x1="634" y1="214" x2="634" y2="238" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_6_5)" x="539" y="230" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">38</text>
+<line x1="634" y1="214" x2="634" y2="238" stroke="#2a3038"/>
 <clipPath id="clip_6_6"><rect x="635" y="215" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_6_6)" x="642" y="230" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">0</text>
-<line x1="737" y1="214" x2="737" y2="238" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_6_6)" x="642" y="230" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">0</text>
+<line x1="737" y1="214" x2="737" y2="238" stroke="#2a3038"/>
 <clipPath id="clip_6_7"><rect x="738" y="215" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_6_7)" x="745" y="230" fill="#059669" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
-<line x1="840" y1="214" x2="840" y2="238" stroke="#e2e8f0"/>
-<line x1="944" y1="214" x2="944" y2="238" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_6_7)" x="745" y="230" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<line x1="840" y1="214" x2="840" y2="238" stroke="#2a3038"/>
+<line x1="944" y1="214" x2="944" y2="238" stroke="#2a3038"/>
 <clipPath id="clip_6_8"><rect x="841" y="215" width="102" height="22"/></clipPath>
-<text clip-path="url(#clip_6_8)" x="848" y="230" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">对战=38 轮空=0</text>
-<rect x="16" y="238" width="928" height="24" fill="#ffffff"/>
-<line x1="16" y1="262" x2="944" y2="262" stroke="#e2e8f0"/>
-<line x1="16" y1="238" x2="16" y2="262" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_6_8)" x="848" y="230" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">对战=38 轮空=0</text>
+<rect x="16" y="238" width="928" height="24" fill="#101316"/>
+<line x1="16" y1="262" x2="944" y2="262" stroke="#2a3038"/>
+<line x1="16" y1="238" x2="16" y2="262" stroke="#2a3038"/>
 <clipPath id="clip_7_0"><rect x="17" y="239" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_7_0)" x="24" y="254" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">5</text>
-<line x1="119" y1="238" x2="119" y2="262" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_7_0)" x="24" y="254" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">5</text>
+<line x1="119" y1="238" x2="119" y2="262" stroke="#2a3038"/>
 <clipPath id="clip_7_1"><rect x="120" y="239" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_7_1)" x="127" y="254" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">成员PK造数测算</text>
-<line x1="222" y1="238" x2="222" y2="262" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_7_1)" x="127" y="254" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">成员PK造数测算</text>
+<line x1="222" y1="238" x2="222" y2="262" stroke="#2a3038"/>
 <clipPath id="clip_7_2"><rect x="223" y="239" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_7_2)" x="230" y="254" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">用户发钻测试</text>
-<line x1="325" y1="238" x2="325" y2="262" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_7_2)" x="230" y="254" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">用户发钻测试</text>
+<line x1="325" y1="238" x2="325" y2="262" stroke="#2a3038"/>
 <clipPath id="clip_7_3"><rect x="326" y="239" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_7_3)" x="333" y="254" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">应发钻石测算</text>
-<line x1="428" y1="238" x2="428" y2="262" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_7_3)" x="333" y="254" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">应发钻石测算</text>
+<line x1="428" y1="238" x2="428" y2="262" stroke="#2a3038"/>
 <clipPath id="clip_7_4"><rect x="429" y="239" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_7_4)" x="436" y="254" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">436</text>
-<line x1="531" y1="238" x2="531" y2="262" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_7_4)" x="436" y="254" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">436</text>
+<line x1="531" y1="238" x2="531" y2="262" stroke="#2a3038"/>
 <clipPath id="clip_7_5"><rect x="532" y="239" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_7_5)" x="539" y="254" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">436</text>
-<line x1="634" y1="238" x2="634" y2="262" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_7_5)" x="539" y="254" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">436</text>
+<line x1="634" y1="238" x2="634" y2="262" stroke="#2a3038"/>
 <clipPath id="clip_7_6"><rect x="635" y="239" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_7_6)" x="642" y="254" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">0</text>
-<line x1="737" y1="238" x2="737" y2="262" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_7_6)" x="642" y="254" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">0</text>
+<line x1="737" y1="238" x2="737" y2="262" stroke="#2a3038"/>
 <clipPath id="clip_7_7"><rect x="738" y="239" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_7_7)" x="745" y="254" fill="#059669" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
-<line x1="840" y1="238" x2="840" y2="262" stroke="#e2e8f0"/>
-<line x1="944" y1="238" x2="944" y2="262" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_7_7)" x="745" y="254" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<line x1="840" y1="238" x2="840" y2="262" stroke="#2a3038"/>
+<line x1="944" y1="238" x2="944" y2="262" stroke="#2a3038"/>
 <clipPath id="clip_7_8"><rect x="841" y="239" width="102" height="22"/></clipPath>
-<text clip-path="url(#clip_7_8)" x="848" y="254" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">应发钻合计=191363</text>
-<rect x="16" y="262" width="928" height="24" fill="#fafbfc"/>
-<line x1="16" y1="286" x2="944" y2="286" stroke="#e2e8f0"/>
-<line x1="16" y1="262" x2="16" y2="286" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_7_8)" x="848" y="254" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">应发钻合计=191363</text>
+<rect x="16" y="262" width="928" height="24" fill="#121519"/>
+<line x1="16" y1="286" x2="944" y2="286" stroke="#2a3038"/>
+<line x1="16" y1="262" x2="16" y2="286" stroke="#2a3038"/>
 <clipPath id="clip_8_0"><rect x="17" y="263" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_8_0)" x="24" y="278" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">6a</text>
-<line x1="119" y1="262" x2="119" y2="286" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_8_0)" x="24" y="278" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">6a</text>
+<line x1="119" y1="262" x2="119" y2="286" stroke="#2a3038"/>
 <clipPath id="clip_8_1"><rect x="120" y="263" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_8_1)" x="127" y="278" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">发奖实发验收</text>
-<line x1="222" y1="262" x2="222" y2="286" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_8_1)" x="127" y="278" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">发奖实发验收</text>
+<line x1="222" y1="262" x2="222" y2="286" stroke="#2a3038"/>
 <clipPath id="clip_8_2"><rect x="223" y="263" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_8_2)" x="230" y="278" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">发钻实发验收</text>
-<line x1="325" y1="262" x2="325" y2="286" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_8_2)" x="230" y="278" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">发钻实发验收</text>
+<line x1="325" y1="262" x2="325" y2="286" stroke="#2a3038"/>
 <clipPath id="clip_8_3"><rect x="326" y="263" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_8_3)" x="333" y="278" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">应发vs实发查钻</text>
-<line x1="428" y1="262" x2="428" y2="286" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_8_3)" x="333" y="278" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">应发vs实发查钻</text>
+<line x1="428" y1="262" x2="428" y2="286" stroke="#2a3038"/>
 <clipPath id="clip_8_4"><rect x="429" y="263" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_8_4)" x="436" y="278" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">436</text>
-<line x1="531" y1="262" x2="531" y2="286" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_8_4)" x="436" y="278" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">436</text>
+<line x1="531" y1="262" x2="531" y2="286" stroke="#2a3038"/>
 <clipPath id="clip_8_5"><rect x="532" y="263" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_8_5)" x="539" y="278" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">430</text>
-<line x1="634" y1="262" x2="634" y2="286" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_8_5)" x="539" y="278" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">430</text>
+<line x1="634" y1="262" x2="634" y2="286" stroke="#2a3038"/>
 <clipPath id="clip_8_6"><rect x="635" y="263" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_8_6)" x="642" y="278" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">6</text>
-<line x1="737" y1="262" x2="737" y2="286" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_8_6)" x="642" y="278" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">6</text>
+<line x1="737" y1="262" x2="737" y2="286" stroke="#2a3038"/>
 <clipPath id="clip_8_7"><rect x="738" y="263" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_8_7)" x="745" y="278" fill="#d97706" font-size="11" font-family="system-ui, -apple-system, sans-serif">部分通过</text>
-<line x1="840" y1="262" x2="840" y2="286" stroke="#e2e8f0"/>
-<line x1="944" y1="262" x2="944" y2="286" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_8_7)" x="745" y="278" fill="#fbbf24" font-size="11" font-family="system-ui, -apple-system, sans-serif">部分通过</text>
+<line x1="840" y1="262" x2="840" y2="286" stroke="#2a3038"/>
+<line x1="944" y1="262" x2="944" y2="286" stroke="#2a3038"/>
 <clipPath id="clip_8_8"><rect x="841" y="263" width="102" height="22"/></clipPath>
-<text clip-path="url(#clip_8_8)" x="848" y="278" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">应发=191363 实发=186905</text>
-<rect x="16" y="286" width="928" height="24" fill="#ffffff"/>
-<line x1="16" y1="310" x2="944" y2="310" stroke="#e2e8f0"/>
-<line x1="16" y1="286" x2="16" y2="310" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_8_8)" x="848" y="278" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">应发=191363 实发=186905</text>
+<rect x="16" y="286" width="928" height="24" fill="#101316"/>
+<line x1="16" y1="310" x2="944" y2="310" stroke="#2a3038"/>
+<line x1="16" y1="286" x2="16" y2="310" stroke="#2a3038"/>
 <clipPath id="clip_9_0"><rect x="17" y="287" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_9_0)" x="24" y="302" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">6b</text>
-<line x1="119" y1="286" x2="119" y2="310" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_9_0)" x="24" y="302" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">6b</text>
+<line x1="119" y1="286" x2="119" y2="310" stroke="#2a3038"/>
 <clipPath id="clip_9_1"><rect x="120" y="287" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_9_1)" x="127" y="302" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">贡献榜验收</text>
-<line x1="222" y1="286" x2="222" y2="310" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_9_1)" x="127" y="302" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">贡献榜验收</text>
+<line x1="222" y1="286" x2="222" y2="310" stroke="#2a3038"/>
 <clipPath id="clip_9_2"><rect x="223" y="287" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_9_2)" x="230" y="302" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">用户发钻测试</text>
-<line x1="325" y1="286" x2="325" y2="310" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_9_2)" x="230" y="302" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">用户发钻测试</text>
+<line x1="325" y1="286" x2="325" y2="310" stroke="#2a3038"/>
 <clipPath id="clip_9_3"><rect x="326" y="287" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_9_3)" x="333" y="302" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">榜单PK/钻/验收</text>
-<line x1="428" y1="286" x2="428" y2="310" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_9_3)" x="333" y="302" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">榜单PK/钻/验收</text>
+<line x1="428" y1="286" x2="428" y2="310" stroke="#2a3038"/>
 <clipPath id="clip_9_4"><rect x="429" y="287" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_9_4)" x="436" y="302" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">436</text>
-<line x1="531" y1="286" x2="531" y2="310" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_9_4)" x="436" y="302" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">436</text>
+<line x1="531" y1="286" x2="531" y2="310" stroke="#2a3038"/>
 <clipPath id="clip_9_5"><rect x="532" y="287" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_9_5)" x="539" y="302" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">436</text>
-<line x1="634" y1="286" x2="634" y2="310" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_9_5)" x="539" y="302" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">436</text>
+<line x1="634" y1="286" x2="634" y2="310" stroke="#2a3038"/>
 <clipPath id="clip_9_6"><rect x="635" y="287" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_9_6)" x="642" y="302" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">0</text>
-<line x1="737" y1="286" x2="737" y2="310" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_9_6)" x="642" y="302" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">0</text>
+<line x1="737" y1="286" x2="737" y2="310" stroke="#2a3038"/>
 <clipPath id="clip_9_7"><rect x="738" y="287" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_9_7)" x="745" y="302" fill="#059669" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
-<line x1="840" y1="286" x2="840" y2="310" stroke="#e2e8f0"/>
-<line x1="944" y1="286" x2="944" y2="310" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_9_7)" x="745" y="302" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<line x1="840" y1="286" x2="840" y2="310" stroke="#2a3038"/>
+<line x1="944" y1="286" x2="944" y2="310" stroke="#2a3038"/>
 <clipPath id="clip_9_8"><rect x="841" y="287" width="102" height="22"/></clipPath>
-<text clip-path="url(#clip_9_8)" x="848" y="302" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">用户PK&lt;minListPk 不在榜记通过</text>
-<rect x="16" y="310" width="928" height="24" fill="#fafbfc"/>
-<line x1="16" y1="334" x2="944" y2="334" stroke="#e2e8f0"/>
-<line x1="16" y1="310" x2="16" y2="334" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_9_8)" x="848" y="302" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">用户PK&lt;minListPk 不在榜记通过</text>
+<rect x="16" y="310" width="928" height="24" fill="#121519"/>
+<line x1="16" y1="334" x2="944" y2="334" stroke="#2a3038"/>
+<line x1="16" y1="310" x2="16" y2="334" stroke="#2a3038"/>
 <clipPath id="clip_10_0"><rect x="17" y="311" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_10_0)" x="24" y="326" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">总体验收结论</text>
-<line x1="119" y1="310" x2="119" y2="334" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_10_0)" x="24" y="326" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">总体验收结论</text>
+<line x1="119" y1="310" x2="119" y2="334" stroke="#2a3038"/>
 <clipPath id="clip_10_1"><rect x="120" y="311" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_10_1)" x="127" y="326" fill="#d97706" font-size="11" font-family="system-ui, -apple-system, sans-serif">部分通过</text>
-<line x1="222" y1="310" x2="222" y2="334" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_10_1)" x="127" y="326" fill="#fbbf24" font-size="11" font-family="system-ui, -apple-system, sans-serif">部分通过</text>
+<line x1="222" y1="310" x2="222" y2="334" stroke="#2a3038"/>
 <clipPath id="clip_10_2"><rect x="223" y="311" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_10_2)" x="230" y="326" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="325" y1="310" x2="325" y2="334" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_10_2)" x="230" y="326" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="325" y1="310" x2="325" y2="334" stroke="#2a3038"/>
 <clipPath id="clip_10_3"><rect x="326" y="311" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_10_3)" x="333" y="326" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="428" y1="310" x2="428" y2="334" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_10_3)" x="333" y="326" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="428" y1="310" x2="428" y2="334" stroke="#2a3038"/>
 <clipPath id="clip_10_4"><rect x="429" y="311" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_10_4)" x="436" y="326" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="531" y1="310" x2="531" y2="334" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_10_4)" x="436" y="326" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="531" y1="310" x2="531" y2="334" stroke="#2a3038"/>
 <clipPath id="clip_10_5"><rect x="532" y="311" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_10_5)" x="539" y="326" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="634" y1="310" x2="634" y2="334" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_10_5)" x="539" y="326" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="634" y1="310" x2="634" y2="334" stroke="#2a3038"/>
 <clipPath id="clip_10_6"><rect x="635" y="311" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_10_6)" x="642" y="326" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="737" y1="310" x2="737" y2="334" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_10_6)" x="642" y="326" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="737" y1="310" x2="737" y2="334" stroke="#2a3038"/>
 <clipPath id="clip_10_7"><rect x="738" y="311" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_10_7)" x="745" y="326" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="840" y1="310" x2="840" y2="334" stroke="#e2e8f0"/>
-<line x1="944" y1="310" x2="944" y2="334" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_10_7)" x="745" y="326" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="840" y1="310" x2="840" y2="334" stroke="#2a3038"/>
+<line x1="944" y1="310" x2="944" y2="334" stroke="#2a3038"/>
 <clipPath id="clip_10_8"><rect x="841" y="311" width="102" height="22"/></clipPath>
-<text clip-path="url(#clip_10_8)" x="848" y="326" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<rect x="16" y="334" width="928" height="26" fill="#f8fafc"/>
-<line x1="16" y1="360" x2="944" y2="360" stroke="#e2e8f0"/>
-<line x1="16" y1="334" x2="16" y2="360" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_10_8)" x="848" y="326" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<rect x="16" y="334" width="928" height="26" fill="#15191e"/>
+<line x1="16" y1="360" x2="944" y2="360" stroke="#2a3038"/>
+<line x1="16" y1="334" x2="16" y2="360" stroke="#2a3038"/>
 <clipPath id="clip_11_0"><rect x="17" y="335" width="101" height="24"/></clipPath>
-<text clip-path="url(#clip_11_0)" x="24" y="350" fill="#64748b" font-size="11" font-family="system-ui, -apple-system, sans-serif">发钻不一致明细</text>
-<line x1="119" y1="334" x2="119" y2="360" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_11_0)" x="24" y="350" fill="#8d949f" font-size="11" font-family="system-ui, -apple-system, sans-serif">发钻不一致明细</text>
+<line x1="119" y1="334" x2="119" y2="360" stroke="#2a3038"/>
 <clipPath id="clip_11_1"><rect x="120" y="335" width="101" height="24"/></clipPath>
-<text clip-path="url(#clip_11_1)" x="127" y="350" fill="#64748b" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="222" y1="334" x2="222" y2="360" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_11_1)" x="127" y="350" fill="#8d949f" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="222" y1="334" x2="222" y2="360" stroke="#2a3038"/>
 <clipPath id="clip_11_2"><rect x="223" y="335" width="101" height="24"/></clipPath>
-<text clip-path="url(#clip_11_2)" x="230" y="350" fill="#64748b" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="325" y1="334" x2="325" y2="360" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_11_2)" x="230" y="350" fill="#8d949f" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="325" y1="334" x2="325" y2="360" stroke="#2a3038"/>
 <clipPath id="clip_11_3"><rect x="326" y="335" width="101" height="24"/></clipPath>
-<text clip-path="url(#clip_11_3)" x="333" y="350" fill="#64748b" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="428" y1="334" x2="428" y2="360" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_11_3)" x="333" y="350" fill="#8d949f" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="428" y1="334" x2="428" y2="360" stroke="#2a3038"/>
 <clipPath id="clip_11_4"><rect x="429" y="335" width="101" height="24"/></clipPath>
-<text clip-path="url(#clip_11_4)" x="436" y="350" fill="#64748b" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="531" y1="334" x2="531" y2="360" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_11_4)" x="436" y="350" fill="#8d949f" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="531" y1="334" x2="531" y2="360" stroke="#2a3038"/>
 <clipPath id="clip_11_5"><rect x="532" y="335" width="101" height="24"/></clipPath>
-<text clip-path="url(#clip_11_5)" x="539" y="350" fill="#64748b" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="634" y1="334" x2="634" y2="360" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_11_5)" x="539" y="350" fill="#8d949f" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="634" y1="334" x2="634" y2="360" stroke="#2a3038"/>
 <clipPath id="clip_11_6"><rect x="635" y="335" width="101" height="24"/></clipPath>
-<text clip-path="url(#clip_11_6)" x="642" y="350" fill="#64748b" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="737" y1="334" x2="737" y2="360" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_11_6)" x="642" y="350" fill="#8d949f" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="737" y1="334" x2="737" y2="360" stroke="#2a3038"/>
 <clipPath id="clip_11_7"><rect x="738" y="335" width="101" height="24"/></clipPath>
-<text clip-path="url(#clip_11_7)" x="745" y="350" fill="#64748b" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="840" y1="334" x2="840" y2="360" stroke="#e2e8f0"/>
-<line x1="944" y1="334" x2="944" y2="360" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_11_7)" x="745" y="350" fill="#8d949f" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="840" y1="334" x2="840" y2="360" stroke="#2a3038"/>
+<line x1="944" y1="334" x2="944" y2="360" stroke="#2a3038"/>
 <clipPath id="clip_11_8"><rect x="841" y="335" width="102" height="24"/></clipPath>
-<text clip-path="url(#clip_11_8)" x="848" y="350" fill="#64748b" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<rect x="16" y="360" width="928" height="28" fill="#f1f5f9"/>
-<line x1="16" y1="388" x2="944" y2="388" stroke="#e2e8f0"/>
-<line x1="16" y1="360" x2="16" y2="388" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_11_8)" x="848" y="350" fill="#8d949f" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<rect x="16" y="360" width="928" height="28" fill="#15191e"/>
+<line x1="16" y1="388" x2="944" y2="388" stroke="#2a3038"/>
+<line x1="16" y1="360" x2="16" y2="388" stroke="#2a3038"/>
 <clipPath id="clip_12_0"><rect x="17" y="361" width="101" height="26"/></clipPath>
-<text clip-path="url(#clip_12_0)" x="24" y="376" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">userId</text>
-<line x1="119" y1="360" x2="119" y2="388" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_12_0)" x="24" y="376" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">userId</text>
+<line x1="119" y1="360" x2="119" y2="388" stroke="#2a3038"/>
 <clipPath id="clip_12_1"><rect x="120" y="361" width="101" height="26"/></clipPath>
-<text clip-path="url(#clip_12_1)" x="127" y="376" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">家族ID</text>
-<line x1="222" y1="360" x2="222" y2="388" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_12_1)" x="127" y="376" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">家族ID</text>
+<line x1="222" y1="360" x2="222" y2="388" stroke="#2a3038"/>
 <clipPath id="clip_12_2"><rect x="223" y="361" width="101" height="26"/></clipPath>
-<text clip-path="url(#clip_12_2)" x="230" y="376" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">家族名称</text>
-<line x1="325" y1="360" x2="325" y2="388" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_12_2)" x="230" y="376" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">家族名称</text>
+<line x1="325" y1="360" x2="325" y2="388" stroke="#2a3038"/>
 <clipPath id="clip_12_3"><rect x="326" y="361" width="101" height="26"/></clipPath>
-<text clip-path="url(#clip_12_3)" x="333" y="376" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">应发钻石</text>
-<line x1="428" y1="360" x2="428" y2="388" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_12_3)" x="333" y="376" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">应发钻石</text>
+<line x1="428" y1="360" x2="428" y2="388" stroke="#2a3038"/>
 <clipPath id="clip_12_4"><rect x="429" y="361" width="101" height="26"/></clipPath>
-<text clip-path="url(#clip_12_4)" x="436" y="376" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">实发钻石</text>
-<line x1="531" y1="360" x2="531" y2="388" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_12_4)" x="436" y="376" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">实发钻石</text>
+<line x1="531" y1="360" x2="531" y2="388" stroke="#2a3038"/>
 <clipPath id="clip_12_5"><rect x="532" y="361" width="101" height="26"/></clipPath>
-<text clip-path="url(#clip_12_5)" x="539" y="376" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">验收</text>
-<line x1="634" y1="360" x2="634" y2="388" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_12_5)" x="539" y="376" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">验收</text>
+<line x1="634" y1="360" x2="634" y2="388" stroke="#2a3038"/>
 <clipPath id="clip_12_6"><rect x="635" y="361" width="101" height="26"/></clipPath>
-<text clip-path="url(#clip_12_6)" x="642" y="376" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">备注</text>
-<line x1="737" y1="360" x2="737" y2="388" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_12_6)" x="642" y="376" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">备注</text>
+<line x1="737" y1="360" x2="737" y2="388" stroke="#2a3038"/>
 <clipPath id="clip_12_7"><rect x="738" y="361" width="101" height="26"/></clipPath>
-<text clip-path="url(#clip_12_7)" x="745" y="376" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="840" y1="360" x2="840" y2="388" stroke="#e2e8f0"/>
-<line x1="944" y1="360" x2="944" y2="388" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_12_7)" x="745" y="376" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="840" y1="360" x2="840" y2="388" stroke="#2a3038"/>
+<line x1="944" y1="360" x2="944" y2="388" stroke="#2a3038"/>
 <clipPath id="clip_12_8"><rect x="841" y="361" width="102" height="26"/></clipPath>
-<text clip-path="url(#clip_12_8)" x="848" y="376" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif"></text>
-<rect x="16" y="388" width="928" height="24" fill="#ffffff"/>
-<line x1="16" y1="412" x2="944" y2="412" stroke="#e2e8f0"/>
-<line x1="16" y1="388" x2="16" y2="412" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_12_8)" x="848" y="376" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif"></text>
+<rect x="16" y="388" width="928" height="24" fill="#101316"/>
+<line x1="16" y1="412" x2="944" y2="412" stroke="#2a3038"/>
+<line x1="16" y1="388" x2="16" y2="412" stroke="#2a3038"/>
 <clipPath id="clip_13_0"><rect x="17" y="389" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_13_0)" x="24" y="404" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">100121433</text>
-<line x1="119" y1="388" x2="119" y2="412" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_13_0)" x="24" y="404" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100121433</text>
+<line x1="119" y1="388" x2="119" y2="412" stroke="#2a3038"/>
 <clipPath id="clip_13_1"><rect x="120" y="389" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_13_1)" x="127" y="404" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">101435</text>
-<line x1="222" y1="388" x2="222" y2="412" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_13_1)" x="127" y="404" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">101435</text>
+<line x1="222" y1="388" x2="222" y2="412" stroke="#2a3038"/>
 <clipPath id="clip_13_2"><rect x="223" y="389" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_13_2)" x="230" y="404" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">CCVC</text>
-<line x1="325" y1="388" x2="325" y2="412" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_13_2)" x="230" y="404" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">CCVC</text>
+<line x1="325" y1="388" x2="325" y2="412" stroke="#2a3038"/>
 <clipPath id="clip_13_3"><rect x="326" y="389" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_13_3)" x="333" y="404" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">1536</text>
-<line x1="428" y1="388" x2="428" y2="412" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_13_3)" x="333" y="404" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">1536</text>
+<line x1="428" y1="388" x2="428" y2="412" stroke="#2a3038"/>
 <clipPath id="clip_13_4"><rect x="429" y="389" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_13_4)" x="436" y="404" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">3072</text>
-<line x1="531" y1="388" x2="531" y2="412" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_13_4)" x="436" y="404" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">3072</text>
+<line x1="531" y1="388" x2="531" y2="412" stroke="#2a3038"/>
 <clipPath id="clip_13_5"><rect x="532" y="389" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_13_5)" x="539" y="404" fill="#d97706" font-size="11" font-family="system-ui, -apple-system, sans-serif">不一致</text>
-<line x1="634" y1="388" x2="634" y2="412" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_13_5)" x="539" y="404" fill="#fbbf24" font-size="11" font-family="system-ui, -apple-system, sans-serif">不一致</text>
+<line x1="634" y1="388" x2="634" y2="412" stroke="#2a3038"/>
 <clipPath id="clip_13_6"><rect x="635" y="389" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_13_6)" x="642" y="404" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">疑似重复发奖</text>
-<line x1="737" y1="388" x2="737" y2="412" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_13_6)" x="642" y="404" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">疑似重复发奖</text>
+<line x1="737" y1="388" x2="737" y2="412" stroke="#2a3038"/>
 <clipPath id="clip_13_7"><rect x="738" y="389" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_13_7)" x="745" y="404" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="840" y1="388" x2="840" y2="412" stroke="#e2e8f0"/>
-<line x1="944" y1="388" x2="944" y2="412" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_13_7)" x="745" y="404" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="840" y1="388" x2="840" y2="412" stroke="#2a3038"/>
+<line x1="944" y1="388" x2="944" y2="412" stroke="#2a3038"/>
 <clipPath id="clip_13_8"><rect x="841" y="389" width="102" height="22"/></clipPath>
-<text clip-path="url(#clip_13_8)" x="848" y="404" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<rect x="16" y="412" width="928" height="24" fill="#fafbfc"/>
-<line x1="16" y1="436" x2="944" y2="436" stroke="#e2e8f0"/>
-<line x1="16" y1="412" x2="16" y2="436" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_13_8)" x="848" y="404" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<rect x="16" y="412" width="928" height="24" fill="#121519"/>
+<line x1="16" y1="436" x2="944" y2="436" stroke="#2a3038"/>
+<line x1="16" y1="412" x2="16" y2="436" stroke="#2a3038"/>
 <clipPath id="clip_14_0"><rect x="17" y="413" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_14_0)" x="24" y="428" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">100468025</text>
-<line x1="119" y1="412" x2="119" y2="436" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_14_0)" x="24" y="428" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100468025</text>
+<line x1="119" y1="412" x2="119" y2="436" stroke="#2a3038"/>
 <clipPath id="clip_14_1"><rect x="120" y="413" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_14_1)" x="127" y="428" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">103772</text>
-<line x1="222" y1="412" x2="222" y2="436" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_14_1)" x="127" y="428" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">103772</text>
+<line x1="222" y1="412" x2="222" y2="436" stroke="#2a3038"/>
 <clipPath id="clip_14_2"><rect x="223" y="413" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_14_2)" x="230" y="428" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">احتفلات اللغة العربي</text>
-<line x1="325" y1="412" x2="325" y2="436" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_14_2)" x="230" y="428" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">احتفلات اللغة العربي</text>
+<line x1="325" y1="412" x2="325" y2="436" stroke="#2a3038"/>
 <clipPath id="clip_14_3"><rect x="326" y="413" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_14_3)" x="333" y="428" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">739</text>
-<line x1="428" y1="412" x2="428" y2="436" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_14_3)" x="333" y="428" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">739</text>
+<line x1="428" y1="412" x2="428" y2="436" stroke="#2a3038"/>
 <clipPath id="clip_14_4"><rect x="429" y="413" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_14_4)" x="436" y="428" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">1478</text>
-<line x1="531" y1="412" x2="531" y2="436" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_14_4)" x="436" y="428" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">1478</text>
+<line x1="531" y1="412" x2="531" y2="436" stroke="#2a3038"/>
 <clipPath id="clip_14_5"><rect x="532" y="413" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_14_5)" x="539" y="428" fill="#d97706" font-size="11" font-family="system-ui, -apple-system, sans-serif">不一致</text>
-<line x1="634" y1="412" x2="634" y2="436" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_14_5)" x="539" y="428" fill="#fbbf24" font-size="11" font-family="system-ui, -apple-system, sans-serif">不一致</text>
+<line x1="634" y1="412" x2="634" y2="436" stroke="#2a3038"/>
 <clipPath id="clip_14_6"><rect x="635" y="413" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_14_6)" x="642" y="428" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">疑似重复发奖</text>
-<line x1="737" y1="412" x2="737" y2="436" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_14_6)" x="642" y="428" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">疑似重复发奖</text>
+<line x1="737" y1="412" x2="737" y2="436" stroke="#2a3038"/>
 <clipPath id="clip_14_7"><rect x="738" y="413" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_14_7)" x="745" y="428" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="840" y1="412" x2="840" y2="436" stroke="#e2e8f0"/>
-<line x1="944" y1="412" x2="944" y2="436" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_14_7)" x="745" y="428" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="840" y1="412" x2="840" y2="436" stroke="#2a3038"/>
+<line x1="944" y1="412" x2="944" y2="436" stroke="#2a3038"/>
 <clipPath id="clip_14_8"><rect x="841" y="413" width="102" height="22"/></clipPath>
-<text clip-path="url(#clip_14_8)" x="848" y="428" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<rect x="16" y="436" width="928" height="24" fill="#ffffff"/>
-<line x1="16" y1="460" x2="944" y2="460" stroke="#e2e8f0"/>
-<line x1="16" y1="436" x2="16" y2="460" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_14_8)" x="848" y="428" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<rect x="16" y="436" width="928" height="24" fill="#101316"/>
+<line x1="16" y1="460" x2="944" y2="460" stroke="#2a3038"/>
+<line x1="16" y1="436" x2="16" y2="460" stroke="#2a3038"/>
 <clipPath id="clip_15_0"><rect x="17" y="437" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_15_0)" x="24" y="452" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">100195977</text>
-<line x1="119" y1="436" x2="119" y2="460" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_15_0)" x="24" y="452" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100195977</text>
+<line x1="119" y1="436" x2="119" y2="460" stroke="#2a3038"/>
 <clipPath id="clip_15_1"><rect x="120" y="437" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_15_1)" x="127" y="452" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">103772</text>
-<line x1="222" y1="436" x2="222" y2="460" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_15_1)" x="127" y="452" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">103772</text>
+<line x1="222" y1="436" x2="222" y2="460" stroke="#2a3038"/>
 <clipPath id="clip_15_2"><rect x="223" y="437" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_15_2)" x="230" y="452" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">احتفلات اللغة العربي</text>
-<line x1="325" y1="436" x2="325" y2="460" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_15_2)" x="230" y="452" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">احتفلات اللغة العربي</text>
+<line x1="325" y1="436" x2="325" y2="460" stroke="#2a3038"/>
 <clipPath id="clip_15_3"><rect x="326" y="437" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_15_3)" x="333" y="452" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">430</text>
-<line x1="428" y1="436" x2="428" y2="460" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_15_3)" x="333" y="452" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">430</text>
+<line x1="428" y1="436" x2="428" y2="460" stroke="#2a3038"/>
 <clipPath id="clip_15_4"><rect x="429" y="437" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_15_4)" x="436" y="452" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">860</text>
-<line x1="531" y1="436" x2="531" y2="460" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_15_4)" x="436" y="452" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">860</text>
+<line x1="531" y1="436" x2="531" y2="460" stroke="#2a3038"/>
 <clipPath id="clip_15_5"><rect x="532" y="437" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_15_5)" x="539" y="452" fill="#d97706" font-size="11" font-family="system-ui, -apple-system, sans-serif">不一致</text>
-<line x1="634" y1="436" x2="634" y2="460" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_15_5)" x="539" y="452" fill="#fbbf24" font-size="11" font-family="system-ui, -apple-system, sans-serif">不一致</text>
+<line x1="634" y1="436" x2="634" y2="460" stroke="#2a3038"/>
 <clipPath id="clip_15_6"><rect x="635" y="437" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_15_6)" x="642" y="452" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">疑似重复发奖</text>
-<line x1="737" y1="436" x2="737" y2="460" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_15_6)" x="642" y="452" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">疑似重复发奖</text>
+<line x1="737" y1="436" x2="737" y2="460" stroke="#2a3038"/>
 <clipPath id="clip_15_7"><rect x="738" y="437" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_15_7)" x="745" y="452" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="840" y1="436" x2="840" y2="460" stroke="#e2e8f0"/>
-<line x1="944" y1="436" x2="944" y2="460" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_15_7)" x="745" y="452" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="840" y1="436" x2="840" y2="460" stroke="#2a3038"/>
+<line x1="944" y1="436" x2="944" y2="460" stroke="#2a3038"/>
 <clipPath id="clip_15_8"><rect x="841" y="437" width="102" height="22"/></clipPath>
-<text clip-path="url(#clip_15_8)" x="848" y="452" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<rect x="16" y="460" width="928" height="24" fill="#fafbfc"/>
-<line x1="16" y1="484" x2="944" y2="484" stroke="#e2e8f0"/>
-<line x1="16" y1="460" x2="16" y2="484" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_15_8)" x="848" y="452" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<rect x="16" y="460" width="928" height="24" fill="#121519"/>
+<line x1="16" y1="484" x2="944" y2="484" stroke="#2a3038"/>
+<line x1="16" y1="460" x2="16" y2="484" stroke="#2a3038"/>
 <clipPath id="clip_16_0"><rect x="17" y="461" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_16_0)" x="24" y="476" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">3705</text>
-<line x1="119" y1="460" x2="119" y2="484" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_16_0)" x="24" y="476" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">3705</text>
+<line x1="119" y1="460" x2="119" y2="484" stroke="#2a3038"/>
 <clipPath id="clip_16_1"><rect x="120" y="461" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_16_1)" x="127" y="476" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">13110</text>
-<line x1="222" y1="460" x2="222" y2="484" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_16_1)" x="127" y="476" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">13110</text>
+<line x1="222" y1="460" x2="222" y2="484" stroke="#2a3038"/>
 <clipPath id="clip_16_2"><rect x="223" y="461" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_16_2)" x="230" y="476" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">fggtest666666666666t</text>
-<line x1="325" y1="460" x2="325" y2="484" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_16_2)" x="230" y="476" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">fggtest666666666666t</text>
+<line x1="325" y1="460" x2="325" y2="484" stroke="#2a3038"/>
 <clipPath id="clip_16_3"><rect x="326" y="461" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_16_3)" x="333" y="476" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">382</text>
-<line x1="428" y1="460" x2="428" y2="484" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_16_3)" x="333" y="476" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">382</text>
+<line x1="428" y1="460" x2="428" y2="484" stroke="#2a3038"/>
 <clipPath id="clip_16_4"><rect x="429" y="461" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_16_4)" x="436" y="476" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">764</text>
-<line x1="531" y1="460" x2="531" y2="484" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_16_4)" x="436" y="476" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">764</text>
+<line x1="531" y1="460" x2="531" y2="484" stroke="#2a3038"/>
 <clipPath id="clip_16_5"><rect x="532" y="461" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_16_5)" x="539" y="476" fill="#d97706" font-size="11" font-family="system-ui, -apple-system, sans-serif">不一致</text>
-<line x1="634" y1="460" x2="634" y2="484" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_16_5)" x="539" y="476" fill="#fbbf24" font-size="11" font-family="system-ui, -apple-system, sans-serif">不一致</text>
+<line x1="634" y1="460" x2="634" y2="484" stroke="#2a3038"/>
 <clipPath id="clip_16_6"><rect x="635" y="461" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_16_6)" x="642" y="476" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">疑似重复发奖</text>
-<line x1="737" y1="460" x2="737" y2="484" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_16_6)" x="642" y="476" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">疑似重复发奖</text>
+<line x1="737" y1="460" x2="737" y2="484" stroke="#2a3038"/>
 <clipPath id="clip_16_7"><rect x="738" y="461" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_16_7)" x="745" y="476" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="840" y1="460" x2="840" y2="484" stroke="#e2e8f0"/>
-<line x1="944" y1="460" x2="944" y2="484" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_16_7)" x="745" y="476" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="840" y1="460" x2="840" y2="484" stroke="#2a3038"/>
+<line x1="944" y1="460" x2="944" y2="484" stroke="#2a3038"/>
 <clipPath id="clip_16_8"><rect x="841" y="461" width="102" height="22"/></clipPath>
-<text clip-path="url(#clip_16_8)" x="848" y="476" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<rect x="16" y="484" width="928" height="24" fill="#ffffff"/>
-<line x1="16" y1="508" x2="944" y2="508" stroke="#e2e8f0"/>
-<line x1="16" y1="484" x2="16" y2="508" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_16_8)" x="848" y="476" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<rect x="16" y="484" width="928" height="24" fill="#101316"/>
+<line x1="16" y1="508" x2="944" y2="508" stroke="#2a3038"/>
+<line x1="16" y1="484" x2="16" y2="508" stroke="#2a3038"/>
 <clipPath id="clip_17_0"><rect x="17" y="485" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_17_0)" x="24" y="500" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">100057657</text>
-<line x1="119" y1="484" x2="119" y2="508" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_17_0)" x="24" y="500" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100057657</text>
+<line x1="119" y1="484" x2="119" y2="508" stroke="#2a3038"/>
 <clipPath id="clip_17_1"><rect x="120" y="485" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_17_1)" x="127" y="500" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">38767</text>
-<line x1="222" y1="484" x2="222" y2="508" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_17_1)" x="127" y="500" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">38767</text>
+<line x1="222" y1="484" x2="222" y2="508" stroke="#2a3038"/>
 <clipPath id="clip_17_2"><rect x="223" y="485" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_17_2)" x="230" y="500" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">美美家族</text>
-<line x1="325" y1="484" x2="325" y2="508" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_17_2)" x="230" y="500" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">美美家族</text>
+<line x1="325" y1="484" x2="325" y2="508" stroke="#2a3038"/>
 <clipPath id="clip_17_3"><rect x="326" y="485" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_17_3)" x="333" y="500" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">298</text>
-<line x1="428" y1="484" x2="428" y2="508" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_17_3)" x="333" y="500" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">298</text>
+<line x1="428" y1="484" x2="428" y2="508" stroke="#2a3038"/>
 <clipPath id="clip_17_4"><rect x="429" y="485" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_17_4)" x="436" y="500" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">596</text>
-<line x1="531" y1="484" x2="531" y2="508" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_17_4)" x="436" y="500" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">596</text>
+<line x1="531" y1="484" x2="531" y2="508" stroke="#2a3038"/>
 <clipPath id="clip_17_5"><rect x="532" y="485" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_17_5)" x="539" y="500" fill="#d97706" font-size="11" font-family="system-ui, -apple-system, sans-serif">不一致</text>
-<line x1="634" y1="484" x2="634" y2="508" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_17_5)" x="539" y="500" fill="#fbbf24" font-size="11" font-family="system-ui, -apple-system, sans-serif">不一致</text>
+<line x1="634" y1="484" x2="634" y2="508" stroke="#2a3038"/>
 <clipPath id="clip_17_6"><rect x="635" y="485" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_17_6)" x="642" y="500" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">疑似重复发奖</text>
-<line x1="737" y1="484" x2="737" y2="508" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_17_6)" x="642" y="500" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">疑似重复发奖</text>
+<line x1="737" y1="484" x2="737" y2="508" stroke="#2a3038"/>
 <clipPath id="clip_17_7"><rect x="738" y="485" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_17_7)" x="745" y="500" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="840" y1="484" x2="840" y2="508" stroke="#e2e8f0"/>
-<line x1="944" y1="484" x2="944" y2="508" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_17_7)" x="745" y="500" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="840" y1="484" x2="840" y2="508" stroke="#2a3038"/>
+<line x1="944" y1="484" x2="944" y2="508" stroke="#2a3038"/>
 <clipPath id="clip_17_8"><rect x="841" y="485" width="102" height="22"/></clipPath>
-<text clip-path="url(#clip_17_8)" x="848" y="500" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<rect x="16" y="508" width="928" height="24" fill="#fafbfc"/>
-<line x1="16" y1="532" x2="944" y2="532" stroke="#e2e8f0"/>
-<line x1="16" y1="508" x2="16" y2="532" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_17_8)" x="848" y="500" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<rect x="16" y="508" width="928" height="24" fill="#121519"/>
+<line x1="16" y1="532" x2="944" y2="532" stroke="#2a3038"/>
+<line x1="16" y1="508" x2="16" y2="532" stroke="#2a3038"/>
 <clipPath id="clip_18_0"><rect x="17" y="509" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_18_0)" x="24" y="524" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">100002554</text>
-<line x1="119" y1="508" x2="119" y2="532" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_18_0)" x="24" y="524" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100002554</text>
+<line x1="119" y1="508" x2="119" y2="532" stroke="#2a3038"/>
 <clipPath id="clip_18_1"><rect x="120" y="509" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_18_1)" x="127" y="524" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">41012</text>
-<line x1="222" y1="508" x2="222" y2="532" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_18_1)" x="127" y="524" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">41012</text>
+<line x1="222" y1="508" x2="222" y2="532" stroke="#2a3038"/>
 <clipPath id="clip_18_2"><rect x="223" y="509" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_18_2)" x="230" y="524" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">🐟的家族</text>
-<line x1="325" y1="508" x2="325" y2="532" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_18_2)" x="230" y="524" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">🐟的家族</text>
+<line x1="325" y1="508" x2="325" y2="532" stroke="#2a3038"/>
 <clipPath id="clip_18_3"><rect x="326" y="509" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_18_3)" x="333" y="524" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">1073</text>
-<line x1="428" y1="508" x2="428" y2="532" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_18_3)" x="333" y="524" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">1073</text>
+<line x1="428" y1="508" x2="428" y2="532" stroke="#2a3038"/>
 <clipPath id="clip_18_4"><rect x="429" y="509" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_18_4)" x="436" y="524" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="531" y1="508" x2="531" y2="532" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_18_4)" x="436" y="524" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="531" y1="508" x2="531" y2="532" stroke="#2a3038"/>
 <clipPath id="clip_18_5"><rect x="532" y="509" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_18_5)" x="539" y="524" fill="#d97706" font-size="11" font-family="system-ui, -apple-system, sans-serif">查钻失败</text>
-<line x1="634" y1="508" x2="634" y2="532" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_18_5)" x="539" y="524" fill="#fbbf24" font-size="11" font-family="system-ui, -apple-system, sans-serif">查钻失败</text>
+<line x1="634" y1="508" x2="634" y2="532" stroke="#2a3038"/>
 <clipPath id="clip_18_6"><rect x="635" y="509" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_18_6)" x="642" y="524" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">未到账</text>
-<line x1="737" y1="508" x2="737" y2="532" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_18_6)" x="642" y="524" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">未到账</text>
+<line x1="737" y1="508" x2="737" y2="532" stroke="#2a3038"/>
 <clipPath id="clip_18_7"><rect x="738" y="509" width="101" height="22"/></clipPath>
-<text clip-path="url(#clip_18_7)" x="745" y="524" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<line x1="840" y1="508" x2="840" y2="532" stroke="#e2e8f0"/>
-<line x1="944" y1="508" x2="944" y2="532" stroke="#e2e8f0"/>
+<text clip-path="url(#clip_18_7)" x="745" y="524" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="840" y1="508" x2="840" y2="532" stroke="#2a3038"/>
+<line x1="944" y1="508" x2="944" y2="532" stroke="#2a3038"/>
 <clipPath id="clip_18_8"><rect x="841" y="509" width="102" height="22"/></clipPath>
-<text clip-path="url(#clip_18_8)" x="848" y="524" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
-<rect x="16" y="64" width="928" height="468" fill="none" stroke="#e2e8f0"/><text x="16" y="556" fill="#64748b" font-size="11" font-family="system-ui">超出列宽的内容已截断 · 可上下左右滑动 · 与钉钉表一致</text>
+<text clip-path="url(#clip_18_8)" x="848" y="524" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<rect x="16" y="64" width="928" height="468" fill="none" stroke="#2a3038"/><text x="16" y="556" fill="#8d949f" font-size="11" font-family="system-ui">超出列宽的内容已截断 · 可上下左右滑动 · 与钉钉表一致</text>
 </svg>
