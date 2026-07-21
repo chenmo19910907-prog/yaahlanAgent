@@ -1403,6 +1403,42 @@
       ta.style.height = Math.min(ta.scrollHeight, 160) + 'px';
     }
 
+    const PROMPT_STORAGE_KEY = 'web_agent_pending_prompt';
+
+    function fillInputFromPrompt(text) {
+      const input = document.getElementById('input');
+      if (!input || input.readOnly || !text) return false;
+      input.value = text;
+      autoResizeInput();
+      input.focus();
+      updateInputState();
+      return true;
+    }
+
+    function applyIncomingPrompt() {
+      const params = new URLSearchParams(window.location.search);
+      const fromUrl = params.get('prompt');
+      if (!fromUrl) return;
+      fillInputFromPrompt(fromUrl);
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.hash);
+      }
+    }
+
+    window.addEventListener('storage', (e) => {
+      if (e.key !== PROMPT_STORAGE_KEY || !e.newValue) return;
+      try {
+        const data = JSON.parse(e.newValue);
+        fillInputFromPrompt(String(data.text || ''));
+      } catch { /* ignore */ }
+    });
+
+    window.addEventListener('message', (e) => {
+      const data = e.data;
+      if (!data || data.type !== 'web-agent-fill-prompt') return;
+      fillInputFromPrompt(String(data.text || ''));
+    });
+
     document.getElementById('input').addEventListener('input', () => {
       autoResizeInput();
       updateInputState();
@@ -1608,6 +1644,7 @@
           showEmptyState();
         }
         startSessionPolling();
+        applyIncomingPrompt();
       } catch (err) {
         document.getElementById('messages').innerHTML =
           `<div class="empty-state"><p>无法连接 Web Agent 服务：${escapeHtml(err.message)}</p>

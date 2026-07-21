@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 202" width="960" height="202">
+<rect width="960" height="202" fill="#ffffff"/>
+
+    <rect width="960" height="56" fill="#f8fafc"/>
+    <line x1="0" y1="56" x2="960" y2="56" stroke="#e2e8f0"/>
+    <text x="16" y="28" fill="#334155" font-size="15" font-weight="700" font-family="system-ui">测试结果 · 全量 4 行</text>
+    <text x="16" y="44" fill="#64748b" font-size="12" font-family="system-ui">由砸金蛋测试记录汇总 · 20 条样本</text>
+    <rect x="16" y="64" width="928" height="0" fill="none" stroke="#e2e8f0" stroke-width="0"/>
+<rect x="16" y="64" width="928" height="28" fill="#f1f5f9"/>
+<line x1="16" y1="92" x2="944" y2="92" stroke="#e2e8f0"/>
+<line x1="16" y1="64" x2="16" y2="92" stroke="#e2e8f0"/>
+<clipPath id="clip_0_0"><rect x="17" y="65" width="183" height="26"/></clipPath>
+<text clip-path="url(#clip_0_0)" x="24" y="80" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">步骤</text>
+<line x1="201" y1="64" x2="201" y2="92" stroke="#e2e8f0"/>
+<clipPath id="clip_0_1"><rect x="202" y="65" width="183" height="26"/></clipPath>
+<text clip-path="url(#clip_0_1)" x="209" y="80" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">样本</text>
+<line x1="386" y1="64" x2="386" y2="92" stroke="#e2e8f0"/>
+<clipPath id="clip_0_2"><rect x="387" y="65" width="183" height="26"/></clipPath>
+<text clip-path="url(#clip_0_2)" x="394" y="80" fill="#059669" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<line x1="571" y1="64" x2="571" y2="92" stroke="#e2e8f0"/>
+<clipPath id="clip_0_3"><rect x="572" y="65" width="183" height="26"/></clipPath>
+<text clip-path="url(#clip_0_3)" x="579" y="80" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">失败</text>
+<line x1="756" y1="64" x2="756" y2="92" stroke="#e2e8f0"/>
+<line x1="944" y1="64" x2="944" y2="92" stroke="#e2e8f0"/>
+<clipPath id="clip_0_4"><rect x="757" y="65" width="186" height="26"/></clipPath>
+<text clip-path="url(#clip_0_4)" x="764" y="80" fill="#64748b" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">结论</text>
+<rect x="16" y="92" width="928" height="24" fill="#ffffff"/>
+<line x1="16" y1="116" x2="944" y2="116" stroke="#e2e8f0"/>
+<line x1="16" y1="92" x2="16" y2="116" stroke="#e2e8f0"/>
+<clipPath id="clip_1_0"><rect x="17" y="93" width="183" height="22"/></clipPath>
+<text clip-path="url(#clip_1_0)" x="24" y="108" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">批量砸蛋与到账验收</text>
+<line x1="201" y1="92" x2="201" y2="116" stroke="#e2e8f0"/>
+<clipPath id="clip_1_1"><rect x="202" y="93" width="183" height="22"/></clipPath>
+<text clip-path="url(#clip_1_1)" x="209" y="108" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">20</text>
+<line x1="386" y1="92" x2="386" y2="116" stroke="#e2e8f0"/>
+<clipPath id="clip_1_2"><rect x="387" y="93" width="183" height="22"/></clipPath>
+<text clip-path="url(#clip_1_2)" x="394" y="108" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">16</text>
+<line x1="571" y1="92" x2="571" y2="116" stroke="#e2e8f0"/>
+<clipPath id="clip_1_3"><rect x="572" y="93" width="183" height="22"/></clipPath>
+<text clip-path="url(#clip_1_3)" x="579" y="108" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">4</text>
+<line x1="756" y1="92" x2="756" y2="116" stroke="#e2e8f0"/>
+<line x1="944" y1="92" x2="944" y2="116" stroke="#e2e8f0"/>
+<clipPath id="clip_1_4"><rect x="757" y="93" width="186" height="22"/></clipPath>
+<text clip-path="url(#clip_1_4)" x="764" y="108" fill="#d97706" font-size="11" font-family="system-ui, -apple-system, sans-serif">部分通过</text>
+<rect x="16" y="116" width="928" height="24" fill="#fafbfc"/>
+<line x1="16" y1="140" x2="944" y2="140" stroke="#e2e8f0"/>
+<line x1="16" y1="116" x2="16" y2="140" stroke="#e2e8f0"/>
+<clipPath id="clip_2_0"><rect x="17" y="117" width="183" height="22"/></clipPath>
+<text clip-path="url(#clip_2_0)" x="24" y="132" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">不一致摘要</text>
+<line x1="201" y1="116" x2="201" y2="140" stroke="#e2e8f0"/>
+<clipPath id="clip_2_1"><rect x="202" y="117" width="183" height="22"/></clipPath>
+<text clip-path="url(#clip_2_1)" x="209" y="132" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">积分到账不符(预期1933，实际1903)；积分到账不符(预期636，实际606)；积分到账不符(预期1943，实际1903)</text>
+<line x1="386" y1="116" x2="386" y2="140" stroke="#e2e8f0"/>
+<clipPath id="clip_2_2"><rect x="387" y="117" width="183" height="22"/></clipPath>
+<text clip-path="url(#clip_2_2)" x="394" y="132" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="571" y1="116" x2="571" y2="140" stroke="#e2e8f0"/>
+<clipPath id="clip_2_3"><rect x="572" y="117" width="183" height="22"/></clipPath>
+<text clip-path="url(#clip_2_3)" x="579" y="132" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="756" y1="116" x2="756" y2="140" stroke="#e2e8f0"/>
+<line x1="944" y1="116" x2="944" y2="140" stroke="#e2e8f0"/>
+<clipPath id="clip_2_4"><rect x="757" y="117" width="186" height="22"/></clipPath>
+<text clip-path="url(#clip_2_4)" x="764" y="132" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<rect x="16" y="140" width="928" height="24" fill="#ffffff"/>
+<line x1="16" y1="164" x2="944" y2="164" stroke="#e2e8f0"/>
+<line x1="16" y1="140" x2="16" y2="164" stroke="#e2e8f0"/>
+<clipPath id="clip_3_0"><rect x="17" y="141" width="183" height="22"/></clipPath>
+<text clip-path="url(#clip_3_0)" x="24" y="156" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">数据来源</text>
+<line x1="201" y1="140" x2="201" y2="164" stroke="#e2e8f0"/>
+<clipPath id="clip_3_1"><rect x="202" y="141" width="183" height="22"/></clipPath>
+<text clip-path="url(#clip_3_1)" x="209" y="156" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif">Sheet「砸金蛋测试记录」</text>
+<line x1="386" y1="140" x2="386" y2="164" stroke="#e2e8f0"/>
+<clipPath id="clip_3_2"><rect x="387" y="141" width="183" height="22"/></clipPath>
+<text clip-path="url(#clip_3_2)" x="394" y="156" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="571" y1="140" x2="571" y2="164" stroke="#e2e8f0"/>
+<clipPath id="clip_3_3"><rect x="572" y="141" width="183" height="22"/></clipPath>
+<text clip-path="url(#clip_3_3)" x="579" y="156" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="756" y1="140" x2="756" y2="164" stroke="#e2e8f0"/>
+<line x1="944" y1="140" x2="944" y2="164" stroke="#e2e8f0"/>
+<clipPath id="clip_3_4"><rect x="757" y="141" width="186" height="22"/></clipPath>
+<text clip-path="url(#clip_3_4)" x="764" y="156" fill="#334155" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<rect x="16" y="64" width="928" height="100" fill="none" stroke="#e2e8f0"/><text x="16" y="188" fill="#64748b" font-size="11" font-family="system-ui">超出列宽的内容已截断 · 可上下左右滑动 · 与钉钉表一致</text>
+</svg>

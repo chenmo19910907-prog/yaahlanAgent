@@ -1,0 +1,193 @@
+[
+  {
+    "order": 1,
+    "frameworkStep": 1,
+    "frameworkLabel": "MSE 参数获取",
+    "title": "MSE 配置同步入表",
+    "tabLabel": "参数配置同步",
+    "sheet": "参数表",
+    "toolSupport": "提供家族 PK 配置地址：voga-common / familyPkConfig",
+    "workflowRecord": {
+      "name": "家族PK配置-MSE同步到钉钉参数表",
+      "script": "从 MSE 服务配置获取家族 PK 最新的配置，把详细配置整理成表格到钉钉文档，支持重新获取更新参数。",
+      "prompts": []
+    },
+    "toolUsage": [
+      { "tool": "MSE 配置读取", "action": "拉取 voga-common / familyPkConfig，解析门槛、档位系数与返利比例" },
+      { "tool": "钉钉 Sheet 写入", "action": "按 merge 更新 Sheet「参数表」，并备份原始 JSON" }
+    ],
+    "media": {
+      "type": "image",
+      "file": "step01-mse-sync.svg",
+      "caption": "Sheet「参数表」全量 61 行"
+    }
+  },
+  {
+    "order": 2,
+    "frameworkStep": 2,
+    "frameworkLabel": "建立数据源",
+    "title": "家族成员清单入表",
+    "tabLabel": "家族成员清单",
+    "sheet": "家族列表",
+    "toolSupport": [],
+    "workflowRecord": {
+      "name": "家族PK配置-后台家族成员写入钉钉",
+      "script": "从开发后台获取全部家族 ID 与家族名称，写入同一钉钉表格；拉取各家族成员的 userId 与手机号，族长单独标记；清除族长非中东区的家族记录。",
+      "prompts": []
+    },
+    "toolUsage": [
+      { "tool": "开发者后台", "action": "分页拉家族 ID/名称，查族长大区与成员手机号" },
+      { "tool": "MOA 成员列表", "action": "查询各家族成员 userId 清单" },
+      { "tool": "钉钉 Sheet 写入", "action": "写入 Sheet「家族列表」，标记是否族长" }
+    ],
+    "media": {
+      "type": "image",
+      "file": "step02-family-list.svg",
+      "caption": "Sheet「家族列表」全量 437 行"
+    }
+  },
+  {
+    "order": 3,
+    "frameworkStep": 3,
+    "frameworkLabel": "数据构造",
+    "title": "收礼榜档位测算入表",
+    "tabLabel": "收礼档位测算",
+    "sheet": "家族PK档位",
+    "toolSupport": [
+      "修改家族贡献值 MOA",
+      "查询家族贡献榜 MOA"
+    ],
+    "workflowRecord": {
+      "name": "家族PK配置-收礼榜造数与档位测算",
+      "script": "设置指定日期前一天的家族收礼榜：按家族成员数随机写入收礼值（成员 > 10 人：20 万～100 万；成员 ≤ 10 人：0～20 万）；结合收礼榜与参数表，计算下一天各家族各档位的 PK 值与钻石奖励数量，结果写入钉钉表格。",
+      "prompts": []
+    },
+    "toolUsage": [
+      { "tool": "钉钉 Sheet 读取", "action": "读 Sheet「家族列表」统计各家族成员数" },
+      { "tool": "MOA 收礼榜造数", "action": "按人数分段随机写入 rankDate 收礼日榜，并回读名次" },
+      { "tool": "档位规则测算", "action": "结合 Sheet「参数表」计算区间日均、达标 PK 与档位钻石" },
+      { "tool": "钉钉 Sheet 写入", "action": "写入 Sheet「家族PK档位」全量明细" }
+    ],
+    "media": {
+      "type": "image",
+      "file": "step03-rank-tier.svg",
+      "caption": "Sheet「家族PK档位」全量 307 行"
+    }
+  },
+  {
+    "order": 4,
+    "frameworkStep": 4,
+    "frameworkLabel": "客户端请求结果验证",
+    "title": "对战匹配验收入表",
+    "tabLabel": "对战匹配验收",
+    "sheet": "匹配验收",
+    "toolSupport": [
+      "录制家族 PK 列表请求方式",
+      "匹配家族 PK 的 MOA"
+    ],
+    "workflowRecord": {
+      "name": "家族PK配置-重匹配与验收写入钉钉",
+      "script": "清除并重新匹配指定日期的家族 PK；请求并抓包家族 PK 列表同日期 Tab 的数据，获取列表中所有家族的匹配信息；按收礼榜对照参数表规则验证匹配是否正确，结果写入钉钉表格。",
+      "prompts": []
+    },
+    "toolUsage": [
+      { "tool": "MOA 对战匹配", "action": "清除 pkDate 旧匹配并重新执行匹配任务" },
+      { "tool": "MOA 对战列表查询", "action": "拉取 getFamilyPkPage 对战列表，与客户端同源" },
+      { "tool": "规则自动比对", "action": "按收礼榜区间核对双方是否同档、每族是否只出现一次" },
+      { "tool": "钉钉 Sheet 写入", "action": "写入 Sheet「匹配验收」及通过/不通过结论" }
+    ],
+    "media": {
+      "type": "image",
+      "file": "step04-match-verify.svg",
+      "caption": "Sheet「匹配验收」全量 42 行"
+    },
+    "mediaThumb": {
+      "type": "image",
+      "file": "step04-battle-list.png",
+      "caption": "App Battle List · 客户端对战列表验收"
+    }
+  },
+  {
+    "order": 5,
+    "frameworkStep": 3,
+    "frameworkLabel": "数据构造",
+    "title": "成员 PK 应发测算入表",
+    "tabLabel": "成员应发测算",
+    "sheet": "用户发钻测试",
+    "toolSupport": [
+      "增加/减少用户家族 PK 值 MOA",
+      "录制家族 PK 列表用户贡献榜请求方式"
+    ],
+    "workflowRecord": {
+      "name": "家族PK配置-成员PK造数与发钻测算",
+      "script": "先清除指定日期（与匹配日期相同）的全部 PK 值；再对家族列表中所有用户随机增加 0～5 万 PK 值。按匹配验收列表判断各场胜负，并构造边界样本：选一胜方用负数 PK 扣减实现平局；选一胜方将某成员 PK 降至参数表领奖最低值以下；再选一配对使双方家族总 PK 均低于参数表获胜最低 PK。最后按用户 PK 与匹配胜负计算各家族各成员应得钻石，写入钉钉表格。",
+      "prompts": []
+    },
+    "toolUsage": [
+      { "tool": "MOA 成员 PK 造数", "action": "清除 pkDate 全员 PK，再随机 incr 各成员 PK 值" },
+      { "tool": "边界样本纠偏", "action": "从 Sheet「匹配验收」挑平局、双方未达 minWinPk 等场景定向改 PK" },
+      { "tool": "应发奖励测算", "action": "读参数表与对战结果，按奖池规则算各成员应得钻石" },
+      { "tool": "钉钉 Sheet 写入", "action": "写入 Sheet「用户发钻测试」PK 值与应发钻" }
+    ],
+    "media": {
+      "type": "image",
+      "file": "step05-member-pk.svg",
+      "caption": "Sheet「用户发钻测试」全量 439 行"
+    }
+  },
+  {
+    "order": 6,
+    "frameworkStep": 5,
+    "frameworkLabel": "奖励下发验收",
+    "title": "发钻实发对比入表",
+    "tabLabel": "发钻实发对比",
+    "sheet": "发钻实发验收",
+    "toolSupport": "结算家族 PK 的 MOA",
+    "workflowRecord": {
+      "name": "家族PK配置-发奖与验收",
+      "script": "先清除指定日期家族 PK 奖励并重新结算；对比每位用户发奖前后钻石数，验证下发是否正确，结果写入钉钉表格。再请求各家族成员贡献榜列表并抓包用户 PK 值与钻石数，核对是否与实发一致，将结论回写到「用户发钻测试」表格。",
+      "prompts": []
+    },
+    "toolUsage": [
+      { "tool": "MOA 结算发奖", "action": "resetSettle 清记录后，用次日任务下发 pkDate 奖励" },
+      { "tool": "到账差异比对", "action": "发奖前后批量查钻，算实发增量并与应发钻对比" },
+      { "tool": "MOA 贡献榜回验", "action": "逐家族拉成员榜，回写榜单 PK/钻/验收到 Sheet「用户发钻测试」" },
+      { "tool": "钉钉 Sheet 写入", "action": "写入 Sheet「发钻实发验收」逐人验收结论" }
+    ],
+    "media": {
+      "type": "image",
+      "file": "step06-dispatch-verify.svg",
+      "caption": "Sheet「发钻实发验收」全量 439 行"
+    },
+    "mediaThumb": {
+      "type": "image",
+      "file": "step06-dispatch-rank.png",
+      "caption": "App Battle List · 成员贡献榜与发钻验收"
+    }
+  },
+  {
+    "order": 7,
+    "frameworkStep": 5,
+    "frameworkLabel": "奖励下发验收",
+    "title": "测试结果汇总入表",
+    "tabLabel": "测试结果汇总",
+    "sheet": "测试结果",
+    "toolSupport": [],
+    "workflowRecord": {
+      "name": "家族PK配置-测试结果汇总",
+      "script": "输出全部测试结果的测试报告。",
+      "prompts": []
+    },
+    "toolUsage": [
+      { "tool": "钉钉 Sheet 读取", "action": "读取参数表至发钻实发验收各步摘要与验收列" },
+      { "tool": "验收结论结构化", "action": "统计每步样本数、通过数、失败数与总评" },
+      { "tool": "钉钉 Sheet 写入", "action": "写入 Sheet「测试结果」及发钻不一致明细" },
+      { "tool": "汇报页生成", "action": "同步刷新 family_pk_report 演示页供向上汇报" }
+    ],
+    "media": {
+      "type": "image",
+      "file": "step07-test-result.svg",
+      "caption": "Sheet「测试结果」全量 19 行"
+    }
+  }
+]

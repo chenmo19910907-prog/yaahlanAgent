@@ -12,6 +12,9 @@ from typing import Any
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _BACKDOOR_TPL = _REPO_ROOT / "MOA" / "templates" / "3周年-砸金蛋测试.json"
 ANNIVERSARY_EGG_DEFAULT_BATCH = 10
+# testGetMysteryCount 第一参：type=2 为活动内用户/房间/平台累计砸蛋次数（砸蛋后会 +N）；
+# type=1 为质量平台另一套读数，砸蛋前后不变，不可用于「砸前+N=砸后」验收。
+MYSTERY_COUNT_TYPE = "2"
 
 
 def _parse_json_blob(text: str) -> dict[str, Any]:
@@ -117,19 +120,23 @@ def get_mystery_count(
     user_id: str,
     room_id: str,
     *,
-    type_flag: str = "1",
+    type_flag: str = MYSTERY_COUNT_TYPE,
     timeout_ms: int = 60000,
 ) -> dict[str, int]:
     """year3Dao.testGetMysteryCount(type, userId, roomId)。
 
     返回用户 / 房间 / 平台砸蛋次数（神秘保底计数），例如::
-        {"user": 35, "room": 52, "platform": 71363}
+        {"user": 35, "room": 52, "platform": 210}
 
-    type 默认 ``"1"``（与质量平台后门试调一致）。
+    默认 ``type=2``：与 ``getEggHome.usedSmashChances``、砸蛋累加验收一致，
+    砸 N 次后 user/room/platform 均 +N（room 为当前 roomId 维度）。
+
+    ``type=1`` 为质量平台试调口径，数值更大且**砸蛋后不随本次 +N 更新**，
+    只应用 ``--type 1`` 显式查询，勿用于落表累加校验。
     """
     user_id = str(user_id).strip()
     room_id = str(room_id).strip()
-    type_flag = str(type_flag or "1").strip() or "1"
+    type_flag = str(type_flag or MYSTERY_COUNT_TYPE).strip() or MYSTERY_COUNT_TYPE
     if not user_id or not room_id:
         raise ValueError("user_id / room_id 不能为空")
     expr = (
@@ -214,6 +221,36 @@ def mystery_guarantee_expected(
         tags.append(labels[winner])
         pending = candidates - {winner}
     return tags, pending
+
+
+def get_store_home(user_id: str, room_id: str, *, timeout_ms: int = 60000) -> dict[str, Any]:
+    """year3GiftService.getStoreHome(userId, roomId) → 含 voucherBalance（活动积分）等。"""
+    user_id = str(user_id).strip()
+    room_id = str(room_id).strip()
+    expr = (
+        "return new com.fasterxml.jackson.databind.ObjectMapper()"
+        ".writeValueAsString(context.getBean(\"year3GiftService\")"
+        f'.getStoreHome("{user_id}","{room_id}"));'
+    )
+    return _as_json_object(_run_backdoor_expr(expr, timeout_ms=timeout_ms))
+
+
+def query_voucher_balance(
+    user_id: str,
+    room_id: str = "",
+    *,
+    timeout_ms: int = 60000,
+) -> int:
+    """三周年活动积分余额（getStoreHome.voucherBalance；档次奖励「积分」）。"""
+    user_id = str(user_id).strip()
+    rid = str(room_id or "").strip()
+    if not rid:
+        rid = resolve_own_room_id(user_id)
+    data = get_store_home(user_id, rid, timeout_ms=timeout_ms)
+    try:
+        return max(0, int(data.get("voucherBalance") or 0))
+    except (TypeError, ValueError):
+        return 0
 
 
 def get_egg_home(user_id: str, room_id: str, *, timeout_ms: int = 60000) -> dict[str, Any]:
@@ -408,6 +445,7 @@ def smash_egg_once(
             "userSmashCount": myst_user,
             "platformSmashBefore": myst_plat,
             "platformSmashCount": myst_plat,
+            "eggLevelBefore": entry_before.get("eggLevel"),
             "eggLevel": entry_before.get("eggLevel"),
             "mysteryCountBefore": myst_before,
             "mysteryCountAfter": myst_before,
@@ -445,6 +483,7 @@ def smash_egg_once(
     # 保留金蛋等级内计数，供 smashCount 差值与等级状态机
     out["roomEggSmashBefore"] = room_smash_before
     out["roomEggSmashAfter"] = room_smash_after
+    out["eggLevelBefore"] = entry_before.get("eggLevel")
     out["eggLevel"] = entry_after.get("eggLevel")
     out["prizePoolPreview"] = _is_prize_pool_preview(out)
     out["smashCount"] = smash_count_from_result(

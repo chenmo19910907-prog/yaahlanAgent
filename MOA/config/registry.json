@@ -828,6 +828,17 @@
       "command": "python3 platform/dingtalk_gateway/anniversary_egg_mse_to_workbook.py \\\n  --workbook https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz \\\n  --sheet-name 金蛋活动配置 \\\n  --namespace Application \\\n  --config-key activityConfig.Year3Anniversary \\\n  --cluster alpha"
     },
     {
+      "id": "anniversary_egg_lottery_to_workbook",
+      "name": "3周年砸金蛋-奖池配置同步钉钉表",
+      "category": "活动（3周年砸金蛋）",
+      "description": "读取 MSE eggPoolConfig 映射的 lotteryId，拉 CMS getLotteryList 奖池明细（类型/数量/权重/限量），写入 Sheet「金蛋奖池配置」。",
+      "prompts": [
+        "同步3周年砸金蛋奖池到钉钉表",
+        "整理砸金蛋 CMS 奖池并写入金蛋奖池配置 sheet"
+      ],
+      "command": "python3 platform/dingtalk_gateway/anniversary_egg_lottery_to_workbook.py \\\n  --workbook https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz \\\n  --sheet-name 金蛋奖池配置"
+    },
+    {
       "id": "anniversary_egg_multi_account_verify",
       "name": "3周年砸金蛋-多账号批量验收落表",
       "category": "活动（3周年砸金蛋）",

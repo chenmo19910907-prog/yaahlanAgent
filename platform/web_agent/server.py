@@ -6,6 +6,8 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import mimetypes
+import os
 import queue
 import re
 import socket
@@ -24,6 +26,18 @@ from urllib.parse import parse_qs, urlparse
 WEB_AGENT_DIR = Path(__file__).resolve().parent
 PLATFORM_DIR = WEB_AGENT_DIR.parent
 REPO_ROOT = PLATFORM_DIR.parent
+
+
+def _resolve_python_executable() -> str:
+    """优先仓库 .venv，避免系统 python 缺 cursor-sdk 导致 Bridge 启动失败。"""
+    candidates = (
+        REPO_ROOT / ".venv" / "bin" / "python3",
+        PLATFORM_DIR / "dingtalk_gateway" / ".venv" / "bin" / "python3",
+    )
+    for path in candidates:
+        if path.is_file() and os.access(path, os.X_OK):
+            return str(path)
+    return sys.executable
 GATEWAY_DIR = PLATFORM_DIR / "dingtalk_gateway"
 SCRIPTS_DIR = PLATFORM_DIR / "scripts"
 
@@ -62,6 +76,8 @@ logger = logging.getLogger("web-agent")
 DEFAULT_HOST = "0.0.0.0"
 DEFAULT_PORT = 18766
 CONFIG_PATH = WEB_AGENT_DIR / "config.json"
+FAMILY_PK_EXPORTS_DIR = REPO_ROOT / "platform" / "family_pk_report" / "exports"
+SHOWCASE_URL_PREFIX = "/family-pk-showcase"
 SSE_POLL_S = 0.25
 RUN_TTL_S = 3600
 PROGRESS_TICK_S = 1.0
@@ -401,6 +417,25 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, directory=str(WEB_AGENT_DIR), **kwargs)
 
+    def _serve_family_pk_export(self, rel_path: str) -> None:
+        root = FAMILY_PK_EXPORTS_DIR.resolve()
+        target = (root / rel_path).resolve()
+        if not str(target).startswith(str(root)) or not target.is_file():
+            self.send_error(HTTPStatus.NOT_FOUND)
+            return
+        content_type, _ = mimetypes.guess_type(str(target))
+        if not content_type:
+            content_type = "application/octet-stream"
+        data = target.read_bytes()
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(data)))
+        if target.suffix.lower() in {".html", ".htm"}:
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+            self.send_header("Pragma", "no-cache")
+        self.end_headers()
+        self.wfile.write(data)
+
     def log_message(self, fmt: str, *args: Any) -> None:
         if self.path.startswith("/api/"):
             super().log_message(fmt, *args)
@@ -426,6 +461,10 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         if path == "/":
             self.path = "/chat.html"
             return super().do_GET()
+
+        if path == SHOWCASE_URL_PREFIX or path.startswith(f"{SHOWCASE_URL_PREFIX}/"):
+            rel = path[len(SHOWCASE_URL_PREFIX) :].lstrip("/") or "index.html"
+            return self._serve_family_pk_export(rel)
 
         if path == "/api/meta":
             return _json_response(self, _platform_meta())
@@ -666,7 +705,15 @@ def ensure_server(host: str | None = None, port: int | None = None, wait_s: floa
         return use_host, use_port
 
     proc = subprocess.Popen(
-        [sys.executable, str(Path(__file__).resolve()), "--serve", "--host", use_host, "--port", str(use_port)],
+        [
+            _resolve_python_executable(),
+            str(Path(__file__).resolve()),
+            "--serve",
+            "--host",
+            use_host,
+            "--port",
+            str(use_port),
+        ],
         cwd=str(REPO_ROOT),
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,

@@ -43,6 +43,10 @@ from anniversary_egg_smash_to_workbook import (  # noqa: E402
     load_activity_rules,
     record_to_row,
 )
+from moa.anniversary_egg_assets import (  # noqa: E402
+    build_smash_asset_verify_payload,
+    snapshot_user_assets,
+)
 from moa.anniversary_egg import (  # noqa: E402
     get_egg_home,
     resolve_own_room_id,
@@ -172,6 +176,7 @@ def run_one(
     )
     diamond_before = query_diamond_balance(user_id)
     vip_before = query_vip_exp(user_id)
+    assets_before = snapshot_user_assets(user_id, room_id)
 
     print(
         f"[{case_no}] phone={phone} user={user_id} room={room_id} "
@@ -206,37 +211,32 @@ def run_one(
     smash = _normalize_smash_prizes(
         smash_egg_once(user_id=user_id, room_id=room_id, lang="en")
     )
-    expected_diamond = expected_diamond_delta_from_smash(smash)
-    expected_vip = expected_vip_exp_delta_from_smash(smash)
-    diamond_after = query_balance_after_credit(
-        user_id,
-        before=diamond_before,
-        expected_delta=expected_diamond,
-        query_fn=query_diamond_balance,
+    asset_verify = build_smash_asset_verify_payload(
+        user_id=user_id,
+        room_id=room_id,
+        smash=smash,
+        diamond_before=diamond_before,
+        vip_before=vip_before,
+        assets_before=assets_before,
     )
-    vip_after = query_balance_after_credit(
-        user_id,
-        before=vip_before,
-        expected_delta=expected_vip,
-        query_fn=query_vip_exp,
-    )
-    diamond_check = evaluate_diamond_credit(
-        before=diamond_before,
-        after=diamond_after,
-        expected=expected_diamond,
-    )
-    vip_check = evaluate_diamond_credit(
-        before=vip_before,
-        after=vip_after,
-        expected=expected_vip,
-    )
+    asset_payload = asset_verify["payload"]
+    diamond_check = asset_verify["diamond"]
+    vip_check = asset_verify["vipExp"]
+    backpack_check = asset_verify["backpack"]
+    prop_check = asset_verify["prop"]
+    voucher_check = asset_verify["voucher"]
 
     print(
         f"  smash count={smash.get('smashCount')} "
-        f"expectedDiamond={expected_diamond} diamond {diamond_before}→{diamond_after} "
-        f"delta={diamond_check['actualDelta']} | "
-        f"expectedVip={expected_vip} vip {vip_before}→{vip_after} "
-        f"delta={vip_check['actualDelta']}",
+        f"expectedDiamond={asset_payload.get('expectedDiamond')} "
+        f"diamond {asset_payload.get('diamondBefore')}→{asset_payload.get('diamondAfter')} "
+        f"delta={diamond_check.get('actualDelta')} | "
+        f"expectedVip={asset_payload.get('expectedVipExp')} "
+        f"vip {asset_payload.get('vipExpBefore')}→{asset_payload.get('vipExpAfter')} "
+        f"delta={vip_check.get('actualDelta')} | "
+        f"backpack delta={backpack_check.get('actualDelta')} | "
+        f"prop delta={prop_check.get('actualDelta')} | "
+        f"voucher delta={voucher_check.get('actualDelta')}",
         file=sys.stderr,
     )
 
@@ -246,14 +246,7 @@ def run_one(
         "userId": user_id,
         "roomId": room_id,
         "gainedChances": 0,
-        "diamondBefore": diamond_before,
-        "diamondAfter": diamond_after,
-        "expectedDiamond": expected_diamond,
-        "actualDiamondDelta": diamond_check.get("actualDelta"),
-        "vipExpBefore": vip_before,
-        "vipExpAfter": vip_after,
-        "expectedVipExp": expected_vip,
-        "actualVipExpDelta": vip_check.get("actualDelta"),
+        **asset_payload,
     }
 
     row = record_to_row(
@@ -274,8 +267,12 @@ def run_one(
         "remainAfter": smash.get("remainAfter"),
         "diamond": diamond_check,
         "vipExp": vip_check,
-        "expectedDiamond": expected_diamond,
-        "expectedVipExp": expected_vip,
+        "backpack": backpack_check,
+        "prop": prop_check,
+        "voucher": voucher_check,
+        "expectedDiamond": asset_payload.get("expectedDiamond"),
+        "expectedVipExp": asset_payload.get("expectedVipExp"),
+        "assetsBefore": assets_before,
         "smash": smash,
         "verdict": verdict,
     }

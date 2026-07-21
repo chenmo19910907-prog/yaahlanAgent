@@ -15,6 +15,8 @@ from mse_sync_to_workbook import _sheet_cell
 from mse_workbook_utils import fetch_workbook_sheets_async, node_id
 
 DEFAULT_SHEET = "砸金蛋测试记录"
+ACTUAL_CREDIT_COL = "实际到账"
+_LEGACY_CREDIT_COL = "VIP经验·钻石增加"
 
 # 默认与最新 MSE activityConfig.Year3Anniversary 对齐（拉取失败时兜底）
 EGG_LEVEL_LV1_TO_LV2_THRESHOLD = 30
@@ -74,12 +76,223 @@ def load_activity_rules(*, force_refresh: bool = False) -> dict[str, Any]:
                 rules["room_guarantee_mod"] = int(mystery["roomGuaranteeMod"])
             if mystery.get("platformGuaranteeMod") is not None:
                 rules["platform_guarantee_mod"] = int(mystery["platformGuaranteeMod"])
+        egg_pool = cfg.get("eggPoolConfig") or {}
+        if isinstance(egg_pool, dict):
+            for src_key, dst_key in (
+                ("lv1LotteryId", "lv1_lottery_id"),
+                ("lv2LotteryId", "lv2_lottery_id"),
+                ("lv3LotteryId", "lv3_lottery_id"),
+                ("freeLotteryId", "free_lottery_id"),
+                ("voucherLotteryId", "voucher_lottery_id"),
+                ("mysteryLotteryId", "mystery_lottery_id"),
+            ):
+                val = egg_pool.get(src_key)
+                if val not in (None, ""):
+                    rules[dst_key] = str(val).strip()
         rules["source"] = "mse"
     except Exception:
         pass
 
     _ACTIVITY_RULES_CACHE = rules
     return rules
+
+
+_LOTTERY_POOLS_BY_ID: dict[int, dict[str, Any]] | None = None
+
+_EGG_LEVEL_LOTTERY_RULE_KEYS = {
+    "LV1": "lv1_lottery_id",
+    "LV2": "lv2_lottery_id",
+    "LV3": "lv3_lottery_id",
+}
+
+
+def load_lottery_pools(*, force_refresh: bool = False) -> dict[int, dict[str, Any]]:
+    """CMS getLotteryList 全量奖池（按 lotteryId 索引）。"""
+    global _LOTTERY_POOLS_BY_ID
+    if _LOTTERY_POOLS_BY_ID is not None and not force_refresh:
+        return _LOTTERY_POOLS_BY_ID
+    try:
+        import sys
+        from pathlib import Path
+
+        repo = Path(__file__).resolve().parents[2]
+        admin_dir = str(repo / "Admin")
+        if admin_dir not in sys.path:
+            sys.path.insert(0, admin_dir)
+        from admin.env import load_local_env
+        from admin.activity import fetch_lottery_pools_by_id
+
+        load_local_env(admin_dir)
+        _LOTTERY_POOLS_BY_ID = fetch_lottery_pools_by_id(force_refresh=force_refresh)
+    except Exception:
+        _LOTTERY_POOLS_BY_ID = {}
+    return _LOTTERY_POOLS_BY_ID
+
+
+def lottery_id_for_egg_level(egg_level: str, *, rules: dict[str, Any] | None = None) -> int | None:
+    label = format_egg_level(egg_level) or str(egg_level or "").strip().upper()
+    if not label.startswith("LV"):
+        return None
+    key = _EGG_LEVEL_LOTTERY_RULE_KEYS.get(label)
+    if not key:
+        return None
+    raw = (rules or load_activity_rules()).get(key)
+    if raw in (None, ""):
+        return None
+    try:
+        return int(str(raw).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _lottery_num_end(item: dict[str, Any]) -> int | None:
+    raw = item.get("numEnd")
+    if raw in (None, ""):
+        return None
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def _lottery_num_start(item: dict[str, Any]) -> int | None:
+    raw = item.get("numStart")
+    if raw in (None, ""):
+        return None
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def _lottery_amount_matches(item: dict[str, Any], amount: int) -> bool:
+    start = _lottery_num_start(item)
+    if start is None:
+        return False
+    end = _lottery_num_end(item)
+    if end is None or end in (0, 1) or end < start:
+        return amount == start
+    return start <= amount <= end
+
+
+def _is_voucher_like_prize(prize: dict[str, Any]) -> bool:
+    prize_type = str(prize.get("prizeType") or "").upper()
+    if prize_type == "UNKNOWN":
+        icon = str(prize.get("icon") or "").lower()
+        return "token" in icon
+    return prize_type in {"VOUCHER", "TOKEN"}
+
+
+def _smash_prize_matches_lottery_item(prize: dict[str, Any], item: dict[str, Any]) -> bool:
+    prize_type = str(prize.get("prizeType") or "").upper()
+    prize_id = str(prize.get("prizeId") or "").strip()
+    try:
+        prize_num = int(prize.get("num") or prize.get("count") or prize.get("amount") or 1)
+    except (TypeError, ValueError):
+        prize_num = 1
+
+    try:
+        lottery_type = int(item.get("type") or 0)
+    except (TypeError, ValueError):
+        lottery_type = 0
+    lottery_id = str(item.get("id") or "").strip()
+
+    if lottery_type == 2 and (
+        prize_type == "TOOL"
+        or prize_id in _TOOL_PROP_PRIZE_IDS
+        or _is_sultan_tool_name(str(prize.get("prizeName") or prize.get("name") or ""))
+    ):
+        return bool(prize_id) and prize_id == lottery_id
+    if lottery_type == 5 and prize_type == "PACKAGE_GIFT":
+        return bool(prize_id) and prize_id == lottery_id
+    if lottery_type == 3 and prize_type == "VIP_VALUE":
+        if prize_id and lottery_id and prize_id == lottery_id:
+            return True
+        start = _lottery_num_start(item)
+        if start is not None and prize_id.upper().startswith("VIP"):
+            digits = prize_id.upper()[3:]
+            if digits.isdigit() and int(digits) == start:
+                return True
+        return start is not None and prize_num == start
+    if lottery_type == 1 and prize_type == "DIAMOND":
+        if prize_id:
+            m = re.match(r"^(\d+)DIA(\d+)$", prize_id.upper())
+            if m:
+                low, high = int(m.group(1)), int(m.group(2))
+                if low <= prize_num <= max(low, high):
+                    return True
+        return _lottery_amount_matches(item, prize_num)
+    if lottery_type == 7 and _is_voucher_like_prize(prize):
+        return _lottery_amount_matches(item, prize_num)
+    return False
+
+
+def _tier_prize_matches_pools(
+    prize: dict[str, Any],
+    pool_ids: list[int],
+    *,
+    pools: dict[int, dict[str, Any]],
+) -> bool:
+    for pool_id in pool_ids:
+        pool = pools.get(int(pool_id))
+        if not isinstance(pool, dict):
+            continue
+        items = pool.get("lotteryList")
+        if not isinstance(items, list):
+            continue
+        for item in items:
+            if isinstance(item, dict) and _smash_prize_matches_lottery_item(prize, item):
+                return True
+    return False
+
+
+def evaluate_tier_pool_match(
+    tier_rewards: Any,
+    *,
+    egg_level: str,
+    rules: dict[str, Any] | None = None,
+    pools: dict[int, dict[str, Any]] | None = None,
+) -> tuple[bool, str]:
+    """校验档次奖励是否落在金蛋等级对应奖池（兑换券另对照 voucherLotteryId）。"""
+    if not isinstance(tier_rewards, list) or not tier_rewards:
+        return True, ""
+
+    r = rules or load_activity_rules()
+    pool_map = pools if pools is not None else load_lottery_pools()
+    if not pool_map:
+        return True, ""
+
+    primary_id = lottery_id_for_egg_level(egg_level, rules=r)
+    if primary_id is None:
+        return True, ""
+
+    voucher_raw = r.get("voucher_lottery_id")
+    voucher_id: int | None
+    try:
+        voucher_id = int(str(voucher_raw).strip()) if voucher_raw not in (None, "") else None
+    except (TypeError, ValueError):
+        voucher_id = None
+
+    invalid: list[str] = []
+    for prize in tier_rewards:
+        if not isinstance(prize, dict):
+            continue
+        pool_ids = [primary_id]
+        if _is_voucher_like_prize(prize) and voucher_id is not None:
+            pool_ids.append(voucher_id)
+        if _tier_prize_matches_pools(prize, pool_ids, pools=pool_map):
+            continue
+        label = format_egg_level(egg_level) or str(egg_level or "").strip().upper()
+        name = str(
+            prize.get("prizeName") or prize.get("name") or prize.get("prizeId") or "奖励"
+        ).strip()
+        prize_id = str(prize.get("prizeId") or "").strip()
+        detail = f"{name}(prizeId={prize_id or '-'}) 不在{label}奖池(lotteryId={primary_id})配置内"
+        invalid.append(detail)
+
+    if not invalid:
+        return True, ""
+    return False, "；".join(invalid)
 
 
 def egg_level_from_room_smash_count(
@@ -271,6 +484,75 @@ def resolve_egg_level_label(
     if from_api:
         return from_api
     return egg_level_from_room_smash_count(room_smash_lifetime, rules=rules)
+
+
+def resolve_egg_level_at_smash(
+    smash_result: dict[str, Any],
+    *,
+    batch: int | None = None,
+    myst_room_before: int | None = None,
+    egg_room_smash_before: int | None = None,
+    rules: dict[str, Any] | None = None,
+) -> str:
+    """砸蛋当时金蛋等级（奖池对照用 LV1 池，非砸后升级后的 LV2）。
+
+    优先 ``eggLevelBefore``（getRoomEggEntry 砸前快照）；若本段砸蛋触发升级，
+    则按砸后等级回退一级，避免用 LV2 奖池验 LV1 档次奖励。
+    """
+    r = rules or load_activity_rules()
+    lv_before = format_egg_level(smash_result.get("eggLevelBefore"))
+    if lv_before:
+        return lv_before
+
+    try:
+        batch_i = max(0, int(batch if batch is not None else smash_result.get("smashCount") or 0))
+    except (TypeError, ValueError):
+        batch_i = 0
+
+    try:
+        room_b = int(
+            egg_room_smash_before
+            if egg_room_smash_before is not None
+            else smash_result.get("roomEggSmashBefore")
+            or smash_result.get("roomSmashBefore")
+            or 0
+        )
+    except (TypeError, ValueError):
+        room_b = 0
+    try:
+        room_a = int(
+            smash_result.get("roomEggSmashAfter")
+            or smash_result.get("roomSmashAfter")
+            or smash_result.get("roomSmashCount")
+            or 0
+        )
+    except (TypeError, ValueError):
+        room_a = 0
+
+    lv_after = format_egg_level(smash_result.get("eggLevel"))
+    if batch_i > 0 and lv_after:
+        try:
+            after_i = int(lv_after[2:])
+        except (TypeError, ValueError):
+            after_i = 0
+        level_up_this_smash = room_a < room_b + batch_i
+        if level_up_this_smash and after_i > 1:
+            return f"LV{after_i - 1}"
+        if level_up_this_smash and after_i == 2:
+            return "LV1"
+
+    if lv_after:
+        return lv_after
+
+    lifetime_before = myst_room_before
+    if lifetime_before is None:
+        try:
+            lifetime_before = max(0, int(smash_result.get("roomSmashBefore") or 0))
+        except (TypeError, ValueError):
+            lifetime_before = 0
+    if batch_i > 0 and lifetime_before is not None:
+        lifetime_before = max(0, int(lifetime_before) - batch_i)
+    return egg_level_from_room_smash_count(int(lifetime_before or 0), rules=r)
 
 
 def _crossed_guarantee(before: int, after: int, mod: int) -> bool:
@@ -627,23 +909,35 @@ def tier_reward_meets_expectation(
     tier_cell: str,
     batch: int,
     egg_level: str = "",
-) -> bool:
+    tier_rewards: Any = None,
+    rules: dict[str, Any] | None = None,
+    lottery_pools: dict[int, dict[str, Any]] | None = None,
+) -> tuple[bool, str]:
     """金蛋等级档次礼物是否符合预期。
 
     - 有砸次：档次奖励非空，且不能只是奖池预览礼物名
+    - 有原始 prizes/rewards：逐条对照金蛋等级对应 CMS 奖池配置
     - 无砸次：不验收档次
     """
     if int(batch or 0) <= 0:
-        return True
+        return True, ""
     text = str(tier_cell or "").strip()
     if not text:
-        return False
+        return False, "档次奖励为空"
     names = _tier_reward_names(text)
     if names and names <= _TIER_POOL_PREVIEW_NAMES:
-        return False
-    # egg_level 预留：后续可对照 lv1/2/3 奖池奖品白名单
-    _ = egg_level
-    return True
+        return False, "档次奖励为奖池预览占位"
+
+    if isinstance(tier_rewards, list) and tier_rewards:
+        pool_ok, pool_detail = evaluate_tier_pool_match(
+            tier_rewards,
+            egg_level=egg_level,
+            rules=rules,
+            pools=lottery_pools,
+        )
+        if not pool_ok:
+            return False, pool_detail
+    return True, ""
 
 
 # 与服务端 maxSmashPerClick / 产品默认一致
@@ -712,35 +1006,44 @@ def count_accumulation_meets_expectation(
 
 
 _VIP_EXP_PRIZE_TYPES = frozenset(
-    {"VIP", "VIP_EXP", "VIP_EXPERIENCE", "VIPVALUE"}
+    {"VIP", "VIP_EXP", "VIP_EXPERIENCE", "VIPVALUE", "VIP_VALUE"}
 )
-_VIP_EXP_PRIZE_IDS = frozenset({"30006354"})
+# 砸金蛋 TOOL / 奖池 type=2 装扮 propId（勿放入 VIP 经验）
+_TOOL_PROP_PRIZE_IDS = frozenset({"30006354"})
 _VIP_EXP_NAME_HINTS = ("VIP经验", "VIP 经验", "vip经验", "VIP经验值")
-# 砸蛋奖池里的 VIP_VALUE / Growth points = 成长值，不是 VIP 经验值
-_VIP_EXP_EXCLUDE_NAME_HINTS = (
-    "成长值",
-    "Growth points",
-    "Growth point",
-    "VIP Growth",
-    "VIP成长",
-)
 
 
-def _is_excluded_vip_exp_reward(name: str) -> bool:
+def _is_vip_growth_points_name(name: str) -> bool:
+    """smashEgg 展示「VIP Growth points」= VIP 经验（奖池 type=3 / prizeType VIP_VALUE）。"""
     n = str(name or "").strip()
     if not n:
         return False
     upper = n.upper()
-    return any(h in n or h.upper() in upper for h in _VIP_EXP_EXCLUDE_NAME_HINTS)
+    return "VIP" in upper and "GROWTH" in upper and "POINT" in upper
 
 
-def _is_sultan_vip_exp_name(name: str) -> bool:
-    """砸蛋展示「السلطان $」= VIP 经验值奖励（$ 为经验货币标识）。"""
+def _is_sultan_tool_name(name: str) -> bool:
+    """「السلطان $」为头像框装扮（propId 30006354），不是 VIP 经验。"""
     n = str(name or "").strip()
-    if not n or _is_excluded_vip_exp_reward(n):
+    if not n:
         return False
-    if "السلطان" in n or "سلطان" in n:
-        return "$" in n or "＄" in n
+    return "السلطان" in n or "سلطان" in n
+
+
+def is_vip_exp_reward_item(item: dict[str, Any]) -> bool:
+    """VIP 经验值奖品；排除装扮（含 السلطان $ / 30006354）。"""
+    if is_tool_reward_item(item):
+        return False
+    name = str(item.get("prizeName") or item.get("name") or "").strip()
+    prize_type = str(item.get("prizeType") or "").upper()
+    if prize_type == "VIP_VALUE":
+        return True
+    if _is_vip_growth_points_name(name):
+        return True
+    if any(hint in name for hint in _VIP_EXP_NAME_HINTS):
+        return True
+    if prize_type in _VIP_EXP_PRIZE_TYPES and "VIP" in name.upper():
+        return True
     return False
 
 
@@ -757,24 +1060,6 @@ def is_diamond_reward_item(item: dict[str, Any]) -> bool:
     return prize_type == "DIAMOND" or name == "DIAMOND"
 
 
-def is_vip_exp_reward_item(item: dict[str, Any]) -> bool:
-    """仅「السلطان $」等明确 VIP 经验奖品；排除 VIP Growth points（成长值）。"""
-    name = str(item.get("prizeName") or item.get("name") or "").strip()
-    if _is_excluded_vip_exp_reward(name):
-        return False
-    prize_id = str(item.get("prizeId") or "").strip()
-    if prize_id in _VIP_EXP_PRIZE_IDS:
-        return True
-    if _is_sultan_vip_exp_name(name):
-        return True
-    if any(hint in name for hint in _VIP_EXP_NAME_HINTS):
-        return True
-    prize_type = str(item.get("prizeType") or "").upper()
-    if prize_type in _VIP_EXP_PRIZE_TYPES and "VIP" in name.upper():
-        return True
-    return False
-
-
 def vip_exp_amount_from_item(item: dict[str, Any]) -> int:
     """单个奖品应到账 VIP 经验（默认取 num）。"""
     if not is_vip_exp_reward_item(item):
@@ -783,11 +1068,11 @@ def vip_exp_amount_from_item(item: dict[str, Any]) -> int:
 
 
 def vip_exp_delta_from_reward_summary(*texts: Any) -> int:
-    """从「档次奖励/神秘奖励」摘要解析 VIP 经验数量（含 السلطان $）。"""
+    """从「档次奖励/神秘奖励」摘要解析 VIP 经验数量。"""
     total = 0
     for text in texts:
         for name, num in parse_reward_summary(text).items():
-            if name == "VIP经验" or _is_sultan_vip_exp_name(name):
+            if name == "VIP经验" or _is_vip_growth_points_name(name):
                 total += int(num)
     return max(0, total)
 
@@ -816,6 +1101,80 @@ def aggregate_vip_exp_reward_delta(rewards: Any) -> int:
     )
 
 
+def is_package_gift_reward_item(item: dict[str, Any]) -> bool:
+    return str(item.get("prizeType") or "").upper() == "PACKAGE_GIFT"
+
+
+def is_tool_reward_item(item: dict[str, Any]) -> bool:
+    prize_type = str(item.get("prizeType") or "").upper()
+    if prize_type == "TOOL":
+        return True
+    prize_id = str(item.get("prizeId") or "").strip()
+    if prize_id in _TOOL_PROP_PRIZE_IDS:
+        return True
+    name = str(item.get("prizeName") or item.get("name") or "").strip()
+    return _is_sultan_tool_name(name)
+
+
+def _smash_reward_lists(smash_result: dict[str, Any]) -> tuple[list[Any], list[Any]]:
+    rewards = smash_result.get("rewards") or smash_result.get("prizes") or []
+    mystery = smash_result.get("mysteryPrizes") or smash_result.get("mysteryRewards") or []
+    return (
+        rewards if isinstance(rewards, list) else [],
+        mystery if isinstance(mystery, list) else [],
+    )
+
+
+def prize_ids_from_smash_rewards(
+    smash_result: dict[str, Any],
+    *,
+    matcher,
+) -> set[str]:
+    ids: set[str] = set()
+    for rewards in _smash_reward_lists(smash_result):
+        for item in rewards:
+            if not isinstance(item, dict) or not matcher(item):
+                continue
+            prize_id = str(item.get("prizeId") or "").strip()
+            if prize_id:
+                ids.add(prize_id)
+    return ids
+
+
+def expected_package_gift_delta_from_smash(smash_result: dict[str, Any]) -> int:
+    """从档次+神秘奖励汇总应到账背包礼物个数（PACKAGE_GIFT.num）。"""
+    rewards, mystery = _smash_reward_lists(smash_result)
+    return max(
+        0,
+        aggregate_typed_reward_delta(rewards, matcher=is_package_gift_reward_item)
+        + aggregate_typed_reward_delta(mystery, matcher=is_package_gift_reward_item),
+    )
+
+
+def expected_tool_delta_from_smash(smash_result: dict[str, Any]) -> int:
+    """从档次+神秘奖励汇总应到账装扮天数（TOOL.num）。"""
+    rewards, mystery = _smash_reward_lists(smash_result)
+    return max(
+        0,
+        aggregate_typed_reward_delta(rewards, matcher=is_tool_reward_item)
+        + aggregate_typed_reward_delta(mystery, matcher=is_tool_reward_item),
+    )
+
+
+def expected_tool_days_from_smash(smash_result: dict[str, Any]) -> int:
+    """装扮/道具奖励应下发天数（同 expected_tool_delta_from_smash）。"""
+    return expected_tool_delta_from_smash(smash_result)
+
+
+def expected_voucher_delta_from_smash(smash_result: dict[str, Any]) -> int:
+    total = 0
+    for rewards in _smash_reward_lists(smash_result):
+        for item in rewards:
+            if isinstance(item, dict) and _is_voucher_like_prize(item):
+                total += _reward_item_amount(item)
+    return max(0, total)
+
+
 def expected_diamond_delta_from_smash(smash_result: dict[str, Any]) -> int:
     """从档次奖励 + 神秘奖励汇总本次应到账钻石数。"""
     rewards = smash_result.get("rewards") or smash_result.get("prizes") or []
@@ -839,6 +1198,144 @@ def expected_vip_exp_delta_from_smash(smash_result: dict[str, Any]) -> int:
         aggregate_vip_exp_reward_delta(rewards)
         + aggregate_vip_exp_reward_delta(mystery),
     )
+
+
+def _lookup_prop_display_names(prop_ids: set[str]) -> dict[str, str]:
+    """propId → MDP 道具名；查不到不阻断。"""
+    ids = sorted(pid for pid in prop_ids if str(pid).strip().isdigit())
+    if not ids:
+        return {}
+    try:
+        import sys
+        from pathlib import Path
+
+        repo = Path(__file__).resolve().parents[2]
+        admin_dir = str(repo / "Admin")
+        if admin_dir not in sys.path:
+            sys.path.insert(0, admin_dir)
+        from admin.env import load_local_env
+        from admin.prop import lookup_prop_names
+
+        load_local_env(admin_dir)
+        info = lookup_prop_names(ids)
+        return {
+            pid: str(row.get("propName") or "").strip()
+            for pid, row in info.items()
+            if str(row.get("propName") or "").strip()
+        }
+    except Exception:
+        return {}
+
+
+def _tool_reward_display_name(item: dict[str, Any]) -> str:
+    """TOOL 装扮展示名：优先 smash 奖品名，否则 propId 查 MDP。"""
+    prize_id = str(item.get("prizeId") or "").strip()
+    raw_name = str(item.get("prizeName") or item.get("name") or "").strip()
+    if raw_name and raw_name not in {"1", "奖励"} and not raw_name.isdigit():
+        canonical = _canonicalize_reward_name(raw_name)
+        if canonical and canonical not in {"积分", "VIP经验", "钻石"}:
+            if _is_sultan_tool_name(canonical) or not canonical.startswith("奖品"):
+                return canonical
+    if prize_id:
+        looked_up = _lookup_prop_display_names({prize_id}).get(prize_id)
+        if looked_up:
+            return looked_up
+        return f"装扮{prize_id}"
+    fallback = reward_display_name(item)
+    if fallback in {"积分", "奖励", "1"} or (fallback.isdigit() and fallback != "1"):
+        return "个人装扮"
+    return fallback
+
+
+def aggregate_tool_reward_display_names(
+    smash_result: dict[str, Any],
+) -> OrderedDict[str, int]:
+    """按装扮展示名汇总应下发天数（档次+神秘）。"""
+    totals: OrderedDict[str, int] = OrderedDict()
+    for rewards in _smash_reward_lists(smash_result):
+        for item in rewards:
+            if not isinstance(item, dict) or not is_tool_reward_item(item):
+                continue
+            name = _tool_reward_display_name(item)
+            totals[name] = int(totals.get(name, 0)) + _reward_item_amount(item)
+    return totals
+
+
+def _tool_names_from_reward_summary(text: str) -> list[str]:
+    """从「档次/神秘奖励」摘要提取装扮名（用于无 smash 原始数据时）。"""
+    names: list[str] = []
+    seen: set[str] = set()
+    skip = frozenset({"钻石", "VIP经验", "积分", "礼物背包", "奖励"})
+    for name in parse_reward_summary(text):
+        if name in skip or _is_vip_growth_points_name(name):
+            continue
+        item: dict[str, Any] = {"prizeName": name}
+        if name.startswith("奖品") and name[2:].isdigit():
+            item["prizeId"] = name[2:]
+        if name.startswith("装扮") and name[2:].isdigit():
+            item["prizeId"] = name[2:]
+            item["prizeType"] = "TOOL"
+        if _is_sultan_tool_name(name):
+            item["prizeType"] = "TOOL"
+        if not is_tool_reward_item(item):
+            continue
+        label = name if _is_sultan_tool_name(name) else _tool_reward_display_name(item)
+        if label and label not in seen:
+            seen.add(label)
+            names.append(label)
+    return names
+
+
+def tool_prop_label_for_credit_cell(
+    smash_result: dict[str, Any] | None = None,
+    *,
+    tier_text: str = "",
+    mystery_text: str = "",
+) -> str:
+    """实际到账列装扮标签：优先 smash 奖品名，否则从档次/神秘摘要推断。"""
+    if smash_result:
+        totals = aggregate_tool_reward_display_names(smash_result)
+        if totals:
+            return "、".join(totals.keys())
+        prop_ids = prize_ids_from_smash_rewards(smash_result, matcher=is_tool_reward_item)
+        if prop_ids:
+            id_names = _lookup_prop_display_names(prop_ids)
+            labels = [
+                id_names.get(pid) or f"装扮{pid}"
+                for pid in sorted(prop_ids)
+            ]
+            joined = "、".join(label for label in labels if label)
+            if joined:
+                return joined
+    labels: list[str] = []
+    seen: set[str] = set()
+    for name in (
+        *_tool_names_from_reward_summary(tier_text),
+        *_tool_names_from_reward_summary(mystery_text),
+    ):
+        if name not in seen:
+            seen.add(name)
+            labels.append(name)
+    return "、".join(labels) if labels else "个人装扮"
+
+
+def refresh_credit_cell_prop_labels(
+    credit_cell: str,
+    *,
+    tier_text: str = "",
+    mystery_text: str = "",
+) -> str:
+    """把 L 列「个人装扮」替换为具体装扮名。"""
+    text = str(credit_cell or "").strip()
+    if not text or "个人装扮" not in text:
+        return text
+    label = tool_prop_label_for_credit_cell(
+        tier_text=tier_text,
+        mystery_text=mystery_text,
+    )
+    if label == "个人装扮":
+        return text
+    return text.replace("个人装扮", label, 1)
 
 
 def format_credit_increase_cell(
@@ -868,21 +1365,116 @@ def format_combined_credit_increase_cell(
     expected_diamond: int | None,
     actual_diamond: int | None,
 ) -> str:
-    """VIP 经验与钻石到账增量合并为一格（与「用户奖励汇总」× 分隔风格一致）。"""
+    """兼容旧调用：仅 VIP / 钻石。"""
+    return format_actual_credit_cell(
+        expected_vip=expected_vip,
+        actual_vip=actual_vip,
+        expected_diamond=expected_diamond,
+        actual_diamond=actual_diamond,
+    )
+
+
+def format_actual_credit_cell(
+    *,
+    expected_backpack: int | None = None,
+    actual_backpack: int | None = None,
+    expected_prop: int | None = None,
+    actual_prop: int | None = None,
+    expected_diamond: int | None = None,
+    actual_diamond: int | None = None,
+    expected_vip: int | None = None,
+    actual_vip: int | None = None,
+    expected_voucher: int | None = None,
+    actual_voucher: int | None = None,
+    prop_label: str | None = None,
+) -> str:
+    """五类实际到账：背包礼物按个数、装扮按天数，其余按增量。"""
     parts: list[str] = []
-    vip = format_credit_increase_cell(
-        expected_delta=expected_vip,
-        actual_delta=actual_vip,
+    prop_name = str(prop_label or "").strip() or "个人装扮"
+    entries = (
+        ("礼物背包", expected_backpack, actual_backpack, "个"),
+        (prop_name, expected_prop, actual_prop, "天"),
+        ("钻石", expected_diamond, actual_diamond, ""),
+        ("VIP经验", expected_vip, actual_vip, ""),
+        ("积分", expected_voucher, actual_voucher, ""),
     )
-    if vip:
-        parts.append(f"VIP经验×{vip}")
-    diamond = format_credit_increase_cell(
-        expected_delta=expected_diamond,
-        actual_delta=actual_diamond,
-    )
-    if diamond:
-        parts.append(f"钻石×{diamond}")
+    for label, expected, actual, unit in entries:
+        delta = format_credit_increase_cell(
+            expected_delta=expected,
+            actual_delta=actual,
+        )
+        if delta:
+            suffix = unit if unit else ""
+            parts.append(f"{label}×{delta}{suffix}")
     return "；".join(parts)
+
+
+def _credit_check_from_verify(
+    verify: dict[str, Any] | None,
+    *,
+    before_key: str,
+    after_key: str,
+    expected_key: str,
+    actual_key: str,
+) -> dict[str, Any]:
+    v = verify or {}
+    before = v.get(before_key)
+    after = v.get(after_key)
+    expected = v.get(expected_key)
+    actual = v.get(actual_key)
+    if expected is None and actual is not None and before is not None and after is not None:
+        try:
+            expected = int(after) - int(before)
+        except (TypeError, ValueError):
+            expected = None
+    if before is None and after is None and expected is None:
+        return evaluate_diamond_credit(before=None, after=None, expected=None)
+    return evaluate_diamond_credit(
+        before=int(before) if before not in (None, "") else None,
+        after=int(after) if after not in (None, "") else None,
+        expected=int(expected) if expected not in (None, "") else None,
+    )
+
+
+def backpack_credit_from_verify(verify: dict[str, Any] | None) -> dict[str, Any]:
+    return _credit_check_from_verify(
+        verify,
+        before_key="backpackBeforeSum",
+        after_key="backpackAfterSum",
+        expected_key="expectedBackpack",
+        actual_key="actualBackpackDelta",
+    )
+
+
+def prop_credit_from_verify(verify: dict[str, Any] | None) -> dict[str, Any]:
+    v = verify or {}
+    merged = dict(v)
+    if merged.get("actualPropDaysDelta") in (None, "") and merged.get("actualPropDelta") not in (
+        None,
+        "",
+    ):
+        merged["actualPropDaysDelta"] = merged.get("actualPropDelta")
+    if merged.get("propAfterDays") in (None, "") and merged.get("propAfterSum") not in (None, ""):
+        merged["propAfterDays"] = merged.get("propAfterSum")
+    if merged.get("propBeforeDays") in (None, "") and merged.get("propBeforeSum") not in (None, ""):
+        merged["propBeforeDays"] = merged.get("propBeforeSum")
+    return _credit_check_from_verify(
+        merged,
+        before_key="propBeforeDays",
+        after_key="propAfterDays",
+        expected_key="expectedProp",
+        actual_key="actualPropDaysDelta",
+    )
+
+
+def voucher_credit_from_verify(verify: dict[str, Any] | None) -> dict[str, Any]:
+    return _credit_check_from_verify(
+        verify,
+        before_key="voucherBefore",
+        after_key="voucherAfter",
+        expected_key="expectedVoucher",
+        actual_key="actualVoucherDelta",
+    )
 
 
 def evaluate_diamond_credit(
@@ -979,6 +1571,9 @@ def evaluate_acceptance_verdict(
     tier_cell: str,
     batch: int,
     egg_level: str = "",
+    tier_rewards: Any = None,
+    rules: dict[str, Any] | None = None,
+    lottery_pools: dict[int, dict[str, Any]] | None = None,
     expected_batch: int | None = None,
     room_before: int | None = None,
     room_after: int | None = None,
@@ -990,14 +1585,26 @@ def evaluate_acceptance_verdict(
     diamond_detail: str = "",
     vip_ok: bool | None = None,
     vip_detail: str = "",
+    backpack_ok: bool | None = None,
+    backpack_detail: str = "",
+    prop_ok: bool | None = None,
+    prop_detail: str = "",
+    voucher_ok: bool | None = None,
+    voucher_detail: str = "",
 ) -> dict[str, Any]:
-    """验收结论：①神秘奖励 ②金蛋等级礼物 ③本次砸蛋次数 ④房/用/平累加 ⑤钻石/VIP 到账。"""
+    """验收结论：①神秘奖励 ②金蛋等级礼物+奖池 ③本次砸蛋次数 ④房/用/平累加 ⑤五类到账。"""
+    r = rules or load_activity_rules()
     fails: list[str] = []
     myst_ok = mystery_reward_meets_expectation(
         theory_tags=theory_tags, mystery_cell=mystery_cell
     )
-    tier_ok = tier_reward_meets_expectation(
-        tier_cell=tier_cell, batch=batch, egg_level=egg_level
+    tier_ok, tier_detail = tier_reward_meets_expectation(
+        tier_cell=tier_cell,
+        batch=batch,
+        egg_level=egg_level,
+        tier_rewards=tier_rewards,
+        rules=r,
+        lottery_pools=lottery_pools,
     )
     smash_ok = smash_count_meets_expectation(
         actual_batch=batch, expected_batch=expected_batch
@@ -1014,7 +1621,7 @@ def evaluate_acceptance_verdict(
     if not myst_ok:
         fails.append("神秘奖励不符合预期")
     if not tier_ok:
-        fails.append("金蛋等级礼物不符合预期")
+        fails.append(tier_detail or "金蛋等级礼物不符合预期")
     if not smash_ok:
         fails.append(
             f"本次砸蛋次数不符合预期(期望{expected_batch}，实际{int(batch or 0)})"
@@ -1025,6 +1632,12 @@ def evaluate_acceptance_verdict(
         fails.append(diamond_detail or "钻石到账不符")
     if vip_ok is False:
         fails.append(vip_detail or "VIP经验到账不符")
+    if backpack_ok is False:
+        fails.append(backpack_detail or "礼物背包到账不符")
+    if prop_ok is False:
+        fails.append(prop_detail or "个人装扮到账不符")
+    if voucher_ok is False:
+        fails.append(voucher_detail or "积分到账不符")
     if not fails:
         return {
             "verdict": "通过",
@@ -1035,6 +1648,9 @@ def evaluate_acceptance_verdict(
             "countAccumOk": True,
             "diamondOk": diamond_ok,
             "vipOk": vip_ok,
+            "backpackOk": backpack_ok,
+            "propOk": prop_ok,
+            "voucherOk": voucher_ok,
         }
     return {
         "verdict": "失败：" + "；".join(fails),
@@ -1045,6 +1661,9 @@ def evaluate_acceptance_verdict(
         "countAccumOk": accum_ok,
         "diamondOk": diamond_ok,
         "vipOk": vip_ok,
+        "backpackOk": backpack_ok,
+        "propOk": prop_ok,
+        "voucherOk": voucher_ok,
     }
 
 
@@ -1061,7 +1680,7 @@ HEADER = [
     "砸蛋时金蛋等级",
     "档次奖励",
     "神秘奖励",
-    "VIP经验·钻石增加",
+    ACTUAL_CREDIT_COL,
     "验收结论",
     "记录写入时间",
 ]
@@ -1080,7 +1699,7 @@ _LEGACY_HEADER_WITH_USER_TOTAL = [
     "档次奖励",
     "神秘奖励",
     "用户奖励汇总",
-    "VIP经验·钻石增加",
+    ACTUAL_CREDIT_COL,
     "验收结论",
     "记录写入时间",
 ]
@@ -1313,6 +1932,7 @@ _LEGACY_HEADER_NO_MYSTERY = [
 # 兼容旧表头
 _LEGACY_HEADER_ALIASES = {
     "列表总奖励": "用户奖励汇总",
+    _LEGACY_CREDIT_COL: ACTUAL_CREDIT_COL,
 }
 
 _REWARD_NAME_ALIASES = {
@@ -1328,8 +1948,6 @@ def _canonicalize_reward_name(name: str) -> str:
     raw = str(name or "").strip()
     if not raw:
         return raw
-    if _is_sultan_vip_exp_name(raw):
-        return raw
     aliased = _REWARD_NAME_ALIASES.get(raw) or _REWARD_NAME_ALIASES.get(raw.upper())
     return aliased or raw
 
@@ -1342,9 +1960,8 @@ def reward_display_name(item: dict[str, Any]) -> str:
     prize_type = str(item.get("prizeType") or "").upper()
     if prize_type == "DIAMOND" or name.upper() == "DIAMOND":
         return "钻石"
-    if _is_excluded_vip_exp_reward(name):
-        return _canonicalize_reward_name(name) if name else "奖励"
-    # 显式 VIP 经验文案展示为 VIP经验；Sultan（السلطان $）保留原文案
+    if prize_type == "VIP_VALUE" or _is_vip_growth_points_name(name):
+        return "VIP经验"
     if any(hint in name for hint in _VIP_EXP_NAME_HINTS):
         return "VIP经验"
     if name and name not in {"1", "奖励"} and not name.isdigit():
@@ -1528,14 +2145,18 @@ def record_to_row(
         myst_room_before = int(smash_result.get("mysteryRoomBefore") or max(0, sheet_room_after - batch))
         myst_room_after = int(smash_result.get("mysteryRoomAfter") or sheet_room_after)
 
-    # 金蛋等级：优先接口 eggLevel；否则按神秘计数房间累计 / 等级内归一推算
-    egg_level = resolve_egg_level_label(
-        room_smash_lifetime=myst_room_after if isinstance(myst_a, dict) else egg_room_after_i,
-        egg_level=smash_result.get("eggLevel"),
+    # 砸蛋时金蛋等级：用砸前 eggLevel（本段升级则按 LV1 奖池验档次奖励）
+    egg_level = resolve_egg_level_at_smash(
+        smash_result,
+        batch=batch,
+        myst_room_before=myst_room_before,
+        egg_room_smash_before=egg_room_before_i,
         rules=rules,
     )
 
     rewards = smash_result.get("rewards")
+    if rewards is None:
+        rewards = smash_result.get("prizes")
     mystery = smash_result.get("mysteryPrizes") or smash_result.get("mysteryRewards")
     tier_summary = _reward_summary(rewards)
     actual_mystery = _reward_summary(mystery)
@@ -1585,6 +2206,9 @@ def record_to_row(
             pass
     diamond_check = diamond_credit_from_verify(v)
     vip_check = vip_exp_credit_from_verify(v)
+    backpack_check = backpack_credit_from_verify(v)
+    prop_check = prop_credit_from_verify(v)
+    voucher_check = voucher_credit_from_verify(v)
     expected_diamond = v.get("expectedDiamond")
     if expected_diamond in (None, ""):
         expected_diamond = expected_diamond_delta_from_smash(smash_result)
@@ -1606,6 +2230,32 @@ def record_to_row(
             expected_vip = int(expected_vip)
         except (TypeError, ValueError):
             expected_vip = expected_vip_exp_delta_from_smash(smash_result)
+    expected_backpack = v.get("expectedBackpack")
+    if expected_backpack in (None, ""):
+        expected_backpack = expected_package_gift_delta_from_smash(smash_result)
+    else:
+        try:
+            expected_backpack = int(expected_backpack)
+        except (TypeError, ValueError):
+            expected_backpack = expected_package_gift_delta_from_smash(smash_result)
+    expected_prop = v.get("expectedPropDays")
+    if expected_prop in (None, ""):
+        expected_prop = v.get("expectedProp")
+    if expected_prop in (None, ""):
+        expected_prop = expected_tool_days_from_smash(smash_result)
+    else:
+        try:
+            expected_prop = int(expected_prop)
+        except (TypeError, ValueError):
+            expected_prop = expected_tool_days_from_smash(smash_result)
+    expected_voucher = v.get("expectedVoucher")
+    if expected_voucher in (None, ""):
+        expected_voucher = expected_voucher_delta_from_smash(smash_result)
+    else:
+        try:
+            expected_voucher = int(expected_voucher)
+        except (TypeError, ValueError):
+            expected_voucher = expected_voucher_delta_from_smash(smash_result)
     diamond_detail = ""
     if diamond_check.get("ok") is False:
         diamond_detail = (
@@ -1618,12 +2268,43 @@ def record_to_row(
             f"VIP经验到账不符(预期{vip_check.get('expectedDelta')}，"
             f"实际{vip_check.get('actualDelta')})"
         )
+    backpack_detail = ""
+    if backpack_check.get("ok") is False:
+        backpack_detail = (
+            f"礼物背包到账不符(预期{backpack_check.get('expectedDelta')}个，"
+            f"实际{backpack_check.get('actualDelta')}个)"
+        )
+    prop_detail = ""
+    if prop_check.get("ok") is False:
+        if prop_check.get("unverified"):
+            prop_detail = (
+                f"个人装扮未能核验到账(预期{prop_check.get('expectedDelta')}天)"
+            )
+        else:
+            prop_detail = (
+                f"个人装扮到账不符(预期{prop_check.get('expectedDelta')}天，"
+                f"实际{prop_check.get('actualDelta')}天)"
+            )
+    voucher_detail = ""
+    if voucher_check.get("ok") is False:
+        if voucher_check.get("unverified"):
+            voucher_detail = (
+                f"积分未能核验到账(预期{voucher_check.get('expectedDelta')})"
+            )
+        else:
+            voucher_detail = (
+                f"积分到账不符(预期{voucher_check.get('expectedDelta')}，"
+                f"实际{voucher_check.get('actualDelta')})"
+            )
     acceptance = evaluate_acceptance_verdict(
         theory_tags=theory_tags,
         mystery_cell=mystery_summary,
         tier_cell=tier_summary,
         batch=batch,
         egg_level=egg_level,
+        tier_rewards=rewards if isinstance(rewards, list) else None,
+        rules=rules,
+        lottery_pools=load_lottery_pools(),
         expected_batch=expected_batch,
         room_before=myst_room_before,
         room_after=myst_room_after,
@@ -1635,13 +2316,31 @@ def record_to_row(
         diamond_detail=diamond_detail,
         vip_ok=vip_check.get("ok"),
         vip_detail=vip_detail,
+        backpack_ok=backpack_check.get("ok"),
+        backpack_detail=backpack_detail,
+        prop_ok=prop_check.get("ok"),
+        prop_detail=prop_detail,
+        voucher_ok=voucher_check.get("ok"),
+        voucher_detail=voucher_detail,
     )
     verdict = acceptance["verdict"]
-    credit_cell = format_combined_credit_increase_cell(
-        expected_vip=expected_vip,
-        actual_vip=vip_check.get("actualDelta"),
+    prop_label = tool_prop_label_for_credit_cell(
+        smash_result,
+        tier_text=tier_summary,
+        mystery_text=actual_mystery,
+    )
+    credit_cell = format_actual_credit_cell(
+        expected_backpack=expected_backpack,
+        actual_backpack=backpack_check.get("actualDelta"),
+        expected_prop=expected_prop,
+        actual_prop=prop_check.get("actualDelta"),
         expected_diamond=expected_diamond,
         actual_diamond=diamond_check.get("actualDelta"),
+        expected_vip=expected_vip,
+        actual_vip=vip_check.get("actualDelta"),
+        expected_voucher=expected_voucher,
+        actual_voucher=voucher_check.get("actualDelta"),
+        prop_label=prop_label,
     )
     return [
         _sheet_cell(v.get("caseNo")),
@@ -1750,7 +2449,11 @@ def _project_row_to_header(
             by_name.get("神秘奖励", ""),
             by_name.get("神秘理论-预期", ""),
         )
-    if not by_name.get("VIP经验·钻石增加"):
+    if not by_name.get(ACTUAL_CREDIT_COL):
+        legacy_credit = str(by_name.get(_LEGACY_CREDIT_COL) or "").strip()
+        if legacy_credit:
+            by_name[ACTUAL_CREDIT_COL] = legacy_credit
+    if not by_name.get(ACTUAL_CREDIT_COL):
         merged_parts: list[str] = []
         vip_raw = str(by_name.get("VIP经验增加") or "").strip()
         dia_raw = str(by_name.get("钻石增加") or "").strip()
@@ -1763,11 +2466,11 @@ def _project_row_to_header(
                 dia_raw if dia_raw.startswith("钻石") else f"钻石×{dia_raw}"
             )
         if merged_parts:
-            by_name["VIP经验·钻石增加"] = "；".join(merged_parts)
-    if "钻石-实际变动" in by_name and not by_name.get("VIP经验·钻石增加"):
+            by_name[ACTUAL_CREDIT_COL] = "；".join(merged_parts)
+    if "钻石-实际变动" in by_name and not by_name.get(ACTUAL_CREDIT_COL):
         dia_legacy = str(by_name.get("钻石-实际变动") or "").strip()
         if dia_legacy:
-            by_name["VIP经验·钻石增加"] = (
+            by_name[ACTUAL_CREDIT_COL] = (
                 dia_legacy
                 if dia_legacy.startswith("钻石")
                 else f"钻石×{dia_legacy}"
@@ -1784,7 +2487,11 @@ def _mystery_col_index() -> int:
 
 
 def _credit_increase_col_index() -> int:
-    return HEADER.index("VIP经验·钻石增加")
+    return HEADER.index(ACTUAL_CREDIT_COL)
+
+
+def _actual_credit_col_index() -> int:
+    return _credit_increase_col_index()
 
 
 def _user_id_col_index() -> int:
@@ -1851,11 +2558,12 @@ def _recompute_derived_columns(data_rows: list[list[str]]) -> list[list[str]]:
       仅当单元格为空时按表内累计补齐（旧行兼容）
     - 砸蛋时金蛋等级：按房间状态机模拟（upgradeThreshold + expireSeconds + 记录时间掉级）
     - 神秘奖励：保留实发奖品文案，并按保底模数补「理论触发」标注
-    - 验收结论：①神秘奖励 ②金蛋等级档次礼物 ③本次砸蛋次数 ④房/用/平相对上条同主体累加
+    - 验收结论：①神秘奖励 ②金蛋等级档次礼物+奖池配置 ③本次砸蛋次数 ④房/用/平相对上条同主体累加
     """
     rules = load_activity_rules()
     tier_idx = _tier_col_index()
     mystery_idx = _mystery_col_index()
+    credit_idx = _actual_credit_col_index()
     user_idx = _user_id_col_index()
     room_idx = _room_id_col_index()
     batch_idx = _batch_count_col_index()
@@ -2021,6 +2729,11 @@ def _recompute_derived_columns(data_rows: list[list[str]]) -> list[list[str]]:
             theory_tags,
             pending_next=pending_out,
             rules=rules,
+        )
+        cells[credit_idx] = refresh_credit_cell_prop_labels(
+            cells[credit_idx],
+            tier_text=cells[tier_idx],
+            mystery_text=actual_mystery_text,
         )
         acceptance = evaluate_acceptance_verdict(
             theory_tags=theory_tags,

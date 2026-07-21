@@ -13,8 +13,10 @@ from playbook import load_playbook, step_status_key
 from showcase import load_showcase_config, render_showcase_html, sync_media_to
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-EXPORTS_DIR = Path(__file__).resolve().parent / "exports"
+REPORT_DIR = Path(__file__).resolve().parent
+EXPORTS_DIR = REPORT_DIR / "exports"
 TMP_DIR = REPO_ROOT / ".tmp"
+SAMPLE_SUMMARY_PATH = REPORT_DIR / "config" / "sample_summary.json"
 
 OVERALL_META = {
     "通过": ("pass", "总体验收通过", "可进入上线评审"),
@@ -31,17 +33,29 @@ def load_summary(path: Path) -> dict[str, Any]:
     return data
 
 
-def scan_summaries(tmp_dir: Path | None = None) -> list[dict[str, Any]]:
+def load_sample_summary() -> dict[str, Any]:
+    if not SAMPLE_SUMMARY_PATH.is_file():
+        raise FileNotFoundError(SAMPLE_SUMMARY_PATH)
+    summary = load_summary(SAMPLE_SUMMARY_PATH)
+    summary["_sourcePath"] = str(SAMPLE_SUMMARY_PATH)
+    summary.setdefault("demo", True)
+    return summary
+
+
+def scan_summaries(tmp_dir: Path | None = None, *, include_demo: bool = True) -> list[dict[str, Any]]:
     base = tmp_dir or TMP_DIR
     items: list[dict[str, Any]] = []
     for path in sorted(base.glob("family_pk_test_result_*.json")):
         try:
             summary = load_summary(path)
             summary["_sourcePath"] = str(path)
+            summary["demo"] = False
             items.append(summary)
         except (OSError, ValueError, json.JSONDecodeError):
             continue
     items.sort(key=lambda x: str(x.get("executedAt") or x.get("pkDate") or ""), reverse=True)
+    if include_demo and not items:
+        items.append(load_sample_summary())
     return items
 
 
@@ -287,6 +301,14 @@ def render_report_html(summary: dict[str, Any], playbook: dict[str, Any] | None 
     pb = playbook or load_playbook()
     overall = str(summary.get("overall") or "未知")
     badge_cls, headline, subline = OVERALL_META.get(overall, ("pending", overall, ""))
+    is_demo = bool(summary.get("demo"))
+    demo_banner = ""
+    if is_demo:
+        demo_banner = """
+        <p class="subtitle" style="margin-top:12px;padding:10px 12px;background:#eff6ff;border-radius:8px;color:#1d4ed8">
+          <strong>示例报告</strong> — 数据来自 config/sample_summary.json，用于演示页附录；真实验收请跑完工作流后扫描 .tmp 生成。
+        </p>
+        """
 
     families = summary.get("families") or {}
     dispatch = summary.get("dispatch") or {}
@@ -321,6 +343,7 @@ def render_report_html(summary: dict[str, Any], playbook: dict[str, Any] | None 
         <span class="badge {badge_cls}">{_esc(overall)}</span>
       </div>
       <p class="subtitle"><strong>{headline}</strong> — {subline}</p>
+      {demo_banner}
       <div class="kpi-grid">
         <div class="kpi"><div class="label">覆盖家族</div><div class="value">{_fmt_int(families.get('families'))}</div></div>
         <div class="kpi"><div class="label">覆盖成员</div><div class="value">{_fmt_int(families.get('members'))}</div></div>
@@ -382,10 +405,25 @@ def write_report(summary_path: Path, out_dir: Path | None = None) -> Path:
     return out_path
 
 
+def write_report_from_summary(summary: dict[str, Any], out_dir: Path | None = None) -> Path:
+    playbook = load_playbook()
+    html_text = render_report_html(summary, playbook)
+    target_dir = out_dir or EXPORTS_DIR
+    target_dir.mkdir(parents=True, exist_ok=True)
+    pk_date = str(summary.get("pkDate") or "unknown")
+    suffix = "_demo" if summary.get("demo") else ""
+    out_path = target_dir / f"family_pk_report_{pk_date}{suffix}.html"
+    out_path.write_text(html_text, encoding="utf-8")
+    return out_path
+
+
 def write_all_reports(tmp_dir: Path | None = None, out_dir: Path | None = None) -> list[Path]:
     summaries = scan_summaries(tmp_dir)
     paths: list[Path] = []
     for item in summaries:
+        if item.get("demo"):
+            paths.append(write_report_from_summary(item, out_dir))
+            continue
         source = item.get("_sourcePath")
         if not source:
             continue
@@ -400,6 +438,9 @@ def write_hub(tmp_dir: Path | None = None, out_dir: Path | None = None) -> Path:
     target_dir = out_dir or EXPORTS_DIR
     target_dir.mkdir(parents=True, exist_ok=True)
     sync_media_to(target_dir)
+    for item in summaries:
+        if item.get("demo"):
+            write_report_from_summary(item, target_dir)
     html_text = render_showcase_html(
         config=config,
         playbook=playbook,

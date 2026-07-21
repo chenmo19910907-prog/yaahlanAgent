@@ -1,156 +1,249 @@
 {
-  "title": "家族 PK 数据测试自动化",
-  "subtitle": "从人工逐条核对到八步标准工作流 · 测试自动化建设成果汇报",
+  "title": "工具平台驱动的复杂活动数据造表测试工作流",
+  "subtitle": "从能力登记到 Workflow 装配，贯通造数、验收与汇报",
+  "webAgentLocalUrl": "http://127.0.0.1:18766",
+  "webAgentRemoteUrl": "http://172.18.125.90:18766",
   "nav": [
-    { "id": "background", "label": "项目背景" },
-    { "id": "demo", "label": "效果演示" },
-    { "id": "implementation", "label": "实现原理" }
+    { "id": "background", "label": "背景介绍" },
+    { "id": "workflows", "label": "工作流框架" },
+    { "id": "demo-ranking", "label": "榜单活动演示" },
+    { "id": "demo-lottery", "label": "抽奖活动演示" }
   ],
-  "background": {
-    "title": "一、项目背景",
-    "lead": "家族 PK 是高频周期性活动，涉及 MSE 配置、全量家族数据、收礼榜、匹配、成员 PK、结算发钻等多条链路。传统测试依赖人工造数与逐条核对，耗时长、易遗漏、难以复用。",
-    "painPoints": [
-      "配置散落在 MSE，测试同学需手工对照参数表",
-      "家族与成员规模大，人工拉表与核对效率低",
-      "匹配、PK、发钻涉及多接口串联，缺少统一验收视图",
-      "每轮活动重复劳动，经验难以沉淀为标准流程"
-    ],
-    "goals": [
-      "将家族 PK 数据测试沉淀为可重复执行的八步标准流程",
-      "MSE + Admin + MOA + 钉钉表一体化，改参后可局部重跑",
-      "单次覆盖全量家族成员，自动输出结构化验收结论",
-      "接入工具平台，降低跨部门协作与向上汇报成本"
-    ],
-    "metrics": [
-      { "label": "标准步骤", "value": "8 步" },
-      { "label": "钉钉产出 Sheet", "value": "7 张" },
-      { "label": "典型覆盖", "value": "70+ 家族 / 400+ 成员" },
-      { "label": "执行方式", "value": "工作流一键串联" }
-    ]
-  },
-  "demo": {
-    "title": "二、效果演示",
-    "lead": "以下为各步骤预录制演示素材。将图片或视频放入 platform/family_pk_report/media/ 后重新生成即可自动嵌入（支持 png / jpg / gif / mp4 / webm）。",
-    "steps": [
-      {
-        "order": 0,
-        "title": "新建钉钉测试表",
-        "description": "在配置的 alidocs 目录自动创建 {pkDate}家族PK数据测试，预建全部 Sheet，输出 workbookUrl 供后续步骤使用。",
-        "media": { "type": "image", "file": "step00-create-workbook.png", "caption": "钉钉目录下新建测试表" }
+  "hero": {},
+  "theory": {
+    "lead": "复杂活动测试的核心矛盾在数据：规则链长、样本难代表全量。以下用图表说明问题、解法与提效逻辑。",
+    "visuals": {
+      "compare": {
+        "title": "传统做法 vs 数据造表测试",
+        "headers": ["维度", "传统做法", "流程化做法"],
+        "rows": [
+          ["建表造数", "每轮从零手工建表、人工造数", "批量造数、快速落表，改参即重跑"],
+          ["验收方式", "抽查少量样本，边界 case 易漏", "钉钉表逐条 mark pass/fail"],
+          ["验证迭代", "强调重复操作，每轮手工全量重来", "强调快速多轮验证，改参局部重跑"],
+          ["结论可信度", "样本难代表全量", "榜单全量家族成员、抽奖多账号批量"]
+        ]
       },
-      {
-        "order": 1,
-        "title": "MSE 参数同步",
-        "description": "从 MSE voga-common/familyPkConfig 拉取最新配置，写入钉钉「参数表」，支持 merge 增量更新。",
-        "media": { "type": "image", "file": "step01-mse-sync.png", "caption": "参数表与 configValue_JSON 同步" }
+      "effort": {
+        "title": "聚焦数据侧，带动整体提效",
+        "caption": "数据测试约占活动测试 60%；若数据侧提效 80%，整体工作量约降至 52%，接近 50% 提效。",
+        "beforeLabel": "现状",
+        "afterLabel": "数据侧提效 80% 后",
+        "segments": [
+          { "key": "data", "label": "数据测试", "before": 60, "after": 12, "color": "#2563eb" },
+          { "key": "ui", "label": "UI 测试", "before": 40, "after": 40, "color": "#94a3b8" }
+        ],
+        "highlight": "整体 100% → 52%"
       },
-      {
-        "order": 2,
-        "title": "全量家族列表",
-        "description": "Admin 拉取全量家族与成员，过滤非 MENA 族长，写入「家族列表」。",
-        "media": { "type": "image", "file": "step02-family-list.png", "caption": "家族 ID / 成员 / 族长标记" }
-      },
-      {
-        "order": 3,
-        "title": "收礼榜造数与档位测算",
-        "description": "按成员数分段随机写入收礼日榜，计算各家族档位达标 PK 与钻石。",
-        "media": { "type": "video", "file": "step03-rank-tier.mp4", "caption": "收礼榜造数 → 档位 Sheet 产出" }
-      },
-      {
-        "order": 4,
-        "title": "匹配验收",
-        "description": "清匹配 → 重匹配 → MOA getFamilyPkPage 拉对战列表，验收同区间匹配。",
-        "media": { "type": "image", "file": "step04-match-verify.png", "caption": "匹配验收 Sheet 通过/失败" }
-      },
-      {
-        "order": 5,
-        "title": "成员 PK 与应发钻测算",
-        "description": "清 PK → 全员随机造数 → 边界纠偏 → 计算各成员应得钻石。",
-        "media": { "type": "video", "file": "step05-member-pk.mp4", "caption": "用户发钻测试 Sheet" }
-      },
-      {
-        "order": 6,
-        "title": "发钻实发验收",
-        "description": "清结算 → 发奖 → 查钻对比应发 vs 实发，贡献榜回写「用户发钻测试」。",
-        "media": { "type": "image", "file": "step06-dispatch-verify.png", "caption": "发钻实发验收与不一致明细" }
-      },
-      {
-        "order": 7,
-        "title": "测试结果汇总",
-        "description": "汇总六步验收数据，输出总体验收结论，并生成 JSON / HTML 报告。",
-        "media": { "type": "image", "file": "step07-test-result.png", "caption": "测试结果 Sheet + 汇报页" }
+      "acceptance": {
+        "title": "造表落库，全量验收",
+        "caption": "以钉钉表承载预期与实测，验收结论建立在完整数据之上。",
+        "beforeTitle": "传统抽查",
+        "afterTitle": "造表全量验收",
+        "before": ["人工造数", "样本有限", "结论难服众", "边界 case 易漏"],
+        "after": ["批量造数落表", "全量 pass/fail", "可复现可汇报", "边界 case 可构造"]
       }
-    ]
+    }
   },
-  "implementation": {
-    "title": "三、实现原理与工具平台",
-    "lead": "底层由 Workflow 编排多模块能力，钉钉 Workbook 作为人机协作载体，工具平台提供能力发现与一键执行入口。",
-    "architecture": {
-      "layers": [
+  "workflows": {
+    "lead": "复杂活动数据测试可抽象为统一骨架，榜单类与抽奖类共享「参数 → 数据源 → 造数 → 验收」，按活动类型扩展中间环节。",
+    "principle": {
+      "title": "核心原理",
+      "lead": "以规则为起点、以验收为终点，四步形成可重复执行的数据测试闭环。",
+      "steps": [
         {
-          "name": "编排层",
-          "items": ["Workflow 工作流", "Playbook 标准流程", "参数化复跑"]
+          "order": 1,
+          "title": "确定活动规则",
+          "description": "汇聚 MSE 配置、需求文档、测试用例与人工经验，形成统一的计值与发奖规则。"
         },
         {
-          "name": "能力层",
-          "items": ["MSE 配置", "Admin 后台", "MOA 造数/验收", "钉钉 Excel 读写"]
+          "order": 2,
+          "title": "录制工具能力",
+          "description": "在智能工具平台沉淀造数、查数、改参与验收操作，转化为可参数化调用的 Workflow。"
         },
         {
-          "name": "产出层",
-          "items": ["钉钉 Workbook", "JSON 摘要", "HTML 汇报页"]
-        }
-      ],
-      "flow": "Agent / workflow_execute.py → MOA 脚本 + dingtalk_gateway → 钉钉表 → 验收 JSON → 本汇报页"
-    },
-    "platform": {
-      "title": "工具平台能力",
-      "catalogUrl": "http://127.0.0.1:18765/catalog.html",
-      "catalogHint": "python3 platform/open_catalog.py",
-      "modules": [
-        {
-          "name": "工作流",
-          "role": "八步 family-pk-config-* 工作流登记与参数化执行",
-          "entry": "python3 workflow/workflow_execute.py run <workflowId>"
+          "order": 3,
+          "title": "造数与预期测算",
+          "description": "批量写入测试数据，按规则计算预期结果，落库钉钉表供后续对照。"
         },
         {
-          "name": "MOA",
-          "role": "收礼榜、匹配、PK 值、结算发奖等测试接口",
-          "entry": "python3 MOA/moa_execute.py"
-        },
-        {
-          "name": "yaahlan后台",
-          "role": "全量家族列表、用户详情、大区过滤",
-          "entry": "python3 Admin/admin_execute.py"
-        },
-        {
-          "name": "MSE配置",
-          "role": "familyPkConfig 参数读取与同步",
-          "entry": "platform/dingtalk_gateway/mse_sync_to_workbook.py"
-        },
-        {
-          "name": "工具平台目录",
-          "role": "跨模块能力合并展示，提示语一键填入 Cursor 执行",
-          "entry": "python3 platform/open_catalog.py"
+          "order": 4,
+          "title": "对照验证",
+          "description": "获取实际结果，与 Sheet 预期逐条比对，输出通过/失败及汇总结论。"
         }
       ]
     },
-    "principles": [
-      {
-        "title": "Playbook 驱动",
-        "body": "workflow/config/registry.json 登记 family_pk_data_test，步骤、Sheet、重跑策略一处维护。"
-      },
-      {
-        "title": "Sheet 即验收面",
-        "body": "每步写入独立 Sheet，测试/开发/产品可在钉钉表直接下钻，无需翻日志。"
-      },
-      {
-        "title": "可局部重跑",
-        "body": "收礼榜或参数变更后重跑 3~6 步；仅重匹配后重跑 4~5 步，降低回归成本。"
-      },
-      {
-        "title": "结构化汇报",
-        "body": "第七步产出 JSON 摘要 + HTML，支撑向上汇报与跨部门同步。"
-      }
+    "platform": {
+      "title": "平台依赖 · 智能工具平台",
+      "tagline": "能力目录 + 组合工厂，让流程越搭越快",
+      "body": "工作流运行在智能工具平台之上：Admin、MOA、MSE、钉钉、Workflow 等能力统一登记、检索与执行。新工具接入后可快速衍生多种参数化用法；按场景组合升级后，再装配为覆盖造数到验收的完整流程。",
+      "layers": [
+        {
+          "name": "工具",
+          "description": "原子能力入库，一次登记、多处复用"
+        },
+        {
+          "name": "复杂工具",
+          "description": "多工具编排组合，形成可独立重跑的流程片段"
+        },
+        {
+          "name": "工作流",
+          "description": "片段串联装配，贯通参数同步到结果验收"
+        }
+      ]
+    },
+    "recording": {
+      "title": "工作流录制方法",
+      "lead": "输入工作流步骤、参数与落表字段后，平台按三步自动生成该步可执行方案：录制工作流脚本 → 匹配工具支持 → 展开平台实现。",
+      "process": [
+        {
+          "order": 1,
+          "title": "录制工作流",
+          "description": "用自然语言描述本步目标、前置条件、操作链路与验收口径，形成可落库的 Workflow 脚本。"
+        },
+        {
+          "order": 2,
+          "title": "提供工具支持",
+          "description": "从能力目录检索并列出本步依赖的工具；缺能力时提示需新登记的能力项。"
+        },
+        {
+          "order": 3,
+          "title": "生成平台实现",
+          "description": "将脚本拆解为 Admin / MOA / MSE / 钉钉等具体调用步骤，含参数映射与落表字段。"
+        }
+      ]
+    },
+    "ranking": {
+      "title": "数据测试流程",
+      "steps": [
+        { "order": 1, "title": "MSE 参数获取", "description": "同步活动配置至参数表，作为后续造数与验收基准。" },
+        { "order": 2, "title": "建立数据源", "description": "拉取并过滤家族、成员等主体，生成可批量操作的数据源。" },
+        { "order": 3, "title": "数据构造", "description": "按规则写入榜值与 PK 数据，同步测算档位与中间结果。", "branches": [
+          { "order": 4, "title": "客户端请求结果验证", "description": "对齐客户端接口拉取榜单与匹配结果，与 Sheet 预期逐项核对。" },
+          { "order": 5, "title": "奖励下发验收", "description": "触发结算发奖，核对应发与实发，形成总体验收结论。" }
+        ] }
+      ]
+    }
+  },
+  "demos": {
+    "ranking": {
+      "title": "榜单类活动演示 · 家族 PK",
+      "pkDate": "2026-07-17",
+      "playbook": "family_pk_data_test",
+      "workbookUrl": "https://alidocs.dingtalk.com/i/nodes/amweZ92PV6v2dzZzCMdMw5yKVxEKBD6p",
+      "workbookLabel": "2026-07-12家族PK数据测试",
+      "status": "已落地",
+      "introSections": [
+        {
+          "title": "活动规则",
+          "summary": "每段规则对应一张 Sheet 与一类 App 展示，测试时要逐项对齐。",
+          "variant": "rules",
+          "points": [
+            {
+              "label": "收礼日",
+              "text": "rankDate（通常 pkDate 前一天）按家族汇总成员收礼排出榜单，再划入 S/A/B 等档位，确定各档奖池规模与返利系数。这是后续配对与奖池测算的唯一输入。"
+            },
+            {
+              "label": "PK 日",
+              "text": "pkDate 将同档位家族两两配对（如 A 族 vs B 族），不跨档。需核对每族只出现一次，并与客户端对战列表同源比对；匹配错则后续全部失效。"
+            },
+            {
+              "label": "对战期",
+              "text": "成员累计 PK，家族总 PK 定胜负，贡献占比定个人分钻。须过「有效 PK」「可获奖 PK」两道门槛；需刻意构造平局、个人未达标等边界。"
+            },
+            {
+              "label": "结算",
+              "text": "按奖池 × 胜负 × 贡献批量发钻。表格应发、账户实发、App 贡献榜三处逐人交叉核对，不一致需能回溯到档位 / 配对 / 门槛 / 贡献。"
+            }
+          ]
+        },
+        {
+          "title": "测试难点",
+          "summary": "流程化之前，手工测法在四件事上最吃力。",
+          "variant": "pain",
+          "points": [
+            {
+              "label": "造数规模",
+              "text": "76 家族、400+ 成员需逐族逐人操作，收礼榜、PK、配对难整批复现；改 pkDate 或单点参数常需整轮重来，一轮数天。"
+            },
+            {
+              "label": "手算易错",
+              "text": "双时间轴叠加分档、配对与多层门槛，预期钻靠 Excel 手算，极易漏项、算错或理解偏差，撑不住 400+ 行核对。"
+            },
+            {
+              "label": "覆盖不足",
+              "text": "只能抽查少量账号与对战，无法逐人对账三源数据；未上榜、同分、平局、未达标等边界多靠经验，结论难服众。"
+            },
+            {
+              "label": "回归成本高",
+              "text": "规则或参数微调后，手工建数、手算、查钻、读屏几乎全量重来，难以快速多轮验证与定位问题。"
+            }
+          ]
+        }
+      ]
+    },
+    "lottery": {
+      "title": "抽奖类活动演示 · 砸金蛋",
+      "demoPrompt": "手机号13311111141-13311111143的账号进行砸金蛋测试，每次给账号随机增加1到15次砸蛋次数，进行10组",
+      "playbook": "anniversary_egg_data_test",
+      "workbookUrl": "https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz",
+      "workbookLabel": "3周年砸金蛋测试记录",
+      "status": "已落地",
+      "introSections": [
+        {
+          "title": "活动规则",
+          "summary": "3 周年砸金蛋：用户在房间内自送礼物获次，消耗次数砸房间金蛋抽奖，金蛋可升级，并叠加用户/房间/平台神秘保底。",
+          "variant": "rules",
+          "points": [
+            {
+              "label": "获次",
+              "text": "活动期间在房间内自己送指定礼物累计获砸蛋次数：每满一定钻石（通常 500 钻）兑换 1 次，与砸蛋本身消耗的钻无关；另有每日免费次数。"
+            },
+            {
+              "label": "砸蛋",
+              "text": "在自己房间消耗次数砸金蛋：剩余次数大于单次上限时一次砸满（常见 10 个），否则一次砸完剩余。房间金蛋分三档，累计砸蛋达升级门槛则升档；高档金蛋长时间无人砸会按时掉级。"
+            },
+            {
+              "label": "保底",
+              "text": "除各等级普通奖池外，用户、房间、平台三个维度各自累计砸蛋次数；达到各自保底间隔时触发神秘奖励。同一次砸多颗蛋时，多维度保底按用户 > 房间 > 平台优先级结算，未消耗的可顺延。"
+            },
+            {
+              "label": "奖品",
+              "text": "单次砸蛋从对应等级奖池抽取，可开出钻石、会员经验、头像框、座驾、房主背景等；三档金蛋与免费次数各绑不同奖池。部分装扮有效天数由奖池或装扮配置决定。"
+            }
+          ]
+        },
+        {
+          "title": "测试难点",
+          "summary": "抽奖类活动的手工测试瓶颈集中在概率、保底与到账三处。",
+          "variant": "pain",
+          "points": [
+            {
+              "label": "概率难验",
+              "text": "奖池权重与多奖池组合下，小样本无法代表分布；需批量砸蛋落表后再统计权重偏差。"
+            },
+            {
+              "label": "保底计数",
+              "text": "用户/房间/平台三套 mod 并行，神秘奖触发点易算错或漏验；须与 MOA 计数和表格累加列交叉核对。"
+            },
+            {
+              "label": "多账号批量",
+              "text": "获次、补钻、进房、砸蛋链路长，手工逐号操作效率低且难复现同一前置状态。"
+            },
+            {
+              "label": "到账核对",
+              "text": "同一批 smash 可能同时发钻、VIP、装扮，应发与实发需分类型对照，纯读屏或抽查不可靠。"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "summary": {
+    "lead": "复杂活动数据造表测试的核心价值与后续方向。",
+    "points": [
+      "榜单类、抽奖类共享「参数 → 数据源 → 造数 → 验收」骨架，按类型扩展验收环节",
+      "钉钉表作为人机协作与 pass/fail 视图，支撑全量数据验收",
+      "Workflow + 智能工具平台降低跨活动复用与向上汇报成本"
     ]
   }
 }

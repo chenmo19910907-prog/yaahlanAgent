@@ -52,12 +52,19 @@ from anniversary_egg_smash_to_workbook import (  # noqa: E402
     expected_vip_exp_delta_from_smash,
     format_mystery_cell,
     load_activity_rules,
+    load_lottery_pools,
+    lottery_id_for_egg_level,
     normalize_room_smash_lifetime,
     pending_mystery_labels,
     record_to_row,
+    resolve_egg_level_at_smash,
     resolve_egg_level_label,
     theory_mystery_result,
     _reward_summary,
+)
+from moa.anniversary_egg_assets import (  # noqa: E402
+    build_smash_asset_verify_payload,
+    snapshot_user_assets,
 )
 from moa.anniversary_egg import (  # noqa: E402
     expected_batch_from_remain,
@@ -304,9 +311,11 @@ def evaluate_case(
         except (TypeError, ValueError):
             plat_before_i = None
 
-    expected_level = resolve_egg_level_label(
-        room_smash_lifetime=myst_room_after if myst_a else room_after,
-        egg_level=smash.get("eggLevel"),
+    expected_level = resolve_egg_level_at_smash(
+        smash,
+        batch=actual_smash,
+        myst_room_before=myst_room_before if myst_b else None,
+        egg_room_smash_before=int(smash.get("roomEggSmashBefore") or 0) if not myst_b else None,
         rules=rules,
     )
     if pending_in is not None:
@@ -350,6 +359,7 @@ def evaluate_case(
         rules=rules,
     )
     tier = _reward_summary(smash.get("rewards") or smash.get("prizes") or [])
+    tier_rewards = smash.get("rewards") or smash.get("prizes") or []
 
     acceptance = evaluate_acceptance_verdict(
         theory_tags=tags,
@@ -357,6 +367,9 @@ def evaluate_case(
         tier_cell=tier,
         batch=actual_smash,
         egg_level=expected_level,
+        tier_rewards=tier_rewards if isinstance(tier_rewards, list) else None,
+        rules=rules,
+        lottery_pools=load_lottery_pools(),
         expected_batch=expected_smash,
         room_before=myst_room_before,
         room_after=myst_room_after,
@@ -396,7 +409,10 @@ def evaluate_case(
         {
             "item": "金蛋等级礼物",
             "pass": acceptance["tierOk"],
-            "expected": f"{expected_level}档次奖励非空",
+            "expected": (
+                f"{expected_level}档次奖励非空且落在奖池 lotteryId="
+                f"{lottery_id_for_egg_level(expected_level, rules=rules) or '?'} 配置内"
+            ),
             "actual": tier or "(空)",
         },
     ]
@@ -548,6 +564,7 @@ def run_one(
 
     diamond_before = query_diamond_balance(user_id)
     vip_before = query_vip_exp(user_id)
+    assets_before = snapshot_user_assets(user_id, smash_room)
     smash = smash_egg_once(user_id=user_id, room_id=smash_room, lang="en")
     # 轻量归一 prizes→rewards
     if smash.get("rewards") is None and isinstance(smash.get("prizes"), list):
@@ -570,35 +587,33 @@ def run_one(
         file=sys.stderr,
     )
 
-    expected_diamond = expected_diamond_delta_from_smash(smash)
-    expected_vip = expected_vip_exp_delta_from_smash(smash)
-    diamond_after = query_balance_after_credit(
-        user_id,
-        before=diamond_before,
-        expected_delta=expected_diamond,
-        query_fn=query_diamond_balance,
+    asset_verify = build_smash_asset_verify_payload(
+        user_id=user_id,
+        room_id=smash_room,
+        smash=smash,
+        diamond_before=diamond_before,
+        vip_before=vip_before,
+        assets_before=assets_before,
     )
-    vip_after = query_balance_after_credit(
-        user_id,
-        before=vip_before,
-        expected_delta=expected_vip,
-        query_fn=query_vip_exp,
-    )
-    diamond_check = evaluate_diamond_credit(
-        before=diamond_before,
-        after=diamond_after,
-        expected=expected_diamond,
-    )
-    vip_check = evaluate_diamond_credit(
-        before=vip_before,
-        after=vip_after,
-        expected=expected_vip,
-    )
+    asset_payload = asset_verify["payload"]
+    diamond_check = asset_verify["diamond"]
+    vip_check = asset_verify["vipExp"]
+    backpack_check = asset_verify["backpack"]
+    prop_check = asset_verify["prop"]
+    voucher_check = asset_verify["voucher"]
     print(
-        f"  diamond expected={expected_diamond} "
-        f"{diamond_before}→{diamond_after} delta={diamond_check.get('actualDelta')} | "
-        f"vip expected={expected_vip} "
-        f"{vip_before}→{vip_after} delta={vip_check.get('actualDelta')}",
+        f"  diamond expected={asset_payload.get('expectedDiamond')} "
+        f"{asset_payload.get('diamondBefore')}→{asset_payload.get('diamondAfter')} "
+        f"delta={diamond_check.get('actualDelta')} | "
+        f"vip expected={asset_payload.get('expectedVipExp')} "
+        f"{asset_payload.get('vipExpBefore')}→{asset_payload.get('vipExpAfter')} "
+        f"delta={vip_check.get('actualDelta')} | "
+        f"backpack expected={asset_payload.get('expectedBackpack')} "
+        f"delta={backpack_check.get('actualDelta')} | "
+        f"prop expected={asset_payload.get('expectedProp')} "
+        f"delta={prop_check.get('actualDelta')} | "
+        f"voucher expected={asset_payload.get('expectedVoucher')} "
+        f"delta={voucher_check.get('actualDelta')}",
         file=sys.stderr,
     )
 
@@ -623,14 +638,7 @@ def run_one(
         "targetChances": target,
         "gainedChances": gift_info["gainedChances"],
         "topUpDiamonds": gift_info["topUpDiamonds"],
-        "diamondBefore": diamond_check.get("balanceBefore"),
-        "diamondAfter": diamond_check.get("balanceAfter"),
-        "expectedDiamond": diamond_check.get("expectedDelta"),
-        "actualDiamondDelta": diamond_check.get("actualDelta"),
-        "vipExpBefore": vip_check.get("balanceBefore"),
-        "vipExpAfter": vip_check.get("balanceAfter"),
-        "expectedVipExp": vip_check.get("expectedDelta"),
-        "actualVipExpDelta": vip_check.get("actualDelta"),
+        **asset_payload,
         **eval_out,
     }
     row_smash = record_to_row(
@@ -654,6 +662,10 @@ def run_one(
         "eval": eval_out,
         "diamond": diamond_check,
         "vipExp": vip_check,
+        "backpack": backpack_check,
+        "prop": prop_check,
+        "voucher": voucher_check,
+        "assetsBefore": assets_before,
         "verdict": combined_verdict,
         "pendingPlatform": pp,
     }

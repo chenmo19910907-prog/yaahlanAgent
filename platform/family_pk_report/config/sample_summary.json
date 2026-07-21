@@ -1,0 +1,57 @@
+{
+  "pkDate": "2026-07-02",
+  "rankDate": "2026-07-01",
+  "userId": "100486375",
+  "executedAt": "2026-07-02 18:30:00",
+  "overall": "通过",
+  "workbookTitle": "2026-07-02家族PK数据测试",
+  "workbookUrl": "https://alidocs.dingtalk.com/i/nodes/demo-family-pk-workbook",
+  "sheetName": "测试结果",
+  "demo": true,
+  "param": {
+    "ok": true,
+    "total": 12,
+    "pass": 12,
+    "fail": 0,
+    "note": "MSE familyPkConfig 全量同步"
+  },
+  "families": {
+    "ok": true,
+    "families": 72,
+    "members": 418,
+    "total": 72,
+    "pass": 72,
+    "fail": 0,
+    "note": "Admin 全量家族，已过滤非 MENA 族长"
+  },
+  "tier": {
+    "ok": true,
+    "total": 72,
+    "pass": 72,
+    "fail": 0,
+    "note": "收礼榜造数 + 档位测算"
+  },
+  "match": {
+    "ok": true,
+    "total": 36,
+    "pass": 36,
+    "fail": 0,
+    "note": "同区间匹配 36 组全部通过"
+  },
+  "reward": {
+    "member_rows": 418,
+    "expected_total": 1250000,
+    "note": "成员 PK 应发钻测算完成"
+  },
+  "dispatch": {
+    "ok": true,
+    "total": 418,
+    "pass": 418,
+    "fail": 0,
+    "expected_total": 1250000,
+    "mismatches": []
+  },
+  "contribPass": 72,
+  "contribFail": 0,
+  "mismatchCount": 0
+}

@@ -387,6 +387,15 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
         if export_mode
         else "由 platform/scripts/generate_catalog.py 自动生成"
     )
+    prompt_composer_html = "" if export_mode else """
+      <section class="prompt-composer" id="promptComposer">
+        <div class="prompt-composer-head">
+          <h2>输入提示语</h2>
+          <button type="button" class="prompt-composer-run" id="promptComposerRun" title="填入 Cursor 输入框">执行</button>
+        </div>
+        <textarea class="prompt-composer-input" id="promptInput" placeholder="从演示页跳转或手动输入提示语…"></textarea>
+      </section>
+    """
 
     if export_mode:
         cursor_bridge_js = ""
@@ -407,6 +416,7 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
         copyPromptLine(copyBtn);
       }
 """
+        composer_init_js = ""
     else:
         cursor_bridge_js = """
     const CURSOR_PROMPT_DEEPLINK = 'cursor://anysphere.cursor-deeplink/prompt';
@@ -445,6 +455,18 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
       if (!line) return;
       sendToCursor(assemblePromptLine(line));
     }
+
+    function applyIncomingPrompt() {
+      const params = new URLSearchParams(window.location.search);
+      const prompt = params.get('prompt');
+      if (!prompt) return;
+      const input = document.getElementById('promptInput');
+      if (!input) return;
+      input.value = prompt;
+      input.focus();
+      const composer = document.getElementById('promptComposer');
+      if (composer) composer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 """
         prompt_action_js = ""
         env_check_handler_js = """
@@ -456,6 +478,21 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
         e.preventDefault();
         runPromptLine(runBtn);
       }
+"""
+        composer_init_js = """
+    const promptInput = document.getElementById('promptInput');
+    const promptComposerRun = document.getElementById('promptComposerRun');
+    if (promptInput && promptComposerRun) {
+      promptComposerRun.addEventListener('click', () => {
+        const text = promptInput.value.trim();
+        if (!text) {
+          promptInput.focus();
+          return;
+        }
+        sendToCursor(text);
+      });
+    }
+    applyIncomingPrompt();
 """
 
     return f"""<!DOCTYPE html>
@@ -670,6 +707,34 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
       border: 1px solid #fde68a; border-radius: 8px; font-size: 0.82rem; color: #92400e;
     }}
     .playbook-notes ul {{ margin: 4px 0 0; padding-left: 1.2rem; }}
+    .prompt-composer {{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px 16px;
+      margin-bottom: 14px;
+    }}
+    .prompt-composer-head {{
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      margin-bottom: 10px;
+    }}
+    .prompt-composer-head h2 {{
+      margin: 0; font-size: 0.98rem; font-weight: 700; color: var(--text);
+    }}
+    .prompt-composer-run {{
+      border: 0; border-radius: 8px; background: var(--accent); color: #fff;
+      font-size: 0.88rem; font-weight: 700; padding: 8px 14px; cursor: pointer;
+    }}
+    .prompt-composer-run:hover {{ background: #1d4ed8; }}
+    .prompt-composer-input {{
+      width: 100%; min-height: 88px; resize: vertical;
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 12px; font-size: 0.92rem; line-height: 1.55;
+      font-family: inherit; color: var(--text); background: #fff;
+    }}
+    .prompt-composer-input:focus {{
+      outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }}
   </style>
 </head>
 <body>
@@ -685,7 +750,10 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
       <input class="search" id="search" type="search" placeholder="搜索能力名、分类、提示语…" autocomplete="off" />
       <div class="module-nav" id="moduleNav"></div>
     </aside>
-    <main id="main"></main>
+    <main id="main">
+      {prompt_composer_html}
+      <div id="catalogBody"></div>
+    </main>
   </div>
   <footer>{footer_text}</footer>
   <script id="catalog-data" type="application/json">{payload_safe}</script>
@@ -884,7 +952,8 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
 
     function render() {{
       const q = query.trim().toLowerCase();
-      const main = document.getElementById('main');
+      const main = document.getElementById('catalogBody');
+      if (!main) return;
       main.innerHTML = '';
       let any = false;
 
@@ -988,6 +1057,7 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
 
     renderNav();
     render();
+{composer_init_js}
   </script>
 </body>
 </html>

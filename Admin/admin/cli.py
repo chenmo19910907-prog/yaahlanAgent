@@ -9,6 +9,7 @@ import subprocess
 import sys
 import urllib.parse
 
+from .activity import parse_query_lottery_list_summary
 from .app_store_review import (
     parse_app_store_review_version_summary,
     parse_update_app_store_review_version_summary,
@@ -302,6 +303,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--cs-area", help="大区 area（默认空=全部）")
     parser.add_argument("--cs-page-index", type=int, help="客服查询页码 pageIndex（默认 1）")
     parser.add_argument("--cs-page-size", type=int, help="客服查询 pageSize（默认 20）")
+    parser.add_argument(
+        "--query-activity-lottery-list",
+        action="store_true",
+        help="查询活动奖池配置列表（getLotteryList；body={}；可按 --lottery-id / --lottery-name 筛选）",
+    )
+    parser.add_argument("--lottery-id", help="奖池 ID lotteryId（配合 --query-activity-lottery-list）")
+    parser.add_argument(
+        "--lottery-name",
+        help="奖池名称模糊筛选（配合 --query-activity-lottery-list，如 砸金蛋、Year3）",
+    )
     parser.add_argument(
         "--query-app-store-review-version",
         action="store_true",
@@ -776,6 +787,14 @@ def _resolve_save_cs_data_request(args: argparse.Namespace) -> tuple[str, dict[s
     return url, body
 
 
+def _resolve_query_activity_lottery_list_request(args: argparse.Namespace) -> tuple[str, dict[str, object]]:
+    cfg = defaults("query_activity_lottery_list")
+    base_url = _resolve_gateway_base_url(cfg)
+    path = str(cfg.get("path", "/yaahlan/cms/activity/getLotteryList"))
+    url = f"{base_url}{path}"
+    return url, {}
+
+
 def _resolve_change_cs_taking_order_request(args: argparse.Namespace) -> tuple[str, dict[str, object]]:
     user_id = str(args.cs_user_id or "").strip()
     if not user_id:
@@ -1147,6 +1166,12 @@ def main() -> int:
                 print(f"POST {url}", file=sys.stderr)
                 print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
             resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
+        elif args.query_activity_lottery_list:
+            url, body = _resolve_query_activity_lottery_list_request(args)
+            if args.dump_body:
+                print(f"POST {url}", file=sys.stderr)
+                print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
+            resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
         elif args.query_app_store_review_version:
             url, body = _resolve_query_app_store_review_version_request(args)
             if args.dump_body:
@@ -1310,6 +1335,17 @@ def main() -> int:
             return 3
         summary = parse_query_cs_data_summary(resp.get("data"))
         print(json.dumps(summary, ensure_ascii=False, indent=2))
+    elif args.query_activity_lottery_list:
+        if not anchor_success(resp):
+            print(f"活动奖池接口返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
+            print(json.dumps(resp, ensure_ascii=False, indent=2))
+            return 3
+        summary = parse_query_lottery_list_summary(
+            resp.get("data"),
+            lottery_id=str(args.lottery_id or "").strip() or None,
+            lottery_name=str(args.lottery_name or "").strip() or None,
+        )
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
     elif args.save_cs_data:
         cfg = defaults("save_cs_data")
         default_roles = cfg.get("defaultRoleList")
@@ -1445,7 +1481,7 @@ def main() -> int:
         if not gateway_success(resp.get("status")):
             print(f"Gateway 返回失败: status={resp.get('status')}, msg={resp.get('msg')}", file=sys.stderr)
             return 3
-    elif args.add_guild_member or args.remove_guild_member or args.change_guild_member or args.query_guild or args.query_cs_data or args.save_cs_data or args.change_cs_taking_order:
+    elif args.add_guild_member or args.remove_guild_member or args.change_guild_member or args.query_guild or args.query_cs_data or args.save_cs_data or args.change_cs_taking_order or args.query_activity_lottery_list:
         if not anchor_success(resp):
             print(f"公会接口返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
             return 3

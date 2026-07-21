@@ -104,7 +104,7 @@
       "id": "query_prop_info",
       "name": "道具-查询配置列表",
       "category": "道具（mdp-nova / propAdmin）",
-      "description": "查询 Yaahlan 全量装扮/道具后台配置（propAdmin/queryPropInfo；可按 propId、propName、propTypeCode 筛选；与 MOA queryOwnPropList 互补：本接口查配置，MOA 查用户拥有）",
+      "description": "查询 Yaahlan 装扮/道具后台配置（POST propAdmin/queryPropInfo；body 含 appId/propId 等；按 propId 精确查如 30003666）。与 MOA queryOwnPropList 互补：本接口查配置，MOA 查用户拥有。鉴权：Admin/.env.local 的 MDP_AEGIS_TOKEN、CLOUD-AEGIS-TOKEN。",
       "prompts": [
         "查询道具配置列表",
         "查道具 propId <propId> 信息",
@@ -299,6 +299,19 @@
         "客服 <userId> 开始接单"
       ],
       "command": "python3 Admin/admin_execute.py \\\n  --change-cs-taking-order \\\n  --cs-user-id <userId> \\\n  --cs-taking-order 0"
+    },
+    {
+      "id": "query_activity_lottery_list",
+      "name": "活动-查询奖池配置列表",
+      "category": "活动（melon-gateway / cms/activity）",
+      "description": "查询后台全部奖池及奖品配置（getLotteryList；body={}；返回 id/name/lotteryList，含 rate、limit、type、奖品 id）。可按 lotteryId 或名称筛选，对照 MSE activityConfig.Year3Anniversary 奖池 lotteryId",
+      "prompts": [
+        "查询活动奖池配置列表",
+        "查奖池 lotteryId <lotteryId> 的奖励配置",
+        "getLotteryList 奖池 <lotteryId>",
+        "三周年砸金蛋奖池 lotteryId <lotteryId> 配置"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-activity-lottery-list --lottery-id <lotteryId>"
     },
     {
       "id": "query_app_store_review_version",

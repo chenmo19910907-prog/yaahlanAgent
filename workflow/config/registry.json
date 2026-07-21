@@ -215,6 +215,111 @@
         "第五步仅测算应得钻石写入「用户发钻测试」",
         "第六步发奖后 MOA 贡献榜验收回写「用户发钻测试」榜单列，并写入「发钻实发验收」"
       ]
+    },
+    {
+      "id": "anniversary_egg_data_test",
+      "title": "3周年砸金蛋数据测试（六步总览）",
+      "category": "3周年活动",
+      "summary": "MSE 金蛋配置 → 账号获次 → 批量砸蛋落表 → 概率保底验收 → 奖品到账验收 → 测试结果汇总。",
+      "defaults": {
+        "workbookUrl": "https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz",
+        "userId": "100486375",
+        "smashCount": "1",
+        "timeoutMs": "60000"
+      },
+      "sheets": [
+        { "name": "金蛋活动配置", "content": "MSE activityConfig.Year3Anniversary：奖池、权重、神秘保底、蛋等级" },
+        { "name": "砸金蛋测试记录", "content": "每次 smashEgg 一行：次数、蛋级、奖品、房/用/平计数、验收 verdict" },
+        { "name": "测试结果", "content": "各步样本数、通过数、失败数与总评" }
+      ],
+      "steps": [
+        {
+          "order": 0,
+          "workflowId": "anniversary-egg-smash-record",
+          "sheet": "（新建整表）",
+          "note": "新测试可用 --create-workbook 在测试目录新建独立表格",
+          "operations": [
+            "anniversary_egg_smash_record.py --create-workbook --parent-folder <nodeId>",
+            "预建 Sheet：金蛋活动配置、砸金蛋测试记录",
+            "输出 workbookUrl 供后续步骤使用"
+          ]
+        },
+        {
+          "order": 1,
+          "workflowId": "anniversary-egg-mse-to-workbook",
+          "sheet": "金蛋活动配置",
+          "note": "MSE Application/activityConfig.Year3Anniversary → 金蛋活动配置",
+          "operations": [
+            "MSE 拉取 activityConfig.Year3Anniversary",
+            "解析 storeLotteryId、userGuaranteeMod、roomGuaranteeMod、蛋升级门槛",
+            "写入钉钉 Sheet「金蛋活动配置」"
+          ]
+        },
+        {
+          "order": 2,
+          "workflowId": "batch-anchor-egg-chances",
+          "sheet": "砸金蛋测试记录",
+          "note": "主播/手机号账号自送获次，钻石不足补钻",
+          "operations": [
+            "batch_anchor_egg_chances 或 multi_account 前置：解析 userId/房间",
+            "自送 giftIds 礼物随机获次 1~15",
+            "MOA getEggHome 确认剩余次数"
+          ]
+        },
+        {
+          "order": 3,
+          "workflowId": "anniversary-egg-smash-record",
+          "sheet": "砸金蛋测试记录",
+          "note": "smashEgg 逐次 append；多账号可用 multi_account_verify",
+          "operations": [
+            "MOA smashEgg(userId, roomId) 默认自己的房间",
+            "testGetMysteryCount 写入房/用/平计数",
+            "append 至 Sheet「砸金蛋测试记录」"
+          ]
+        },
+        {
+          "order": 4,
+          "workflowId": "anniversary-egg-multi-account-verify",
+          "sheet": "砸金蛋测试记录",
+          "note": "对照配置验收权重、神秘保底 mod、蛋等级",
+          "operations": [
+            "读 Sheet「金蛋活动配置」奖池与保底 mod",
+            "evaluate_acceptance_verdict 写验收列",
+            "mystery_count 辅助核对保底触发"
+          ]
+        },
+        {
+          "order": 5,
+          "workflowId": "anniversary-egg-direct-smash-diamond-verify",
+          "sheet": "砸金蛋测试记录",
+          "note": "应发钻/VIP/装扮 vs 账户实发增量",
+          "operations": [
+            "发奖前后查钻、查 VIP 经验",
+            "evaluate_diamond_credit 写到账列",
+            "更新 verdict"
+          ]
+        },
+        {
+          "order": 6,
+          "workflowId": "anniversary-egg-test-result",
+          "sheet": "测试结果",
+          "note": "汇总六步验收结论（演示页 / 手工汇总）",
+          "operations": [
+            "统计各步样本与 pass/fail",
+            "写入 Sheet「测试结果」",
+            "刷新 family_pk_report 抽奖演示"
+          ]
+        }
+      ],
+      "prompts": [
+        "执行3周年砸金蛋数据测试 userId=<userId>",
+        "测试3周年砸金蛋，第 1 步 · MSE 配置同步入表"
+      ],
+      "notes": [
+        "勿与家族 PK 表混用；默认独立表 jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz",
+        "新测试可用 --create-workbook 新建表格",
+        "批量场景优先 anniversary_egg_multi_account_verify.py"
+      ]
     }
   ],
   "items": [

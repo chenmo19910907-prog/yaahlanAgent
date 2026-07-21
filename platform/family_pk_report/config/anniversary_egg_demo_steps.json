@@ -1,0 +1,139 @@
+[
+  {
+    "order": 1,
+    "frameworkStep": 1,
+    "frameworkLabel": "MSE 参数获取",
+    "title": "MSE 配置同步入表",
+    "sheet": "金蛋活动配置",
+    "toolSupport": "提供金蛋活动配置地址：Application / activityConfig.Year3Anniversary",
+    "workflowRecord": {
+      "name": "3周年砸金蛋-MSE配置同步钉钉表",
+      "script": "从 MSE 服务配置获取金蛋活动最新的配置，把详细配置整理成表格到钉钉文档，支持重新获取更新参数。\n从开发后台获取每个奖池的数据，整理到钉钉文档，支持重新获取参数。",
+      "prompts": []
+    },
+    "toolUsage": [
+      { "tool": "MSE 配置读取", "action": "拉取 Application / activityConfig.Year3Anniversary，解析奖池 lotteryId、保底 mod、蛋升级门槛" },
+      { "tool": "钉钉 Sheet 写入", "action": "写入 Sheet「金蛋活动配置」，含基础参数、奖池权重与装扮映射" }
+    ],
+    "media": {
+      "type": "image",
+      "file": "lottery-step01-mse-config.svg",
+      "caption": "Sheet「金蛋活动配置」全量参数"
+    }
+  },
+  {
+    "order": 2,
+    "frameworkStep": 2,
+    "frameworkLabel": "建立数据源",
+    "title": "测试账号与机会准备",
+    "sheet": "砸金蛋测试记录",
+    "toolSupport": [],
+    "workflowRecord": {
+      "name": "砸金蛋-主播批量获次",
+      "script": "根据给定的账号及房间（未给定房间默认自己的房间），每次通过自送指定礼物方式获得指定砸蛋次数，钻石不足时自动补钻。",
+      "prompts": []
+    },
+    "toolUsage": [
+      { "tool": "Admin / CMS", "action": "拉主播账号或按手机号解析 userId、房间 ID" },
+      { "tool": "测试环境送礼", "action": "自送 giftIds 礼物获次，随机 1~15 次/账号" },
+      { "tool": "MOA getEggHome", "action": "回读剩余砸蛋次数，确认账号就绪" }
+    ],
+    "media": {
+      "type": "image",
+      "file": "lottery-step02-chances.svg",
+      "caption": "多账号剩余次数与补钻状态"
+    }
+  },
+  {
+    "order": 3,
+    "frameworkStep": 3,
+    "frameworkLabel": "数据构造",
+    "title": "批量砸蛋造数入表",
+    "sheet": "砸金蛋测试记录",
+    "toolSupport": "砸蛋操作MOA，需要返回砸蛋数量、获得奖励、金蛋等级信息\n用户、房间、平台砸蛋次数查询MOA",
+    "workflowRecord": {
+      "name": "3周年砸金蛋-造数并记录",
+      "script": "砸蛋前记录账号房间信息，获取用户、房间、平台三个维度当前砸蛋次数，砸蛋时返回实砸次数，并重新获取三个维度砸蛋次数，判断增加量正确。",
+      "prompts": []
+    },
+    "toolUsage": [
+      { "tool": "MOA smashEgg", "action": "默认自己的房间；本次砸蛋次数以返回值 / 剩余差值为准" },
+      { "tool": "MOA testGetMysteryCount", "action": "读取用户/房间/平台砸蛋计数，写入表格" },
+      { "tool": "钉钉 Sheet 追加", "action": "逐次 append 至 Sheet「砸金蛋测试记录」" }
+    ],
+    "media": {
+      "type": "image",
+      "file": "lottery-step03-batch-smash.svg",
+      "caption": "Sheet「砸金蛋测试记录」批量造数"
+    }
+  },
+  {
+    "order": 4,
+    "frameworkStep": 4,
+    "frameworkLabel": "奖励下发验收",
+    "title": "奖池概率与保底验收",
+    "sheet": "砸金蛋测试记录",
+    "toolSupport": [],
+    "workflowRecord": {
+      "name": "砸金蛋-概率与保底验收",
+      "script": "根据服务配置和金蛋等级判断保底触发时机和等级对应奖池，验证保底时机和金蛋奖池正确。",
+      "prompts": []
+    },
+    "toolUsage": [
+      { "tool": "配置规则读取", "action": "读 Sheet「金蛋活动配置」奖池权重与保底 mod" },
+      { "tool": "MOA testGetMysteryCount", "action": "核对神秘保底触发是否与 mod 对齐" },
+      { "tool": "验收引擎", "action": "evaluate_acceptance_verdict 写入表格验收列" }
+    ],
+    "media": {
+      "type": "image",
+      "file": "lottery-step04-pool-verify.svg",
+      "caption": "权重分布 · 神秘保底 mod 验收"
+    }
+  },
+  {
+    "order": 5,
+    "frameworkStep": 4,
+    "frameworkLabel": "奖励下发验收",
+    "title": "奖品下发验收入表",
+    "sheet": "砸金蛋测试记录",
+    "toolSupport": "录制兑换券数量查询方式",
+    "workflowRecord": {
+      "name": "砸金蛋-钻/VIP/装扮到账验收",
+      "script": "砸蛋前获取当前装扮、背包、钻石、VIP经验值、兑换券数量，砸蛋后验证奖励下发正确。",
+      "prompts": []
+    },
+    "toolUsage": [
+      { "tool": "MOA 查钻 / 查 VIP", "action": "发奖前后批量查余额与经验" },
+      { "tool": "应发测算", "action": "从 smash 返回解析 expected_diamond_delta / VIP / 装扮" },
+      { "tool": "钉钉 Sheet 回写", "action": "更新到账验收与 verdict 列" }
+    ],
+    "media": {
+      "type": "image",
+      "file": "lottery-step05-reward-verify.svg",
+      "caption": "应得钻 vs 实发增量逐条核对"
+    }
+  },
+  {
+    "order": 6,
+    "frameworkStep": 4,
+    "frameworkLabel": "奖励下发验收",
+    "title": "测试结果汇总入表",
+    "sheet": "测试结果",
+    "toolSupport": [],
+    "workflowRecord": {
+      "name": "砸金蛋-测试结果汇总",
+      "script": "把砸蛋结果逐次写入钉钉文档，全部完成后输出全部测试结果的测试报告。",
+      "prompts": []
+    },
+    "toolUsage": [
+      { "tool": "钉钉 Sheet 读取", "action": "读取金蛋活动配置与砸金蛋测试记录验收列" },
+      { "tool": "验收结论结构化", "action": "统计每步样本数、通过数、失败数与总评" },
+      { "tool": "汇报页生成", "action": "同步刷新 family_pk_report 抽奖演示 Tab" }
+    ],
+    "media": {
+      "type": "image",
+      "file": "lottery-step06-test-result.svg",
+      "caption": "Sheet「测试结果」汇总"
+    }
+  }
+]

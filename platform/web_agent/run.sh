@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
-# 用 dingtalk_gateway venv 启动 Web Agent（含 cursor-sdk / httpx）
+# 用仓库 venv 启动 Web Agent（含 cursor-sdk / httpx）
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
-VENV="$DIR/../dingtalk_gateway/.venv/bin/python3"
-exec "$VENV" "$DIR/server.py" "${1:---serve}" "${@:2}"
+REPO_ROOT="$(cd "$DIR/../.." && pwd)"
+for CAND in \
+  "$REPO_ROOT/.venv/bin/python3" \
+  "$DIR/../dingtalk_gateway/.venv/bin/python3"; do
+  if [[ -x "$CAND" ]]; then
+    exec "$CAND" "$DIR/server.py" "${1:---serve}" "${@:2}"
+  fi
+done
+exec python3 "$DIR/server.py" "${1:---serve}" "${@:2}"

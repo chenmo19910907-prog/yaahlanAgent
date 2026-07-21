@@ -36,9 +36,9 @@ def main() -> int:
     )
     parser.add_argument(
         "--type",
-        default="1",
+        default="2",
         dest="type_flag",
-        help='testGetMysteryCount 第一参，默认 "1"',
+        help='testGetMysteryCount 第一参，默认 "2"（累加验收）；质量平台对照用 "1"',
     )
     parser.add_argument(
         "--batch",
