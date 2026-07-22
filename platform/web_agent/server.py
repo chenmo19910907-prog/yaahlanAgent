@@ -28,16 +28,34 @@ PLATFORM_DIR = WEB_AGENT_DIR.parent
 REPO_ROOT = PLATFORM_DIR.parent
 
 
+def _python_can_import_cursor_sdk(python: Path) -> bool:
+    try:
+        proc = subprocess.run(
+            [str(python), "-c", "import cursor_sdk"],
+            capture_output=True,
+            timeout=5,
+            check=False,
+        )
+        return proc.returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
 def _resolve_python_executable() -> str:
-    """优先仓库 .venv，避免系统 python 缺 cursor-sdk 导致 Bridge 启动失败。"""
+    """优先已安装 cursor-sdk 的 venv，避免子进程 import 失败立即退出。"""
     candidates = (
         REPO_ROOT / ".venv" / "bin" / "python3",
         PLATFORM_DIR / "dingtalk_gateway" / ".venv" / "bin" / "python3",
     )
+    fallback: str | None = None
     for path in candidates:
-        if path.is_file() and os.access(path, os.X_OK):
-            return str(path)
-    return sys.executable
+        if not path.is_file() or not os.access(path, os.X_OK):
+            continue
+        resolved = str(path)
+        if _python_can_import_cursor_sdk(path):
+            return resolved
+        fallback = fallback or resolved
+    return fallback or sys.executable
 GATEWAY_DIR = PLATFORM_DIR / "dingtalk_gateway"
 SCRIPTS_DIR = PLATFORM_DIR / "scripts"
 
@@ -713,6 +731,9 @@ def ensure_server(host: str | None = None, port: int | None = None, wait_s: floa
     if is_port_open(check_host, use_port):
         return use_host, use_port
 
+    log_path = WEB_AGENT_DIR / "data" / "server.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_fp = open(log_path, "a", encoding="utf-8")
     proc = subprocess.Popen(
         [
             _resolve_python_executable(),
@@ -724,8 +745,8 @@ def ensure_server(host: str | None = None, port: int | None = None, wait_s: floa
             str(use_port),
         ],
         cwd=str(REPO_ROOT),
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        stdout=log_fp,
+        stderr=subprocess.STDOUT,
         start_new_session=True,
     )
 

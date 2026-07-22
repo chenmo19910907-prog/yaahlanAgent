@@ -316,7 +316,7 @@
       min-width: 0;
       animation: message-rise 360ms var(--ease-spring) both;
     }
-    .msg.user { align-self: flex-end; max-width: min(78%, var(--content-width)); }
+    .msg.user { align-self: flex-end; max-width: min(78%, var(--content-width)); min-width: 0; }
     .msg.assistant { align-self: center; }
     .msg-label {
       font-size: 0.72rem; color: var(--muted); margin-bottom: 8px;
@@ -328,6 +328,10 @@
       box-shadow: 0 18px 50px rgba(0,0,0,0.18);
       transform: translateY(0);
       transition: transform 220ms var(--ease-standard), border-color 220ms var(--ease-standard), box-shadow 220ms var(--ease-standard), background 220ms var(--ease-standard);
+      min-width: 0;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .msg.assistant .msg-body:hover,
     .msg.user .msg-body:hover {
@@ -347,12 +351,20 @@
     .msg-body pre {
       background: rgba(8,10,15,0.92); padding: 12px; border-radius: 10px; overflow-x: auto;
       font-size: 0.82rem; margin: 10px 0; border: 1px solid rgba(148,163,184,0.12);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
-    .msg-body code { background: #0a0c10; padding: 2px 5px; border-radius: 4px; font-size: 0.85em; }
+    .msg-body code { background: #0a0c10; padding: 2px 5px; border-radius: 4px; font-size: 0.85em; overflow-wrap: anywhere; word-break: break-word; }
     .msg-body pre code { background: none; padding: 0; }
     .msg-body table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 0.85rem; }
     .msg-body th, .msg-body td { border: 1px solid var(--border); padding: 6px 10px; }
     .msg-body th { background: rgba(255,255,255,0.05); color: var(--text); }
+    .msg-body .markdown-body {
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
     .msg-body .markdown-body > :first-child { margin-top: 0; }
     .msg-body .markdown-body > :last-child { margin-bottom: 0; }
     .msg-body .markdown-body p { margin: 0.55em 0; }
