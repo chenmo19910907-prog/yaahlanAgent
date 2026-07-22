@@ -736,7 +736,7 @@
   <script>
     const API = '';
     let currentSessionId = localStorage.getItem('web_agent_session') || '';
-    /** @type {Map<string, { eventSource: EventSource, runId: string, cancelling?: boolean, status: { ack: string, batch: string, elapsed: string }, shellEl: HTMLElement | null }>} */
+    /** @type {Map<string, { eventSource: EventSource, runId: string, cancelling?: boolean, status: { ack: string, batch: string, elapsed: string }, shellEl: HTMLElement | null, sentDraft?: { text: string, images: typeof pendingImages } }>} */
     const activeRuns = new Map();
     let meta = {};
     let catalogPanel = null;
@@ -1041,16 +1041,52 @@
       if (clearBtn) clearBtn.disabled = currentSessionReadOnly || busy || !currentSessionId;
     }
 
-    function showInterruptedReply(sessionId) {
-      if (currentSessionId !== sessionId) return;
+    function findActiveAssistantShell(sessionId) {
       const run = activeRuns.get(sessionId);
-      let shell = run?.shellEl;
-      if (!shell) {
-        shell = ensureStreamingShell(sessionId);
-        if (run) run.shellEl = shell;
-      }
+      if (run?.shellEl?.isConnected) return run.shellEl;
+      const msgs = document.getElementById('messages');
+      const shells = msgs?.querySelectorAll('.msg.assistant') || [];
+      return shells.length ? shells[shells.length - 1] : null;
+    }
+
+    function showInterruptedReply(sessionId, text) {
+      if (currentSessionId !== sessionId) return;
+      const body = text || '⚠️ 任务已中断。';
+      let shell = findActiveAssistantShell(sessionId);
+      if (!shell) shell = ensureStreamingShell(sessionId);
+      const run = activeRuns.get(sessionId);
+      if (run) run.shellEl = shell;
       clearRunStatus(sessionId);
-      shell.querySelector('.msg-body').innerHTML = renderMarkdown('⚠️ 任务已中断。');
+      shell.querySelector('.msg-body').innerHTML = renderMarkdown(body);
+    }
+
+    function shouldRestoreSentDraft(run, doneText) {
+      if (!run?.sentDraft) return false;
+      if (run.cancelling) return true;
+      const text = (doneText || '').trim();
+      return text.startsWith('⚠️ 任务已中断');
+    }
+
+    function restoreSentDraft(sessionId) {
+      if (currentSessionId !== sessionId || currentSessionReadOnly) return;
+      const draft = activeRuns.get(sessionId)?.sentDraft;
+      if (!draft) return;
+      const input = document.getElementById('input');
+      if (!input || input.readOnly) return;
+      input.value = draft.text || '';
+      autoResizeInput();
+      if (draft.images?.length) {
+        pendingImages = draft.images.map(item => ({
+          id: item.id,
+          name: item.name,
+          mime: item.mime,
+          previewUrl: item.previewUrl,
+          data_base64: item.data_base64,
+        }));
+        renderPendingImages();
+      }
+      updateInputState();
+      input.focus();
     }
 
     async function cancelCurrentRun() {
@@ -1068,8 +1104,10 @@
             session_id: sessionId,
           }),
         });
-        showInterruptedReply(sessionId);
+        restoreSentDraft(sessionId);
         if (run.pending) {
+          // 尚未建立 SSE：cancel 事件无人消费，需本地占位
+          showInterruptedReply(sessionId);
           finishRun(sessionId);
           return;
         }
@@ -1080,6 +1118,7 @@
             if (!pending?.cancelling) return;
             pending.eventSource?.close();
             showInterruptedReply(sessionId);
+            restoreSentDraft(sessionId);
             finishRun(sessionId);
           }, 5000);
         }
@@ -1278,6 +1317,16 @@
 
       const sessionId = currentSessionId;
       const previewImages = pendingImages.map(item => item.previewUrl);
+      const sentDraft = {
+        text: message,
+        images: pendingImages.map(item => ({
+          id: item.id,
+          name: item.name,
+          mime: item.mime,
+          previewUrl: item.previewUrl,
+          data_base64: item.data_base64,
+        })),
+      };
       document.getElementById('input').value = '';
       autoResizeInput();
       clearPendingImages();
@@ -1289,6 +1338,7 @@
         cancelling: false,
         status: { ack: '', batch: '', elapsed: '' },
         shellEl: null,
+        sentDraft,
       });
       updateInputState();
 
@@ -1318,6 +1368,7 @@
             cancelling: existing.cancelling,
             status: existing.status,
             shellEl: existing.shellEl,
+            sentDraft: existing.sentDraft,
           });
           updateInputState();
           loadSessions();
@@ -1342,8 +1393,12 @@
               assistantEl.querySelector('.msg-body').innerHTML = renderMarkdown(data.markdown || '');
               document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
             } else if (data.type === 'done') {
-              if (activeRuns.get(sessionId)?.cancelWatchdog) {
-                clearTimeout(activeRuns.get(sessionId).cancelWatchdog);
+              const doneRun = activeRuns.get(sessionId);
+              if (doneRun?.cancelWatchdog) {
+                clearTimeout(doneRun.cancelWatchdog);
+              }
+              if (shouldRestoreSentDraft(doneRun, data.text)) {
+                restoreSentDraft(sessionId);
               }
               if (isViewing()) {
                 if (!assistantEl) {
@@ -1393,6 +1448,7 @@
         const run = activeRuns.get(sessionId);
         if (!run) return;
         if (run.eventSource) run.eventSource.close();
+        if (shouldRestoreSentDraft(run)) restoreSentDraft(sessionId);
         finishRun(sessionId);
       }
     }

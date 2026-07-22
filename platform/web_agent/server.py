@@ -166,6 +166,8 @@ class ActiveRun:
     error: str | None = None
     task_session: TaskSession = field(default_factory=TaskSession)
     cancel_notified: bool = False
+    started_at: float = 0.0
+    task_kind: str = ""
     _notify_lock: threading.Lock = field(default_factory=threading.Lock)
 
 
@@ -212,6 +214,9 @@ INTERRUPT_REPLY = "⚠️ 任务已中断。"
 def _notify_run_interrupted(run: ActiveRun, text: str) -> bool:
     """立即推送 SSE 结束事件，避免前端一直等待 worker。"""
     body = (text or INTERRUPT_REPLY).strip() or INTERRUPT_REPLY
+    if run.started_at > 0:
+        elapsed = max(0.0, time.monotonic() - run.started_at)
+        body = append_duration_footer(body, elapsed, task_kind=run.task_kind)
     with run._notify_lock:
         if run.cancel_notified:
             return False
@@ -337,6 +342,8 @@ def _start_chat_run(
         )
     clear_batch_progress(user_key)
     started_at = time.monotonic()
+    run.started_at = started_at
+    run.task_kind = task_kind
     progress_stop = threading.Event()
     _start_run_progress_watcher(
         run,
@@ -377,8 +384,10 @@ def _start_chat_run(
                 task_kind=task_kind,
             )
             store.append_message(session_id, "assistant", run.final_text)
-            if not run.cancel_notified:
-                run.events.put({"type": "done", "text": run.final_text})
+            with run._notify_lock:
+                if not run.cancel_notified:
+                    run.cancel_notified = True
+                    run.events.put({"type": "done", "text": run.final_text})
             status = "interrupted"
         except Exception as exc:  # noqa: BLE001
             elapsed = time.monotonic() - started_at
