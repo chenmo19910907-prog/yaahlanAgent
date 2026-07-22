@@ -74,7 +74,7 @@
     },
     "platform": {
       "title": "平台依赖 · 智能工具平台",
-      "tagline": "能力目录 + 组合工厂，让流程越搭越快",
+      "tagline": "是工具平台，更是工具工厂，让流程越搭越快",
       "body": "工作流运行在智能工具平台之上：Admin、MOA、MSE、钉钉、Workflow 等能力统一登记、检索与执行。新工具接入后可快速衍生多种参数化用法；按场景组合升级后，再装配为覆盖造数到验收的完整流程。",
       "layers": [
         {
@@ -93,6 +93,7 @@
     },
     "recording": {
       "title": "工作流录制方法",
+      "parallelFirst": 2,
       "lead": "输入工作流步骤、参数与落表字段后，平台按三步自动生成该步可执行方案：录制工作流脚本 → 匹配工具支持 → 展开平台实现。",
       "process": [
         {
@@ -114,10 +115,11 @@
     },
     "ranking": {
       "title": "数据测试流程",
+      "flowGroupAfter": 2,
       "steps": [
         { "order": 1, "title": "MSE 参数获取", "description": "同步活动配置至参数表，作为后续造数与验收基准。" },
         { "order": 2, "title": "建立数据源", "description": "拉取并过滤家族、成员等主体，生成可批量操作的数据源。" },
-        { "order": 3, "title": "数据构造", "description": "按规则写入榜值与 PK 数据，同步测算档位与中间结果。", "branches": [
+        { "order": 3, "title": "数据构造", "description": "按规则写入榜值，同步测算档位与中间结果。", "branches": [
           { "order": 4, "title": "客户端请求结果验证", "description": "对齐客户端接口拉取榜单与匹配结果，与 Sheet 预期逐项核对。" },
           { "order": 5, "title": "奖励下发验收", "description": "触发结算发奖，核对应发与实发，形成总体验收结论。" }
         ] }

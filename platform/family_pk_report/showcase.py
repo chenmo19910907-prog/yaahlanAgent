@@ -429,24 +429,29 @@ def _render_flow_parallel_branches(
     *,
     index_prefix: str = "",
     featured_names: set[str] | None = None,
+    show_branch_arrow: bool = True,
 ) -> str:
     rows: list[str] = []
     for branch in sorted(branches, key=lambda s: int(s.get("order") or 0)):
         order = int(branch.get("order") or 0)
+        arrow_html = (
+            '<div class="flow-arrow" aria-hidden="true">→</div>' if show_branch_arrow else ""
+        )
         rows.append(
             f"""<div class="flow-parallel-branch">
-              <div class="flow-arrow" aria-hidden="true">→</div>
+              {arrow_html}
               {_render_flow_step_card(branch, index_prefix=index_prefix, featured_names=featured_names, fallback_order=order)}
             </div>"""
         )
     return f'<div class="flow-parallel">{"".join(rows)}</div>'
 
 
-def _render_flow_track(
+def _render_flow_segment(
     steps: list[dict[str, Any]],
     *,
     index_prefix: str = "",
     featured_names: set[str] | None = None,
+    attach_branches_on_last: bool = True,
 ) -> str:
     parts: list[str] = []
     ordered = sorted(steps, key=lambda s: int(s.get("order") or 0))
@@ -464,16 +469,71 @@ def _render_flow_track(
                 fallback_order=order,
             )
         )
-        branches = step.get("branches")
-        if isinstance(branches, list) and branches:
-            parts.append(
-                _render_flow_parallel_branches(
-                    branches,
-                    index_prefix=index_prefix,
-                    featured_names=featured_names,
+        if attach_branches_on_last and i == len(ordered) - 1:
+            branches = step.get("branches")
+            if isinstance(branches, list) and branches:
+                parts.append(
+                    _render_flow_parallel_branches(
+                        branches,
+                        index_prefix=index_prefix,
+                        featured_names=featured_names,
+                    )
                 )
-            )
-    return f'<div class="flow-track">{"".join(parts)}</div>'
+    return "".join(parts)
+
+
+def _render_flow_parallel_lead(
+    steps: list[dict[str, Any]],
+    *,
+    index_prefix: str = "",
+    featured_names: set[str] | None = None,
+) -> str:
+    if len(steps) < 2:
+        return _render_flow_segment(
+            steps,
+            index_prefix=index_prefix,
+            featured_names=featured_names,
+            attach_branches_on_last=False,
+        )
+    return (
+        f'<div class="flow-parallel-lead">'
+        f"{_render_flow_parallel_branches(steps, index_prefix=index_prefix, featured_names=featured_names, show_branch_arrow=False)}"
+        f"</div>"
+    )
+
+
+def _render_flow_track(
+    steps: list[dict[str, Any]],
+    *,
+    index_prefix: str = "",
+    featured_names: set[str] | None = None,
+    group_after: int | None = None,
+    parallel_first: int | None = None,
+) -> str:
+    ordered = sorted(steps, key=lambda s: int(s.get("order") or 0))
+    if group_after and len(ordered) > group_after:
+        first_group = ordered[:group_after]
+        second_group = ordered[group_after:]
+        first_html = _render_flow_segment(
+            first_group,
+            index_prefix=index_prefix,
+            featured_names=featured_names,
+            attach_branches_on_last=False,
+        )
+        return f"""<div class="flow-track flow-track-grouped">
+      <div class="flow-group">{first_html}</div>
+      <div class="flow-arrow flow-arrow-outer" aria-hidden="true">→</div>
+      <div class="flow-group">{_render_flow_segment(second_group, index_prefix=index_prefix, featured_names=featured_names, attach_branches_on_last=True)}</div>
+    </div>"""
+    if parallel_first and len(ordered) > parallel_first:
+        lead_steps = ordered[:parallel_first]
+        rest_steps = ordered[parallel_first:]
+        return f"""<div class="flow-track">
+      {_render_flow_parallel_lead(lead_steps, index_prefix=index_prefix, featured_names=featured_names)}
+      <div class="flow-arrow" aria-hidden="true">→</div>
+      {_render_flow_segment(rest_steps, index_prefix=index_prefix, featured_names=featured_names)}
+    </div>"""
+    return f'<div class="flow-track">{_render_flow_segment(ordered, index_prefix=index_prefix, featured_names=featured_names)}</div>'
 
 
 def _render_sub_panel_head(title: str, badge: str = "") -> str:
@@ -485,10 +545,12 @@ def _render_workflow_framework_block(block: dict[str, Any], *, block_cls: str) -
     if not block:
         return ""
     badge = "流程" if block_cls == "ranking" else "抽奖"
+    group_after = block.get("flowGroupAfter")
+    group_after_int = int(group_after) if isinstance(group_after, int) and group_after > 0 else None
     return f"""
     <div class="sub-panel {_esc(block_cls)}">
       {_render_sub_panel_head(str(block.get("title") or ""), badge)}
-      {_render_flow_track(block.get("steps") or [], index_prefix="S")}
+      {_render_flow_track(block.get("steps") or [], index_prefix="S", group_after=group_after_int)}
     </div>
     """
 
@@ -538,7 +600,15 @@ def _render_workflow_recording(recording: dict[str, Any]) -> str:
     process_steps = recording.get("process") or []
     process_html = ""
     if process_steps:
-        process_html = _render_flow_track(process_steps, featured_names={"生成平台实现"})
+        parallel_first = recording.get("parallelFirst")
+        parallel_first_int = (
+            int(parallel_first) if isinstance(parallel_first, int) and parallel_first > 1 else None
+        )
+        process_html = _render_flow_track(
+            process_steps,
+            featured_names={"生成平台实现"},
+            parallel_first=parallel_first_int,
+        )
 
     return f"""
     <div class="sub-panel recording">
