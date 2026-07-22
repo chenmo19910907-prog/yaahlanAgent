@@ -20,7 +20,7 @@ enter_moment_follow_tab:
 open_moment_publish_editor:
   - tap: [0.93, 0.072]
     afterSleep: 2000
-  - waitFor: 已进入动态发布编辑页，可见文字输入区与添加媒体入口
+  - waitFor: 已进入动态发布编辑页，可见 "Post" 按钮、文字输入区和 "+ Add Voice" 按钮
 
 reset_moment_discover_ready:
   - adb: input keyevent KEYCODE_BACK

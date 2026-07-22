@@ -136,7 +136,7 @@ function buildHtml(testModule, cases, timestamp, platformLabel = 'Android') {
     const imgs = (tc.screenshots ?? [])
       .map(
         (img) =>
-          `<img src="data:image/png;base64,${img.base64}"/>`,
+          `<img class="screenshot-thumb" src="data:image/png;base64,${img.base64}" alt="截图" loading="lazy"/>`,
       )
       .join('');
 
@@ -206,7 +206,17 @@ body { font-family: -apple-system, "SF Pro", "PingFang SC", "Helvetica Neue", sa
 .expects-section .step-list li::before { background: #66BB6A; }
 
 .screenshots { margin-top: 16px; display: flex; gap: 10px; overflow-x: auto; padding: 8px 0; }
-.screenshots img { height: 360px; border-radius: 8px; border: 1px solid #eee; flex-shrink: 0; }
+.screenshots img { height: 360px; border-radius: 8px; border: 1px solid #eee; flex-shrink: 0; cursor: zoom-in; transition: transform 0.15s, box-shadow 0.15s; }
+.screenshots img:hover { transform: scale(1.02); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+
+.lightbox { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+.lightbox.hidden { display: none; }
+.lightbox-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.85); cursor: zoom-out; }
+.lightbox-panel { position: relative; z-index: 1; max-width: calc(100vw - 48px); max-height: calc(100vh - 48px); display: flex; flex-direction: column; align-items: center; }
+.lightbox-panel img { max-width: 100%; max-height: calc(100vh - 96px); object-fit: contain; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+.lightbox-close { position: fixed; top: 16px; right: 20px; z-index: 2; width: 40px; height: 40px; border: none; border-radius: 50%; background: rgba(255,255,255,0.15); color: #fff; font-size: 24px; line-height: 1; cursor: pointer; }
+.lightbox-close:hover { background: rgba(255,255,255,0.25); }
+.lightbox-hint { margin-top: 12px; color: rgba(255,255,255,0.6); font-size: 12px; }
 
 .footer { text-align: center; margin-top: 32px; font-size: 12px; color: #aaa; }
 </style>
@@ -225,6 +235,47 @@ body { font-family: -apple-system, "SF Pro", "PingFang SC", "Helvetica Neue", sa
 </div>
 ${cards}
 <div class="footer">Intent Test Report · Auto Generated</div>
+<div id="lightbox" class="lightbox hidden" aria-hidden="true">
+  <div class="lightbox-backdrop" data-lightbox-close></div>
+  <button class="lightbox-close" type="button" aria-label="关闭" data-lightbox-close>&times;</button>
+  <div class="lightbox-panel">
+    <img id="lightbox-img" src="" alt="截图预览"/>
+    <div class="lightbox-hint">点击背景或按 Esc 关闭</div>
+  </div>
+</div>
+<script>
+(function () {
+  var lightbox = document.getElementById('lightbox');
+  var lightboxImg = document.getElementById('lightbox-img');
+  if (!lightbox || !lightboxImg) return;
+
+  function openLightbox(src) {
+    lightboxImg.src = src;
+    lightbox.classList.remove('hidden');
+    lightbox.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    lightbox.classList.add('hidden');
+    lightbox.setAttribute('aria-hidden', 'true');
+    lightboxImg.src = '';
+    document.body.style.overflow = '';
+  }
+
+  document.querySelectorAll('.screenshot-thumb').forEach(function (img) {
+    img.addEventListener('click', function () { openLightbox(img.src); });
+  });
+
+  lightbox.querySelectorAll('[data-lightbox-close]').forEach(function (el) {
+    el.addEventListener('click', closeLightbox);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !lightbox.classList.contains('hidden')) closeLightbox();
+  });
+})();
+</script>
 </body>
 </html>`;
 }

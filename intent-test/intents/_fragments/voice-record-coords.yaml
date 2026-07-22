@@ -1,0 +1,37 @@
+# 录制弹窗关键按钮 ADB 坐标（2026-07-22 uiautomator 校准）
+# 设备: 47130DLAQ012BU 分辨率 1080×2424
+# 弹窗为底部半屏，高度随状态变化（录制中/停止后弹窗更高）
+#
+# 校准数据:
+#   Record title:    center=(540,1513) ratio=[0.500,0.624] (stopped state)
+#   Tap to Play:     center=(540,1715) ratio=[0.500,0.708]
+#   Voice bar (5s):  center=(575,1846) ratio=[0.532,0.762]
+#   Re-record:       center=(290,2088) ratio=[0.269,0.861]
+#   Use:             center=(790,2088) ratio=[0.731,0.861]
+#   Close/Back:      center=(73,1513)  ratio=[0.068,0.624]
+#   Record btn(init): ~center=(540,1903) ratio=[0.500,0.785]
+
+# 录制按钮（大圆形紫色按钮）— 开始/停止录制
+tap_record_btn:
+  - tap: [0.50, 0.785]
+    afterSleep: 1500
+
+# "Re-record" 按钮（停止后左侧深灰色按钮）
+tap_re_record:
+  - tap: [0.269, 0.861]
+    afterSleep: 2000
+
+# "Use" 按钮（停止后右侧紫色渐变按钮）
+tap_use:
+  - tap: [0.731, 0.861]
+    afterSleep: 2000
+
+# 语音条 / "Tap to Play" 区域
+tap_voice_bar_play:
+  - tap: [0.50, 0.708]
+    afterSleep: 1500
+
+# 弹窗左上角 "<" 返回箭头
+tap_record_back:
+  - tap: [0.068, 0.624]
+    afterSleep: 1500

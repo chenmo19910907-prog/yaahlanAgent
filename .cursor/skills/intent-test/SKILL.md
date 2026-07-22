@@ -313,6 +313,74 @@ intent YAML → compile-intent.mjs → .generated/*.midscene.yaml → midscene-r
 
 此策略大幅减少执行时间（省去每条约 5-6s 的冷启动等待），通过 `INTENT_SKIP_RELAUNCH` 环境变量自动控制，无需手动配置。
 
+## 自动调试模式（默认开启）
+
+`config/base-profile.yaml` 中 `intent.autoDebug: true` 时，**所有模块**跑批时自动启用（voice-record 验证沉淀）：
+
+| 能力 | 环境变量 | 行为 |
+|------|----------|------|
+| 失败继续 | `INTENT_CONTINUE=1` | 单条失败不中断，跑完全部再汇总 |
+| setup 重试 | `INTENT_SETUP_RETRY=1` | setup/导航失败或 replan 超限时，**强制冷启动 App 重跑 1 次** |
+| 断言 auto-fix | `INTENT_AUTO_FIX=1` | 跑完后分析 Midscene Reason，自动修正 YAML 中可识别的断言措辞 |
+| 聚合报告 | （内置） | 每条 case 结束生成卡片报告，截图可点击查看大图 |
+
+关闭：`intent.autoDebug: false` 或分别设 `setupRetry: false` / `autoFix: false`。
+
+### Agent / 人工调试规则（必须）
+
+1. **case 失败直接改 YAML**，不要停下来问用户（坐标、断言、步骤、skip）
+2. **优先稳定手段**：弹窗内固定按钮用 `tap: [x%, y%]`；位置不固定的用 `act`；时长用 `sleep` 不用「录制约 X 秒」
+3. **断言只用正面描述**：写「可见 Post 按钮」，不写「Record 弹窗不再可见」（AI 易误判）
+4. **禁止动态视觉断言**：不写「图标变化」「波纹动画」「播放进度变化」
+5. **弹窗场景**加 `skipPopupDismiss: true`，避免全局 dismiss 干扰
+6. **坐标校准**：uiautomator dump 取 bounds → 换算 `[cx/W, cy/H]`，沉淀到 `_fragments/*-coords.yaml`
+7. **产品行为变更**：确认后直接改 case 或 `skip: true` + `skipReason`，不要保留过时流程（如已废弃的确认弹窗）
+
+### setup 重试触发条件
+
+`runners/auto-fix-assertions.mjs` 识别以下失败为可重试：
+- Reason 含 Discover/发现页、未到编辑页、不存在 Post/Record/弹窗等
+- Midscene replan 超限（`Replanned N times`）
+- XML 解析错误（flaky）
+
+重试流程：`失败 → 强制 INTENT_SKIP_RELAUNCH=0 重新编译 → 冷启动重跑 1 次`
+
+### Case 编写模板（稳定弹窗/录制类）
+
+```yaml
+setup:
+  launchApp: true
+  skipPopupDismiss: true          # 弹窗内操作必加
+  include:
+    - moments-navigation/open_moment_publish_editor
+  steps:
+    - act: 点击 "+ Add Voice" 按钮   # 位置不固定 → AI
+    - waitFor: 出现 Record 弹窗，可见 "Tap to Record"
+    - tap: [0.50, 0.785]           # 弹窗内固定按钮 → 坐标
+      afterSleep: 500
+    - sleep: 4000                   # 精确控时长
+    - tap: [0.50, 0.785]
+      afterSleep: 2000
+
+intent:
+  action: 观察停止录制后的界面
+  expected:
+    - 可见 "Re-record" 和 "Use" 按钮文字   # 正面文字断言
+```
+
+### 推荐执行命令
+
+```bash
+# 按模块跑（自动调试模式默认开启）
+npm run intent:module -- 语音动态-录制弹窗
+
+# 单条调试
+npm run intent -- --id IT-MOM-VOICE-PUB-009
+
+# 临时关闭 auto-fix / setup 重试
+INTENT_AUTO_FIX=0 INTENT_SETUP_RETRY=0 npm run intent -- intents/xxx.yaml
+```
+
 ## 超时控制
 
 每条用例默认 **5 分钟**超时限制（`CASE_TIMEOUT_MS` 环境变量，毫秒）。超时后进程被 SIGTERM 中断，自动继续下一条用例。聚合报告中超时用例以**橙色"超时"**标签标注。

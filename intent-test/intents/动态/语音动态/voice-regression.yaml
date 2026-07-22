@@ -1,6 +1,7 @@
 # 语音条动态 · PRD: 支持发布带语音条的动态（Yaahlan-2.5.7）
 # 对照: documents/moments/basic module.md
 # 排除: 屏幕适配、多语言/RTL、纯后端逻辑、安装/升级路径
+# 真机 UI 基准: 2026-07-21 截图校准（英文 UI）
 
 # ╔══════════════════════════════════════════════════════════╗
 # ║  模块 8：回归 — 动态基础功能不受语音条影响                 ║
@@ -21,10 +22,10 @@ setup:
     - moments-navigation/open_moment_publish_editor
   steps:
     - act: 输入一段纯文字（regression test text only）
-    - waitFor: 文字已展示，发布按钮可点击
+    - waitFor: 文字已展示，"Post" 按钮可点击
 
 intent:
-  action: 不添加任何语音/图片/视频，直接点击发布
+  action: 不添加任何语音/图片/视频，直接点击右上角 "Post" 按钮
   expected:
     - 纯文字动态发布成功
     - 跳转我的动态页可见刚发布内容
@@ -49,7 +50,7 @@ setup:
     - waitFor: 图片已添加到编辑页
 
 intent:
-  action: 不添加语音条，直接点击发布
+  action: 不添加语音条，直接点击右上角 "Post" 按钮
   expected:
     - 纯图片动态发布成功
     - 我的动态可见图片

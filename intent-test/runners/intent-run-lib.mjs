@@ -15,6 +15,7 @@ import {
 import { applyBaseProfileEnv, applyPlatformProfileEnv } from './load-base-profile.mjs';
 import { ensureIntentData } from './ensure-intent-data.mjs';
 import { generateReport } from './generate-report.mjs';
+import { autoFixAfterRun, isRetryableFailure } from './auto-fix-assertions.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const COMPILE = resolve(ROOT, 'runners/compile-intent.mjs');
@@ -23,6 +24,7 @@ const TUNNEL_VERIFY = resolve(ROOT, 'runners/tunnel-verify.py');
 const REPORT_DIR = resolve(ROOT, '../midscene/midscene_run/report');
 const RUNS_DIR = resolve(ROOT, '.generated/runs');
 const CASE_TIMEOUT_MS = Number(process.env.CASE_TIMEOUT_MS ?? 5 * 60 * 1000);
+const SETUP_RETRY_ENABLED = process.env.INTENT_SETUP_RETRY !== '0';
 
 export function loadCatalog() {
   const path = resolve(ROOT, 'intents/catalog.json');
@@ -90,7 +92,6 @@ function reportDirName(id, platform, useSuffix) {
  * 返回 true 表示已在主界面可跳过重启，false 表示需要重启。
  */
 function trySmartReset() {
-  const pkg = process.env.ANDROID_APP_ID ?? 'com.immomo.biz.yaahlan';
   const deviceId = process.env.ADB_DEVICE_ID || process.env.ANDROID_DEVICE_ID;
   const adbPrefix = deviceId ? `adb -s ${deviceId}` : 'adb';
   const w = Number(process.env.DEVICE_WIDTH ?? 1080);
@@ -99,29 +100,35 @@ function trySmartReset() {
   const backY = Math.round(h * 0.04);
 
   function isOnMainScreen() {
-    const check = spawnSync('sh', ['-c',
-      `${adbPrefix} shell dumpsys activity activities | grep topResumedActivity`,
+    spawnSync('sh', ['-c',
+      `${adbPrefix} shell uiautomator dump /sdcard/ui_check.xml`,
+    ], { stdio: 'ignore' });
+    const pull = spawnSync('sh', ['-c',
+      `${adbPrefix} shell cat /sdcard/ui_check.xml`,
     ], { encoding: 'utf8' });
-    return (check.stdout ?? '').includes(pkg);
+    const xml = pull.stdout ?? '';
+    const tabs = ['Game', 'Room', 'Message', 'Moment'].filter(
+      (t) => xml.includes(`text="${t}"`),
+    );
+    return tabs.length >= 3;
   }
 
-  for (let i = 0; i < 2; i++) {
-    // 第 1 次用系统 back 键，第 2 次用左上角坐标点击
-    if (i === 0) {
+  for (let i = 0; i < 3; i++) {
+    if (i < 2) {
       spawnSync('sh', ['-c', `${adbPrefix} shell input keyevent KEYCODE_BACK`], { stdio: 'ignore' });
     } else {
       spawnSync('sh', ['-c', `${adbPrefix} shell input tap ${backX} ${backY}`], { stdio: 'ignore' });
     }
-    spawnSync('sh', ['-c', 'sleep 1.2'], { stdio: 'ignore' });
+    spawnSync('sh', ['-c', 'sleep 1.5'], { stdio: 'ignore' });
 
     if (isOnMainScreen()) {
-      const method = i === 0 ? '系统back' : '左上角tap';
-      console.log(`[intent-run] ↩ ${method} → 已在主界面，跳过重启`);
+      const method = i < 2 ? `系统back×${i + 1}` : '左上角tap';
+      console.log(`[intent-run] ↩ ${method} → 检测到底部导航栏，跳过重启`);
       return true;
     }
   }
 
-  console.log('[intent-run] ↩ 2次返回未回到主界面，将重启 App');
+  console.log('[intent-run] ↩ 3次返回未回到主界面（底部导航栏不可见），将重启 App');
   return false;
 }
 
@@ -195,6 +202,56 @@ function compileSources(sources, platform, filterByPlatform) {
   }
 }
 
+function forceRelaunchCompile(sources, platform, filterByPlatform) {
+  process.env.INTENT_SKIP_RELAUNCH = '0';
+  compileSources(sources, platform, filterByPlatform);
+}
+
+function isMidsceneTimeout(ui) {
+  return ui.error?.code === 'ETIMEDOUT' || ui.signal === 'SIGTERM';
+}
+
+/**
+ * 执行单条 UI case；setup/flaky 失败或 replan 超时时强制重启 App 重试一次
+ */
+function executeUiCase(run, platform, sources, filterByPlatform) {
+  let startTime = Math.floor(Date.now() / 1000) - 5;
+  let ui = runMidscene(run.yaml, platform);
+
+  const timedOut = isMidsceneTimeout(ui);
+  if (!timedOut && ui.status === 0) {
+    return { startTime, passed: true };
+  }
+
+  const shouldRetry = SETUP_RETRY_ENABLED
+    && platform === 'android'
+    && !run.setupRetried
+    && isRetryableFailure(run.id, { timedOut });
+
+  if (shouldRetry) {
+    console.log(
+      `[intent-run:${platform}] 🔄 ${run.id} ${timedOut ? '超时且疑似 replan' : '疑似 setup/flaky 失败'}，强制重启 App 重试...`,
+    );
+    forceRelaunchCompile(sources, platform, filterByPlatform);
+    run.setupRetried = true;
+    startTime = Math.floor(Date.now() / 1000) - 5;
+    ui = runMidscene(run.yaml, platform);
+
+    if (isMidsceneTimeout(ui)) {
+      return { startTime, passed: false, timedOut: true, setupRetried: true };
+    }
+    if (ui.status === 0) {
+      return { startTime, passed: true, setupRetried: true };
+    }
+    return { startTime, passed: false, setupRetried: true };
+  }
+
+  if (timedOut) {
+    return { startTime, passed: false, timedOut: true };
+  }
+  return { startTime, passed: false };
+}
+
 /**
  * @param {object} opts
  * @param {string} opts.platform android | ios
@@ -252,7 +309,7 @@ export function runIntentPlatform(opts) {
   }
 
   console.log(
-    `[intent-run:${platform}] 共 ${runs.length} 条（${platform}${skipTunnel ? '' : ' + Tunnel'}，超时 ${CASE_TIMEOUT_MS / 1000}s）`,
+    `[intent-run:${platform}] 共 ${runs.length} 条（${platform}${skipTunnel ? '' : ' + Tunnel'}，超时 ${CASE_TIMEOUT_MS / 1000}s${SETUP_RETRY_ENABLED ? '，setup 失败可重启重试' : ''}）`,
   );
 
   let failed = 0;
@@ -276,10 +333,10 @@ export function runIntentPlatform(opts) {
     }
     isFirstCase = false;
 
-    const startTime = Math.floor(Date.now() / 1000) - 5;
-    const ui = runMidscene(run.yaml, platform);
+    const outcome = executeUiCase(run, platform, sources, filterByPlatform);
+    const { startTime, passed, timedOut, setupRetried } = outcome;
 
-    if (ui.error?.code === 'ETIMEDOUT' || ui.signal === 'SIGTERM') {
+    if (timedOut) {
       failed += 1;
       failedIds.add(run.id);
       timedOutIds.add(run.id);
@@ -290,14 +347,18 @@ export function runIntentPlatform(opts) {
       continue;
     }
 
-    if (ui.status !== 0) {
+    if (!passed) {
       failed += 1;
       failedIds.add(run.id);
-      console.error(`[intent-run:${platform}] ✗ ${run.id} UI 失败`);
+      console.error(
+        `[intent-run:${platform}] ✗ ${run.id} UI 失败${setupRetried ? '（setup 重试仍失败）' : ''}`,
+      );
       if (!continueOnError) break;
       continue;
     }
-    console.log(`[intent-run:${platform}] ✓ ${run.id} UI 通过`);
+    console.log(
+      `[intent-run:${platform}] ✓ ${run.id} UI 通过${setupRetried ? '（setup 重试成功）' : ''}`,
+    );
 
     if (skipTunnel || !existsSync(run.tunnel)) {
       if (!skipTunnel && !existsSync(run.tunnel)) {
@@ -344,6 +405,14 @@ export function runIntentPlatform(opts) {
     console.log(`[intent-run:${platform}] 📊 聚合报告: ${reportPath}`);
   } catch (e) {
     console.error(`[intent-run:${platform}] 报告生成失败: ${e.message}`);
+  }
+
+  if (failed > 0 && process.env.INTENT_AUTO_FIX !== '0') {
+    try {
+      autoFixAfterRun(sources, results);
+    } catch (e) {
+      console.error(`[intent-run:${platform}] auto-fix 失败: ${e.message}`);
+    }
   }
 
   const exitCode = failed ? 1 : 0;

@@ -287,6 +287,16 @@ function compileOne(doc) {
       const pkg = process.env.ANDROID_APP_ID ?? 'com.immomo.biz.yaahlan';
       const yaha = process.env.ANDROID_FORCE_STOP_YAHA ?? 'com.immomo.yaha';
       const mode = process.env.ANDROID_LAUNCH_MODE ?? 'launcher';
+      const pin = process.env.DEVICE_UNLOCK_PIN ?? '';
+      flow.push({ runAdbShell: 'svc power stayon true' });
+      flow.push({ runAdbShell: 'input keyevent KEYCODE_WAKEUP' });
+      if (pin) {
+        flow.push({ sleep: 500 });
+        flow.push({ runAdbShell: `input swipe 540 1800 540 800 300` });
+        flow.push({ sleep: 1000 });
+        flow.push({ runAdbShell: `input text ${pin}` });
+        flow.push({ sleep: 2000 });
+      }
       flow.push({ runAdbShell: `am force-stop ${yaha}` });
       flow.push({ runAdbShell: `am force-stop ${pkg}` });
       flow.push({ sleep: 1000 });
@@ -298,7 +308,7 @@ function compileOne(doc) {
         const act = process.env.ANDROID_MAIN_ACTIVITY ?? '.personalityIcon4';
         flow.push({ launch: `${pkg}/${act}` });
       }
-      flow.push({ sleep: 4000 });
+      flow.push({ sleep: 6000 });
     }
   } else if (setup.launchApp && platform === 'ios') {
     flow.push({ launch: '${IOS_APP_ID}' }, { sleep: 3000 });
@@ -420,6 +430,10 @@ function parseIntentFile(filePath, opts = {}) {
     throw new Error(`未解析到意图文档: ${filePath}`);
   }
   const filtered = docs.filter((doc) => {
+    if (doc.skip) {
+      console.log(`[compile-intent] ⊘ ${doc.id ?? '?'} skip: ${doc.skipReason ?? 'true'}`);
+      return false;
+    }
     if (!platformFilter) return true;
     return String(doc.platform ?? 'android').toLowerCase() === platformFilter;
   });

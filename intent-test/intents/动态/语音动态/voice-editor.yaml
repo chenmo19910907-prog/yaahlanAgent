@@ -1,6 +1,7 @@
 # 语音条动态 · PRD: 支持发布带语音条的动态（Yaahlan-2.5.7）
 # 对照: documents/moments/basic module.md
 # 排除: 屏幕适配、多语言/RTL、纯后端逻辑、安装/升级路径
+# 真机 UI 基准: 2026-07-21 截图校准（英文 UI）
 
 # ╔════════════════════════════════════════════════════════╗
 # ║  模块 2：编辑页语音条 — 展示 → 操作 → 约束 → 波浪符号  ║
@@ -16,21 +17,22 @@ tags: [动态, 语音, 编辑, 展示]
 
 setup:
   launchApp: true
+  skipPopupDismiss: true
   include:
     - moments-navigation/enter_moment_discover_tab
     - moments-navigation/open_moment_publish_editor
   steps:
-    - act: 点击语音条录制按钮，录制约5秒后暂停，点击使用
+    - act: 点击 "+ Add Voice" 按钮，录制约5秒后点击停止，点击 "Use"
     - waitFor: 返回编辑页
 
 intent:
-  action: 观察编辑页语音条区域的内容
+  action: 观察编辑页中 "+ Add Voice" 区域变化后的语音条内容
   expected:
     - 语音条位于文字输入区下方，呈横条形状
-    - 语音条左侧可见播放/暂停按钮图标
-    - 语音条中部展示波形可视化图案
-    - 语音条右侧显示录制时长（约5s）
-    - 语音条右上角可见删除按钮（X图标）
+    - 语音条左侧可见播放按钮图标
+    - 语音条中部展示声波可视化图案
+    - 语音条显示录制时长（约 "5s"）
+    - 语音条附近可见删除按钮（X 图标）
 
 timeoutMs: 120000
 
@@ -44,11 +46,12 @@ tags: [动态, 语音, 编辑, 试听]
 
 setup:
   launchApp: true
+  skipPopupDismiss: true
   include:
     - moments-navigation/enter_moment_discover_tab
     - moments-navigation/open_moment_publish_editor
   steps:
-    - act: 录制约3秒后暂停，点击使用
+    - act: 点击 "+ Add Voice"，录制约3秒后停止，点击 "Use"
     - waitFor: 返回编辑页可见语音条
 
 intent:
@@ -70,11 +73,12 @@ tags: [动态, 语音, 编辑, 删除确认]
 
 setup:
   launchApp: true
+  skipPopupDismiss: true
   include:
     - moments-navigation/enter_moment_discover_tab
     - moments-navigation/open_moment_publish_editor
   steps:
-    - act: 录制约3秒后暂停，点击使用
+    - act: 点击 "+ Add Voice"，录制约3秒后停止，点击 "Use"
     - waitFor: 返回编辑页可见语音条
 
 intent:
@@ -95,20 +99,21 @@ tags: [动态, 语音, 编辑, 删除确认]
 
 setup:
   launchApp: true
+  skipPopupDismiss: true
   include:
     - moments-navigation/enter_moment_discover_tab
     - moments-navigation/open_moment_publish_editor
   steps:
-    - act: 录制约3秒后暂停，点击使用
+    - act: 点击 "+ Add Voice"，录制约3秒后停止，点击 "Use"
     - waitFor: 返回编辑页可见语音条
-    - act: 点击语音条删除按钮
+    - act: 点击语音条删除按钮（X 图标）
     - waitFor: 弹出二次确认弹窗
 
 intent:
-  action: 点击确认删除
+  action: 点击确认删除按钮
   expected:
     - 语音条从编辑页消失
-    - 语音录制入口按钮重新显示
+    - "+ Add Voice" 按钮重新显示
 
 timeoutMs: 120000
 
@@ -122,13 +127,14 @@ tags: [动态, 语音, 编辑, 取消删除]
 
 setup:
   launchApp: true
+  skipPopupDismiss: true
   include:
     - moments-navigation/enter_moment_discover_tab
     - moments-navigation/open_moment_publish_editor
   steps:
-    - act: 录制约3秒后暂停，点击使用
+    - act: 点击 "+ Add Voice"，录制约3秒后停止，点击 "Use"
     - waitFor: 返回编辑页可见语音条
-    - act: 点击语音条删除按钮
+    - act: 点击语音条删除按钮（X 图标）
     - waitFor: 弹出二次确认弹窗
 
 intent:
@@ -149,17 +155,18 @@ tags: [动态, 语音, 编辑, 唯一性]
 
 setup:
   launchApp: true
+  skipPopupDismiss: true
   include:
     - moments-navigation/enter_moment_discover_tab
     - moments-navigation/open_moment_publish_editor
   steps:
-    - act: 录制约3秒后暂停，点击使用
+    - act: 点击 "+ Add Voice"，录制约3秒后停止，点击 "Use"
     - waitFor: 返回编辑页可见语音条
 
 intent:
-  action: 观察编辑页底部工具栏中的语音录制入口状态
+  action: 观察编辑页中 "+ Add Voice" 按钮是否仍可见或可点击
   expected:
-    - 已有语音条后，底部工具栏中语音录制入口消失或置灰不可点击
+    - 已有语音条后，"+ Add Voice" 按钮消失或置灰不可点击
     - 编辑页仅展示一条语音条
 
 timeoutMs: 120000
@@ -174,26 +181,27 @@ tags: [动态, 语音, 编辑, 删除后重录]
 
 setup:
   launchApp: true
+  skipPopupDismiss: true
   include:
     - moments-navigation/enter_moment_discover_tab
     - moments-navigation/open_moment_publish_editor
   steps:
-    - act: 录制约3秒后暂停，点击使用
+    - act: 点击 "+ Add Voice"，录制约3秒后停止，点击 "Use"
     - waitFor: 编辑页可见语音条
-    - act: 点击删除按钮，确认删除
-    - waitFor: 语音条消失，录制入口恢复
+    - act: 点击删除按钮（X 图标），确认删除
+    - waitFor: 语音条消失，"+ Add Voice" 按钮恢复
 
 intent:
-  action: 再次点击录制入口，录制新的约5秒音频后暂停，点击使用
+  action: 再次点击 "+ Add Voice"，录制约5秒后停止，点击 "Use"
   expected:
     - 新语音条正常添加到编辑页
-    - 显示新的时长（约5秒）
+    - 显示新的时长（约 "5s"）
 
 timeoutMs: 240000
 
 ---
 id: IT-MOM-VOICE-PUB-025
-name: 有语音条时发布按钮可点击
+name: 有语音条时 Post 按钮可点击
 module: 语音动态-编辑页
 platform: android
 priority: P0
@@ -201,18 +209,19 @@ tags: [动态, 语音, 编辑, 发布按钮状态]
 
 setup:
   launchApp: true
+  skipPopupDismiss: true
   include:
     - moments-navigation/enter_moment_discover_tab
     - moments-navigation/open_moment_publish_editor
   steps:
-    - act: 不输入文字，不上传图片，仅录制约3秒语音并使用
+    - act: 不输入文字，不上传图片，仅点击 "+ Add Voice" 录制约3秒后停止，点击 "Use"
     - waitFor: 编辑页仅有语音条，无文字和图片
 
 intent:
-  action: 观察右上角发布按钮（Post）的状态
+  action: 观察右上角 "Post" 按钮的状态
   expected:
-    - 仅有语音条时，发布按钮从置灰变为高亮紫色可点击
-    - 说明语音条可独立作为发布内容
+    - 仅有语音条时，"Post" 按钮变为高亮可点击状态
+    - 语音条可独立作为发布内容
 
 timeoutMs: 120000
 
@@ -226,11 +235,12 @@ tags: [动态, 语音, 编辑, 波浪符号]
 
 setup:
   launchApp: true
+  skipPopupDismiss: true
   include:
     - moments-navigation/enter_moment_discover_tab
     - moments-navigation/open_moment_publish_editor
   steps:
-    - act: 录制约10秒后暂停，点击使用
+    - act: 点击 "+ Add Voice"，录制约10秒后停止，点击 "Use"
     - waitFor: 编辑页显示语音条
 
 intent:
@@ -251,11 +261,12 @@ tags: [动态, 语音, 编辑, 波浪符号, 长音频]
 
 setup:
   launchApp: true
+  skipPopupDismiss: true
   include:
     - moments-navigation/enter_moment_discover_tab
     - moments-navigation/open_moment_publish_editor
   steps:
-    - act: 录制约35秒后暂停，点击使用
+    - act: 点击 "+ Add Voice"，录制约35秒后停止，点击 "Use"
     - waitFor: 编辑页显示语音条
 
 intent:

@@ -1,6 +1,7 @@
 # 语音条动态 · PRD: 支持发布带语音条的动态（Yaahlan-2.5.7）
 # 对照: documents/moments/basic module.md
 # 排除: 屏幕适配、多语言/RTL、纯后端逻辑、安装/升级路径
+# 真机 UI 基准: 2026-07-21 截图校准（英文 UI）
 
 # ╔═══════════════════════════════════════════════════════════╗
 # ║  模块 3：发布组合 — 各内容组合发布成功                      ║
@@ -16,15 +17,16 @@ tags: [动态, 语音, 发布, 纯语音]
 
 setup:
   launchApp: true
+  skipPopupDismiss: true
   include:
     - moments-navigation/enter_moment_discover_tab
     - moments-navigation/open_moment_publish_editor
   steps:
-    - act: 不输入文字，不上传图片/视频，仅录制约5秒语音并点击使用
+    - act: 不输入文字，不上传图片/视频，仅点击 "+ Add Voice" 录制约5秒后停止，点击 "Use"
     - waitFor: 编辑页仅有语音条
 
 intent:
-  action: 点击右上角发布按钮
+  action: 点击右上角 "Post" 按钮
   expected:
     - 发布成功，跳转我的动态页
 
@@ -44,17 +46,18 @@ tags: [动态, 语音, 文字, 组合发布]
 
 setup:
   launchApp: true
+  skipPopupDismiss: true
   include:
     - moments-navigation/enter_moment_discover_tab
     - moments-navigation/open_moment_publish_editor
   steps:
     - act: 输入测试文案（voice text combo test）
     - waitFor: 文字输入区展示内容
-    - act: 点击语音录制入口，录制约3秒后暂停，点击使用
+    - act: 点击 "+ Add Voice"，录制约3秒后停止，点击 "Use"
     - waitFor: 编辑页可见文字和语音条
 
 intent:
-  action: 点击右上角发布按钮
+  action: 点击右上角 "Post" 按钮
   expected:
     - 发布成功，跳转我的动态页
 
@@ -74,17 +77,18 @@ tags: [动态, 语音, 图片, 组合发布]
 
 setup:
   launchApp: true
+  skipPopupDismiss: true
   include:
     - moments-navigation/enter_moment_discover_tab
     - moments-navigation/open_moment_publish_editor
   steps:
-    - act: 点击添加图片入口，从相册选择一张图片
+    - act: 点击添加图片入口（+ 号方块），从相册选择一张图片
     - waitFor: 编辑页展示图片缩略图
-    - act: 点击语音录制入口，录制约3秒后暂停，点击使用
+    - act: 点击 "+ Add Voice"，录制约3秒后停止，点击 "Use"
     - waitFor: 编辑页可见图片和语音条
 
 intent:
-  action: 点击右上角发布按钮
+  action: 点击右上角 "Post" 按钮
   expected:
     - 发布成功，跳转我的动态页
     - 我的动态中可见图片和语音条
@@ -101,17 +105,18 @@ tags: [动态, 语音, 视频, 组合发布]
 
 setup:
   launchApp: true
+  skipPopupDismiss: true
   include:
     - moments-navigation/enter_moment_discover_tab
     - moments-navigation/open_moment_publish_editor
   steps:
-    - act: 点击添加媒体入口，从相册选择一个2-60秒的视频
+    - act: 点击添加媒体入口（+ 号方块），从相册选择一个2-60秒的视频
     - waitFor: 编辑页展示视频预览图
-    - act: 点击语音录制入口，录制约3秒后暂停，点击使用
+    - act: 点击 "+ Add Voice"，录制约3秒后停止，点击 "Use"
     - waitFor: 编辑页可见视频预览和语音条
 
 intent:
-  action: 点击右上角发布按钮
+  action: 点击右上角 "Post" 按钮
   expected:
     - 发布成功，跳转我的动态页
 
@@ -134,16 +139,17 @@ setup:
   include:
     - moments-navigation/enter_moment_discover_tab
     - moments-navigation/open_moment_publish_editor
+  skipPopupDismiss: true
   steps:
     - act: 输入测试文案
     - waitFor: 文字展示
-    - act: 从相册选择一个视频
+    - act: 点击添加媒体入口（+ 号方块），从相册选择一个视频
     - waitFor: 视频预览图展示
-    - act: 点击语音录制入口，录制约3秒后暂停，点击使用
+    - act: 点击 "+ Add Voice"，录制约3秒后停止，点击 "Use"
     - waitFor: 编辑页同时展示文字、视频、语音条
 
 intent:
-  action: 点击右上角发布按钮
+  action: 点击右上角 "Post" 按钮
   expected:
     - 发布成功，跳转我的动态页
     - 三种内容均可见
@@ -160,17 +166,18 @@ tags: [动态, 语音, 好友可见, 权限]
 
 setup:
   launchApp: true
+  skipPopupDismiss: true
   include:
     - moments-navigation/enter_moment_discover_tab
     - moments-navigation/open_moment_publish_editor
   steps:
-    - act: 录制约3秒语音后使用
+    - act: 点击 "+ Add Voice"，录制约3秒后停止，点击 "Use"
     - waitFor: 编辑页可见语音条
-    - act: 开启好友可见按钮，确认弹窗点击确认
-    - waitFor: 好友可见状态已开启
+    - act: 点击 "Only friends can view" 开关
+    - waitFor: "Only friends can view" 开关已开启
 
 intent:
-  action: 点击右上角发布按钮
+  action: 点击右上角 "Post" 按钮
   expected:
     - 发布成功
     - 动态为好友可见状态
@@ -188,20 +195,21 @@ preconditions: 用户有可选的语音房（创建/管理/成员房间）
 
 setup:
   launchApp: true
+  skipPopupDismiss: true
   include:
     - moments-navigation/enter_moment_discover_tab
     - moments-navigation/open_moment_publish_editor
   steps:
-    - act: 录制约3秒语音后使用
+    - act: 点击 "+ Add Voice"，录制约3秒后停止，点击 "Use"
     - waitFor: 编辑页可见语音条
-    - act: 点击添加语音房入口，选择一个语音房
-    - waitFor: 编辑页可见语音条和语音房card
+    - act: 点击底部 "Add Voice Room" 入口，选择一个语音房
+    - waitFor: 编辑页可见语音条和语音房 card
 
 intent:
-  action: 点击右上角发布按钮
+  action: 点击右上角 "Post" 按钮
   expected:
     - 发布成功
-    - 动态中可见语音条和语音房card
+    - 动态中可见语音条和语音房 card
 
 timeoutMs: 300000
 

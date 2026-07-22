@@ -95,10 +95,15 @@ export function applyPlatformProfileEnv(platform = 'android', profile = loadBase
   const applied = [];
   const intent = plat.intent ?? profile.intent;
   if (intent && typeof intent === 'object') {
+    const autoDebugOff = intent.autoDebug === false;
+    const setupRetryOn = !autoDebugOff && intent.setupRetry !== false;
+    const autoFixOn = !autoDebugOff && intent.autoFix !== false;
     const intentEnv = {
       ...(intent.requireData ? { INTENT_REQUIRE_DATA: '1' } : {}),
       ...(intent.continueOnError ? { INTENT_CONTINUE: '1' } : {}),
       ...(intent.skipTunnel ? { INTENT_TUNNEL: '0' } : {}),
+      ...(setupRetryOn ? { INTENT_SETUP_RETRY: '1' } : { INTENT_SETUP_RETRY: '0' }),
+      ...(autoFixOn ? { INTENT_AUTO_FIX: '1' } : { INTENT_AUTO_FIX: '0' }),
     };
     for (const [key, value] of Object.entries(intentEnv)) {
       if (!process.env[key]) {
