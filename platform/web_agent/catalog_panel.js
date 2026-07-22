@@ -14,6 +14,15 @@
       .replace(/>/g, '&gt;');
   }
 
+  function smallIcon(name) {
+    const icons = {
+      module: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M4 5h7v7H4zM13 5h7v7h-7zM4 14h7v5H4zM13 14h7v5h-7z"/></svg>',
+      spark: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M12 3l1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>',
+      play: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>',
+    };
+    return icons[name] || icons.spark;
+  }
+
   function assemblePromptLine(lineEl) {
     let result = '';
     lineEl.querySelector('.prompt-text').childNodes.forEach(node => {
@@ -103,6 +112,7 @@
     return `<li class="cap">
       <div class="cap-head${headToggle}"${headAria}>
         ${chevron}
+        <span class="cap-icon" aria-hidden="true">${smallIcon('spark')}</span>
         <div class="cap-main">
           <span class="cap-name">${escapeHtml(item.name)}</span>
           ${source}
@@ -228,8 +238,11 @@
       section.id = 'catalog-mod-' + mod.id;
       section.innerHTML = `
         <div class="module-head">
-          <h3>${escapeHtml(mod.label)}</h3>
-          <div class="sub">${visibleCount} 项能力</div>
+          <span class="module-icon" aria-hidden="true">${smallIcon('module')}</span>
+          <div>
+            <h3>${escapeHtml(mod.label)}</h3>
+            <div class="sub">${visibleCount} 项能力</div>
+          </div>
         </div>
         <ol class="cats">${catsHtml}</ol>`;
       main.appendChild(section);
