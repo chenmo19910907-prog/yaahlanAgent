@@ -748,6 +748,7 @@
     let currentSessionReadOnly = false;
     /** @type {Array<{ id: string, name: string, mime: string, previewUrl: string, data_base64: string }>} */
     let pendingImages = [];
+    let inputComposing = false;
     const MAX_IMAGES = 5;
     const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
@@ -1499,11 +1500,19 @@
       autoResizeInput();
       updateInputState();
     });
-    document.getElementById('input').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
+    const chatInput = document.getElementById('input');
+    chatInput.addEventListener('compositionstart', () => {
+      inputComposing = true;
+    });
+    chatInput.addEventListener('compositionend', () => {
+      inputComposing = false;
+    });
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || e.shiftKey) return;
+      // 输入法组字期间 Enter 用于选词/确认，不应发送消息
+      if (inputComposing || e.isComposing || e.keyCode === 229) return;
+      e.preventDefault();
+      sendMessage();
     });
     document.getElementById('btn-send').addEventListener('click', () => sendMessage());
     document.getElementById('btn-stop').addEventListener('click', () => cancelCurrentRun());
