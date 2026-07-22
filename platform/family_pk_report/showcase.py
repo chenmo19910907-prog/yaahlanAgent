@@ -1424,6 +1424,11 @@ def _showcase_tab_script(
         return window.location.origin;
       }}
 
+      function resolveWebAgentBaseForDemo() {{
+        if (WEB_AGENT_REMOTE_URL) return WEB_AGENT_REMOTE_URL;
+        return resolveWebAgentBase();
+      }}
+
       function showDemoToast(message) {{
         var el = document.getElementById("demo-toast");
         if (!el) {{
@@ -1445,10 +1450,10 @@ def _showcase_tab_script(
         if (!text) return;
         if (window.parent !== window) {{
           window.parent.postMessage({{ type: "web-agent-fill-prompt", text: text }}, "*");
-          showDemoToast("已填入 Web Agent 输入框");
+          showDemoToast("已填入内网工具平台输入框");
           return;
         }}
-        var agentBase = resolveWebAgentBase().replace(/\\/$/, "");
+        var agentBase = resolveWebAgentBaseForDemo().replace(/\\/$/, "");
         var chatUrl = agentBase + "/?prompt=" + encodeURIComponent(text);
         var payload = JSON.stringify({{ text: text, ts: Date.now() }});
         try {{
@@ -1457,10 +1462,10 @@ def _showcase_tab_script(
         var win = window.open(chatUrl, "web_agent_chat");
         if (win) {{
           try {{ win.focus(); }} catch (err) {{}}
-          showDemoToast("已打开 Web Agent 并填入提示语");
+          showDemoToast("已打开内网工具平台并填入提示语");
           return;
         }}
-        showDemoToast("请切换到 Web Agent 标签页查看已填入的提示语");
+        showDemoToast("请允许弹窗，或手动打开内网工具平台查看已填入的提示语");
       }}
 
       var lightbox = document.getElementById("demo-image-lightbox");
