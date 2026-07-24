@@ -1116,7 +1116,7 @@ def main() -> int:
         if args.schedule_im_message_types:
             results = schedule_im_message_type_smoke(
                 area=str(args.im_area or "MENA").strip() or "MENA",
-                user_type=1,
+                user_type=2,
                 start_offset_minutes=int(args.im_start_offset_minutes),
                 interval_minutes=int(args.im_interval_minutes),
                 dry_run=bool(args.im_dry_run),
