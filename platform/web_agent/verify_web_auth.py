@@ -15,13 +15,24 @@ GATEWAY_DIR = WEB_AGENT_DIR.parent / "dingtalk_gateway"
 sys.path.insert(0, str(GATEWAY_DIR))
 sys.path.insert(0, str(WEB_AGENT_DIR))
 
-from web_auth import auth_enabled, auth_required_for_request, authorize_request  # noqa: E402
+from web_auth import (  # noqa: E402
+    auth_enabled,
+    auth_required_for_request,
+    authorize_request,
+    is_anonymous_allowed,
+)
 
 
 class _FakeHandler:
-    def __init__(self, headers: dict[str, str] | None = None, client: str = "127.0.0.1") -> None:
+    def __init__(
+        self,
+        headers: dict[str, str] | None = None,
+        client: str = "127.0.0.1",
+        path: str = "/",
+    ) -> None:
         self.headers = headers or {}
         self.client_address = (client, 0)
+        self.path = path
         self.response_code = 0
         self.response_headers: list[tuple[str, str]] = []
         self.body = b""
@@ -92,6 +103,13 @@ class WebAuthTest(unittest.TestCase):
             handler = _FakeHandler(client="8.8.8.8")
             self.assertTrue(auth_required_for_request(handler))
             self.assertFalse(authorize_request(handler))
+
+    def test_otp_guest_can_browse_dingtalk_session_messages(self) -> None:
+        env = {"WEB_AGENT_OTP_AUTH": "1"}
+        handler = _FakeHandler(path="/api/sessions/dt2d30ed2a75da4494/messages")
+        with patch("web_auth.load_env_local", lambda: None), patch.dict(os.environ, env, clear=True):
+            self.assertTrue(is_anonymous_allowed(handler, method="GET"))
+            self.assertTrue(authorize_request(handler, method="GET"))
 
     def test_tunnel_host_requires_auth(self) -> None:
         env = {

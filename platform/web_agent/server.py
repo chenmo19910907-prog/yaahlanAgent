@@ -508,7 +508,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             self.send_response(HTTPStatus.NO_CONTENT)
             self.end_headers()
             return
-        if not authorize_request(self):
+        if not authorize_request(self, method="OPTIONS"):
             return
         self.send_response(HTTPStatus.NO_CONTENT)
         self.end_headers()
@@ -536,7 +536,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 }
             return _json_response(self, payload)
 
-        if not authorize_request(self):
+        if not authorize_request(self, method="GET"):
             return
 
         if path == "/":
@@ -697,7 +697,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             logout_current_session(self)
             return _json_response(self, {"ok": True})
 
-        if not authorize_request(self):
+        if not authorize_request(self, method="POST"):
             return
 
         if path == "/api/sessions":
@@ -804,7 +804,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         self.send_error(HTTPStatus.NOT_FOUND)
 
     def do_DELETE(self) -> None:
-        if not authorize_request(self):
+        if not authorize_request(self, method="DELETE"):
             return
         parsed = urlparse(self.path)
         m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})$", parsed.path.rstrip("/"))

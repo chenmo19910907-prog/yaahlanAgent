@@ -133,6 +133,20 @@
       flex-shrink: 0;
     }
     .user-menu[hidden] { display: none; }
+    .btn-login-header {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 180ms var(--ease-standard), transform 120ms var(--ease-standard);
+    }
+    .btn-login-header:hover { background: var(--accent-hover); }
+    .btn-login-header[hidden] { display: none; }
     .user-menu-btn {
       min-height: 36px;
       max-width: 168px;
@@ -1051,6 +1065,7 @@
         </svg>
         关于
       </button>
+      <button type="button" class="btn-login-header" id="btn-login" hidden>登录</button>
       <div class="user-menu" id="user-menu" hidden>
         <button type="button" class="user-menu-btn" id="user-menu-btn" aria-haspopup="menu" aria-expanded="false">
           <span class="user-menu-avatar" id="user-menu-avatar" aria-hidden="true">U</span>
@@ -1158,6 +1173,7 @@
     let currentSessionId = localStorage.getItem('web_agent_session') || '';
     /** @type {{ staffId?: string, displayName?: string, isAdmin?: boolean } | null} */
     let currentAuthUser = null;
+    let otpAuthEnabled = true;
     /** @type {Map<string, { eventSource: EventSource, runId: string, cancelling?: boolean, status: { ack: string, batch: string, elapsed: string }, shellEl: HTMLElement | null, sentDraft?: { text: string, images: typeof pendingImages } }>} */
     const activeRuns = new Map();
     let meta = {};
@@ -1242,6 +1258,7 @@
     }
 
     const DEFAULT_PLACEHOLDER = '输入问题；可直接粘贴或拖拽图片到此处…';
+    const GUEST_PLACEHOLDER = '登录后即可发送消息…';
     const DINGTALK_READONLY_PLACEHOLDER = '此会话来自钉钉同步，仅供查看；继续对话请点「+ 新对话」';
     const WEB_READONLY_PLACEHOLDER = '此会话归属他人，仅供查看；请点「+ 新对话」继续自己的任务';
 
@@ -1356,6 +1373,12 @@
         ...opts,
       });
       if (resp.status === 401) {
+        const readOnlyBrowse = opts.method === undefined || opts.method === 'GET';
+        const browsingSession = /^\/api\/sessions(\/[a-z0-9]+)?(\/messages)?$/.test(path);
+        if (otpAuthEnabled && !(readOnlyBrowse && browsingSession)) {
+          goToLogin();
+          throw new Error('请先登录');
+        }
         throw new Error('需要登录鉴权，请刷新页面并在浏览器登录框输入账号密码');
       }
       if (!resp.ok) {
@@ -1460,12 +1483,28 @@
       }
     }
 
+    function isGuestMode() {
+      return otpAuthEnabled && !currentAuthUser;
+    }
+
+    function goToLogin() {
+      window.location.href = '/login.html';
+    }
+
     function updateReadOnlyState() {
       const input = document.getElementById('input');
       const inputWrap = document.querySelector('.input-wrap');
       const defaultHint = document.querySelector('.input-area .input-hint');
       const item = sessionsCache.find(s => s.id === currentSessionId);
-      if (currentSessionReadOnly) {
+      if (isGuestMode()) {
+        input.readOnly = true;
+        input.value = '';
+        input.placeholder = GUEST_PLACEHOLDER;
+        input.classList.add('readonly-input');
+        inputWrap?.classList.add('readonly');
+        if (defaultHint) defaultHint.hidden = true;
+        clearPendingImages();
+      } else if (currentSessionReadOnly) {
         input.readOnly = true;
         input.value = '';
         input.placeholder = readonlyPlaceholder(item);
@@ -1661,6 +1700,10 @@
     }
 
     async function createSession() {
+      if (isGuestMode()) {
+        goToLogin();
+        return;
+      }
       clearPendingImages();
       if (currentSessionId) {
         try {
@@ -1797,6 +1840,10 @@
         data_base64: item.data_base64,
       }));
       if ((!message && !imagesToSend.length) || isCurrentSessionStreaming() || currentSessionReadOnly) return;
+      if (isGuestMode()) {
+        goToLogin();
+        return;
+      }
 
       if (!currentSessionId) await createSession();
 
@@ -2194,21 +2241,25 @@
       dropdown.hidden = !open;
     }
 
-    function initUserMenu(authData) {
+    function initAuthUI(authData) {
+      otpAuthEnabled = authData?.otpAuthEnabled !== false;
+      currentAuthUser = authData?.loggedIn && authData?.user ? authData.user : null;
+      const loginBtn = document.getElementById('btn-login');
       const wrap = document.getElementById('user-menu');
       const nameEl = document.getElementById('user-menu-name');
       const avatarEl = document.getElementById('user-menu-avatar');
-      currentAuthUser = authData?.loggedIn && authData?.user ? authData.user : null;
-      if (!wrap || !nameEl || !avatarEl) return;
-      if (!currentAuthUser) {
-        wrap.hidden = true;
-        setUserMenuOpen(false);
-        return;
+      setUserMenuOpen(false);
+      if (currentAuthUser && wrap && nameEl && avatarEl) {
+        const displayName = authUserDisplayName(currentAuthUser);
+        nameEl.textContent = displayName;
+        avatarEl.textContent = displayName.slice(0, 1).toUpperCase();
+        wrap.hidden = false;
+        if (loginBtn) loginBtn.hidden = true;
+      } else {
+        if (wrap) wrap.hidden = true;
+        if (loginBtn) loginBtn.hidden = !otpAuthEnabled;
       }
-      const displayName = authUserDisplayName(currentAuthUser);
-      nameEl.textContent = displayName;
-      avatarEl.textContent = displayName.slice(0, 1).toUpperCase();
-      wrap.hidden = false;
+      updateReadOnlyState();
     }
 
     async function logoutCurrentUser() {
@@ -2216,8 +2267,10 @@
       try {
         await fetch('/api/auth/logout', { method: 'POST' });
       } catch { /* ignore */ }
-      window.location.replace('/login.html');
+      window.location.replace('/');
     }
+
+    document.getElementById('btn-login')?.addEventListener('click', goToLogin);
 
     document.getElementById('user-menu-btn')?.addEventListener('click', (event) => {
       event.stopPropagation();
@@ -2238,11 +2291,7 @@
         const authRes = await fetch('/api/auth/status');
         if (authRes.ok) {
           const authData = await authRes.json();
-          if (authData.otpAuthEnabled !== false && !authData.loggedIn) {
-            window.location.replace('/login.html');
-            return;
-          }
-          initUserMenu(authData);
+          initAuthUI(authData);
         }
         setupInputImageHandlers();
         await loadMeta();

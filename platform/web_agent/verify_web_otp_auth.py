@@ -77,13 +77,13 @@ class WebOtpAuthTest(unittest.TestCase):
 
 
 class WebAuthIntegrationTest(unittest.TestCase):
-    def test_otp_auth_blocks_without_cookie(self) -> None:
+    def test_otp_auth_blocks_write_without_cookie(self) -> None:
         from io import BytesIO
 
         from web_auth import authorize_request
 
         class Handler:
-            path = "/api/sessions"
+            path = "/api/chat"
             headers = {}
             client_address = ("127.0.0.1", 0)
             response_code = 0
@@ -101,8 +101,36 @@ class WebAuthIntegrationTest(unittest.TestCase):
 
         with patch.dict(os.environ, {"WEB_AGENT_OTP_AUTH": "1"}, clear=False):
             handler = Handler()
-            self.assertFalse(authorize_request(handler))
+            self.assertFalse(authorize_request(handler, method="POST"))
             self.assertEqual(handler.response_code, 401)
+
+    def test_otp_auth_allows_anonymous_browse(self) -> None:
+        from io import BytesIO
+
+        from web_auth import authorize_request
+
+        class Handler:
+            def __init__(self, path: str) -> None:
+                self.path = path
+                self.headers = {}
+                self.client_address = ("127.0.0.1", 0)
+                self.response_code = 0
+                self.response_headers: list[tuple[str, str]] = []
+                self.wfile = BytesIO()
+
+            def send_response(self, code: int) -> None:
+                self.response_code = code
+
+            def send_header(self, key: str, value: str) -> None:
+                self.response_headers.append((key, value))
+
+            def end_headers(self) -> None:
+                pass
+
+        with patch.dict(os.environ, {"WEB_AGENT_OTP_AUTH": "1"}, clear=False):
+            for path in ("/", "/chat.html", "/api/meta", "/api/sessions"):
+                handler = Handler(path)
+                self.assertTrue(authorize_request(handler, method="GET"), path)
 
 
 if __name__ == "__main__":
