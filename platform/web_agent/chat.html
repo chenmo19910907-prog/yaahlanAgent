@@ -361,7 +361,7 @@
       display: inline-block; font-size: 0.68rem; padding: 1px 6px; border-radius: 4px;
       background: rgba(252, 211, 77, 0.15); color: #fcd34d; vertical-align: middle; margin-right: 4px;
     }
-    .session-owner { color: #fcd34d; }
+    .session-owner { color: inherit; }
     .dingtalk-owner-bar {
       flex-shrink: 0;
       padding: 8px 24px;
@@ -1449,11 +1449,11 @@
       const owner = sessionOwnerName(item);
       if (item?.source === 'dingtalk' && owner) {
         bar.hidden = false;
-        bar.textContent = `钉钉会话 · 归属：${owner}`;
+        bar.textContent = `钉钉会话 · ${owner}`;
       } else if (item?.source === 'web' && owner) {
         bar.hidden = false;
         const suffix = isSessionReadOnly(item) ? '（仅查看）' : '';
-        bar.textContent = `网页会话 · 归属：${owner}${suffix}`;
+        bar.textContent = `网页会话 · ${owner}${suffix}`;
       } else {
         bar.hidden = true;
         bar.textContent = '';
@@ -1638,7 +1638,7 @@
           : '';
         const ownerName = sessionOwnerName(s);
         const ownerLine = ownerName
-          ? `<span class="session-owner">归属：${escapeHtml(ownerName)}</span> · `
+          ? `<span class="session-owner">${escapeHtml(ownerName)}</span> · `
           : '';
         const previewLine = s.latest_preview
           ? `<div class="session-preview">${escapeHtml(s.latest_preview)}</div>`
