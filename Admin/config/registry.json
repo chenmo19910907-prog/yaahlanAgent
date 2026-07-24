@@ -314,6 +314,45 @@
       "command": "python3 Admin/admin_execute.py --query-activity-lottery-list --lottery-id <lotteryId>"
     },
     {
+      "id": "schedule_im_message_types",
+      "name": "活动-IM六种消息类型定时下发",
+      "category": "活动（melon-gateway / cms/activity）",
+      "description": "为 IM 配置后台 6 种消息类型各创建一条「type=2 定时任务下发 + sendType=0~5 消息类型 + 近30天活跃 + 英阿双语文案」任务，默认从 1 分钟后起每分钟一种（addIm）",
+      "prompts": [
+        "IM六种消息类型每分钟下发测试",
+        "批量创建 IM 消息类型定时任务",
+        "schedule im message types smoke",
+        "活动 IM 配置六种类型定时下发"
+      ],
+      "command": "python3 Admin/admin_execute.py --schedule-im-message-types --im-area MENA"
+    },
+    {
+      "id": "query_im_list",
+      "name": "活动-查询IM配置任务列表",
+      "category": "活动（melon-gateway / cms/activity）",
+      "description": "查询 IM 配置后台任务列表（getImList；body={area}；返回 id/name/type/sendType/sendStatus/sendTime 等；type=下发类型，sendType=消息类型）",
+      "prompts": [
+        "查询 IM 配置任务列表",
+        "getImList 中东区 IM 任务",
+        "查 IM 任务 im-type-smoke",
+        "活动 IM 配置列表"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-im-list --im-area MENA"
+    },
+    {
+      "id": "delete_im_task",
+      "name": "活动-删除IM配置任务",
+      "category": "活动（melon-gateway / cms/activity）",
+      "description": "删除 IM 配置任务（deleteIm；body={id, area}）。支持单条 --delete-im-task --im-task-id，或批量 --delete-im-tasks-above-id",
+      "prompts": [
+        "删除 IM 配置任务 <taskId>",
+        "deleteIm 任务 <taskId>",
+        "清理 IM 任务 id 大于 <id>",
+        "删除中东区 IM smoke 测试任务"
+      ],
+      "command": "python3 Admin/admin_execute.py --delete-im-task --im-task-id <taskId> --im-area MENA"
+    },
+    {
       "id": "query_app_store_review_version",
       "name": "版本-查询 App Store 审核版本",
       "category": "版本（melon-gateway / backend/pangu）",

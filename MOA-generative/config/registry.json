@@ -185,6 +185,18 @@
         "生成式MOA publishComment"
       ],
       "command": "python3 MOA-generative/scripts/form_feed_publish_comment.py \\\n  --user-id <userId> \\\n  --feed-id <feedId> \\\n  --content <content>"
+    },
+    {
+      "id": "moa_generative_cp_love_chest_homepage",
+      "name": "生成式MOA-CP爱意宝箱主页",
+      "category": "生成式MOA（抓包转MOA）",
+      "description": "HTTP /yaahlan/trick/cpLoveChest/getCpLoveChestHomepage → 候选 ServiceUrl /service/yaahlan-trick/external/cp-love-chest-stage + getCpLoveChestHomepage。打开 CP 爱意宝箱页时触发；返回 currentLoveValue（CP 双方共享周期爱意值）、userInfo、cpInfo、tiers。",
+      "prompts": [
+        "查询 CP 爱意宝箱爱意值 <userId>",
+        "100465989 打开 CP 爱意宝箱页查爱意值",
+        "生成式MOA getCpLoveChestHomepage"
+      ],
+      "command": "python3 MOA-generative/scripts/form_cp_love_chest_homepage.py \\\n  --user-id <userId>"
     }
   ]
 }

@@ -1,0 +1,24 @@
+{
+  "id": "",
+  "name": "IM定时任务-活动奖励示例",
+  "msgContent": {
+    "en": "English message",
+    "ar": "Arabic message"
+  },
+  "userFilterType": 0,
+  "type": 2,
+  "userType": 2,
+  "whiteList": "",
+  "filePath": "",
+  "fileName": "",
+  "userCount": "",
+  "image": {
+    "ar": "",
+    "en": ""
+  },
+  "gotoUrl": "",
+  "sendTime": 1784791200000,
+  "sendType": 1,
+  "bgColor": "",
+  "area": "MENA"
+}

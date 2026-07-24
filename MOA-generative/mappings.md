@@ -17,6 +17,7 @@
 | 2026-07-17 | `/yaahlan/component/giftPanel/getGiftTabListV3` | `/service/yh-components/gift-panel` | `getGiftTabListV3` | MOA Redis 直连 + httpproxy；背包 Tab 读 `package.remain`；无需打开礼物面板 |
 | 2026-07-17 | `/yaahlan/component/giftPanel/propPackageList` | `/service/yh-components/gift-panel` | `propPackageList` | 背包道具列表；与 getGiftTabListV3 背包 Tab 礼物不同 |
 | 2026-07-17 | `/yaahlan/feed-comment/publishComment` | `/service/feed/external/feed-comment-stage` | `publishComment` | body：`userId`/`uid`、`feedId`、`content`、`source`（discover）；返回 `commentId`；100 账号批量评论已验证 |
+| 2026-07-24 | `/yaahlan/trick/cpLoveChest/getCpLoveChestHomepage` | `/service/yaahlan-trick/external/cp-love-chest-stage`（候选） | `getCpLoveChestHomepage` | 打开 CP 爱意宝箱 H5 触发；Tunnel `100465989` 抓包 `_id=g3vAkp8Bpk1mjMPPbFig`；返回 `currentLoveValue`（CP 共享周期爱意值）、`userInfo`、`cpInfo`、`tiers`；**ServiceUrl 待 MSE 调用链确认** |
 
 ## 配套 HTTP（非 MOA，仅对照）
 
@@ -26,6 +27,7 @@
 | `/yaahlan/feed-list/listUserFeed` | 个人动态列表（取 contentId） |
 | `/yaahlan/feed-list/listFollowFeedV2` | 关注流动态列表 |
 | `/yaahlan/v2/gift/send`（`ext.intimate_invite_gift=1`） | **发起**亲密申请：用 `Gift/gift_execute.py --intimate-invite`，不走生成式 MOA |
+| `/yaahlan/trick/cpLoveChest/getCpLoveChestHomepage` | 打开 CP 爱意宝箱主页；读 `data.currentLoveValue`（双方共享爱意值） |
 
 ## 调用链辅助线索
 

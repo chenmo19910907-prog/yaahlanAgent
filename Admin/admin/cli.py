@@ -10,6 +10,13 @@ import sys
 import urllib.parse
 
 from .activity import parse_query_lottery_list_summary
+from .im_activity import (
+    delete_im_task,
+    delete_im_tasks_above_id,
+    parse_im_list_summary,
+    schedule_im_message_type_smoke,
+    summarize_schedule_results,
+)
 from .app_store_review import (
     parse_app_store_review_version_summary,
     parse_update_app_store_review_version_summary,
@@ -312,6 +319,55 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--lottery-name",
         help="奖池名称模糊筛选（配合 --query-activity-lottery-list，如 砸金蛋、Year3）",
+    )
+    parser.add_argument(
+        "--schedule-im-message-types",
+        action="store_true",
+        help="批量创建 6 种 IM 消息类型的定时下发任务（默认近30天活跃、每分钟一种、中东区）",
+    )
+    parser.add_argument(
+        "--query-im-list",
+        action="store_true",
+        help="查询 IM 配置任务列表（getImList；body={area}；可按 --im-task-id / --im-task-name 筛选）",
+    )
+    parser.add_argument("--im-task-id", help="IM 任务 ID（配合 --query-im-list）")
+    parser.add_argument("--im-task-name", help="IM 任务名称精确匹配（配合 --query-im-list）")
+    parser.add_argument(
+        "--im-name-contains",
+        help="IM 任务名称模糊筛选（配合 --query-im-list，如 im-type-smoke）",
+    )
+    parser.add_argument(
+        "--delete-im-task",
+        action="store_true",
+        help="删除单条 IM 配置任务（deleteIm；需 --im-task-id 与 --im-area）",
+    )
+    parser.add_argument(
+        "--delete-im-tasks-above-id",
+        type=int,
+        metavar="ID",
+        help="删除指定分区内 id 大于该值的全部 IM 任务（配合 --im-area）",
+    )
+    parser.add_argument(
+        "--im-area",
+        default="MENA",
+        help="IM 任务分区 area（配合 --schedule-im-message-types；默认 MENA）",
+    )
+    parser.add_argument(
+        "--im-start-offset-minutes",
+        type=int,
+        default=1,
+        help="首条任务相对现在的下发偏移分钟数（默认 1）",
+    )
+    parser.add_argument(
+        "--im-interval-minutes",
+        type=int,
+        default=1,
+        help="相邻两种消息类型的下发间隔分钟数（默认 1）",
+    )
+    parser.add_argument(
+        "--im-dry-run",
+        action="store_true",
+        help="仅打印 6 条 addIm payload，不实际创建任务",
     )
     parser.add_argument(
         "--query-app-store-review-version",
@@ -1057,6 +1113,58 @@ def main() -> int:
     try:
         if getattr(args, "online_env", False) and args.query_user_id is None:
             raise ValueError("线上环境当前仅支持 --query-user-id（须用户提示词含「线上环境」）")
+        if args.schedule_im_message_types:
+            results = schedule_im_message_type_smoke(
+                area=str(args.im_area or "MENA").strip() or "MENA",
+                user_type=1,
+                start_offset_minutes=int(args.im_start_offset_minutes),
+                interval_minutes=int(args.im_interval_minutes),
+                dry_run=bool(args.im_dry_run),
+            )
+            print(json.dumps(summarize_schedule_results(results), ensure_ascii=False, indent=2))
+            return 0
+        if args.query_im_list:
+            cfg = defaults("query_im_list")
+            base_url = _resolve_gateway_base_url(cfg)
+            path = str(cfg.get("path", "/yaahlan/cms/activity/getImList"))
+            area = str(args.im_area or cfg.get("defaultArea") or "MENA").strip() or "MENA"
+            url = f"{base_url}{path}"
+            body = {"area": area}
+            if args.dump_body:
+                print(f"POST {url}", file=sys.stderr)
+                print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
+            resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
+            if not anchor_success(resp):
+                print(f"IM 列表接口返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
+                print(json.dumps(resp, ensure_ascii=False, indent=2))
+                return 3
+            summary = parse_im_list_summary(
+                resp.get("data"),
+                area=area,
+                task_id=str(args.im_task_id or "").strip() or None,
+                task_name=str(args.im_task_name or "").strip() or None,
+                name_contains=str(args.im_name_contains or "").strip() or None,
+            )
+            print(json.dumps(summary, ensure_ascii=False, indent=2))
+            return 0
+        if args.delete_im_task:
+            task_id = str(args.im_task_id or "").strip()
+            if not task_id:
+                raise ValueError("delete-im-task 必须提供 --im-task-id")
+            area = str(args.im_area or "MENA").strip() or "MENA"
+            resp = delete_im_task(task_id=int(task_id), area=area, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
+            print(json.dumps({"id": int(task_id), "area": area, "status": "deleted", "response": resp}, ensure_ascii=False, indent=2))
+            return 0
+        if args.delete_im_tasks_above_id is not None:
+            area = str(args.im_area or "MENA").strip() or "MENA"
+            summary = delete_im_tasks_above_id(
+                min_exclusive_id=int(args.delete_im_tasks_above_id),
+                area=area,
+                dry_run=bool(args.im_dry_run),
+                timeout_s=max(args.timeout_ms, 1000) / 1000.0,
+            )
+            print(json.dumps(summary, ensure_ascii=False, indent=2))
+            return 0 if summary.get("failedCount", 0) == 0 else 3
         if args.query_prop_list:
             url, body = _resolve_query_prop_info_request(args)
             if args.dump_body:

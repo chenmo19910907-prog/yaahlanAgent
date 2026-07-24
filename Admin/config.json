@@ -133,5 +133,18 @@
   "query_activity_lottery_list": {
     "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
     "path": "/yaahlan/cms/activity/getLotteryList"
+  },
+  "add_im": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/activity/addIm"
+  },
+  "query_im_list": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/activity/getImList",
+    "defaultArea": "MENA"
+  },
+  "delete_im": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/activity/deleteIm"
   }
 }
