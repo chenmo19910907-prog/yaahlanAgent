@@ -39,13 +39,16 @@ class _FakeHandler:
 
 class WebAuthTest(unittest.TestCase):
     def test_auth_disabled_without_env(self) -> None:
-        with patch("web_auth.load_env_local", lambda: None), patch.dict(os.environ, {}, clear=True):
+        with patch("web_auth.load_env_local", lambda: None), patch.dict(
+            os.environ, {"WEB_AGENT_OTP_AUTH": "0"}, clear=True
+        ):
             self.assertFalse(auth_enabled())
             handler = _FakeHandler()
             self.assertTrue(authorize_request(handler))
 
     def test_auth_required_when_configured(self) -> None:
         env = {
+            "WEB_AGENT_OTP_AUTH": "0",
             "WEB_AGENT_AUTH_USER": "qa",
             "WEB_AGENT_AUTH_PASSWORD": "secret",
         }
@@ -59,6 +62,7 @@ class WebAuthTest(unittest.TestCase):
         import base64
 
         env = {
+            "WEB_AGENT_OTP_AUTH": "0",
             "WEB_AGENT_AUTH_USER": "qa",
             "WEB_AGENT_AUTH_PASSWORD": "secret",
         }
@@ -69,6 +73,7 @@ class WebAuthTest(unittest.TestCase):
 
     def test_private_ip_skips_auth(self) -> None:
         env = {
+            "WEB_AGENT_OTP_AUTH": "0",
             "WEB_AGENT_AUTH_USER": "qa",
             "WEB_AGENT_AUTH_PASSWORD": "secret",
         }
@@ -79,6 +84,7 @@ class WebAuthTest(unittest.TestCase):
 
     def test_public_ip_requires_auth(self) -> None:
         env = {
+            "WEB_AGENT_OTP_AUTH": "0",
             "WEB_AGENT_AUTH_USER": "qa",
             "WEB_AGENT_AUTH_PASSWORD": "secret",
         }
@@ -89,6 +95,7 @@ class WebAuthTest(unittest.TestCase):
 
     def test_tunnel_host_requires_auth(self) -> None:
         env = {
+            "WEB_AGENT_OTP_AUTH": "0",
             "WEB_AGENT_AUTH_USER": "qa",
             "WEB_AGENT_AUTH_PASSWORD": "secret",
         }

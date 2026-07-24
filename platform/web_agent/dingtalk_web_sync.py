@@ -15,6 +15,7 @@ CONVERSATIONS_INDEX = GATEWAY_DIR / "data" / "conversations.json"
 if str(GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR))
 
+from web_otp_auth import is_web_login_request  # noqa: E402
 from web_session_store import (  # noqa: E402
     ChatMessage,
     _turn_already_synced,
@@ -24,6 +25,22 @@ from web_session_store import (  # noqa: E402
 )
 
 logger = logging.getLogger("web-agent")
+
+_OTP_REPLY_MARKERS = (
+    "Yaahlan 网页版验证码",
+    "验证码已通过私聊发送",
+)
+
+
+def should_sync_dingtalk_turn(user_prompt: str, assistant_message: str = "") -> bool:
+    """网页验证码口令及其回复不同步到 Web 历史（避免明文验证码落库）。"""
+    prompt = (user_prompt or "").strip()
+    reply = (assistant_message or "").strip()
+    if is_web_login_request(prompt):
+        return False
+    if reply and any(marker in reply for marker in _OTP_REPLY_MARKERS):
+        return False
+    return True
 
 
 def is_sync_enabled() -> bool:
@@ -68,6 +85,9 @@ def sync_dingtalk_exchange(
     prompt = (user_prompt or "").strip()
     reply = (assistant_message or "").strip()
     if not key or not prompt or not reply:
+        return False
+    if not should_sync_dingtalk_turn(prompt, reply):
+        logger.debug("跳过网页验证码轮次同步 key=%s", key[:24])
         return False
 
     store = get_session_store()
@@ -115,6 +135,8 @@ def sync_all_from_conversation_store() -> int:
         prompt = str(item.get("prompt") or "").strip()
         reply = str(item.get("last_full_reply") or "").strip()
         if not prompt or not reply:
+            continue
+        if not should_sync_dingtalk_turn(prompt, reply):
             continue
         if sync_dingtalk_exchange(str(dt_key), prompt, reply):
             count += 1

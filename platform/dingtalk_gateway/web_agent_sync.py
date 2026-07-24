@@ -22,7 +22,13 @@ def sync_exchange_to_web_agent(
     try:
         if str(WEB_AGENT_DIR) not in sys.path:
             sys.path.insert(0, str(WEB_AGENT_DIR))
-        from dingtalk_web_sync import sync_dingtalk_exchange  # noqa: WPS433
+        from dingtalk_web_sync import (  # noqa: WPS433
+            should_sync_dingtalk_turn,
+            sync_dingtalk_exchange,
+        )
+
+        if not should_sync_dingtalk_turn(user_prompt, assistant_message):
+            return
 
         sync_dingtalk_exchange(
             dingtalk_key,

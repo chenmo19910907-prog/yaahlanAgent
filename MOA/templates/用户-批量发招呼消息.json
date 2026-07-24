@@ -1,0 +1,48 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-user-tool-stage",
+  "method": "batchSendP2pMessage",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "3966",
+      "json": "",
+      "type": "string",
+      "value": "3966"
+    },
+    {
+      "title": "参数2",
+      "name": "2",
+      "txt": "",
+      "json": "",
+      "type": "string",
+      "value": ""
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "user_batch_send_greeting_message",
+    "name": "用户-批量发招呼消息",
+    "category": "用户工具（voga-mts-user-tool-stage）",
+    "description": "测试环境批量发私聊招呼（batchSendP2pMessage；调一次约 600+ 测试号各发一条招呼；params[0]=3966 固定场景号，params[1] 留空）。执行前可改模板 params 或使用 --payload 传入完整 JSON",
+    "prompts": [
+      "批量发招呼消息",
+      "批量打招呼",
+      "发招呼消息 3966"
+    ]
+  }
+}

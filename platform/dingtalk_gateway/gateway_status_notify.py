@@ -192,13 +192,13 @@ def notify_gateway_started(*, client: Any | None = None) -> None:
             f"原因：代码更新后重启（{operator}）\n"
             f"变更：{summary}\n"
             f"执行机：{host}\n"
-            f"@机器人 发消息即可使用；快捷指令可发「帮助」"
+            f"@机器人 发消息即可使用"
         )
     else:
         text = (
             f"✅ Yaahlan 智能工具网关已启动\n"
             f"执行机：{host}\n"
-            f"@机器人 发消息即可使用；快捷指令可发「帮助」"
+            f"@机器人 发消息即可使用"
         )
     send_proactive_group_text(text, client=client)
 

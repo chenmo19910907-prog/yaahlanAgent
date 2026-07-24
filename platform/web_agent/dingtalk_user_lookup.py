@@ -55,10 +55,14 @@ def collect_known_labels(sessions: list[SessionMeta]) -> dict[str, str]:
     """从已有会话里汇总 staffId → 钉钉昵称。"""
     known: dict[str, str] = {}
     for meta in sessions:
-        if meta.source != "dingtalk":
+        if meta.source == "dingtalk":
+            uid = (meta.dingtalk_owner_id or "").strip()
+            label = (meta.dingtalk_label or "").strip()
+        elif meta.source == "web":
+            uid = (meta.web_owner_id or "").strip()
+            label = (meta.web_owner_label or "").strip()
+        else:
             continue
-        uid = (meta.dingtalk_owner_id or "").strip()
-        label = (meta.dingtalk_label or "").strip()
         if uid and label and uid not in known:
             known[uid] = label
     return known

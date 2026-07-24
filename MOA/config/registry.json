@@ -1144,6 +1144,30 @@
         "帖子打赏 MOA feed gift send"
       ],
       "command": "python3 Gift/gift_execute.py \\\n  --scene private \\\n  --sender <userId> \\\n  --receivers <toUserId> \\\n  --gift-id 2005001671 \\\n  --num 1\n# 动态帖子须 ext.feedId=<feedId>，见 MOA/templates/动态-帖子送礼.json 抓包 body，Agent 用 Gift/send_stage POST /v2/gift/send\n"
+    },
+    {
+      "id": "user_batch_send_p2p_message",
+      "name": "用户-批量发消息",
+      "category": "用户工具（voga-mts-user-tool-stage）",
+      "description": "测试环境批量发私聊消息（batchSendP2pMessage；调一次约 600+ 测试号各发一条；params[0]=userId，params[1]=消息内容）。执行前请改模板 params 或使用 --payload 传入完整 JSON",
+      "prompts": [
+        "批量发消息 userId <userId> 内容 <message>",
+        "用 <userId> 批量发私聊 <message>",
+        "批量发私聊消息"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-批量发消息.json\n"
+    },
+    {
+      "id": "user_batch_send_greeting_message",
+      "name": "用户-批量发招呼消息",
+      "category": "用户工具（voga-mts-user-tool-stage）",
+      "description": "测试环境批量发私聊招呼（batchSendP2pMessage；调一次约 600+ 测试号各发一条招呼；params[0]=3966 固定场景号，params[1] 留空）。执行前可改模板 params 或使用 --payload 传入完整 JSON",
+      "prompts": [
+        "批量发招呼消息",
+        "批量打招呼",
+        "发招呼消息 3966"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-批量发招呼消息.json\n"
     }
   ]
 }

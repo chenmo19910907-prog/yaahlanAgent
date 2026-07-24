@@ -204,7 +204,6 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
         if inbound.is_empty:
             self._reply(
                 "请输入文字、图片或图文链接。常用：\n"
-                "• `帮助` — 能力说明\n"
                 "• `MOA检查` — 测试 MOA 是否可用\n"
                 "• `中断操作` / `重新执行`",
                 incoming,
@@ -260,7 +259,7 @@ def main() -> int:
     )
     register_lifecycle_hooks(client)
     logger.info(
-        "Yaahlan 钉钉网关已启动（fast 队列 + 按用户并行 Agent / 流式 AI 卡片 / 帮助 / MOA / 中断 / 持久化）"
+        "Yaahlan 钉钉网关已启动（fast 队列 + 按用户并行 Agent / 流式 AI 卡片 / MOA / 中断 / 持久化）"
     )
     client.start_forever()
     return 0

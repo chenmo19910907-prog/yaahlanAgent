@@ -165,7 +165,22 @@ class SessionMeta:
     dingtalk_key: str = ""
     dingtalk_label: str = ""
     dingtalk_owner_id: str = ""
+    web_owner_id: str = ""
+    web_owner_label: str = ""
     latest_preview: str = field(default="", repr=False)
+
+    def web_owner_display(self, *, known_labels: dict[str, str] | None = None) -> str:
+        uid = (self.web_owner_id or "").strip()
+        if uid and known_labels:
+            mapped = (known_labels.get(uid) or "").strip()
+            if mapped:
+                return mapped
+        label = (self.web_owner_label or "").strip()
+        if label:
+            return label
+        if uid:
+            return f"用户 {uid}"
+        return ""
 
     def owner_display(self, *, known_labels: dict[str, str] | None = None) -> str:
         label = (self.dingtalk_label or "").strip()
@@ -191,7 +206,23 @@ class SessionMeta:
             return f"用户 {owner_id}"
         return "未知用户"
 
-    def to_dict(self, *, known_labels: dict[str, str] | None = None) -> dict[str, object]:
+    def is_read_only_for_viewer(self, viewer_staff_id: str | None = None) -> bool:
+        if self.source == "dingtalk":
+            return True
+        owner_id = (self.web_owner_id or "").strip()
+        if not owner_id:
+            return False
+        viewer = (viewer_staff_id or "").strip()
+        if not viewer:
+            return True
+        return viewer != owner_id
+
+    def to_dict(
+        self,
+        *,
+        known_labels: dict[str, str] | None = None,
+        viewer_staff_id: str | None = None,
+    ) -> dict[str, object]:
         payload: dict[str, object] = {
             "id": self.id,
             "title": self.title,
@@ -208,6 +239,18 @@ class SessionMeta:
                 payload["dingtalk_label"] = self.dingtalk_label
             if self.dingtalk_owner_id:
                 payload["dingtalk_owner_id"] = self.dingtalk_owner_id
+        elif self.source == "web":
+            owner = self.web_owner_display(known_labels=known_labels)
+            if owner:
+                payload["web_owner"] = owner
+            if self.web_owner_label:
+                payload["web_owner_label"] = self.web_owner_label
+            if self.web_owner_id:
+                payload["web_owner_id"] = self.web_owner_id
+            if self.is_read_only_for_viewer(viewer_staff_id):
+                payload["read_only"] = True
+            elif viewer_staff_id and (self.web_owner_id or "").strip() == (viewer_staff_id or "").strip():
+                payload["is_mine"] = True
         preview = (self.latest_preview or "").strip()
         if preview:
             payload["latest_preview"] = preview
@@ -269,6 +312,8 @@ class WebSessionStore:
                 dingtalk_key=str(item.get("dingtalk_key") or ""),
                 dingtalk_label=str(item.get("dingtalk_label") or ""),
                 dingtalk_owner_id=str(item.get("dingtalk_owner_id") or ""),
+                web_owner_id=str(item.get("web_owner_id") or ""),
+                web_owner_label=str(item.get("web_owner_label") or ""),
             )
         return sessions
 
@@ -284,6 +329,8 @@ class WebSessionStore:
                 "dingtalk_key": meta.dingtalk_key,
                 "dingtalk_label": meta.dingtalk_label,
                 "dingtalk_owner_id": meta.dingtalk_owner_id,
+                "web_owner_id": meta.web_owner_id,
+                "web_owner_label": meta.web_owner_label,
             }
             for sid, meta in self._sessions.items()
         }
@@ -363,10 +410,21 @@ class WebSessionStore:
             items = [s for s in items if s.message_count > 0]
             if enrich_names and items:
                 try:
-                    from dingtalk_user_lookup import enrich_session_owner_labels
+                    from dingtalk_user_lookup import collect_known_labels, enrich_session_owner_labels
 
                     if enrich_session_owner_labels(items):
                         dirty = True
+                    known = collect_known_labels(items)
+                    for meta in items:
+                        if meta.source != "web":
+                            continue
+                        uid = (meta.web_owner_id or "").strip()
+                        if not uid:
+                            continue
+                        expected = (known.get(uid) or "").strip()
+                        if expected and meta.web_owner_label != expected:
+                            meta.web_owner_label = expected
+                            dirty = True
                 except Exception as exc:  # noqa: BLE001
                     logger.warning("补全钉钉用户姓名失败: %s", exc)
             if dirty:
@@ -374,10 +432,23 @@ class WebSessionStore:
         items.sort(key=lambda s: s.updated_at, reverse=True)
         return items
 
-    def create_session(self, *, title: str = "新对话") -> SessionMeta:
+    def create_session(
+        self,
+        *,
+        title: str = "新对话",
+        owner_id: str = "",
+        owner_label: str = "",
+    ) -> SessionMeta:
         sid = uuid.uuid4().hex[:16]
         now = _now_iso()
-        meta = SessionMeta(id=sid, title=title.strip() or "新对话", created_at=now, updated_at=now)
+        meta = SessionMeta(
+            id=sid,
+            title=title.strip() or "新对话",
+            created_at=now,
+            updated_at=now,
+            web_owner_id=(owner_id or "").strip(),
+            web_owner_label=(owner_label or "").strip(),
+        )
         with self._lock:
             self._reload_index_if_stale()
             self._sessions[sid] = meta
@@ -524,11 +595,46 @@ class WebSessionStore:
             self._save_index()
         return True
 
-    def is_read_only(self, session_id: str) -> bool:
+    def ensure_web_owner(
+        self,
+        session_id: str,
+        *,
+        owner_id: str = "",
+        owner_label: str = "",
+    ) -> bool:
+        """首次写入网页会话归属；已有归属则不再变更。"""
+        uid = (owner_id or "").strip()
+        label = (owner_label or "").strip()
+        if not uid:
+            return False
         with self._lock:
             self._reload_index_if_stale()
             meta = self._sessions.get(session_id)
-        return meta is not None and meta.source == "dingtalk"
+            if meta is None or meta.source != "web":
+                return False
+            if (meta.web_owner_id or "").strip():
+                return False
+            meta.web_owner_id = uid
+            if label:
+                meta.web_owner_label = label
+            self._save_index()
+        return True
+
+    def is_read_only_for_viewer(
+        self,
+        session_id: str,
+        viewer_staff_id: str | None = None,
+    ) -> bool:
+        with self._lock:
+            self._reload_index_if_stale()
+            meta = self._sessions.get(session_id)
+        if meta is None:
+            return True
+        return meta.is_read_only_for_viewer(viewer_staff_id)
+
+    def is_read_only(self, session_id: str) -> bool:
+        """兼容旧调用：未提供 viewer 时，有归属的网页会话视为只读。"""
+        return self.is_read_only_for_viewer(session_id, viewer_staff_id=None)
 
     def append_message(
         self,

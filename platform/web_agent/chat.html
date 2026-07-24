@@ -128,6 +128,112 @@
       background: var(--accent); border-color: var(--accent); color: #fff;
     }
     .header-actions .primary:hover { background: var(--accent-hover); }
+    .user-menu {
+      position: relative;
+      flex-shrink: 0;
+    }
+    .user-menu[hidden] { display: none; }
+    .user-menu-btn {
+      min-height: 36px;
+      max-width: 168px;
+      background: rgba(255,255,255,0.045);
+      border: 1px solid var(--border);
+      color: var(--text-soft);
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition:
+        transform 180ms var(--ease-standard),
+        border-color 180ms var(--ease-standard),
+        color 180ms var(--ease-standard),
+        background 180ms var(--ease-standard),
+        box-shadow 180ms var(--ease-standard);
+    }
+    .user-menu-btn:hover {
+      border-color: rgba(91,140,255,0.55);
+      color: var(--text);
+      background: rgba(91,140,255,0.1);
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.16);
+    }
+    .user-menu-btn[aria-expanded="true"] {
+      border-color: rgba(91,140,255,0.55);
+      background: rgba(91,140,255,0.14);
+      color: var(--text);
+    }
+    .user-menu-avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(91,140,255,0.85), rgba(66,211,178,0.75));
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 650;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .user-menu-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 96px;
+    }
+    .user-menu-chevron {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      flex-shrink: 0;
+      transition: transform 180ms var(--ease-standard);
+    }
+    .user-menu-btn[aria-expanded="true"] .user-menu-chevron {
+      transform: rotate(180deg);
+    }
+    .user-menu-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 148px;
+      padding: 6px;
+      border-radius: 12px;
+      border: 1px solid var(--border-strong);
+      background: rgba(18, 22, 31, 0.96);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.34);
+      z-index: 20;
+    }
+    .user-menu-dropdown[hidden] { display: none; }
+    .user-menu-dropdown button {
+      width: 100%;
+      min-height: 36px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-soft);
+      font-size: 0.82rem;
+      text-align: left;
+      padding: 8px 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 160ms var(--ease-standard), color 160ms var(--ease-standard);
+    }
+    .user-menu-dropdown button:hover {
+      background: rgba(239, 68, 68, 0.12);
+      color: #fca5a5;
+    }
+    .user-menu-dropdown button svg {
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
+      flex-shrink: 0;
+    }
     .main {
       position: relative;
       z-index: 1;
@@ -318,10 +424,18 @@
     }
     .msg.user { align-self: flex-end; max-width: min(78%, var(--content-width)); min-width: 0; }
     .msg.assistant { align-self: center; }
-    .msg-label {
-      font-size: 0.72rem; color: var(--muted); margin-bottom: 8px;
+    .msg-label-row {
+      display: flex; align-items: baseline; gap: 8px;
+      margin-bottom: 8px;
     }
-    .msg.user .msg-label { text-align: right; }
+    .msg.user .msg-label-row { justify-content: flex-end; }
+    .msg-label {
+      font-size: 0.72rem; color: var(--muted);
+    }
+    .msg-time {
+      font-size: 0.68rem; color: var(--muted); opacity: 0.82;
+      white-space: nowrap;
+    }
     .msg-body {
       padding: 20px 24px; border-radius: 14px; font-size: 0.95rem; line-height: 1.76;
       color: var(--text-soft);
@@ -937,6 +1051,24 @@
         </svg>
         关于
       </button>
+      <div class="user-menu" id="user-menu" hidden>
+        <button type="button" class="user-menu-btn" id="user-menu-btn" aria-haspopup="menu" aria-expanded="false">
+          <span class="user-menu-avatar" id="user-menu-avatar" aria-hidden="true">U</span>
+          <span class="user-menu-name" id="user-menu-name">用户</span>
+          <svg class="user-menu-chevron" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </button>
+        <div class="user-menu-dropdown" id="user-menu-dropdown" role="menu" hidden>
+          <button type="button" id="btn-logout" role="menuitem">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>
+            </svg>
+            退出登录
+          </button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -1024,6 +1156,8 @@
   <script>
     const API = '';
     let currentSessionId = localStorage.getItem('web_agent_session') || '';
+    /** @type {{ staffId?: string, displayName?: string, isAdmin?: boolean } | null} */
+    let currentAuthUser = null;
     /** @type {Map<string, { eventSource: EventSource, runId: string, cancelling?: boolean, status: { ack: string, batch: string, elapsed: string }, shellEl: HTMLElement | null, sentDraft?: { text: string, images: typeof pendingImages } }>} */
     const activeRuns = new Map();
     let meta = {};
@@ -1108,7 +1242,8 @@
     }
 
     const DEFAULT_PLACEHOLDER = '输入问题；可直接粘贴或拖拽图片到此处…';
-    const READONLY_PLACEHOLDER = '此会话来自钉钉同步，仅供查看；继续对话请点「+ 新对话」';
+    const DINGTALK_READONLY_PLACEHOLDER = '此会话来自钉钉同步，仅供查看；继续对话请点「+ 新对话」';
+    const WEB_READONLY_PLACEHOLDER = '此会话归属他人，仅供查看；请点「+ 新对话」继续自己的任务';
 
     function canAttachImages() {
       return !currentSessionReadOnly && !isCurrentSessionStreaming();
@@ -1176,6 +1311,31 @@
       });
     }
 
+    function formatMessageTime(iso) {
+      if (!iso) return '';
+      try {
+        const dt = new Date(iso);
+        if (Number.isNaN(dt.getTime())) return '';
+        const pad = (n) => String(n).padStart(2, '0');
+        const hhmm = `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+        const now = new Date();
+        if (dt.toDateString() === now.toDateString()) return hhmm;
+        const md = `${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+        if (dt.getFullYear() === now.getFullYear()) return `${md} ${hhmm}`;
+        return `${dt.getFullYear()}-${md} ${hhmm}`;
+      } catch {
+        return '';
+      }
+    }
+
+    function buildMsgLabelHtml(label, timestamp) {
+      const timeText = formatMessageTime(timestamp);
+      const timeHtml = timeText
+        ? `<span class="msg-time">${escapeHtml(timeText)}</span>`
+        : '';
+      return `<div class="msg-label-row"><div class="msg-label">${escapeHtml(label)}</div>${timeHtml}</div>`;
+    }
+
     function renderMarkdown(text) {
       try {
         if (typeof marked?.use === 'function') {
@@ -1239,7 +1399,7 @@
       const el = document.createElement('div');
       el.className = 'msg assistant streaming';
       el.innerHTML = `
-        <div class="msg-label">Agent</div>
+        ${buildMsgLabelHtml('Agent', new Date().toISOString())}
         <div class="run-status"></div>
         <div class="msg-body"></div>`;
       container.appendChild(el);
@@ -1269,13 +1429,31 @@
       run.shellEl.classList.remove('streaming');
     }
 
+    function sessionOwnerName(item) {
+      if (!item) return '';
+      if (item.source === 'dingtalk' && item.dingtalk_owner) return item.dingtalk_owner;
+      if (item.web_owner) return item.web_owner;
+      return '';
+    }
+
+    function readonlyPlaceholder(item) {
+      if (item?.source === 'dingtalk') return DINGTALK_READONLY_PLACEHOLDER;
+      if (item?.read_only) return WEB_READONLY_PLACEHOLDER;
+      return DINGTALK_READONLY_PLACEHOLDER;
+    }
+
     function updateDingtalkOwnerBar() {
       const bar = document.getElementById('dingtalk-owner-bar');
       if (!bar) return;
       const item = sessionsCache.find(s => s.id === currentSessionId);
-      if (item?.source === 'dingtalk' && item.dingtalk_owner) {
+      const owner = sessionOwnerName(item);
+      if (item?.source === 'dingtalk' && owner) {
         bar.hidden = false;
-        bar.textContent = `钉钉会话 · 归属：${item.dingtalk_owner}`;
+        bar.textContent = `钉钉会话 · 归属：${owner}`;
+      } else if (item?.source === 'web' && owner) {
+        bar.hidden = false;
+        const suffix = isSessionReadOnly(item) ? '（仅查看）' : '';
+        bar.textContent = `网页会话 · 归属：${owner}${suffix}`;
       } else {
         bar.hidden = true;
         bar.textContent = '';
@@ -1286,10 +1464,11 @@
       const input = document.getElementById('input');
       const inputWrap = document.querySelector('.input-wrap');
       const defaultHint = document.querySelector('.input-area .input-hint');
+      const item = sessionsCache.find(s => s.id === currentSessionId);
       if (currentSessionReadOnly) {
         input.readOnly = true;
         input.value = '';
-        input.placeholder = READONLY_PLACEHOLDER;
+        input.placeholder = readonlyPlaceholder(item);
         input.classList.add('readonly-input');
         inputWrap?.classList.add('readonly');
         if (defaultHint) defaultHint.hidden = true;
@@ -1305,9 +1484,18 @@
       updateInputState();
     }
 
+    function isSessionReadOnly(item) {
+      if (!item) return false;
+      if (item.source === 'dingtalk') return true;
+      const viewerId = (currentAuthUser?.staffId || '').trim();
+      const ownerId = (item.web_owner_id || '').trim();
+      if (viewerId && ownerId && viewerId === ownerId) return false;
+      return item.read_only === true;
+    }
+
     function syncSessionReadOnly(sessionId) {
       const item = sessionsCache.find(s => s.id === sessionId);
-      currentSessionReadOnly = item?.read_only === true || item?.source === 'dingtalk';
+      currentSessionReadOnly = isSessionReadOnly(item);
       updateReadOnlyState();
       updateDingtalkOwnerBar();
     }
@@ -1448,16 +1636,20 @@
         const sourceBadge = s.source === 'dingtalk'
           ? '<span class="session-source">钉钉</span>'
           : '';
-        const ownerLine = s.source === 'dingtalk' && s.dingtalk_owner
-          ? `<span class="session-owner">归属：${escapeHtml(s.dingtalk_owner)}</span> · `
+        const ownerName = sessionOwnerName(s);
+        const ownerLine = ownerName
+          ? `<span class="session-owner">归属：${escapeHtml(ownerName)}</span> · `
           : '';
         const previewLine = s.latest_preview
           ? `<div class="session-preview">${escapeHtml(s.latest_preview)}</div>`
           : '';
+        const rel = (s.relative_time || '').trim();
+        const abs = formatMessageTime(s.updated_at || s.created_at);
+        const timeLine = escapeHtml([rel, abs].filter(Boolean).join(' · '));
         el.innerHTML = `
           <div class="session-title">${sourceBadge}${escapeHtml(s.title)}</div>
           ${previewLine}
-          <div class="session-meta">${ownerLine}${escapeHtml(s.relative_time || '')} · ${s.message_count || 0} 条${running}</div>`;
+          <div class="session-meta">${ownerLine}${timeLine} · ${s.message_count || 0} 条${running}</div>`;
         el.addEventListener('click', () => selectSession(s.id));
         list.appendChild(el);
       });
@@ -1549,7 +1741,7 @@
       const container = document.getElementById('messages');
       if (!msgs.length) { showEmptyState(); return; }
       container.innerHTML = '';
-      msgs.forEach(m => appendMessage(m.role, m.content, false, m.images || []));
+      msgs.forEach(m => appendMessage(m.role, m.content, false, m.images || [], m.timestamp));
       if (activeRuns.has(currentSessionId)) {
         const run = activeRuns.get(currentSessionId);
         if (run?.shellEl) {
@@ -1566,15 +1758,19 @@
       container.scrollTop = container.scrollHeight;
     }
 
-    function userMessageLabel() {
-      const item = sessionsCache.find(s => s.id === currentSessionId);
-      if (item?.source === 'dingtalk' && item.dingtalk_owner) {
-        return item.dingtalk_owner;
-      }
-      return '你';
+    function authUserDisplayName(user) {
+      if (!user) return '你';
+      return (user.displayName || user.staffId || '用户').trim() || '你';
     }
 
-    function appendMessage(role, content, scroll = true, images = []) {
+    function userMessageLabel() {
+      const item = sessionsCache.find(s => s.id === currentSessionId);
+      const owner = sessionOwnerName(item);
+      if (owner) return owner;
+      return authUserDisplayName(currentAuthUser);
+    }
+
+    function appendMessage(role, content, scroll = true, images = [], timestamp = '') {
       const container = document.getElementById('messages');
       if (container.querySelector('.empty-state')) container.innerHTML = '';
       const el = document.createElement('div');
@@ -1586,7 +1782,7 @@
         ? renderMarkdown(text)
         : `${imageHtml}${text ? escapeHtml(text).replace(/\n/g, '<br>') : ''}`;
       el.innerHTML = `
-        <div class="msg-label">${escapeHtml(label)}</div>
+        ${buildMsgLabelHtml(label, timestamp || new Date().toISOString())}
         <div class="msg-body">${bodyHtml || imageHtml}</div>`;
       container.appendChild(el);
       if (scroll) container.scrollTop = container.scrollHeight;
@@ -1808,11 +2004,27 @@
     document.getElementById('btn-new-side').addEventListener('click', createSession);
     document.getElementById('btn-sidebar-close').addEventListener('click', () => setSidebarOpen(false));
     document.getElementById('btn-sidebar').addEventListener('click', () => setSidebarOpen(!sidebarOpen));
+    function isCurrentUserAdmin() {
+      return !!currentAuthUser?.isAdmin;
+    }
+
     document.getElementById('btn-clear').addEventListener('click', async () => {
       if (isCurrentSessionStreaming() || currentSessionReadOnly) return;
+      if (!isCurrentUserAdmin()) {
+        alert('没有权限');
+        return;
+      }
       if (currentSessionId && confirm('清空当前会话消息？')) {
-        await api(`/api/sessions/${currentSessionId}`, { method: 'DELETE' });
-        await createSession();
+        try {
+          await api(`/api/sessions/${currentSessionId}`, { method: 'DELETE' });
+          await createSession();
+        } catch (err) {
+          if (String(err.message || '').includes('没有权限')) {
+            alert('没有权限');
+            return;
+          }
+          throw err;
+        }
       }
     });
     document.getElementById('btn-about').addEventListener('click', () => {
@@ -1974,8 +2186,64 @@
       }, 15000);
     }
 
+    function setUserMenuOpen(open) {
+      const btn = document.getElementById('user-menu-btn');
+      const dropdown = document.getElementById('user-menu-dropdown');
+      if (!btn || !dropdown) return;
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      dropdown.hidden = !open;
+    }
+
+    function initUserMenu(authData) {
+      const wrap = document.getElementById('user-menu');
+      const nameEl = document.getElementById('user-menu-name');
+      const avatarEl = document.getElementById('user-menu-avatar');
+      currentAuthUser = authData?.loggedIn && authData?.user ? authData.user : null;
+      if (!wrap || !nameEl || !avatarEl) return;
+      if (!currentAuthUser) {
+        wrap.hidden = true;
+        setUserMenuOpen(false);
+        return;
+      }
+      const displayName = authUserDisplayName(currentAuthUser);
+      nameEl.textContent = displayName;
+      avatarEl.textContent = displayName.slice(0, 1).toUpperCase();
+      wrap.hidden = false;
+    }
+
+    async function logoutCurrentUser() {
+      setUserMenuOpen(false);
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+      } catch { /* ignore */ }
+      window.location.replace('/login.html');
+    }
+
+    document.getElementById('user-menu-btn')?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const btn = document.getElementById('user-menu-btn');
+      const open = btn?.getAttribute('aria-expanded') === 'true';
+      setUserMenuOpen(!open);
+    });
+    document.getElementById('btn-logout')?.addEventListener('click', () => {
+      logoutCurrentUser();
+    });
+    document.addEventListener('click', () => setUserMenuOpen(false));
+    document.getElementById('user-menu')?.addEventListener('click', (event) => {
+      event.stopPropagation();
+    });
+
     (async () => {
       try {
+        const authRes = await fetch('/api/auth/status');
+        if (authRes.ok) {
+          const authData = await authRes.json();
+          if (authData.otpAuthEnabled !== false && !authData.loggedIn) {
+            window.location.replace('/login.html');
+            return;
+          }
+          initUserMenu(authData);
+        }
         setupInputImageHandlers();
         await loadMeta();
         initSidebarResize();

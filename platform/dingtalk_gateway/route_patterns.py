@@ -23,10 +23,6 @@ MOA_CHECK_RE = re.compile(
     r"^(?:MOA检查|检查\s*MOA(?:环境)?|MOA探活|moa探活|moa检查|moa\s*check|MOA\s*check)\s*$",
     re.I,
 )
-HELP_RE = re.compile(
-    r"^(?:帮助|使用说明|使用帮助|能力说明|help|\?|？|说明书|新手引导)\s*$",
-    re.I,
-)
 VIP_UPGRADE_RE = re.compile(
     r"^(?:用户\s*)?(\d{5,})\s*(?:升级|升到|升级到)\s*VIP?\s*(\d+)\s*$",
     re.I,
@@ -43,11 +39,8 @@ REPORT_URL_RE = re.compile(
     r"^(?:生成\s*)?测试报告\s+(https://alidocs\.dingtalk\.com/\S+)\s*$",
     re.I,
 )
-CATALOG_OPEN_RE = re.compile(
-    r"^(?:打开|刷新|生成)?\s*"
-    r"(?:工具平台|工具工作台|工具台|输入工作台|智能工具平台|平台目录|能力目录|工作台|"
-    r"工具平台清单|平台说明书|工具说明书|catalog)"
-    r"\s*(?:html|HTML)?\s*$",
+WEB_LOGIN_RE = re.compile(
+    r"^请求访问\s*Yaahlan\s*智能工具\s*Agent\s*$",
     re.I,
 )
 
@@ -60,9 +53,8 @@ _NL_TASK_RE = re.compile(
 )
 
 _FAST_ROUTE_RES = (
-    HELP_RE,
+    WEB_LOGIN_RE,
     MOA_CHECK_RE,
-    CATALOG_OPEN_RE,
     EXPORT_FILE_RE,
     VIP_UPGRADE_RE,
     REPORT_VERSION_RE,
@@ -81,7 +73,7 @@ def normalize_report_prompt(text: str) -> str | None:
 
 
 def normalize_fuzzy_fast_command(text: str) -> str | None:
-    """模糊快捷口令 → 标准 fast 路由口令（如「打开工具平台」→「工具平台」）。
+    """模糊快捷口令 → 标准 fast 路由口令。
 
     MOA 探活**不做**模糊归一：仅整条消息完全匹配 MOA_CHECK_RE 时才走探活（见 command_router）。
     """
@@ -94,11 +86,11 @@ def normalize_fuzzy_fast_command(text: str) -> str | None:
         return None
     if _MOA_REGISTRY_INTENT_RE.search(t):
         return None
-    if re.search(r"工具|工作台|catalog|平台清单|说明书", t, re.I):
-        return "工具平台"
-    if re.search(r"帮助|说明|help|怎么用|用法", t, re.I):
-        return "帮助"
     return None
+
+
+def is_web_login_request(text: str) -> bool:
+    return bool(WEB_LOGIN_RE.match((text or "").strip()))
 
 
 def is_likely_fast_route(text: str) -> bool:
@@ -106,6 +98,8 @@ def is_likely_fast_route(text: str) -> bool:
     t = (text or "").strip()
     if not t:
         return False
+    if is_web_login_request(t):
+        return True
     if is_view_all_follow_up(t):
         return True
     if normalize_report_prompt(t):

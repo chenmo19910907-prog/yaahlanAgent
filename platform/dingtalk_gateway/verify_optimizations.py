@@ -59,17 +59,41 @@ def test_moa_check_fuzzy() -> None:
         assert not is_likely_fast_route(text), text
 
 
-def test_help_fuzzy() -> None:
-    for text in ("帮助", "使用帮助", "能力说明", "说明书", "新手引导"):
-        result = try_route(text)
-        assert result.handled, f"应路由: {text!r}"
+def test_help_not_fast_route() -> None:
+    from route_patterns import is_likely_fast_route, normalize_fuzzy_fast_command
+
+    for text in (
+        "帮助",
+        "使用说明",
+        "使用帮助",
+        "能力说明",
+        "新手引导",
+        "help",
+        "?",
+        "？",
+        "说明书",
+    ):
+        assert not try_route(text).handled, f"不应走快捷路由: {text!r}"
+        assert normalize_fuzzy_fast_command(text) is None, text
+        assert not is_likely_fast_route(text), text
 
 
-def test_catalog_fuzzy() -> None:
-    from route_patterns import CATALOG_OPEN_RE
+def test_catalog_not_fast_route() -> None:
+    from route_patterns import is_likely_fast_route, normalize_fuzzy_fast_command
 
-    for text in ("工具平台", "工具平台清单", "平台说明书", "打开工具台"):
-        assert CATALOG_OPEN_RE.match(text), f"应匹配: {text!r}"
+    for text in (
+        "工具平台",
+        "工具平台清单",
+        "平台说明书",
+        "打开工具台",
+        "打开工作台",
+        "工具工作台",
+        "输入工作台",
+        "catalog",
+    ):
+        assert not try_route(text).handled, f"不应走快捷路由: {text!r}"
+        assert normalize_fuzzy_fast_command(text) is None, text
+        assert not is_likely_fast_route(text), text
 
 
 def test_queue_and_progress() -> None:
@@ -145,7 +169,7 @@ def test_report_nl_route() -> None:
     assert is_likely_fast_route("帮我生成2.5.4版本测试报告")
     assert normalize_fuzzy_fast_command("帮我 MOA 探活") is None
     assert not is_likely_fast_route("不要看到MOA就进行检查")
-    assert normalize_fuzzy_fast_command("平台说明书在哪") == "工具平台"
+    assert normalize_fuzzy_fast_command("平台说明书在哪") is None
 
 
 def test_code_modify_guard() -> None:
@@ -263,6 +287,10 @@ def test_duration_history() -> None:
         store.record("agent:query", 999.0, status="error")
         store.record("agent:query", 10.0, status="interrupted")
         assert store.estimate_seconds("agent:query") == 100.0
+        assert not any(
+            str(item.get("status")) == "interrupted"
+            for item in store._records.get("agent:query", [])
+        )
         reloaded = DurationHistoryStore(path=path)
         assert reloaded.estimate_seconds("agent:query") == 100.0
         assert len(reloaded._records.get("agent:query", [])) == 3
@@ -271,7 +299,7 @@ def test_duration_history() -> None:
 def test_fast_route_skip_text_ack() -> None:
     from route_patterns import is_likely_fast_route, should_send_text_task_ack
 
-    for text in ("查看全部数据", "帮助", "MOA检查", "工具平台"):
+    for text in ("查看全部数据", "MOA检查"):
         assert is_likely_fast_route(text), text
         assert not should_send_text_task_ack(text), text
     assert should_send_text_task_ack("查询用户 100465989")
@@ -318,10 +346,10 @@ def main() -> int:
     print("[OK] test_env_check_not_fast_route")
     test_moa_check_fuzzy()
     print("[OK] test_moa_check_fuzzy")
-    test_help_fuzzy()
-    print("[OK] test_help_fuzzy")
-    test_catalog_fuzzy()
-    print("[OK] test_catalog_fuzzy")
+    test_help_not_fast_route()
+    print("[OK] test_help_not_fast_route")
+    test_catalog_not_fast_route()
+    print("[OK] test_catalog_not_fast_route")
     test_queue_and_progress()
     print("[OK] test_queue_and_progress")
     test_log_redact()

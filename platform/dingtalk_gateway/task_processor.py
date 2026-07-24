@@ -72,7 +72,7 @@ from progress_message import (
 )
 from queue_persist import get_queue_persist
 from reply_formatter import format_exception, format_group_reply
-from route_patterns import normalize_fuzzy_fast_command, normalize_report_prompt
+from route_patterns import is_web_login_request, normalize_fuzzy_fast_command, normalize_report_prompt
 from task_session import TaskInterrupted, TaskSession
 from testcase_auto_export import (
     export_generated_testcases_safe,
@@ -80,6 +80,7 @@ from testcase_auto_export import (
 )
 from user_agent_pool import get_user_agent_pool
 from web_agent_sync import sync_exchange_to_web_agent
+from web_login_route import handle_web_login_request
 
 logger = logging.getLogger("dingtalk-gateway")
 
@@ -502,6 +503,28 @@ def process_inbound_task(
             store.save(incoming.conversation_id, prompt, **store_kwargs)
             return "denied_env_check"
 
+        if is_web_login_request(prompt):
+            task_kind = classify_task_kind(prompt, route_kind="web_login")
+            group_reply, _dm_ok = handle_web_login_request(
+                sender_staff_id=sender_staff_id,
+                sender_name=sender_name,
+                conversation_type=incoming.conversation_type,
+                client=getattr(handler, "dingtalk_client", None),
+            )
+            _reply_final(
+                handler,
+                incoming,
+                inbound,
+                group_reply,
+                started=started,
+                task_kind=task_kind,
+                user_key=user_key,
+                user_prompt=prompt,
+                sender_name=sender_name,
+                sender_staff_id=sender_staff_id,
+            )
+            return "ok"
+
         image_paths = []
         if inbound.image_download_codes:
             session.set_phase("prepare")
@@ -721,20 +744,15 @@ def process_inbound_task(
             redact_for_log(prompt),
         )
         interrupt_body = "⚠️ 你的任务已被中断。"
-        interrupt_with_footer = append_duration_footer(
-            interrupt_body,
-            time.monotonic() - started,
-            task_kind=task_kind,
-        )
         if stream_card is not None:
-            stream_card.finish(interrupt_with_footer)
+            stream_card.finish(interrupt_body)
         else:
             handler._reply(interrupt_body, incoming, inbound)
         if user_key and prompt:
             sync_exchange_to_web_agent(
                 user_key,
                 prompt,
-                interrupt_with_footer,
+                interrupt_body,
                 sender_name=sender_name,
                 sender_staff_id=sender_staff_id,
             )

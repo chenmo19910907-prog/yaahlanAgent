@@ -163,8 +163,6 @@ def build_document() -> Document:
         ],
     )
     add_body(doc, "最简示例：", bold=True)
-    add_bullet(doc, "@机器人 帮助")
-    add_bullet(doc, "@机器人 环境检查")
     add_bullet(doc, "@机器人 查一下用户 100465989 的 VIP 等级")
 
     # —— 3 两种交互方式 ——
@@ -188,7 +186,7 @@ def build_document() -> Document:
     )
     add_body(
         doc,
-        "提示：群里发「帮助」可查看完整指令列表；发「打开工作台」可获取离线版工具能力目录（zip 附件）。",
+        "提示：执行机本地可运行 python3 platform/open_catalog.py 打开工具能力目录。",
         color=COLOR_MUTED,
     )
 
@@ -200,11 +198,9 @@ def build_document() -> Document:
         doc,
         ["指令", "说明"],
         [
-            ["帮助", "显示完整用法说明"],
             ["环境检查", "本机配置自检（Bridge、凭证、依赖等）"],
             ["MOA检查", "测试环境 MOA Cookie 是否有效"],
             ["导出 temporary_testcase/xxx.csv", "将本地用例文件导出为钉钉在线表格"],
-            ["打开工作台 / 工具平台", "发送离线 HTML 工具台 zip 到本群"],
             ["2.4.5版本生成测试报告", "生成指定版本内/外网 HTML 测试报告（zip 附件）"],
             ["100465989升级 VIP3", "MOA VIP 升级（用户 ID + 等级）"],
             ["中断操作", "打断本群当前正在执行的任务"],
@@ -302,7 +298,7 @@ def build_document() -> Document:
         ),
         (
             "Q：如何获取全部工具能力清单？",
-            "A：群里发「打开工作台」下载离线版；执行机本地可运行 python3 platform/open_catalog.py。",
+            "A：执行机本地可运行 python3 platform/open_catalog.py。",
         ),
     ]
     for q, a in faqs:
@@ -314,8 +310,8 @@ def build_document() -> Document:
     style_heading(h, 1)
     add_body(
         doc,
-        "@机器人 + 你的需求 ｜ 帮助 ｜ 环境检查 ｜ 中断操作 ｜ 重新执行 ｜ "
-        "查看全部数据 ｜ 导出到钉钉文档 ｜ 打开工作台",
+        "@机器人 + 你的需求 ｜ MOA检查 ｜ 中断操作 ｜ 重新执行 ｜ "
+        "查看全部数据 ｜ 导出到钉钉文档",
         color=COLOR_ACCENT,
     )
 

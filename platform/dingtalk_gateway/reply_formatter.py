@@ -7,7 +7,6 @@ import re
 
 from natural_language import (
     naturalize_agent_reply,
-    naturalize_catalog,
     naturalize_export,
     naturalize_moa_check,
     naturalize_report,
@@ -17,7 +16,6 @@ from natural_language import (
 from moa_registry_guard import is_explicit_moa_check_command, looks_like_moa_registry_intent
 from export_delivery import TRUNCATE_GUIDE
 from route_patterns import (
-    CATALOG_OPEN_RE,
     EXPORT_FILE_RE,
     REPORT_URL_RE,
     REPORT_VERSION_RE,
@@ -113,15 +111,6 @@ def _format_vip_upgrade(raw: str, prompt: str) -> str:
     if _is_html_blob(detail):
         return _moa_auth_expired_message()
     return naturalize_vip_failure(user_id, level, detail)
-
-
-def _format_catalog(raw: str, prompt: str) -> str:
-    if not (
-        CATALOG_OPEN_RE.match(prompt.strip())
-        or raw.strip().startswith("[OK] 工具平台离线版已生成")
-    ):
-        return ""
-    return _truncate(naturalize_catalog(raw))
 
 
 def _format_report(raw: str, prompt: str) -> str:
@@ -245,10 +234,6 @@ def format_group_reply(
     export_msg = _format_export(text, normalized_prompt)
     if export_msg:
         return export_msg
-
-    catalog_msg = _format_catalog(text, normalized_prompt)
-    if catalog_msg:
-        return catalog_msg
 
     report_msg = _format_report(text, normalized_prompt)
     if report_msg:

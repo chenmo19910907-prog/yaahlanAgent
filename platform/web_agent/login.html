@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>登录 · Yaahlan 智能工具 Agent</title>
+  <style>
+    :root {
+      --bg: #0b0e14;
+      --panel: rgba(20, 24, 33, 0.92);
+      --border: rgba(148, 163, 184, 0.18);
+      --text: #f2f5fa;
+      --muted: #a4adbd;
+      --accent: #5b8cff;
+      --accent-soft: rgba(91, 140, 255, 0.16);
+      --success: #22c55e;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        linear-gradient(135deg, rgba(91, 140, 255, 0.18) 0%, transparent 42%),
+        linear-gradient(225deg, rgba(66, 211, 178, 0.13) 0%, transparent 46%),
+        linear-gradient(180deg, #0b0e14 0%, #101522 46%, #090b10 100%);
+    }
+    .card {
+      width: min(480px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 28px 28px 24px;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(12px);
+    }
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 650;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.55;
+      margin-bottom: 22px;
+    }
+    .step {
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.55;
+      margin-bottom: 10px;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      max-width: 100%;
+    }
+    .phrase-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+    .phrase-box {
+      min-width: 0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      font-size: 0.86rem;
+      line-height: 1.45;
+      white-space: nowrap;
+      overflow-x: auto;
+    }
+    .copy-btn {
+      flex: 0 0 auto;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 12px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+    .copy-btn:hover { background: rgba(91, 140, 255, 0.24); }
+    .copy-btn:active { transform: scale(0.98); }
+    .copy-btn.copied { color: var(--success); background: rgba(34, 197, 94, 0.12); }
+    label {
+      display: block;
+      font-size: 0.86rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .code-input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-size: 1.35rem;
+      letter-spacing: 0.35em;
+      text-align: center;
+      outline: none;
+    }
+    .code-input:focus {
+      border-color: rgba(91, 140, 255, 0.55);
+      box-shadow: 0 0 0 3px rgba(91, 140, 255, 0.15);
+    }
+    .login-btn {
+      width: 100%;
+      margin-top: 16px;
+      padding: 13px 16px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #5b8cff, #4a78e8);
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    .login-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .hint, .error {
+      margin-top: 14px;
+      font-size: 0.84rem;
+      line-height: 1.55;
+    }
+    .hint { color: var(--muted); }
+    .error { color: var(--danger); display: none; }
+    .error.show { display: block; }
+    @media (max-width: 420px) {
+      body { padding: 16px; }
+      .card { padding: 20px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Yaahlan 智能工具 Agent</h1>
+    <p class="subtitle">网页版需先通过钉钉机器人验证身份。验证码将私聊发送，登录后会记住本浏览器，无需重复验证。</p>
+
+    <p class="step">1. 复制下方文案，发送给【智能工具人yaahlan】或【群内@智能工具人yaahlan】发送，加群请联系【陈墨】</p>
+    <div class="phrase-row">
+      <div class="phrase-box" id="loginPhrase">请求访问Yaahlan 智能工具 Agent</div>
+      <button type="button" class="copy-btn" id="copyBtn">复制</button>
+    </div>
+
+    <p class="step">2. 在钉钉私聊中查收 8 位验证码，输入后登录</p>
+    <input id="codeInput" class="code-input" type="text" inputmode="numeric" maxlength="8"
+           autocomplete="one-time-code" placeholder="········" />
+    <button type="button" class="login-btn" id="loginBtn">登录</button>
+
+    <p class="hint">重新向机器人发送上述文案会更新验证码，并使此前网页登录失效。</p>
+    <p class="error" id="errorBox"></p>
+  </div>
+
+  <script>
+    const phraseEl = document.getElementById('loginPhrase');
+    const copyBtn = document.getElementById('copyBtn');
+    const codeInput = document.getElementById('codeInput');
+    const loginBtn = document.getElementById('loginBtn');
+    const errorBox = document.getElementById('errorBox');
+
+    function renderLoginPhrase(text) {
+      const t = (text || '').trim();
+      phraseEl.textContent = t;
+      return t;
+    }
+
+    function getPhrasePlainText() {
+      return phraseEl.textContent.replace(/\s+/g, ' ').trim();
+    }
+
+    async function bootstrap() {
+      try {
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
+        if (data.loggedIn) {
+          window.location.replace('/');
+          return;
+        }
+        if (data.loginPhrase) {
+          renderLoginPhrase(data.loginPhrase);
+        }
+      } catch (_) {
+        /* ignore */
+      }
+    }
+
+    copyBtn.addEventListener('click', async () => {
+      const text = getPhrasePlainText();
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (_) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      copyBtn.textContent = '已复制';
+      copyBtn.classList.add('copied');
+      setTimeout(() => {
+        copyBtn.textContent = '复制';
+        copyBtn.classList.remove('copied');
+      }, 1800);
+    });
+
+    function showError(msg) {
+      errorBox.textContent = msg || '登录失败';
+      errorBox.classList.add('show');
+    }
+
+    async function doLogin() {
+      const code = codeInput.value.replace(/\D/g, '').slice(0, 8);
+      codeInput.value = code;
+      if (code.length !== 8) {
+        showError('请输入 8 位数字验证码');
+        return;
+      }
+      errorBox.classList.remove('show');
+      loginBtn.disabled = true;
+      loginBtn.textContent = '登录中…';
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showError(data.error || '登录失败');
+          return;
+        }
+        window.location.replace('/');
+      } catch (err) {
+        showError(err.message || '无法连接服务');
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = '登录';
+      }
+    }
+
+    loginBtn.addEventListener('click', doLogin);
+    codeInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') doLogin();
+    });
+    codeInput.addEventListener('input', () => {
+      codeInput.value = codeInput.value.replace(/\D/g, '').slice(0, 8);
+      errorBox.classList.remove('show');
+    });
+
+    bootstrap();
+  </script>
+</body>
+</html>

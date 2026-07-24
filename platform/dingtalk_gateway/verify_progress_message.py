@@ -63,6 +63,13 @@ def test_heartbeat_elapsed_only() -> None:
     assert "中断操作" in msg
 
 
+def test_interrupted_task_has_no_duration_footer() -> None:
+    """中断任务不展示耗时尾注（也不写入历史，见 duration_history.record）。"""
+    body = "⚠️ 你的任务已被中断。"
+    assert "本次耗时" not in body
+    assert "⏱" not in body
+
+
 def test_streaming_progress_status_line() -> None:
     from progress_message import build_streaming_progress_status_line
 
@@ -81,6 +88,8 @@ def main() -> int:
     print("[OK] test_duration_footer")
     test_heartbeat_elapsed_only()
     print("[OK] test_heartbeat_elapsed_only")
+    test_interrupted_task_has_no_duration_footer()
+    print("[OK] test_interrupted_task_has_no_duration_footer")
     test_streaming_progress_status_line()
     print("[OK] test_streaming_progress_status_line")
     print("[PASS] progress_message")

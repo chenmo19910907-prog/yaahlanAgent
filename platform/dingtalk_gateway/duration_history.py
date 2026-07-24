@@ -13,9 +13,7 @@ from pathlib import Path
 from env_loader import GATEWAY_DIR
 from export_delivery import is_view_all_follow_up
 from route_patterns import (
-    CATALOG_OPEN_RE,
     EXPORT_FILE_RE,
-    HELP_RE,
     MOA_CHECK_RE,
     REPORT_NL_RE,
     REPORT_URL_RE,
@@ -45,12 +43,8 @@ def classify_task_kind(
         return DEFAULT_AGENT_KIND
     if is_view_all_follow_up(text):
         return "fast:view_all"
-    if HELP_RE.match(text):
-        return "fast:help"
     if MOA_CHECK_RE.match(text):
         return "fast:moa_check"
-    if CATALOG_OPEN_RE.match(text):
-        return "fast:catalog"
     if EXPORT_FILE_RE.match(text):
         return "fast:export_file"
     if VIP_UPGRADE_RE.match(text):

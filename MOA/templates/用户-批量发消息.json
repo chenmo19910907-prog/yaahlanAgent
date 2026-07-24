@@ -1,0 +1,48 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-user-tool-stage",
+  "method": "batchSendP2pMessage",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "100063802",
+      "json": "",
+      "type": "string",
+      "value": "100063802"
+    },
+    {
+      "title": "参数2",
+      "name": "2",
+      "txt": "测试批量消息",
+      "json": "",
+      "type": "string",
+      "value": "测试批量消息"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "user_batch_send_p2p_message",
+    "name": "用户-批量发消息",
+    "category": "用户工具（voga-mts-user-tool-stage）",
+    "description": "测试环境批量发私聊消息（batchSendP2pMessage；调一次约 600+ 测试号各发一条；params[0]=userId，params[1]=消息内容）。执行前请改模板 params 或使用 --payload 传入完整 JSON",
+    "prompts": [
+      "批量发消息 userId <userId> 内容 <message>",
+      "用 <userId> 批量发私聊 <message>",
+      "批量发私聊消息"
+    ]
+  }
+}

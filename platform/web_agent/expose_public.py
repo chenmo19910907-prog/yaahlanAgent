@@ -33,7 +33,7 @@ if str(WEB_AGENT_DIR) not in sys.path:
     sys.path.insert(0, str(WEB_AGENT_DIR))
 
 from env_loader import ENV_LOCAL, load_env_local  # noqa: E402
-from web_auth import auth_credentials  # noqa: E402
+from web_auth import auth_credentials, otp_auth_enabled  # noqa: E402
 
 DEFAULT_PORT = 18766
 
@@ -55,15 +55,18 @@ def _load_config_port() -> int:
         return DEFAULT_PORT
 
 
-def _require_auth_configured() -> tuple[str, str]:
+def _require_auth_configured() -> tuple[str, str] | None:
     load_env_local()
+    if otp_auth_enabled():
+        return None
     creds = auth_credentials()
     if creds is None:
         raise RuntimeError(
-            "外网暴露必须先配置鉴权，请在 "
-            f"{ENV_LOCAL} 增加：\n"
+            "外网暴露须启用钉钉验证码登录（默认已开启），或在 "
+            f"{ENV_LOCAL} 配置：\n"
             "  WEB_AGENT_AUTH_USER=你的用户名\n"
-            "  WEB_AGENT_AUTH_PASSWORD=强密码"
+            "  WEB_AGENT_AUTH_PASSWORD=强密码\n"
+            "若仅需 Basic Auth，可设 WEB_AGENT_OTP_AUTH=0"
         )
     return creds
 
@@ -206,7 +209,7 @@ def main() -> int:
     args = parser.parse_args()
 
     port = args.port if args.port is not None else _load_config_port()
-    user, _password = _require_auth_configured()
+    _require_auth_configured()
     os.environ["WEB_AGENT_PUBLIC"] = "1"
 
     try:

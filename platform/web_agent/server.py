@@ -87,7 +87,16 @@ from web_image_store import (  # noqa: E402
     save_chat_images,
 )
 from web_session_store import get_session_store  # noqa: E402
-from web_auth import authorize_request, auth_enabled  # noqa: E402
+from web_admin_permission import is_web_admin, web_admin_denial_message  # noqa: E402
+from web_auth import authorize_request, auth_enabled, logout_current_session  # noqa: E402
+from web_otp_auth import (  # noqa: E402
+    WEB_LOGIN_PHRASE,
+    current_web_user,
+    get_web_otp_store,
+    is_public_auth_path,
+    otp_auth_enabled,
+    set_session_cookie,
+)
 
 logger = logging.getLogger("web-agent")
 
@@ -171,6 +180,8 @@ def _platform_meta() -> dict[str, int | str]:
         "maxImagesPerMessage": MAX_IMAGES_PER_MESSAGE,
         "authRequired": auth_enabled(),
         "authPublicOnly": auth_enabled(),
+        "otpAuthEnabled": otp_auth_enabled(),
+        "loginPhrase": WEB_LOGIN_PHRASE,
     }
 
 
@@ -327,6 +338,23 @@ def _start_run_progress_watcher(
     ).start()
 
 
+def _session_owner_context(user: Any) -> tuple[str, str, float]:
+    if user is None:
+        return "", "", 0.0
+    uid = str(getattr(user, "staff_id", "") or "").strip()
+    label = str(getattr(user, "display_name", "") or uid or "").strip()
+    try:
+        auth_created = float(getattr(user, "auth_created_at", 0) or 0)
+    except (TypeError, ValueError):
+        auth_created = 0.0
+    return uid, label, auth_created
+
+
+def _session_owner_from_user(user: Any) -> tuple[str, str]:
+    uid, label, _ = _session_owner_context(user)
+    return uid, label
+
+
 def _start_chat_run(
     session_id: str,
     message: str,
@@ -474,16 +502,42 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_OPTIONS(self) -> None:
+        parsed = urlparse(self.path)
+        path = parsed.path.rstrip("/") or "/"
+        if is_public_auth_path(path):
+            self.send_response(HTTPStatus.NO_CONTENT)
+            self.end_headers()
+            return
         if not authorize_request(self):
             return
         self.send_response(HTTPStatus.NO_CONTENT)
         self.end_headers()
 
     def do_GET(self) -> None:
-        if not authorize_request(self):
-            return
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
+
+        if path in ("/login.html", "/login"):
+            self.path = "/login.html"
+            return super().do_GET()
+
+        if path == "/api/auth/status":
+            user = current_web_user(self)
+            payload: dict[str, Any] = {
+                "loggedIn": user is not None,
+                "otpAuthEnabled": otp_auth_enabled(),
+                "loginPhrase": WEB_LOGIN_PHRASE,
+            }
+            if user is not None:
+                payload["user"] = {
+                    "staffId": user.staff_id,
+                    "displayName": user.display_name or user.staff_id,
+                    "isAdmin": is_web_admin(staff_id=user.staff_id),
+                }
+            return _json_response(self, payload)
+
+        if not authorize_request(self):
+            return
 
         if path == "/":
             self.path = "/chat.html"
@@ -507,6 +561,8 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             sync_all_from_conversation_store()
             store = get_session_store()
             store.reload_from_disk()
+            viewer = current_web_user(self)
+            viewer_staff_id = viewer.staff_id if viewer is not None else None
             items = store.list_sessions()
             try:
                 from dingtalk_user_lookup import collect_known_labels
@@ -514,7 +570,10 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 known = collect_known_labels(items)
             except Exception:  # noqa: BLE001
                 known = {}
-            sessions = [s.to_dict(known_labels=known) for s in items]
+            sessions = [
+                s.to_dict(known_labels=known, viewer_staff_id=viewer_staff_id)
+                for s in items
+            ]
             return _json_response(self, {"sessions": sessions})
 
         m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})/messages$", path)
@@ -606,10 +665,40 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             run.task_session.request_cancel()
 
     def do_POST(self) -> None:
-        if not authorize_request(self):
-            return
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/")
+
+        if path == "/api/auth/login":
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            code = str(body.get("code") or "").strip()
+            token, user, err = get_web_otp_store().verify_otp_and_create_session(code)
+            if not token or user is None:
+                return _json_response(self, {"error": err or "登录失败"}, 401)
+            payload = {
+                "ok": True,
+                "user": {
+                    "staffId": user.staff_id,
+                    "displayName": user.display_name or user.staff_id,
+                },
+            }
+            body_bytes = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            set_session_cookie(self, token)
+            self.send_header("Content-Length", str(len(body_bytes)))
+            self.end_headers()
+            self.wfile.write(body_bytes)
+            return
+
+        if path == "/api/auth/logout":
+            logout_current_session(self)
+            return _json_response(self, {"ok": True})
+
+        if not authorize_request(self):
+            return
 
         if path == "/api/sessions":
             try:
@@ -617,8 +706,17 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             except json.JSONDecodeError:
                 return _json_response(self, {"error": "invalid json"}, 400)
             title = str(body.get("title") or "新对话")
-            meta = get_session_store().create_session(title=title)
-            return _json_response(self, meta.to_dict(), 201)
+            owner_id, owner_label = _session_owner_from_user(current_web_user(self))
+            meta = get_session_store().create_session(
+                title=title,
+                owner_id=owner_id,
+                owner_label=owner_label,
+            )
+            return _json_response(
+                self,
+                meta.to_dict(viewer_staff_id=owner_id or None),
+                201,
+            )
 
         if path == "/api/chat":
             try:
@@ -642,12 +740,21 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             store = get_session_store()
             if store.get_session(session_id) is None:
                 return _json_response(self, {"error": "session not found"}, 404)
-            if store.is_read_only(session_id):
-                return _json_response(
-                    self,
-                    {"error": "钉钉同步会话只读，请在 Web 新建对话继续"},
-                    403,
-                )
+            viewer = current_web_user(self)
+            viewer_staff_id = viewer.staff_id if viewer is not None else None
+            if store.is_read_only_for_viewer(session_id, viewer_staff_id):
+                meta = store.get_session(session_id)
+                if meta is not None and meta.source == "dingtalk":
+                    err = "钉钉同步会话只读，请在 Web 新建对话继续"
+                else:
+                    err = "该会话归属他人，仅供查看；请新建对话继续"
+                return _json_response(self, {"error": err}, 403)
+            owner_id, owner_label = _session_owner_from_user(viewer)
+            store.ensure_web_owner(
+                session_id,
+                owner_id=owner_id,
+                owner_label=owner_label,
+            )
             user_key = store.user_key(session_id)
             display_message = message
             if not display_message and image_items:
@@ -704,6 +811,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         if not m:
             self.send_error(HTTPStatus.NOT_FOUND)
             return
+        user = current_web_user(self)
+        if user is not None and not is_web_admin(staff_id=user.staff_id):
+            return _json_response(self, {"error": web_admin_denial_message()}, 403)
         ok = get_session_store().delete_session(m.group(1))
         if not ok:
             return _json_response(self, {"error": "session not found"}, 404)

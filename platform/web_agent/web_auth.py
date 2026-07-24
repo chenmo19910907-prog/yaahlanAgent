@@ -1,4 +1,4 @@
-"""Web Agent 公网访问鉴权（HTTP Basic Auth + 可选 IP 白名单）。"""
+"""Web Agent 鉴权：钉钉验证码 Cookie 登录 + 可选 HTTP Basic Auth。"""
 
 from __future__ import annotations
 
@@ -18,6 +18,17 @@ if str(_gateway) not in sys.path:
     sys.path.insert(0, str(_gateway))
 
 from env_loader import load_env_local
+from web_otp_auth import (
+    clear_session_cookie,
+    current_web_user,
+    is_public_auth_path,
+    otp_auth_enabled,
+    read_session_cookie,
+    send_auth_required,
+    send_login_redirect,
+    set_session_cookie,
+    get_web_otp_store,
+)
 
 
 def _env_bool(name: str, default: bool = False) -> bool:
@@ -49,9 +60,8 @@ def _effective_client_ip(handler: BaseHTTPRequestHandler) -> str:
 
 
 def _is_external_proxy_request(handler: BaseHTTPRequestHandler) -> bool:
-    """经 Cloudflare/ngrok 等公网隧道转发时，即便 origin 看到 127.0.0.1 也须鉴权。"""
     headers = handler.headers
-    if (headers.get("CF-Connecting-IP") or headers.get("CF-Ray") or headers.get("CF-Visitor")):
+    if headers.get("CF-Connecting-IP") or headers.get("CF-Ray") or headers.get("CF-Visitor"):
         return True
     host = (headers.get("Host") or "").lower()
     if any(token in host for token in ("trycloudflare.com", "ngrok", "ngrok-free.app", "ngrok.io")):
@@ -62,21 +72,11 @@ def _is_external_proxy_request(handler: BaseHTTPRequestHandler) -> bool:
     return False
 
 
-def auth_required_for_request(handler: BaseHTTPRequestHandler) -> bool:
-    """是否须校验 Basic Auth。默认仅公网/隧道访问须登录，内网直连免登录。"""
-    if not auth_enabled():
-        return False
-    load_env_local()
-    if not _env_bool("WEB_AGENT_AUTH_PUBLIC_ONLY", True):
-        return True
-    if _is_external_proxy_request(handler):
-        return True
-    return not _is_private_or_local(_effective_client_ip(handler))
-
-
 def auth_enabled() -> bool:
-    """配置了用户名密码则启用鉴权。"""
+    """是否启用任意鉴权（OTP 或 Basic）。"""
     load_env_local()
+    if otp_auth_enabled():
+        return True
     user = os.environ.get("WEB_AGENT_AUTH_USER", "").strip()
     password = os.environ.get("WEB_AGENT_AUTH_PASSWORD", "").strip()
     return bool(user and password)
@@ -92,9 +92,21 @@ def auth_credentials() -> tuple[str, str] | None:
 
 
 def public_mode_required() -> bool:
-    """外网暴露模式：必须配置鉴权（由 expose_public 设置）。"""
     load_env_local()
     return _env_bool("WEB_AGENT_PUBLIC", False)
+
+
+def auth_required_for_request(handler: BaseHTTPRequestHandler) -> bool:
+    load_env_local()
+    if otp_auth_enabled():
+        return True
+    if not auth_enabled():
+        return False
+    if not _env_bool("WEB_AGENT_AUTH_PUBLIC_ONLY", True):
+        return True
+    if _is_external_proxy_request(handler):
+        return True
+    return not _is_private_or_local(_effective_client_ip(handler))
 
 
 def _client_ip(handler: BaseHTTPRequestHandler) -> str:
@@ -144,12 +156,33 @@ def _send_forbidden(handler: BaseHTTPRequestHandler) -> None:
     handler.wfile.write(body)
 
 
+def _basic_auth_valid(handler: BaseHTTPRequestHandler) -> bool:
+    creds = auth_credentials()
+    if creds is None:
+        return False
+    auth_header = handler.headers.get("Authorization") or ""
+    if not auth_header.startswith("Basic "):
+        return False
+    try:
+        decoded = base64.b64decode(auth_header[6:].strip(), validate=True).decode("utf-8")
+        user, sep, password = decoded.partition(":")
+        if not sep:
+            return False
+    except (ValueError, UnicodeDecodeError):
+        return False
+    expected_user, expected_password = creds
+    return user == expected_user and password == expected_password
+
+
 def authorize_request(handler: BaseHTTPRequestHandler) -> bool:
     """返回 True 表示可继续处理请求。"""
+    load_env_local()
+    path = (getattr(handler, "path", "") or "").split("?", 1)[0].rstrip("/") or "/"
+
     if public_mode_required() and not auth_enabled():
         handler.send_response(HTTPStatus.SERVICE_UNAVAILABLE)
         handler.send_header("Content-Type", "text/plain; charset=utf-8")
-        body = "外网模式未配置 WEB_AGENT_AUTH_USER / WEB_AGENT_AUTH_PASSWORD\n".encode("utf-8")
+        body = "外网模式未配置鉴权\n".encode("utf-8")
         handler.send_header("Content-Length", str(len(body)))
         handler.end_headers()
         handler.wfile.write(body)
@@ -160,27 +193,30 @@ def authorize_request(handler: BaseHTTPRequestHandler) -> bool:
         _send_forbidden(handler)
         return False
 
-    creds = auth_credentials()
-    if creds is None or not auth_required_for_request(handler):
+    if is_public_auth_path(path):
         return True
 
-    auth_header = handler.headers.get("Authorization") or ""
-    if not auth_header.startswith("Basic "):
-        _send_unauthorized(handler)
+    if otp_auth_enabled():
+        if current_web_user(handler) is not None:
+            return True
+        if _basic_auth_valid(handler):
+            return True
+        json_api = path.startswith("/api/")
+        send_auth_required(handler, json_api=json_api)
         return False
 
-    try:
-        decoded = base64.b64decode(auth_header[6:].strip(), validate=True).decode("utf-8")
-        user, sep, password = decoded.partition(":")
-        if not sep:
-            _send_unauthorized(handler)
-            return False
-    except (ValueError, UnicodeDecodeError):
-        _send_unauthorized(handler)
-        return False
+    if not auth_required_for_request(handler):
+        return True
 
-    expected_user, expected_password = creds
-    if user != expected_user or password != expected_password:
-        _send_unauthorized(handler)
-        return False
-    return True
+    if _basic_auth_valid(handler):
+        return True
+
+    _send_unauthorized(handler)
+    return False
+
+
+def logout_current_session(handler: BaseHTTPRequestHandler) -> None:
+    token = read_session_cookie(handler)
+    if token:
+        get_web_otp_store().revoke_session_token(token)
+    clear_session_cookie(handler)
