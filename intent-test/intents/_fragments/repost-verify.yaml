@@ -1,0 +1,30 @@
+# 转发动态（v2.5.8）结果验证片段
+#
+# 用法:
+#   verify:
+#     include:
+#       - repost-verify/verify_repost_publish_success
+#       - repost-verify/verify_forward_label_in_discover
+
+verify_repost_publish_success:
+  - waitFor: 出现发布成功 toast 提示，或发布 loading 结束后自动跳转
+  - waitFor: 当前已离开发布编辑页，处于我的动态列表页或 Discover 页
+
+verify_forward_label_in_discover:
+  - tap: [0.70, 0.96]
+    afterSleep: 2000
+  - waitFor: 已进入 Discover 发现 tab
+  - waitFor: 动态列表中可见带 "Forward" 标签的转发帖
+
+verify_repost_card_in_feed:
+  - waitFor: 转发帖外层展示发布者昵称和 "Forward" 标签
+  - waitFor: 转发帖嵌套区域内可见被转发动态卡片，卡片底部可见 "Moment" 字样
+
+verify_unavailable_nested_card:
+  - waitFor: 嵌套转发卡片区域展示 "This moment has been changed to Friends Only or has been deleted" 文案
+  - waitFor: 嵌套卡片内可见不可查看图标（斜线眼睛或类似占位）
+
+cleanup_delete_latest_repost:
+  - act: 在我的动态列表中找到刚发布的转发帖，点击 "..." 或长按打开菜单
+  - act: 点击 Delete 删除并确认
+  - waitFor: 该转发帖已从列表移除

@@ -13,6 +13,7 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync, existsSy
 import { dirname, resolve, basename, relative } from 'path';
 import { fileURLToPath } from 'url';
 import { applyBaseProfileEnv } from './load-base-profile.mjs';
+import { loadMidsceneEnv } from '../../midscene/scripts/load-env.mjs';
 import { parseAllDocuments, parse } from 'yaml';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -56,19 +57,7 @@ const DEFAULT_ACT_SLEEP_MS = Number(process.env.INTENT_ACT_SLEEP_MS ?? 1000);
 
 function loadEnvFromMidscene() {
   applyBaseProfileEnv();
-  try {
-    const lines = readFileSync(resolve(MIDSCENE_ROOT, '.env'), 'utf8').split('\n');
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#') || !trimmed.includes('=')) continue;
-      const idx = trimmed.indexOf('=');
-      const key = trimmed.slice(0, idx).trim();
-      const val = trimmed.slice(idx + 1).trim().replace(/\s*#.*$/, '').trim();
-      if (key) process.env[key] = val;
-    }
-  } catch {
-    /* midscene/.env 可选 */
-  }
+  loadMidsceneEnv({ root: MIDSCENE_ROOT });
 }
 
 function expandTemplate(str) {

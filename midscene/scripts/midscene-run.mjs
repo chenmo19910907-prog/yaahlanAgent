@@ -25,26 +25,16 @@ import { readFileSync, writeFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import os from 'os';
+import { loadMidsceneEnv } from './load-env.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const VCODE_FILE   = '/data/local/tmp/vcode.txt';
 const INPUT_SCRIPT = '/data/local/tmp/run_input.sh';
 const GET_CODE_URL = 'https://fproject.immomo.com/inner/admin/ui/getVerifyCode';
 
-// 手动加载 .env
+// 手动加载 .env（MIDSCENE_* 以文件为准）
 function loadEnv() {
-  try {
-    const lines = readFileSync(resolve(root, '.env'), 'utf8').split('\n');
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#')) continue;
-      const idx = trimmed.indexOf('=');
-      if (idx === -1) continue;
-      const key = trimmed.slice(0, idx).trim();
-      const val = trimmed.slice(idx + 1).trim().replace(/\s*#.*$/, '').trim();
-      if (key && !process.env[key]) process.env[key] = val;
-    }
-  } catch { /* .env 不存在时忽略 */ }
+  loadMidsceneEnv({ root });
 }
 
 function adb(...args) {
@@ -170,7 +160,7 @@ function needsAndroidVerifyCode(yamlPaths, rawArgs) {
 /** 运行 midscene，返回退出码 */
 function runMidscene(yamlArgs, extraEnv = {}) {
   return new Promise((resolve) => {
-    const child = spawn('npx', ['midscene', ...yamlArgs], {
+    const child = spawn('npx', ['midscene', '--dotenv-override', ...yamlArgs], {
       stdio: 'inherit',
       env: { ...process.env, ...extraEnv },
       cwd: root,

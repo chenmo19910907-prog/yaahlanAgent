@@ -1,0 +1,318 @@
+# 转发动态 · PRD: Yaahlan-2.5.8 转发编辑页
+# UI 基准: 转发编辑页设计稿（X / Post / 转发卡片 / + Add Voice message）
+# 排除: 屏幕适配、多语言/RTL、@提及/表情细节回归、安装/升级路径
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║  模块 2：转发编辑页 — 卡片展示 → 编辑能力 → 纯转发发布  ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+id: IT-MOM-REPOST-009
+name: 纯转发编辑页展示转发卡片与 Post 按钮
+module: 转发动态-编辑页
+platform: android
+priority: P0
+tags: [动态, 转发, 编辑页, 展示]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_others_moment_share_menu
+    - repost-navigation/open_repost_editor_from_share
+
+intent:
+  action: 观察转发编辑页整体布局（未输入任何附加内容）
+  expected:
+    - 左上角可见 X 关闭按钮
+    - 右上角可见紫色 "Post" 按钮，处于高亮可点击状态
+    - 原图片/视频上传区已被转发卡片预览替代
+    - 转发卡片底部可见 "Moment" 字样
+    - 转发卡片右侧可见原作者昵称
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-010
+name: 转发编辑页无添加图片视频入口
+module: 转发动态-编辑页
+platform: android
+priority: P0
+tags: [动态, 转发, 编辑页, 限制]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_others_moment_share_menu
+    - repost-navigation/open_repost_editor_from_share
+
+intent:
+  action: 观察编辑页媒体上传相关入口
+  expected:
+    - 可见 "+ Add Voice message" 语音条添加入口
+    - 页面中部可见被转发动态卡片预览，卡片底部有 "Moment" 字样
+    - 右上角可见紫色 "Post" 按钮
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-011
+name: 转发编辑页输入文字展示字数计数
+module: 转发动态-编辑页
+platform: android
+priority: P0
+tags: [动态, 转发, 编辑页, 文字]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_others_moment_share_menu
+    - repost-navigation/open_repost_editor_from_share
+
+intent:
+  action: 在文字输入区输入测试文案 "repost text test"
+  expected:
+    - 文字输入区正常展示输入内容
+    - 输入区右下角可见字数计数，格式类似 "xx/1000"
+    - 右上角 "Post" 按钮仍保持高亮可点击
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-012
+name: 转发编辑页添加语音条
+module: 转发动态-编辑页
+platform: android
+priority: P0
+tags: [动态, 转发, 编辑页, 语音]
+preconditions: 麦克风权限已授予
+
+setup:
+  launchApp: true
+  skipPopupDismiss: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_others_moment_share_menu
+    - repost-navigation/open_repost_editor_from_share
+  steps:
+    - act: 点击 "+ Add Voice message" 按钮
+    - waitFor: 出现底部 Record 弹窗，可见紫色圆形录制按钮
+    - tap: [0.50, 0.785]
+      afterSleep: 500
+    - sleep: 3000
+    - tap: [0.50, 0.785]
+      afterSleep: 2000
+    - tap: [0.731, 0.861]
+      afterSleep: 2000
+    - waitFor: 返回转发编辑页，可见语音条胶囊
+
+intent:
+  action: 观察编辑页语音条展示
+  expected:
+    - 文字输入区下方可见语音条胶囊，显示时长（如 "3s" 或 "5s"）
+    - 转发卡片预览仍正常展示，未被语音条遮挡
+    - 右上角 "Post" 按钮仍高亮可点击
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-REPOST-013
+name: 转发编辑页选择话题标签
+module: 转发动态-编辑页
+platform: android
+priority: P1
+tags: [动态, 转发, 编辑页, 话题]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_others_moment_share_menu
+    - repost-navigation/open_repost_editor_from_share
+
+intent:
+  action: 在 Topic 区域点击一个话题标签（如 "#Happy Weekend"）
+  expected:
+    - 编辑页展示已选话题标签 pill，标签文案以 "#" 开头
+    - 转发卡片预览仍保留，未被清除
+    - 右上角 "Post" 按钮仍高亮可点击
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-014
+name: 转发编辑页 Only friends can view 开关
+module: 转发动态-编辑页
+platform: android
+priority: P1
+tags: [动态, 转发, 编辑页, 隐私]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_others_moment_share_menu
+    - repost-navigation/open_repost_editor_from_share
+
+intent:
+  action: 观察并点击 "Only friends can view" 开关
+  expected:
+    - 编辑页可见 "Only friends can view" 文案及右侧开关
+    - 点击后开关状态发生切换（开/关）
+    - 切换后转发卡片预览仍正常展示
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-015
+name: 转发编辑页 Skin 皮肤选择区域展示
+module: 转发动态-编辑页
+platform: android
+priority: P1
+tags: [动态, 转发, 编辑页, 皮肤]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_others_moment_share_menu
+    - repost-navigation/open_repost_editor_from_share
+  steps:
+    - act: 向下滑动编辑页，直到可见 Skin 皮肤选择区域
+
+intent:
+  action: 观察 Skin 区域
+  expected:
+    - 可见 Skin 相关 tab（如 Skin Owned 或 Store Skins）
+    - 皮肤卡片横向列表正常展示
+    - Post 按钮仍可见
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-016
+name: 纯转发不追加内容 Post 按钮可发布
+module: 转发动态-编辑页
+platform: android
+priority: P0
+tags: [动态, 转发, 编辑页, 纯转发]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_others_moment_share_menu
+    - repost-navigation/open_repost_editor_from_share
+
+intent:
+  action: 不输入文字、不添加语音，直接观察 Post 按钮状态
+  expected:
+    - 右上角 "Post" 按钮为紫色高亮状态
+    - Post 按钮可点击，非置灰禁用状态
+    - 转发卡片预览正常展示
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-017
+name: 点击 X 关闭编辑页不发布转发
+module: 转发动态-编辑页
+platform: android
+priority: P1
+tags: [动态, 转发, 编辑页, 取消]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_others_moment_share_menu
+    - repost-navigation/open_repost_editor_from_share
+  steps:
+    - act: 在文字区输入 "cancel repost test"
+
+intent:
+  action: 点击左上角 X 关闭按钮
+  expected:
+    - 已离开转发编辑页，返回 Discover 列表或 Share or repost 分享面板
+    - 当前页面可见动态列表或分享面板，不是转发编辑页
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-018
+name: 文字动态被转发卡片展示文字图标头图
+module: 转发动态-编辑页
+platform: android
+priority: P1
+tags: [动态, 转发, 编辑页, 文字原帖]
+preconditions: Discover 存在纯文字无图动态
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - act: 找到一条纯文字、无图片无视频的他人动态，打开 Share or repost 并进入编辑页
+    - waitFor: 已进入转发编辑页
+
+intent:
+  action: 观察被转发动态卡片左侧头图区域
+  expected:
+    - 转发卡片左侧展示文字类型图标（非图片缩略图）
+    - 卡片右侧可见原作者昵称和动态文案摘要
+    - 卡片底部可见 "Moment" 字样
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-019
+name: 图片动态被转发卡片展示图片缩略图
+module: 转发动态-编辑页
+platform: android
+priority: P1
+tags: [动态, 转发, 编辑页, 图片原帖]
+preconditions: Discover 存在带图片的动态
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - act: 找到一条带图片的他人动态，打开 Share or repost 并进入编辑页
+    - waitFor: 已进入转发编辑页
+
+intent:
+  action: 观察被转发动态卡片左侧头图区域
+  expected:
+    - 转发卡片左侧展示原帖图片缩略图
+    - 卡片右侧可见原作者昵称
+    - 卡片底部可见 "Moment" 字样
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-020
+name: 语音动态被转发卡片展示语音图标头图
+module: 转发动态-编辑页
+platform: android
+priority: P1
+tags: [动态, 转发, 编辑页, 语音原帖]
+preconditions: Discover 存在带语音条的动态
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - act: 找到一条带语音条的他人动态，打开 Share or repost 并进入编辑页
+    - waitFor: 已进入转发编辑页
+
+intent:
+  action: 观察被转发动态卡片左侧头图区域
+  expected:
+    - 转发卡片左侧展示语音类型图标（非图片缩略图）
+    - 卡片右侧可见原作者昵称
+    - 卡片底部可见 "Moment" 字样
+
+timeoutMs: 120000

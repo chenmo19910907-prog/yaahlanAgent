@@ -1,0 +1,149 @@
+# 转发动态 · PRD: Yaahlan-2.5.8 转发限制（二次转发 / 仅好友可见 / 自己动态）
+# 排除: 后台开关关闭场景（纯配置）、屏幕适配、多语言
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║  模块 5：限制场景 — 不可二次转发 / 仅好友可见 / 自己动态  ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+id: IT-MOM-REPOST-037
+name: 转发帖不可二次转发 toast 提示
+module: 转发动态-限制
+platform: android
+priority: P0
+tags: [动态, 转发, 二次转发, 限制]
+preconditions: Discover 存在带 Forward 标签的转发帖
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_forward_post_share_menu
+
+intent:
+  action: 点击 "Repost this moment" 按钮尝试二次转发
+  expected:
+    - 出现 toast 提示不可二次转发（含 repost 或 forward 相关英文提示）
+    - 仍停留在 Share or repost 分享面板，不是转发编辑页
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-038
+name: 转发帖详情页不可二次转发
+module: 转发动态-限制
+platform: android
+priority: P0
+tags: [动态, 转发, 二次转发, 详情页]
+preconditions: 可进入一条 Forward 转发帖详情
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - act: 进入一条带 "Forward" 标签的转发帖详情页
+    - waitFor: 已进入 Moments details 详情页
+    - act: 点击详情页分享/转发图标打开 Share or repost 面板
+
+intent:
+  action: 点击 "Repost this moment" 按钮
+  expected:
+    - 出现 toast 提示不可二次转发
+    - 未进入转发编辑页
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-039
+name: 仅好友可见动态不可转发 toast
+module: 转发动态-限制
+platform: android
+priority: P0
+tags: [动态, 转发, 仅好友可见, 限制]
+preconditions: MOA 造数 scope=FRIEND 正文 seed039xyz（作者 100438156）；100438156 为测试账号好友
+
+setup:
+  launchApp: true
+  include:
+    - repost-navigation/open_friends_only_moment_share_menu
+
+intent:
+  action: 点击 "Repost this moment" 按钮
+  expected:
+    - 出现 toast 提示该动态不可转发（含 friend 或 repost 相关英文提示）
+    - 未进入转发编辑页
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-REPOST-040
+name: 自己动态分享不支持转发
+module: 转发动态-限制
+platform: android
+priority: P0
+tags: [动态, 转发, 自己动态, 限制]
+preconditions: 测试账号个人主页存在自己发布的动态
+
+setup:
+  launchApp: true
+  include:
+    - repost-navigation/enter_my_moments_from_me_tab
+  steps:
+    - act: 点击自己发布的一条普通动态进入详情或打开分享菜单
+
+intent:
+  action: 尝试点击 Repost this moment 或观察分享面板是否展示 Repost 按钮
+  expected:
+    - 自己动态分享面板无紫色 "Repost this moment" 按钮，或点击后出现不可转发 toast
+    - 当前页面为分享面板或动态详情页，不是转发编辑页
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-041
+name: 二次转发限制后其他分享方式仍可用
+module: 转发动态-限制
+platform: android
+priority: P1
+tags: [动态, 转发, 分享, 共存]
+preconditions: Discover 存在 Forward 转发帖
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_forward_post_share_menu
+
+intent:
+  action: 观察 Repost 不可用后面板其他分享入口
+  expected:
+    - 面板仍展示 Whatsapp、Facebook、Copy link 外部分享入口
+    - 面板仍展示站内 Share 联系人列表及 "share" 按钮
+    - 其他分享方式布局正常可用
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-042
+name: 转发帖详情二次转发后仍不可转发
+module: 转发动态-限制
+platform: android
+priority: P1
+tags: [动态, 转发, 二次转发, 回归]
+preconditions: 已存在被转发过的原帖及对应转发帖
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - act: 对一条 Forward 转发帖打开 Share or repost，点击 Repost 触发 toast
+    - waitFor: 出现不可二次转发 toast
+
+intent:
+  action: 关闭分享面板后再次打开同一转发帖分享菜单，再次点击 Repost
+  expected:
+    - 仍出现不可二次转发 toast
+    - 始终无法进入转发编辑页
+
+timeoutMs: 120000

@@ -1,0 +1,206 @@
+# 转发动态 · PRD: Yaahlan-2.5.8 Feed/详情点击跳转
+# UI 基准: Moments details 详情页嵌套 Forward 卡片
+# 排除: 屏幕适配、多语言/RTL、站外二次确认弹窗
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║  模块 4：Feed 与详情 — Forward 展示 → 内外区域点击跳转    ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+id: IT-MOM-REPOST-029
+name: 点击嵌套卡片内区域跳转原帖详情
+module: 转发动态-Feed跳转
+platform: android
+priority: P0
+tags: [动态, 转发, 跳转, 原帖]
+preconditions: Discover 存在可点击嵌套卡片的转发帖
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - waitFor: 列表中存在带 "Forward" 标签和嵌套卡片的转发帖
+
+intent:
+  action: 点击转发帖嵌套卡片内部区域（原帖内容区，非外层空白）
+  expected:
+    - 进入被转发原帖的动态详情页
+    - 详情页展示原帖发布者信息与原帖完整内容
+    - 详情页标题或顶栏为 "Moments details"
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-030
+name: 点击转发帖外层区域跳转转发帖详情
+module: 转发动态-Feed跳转
+platform: android
+priority: P0
+tags: [动态, 转发, 跳转, 转发帖]
+preconditions: Discover 存在带附加文案的转发帖
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - waitFor: 列表中存在带 "Forward" 标签的转发帖
+
+intent:
+  action: 点击转发帖外层区域（转发者附加文案区或卡片外空白，避开嵌套卡片内）
+  expected:
+    - 进入本条转发帖详情页，而非原帖详情
+    - 详情页顶栏为 "Moments details"
+    - 详情页可见 "Forward" 标签和嵌套卡片
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-031
+name: 转发帖详情页展示 Forward 标签
+module: 转发动态-Feed跳转
+platform: android
+priority: P0
+tags: [动态, 转发, 详情页, 展示]
+preconditions: 可进入一条转发帖详情
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - act: 在 Discover 列表滑动找到一条带 Forward 标签的转发帖并点击进入详情
+    - waitFor: 已进入 "Moments details" 详情页
+
+intent:
+  action: 观察转发帖详情页顶部内容区
+  expected:
+    - 详情页顶栏为 "Moments details"
+    - 可见转发发布者昵称和头像
+    - 可见嵌套的被转发动态卡片区域
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-032
+name: 转发帖详情嵌套区展示原帖多类型内容
+module: 转发动态-Feed跳转
+platform: android
+priority: P1
+tags: [动态, 转发, 详情页, 嵌套]
+preconditions: 存在含文字/语音/图片/话题的转发帖
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - act: 进入一条内容较完整的转发帖详情页
+
+intent:
+  action: 观察详情页嵌套 Forward 区域内原帖内容
+  expected:
+    - 嵌套区可见被转发动态卡片
+    - 嵌套卡片内可见原帖发布者昵称
+    - 嵌套区可见原帖文字、图片、语音条或话题标签中的至少一种
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-033
+name: 转发帖详情页展示 Comment 与 Reward tab
+module: 转发动态-Feed跳转
+platform: android
+priority: P1
+tags: [动态, 转发, 详情页, 互动]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - act: 进入一条转发帖详情页
+
+intent:
+  action: 观察详情页底部互动区域
+  expected:
+    - 可见 "Comment" 评论 tab
+    - 可见 "Reward" 打赏 tab
+    - 详情页底部可见互动操作按钮区域
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-034
+name: 关注 tab 转发帖同样展示 Forward 卡片
+module: 转发动态-Feed跳转
+platform: android
+priority: P1
+tags: [动态, 转发, 关注页, 展示]
+preconditions: Following 页存在转发帖
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - moments-navigation/enter_moment_follow_tab
+  steps:
+    - waitFor: Following 关注 tab 动态列表已加载
+
+intent:
+  action: 在 Following 列表中找到转发帖并观察
+  expected:
+    - 转发帖可见 "Forward" 标签
+    - 嵌套卡片正常展示被转发动态内容
+    - 卡片结构与 Discover 页一致
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-035
+name: 嵌套卡片点击后原帖详情可返回
+module: 转发动态-Feed跳转
+platform: android
+priority: P1
+tags: [动态, 转发, 跳转, 返回]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - act: 点击转发帖嵌套卡片进入原帖详情
+    - waitFor: 已进入原帖 Moments details 页
+
+intent:
+  action: 点击详情页左上角返回箭头
+  expected:
+    - 成功返回上一级页面
+    - 返回到 Discover 列表或转发帖详情，页面未崩溃空白
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-036
+name: 转发帖外层展示热度标签
+module: 转发动态-Feed跳转
+platform: android
+priority: P2
+tags: [动态, 转发, 热度, 展示]
+preconditions: 被转发原帖为高热度动态（含 Hot 或 NO.1 标签）
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - act: 在 Discover 列表滑动查找带 Forward 标签的转发帖
+
+intent:
+  action: 观察转发帖外层热度标签展示
+  expected:
+    - 若被转发原帖带 Hot 或 NO.1 标签，转发帖外层可见该热度标签
+    - 嵌套卡片内重点展示原帖内容
+    - 转发帖卡片结构完整可见
+
+timeoutMs: 120000

@@ -14,7 +14,7 @@ import {
 } from './compile-intent.mjs';
 import { applyBaseProfileEnv, applyPlatformProfileEnv } from './load-base-profile.mjs';
 import { ensureIntentData } from './ensure-intent-data.mjs';
-import { generateReport } from './generate-report.mjs';
+import { generateReport, mergeResultsFromDisk, archiveCaseReportSnapshot } from './generate-report.mjs';
 import { autoFixAfterRun, isRetryableFailure } from './auto-fix-assertions.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -44,14 +44,27 @@ export function resolveInputs(args) {
   }
 
   const idIdx = args.indexOf('--id');
-  if (idIdx !== -1) {
-    return { paths: [], filterId: args[idIdx + 1] };
+  const filterId = idIdx !== -1 ? args[idIdx + 1] : null;
+  const flagValues = new Set(
+    ['--module', '--id', '--platform']
+      .map((flag) => {
+        const i = args.indexOf(flag);
+        return i !== -1 ? args[i + 1] : null;
+      })
+      .filter(Boolean),
+  );
+  const files = args.filter((a) => !a.startsWith('--') && !flagValues.has(a));
+
+  if (filterId) {
+    return {
+      paths: files.map((f) => resolve(process.cwd(), f)),
+      filterId,
+    };
   }
 
-  const files = args.filter((a) => !a.startsWith('--'));
   if (!files.length) {
     throw new Error(
-      '用法: intent-run <intent.yaml> | --module <名> | --id <ID>',
+      '用法: intent-run <intent.yaml> | --module <名> | --id <ID> [intent.yaml]',
     );
   }
   return { paths: files.map((f) => resolve(process.cwd(), f)), filterId: null };
@@ -214,13 +227,19 @@ function isMidsceneTimeout(ui) {
 /**
  * 执行单条 UI case；setup/flaky 失败或 replan 超时时强制重启 App 重试一次
  */
-function executeUiCase(run, platform, sources, filterByPlatform) {
+function executeUiCase(run, platform, sources, filterByPlatform, snapOpts = {}) {
   let startTime = Math.floor(Date.now() / 1000) - 5;
+
+  function finish(outcome) {
+    const archived = archiveCaseReportSnapshot(run.id, snapOpts);
+    return { ...outcome, snapshotRunId: archived?.runId ?? null };
+  }
+
   let ui = runMidscene(run.yaml, platform);
 
   const timedOut = isMidsceneTimeout(ui);
   if (!timedOut && ui.status === 0) {
-    return { startTime, passed: true };
+    return finish({ startTime, passed: true });
   }
 
   const shouldRetry = SETUP_RETRY_ENABLED
@@ -238,18 +257,18 @@ function executeUiCase(run, platform, sources, filterByPlatform) {
     ui = runMidscene(run.yaml, platform);
 
     if (isMidsceneTimeout(ui)) {
-      return { startTime, passed: false, timedOut: true, setupRetried: true };
+      return finish({ startTime, passed: false, timedOut: true, setupRetried: true });
     }
     if (ui.status === 0) {
-      return { startTime, passed: true, setupRetried: true };
+      return finish({ startTime, passed: true, setupRetried: true });
     }
-    return { startTime, passed: false, setupRetried: true };
+    return finish({ startTime, passed: false, setupRetried: true });
   }
 
   if (timedOut) {
-    return { startTime, passed: false, timedOut: true };
+    return finish({ startTime, passed: false, timedOut: true });
   }
-  return { startTime, passed: false };
+  return finish({ startTime, passed: false });
 }
 
 /**
@@ -315,6 +334,7 @@ export function runIntentPlatform(opts) {
   let failed = 0;
   const failedIds = new Set();
   const timedOutIds = new Set();
+  const snapshotRunIds = new Map();
 
   let isFirstCase = true;
 
@@ -333,8 +353,10 @@ export function runIntentPlatform(opts) {
     }
     isFirstCase = false;
 
-    const outcome = executeUiCase(run, platform, sources, filterByPlatform);
-    const { startTime, passed, timedOut, setupRetried } = outcome;
+    const snapOpts = usePlatformSubdir ? { platform } : {};
+    const outcome = executeUiCase(run, platform, sources, filterByPlatform, snapOpts);
+    const { startTime, passed, timedOut, setupRetried, snapshotRunId } = outcome;
+    if (snapshotRunId) snapshotRunIds.set(run.id, snapshotRunId);
 
     if (timedOut) {
       failed += 1;
@@ -380,6 +402,7 @@ export function runIntentPlatform(opts) {
   }
 
   const executedIds = new Set([...failedIds]);
+
   for (const run of runs) {
     if (!failedIds.has(run.id)) {
       const reportExists = existsSync(
@@ -395,14 +418,20 @@ export function runIntentPlatform(opts) {
     passed: !failedIds.has(run.id) && executedIds.has(run.id),
     skipped: !executedIds.has(run.id),
     timedOut: timedOutIds.has(run.id),
+    snapshotRunId: snapshotRunIds.get(run.id) ?? null,
+    noPassResult: !executedIds.has(run.id),
   }));
 
   try {
-    const reportOpts = usePlatformSubdir
-      ? { platform, platformLabel: platform === 'ios' ? 'iOS' : 'Android' }
-      : { platformLabel: platform === 'ios' ? 'iOS' : 'Android' };
-    const reportPath = generateReport(sources, results, reportOpts);
-    console.log(`[intent-run:${platform}] 📊 聚合报告: ${reportPath}`);
+    if (!opts.skipSummaryReport) {
+      const reportOpts = usePlatformSubdir
+        ? { platform, platformLabel: platform === 'ios' ? 'iOS' : 'Android' }
+        : { platformLabel: platform === 'ios' ? 'iOS' : 'Android' };
+      const mergeLatest = process.env.INTENT_REPORT_MERGE_LATEST !== '0';
+      const reportResults = mergeLatest ? mergeResultsFromDisk(sources, results) : results;
+      const reportPath = generateReport(sources, reportResults, reportOpts);
+      console.log(`[intent-run:${platform}] 📊 聚合报告: ${reportPath}`);
+    }
   } catch (e) {
     console.error(`[intent-run:${platform}] 报告生成失败: ${e.message}`);
   }

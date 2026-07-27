@@ -22,7 +22,7 @@ function main() {
   let { paths, filterId } = resolveInputs(cliArgs);
   let sources = paths;
 
-  if (filterId) {
+  if (filterId && sources.length === 0) {
     const source = findSourceById(filterId);
     if (!source) {
       console.error(`[intent-run:${platform}] catalog 中未找到: ${filterId}`);

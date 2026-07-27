@@ -1,0 +1,230 @@
+# 转发动态 · PRD: Yaahlan-2.5.8 转发发布
+# 排除: 屏幕适配、多语言/RTL、审核回调、安装/升级路径
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║  模块 3：转发发布 — 纯转发 / 文字 / 语音 / 话题组合      ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+id: IT-MOM-REPOST-021
+name: 纯转发发布成功
+module: 转发动态-发布
+platform: android
+priority: P0
+tags: [动态, 转发, 发布, 纯转发]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_others_moment_share_menu
+    - repost-navigation/open_repost_editor_from_share
+
+intent:
+  action: 不追加任何内容，点击右上角 "Post" 按钮发布
+  expected:
+    - 发布流程正常完成
+    - 出现发布成功提示或自动跳转离开编辑页
+
+verify:
+  include:
+    - repost-verify/verify_repost_publish_success
+    - repost-verify/verify_forward_label_in_discover
+
+timeoutMs: 300000
+
+---
+id: IT-MOM-REPOST-022
+name: 文字加转发发布成功
+module: 转发动态-发布
+platform: android
+priority: P0
+tags: [动态, 转发, 发布, 文字]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_others_moment_share_menu
+    - repost-navigation/open_repost_editor_from_share
+  steps:
+    - act: 在文字输入区输入 "repost with text IT-MOM-REPOST-022"
+
+intent:
+  action: 点击右上角 "Post" 按钮发布
+  expected:
+    - 发布成功，离开编辑页
+    - 跳转后页面可见刚发布的转发内容
+
+verify:
+  include:
+    - repost-verify/verify_repost_publish_success
+
+timeoutMs: 300000
+
+---
+id: IT-MOM-REPOST-023
+name: 语音加转发发布成功
+module: 转发动态-发布
+platform: android
+priority: P0
+tags: [动态, 转发, 发布, 语音]
+preconditions: 麦克风权限已授予
+
+setup:
+  launchApp: true
+  skipPopupDismiss: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_others_moment_share_menu
+    - repost-navigation/open_repost_editor_from_share
+  steps:
+    - act: 点击 "+ Add Voice message" 按钮
+    - waitFor: 出现底部 Record 弹窗，可见紫色圆形录制按钮
+    - tap: [0.50, 0.785]
+      afterSleep: 500
+    - sleep: 3000
+    - tap: [0.50, 0.785]
+      afterSleep: 2000
+    - tap: [0.731, 0.861]
+      afterSleep: 2000
+    - waitFor: 编辑页可见语音条胶囊
+
+intent:
+  action: 点击右上角 "Post" 按钮发布
+  expected:
+    - 发布成功，离开编辑页
+
+verify:
+  include:
+    - repost-verify/verify_repost_publish_success
+
+timeoutMs: 300000
+
+---
+id: IT-MOM-REPOST-024
+name: 话题加转发发布成功
+module: 转发动态-发布
+platform: android
+priority: P1
+tags: [动态, 转发, 发布, 话题]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_others_moment_share_menu
+    - repost-navigation/open_repost_editor_from_share
+  steps:
+    - act: 选择一个 Topic 话题标签（如 #Happy Weekend）
+
+intent:
+  action: 点击右上角 "Post" 按钮发布
+  expected:
+    - 发布成功，离开编辑页
+
+verify:
+  include:
+    - repost-verify/verify_repost_publish_success
+
+timeoutMs: 300000
+
+---
+id: IT-MOM-REPOST-025
+name: 发布后 Discover 展示 Forward 标签
+module: 转发动态-发布
+platform: android
+priority: P0
+tags: [动态, 转发, 发现页, 展示]
+preconditions: 测试账号刚发布一条转发帖
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - waitFor: Discover 列表已加载
+    - act: 在 Discover 列表中向上或向下滑动，找到一条带 "Forward" 标签的转发帖
+
+intent:
+  action: 观察找到的转发帖卡片结构
+  expected:
+    - 转发帖可见 "Forward" 标签
+    - 外层展示转发发布者昵称
+    - 嵌套区域内可见被转发动态卡片，底部有 "Moment" 字样
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-026
+name: 发布后嵌套卡片展示原帖内容
+module: 转发动态-发布
+platform: android
+priority: P0
+tags: [动态, 转发, 发现页, 嵌套卡片]
+preconditions: Discover 存在带文字/图片/语音的转发帖
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - waitFor: 列表中存在带 "Forward" 标签的转发帖
+
+intent:
+  action: 观察转发帖嵌套卡片内的原帖内容展示
+  expected:
+    - 嵌套卡片内可见原作者 @昵称 或昵称信息
+    - 嵌套卡片内可见原帖文字、语音条时长、图片或视频封面中的至少一种内容
+    - 嵌套卡片区域完整展示，未被截断为空白
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-027
+name: 无转发文案时仍展示嵌套卡片
+module: 转发动态-发布
+platform: android
+priority: P1
+tags: [动态, 转发, 纯转发, 展示]
+preconditions: 存在未追加文字的纯转发帖
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - act: 在 Discover 列表中多次滑动，找到一条带 Forward 标签或嵌套转发卡片的转发帖
+
+intent:
+  action: 观察转发帖展示
+  expected:
+    - 可见嵌套的被转发动态卡片区域
+    - 嵌套卡片内可见原帖内容（文字、图片或语音）
+    - 转发帖卡片结构完整，页面正常展示
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-028
+name: 转发帖嵌套区不展示原帖皮肤
+module: 转发动态-发布
+platform: android
+priority: P1
+tags: [动态, 转发, 皮肤, 嵌套]
+preconditions: 被转发原帖使用了皮肤，且已被他人转发
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - act: 在 Discover 列表滑动查找带 Forward 标签的转发帖
+
+intent:
+  action: 观察转发帖嵌套区域样式
+  expected:
+    - 嵌套卡片内容（文字/图片/语音）正常可见
+    - 嵌套卡片为简洁卡片样式，重点展示原帖内容
+    - 外层转发帖可使用转发者自己选择的皮肤
+
+timeoutMs: 120000

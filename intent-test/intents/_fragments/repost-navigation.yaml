@@ -1,0 +1,76 @@
+# 转发动态（v2.5.8）导航片段 — 对齐 PRD §转发他人动态 + UI「Share or repost」半屏
+# 依赖: moments-navigation/enter_moment_discover_tab
+# 动态元素（列表卡片、分享图标、Repost 按钮）用 AI act；底栏 tab 用 ADB 坐标
+#
+# 用法:
+#   setup:
+#     include:
+#       - moments-navigation/enter_moment_discover_tab
+#       - repost-navigation/open_others_moment_share_menu
+#       - repost-navigation/open_repost_editor_from_share
+
+dismiss_blocking_popup:
+  - act: 若屏幕上有 Payment successful 或其他居中遮挡弹窗，点击 Close 或 X 关闭
+  - sleep: 1000
+
+open_others_moment_share_menu:
+  - act: 若屏幕上有 Payment successful 或其他居中遮挡弹窗，点击 Close 或 X 关闭
+  - sleep: 1000
+  - waitFor: Discover 发现 tab 动态列表已加载，可见至少一条他人发布的动态
+  - act: 在 Discover 列表中找到一条他人发布的普通动态（非 Forward 转发帖），点击该动态操作栏最右侧 curved arrow 分享图标；若未弹出面板则点击 "..." 菜单选 Share
+  - waitFor: 从底部弹出半屏分享面板，标题为 "Share or repost"，左上角可见返回箭头
+
+open_repost_editor_from_share:
+  - waitFor: 分享面板已打开，顶部可见紫色 "Repost this moment" 按钮
+  - act: 点击紫色全宽按钮 "Repost this moment"
+  - waitFor: 已进入转发编辑页，页面中部可见被转发动态卡片预览，卡片底部有 Moment 字样
+
+open_moment_detail_from_discover:
+  - waitFor: Discover 发现 tab 动态列表已加载，可见至少一条带正文文字的他人动态
+  - act: 点击 Discover 列表中一条他人动态的用户昵称或正文文字区域进入详情（不要点击图片或视频，避免进入全屏媒体浏览）
+  - waitFor: 已进入 Moments details 动态详情页，可见 Comment tab 或动态正文，不是图片轮播页（无 x/y 页码）
+
+open_share_from_moment_detail:
+  - act: 点击动态详情页操作栏中的分享/转发图标（curved arrow 弧形箭头）
+  - waitFor: 从底部弹出半屏分享面板，标题为 "Share or repost"
+
+find_unavailable_repost_in_discover:
+  - act: 在 My Moments 列表顶部查找带 Reposted 或 Forward 标签且嵌套区含 "Friends Only or has been deleted" 文案的转发帖；若首屏未见则向下滑动 1～2 次
+  - waitFor: 找到带 Reposted 标签且嵌套区展示 "This moment has been changed to Friends Only or has been deleted" 的转发帖
+
+open_unavailable_repost_detail:
+  - act: 点击该不可见原帖转发帖卡片右侧评论/分享图标，或卡片底部互动栏区域，进入转发帖详情；不要点击用户头像、昵称或嵌套占位文案（避免进入 Profile）
+  - waitFor: 已进入单条动态详情页，顶栏含 Moments details 或可见 Comment tab，不是 My Moments 列表也不是 Profile 个人主页
+
+close_share_panel_without_repost:
+  - act: 点击分享面板左上角返回箭头，或向下滑动关闭半屏面板
+  - waitFor: 分享面板已关闭，仍停留在原动态列表或详情页，未进入转发编辑页
+
+open_forward_post_share_menu:
+  - waitFor: Discover 列表中存在带 "Forward" 标签的转发帖
+  - act: 找到一条带 "Forward" 标签的转发帖，点击其分享/转发图标
+  - waitFor: 弹出 "Share or repost" 半屏分享面板
+
+open_friends_only_moment_share_menu:
+  - act: 若屏幕上有 Payment successful、moment card 购买成功或任何居中遮挡弹窗，点击 Close 或 X 关闭
+  - sleep: 1000
+  - tap: [0.50, 0.96]
+    afterSleep: 2000
+  - waitFor: 已进入 Message 消息页，可见会话列表或顶部 Friends 入口
+  - act: 点击消息页右上角 Friends/好友 图标，进入好友列表
+  - waitFor: 好友列表已加载，可见好友头像列表
+  - act: 在好友列表中点击用户 100438156 进入其个人主页（或点击昵称含 100438156 的条目）
+  - waitFor: 已进入该用户 Profile 个人主页，可见 Moments 或动态入口
+  - act: 点击 Moments/动态 入口进入动态列表
+  - waitFor: 已进入该用户动态列表，可见至少一条动态卡片
+  - act: 找到正文含 seed039xyz 的动态，点击其分享/转发图标（curved arrow）
+  - waitFor: 弹出 "Share or repost" 半屏分享面板，可见 "Repost this moment" 按钮
+
+enter_my_moments_from_me_tab:
+  - act: 若屏幕上有 Payment successful 或其他居中遮挡弹窗，点击 Close 或 X 关闭
+  - sleep: 1000
+  - tap: [0.90, 0.96]
+    afterSleep: 2500
+  - waitFor: 已进入 Me 个人主页，可见用户头像、Settings 或 Wallet 等，不是 Discover 公共动态流
+  - act: 在个人主页找到 Moments/动态 入口（文字标签或动态缩略图区域），点击进入 My Moments 我的动态列表
+  - waitFor: 已进入 My Moments 个人动态列表页，页面标题或顶栏含 Moments，展示本人发布的动态卡片，不是 Discover 发现推荐流

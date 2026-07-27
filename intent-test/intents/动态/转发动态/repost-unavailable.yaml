@@ -1,0 +1,124 @@
+# 转发动态 · PRD: Yaahlan-2.5.8 原帖删除/不可见特殊展示
+# UI 基准: "This moment has been changed to Friends Only or has been deleted" 嵌套占位
+# 排除: 权限变更实时推送（需造数）、屏幕适配、多语言
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║  模块 6：异常态 — 原帖不可见占位 → 详情一致 → 仍可互动   ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+id: IT-MOM-REPOST-043
+name: Feed 原帖不可见嵌套区展示占位文案
+module: 转发动态-异常态
+platform: android
+priority: P0
+tags: [动态, 转发, 不可见, Feed]
+preconditions: 存在原帖已删除或不可见的转发帖（MOA 造数 7063843_100261858）
+
+setup:
+  launchApp: true
+  include:
+    - repost-navigation/enter_my_moments_from_me_tab
+    - repost-navigation/find_unavailable_repost_in_discover
+
+intent:
+  action: 观察已找到的原帖不可见转发帖嵌套卡片区域
+  expected:
+    - 嵌套卡片区域展示 "This moment has been changed to Friends Only or has been deleted" 文案
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-REPOST-044
+name: 详情页原帖不可见嵌套区同样占位
+module: 转发动态-异常态
+platform: android
+priority: P0
+tags: [动态, 转发, 不可见, 详情页]
+preconditions: 存在原帖不可见的转发帖详情可进入
+
+setup:
+  launchApp: true
+  include:
+    - repost-navigation/enter_my_moments_from_me_tab
+    - repost-navigation/find_unavailable_repost_in_discover
+    - repost-navigation/open_unavailable_repost_detail
+
+intent:
+  action: 观察详情页嵌套 Forward 区域
+  expected:
+    - 嵌套区展示 "This moment has been changed to Friends Only or has been deleted" 文案
+    - 页面未空白或崩溃
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-REPOST-045
+name: 原帖不可见时点击嵌套区不跳转原帖
+module: 转发动态-异常态
+platform: android
+priority: P0
+tags: [动态, 转发, 不可见, 跳转]
+preconditions: Feed 存在原帖不可见转发帖
+
+setup:
+  launchApp: true
+  include:
+    - repost-navigation/enter_my_moments_from_me_tab
+    - repost-navigation/find_unavailable_repost_in_discover
+
+intent:
+  action: 点击该转发帖嵌套区 "This moment has been changed to Friends Only or has been deleted" 占位区域
+  expected:
+    - 不进入原帖详情页
+    - 仍停留在 My Moments 列表或当前页，无崩溃
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-REPOST-046
+name: 原帖不可见转发帖仍可进入转发帖详情
+module: 转发动态-异常态
+platform: android
+priority: P1
+tags: [动态, 转发, 不可见, 转发帖详情]
+preconditions: Feed 存在原帖不可见转发帖
+
+setup:
+  launchApp: true
+  include:
+    - repost-navigation/enter_my_moments_from_me_tab
+    - repost-navigation/find_unavailable_repost_in_discover
+    - repost-navigation/open_unavailable_repost_detail
+
+intent:
+  action: 确认已进入转发帖详情页并观察互动区域
+  expected:
+    - 已进入单条动态详情页（Moments details 或可见 Comment 区域）
+    - 详情页嵌套区展示 "This moment has been changed to Friends Only or has been deleted"
+
+timeoutMs: 180000
+
+---
+id: IT-MOM-REPOST-047
+name: Discover 列表可见不可见态转发帖样例
+module: 转发动态-异常态
+platform: android
+priority: P1
+tags: [动态, 转发, 不可见, 展示]
+preconditions: 测试环境 Feed 已存在不可见原帖的转发帖
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - waitFor: Discover 列表已加载
+
+intent:
+  action: 在 Discover 列表中查找不可见原帖的转发帖样例
+  expected:
+    - Discover 列表正常加载，可见动态卡片
+    - 若存在带 Reposted 标签且嵌套区含 "Friends Only or has been deleted" 的转发帖，占位文案正确展示
+    - 若暂无此类数据，列表浏览正常无崩溃
+
+timeoutMs: 180000

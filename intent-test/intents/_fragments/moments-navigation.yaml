@@ -7,11 +7,15 @@
 #     - moments-navigation/open_moment_publish_editor
 
 enter_moment_discover_tab:
+  - act: 若屏幕上有 Payment successful 或其他居中遮挡弹窗，点击 Close 或 X 关闭
+  - sleep: 1000
   - tap: [0.70, 0.96]
     afterSleep: 2000
   - waitFor: 已进入动态帧，顶栏可见 Discover 与 Follow tab，默认停留在 Discover 发现 tab
 
 enter_moment_follow_tab:
+  - act: 若屏幕上有 Payment successful 或其他居中遮挡弹窗，点击 Close 或 X 关闭
+  - sleep: 1000
   - tap: [0.70, 0.96]
     afterSleep: 1500
   - act: 点击顶栏 Follow 或 关注 tab

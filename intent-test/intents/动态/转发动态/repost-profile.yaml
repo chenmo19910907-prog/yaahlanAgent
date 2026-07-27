@@ -1,0 +1,120 @@
+# 转发动态 · PRD: Yaahlan-2.5.8 个人主页缩略图
+# 规则: 纯转发/仅标签 → 转发图标；带文案或语音 → 正常缩略图
+# 排除: 屏幕适配、多语言、game 帧展示
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║  模块 7：个人主页 — 纯转发缩略图 → 带文案/语音缩略图      ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+id: IT-MOM-REPOST-048
+name: 纯转发个人主页缩略图展示转发图标
+module: 转发动态-个人主页
+platform: android
+priority: P0
+tags: [动态, 转发, 个人主页, 缩略图]
+preconditions: 个人主页存在无文案无语音的纯转发帖
+
+setup:
+  launchApp: true
+  include:
+    - repost-navigation/enter_my_moments_from_me_tab
+
+intent:
+  action: 在个人主页动态缩略图网格中找到纯转发帖缩略图
+  expected:
+    - 纯转发帖缩略图内展示转发动态专用图标
+    - 缩略图布局与其他动态格子大小一致
+    - 缩略图主视觉为转发图标而非原帖图片
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-049
+name: 带文案转发帖缩略图正常展示
+module: 转发动态-个人主页
+platform: android
+priority: P0
+tags: [动态, 转发, 个人主页, 文案]
+preconditions: 个人主页存在带附加文案的转发帖
+
+setup:
+  launchApp: true
+  include:
+    - repost-navigation/enter_my_moments_from_me_tab
+
+intent:
+  action: 找到带转发附加文案的动态缩略图
+  expected:
+    - 缩略图展示转发者输入的文字内容摘要
+    - 缩略图不使用纯转发专用图标样式
+    - 缩略图可点击进入该转发帖详情
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-050
+name: 带语音转发帖缩略图正常展示
+module: 转发动态-个人主页
+platform: android
+priority: P0
+tags: [动态, 转发, 个人主页, 语音]
+preconditions: 个人主页存在带语音条的转发帖
+
+setup:
+  launchApp: true
+  include:
+    - repost-navigation/enter_my_moments_from_me_tab
+
+intent:
+  action: 找到带语音条的转发帖缩略图
+  expected:
+    - 缩略图展示语音条或语音相关视觉元素
+    - 缩略图主视觉为语音内容而非纯转发图标
+    - 缩略图可正常展示在动态网格中
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-051
+name: 仅话题标签转发帖缩略图展示转发图标
+module: 转发动态-个人主页
+platform: android
+priority: P1
+tags: [动态, 转发, 个人主页, 话题]
+preconditions: 个人主页存在仅添加话题、无文案无语音的转发帖
+
+setup:
+  launchApp: true
+  include:
+    - repost-navigation/enter_my_moments_from_me_tab
+
+intent:
+  action: 找到仅含话题标签、无正文无语音的转发帖缩略图
+  expected:
+    - 缩略图内展示转发动态专用图标
+    - 缩略图不展示话题标签文字作为主视觉
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-052
+name: 点击纯转发缩略图进入转发帖详情
+module: 转发动态-个人主页
+platform: android
+priority: P1
+tags: [动态, 转发, 个人主页, 跳转]
+preconditions: 个人主页存在纯转发帖缩略图
+
+setup:
+  launchApp: true
+  include:
+    - repost-navigation/enter_my_moments_from_me_tab
+
+intent:
+  action: 点击纯转发帖缩略图
+  expected:
+    - 进入该转发帖 "Moments details" 详情页
+    - 详情页可见 "Forward" 标签和嵌套卡片
+    - 页面正常加载无崩溃
+
+timeoutMs: 120000

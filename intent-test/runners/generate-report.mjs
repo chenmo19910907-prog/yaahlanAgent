@@ -9,7 +9,7 @@
  * 不传 --results 时，按报告目录是否存在判定
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync, copyFileSync } from 'fs';
 import { resolve, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
 import { parseAllDocuments } from 'yaml';
@@ -17,6 +17,7 @@ import { parseAllDocuments } from 'yaml';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const REPORT_DIR = resolve(ROOT, '../midscene/midscene_run/report');
+const OUTPUT_DIR = resolve(ROOT, '../midscene/midscene_run/output');
 const DEVICE_WIDTH = Number(process.env.DEVICE_WIDTH ?? 1080);
 const DEVICE_HEIGHT = Number(process.env.DEVICE_HEIGHT ?? 2424);
 
@@ -124,8 +125,24 @@ function buildHtml(testModule, cases, timestamp, platformLabel = 'Android') {
   let cards = '';
   for (const tc of cases) {
     const statusClass = tc.timedOut ? 'timeout' : tc.skipped ? 'skip' : tc.passed ? 'pass' : 'fail';
-    const statusLabel = tc.timedOut ? '超时' : tc.skipped ? '未执行' : tc.passed ? '通过' : '失败';
+    const statusLabel = tc.timedOut
+      ? '超时'
+      : tc.skipped
+        ? (tc.yamlSkipped ? '已跳过' : '未执行')
+        : tc.passed
+          ? (tc.historicalPass ? '通过（历史）' : '通过')
+          : '失败';
     const statusBg = tc.timedOut ? '#FF9800' : tc.skipped ? '#9E9E9E' : tc.passed ? '#4CAF50' : '#F44336';
+
+    let resultNote = '';
+    if (tc.yamlSkipped) {
+      const reason = tc.skipReason ? `跳过原因：${escHtml(tc.skipReason)} · ` : '';
+      resultNote = `<div class="result-note skip-reason">${reason}无通过结果</div>`;
+    } else if (tc.skipped && tc.noPassResult) {
+      resultNote = '<div class="result-note">无通过结果（本次未执行）</div>';
+    } else if (tc.passed && tc.historicalPass) {
+      resultNote = '<div class="result-note historical">通过结果来自历史跑批（本次未执行）</div>';
+    }
 
     const stepItems = (tc.steps ?? [])
       .map((s) => `<li>${escHtml(s)}</li>`)
@@ -139,6 +156,11 @@ function buildHtml(testModule, cases, timestamp, platformLabel = 'Android') {
           `<img class="screenshot-thumb" src="data:image/png;base64,${img.base64}" alt="截图" loading="lazy"/>`,
       )
       .join('');
+    const screenshotNote = tc.screenshotStale
+      ? '<div class="screenshot-note">⚠ 通过结果来自历史跑批，暂无对应截图快照（请重跑该 case 以刷新截图）</div>'
+      : tc.screenshotFallback
+        ? '<div class="screenshot-note">ℹ 截图来自历史跑批快照（与本次通过 runId 非精确匹配，仅供参看）</div>'
+        : '';
 
     cards += `
 <div class="case-card ${statusClass}">
@@ -149,6 +171,7 @@ function buildHtml(testModule, cases, timestamp, platformLabel = 'Android') {
     </div>
     <span class="case-status" style="background:${statusBg}">${statusLabel}</span>
   </div>
+  ${resultNote}
   <div class="case-body">
     <div class="steps-section">
       <div class="section-title">测试步骤</div>
@@ -159,7 +182,7 @@ function buildHtml(testModule, cases, timestamp, platformLabel = 'Android') {
       <ul class="step-list">${expectItems || '<li>-</li>'}</ul>
     </div>
   </div>
-  ${imgs ? `<div class="screenshots">${imgs}</div>` : ''}
+  ${screenshotNote}${imgs ? `<div class="screenshots">${imgs}</div>` : ''}
 </div>`;
   }
 
@@ -205,7 +228,13 @@ body { font-family: -apple-system, "SF Pro", "PingFang SC", "Helvetica Neue", sa
 .steps-section .step-list li::before { background: #90A4AE; }
 .expects-section .step-list li::before { background: #66BB6A; }
 
+.result-note { margin-top: 12px; padding: 10px 12px; border-radius: 8px; font-size: 13px; line-height: 1.5; }
+.result-note.skip-reason { background: #f5f5f5; color: #616161; }
+.result-note.historical { background: #e8f5e9; color: #2e7d32; }
+.result-note:not(.skip-reason):not(.historical) { background: #fafafa; color: #757575; }
+
 .screenshots { margin-top: 16px; display: flex; gap: 10px; overflow-x: auto; padding: 8px 0; }
+.screenshot-note { margin: 12px 0 4px; padding: 10px 12px; background: #fff8e1; border-radius: 8px; font-size: 13px; color: #8d6e00; }
 .screenshots img { height: 360px; border-radius: 8px; border: 1px solid #eee; flex-shrink: 0; cursor: zoom-in; transition: transform 0.15s, box-shadow 0.15s; }
 .screenshots img:hover { transform: scale(1.02); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
 
@@ -295,15 +324,216 @@ function parseSourceDocs(filePath) {
     .filter((d) => d && d.id);
 }
 
+function extractOutputRunId(outputFileName) {
+  const m = outputFileName.match(/\.midscene-(\d+)\.json$/);
+  return m ? m[1] : null;
+}
+
+/** 解析 case 报告 HTML 路径；优先使用与通过跑批对应的 snapshots/{runId}.html */
+export function resolveCaseReportHtml(caseId, opts = {}) {
+  const platform = opts.platform ? String(opts.platform).toLowerCase() : '';
+  const useSuffix = platform && process.env.INTENT_REPORT_PLATFORM_SUFFIX === '1';
+  const dirName = `${String(caseId).toLowerCase()}${useSuffix ? `-${platform}` : ''}`;
+  const base = resolve(REPORT_DIR, dirName);
+  const snapshotRunId = opts.snapshotRunId ?? null;
+  if (snapshotRunId) {
+    const snap = resolve(base, 'snapshots', `${snapshotRunId}.html`);
+    if (existsSync(snap)) return snap;
+  }
+  return resolve(base, 'index.html');
+}
+
+/** 每次 case 跑完后归档 report 快照，供 merge-latest 对齐通过结果与截图 */
+export function archiveCaseReportSnapshot(caseId, opts = {}) {
+  const outputs = listCaseOutputFiles(caseId);
+  if (!outputs.length) return null;
+  const runId = extractOutputRunId(outputs[0].name);
+  if (!runId) return null;
+
+  const liveHtml = resolveCaseReportHtml(caseId, opts);
+  if (!existsSync(liveHtml)) return null;
+
+  const snapDir = resolve(dirname(liveHtml), 'snapshots');
+  mkdirSync(snapDir, { recursive: true });
+  const snapPath = resolve(snapDir, `${runId}.html`);
+  copyFileSync(liveHtml, snapPath);
+  return { runId, snapPath };
+}
+
+function listCaseOutputFiles(caseId) {
+  if (!existsSync(OUTPUT_DIR)) return [];
+  const prefix = `${caseId}.midscene-`;
+  return readdirSync(OUTPUT_DIR)
+    .filter((name) => name.startsWith(prefix) && name.endsWith('.json'))
+    .map((name) => {
+      const full = resolve(OUTPUT_DIR, name);
+      return { name, full, mtime: statSync(full).mtimeMs };
+    })
+    .sort((a, b) => b.mtime - a.mtime);
+}
+
+function readOutputJson(filePath) {
+  try {
+    return JSON.parse(readFileSync(filePath, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function isOutputPassed(data) {
+  if (!data || typeof data !== 'object') return false;
+  for (const v of Object.values(data)) {
+    if (v && typeof v === 'object' && v.pass === false) return false;
+  }
+  return true;
+}
+
+function isOutputTimedOut(data) {
+  if (!data || typeof data !== 'object') return false;
+  for (const v of Object.values(data)) {
+    if (v && typeof v === 'object' && v.pass === false) {
+      const msg = String(v.message ?? v.thought ?? '');
+      if (/timeout|超时|waitFor timeout/i.test(msg)) return true;
+    }
+  }
+  return false;
+}
+
+function findLatestPassOutput(caseId) {
+  return listCaseOutputFiles(caseId).find((f) => isOutputPassed(readOutputJson(f.full))) ?? null;
+}
+
+function listCaseSnapshotFiles(caseDir) {
+  const snapDir = resolve(caseDir, 'snapshots');
+  if (!existsSync(snapDir)) return [];
+  return readdirSync(snapDir)
+    .filter((name) => name.endsWith('.html'))
+    .map((name) => {
+      const runId = name.replace(/\.html$/, '');
+      return { name, runId, full: resolve(snapDir, name) };
+    })
+    .sort((a, b) => Number(b.runId) - Number(a.runId));
+}
+
+/**
+ * 通过结果对应的截图 HTML：优先精确 runId；否则用不晚于 passRunId 的最近快照（历史通过但后续失败重跑时常见）
+ */
+function resolvePassAlignedReportHtml(caseDir, snapshotRunId) {
+  if (snapshotRunId) {
+    const exact = resolve(caseDir, 'snapshots', `${snapshotRunId}.html`);
+    if (existsSync(exact)) {
+      return { htmlPath: exact, snapshotExact: true, snapshotFallback: false };
+    }
+  }
+
+  const passNum = Number(snapshotRunId);
+  if (Number.isFinite(passNum)) {
+    const aligned = listCaseSnapshotFiles(caseDir).find((snap) => Number(snap.runId) <= passNum);
+    if (aligned) {
+      return {
+        htmlPath: aligned.full,
+        snapshotExact: false,
+        snapshotFallback: true,
+      };
+    }
+  }
+
+  return { htmlPath: null, snapshotExact: false, snapshotFallback: false };
+}
+
+function shouldUseLiveReport(caseId, passOutputFile) {
+  const outputs = listCaseOutputFiles(caseId);
+  if (!outputs.length || !passOutputFile) return false;
+  return outputs[0].name === passOutputFile.name;
+}
+
+/** 合并磁盘历史：后续重跑通过的 case 在聚合报告中仍计为通过 */
+export function mergeResultsFromDisk(sources, currentResults = []) {
+  const currentMap = new Map((currentResults ?? []).map((r) => [r.id, r]));
+  const hasCurrentBatch = (currentResults ?? []).length > 0;
+  const merged = [];
+
+  for (const src of sources) {
+    for (const doc of parseSourceDocs(src)) {
+      const id = doc.id;
+      if (doc.skip) {
+        merged.push({
+          id,
+          passed: false,
+          skipped: true,
+          timedOut: false,
+          yamlSkipped: true,
+          skipReason: doc.skipReason ?? null,
+          noPassResult: true,
+        });
+        continue;
+      }
+
+      const outputs = listCaseOutputFiles(id);
+      const latestPass = outputs.find((f) => isOutputPassed(readOutputJson(f.full)));
+      const current = currentMap.get(id);
+      const currentSkipped = !current || current.skipped;
+
+      if (latestPass) {
+        merged.push({
+          id,
+          passed: true,
+          skipped: false,
+          timedOut: false,
+          snapshotRunId: extractOutputRunId(latestPass.name),
+          historicalPass: hasCurrentBatch && currentSkipped,
+        });
+        continue;
+      }
+
+      if (current && !current.skipped) {
+        merged.push({
+          ...current,
+          skipped: false,
+          noPassResult: false,
+        });
+        continue;
+      }
+
+      if (outputs.length) {
+        const latest = readOutputJson(outputs[0].full);
+        merged.push({
+          id,
+          passed: false,
+          skipped: false,
+          timedOut: isOutputTimedOut(latest),
+          noPassResult: false,
+        });
+        continue;
+      }
+
+      merged.push({
+        id,
+        passed: false,
+        skipped: true,
+        timedOut: false,
+        noPassResult: true,
+      });
+    }
+  }
+
+  return merged;
+}
+
+function collectAllDocs(sources) {
+  const docs = [];
+  for (const src of sources) {
+    docs.push(...parseSourceDocs(src));
+  }
+  return docs;
+}
+
 export function generateReport(sources, results, opts = {}) {
   const platformLabel = opts.platformLabel ?? (opts.platform === 'ios' ? 'iOS' : 'Android');
   const platform = opts.platform ? String(opts.platform).toLowerCase() : '';
   const reportSuffix =
     platform && process.env.INTENT_REPORT_PLATFORM_SUFFIX === '1' ? `-${platform}` : '';
 
-  function reportHtmlPath(id) {
-    return resolve(REPORT_DIR, `${String(id).toLowerCase()}${reportSuffix}`, 'index.html');
-  }
   const allCases = [];
   let moduleName = '';
 
@@ -312,12 +542,27 @@ export function generateReport(sources, results, opts = {}) {
     for (const doc of docs) {
       if (!moduleName) moduleName = doc.module ?? basename(src, '.yaml');
       const result = results?.find((r) => r.id === doc.id);
-      const passed = result ? result.passed : false;
-      const skipped = result?.skipped ?? false;
-      const timedOut = result?.timedOut ?? false;
-
-      const reportHtml = reportHtmlPath(doc.id);
-      const screenshots = (skipped || timedOut) ? [] : getLastScreenshots(reportHtml, 2);
+      const yamlSkipped = Boolean(doc.skip);
+      const skipReason = doc.skipReason ?? result?.skipReason ?? null;
+      const skipped = yamlSkipped || (result?.skipped ?? false);
+      const passed = yamlSkipped ? false : (result ? result.passed : false);
+      const timedOut = yamlSkipped ? false : (result?.timedOut ?? false);
+      const historicalPass = yamlSkipped ? false : (result?.historicalPass ?? false);
+      const noPassResult = yamlSkipped ? true : (result?.noPassResult ?? skipped);
+      const snapshotRunId = result?.snapshotRunId ?? null;
+      const caseDir = resolve(REPORT_DIR, `${String(doc.id).toLowerCase()}${reportSuffix}`);
+      const passOutput = passed ? findLatestPassOutput(doc.id) : null;
+      const aligned = passed
+        ? resolvePassAlignedReportHtml(caseDir, snapshotRunId)
+        : { htmlPath: null, snapshotExact: false, snapshotFallback: false };
+      const liveHtml = resolve(caseDir, 'index.html');
+      const useLiveReport = !aligned.htmlPath && passed && shouldUseLiveReport(doc.id, passOutput);
+      const reportHtml = aligned.htmlPath ?? (useLiveReport ? liveHtml : null);
+      const screenshotStale = passed && !reportHtml;
+      const screenshotFallback = passed && aligned.snapshotFallback;
+      const screenshots = (skipped || timedOut || !reportHtml || screenshotStale)
+        ? []
+        : getLastScreenshots(reportHtml, 2);
 
       const steps = [];
       if (doc.setup?.include) {
@@ -340,6 +585,12 @@ export function generateReport(sources, results, opts = {}) {
         passed,
         skipped,
         timedOut,
+        yamlSkipped,
+        skipReason,
+        historicalPass,
+        noPassResult,
+        screenshotStale,
+        screenshotFallback,
         steps,
         expected: doc.intent?.expected ?? [],
         screenshots,
@@ -347,13 +598,14 @@ export function generateReport(sources, results, opts = {}) {
     }
   }
 
-  const slugBase = moduleName.replace(/[^a-zA-Z0-9\u4e00-\u9fff-]/g, '-').toLowerCase();
+  const displayModule = opts.moduleName ?? moduleName;
+  const slugBase = (opts.reportSlug ?? displayModule).replace(/[^a-zA-Z0-9\u4e00-\u9fff-]/g, '-').toLowerCase();
   const slug = opts.platform ? `${slugBase}-${opts.platform}` : slugBase;
   const outDir = resolve(REPORT_DIR, `${slug}-summary`);
   mkdirSync(outDir, { recursive: true });
 
   const ts = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
-  const html = buildHtml(moduleName, allCases, ts, platformLabel);
+  const html = buildHtml(displayModule, allCases, ts, platformLabel);
   const outPath = resolve(outDir, 'index.html');
   writeFileSync(outPath, html, 'utf8');
   console.log(`[report] 聚合报告已生成: ${outPath}`);
@@ -363,21 +615,37 @@ export function generateReport(sources, results, opts = {}) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const resIdx = args.indexOf('--results');
+  const mergeLatest = args.includes('--merge-latest');
   let results = null;
   const files = [];
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--results') {
       results = JSON.parse(args[++i]);
+    } else if (args[i] === '--merge-latest') {
+      /* flag */
     } else if (!args[i].startsWith('--')) {
       files.push(resolve(process.cwd(), args[i]));
     }
   }
 
   if (!files.length) {
-    console.error('用法: node runners/generate-report.mjs <intent.yaml> [--results \'[...]\']');
+    console.error(
+      '用法: node runners/generate-report.mjs <intent.yaml> [--results \'[...]\'] [--merge-latest]',
+    );
     process.exit(1);
   }
 
-  generateReport(files, results);
+  const finalResults = mergeLatest ? mergeResultsFromDisk(files, results ?? []) : results;
+  if (mergeLatest) {
+    const docs = collectAllDocs(files);
+    const pass = finalResults.filter((r) => r.passed).length;
+    const skip = finalResults.filter((r) => r.skipped).length;
+    const timeout = finalResults.filter((r) => r.timedOut).length;
+    const fail = docs.length - pass - skip - timeout;
+    console.log(
+      `[report] merge-latest: ${docs.length} 条 → 通过 ${pass} / 失败 ${fail} / 超时 ${timeout} / 跳过 ${skip}`,
+    );
+  }
+  generateReport(files, finalResults);
 }

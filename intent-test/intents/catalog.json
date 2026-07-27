@@ -24,9 +24,33 @@
       "label": "语音动态 · 回归",
       "intents": ["intents/动态/语音动态/voice-regression.yaml"]
     },
-    "文字动态-发布": {
-      "label": "文字动态 · 发布",
-      "intents": ["intents/动态/text-moment-publish.yaml"]
+    "转发动态-分享入口": {
+      "label": "转发动态 · 分享入口",
+      "intents": ["intents/动态/转发动态/repost-entry.yaml"]
+    },
+    "转发动态-编辑页": {
+      "label": "转发动态 · 编辑页",
+      "intents": ["intents/动态/转发动态/repost-editor.yaml"]
+    },
+    "转发动态-发布": {
+      "label": "转发动态 · 发布展示",
+      "intents": ["intents/动态/转发动态/repost-publish.yaml"]
+    },
+    "转发动态-Feed跳转": {
+      "label": "转发动态 · Feed 跳转",
+      "intents": ["intents/动态/转发动态/repost-feed.yaml"]
+    },
+    "转发动态-限制": {
+      "label": "转发动态 · 限制场景",
+      "intents": ["intents/动态/转发动态/repost-restrictions.yaml"]
+    },
+    "转发动态-异常态": {
+      "label": "转发动态 · 异常态",
+      "intents": ["intents/动态/转发动态/repost-unavailable.yaml"]
+    },
+    "转发动态-个人主页": {
+      "label": "转发动态 · 个人主页",
+      "intents": ["intents/动态/转发动态/repost-profile.yaml"]
     }
   }
 }

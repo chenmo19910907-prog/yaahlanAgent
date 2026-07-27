@@ -1,0 +1,202 @@
+# 转发动态 · PRD: Yaahlan-2.5.8 转发他人动态
+# UI 基准: Share or repost 半屏弹窗（2026-07-23 设计稿）
+# 排除: 屏幕适配、多语言/RTL、后台开关、站外分享、安装/升级路径、老版本回归
+# 已评估: 与神秘人逻辑无关
+
+# ╔═══════════════════════════════════════════════════════════╗
+# ║  模块 1：分享入口 — 面板展示 → Repost 跳转 → 关闭/限制   ║
+# ╚═══════════════════════════════════════════════════════════╝
+
+id: IT-MOM-REPOST-001
+name: 他人动态点击分享打开 Share or repost 面板
+module: 转发动态-分享入口
+platform: android
+priority: P0
+tags: [动态, 转发, 分享, 入口]
+preconditions: Discover 页存在他人发布的普通动态（非 Forward 帖）
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+  steps:
+    - waitFor: Discover 动态列表已加载，可见至少一条带操作栏的他人动态
+    - act: 在 Discover 列表中找到一条他人发布的普通动态（非 Forward 转发帖），点击该动态操作栏中的 curved arrow 分享图标
+    - waitFor: 从底部弹出半屏分享面板，标题为 "Share or repost"
+
+intent:
+  action: 观察当前分享面板
+  expected:
+    - 半屏分享面板仍处于打开状态
+    - 面板标题为 "Share or repost"
+    - 面板顶部可见紫色按钮 "Repost this moment"
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-002
+name: 分享面板展示 Repost this moment 主按钮
+module: 转发动态-分享入口
+platform: android
+priority: P0
+tags: [动态, 转发, 分享, 主按钮]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_others_moment_share_menu
+
+intent:
+  action: 观察分享面板顶部主操作区域
+  expected:
+    - 面板顶部可见紫色全宽按钮 "Repost this moment"
+    - 按钮文案完整可读，未被其他元素遮挡
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-003
+name: 分享面板同时展示外部分享入口
+module: 转发动态-分享入口
+platform: android
+priority: P1
+tags: [动态, 转发, 分享, 外部分享]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_others_moment_share_menu
+
+intent:
+  action: 观察 Repost this moment 按钮下方的外部分享区域
+  expected:
+    - 可见 "Whatsapp" 外部分享入口
+    - 可见 "Facebook" 外部分享入口
+    - 可见 "Copy link" 复制链接入口
+    - 外部分享入口与 Repost 按钮同时存在，布局正常无重叠
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-004
+name: 点击 Repost this moment 进入转发编辑页
+module: 转发动态-分享入口
+platform: android
+priority: P0
+tags: [动态, 转发, 编辑页, 入口]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_others_moment_share_menu
+    - repost-navigation/open_repost_editor_from_share
+
+intent:
+  action: 观察当前转发编辑页
+  expected:
+    - 左上角可见 X 关闭按钮
+    - 右上角可见紫色 "Post" 按钮
+    - 页面中部可见被转发动态卡片预览，卡片底部有 "Moment" 字样
+
+timeoutMs: 300000
+
+---
+id: IT-MOM-REPOST-005
+name: 关闭分享面板不进入编辑页
+module: 转发动态-分享入口
+platform: android
+priority: P1
+tags: [动态, 转发, 分享, 取消]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_others_moment_share_menu
+    - repost-navigation/close_share_panel_without_repost
+
+intent:
+  action: 观察关闭分享面板后的页面
+  expected:
+    - 分享面板已关闭，未进入转发编辑页
+    - Discover 发现 tab 动态列表可见
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-006
+name: 动态详情页分享入口展示 Repost 按钮
+module: 转发动态-分享入口
+platform: android
+priority: P0
+tags: [动态, 转发, 详情页, 入口]
+preconditions: Discover 页存在可进入详情的他人动态
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_moment_detail_from_discover
+
+intent:
+  action: 点击详情页操作栏中的分享/转发图标（curved arrow）
+  expected:
+    - 从底部弹出半屏分享面板，标题为 "Share or repost"
+    - 面板顶部可见紫色按钮 "Repost this moment"
+
+timeoutMs: 120000
+
+---
+id: IT-MOM-REPOST-007
+name: 详情页 Repost 同样进入转发编辑页
+module: 转发动态-分享入口
+platform: android
+priority: P0
+tags: [动态, 转发, 详情页, 编辑页]
+
+setup:
+  launchApp: true
+  include:
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_moment_detail_from_discover
+    - repost-navigation/open_share_from_moment_detail
+    - repost-navigation/open_repost_editor_from_share
+
+intent:
+  action: 观察当前转发编辑页
+  expected:
+    - 左上角可见 X 关闭按钮
+    - 右上角可见紫色 "Post" 按钮
+    - 页面中部可见被转发动态卡片预览，卡片底部有 "Moment" 字样
+
+timeoutMs: 300000
+
+---
+id: IT-MOM-REPOST-008
+name: 分享面板展示站内 Share 联系人列表
+module: 转发动态-分享入口
+platform: android
+priority: P1
+tags: [动态, 转发, 分享, 站内分享]
+
+setup:
+  launchApp: true
+  skipPopupDismiss: true
+  include:
+    - repost-navigation/dismiss_blocking_popup
+    - moments-navigation/enter_moment_discover_tab
+    - repost-navigation/open_others_moment_share_menu
+  steps:
+    - act: 若 Share 联系人列表未完全可见，向下滑动分享面板一次
+
+intent:
+  action: 观察分享面板站内 Share 区域
+  expected:
+    - 可见 "Share" 分区标题
+    - 联系人列表中可见 share 按钮
+    - Repost this moment 按钮仍可见
+
+timeoutMs: 180000

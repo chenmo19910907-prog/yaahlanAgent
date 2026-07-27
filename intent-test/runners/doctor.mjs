@@ -3,7 +3,8 @@ import { existsSync, readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
-import { getPlatformProfile, loadBaseProfile } from './load-base-profile.mjs';
+import { applyBaseProfileEnv, applyPlatformProfileEnv, getPlatformProfile, loadBaseProfile } from './load-base-profile.mjs';
+import { loadMidsceneEnv, readMidsceneEnv, validateModelEnv } from '../../midscene/scripts/load-env.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MIDSCENE = resolve(ROOT, '../midscene');
@@ -82,6 +83,40 @@ try {
 
 const momoid = process.env.TEST_TUNNEL_MOMOID;
 if (existsSync(resolve(MIDSCENE, '.env'))) {
+  loadMidsceneEnv({ root: MIDSCENE });
+  const modelCheck = validateModelEnv(readMidsceneEnv({ root: MIDSCENE }));
+  if (modelCheck.ok) {
+    check(
+      'MIDSCENE 视觉模型配置',
+      true,
+      `${modelCheck.vars.MIDSCENE_MODEL_NAME} · ${modelCheck.vars.MIDSCENE_MODEL_FAMILY}`,
+    );
+    try {
+      const base = modelCheck.vars.MIDSCENE_MODEL_BASE_URL.replace(/\/$/, '');
+      const body = JSON.stringify({
+        model: modelCheck.vars.MIDSCENE_MODEL_NAME,
+        messages: [{ role: 'user', content: 'ping' }],
+      });
+      const out = execSync(
+        `curl -sS -m 15 -X POST "${base}/chat/completions" `
+        + `-H "Authorization: Bearer ${modelCheck.vars.MIDSCENE_MODEL_API_KEY}" `
+        + `-H "Content-Type: application/json" `
+        + `-d ${JSON.stringify(body)}`,
+        { encoding: 'utf8' },
+      );
+      const parsed = JSON.parse(out);
+      if (parsed.error) {
+        check('模型 API 连通', false, `${parsed.error.code}: ${parsed.error.message}`);
+      } else {
+        check('模型 API 连通', true, 'chat/completions 正常');
+      }
+    } catch (e) {
+      check('模型 API 连通', false, e.message?.slice(0, 120));
+    }
+  } else {
+    check('MIDSCENE 视觉模型配置', false, `缺少 ${modelCheck.missing.join(', ')}`);
+  }
+
   const envText = readFileSync(resolve(MIDSCENE, '.env'), 'utf8');
   const hasMomoid = /TEST_TUNNEL_MOMOID=\d+/.test(envText);
   check('TEST_TUNNEL_MOMOID', hasMomoid, momoid || '写入 midscene/.env');
