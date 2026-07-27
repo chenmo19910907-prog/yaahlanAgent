@@ -333,6 +333,8 @@ testcase:
   - 中端设备 → 动态效果展示为静态图
   - 高端设备 → 动态效果正常播放
 
+**图片类需求必查五种格式**：凡涉及图片上传、展示、预览、装扮/道具资源、活动 Banner/头图、背景、头像、礼物图标等，须覆盖 **SVGA、JPG、PNG、WEBP、GIF** 五种格式（详见 `rules/testcase_generation_rules.md` §图片资源格式通用规则）；SVGA/GIF 须与上文极速模式、设备档位联动。
+
 ### 本地文件管理规范
 
 - 用例统一存放在 `temporary_testcase/` 目录，文件名与需求名一致
