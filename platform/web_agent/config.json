@@ -7,6 +7,9 @@
     "provider": "cloudflare",
     "note": "执行 python3 platform/web_agent/expose_public.py；须先在 .env.local 配置 WEB_AGENT_AUTH_USER/PASSWORD"
   },
+  "dingtalkOAuth": {
+    "note": "钉钉 H5 免登：.env.local 配置 DINGTALK_CORP_ID + WEB_AGENT_DINGTALK_OAUTH=1；工作台应用首页指向本服务 HTTPS 地址"
+  },
   "sync_dingtalk_chat": true,
   "quickPromptCount": 4,
   "quickPrompts": [

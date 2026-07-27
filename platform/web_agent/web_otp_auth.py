@@ -217,6 +217,34 @@ class WebOtpAuthStore:
         logger.info("网页登录成功 staff=%s", uid[:12])
         return token, user, None
 
+    def create_session_for_staff(
+        self,
+        staff_id: str,
+        *,
+        display_name: str = "",
+    ) -> tuple[str | None, WebAuthUser | None, str | None]:
+        """OAuth 等已验证身份后直接创建 Cookie 会话。返回 (token, user, error)。"""
+        uid = (staff_id or "").strip()
+        if not uid:
+            return None, None, "缺少用户标识"
+        name = (display_name or "").strip()
+        now = time.time()
+        with self._lock:
+            otps = self._load_otps()
+            sessions = self._load_sessions()
+            self._purge_expired_locked(otps, sessions)
+            token = secrets.token_urlsafe(32)
+            sessions[token] = {
+                "staffId": uid,
+                "displayName": name,
+                "createdAt": now,
+                "expiresAt": now + SESSION_TTL_S,
+            }
+            self._save_sessions(sessions)
+        user = WebAuthUser(staff_id=uid, display_name=name)
+        logger.info("网页 OAuth 登录成功 staff=%s", uid[:12])
+        return token, user, None
+
     def validate_session_token(self, token: str) -> WebAuthUser | None:
         raw = (token or "").strip()
         if not raw:

@@ -1167,6 +1167,8 @@
     </div>
   </div>
 
+  <script src="https://g.alicdn.com/dingding/dingtalk-jsapi/3.0.25/dingtalk.open.js"></script>
+  <script src="dingtalk_oauth.js"></script>
   <script src="catalog_panel.js"></script>
   <script>
     const API = '';
@@ -2286,13 +2288,31 @@
       event.stopPropagation();
     });
 
+    async function ensureAuthSession() {
+      const authRes = await fetch('/api/auth/status');
+      if (!authRes.ok) return null;
+      let authData = await authRes.json();
+      if (
+        !authData.loggedIn
+        && authData.dingtalkOAuth?.enabled
+        && typeof DingtalkOAuth !== 'undefined'
+        && DingtalkOAuth.isLikelyDingTalkClient()
+      ) {
+        try {
+          const ok = await DingtalkOAuth.tryDingTalkOAuthLogin(authData.dingtalkOAuth);
+          if (ok) {
+            const retry = await fetch('/api/auth/status');
+            if (retry.ok) authData = await retry.json();
+          }
+        } catch { /* fallback guest / login btn */ }
+      }
+      return authData;
+    }
+
     (async () => {
       try {
-        const authRes = await fetch('/api/auth/status');
-        if (authRes.ok) {
-          const authData = await authRes.json();
-          initAuthUI(authData);
-        }
+        const authData = await ensureAuthSession();
+        if (authData) initAuthUI(authData);
         setupInputImageHandlers();
         await loadMeta();
         initSidebarResize();

@@ -97,6 +97,11 @@ from web_otp_auth import (  # noqa: E402
     otp_auth_enabled,
     set_session_cookie,
 )
+from web_dingtalk_oauth import (  # noqa: E402
+    dingtalk_oauth_enabled,
+    dingtalk_oauth_public_config,
+    login_with_auth_code,
+)
 
 logger = logging.getLogger("web-agent")
 
@@ -182,6 +187,7 @@ def _platform_meta() -> dict[str, int | str]:
         "authPublicOnly": auth_enabled(),
         "otpAuthEnabled": otp_auth_enabled(),
         "loginPhrase": WEB_LOGIN_PHRASE,
+        "dingtalkOAuth": dingtalk_oauth_public_config(),
     }
 
 
@@ -527,6 +533,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 "loggedIn": user is not None,
                 "otpAuthEnabled": otp_auth_enabled(),
                 "loginPhrase": WEB_LOGIN_PHRASE,
+                "dingtalkOAuth": dingtalk_oauth_public_config(),
             }
             if user is not None:
                 payload["user"] = {
@@ -535,6 +542,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     "isAdmin": is_web_admin(staff_id=user.staff_id),
                 }
             return _json_response(self, payload)
+
+        if path == "/api/auth/dingtalk-config":
+            return _json_response(self, dingtalk_oauth_public_config())
 
         if not authorize_request(self, method="GET"):
             return
@@ -677,6 +687,37 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             token, user, err = get_web_otp_store().verify_otp_and_create_session(code)
             if not token or user is None:
                 return _json_response(self, {"error": err or "登录失败"}, 401)
+            payload = {
+                "ok": True,
+                "user": {
+                    "staffId": user.staff_id,
+                    "displayName": user.display_name or user.staff_id,
+                },
+            }
+            body_bytes = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            set_session_cookie(self, token)
+            self.send_header("Content-Length", str(len(body_bytes)))
+            self.end_headers()
+            self.wfile.write(body_bytes)
+            return
+
+        if path == "/api/auth/dingtalk-oauth":
+            if not dingtalk_oauth_enabled():
+                return _json_response(self, {"error": "钉钉 OAuth 免登未启用"}, 503)
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            auth_code = str(body.get("authCode") or body.get("code") or "").strip()
+            try:
+                token, user, err = login_with_auth_code(auth_code)
+            except Exception as exc:  # noqa: BLE001
+                logger.exception("钉钉 OAuth 登录异常")
+                return _json_response(self, {"error": f"钉钉登录异常：{exc}"}, 500)
+            if not token or user is None:
+                return _json_response(self, {"error": err or "钉钉登录失败"}, 401)
             payload = {
                 "ok": True,
                 "user": {
