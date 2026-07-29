@@ -53,9 +53,19 @@ def is_web_login_request(text: str) -> bool:
     return bool(WEB_LOGIN_RE.match((text or "").strip()))
 
 
+LOGIN_PUBLIC_STATIC_PATHS = frozenset(
+    {
+        "/theme.js",
+        "/dingtalk_oauth.js",
+    }
+)
+
+
 def is_public_auth_path(path: str) -> bool:
     p = (path or "").rstrip("/") or "/"
     if p in ("/login.html", "/login"):
+        return True
+    if p in LOGIN_PUBLIC_STATIC_PATHS:
         return True
     if p.startswith("/api/auth/"):
         return True

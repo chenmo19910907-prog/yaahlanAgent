@@ -18,6 +18,7 @@ sys.path.insert(0, str(WEB_AGENT_DIR))
 from web_otp_auth import (  # noqa: E402
     WEB_LOGIN_PHRASE,
     WebOtpAuthStore,
+    is_public_auth_path,
     is_web_login_request,
 )
 
@@ -27,6 +28,13 @@ class WebOtpAuthTest(unittest.TestCase):
         self.assertTrue(is_web_login_request(WEB_LOGIN_PHRASE))
         self.assertTrue(is_web_login_request("  请求访问 Yaahlan 智能工具 Agent  "))
         self.assertFalse(is_web_login_request("网页登录"))
+
+    def test_login_public_static_paths(self) -> None:
+        self.assertTrue(is_public_auth_path("/login.html"))
+        self.assertTrue(is_public_auth_path("/theme.js"))
+        self.assertTrue(is_public_auth_path("/dingtalk_oauth.js"))
+        self.assertTrue(is_public_auth_path("/api/auth/status"))
+        self.assertFalse(is_public_auth_path("/chat.html"))
 
     def test_issue_verify_and_invalidate_sessions(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

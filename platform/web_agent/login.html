@@ -69,14 +69,14 @@
       background: rgba(34, 197, 94, 0.08);
     }
     .divider {
-      display: none;
+      display: flex;
       align-items: center;
       gap: 12px;
       margin: 18px 0;
       color: var(--muted);
       font-size: 0.82rem;
     }
-    .divider.show { display: flex; }
+    .divider.hidden { display: none; }
     .divider::before,
     .divider::after {
       content: "";
@@ -84,8 +84,8 @@
       height: 1px;
       background: var(--border);
     }
-    .otp-section { display: none; }
-    .otp-section.show { display: block; }
+    .otp-section { display: block; }
+    .otp-section.hidden { display: none; }
     .step {
       color: var(--muted);
       font-size: 0.86rem;
@@ -177,11 +177,11 @@
 <body>
   <div class="card">
     <h1>Yaahlan 智能工具 Agent</h1>
-    <p class="subtitle" id="subtitle">登录后可使用 Web 对话与工具能力。</p>
+    <p class="subtitle" id="subtitle">网页版可通过钉钉机器人验证码登录；在钉钉内打开时将优先尝试自动登录。</p>
 
     <div class="oauth-status" id="oauthStatus">正在通过钉钉验证身份…</div>
 
-    <div class="divider" id="otpDivider">或使用验证码登录</div>
+    <div class="divider hidden" id="otpDivider">或使用验证码登录</div>
 
     <div class="otp-section" id="otpSection">
       <p class="step">1. 复制下方文案，发送给【智能工具人yaahlan】或【群内@智能工具人yaahlan】</p>
@@ -217,10 +217,20 @@
     let oauthConfig = { enabled: false, clientId: '', corpId: '' };
 
     function showOtpFallback() {
-      otpSection.classList.add('show');
-      otpDivider.classList.add('show');
+      otpSection.classList.remove('hidden');
+      otpDivider.classList.remove('hidden');
       oauthStatus.classList.remove('show');
       subtitleEl.textContent = '网页版可通过钉钉机器人验证码登录；在钉钉内打开时将优先尝试自动登录。';
+    }
+
+    function hideOtpForOAuth() {
+      otpSection.classList.add('hidden');
+      otpDivider.classList.add('hidden');
+    }
+
+    function oauthClientReady() {
+      return typeof DingtalkOAuth !== 'undefined'
+        && typeof DingtalkOAuth.isLikelyDingTalkClient === 'function';
     }
 
     function showOauthMessage(text, kind) {
@@ -241,11 +251,17 @@
 
     async function tryDingTalkOAuth() {
       if (!oauthConfig.enabled) return false;
-      if (!DingtalkOAuth.isLikelyDingTalkClient() && !window.dd) return false;
+      if (!oauthClientReady() && !window.dd) return false;
+      hideOtpForOAuth();
       showOauthMessage('正在通过钉钉验证身份…');
       try {
-        const ok = await DingtalkOAuth.tryDingTalkOAuthLogin(oauthConfig);
-        if (!ok) return false;
+        const ok = oauthClientReady()
+          ? await DingtalkOAuth.tryDingTalkOAuthLogin(oauthConfig)
+          : false;
+        if (!ok) {
+          showOtpFallback();
+          return false;
+        }
         showOauthMessage('登录成功，正在进入…', 'success');
         window.location.replace('/');
         return true;
@@ -269,7 +285,7 @@
           renderLoginPhrase(data.loginPhrase);
         }
         oauthConfig = data.dingtalkOAuth || oauthConfig;
-        if (oauthConfig.enabled && DingtalkOAuth.isLikelyDingTalkClient()) {
+        if (oauthConfig.enabled && oauthClientReady() && DingtalkOAuth.isLikelyDingTalkClient()) {
           subtitleEl.textContent = '检测到钉钉客户端，正在尝试免登…';
           const ok = await tryDingTalkOAuth();
           if (ok) return;
@@ -344,6 +360,10 @@
       errorBox.classList.remove('show');
     });
 
+    showOtpFallback();
+    try {
+      if (typeof initThemeSettings === 'function') initThemeSettings();
+    } catch (_) { /* theme.js 未加载时不阻断验证码登录 */ }
     bootstrap();
   </script>
 </body>

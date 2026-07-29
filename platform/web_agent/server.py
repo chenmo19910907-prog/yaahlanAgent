@@ -527,6 +527,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             self.path = "/login.html"
             return super().do_GET()
 
+        if path in ("/theme.js", "/dingtalk_oauth.js"):
+            return super().do_GET()
+
         if path == "/api/auth/status":
             user = current_web_user(self)
             payload: dict[str, Any] = {
