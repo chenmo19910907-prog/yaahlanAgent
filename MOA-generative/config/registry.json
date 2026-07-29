@@ -39,7 +39,7 @@
     {
       "id": "moa_generative_signin_example",
       "name": "生成式MOA-签到示例",
-      "category": "生成式MOA（已验证示例）",
+      "category": "活动（app-task）",
       "description": "HTTP /yaahlan/sign/signIn → ServiceUrl /service/yaahlan-trick/external/app-task + method signIn。示例 body 见 templates/example-signIn.body.json。",
       "prompts": [
         "生成式MOA 签到示例",
@@ -50,7 +50,7 @@
     {
       "id": "moa_generative_like_example",
       "name": "生成式MOA-点赞示例",
-      "category": "生成式MOA（已验证示例）",
+      "category": "动态（feed-interact-stage）",
       "description": "HTTP /yaahlan/feed-interact/likeContent → ServiceUrl /service/feed/external/feed-interact-stage + method likeContent。contentId 须来自当前列表；示例 body 见 templates/example-likeContent.body.json。",
       "prompts": [
         "生成式MOA 点赞示例",
@@ -61,7 +61,7 @@
     {
       "id": "moa_generative_accept_intimate_example",
       "name": "生成式MOA-同意亲密申请",
-      "category": "生成式MOA（已验证示例）",
+      "category": "CP·亲密关系",
       "description": "HTTP /yaahlan/user/intimate/acceptIntimateInvitation → /service/yaahlan/user/intimate-api + acceptIntimateInvitation。body 需接受方 userId、intimateId、relationshipType；发起仍用 Gift --intimate-invite。",
       "prompts": [
         "生成式MOA 同意亲密申请",
@@ -72,10 +72,10 @@
     {
       "id": "moa_generative_buddy_form",
       "name": "生成式MOA-结挚友一键",
-      "category": "生成式MOA（已验证示例）",
+      "category": "CP·亲密关系",
       "description": "结挚友闭环：Gift intimate-invite 发起 + MOA acceptIntimateInvitation 同意 + homepage 验收。推荐工作流 intimate-buddy-form。",
       "prompts": [
-        "结挚友 <fromUserId> <toUserId>",
+        "<fromUserId|userId>和<toUserId|userId>结为挚友关系",
         "100465989 和 100079102 结为挚友",
         "生成式MOA 结挚友"
       ],
@@ -84,19 +84,19 @@
     {
       "id": "moa_generative_cp_form",
       "name": "生成式MOA-结CP一键",
-      "category": "生成式MOA（已验证示例）",
-      "description": "结CP闭环：Gift intimate-invite（cpGiftList，默认 2005006943）+ MOA acceptIntimateInvitation（relationshipType=1）+ homepage 验收。推荐工作流 intimate-cp-form。",
+      "category": "CP·亲密关系",
+      "description": "结CP闭环：Gift intimate-invite（cpGiftList，默认 2005004592 Neon Heart）+ MOA acceptIntimateInvitation（relationshipType=1）+ homepage 验收。推荐工作流 intimate-cp-form。",
       "prompts": [
-        "结CP <fromUserId> <toUserId>",
+        "<fromUserId|userId>和<toUserId|userId>结为CP关系",
         "100465989 和 100006869 结为CP",
         "生成式MOA 结CP"
       ],
-      "command": "python3 workflow/workflow_execute.py run intimate-cp-form \\\n  --from-user-id <fromUserId> \\\n  --to-user-id <toUserId> \\\n  --gift-id 2005006943 \\\n  --dismiss-first 1"
+      "command": "python3 workflow/workflow_execute.py run intimate-cp-form \\\n  --from-user-id <fromUserId> \\\n  --to-user-id <toUserId> \\\n  --gift-id 2005004592 \\\n  --dismiss-first 1"
     },
     {
       "id": "moa_generative_family_pk_member_list",
       "name": "生成式MOA-家族PK成员贡献列表",
-      "category": "生成式MOA（已验证示例）",
+      "category": "家族PK（vas/activity/family-pk-v2-api）",
       "description": "HTTP /yaahlan/vas/familyPk/getFamilyPkUserList → /service/vas/activity/family-pk-v2-api + getFamilyPkUserList。body 需 userId、familyId、date、limit、offset；返回 memberList 成员贡献榜。",
       "prompts": [
         "家族PK成员贡献列表 MOA",
@@ -108,7 +108,7 @@
     {
       "id": "moa_generative_family_pk_page",
       "name": "生成式MOA-家族PK请求页面",
-      "category": "生成式MOA（已验证示例）",
+      "category": "家族PK（vas/activity/family-pk-v2-api）",
       "description": "HTTP /yaahlan/vas/familyPk/getFamilyPkPage → /service/vas/activity/family-pk-v2-api + getFamilyPkPage。body 需 userId、date、area；返回 pkList/current 对战列表。",
       "prompts": [
         "家族PK请求页面 MOA",
@@ -120,7 +120,7 @@
     {
       "id": "moa_generative_room_member_apply",
       "name": "生成式MOA-房间成员申请",
-      "category": "生成式MOA（已验证示例）",
+      "category": "房间（room-member-stage）",
       "description": "HTTP /yaahlan/room/member/apply → /service/room/external/room-member-stage + apply。body 需申请人 userId、roomId。",
       "prompts": [
         "房间成员申请 MOA",
@@ -131,7 +131,7 @@
     {
       "id": "moa_generative_room_member_agree",
       "name": "生成式MOA-同意房间成员申请",
-      "category": "生成式MOA（已验证示例）",
+      "category": "房间（room-member-stage）",
       "description": "HTTP /yaahlan/room/member/agree → /service/room/external/room-member-stage + agree。body 需房主 userId、roomId、remoteId（申请人）。",
       "prompts": [
         "同意房间成员申请 MOA",
@@ -142,7 +142,7 @@
     {
       "id": "moa_generative_gift_panel_backpack_gifts",
       "name": "生成式MOA-礼物面板背包礼物",
-      "category": "生成式MOA（抓包转MOA）",
+      "category": "礼物面板（yh-components/gift-panel）",
       "description": "HTTP /yaahlan/component/giftPanel/getGiftTabListV3 → ServiceUrl /service/yh-components/gift-panel + getGiftTabListV3。MOA Redis 直连可查背包 Tab（package.remain），无需打开礼物面板。",
       "prompts": [
         "礼物面板查看背包 MOA",
@@ -154,7 +154,7 @@
     {
       "id": "moa_generative_gift_panel_backpack_props",
       "name": "生成式MOA-礼物面板背包道具",
-      "category": "生成式MOA（抓包转MOA）",
+      "category": "礼物面板（yh-components/gift-panel）",
       "description": "HTTP /yaahlan/component/giftPanel/propPackageList → ServiceUrl /service/yh-components/gift-panel + propPackageList。",
       "prompts": [
         "礼物面板背包道具 MOA",
@@ -165,10 +165,10 @@
     {
       "id": "moa_generative_room_member_quick_add",
       "name": "生成式MOA-快速添加房间成员",
-      "category": "生成式MOA（已验证示例）",
+      "category": "房间（room-member-stage）",
       "description": "快速添加房间成员：MOA apply（申请人）+ agree（房主）。推荐工作流 room-member-quick-add-form。",
       "prompts": [
-        "快速添加房间成员 <applicantUserId> <ownerUserId> <roomId>",
+        "<applicantUserId|userId>申请加入房间<roomId|roomId>，房主<ownerUserId|userId>同意",
         "13311111118 加入 13311111112 房间",
         "生成式MOA 添加房间成员"
       ],
@@ -177,11 +177,11 @@
     {
       "id": "moa_generative_feed_publish_comment",
       "name": "生成式MOA-帖子评论",
-      "category": "生成式MOA（已验证示例）",
+      "category": "动态（feed-comment-stage）",
       "description": "HTTP /yaahlan/feed-comment/publishComment → /service/feed/external/feed-comment-stage + publishComment。body 需 userId、feedId、content、source。",
       "prompts": [
         "帖子评论 MOA",
-        "用户 <userId> 给帖子 <feedId> 评论 <content>",
+        "用户<userId|userId>给帖子<feedId|feedId>评论<content|内容>",
         "生成式MOA publishComment"
       ],
       "command": "python3 MOA-generative/scripts/form_feed_publish_comment.py \\\n  --user-id <userId> \\\n  --feed-id <feedId> \\\n  --content <content>"
@@ -189,14 +189,50 @@
     {
       "id": "moa_generative_cp_love_chest_homepage",
       "name": "生成式MOA-CP爱意宝箱主页",
-      "category": "生成式MOA（抓包转MOA）",
-      "description": "HTTP /yaahlan/trick/cpLoveChest/getCpLoveChestHomepage → 候选 ServiceUrl /service/yaahlan-trick/external/cp-love-chest-stage + getCpLoveChestHomepage。打开 CP 爱意宝箱页时触发；返回 currentLoveValue（CP 双方共享周期爱意值）、userInfo、cpInfo、tiers。",
+      "category": "CP·爱意宝箱",
+      "description": "HTTP /yaahlan/trick/cpLoveChest/getCpLoveChestHomepage → MOA /service/yaahlan-trick/external/cp-love-chest + getCpLoveChestHomepage（已验证）。读 data.currentLoveValue 为15天周期爱意值；**≠** cp-moa loveValue。周期值造数须 Stage 私聊送礼（Rose 2005000233）。",
       "prompts": [
-        "查询 CP 爱意宝箱爱意值 <userId>",
+        "查询用户<userId|userId>的CP爱意宝箱爱意值",
         "100465989 打开 CP 爱意宝箱页查爱意值",
         "生成式MOA getCpLoveChestHomepage"
       ],
       "command": "python3 MOA-generative/scripts/form_cp_love_chest_homepage.py \\\n  --user-id <userId>"
+    },
+    {
+      "id": "moa_generative_cp_space_medals",
+      "name": "生成式MOA-CP空间CP勋章",
+      "category": "CP·爱意宝箱",
+      "description": "HTTP /yaahlan/user/intimate/intimateHomePage → /service/yaahlan/user/intimate-api + intimateHomePage。打开 CP 空间页时触发；返回 cpMedalTab.list（medalName/num/obtainTime/imageUrl/dynamicImageUrl）。",
+      "prompts": [
+        "查询用户<userId|userId>的CP空间CP勋章",
+        "13311111112 打开 CP 空间查 CP 勋章",
+        "生成式MOA intimateHomePage cpMedalTab"
+      ],
+      "command": "python3 MOA-generative/scripts/form_cp_space_medals.py \\\n  --user-id <userId>"
+    },
+    {
+      "id": "moa_generative_nameplate_page",
+      "name": "生成式MOA-铭牌页",
+      "category": "用户资料（userProfile）",
+      "description": "HTTP /yaahlan/userProfile/nameplatePageData → Tunnel 自动读取（无需人工验收）。返回 unlockedNameplates/lockedNameplates（id/unlockTime/remainTime/wearState）。",
+      "prompts": [
+        "查询用户<userId|userId>铭牌页",
+        "13311111112 查 sweet CP 1138 铭牌",
+        "生成式MOA nameplatePageData"
+      ],
+      "command": "python3 MOA-generative/scripts/form_nameplate_page.py \\\n  --user-id <userId> \\\n  [--nameplate-id <nameplateId>]"
+    },
+    {
+      "id": "moa_generative_diamond_history",
+      "name": "生成式MOA-钻石记录",
+      "category": "钻石（wallet-api）",
+      "description": "HTTP /yaahlan/components/wallet/diamondHistory → /service/yaahlan/components/wallet-api + diamondHistory。钱包钻石记录页；返回 data.list（desc/rechargeMethod/diamondDiff/createTime/balance）。",
+      "prompts": [
+        "查询用户<userId|userId>钻石记录",
+        "打开钻石记录页查 diamondHistory",
+        "生成式MOA diamondHistory"
+      ],
+      "command": "python3 MOA-generative/scripts/form_diamond_history.py \\\n  --user-id <userId> \\\n  [--page-size <pageSize>] \\\n  [--last-id <lastId>]"
     }
   ]
 }

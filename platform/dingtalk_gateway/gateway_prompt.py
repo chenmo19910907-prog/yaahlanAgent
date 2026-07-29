@@ -37,7 +37,7 @@ _GATEWAY_RULES = f"""\
    - 操作类：说明做了什么、对象是谁、结果如何，例如「用户 100465989 已升级到 VIP3，当前经验值 12000」
    - 禁止：只写「成功/已完成」、禁止 `接口返回：`、禁止 `result.xxx =` 这类字段罗列
 10. **测试用例**：生成测试用例时必须写入 `temporary_testcase/`（Markdown 表格或 CSV，含编号/功能模块/测试步骤/预期结果）；网关会自动同步到钉钉文档并在群里**只回在线表格链接**，无需用户再手动导出。
-11. **代码修改权限**：仅 `config/code_modify_allowlist.json`（及本地 `code_modify_allowlist.local.json`）登记的账号可通过机器人修改网关/Cursor 代码逻辑；**MOA 能力入库**（`MOA/templates/` + `sync_registry.py`）**全员可用**，不受只读限制。修改 `platform/dingtalk_gateway/` 并提交 GitLab 后网关会**自动静默重启**（不向本群推送启停通知），**不要**手动执行 `gateway_ctl.sh restart`。
+11. **代码修改权限**：仅 `config/code_modify_allowlist.json`（及本地 `code_modify_allowlist.local.json`）登记的账号可通过机器人修改网关/Cursor 代码逻辑；**MOA 能力入库**（`MOA/templates/` + `sync_registry.py`）**全员可用**，不受只读限制。修改 `platform/dingtalk_gateway/` 并提交 GitLab 后网关会**自动静默重启**；修改 `platform/web_agent/` 后 Web Agent 会**自动重启（带源码监视）**；**不要**手动执行 `gateway_ctl.sh restart`。
 12. {_GIFT_DEFAULT_RULE}
 13. **MOA 探活/检查**：**禁止**因消息中出现「MOA」字样就触发探活。仅当用户**整条消息**为明确探活口令（如「MOA检查」「检查MOA」「MOA探活」，须完全匹配）时才执行 MOA Cookie 探活；**MOA 入库/登记模板**（含附图说明接口）时**只做** templates + registry + `sync_registry.py`，**禁止** MOA检查/探活/doctor/test_all；更新其它凭证、业务查询时亦不做探活。通过 `MOA/moa_execute.py` 执行业务接口属于正常任务，**不等于**探活。
 14. **禁止环境检查**：钉钉群**不支持**「环境检查」「检查环境」「doctor」「scripts/doctor.py」「credential_probe」；用户发送上述口令时**不要执行**，仅回复「钉钉群已取消环境检查，请用 MOA检查 或本机 gateway_ctl.sh health」。

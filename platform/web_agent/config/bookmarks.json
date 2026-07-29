@@ -15,7 +15,8 @@
           "id": "bookmark-ms5kikr1",
           "label": "创新中台",
           "url": "https://mdp-nova-alpha.wemomo.com/fep/momo/mdp-spacey/innovation-platform/index.html#/",
-          "icon": "link"
+          "icon": "link",
+          "description": "中台后台"
         },
         {
           "id": "mse",
@@ -31,13 +32,6 @@
       "label": "外网平台",
       "items": [
         {
-          "id": "bookmark-ms5kjnmi",
-          "label": "管理后台",
-          "url": "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/home",
-          "icon": "link",
-          "description": "开发者后台"
-        },
-        {
           "id": "bookmark-ms5kk3ld",
           "label": "MSE 配置",
           "url": "https://mse.wemomo.com/#/config/app?corp=overseas&env=overseas&serviceType=moa&appKey=momo.bpm.biz.gameplatform.overseas-voga-mts-room&shareId=c5bc301c6a684beb8236c99475a547b7&type=share",
@@ -48,7 +42,8 @@
           "id": "bookmark-ms5k7ypo",
           "label": "管理后台",
           "url": "https://www.yaahlan.fun/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/manage",
-          "icon": "link"
+          "icon": "link",
+          "description": "开发者后台"
         }
       ]
     },
@@ -60,20 +55,22 @@
           "id": "bookmark-ms5kl1xl",
           "label": "Figma",
           "url": "https://www.figma.com/design/dX2pELrDX0Fykai5tDvOsx/Yaahlan客户端2.0?node-id=98409-321698&p=f&t=tB4XDjSPfzCVGgM6-0",
-          "icon": "link"
+          "icon": "link",
+          "description": "设计图平台"
         },
         {
           "id": "bookmark-ms5klerk",
           "label": "Bug平台",
           "url": "https://teambition.wemomo.com/project/603c619f128c30001daff853/bug",
-          "icon": "link"
+          "icon": "link",
+          "description": "提交查看bug"
         },
         {
           "id": "bookmark-ms5kmjmi",
           "label": "代码质量平台",
           "url": "https://cosmos-compass-web.immomo.com/cpm/codeCoverage/testReport?appid=&_bid=0",
           "icon": "link",
-          "description": "覆盖率"
+          "description": "覆盖率测试"
         },
         {
           "id": "tunnel_mock",

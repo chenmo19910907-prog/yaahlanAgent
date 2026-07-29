@@ -1,0 +1,52 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/yaahlan/components/wallet-api",
+  "method": "diamondHistory",
+  "header": "{\"userId\":\"100007541\",\"uid\":\"100007541\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"ios\",\"osType\":\"ios\",\"originRsp\":\"1\",\"dataType\":\"json\",\"pageSize\":\"20\",\"lastId\":\"0\",\"type\":\"\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100007541\",\"uid\":\"100007541\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"ios\",\"osType\":\"ios\",\"originRsp\":\"1\",\"dataType\":\"json\",\"pageSize\":\"20\",\"lastId\":\"0\",\"type\":\"\"}",
+      "type": "json",
+      "value": {
+        "userId": "100007541",
+        "uid": "100007541",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "ios",
+        "osType": "ios",
+        "originRsp": "1",
+        "dataType": "json",
+        "pageSize": "20",
+        "lastId": "0",
+        "type": ""
+      }
+    }
+  ],
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_meta": {
+    "httpPath": "/yaahlan/components/wallet/diamondHistory",
+    "captureUserId": "100007541",
+    "tunnelRequestId": "QuvEop8Bpk1mjMPP3A5W",
+    "tunnelTime": "2026/07/27 16:50:38",
+    "tunnelLink": "https://tunnel.wemomo.com/request/QuvEop8Bpk1mjMPP3A5W?req_time=1785142238&g_appid=All&g_env=alpha",
+    "verified": true,
+    "serviceUrl": "/service/yaahlan/components/wallet-api",
+    "note": "钱包钻石记录页；data.list[] 含 desc/rechargeMethod/diamondDiff/createTime/beforeBalance/balance"
+  }
+}

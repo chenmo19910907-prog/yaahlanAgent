@@ -43,10 +43,20 @@ def test_duration_footer() -> None:
         store.record("agent:query", 90.0, status="ok")
         store.record("agent:query", 110.0, status="ok")
         with patch("progress_message.get_duration_store", return_value=store):
-            footer = build_duration_footer(45.0, task_kind="agent:query")
+            footer = build_duration_footer(
+                45.0,
+                task_kind="agent:query",
+                prompt="查询用户 100465989",
+            )
             assert "本次耗时 45秒" in footer
-            assert "同类任务通常约" in footer
-            body = append_duration_footer("查询完成", 45.0, task_kind="agent:query")
+            assert "预估约" in footer
+            assert "Admin/MOA 查询" in footer
+            body = append_duration_footer(
+                "查询完成",
+                45.0,
+                task_kind="agent:query",
+                prompt="查询用户 100465989",
+            )
             assert body.startswith("查询完成")
             assert "本次耗时 45秒" in body
 

@@ -160,6 +160,7 @@ python3 online/online_execute.py tunnel --momoid <userId> --keyword getTotalCust
 | 手机号 → userId | `MOA/` | `queryLoginStatusV2` |
 | 真机 UI 操作 | `adb/` | 截屏点击 |
 | 接口是否发出/返回 | `Tunnel/` | 本模块 |
+| **Mock 响应字段/整包** | `Tunnel/tunnel_mock_execute.py` | `POST /api/param_mock`、`/api/mock_cases`；见 `.cursor/skills/tunnel-mock/SKILL.md` |
 | **操作 + 截图 + 抓包** | `adb run` | `python3 adb/adb_execute.py run --macro ... --tunnel-account familyLeader --tunnel-keyword gift` |
 
 一体化流程见 [adb/README.md](../adb/README.md#adb--tunnel-抓包校验推荐) 与 Skill `.cursor/skills/adb-tunnel-verify/SKILL.md`。

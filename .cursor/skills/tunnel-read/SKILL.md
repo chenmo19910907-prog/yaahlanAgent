@@ -79,3 +79,4 @@ https://tunnel.wemomo.com/request/<_id>?req_time=<unix_seconds>&g_appid=All&g_en
 
 - [Tunnel/README.md](../../../Tunnel/README.md)
 - [Tunnel/使用方法.md](../../../Tunnel/使用方法.md)
+- Mock 字段/整包响应：技能 **`tunnel-mock`**，`python3 Tunnel/tunnel_mock_execute.py`

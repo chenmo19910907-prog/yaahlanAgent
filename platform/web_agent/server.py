@@ -10,6 +10,7 @@ import mimetypes
 import os
 import queue
 import re
+import signal
 import socket
 import subprocess
 import sys
@@ -123,6 +124,13 @@ from bookmarks_store import (  # noqa: E402
     normalize_bookmarks_payload as _normalize_bookmarks_payload,
     save_bookmarks as _save_bookmarks,
 )
+from message_board_store import (  # noqa: E402
+    create_message as _create_message_board_entry,
+    delete_message as _delete_message_board_entry,
+    list_messages_for_viewer as _list_message_board_entries,
+    normalize_create_payload as _normalize_message_board_payload,
+    normalize_guest_id as _normalize_message_board_guest_id,
+)
 
 logger = logging.getLogger("web-agent")
 
@@ -194,6 +202,100 @@ def _handle_bookmarks_import_legacy(handler: SimpleHTTPRequestHandler, body: Any
             "imported_count": len(added),
         },
     )
+
+
+def _message_board_viewer(
+    handler: SimpleHTTPRequestHandler,
+    *,
+    body: Any | None = None,
+) -> tuple[str, str, bool, bool, str | None]:
+    """返回 (staff_id, display_name, is_admin, is_guest, error)。"""
+    user = current_web_user(handler)
+    if user is not None:
+        admin = is_web_admin(staff_id=user.staff_id)
+        return user.staff_id, user.display_name or user.staff_id, admin, False, None
+
+    guest_raw = handler.headers.get("X-Message-Board-Guest")
+    if guest_raw is None and isinstance(body, dict):
+        guest_raw = body.get("guestId")
+    guest_id = _normalize_message_board_guest_id(guest_raw)
+    if guest_id is None:
+        return "", "", False, True, "缺少访客标识，请刷新页面后重试"
+    return guest_id, "访客", False, True, None
+
+
+def _handle_message_board_list(handler: SimpleHTTPRequestHandler) -> None:
+    staff_id, _, admin, _, err = _message_board_viewer(handler)
+    if err:
+        return _json_response(handler, {"error": err}, 400)
+    messages = _list_message_board_entries(
+        viewer_staff_id=staff_id,
+        is_admin=admin,
+    )
+    return _json_response(
+        handler,
+        {
+            "messages": messages,
+            "isAdmin": admin,
+        },
+    )
+
+
+def _handle_message_board_create(handler: SimpleHTTPRequestHandler, body: Any) -> None:
+    staff_id, display_name, admin, is_guest, err = _message_board_viewer(handler, body=body)
+    if err:
+        return _json_response(handler, {"error": err}, 400)
+    parsed = _normalize_message_board_payload(body)
+    if parsed is None:
+        return _json_response(handler, {"error": "反馈内容不能为空"}, 400)
+    content, show_real_name = parsed
+    if is_guest:
+        show_real_name = False
+    try:
+        created = _create_message_board_entry(
+            staff_id=staff_id,
+            display_name=display_name,
+            content=content,
+            show_real_name=show_real_name,
+        )
+    except ValueError as exc:
+        return _json_response(handler, {"error": str(exc)}, 400)
+    except OSError as exc:
+        logger.exception("保存留言板失败")
+        return _json_response(handler, {"error": f"保存失败：{exc}"}, 500)
+    public = _list_message_board_entries(
+        viewer_staff_id=staff_id,
+        is_admin=admin,
+    )
+    created_public = next((item for item in public if item.get("id") == created.get("id")), None)
+    return _json_response(
+        handler,
+        {
+            "ok": True,
+            "message": created_public or created,
+            "isAdmin": admin,
+        },
+    )
+
+
+def _handle_message_board_delete(handler: SimpleHTTPRequestHandler, message_id: str) -> None:
+    staff_id, _, admin, _, err = _message_board_viewer(handler)
+    if err:
+        return _json_response(handler, {"error": err}, 400)
+    try:
+        removed = _delete_message_board_entry(
+            message_id=message_id,
+            viewer_staff_id=staff_id,
+            is_admin=admin,
+        )
+    except PermissionError as exc:
+        return _json_response(handler, {"error": str(exc)}, 403)
+    except OSError as exc:
+        logger.exception("删除留言板条目失败")
+        return _json_response(handler, {"error": f"删除失败：{exc}"}, 500)
+    if not removed:
+        return _json_response(handler, {"error": "反馈不存在"}, 404)
+    return _json_response(handler, {"ok": True})
 
 
 def _agent_models_from_config(cfg: dict[str, Any] | None = None) -> list[dict[str, str]]:
@@ -337,7 +439,63 @@ class ActiveRun:
     cancel_notified: bool = False
     started_at: float = 0.0
     task_kind: str = ""
+    last_ack_line: str = ""
+    last_elapsed_line: str = ""
+    last_batch_line: str = ""
+    last_markdown: str = ""
     _notify_lock: threading.Lock = field(default_factory=threading.Lock)
+
+    def emit_event(self, event: dict[str, Any]) -> None:
+        etype = event.get("type")
+        if etype == "ack":
+            self.last_ack_line = str(event.get("line") or "")
+        elif etype == "status":
+            self.last_elapsed_line = str(event.get("elapsed_line") or "")
+            self.last_batch_line = str(event.get("batch_line") or "")
+        elif etype == "delta":
+            markdown = event.get("markdown")
+            if markdown:
+                self.last_markdown = str(markdown)
+        self.events.put(event)
+
+    def snapshot_events(self) -> list[dict[str, Any]]:
+        """重连 SSE 时回放当前进度（ack / 状态 / 已渲染正文）。"""
+        events: list[dict[str, Any]] = []
+        if self.last_ack_line:
+            events.append({"type": "ack", "line": self.last_ack_line})
+        if self.last_elapsed_line or self.last_batch_line:
+            events.append(
+                {
+                    "type": "status",
+                    "elapsed_line": self.last_elapsed_line,
+                    "batch_line": self.last_batch_line,
+                }
+            )
+        if self.last_markdown:
+            events.append({"type": "delta", "markdown": self.last_markdown})
+        if self.done.is_set():
+            if self.error:
+                events.append(
+                    {
+                        "type": "error",
+                        "message": self.error,
+                        "text": self.final_text,
+                    }
+                )
+            else:
+                events.append({"type": "done", "text": self.final_text})
+        return events
+
+    def to_active_run_dict(self) -> dict[str, Any]:
+        return {
+            "active": not self.done.is_set(),
+            "run_id": self.run_id,
+            "session_id": self.session_id,
+            "ack_line": self.last_ack_line,
+            "elapsed_line": self.last_elapsed_line,
+            "batch_line": self.last_batch_line,
+            "markdown": self.last_markdown,
+        }
 
 
 class RunManager:
@@ -392,7 +550,7 @@ def _notify_run_interrupted(run: ActiveRun, text: str) -> bool:
             return False
         run.cancel_notified = True
         run.final_text = body
-    run.events.put({"type": "done", "text": body})
+    run.emit_event({"type": "done", "text": body})
     return True
 
 
@@ -449,7 +607,7 @@ def _start_run_progress_watcher(
     task_kind = classify_task_kind(message)
     estimate_s = resolve_task_estimate_seconds(task_kind, prompt=message)
     ack_line = build_task_ack_message(_task_summary(message), prompt=message)
-    run.events.put({"type": "ack", "line": ack_line})
+    run.emit_event({"type": "ack", "line": ack_line})
 
     def loop() -> None:
         while not progress_stop.wait(PROGRESS_TICK_S):
@@ -464,7 +622,7 @@ def _start_run_progress_watcher(
             state = read_batch_progress(user_key)
             if state is not None:
                 batch_line = build_batch_progress_message(state)
-            run.events.put(
+            run.emit_event(
                 {
                     "type": "status",
                     "elapsed_line": elapsed_line,
@@ -611,7 +769,7 @@ def _start_chat_run(
         def on_render(markdown: str) -> None:
             nonlocal last_markdown
             last_markdown = markdown
-            run.events.put({"type": "delta", "markdown": markdown})
+            run.emit_event({"type": "delta", "markdown": markdown})
 
         def _append_assistant(text: str) -> None:
             output_files = consume_pending_outputs(session_id)
@@ -639,7 +797,7 @@ def _start_chat_run(
             run.final_text = append_duration_footer(body, elapsed, task_kind=task_kind)
             _append_assistant(run.final_text)
             status = "ok"
-            run.events.put({"type": "done", "text": run.final_text})
+            run.emit_event({"type": "done", "text": run.final_text})
         except TaskInterrupted:
             elapsed = time.monotonic() - started_at
             run.final_text = append_duration_footer(
@@ -651,7 +809,7 @@ def _start_chat_run(
             with run._notify_lock:
                 if not run.cancel_notified:
                     run.cancel_notified = True
-                    run.events.put({"type": "done", "text": run.final_text})
+                    run.emit_event({"type": "done", "text": run.final_text})
             status = "interrupted"
         except Exception as exc:  # noqa: BLE001
             elapsed = time.monotonic() - started_at
@@ -663,7 +821,9 @@ def _start_chat_run(
                 task_kind=task_kind,
             )
             _append_assistant(run.final_text)
-            run.events.put({"type": "error", "message": run.error, "text": run.final_text})
+            run.emit_event(
+                {"type": "error", "message": run.error, "text": run.final_text}
+            )
         finally:
             progress_stop.set()
             clear_batch_progress(user_key)
@@ -808,6 +968,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             meta = resolve_bookmark_metadata(target)
             return _json_response(self, meta)
 
+        if path == "/api/message-board":
+            return _handle_message_board_list(self)
+
         if path == "/api/sessions":
             sync_all_from_conversation_store()
             store = get_session_store()
@@ -822,10 +985,24 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             except Exception:  # noqa: BLE001
                 known = {}
             sessions = [
-                s.to_dict(known_labels=known, viewer_staff_id=viewer_staff_id)
+                {
+                    **s.to_dict(known_labels=known, viewer_staff_id=viewer_staff_id),
+                    "running": RUN_MANAGER.find_active_by_session(s.id) is not None,
+                }
                 for s in items
             ]
             return _json_response(self, {"sessions": sessions})
+
+        m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})/active-run$", path)
+        if m:
+            session_id = m.group(1)
+            store = get_session_store()
+            if store.get_session(session_id) is None:
+                return _json_response(self, {"error": "session not found"}, 404)
+            run = RUN_MANAGER.find_active_by_session(session_id)
+            if run is None:
+                return _json_response(self, {"active": False})
+            return _json_response(self, run.to_active_run_dict())
 
         m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})/messages$", path)
         if m:
@@ -868,6 +1045,11 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
 
         return super().do_GET()
 
+    def _write_sse_event(self, event: dict[str, Any]) -> None:
+        payload = json.dumps(event, ensure_ascii=False)
+        self.wfile.write(f"data: {payload}\n\n".encode("utf-8"))
+        self.wfile.flush()
+
     def _handle_sse(self, run_id: str) -> None:
         run = RUN_MANAGER.get(run_id)
         if run is None:
@@ -883,6 +1065,12 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         deadline = time.monotonic() + RUN_TTL_S
         sent_done = False
         try:
+            for event in run.snapshot_events():
+                self._write_sse_event(event)
+                if event.get("type") in ("done", "error"):
+                    sent_done = True
+                    return
+
             while time.monotonic() < deadline:
                 try:
                     event = run.events.get(timeout=SSE_POLL_S)
@@ -890,22 +1078,23 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     if run.done.is_set():
                         break
                     continue
-                payload = json.dumps(event, ensure_ascii=False)
-                chunk = f"data: {payload}\n\n".encode("utf-8")
-                self.wfile.write(chunk)
-                self.wfile.flush()
+                self._write_sse_event(event)
                 if event.get("type") in ("done", "error"):
                     sent_done = True
                     break
             if not sent_done and run.done.is_set():
                 if run.error:
-                    payload = json.dumps({"type": "error", "message": run.error}, ensure_ascii=False)
+                    payload = {"type": "error", "message": run.error, "text": run.final_text}
                 else:
-                    payload = json.dumps({"type": "done", "text": run.final_text}, ensure_ascii=False)
-                self.wfile.write(f"data: {payload}\n\n".encode("utf-8"))
-                self.wfile.flush()
+                    payload = {"type": "done", "text": run.final_text}
+                self._write_sse_event(payload)
         except (BrokenPipeError, ConnectionResetError):
-            run.task_session.request_cancel()
+            # 刷新页面 / 切 tab 会断开 SSE；后台任务继续，客户端可重连
+            logger.info(
+                "SSE client disconnected run=%s session=%s (task continues)",
+                run_id,
+                run.session_id,
+            )
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
@@ -1085,6 +1274,13 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 return _json_response(self, {"error": "invalid json"}, 400)
             return _handle_bookmarks_import_legacy(self, body)
 
+        if path == "/api/message-board":
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            return _handle_message_board_create(self, body)
+
         if path == "/api/chat/cancel":
             try:
                 body = _read_json_body(self)
@@ -1121,7 +1317,13 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         if not authorize_request(self, method="DELETE"):
             return
         parsed = urlparse(self.path)
-        m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})$", parsed.path.rstrip("/"))
+        path = parsed.path.rstrip("/") or "/"
+
+        m_board = re.match(r"^/api/message-board/([a-f0-9]{32})$", path)
+        if m_board:
+            return _handle_message_board_delete(self, m_board.group(1))
+
+        m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})$", path)
         if not m:
             self.send_error(HTTPStatus.NOT_FOUND)
             return
@@ -1138,6 +1340,11 @@ def serve(host: str, port: int) -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     server = ThreadingHTTPServer((host, port), WebAgentHandler)
     print(f"Web Agent: http://{host}:{port}/")
+
+    def _shutdown(_signum: int, _frame: object) -> None:
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGTERM, _shutdown)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
@@ -1146,35 +1353,61 @@ def serve(host: str, port: int) -> None:
         server.server_close()
 
 
-def ensure_server(host: str | None = None, port: int | None = None, wait_s: float = 3.0) -> tuple[str, int]:
+def ensure_server(
+    host: str | None = None,
+    port: int | None = None,
+    wait_s: float = 3.0,
+    *,
+    watch: bool = True,
+) -> tuple[str, int]:
+    from server_watch import (  # noqa: E402
+        is_watch_running,
+        kill_all_watch_processes,
+        kill_process_on_port,
+        start_watch_background,
+    )
+
     cfg = _load_config()
     use_host = host or str(cfg.get("host") or DEFAULT_HOST)
     use_port = port if port is not None else int(cfg.get("port") or DEFAULT_PORT)
     check_host = "127.0.0.1" if use_host == "0.0.0.0" else use_host
 
-    if is_port_open(check_host, use_port):
+    if watch and is_watch_running() and is_port_open(check_host, use_port):
         return use_host, use_port
 
-    log_path = WEB_AGENT_DIR / "data" / "server.log"
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    log_fp = open(log_path, "a", encoding="utf-8")
-    proc = subprocess.Popen(
-        [
-            _resolve_python_executable(),
-            str(Path(__file__).resolve()),
-            "--serve",
-            "--host",
-            use_host,
-            "--port",
-            str(use_port),
-        ],
-        cwd=str(REPO_ROOT),
-        stdout=log_fp,
-        stderr=subprocess.STDOUT,
-        start_new_session=True,
-    )
+    if not watch and is_port_open(check_host, use_port):
+        return use_host, use_port
 
-    deadline = time.monotonic() + wait_s
+    if watch:
+        kill_all_watch_processes()
+        kill_process_on_port(use_port)
+    elif is_port_open(check_host, use_port):
+        return use_host, use_port
+
+    if watch:
+        proc = start_watch_background(host=use_host, port=use_port)
+        deadline = time.monotonic() + max(wait_s, 15.0)
+    else:
+        log_path = WEB_AGENT_DIR / "data" / "server.log"
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        log_fp = open(log_path, "a", encoding="utf-8")
+        proc = subprocess.Popen(
+            [
+                _resolve_python_executable(),
+                str(Path(__file__).resolve()),
+                "--serve",
+                "--host",
+                use_host,
+                "--port",
+                str(use_port),
+            ],
+            cwd=str(REPO_ROOT),
+            stdout=log_fp,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
+        deadline = time.monotonic() + wait_s
+
     while time.monotonic() < deadline:
         if is_port_open(check_host, use_port):
             return use_host, use_port
@@ -1186,8 +1419,9 @@ def ensure_server(host: str | None = None, port: int | None = None, wait_s: floa
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Yaahlan Web Agent HTTP 服务")
-    parser.add_argument("--ensure", action="store_true", help="若未运行则后台启动")
+    parser.add_argument("--ensure", action="store_true", help="若未运行则后台启动（默认带源码监视）")
     parser.add_argument("--serve", action="store_true", help="前台运行 HTTP 服务")
+    parser.add_argument("--no-watch", action="store_true", help="禁用源码变更自动重启")
     parser.add_argument("--host", default=None)
     parser.add_argument("--port", type=int, default=None)
     args = parser.parse_args()
@@ -1196,14 +1430,21 @@ def main() -> int:
     host = args.host or str(cfg.get("host") or DEFAULT_HOST)
     port = args.port if args.port is not None else int(cfg.get("port") or DEFAULT_PORT)
 
+    watch = not args.no_watch
+
     if args.ensure:
-        ensure_server(host, port)
+        ensure_server(host, port, watch=watch)
         display = "127.0.0.1" if host == "0.0.0.0" else host
         print(f"http://{display}:{port}/")
         return 0
 
     if args.serve:
-        serve(host, port)
+        if watch:
+            from server_watch import run_watch  # noqa: E402
+
+            run_watch(host=host, port=port)
+        else:
+            serve(host, port)
         return 0
 
     parser.print_help()

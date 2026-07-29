@@ -1,0 +1,37 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/vas/internal/gift-statistics-stage",
+  "method": "incrUserReceiveGiftDiamondsNum",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "100465989",
+      "json": "",
+      "type": "string",
+      "value": "100465989"
+    },
+    {
+      "title": "参数2",
+      "name": "2",
+      "txt": "1000",
+      "json": "",
+      "type": "long",
+      "value": "1000"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad"
+}

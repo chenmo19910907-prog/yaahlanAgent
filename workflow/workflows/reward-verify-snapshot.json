@@ -1,0 +1,57 @@
+{
+  "id": "reward-verify-snapshot",
+  "name": "奖励验收-用户资产快照",
+  "category": "奖励验收",
+  "description": "发奖前/后各执行一次：钻石余额、diamondHistory 基线、背包礼物、装扮 props、CP 勋章、铭牌（Tunnel 自动）。snapshotVersion=3，供 diff/compare 求差值。",
+  "version": 3,
+  "params": {
+    "userId": {
+      "label": "用户ID",
+      "type": "string",
+      "required": true,
+      "prompt": "momoid / userId"
+    },
+    "outFile": {
+      "label": "快照输出路径",
+      "type": "string",
+      "required": true,
+      "default": ".tmp/reward_snapshot.json",
+      "prompt": "JSON 文件路径，发奖前后分别保存"
+    },
+    "propTypes": {
+      "label": "装扮类型",
+      "type": "string",
+      "required": false,
+      "default": "10043,10045,10069,10177,10180,10182,10183,10140,10144",
+      "prompt": "逗号分隔 propTypeCode"
+    },
+    "cpUserId": {
+      "label": "CP对方userId",
+      "type": "string",
+      "required": false,
+      "default": "",
+      "prompt": "CP 爱意宝箱/勋章验收时填写"
+    },
+    "intimateId": {
+      "label": "intimateId",
+      "type": "string",
+      "required": false,
+      "default": "",
+      "prompt": "如 100305533-100486375"
+    }
+  },
+  "steps": [
+    {
+      "id": "snapshot",
+      "name": "快照钻石/记录/背包/装扮/勋章",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/reward_verify.py snapshot --user-id {{userId}} --out {{outFile}} --prop-types {{propTypes}} --cp-user-id {{cpUserId}} --intimate-id {{intimateId}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

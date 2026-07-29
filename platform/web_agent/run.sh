@@ -23,7 +23,10 @@ pick_python() {
   return 1
 }
 PY="$(pick_python || true)"
-if [[ -n "${PY:-}" ]]; then
-  exec "$PY" "$DIR/server.py" "${1:---serve}" "${@:2}"
+RUN_PY="${PY:-python3}"
+CMD="${1:---serve}"
+shift || true
+if [[ "$CMD" == "--serve" ]]; then
+  exec "$RUN_PY" "$DIR/server_watch.py" "$@"
 fi
-exec python3 "$DIR/server.py" "${1:---serve}" "${@:2}"
+exec "$RUN_PY" "$DIR/server.py" "$CMD" "$@"

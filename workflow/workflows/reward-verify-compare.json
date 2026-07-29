@@ -1,0 +1,41 @@
+{
+  "id": "reward-verify-compare",
+  "name": "奖励验收-前后快照对比",
+  "category": "奖励验收",
+  "description": "对比发奖前后 snapshot JSON 与期望 rewards 配置：钻石增量+钻石记录、背包礼物 giftId+数量+单价(钻)+expire 有效、装扮 propId+有效期天数（±toleranceDays）。",
+  "version": 1,
+  "params": {
+    "beforeFile": {
+      "label": "发奖前快照",
+      "type": "string",
+      "required": true,
+      "prompt": "reward-verify-snapshot 输出的 JSON"
+    },
+    "afterFile": {
+      "label": "发奖后快照",
+      "type": "string",
+      "required": true,
+      "prompt": "跨门槛/发奖后再 snapshot"
+    },
+    "expectedFile": {
+      "label": "期望奖励配置",
+      "type": "string",
+      "required": true,
+      "prompt": "含 rewards[]：DIAMOND/GIFT/PROP/NAMEPLATE；GIFT 验数量与 expire；PROP 验 expireDays"
+    }
+  },
+  "steps": [
+    {
+      "id": "compare",
+      "name": "对比奖励增量",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/reward_verify.py compare --before {{beforeFile}} --after {{afterFile}} --expected {{expectedFile}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

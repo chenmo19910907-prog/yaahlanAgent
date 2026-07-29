@@ -1,7 +1,7 @@
 {
   "type": "moa",
   "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
-  "url": "/service/yaahlan-trick/external/cp-love-chest-stage",
+  "url": "/service/yaahlan-trick/external/cp-love-chest",
   "method": "getCpLoveChestHomepage",
   "header": "{\"userId\":\"100465989\",\"uid\":\"100465989\",\"_uid_\":\"100465989\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"ios\",\"osType\":\"ios\",\"clientType\":\"2\",\"dataType\":\"json\",\"originRsp\":1,\"appVersion\":\"2.5.8\",\"osVersion\":\"26.5.2\",\"rom\":\"26.5.2\",\"model\":\"iPhone 11\",\"country\":\"B1\",\"timeZone\":\"Asia/Shanghai\",\"deviceId\":\"357f25796f6674793fd8e07d48940954462fb22f168967660412\",\"mmuid\":\"357f25796f6674793fd8e07d48940954462fb22f168967660412\",\"netQuality\":5,\"imsi\":0,\"_version_\":1000,\"localTime\":1784873511620}",
   "params": [
@@ -57,8 +57,8 @@
     "tunnelRequestId": "g3vAkp8Bpk1mjMPPbFig",
     "tunnelTime": "2026/07/24 14:11:51",
     "tunnelLink": "https://tunnel.wemomo.com/request/g3vAkp8Bpk1mjMPPbFig?req_time=1784873511&g_appid=All&g_env=alpha",
-    "verified": false,
-    "candidateServiceUrl": "/service/yaahlan-trick/external/cp-love-chest-stage",
-    "note": "打开 CP 爱意宝箱 H5（loveChest.html）时触发。返回 currentLoveValue 为 CP 双方共享周期爱意值；userInfo/cpInfo 为双方用户信息。须在 MSE 调用链确认 ServiceUrl 后再标记 verified。"
+    "verified": true,
+    "candidateServiceUrl": "/service/yaahlan-trick/external/cp-love-chest",
+    "note": "currentLoveValue=宝箱15天周期爱意值；与 cp-moa loveValue 不是同一字段；周期值造数须 Stage 私聊送礼（Rose 2005000233）"
   }
 }

@@ -378,6 +378,42 @@ def build_parser() -> argparse.ArgumentParser:
         help="查询财富等级 userId（getWealthInfoNoAvatar）",
     )
     parser.add_argument(
+        "--wealth-incr-user-id",
+        help="增加财富值 userId（gift-statistics-stage incrUserSendGiftDiamondsNum）",
+    )
+    parser.add_argument(
+        "--wealth-incr-num",
+        type=int,
+        help="增加财富值 num（与 --wealth-incr-user-id 联用）",
+    )
+    parser.add_argument(
+        "--charm-incr-user-id",
+        help="增加魅力值 userId（gift-statistics-stage incrUserReceiveGiftDiamondsNum）",
+    )
+    parser.add_argument(
+        "--charm-incr-num",
+        type=int,
+        help="增加魅力值 num（与 --charm-incr-user-id 联用）",
+    )
+    parser.add_argument(
+        "--wealth-decr-user-id",
+        help="减少财富值 userId（gift-statistics-stage incrUserSendGiftDiamondsNum 传负 num）",
+    )
+    parser.add_argument(
+        "--wealth-decr-num",
+        type=int,
+        help="减少财富值 num（与 --wealth-decr-user-id 联用，传正值）",
+    )
+    parser.add_argument(
+        "--charm-decr-user-id",
+        help="减少魅力值 userId（gift-statistics-stage incrUserReceiveGiftDiamondsNum 传负 num）",
+    )
+    parser.add_argument(
+        "--charm-decr-num",
+        type=int,
+        help="减少魅力值 num（与 --charm-decr-user-id 联用，传正值）",
+    )
+    parser.add_argument(
         "--wealth-charm-output",
         choices=["summary", "json"],
         default="summary",
@@ -543,6 +579,32 @@ def build_parser() -> argparse.ArgumentParser:
         "--cp-ferris-area",
         choices=sorted(USER_AREA_CODES),
         help="CP摩天轮大区（distributeCpFerrisWheelBonusDiamonds / calculateAndDistributeCpFerrisWheelWeekPrize；仅 params[0]）",
+    )
+    parser.add_argument(
+        "--cp-love-user-id",
+        help="增加 CP 总恩爱值 loveValue：一方 userId（cp-moa addCpLoveValue；不作用于宝箱 currentLoveValue）",
+    )
+    parser.add_argument(
+        "--cp-love-remote-id",
+        help="增加 CP 总恩爱值：另一方 userId（须已有 CP 关系）",
+    )
+    parser.add_argument(
+        "--cp-love-value",
+        type=int,
+        help="CP 总恩爱值 loveValue 增量（可为负；MOA 返回最新 loveValue）",
+    )
+    parser.add_argument(
+        "--cp-ferris-user-id",
+        help="增加 CP 摩天轮周期爱意值：一方 userId（addCpFerrisWheelValue）",
+    )
+    parser.add_argument(
+        "--cp-ferris-remote-id",
+        help="增加 CP 摩天轮周期爱意值：另一方 userId",
+    )
+    parser.add_argument(
+        "--cp-ferris-value",
+        type=int,
+        help="增加 CP 摩天轮周期爱意值（正整数；服务端内部 diamonds*10）",
     )
 
     parser.add_argument("--activity-gift-from-user-id", help="活动模拟送礼：送礼方 userId")

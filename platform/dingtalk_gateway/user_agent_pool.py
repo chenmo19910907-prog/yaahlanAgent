@@ -30,6 +30,7 @@ class UserAgentRecord:
     agent_id: str
     sender_name: str = ""
     updated_at: str = ""
+    model: str = ""
 
 
 class UserAgentPool:
@@ -37,6 +38,7 @@ class UserAgentPool:
         self._index_path = index_path
         self._lock = threading.Lock()
         self._live: dict[str, Agent] = {}
+        self._live_model: dict[str, str] = {}
         self._last_used: dict[str, float] = {}
         self._records: dict[str, UserAgentRecord] = self._load()
 
@@ -84,6 +86,7 @@ class UserAgentPool:
                 agent_id=agent_id,
                 sender_name=str(item.get("sender_name") or ""),
                 updated_at=str(item.get("updated_at") or ""),
+                model=str(item.get("model") or ""),
             )
         return records
 
@@ -94,6 +97,7 @@ class UserAgentPool:
                 "agent_id": record.agent_id,
                 "sender_name": record.sender_name,
                 "updated_at": record.updated_at,
+                "model": record.model,
             }
             for key, record in self._records.items()
         }
@@ -102,11 +106,12 @@ class UserAgentPool:
             encoding="utf-8",
         )
 
-    def _persist(self, user_key: str, agent_id: str, sender_name: str) -> None:
+    def _persist(self, user_key: str, agent_id: str, sender_name: str, model: str = "") -> None:
         self._records[user_key] = UserAgentRecord(
             agent_id=agent_id,
             sender_name=sender_name,
             updated_at=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+            model=model,
         )
         self._save()
 
@@ -118,8 +123,16 @@ class UserAgentPool:
         with self._lock:
             self._touch_locked(user_key)
 
+    def _effective_model(self, user_key: str, record: UserAgentRecord | None) -> str:
+        if user_key in self._live_model:
+            return self._live_model[user_key]
+        if record is not None and record.model:
+            return record.model
+        return ""
+
     def _close_live_locked(self, user_key: str) -> None:
         agent = self._live.pop(user_key, None)
+        self._live_model.pop(user_key, None)
         self._last_used.pop(user_key, None)
         if agent is None:
             return
@@ -206,6 +219,20 @@ class UserAgentPool:
         display = self.display_name(sender_name, user_key)
 
         with self._lock:
+            record = self._records.get(user_key)
+            effective_model = self._effective_model(user_key, record)
+            if effective_model != model:
+                logger.info(
+                    "模型已切换 user=%s %s -> %s，重建 Agent",
+                    user_key,
+                    effective_model or "(未知/默认)",
+                    model,
+                )
+                self._close_live_locked(user_key)
+                if record is not None:
+                    self._records.pop(user_key, None)
+                    record = None
+
             if self._evict_if_idle_locked(user_key):
                 pass
             live = self._live.get(user_key)
@@ -220,7 +247,10 @@ class UserAgentPool:
                 try:
                     agent = Agent.resume(record.agent_id, options)
                     self._live[user_key] = agent
+                    self._live_model[user_key] = model
                     self._touch_locked(user_key)
+                    if record.model != model:
+                        self._persist(user_key, agent.agent_id, sender_name, model)
                     logger.info("ResumeAgent user=%s agent_id=%s", user_key, agent.agent_id)
                     return agent, False
                 except Exception as exc:  # noqa: BLE001
@@ -234,8 +264,9 @@ class UserAgentPool:
 
             agent = Agent.create(options, name=display)
             self._live[user_key] = agent
+            self._live_model[user_key] = model
             self._touch_locked(user_key)
-            self._persist(user_key, agent.agent_id, sender_name)
+            self._persist(user_key, agent.agent_id, sender_name, model)
             logger.info("CreateAgent user=%s name=%s agent_id=%s", user_key, display, agent.agent_id)
             return agent, True
 

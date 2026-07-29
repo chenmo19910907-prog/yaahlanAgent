@@ -1,0 +1,58 @@
+{
+  "id": "reward-verify-prop-days",
+  "name": "奖励验收-装扮有效期天数",
+  "category": "奖励验收",
+  "description": "MOA queryOwnPropList 查指定 propId 的 expireTime，与配置天数对比（默认 ±1 天容差）。用于 CP 宝箱等限时装扮/铭牌验收。",
+  "version": 1,
+  "params": {
+    "userId": {
+      "label": "用户ID",
+      "type": "string",
+      "required": true
+    },
+    "propId": {
+      "label": "装扮propId",
+      "type": "string",
+      "required": true
+    },
+    "propTypeCode": {
+      "label": "propTypeCode",
+      "type": "string",
+      "required": true,
+      "prompt": "见 MOA/config/prop_types.json"
+    },
+    "expectedDays": {
+      "label": "期望有效天数",
+      "type": "string",
+      "required": true,
+      "default": "15"
+    },
+    "toleranceDays": {
+      "label": "容差天数",
+      "type": "string",
+      "required": false,
+      "default": "1"
+    },
+    "referenceTs": {
+      "label": "发放时刻Unix秒",
+      "type": "string",
+      "required": false,
+      "default": "",
+      "prompt": "留空则用当前时刻"
+    }
+  },
+  "steps": [
+    {
+      "id": "verify_days",
+      "name": "验证装扮有效期",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/reward_verify.py verify-prop-days --user-id {{userId}} --prop-id {{propId}} --prop-type-code {{propTypeCode}} --expected-days {{expectedDays}} --tolerance-days {{toleranceDays}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

@@ -113,6 +113,25 @@ class WebAuthTest(unittest.TestCase):
             self.assertTrue(is_anonymous_allowed(handler, method="GET"))
             self.assertTrue(authorize_request(handler, method="GET"))
 
+    def test_otp_guest_can_use_message_board(self) -> None:
+        env = {"WEB_AGENT_OTP_AUTH": "1"}
+        guest_id = "guest_" + "a" * 32
+        cases = [
+            ("/api/message-board", "GET"),
+            ("/api/message-board", "POST"),
+            (f"/api/message-board/{'b' * 32}", "DELETE"),
+        ]
+        with patch("web_auth.load_env_local", lambda: None), patch.dict(os.environ, env, clear=True):
+            for path, method in cases:
+                with self.subTest(path=path, method=method):
+                    handler = _FakeHandler(
+                        path=path,
+                        client="8.8.8.8",
+                        headers={"X-Message-Board-Guest": guest_id},
+                    )
+                    self.assertTrue(is_anonymous_allowed(handler, method=method))
+                    self.assertTrue(authorize_request(handler, method=method))
+
     def test_localhost_bypasses_otp_auth(self) -> None:
         env = {"WEB_AGENT_OTP_AUTH": "1"}
         handler = _FakeHandler(client="127.0.0.1", path="/api/chat")

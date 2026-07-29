@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from duration_history import classify_task_kind, get_duration_store
+from task_chain_estimate import analyze_task_chain, blend_chain_and_history
 from task_session import TaskSession
 
 # 排队时按任务数粗估等待（秒）；无历史数据时使用
@@ -27,19 +28,24 @@ def resolve_task_estimate_seconds(
     *,
     prompt: str | None = None,
 ) -> float | None:
-    """同类任务预计总耗时（秒）；Agent 无历史时用 DEFAULT_AGENT_ESTIMATE_S。"""
+    """结合处理逻辑链与历史统计，预估任务总耗时（秒）。"""
     kind = (task_kind or "").strip()
     if not kind and prompt is not None:
         kind = classify_task_kind(prompt)
+    chain = analyze_task_chain(prompt or "", task_kind=kind) if prompt else None
+    chain_est = chain.total_seconds if chain else None
     store = get_duration_store()
-    estimate: float | None = None
+    hist_est: float | None = None
     if kind:
-        estimate = store.estimate_seconds(kind)
-        if estimate is None and kind.startswith("agent:"):
-            estimate = store.estimate_agent_seconds()
-    if estimate is None and (not kind or kind.startswith("agent:")):
+        hist_est = store.estimate_seconds(kind)
+        if hist_est is None and kind.startswith("agent:"):
+            hist_est = store.estimate_agent_seconds()
+    blended = blend_chain_and_history(chain_est, hist_est, chain_weight=0.55)
+    if blended is not None:
+        return blended
+    if not kind or kind.startswith("agent:"):
         return float(DEFAULT_AGENT_ESTIMATE_S)
-    return estimate
+    return None
 
 
 def format_eta_total(seconds: float | None) -> str:
@@ -188,13 +194,23 @@ def build_queue_message(ahead: int, *, prompt: str | None = None) -> str:
     return f"排队中（前面约 {count} 个，预计等待约 {est_str}）"
 
 
-def build_duration_footer(elapsed_s: float, *, task_kind: str | None = None) -> str:
-    """最终结果尾注：本次耗时 + 同类任务历史参考。"""
+def build_duration_footer(
+    elapsed_s: float,
+    *,
+    task_kind: str | None = None,
+    prompt: str | None = None,
+) -> str:
+    """最终结果尾注：本次耗时 + 逻辑链预估参考。"""
     elapsed_str = format_duration(elapsed_s)
     footer = f"⏱ 本次耗时 {elapsed_str}"
-    estimate = get_duration_store().estimate_seconds(task_kind)
+    kind = (task_kind or "").strip()
+    if not kind and prompt:
+        kind = classify_task_kind(prompt)
+    estimate = resolve_task_estimate_seconds(kind, prompt=prompt)
     if estimate is not None and estimate > 0:
-        footer += f"（同类任务通常约 {format_duration(estimate)}）"
+        chain = analyze_task_chain(prompt or "", task_kind=kind) if prompt else None
+        hint = chain.summary if chain and chain.summary else "同类任务"
+        footer += f"（预估约 {format_duration(estimate)}：{hint}）"
     return footer
 
 
@@ -203,9 +219,10 @@ def append_duration_footer(
     elapsed_s: float,
     *,
     task_kind: str | None = None,
+    prompt: str | None = None,
 ) -> str:
     """在群消息末尾追加耗时尾注。"""
-    footer = build_duration_footer(elapsed_s, task_kind=task_kind)
+    footer = build_duration_footer(elapsed_s, task_kind=task_kind, prompt=prompt)
     body = (message or "").rstrip()
     if not body:
         return footer

@@ -268,6 +268,132 @@
     .hint { color: var(--muted); }
     .error { color: var(--danger); display: none; }
     .error.show { display: block; }
+    .message-board-entry-btn {
+      flex: 0 0 auto;
+      height: 40px;
+      padding: 0 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--phrase-bg);
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+    }
+    .message-board-entry-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      flex-shrink: 0;
+    }
+    .message-board-entry-btn:hover {
+      border-color: rgba(91, 140, 255, 0.55);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+    .card-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .message-board-modal {
+      display: flex; position: fixed; inset: 0; z-index: 110;
+      background: rgba(0,0,0,0.6);
+      align-items: center; justify-content: center; padding: 24px;
+      visibility: hidden; opacity: 0; pointer-events: none;
+      transition: opacity 220ms ease, visibility 0s linear 220ms;
+    }
+    .message-board-modal.open {
+      visibility: visible; opacity: 1; pointer-events: auto;
+      transition: opacity 280ms ease, visibility 0s linear 0s;
+    }
+    .message-board-bubble {
+      position: relative;
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 20px; width: min(560px, 94vw); max-height: min(82vh, 720px);
+      display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: var(--card-shadow);
+    }
+    .message-board-head {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      padding: 18px 22px 12px; border-bottom: 1px solid var(--border);
+    }
+    .message-board-head h3 { font-size: 1.08rem; font-weight: 600; margin-bottom: 4px; }
+    .message-board-head p { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+    .message-board-list {
+      flex: 1; overflow: auto; padding: 12px 22px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .message-board-empty {
+      color: var(--muted); text-align: center; padding: 28px 12px; font-size: 0.86rem;
+    }
+    .message-board-item {
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--phrase-bg); padding: 12px 14px;
+    }
+    .message-board-item.is-mine { border-color: rgba(91,140,255,0.24); }
+    .message-board-item-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      margin-bottom: 8px;
+    }
+    .message-board-item-leading {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; flex: 1;
+    }
+    .message-board-item-actions {
+      display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+    }
+    .message-board-author { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+    .message-board-badge {
+      font-size: 0.68rem; padding: 2px 6px; border-radius: 999px; border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .message-board-badge.real { color: var(--accent); border-color: rgba(91,140,255,0.28); background: var(--accent-soft); }
+    .message-board-time {
+      font-size: 0.68rem; color: var(--muted); white-space: nowrap;
+    }
+    .message-board-content {
+      font-size: 0.9rem; line-height: 1.65; color: var(--text); white-space: pre-wrap; word-break: break-word;
+    }
+    .message-board-compose {
+      border-top: 1px solid var(--border); padding: 14px 22px 18px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .message-board-compose textarea {
+      width: 100%; min-height: 88px; resize: vertical;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--input-bg); color: var(--text);
+      padding: 12px 14px; font-size: 0.9rem; line-height: 1.55;
+      font-family: inherit;
+    }
+    .message-board-compose textarea:focus { outline: none; border-color: var(--accent); }
+    .message-board-compose-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    }
+    .message-board-realname {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 0.82rem; color: var(--muted); cursor: pointer; user-select: none;
+    }
+    .message-board-submit {
+      min-height: 36px; padding: 0 16px; border-radius: 10px;
+      border: none; background: var(--accent); color: #fff;
+      font-size: 0.84rem; font-weight: 600; cursor: pointer;
+    }
+    .message-board-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+    .message-board-delete {
+      padding: 2px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(239, 68, 68, 0.28);
+      background: rgba(239, 68, 68, 0.08);
+      color: var(--danger);
+      font-size: 0.68rem;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
     @media (max-width: 420px) {
       body { padding: 16px; }
       .card { padding: 20px 16px; }
@@ -281,6 +407,7 @@
         <h1>Yaahlan 智能工具 Agent</h1>
         <p class="subtitle" id="subtitle">网页版可通过钉钉机器人验证码登录；在钉钉内打开时将优先尝试自动登录。</p>
       </div>
+      <div class="card-header-actions">
       <button type="button" class="theme-quick-btn is-dark" id="btn-theme-toggle" title="切换到白天模式" aria-label="切换白天/夜间模式">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
           <path d="M9 18h6"/>
@@ -288,6 +415,13 @@
           <path class="bulb-glass" d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>
         </svg>
       </button>
+      <button type="button" class="message-board-entry-btn" id="btn-message-board" title="反馈">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        反馈
+      </button>
+      </div>
     </div>
 
     <div class="oauth-status" id="oauthStatus">正在通过钉钉验证身份…</div>
@@ -312,8 +446,31 @@
     <p class="error" id="errorBox"></p>
   </div>
 
+  <div class="message-board-modal" id="message-board-modal" aria-hidden="true">
+    <div class="message-board-bubble" id="message-board-bubble" role="dialog" aria-labelledby="message-board-title">
+      <div class="message-board-head">
+        <div>
+          <h3 id="message-board-title">反馈</h3>
+          <p id="message-board-hint">遇到问题、优化建议、功能补充 都可以进行反馈，反馈内容仅自己可见</p>
+        </div>
+      </div>
+      <div class="message-board-list" id="message-board-list"></div>
+      <form class="message-board-compose" id="message-board-form">
+        <textarea id="message-board-content" maxlength="2000" placeholder="输入反馈内容…" aria-label="反馈内容"></textarea>
+        <div class="message-board-compose-row">
+          <label class="message-board-realname" for="message-board-realname" hidden>
+            <input type="checkbox" id="message-board-realname" />
+            实名反馈
+          </label>
+          <button type="submit" class="message-board-submit" id="message-board-submit">发布反馈</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="https://g.alicdn.com/dingding/dingtalk-jsapi/3.0.25/dingtalk.open.js"></script>
   <script src="dingtalk_oauth.js"></script>
+  <script src="message_board_panel.js"></script>
   <script>
     const phraseEl = document.getElementById('loginPhrase');
     const copyBtn = document.getElementById('copyBtn');
@@ -478,6 +635,35 @@
     try {
       if (typeof initThemeSettings === 'function') initThemeSettings();
     } catch (_) { /* theme.js 未加载时不阻断验证码登录 */ }
+
+    let messageBoardPanel = null;
+    function initMessageBoardPanel() {
+      if (typeof MessageBoardPanel === 'undefined') return;
+      messageBoardPanel = new MessageBoardPanel({
+        modalEl: document.getElementById('message-board-modal'),
+        bubbleEl: document.getElementById('message-board-bubble'),
+        listEl: document.getElementById('message-board-list'),
+        formEl: document.getElementById('message-board-form'),
+        contentEl: document.getElementById('message-board-content'),
+        realNameEl: document.getElementById('message-board-realname'),
+        hintEl: document.getElementById('message-board-hint'),
+        submitEl: document.getElementById('message-board-submit'),
+        getAuthUser: () => null,
+      });
+      messageBoardPanel.bind();
+    }
+    function setMessageBoardOpen(open) {
+      if (!messageBoardPanel) return;
+      messageBoardPanel.setOpen(open);
+    }
+    document.getElementById('btn-message-board')?.addEventListener('click', () => {
+      setMessageBoardOpen(!messageBoardPanel?.open);
+    });
+    document.getElementById('message-board-modal')?.addEventListener('click', (event) => {
+      if (event.target.id === 'message-board-modal') setMessageBoardOpen(false);
+    });
+    initMessageBoardPanel();
+
     bootstrap();
   </script>
 </body>

@@ -148,6 +148,12 @@ def test_format_exception_friendly() -> None:
     assert "重新执行" in msg
     assert "internal error" not in msg
 
+    agent_fail = format_exception(RuntimeError("Agent 执行失败: run-6a1323b4-817d-4847-b2f5-65753a478f7f"))
+    assert "重新执行" in agent_fail
+    assert "再发一次" in agent_fail
+    assert "run-6a1323b4" not in agent_fail
+    assert "未能正常完成" in agent_fail
+
 
 def test_truncate_guide() -> None:
     from export_delivery import _truncate_inline
@@ -339,6 +345,25 @@ def test_gateway_code_restart() -> None:
             assert read_and_clear_restart_context() is None
 
 
+def test_web_agent_code_restart() -> None:
+    import time
+    from unittest.mock import patch
+
+    from web_agent_restart import list_web_agent_files_changed_since
+
+    with tempfile.TemporaryDirectory() as tmp:
+        web_dir = Path(tmp) / "platform" / "web_agent"
+        web_dir.mkdir(parents=True)
+        sample = web_dir / "chat.html"
+        sample.write_text("<html></html>", encoding="utf-8")
+        now = time.time()
+        with patch("web_agent_restart.WEB_AGENT_DIR", web_dir):
+            with patch("web_agent_restart.REPO_ROOT", Path(tmp)):
+                changed = list_web_agent_files_changed_since(now - 5)
+                assert any(p.endswith("chat.html") for p in changed)
+                assert not list_web_agent_files_changed_since(now + 60)
+
+
 def main() -> int:
     test_env_check_blocked()
     print("[OK] test_env_check_blocked")
@@ -378,6 +403,8 @@ def main() -> int:
     print("[OK] test_fast_route_skip_text_ack")
     test_gateway_code_restart()
     print("[OK] test_gateway_code_restart")
+    test_web_agent_code_restart()
+    print("[OK] test_web_agent_code_restart")
     print("[PASS] gateway optimizations")
     return 0
 

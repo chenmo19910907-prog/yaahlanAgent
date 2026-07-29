@@ -33,6 +33,7 @@ from batch_progress import (
     should_push_batch_progress,
 )
 from batch_result import choose_final_reply_source, clear_batch_result, pop_batch_attachment, pop_batch_result
+from task_chain_estimate import save_batch_task_context
 from command_hints import suggest_command_hint
 from command_router import try_route
 from code_modify_guard import guard_readonly_agent_reply
@@ -57,6 +58,11 @@ from gateway_restart import (
     format_code_update_restart_note,
     list_gateway_files_changed_since,
     schedule_gateway_restart_after_code_change,
+)
+from web_agent_restart import (
+    format_web_agent_restart_note,
+    list_web_agent_files_changed_since,
+    schedule_web_agent_restart_after_code_change,
 )
 from dingtalk_group_file import send_group_file
 from dingtalk_media import download_message_images
@@ -103,7 +109,12 @@ def _reply_final(
     sender_staff_id: str = "",
 ) -> None:
     elapsed = time.monotonic() - started
-    body = append_duration_footer(message, elapsed, task_kind=task_kind)
+    body = append_duration_footer(
+        message,
+        elapsed,
+        task_kind=task_kind,
+        prompt=user_prompt or None,
+    )
     handler._reply(body, incoming, inbound, quote=quote)
     if user_key and user_prompt:
         sync_exchange_to_web_agent(
@@ -407,6 +418,7 @@ def process_inbound_task(
     session.begin(prompt, conversation_id=user_key, budget_s=DEFAULT_TIMEOUT_S)
     clear_batch_progress(user_key)
     clear_batch_result(user_key)
+    save_batch_task_context(user_key, prompt)
     if use_streaming:
         heartbeat_stop = threading.Event()
         batch_progress_stop = (
@@ -696,14 +708,23 @@ def process_inbound_task(
             reply_message = delivery.message
             if code_modify_session:
                 session.check_cancelled()
-                changed_files = list_gateway_files_changed_since(started_wall)
-                if changed_files:
+                gateway_changed = list_gateway_files_changed_since(started_wall)
+                web_agent_changed = list_web_agent_files_changed_since(started_wall)
+                if gateway_changed:
                     schedule_gateway_restart_after_code_change(
                         operator=sender_name,
-                        changed_files=changed_files,
+                        changed_files=gateway_changed,
                     )
                     reply_message = (
-                        f"{reply_message}{format_code_update_restart_note(changed_files)}"
+                        f"{reply_message}{format_code_update_restart_note(gateway_changed)}"
+                    )
+                if web_agent_changed:
+                    schedule_web_agent_restart_after_code_change(
+                        operator=sender_name,
+                        changed_files=web_agent_changed,
+                    )
+                    reply_message = (
+                        f"{reply_message}{format_web_agent_restart_note(web_agent_changed)}"
                     )
             session.check_cancelled()
             reply_text = truncate_for_dingtalk(reply_message)
@@ -766,6 +787,7 @@ def process_inbound_task(
             error_body,
             time.monotonic() - started,
             task_kind=task_kind,
+            prompt=prompt,
         )
         if stream_card is not None:
             stream_card.fail(error_with_footer)

@@ -174,6 +174,19 @@
       "notes": ["提交表单优先抓包，不以 Toast 为准"]
     },
     {
+      "id": "nameplate_page",
+      "name": "铭牌页数据",
+      "category": "用户",
+      "keyword": "nameplatePageData",
+      "trigger": "个人页进入铭牌页",
+      "successPath": "response.ec",
+      "successValue": 200,
+      "handler": "tunnel_query",
+      "expectEc": 200,
+      "command": "python3 MOA-generative/scripts/form_nameplate_page.py --user-id <userId>",
+      "notes": ["reward_verify CP 场景自动读 Tunnel；sweet CP 1138"]
+    },
+    {
       "id": "popup_login",
       "name": "登录后弹窗信号",
       "category": "弹窗",

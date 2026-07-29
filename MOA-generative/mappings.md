@@ -9,7 +9,7 @@
 | 2026-07-15 | `/yaahlan/user/intimate/acceptIntimateInvitation` | `/service/yaahlan/user/intimate-api` | `acceptIntimateInvitation` | body：`userId`（接受方）、`intimateId`（小-大）、`relationshipType`（2=挚友）；已同意再调常见业务失败/Network error，可先 `intimateDismiss` |
 | 2026-07-15 | `/yaahlan/user/intimate/intimateDismiss` | `/service/yaahlan/user/intimate-api` | `intimateDismiss` | 解除亲密关系；同 ServiceUrl |
 | 2026-07-15 | `/yaahlan/user/intimate/intimateInvitationInfo` | `/service/yaahlan/user/intimate-api` | `intimateInvitationInfo` | 查申请状态 |
-| 2026-07-15 | `/yaahlan/user/intimate/intimateHomePage` | `/service/yaahlan/user/intimate-api` | `intimateHomePage` | 关系主页；无关系时 ec=404 |
+| 2026-07-15 | `/yaahlan/user/intimate/intimateHomePage` | `/service/yaahlan/user/intimate-api` | `intimateHomePage` | CP/挚友空间主页；body 需 `userId`、`intimateId`、`relationshipType`；返回 `cpMedalTab.list`（CP 勋章：medalName/num/obtainTime/imageUrl/dynamicImageUrl）、`intimateInfo` 等；无关系 ec=404；MOA 实测 `100486375`（13311111112） |
 | 2026-07-15 | `/yaahlan/room/member/apply` | `/service/room/external/room-member-stage` | `apply` | body：`userId`（申请人）、`roomId`；Tunnel 未录到 apply 包，body 由 agree 抓包推断，MOA 实测 ec=200 |
 | 2026-07-15 | `/yaahlan/room/member/agree` | `/service/room/external/room-member-stage` | `agree` | body：`userId`（房主）、`roomId`、`remoteId`（申请人）；已加入再调 ec=20210111 |
 | 2026-07-16 | `/yaahlan/vas/familyPk/getFamilyPkPage` | `/service/vas/activity/family-pk-v2-api` | `getFamilyPkPage` | body：`userId`/`uid`、`date`（tab 日期）、`area`；返回 `pkList`/`current`/`tierList`。旧版 `family-pk` + `home` 仅活动入口摘要，非本页 |
@@ -17,7 +17,11 @@
 | 2026-07-17 | `/yaahlan/component/giftPanel/getGiftTabListV3` | `/service/yh-components/gift-panel` | `getGiftTabListV3` | MOA Redis 直连 + httpproxy；背包 Tab 读 `package.remain`；无需打开礼物面板 |
 | 2026-07-17 | `/yaahlan/component/giftPanel/propPackageList` | `/service/yh-components/gift-panel` | `propPackageList` | 背包道具列表；与 getGiftTabListV3 背包 Tab 礼物不同 |
 | 2026-07-17 | `/yaahlan/feed-comment/publishComment` | `/service/feed/external/feed-comment-stage` | `publishComment` | body：`userId`/`uid`、`feedId`、`content`、`source`（discover）；返回 `commentId`；100 账号批量评论已验证 |
-| 2026-07-24 | `/yaahlan/trick/cpLoveChest/getCpLoveChestHomepage` | `/service/yaahlan-trick/external/cp-love-chest-stage`（候选） | `getCpLoveChestHomepage` | 打开 CP 爱意宝箱 H5 触发；Tunnel `100465989` 抓包 `_id=g3vAkp8Bpk1mjMPPbFig`；返回 `currentLoveValue`（CP 共享周期爱意值）、`userInfo`、`cpInfo`、`tiers`；**ServiceUrl 待 MSE 调用链确认** |
+| 2026-07-27 | `/yaahlan/components/wallet/diamondHistory` | `/service/yaahlan/components/wallet-api` | `diamondHistory` | 钱包钻石记录页；Tunnel `100007541` `_id=QuvEop8Bpk1mjMPP3A5W`；`data.list[]` 含 `desc`/`rechargeMethod`/`diamondDiff`/`createTime`/`balance` |
+| 2026-07-27 | `/yaahlan/userProfile/nameplatePageData` | （Tunnel 抓包；gw-api 需 SESSIONID） | — | 铭牌页；Tunnel `100486375` `_id=rBgAo58Bpk1mjMPP_JqB`；`data.unlockedNameplates[]`/`lockedNameplates[]`（`id`/`unlockTime`/`remainTime`/`wearState`）；CP 宝箱 sweet CP **1138** |
+| 2026-07-28 | `/yaahlan/trick/cpLoveChest/getCpLoveChestHomepage` | `/service/yaahlan-trick/external/cp-love-chest` | `getCpLoveChestHomepage` | params=`userId`,`cpUserId`；读 `data.currentLoveValue`（15天周期爱意值）；**不是** cp-moa loveValue |
+| 2026-07-28 | （MOA 后门） | `/service/yaahlan/user/cp-moa` | `addCpLoveValue` | params=`userId`,`remoteId`,`value`(long)；**CP 总恩爱值 loveValue**；须已有 CP；**不更新**宝箱 currentLoveValue |
+| 2026-07-28 | （MOA 后门） | `/service/vas/external/cp-stage` | `addCpFerrisWheelValue` | params=`userId1`,`userId2`,`value`(long)；摩天轮活动期周期榜；**不是**宝箱 currentLoveValue |
 
 ## 配套 HTTP（非 MOA，仅对照）
 
@@ -27,7 +31,10 @@
 | `/yaahlan/feed-list/listUserFeed` | 个人动态列表（取 contentId） |
 | `/yaahlan/feed-list/listFollowFeedV2` | 关注流动态列表 |
 | `/yaahlan/v2/gift/send`（`ext.intimate_invite_gift=1`） | **发起**亲密申请：用 `Gift/gift_execute.py --intimate-invite`，不走生成式 MOA |
-| `/yaahlan/trick/cpLoveChest/getCpLoveChestHomepage` | 打开 CP 爱意宝箱主页；读 `data.currentLoveValue`（双方共享爱意值） |
+| `/yaahlan/trick/cpLoveChest/getCpLoveChestHomepage` | 打开 CP 爱意宝箱主页；读 `data.currentLoveValue`（15天周期爱意值；**≠** cp-moa loveValue） |
+| `/yaahlan/components/wallet/diamondHistory` | 钱包钻石记录页；读 `data.list[]`（`diamondDiff`/`desc`/`rechargeMethod`/`createTime`） |
+| `/yaahlan/userProfile/nameplatePageData` | 铭牌页；读 `data.unlockedNameplates[]` / `lockedNameplates[]`；**Tunnel 自动读取 + `.tmp/nameplate_cache/` 缓存兜底**（`form_nameplate_page.py`） |
+| `/yaahlan/user/intimate/intimateHomePage` | 打开 CP 空间页；读 `data.cpMedalTab.list`（CP 勋章列表） |
 
 ## 调用链辅助线索
 
@@ -43,7 +50,7 @@ python3 workflow/workflow_execute.py run intimate-buddy-form \
   --from-user-id <发起方> \
   --to-user-id <接受方>
 
-# CP relationshipType=1，默认 gift 2005006943
+# CP relationshipType=1，默认 gift 2005004592（Neon Heart，cpGiftList 1500钻）
 python3 workflow/workflow_execute.py run intimate-cp-form \
   --from-user-id <发起方> \
   --to-user-id <接受方>

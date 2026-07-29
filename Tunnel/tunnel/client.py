@@ -62,9 +62,10 @@ def _read_json_response(req: urllib.request.Request, *, timeout_s: float) -> dic
 
 def tunnel_success(ec: Any) -> bool:
     try:
-        return int(ec) == 200
+        code = int(ec)
     except (TypeError, ValueError):
         return False
+    return code in (200, 201, 204)
 
 
 def list_requests(

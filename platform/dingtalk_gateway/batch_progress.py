@@ -13,6 +13,12 @@ from typing import Any
 from env_loader import GATEWAY_DIR
 from batch_duration_history import get_batch_duration_store
 from progress_message import format_duration, format_eta_remaining
+from task_chain_estimate import (
+    clear_batch_task_context,
+    estimate_batch_sec_per_item,
+    read_batch_task_context,
+    save_batch_task_context,
+)
 
 logger = logging.getLogger("dingtalk-gateway")
 
@@ -34,9 +40,6 @@ def is_batch_scope(total: int) -> bool:
         return False
 # 尚无历史/进度时，按每项默认秒数粗估
 DEFAULT_SEC_PER_ITEM = 1.0
-# 实时进度与历史单项耗时的融合权重
-LIVE_ETA_WEIGHT = 0.55
-HIST_ETA_WEIGHT = 0.45
 
 
 @dataclass(frozen=True)
@@ -177,21 +180,25 @@ def clear_batch_progress(user_key: str) -> None:
         path.unlink(missing_ok=True)
     except OSError as exc:
         logger.warning("清理批量进度失败 user=%s: %s", key, exc)
+    clear_batch_task_context(key)
 
 
 def _sec_per_item_estimate(state: BatchProgressState) -> float:
-    """融合本次实时速度与历史单项耗时中位数。"""
+    """融合逻辑链、本次实时速度与历史单项耗时。"""
+    prompt = read_batch_task_context(state.user_key)
+    chain_spi = estimate_batch_sec_per_item(state.label, prompt=prompt, user_key=state.user_key)
     hist = get_batch_duration_store().estimate_sec_per_item(state.label)
     live: float | None = None
     if state.current > 0 and state.started_at > 0:
         elapsed = max(0.1, state.updated_at - state.started_at)
         live = elapsed / state.current
-    if hist is not None and live is not None:
-        return LIVE_ETA_WEIGHT * live + HIST_ETA_WEIGHT * hist
-    if hist is not None:
-        return hist
+    base = chain_spi if chain_spi is not None else hist
+    if base is not None and live is not None:
+        return 0.35 * base + 0.65 * live
     if live is not None:
         return live
+    if base is not None:
+        return base
     return DEFAULT_SEC_PER_ITEM
 
 

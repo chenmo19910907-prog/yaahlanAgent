@@ -114,7 +114,19 @@ def test_eta_at_start() -> None:
     msg = build_batch_progress_message(state)
     assert "0/20" in msg
     assert "已完成" in msg
-    assert "预计还需约 20秒" in msg
+    # 逻辑链：查 userId(5s)+发钻(7s) ≈ 12s/项 × 20 项 > 3 分钟
+    assert "3分钟以上" in msg
+
+    state_default = BatchProgressState(
+        user_key="k2",
+        total=20,
+        current=0,
+        label="未知批量",
+        updated_at=1.0,
+        started_at=1.0,
+    )
+    msg_default = build_batch_progress_message(state_default)
+    assert "预计还需约 20秒" in msg_default
 
 
 def test_push_policy() -> None:

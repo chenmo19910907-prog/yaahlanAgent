@@ -8,7 +8,7 @@
       "category": "房间经验值（voga-mts-room-backdoor）",
       "description": "给指定房间增加经验值（增量）",
       "prompts": [
-        "给房间 <roomId> 增加 <exp> 经验值"
+        "给房间<roomId|roomId>增加<exp|经验值>经验值"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间经验值-backdoor.json \\\n  --service-url /service/voga-mts-room-backdoor \\\n  --moa-method execute \\\n  --room-id <roomId> \\\n  --exp <exp>\n"
     },
@@ -52,7 +52,7 @@
       "description": "给房间增加在线机器人（addOnlineUsersToRoom；params=roomId, 总数, 麦上数）",
       "prompts": [
         "给房间 <roomId> 增加 <total> 个机器人，其中 <onMic> 个麦上",
-        "房间 <roomId> 加 <total> 机器人 <onMic> 麦上"
+        "房间<roomId|roomId>加<total|数量>个机器人，<onMic|数量>个上麦"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-增加机器人.json \\\n  --room-bot-room-id <roomId> \\\n  --room-bot-total <total> \\\n  --room-bot-on-mic <onMic>\n"
     },
@@ -63,7 +63,7 @@
       "description": "给房间增加在线人数（room-test-stage addOnlineUsersToRoom；params=roomId, 进房上限, 自动上麦数）",
       "prompts": [
         "给房间 <roomId> 增加在线人数，进房上限 <limit>，自动上麦 <mic>",
-        "房间 <roomId> 在线人数上限 <limit> 自动上麦 <mic>"
+        "房间<roomId|roomId>在线人数上限<limit|人数>，自动上麦<mic|数量>人"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-增加在线人数.json \\\n  --room-online-room-id <roomId> \\\n  --room-online-limit <limit> \\\n  --room-online-mic <mic>\n"
     },
@@ -175,7 +175,7 @@
       "description": "给指定用户在房间内增加成员陪伴值（doorIncrMemberLv；params=roomId, userId, 增量）",
       "prompts": [
         "用户 <userId> 在房间 <roomId> 增加 <exp> 成员经验值",
-        "房间 <roomId> 用户 <userId> 加 <exp> 陪伴值"
+        "房间<roomId|roomId>用户<userId|userId>加<exp|陪伴值>陪伴值"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间成员-增加陪伴值.json \\\n  --member-lv-room-id <roomId> \\\n  --member-lv-user-id <userId> \\\n  --member-lv-exp <exp>\n"
     },
@@ -198,7 +198,7 @@
       "description": "把用户在房间内的成员等级升到目标 lv（按陪伴值阈值与 --member-lv-current-exp 计算增量；可用 --level-exp-mode min/max）",
       "prompts": [
         "用户 <userId> 在房间 <roomId> 升级到成员 lv<level>",
-        "房间 <roomId> 用户 <userId> 升到成员等级 <level>"
+        "房间<roomId|roomId>用户<userId|userId>升到成员等级<level|等级>"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间成员-增加陪伴值.json \\\n  --member-lv-room-id <roomId> \\\n  --member-lv-user-id <userId> \\\n  --member-lv-level <level> \\\n  --member-lv-current-exp <currentExp>\n"
     },
@@ -263,11 +263,11 @@
     {
       "id": "cp_ferris_wheel_set_tier",
       "name": "CP摩天轮-设置档位",
-      "category": "CP摩天轮（vas/external/cp-stage）",
+      "category": "CP·摩天轮（vas/external/cp-stage）",
       "description": "批量设置 CP 对摩天轮档位（batchSetCpFerrisWheelTierLevel；档位 1=D…5=S；CP 对格式小uid-大uid）",
       "prompts": [
-        "设置 CP <smallUid>-<largeUid> 摩天轮档位为 <tier>",
-        "把 CP 对 <smallUid>-<largeUid> 设为摩天轮 <tier> 档",
+        "设置CP <smallUid|userId>-<largeUid|userId> 摩天轮档位为<tier|档位>",
+        "把CP对<smallUid|userId>-<largeUid|userId>设为摩天轮<tier|档位>档",
         "榜单所有 CP 设为摩天轮 5 档"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/CP摩天轮-设置档位.json \\\n  --cp-ferris-tier <tier> \\\n  --cp-pairs <smallUid-largeUid>[,<smallUid-largeUid>...]\n"
@@ -275,7 +275,7 @@
     {
       "id": "cp_ferris_wheel_distribute_bonus",
       "name": "CP摩天轮-发放档位积分返奖",
-      "category": "CP摩天轮（vas/external/cp-stage）",
+      "category": "CP·摩天轮（vas/external/cp-stage）",
       "description": "发放 CP 摩天轮档位积分返奖钻石（distributeCpFerrisWheelBonusDiamonds；params=大区）",
       "prompts": [
         "下发 CP 摩天轮档位积分返奖",
@@ -287,7 +287,7 @@
     {
       "id": "cp_ferris_wheel_week_prize",
       "name": "CP摩天轮-发放周榜奖励",
-      "category": "CP摩天轮（vas/external/cp-stage）",
+      "category": "CP·摩天轮（vas/external/cp-stage）",
       "description": "结算并发放 CP 摩天轮周榜 TOP30 奖池钻石（calculateAndDistributeCpFerrisWheelWeekPrize；params=大区）",
       "prompts": [
         "下发 CP 摩天轮周榜 TOP30 奖励",
@@ -295,6 +295,30 @@
         "MENA 区发放 CP 摩天轮周榜奖励"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/CP摩天轮-发放周榜奖励.json \\\n  --cp-ferris-area MENA\n"
+    },
+    {
+      "id": "cp_love_value_add",
+      "name": "CP总恩爱值-增加",
+      "category": "CP·MOA（yaahlan/user/cp-moa）",
+      "description": "测试环境增加 CP 总恩爱值 loveValue（addCpLoveValue；params=userId, remoteId, value；须已有 CP；返回最新 loveValue）。**不是**爱意宝箱主页 currentLoveValue；宝箱周期爱意值无直改 MOA，须 Stage 私聊送礼（见 Gift/plan_cp_love_gift + Rose 2005000233）。",
+      "prompts": [
+        "给 CP <userId> 和 <remoteId> 增加 <value> 总恩爱值",
+        "CP总恩爱值 addCpLoveValue <userId> <remoteId> <value>",
+        "cp-moa 增加 loveValue <userId> <remoteId> <value>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/CP总恩爱值-增加.json \\\n  --cp-love-user-id <userId> \\\n  --cp-love-remote-id <remoteId> \\\n  --cp-love-value <value>\n"
+    },
+    {
+      "id": "cp_ferris_wheel_value_add",
+      "name": "CP摩天轮-增加周期值",
+      "category": "CP·摩天轮（vas/external/cp-stage）",
+      "description": "测试环境增加 CP 摩天轮活动期周期榜分数（addCpFerrisWheelValue；params=userId1, userId2, value；服务端内部 diamonds×10）。**不是**爱意宝箱 currentLoveValue；宝箱造数走 Stage 私聊送礼。",
+      "prompts": [
+        "给 CP <userId> 和 <remoteId> 增加摩天轮周期爱意值 <value>",
+        "addCpFerrisWheelValue <userId> <remoteId> <value>",
+        "CP周期爱意值造数 <userId> <remoteId> <value>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/CP摩天轮-增加周期爱意值.json \\\n  --cp-ferris-user-id <userId> \\\n  --cp-ferris-remote-id <remoteId> \\\n  --cp-ferris-value <value>\n"
     },
     {
       "id": "custom_gift_reset_upload",
@@ -436,7 +460,7 @@
       "category": "家族（internal/user/family-moa）",
       "description": "给家族成员增加基金贡献值（batchIncrFundContribution；API 传值为贡献值×2）",
       "prompts": [
-        "成员 <userId> 在家族 <familyId> 增加 <contrib> 基金贡献值",
+        "成员<userId|userId>在家族<familyId|familyId>增加<contrib|贡献值>基金贡献值",
         "给家族成员 <userId> 加 <contrib> 基金"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-成员增加基金贡献值.json \\\n  --family-id <familyId> \\\n  --family-member-fund-user-id <userId> \\\n  --family-member-fund-contrib <contrib> \\\n  --family-fund-week <weekMonday>\n"
@@ -676,6 +700,54 @@
         "getWealthInfoNoAvatar <userId>"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/财富-查询等级.json \\\n  --wealth-query-user-id <userId>\n"
+    },
+    {
+      "id": "wealth_incr",
+      "name": "财富-增加",
+      "category": "礼物统计（vas/internal/gift-statistics-stage）",
+      "description": "测试环境增加用户财富值（incrUserSendGiftDiamondsNum；params=userId, num；1 num = 1 财富值，等同送礼钻石累计）",
+      "prompts": [
+        "给用户 <userId> 增加 <num> 财富值",
+        "增加用户 <userId> 财富值 <num>",
+        "incrUserSendGiftDiamondsNum <userId> <num>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/财富-增加.json \\\n  --wealth-incr-user-id <userId> \\\n  --wealth-incr-num <num>\n"
+    },
+    {
+      "id": "charm_incr",
+      "name": "魅力-增加",
+      "category": "礼物统计（vas/internal/gift-statistics-stage）",
+      "description": "测试环境增加用户魅力值（incrUserReceiveGiftDiamondsNum；params=userId, num；1 num = 1 魅力值，等同收礼钻石累计）",
+      "prompts": [
+        "给用户 <userId> 增加 <num> 魅力值",
+        "增加用户 <userId> 魅力值 <num>",
+        "incrUserReceiveGiftDiamondsNum <userId> <num>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/魅力-增加.json \\\n  --charm-incr-user-id <userId> \\\n  --charm-incr-num <num>\n"
+    },
+    {
+      "id": "wealth_decr",
+      "name": "财富-减少",
+      "category": "礼物统计（vas/internal/gift-statistics-stage）",
+      "description": "测试环境减少用户财富值（incrUserSendGiftDiamondsNum 传负 num；无独立 decr method；params=userId, num）",
+      "prompts": [
+        "给用户 <userId> 减少 <num> 财富值",
+        "减少用户 <userId> 财富值 <num>",
+        "incrUserSendGiftDiamondsNum <userId> -<num>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/财富-减少.json \\\n  --wealth-decr-user-id <userId> \\\n  --wealth-decr-num <num>\n"
+    },
+    {
+      "id": "charm_decr",
+      "name": "魅力-减少",
+      "category": "礼物统计（vas/internal/gift-statistics-stage）",
+      "description": "测试环境减少用户魅力值（incrUserReceiveGiftDiamondsNum 传负 num；无独立 decr method；params=userId, num）",
+      "prompts": [
+        "给用户 <userId> 减少 <num> 魅力值",
+        "减少用户 <userId> 魅力值 <num>",
+        "incrUserReceiveGiftDiamondsNum <userId> -<num>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/魅力-减少.json \\\n  --charm-decr-user-id <userId> \\\n  --charm-decr-num <num>\n"
     },
     {
       "id": "user_area_change",
@@ -960,7 +1032,7 @@
       "category": "家族PK（vas/internal/family-pk-moa）",
       "description": "测试环境覆盖写入家族收礼日榜（modifyReceiveDailyRankForTest）。familyReceiveScore 为家族日榜分值（覆盖写）；memberUserId + memberReceiveScore 可选，同步覆盖成员收礼明细。修改模板 params[0].value 后执行",
       "prompts": [
-        "修改家族 <familyId> <date> 收礼日榜分值为 <score>",
+        "修改家族<familyId|familyId> <date|日期>收礼日榜分值为<score|分值>",
         "家族PK修改收礼日榜 familyId=<familyId> date=<date> familyReceiveScore=<score>",
         "覆盖写入家族收礼日榜"
       ],

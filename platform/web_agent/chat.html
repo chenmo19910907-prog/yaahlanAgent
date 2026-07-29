@@ -229,6 +229,7 @@
     }
     [data-theme="light"] .header-actions button,
     [data-theme="light"] .header-start .header-btn,
+    [data-theme="light"] .header-center .header-btn,
     [data-theme="light"] .panel-head .header-btn,
     [data-theme="light"] .user-menu-btn {
       background: var(--btn-subtle-bg);
@@ -329,8 +330,21 @@
     .brand-icon svg, .empty-logo svg { width: 100%; height: 100%; display: block; }
     .brand h1 { font-size: 1rem; font-weight: 650; color: var(--text); }
     .header-actions { display: flex; gap: 10px; margin-left: auto; align-items: center; flex-wrap: wrap; justify-content: flex-end; flex-shrink: 0; }
+    .header-center {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .header-center .header-btn { pointer-events: auto; }
     .header-actions button,
     .header-start .header-btn,
+    .header-center .header-btn,
     .panel-head .header-btn {
       min-height: 36px;
       background: var(--btn-subtle-bg); border: 1px solid var(--border); color: var(--text-soft);
@@ -349,12 +363,14 @@
     }
     .header-actions button svg,
     .header-start .header-btn svg,
+    .header-center .header-btn svg,
     .panel-head .header-btn svg {
       width: 15px; height: 15px; stroke: currentColor; flex-shrink: 0;
       transition: transform 180ms var(--ease-standard);
     }
     .header-actions button:hover:not(:disabled),
     .header-start .header-btn:hover:not(:disabled),
+    .header-center .header-btn:hover:not(:disabled),
     .panel-head .header-btn:hover:not(:disabled) {
       border-color: rgba(91,140,255,0.55); color: var(--text); background: rgba(91,140,255,0.1);
       transform: translateY(-1px);
@@ -362,12 +378,15 @@
     }
     .header-actions button:hover:not(:disabled) svg,
     .header-start .header-btn:hover:not(:disabled) svg,
+    .header-center .header-btn:hover:not(:disabled) svg,
     .panel-head .header-btn:hover:not(:disabled) svg { transform: translateY(-1px); }
     .header-actions button:active:not(:disabled),
     .header-start .header-btn:active:not(:disabled),
+    .header-center .header-btn:active:not(:disabled),
     .panel-head .header-btn:active:not(:disabled) { transform: translateY(0) scale(0.98); }
     .header-actions button:disabled,
     .header-start .header-btn:disabled,
+    .header-center .header-btn:disabled,
     .panel-head .header-btn:disabled {
       opacity: 0.38; cursor: not-allowed;
       border-color: var(--border); color: var(--muted);
@@ -1164,6 +1183,8 @@
       margin: 0 auto;
       width: 100%;
       overflow: visible;
+      position: relative;
+      left: -3%;
     }
     .input-composer {
       position: relative;
@@ -1374,7 +1395,7 @@
       from { opacity: 1; transform: translateX(0); }
       to { opacity: 0; transform: translateX(16px); }
     }
-    .input-hint { font-size: 0.72rem; color: var(--muted); margin: 10px auto 0; max-width: var(--content-width); }
+    .input-hint { font-size: 0.72rem; color: var(--muted); margin: 10px auto 0; max-width: var(--content-width); position: relative; left: 2%; }
     .settings-modal {
       display: flex; position: fixed; inset: 0; background: var(--modal-overlay, rgba(0,0,0,0.6));
       align-items: center; justify-content: center; z-index: 100;
@@ -1587,13 +1608,15 @@
       padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 0.86rem;
     }
     .header-actions button.active,
-    .header-start .header-btn.active {
+    .header-start .header-btn.active,
+    .header-center .header-btn.active {
       border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,0.12);
     }
     .header-actions button.header-btn-active-flash {
       animation: header-btn-active-in-right 280ms var(--ease-spring) both;
     }
-    .header-start .header-btn.header-btn-active-flash {
+    .header-start .header-btn.header-btn-active-flash,
+    .header-center .header-btn.header-btn-active-flash {
       animation: header-btn-active-in-left 280ms var(--ease-spring) both;
     }
     /* 能力目录已打开时隐藏顶栏入口，改由面板内关闭按钮关闭 */
@@ -1796,6 +1819,121 @@
     @media (max-width: 720px) {
       .bookmarks-bubble { width: 100%; max-height: 92vh; border-radius: 16px; }
       .bookmarks-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+    .message-board-modal {
+      display: flex; position: fixed; inset: 0; z-index: 110;
+      background: var(--modal-overlay, rgba(0,0,0,0.6));
+      align-items: center; justify-content: center; padding: 24px;
+      visibility: hidden; opacity: 0; pointer-events: none;
+      transition: opacity 220ms var(--ease-standard), visibility 0s linear 220ms;
+    }
+    .message-board-modal.open {
+      visibility: visible; opacity: 1; pointer-events: auto;
+      transition: opacity 280ms var(--ease-spring), visibility 0s linear 0s;
+    }
+    .message-board-modal.open .message-board-bubble { animation: modal-pop-in 240ms var(--ease-spring) both; }
+    .message-board-modal.overlay-closing {
+      visibility: visible; opacity: 0; pointer-events: none;
+      transition: opacity 200ms var(--ease-standard), visibility 0s linear 200ms;
+    }
+    .message-board-modal.overlay-closing .message-board-bubble { animation: modal-pop-out 200ms var(--ease-standard) both; }
+    .message-board-bubble {
+      position: relative;
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 20px; width: min(560px, 94vw); max-height: min(82vh, 720px);
+      display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 0 28px 64px rgba(0,0,0,0.28);
+    }
+    .message-board-head {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      padding: 18px 22px 12px; border-bottom: 1px solid var(--border);
+    }
+    .message-board-head h3 { font-size: 1.08rem; font-weight: 600; margin-bottom: 4px; }
+    .message-board-head p { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+    .message-board-list {
+      flex: 1; overflow: auto; padding: 12px 22px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .message-board-empty {
+      color: var(--muted); text-align: center; padding: 28px 12px; font-size: 0.86rem;
+    }
+    .message-board-item {
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--card-bg); padding: 12px 14px;
+    }
+    .message-board-item.is-mine { border-color: rgba(91,140,255,0.24); }
+    .message-board-item-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      margin-bottom: 8px;
+    }
+    .message-board-item-leading {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; flex: 1;
+    }
+    .message-board-item-actions {
+      display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+    }
+    .message-board-author { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+    .message-board-badge {
+      font-size: 0.68rem; padding: 2px 6px; border-radius: 999px; border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .message-board-badge.real { color: var(--accent); border-color: rgba(91,140,255,0.28); background: var(--accent-soft); }
+    .message-board-badge.anon { color: var(--muted-soft); }
+    .message-board-staff {
+      font-size: 0.68rem; color: var(--muted-soft); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .message-board-time {
+      font-size: 0.68rem; color: var(--muted); white-space: nowrap;
+    }
+    .message-board-content {
+      font-size: 0.9rem; line-height: 1.65; color: var(--text-soft); white-space: pre-wrap; word-break: break-word;
+    }
+    .message-board-compose {
+      border-top: 1px solid var(--border); padding: 14px 22px 18px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .message-board-compose textarea {
+      width: 100%; min-height: 88px; resize: vertical;
+      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--bg-input); color: var(--text);
+      padding: 12px 14px; font-size: 0.9rem; line-height: 1.55;
+      font-family: inherit;
+    }
+    .message-board-compose textarea:focus { outline: none; border-color: var(--accent); }
+    .message-board-compose-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    }
+    .message-board-realname {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 0.82rem; color: var(--text-soft); cursor: pointer; user-select: none;
+    }
+    .message-board-realname input { width: 16px; height: 16px; accent-color: var(--accent); }
+    .message-board-submit {
+      min-height: 36px; padding: 0 16px; border-radius: 10px;
+      border: none; background: var(--accent); color: #fff;
+      font-size: 0.84rem; font-weight: 600; cursor: pointer;
+    }
+    .message-board-submit:hover { background: var(--accent-hover); }
+    .message-board-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+    .message-board-delete {
+      padding: 2px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(239, 68, 68, 0.28);
+      background: rgba(239, 68, 68, 0.08);
+      color: var(--danger, #ef4444);
+      font-size: 0.68rem;
+      cursor: pointer;
+      line-height: 1.4;
+      flex-shrink: 0;
+    }
+    .message-board-delete:hover {
+      background: rgba(239, 68, 68, 0.16);
+      border-color: rgba(239, 68, 68, 0.42);
+    }
+    @media (max-width: 760px) {
+      .header-center { position: static; transform: none; order: 3; width: 100%; justify-content: center; margin-top: 4px; pointer-events: auto; }
+      header { flex-wrap: wrap; }
+      .message-board-bubble { width: 100%; max-height: 92vh; border-radius: 16px; }
     }
     .catalog-panel {
       position: relative;
@@ -2184,6 +2322,14 @@
         </button>
       </div>
     </div>
+    <div class="header-center">
+      <button type="button" class="header-btn" id="btn-message-board" title="反馈">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        反馈
+      </button>
+    </div>
     <div class="header-actions">
       <button type="button" id="btn-catalog" title="工具台能力目录">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
@@ -2389,6 +2535,28 @@
     </div>
   </div>
 
+  <div class="message-board-modal" id="message-board-modal" aria-hidden="true">
+    <div class="message-board-bubble" id="message-board-bubble" role="dialog" aria-labelledby="message-board-title">
+      <div class="message-board-head">
+        <div>
+          <h3 id="message-board-title">反馈</h3>
+          <p id="message-board-hint">遇到问题、优化建议、功能补充 都可以进行反馈，反馈内容仅自己可见</p>
+        </div>
+      </div>
+      <div class="message-board-list" id="message-board-list"></div>
+      <form class="message-board-compose" id="message-board-form">
+        <textarea id="message-board-content" maxlength="2000" placeholder="输入反馈内容…" aria-label="反馈内容"></textarea>
+        <div class="message-board-compose-row">
+          <label class="message-board-realname" for="message-board-realname">
+            <input type="checkbox" id="message-board-realname" />
+            实名反馈
+          </label>
+          <button type="submit" class="message-board-submit" id="message-board-submit">发布反馈</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="bookmarks-modal" id="bookmarks-modal" aria-hidden="true">
     <div class="bookmarks-bubble" id="bookmarks-bubble" role="dialog" aria-labelledby="bookmarks-title">
       <div class="bookmarks-head">
@@ -2456,6 +2624,7 @@
   <script src="https://g.alicdn.com/dingding/dingtalk-jsapi/3.0.25/dingtalk.open.js"></script>
   <script src="dingtalk_oauth.js"></script>
   <script src="bookmarks_panel.js"></script>
+  <script src="message_board_panel.js"></script>
   <script src="catalog_panel.js"></script>
   <script src="waiting_fx.js"></script>
   <script>
@@ -2474,6 +2643,7 @@
     let meta = {};
     let catalogPanel = null;
     let bookmarksPanel = null;
+    let messageBoardPanel = null;
     /** 能力侧栏默认关闭，仅顶栏「能力」或面板内关闭按钮手动切换；不持久化以免旧默认误开 */
     let catalogOpen = false;
     const sidebarPref = localStorage.getItem('web_agent_sidebar_open');
@@ -2524,6 +2694,7 @@
       renderSessionList();
       updateDingtalkOwnerBar();
       await loadMessages();
+      await tryReconnectActiveRun(sessionId);
       updateInputState();
       return true;
     }
@@ -2895,15 +3066,17 @@
     }
 
     async function api(path, opts = {}) {
+      const { headers: optHeaders, ...restOpts } = opts;
       const resp = await fetch(API + path, {
         credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
-        ...opts,
+        ...restOpts,
+        headers: { 'Content-Type': 'application/json', ...(optHeaders || {}) },
       });
       if (resp.status === 401) {
         const readOnlyBrowse = opts.method === undefined || opts.method === 'GET';
         const browsingSession = /^\/api\/sessions(\/[a-z0-9]+)?(\/messages)?$/.test(path);
-        if (otpAuthEnabled && !(readOnlyBrowse && browsingSession)) {
+        const messageBoardApi = /^\/api\/message-board(\/[a-f0-9]{32})?$/.test(path);
+        if (otpAuthEnabled && !(readOnlyBrowse && browsingSession) && !messageBoardApi) {
           goToLogin();
           throw new Error('请先登录');
         }
@@ -3346,7 +3519,7 @@
         const el = document.createElement('div');
         el.className = 'session-item' + (s.id === currentSessionId ? ' active' : '');
         el.dataset.id = s.id;
-        const running = activeRuns.has(s.id) ? ' · 思考中' : '';
+        const running = activeRuns.has(s.id) || s.running ? ' · 思考中' : '';
         const sourceBadge = s.source === 'dingtalk'
           ? '<span class="session-source">钉钉</span>'
           : '';
@@ -3610,7 +3783,7 @@
     async function animateOverlayClose(modalEl) {
       if (!modalEl?.classList.contains('open') || prefersReducedMotion()) return;
       modalEl.classList.add('overlay-closing');
-      await waitMotion(modalEl.querySelector('.settings-box, .bookmarks-bubble') || modalEl, 220);
+      await waitMotion(modalEl.querySelector('.settings-box, .bookmarks-bubble, .message-board-bubble') || modalEl, 220);
       modalEl.classList.remove('overlay-closing');
     }
 
@@ -3800,6 +3973,7 @@
       syncSessionReadOnly(id);
       await loadSessions();
       await loadMessages();
+      await tryReconnectActiveRun(id);
       updateInputState();
     }
 
@@ -3920,6 +4094,175 @@
       return el;
     }
 
+    function attachRunStream(sessionId, runId, { reconnectAttempt = 0 } = {}) {
+      const MAX_RECONNECT = 3;
+      let assistantEl = null;
+
+      return new Promise((resolve, reject) => {
+        const existing = activeRuns.get(sessionId);
+        if (!existing) {
+          reject(new Error('run state missing'));
+          return;
+        }
+        if (existing.cancelling) {
+          resolve();
+          return;
+        }
+
+        existing.eventSource?.close();
+
+        const es = new EventSource(`${API}/api/chat/stream/${runId}`);
+        activeRuns.set(sessionId, {
+          ...existing,
+          pending: false,
+          eventSource: es,
+          runId,
+        });
+        updateInputState();
+        loadSessions();
+
+        const isViewing = () => currentSessionId === sessionId;
+
+        es.onmessage = (ev) => {
+          const data = JSON.parse(ev.data);
+          if (data.type === 'ack') {
+            updateRunStatus(sessionId, { ack: data.line || '' });
+          } else if (data.type === 'status') {
+            updateRunStatus(sessionId, {
+              elapsed: data.elapsed_line || '',
+              batch: data.batch_line || '',
+            });
+          } else if (data.type === 'delta') {
+            if (!isViewing()) return;
+            if (!assistantEl) {
+              assistantEl = ensureStreamingShell(sessionId);
+              activeRuns.get(sessionId).shellEl = assistantEl;
+            }
+            assistantEl.querySelector('.msg-body').innerHTML = renderMarkdown(data.markdown || '');
+            scrollMessagesToBottom();
+          } else if (data.type === 'done') {
+            const doneRun = activeRuns.get(sessionId);
+            if (doneRun?.cancelWatchdog) {
+              clearTimeout(doneRun.cancelWatchdog);
+            }
+            if (shouldRestoreSentDraft(doneRun, data.text)) {
+              restoreSentDraft(sessionId);
+            }
+            if (isViewing()) {
+              if (!assistantEl) {
+                assistantEl = ensureStreamingShell(sessionId);
+                activeRuns.get(sessionId).shellEl = assistantEl;
+              }
+              clearRunStatus(sessionId);
+              if (data.text) {
+                assistantEl.querySelector('.msg-body').innerHTML = renderMarkdown(data.text);
+              } else if (!assistantEl.querySelector('.msg-body').innerHTML.trim()) {
+                assistantEl.querySelector('.msg-body').innerHTML = renderMarkdown('（无回复）');
+              }
+              scrollMessagesToBottom({ force: true });
+            }
+            es.close();
+            resolve();
+          } else if (data.type === 'error') {
+            const errorRun = activeRuns.get(sessionId);
+            if (errorRun) errorRun.failed = true;
+            if (isViewing()) {
+              if (!assistantEl) {
+                assistantEl = ensureStreamingShell(sessionId);
+                activeRuns.get(sessionId).shellEl = assistantEl;
+              }
+              clearRunStatus(sessionId);
+              const text = appendRetryHint(data.text || `⚠️ ${data.message || 'Agent 执行失败'}`);
+              assistantEl.querySelector('.msg-body').innerHTML = renderMarkdown(text);
+              scrollMessagesToBottom({ force: true });
+            }
+            es.close();
+            resolve();
+          }
+        };
+
+        es.onerror = async () => {
+          es.close();
+          if (reconnectAttempt < MAX_RECONNECT) {
+            try {
+              const data = await api(`/api/sessions/${sessionId}/active-run`);
+              if (data.active && data.run_id) {
+                await attachRunStream(sessionId, data.run_id, {
+                  reconnectAttempt: reconnectAttempt + 1,
+                });
+                resolve();
+                return;
+              }
+            } catch { /* fall through */ }
+          }
+          reject(new Error('流式连接中断'));
+        };
+      });
+    }
+
+    async function tryReconnectActiveRun(sessionId) {
+      const sid = String(sessionId || '').trim();
+      if (!sid || activeRuns.has(sid)) return;
+      let data;
+      try {
+        data = await api(`/api/sessions/${sid}/active-run`);
+      } catch {
+        return;
+      }
+      if (!data?.active || !data.run_id) return;
+
+      activeRuns.set(sid, {
+        pending: false,
+        eventSource: null,
+        runId: data.run_id,
+        cancelling: false,
+        status: {
+          ack: data.ack_line || '',
+          batch: data.batch_line || '',
+          elapsed: data.elapsed_line || '',
+        },
+        shellEl: null,
+        sentDraft: null,
+      });
+      updateInputState();
+      renderSessionList();
+
+      if (currentSessionId === sid) {
+        if (data.markdown) {
+          const shell = ensureStreamingShell(sid);
+          activeRuns.get(sid).shellEl = shell;
+          shell.querySelector('.msg-body').innerHTML = renderMarkdown(data.markdown);
+          renderRunStatusEl(shell.querySelector('.run-status'), activeRuns.get(sid).status);
+          scrollMessagesToBottom();
+        } else if (data.ack_line || data.elapsed_line || data.batch_line) {
+          const typingEl = document.createElement('div');
+          typingEl.className = 'typing';
+          typingEl.id = 'typing-indicator';
+          typingEl.textContent = data.ack_line || data.elapsed_line || 'Agent 思考中…';
+          document.getElementById('messages')?.appendChild(typingEl);
+        }
+      }
+
+      try {
+        await attachRunStream(sid, data.run_id);
+      } catch (err) {
+        const run = activeRuns.get(sid);
+        if (run) run.failed = true;
+        if (currentSessionId === sid) {
+          document.getElementById('typing-indicator')?.remove();
+          const failText = appendRetryHint(`⚠️ ${err.message}`);
+          if (run?.shellEl) {
+            clearRunStatus(sid);
+            run.shellEl.querySelector('.msg-body').innerHTML = renderMarkdown(failText);
+          } else {
+            appendMessage('assistant', failText);
+          }
+        }
+      } finally {
+        finishRun(sid);
+      }
+    }
+
     async function sendMessage(text) {
       const message = (text || document.getElementById('input').value).trim();
       const attachmentsToSend = pendingAttachments.map(item => ({
@@ -3960,8 +4303,6 @@
       });
       updateInputState();
 
-      let assistantEl = null;
-
       try {
         const { run_id } = await api('/api/chat', {
           method: 'POST',
@@ -3979,84 +4320,7 @@
           return;
         }
 
-        await new Promise((resolve, reject) => {
-          const es = new EventSource(`${API}/api/chat/stream/${run_id}`);
-          activeRuns.set(sessionId, {
-            pending: false,
-            eventSource: es,
-            runId: run_id,
-            cancelling: existing.cancelling,
-            status: existing.status,
-            shellEl: existing.shellEl,
-            sentDraft: existing.sentDraft,
-          });
-          updateInputState();
-          loadSessions();
-
-          const isViewing = () => currentSessionId === sessionId;
-
-          es.onmessage = (ev) => {
-            const data = JSON.parse(ev.data);
-            if (data.type === 'ack') {
-              updateRunStatus(sessionId, { ack: data.line || '' });
-            } else if (data.type === 'status') {
-              updateRunStatus(sessionId, {
-                elapsed: data.elapsed_line || '',
-                batch: data.batch_line || '',
-              });
-            } else if (data.type === 'delta') {
-              if (!isViewing()) return;
-              if (!assistantEl) {
-                assistantEl = ensureStreamingShell(sessionId);
-                activeRuns.get(sessionId).shellEl = assistantEl;
-              }
-              assistantEl.querySelector('.msg-body').innerHTML = renderMarkdown(data.markdown || '');
-              scrollMessagesToBottom();
-            } else if (data.type === 'done') {
-              const doneRun = activeRuns.get(sessionId);
-              if (doneRun?.cancelWatchdog) {
-                clearTimeout(doneRun.cancelWatchdog);
-              }
-              if (shouldRestoreSentDraft(doneRun, data.text)) {
-                restoreSentDraft(sessionId);
-              }
-              if (isViewing()) {
-                if (!assistantEl) {
-                  assistantEl = ensureStreamingShell(sessionId);
-                  activeRuns.get(sessionId).shellEl = assistantEl;
-                }
-                clearRunStatus(sessionId);
-                if (data.text) {
-                  assistantEl.querySelector('.msg-body').innerHTML = renderMarkdown(data.text);
-                } else if (!assistantEl.querySelector('.msg-body').innerHTML.trim()) {
-                  assistantEl.querySelector('.msg-body').innerHTML = renderMarkdown('（无回复）');
-                }
-                scrollMessagesToBottom({ force: true });
-              }
-              es.close();
-              resolve();
-            } else if (data.type === 'error') {
-              const errorRun = activeRuns.get(sessionId);
-              if (errorRun) errorRun.failed = true;
-              if (isViewing()) {
-                if (!assistantEl) {
-                  assistantEl = ensureStreamingShell(sessionId);
-                  activeRuns.get(sessionId).shellEl = assistantEl;
-                }
-                clearRunStatus(sessionId);
-                const text = appendRetryHint(data.text || `⚠️ ${data.message || 'Agent 执行失败'}`);
-                assistantEl.querySelector('.msg-body').innerHTML = renderMarkdown(text);
-                scrollMessagesToBottom({ force: true });
-              }
-              es.close();
-              resolve();
-            }
-          };
-          es.onerror = () => {
-            es.close();
-            reject(new Error('流式连接中断'));
-          };
-        });
+        await attachRunStream(sessionId, run_id);
       } catch (err) {
         const run = activeRuns.get(sessionId);
         if (run) run.failed = true;
@@ -4378,6 +4642,36 @@
       setHeaderBtnActive(document.getElementById('btn-bookmarks'), open);
     }
 
+    function initMessageBoardPanel() {
+      if (typeof MessageBoardPanel === 'undefined') return;
+      messageBoardPanel = new MessageBoardPanel({
+        modalEl: document.getElementById('message-board-modal'),
+        bubbleEl: document.getElementById('message-board-bubble'),
+        listEl: document.getElementById('message-board-list'),
+        formEl: document.getElementById('message-board-form'),
+        contentEl: document.getElementById('message-board-content'),
+        realNameEl: document.getElementById('message-board-realname'),
+        hintEl: document.getElementById('message-board-hint'),
+        submitEl: document.getElementById('message-board-submit'),
+        request: (path, init) => api(path, init),
+        getAuthUser: () => currentAuthUser,
+      });
+      messageBoardPanel.setAdmin(!!currentAuthUser?.isAdmin);
+      messageBoardPanel.bind();
+    }
+
+    async function setMessageBoardOpen(open, opts = {}) {
+      if (!messageBoardPanel) return;
+      if (!open && messageBoardPanel.open && !opts.skipAnimation && document.body.classList.contains('layout-ready')) {
+        const modal = document.getElementById('message-board-modal');
+        await animateOverlayClose(modal);
+      }
+      messageBoardPanel.setOpen(open, opts);
+      const modal = document.getElementById('message-board-modal');
+      if (modal) modal.setAttribute('aria-hidden', open ? 'false' : 'true');
+      setHeaderBtnActive(document.getElementById('btn-message-board'), open);
+    }
+
     async function initCatalogPanel() {
       catalogPanel = new CatalogPanel({
         root: document.getElementById('catalog-panel'),
@@ -4401,6 +4695,12 @@
 
     document.getElementById('btn-bookmarks')?.addEventListener('click', () => {
       setBookmarksOpen(!bookmarksPanel?.open);
+    });
+    document.getElementById('btn-message-board')?.addEventListener('click', () => {
+      setMessageBoardOpen(!messageBoardPanel?.open);
+    });
+    document.getElementById('message-board-modal')?.addEventListener('click', (event) => {
+      if (event.target.id === 'message-board-modal') setMessageBoardOpen(false);
     });
     document.getElementById('btn-bookmarks-add')?.addEventListener('click', () => {
       bookmarksPanel?.toggleAddPanel(true);
@@ -4431,6 +4731,7 @@
         return;
       }
       if (bookmarksPanel?.open) setBookmarksOpen(false);
+      if (messageBoardPanel?.open) setMessageBoardOpen(false);
     });
 
     let sessionPollTimer = null;
@@ -4442,8 +4743,14 @@
         const wasDingtalk = currentSessionReadOnly;
         try {
           await loadSessions();
-          if (viewingId && (wasDingtalk || activeRuns.has(viewingId)) && currentSessionId === viewingId) {
-            await loadMessages();
+          if (viewingId && currentSessionId === viewingId) {
+            if (!activeRuns.has(viewingId)) {
+              const active = sessionsCache.find((s) => s.id === viewingId)?.running;
+              if (active) await tryReconnectActiveRun(viewingId);
+            }
+            if (wasDingtalk || activeRuns.has(viewingId)) {
+              await loadMessages();
+            }
           }
         } catch { /* ignore poll errors */ }
       }, 15000);
@@ -4483,6 +4790,7 @@
       }
       updateReadOnlyState();
       if (bookmarksPanel) bookmarksPanel.setAdmin(!!currentAuthUser?.isAdmin);
+      if (messageBoardPanel) messageBoardPanel.setAdmin(!!currentAuthUser?.isAdmin);
     }
 
     async function logoutCurrentUser() {
@@ -4544,6 +4852,7 @@
         initCatalogResize();
         setSidebarOpen(sidebarOpen, { skipAnimation: true });
         await initBookmarksPanel();
+        initMessageBoardPanel();
         await initCatalogPanel();
         setCatalogOpen(catalogOpen, { skipAnimation: true });
         requestAnimationFrame(() => document.body.classList.add('layout-ready'));

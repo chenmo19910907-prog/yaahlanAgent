@@ -57,6 +57,96 @@
       ]
     },
     {
+      "id": "reward_dispatch_verify",
+      "title": "CP爱意宝箱-奖励下发验收",
+      "category": "CP·爱意宝箱",
+      "summary": "发奖前/后各 snapshot（含 diamondHistory 基线、CP 勋章），diff 求差或 compare 对期望配置。验钻石记录、背包礼物钻价/有效期、装扮 expireTime、勋章个数。",
+      "defaults": {
+        "userId": "100079102",
+        "expectedDays": "15",
+        "toleranceDays": "1"
+      },
+      "steps": [
+        {
+          "order": 1,
+          "workflowId": "reward-verify-snapshot",
+          "name": "发奖前快照",
+          "note": "保存 before.json：钻石余额、diamondHistory 基线、背包礼物(remain/price/expire)、装扮 props、CP 勋章（--cp-user-id --intimate-id）",
+          "operations": [
+            "python3 workflow/scripts/reward_verify.py snapshot --user-id <userId> --out .tmp/reward_before.json --cp-user-id <cpUserId> --intimate-id <intimateId>"
+          ]
+        },
+        {
+          "order": 2,
+          "name": "触发奖励下发",
+          "note": "送礼跨档 / MOA 发奖 / 活动结算等（依场景）",
+          "operations": [
+            "记录发放时刻 referenceTs（跨档送礼完成时间）",
+            "等待 3–5s 让异步下发完成"
+          ]
+        },
+        {
+          "order": 3,
+          "workflowId": "reward-verify-snapshot",
+          "name": "发奖后快照",
+          "note": "保存 after.json（字段同 before）",
+          "operations": [
+            "python3 workflow/scripts/reward_verify.py snapshot --user-id <userId> --out .tmp/reward_after.json --cp-user-id <cpUserId> --intimate-id <intimateId>"
+          ]
+        },
+        {
+          "order": 4,
+          "workflowId": "reward-verify-diff",
+          "name": "前后快照求差（推荐）",
+          "note": "输出钻石/记录/背包/装扮/勋章增量，无需 expected.json",
+          "operations": [
+            "python3 workflow/scripts/reward_verify.py diff --before .tmp/reward_before.json --after .tmp/reward_after.json --out .tmp/reward_diff.json"
+          ]
+        },
+        {
+          "order": 5,
+          "workflowId": "reward-verify-report",
+          "name": "生成 Markdown 测试报告",
+          "note": "报告展示：个人装扮/铭牌实际下发有效期；礼物背包每个礼物的钻石价值与有效期",
+          "operations": [
+            "python3 workflow/scripts/reward_verify.py report --diff .tmp/reward_diff.json --out .tmp/reward_verify_report.md --user-label <phoneOrUserId>"
+          ]
+        },
+        {
+          "order": 6,
+          "workflowId": "reward-verify-compare",
+          "name": "对比期望奖励（可选）",
+          "note": "背包 GIFT：验 giftId、remain 增量、price 单价(钻)、下发总价值、expire 未过期；DIAMOND：验余额增量 + diamondHistory 记录；装扮 PROP：验 expireDays±容差",
+          "operations": [
+            "expected.json rewards[] 可从 getCpLoveChestHomepage tiers[].reward 提取",
+            "crossGiftCost=1 仅送礼方扣跨档 1 钻",
+            "DIAMOND 奖励可设 recordSource（如 Event reward / 爱意宝箱奖励）匹配 diamondHistory"
+          ]
+        },
+        {
+          "order": 7,
+          "workflowId": "reward-verify-prop-days",
+          "name": "单项装扮天数复核（可选）",
+          "note": "compare 已含 expireDays；此项用于单独复核或 homepage 配置 count/expireTime 对照",
+          "operations": [
+            "python3 workflow/scripts/reward_verify.py verify-prop-days --user-id <userId> --prop-id <propId> --prop-type-code <code> --expected-days 15"
+          ]
+        }
+      ],
+      "prompts": [
+        "执行奖励下发验收 userId=<userId>",
+        "验收背包礼物数量、价值与有效期",
+        "验收装扮奖励有效期天数"
+      ],
+      "notes": [
+        "背包礼物：MOA getGiftTabListV3 背包 Tab → package.remain + price(钻) + package.expire（须未过期）",
+        "装扮：MOA queryOwnPropList → expireTime 换算天数，默认 ±1 天容差",
+        "钻石记录：MOA diamondHistory（/service/yaahlan/components/wallet-api）验 diamondDiff + desc/rechargeMethod",
+        "expected.json 示例：{\"crossGiftCost\":0,\"rewards\":[{\"type\":\"DIAMOND\",\"count\":50,\"recordSource\":\"Event reward\"},{\"type\":\"GIFT\",\"giftId\":\"2005058134\",\"count\":1,\"price\":100},{\"type\":\"PROP\",\"propId\":\"30006429\",\"propTypeCode\":\"10180\",\"expireDays\":15}]}",
+        "脚本：workflow/scripts/reward_verify.py；MOA propTypeCode 见 MOA/config/prop_types.json"
+      ]
+    },
+    {
       "id": "family_pk_data_test",
       "title": "家族PK数据测试（新表+六步总览）",
       "category": "家族PK",
@@ -228,9 +318,18 @@
         "timeoutMs": "60000"
       },
       "sheets": [
-        { "name": "金蛋活动配置", "content": "MSE activityConfig.Year3Anniversary：奖池、权重、神秘保底、蛋等级" },
-        { "name": "砸金蛋测试记录", "content": "每次 smashEgg 一行：次数、蛋级、奖品、房/用/平计数、验收 verdict" },
-        { "name": "测试结果", "content": "各步样本数、通过数、失败数与总评" }
+        {
+          "name": "金蛋活动配置",
+          "content": "MSE activityConfig.Year3Anniversary：奖池、权重、神秘保底、蛋等级"
+        },
+        {
+          "name": "砸金蛋测试记录",
+          "content": "每次 smashEgg 一行：次数、蛋级、奖品、房/用/平计数、验收 verdict"
+        },
+        {
+          "name": "测试结果",
+          "content": "各步样本数、通过数、失败数与总评"
+        }
       ],
       "steps": [
         {
@@ -330,8 +429,7 @@
       "order": 0,
       "description": "第 0 步（新测试必做）：在配置的 alidocs 目录新建钉钉表格 {pkDate}家族PK数据测试，预建各步骤 Sheet；输出 workbookUrl 供后续步骤使用。",
       "prompts": [
-        "新建家族PK测试钉钉表 pkDate=<pkDate>",
-        "工作流 family-pk-config-create-workbook <pkDate>"
+        "新建<pkDate|PK日期>家族PK测试钉钉表"
       ],
       "command": "python3 workflow/workflow_execute.py run family-pk-config-create-workbook --pk-date <pkDate>"
     },
@@ -343,7 +441,7 @@
       "description": "第一步：从 MSE voga-common 读取 familyPkConfig 最新配置，整理为参数表写入 Sheet「参数表」。merge 模式可在原表上更新数值、增删参数行。",
       "prompts": [
         "执行工作流 家族PK配置-MSE同步到钉钉参数表",
-        "工作流 family-pk-config-mse-to-dingtalk <workbookUrl> <pkDate> <namespace> <configKey> <paramSheet> <mode>"
+        "把MSE家族PK配置同步到钉钉表<workbookUrl|表格链接>，pkDate=<pkDate|PK日期>"
       ],
       "command": "python3 workflow/workflow_execute.py run family-pk-config-mse-to-dingtalk --workbook-url <workbookUrl> --pk-date <pkDate> --namespace <namespace> --config-key <configKey> --param-sheet <paramSheet> --mode <mode>"
     },
@@ -355,7 +453,7 @@
       "description": "第二步：从开发者后台 getAllFamilyList 拉取全部家族 ID/名称，补全成员 userId、手机号并标记族长；族长大区非中东（MENA）的家族剔除后写入 Sheet「家族列表」。",
       "prompts": [
         "执行工作流 家族PK配置-后台家族成员写入钉钉",
-        "工作流 family-pk-config-pk-list-to-dingtalk <workbookUrl> <sheetName> <pkDate>"
+        "把后台家族成员写入钉钉表<workbookUrl|表格链接>，pkDate=<pkDate|PK日期>"
       ],
       "command": "python3 workflow/workflow_execute.py run family-pk-config-pk-list-to-dingtalk --workbook-url <workbookUrl> --sheet-name <sheetName> --pk-date <pkDate>"
     },
@@ -367,7 +465,7 @@
       "description": "第三步：按 Sheet「家族列表」成员数分段随机写入 rankDate 收礼榜（>10 人：20 万~100 万；≤10 人：0~20 万），再按收礼榜+参数表计算 pkDate 各家族档位达标 PK 与钻石，写入 Sheet「家族PK档位」。不重匹配。",
       "prompts": [
         "执行工作流 家族PK配置-收礼榜造数与档位测算",
-        "工作流 family-pk-config-rank-rematch <workbookUrl> <rankDate> <pkDate>"
+        "家族PK收礼榜造数 表<workbookUrl|表格链接> rankDate=<rankDate|榜单日> pkDate=<pkDate|PK日期>"
       ],
       "command": "python3 workflow/workflow_execute.py run family-pk-config-rank-rematch --workbook-url <workbookUrl> --rank-date <rankDate> --pk-date <pkDate>"
     },
@@ -379,7 +477,7 @@
       "description": "第四步：清除并重匹配 pkDate 家族 PK → MOA getFamilyPkPage 拉取对战列表 → 按收礼榜区间验收同区间匹配，写入 Sheet「匹配验收」。",
       "prompts": [
         "执行工作流 家族PK配置-重匹配与验收写入钉钉",
-        "工作流 family-pk-config-match-verify <workbookUrl> <userId> <pkDate>"
+        "验收家族PK匹配 表<workbookUrl|表格链接> pkDate=<pkDate|PK日期> userId=<userId|userId>"
       ],
       "command": "python3 workflow/workflow_execute.py run family-pk-config-match-verify --workbook-url <workbookUrl> --user-id <userId> --pk-date <pkDate>"
     },
@@ -391,7 +489,7 @@
       "description": "第五步：清除 pkDate 全部成员 PK → 全员随机 PK → 纠偏边界场景 → 测算应得钻石写入「用户发钻测试」（榜单验收在第六步结算后）。",
       "prompts": [
         "执行工作流 家族PK配置-成员PK造数与发钻测算",
-        "工作流 family-pk-config-member-pk-reward <workbookUrl> <pkDate>"
+        "家族PK成员造数发钻测算 表<workbookUrl|表格链接> pkDate=<pkDate|PK日期>"
       ],
       "command": "python3 workflow/workflow_execute.py run family-pk-config-member-pk-reward --workbook-url <workbookUrl> --pk-date <pkDate>"
     },
@@ -403,7 +501,7 @@
       "description": "第六步：resetSettleDataForTest 清结算 → runFamilyPkMatchTask(次日) 发奖 → 查钻对比应发 vs 实发写入「发钻实发验收」→ MOA 贡献榜验收回写「用户发钻测试」。",
       "prompts": [
         "执行工作流 家族PK配置-发奖与验收",
-        "工作流 family-pk-config-dispatch-verify <workbookUrl> <pkDate> <userId>"
+        "家族PK发奖验收 表<workbookUrl|表格链接> pkDate=<pkDate|PK日期> userId=<userId|userId>"
       ],
       "command": "python3 workflow/workflow_execute.py run family-pk-config-dispatch-verify --workbook-url <workbookUrl> --pk-date <pkDate> --user-id <userId>"
     },
@@ -415,7 +513,7 @@
       "description": "第七步：读取各步骤 Sheet 验收摘要，汇总写入「测试结果」（总体验收结论 + 发钻不一致明细）。",
       "prompts": [
         "执行工作流 家族PK配置-测试结果汇总",
-        "工作流 family-pk-config-test-result <workbookUrl> <pkDate>"
+        "汇总家族PK测试结果 表<workbookUrl|表格链接> pkDate=<pkDate|PK日期>"
       ],
       "command": "python3 workflow/workflow_execute.py run family-pk-config-test-result --workbook-url <workbookUrl> --pk-date <pkDate> --user-id <userId>"
     },
@@ -427,7 +525,7 @@
       "description": "辅助：仅按收礼榜与参数表重算各家族档位达标 PK 与钻石，写入 Sheet「家族PK档位」（第三步已内置，可单独重跑）。",
       "prompts": [
         "执行工作流 家族PK配置-档位PK与奖励测算",
-        "工作流 family-pk-config-reward-calc <workbookUrl> <rankDate> <pkDate>"
+        "测算家族PK档位奖励 表<workbookUrl|表格链接> rankDate=<rankDate|榜单日> pkDate=<pkDate|PK日期>"
       ],
       "command": "python3 workflow/workflow_execute.py run family-pk-config-reward-calc --workbook-url <workbookUrl> --rank-date <rankDate> --pk-date <pkDate>"
     },
@@ -439,7 +537,7 @@
       "description": "辅助：读取 Sheet「参数表」中已修改的数值，合并回 MSE 原始结构，写回 configValue_JSON Sheet。改参后执行；勿直接声称已发布到 MSE。",
       "prompts": [
         "执行工作流 家族PK配置-钉钉参数表生成JSON",
-        "工作流 family-pk-config-sheet-to-json <workbookUrl>"
+        "从钉钉参数表<workbookUrl|表格链接>生成JSON"
       ],
       "command": "python3 workflow/workflow_execute.py run family-pk-config-sheet-to-json --workbook-url <workbookUrl>"
     },
@@ -450,9 +548,7 @@
       "order": 22,
       "description": "独立：清除 pkDate 匹配数据 → 结算前一日并发奖 → 重新匹配 pkDate。参数 pkDate、timeoutMs（默认 180000）。",
       "prompts": [
-        "重置 <pkDate> 家族PK匹配并下发前日奖励",
-        "工作流 family-pk-daily-rematch pkDate=<pkDate>",
-        "家族PK每日重置匹配 pkDate=<pkDate>"
+        "重置<pkDate|PK日期>家族PK匹配并下发前日奖励"
       ],
       "command": "python3 workflow/workflow_execute.py run family-pk-daily-rematch --pk-date <pkDate> --timeout-ms <timeoutMs>"
     },
@@ -463,7 +559,7 @@
       "description": "用户已在 App 打开礼物面板后，Tunnel 抓 getGiftTabListV3 → 背包 Tab 读 package.remain；按 bid 验收数量。propPackageList 仅道具不含礼物。",
       "prompts": [
         "执行工作流 背包礼物-Tunnel背包验收",
-        "工作流 package-gift-backpack-verify <userId> <baseProductId> <expectRemain> <sinceSeconds>"
+        "验收用户<userId|userId>背包礼物<baseProductId|礼物ID>剩余<expectRemain|数量>个"
       ],
       "command": "python3 workflow/workflow_execute.py run package-gift-backpack-verify --user-id <userId> --base-product-id <baseProductId> --expect-remain <expectRemain> --since-seconds <sinceSeconds>"
     },
@@ -474,7 +570,7 @@
       "description": "MOA addPackageGift 下发 → 用户在 App 打开礼物面板 → Tunnel getGiftTabListV3 背包 Tab 验收 package.remain。两步之间须手动开面板。",
       "prompts": [
         "执行工作流 背包礼物-下发与Tunnel验收",
-        "工作流 package-gift-dispatch-verify <userId> <baseProductId> <num> <sinceSeconds>"
+        "给用户<userId|userId>下发背包礼物<baseProductId|礼物ID><num|数量>个并验收"
       ],
       "command": "python3 workflow/workflow_execute.py run package-gift-dispatch-verify --user-id <userId> --base-product-id <baseProductId> --num <num> --since-seconds <sinceSeconds>"
     },
@@ -485,37 +581,37 @@
       "description": "smashEgg：房间默认自己的房间；每砸一次立即写入钉钉「砸金蛋测试记录」（砸一次写一次）。",
       "prompts": [
         "执行工作流 3周年砸金蛋-造数并记录",
-        "工作流 anniversary-egg-smash-record <userId> <smashCount>"
+        "用户<userId|userId>砸金蛋<smashCount|次数>次并记录"
       ],
       "command": "python3 workflow/workflow_execute.py run anniversary-egg-smash-record --workbook https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz --user-id <userId> --smash-count <smashCount>"
     },
     {
       "id": "moa_generative_run",
       "name": "MOA-generative-抓包转MOA执行",
-      "category": "MOA-generative",
+      "category": "抓包转MOA",
       "description": "将 Tunnel 抓包 body + 调用链 ServiceUrl/Method 生成双写 header+params 的 MOA payload 并执行。默认业务拒绝（已签到/已点赞）也算成功；--strict 要求业务 success。",
       "prompts": [
         "执行工作流 MOA-generative-抓包转MOA执行",
-        "工作流 moa-generative-run <serviceUrl> <method> <bodyFile> <timeoutMs> <payloadOut> <strict>"
+        "抓包转MOA执行 服务<serviceUrl|URL> 方法<method|Method> 文件<bodyFile|body.json>"
       ],
       "command": "python3 workflow/workflow_execute.py run moa-generative-run --service-url <serviceUrl> --method <method> --body-file <bodyFile> --timeout-ms <timeoutMs> --payload-out <payloadOut> --strict <strict>"
     },
     {
       "id": "intimate_buddy_form",
       "name": "亲密关系-结挚友",
-      "category": "亲密关系",
+      "category": "CP·亲密关系",
       "description": "测试环境结挚友：Gift --intimate-invite 发起（默认 gift 2005007129）→ MOA acceptIntimateInvitation 同意 → intimateHomePage 验收。可选先 dismiss。relationshipType 默认 2。",
       "prompts": [
         "执行工作流 亲密关系-结挚友",
-        "工作流 intimate-buddy-form <fromUserId> <toUserId> <giftId> <dismissFirst> <relationshipType>"
+        "<fromUserId|userId>和<toUserId|userId>结为挚友关系"
       ],
       "command": "python3 workflow/workflow_execute.py run intimate-buddy-form --from-user-id <fromUserId> --to-user-id <toUserId> --gift-id <giftId> --dismiss-first <dismissFirst> --relationship-type <relationshipType>"
     },
     {
       "id": "intimate_cp_form",
       "name": "亲密关系-结CP",
-      "category": "亲密关系",
-      "description": "测试环境结CP：Gift --intimate-invite 发起（默认 cpGiftList 特价礼 2005006943）→ MOA acceptIntimateInvitation 同意 → intimateHomePage 验收。relationshipType 固定 1；可选先 dismiss。",
+      "category": "CP·亲密关系",
+      "description": "测试环境结CP：Gift --intimate-invite 发起（默认 cpGiftList 2005004592 Neon Heart）→ MOA acceptIntimateInvitation 同意 → intimateHomePage 验收。relationshipType 固定 1；可选先 dismiss。",
       "prompts": [
         "执行工作流 亲密关系-结CP",
         "工作流 intimate-cp-form <fromUserId> <toUserId> <giftId> <dismissFirst>"
@@ -529,10 +625,70 @@
       "description": "测试环境快速添加房间成员：MOA room-member-stage.apply（申请人）→ agree（房主）。HTTP 对应 /yaahlan/room/member/apply 与 /member/agree。",
       "prompts": [
         "执行工作流 房间成员-快速添加",
-        "工作流 room-member-quick-add-form <applicantUserId> <ownerUserId> <roomId>",
+        "<applicantUserId|userId>申请加入房间<roomId|roomId>，房主<ownerUserId|userId>同意",
         "快速添加房间成员"
       ],
       "command": "python3 workflow/workflow_execute.py run room-member-quick-add-form --applicant-user-id <applicantUserId> --owner-user-id <ownerUserId> --room-id <roomId>"
+    },
+    {
+      "id": "reward_verify_snapshot",
+      "name": "奖励验收-用户资产快照",
+      "category": "奖励验收",
+      "description": "发奖前/后各执行一次：钻石余额、diamondHistory 基线、背包礼物（giftId/remain/price/expire）、装扮 props（propId/expireTime）、可选 CP 勋章。snapshotVersion=2，供 diff/compare 求差值。",
+      "prompts": [
+        "执行工作流 奖励验收-用户资产快照",
+        "奖励验收发奖前快照 userId=<userId>",
+        "工作流 reward-verify-snapshot <userId> <outFile> <propTypes> <cpUserId> <intimateId>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run reward-verify-snapshot --user-id <userId> --out-file <outFile> --prop-types <propTypes> --cp-user-id <cpUserId> --intimate-id <intimateId>"
+    },
+    {
+      "id": "reward_verify_diff",
+      "name": "奖励验收-前后快照求差",
+      "category": "奖励验收",
+      "description": "对比发奖前后 snapshot JSON，输出钻石余额/钻石记录增量、背包礼物 remain/price/expire 差值、装扮 expireTime 差值、CP 勋章个数差值。发奖前须用 reward-verify-snapshot（含 diamondHistory、cpMedals）。",
+      "prompts": [
+        "执行工作流 奖励验收-前后快照求差",
+        "奖励验收发奖前后求差",
+        "工作流 reward-verify-diff <beforeFile> <afterFile> <outFile>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run reward-verify-diff --before-file <beforeFile> --after-file <afterFile> --out-file <outFile>"
+    },
+    {
+      "id": "reward_verify_compare",
+      "name": "奖励验收-前后快照对比",
+      "category": "奖励验收",
+      "description": "对比发奖前后 snapshot JSON 与期望 rewards 配置：钻石增量+钻石记录、背包礼物 giftId+数量+单价(钻)+expire 有效、装扮 propId+有效期天数（±toleranceDays）。",
+      "prompts": [
+        "执行工作流 奖励验收-前后快照对比",
+        "奖励验收对比 expected.json",
+        "工作流 reward-verify-compare <beforeFile> <afterFile> <expectedFile>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run reward-verify-compare --before-file <beforeFile> --after-file <afterFile> --expected-file <expectedFile>"
+    },
+    {
+      "id": "reward_verify_report",
+      "name": "奖励验收-生成测试报告",
+      "category": "奖励验收",
+      "description": "由 diff JSON 或 before/after 快照生成 Markdown 测试报告：个人装扮/铭牌每个实际下发项的有效期、礼物背包每个礼物的钻石价值与有效期。",
+      "prompts": [
+        "执行工作流 奖励验收-生成测试报告",
+        "奖励验收生成测试报告",
+        "工作流 reward-verify-report <diffFile> <outFile> <userLabel>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run reward-verify-report --diff-file <diffFile> --out-file <outFile> --user-label <userLabel> --title <title>"
+    },
+    {
+      "id": "reward_verify_prop_days",
+      "name": "奖励验收-装扮有效期天数",
+      "category": "奖励验收",
+      "description": "MOA queryOwnPropList 查指定 propId 的 expireTime，与配置天数对比（默认 ±1 天容差）。用于活动/宝箱等限时装扮/铭牌验收。",
+      "prompts": [
+        "执行工作流 奖励验收-装扮有效期天数",
+        "奖励验收验装扮天数 userId=<userId>",
+        "工作流 reward-verify-prop-days <userId> <propId> <propTypeCode> <expectedDays> <toleranceDays> <referenceTs>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run reward-verify-prop-days --user-id <userId> --prop-id <propId> --prop-type-code <propTypeCode> --expected-days <expectedDays> --tolerance-days <toleranceDays> --reference-ts <referenceTs>"
     }
   ]
 }

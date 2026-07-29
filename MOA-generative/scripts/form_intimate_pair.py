@@ -8,7 +8,7 @@ Flow:
   4) acceptIntimateInvitation as to-user
   5) intimateHomePage verify
 
-relationshipType: 2=挚友（默认 gift 2005007129），1=CP（默认 gift 2005006943）
+relationshipType: 2=挚友（默认 gift 2005007129），1=CP（默认 gift 2005004592）
 ServiceUrl: /service/yaahlan/user/intimate-api
 """
 
@@ -25,7 +25,7 @@ from typing import Any
 _REPO = Path(__file__).resolve().parents[2]
 _URL = "/service/yaahlan/user/intimate-api"
 _DEFAULT_BUDDY_GIFT = "2005007129"  # buddyGiftList 特价礼（已抓包验证）
-_DEFAULT_CP_GIFT = "2005006943"  # cpGiftList 特价礼 Middle platform（已验证结 CP）
+_DEFAULT_CP_GIFT = "2005004592"  # cpGiftList Neon Heart 1500钻（13311111112 抓包 intimateInvitePreviewPage）
 
 
 def _default_gift_for_relationship(relationship_type: str) -> str:
@@ -160,7 +160,7 @@ def main() -> int:
     parser.add_argument(
         "--gift-id",
         default="",
-        help="申请礼物 giftId；空则按 relationshipType 选默认（挚友 2005007129 / CP 2005006943）",
+        help="申请礼物 giftId；空则按 relationshipType 选默认（挚友 2005007129 / CP 2005004592）",
     )
     parser.add_argument(
         "--dismiss-first",

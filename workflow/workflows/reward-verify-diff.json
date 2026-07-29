@@ -1,0 +1,42 @@
+{
+  "id": "reward-verify-diff",
+  "name": "奖励验收-前后快照求差",
+  "category": "奖励验收",
+  "description": "对比发奖前后 snapshot JSON，输出钻石余额/钻石记录增量、背包礼物 remain/price/expire 差值、装扮 expireTime 差值、CP 勋章个数差值。发奖前须用 reward-verify-snapshot（含 diamondHistory、cpMedals）。",
+  "version": 1,
+  "params": {
+    "beforeFile": {
+      "label": "发奖前快照",
+      "type": "string",
+      "required": true,
+      "prompt": "reward-verify-snapshot 发奖前输出"
+    },
+    "afterFile": {
+      "label": "发奖后快照",
+      "type": "string",
+      "required": true,
+      "prompt": "reward-verify-snapshot 发奖后输出"
+    },
+    "outFile": {
+      "label": "差值报告路径",
+      "type": "string",
+      "required": false,
+      "default": ".tmp/reward_diff.json",
+      "prompt": "可选：写入 JSON"
+    }
+  },
+  "steps": [
+    {
+      "id": "diff",
+      "name": "前后快照求差",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/reward_verify.py diff --before {{beforeFile}} --after {{afterFile}} --out {{outFile}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

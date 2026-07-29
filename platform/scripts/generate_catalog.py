@@ -784,7 +784,7 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
       }});
     }}
 
-    const PROMPT_PLACEHOLDER_RE = /<([^>]+)>/g;
+    const PROMPT_PLACEHOLDER_RE = /<([^>|]+)(?:\\|([^>]+))?>/g;
 
     function renderPromptLine(text) {{
       const spanParts = [];
@@ -796,10 +796,11 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
           spanParts.push(escapeHtml(text.slice(last, m.index)));
         }}
         const key = m[1];
-        const width = Math.min(14, Math.max(4, key.length + 1));
+        const label = (m[2] || key).trim();
+        const width = Math.min(14, Math.max(4, label.length + 1));
         spanParts.push(
           `<input type="text" class="prompt-field" data-key="${{escapeHtml(key)}}" ` +
-          `placeholder="${{escapeHtml(key)}}" aria-label="${{escapeHtml(key)}}" ` +
+          `placeholder="${{escapeHtml(label)}}" aria-label="${{escapeHtml(label)}}" ` +
           `style="width:${{width}}em">`
         );
         last = re.lastIndex;

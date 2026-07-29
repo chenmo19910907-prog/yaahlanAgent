@@ -2,7 +2,7 @@
   "id": "intimate-cp-form",
   "name": "亲密关系-结CP",
   "category": "亲密关系",
-  "description": "测试环境结CP：Gift --intimate-invite 发起（默认 cpGiftList 特价礼 2005006943）→ MOA acceptIntimateInvitation 同意 → intimateHomePage 验收。relationshipType 固定 1；可选先 dismiss。",
+  "description": "测试环境结CP：Gift --intimate-invite 发起（默认 cpGiftList 2005004592 Neon Heart）→ MOA acceptIntimateInvitation 同意 → intimateHomePage 验收。relationshipType 固定 1；可选先 dismiss。",
   "version": 1,
   "params": {
     "fromUserId": {
@@ -21,8 +21,8 @@
       "label": "申请礼物giftId",
       "type": "string",
       "required": false,
-      "default": "2005006943",
-      "prompt": "CP 预览 cpGiftList 礼物；默认特价礼 2005006943（Middle platform）"
+      "default": "2005004592",
+      "prompt": "CP 预览 cpGiftList 礼物；默认 2005004592（Neon Heart 1500钻）"
     },
     "dismissFirst": {
       "label": "先解除已有关系",

@@ -66,6 +66,51 @@ def three_params(room_id: str, second: int, third: int, *, second_type: str = "i
     ]
 
 
+def three_params_str_str_long(first: str, second: str, third: int) -> list[dict[str, Any]]:
+    third_str = str(third)
+    return [
+        _param("参数1", "1", first, ptype="string", txt=first),
+        _param("参数2", "2", second, ptype="string", txt=second),
+        _param("参数3", "3", third_str, ptype="long", txt=third_str),
+    ]
+
+
+def set_cp_love_value_add_params(
+    payload: dict[str, Any],
+    user_id: str,
+    remote_id: str,
+    value: int,
+) -> None:
+    """cp-moa addCpLoveValue：CP 总恩爱值 loveValue（须已有 CP；不更新宝箱 currentLoveValue）。"""
+    user_id = str(user_id).strip()
+    remote_id = str(remote_id).strip()
+    if not user_id or not remote_id:
+        raise ValueError("userId 与 remoteId 均不能为空")
+    if value == 0:
+        raise ValueError("value 不能为 0")
+    payload["url"] = "/service/yaahlan/user/cp-moa"
+    payload["method"] = "addCpLoveValue"
+    payload["params"] = three_params_str_str_long(user_id, remote_id, value)
+
+
+def set_cp_ferris_wheel_value_add_params(
+    payload: dict[str, Any],
+    user_id: str,
+    remote_id: str,
+    value: int,
+) -> None:
+    """cp-stage addCpFerrisWheelValue：摩天轮活动期周期榜（内部 diamonds*10；不是宝箱 currentLoveValue）。"""
+    user_id = str(user_id).strip()
+    remote_id = str(remote_id).strip()
+    if not user_id or not remote_id:
+        raise ValueError("userId 与 remoteId 均不能为空")
+    if value <= 0:
+        raise ValueError("value 必须为正整数")
+    payload["url"] = "/service/vas/external/cp-stage"
+    payload["method"] = "addCpFerrisWheelValue"
+    payload["params"] = three_params_str_str_long(user_id, remote_id, value)
+
+
 def random_five_digit_out_order_id(prefix: str = "system") -> str:
     return f"{prefix}-{random.randint(10000, 99999)}"
 
@@ -96,6 +141,56 @@ def set_noble_params(payload: dict[str, Any], user_id: str, noble_exp_delta: int
     if noble_exp_delta < 0:
         raise ValueError("noble_exp_delta 不能为负数")
     payload["params"] = two_params(str(user_id), noble_exp_delta, second_type="long")
+
+
+def set_gift_statistics_incr_params(
+    payload: dict[str, Any],
+    user_id: str,
+    num: int,
+    *,
+    kind: str,
+) -> None:
+    """gift-statistics-stage：incrUserSendGiftDiamondsNum（财富）/ incrUserReceiveGiftDiamondsNum（魅力）。"""
+    user_id = str(user_id).strip()
+    if not user_id:
+        raise ValueError("userId 不能为空")
+    if num <= 0:
+        raise ValueError("num 必须为正整数")
+    kind = kind.strip().lower()
+    if kind == "wealth":
+        payload["url"] = "/service/vas/internal/gift-statistics-stage"
+        payload["method"] = "incrUserSendGiftDiamondsNum"
+    elif kind == "charm":
+        payload["url"] = "/service/vas/internal/gift-statistics-stage"
+        payload["method"] = "incrUserReceiveGiftDiamondsNum"
+    else:
+        raise ValueError(f"未知 kind: {kind!r}（wealth 或 charm）")
+    payload["params"] = two_params(user_id, num, second_type="long")
+
+
+def set_gift_statistics_decr_params(
+    payload: dict[str, Any],
+    user_id: str,
+    num: int,
+    *,
+    kind: str,
+) -> None:
+    """gift-statistics-stage 减少：无独立 decr method，incr* 传负 num。"""
+    user_id = str(user_id).strip()
+    if not user_id:
+        raise ValueError("userId 不能为空")
+    if num <= 0:
+        raise ValueError("num 必须为正整数（脚本会自动传负值）")
+    kind = kind.strip().lower()
+    if kind == "wealth":
+        payload["url"] = "/service/vas/internal/gift-statistics-stage"
+        payload["method"] = "incrUserSendGiftDiamondsNum"
+    elif kind == "charm":
+        payload["url"] = "/service/vas/internal/gift-statistics-stage"
+        payload["method"] = "incrUserReceiveGiftDiamondsNum"
+    else:
+        raise ValueError(f"未知 kind: {kind!r}（wealth 或 charm）")
+    payload["params"] = two_params(user_id, -num, second_type="long")
 
 
 def set_family_exp_params(payload: dict[str, Any], family_id: str, exp_delta: int) -> None:

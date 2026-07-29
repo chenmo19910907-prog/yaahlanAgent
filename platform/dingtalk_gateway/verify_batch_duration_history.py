@@ -55,7 +55,8 @@ def test_eta_blends_history() -> None:
             )
             remaining = estimate_batch_remaining_s(state)
             assert remaining is not None
-            assert 18 <= remaining <= 22
+            # 逻辑链 12s/项 × 20 项（无实时进度时优先链预估）
+            assert 230 <= remaining <= 250
 
             state_mid = BatchProgressState(
                 user_key="k",
@@ -67,7 +68,8 @@ def test_eta_blends_history() -> None:
             )
             remaining_mid = estimate_batch_remaining_s(state_mid)
             assert remaining_mid is not None
-            assert 8 <= remaining_mid <= 12
+            # 融合链(12s)与实时(1s)：base≈4.85s/项 × 10 项
+            assert 45 <= remaining_mid <= 52
 
 
 def test_report_records_on_complete() -> None:

@@ -44,7 +44,7 @@ python3 Gift/gift_execute.py \
 | 私聊 / IM | `--scene private`（无需 scene-id） |
 | 亲密关系申请送礼 | `--scene private --intimate-invite`（`ext.intimate_invite_gift=1`） |
 | 结挚友闭环（发起+同意） | 工作流 `intimate-buddy-form` |
-| 结CP闭环（发起+同意） | 工作流 `intimate-cp-form`（`relationshipType=1`，默认 gift `2005006943`） |
+| 结CP闭环（发起+同意） | 工作流 `intimate-cp-form`（`relationshipType=1`，默认 gift `2005004592` Neon Heart） |
 | 送礼人 / sender | `--sender` |
 | 收礼人 / receivers | `--receivers uid1,uid2` |
 | 礼物 id | `--gift-id` |
@@ -75,6 +75,30 @@ CMDB 查 instance_ip → MOA 查礼物 → MOA 查用户设备 → 组装 body �
 | `snap` | 全房间送礼时的快照信息（snapId / recvCnt / needDiamonds） |
 
 `response.ec != 0` 时读 `response.em` 排查（余额不足、礼物不存在等）。
+
+## CP 爱意值造数（私聊送礼 · Rose）
+
+**无直改 MOA**；面板礼物 **1 钻 = 1 爱意值**。
+
+| 项 | 值 |
+|---|---|
+| 默认礼物 | **Rose** · `2005000233`（Gift Tab，**1 钻**，面板名 **Rose**） |
+| 禁止 | `roses` 系列（`2005001776`/`2005001778`/`2005001774`）、`2005004730` |
+
+1. **先规划**：
+   ```bash
+   python3 Gift/scripts/plan_cp_love_gift.py --delta <爱意值增量>
+   ```
+2. **执行**（Rose 1 钻：`--num` = 爱意值增量，**1 次 HTTP**）：
+   ```bash
+   python3 Gift/gift_execute.py --scene private --sender <uid> --receivers <cpUid> \
+     --gift-id 2005000233 --num <规划num>
+   ```
+3. 段后查 `form_cp_love_chest_homepage.py` 验收。
+
+**示例（50 万增量）**：`--gift-id 2005000233 --num 500000`（1 次 HTTP）。
+
+配置：`Gift/config/cp_love_gift.json`
 
 ## 与 MOA 背包 / ADB 的分工
 

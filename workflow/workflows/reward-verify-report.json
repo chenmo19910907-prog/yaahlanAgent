@@ -1,0 +1,63 @@
+{
+  "id": "reward-verify-report",
+  "name": "奖励验收-生成测试报告",
+  "category": "奖励验收",
+  "description": "由 diff JSON（或 before/after 快照）生成 Markdown 测试报告：个人装扮/铭牌实际下发有效期、礼物背包钻价与有效期。",
+  "version": 1,
+  "params": {
+    "diffFile": {
+      "label": "差值报告 JSON",
+      "type": "string",
+      "required": false,
+      "default": ".tmp/reward_diff.json",
+      "prompt": "reward-verify-diff 输出；与 beforeFile+afterFile 二选一"
+    },
+    "beforeFile": {
+      "label": "发奖前快照",
+      "type": "string",
+      "required": false,
+      "prompt": "无 diffFile 时与 afterFile 一起使用"
+    },
+    "afterFile": {
+      "label": "发奖后快照",
+      "type": "string",
+      "required": false,
+      "prompt": "无 diffFile 时与 beforeFile 一起使用"
+    },
+    "outFile": {
+      "label": "Markdown 报告路径",
+      "type": "string",
+      "required": false,
+      "default": ".tmp/reward_verify_report.md",
+      "prompt": "测试报告输出路径"
+    },
+    "userLabel": {
+      "label": "用户标识",
+      "type": "string",
+      "required": false,
+      "default": "",
+      "prompt": "报告显示的手机号等（可选）"
+    },
+    "title": {
+      "label": "报告标题",
+      "type": "string",
+      "required": false,
+      "default": "奖励下发验收报告",
+      "prompt": "Markdown 标题"
+    }
+  },
+  "steps": [
+    {
+      "id": "report",
+      "name": "生成 Markdown 测试报告",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/reward_verify.py report --diff {{diffFile}} --before {{beforeFile}} --after {{afterFile}} --out {{outFile}} --title \"{{title}}\" --user-label {{userLabel}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

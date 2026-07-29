@@ -1,0 +1,48 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/yaahlan/user/intimate-api",
+  "method": "intimateHomePage",
+  "header": "{\"userId\":\"100486375\",\"uid\":\"100486375\",\"_uid_\":\"100486375\",\"relationshipType\":\"1\",\"intimateId\":\"100305533-100486375\",\"area\":\"MENA\",\"lang\":\"en\",\"appId\":\"2005\",\"osType\":\"ios\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100486375\",\"uid\":\"100486375\",\"_uid_\":\"100486375\",\"relationshipType\":\"1\",\"intimateId\":\"100305533-100486375\",\"area\":\"MENA\",\"lang\":\"en\",\"appId\":\"2005\",\"osType\":\"ios\"}",
+      "type": "json",
+      "value": {
+        "userId": "100486375",
+        "uid": "100486375",
+        "_uid_": "100486375",
+        "relationshipType": "1",
+        "intimateId": "100305533-100486375",
+        "area": "MENA",
+        "lang": "en",
+        "appId": "2005",
+        "osType": "ios"
+      }
+    }
+  ],
+  "_meta": {
+    "httpPath": "/yaahlan/user/intimate/intimateHomePage",
+    "captureUserId": "100486375",
+    "capturePhone": "13311111112",
+    "captureCpUserId": "100305533",
+    "captureIntimateId": "100305533-100486375",
+    "verified": true,
+    "note": "打开 CP 空间页触发；返回 data.cpMedalTab.list 为 CP 勋章列表（medalName/num/obtainTime/imageUrl/dynamicImageUrl）。MOA 实测 ec=200 userId=100486375。"
+  }
+}

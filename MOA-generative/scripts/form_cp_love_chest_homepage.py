@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 _REPO = Path(__file__).resolve().parents[2]
-_SERVICE_URL = "/service/yaahlan-trick/external/cp-love-chest-stage"
+_SERVICE_URL = "/service/yaahlan-trick/external/cp-love-chest"
 _METHOD = "getCpLoveChestHomepage"
 _TEMPLATE_BODY = _REPO / "MOA-generative/templates/example-getCpLoveChestHomepage.body.json"
 
@@ -41,7 +41,7 @@ def _summarize_love_value(business: dict[str, Any]) -> dict[str, Any]:
         "userNickName": user_info.get("nickName"),
         "cpUserId": cp_info.get("userId"),
         "cpNickName": cp_info.get("nickName"),
-        "note": "currentLoveValue 为 CP 双方共享周期爱意值，非各自独立字段",
+        "note": "currentLoveValue=宝箱15天周期爱意值；与 cp-moa addCpLoveValue 的 loveValue 不是同一字段；造数须 Stage 私聊送礼",
     }
 
 

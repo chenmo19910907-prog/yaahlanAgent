@@ -27,6 +27,22 @@ MOA_OUTER_FAIL_RE = re.compile(r"MOA 返回失败: ec=(\d+), em=(.+)")
 EXEC_FAIL_RE = re.compile(r"执行失败:\s*(.+)", re.S)
 
 DINGTALK_REPLY_MAX_CHARS = 3800
+RETRY_HINT = "请 @机器人 再发一次相同指令重试；也可发「重新执行」。"
+AGENT_RUN_ID_RE = re.compile(r"^run-[a-f0-9-]+$", re.I)
+
+
+def _has_retry_hint(text: str) -> bool:
+    return any(k in text for k in ("重新执行", "再发一次", "再试一次"))
+
+
+def _append_retry_hint(text: str) -> str:
+    if _has_retry_hint(text):
+        return text
+    return f"{text.rstrip()}\n{RETRY_HINT}"
+
+
+def _format_exec_failure(reason: str) -> str:
+    return _append_retry_hint(f"❌ 任务执行失败。原因：{reason}。")
 
 
 def _is_html_blob(text: str) -> bool:
@@ -198,7 +214,7 @@ def _format_agent_reply(raw: str) -> str:
 
     business_error = _parse_moa_business_error(text)
     if business_error and _looks_raw_dump(text):
-        return f"❌ 任务执行失败，{business_error}。"
+        return _format_exec_failure(business_error)
 
     return _truncate(naturalize_agent_reply(text))
 
@@ -248,10 +264,10 @@ def format_group_reply(
             return _moa_auth_expired_message()
         business_error = _parse_moa_business_error(text)
         if business_error:
-            return _truncate(f"❌ 任务执行失败，{business_error}。")
+            return _truncate(_format_exec_failure(business_error))
         fail = EXEC_FAIL_RE.search(text)
         if fail:
-            return _truncate(f"❌ 任务执行失败。原因：{fail.group(1).strip()[:500]}")
+            return _truncate(_format_exec_failure(fail.group(1).strip()[:500]))
 
     if preserve_markdown:
         cleaned = _preserve_markdown_clean(text)
@@ -261,7 +277,7 @@ def format_group_reply(
             return _moa_auth_expired_message()
         business_error = _parse_moa_business_error(cleaned)
         if business_error and _looks_raw_dump(cleaned):
-            return _truncate(f"❌ 任务执行失败，{business_error}。")
+            return _truncate(_format_exec_failure(business_error))
         return _truncate(cleaned)
 
     return _format_agent_reply(text)
@@ -290,7 +306,13 @@ def format_exception(exc: BaseException) -> str:
         )
     if "agent 未返回" in lower:
         return "❌ Agent 未返回结果，请发「重新执行」重试。"
+    if message.startswith("Agent 执行失败"):
+        detail = message.split(":", 1)[-1].strip() if ":" in message else ""
+        if AGENT_RUN_ID_RE.match(detail):
+            return _append_retry_hint("❌ 任务执行失败，Agent 未能正常完成本次请求。")
+        return _truncate(_format_exec_failure(message))
+
     business_error = _parse_moa_business_error(message)
     if business_error:
-        return f"❌ 任务执行失败，{business_error}。"
-    return _truncate(f"❌ 任务执行失败。原因：{message}")
+        return _format_exec_failure(business_error)
+    return _truncate(_format_exec_failure(message))

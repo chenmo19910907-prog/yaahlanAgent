@@ -28,7 +28,9 @@ from .params import (
     set_diamond_provide_params,
     set_diamond_query_params,
     set_family_exp_params,
+    set_gift_statistics_incr_params,
     set_family_decrease_exp_params,
+    set_gift_statistics_decr_params,
     set_family_member_fund_contrib_params,
     set_family_leave_params,
     set_family_kick_member_params,
@@ -52,6 +54,8 @@ from .params import (
     parse_cp_pair_keys,
     set_cp_ferris_wheel_area_params,
     set_cp_ferris_wheel_tier_params,
+    set_cp_ferris_wheel_value_add_params,
+    set_cp_love_value_add_params,
     set_query_login_status_params,
     set_room_bot_params,
     set_room_online_params,
@@ -259,6 +263,14 @@ def _cp_ferris_area_mode(args: argparse.Namespace) -> bool:
     return args.cp_ferris_area is not None
 
 
+def _cp_love_value_mode(args: argparse.Namespace) -> bool:
+    return args.cp_love_user_id is not None
+
+
+def _cp_ferris_value_mode(args: argparse.Namespace) -> bool:
+    return args.cp_ferris_user_id is not None
+
+
 def _op_cp_ferris_tier(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     pair_keys: list[str] = []
     if args.cp_pairs:
@@ -272,6 +284,40 @@ def _op_cp_ferris_tier(args: argparse.Namespace, payload: dict[str, Any]) -> Non
 
 def _op_cp_ferris_area(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     set_cp_ferris_wheel_area_params(payload, args.cp_ferris_area)
+
+
+def _op_cp_love_value_add(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if args.cp_love_remote_id is None:
+        raise ValueError("增加 CP 总恩爱值需提供 --cp-love-remote-id")
+    if args.cp_love_value is None:
+        raise ValueError("增加 CP 总恩爱值需提供 --cp-love-value")
+    set_cp_love_value_add_params(
+        payload,
+        user_id=args.cp_love_user_id,
+        remote_id=args.cp_love_remote_id,
+        value=args.cp_love_value,
+    )
+    print(
+        f"增加 CP 爱意值 userId={args.cp_love_user_id} remoteId={args.cp_love_remote_id} value={args.cp_love_value}",
+        file=sys.stderr,
+    )
+
+
+def _op_cp_ferris_wheel_value_add(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if args.cp_ferris_remote_id is None:
+        raise ValueError("增加 CP 周期爱意值需提供 --cp-ferris-remote-id")
+    if args.cp_ferris_value is None:
+        raise ValueError("增加 CP 周期爱意值需提供 --cp-ferris-value")
+    set_cp_ferris_wheel_value_add_params(
+        payload,
+        user_id=args.cp_ferris_user_id,
+        remote_id=args.cp_ferris_remote_id,
+        value=args.cp_ferris_value,
+    )
+    print(
+        f"增加 CP 摩天轮周期爱意值 userId={args.cp_ferris_user_id} remoteId={args.cp_ferris_remote_id} value={args.cp_ferris_value}",
+        file=sys.stderr,
+    )
 
 
 def _op_change_user_area(args: argparse.Namespace, payload: dict[str, Any]) -> None:
@@ -326,6 +372,70 @@ def _op_wealth_query(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     payload["method"] = "execute"
     expr = build_wealth_charm_query_expr("getWealthInfoNoAvatar", args.wealth_query_user_id)
     set_backdoor_execute_expr(payload, expr)
+
+
+def _op_wealth_incr(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    """增加财富值（gift-statistics-stage；incrUserSendGiftDiamondsNum）。"""
+    if args.wealth_incr_num is None:
+        raise ValueError("增加财富值需提供 --wealth-incr-num")
+    set_gift_statistics_incr_params(
+        payload,
+        user_id=args.wealth_incr_user_id,
+        num=args.wealth_incr_num,
+        kind="wealth",
+    )
+    print(
+        f"增加财富值 userId={args.wealth_incr_user_id} num={args.wealth_incr_num}",
+        file=sys.stderr,
+    )
+
+
+def _op_charm_incr(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    """增加魅力值（gift-statistics-stage；incrUserReceiveGiftDiamondsNum）。"""
+    if args.charm_incr_num is None:
+        raise ValueError("增加魅力值需提供 --charm-incr-num")
+    set_gift_statistics_incr_params(
+        payload,
+        user_id=args.charm_incr_user_id,
+        num=args.charm_incr_num,
+        kind="charm",
+    )
+    print(
+        f"增加魅力值 userId={args.charm_incr_user_id} num={args.charm_incr_num}",
+        file=sys.stderr,
+    )
+
+
+def _op_wealth_decr(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    """减少财富值（gift-statistics-stage；incrUserSendGiftDiamondsNum 传负 num）。"""
+    if args.wealth_decr_num is None:
+        raise ValueError("减少财富值需提供 --wealth-decr-num")
+    set_gift_statistics_decr_params(
+        payload,
+        user_id=args.wealth_decr_user_id,
+        num=args.wealth_decr_num,
+        kind="wealth",
+    )
+    print(
+        f"减少财富值 userId={args.wealth_decr_user_id} num={args.wealth_decr_num}",
+        file=sys.stderr,
+    )
+
+
+def _op_charm_decr(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    """减少魅力值（gift-statistics-stage；incrUserReceiveGiftDiamondsNum 传负 num）。"""
+    if args.charm_decr_num is None:
+        raise ValueError("减少魅力值需提供 --charm-decr-num")
+    set_gift_statistics_decr_params(
+        payload,
+        user_id=args.charm_decr_user_id,
+        num=args.charm_decr_num,
+        kind="charm",
+    )
+    print(
+        f"减少魅力值 userId={args.charm_decr_user_id} num={args.charm_decr_num}",
+        file=sys.stderr,
+    )
 
 
 def _op_user_prop_query(args: argparse.Namespace, payload: dict[str, Any]) -> None:
@@ -1090,8 +1200,14 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.activity_gift_from_user_id is not None, _op_activity_mock_gift),
     (lambda a: _cp_ferris_tier_mode(a), _op_cp_ferris_tier),
     (lambda a: _cp_ferris_area_mode(a), _op_cp_ferris_area),
+    (lambda a: _cp_ferris_value_mode(a), _op_cp_ferris_wheel_value_add),
+    (lambda a: _cp_love_value_mode(a), _op_cp_love_value_add),
     (lambda a: a.change_user_area_user_id is not None, _op_change_user_area),
     (lambda a: a.cancel_user_id is not None, _op_cancel_user),
+    (lambda a: a.charm_decr_user_id is not None, _op_charm_decr),
+    (lambda a: a.wealth_decr_user_id is not None, _op_wealth_decr),
+    (lambda a: a.charm_incr_user_id is not None, _op_charm_incr),
+    (lambda a: a.wealth_incr_user_id is not None, _op_wealth_incr),
     (lambda a: a.charm_query_user_id is not None, _op_charm_query),
     (lambda a: a.wealth_query_user_id is not None, _op_wealth_query),
     (lambda a: a.query_user_by_phone is not None, _op_query_user_by_phone),

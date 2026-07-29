@@ -71,8 +71,19 @@ def gateway_gift_rule_line() -> str:
     cfg = load_gift_defaults()
     execute = str(cfg.get("defaultExecute") or "Gift/gift_execute.py")
     keywords = " / ".join(backpack_keywords()[:4])
+    cp_love = gateway_cp_love_rule_line()
     return (
         f"**送礼默认路径**：用户说「送礼/送礼物/gift send」等且**未明确**"
         f"「{keywords}…」时，**默认**用 `{execute}` Stage HTTP（`/v2/gift/send`）。"
         "仅当用户明确要背包送礼或背包备货时，才走 MOA 背包模板。"
+        f"\n{cp_love}"
+    )
+
+
+def gateway_cp_love_rule_line() -> str:
+    return (
+        "**CP 宝箱周期爱意值造数**：无直改 MOA（`addCpLoveValue` 只改 cp-moa 总恩爱值 loveValue，不更新宝箱 currentLoveValue）。须 Stage 私聊送礼（1 钻 = 1 爱意值）。"
+        "**默认礼物：面板 Rose `2005000233`（1 钻，名称 Rose；禁止 roses/`2005001776` 及 `2005004730`）。**"
+        "先 `python3 Gift/scripts/plan_cp_love_gift.py --delta <增量>`；"
+        "**禁止**固定 `--num 10000` 小步循环；优先 1 次 HTTP，`--num` 按规划（Rose 1 钻时 num=增量）。"
     )

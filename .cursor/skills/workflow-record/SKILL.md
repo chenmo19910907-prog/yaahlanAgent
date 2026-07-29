@@ -130,4 +130,4 @@ python3 workflow/workflow_execute.py init my-workflow --name "我的流程"
 
 `intimate-buddy-form`：结挚友（Gift `--intimate-invite` 发起 → MOA `acceptIntimateInvitation` 同意 → 主页验收）。
 
-`intimate-cp-form`：结CP（同上，`relationshipType=1`，默认礼物 `2005006943`）。
+`intimate-cp-form`：结CP（同上，`relationshipType=1`，默认礼物 `2005004592` Neon Heart）。
