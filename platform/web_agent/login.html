@@ -4,17 +4,61 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>登录 · Yaahlan 智能工具 Agent</title>
+  <script src="theme.js"></script>
+  <script>WebAgentTheme.applyThemeEarly();</script>
   <style>
-    :root {
+    :root,
+    [data-theme="dark"] {
       --bg: #0b0e14;
       --panel: rgba(20, 24, 33, 0.92);
       --border: rgba(148, 163, 184, 0.18);
       --text: #f2f5fa;
       --muted: #a4adbd;
       --accent: #5b8cff;
+      --accent-hover: #4a78e8;
       --accent-soft: rgba(91, 140, 255, 0.16);
       --success: #22c55e;
       --danger: #ef4444;
+      --input-bg: rgba(255, 255, 255, 0.04);
+      --phrase-bg: rgba(255, 255, 255, 0.04);
+      --card-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+      --body-bg:
+        linear-gradient(135deg, rgba(91, 140, 255, 0.18) 0%, transparent 42%),
+        linear-gradient(225deg, rgba(66, 211, 178, 0.13) 0%, transparent 46%),
+        linear-gradient(180deg, #0b0e14 0%, #101522 46%, #090b10 100%);
+      --oauth-bg: rgba(91, 140, 255, 0.08);
+      --oauth-border: rgba(91, 140, 255, 0.22);
+      --success-bg: rgba(34, 197, 94, 0.08);
+      --success-border: rgba(34, 197, 94, 0.28);
+      --copy-hover-bg: rgba(91, 140, 255, 0.24);
+      --copied-bg: rgba(34, 197, 94, 0.12);
+      --placeholder-color: #98a2b4;
+    }
+    [data-theme="light"] {
+      --bg: #eef2f8;
+      --panel: rgba(255, 255, 255, 0.96);
+      --border: rgba(15, 23, 42, 0.12);
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #3b6ff5;
+      --accent-hover: #2f5fe0;
+      --accent-soft: rgba(59, 111, 245, 0.12);
+      --success: #16a34a;
+      --danger: #dc2626;
+      --input-bg: #f8fafc;
+      --phrase-bg: #f1f5f9;
+      --card-shadow: 0 20px 48px rgba(15, 23, 42, 0.1);
+      --body-bg:
+        linear-gradient(135deg, rgba(59, 111, 245, 0.12) 0%, transparent 44%),
+        linear-gradient(225deg, rgba(13, 148, 136, 0.1) 0%, transparent 48%),
+        linear-gradient(180deg, #eef2f8 0%, #f8fafc 52%, #e9eef5 100%);
+      --oauth-bg: rgba(59, 111, 245, 0.08);
+      --oauth-border: rgba(59, 111, 245, 0.22);
+      --success-bg: rgba(22, 163, 74, 0.08);
+      --success-border: rgba(22, 163, 74, 0.24);
+      --copy-hover-bg: rgba(59, 111, 245, 0.18);
+      --copied-bg: rgba(22, 163, 74, 0.12);
+      --placeholder-color: #94a3b8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -26,10 +70,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
         "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
       color: var(--text);
-      background:
-        linear-gradient(135deg, rgba(91, 140, 255, 0.18) 0%, transparent 42%),
-        linear-gradient(225deg, rgba(66, 211, 178, 0.13) 0%, transparent 46%),
-        linear-gradient(180deg, #0b0e14 0%, #101522 46%, #090b10 100%);
+      background: var(--body-bg);
     }
     .card {
       width: min(480px, 100%);
@@ -37,8 +78,19 @@
       border: 1px solid var(--border);
       border-radius: 18px;
       padding: 28px 28px 24px;
-      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
+      box-shadow: var(--card-shadow);
       backdrop-filter: blur(12px);
+    }
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .card-header-text {
+      flex: 1;
+      min-width: 0;
     }
     h1 {
       font-size: 1.35rem;
@@ -49,14 +101,60 @@
       color: var(--muted);
       font-size: 0.92rem;
       line-height: 1.55;
-      margin-bottom: 22px;
+      margin-bottom: 0;
+    }
+    .theme-quick-btn {
+      flex: 0 0 auto;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--phrase-bg);
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+    }
+    .theme-quick-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      flex-shrink: 0;
+    }
+    .theme-quick-btn:hover {
+      border-color: rgba(91, 140, 255, 0.55);
+      color: var(--accent);
+      background: var(--accent-soft);
+      transform: translateY(-1px);
+    }
+    .theme-quick-btn:active { transform: scale(0.98); }
+    .theme-quick-btn.is-light {
+      color: #d97706;
+      border-color: rgba(217, 119, 6, 0.28);
+      background: rgba(251, 191, 36, 0.12);
+    }
+    .theme-quick-btn.is-light:hover {
+      color: #b45309;
+      background: rgba(251, 191, 36, 0.2);
+    }
+    .theme-quick-btn.is-light .bulb-glass {
+      fill: rgba(251, 191, 36, 0.35);
+    }
+    [data-theme="light"] .theme-quick-btn {
+      background: rgba(15, 23, 42, 0.04);
+    }
+    [data-theme="light"] .theme-quick-btn.is-light {
+      background: rgba(251, 191, 36, 0.14);
     }
     .oauth-status {
       display: none;
       padding: 14px 16px;
       border-radius: 12px;
-      background: rgba(91, 140, 255, 0.08);
-      border: 1px solid rgba(91, 140, 255, 0.22);
+      background: var(--oauth-bg);
+      border: 1px solid var(--oauth-border);
       color: var(--muted);
       font-size: 0.9rem;
       line-height: 1.55;
@@ -65,8 +163,8 @@
     .oauth-status.show { display: block; }
     .oauth-status.success {
       color: var(--success);
-      border-color: rgba(34, 197, 94, 0.28);
-      background: rgba(34, 197, 94, 0.08);
+      border-color: var(--success-border);
+      background: var(--success-bg);
     }
     .divider {
       display: flex;
@@ -106,12 +204,13 @@
       min-width: 0;
       padding: 12px 14px;
       border-radius: 12px;
-      background: rgba(255, 255, 255, 0.04);
+      background: var(--phrase-bg);
       border: 1px solid var(--border);
       font-size: 0.86rem;
       line-height: 1.45;
       white-space: nowrap;
       overflow-x: auto;
+      color: var(--text);
     }
     .copy-btn {
       flex: 0 0 auto;
@@ -125,21 +224,22 @@
       cursor: pointer;
       transition: background 0.15s ease, transform 0.15s ease;
     }
-    .copy-btn:hover { background: rgba(91, 140, 255, 0.24); }
+    .copy-btn:hover { background: var(--copy-hover-bg); }
     .copy-btn:active { transform: scale(0.98); }
-    .copy-btn.copied { color: var(--success); background: rgba(34, 197, 94, 0.12); }
+    .copy-btn.copied { color: var(--success); background: var(--copied-bg); }
     .code-input {
       width: 100%;
       padding: 14px 16px;
       border-radius: 12px;
       border: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.04);
+      background: var(--input-bg);
       color: var(--text);
       font-size: 1.35rem;
       letter-spacing: 0.35em;
       text-align: center;
       outline: none;
     }
+    .code-input::placeholder { color: var(--placeholder-color); opacity: 1; }
     .code-input:focus {
       border-color: rgba(91, 140, 255, 0.55);
       box-shadow: 0 0 0 3px rgba(91, 140, 255, 0.15);
@@ -150,7 +250,7 @@
       padding: 13px 16px;
       border: none;
       border-radius: 12px;
-      background: linear-gradient(135deg, #5b8cff, #4a78e8);
+      background: linear-gradient(135deg, var(--accent), var(--accent-hover));
       color: #fff;
       font-size: 0.95rem;
       font-weight: 650;
@@ -176,15 +276,26 @@
 </head>
 <body>
   <div class="card">
-    <h1>Yaahlan 智能工具 Agent</h1>
-    <p class="subtitle" id="subtitle">网页版可通过钉钉机器人验证码登录；在钉钉内打开时将优先尝试自动登录。</p>
+    <div class="card-header">
+      <div class="card-header-text">
+        <h1>Yaahlan 智能工具 Agent</h1>
+        <p class="subtitle" id="subtitle">网页版可通过钉钉机器人验证码登录；在钉钉内打开时将优先尝试自动登录。</p>
+      </div>
+      <button type="button" class="theme-quick-btn is-dark" id="btn-theme-toggle" title="切换到白天模式" aria-label="切换白天/夜间模式">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+          <path d="M9 18h6"/>
+          <path d="M10 22h4"/>
+          <path class="bulb-glass" d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>
+        </svg>
+      </button>
+    </div>
 
     <div class="oauth-status" id="oauthStatus">正在通过钉钉验证身份…</div>
 
     <div class="divider hidden" id="otpDivider">或使用验证码登录</div>
 
     <div class="otp-section" id="otpSection">
-      <p class="step">1. 复制下方文案，发送给【智能工具人yaahlan】或【群内@智能工具人yaahlan】</p>
+      <p class="step">1. 复制下方文案，发送给【智能工具人yaahlan】或【群内@智能工具人yaahlan】，加群请联系【陈墨】</p>
       <div class="phrase-row">
         <div class="phrase-box" id="loginPhrase">请求访问Yaahlan 智能工具 Agent</div>
         <button type="button" class="copy-btn" id="copyBtn">复制</button>
@@ -213,8 +324,11 @@
     const otpSection = document.getElementById('otpSection');
     const otpDivider = document.getElementById('otpDivider');
     const subtitleEl = document.getElementById('subtitle');
-
     let oauthConfig = { enabled: false, clientId: '', corpId: '' };
+
+    function initThemeSettings() {
+      WebAgentTheme.initThemeSettings();
+    }
 
     function showOtpFallback() {
       otpSection.classList.remove('hidden');

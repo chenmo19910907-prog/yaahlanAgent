@@ -346,6 +346,11 @@ def clear_session_cookie(handler: BaseHTTPRequestHandler) -> None:
 
 
 def current_web_user(handler: BaseHTTPRequestHandler) -> WebAuthUser | None:
+    from web_auth import is_localhost_request, localhost_admin_config
+
+    if is_localhost_request(handler):
+        staff_id, display_name = localhost_admin_config()
+        return WebAuthUser(staff_id=staff_id, display_name=display_name)
     if not otp_auth_enabled():
         return None
     token = read_session_cookie(handler)

@@ -152,6 +152,7 @@ class ChatMessage:
     content: str
     timestamp: str = field(default_factory=_now_iso)
     images: list[str] = field(default_factory=list)
+    files: list[dict[str, object]] = field(default_factory=list)
 
 
 @dataclass
@@ -363,7 +364,13 @@ class WebSessionStore:
             images: list[str] = []
             if isinstance(raw_images, list):
                 images = [str(path).strip() for path in raw_images if str(path).strip()]
-            if role not in ("user", "assistant") or (not content.strip() and not images):
+            raw_files = item.get("files")
+            files: list[dict[str, object]] = []
+            if isinstance(raw_files, list):
+                for entry in raw_files:
+                    if isinstance(entry, dict) and str(entry.get("url") or "").strip():
+                        files.append(entry)
+            if role not in ("user", "assistant") or (not content.strip() and not images and not files):
                 continue
             messages.append(
                 ChatMessage(
@@ -371,6 +378,7 @@ class WebSessionStore:
                     content=content,
                     timestamp=str(item.get("timestamp") or _now_iso()),
                     images=images,
+                    files=files,
                 )
             )
         return messages
@@ -383,6 +391,7 @@ class WebSessionStore:
                 "content": m.content,
                 "timestamp": m.timestamp,
                 **({"images": m.images} if m.images else {}),
+                **({"files": m.files} if m.files else {}),
             }
             for m in messages
         ]
@@ -643,10 +652,12 @@ class WebSessionStore:
         content: str,
         *,
         images: list[str] | None = None,
+        files: list[dict[str, object]] | None = None,
     ) -> ChatMessage | None:
         text = (content or "").strip()
         image_list = [path.strip() for path in (images or []) if str(path).strip()]
-        if not text and not image_list:
+        file_list = [entry for entry in (files or []) if isinstance(entry, dict)]
+        if not text and not image_list and not file_list:
             return None
         with self._lock:
             self._reload_index_if_stale()
@@ -654,7 +665,7 @@ class WebSessionStore:
             if meta is None:
                 return None
             messages = self._load_messages(session_id)
-            msg = ChatMessage(role=role, content=text, images=image_list)
+            msg = ChatMessage(role=role, content=text, images=image_list, files=file_list)
             messages.append(msg)
             self._save_messages(session_id, messages)
             _apply_message_derived_meta(meta, messages)

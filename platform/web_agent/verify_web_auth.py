@@ -20,7 +20,9 @@ from web_auth import (  # noqa: E402
     auth_required_for_request,
     authorize_request,
     is_anonymous_allowed,
+    is_localhost_request,
 )
+from web_otp_auth import current_web_user  # noqa: E402
 
 
 class _FakeHandler:
@@ -110,6 +112,25 @@ class WebAuthTest(unittest.TestCase):
         with patch("web_auth.load_env_local", lambda: None), patch.dict(os.environ, env, clear=True):
             self.assertTrue(is_anonymous_allowed(handler, method="GET"))
             self.assertTrue(authorize_request(handler, method="GET"))
+
+    def test_localhost_bypasses_otp_auth(self) -> None:
+        env = {"WEB_AGENT_OTP_AUTH": "1"}
+        handler = _FakeHandler(client="127.0.0.1", path="/api/chat")
+        with patch("web_auth.load_env_local", lambda: None), patch.dict(os.environ, env, clear=True):
+            self.assertTrue(is_localhost_request(handler))
+            self.assertTrue(authorize_request(handler, method="POST"))
+            user = current_web_user(handler)
+            assert user is not None
+            self.assertEqual(user.staff_id, "admin")
+            self.assertEqual(user.display_name, "admin")
+
+    def test_lan_ip_still_requires_login_for_write(self) -> None:
+        env = {"WEB_AGENT_OTP_AUTH": "1"}
+        handler = _FakeHandler(client="172.18.125.90", path="/api/chat")
+        with patch("web_auth.load_env_local", lambda: None), patch.dict(os.environ, env, clear=True):
+            self.assertFalse(is_localhost_request(handler))
+            self.assertFalse(authorize_request(handler, method="POST"))
+            self.assertEqual(handler.response_code, 401)
 
     def test_tunnel_host_requires_auth(self) -> None:
         env = {

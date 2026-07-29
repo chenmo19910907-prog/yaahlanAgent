@@ -32,6 +32,8 @@ from web_otp_auth import (
 )
 
 _SESSION_MESSAGES_RE = re.compile(r"^/api/sessions/[a-z0-9]+/messages$")
+LOCALHOST_ADMIN_STAFF_ID = "admin"
+LOCALHOST_ADMIN_DISPLAY_NAME = "admin"
 
 
 def _env_bool(name: str, default: bool = False) -> bool:
@@ -47,6 +49,31 @@ def _is_private_or_local(ip: str) -> bool:
     except ValueError:
         return False
     return bool(addr.is_loopback or addr.is_private or addr.is_link_local)
+
+
+def _is_loopback_ip(ip: str) -> bool:
+    try:
+        return ipaddress.ip_address(ip).is_loopback
+    except ValueError:
+        return False
+
+
+def localhost_admin_config() -> tuple[str, str]:
+    load_env_local()
+    staff_id = os.environ.get("WEB_AGENT_LOCAL_ADMIN_STAFF_ID", LOCALHOST_ADMIN_STAFF_ID).strip()
+    if not staff_id:
+        staff_id = LOCALHOST_ADMIN_STAFF_ID
+    display = os.environ.get("WEB_AGENT_LOCAL_ADMIN_NAME", LOCALHOST_ADMIN_DISPLAY_NAME).strip()
+    if not display:
+        display = staff_id
+    return staff_id, display
+
+
+def is_localhost_request(handler: BaseHTTPRequestHandler) -> bool:
+    """本机回环地址直连（127.0.0.1 / ::1），不含隧道或内网 IP。"""
+    if _is_external_proxy_request(handler):
+        return False
+    return _is_loopback_ip(_client_ip(handler))
 
 
 def _effective_client_ip(handler: BaseHTTPRequestHandler) -> str:
@@ -187,7 +214,10 @@ def is_anonymous_allowed(handler: BaseHTTPRequestHandler, *, method: str = "GET"
     if is_public_auth_path(path):
         return True
     if verb == "GET":
-        if path in ("/", "/chat.html"):
+        if path in ("/", "/chat.html", "/login.html"):
+            return True
+        # 页面依赖的静态脚本须免鉴权，否则浏览器收到 login.html 导致 JS 变量未定义
+        if path.endswith(".js") and not path.startswith("/api/"):
             return True
         if path in ("/api/meta", "/api/catalog", "/api/sessions"):
             return True
@@ -218,6 +248,9 @@ def authorize_request(handler: BaseHTTPRequestHandler, *, method: str = "GET") -
         return False
 
     if is_public_auth_path(path):
+        return True
+
+    if is_localhost_request(handler):
         return True
 
     if is_anonymous_allowed(handler, method=method):

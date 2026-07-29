@@ -4,9 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Yaahlan 智能工具 Agent</title>
+  <script src="theme.js"></script>
+  <script>WebAgentTheme.applyThemeEarly();</script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
-    :root {
+    :root,
+    [data-theme="dark"] {
       --bg: #0b0e14;
       --bg-panel: rgba(20, 24, 33, 0.86);
       --bg-solid: #151923;
@@ -29,8 +32,136 @@
       --success: #22c55e;
       --danger: #ef4444;
       --content-width: 880px;
+      --chat-gutter: clamp(48px, 10vw, 144px);
       --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
       --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    [data-theme="light"] {
+      --bg: #eef2f8;
+      --bg-panel: rgba(255, 255, 255, 0.92);
+      --bg-solid: #ffffff;
+      --bg-soft: #f5f7fb;
+      --bg-hover: #e8edf5;
+      --bg-input: rgba(255, 255, 255, 0.96);
+      --border: rgba(15, 23, 42, 0.1);
+      --border-strong: rgba(15, 23, 42, 0.16);
+      --text: #0f172a;
+      --text-soft: #334155;
+      --muted: #64748b;
+      --muted-soft: #94a3b8;
+      --accent: #3b6ff5;
+      --accent-hover: #2f5fe0;
+      --accent-soft: rgba(59, 111, 245, 0.12);
+      --teal: #0d9488;
+      --violet: #6d28d9;
+      --user-bg: rgba(219, 234, 254, 0.92);
+      --assistant-bg: rgba(255, 255, 255, 0.94);
+      --success: #16a34a;
+      --danger: #dc2626;
+      --modal-overlay: rgba(15, 23, 42, 0.35);
+      --header-bg: rgba(255, 255, 255, 0.86);
+      --panel-bg: rgba(255, 255, 255, 0.92);
+      --catalog-bg: rgba(255, 255, 255, 0.94);
+      --input-area-bg: linear-gradient(180deg, rgba(238,242,248,0.35), rgba(255,255,255,0.96));
+      --input-wrap-bg: #ffffff;
+      --input-wrap-shadow: 0 12px 32px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255,255,255,0.9);
+      --card-bg: rgba(255, 255, 255, 0.96);
+      --card-bg-hover: #ffffff;
+      --card-border-hover: rgba(15, 23, 42, 0.12);
+      --search-bg: #f8fafc;
+      --cap-bg: rgba(15, 23, 42, 0.03);
+      --cap-bg-hover: rgba(15, 23, 42, 0.05);
+      --cap-bg-open: rgba(59, 111, 245, 0.08);
+      --session-active-bg: #DCEBFD;
+      --prompt-bg: #f8fafc;
+      --prompt-panel-bg: #f1f5f9;
+      --code-bg: #f1f5f9;
+      --code-inline-bg: #e2e8f0;
+      --code-text: #0f172a;
+      --link-color: #2563eb;
+      --nav-active-color: #1d4ed8;
+      --nav-active-bg: rgba(59, 111, 245, 0.12);
+      --nav-count-active: #1e40af;
+      --module-icon-bg: rgba(59, 111, 245, 0.12);
+      --module-icon-color: #2563eb;
+      --cap-icon-bg: rgba(13, 148, 136, 0.1);
+      --cap-icon-color: #0f766e;
+      --tag-bg: rgba(59, 111, 245, 0.1);
+      --tag-color: #2563eb;
+      --warn-bg: rgba(245, 158, 11, 0.12);
+      --warn-border: rgba(245, 158, 11, 0.28);
+      --warn-text: #b45309;
+      --session-tag-bg: rgba(245, 158, 11, 0.14);
+      --session-tag-text: #b45309;
+      --placeholder-color: #94a3b8;
+      --shadow-soft: 0 12px 28px rgba(15, 23, 42, 0.08);
+      --shadow-msg: 0 10px 28px rgba(15, 23, 42, 0.06);
+      --chip-code-color: #2563eb;
+      --playbook-num-color: #2563eb;
+      --source-test-color: #0f766e;
+      --source-online-color: #b45309;
+      --btn-subtle-bg: rgba(15, 23, 42, 0.04);
+      --input-area-border-top: rgba(15, 23, 42, 0.16);
+      --dropdown-bg: rgba(255, 255, 255, 0.98);
+      --dropdown-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+      --dropdown-logout-hover-bg: rgba(220, 38, 38, 0.08);
+      --dropdown-logout-hover-color: #dc2626;
+      --scroll-bottom-bg: rgba(255, 255, 255, 0.96);
+      --scroll-bottom-bg-hover: #ffffff;
+      --scroll-bottom-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+    }
+    [data-theme="dark"] {
+      --header-bg: rgba(13, 17, 25, 0.78);
+      --panel-bg: rgba(15, 20, 30, 0.76);
+      --catalog-bg: rgba(15, 20, 30, 0.78);
+      --input-area-bg: linear-gradient(180deg, rgba(11,14,20,0.1), rgba(11,14,20,0.76)), linear-gradient(90deg, rgba(91,140,255,0.05), rgba(66,211,178,0.035));
+      --input-wrap-bg: rgba(20, 25, 35, 0.9);
+      --input-wrap-shadow: 0 18px 48px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.04);
+      --card-bg: rgba(20,24,33,0.72);
+      --card-bg-hover: rgba(22,27,38,0.78);
+      --card-border-hover: rgba(148,163,184,0.28);
+      --search-bg: rgba(11,14,20,0.54);
+      --cap-bg: rgba(255,255,255,0.015);
+      --cap-bg-hover: rgba(255,255,255,0.04);
+      --cap-bg-open: rgba(91,140,255,0.1);
+      --session-active-bg: #1A2D4B;
+      --prompt-bg: rgba(20,24,33,0.72);
+      --prompt-panel-bg: rgba(11,14,20,0.5);
+      --code-bg: rgba(8,10,15,0.92);
+      --code-inline-bg: #0a0c10;
+      --code-text: var(--text-soft);
+      --link-color: #93c5fd;
+      --nav-active-color: #bdd0ff;
+      --nav-active-bg: rgba(91,140,255,0.18);
+      --nav-count-active: #d7e2ff;
+      --module-icon-bg: rgba(91,140,255,0.16);
+      --module-icon-color: #bdd0ff;
+      --cap-icon-bg: rgba(66,211,178,0.1);
+      --cap-icon-color: #a9f5e0;
+      --tag-bg: rgba(59,130,246,0.12);
+      --tag-color: #93c5fd;
+      --warn-bg: rgba(252, 211, 77, 0.08);
+      --warn-border: rgba(252, 211, 77, 0.2);
+      --warn-text: #fcd34d;
+      --session-tag-bg: rgba(252, 211, 77, 0.15);
+      --session-tag-text: #fcd34d;
+      --placeholder-color: #98a2b4;
+      --shadow-soft: 0 18px 42px rgba(0,0,0,0.18);
+      --shadow-msg: 0 18px 50px rgba(0,0,0,0.18);
+      --chip-code-color: #93c5fd;
+      --playbook-num-color: #93c5fd;
+      --source-test-color: #9ff0dc;
+      --source-online-color: #fcd34d;
+      --btn-subtle-bg: rgba(255,255,255,0.045);
+      --modal-overlay: rgba(0, 0, 0, 0.6);
+      --input-area-border-top: rgba(255,255,255,0.07);
+      --dropdown-bg: rgba(18, 22, 31, 0.96);
+      --dropdown-shadow: 0 16px 40px rgba(0,0,0,0.34);
+      --dropdown-logout-hover-bg: rgba(239, 68, 68, 0.12);
+      --dropdown-logout-hover-color: #fca5a5;
+      --scroll-bottom-bg: rgba(28, 33, 44, 0.94);
+      --scroll-bottom-bg-hover: rgba(36, 42, 56, 0.98);
+      --scroll-bottom-shadow: 0 12px 32px rgba(0, 0, 0, 0.34);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -72,6 +203,99 @@
         linear-gradient(180deg, rgba(255,255,255,0.035), transparent 22%),
         linear-gradient(90deg, rgba(0,0,0,0.18), transparent 18%, transparent 82%, rgba(0,0,0,0.22));
     }
+    [data-theme="light"] body {
+      background:
+        linear-gradient(135deg, rgba(59, 111, 245, 0.12) 0%, rgba(59, 111, 245, 0.03) 24%, transparent 44%),
+        linear-gradient(225deg, rgba(13, 148, 136, 0.1) 0%, rgba(13, 148, 136, 0.03) 26%, transparent 48%),
+        linear-gradient(180deg, #eef2f8 0%, #f8fafc 52%, #e9eef5 100%);
+    }
+    [data-theme="light"] body::before {
+      background:
+        linear-gradient(120deg, transparent 0 18%, rgba(109, 40, 217, 0.05) 30%, transparent 48%),
+        linear-gradient(245deg, transparent 0 26%, rgba(13, 148, 136, 0.04) 42%, transparent 62%),
+        repeating-linear-gradient(90deg, rgba(15,23,42,0.025) 0 1px, transparent 1px 88px),
+        repeating-linear-gradient(0deg, rgba(15,23,42,0.02) 0 1px, transparent 1px 88px);
+      opacity: 0.55;
+    }
+    [data-theme="light"] body::after {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.55), transparent 22%),
+        linear-gradient(90deg, rgba(255,255,255,0.35), transparent 18%, transparent 82%, rgba(15,23,42,0.04));
+    }
+    [data-theme="light"] header,
+    [data-theme="light"] .left-panel,
+    [data-theme="light"] .catalog-panel {
+      background: var(--panel-bg);
+    }
+    [data-theme="light"] .header-actions button,
+    [data-theme="light"] .header-start .header-btn,
+    [data-theme="light"] .panel-head .header-btn,
+    [data-theme="light"] .user-menu-btn {
+      background: var(--btn-subtle-bg);
+    }
+    [data-theme="light"] .message.assistant .bubble,
+    [data-theme="light"] .msg-body {
+      box-shadow: var(--shadow-msg);
+    }
+    [data-theme="light"] .input-area {
+      border-top: 1px solid var(--input-area-border-top);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+    [data-theme="light"] .msg.assistant .msg-body:hover,
+    [data-theme="light"] .msg.user .msg-body:hover {
+      box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+    }
+    [data-theme="light"] .quick-prompts button:hover {
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    }
+    [data-theme="light"] .msg-body th {
+      background: rgba(15, 23, 42, 0.04);
+    }
+    [data-theme="light"] .catalog-module ol.cats > li {
+      border-bottom-color: rgba(15, 23, 42, 0.06);
+    }
+    [data-theme="light"] .playbook-step-body {
+      border-top-color: rgba(15, 23, 42, 0.06);
+    }
+    [data-theme="light"] .playbook-step-head:hover {
+      background: rgba(15, 23, 42, 0.03);
+    }
+    [data-theme="light"] .playbook-step-sub code {
+      background: rgba(15, 23, 42, 0.06);
+    }
+    [data-theme="light"] .msg-file-link {
+      background: rgba(15, 23, 42, 0.03);
+    }
+    [data-theme="light"] .attach-btn {
+      background: var(--btn-subtle-bg);
+    }
+    [data-theme="light"] .catalog-meta {
+      background: var(--btn-subtle-bg);
+    }
+    [data-theme="light"] .catalog-nav .count {
+      background: rgba(15, 23, 42, 0.06);
+    }
+    [data-theme="light"] .catalog-nav button.active .count {
+      background: rgba(59, 111, 245, 0.18);
+    }
+    [data-theme="light"] .source-badge {
+      background: rgba(15, 23, 42, 0.04);
+    }
+    [data-theme="light"] .source-badge[data-env="online"] {
+      background: var(--warn-bg);
+      color: var(--warn-text);
+      border-color: var(--warn-border);
+    }
+    [data-theme="light"] .source-badge[data-env="test"] {
+      color: var(--source-test-color);
+      border-color: rgba(13, 148, 136, 0.22);
+    }
+    [data-theme="light"] .input-wrap:focus-within {
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.1), 0 0 0 1px rgba(59, 111, 245, 0.22), inset 0 1px 0 rgba(255,255,255,0.9);
+    }
+    [data-theme="light"] .catalog-panel {
+      box-shadow: -4px 0 24px rgba(15, 23, 42, 0.08);
+    }
     header {
       position: relative;
       z-index: 3;
@@ -81,11 +305,21 @@
       min-height: 64px;
       padding: 12px 24px;
       border-bottom: 1px solid var(--border);
-      background: rgba(13, 17, 25, 0.78);
+      background: var(--header-bg);
       backdrop-filter: blur(22px);
       flex-shrink: 0;
     }
-    .brand { display: flex; align-items: center; gap: 10px; }
+    .header-start {
+      display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 auto;
+    }
+    .header-start-tools {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      flex-shrink: 0;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .brand-icon {
       width: 28px; height: 28px; border-radius: 8px;
       background: #0a0a0a;
@@ -94,10 +328,12 @@
     }
     .brand-icon svg, .empty-logo svg { width: 100%; height: 100%; display: block; }
     .brand h1 { font-size: 1rem; font-weight: 650; color: var(--text); }
-    .header-actions { display: flex; gap: 10px; margin-left: auto; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
-    .header-actions button {
+    .header-actions { display: flex; gap: 10px; margin-left: auto; align-items: center; flex-wrap: wrap; justify-content: flex-end; flex-shrink: 0; }
+    .header-actions button,
+    .header-start .header-btn,
+    .panel-head .header-btn {
       min-height: 36px;
-      background: rgba(255,255,255,0.045); border: 1px solid var(--border); color: var(--text-soft);
+      background: var(--btn-subtle-bg); border: 1px solid var(--border); color: var(--text-soft);
       padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 0.82rem;
       display: inline-flex; align-items: center; gap: 7px;
       transform: translateY(0);
@@ -106,20 +342,33 @@
         border-color 180ms var(--ease-standard),
         color 180ms var(--ease-standard),
         background 180ms var(--ease-standard),
-        box-shadow 180ms var(--ease-standard);
+        box-shadow 180ms var(--ease-standard),
+        max-width 300ms var(--ease-spring),
+        opacity 260ms var(--ease-spring),
+        padding 300ms var(--ease-spring);
     }
-    .header-actions button svg {
+    .header-actions button svg,
+    .header-start .header-btn svg,
+    .panel-head .header-btn svg {
       width: 15px; height: 15px; stroke: currentColor; flex-shrink: 0;
       transition: transform 180ms var(--ease-standard);
     }
-    .header-actions button:hover:not(:disabled) {
+    .header-actions button:hover:not(:disabled),
+    .header-start .header-btn:hover:not(:disabled),
+    .panel-head .header-btn:hover:not(:disabled) {
       border-color: rgba(91,140,255,0.55); color: var(--text); background: rgba(91,140,255,0.1);
       transform: translateY(-1px);
       box-shadow: 0 10px 24px rgba(0,0,0,0.16);
     }
-    .header-actions button:hover:not(:disabled) svg { transform: translateY(-1px); }
-    .header-actions button:active:not(:disabled) { transform: translateY(0) scale(0.98); }
-    .header-actions button:disabled {
+    .header-actions button:hover:not(:disabled) svg,
+    .header-start .header-btn:hover:not(:disabled) svg,
+    .panel-head .header-btn:hover:not(:disabled) svg { transform: translateY(-1px); }
+    .header-actions button:active:not(:disabled),
+    .header-start .header-btn:active:not(:disabled),
+    .panel-head .header-btn:active:not(:disabled) { transform: translateY(0) scale(0.98); }
+    .header-actions button:disabled,
+    .header-start .header-btn:disabled,
+    .panel-head .header-btn:disabled {
       opacity: 0.38; cursor: not-allowed;
       border-color: var(--border); color: var(--muted);
       background: transparent;
@@ -150,7 +399,7 @@
     .user-menu-btn {
       min-height: 36px;
       max-width: 168px;
-      background: rgba(255,255,255,0.045);
+      background: var(--btn-subtle-bg);
       border: 1px solid var(--border);
       color: var(--text-soft);
       padding: 8px 12px;
@@ -216,12 +465,15 @@
       padding: 6px;
       border-radius: 12px;
       border: 1px solid var(--border-strong);
-      background: rgba(18, 22, 31, 0.96);
+      background: var(--dropdown-bg);
       backdrop-filter: blur(18px);
-      box-shadow: 0 16px 40px rgba(0,0,0,0.34);
+      box-shadow: var(--dropdown-shadow);
       z-index: 20;
     }
     .user-menu-dropdown[hidden] { display: none; }
+    .user-menu-dropdown { transform-origin: top right; }
+    .user-menu-dropdown.dropdown-opening { animation: dropdown-pop-in 200ms var(--ease-spring) both; }
+    .user-menu-dropdown.dropdown-closing { animation: dropdown-pop-out 160ms var(--ease-standard) both; }
     .user-menu-dropdown button {
       width: 100%;
       min-height: 36px;
@@ -239,8 +491,8 @@
       transition: background 160ms var(--ease-standard), color 160ms var(--ease-standard);
     }
     .user-menu-dropdown button:hover {
-      background: rgba(239, 68, 68, 0.12);
-      color: #fca5a5;
+      background: var(--dropdown-logout-hover-bg);
+      color: var(--dropdown-logout-hover-color);
     }
     .user-menu-dropdown button svg {
       width: 15px;
@@ -252,46 +504,177 @@
       position: relative;
       z-index: 1;
       display: grid;
-      grid-template-columns: var(--sidebar-width, 240px) minmax(0, 1fr);
+      grid-template-columns: var(--sidebar-width, 240px) minmax(0, 1fr) 0px;
       flex: 1;
       min-height: 0;
       min-width: 0;
+      transition: grid-template-columns 300ms var(--ease-spring);
     }
     .main.catalog-open {
       grid-template-columns: var(--sidebar-width, 240px) minmax(0, 1fr) var(--catalog-width, 380px);
     }
-    .main.sidebar-collapsed { grid-template-columns: 1fr; }
+    .main.sidebar-collapsed { grid-template-columns: 0px minmax(0, 1fr) 0px; }
     .main.sidebar-collapsed.catalog-open {
-      grid-template-columns: minmax(0, 1fr) var(--catalog-width, 380px);
+      grid-template-columns: 0px minmax(0, 1fr) var(--catalog-width, 380px);
     }
-    .main.sidebar-collapsed .left-panel { display: none; }
+    #btn-new-header {
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      padding-left: 0;
+      padding-right: 0;
+      border-color: transparent;
+      transform: translateX(-12px);
+      pointer-events: none;
+      gap: 0;
+      transition: none;
+    }
+    body.layout-ready #btn-new-header {
+      transition:
+        max-width 300ms var(--ease-spring),
+        opacity 260ms var(--ease-spring),
+        transform 300ms var(--ease-spring),
+        padding 300ms var(--ease-spring),
+        border-color 220ms var(--ease-standard),
+        background 180ms var(--ease-standard),
+        color 180ms var(--ease-standard),
+        box-shadow 180ms var(--ease-standard),
+        gap 300ms var(--ease-spring);
+    }
+    body.sidebar-collapsed #btn-new-header,
+    body.header-new-visible #btn-new-header {
+      max-width: 148px;
+      opacity: 1;
+      padding-left: 12px;
+      padding-right: 12px;
+      border-color: var(--border);
+      transform: translateX(0);
+      pointer-events: auto;
+      gap: 7px;
+    }
+    @keyframes header-btn-active-in-left {
+      from { opacity: 0.7; transform: translateX(-10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes header-btn-active-in-right {
+      from { opacity: 0.7; transform: translateX(10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
     body.is-resizing { cursor: col-resize !important; user-select: none !important; }
     body.is-resizing * { cursor: col-resize !important; }
     @media (max-width: 960px) {
-      .main.catalog-open { grid-template-columns: var(--sidebar-width, 200px) 1fr; }
+      .main.catalog-open { grid-template-columns: var(--sidebar-width, 200px) minmax(0, 1fr) 0px; }
       .catalog-panel {
         position: fixed; top: 49px; right: 0; bottom: 0;
         width: var(--catalog-width, min(94vw, 400px));
         z-index: 50; box-shadow: -8px 0 32px rgba(0,0,0,0.5);
+        transform: translateX(100%);
+        transition: transform 300ms var(--ease-spring), opacity 240ms var(--ease-spring), visibility 0s linear 300ms;
       }
+      .catalog-panel.open {
+        transform: translateX(0);
+        transition: transform 300ms var(--ease-spring), opacity 240ms var(--ease-spring), visibility 0s linear 0s;
+      }
+      .catalog-panel.open.panel-opening { animation: none; }
     }
     @media (max-width: 640px) {
       .main { grid-template-columns: 1fr; }
       .main.catalog-open { grid-template-columns: 1fr; }
       .left-panel { display: none; }
+      .main.sidebar-collapsed { grid-template-columns: 1fr; }
+      body.header-new-visible #btn-new-header,
+      #btn-new-header {
+        max-width: 148px;
+        opacity: 1;
+        padding-left: 12px;
+        padding-right: 12px;
+        border-color: var(--border);
+        transform: translateX(0);
+        pointer-events: auto;
+        gap: 7px;
+      }
+      #btn-new-header { display: inline-flex; }
+      .sidebar-collapse-btn { display: none; }
+      #btn-sidebar { display: inline-flex; }
     }
     .left-panel {
       position: relative;
       border-right: 1px solid var(--border);
-      background: rgba(15, 20, 30, 0.76);
+      background: var(--panel-bg);
       backdrop-filter: blur(24px);
       display: flex;
       flex-direction: column;
       min-height: 0;
+      min-width: 0;
+      overflow: hidden;
+    }
+    body.sidebar-collapsed .left-panel {
+      visibility: hidden;
+      pointer-events: none;
+      border-right-color: transparent;
+    }
+    .left-panel.panel-opening {
+      animation: panel-slide-in-left 300ms var(--ease-spring) both;
+    }
+    .left-panel.panel-closing {
+      animation: panel-slide-out-left 260ms var(--ease-standard) both;
+    }
+    @keyframes panel-slide-in-left {
+      from { opacity: 0; transform: translateX(-16px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    body.sidebar-collapsed .sidebar-resizer {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .sidebar-collapse-btn {
+      position: absolute;
+      top: 50%;
+      left: calc(var(--sidebar-width, 240px) - 11px);
+      transform: translateY(-50%);
+      z-index: 12;
+      width: 22px;
+      height: 44px;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel-bg);
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(12px);
+      transition:
+        left 300ms var(--ease-spring),
+        color 180ms var(--ease-standard),
+        background 180ms var(--ease-standard),
+        border-color 180ms var(--ease-standard),
+        opacity 200ms var(--ease-standard),
+        visibility 200ms var(--ease-standard);
+    }
+    .sidebar-collapse-btn svg {
+      width: 14px;
+      height: 14px;
+      pointer-events: none;
+    }
+    .sidebar-collapse-btn:hover {
+      color: var(--text);
+      background: var(--bg-hover);
+      border-color: var(--border-strong);
+    }
+    body.sidebar-collapsed .sidebar-collapse-btn {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
     }
     .sidebar-resizer {
       position: absolute; right: -3px; top: 0; bottom: 0; width: 6px;
       cursor: col-resize; z-index: 2; touch-action: none;
+      transition: opacity 200ms var(--ease-standard);
     }
     .sidebar-resizer::after {
       content: ''; position: absolute; right: 2px; top: 0; bottom: 0; width: 2px;
@@ -304,101 +687,179 @@
     .panel-head {
       min-height: 62px;
       padding: 16px 14px; border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
       font-size: 0.85rem; color: var(--muted);
     }
-    .panel-head button:not(.panel-head-close) {
+    .panel-head button:not(.btn-close):not(.header-btn) {
       background: var(--accent); border: none; color: #fff;
       padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.78rem;
+      display: inline-flex; align-items: center; gap: 5px;
       transition: transform 180ms var(--ease-standard), background 180ms var(--ease-standard), box-shadow 180ms var(--ease-standard);
     }
-    .panel-head button:not(.panel-head-close):hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(91,140,255,0.2); }
-    .panel-head button:not(.panel-head-close):active { transform: scale(0.98); }
+    .panel-head button:not(.btn-close):not(.header-btn):hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(91,140,255,0.2); }
+    .panel-head button:not(.btn-close):not(.header-btn):active { transform: scale(0.98); }
     .panel-head-title {
-      display: flex; align-items: center; gap: 8px; min-width: 0;
+      display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;
     }
-    .panel-head-title > span { color: var(--text-soft); font-size: 0.86rem; font-weight: 600; }
+    .panel-head-title .head-main {
+      flex: 1; min-width: 0;
+      display: flex; align-items: center;
+    }
+    .panel-head-title h2 {
+      font-size: 0.94rem; font-weight: 650; margin: 0; color: var(--text);
+      line-height: 28px;
+    }
+    .panel-head-actions {
+      display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+    }
+    .btn-close {
+      background: transparent; border: none; color: var(--muted);
+      cursor: pointer; font-size: 1.15rem; line-height: 1;
+      padding: 4px 8px; border-radius: 6px; flex-shrink: 0;
+      transition: transform 180ms var(--ease-standard), color 180ms var(--ease-standard), background 180ms var(--ease-standard);
+    }
+    .btn-close:hover {
+      color: var(--text); background: var(--bg-hover); transform: rotate(90deg);
+    }
+    .session-filter {
+      flex-shrink: 0;
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px 0;
+    }
+    .session-filter-select {
+      flex: 1; min-width: 0;
+      appearance: none;
+      background: rgba(255,255,255,0.04) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b93a7' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-soft);
+      font-size: 0.76rem;
+      padding: 7px 28px 7px 10px;
+      cursor: pointer;
+      transition: border-color 180ms var(--ease-standard), background 180ms var(--ease-standard);
+    }
+    .session-filter-select:hover,
+    .session-filter-select:focus {
+      border-color: rgba(59,130,246,0.45);
+      outline: none;
+      background-color: rgba(255,255,255,0.06);
+    }
+    .session-filter-empty {
+      padding: 24px 12px;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
     .session-list { overflow-y: auto; flex: 1; padding: 10px 10px 18px; }
     .session-item {
       position: relative;
-      padding: 12px 12px; cursor: pointer; border: 1px solid transparent;
-      border-radius: 12px; margin-bottom: 10px;
+      padding: 10px 11px; cursor: pointer;
+      border: none;
+      border-radius: 10px; margin-bottom: 8px;
+      background: var(--cap-bg);
       transform: translateX(0);
       transition:
         transform 180ms var(--ease-standard),
-        background 180ms var(--ease-standard),
-        border-color 180ms var(--ease-standard),
-        box-shadow 180ms var(--ease-standard);
-    }
-    .session-item::before {
-      content: '';
-      position: absolute; left: 8px; top: 12px; bottom: 12px; width: 2px;
-      border-radius: 999px; background: var(--accent);
-      opacity: 0; transform: scaleY(0.4);
-      transition: opacity 180ms var(--ease-standard), transform 220ms var(--ease-spring);
+        background 180ms var(--ease-standard);
     }
     .session-item:hover {
-      background: var(--bg-hover);
+      background: var(--cap-bg-hover);
       transform: translateX(2px);
-      box-shadow: 0 14px 30px rgba(0,0,0,0.16);
     }
     .session-item.active {
-      background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.28);
-      box-shadow: inset 0 0 0 1px rgba(91,140,255,0.08);
+      background: var(--session-active-bg);
     }
-    .session-item.active::before { opacity: 1; transform: scaleY(1); }
-    .panel-head-close {
-      flex-shrink: 0;
-      width: 16px; height: 16px; padding: 0; margin: 0;
-      border: none; border-radius: 0;
-      background: transparent; color: #8b93a7;
-      cursor: pointer; display: inline-flex;
-      align-items: center; justify-content: center;
-    }
-    .panel-head-close svg {
-      width: 12px; height: 12px; stroke: currentColor;
-      stroke-width: 1.6; stroke-linecap: round;
-    }
-    .panel-head-close:hover { color: #c4cad6; }
-    .panel-head-close svg { transition: transform 180ms var(--ease-standard); }
-    .panel-head-close:hover svg { transform: rotate(90deg); }
     .session-title {
-      font-size: 0.86rem; color: var(--text-soft); font-weight: 600;
+      font-size: 0.86rem; color: var(--muted); font-weight: 500;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .session-meta { font-size: 0.72rem; color: var(--muted); margin-top: 6px; }
-    .session-preview {
-      font-size: 0.76rem; color: var(--muted); margin-top: 6px; line-height: 1.45;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
+    .session-item.active .session-title { color: var(--text-soft); }
+    .session-meta { font-size: 0.72rem; color: var(--muted-soft); margin-top: 6px; }
+    .session-item.active .session-meta { color: var(--muted); }
     .session-source {
       display: inline-block; font-size: 0.68rem; padding: 1px 6px; border-radius: 4px;
-      background: rgba(252, 211, 77, 0.15); color: #fcd34d; vertical-align: middle; margin-right: 4px;
+      background: var(--session-tag-bg); color: var(--session-tag-text); vertical-align: middle; margin-right: 4px;
+      opacity: 0.82;
     }
     .session-owner { color: inherit; }
     .dingtalk-owner-bar {
       flex-shrink: 0;
       padding: 8px 24px;
       font-size: 0.8rem;
-      color: #fcd34d;
-      background: rgba(252, 211, 77, 0.08);
-      border-bottom: 1px solid rgba(252, 211, 77, 0.2);
+      color: var(--warn-text);
+      background: var(--warn-bg);
+      border-bottom: 1px solid var(--warn-border);
     }
     .dingtalk-owner-bar[hidden] { display: none; }
-    .readonly-hint { color: #fcd34d !important; }
-    .input-wrap.readonly { border-color: rgba(252, 211, 77, 0.35); }
-    textarea.readonly-input::placeholder { color: #fcd34d; opacity: 1; }
+    .readonly-hint { color: var(--warn-text) !important; }
+    .input-wrap.readonly { border-color: var(--warn-border); }
+    textarea.readonly-input::placeholder { color: var(--warn-text); opacity: 1; }
     textarea.readonly-input { cursor: not-allowed; color: var(--muted); }
     .chat-area {
       position: relative;
       display: flex; flex-direction: column; min-height: 0; min-width: 0;
       background: transparent;
     }
+    .messages-shell {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
     .messages {
       flex: 1; overflow-y: auto;
-      display: flex; flex-direction: column; align-items: center;
-      padding: 50px clamp(24px, 6vw, 96px) 38px;
+      display: flex; flex-direction: column; align-items: stretch;
+      padding: 50px var(--chat-gutter) 56px;
       min-width: 0;
+      scroll-padding-bottom: 24px;
+    }
+    .scroll-to-bottom-btn {
+      position: absolute;
+      left: 50%;
+      bottom: 14px;
+      z-index: 4;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--scroll-bottom-bg);
+      color: var(--text);
+      box-shadow: var(--scroll-bottom-shadow);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transform: translateX(-50%) translateY(8px) scale(0.92);
+      opacity: 0;
+      pointer-events: none;
+      transition:
+        opacity 180ms var(--ease-standard),
+        transform 180ms var(--ease-spring),
+        background 180ms var(--ease-standard),
+        border-color 180ms var(--ease-standard);
+    }
+    .scroll-to-bottom-btn.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0) scale(1);
+    }
+    .scroll-to-bottom-btn:hover {
+      background: var(--scroll-bottom-bg-hover);
+      border-color: var(--border-strong);
+    }
+    .scroll-to-bottom-btn:active {
+      transform: translateX(-50%) translateY(0) scale(0.96);
+    }
+    .scroll-to-bottom-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
     .empty-state {
       display: flex; flex-direction: column; align-items: center;
@@ -413,6 +874,53 @@
     }
     .empty-state h2 { color: var(--text); font-size: 1.3rem; }
     .empty-state p { font-size: 0.9rem; max-width: 420px; }
+    .messages.messages-exit {
+      animation: messages-fade-out 220ms var(--ease-standard) both;
+      pointer-events: none;
+    }
+    .empty-state.empty-state-enter {
+      animation: empty-state-rise 520ms var(--ease-spring) both;
+    }
+    .empty-state-enter .empty-logo {
+      animation: empty-logo-pop 560ms var(--ease-spring) both;
+      animation-delay: 70ms;
+    }
+    .empty-state-enter h2 {
+      animation: empty-part-rise 440ms var(--ease-spring) both;
+      animation-delay: 130ms;
+    }
+    .empty-state-enter p {
+      animation: empty-part-rise 440ms var(--ease-spring) both;
+      animation-delay: 190ms;
+    }
+    .empty-state-enter .quick-prompts button {
+      animation: empty-prompt-rise 400ms var(--ease-spring) both;
+    }
+    @keyframes messages-fade-out {
+      from { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+      to { opacity: 0; transform: translateY(-14px) scale(0.985); filter: blur(3px); }
+    }
+    @keyframes empty-state-rise {
+      from { opacity: 0; transform: translateY(28px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes empty-logo-pop {
+      from { opacity: 0; transform: scale(0.55) rotate(-10deg); }
+      62% { opacity: 1; transform: scale(1.06) rotate(2deg); }
+      to { opacity: 1; transform: scale(1) rotate(0); }
+    }
+    @keyframes empty-part-rise {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes empty-prompt-rise {
+      from { opacity: 0; transform: translateY(12px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .header-btn.is-creating-session {
+      opacity: 0.55;
+      pointer-events: none;
+    }
     .quick-prompts {
       display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
       max-width: 640px; width: 100%; margin-top: 8px;
@@ -435,9 +943,14 @@
       margin-bottom: 32px;
       min-width: 0;
       animation: message-rise 360ms var(--ease-spring) both;
+      scroll-margin-bottom: 20px;
     }
-    .msg.user { align-self: flex-end; max-width: min(78%, var(--content-width)); min-width: 0; }
-    .msg.assistant { align-self: center; }
+    .msg.user { align-self: flex-end; max-width: min(62.4%, var(--content-width)); min-width: 0; }
+    .msg.assistant {
+      align-self: flex-start;
+      width: min(100%, calc(var(--content-width) * 1.2));
+      max-width: min(100%, calc(var(--content-width) * 1.2));
+    }
     .msg-label-row {
       display: flex; align-items: baseline; gap: 8px;
       margin-bottom: 8px;
@@ -453,7 +966,7 @@
     .msg-body {
       padding: 20px 24px; border-radius: 14px; font-size: 0.95rem; line-height: 1.76;
       color: var(--text-soft);
-      box-shadow: 0 18px 50px rgba(0,0,0,0.18);
+      box-shadow: var(--shadow-msg);
       transform: translateY(0);
       transition: transform 220ms var(--ease-standard), border-color 220ms var(--ease-standard), box-shadow 220ms var(--ease-standard), background 220ms var(--ease-standard);
       min-width: 0;
@@ -477,13 +990,14 @@
       backdrop-filter: blur(18px);
     }
     .msg-body pre {
-      background: rgba(8,10,15,0.92); padding: 12px; border-radius: 10px; overflow-x: auto;
-      font-size: 0.82rem; margin: 10px 0; border: 1px solid rgba(148,163,184,0.12);
+      background: var(--code-bg); padding: 12px; border-radius: 10px; overflow-x: auto;
+      font-size: 0.82rem; margin: 10px 0; border: 1px solid var(--border);
       white-space: pre-wrap;
       overflow-wrap: anywhere;
       word-break: break-word;
+      color: var(--code-text);
     }
-    .msg-body code { background: #0a0c10; padding: 2px 5px; border-radius: 4px; font-size: 0.85em; overflow-wrap: anywhere; word-break: break-word; }
+    .msg-body code { background: var(--code-inline-bg); color: var(--code-text); padding: 2px 5px; border-radius: 4px; font-size: 0.85em; overflow-wrap: anywhere; word-break: break-word; }
     .msg-body pre code { background: none; padding: 0; }
     .msg-body table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 0.85rem; }
     .msg-body th, .msg-body td { border: 1px solid var(--border); padding: 6px 10px; }
@@ -538,7 +1052,7 @@
       border-top: 1px solid var(--border);
       margin: 1em 0;
     }
-    .msg-body .markdown-body a { color: #93c5fd; text-decoration: none; }
+    .msg-body .markdown-body a { color: var(--link-color); text-decoration: none; }
     .msg-body .markdown-body a:hover { text-decoration: underline; }
     .typing { color: var(--muted); font-style: italic; font-size: 0.85rem; padding: 8px 0; }
     .run-status {
@@ -549,23 +1063,120 @@
     }
     .run-status:empty { display: none; }
     .run-status-line { line-height: 1.45; }
-    .run-status-ack { color: #93c5fd; }
-    .run-status-batch { color: #fcd34d; }
+    .run-status-ack { color: var(--link-color); }
+    .run-status-batch { color: var(--warn-text); }
     .run-status-elapsed { color: var(--muted); font-style: italic; }
+    body.agent-waiting:not(.is-resizing) .chat-area.agent-waiting-hover {
+      cursor: none;
+    }
+    body.agent-waiting:not(.is-resizing) .chat-area.agent-waiting-hover input,
+    body.agent-waiting:not(.is-resizing) .chat-area.agent-waiting-hover textarea,
+    body.agent-waiting:not(.is-resizing) .chat-area.agent-waiting-hover select {
+      cursor: text;
+    }
+    body.agent-waiting:not(.is-resizing) .chat-area.agent-waiting-hover button:not(:disabled),
+    body.agent-waiting:not(.is-resizing) .chat-area.agent-waiting-hover a,
+    body.agent-waiting:not(.is-resizing) .chat-area.agent-waiting-hover [role="button"] {
+      cursor: pointer;
+    }
+    body.agent-waiting:not(.is-resizing) .chat-area.agent-waiting-hover *:not(input):not(textarea):not(select):not(button):not(a):not([role="button"]) {
+      cursor: none;
+    }
+    .agent-waiting-cursor {
+      position: fixed; left: 0; top: 0; z-index: 99999;
+      width: 12px; height: 12px; margin: -6px 0 0 -6px;
+      pointer-events: none; opacity: 0;
+      transition: opacity 140ms var(--ease-standard);
+      will-change: transform;
+    }
+    .agent-waiting-cursor.is-visible { opacity: 1; }
+    body.is-resizing .agent-waiting-cursor { opacity: 0 !important; }
+    .agent-waiting-cursor-core {
+      position: absolute; inset: 0; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 10px rgba(91, 140, 255, 0.55);
+      animation: agent-heartbeat-core 1.15s ease-in-out infinite;
+    }
+    .agent-waiting-cursor-ring {
+      position: absolute; inset: -5px; border-radius: 50%;
+      border: 2px solid var(--accent); opacity: 0.42;
+      animation: agent-heartbeat-ring 1.15s ease-in-out infinite;
+    }
+    @keyframes agent-heartbeat-core {
+      0%, 100% { transform: scale(1); opacity: 0.92; }
+      12% { transform: scale(1.38); opacity: 1; }
+      24% { transform: scale(1); opacity: 0.92; }
+      36% { transform: scale(1.24); opacity: 1; }
+      48% { transform: scale(1); opacity: 0.92; }
+      60%, 100% { transform: scale(1); opacity: 0.92; }
+    }
+    @keyframes agent-heartbeat-ring {
+      0%, 100% { transform: scale(1); opacity: 0.42; }
+      12% { transform: scale(1.75); opacity: 0.08; }
+      24% { transform: scale(1); opacity: 0.42; }
+      36% { transform: scale(1.5); opacity: 0.12; }
+      48% { transform: scale(1); opacity: 0.42; }
+      60%, 100% { transform: scale(1); opacity: 0.42; }
+    }
+    .agent-waiting-cursor-burst {
+      position: absolute; inset: -7px; border-radius: 50%;
+      border: 2px solid var(--accent); opacity: 0;
+      pointer-events: none;
+    }
+    .agent-waiting-cursor-burst-2 { inset: -4px; border-width: 1.5px; }
+    .agent-waiting-cursor.is-burst .agent-waiting-cursor-core {
+      animation: agent-cursor-burst-core 620ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .agent-waiting-cursor.is-burst .agent-waiting-cursor-ring {
+      animation: agent-cursor-burst-ring 620ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .agent-waiting-cursor.is-burst .agent-waiting-cursor-burst {
+      animation: agent-cursor-burst-wave 620ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .agent-waiting-cursor.is-burst .agent-waiting-cursor-burst-2 {
+      animation: agent-cursor-burst-wave-2 620ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    @keyframes agent-cursor-burst-core {
+      0% { transform: scale(1); opacity: 1; box-shadow: 0 0 10px rgba(91, 140, 255, 0.55); }
+      35% { transform: scale(1.55); opacity: 1; box-shadow: 0 0 18px rgba(91, 140, 255, 0.85); }
+      100% { transform: scale(2.6); opacity: 0; box-shadow: 0 0 28px rgba(91, 140, 255, 0); }
+    }
+    @keyframes agent-cursor-burst-ring {
+      0% { transform: scale(1); opacity: 0.45; }
+      100% { transform: scale(4.2); opacity: 0; }
+    }
+    @keyframes agent-cursor-burst-wave {
+      0% { transform: scale(0.6); opacity: 0.72; }
+      100% { transform: scale(5.5); opacity: 0; }
+    }
+    @keyframes agent-cursor-burst-wave-2 {
+      0% { transform: scale(0.85); opacity: 0.5; }
+      100% { transform: scale(3.8); opacity: 0; }
+    }
     .input-area {
-      padding: 20px clamp(24px, 6vw, 96px) 26px; border-top: 1px solid rgba(255,255,255,0.07);
-      background:
-        linear-gradient(180deg, rgba(11,14,20,0.1), rgba(11,14,20,0.76)),
-        linear-gradient(90deg, rgba(91,140,255,0.05), rgba(66,211,178,0.035));
+      padding: 20px var(--chat-gutter) 26px; border-top: 1px solid var(--input-area-border-top, rgba(255,255,255,0.07));
+      background: var(--input-area-bg);
       backdrop-filter: blur(18px);
+      overflow: visible;
+    }
+    .input-stack {
+      max-width: var(--content-width);
+      margin: 0 auto;
+      width: 100%;
+      overflow: visible;
+    }
+    .input-composer {
+      position: relative;
+      width: 100%;
+      margin-right: -56px;
     }
     .input-wrap {
       display: flex; gap: 14px; align-items: center;
+      width: 100%;
       min-height: 72px;
-      background: rgba(20, 25, 35, 0.9); border: 1px solid var(--border);
+      background: var(--input-wrap-bg); border: 1px solid var(--border);
       border-radius: 18px; padding: 12px 16px 12px 24px;
-      max-width: var(--content-width); margin: 0 auto;
-      box-shadow: 0 18px 48px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.04);
+      box-shadow: var(--input-wrap-shadow);
       transform: translateY(0);
       transition: transform 220ms var(--ease-standard), border-color 220ms var(--ease-standard), box-shadow 220ms var(--ease-standard), background 220ms var(--ease-standard);
     }
@@ -585,11 +1196,23 @@
       margin-bottom: 8px;
     }
     .pending-images:empty { display: none; }
-    .pending-image {
-      position: relative; width: 72px; height: 72px;
+    .pending-image, .pending-file {
+      position: relative;
       border-radius: 10px; overflow: hidden;
-      border: 1px solid var(--border); background: #0a0c10;
+      border: 1px solid var(--border); background: var(--code-inline-bg);
       animation: image-pop 220ms var(--ease-spring) both;
+    }
+    .pending-image {
+      width: 72px; height: 72px;
+    }
+    .pending-file {
+      display: flex; align-items: center; gap: 8px;
+      max-width: 240px; padding: 8px 28px 8px 10px;
+      font-size: 0.82rem; color: var(--muted);
+    }
+    .pending-file .file-name {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      color: var(--text);
     }
     @keyframes image-pop {
       from { opacity: 0; transform: scale(0.96); }
@@ -598,7 +1221,7 @@
     .pending-image img {
       width: 100%; height: 100%; object-fit: cover; display: block;
     }
-    .pending-image button {
+    .pending-image button, .pending-file button {
       position: absolute; top: 4px; right: 4px;
       width: 20px; height: 20px; border: none; border-radius: 999px;
       background: rgba(0,0,0,0.65); color: #fff; cursor: pointer;
@@ -611,13 +1234,87 @@
       max-width: 220px; max-height: 180px; border-radius: 10px;
       border: 1px solid var(--border); object-fit: cover; cursor: zoom-in;
     }
+    .msg-files {
+      display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;
+    }
+    .msg-file-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border-radius: 10px;
+      border: 1px solid var(--border); background: rgba(255,255,255,0.03);
+      color: var(--accent); text-decoration: none; font-size: 0.88rem;
+      max-width: 100%;
+    }
+    .msg-file-link:hover { background: rgba(91,140,255,0.08); }
+    .msg-file-link span {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .attach-btn {
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      color: var(--muted); width: 44px; height: 44px; border-radius: 12px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: center;
+      transition: background 180ms var(--ease-standard), color 180ms var(--ease-standard);
+    }
+    .attach-btn:hover:not(:disabled) { background: rgba(91,140,255,0.12); color: var(--accent); }
+    .attach-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .theme-quick-btn {
+      position: absolute;
+      left: 100%;
+      top: calc(50% - 22px);
+      margin-left: 12px;
+      flex: 0 0 auto;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--phrase-bg, rgba(255,255,255,0.04));
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+    }
+    .theme-quick-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      flex-shrink: 0;
+    }
+    .theme-quick-btn:hover {
+      border-color: rgba(91, 140, 255, 0.55);
+      color: var(--accent);
+      background: var(--accent-soft);
+      transform: translateY(-1px);
+    }
+    .theme-quick-btn:active { transform: scale(0.98); }
+    .theme-quick-btn.is-light {
+      color: #d97706;
+      border-color: rgba(217, 119, 6, 0.28);
+      background: rgba(251, 191, 36, 0.12);
+    }
+    .theme-quick-btn.is-light:hover {
+      color: #b45309;
+      background: rgba(251, 191, 36, 0.2);
+    }
+    .theme-quick-btn.is-light .bulb-glass {
+      fill: rgba(251, 191, 36, 0.35);
+    }
+    [data-theme="light"] .theme-quick-btn {
+      background: rgba(15, 23, 42, 0.04);
+    }
+    [data-theme="light"] .theme-quick-btn.is-light {
+      background: rgba(251, 191, 36, 0.14);
+    }
     textarea {
       flex: 1; background: transparent; border: none; color: var(--text);
       font-size: 0.96rem; resize: none; outline: none; min-height: 40px; max-height: 160px;
       font-family: inherit; line-height: 40px; padding: 0;
       display: block;
     }
-    textarea::placeholder { color: #98a2b4; opacity: 1; }
+    textarea::placeholder { color: var(--placeholder-color); opacity: 1; }
     .send-btn {
       background: var(--accent); border: none; color: #fff;
       width: 44px; height: 44px; border-radius: 12px; cursor: pointer;
@@ -653,46 +1350,484 @@
       animation: stop-spin 0.75s linear infinite;
     }
     @keyframes stop-spin { to { transform: rotate(360deg); } }
-    .input-hint { font-size: 0.72rem; color: var(--muted); margin: 10px auto 0; max-width: var(--content-width); }
-    .about-modal {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-      align-items: center; justify-content: center; z-index: 100;
-    }
-    .about-modal.open { display: flex; }
-    .about-modal.open .about-box { animation: modal-in 220ms var(--ease-spring) both; }
-    .about-box {
-      background: rgba(20,24,33,0.96); border: 1px solid var(--border);
-      border-radius: 12px; padding: 24px; max-width: 480px; width: 90%;
-    }
-    @keyframes modal-in {
-      from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    @keyframes modal-pop-in {
+      from { opacity: 0; transform: translateY(12px) scale(0.98); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
-    .about-box h3 { margin-bottom: 12px; }
-    .about-box p { color: var(--muted); font-size: 0.88rem; line-height: 1.6; margin-bottom: 8px; }
-    .about-box button {
-      margin-top: 16px; background: var(--accent); border: none; color: #fff;
-      padding: 8px 20px; border-radius: 8px; cursor: pointer;
+    @keyframes modal-pop-out {
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to { opacity: 0; transform: translateY(8px) scale(0.98); }
     }
-    .header-actions button.active {
+    @keyframes dropdown-pop-in {
+      from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes dropdown-pop-out {
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to { opacity: 0; transform: translateY(-4px) scale(0.98); }
+    }
+    @keyframes panel-slide-out-left {
+      from { opacity: 1; transform: translateX(0); }
+      to { opacity: 0; transform: translateX(-16px); }
+    }
+    @keyframes panel-slide-out-right {
+      from { opacity: 1; transform: translateX(0); }
+      to { opacity: 0; transform: translateX(16px); }
+    }
+    .input-hint { font-size: 0.72rem; color: var(--muted); margin: 10px auto 0; max-width: var(--content-width); }
+    .settings-modal {
+      display: flex; position: fixed; inset: 0; background: var(--modal-overlay, rgba(0,0,0,0.6));
+      align-items: center; justify-content: center; z-index: 100;
+      visibility: hidden; opacity: 0; pointer-events: none;
+      transition: opacity 220ms var(--ease-standard), visibility 0s linear 220ms;
+    }
+    .settings-modal.open {
+      visibility: visible; opacity: 1; pointer-events: auto;
+      transition: opacity 280ms var(--ease-spring), visibility 0s linear 0s;
+    }
+    .settings-modal.open .settings-box { animation: modal-pop-in 240ms var(--ease-spring) both; }
+    .settings-modal.overlay-closing {
+      visibility: visible; opacity: 0; pointer-events: none;
+      transition: opacity 200ms var(--ease-standard), visibility 0s linear 200ms;
+    }
+    .settings-modal.overlay-closing .settings-box { animation: modal-pop-out 200ms var(--ease-standard) both; }
+    .settings-box {
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 14px; padding: 22px 24px; max-width: 420px; width: 90%;
+      box-shadow: 0 24px 48px rgba(0,0,0,0.18);
+      position: relative;
+      z-index: 1;
+    }
+    .settings-box h3 { margin-bottom: 16px; font-size: 1.05rem; }
+    .settings-section { margin-bottom: 18px; }
+    .settings-label {
+      font-size: 0.78rem; color: var(--muted); margin-bottom: 10px; font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .theme-toggle {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .theme-option {
+      min-height: 42px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--bg-soft); color: var(--text-soft); cursor: pointer;
+      font-size: 0.84rem; transition: border-color 180ms, background 180ms, color 180ms;
+    }
+    .theme-option:hover { border-color: var(--accent); color: var(--text); }
+    .theme-option.active {
+      border-color: var(--accent); background: var(--accent-soft); color: var(--accent);
+      font-weight: 600;
+    }
+    .model-picker {
+      position: relative;
+    }
+    .model-picker-trigger {
+      width: 100%;
+      min-height: 42px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-soft);
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 0.86rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      transition: border-color 180ms, background 180ms, box-shadow 180ms;
+    }
+    .model-picker-trigger:hover,
+    .model-picker-trigger[aria-expanded="true"] {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .model-picker-label {
+      flex: 1;
+      text-align: left;
+      font-weight: 600;
+    }
+    .model-picker-chevron {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      flex-shrink: 0;
+      transition: transform 180ms var(--ease-standard);
+    }
+    .model-picker-trigger[aria-expanded="true"] .model-picker-chevron {
+      transform: rotate(180deg);
+    }
+    .model-picker-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      z-index: 20;
+      background: var(--dropdown-bg, var(--bg-panel));
+      border: 1px solid var(--border-strong, var(--border));
+      border-radius: 10px;
+      box-shadow: var(--dropdown-shadow, 0 12px 32px rgba(0,0,0,0.18));
+      overflow: hidden;
+      max-height: min(320px, 50vh);
+      overflow-y: auto;
+    }
+    .model-picker-menu[hidden] { display: none; }
+    .model-picker-menu { transform-origin: top center; }
+    .model-picker-menu.dropdown-opening { animation: dropdown-pop-in 200ms var(--ease-spring) both; }
+    .model-picker-menu.dropdown-closing { animation: dropdown-pop-out 160ms var(--ease-standard) both; }
+    .model-picker-item {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: var(--text-soft);
+      text-align: left;
+      padding: 11px 12px;
+      cursor: pointer;
+      font-size: 0.84rem;
+      display: block;
+      transition: background 160ms, color 160ms;
+    }
+    .model-picker-item + .model-picker-item {
+      border-top: 1px solid var(--border);
+    }
+    .model-picker-item:hover {
+      background: var(--accent-soft);
+      color: var(--text);
+    }
+    .model-picker-item.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .external-agent-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .external-agent-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg-soft);
+      transition: border-color 180ms, background 180ms;
+    }
+    .external-agent-item:hover { border-color: var(--accent); }
+    .external-agent-check {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+      cursor: pointer;
+    }
+    .external-agent-item input {
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .external-agent-name {
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .external-agent-open {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text-soft);
+      font-size: 0.78rem;
+      text-decoration: none;
+      transition: border-color 180ms, background 180ms, color 180ms;
+    }
+    .external-agent-open:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+    .external-agent-open svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      flex-shrink: 0;
+    }
+    .settings-hint {
+      margin-top: 6px;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--muted);
+      opacity: 0.72;
+      line-height: 1.45;
+    }
+    .settings-link {
+      width: 100%; text-align: left; min-height: 42px; padding: 10px 14px;
+      border-radius: 10px; border: 1px solid var(--border); background: var(--bg-soft);
+      color: var(--text-soft); cursor: pointer; font-size: 0.86rem;
+      display: flex; align-items: center; justify-content: space-between;
+      transition: border-color 180ms, background 180ms, color 180ms;
+    }
+    .settings-link:hover { border-color: var(--accent); color: var(--text); background: var(--accent-soft); }
+    .settings-link svg { width: 16px; height: 16px; stroke: currentColor; flex-shrink: 0; }
+    .settings-back {
+      background: transparent; border: none; color: var(--muted); cursor: pointer;
+      font-size: 0.82rem; padding: 0; margin-bottom: 12px; display: inline-flex; align-items: center; gap: 4px;
+    }
+    .settings-box p { color: var(--muted); font-size: 0.88rem; line-height: 1.6; margin-bottom: 8px; }
+    .settings-actions { margin-top: 18px; display: flex; justify-content: flex-end; }
+    .settings-box .btn-close-modal {
+      background: var(--accent); border: none; color: #fff;
+      padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 0.86rem;
+    }
+    .header-actions button.active,
+    .header-start .header-btn.active {
       border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,0.12);
+    }
+    .header-actions button.header-btn-active-flash {
+      animation: header-btn-active-in-right 280ms var(--ease-spring) both;
+    }
+    .header-start .header-btn.header-btn-active-flash {
+      animation: header-btn-active-in-left 280ms var(--ease-spring) both;
+    }
+    /* 能力目录已打开时隐藏顶栏入口，改由面板内关闭按钮关闭 */
+    body.catalog-open #btn-catalog {
+      display: none;
+    }
+    /* 历史侧栏已展开时隐藏顶栏入口，改由侧栏边缘收起按钮关闭 */
+    body:not(.sidebar-collapsed) #btn-sidebar {
+      display: none;
+    }
+    .bookmarks-modal {
+      display: flex; position: fixed; inset: 0; z-index: 110;
+      background: var(--modal-overlay, rgba(0,0,0,0.6));
+      align-items: center; justify-content: center; padding: 24px;
+      visibility: hidden; opacity: 0; pointer-events: none;
+      transition: opacity 220ms var(--ease-standard), visibility 0s linear 220ms;
+    }
+    .bookmarks-modal.open {
+      visibility: visible; opacity: 1; pointer-events: auto;
+      transition: opacity 280ms var(--ease-spring), visibility 0s linear 0s;
+    }
+    .bookmarks-modal.open .bookmarks-bubble { animation: modal-pop-in 240ms var(--ease-spring) both; }
+    .bookmarks-modal.overlay-closing {
+      visibility: visible; opacity: 0; pointer-events: none;
+      transition: opacity 200ms var(--ease-standard), visibility 0s linear 200ms;
+    }
+    .bookmarks-modal.overlay-closing .bookmarks-bubble { animation: modal-pop-out 200ms var(--ease-standard) both; }
+    .bookmarks-bubble {
+      position: relative;
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 20px; width: min(680px, 94vw); max-height: min(85vh, 820px);
+      display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 0 28px 64px rgba(0,0,0,0.28);
+    }
+    .bookmarks-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 18px 22px 12px; border-bottom: 1px solid var(--border);
+    }
+    .bookmarks-head-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .bookmarks-head h3 { font-size: 1.08rem; font-weight: 600; }
+    .bookmarks-head p { font-size: 0.78rem; color: var(--muted); }
+    .bookmarks-head-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .bookmarks-head-actions button {
+      min-height: 36px; padding: 0 12px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--bg-soft);
+      color: var(--text-soft); cursor: pointer; font-size: 0.82rem;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: border-color 180ms, background 180ms, color 180ms;
+    }
+    .bookmarks-head-actions button:hover { border-color: var(--accent); color: var(--text); }
+    .bookmarks-head-actions button.primary {
+      border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600;
+    }
+    .bookmarks-body {
+      flex: 1; overflow: auto; padding: 4px 22px 18px;
+    }
+    .bookmarks-section { margin-bottom: 14px; }
+    .bookmarks-section-head {
+      display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+    }
+    .bookmarks-section-title {
+      font-size: 0.76rem; color: var(--muted); font-weight: 600;
+      letter-spacing: 0.04em; text-transform: uppercase; margin: 0;
+    }
+    .bookmarks-section-edit {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; padding: 0; border: none; border-radius: 6px;
+      background: transparent; color: var(--muted); cursor: pointer;
+      opacity: 0; transition: opacity 160ms, background 160ms, color 160ms;
+    }
+    .bookmarks-section-head:hover .bookmarks-section-edit,
+    .bookmarks-section-edit:focus-visible {
+      opacity: 1;
+    }
+    .bookmarks-section-edit:hover {
+      background: var(--bg-hover); color: var(--text);
+    }
+    .bookmarks-section-edit svg { width: 14px; height: 14px; }
+    .bookmarks-grid {
+      display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px;
+    }
+    .bookmark-tile {
+      position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 12px 4px 8px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--card-bg);
+      text-decoration: none; color: var(--text); cursor: pointer;
+      transition: border-color 180ms, background 180ms, transform 180ms, box-shadow 180ms;
+      min-height: 98px; text-align: center;
+    }
+    .bookmark-tile:hover {
+      border-color: var(--accent); background: var(--card-bg-hover);
+      transform: translateY(-2px); box-shadow: var(--shadow-soft);
+    }
+    .bookmark-tile.bookmark-tile-pressed {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      transform: scale(0.98);
+    }
+    .bookmark-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--module-icon-bg); color: var(--module-icon-color);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .bookmark-icon svg { width: 22px; height: 22px; }
+    .bookmark-favicon {
+      width: 28px; height: 28px; object-fit: contain; display: block;
+    }
+    .bookmark-letter {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: var(--accent-soft); color: var(--accent);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      line-height: 1;
+    }
+    .bookmark-label {
+      font-size: 0.72rem; font-weight: 600; line-height: 1.3;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .bookmark-desc {
+      font-size: 0.62rem; color: var(--muted); line-height: 1.25;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .bookmark-context-menu {
+      position: absolute; z-index: 30; min-width: 112px;
+      display: flex; flex-direction: column; gap: 2px;
+      padding: 6px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--card-bg);
+      box-shadow: var(--shadow-soft);
+    }
+    .bookmark-context-menu[hidden] {
+      display: none !important;
+    }
+    .bookmark-context-menu { transform-origin: top left; }
+    .bookmark-context-menu.dropdown-opening { animation: dropdown-pop-in 200ms var(--ease-spring) both; }
+    .bookmark-context-menu.dropdown-closing { animation: dropdown-pop-out 160ms var(--ease-standard) both; }
+    .bookmark-context-menu button {
+      border: none; background: transparent; color: var(--text);
+      text-align: left; padding: 8px 12px; border-radius: 8px;
+      font-size: 0.84rem; cursor: pointer;
+    }
+    .bookmark-context-menu button:hover {
+      background: var(--bg-hover);
+    }
+    .bookmark-context-menu .bookmark-context-delete {
+      color: var(--danger);
+    }
+    .bookmark-context-menu .bookmark-context-delete:hover {
+      background: rgba(239,68,68,0.12);
+    }
+    .bookmarks-empty {
+      padding: 48px 16px; text-align: center; color: var(--muted); font-size: 0.88rem;
+    }
+    .bookmarks-add-modal {
+      position: fixed; inset: 0; z-index: 120;
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+      background: rgba(0, 0, 0, 0.45);
+      visibility: hidden; opacity: 0; pointer-events: none;
+      transition: opacity 200ms var(--ease-standard), visibility 0s linear 200ms;
+    }
+    .bookmarks-add-modal.open {
+      visibility: visible; opacity: 1; pointer-events: auto;
+      transition: opacity 240ms var(--ease-spring), visibility 0s linear 0s;
+    }
+    .bookmarks-add-modal.open .bookmarks-add-dialog { animation: modal-pop-in 240ms var(--ease-spring) both; }
+    .bookmarks-add-modal[hidden] { display: none !important; }
+    .bookmarks-add-dialog {
+      width: min(420px, 92vw);
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px 22px 18px;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.28);
+    }
+    .bookmarks-add-dialog h4 { font-size: 1rem; font-weight: 600; margin-bottom: 14px; }
+    .bookmarks-add-form {
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .bookmarks-add-form input,
+    .bookmarks-add-form select {
+      min-height: 40px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--bg-input); color: var(--text); padding: 0 12px; font-size: 0.88rem;
+      width: 100%;
+    }
+    .bookmarks-add-form input:focus,
+    .bookmarks-add-form select:focus { outline: none; border-color: var(--accent); }
+    .bookmarks-add-field label {
+      display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 6px;
+    }
+    .bookmarks-add-actions {
+      display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px;
+    }
+    .bookmarks-add-actions button {
+      min-height: 36px; padding: 0 14px; border-radius: 10px; cursor: pointer; font-size: 0.82rem;
+    }
+    .bookmarks-add-actions .cancel {
+      border: 1px solid var(--border); background: transparent; color: var(--muted);
+    }
+    .bookmarks-add-actions .submit {
+      border: none; background: var(--accent); color: #fff; font-weight: 600;
+    }
+    @media (max-width: 720px) {
+      .bookmarks-bubble { width: 100%; max-height: 92vh; border-radius: 16px; }
+      .bookmarks-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
     .catalog-panel {
       position: relative;
       border-left: 1px solid var(--border);
-      background: rgba(15, 20, 30, 0.78);
+      background: var(--catalog-bg);
       backdrop-filter: blur(24px);
-      display: none;
+      display: flex;
       flex-direction: column;
       min-height: 0;
       width: 100%;
       min-width: 0;
       max-width: none;
+      overflow: hidden;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 220ms var(--ease-standard), visibility 0s linear 220ms;
     }
-    .catalog-panel.open { display: flex; }
-    .catalog-panel.open { animation: panel-slide-in 240ms var(--ease-spring) both; }
-    @keyframes panel-slide-in {
-      from { opacity: 0; transform: translateX(10px); }
+    .catalog-panel.open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transition: opacity 280ms var(--ease-spring), visibility 0s linear 0s;
+    }
+    .catalog-panel.open.panel-opening {
+      animation: panel-slide-in-right 300ms var(--ease-spring) both;
+    }
+    .catalog-panel.panel-closing {
+      animation: panel-slide-out-right 260ms var(--ease-standard) both;
+    }
+    @keyframes panel-slide-in-right {
+      from { opacity: 0; transform: translateX(16px); }
       to { opacity: 1; transform: translateX(0); }
     }
     .catalog-panel-resizer {
@@ -726,20 +1861,12 @@
     .catalog-panel-head .head-actions {
       display: flex; align-items: center; gap: 4px; flex-shrink: 0;
     }
-    .catalog-panel-head button {
-      background: transparent; border: none; color: var(--muted);
-      cursor: pointer; font-size: 0.78rem; line-height: 1;
-      padding: 6px 8px; border-radius: 6px;
-      transition: transform 180ms var(--ease-standard), color 180ms var(--ease-standard), background 180ms var(--ease-standard);
-    }
-    .catalog-panel-head button:hover { color: var(--text); background: var(--bg-hover); transform: rotate(90deg); }
-    .catalog-panel-head .btn-close { font-size: 1.15rem; padding: 4px 8px; }
     .catalog-toolbar {
       padding: 14px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
     }
     .catalog-search {
       width: 100%; padding: 11px 13px; border: 1px solid var(--border);
-      border-radius: 12px; background: rgba(11,14,20,0.54); color: var(--text);
+      border-radius: 12px; background: var(--search-bg); color: var(--text);
       font-size: 0.84rem;
     }
     .catalog-search:focus {
@@ -749,7 +1876,7 @@
     .catalog-search {
       transition: border-color 180ms var(--ease-standard), box-shadow 180ms var(--ease-standard), background 180ms var(--ease-standard);
     }
-    .catalog-search::placeholder { color: #6b7280; }
+    .catalog-search::placeholder { color: var(--placeholder-color); }
     .catalog-panel-body {
       display: flex; flex-direction: row;
       flex: 1; min-height: 0; min-width: 0;
@@ -789,7 +1916,7 @@
     }
     .catalog-nav button:hover { background: var(--bg-hover); color: var(--text); transform: translateX(2px); }
     .catalog-nav button.active {
-      background: rgba(91,140,255,0.18); color: #bdd0ff; font-weight: 650;
+      background: var(--nav-active-bg); color: var(--nav-active-color); font-weight: 650;
     }
     .catalog-nav button.active::before { opacity: 1; transform: scaleY(1); }
     .catalog-nav .nav-label {
@@ -801,14 +1928,14 @@
       transition: background 180ms var(--ease-standard), color 180ms var(--ease-standard), transform 180ms var(--ease-standard);
     }
     .catalog-nav button.active .count {
-      color: #d7e2ff; background: rgba(91,140,255,0.24);
+      color: var(--nav-count-active); background: rgba(91,140,255,0.24);
     }
     .catalog-main {
       overflow-y: auto; padding: 18px; flex: 1; min-width: 0;
       scrollbar-width: thin;
     }
     .catalog-module, .playbook-section {
-      background: rgba(20,24,33,0.72);
+      background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 14px; padding: 16px; margin-bottom: 20px;
       backdrop-filter: blur(14px);
@@ -817,9 +1944,9 @@
     }
     .catalog-module:hover, .playbook-section:hover {
       transform: translateY(-2px);
-      border-color: rgba(148,163,184,0.28);
-      box-shadow: 0 18px 42px rgba(0,0,0,0.18);
-      background: rgba(22,27,38,0.78);
+      border-color: var(--card-border-hover);
+      box-shadow: var(--shadow-soft);
+      background: var(--card-bg-hover);
     }
     .catalog-module .module-head, .playbook-section .playbook-head {
       margin-bottom: 16px;
@@ -830,7 +1957,7 @@
     .module-icon, .catalog-title-icon {
       width: 28px; height: 28px; border-radius: 9px;
       display: inline-flex; align-items: center; justify-content: center;
-      background: rgba(91,140,255,0.16); color: #bdd0ff;
+      background: var(--module-icon-bg); color: var(--module-icon-color);
       border: 1px solid rgba(91,140,255,0.25); flex-shrink: 0;
       transition: transform 220ms var(--ease-standard), background 220ms var(--ease-standard);
     }
@@ -844,8 +1971,8 @@
     }
     .playbook-tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
     .playbook-tag {
-      font-size: 0.68rem; background: rgba(59,130,246,0.12);
-      color: #93c5fd; padding: 2px 8px; border-radius: 999px;
+      font-size: 0.68rem; background: var(--tag-bg);
+      color: var(--tag-color); padding: 2px 8px; border-radius: 999px;
       border: 1px solid rgba(59,130,246,0.2);
     }
     .catalog-module ol.cats { margin: 0; padding: 0; list-style: none; }
@@ -869,20 +1996,20 @@
     .cap-head {
       display: flex; align-items: center; gap: 8px;
       padding: 10px 11px; border-radius: 10px;
-      background: rgba(255,255,255,0.015);
+      background: var(--cap-bg);
       transition: background 180ms var(--ease-standard), transform 180ms var(--ease-standard);
     }
     .cap-icon {
       width: 22px; height: 22px; border-radius: 7px;
       display: inline-flex; align-items: center; justify-content: center;
-      color: #a9f5e0; background: rgba(66,211,178,0.1);
+      color: var(--cap-icon-color); background: var(--cap-icon-bg);
       border: 1px solid rgba(66,211,178,0.16);
       flex-shrink: 0;
     }
     .cap-icon svg { width: 13px; height: 13px; stroke: currentColor; }
     .cap-head.is-toggle { cursor: pointer; user-select: none; }
-    .cap-head.is-toggle:hover { background: rgba(255,255,255,0.04); transform: translateX(2px); }
-    .cap-head.is-toggle[aria-expanded="true"] { background: rgba(91,140,255,0.1); }
+    .cap-head.is-toggle:hover { background: var(--cap-bg-hover); transform: translateX(2px); }
+    .cap-head.is-toggle[aria-expanded="true"] { background: var(--cap-bg-open); }
     .cap-chevron {
       flex-shrink: 0; width: 14px; color: var(--muted); font-size: 0.7rem;
       transition: transform 180ms var(--ease-standard), color 180ms var(--ease-standard);
@@ -898,19 +2025,19 @@
       padding: 2px 7px; border-radius: 999px; border: 1px solid var(--border);
     }
     .source-badge[data-env="online"] {
-      background: rgba(234,179,8,0.12); color: #fcd34d; border-color: rgba(234,179,8,0.25);
+      background: var(--warn-bg); color: var(--source-online-color); border-color: var(--warn-border);
     }
-    .source-badge[data-env="test"] { border-color: rgba(66,211,178,0.22); color: #9ff0dc; }
+    .source-badge[data-env="test"] { border-color: rgba(66,211,178,0.22); color: var(--source-test-color); }
     .prompt-panel {
       margin: 2px 8px 10px; padding: 10px;
-      background: rgba(11,14,20,0.5); border: 1px solid var(--border); border-radius: 10px;
+      background: var(--prompt-panel-bg); border: 1px solid var(--border); border-radius: 10px;
       animation: prompt-drop 180ms var(--ease-spring) both;
     }
     .prompt-panel[hidden] { display: none; }
     .prompt-list { display: flex; flex-direction: column; gap: 8px; }
     .prompt-line {
       display: flex; flex-direction: column; gap: 8px;
-      padding: 10px; background: rgba(20,24,33,0.72);
+      padding: 10px; background: var(--prompt-bg);
       border: 1px solid var(--border); border-radius: 10px;
     }
     .prompt-text {
@@ -920,14 +2047,14 @@
     .prompt-field {
       display: inline-block; min-width: 3.5em; max-width: 100%;
       padding: 2px 7px; margin: 0 2px; border: 1px solid rgba(59,130,246,0.35);
-      border-radius: 5px; font-size: 0.78rem; background: #0d1118;
+      border-radius: 5px; font-size: 0.78rem; background: var(--bg-input);
       color: var(--text); vertical-align: baseline;
     }
     .prompt-field:focus {
       outline: none; border-color: var(--accent);
       box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
     }
-    .prompt-field::placeholder { color: #6b7280; font-style: italic; }
+    .prompt-field::placeholder { color: var(--placeholder-color); font-style: italic; }
     .prompt-line-footer { display: flex; justify-content: flex-end; }
     .prompt-run {
       border: none; background: var(--accent); color: #fff;
@@ -953,7 +2080,7 @@
       padding: 3px 8px; border-radius: 6px;
     }
     .default-chip code {
-      color: #93c5fd; background: none; padding: 0; font-size: inherit;
+      color: var(--chip-code-color); background: none; padding: 0; font-size: inherit;
     }
     .playbook-steps { margin-top: 10px; }
     .playbook-step {
@@ -969,7 +2096,7 @@
     .playbook-step:hover { transform: translateY(-1px); border-color: rgba(91,140,255,0.24); }
     .playbook-step-num {
       flex-shrink: 0; width: 1.5rem; height: 1.5rem; border-radius: 8px;
-      background: rgba(59,130,246,0.2); color: #93c5fd;
+      background: rgba(59,130,246,0.2); color: var(--playbook-num-color);
       font-size: 0.75rem; font-weight: 700;
       display: flex; align-items: center; justify-content: center;
       border: 1px solid rgba(59,130,246,0.3);
@@ -992,7 +2119,7 @@
     .playbook-step-note { font-size: 0.76rem; color: var(--muted); margin: 8px 0; line-height: 1.5; }
     .playbook-ops {
       margin: 6px 0 0; padding-left: 1.1rem;
-      font-size: 0.74rem; color: #9ca3af; line-height: 1.5;
+      font-size: 0.74rem; color: var(--muted-soft); line-height: 1.5;
     }
     .playbook-ops li { margin: 3px 0; }
     .catalog-empty {
@@ -1001,10 +2128,11 @@
     }
     @media (max-width: 760px) {
       header { align-items: flex-start; gap: 12px; flex-direction: column; }
-      .header-actions { width: 100%; justify-content: flex-start; }
+      .header-start { width: 100%; flex-wrap: wrap; }
+      .header-actions { width: 100%; justify-content: flex-start; margin-left: 0; }
       .header-actions button { flex: 1 1 auto; justify-content: center; }
       .messages { padding: 34px 18px 28px; }
-      .msg.user { max-width: 92%; }
+      .msg.user { max-width: 73.6%; }
       .msg-body { padding: 16px 18px; }
       .input-area { padding: 16px 18px 20px; }
       .quick-prompts { grid-template-columns: 1fr; }
@@ -1023,47 +2151,52 @@
 </head>
 <body>
   <header>
-    <div class="brand">
-      <div class="brand-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="24" height="24" rx="5.5" fill="#000"/>
-          <path d="M5.5 9.5L12 6.5V13.5L5.5 16.5V9.5Z" fill="#F5F5F5"/>
-          <path d="M12 6.5L18.5 9.5V16.5L12 13.5V6.5Z" fill="#7A7A7A"/>
-          <path d="M5.5 16.5L12 13.5L18.5 16.5L12 19.5L5.5 16.5Z" fill="#424242"/>
-        </svg>
+    <div class="header-start">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="24" height="24" rx="5.5" fill="#000"/>
+            <path d="M5.5 9.5L12 6.5V13.5L5.5 16.5V9.5Z" fill="#F5F5F5"/>
+            <path d="M12 6.5L18.5 9.5V16.5L12 13.5V6.5Z" fill="#7A7A7A"/>
+            <path d="M5.5 16.5L12 13.5L18.5 16.5L12 19.5L5.5 16.5Z" fill="#424242"/>
+          </svg>
+        </div>
+        <h1 id="app-title">Yaahlan 智能工具 Agent</h1>
       </div>
-      <h1 id="app-title">Yaahlan 智能工具 Agent</h1>
+      <div class="header-start-tools">
+        <button type="button" class="header-btn" id="btn-new-header" title="新建对话">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+            新对话
+        </button>
+        <button type="button" class="header-btn" id="btn-bookmarks" title="快捷入口">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+          </svg>
+          快捷
+        </button>
+        <button type="button" class="header-btn" id="btn-sidebar" title="历史会话">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+            <path d="M4 6h16M4 12h16M4 18h10"/>
+          </svg>
+          历史
+        </button>
+      </div>
     </div>
     <div class="header-actions">
-      <button type="button" id="btn-sidebar" title="历史会话">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
-          <path d="M4 6h16M4 12h16M4 18h10"/>
-        </svg>
-        历史
-      </button>
       <button type="button" id="btn-catalog" title="工具台能力目录">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
           <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/>
         </svg>
         能力
       </button>
-      <button type="button" id="btn-new">
+      <button type="button" id="btn-settings" title="设置">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
-          <path d="M12 5v14M5 12h14"/>
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
         </svg>
-        新对话
-      </button>
-      <button type="button" id="btn-clear">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
-          <path d="M3 6h18M8 6V4h8v2M9 10v8M15 10v8M6 6l1 14h10l1-14"/>
-        </svg>
-        清空
-      </button>
-      <button type="button" id="btn-about">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
-          <circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/>
-        </svg>
-        关于
+        设置
       </button>
       <button type="button" class="btn-login-header" id="btn-login" hidden>登录</button>
       <div class="user-menu" id="user-menu" hidden>
@@ -1091,42 +2224,88 @@
     <aside class="left-panel">
       <div class="panel-head">
         <div class="panel-head-title">
-          <button type="button" class="panel-head-close" id="btn-sidebar-close" title="收起侧边栏" aria-label="收起侧边栏">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M6 6l12 12M18 6L6 18"/>
+          <span class="catalog-title-icon session-title-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+              <circle cx="12" cy="12" r="9"/>
+              <path d="M12 7v5l3 3"/>
             </svg>
-          </button>
-          <span>历史会话</span>
+          </span>
+          <div class="head-main">
+            <h2>历史会话</h2>
+          </div>
         </div>
-        <button type="button" id="btn-new-side">+ 新建</button>
+        <div class="panel-head-actions">
+          <button type="button" class="header-btn" id="btn-new" title="新建对话" aria-label="新建对话">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            新对话
+          </button>
+        </div>
+      </div>
+      <div class="session-filter">
+        <select id="session-owner-filter" class="session-filter-select" title="按归属人员筛选历史会话">
+          <option value="all">全部人员</option>
+        </select>
       </div>
       <div class="session-list" id="session-list"></div>
       <div class="sidebar-resizer" id="sidebar-resizer" title="拖动调整历史会话宽度"></div>
     </aside>
 
+    <button type="button" class="sidebar-collapse-btn" id="btn-sidebar-collapse" title="收起侧栏" aria-label="收起侧栏">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+    </button>
+
     <section class="chat-area">
       <div class="dingtalk-owner-bar" id="dingtalk-owner-bar" hidden></div>
-      <div class="messages" id="messages"></div>
+      <div class="messages-shell">
+        <div class="messages" id="messages"></div>
+        <button type="button" class="scroll-to-bottom-btn" id="btn-scroll-to-bottom" title="回到最新对话" hidden aria-label="回到最新对话">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14"/>
+            <path d="M6 13l6 6 6-6"/>
+          </svg>
+        </button>
+      </div>
       <div class="input-area">
-        <div class="pending-images" id="pending-images"></div>
-        <div class="input-wrap" id="input-wrap">
-          <textarea id="input" rows="1" placeholder="输入问题；可直接粘贴或拖拽图片到此处…"></textarea>
-          <button type="button" class="stop-btn" id="btn-stop" title="中断思考" hidden aria-busy="false">
-            <svg class="stop-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <rect x="6" y="6" width="12" height="12" rx="1.5"/>
-            </svg>
-            <svg class="stop-spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" stroke-opacity="0.25"/>
-              <path d="M12 3a9 9 0 0 1 9 9" stroke-linecap="round"/>
-            </svg>
-          </button>
-          <button type="button" class="send-btn" id="btn-send" title="发送">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 19V5M5 12l7-7 7 7"/>
-            </svg>
-          </button>
+        <div class="input-stack">
+          <div class="pending-images" id="pending-images"></div>
+          <div class="input-composer">
+            <div class="input-wrap" id="input-wrap">
+              <input type="file" id="file-input" multiple hidden />
+              <textarea id="input" rows="1" placeholder="输入问题；可粘贴/拖拽图片或文件，或点 📎 选择…"></textarea>
+              <button type="button" class="attach-btn" id="btn-attach" title="添加附件">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                </svg>
+              </button>
+              <button type="button" class="stop-btn" id="btn-stop" title="中断思考" hidden aria-busy="false">
+                <svg class="stop-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <rect x="6" y="6" width="12" height="12" rx="1.5"/>
+                </svg>
+                <svg class="stop-spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" stroke-opacity="0.25"/>
+                  <path d="M12 3a9 9 0 0 1 9 9" stroke-linecap="round"/>
+                </svg>
+              </button>
+              <button type="button" class="send-btn" id="btn-send" title="发送">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 19V5M5 12l7-7 7 7"/>
+                </svg>
+              </button>
+            </div>
+            <button type="button" class="theme-quick-btn is-dark" id="btn-theme-toggle" title="切换到白天模式" aria-label="切换白天/夜间模式">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+                <path d="M9 18h6"/>
+                <path d="M10 22h4"/>
+                <path class="bulb-glass" d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="input-hint">Enter 发送 · Shift+Enter 换行 · 📎 或拖拽/粘贴附件 · 支持图片与 csv/xlsx/pdf/zip/txt/md/json 等</div>
         </div>
-        <div class="input-hint">Enter 发送 · Shift+Enter 换行 · 执行中可点右侧停止按钮中断 · 输入框内粘贴/拖拽图片</div>
       </div>
     </section>
 
@@ -1158,39 +2337,276 @@
     </aside>
   </div>
 
-  <div class="about-modal" id="about-modal">
-    <div class="about-box">
-      <h3>关于 Yaahlan Web Agent</h3>
-      <p>基于 Cursor Agent SDK 的 Web 对话界面，可直接调用仓库内各模块 execute 脚本、钉钉 MCP、Tunnel 抓包等能力。</p>
-      <p>会话历史保存在服务端，重启后可恢复。Agent 上下文按会话复用，支持多轮对话。</p>
-      <button type="button" id="btn-about-close">关闭</button>
+  <div class="settings-modal" id="settings-modal">
+    <div class="settings-box" id="settings-box">
+      <div id="settings-view-main">
+        <h3>设置</h3>
+        <div class="settings-section">
+          <div class="settings-label">外观</div>
+          <div class="theme-toggle" role="group" aria-label="主题模式">
+            <button type="button" class="theme-option" id="theme-light" data-theme="light">白天模式</button>
+            <button type="button" class="theme-option" id="theme-dark" data-theme="dark">夜间模式</button>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-label">大模型</div>
+          <div class="model-picker" id="model-picker">
+            <button type="button" class="model-picker-trigger" id="model-picker-trigger" aria-expanded="false" aria-haspopup="listbox">
+              <span class="model-picker-label" id="model-picker-label">Composer 2.5（默认）</span>
+              <svg class="model-picker-chevron" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+            <div class="model-picker-menu" id="model-picker-menu" role="listbox" hidden></div>
+          </div>
+          <p class="settings-hint" id="model-hint">下一条消息起生效</p>
+        </div>
+        <div class="settings-section">
+          <div class="settings-label">外部 Agent</div>
+          <div class="external-agent-list" id="external-agent-list"></div>
+          <p class="settings-hint" id="external-agent-hint">未勾选时不调用外部查询接口</p>
+        </div>
+        <div class="settings-section">
+          <div class="settings-label">其他</div>
+          <button type="button" class="settings-link" id="btn-settings-about">
+            <span>关于 Yaahlan Web Agent</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
+        <div class="settings-actions">
+          <button type="button" class="btn-close-modal" id="btn-settings-close">关闭</button>
+        </div>
+      </div>
+      <div id="settings-view-about" hidden>
+        <button type="button" class="settings-back" id="btn-settings-back">← 返回</button>
+        <h3>关于 Yaahlan Web Agent</h3>
+        <p>基于 Cursor Agent SDK 的 Web 对话界面，可直接调用仓库内各模块 execute 脚本、钉钉 MCP、Tunnel 抓包等能力。</p>
+        <p>会话历史保存在服务端，重启后可恢复。Agent 上下文按会话复用，支持多轮对话。</p>
+        <div class="settings-actions">
+          <button type="button" class="btn-close-modal" id="btn-about-close">关闭</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bookmarks-modal" id="bookmarks-modal" aria-hidden="true">
+    <div class="bookmarks-bubble" id="bookmarks-bubble" role="dialog" aria-labelledby="bookmarks-title">
+      <div class="bookmarks-head">
+        <div class="bookmarks-head-main">
+          <h3 id="bookmarks-title">快捷入口</h3>
+          <p>团队共享的常用链接，全员同步；添加时自行填写名称与备注；点击图标打开，长按可编辑或删除；分类标题旁可改分类名</p>
+        </div>
+        <div class="bookmarks-head-actions">
+          <button type="button" class="primary" id="btn-bookmarks-add">+ 添加</button>
+        </div>
+      </div>
+      <div class="bookmarks-body" id="bookmarks-body"></div>
+    </div>
+    <div class="bookmarks-add-modal" id="bookmarks-add-modal" hidden aria-hidden="true">
+      <div class="bookmarks-add-dialog" id="bookmarks-add-dialog" role="dialog" aria-labelledby="bookmarks-add-title">
+        <h4 id="bookmarks-add-title">添加快捷入口</h4>
+        <form class="bookmarks-add-form" id="bookmarks-add-form">
+          <div class="bookmarks-add-field">
+            <label for="bookmarks-url-input">网址</label>
+            <input id="bookmarks-url-input" name="url" type="url" placeholder="https://..." required autocomplete="off" />
+          </div>
+          <div class="bookmarks-add-edit-fields" id="bookmarks-add-edit-fields">
+            <div class="bookmarks-add-field">
+              <label for="bookmarks-label-input">名称</label>
+              <input id="bookmarks-label-input" name="label" type="text" maxlength="40"
+                     placeholder="显示名称" required autocomplete="off" />
+            </div>
+            <div class="bookmarks-add-field">
+              <label for="bookmarks-description-input">备注</label>
+              <input id="bookmarks-description-input" name="description" type="text" maxlength="80"
+                     placeholder="可选" autocomplete="off" />
+            </div>
+          </div>
+          <div class="bookmarks-add-field">
+            <label for="bookmarks-category-select">分类</label>
+            <select name="category" id="bookmarks-category-select" aria-label="分类"></select>
+            <input name="categoryNew" id="bookmarks-category-new" type="text"
+                   placeholder="新分类名称" maxlength="20" hidden />
+          </div>
+          <div class="bookmarks-add-actions">
+            <button type="button" class="cancel" id="btn-bookmarks-add-cancel">取消</button>
+            <button type="submit" class="submit">保存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="bookmarks-add-modal" id="bookmarks-category-edit-modal" hidden aria-hidden="true">
+      <div class="bookmarks-add-dialog" id="bookmarks-category-edit-dialog" role="dialog" aria-labelledby="bookmarks-category-edit-title">
+        <h4 id="bookmarks-category-edit-title">编辑分类</h4>
+        <form class="bookmarks-add-form" id="bookmarks-category-edit-form">
+          <div class="bookmarks-add-field">
+            <label for="bookmarks-category-label-input">分类名称</label>
+            <input id="bookmarks-category-label-input" name="label" type="text" maxlength="20"
+                   placeholder="分类名称" required autocomplete="off" />
+          </div>
+          <div class="bookmarks-add-actions">
+            <button type="button" class="cancel" id="btn-bookmarks-category-edit-cancel">取消</button>
+            <button type="submit" class="submit">保存</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 
   <script src="https://g.alicdn.com/dingding/dingtalk-jsapi/3.0.25/dingtalk.open.js"></script>
   <script src="dingtalk_oauth.js"></script>
+  <script src="bookmarks_panel.js"></script>
   <script src="catalog_panel.js"></script>
+  <script src="waiting_fx.js"></script>
   <script>
+    WebAgentTheme.initThemeSettings();
     const API = '';
-    let currentSessionId = localStorage.getItem('web_agent_session') || '';
+    let currentSessionId = '';
+    const LEGACY_SESSION_STORAGE_KEY = 'web_agent_session';
     /** @type {{ staffId?: string, displayName?: string, isAdmin?: boolean } | null} */
     let currentAuthUser = null;
     let otpAuthEnabled = true;
-    /** @type {Map<string, { eventSource: EventSource, runId: string, cancelling?: boolean, status: { ack: string, batch: string, elapsed: string }, shellEl: HTMLElement | null, sentDraft?: { text: string, images: typeof pendingImages } }>} */
+    /** @type {Map<string, { eventSource: EventSource, runId: string, cancelling?: boolean, failed?: boolean, status: { ack: string, batch: string, elapsed: string }, shellEl: HTMLElement | null, sentDraft?: { text: string, images: typeof pendingImages } }>} */
     const activeRuns = new Map();
+    const MESSAGES_SCROLL_NEAR_BOTTOM_PX = 80;
+    /** 用户未手动上滑时，流式更新才跟随滚到底；执行完成后强制滚到底 */
+    let messagesPinnedToBottom = true;
     let meta = {};
     let catalogPanel = null;
-    const catalogPref = localStorage.getItem('web_agent_catalog_open');
-    let catalogOpen = catalogPref === null ? true : catalogPref === '1';
+    let bookmarksPanel = null;
+    /** 能力侧栏默认关闭，仅顶栏「能力」或面板内关闭按钮手动切换；不持久化以免旧默认误开 */
+    let catalogOpen = false;
     const sidebarPref = localStorage.getItem('web_agent_sidebar_open');
     let sidebarOpen = sidebarPref === null ? true : sidebarPref === '1';
+    function sessionStorageKey() {
+      const staffId = (currentAuthUser?.staffId || '').trim();
+      return staffId ? `web_agent_last_session_${staffId}` : LEGACY_SESSION_STORAGE_KEY;
+    }
+
+    function readPersistedSessionId() {
+      const key = sessionStorageKey();
+      const saved = (localStorage.getItem(key) || '').trim();
+      if (saved) return saved;
+      if (currentAuthUser?.staffId) {
+        return (localStorage.getItem(LEGACY_SESSION_STORAGE_KEY) || '').trim();
+      }
+      return (localStorage.getItem(LEGACY_SESSION_STORAGE_KEY) || '').trim();
+    }
+
+    function persistSessionId(id) {
+      const sid = String(id || '').trim();
+      if (!sid) return;
+      localStorage.setItem(sessionStorageKey(), sid);
+      if (currentAuthUser?.staffId) {
+        localStorage.removeItem(LEGACY_SESSION_STORAGE_KEY);
+      }
+    }
+
+    function clearPersistedSessionId() {
+      localStorage.removeItem(sessionStorageKey());
+      localStorage.removeItem(LEGACY_SESSION_STORAGE_KEY);
+    }
+
+    function myWritableWebSessions() {
+      return sessionsCache.filter((s) => s.source === 'web' && !isSessionReadOnly(s));
+    }
+
+    async function activateSession(id, opts = {}) {
+      const sessionId = String(id || '').trim();
+      if (!sessionId) {
+        showEmptyState();
+        return false;
+      }
+      if (!opts.force && sessionId === currentSessionId) return true;
+      currentSessionId = sessionId;
+      persistSessionId(sessionId);
+      syncSessionReadOnly(sessionId);
+      renderSessionList();
+      updateDingtalkOwnerBar();
+      await loadMessages();
+      updateInputState();
+      return true;
+    }
+
+    async function tryRestorePersistedSession(id) {
+      const sessionId = String(id || '').trim();
+      if (!sessionId) return false;
+      const cached = sessionsCache.find((s) => s.id === sessionId);
+      if (cached?.source === 'dingtalk' || isSessionReadOnly(cached)) return false;
+      try {
+        await api(`/api/sessions/${sessionId}/messages`);
+      } catch {
+        return false;
+      }
+      return activateSession(sessionId, { force: true });
+    }
+
+    async function restoreOrCreateInitialSession() {
+      if (isGuestMode()) {
+        currentSessionId = '';
+        showEmptyState();
+        return;
+      }
+      const savedId = readPersistedSessionId();
+      if (savedId && await tryRestorePersistedSession(savedId)) return;
+      const mine = myWritableWebSessions();
+      if (mine.length) {
+        await activateSession(mine[0].id, { force: true });
+        return;
+      }
+      await createSession({ animate: false });
+    }
+
     let sessionsCache = [];
+    let sessionOwnerFilter = localStorage.getItem('web_agent_session_owner_filter') || 'all';
     let currentSessionReadOnly = false;
     /** @type {Array<{ id: string, name: string, mime: string, previewUrl: string, data_base64: string }>} */
-    let pendingImages = [];
+    /** @type {Array<{ id: string, name: string, mime: string, kind: 'image'|'file', previewUrl?: string, data_base64: string }>} */
+    let pendingAttachments = [];
     let inputComposing = false;
-    const MAX_IMAGES = 5;
+    const MAX_ATTACHMENTS = 5;
     const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+    const MAX_FILE_BYTES = 15 * 1024 * 1024;
+    const DEFAULT_ALLOWED_EXTENSIONS = [
+      '.png', '.jpg', '.jpeg', '.gif', '.webp',
+      '.txt', '.csv', '.md', '.json', '.pdf', '.zip', '.xlsx', '.xls', '.docx', '.html', '.xml',
+    ];
+
+    function maxAttachments() {
+      return meta.maxAttachmentsPerMessage || meta.maxImagesPerMessage || MAX_ATTACHMENTS;
+    }
+
+    function allowedExtensions() {
+      return Array.isArray(meta.allowedFileExtensions) && meta.allowedFileExtensions.length
+        ? meta.allowedFileExtensions
+        : DEFAULT_ALLOWED_EXTENSIONS;
+    }
+
+    function fileExtension(name) {
+      const idx = String(name || '').lastIndexOf('.');
+      if (idx < 0) return '';
+      const ext = name.slice(idx).toLowerCase();
+      return ext === '.jpeg' ? '.jpg' : ext;
+    }
+
+    function isImageFile(file) {
+      return (file.type || '').startsWith('image/') || IMAGE_EXTENSIONS.has(fileExtension(file.name));
+    }
+
+    const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp']);
+
+    function isAllowedAttachment(file) {
+      const ext = fileExtension(file.name);
+      if (allowedExtensions().includes(ext)) return true;
+      return isImageFile(file);
+    }
+
+    function formatFileSize(bytes) {
+      const n = Number(bytes) || 0;
+      if (n < 1024) return `${n} B`;
+      if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+      return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+    }
 
     function renderMessageImages(images) {
       if (!images?.length) return '';
@@ -1199,116 +2615,203 @@
       ).join('')}</div>`;
     }
 
-    function renderPendingImages() {
+    function renderMessageFiles(files) {
+      if (!files?.length) return '';
+      return `<div class="msg-files">${files.map(file => {
+        const url = escapeHtml(file.url || '');
+        const name = escapeHtml(file.name || '附件');
+        const size = file.size ? ` · ${escapeHtml(formatFileSize(file.size))}` : '';
+        return `<a class="msg-file-link" href="${url}" data-download-url="${url}" data-download-name="${name}"><span>📎 ${name}${size}</span></a>`;
+      }).join('')}</div>`;
+    }
+
+    async function downloadMessageFile(url, name) {
+      const target = (url || '').trim();
+      if (!target) {
+        alert('文件链接无效');
+        return;
+      }
+      try {
+        const resp = await fetch(API + target, { credentials: 'same-origin' });
+        if (!resp.ok) {
+          throw new Error(resp.status === 401 ? '请先登录后再下载' : `下载失败（HTTP ${resp.status}）`);
+        }
+        const blob = await resp.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        link.download = name || 'download';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+      } catch (err) {
+        alert(err?.message || '下载失败');
+      }
+    }
+
+    function setupMessageFileDownloads() {
+      const container = document.getElementById('messages');
+      if (!container || container.dataset.fileDownloadBound === '1') return;
+      container.dataset.fileDownloadBound = '1';
+      container.addEventListener('click', (event) => {
+        const link = event.target.closest('.msg-file-link');
+        if (!link) return;
+        const url = link.getAttribute('data-download-url') || link.getAttribute('href') || '';
+        if (!url || url === '#') {
+          event.preventDefault();
+          alert('文件尚未就绪，请稍候刷新页面后重试');
+          return;
+        }
+        event.preventDefault();
+        const name = link.getAttribute('data-download-name') || 'download';
+        downloadMessageFile(url, name);
+      });
+    }
+
+    function renderPendingAttachments() {
       const container = document.getElementById('pending-images');
       if (!container) return;
-      container.innerHTML = pendingImages.map(item => `
+      container.innerHTML = pendingAttachments.map(item => {
+        if (item.kind === 'image') {
+          return `
         <div class="pending-image" data-id="${escapeHtml(item.id)}">
           <img src="${item.previewUrl}" alt="${escapeHtml(item.name)}" />
-          <button type="button" title="移除" aria-label="移除图片">×</button>
-        </div>`).join('');
-      container.querySelectorAll('.pending-image button').forEach(btn => {
+          <button type="button" title="移除" aria-label="移除附件">×</button>
+        </div>`;
+        }
+        return `
+        <div class="pending-file" data-id="${escapeHtml(item.id)}">
+          <span>📎</span>
+          <span class="file-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
+          <button type="button" title="移除" aria-label="移除附件">×</button>
+        </div>`;
+      }).join('');
+      container.querySelectorAll('.pending-image button, .pending-file button').forEach(btn => {
         btn.addEventListener('click', () => {
-          const wrap = btn.closest('.pending-image');
+          const wrap = btn.closest('[data-id]');
           const id = wrap?.getAttribute('data-id');
           if (!id) return;
-          pendingImages = pendingImages.filter(item => item.id !== id);
-          renderPendingImages();
+          pendingAttachments = pendingAttachments.filter(item => item.id !== id);
+          renderPendingAttachments();
           updateInputState();
         });
       });
     }
 
-    async function addPendingImageFiles(fileList) {
+    async function readFileAsBase64(file) {
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('读取文件失败'));
+        reader.readAsDataURL(file);
+      });
+      const comma = dataUrl.indexOf(',');
+      return comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
+    }
+
+    async function addPendingAttachmentFiles(fileList) {
       if (currentSessionReadOnly) return;
       const files = Array.from(fileList || []);
       for (const file of files) {
-        if (pendingImages.length >= (meta.maxImagesPerMessage || MAX_IMAGES)) {
-          alert(`最多上传 ${meta.maxImagesPerMessage || MAX_IMAGES} 张图片`);
+        if (pendingAttachments.length >= maxAttachments()) {
+          alert(`最多上传 ${maxAttachments()} 个附件`);
           break;
         }
-        if (!file.type.startsWith('image/')) {
+        if (!isAllowedAttachment(file)) {
           alert(`不支持的文件类型：${file.name}`);
           continue;
         }
-        if (file.size > MAX_IMAGE_BYTES) {
-          alert(`图片过大（>${MAX_IMAGE_BYTES / (1024 * 1024)}MB）：${file.name}`);
+        const isImage = isImageFile(file);
+        const limit = isImage ? MAX_IMAGE_BYTES : (meta.maxFileBytes || MAX_FILE_BYTES);
+        if (file.size > limit) {
+          alert(`文件过大（>${limit / (1024 * 1024)}MB）：${file.name}`);
           continue;
         }
-        const dataUrl = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result || ''));
-          reader.onerror = () => reject(new Error('读取图片失败'));
-          reader.readAsDataURL(file);
-        });
-        const comma = dataUrl.indexOf(',');
-        pendingImages.push({
+        const data_base64 = await readFileAsBase64(file);
+        const dataUrl = isImage ? `data:${file.type || 'image/png'};base64,${data_base64}` : '';
+        pendingAttachments.push({
           id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
           name: file.name,
-          mime: file.type,
+          mime: file.type || (isImage ? 'image/png' : 'application/octet-stream'),
+          kind: isImage ? 'image' : 'file',
           previewUrl: dataUrl,
-          data_base64: comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl,
+          data_base64,
         });
       }
-      renderPendingImages();
+      renderPendingAttachments();
       updateInputState();
     }
 
-    function clearPendingImages() {
-      pendingImages = [];
-      renderPendingImages();
+    function clearPendingAttachments() {
+      pendingAttachments = [];
+      renderPendingAttachments();
     }
 
-    const DEFAULT_PLACEHOLDER = '输入问题；可直接粘贴或拖拽图片到此处…';
+    const DEFAULT_PLACEHOLDER = '输入问题；可粘贴/拖拽图片或文件，或点 📎 选择…';
+    const RETRY_PLACEHOLDER = '执行失败，原消息已回填，请修改后重试…';
+    const RETRY_HINT_MARKDOWN = '\n\n💡 原消息已回填到输入框，请检查后重试。';
     const GUEST_PLACEHOLDER = '登录后即可发送消息…';
-    const DINGTALK_READONLY_PLACEHOLDER = '此会话来自钉钉同步，仅供查看；继续对话请点「+ 新对话」';
-    const WEB_READONLY_PLACEHOLDER = '此会话归属他人，仅供查看；请点「+ 新对话」继续自己的任务';
+    let retryHintActive = false;
+    const DINGTALK_READONLY_PLACEHOLDER = '此会话来自钉钉同步，仅供查看；继续对话请点「新对话」';
+    const WEB_READONLY_PLACEHOLDER = '此会话归属他人，仅供查看；请点「新对话」继续自己的任务';
 
-    function canAttachImages() {
+    function canAttachFiles() {
       return !currentSessionReadOnly && !isCurrentSessionStreaming();
     }
 
-    function collectImageFilesFromDataTransfer(dataTransfer) {
+    function collectAttachmentFilesFromDataTransfer(dataTransfer) {
       if (!dataTransfer) return [];
       const files = [];
       if (dataTransfer.items?.length) {
         for (const item of dataTransfer.items) {
-          if (item.kind === 'file' && item.type.startsWith('image/')) {
+          if (item.kind === 'file') {
             const file = item.getAsFile();
             if (file) files.push(file);
           }
         }
       }
       if (!files.length && dataTransfer.files?.length) {
-        for (const file of dataTransfer.files) {
-          if (file.type.startsWith('image/')) files.push(file);
-        }
+        for (const file of dataTransfer.files) files.push(file);
       }
-      return files;
+      return files.filter(isAllowedAttachment);
     }
 
-    function setupInputImageHandlers() {
+    function setupInputAttachmentHandlers() {
       const inputWrap = document.getElementById('input-wrap');
       const textarea = document.getElementById('input');
+      const fileInput = document.getElementById('file-input');
+      const attachBtn = document.getElementById('btn-attach');
       if (!inputWrap || !textarea) return;
 
+      attachBtn?.addEventListener('click', () => {
+        if (!canAttachFiles()) return;
+        fileInput?.click();
+      });
+      fileInput?.addEventListener('change', () => {
+        if (!fileInput.files?.length) return;
+        addPendingAttachmentFiles(fileInput.files);
+        fileInput.value = '';
+      });
+
       textarea.addEventListener('paste', (e) => {
-        if (!canAttachImages()) return;
-        const files = collectImageFilesFromDataTransfer(e.clipboardData);
+        if (!canAttachFiles()) return;
+        const files = collectAttachmentFilesFromDataTransfer(e.clipboardData);
         if (!files.length) return;
         e.preventDefault();
-        addPendingImageFiles(files);
+        addPendingAttachmentFiles(files);
       });
 
       inputWrap.addEventListener('dragenter', (e) => {
-        if (!canAttachImages()) return;
+        if (!canAttachFiles()) return;
         if (![...(e.dataTransfer?.types || [])].includes('Files')) return;
         e.preventDefault();
         inputWrap.classList.add('drag-over');
       });
 
       inputWrap.addEventListener('dragover', (e) => {
-        if (!canAttachImages()) return;
+        if (!canAttachFiles()) return;
         if (![...(e.dataTransfer?.types || [])].includes('Files')) return;
         e.preventDefault();
         if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
@@ -1324,9 +2827,9 @@
       inputWrap.addEventListener('drop', (e) => {
         e.preventDefault();
         inputWrap.classList.remove('drag-over');
-        if (!canAttachImages()) return;
-        const files = collectImageFilesFromDataTransfer(e.dataTransfer);
-        if (files.length) addPendingImageFiles(files);
+        if (!canAttachFiles()) return;
+        const files = collectAttachmentFilesFromDataTransfer(e.dataTransfer);
+        if (files.length) addPendingAttachmentFiles(files);
       });
     }
 
@@ -1355,6 +2858,13 @@
       return `<div class="msg-label-row"><div class="msg-label">${escapeHtml(label)}</div>${timeHtml}</div>`;
     }
 
+    function withLinksOpenInNewTab(html) {
+      return (html || '').replace(/<a\b([^>]*?)>/gi, (match, attrs) => {
+        if (/\btarget\s*=/.test(attrs)) return match;
+        return `<a${attrs} target="_blank" rel="noopener noreferrer">`;
+      });
+    }
+
     function renderMarkdown(text) {
       try {
         if (typeof marked?.use === 'function') {
@@ -1362,10 +2872,26 @@
         } else if (marked?.setOptions) {
           marked.setOptions({ gfm: true, breaks: false });
         }
-        return `<div class="markdown-body">${marked.parse(text || '')}</div>`;
+        const html = withLinksOpenInNewTab(marked.parse(text || ''));
+        return `<div class="markdown-body">${html}</div>`;
       } catch {
         return `<div class="markdown-body">${(text || '').replace(/</g, '&lt;').replace(/\n/g, '<br>')}</div>`;
       }
+    }
+
+    function setupMarkdownLinkNewTab() {
+      const container = document.getElementById('messages');
+      if (!container || container.dataset.markdownLinkBound === '1') return;
+      container.dataset.markdownLinkBound = '1';
+      container.addEventListener('click', (event) => {
+        const link = event.target.closest('.msg-body .markdown-body a[href]');
+        if (!link) return;
+        const href = (link.getAttribute('href') || '').trim();
+        if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+        if (link.getAttribute('target') === '_blank') return;
+        event.preventDefault();
+        window.open(href, '_blank', 'noopener,noreferrer');
+      });
     }
 
     async function api(path, opts = {}) {
@@ -1394,10 +2920,283 @@
       meta = await api('/api/meta');
       document.getElementById('app-title').textContent = meta.title || 'Yaahlan 智能工具 Agent';
       document.title = meta.title || 'Yaahlan Web Agent';
+      renderModelOptions();
+      renderExternalAgentOptions();
+    }
+
+    const MODEL_KEY = 'web_agent_model';
+    const EXTERNAL_AGENTS_KEY = 'web_agent_enabled_external_agents';
+    const DEFAULT_AGENT_MODELS = [
+      { id: 'composer-2.5', label: 'Composer 2.5（默认）', description: '默认推荐，能力完整' },
+    ];
+
+    function getExternalAgentCatalog() {
+      return Array.isArray(meta.externalAgents) ? meta.externalAgents : [];
+    }
+
+    function loadStoredEnabledExternalAgents() {
+      try {
+        const raw = localStorage.getItem(EXTERNAL_AGENTS_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed.map((item) => String(item || '').trim()).filter(Boolean) : null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function getDefaultEnabledExternalAgents() {
+      return getExternalAgentCatalog()
+        .filter((item) => item.defaultEnabled)
+        .map((item) => String(item.id || '').trim())
+        .filter(Boolean);
+    }
+
+    function getEnabledExternalAgents() {
+      const allowed = new Set(
+        getExternalAgentCatalog().map((item) => String(item.id || '').trim()).filter(Boolean),
+      );
+      const stored = loadStoredEnabledExternalAgents();
+      const source = stored ?? getDefaultEnabledExternalAgents();
+      return source.filter((id) => allowed.has(id));
+    }
+
+    function saveEnabledExternalAgents(ids) {
+      localStorage.setItem(EXTERNAL_AGENTS_KEY, JSON.stringify(ids));
+    }
+
+    function renderExternalAgentOptions() {
+      const container = document.getElementById('external-agent-list');
+      if (!container) return;
+      const agents = getExternalAgentCatalog();
+      const enabled = new Set(getEnabledExternalAgents());
+      if (!agents.length) {
+        container.innerHTML = '<p class="settings-hint">暂无可配置的外部 Agent。</p>';
+        return;
+      }
+      container.innerHTML = agents.map((item) => {
+        const id = String(item.id || '').trim();
+        const label = escapeHtml(String(item.label || id));
+        const url = String(item.url || '').trim();
+        const checked = enabled.has(id) ? ' checked' : '';
+        const openBtn = url
+          ? `<a class="external-agent-open" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" title="打开 ${label}">
+              打开
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M14 3h7v7"/><path d="M10 14 21 3"/><path d="M21 14v7h-7"/><path d="M3 10V3h7"/></svg>
+            </a>`
+          : '';
+        return `
+          <div class="external-agent-item">
+            <label class="external-agent-check" for="external-agent-${escapeHtml(id)}">
+              <input type="checkbox" id="external-agent-${escapeHtml(id)}" data-agent-id="${escapeHtml(id)}"${checked} />
+              <span class="external-agent-name">${label}</span>
+            </label>
+            ${openBtn}
+          </div>`;
+      }).join('');
+      container.querySelectorAll('.external-agent-open').forEach((link) => {
+        link.addEventListener('click', (event) => event.stopPropagation());
+      });
+      container.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+        input.addEventListener('change', () => {
+          const next = Array.from(container.querySelectorAll('input[type="checkbox"]:checked'))
+            .map((el) => el.dataset.agentId)
+            .filter(Boolean);
+          saveEnabledExternalAgents(next);
+          updateExternalAgentHint(next);
+        });
+      });
+      updateExternalAgentHint(Array.from(enabled));
+    }
+
+    function updateExternalAgentHint(enabledIds) {
+      const hint = document.getElementById('external-agent-hint');
+      if (!hint) return;
+      const count = enabledIds.length;
+      hint.textContent = count
+        ? `已勾选 ${count} 个 · 下一条消息起生效`
+        : '未勾选时不调用外部查询接口';
+    }
+
+    function getDefaultModelId() {
+      return String(meta.defaultAgentModel || DEFAULT_AGENT_MODELS[0].id).trim();
+    }
+
+    function getModelDisplayLabel(item) {
+      const id = String(item?.id || '').trim();
+      const base = String(item?.label || id).trim();
+      if (!id) return base;
+      if (id === getDefaultModelId() && !base.includes('默认')) {
+        return `${base}（默认）`;
+      }
+      return base;
+    }
+
+    function getModelCatalog() {
+      const models = Array.isArray(meta.agentModels) ? meta.agentModels : [];
+      return models.length ? models : DEFAULT_AGENT_MODELS;
+    }
+
+    function closeModelPicker() {
+      const menu = document.getElementById('model-picker-menu');
+      const trigger = document.getElementById('model-picker-trigger');
+      if (menu && !menu.hidden) {
+        setDropdownAnimated(menu, false).then(() => {
+          if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        });
+        return;
+      }
+      if (menu) menu.hidden = true;
+      if (trigger) trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleModelPicker() {
+      const menu = document.getElementById('model-picker-menu');
+      const trigger = document.getElementById('model-picker-trigger');
+      if (!menu || !trigger) return;
+      const willOpen = menu.hidden;
+      if (willOpen) {
+        renderModelOptions();
+        setDropdownAnimated(menu, true);
+        trigger.setAttribute('aria-expanded', 'true');
+      } else {
+        closeModelPicker();
+      }
+    }
+
+    function getSelectedModel() {
+      const stored = (localStorage.getItem(MODEL_KEY) || '').trim();
+      const models = getModelCatalog();
+      const allowed = new Set(models.map((item) => String(item.id || '').trim()).filter(Boolean));
+      const fallback = String(meta.defaultAgentModel || DEFAULT_AGENT_MODELS[0].id);
+      if (stored && allowed.has(stored)) return stored;
+      if (allowed.has(fallback)) return fallback;
+      return models[0]?.id || fallback;
+    }
+
+    function renderModelOptions() {
+      const menu = document.getElementById('model-picker-menu');
+      const label = document.getElementById('model-picker-label');
+      if (!menu) return;
+      const models = getModelCatalog();
+      const current = getSelectedModel();
+      menu.innerHTML = models.map((item) => {
+        const id = String(item.id || '').trim();
+        const name = getModelDisplayLabel(item);
+        const active = id === current ? ' active' : '';
+        return `<button type="button" class="model-picker-item${active}" data-model-id="${escapeHtml(id)}" role="option" aria-selected="${id === current ? 'true' : 'false'}">${escapeHtml(name)}</button>`;
+      }).join('');
+      if (label) {
+        const currentItem = models.find((entry) => String(entry.id || '') === current);
+        label.textContent = currentItem ? getModelDisplayLabel(currentItem) : current;
+      }
+      localStorage.setItem(MODEL_KEY, current);
+      updateModelHint(current);
+    }
+
+    function updateModelHint(_modelId) {
+      const hint = document.getElementById('model-hint');
+      if (!hint) return;
+      hint.textContent = '下一条消息起生效';
+    }
+
+    function applyModelSelection(modelId) {
+      const next = String(modelId || '').trim();
+      if (!next) return;
+      localStorage.setItem(MODEL_KEY, next);
+      document.querySelectorAll('.model-picker-item').forEach((btn) => {
+        const active = btn.dataset.modelId === next;
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      const label = document.getElementById('model-picker-label');
+      const models = getModelCatalog();
+      const item = models.find((entry) => String(entry.id || '') === next);
+      if (label) label.textContent = item ? getModelDisplayLabel(item) : next;
+      updateModelHint(next);
+      closeModelPicker();
     }
 
     function isCurrentSessionStreaming() {
       return activeRuns.has(currentSessionId);
+    }
+
+    function getMessagesEl() {
+      return document.getElementById('messages');
+    }
+
+    function isMessagesNearBottom(container, threshold = MESSAGES_SCROLL_NEAR_BOTTOM_PX) {
+      if (!container) return true;
+      return container.scrollHeight - container.scrollTop - container.clientHeight <= threshold;
+    }
+
+    function scrollMessagesToBottom(options = {}) {
+      const { force = false } = options;
+      const container = getMessagesEl();
+      if (!container) return;
+      if (!force && !messagesPinnedToBottom) return;
+      if (force) messagesPinnedToBottom = true;
+
+      const anchor = container.querySelector('.msg:last-of-type, .typing:last-of-type, #typing-indicator');
+      if (anchor) {
+        anchor.scrollIntoView({ block: 'end', behavior: 'auto' });
+      } else {
+        container.scrollTop = container.scrollHeight;
+      }
+      updateScrollToBottomBtn();
+    }
+
+    function updateScrollToBottomBtn() {
+      const btn = document.getElementById('btn-scroll-to-bottom');
+      const container = getMessagesEl();
+      if (!btn || !container) return;
+      const hasMessages = !container.querySelector('.empty-state') && container.children.length > 0;
+      const show = hasMessages && !messagesPinnedToBottom;
+      btn.toggleAttribute('hidden', !show);
+      btn.classList.toggle('is-visible', show);
+      btn.setAttribute('aria-hidden', show ? 'false' : 'true');
+    }
+
+    let scrollMessagesRaf = 0;
+    function scheduleScrollMessagesToBottom(options = {}) {
+      scrollMessagesToBottom(options);
+      cancelAnimationFrame(scrollMessagesRaf);
+      scrollMessagesRaf = requestAnimationFrame(() => {
+        scrollMessagesToBottom(options);
+        requestAnimationFrame(() => scrollMessagesToBottom(options));
+      });
+    }
+
+    function bindMessagesMediaLoadScroll(container) {
+      if (!container) return;
+      container.querySelectorAll('img').forEach((img) => {
+        if (img.complete) return;
+        img.addEventListener('load', () => {
+          if (messagesPinnedToBottom) scrollMessagesToBottom();
+        }, { once: true });
+      });
+    }
+
+    function setupMessagesScrollTracking() {
+      const container = getMessagesEl();
+      if (!container || container.dataset.scrollTrackBound) return;
+      container.dataset.scrollTrackBound = '1';
+      container.addEventListener('scroll', () => {
+        messagesPinnedToBottom = isMessagesNearBottom(container);
+        updateScrollToBottomBtn();
+      }, { passive: true });
+      document.getElementById('btn-scroll-to-bottom')?.addEventListener('click', () => {
+        scheduleScrollMessagesToBottom({ force: true });
+      });
+      if (typeof ResizeObserver !== 'undefined') {
+        let resizeRaf = 0;
+        const observer = new ResizeObserver(() => {
+          if (!messagesPinnedToBottom) return;
+          cancelAnimationFrame(resizeRaf);
+          resizeRaf = requestAnimationFrame(() => scrollMessagesToBottom());
+        });
+        observer.observe(container);
+      }
     }
 
     function renderRunStatusEl(statusEl, status) {
@@ -1428,7 +3227,7 @@
         <div class="run-status"></div>
         <div class="msg-body"></div>`;
       container.appendChild(el);
-      container.scrollTop = container.scrollHeight;
+      scrollMessagesToBottom();
       if (run) {
         run.shellEl = el;
         renderRunStatusEl(el.querySelector('.run-status'), run.status);
@@ -1443,7 +3242,7 @@
       if (sessionId !== currentSessionId) return;
       const shell = run.shellEl || ensureStreamingShell(sessionId);
       renderRunStatusEl(shell.querySelector('.run-status'), run.status);
-      document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+      scrollMessagesToBottom();
     }
 
     function clearRunStatus(sessionId) {
@@ -1454,11 +3253,116 @@
       run.shellEl.classList.remove('streaming');
     }
 
+    function sessionOwnerInfo(item) {
+      if (!item) return { id: '', label: '' };
+      if (item.source === 'dingtalk') {
+        const id = (item.dingtalk_owner_id || '').trim();
+        const label = (item.dingtalk_owner || item.dingtalk_label || '').trim();
+        return { id, label };
+      }
+      const id = (item.web_owner_id || '').trim();
+      const label = (item.web_owner || item.web_owner_label || '').trim();
+      return { id, label };
+    }
+
+    function sessionOwnerFilterKey(item) {
+      const info = sessionOwnerInfo(item);
+      if (!info.id && !info.label) return '';
+      return info.id || `name:${info.label}`;
+    }
+
     function sessionOwnerName(item) {
-      if (!item) return '';
-      if (item.source === 'dingtalk' && item.dingtalk_owner) return item.dingtalk_owner;
-      if (item.web_owner) return item.web_owner;
-      return '';
+      const info = sessionOwnerInfo(item);
+      return info.label || info.id || '';
+    }
+
+    function buildOwnerFilterOptions(sessions) {
+      const owners = new Map();
+      let noneCount = 0;
+      sessions.forEach(s => {
+        const key = sessionOwnerFilterKey(s);
+        if (!key) {
+          noneCount += 1;
+          return;
+        }
+        const info = sessionOwnerInfo(s);
+        const prev = owners.get(key);
+        if (prev) {
+          prev.count += 1;
+        } else {
+          owners.set(key, {
+            label: info.label || info.id || key,
+            count: 1,
+          });
+        }
+      });
+      const sorted = [...owners.entries()].sort((a, b) =>
+        a[1].label.localeCompare(b[1].label, 'zh-CN')
+      );
+      return { owners: sorted, noneCount };
+    }
+
+    function sessionsMatchingOwnerFilter() {
+      const filter = sessionOwnerFilter || 'all';
+      if (filter === 'all') return sessionsCache;
+      if (filter === '__none__') {
+        return sessionsCache.filter(s => !sessionOwnerFilterKey(s));
+      }
+      return sessionsCache.filter(s => sessionOwnerFilterKey(s) === filter);
+    }
+
+    function renderOwnerFilter() {
+      const select = document.getElementById('session-owner-filter');
+      if (!select) return;
+      const { owners, noneCount } = buildOwnerFilterOptions(sessionsCache);
+      const parts = [
+        `<option value="all">全部人员 (${sessionsCache.length})</option>`,
+      ];
+      if (noneCount > 0) {
+        parts.push(`<option value="__none__">未标注归属 (${noneCount})</option>`);
+      }
+      owners.forEach(([key, info]) => {
+        parts.push(
+          `<option value="${escapeHtml(key)}">${escapeHtml(info.label)} (${info.count})</option>`
+        );
+      });
+      select.innerHTML = parts.join('');
+      const valid = [...select.options].some(opt => opt.value === sessionOwnerFilter);
+      select.value = valid ? sessionOwnerFilter : 'all';
+      if (!valid) sessionOwnerFilter = 'all';
+    }
+
+    function renderSessionList() {
+      const list = document.getElementById('session-list');
+      if (!list) return;
+      list.innerHTML = '';
+      const filtered = sessionsMatchingOwnerFilter();
+      if (!filtered.length) {
+        list.innerHTML = '<div class="session-filter-empty">暂无匹配的会话<br><span style="font-size:0.72rem;opacity:0.85">可切换上方人员筛选</span></div>';
+        syncSessionReadOnly(currentSessionId);
+        return;
+      }
+      filtered.forEach(s => {
+        const el = document.createElement('div');
+        el.className = 'session-item' + (s.id === currentSessionId ? ' active' : '');
+        el.dataset.id = s.id;
+        const running = activeRuns.has(s.id) ? ' · 思考中' : '';
+        const sourceBadge = s.source === 'dingtalk'
+          ? '<span class="session-source">钉钉</span>'
+          : '';
+        const ownerName = sessionOwnerName(s);
+        const ownerLine = ownerName
+          ? `<span class="session-owner">${escapeHtml(ownerName)}</span> · `
+          : '';
+        const rel = escapeHtml((s.relative_time || '').trim());
+        const relLine = rel ? `${rel} · ` : '';
+        el.innerHTML = `
+          <div class="session-title">${sourceBadge}${escapeHtml(s.title)}</div>
+          <div class="session-meta">${ownerLine}${relLine}${s.message_count || 0} 条${running}</div>`;
+        el.addEventListener('click', () => selectSession(s.id));
+        list.appendChild(el);
+      });
+      syncSessionReadOnly(currentSessionId);
     }
 
     function readonlyPlaceholder(item) {
@@ -1499,24 +3403,28 @@
       const defaultHint = document.querySelector('.input-area .input-hint');
       const item = sessionsCache.find(s => s.id === currentSessionId);
       if (isGuestMode()) {
+        clearRetryPlaceholder();
         input.readOnly = true;
         input.value = '';
         input.placeholder = GUEST_PLACEHOLDER;
         input.classList.add('readonly-input');
         inputWrap?.classList.add('readonly');
         if (defaultHint) defaultHint.hidden = true;
-        clearPendingImages();
+        clearPendingAttachments();
       } else if (currentSessionReadOnly) {
+        clearRetryPlaceholder();
         input.readOnly = true;
         input.value = '';
         input.placeholder = readonlyPlaceholder(item);
         input.classList.add('readonly-input');
         inputWrap?.classList.add('readonly');
         if (defaultHint) defaultHint.hidden = true;
-        clearPendingImages();
+        clearPendingAttachments();
       } else {
         input.readOnly = false;
-        input.placeholder = DEFAULT_PLACEHOLDER;
+        if (!retryHintActive) {
+          input.placeholder = DEFAULT_PLACEHOLDER;
+        }
         input.classList.remove('readonly-input');
         inputWrap?.classList.remove('readonly');
         if (defaultHint) defaultHint.hidden = false;
@@ -1543,20 +3451,23 @@
 
     function updateInputState() {
       const busy = isCurrentSessionStreaming();
-      const hasDraft = !!document.getElementById('input').value.trim() || pendingImages.length > 0;
+      const hasDraft = !!document.getElementById('input').value.trim() || pendingAttachments.length > 0;
       const sendBtn = document.getElementById('btn-send');
       const stopBtn = document.getElementById('btn-stop');
       const run = activeRuns.get(currentSessionId);
       sendBtn.hidden = busy;
       stopBtn.hidden = !busy || currentSessionReadOnly;
       sendBtn.disabled = currentSessionReadOnly || busy || !hasDraft;
+      const attachBtn = document.getElementById('btn-attach');
+      if (attachBtn) attachBtn.disabled = currentSessionReadOnly || busy;
       const cancelling = !!run?.cancelling;
       stopBtn.disabled = currentSessionReadOnly || !busy || cancelling;
       stopBtn.classList.toggle('is-cancelling', cancelling);
       stopBtn.title = cancelling ? '中断发起中…' : '中断思考';
       stopBtn.setAttribute('aria-busy', cancelling ? 'true' : 'false');
-      const clearBtn = document.getElementById('btn-clear');
-      if (clearBtn) clearBtn.disabled = currentSessionReadOnly || busy || !currentSessionId;
+      if (window.WaitingFx) {
+        WaitingFx.setActive(busy && !currentSessionReadOnly);
+      }
     }
 
     function findActiveAssistantShell(sessionId) {
@@ -1576,16 +3487,37 @@
       if (run) run.shellEl = shell;
       clearRunStatus(sessionId);
       shell.querySelector('.msg-body').innerHTML = renderMarkdown(body);
+      scrollMessagesToBottom({ force: true });
+    }
+
+    function isFailureReplyText(text) {
+      const body = (text || '').trim();
+      return body.startsWith('⚠️ Agent 执行失败')
+        || body.startsWith('⚠️ 任务已中断');
+    }
+
+    function appendRetryHint(text) {
+      const body = (text || '').trim();
+      if (!body || body.includes('原消息已回填')) return body || text;
+      return `${body}${RETRY_HINT_MARKDOWN}`;
+    }
+
+    function clearRetryPlaceholder() {
+      if (!retryHintActive) return;
+      const input = document.getElementById('input');
+      if (input && !input.readOnly) {
+        input.placeholder = DEFAULT_PLACEHOLDER;
+      }
+      retryHintActive = false;
     }
 
     function shouldRestoreSentDraft(run, doneText) {
       if (!run?.sentDraft) return false;
-      if (run.cancelling) return true;
-      const text = (doneText || '').trim();
-      return text.startsWith('⚠️ 任务已中断');
+      if (run.cancelling || run.failed) return true;
+      return isFailureReplyText(doneText);
     }
 
-    function restoreSentDraft(sessionId) {
+    function restoreSentDraft(sessionId, { showRetryHint = true } = {}) {
       if (currentSessionId !== sessionId || currentSessionReadOnly) return;
       const draft = activeRuns.get(sessionId)?.sentDraft;
       if (!draft) return;
@@ -1593,15 +3525,20 @@
       if (!input || input.readOnly) return;
       input.value = draft.text || '';
       autoResizeInput();
-      if (draft.images?.length) {
-        pendingImages = draft.images.map(item => ({
+      if (draft.attachments?.length) {
+        pendingAttachments = draft.attachments.map(item => ({
           id: item.id,
           name: item.name,
           mime: item.mime,
+          kind: item.kind || (item.previewUrl ? 'image' : 'file'),
           previewUrl: item.previewUrl,
           data_base64: item.data_base64,
         }));
-        renderPendingImages();
+        renderPendingAttachments();
+      }
+      if (showRetryHint && (draft.text || draft.attachments?.length)) {
+        input.placeholder = RETRY_PLACEHOLDER;
+        retryHintActive = true;
       }
       updateInputState();
       input.focus();
@@ -1647,11 +3584,122 @@
       }
     }
 
-    function setSidebarOpen(open) {
+    const MOTION_MS = 240;
+
+    function prefersReducedMotion() {
+      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+
+    function waitMotion(el, ms = MOTION_MS) {
+      return new Promise((resolve) => {
+        if (!el || prefersReducedMotion()) {
+          resolve();
+          return;
+        }
+        let settled = false;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          resolve();
+        };
+        el.addEventListener('animationend', finish, { once: true });
+        setTimeout(finish, ms + 60);
+      });
+    }
+
+    async function animateOverlayClose(modalEl) {
+      if (!modalEl?.classList.contains('open') || prefersReducedMotion()) return;
+      modalEl.classList.add('overlay-closing');
+      await waitMotion(modalEl.querySelector('.settings-box, .bookmarks-bubble') || modalEl, 220);
+      modalEl.classList.remove('overlay-closing');
+    }
+
+    function setDropdownAnimated(menuEl, open) {
+      if (!menuEl) return Promise.resolve();
+      if (prefersReducedMotion()) {
+        menuEl.hidden = !open;
+        menuEl.classList.remove('dropdown-opening', 'dropdown-closing');
+        return Promise.resolve();
+      }
+      if (open) {
+        menuEl.hidden = false;
+        menuEl.classList.remove('dropdown-closing');
+        void menuEl.offsetWidth;
+        menuEl.classList.add('dropdown-opening');
+        menuEl.addEventListener('animationend', () => menuEl.classList.remove('dropdown-opening'), { once: true });
+        return Promise.resolve();
+      }
+      if (menuEl.hidden) return Promise.resolve();
+      return new Promise((resolve) => {
+        menuEl.classList.remove('dropdown-opening');
+        menuEl.classList.add('dropdown-closing');
+        const finish = () => {
+          menuEl.hidden = true;
+          menuEl.classList.remove('dropdown-closing');
+          resolve();
+        };
+        menuEl.addEventListener('animationend', finish, { once: true });
+        setTimeout(finish, 200);
+      });
+    }
+
+    window.WebAgentMotion = {
+      prefersReducedMotion,
+      waitMotion,
+      animateOverlayClose,
+      setDropdownAnimated,
+    };
+
+    function triggerPanelOpenAnimation(el, className) {
+      if (!el) return;
+      el.classList.remove(className);
+      void el.offsetWidth;
+      el.classList.add(className);
+      el.addEventListener('animationend', () => el.classList.remove(className), { once: true });
+    }
+
+    async function triggerPanelCloseAnimation(el, className) {
+      if (!el || prefersReducedMotion()) return;
+      el.classList.remove(className);
+      void el.offsetWidth;
+      el.classList.add(className);
+      await waitMotion(el, 280);
+      el.classList.remove(className);
+    }
+
+    function triggerHeaderBtnActiveAnimation(btn) {
+      if (!btn || !btn.classList.contains('active')) return;
+      btn.classList.remove('header-btn-active-flash');
+      void btn.offsetWidth;
+      btn.classList.add('header-btn-active-flash');
+      btn.addEventListener('animationend', () => btn.classList.remove('header-btn-active-flash'), { once: true });
+    }
+
+    function setHeaderBtnActive(btn, active, opts = {}) {
+      if (!btn) return;
+      const wasActive = btn.classList.contains('active');
+      btn.classList.toggle('active', active);
+      if (active && !wasActive && !opts.skipAnimation && document.body.classList.contains('layout-ready')) {
+        triggerHeaderBtnActiveAnimation(btn);
+      }
+    }
+
+    async function setSidebarOpen(open, opts = {}) {
+      const leftPanel = document.querySelector('.left-panel');
+      const main = document.querySelector('.main');
+      const wasOpen = sidebarOpen;
       sidebarOpen = open;
       localStorage.setItem('web_agent_sidebar_open', open ? '1' : '0');
-      document.querySelector('.main').classList.toggle('sidebar-collapsed', !open);
-      document.getElementById('btn-sidebar')?.classList.toggle('active', open);
+      const collapsed = !open;
+      document.body.classList.toggle('sidebar-collapsed', collapsed);
+      main?.classList.toggle('sidebar-collapsed', collapsed);
+      setHeaderBtnActive(document.getElementById('btn-sidebar'), open, opts);
+      if (open && !wasOpen && !opts.skipAnimation && document.body.classList.contains('layout-ready')) {
+        leftPanel?.classList.remove('panel-closing');
+        triggerPanelOpenAnimation(leftPanel, 'panel-opening');
+      } else {
+        leftPanel?.classList.remove('panel-opening', 'panel-closing');
+      }
     }
 
     function finishRun(sessionId) {
@@ -1660,77 +3708,95 @@
         clearTimeout(run.cancelWatchdog);
       }
       activeRuns.delete(sessionId);
-      if (sessionId === currentSessionId) updateInputState();
+      if (sessionId === currentSessionId) {
+        updateInputState();
+        loadMessages();
+      }
       loadSessions();
     }
 
     async function loadSessions() {
       const data = await api('/api/sessions');
       sessionsCache = data.sessions || [];
-      const list = document.getElementById('session-list');
-      list.innerHTML = '';
-      sessionsCache.forEach(s => {
-        const el = document.createElement('div');
-        el.className = 'session-item' + (s.id === currentSessionId ? ' active' : '');
-        el.dataset.id = s.id;
-        const running = activeRuns.has(s.id) ? ' · 思考中' : '';
-        const sourceBadge = s.source === 'dingtalk'
-          ? '<span class="session-source">钉钉</span>'
-          : '';
-        const ownerName = sessionOwnerName(s);
-        const ownerLine = ownerName
-          ? `<span class="session-owner">${escapeHtml(ownerName)}</span> · `
-          : '';
-        const previewLine = s.latest_preview
-          ? `<div class="session-preview">${escapeHtml(s.latest_preview)}</div>`
-          : '';
-        const rel = (s.relative_time || '').trim();
-        const abs = formatMessageTime(s.updated_at || s.created_at);
-        const timeLine = escapeHtml([rel, abs].filter(Boolean).join(' · '));
-        el.innerHTML = `
-          <div class="session-title">${sourceBadge}${escapeHtml(s.title)}</div>
-          ${previewLine}
-          <div class="session-meta">${ownerLine}${timeLine} · ${s.message_count || 0} 条${running}</div>`;
-        el.addEventListener('click', () => selectSession(s.id));
-        list.appendChild(el);
-      });
-      syncSessionReadOnly(currentSessionId);
+      renderOwnerFilter();
+      renderSessionList();
     }
 
     function escapeHtml(s) {
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
-    async function createSession() {
+    let creatingSession = false;
+
+    function setNewSessionButtonsDisabled(disabled) {
+      ['btn-new', 'btn-new-header'].forEach((id) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.disabled = disabled;
+        btn.classList.toggle('is-creating-session', disabled);
+        btn.setAttribute('aria-busy', disabled ? 'true' : 'false');
+      });
+    }
+
+    async function animateMessagesExit() {
+      const container = document.getElementById('messages');
+      if (!container || prefersReducedMotion() || !container.children.length) return;
+      container.classList.remove('messages-exit');
+      void container.offsetWidth;
+      container.classList.add('messages-exit');
+      await waitMotion(container, 220);
+    }
+
+    async function createSession(opts = {}) {
       if (isGuestMode()) {
         goToLogin();
         return;
       }
-      clearPendingImages();
-      if (currentSessionId) {
-        try {
-          const data = await api(`/api/sessions/${currentSessionId}/messages`);
-          if (!(data.messages || []).length) {
-            await api(`/api/sessions/${currentSessionId}`, { method: 'DELETE' });
-          }
-        } catch { /* ignore */ }
+      if (creatingSession) return;
+      const animate = !!opts.animate;
+      if (animate) {
+        creatingSession = true;
+        setNewSessionButtonsDisabled(true);
       }
-      const s = await api('/api/sessions', { method: 'POST', body: JSON.stringify({ title: '新对话' }) });
-      currentSessionId = s.id;
-      currentSessionReadOnly = false;
-      localStorage.setItem('web_agent_session', currentSessionId);
-      await loadSessions();
-      updateDingtalkOwnerBar();
-      updateReadOnlyState();
-      await loadMessages();
-      document.getElementById('input').focus();
+      try {
+        clearPendingAttachments();
+        const exitPromise = animate ? animateMessagesExit() : Promise.resolve();
+        const cleanupPromise = (async () => {
+          if (!currentSessionId) return;
+          try {
+            const data = await api(`/api/sessions/${currentSessionId}/messages`);
+            if (!(data.messages || []).length) {
+              await api(`/api/sessions/${currentSessionId}`, { method: 'DELETE' });
+            }
+          } catch { /* ignore */ }
+        })();
+        await Promise.all([exitPromise, cleanupPromise]);
+        const s = await api('/api/sessions', { method: 'POST', body: JSON.stringify({ title: '新对话' }) });
+        currentSessionId = s.id;
+        currentSessionReadOnly = false;
+        persistSessionId(currentSessionId);
+        await loadSessions();
+        updateDingtalkOwnerBar();
+        updateReadOnlyState();
+        if (animate) {
+          showEmptyState({ animate: true });
+        } else {
+          await loadMessages();
+        }
+        document.getElementById('input').focus();
+      } finally {
+        if (animate) {
+          creatingSession = false;
+          setNewSessionButtonsDisabled(false);
+        }
+      }
     }
 
-    async function selectSession(id) {
-      if (id === currentSessionId) return;
-      clearPendingImages();
+    async function selectSession(id, opts = {}) {
+      if (!opts.force && id === currentSessionId) return;
+      clearPendingAttachments();
       currentSessionId = id;
-      localStorage.setItem('web_agent_session', id);
+      persistSessionId(id);
       syncSessionReadOnly(id);
       await loadSessions();
       await loadMessages();
@@ -1756,7 +3822,7 @@
       return items.slice(0, n);
     }
 
-    function showEmptyState() {
+    function showEmptyState(opts = {}) {
       const pool = meta.quickPrompts || [
         '查一下 Gift 模块 Stage 送礼怎么用',
         '工具平台有哪些 MOA 能力？',
@@ -1765,8 +3831,10 @@
       ];
       const prompts = pickRotatingPrompts(pool, meta.quickPromptCount || 4);
       const container = document.getElementById('messages');
+      const animate = !!opts.animate && !prefersReducedMotion();
+      container.classList.remove('messages-exit');
       container.innerHTML = `
-        <div class="empty-state">
+        <div class="empty-state${animate ? ' empty-state-enter' : ''}">
           <div class="empty-logo">${cursorLogoHtml()}</div>
           <h2>${escapeHtml(meta.title || 'Yaahlan 智能工具 Agent')}</h2>
           <p>${escapeHtml(meta.subtitle || '钉钉 Agent · MOA/Admin 查数 · Tunnel 抓包 · Stage 送礼 · 用例生成')}</p>
@@ -1774,9 +3842,21 @@
             ${prompts.map(p => `<button type="button" data-prompt="${escapeHtml(p)}">${escapeHtml(p)}</button>`).join('')}
           </div>
         </div>`;
+      const emptyEl = container.querySelector('.empty-state');
+      const promptBtns = container.querySelectorAll('.quick-prompts button');
+      if (animate && emptyEl) {
+        promptBtns.forEach((btn, index) => {
+          btn.style.animationDelay = `${260 + index * 58}ms`;
+        });
+        emptyEl.addEventListener('animationend', () => {
+          emptyEl.classList.remove('empty-state-enter');
+          promptBtns.forEach((btn) => { btn.style.animationDelay = ''; });
+        }, { once: true });
+      }
       container.querySelectorAll('[data-prompt]').forEach(btn => {
         btn.addEventListener('click', () => sendMessage(btn.dataset.prompt));
       });
+      updateScrollToBottomBtn();
     }
 
     async function loadMessages() {
@@ -1786,7 +3866,7 @@
       const container = document.getElementById('messages');
       if (!msgs.length) { showEmptyState(); return; }
       container.innerHTML = '';
-      msgs.forEach(m => appendMessage(m.role, m.content, false, m.images || [], m.timestamp));
+      msgs.forEach(m => appendMessage(m.role, m.content, false, m.images || [], m.files || [], m.timestamp));
       if (activeRuns.has(currentSessionId)) {
         const run = activeRuns.get(currentSessionId);
         if (run?.shellEl) {
@@ -1800,7 +3880,10 @@
           container.appendChild(typingEl);
         }
       }
-      container.scrollTop = container.scrollHeight;
+      scrollMessagesToBottom({ force: !isCurrentSessionStreaming() });
+      bindMessagesMediaLoadScroll(container);
+      scheduleScrollMessagesToBottom({ force: !isCurrentSessionStreaming() });
+      updateScrollToBottomBtn();
     }
 
     function authUserDisplayName(user) {
@@ -1815,33 +3898,36 @@
       return authUserDisplayName(currentAuthUser);
     }
 
-    function appendMessage(role, content, scroll = true, images = [], timestamp = '') {
+    function appendMessage(role, content, scroll = true, images = [], files = [], timestamp = '') {
       const container = document.getElementById('messages');
       if (container.querySelector('.empty-state')) container.innerHTML = '';
       const el = document.createElement('div');
       el.className = `msg ${role}`;
       const label = role === 'user' ? userMessageLabel() : 'Agent';
-      const imageHtml = role === 'user' ? renderMessageImages(images) : '';
+      const imageHtml = renderMessageImages(images);
+      const fileHtml = renderMessageFiles(files);
       const text = (content || '').trim();
+      const attachmentHtml = `${imageHtml}${fileHtml}`;
       const bodyHtml = role === 'assistant'
-        ? renderMarkdown(text)
-        : `${imageHtml}${text ? escapeHtml(text).replace(/\n/g, '<br>') : ''}`;
+        ? `${attachmentHtml}${renderMarkdown(text)}`
+        : `${attachmentHtml}${text ? escapeHtml(text).replace(/\n/g, '<br>') : ''}`;
       el.innerHTML = `
         ${buildMsgLabelHtml(label, timestamp || new Date().toISOString())}
-        <div class="msg-body">${bodyHtml || imageHtml}</div>`;
+        <div class="msg-body">${bodyHtml || attachmentHtml}</div>`;
       container.appendChild(el);
-      if (scroll) container.scrollTop = container.scrollHeight;
+      bindMessagesMediaLoadScroll(container);
+      if (scroll) scheduleScrollMessagesToBottom({ force: true });
       return el;
     }
 
     async function sendMessage(text) {
       const message = (text || document.getElementById('input').value).trim();
-      const imagesToSend = pendingImages.map(item => ({
+      const attachmentsToSend = pendingAttachments.map(item => ({
         name: item.name,
         mime: item.mime,
         data_base64: item.data_base64,
       }));
-      if ((!message && !imagesToSend.length) || isCurrentSessionStreaming() || currentSessionReadOnly) return;
+      if ((!message && !attachmentsToSend.length) || isCurrentSessionStreaming() || currentSessionReadOnly) return;
       if (isGuestMode()) {
         goToLogin();
         return;
@@ -1850,21 +3936,19 @@
       if (!currentSessionId) await createSession();
 
       const sessionId = currentSessionId;
-      const previewImages = pendingImages.map(item => item.previewUrl);
+      const previewImages = pendingAttachments.filter(item => item.kind === 'image').map(item => item.previewUrl);
+      const previewFiles = pendingAttachments.filter(item => item.kind !== 'image').map(item => ({
+        url: '#', name: item.name, size: 0,
+      }));
       const sentDraft = {
         text: message,
-        images: pendingImages.map(item => ({
-          id: item.id,
-          name: item.name,
-          mime: item.mime,
-          previewUrl: item.previewUrl,
-          data_base64: item.data_base64,
-        })),
+        attachments: pendingAttachments.map(item => ({ ...item })),
       };
+      clearRetryPlaceholder();
       document.getElementById('input').value = '';
       autoResizeInput();
-      clearPendingImages();
-      appendMessage('user', message, true, previewImages);
+      clearPendingAttachments();
+      appendMessage('user', message, true, previewImages, previewFiles);
       activeRuns.set(sessionId, {
         pending: true,
         eventSource: null,
@@ -1884,7 +3968,9 @@
           body: JSON.stringify({
             session_id: sessionId,
             message,
-            images: imagesToSend,
+            attachments: attachmentsToSend,
+            model: getSelectedModel(),
+            enabled_external_agents: getEnabledExternalAgents(),
           }),
         });
 
@@ -1925,7 +4011,7 @@
                 activeRuns.get(sessionId).shellEl = assistantEl;
               }
               assistantEl.querySelector('.msg-body').innerHTML = renderMarkdown(data.markdown || '');
-              document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+              scrollMessagesToBottom();
             } else if (data.type === 'done') {
               const doneRun = activeRuns.get(sessionId);
               if (doneRun?.cancelWatchdog) {
@@ -1945,18 +4031,22 @@
                 } else if (!assistantEl.querySelector('.msg-body').innerHTML.trim()) {
                   assistantEl.querySelector('.msg-body').innerHTML = renderMarkdown('（无回复）');
                 }
+                scrollMessagesToBottom({ force: true });
               }
               es.close();
               resolve();
             } else if (data.type === 'error') {
+              const errorRun = activeRuns.get(sessionId);
+              if (errorRun) errorRun.failed = true;
               if (isViewing()) {
                 if (!assistantEl) {
                   assistantEl = ensureStreamingShell(sessionId);
                   activeRuns.get(sessionId).shellEl = assistantEl;
                 }
                 clearRunStatus(sessionId);
-                const text = data.text || `⚠️ ${data.message || 'Agent 执行失败'}`;
+                const text = appendRetryHint(data.text || `⚠️ ${data.message || 'Agent 执行失败'}`);
                 assistantEl.querySelector('.msg-body').innerHTML = renderMarkdown(text);
+                scrollMessagesToBottom({ force: true });
               }
               es.close();
               resolve();
@@ -1968,14 +4058,16 @@
           };
         });
       } catch (err) {
+        const run = activeRuns.get(sessionId);
+        if (run) run.failed = true;
         if (currentSessionId === sessionId) {
           document.getElementById('typing-indicator')?.remove();
-          const run = activeRuns.get(sessionId);
+          const failText = appendRetryHint(`⚠️ ${err.message}`);
           if (run?.shellEl) {
             clearRunStatus(sessionId);
-            run.shellEl.querySelector('.msg-body').innerHTML = renderMarkdown(`⚠️ ${err.message}`);
+            run.shellEl.querySelector('.msg-body').innerHTML = renderMarkdown(failText);
           } else {
-            appendMessage('assistant', `⚠️ ${err.message}`);
+            appendMessage('assistant', failText);
           }
         }
       } finally {
@@ -2030,6 +4122,7 @@
     });
 
     document.getElementById('input').addEventListener('input', () => {
+      clearRetryPlaceholder();
       autoResizeInput();
       updateInputState();
     });
@@ -2049,46 +4142,90 @@
     });
     document.getElementById('btn-send').addEventListener('click', () => sendMessage());
     document.getElementById('btn-stop').addEventListener('click', () => cancelCurrentRun());
-    document.getElementById('btn-new').addEventListener('click', createSession);
-    document.getElementById('btn-new-side').addEventListener('click', createSession);
-    document.getElementById('btn-sidebar-close').addEventListener('click', () => setSidebarOpen(false));
+    document.getElementById('btn-new').addEventListener('click', () => createSession({ animate: true }));
+    document.getElementById('btn-new-header').addEventListener('click', () => createSession({ animate: true }));
+    document.getElementById('btn-sidebar-collapse')?.addEventListener('mousedown', (e) => e.stopPropagation());
+    document.getElementById('btn-sidebar-collapse')?.addEventListener('click', () => setSidebarOpen(false));
     document.getElementById('btn-sidebar').addEventListener('click', () => setSidebarOpen(!sidebarOpen));
-    function isCurrentUserAdmin() {
-      return !!currentAuthUser?.isAdmin;
+    document.getElementById('session-owner-filter')?.addEventListener('change', (event) => {
+      sessionOwnerFilter = event.target.value || 'all';
+      localStorage.setItem('web_agent_session_owner_filter', sessionOwnerFilter);
+      renderSessionList();
+    });
+    async function openSettingsModal() {
+      document.getElementById('settings-view-main').hidden = false;
+      document.getElementById('settings-view-about').hidden = true;
+      document.getElementById('settings-modal').classList.add('open');
+      if (!getExternalAgentCatalog().length) {
+        try {
+          await loadMeta();
+        } catch (_) { /* 保留已有 meta，避免阻塞设置弹窗 */ }
+      }
+      renderModelOptions();
+      renderExternalAgentOptions();
+      closeModelPicker();
     }
 
-    document.getElementById('btn-clear').addEventListener('click', async () => {
-      if (isCurrentSessionStreaming() || currentSessionReadOnly) return;
-      if (!isCurrentUserAdmin()) {
-        alert('没有权限');
-        return;
-      }
-      if (currentSessionId && confirm('清空当前会话消息？')) {
-        try {
-          await api(`/api/sessions/${currentSessionId}`, { method: 'DELETE' });
-          await createSession();
-        } catch (err) {
-          if (String(err.message || '').includes('没有权限')) {
-            alert('没有权限');
-            return;
-          }
-          throw err;
-        }
-      }
-    });
-    document.getElementById('btn-about').addEventListener('click', () => {
-      document.getElementById('about-modal').classList.add('open');
-    });
-    document.getElementById('btn-about-close').addEventListener('click', () => {
-      document.getElementById('about-modal').classList.remove('open');
-    });
+    async function closeSettingsModal() {
+      const modal = document.getElementById('settings-modal');
+      if (!modal?.classList.contains('open')) return;
+      closeModelPicker();
+      await animateOverlayClose(modal);
+      modal.classList.remove('open');
+      document.getElementById('settings-view-main').hidden = false;
+      document.getElementById('settings-view-about').hidden = true;
+    }
 
-    function setCatalogOpen(open) {
+    function initThemeSettings() {
+      renderModelOptions();
+      document.getElementById('model-picker-trigger')?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        toggleModelPicker();
+      });
+      document.getElementById('model-picker-menu')?.addEventListener('click', (event) => {
+        const btn = event.target.closest('.model-picker-item');
+        if (!btn) return;
+        event.stopPropagation();
+        applyModelSelection(btn.dataset.modelId);
+      });
+      document.getElementById('model-picker')?.addEventListener('click', (event) => {
+        event.stopPropagation();
+      });
+      document.getElementById('settings-box')?.addEventListener('click', (event) => {
+        event.stopPropagation();
+      });
+      document.addEventListener('click', () => closeModelPicker());
+      document.getElementById('btn-settings').addEventListener('click', openSettingsModal);
+      document.getElementById('btn-settings-close').addEventListener('click', closeSettingsModal);
+      document.getElementById('btn-about-close').addEventListener('click', closeSettingsModal);
+      document.getElementById('btn-settings-about').addEventListener('click', () => {
+        document.getElementById('settings-view-main').hidden = true;
+        document.getElementById('settings-view-about').hidden = false;
+      });
+      document.getElementById('btn-settings-back').addEventListener('click', () => {
+        document.getElementById('settings-view-main').hidden = false;
+        document.getElementById('settings-view-about').hidden = true;
+      });
+      document.getElementById('settings-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'settings-modal') closeSettingsModal();
+      });
+    }
+
+    async function setCatalogOpen(open, opts = {}) {
+      const panel = document.getElementById('catalog-panel');
+      const main = document.querySelector('.main');
+      const wasOpen = catalogOpen;
       catalogOpen = open;
-      localStorage.setItem('web_agent_catalog_open', open ? '1' : '0');
-      document.getElementById('catalog-panel').classList.toggle('open', open);
-      document.querySelector('.main').classList.toggle('catalog-open', open);
-      document.getElementById('btn-catalog').classList.toggle('active', open);
+      panel.classList.toggle('open', open);
+      main?.classList.toggle('catalog-open', open);
+      document.body.classList.toggle('catalog-open', open);
+      setHeaderBtnActive(document.getElementById('btn-catalog'), open, opts);
+      if (open && !wasOpen && !opts.skipAnimation && document.body.classList.contains('layout-ready')) {
+        panel?.classList.remove('panel-closing');
+        triggerPanelOpenAnimation(panel, 'panel-opening');
+      } else {
+        panel?.classList.remove('panel-opening', 'panel-closing');
+      }
     }
 
     function initSidebarResize() {
@@ -2198,6 +4335,49 @@
       );
     }
 
+    async function initBookmarksPanel() {
+      if (typeof BookmarksPanel === 'undefined') return;
+      bookmarksPanel = new BookmarksPanel({
+        modalEl: document.getElementById('bookmarks-modal'),
+        bubbleEl: document.getElementById('bookmarks-bubble'),
+        bodyEl: document.getElementById('bookmarks-body'),
+        addModalEl: document.getElementById('bookmarks-add-modal'),
+        addDialogEl: document.getElementById('bookmarks-add-dialog'),
+        addFormEl: document.getElementById('bookmarks-add-form'),
+        addTitleEl: document.getElementById('bookmarks-add-title'),
+        urlInputEl: document.getElementById('bookmarks-url-input'),
+        labelInputEl: document.getElementById('bookmarks-label-input'),
+        descriptionInputEl: document.getElementById('bookmarks-description-input'),
+        editFieldsEl: document.getElementById('bookmarks-add-edit-fields'),
+        categorySelectEl: document.getElementById('bookmarks-category-select'),
+        categoryNewEl: document.getElementById('bookmarks-category-new'),
+        categoryEditModalEl: document.getElementById('bookmarks-category-edit-modal'),
+        categoryEditDialogEl: document.getElementById('bookmarks-category-edit-dialog'),
+        categoryEditFormEl: document.getElementById('bookmarks-category-edit-form'),
+        categoryLabelInputEl: document.getElementById('bookmarks-category-label-input'),
+        fetchBookmarks: async () => {
+          const latest = await api('/api/meta');
+          return latest.bookmarks || { categories: [] };
+        },
+      });
+      bookmarksPanel.setAdmin(!!currentAuthUser?.isAdmin);
+      bookmarksPanel.bind();
+      bookmarksPanel.setData(meta.bookmarks || { categories: [] });
+      await bookmarksPanel.migrateFromLocalStorageIfNeeded();
+    }
+
+    async function setBookmarksOpen(open, opts = {}) {
+      if (!bookmarksPanel) return;
+      if (!open && bookmarksPanel.open && !opts.skipAnimation && document.body.classList.contains('layout-ready')) {
+        const modal = document.getElementById('bookmarks-modal');
+        await animateOverlayClose(modal);
+      }
+      bookmarksPanel.setOpen(open, opts);
+      const modal = document.getElementById('bookmarks-modal');
+      if (modal) modal.setAttribute('aria-hidden', open ? 'false' : 'true');
+      setHeaderBtnActive(document.getElementById('btn-bookmarks'), open);
+    }
+
     async function initCatalogPanel() {
       catalogPanel = new CatalogPanel({
         root: document.getElementById('catalog-panel'),
@@ -2219,6 +4399,40 @@
     document.getElementById('btn-catalog').addEventListener('click', () => setCatalogOpen(!catalogOpen));
     document.getElementById('btn-catalog-close').addEventListener('click', () => setCatalogOpen(false));
 
+    document.getElementById('btn-bookmarks')?.addEventListener('click', () => {
+      setBookmarksOpen(!bookmarksPanel?.open);
+    });
+    document.getElementById('btn-bookmarks-add')?.addEventListener('click', () => {
+      bookmarksPanel?.toggleAddPanel(true);
+    });
+    document.getElementById('btn-bookmarks-add-cancel')?.addEventListener('click', () => {
+      bookmarksPanel?.toggleAddPanel(false);
+    });
+    document.getElementById('bookmarks-add-modal')?.addEventListener('click', (event) => {
+      if (event.target.id === 'bookmarks-add-modal') bookmarksPanel?.toggleAddPanel(false);
+    });
+    document.getElementById('bookmarks-category-edit-modal')?.addEventListener('click', (event) => {
+      if (event.target.id === 'bookmarks-category-edit-modal') bookmarksPanel?.toggleCategoryEditPanel(false);
+    });
+    document.getElementById('btn-bookmarks-category-edit-cancel')?.addEventListener('click', () => {
+      bookmarksPanel?.toggleCategoryEditPanel(false);
+    });
+    document.getElementById('bookmarks-modal')?.addEventListener('click', (event) => {
+      if (event.target.id === 'bookmarks-modal') setBookmarksOpen(false);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      if (bookmarksPanel?.categoryEditOpen) {
+        bookmarksPanel.toggleCategoryEditPanel(false);
+        return;
+      }
+      if (bookmarksPanel?.addOpen) {
+        bookmarksPanel.toggleAddPanel(false);
+        return;
+      }
+      if (bookmarksPanel?.open) setBookmarksOpen(false);
+    });
+
     let sessionPollTimer = null;
     function startSessionPolling() {
       if (sessionPollTimer) return;
@@ -2235,12 +4449,18 @@
       }, 15000);
     }
 
-    function setUserMenuOpen(open) {
+    async function setUserMenuOpen(open) {
       const btn = document.getElementById('user-menu-btn');
       const dropdown = document.getElementById('user-menu-dropdown');
       if (!btn || !dropdown) return;
+      if (!open && !dropdown.hidden) {
+        await setDropdownAnimated(dropdown, false);
+      } else if (open) {
+        setDropdownAnimated(dropdown, true);
+      } else {
+        dropdown.hidden = true;
+      }
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      dropdown.hidden = !open;
     }
 
     function initAuthUI(authData) {
@@ -2262,6 +4482,7 @@
         if (loginBtn) loginBtn.hidden = !otpAuthEnabled;
       }
       updateReadOnlyState();
+      if (bookmarksPanel) bookmarksPanel.setAdmin(!!currentAuthUser?.isAdmin);
     }
 
     async function logoutCurrentUser() {
@@ -2313,26 +4534,22 @@
       try {
         const authData = await ensureAuthSession();
         if (authData) initAuthUI(authData);
-        setupInputImageHandlers();
+        setupInputAttachmentHandlers();
+        setupMessageFileDownloads();
+        setupMarkdownLinkNewTab();
+        setupMessagesScrollTracking();
+        initThemeSettings();
         await loadMeta();
         initSidebarResize();
         initCatalogResize();
-        setSidebarOpen(sidebarOpen);
+        setSidebarOpen(sidebarOpen, { skipAnimation: true });
+        await initBookmarksPanel();
         await initCatalogPanel();
-        setCatalogOpen(catalogOpen);
+        setCatalogOpen(catalogOpen, { skipAnimation: true });
+        requestAnimationFrame(() => document.body.classList.add('layout-ready'));
         await loadSessions();
-        if (currentSessionId) {
-          try {
-            await api(`/api/sessions/${currentSessionId}/messages`);
-            await loadMessages();
-          } catch {
-            currentSessionId = '';
-            localStorage.removeItem('web_agent_session');
-            showEmptyState();
-          }
-        } else {
-          showEmptyState();
-        }
+        await restoreOrCreateInitialSession();
+        scheduleScrollMessagesToBottom({ force: true });
         startSessionPolling();
         applyIncomingPrompt();
       } catch (err) {

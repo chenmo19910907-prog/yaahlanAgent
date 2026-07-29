@@ -136,7 +136,14 @@ class WebAuthIntegrationTest(unittest.TestCase):
                 pass
 
         with patch.dict(os.environ, {"WEB_AGENT_OTP_AUTH": "1"}, clear=False):
-            for path in ("/", "/chat.html", "/api/meta", "/api/sessions"):
+            for path in (
+                "/",
+                "/chat.html",
+                "/theme.js",
+                "/waiting_fx.js",
+                "/api/meta",
+                "/api/sessions",
+            ):
                 handler = Handler(path)
                 self.assertTrue(authorize_request(handler, method="GET"), path)
 

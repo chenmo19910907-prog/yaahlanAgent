@@ -5,7 +5,7 @@
 (function (global) {
   'use strict';
 
-  const PROMPT_PLACEHOLDER_RE = /<([^>]+)>/g;
+  const PROMPT_PLACEHOLDER_RE = /<([^>|]+)(?:\|([^>]+))?>/g;
 
   function escapeHtml(s) {
     return String(s)
@@ -82,10 +82,11 @@
     while ((m = re.exec(text)) !== null) {
       if (m.index > last) spanParts.push(escapeHtml(text.slice(last, m.index)));
       const key = m[1];
-      const width = Math.min(12, Math.max(4, key.length + 1));
+      const label = (m[2] || key).trim();
+      const width = Math.min(12, Math.max(4, label.length + 1));
       spanParts.push(
         `<input type="text" class="prompt-field" data-key="${escapeHtml(key)}" ` +
-        `placeholder="${escapeHtml(key)}" aria-label="${escapeHtml(key)}" ` +
+        `placeholder="${escapeHtml(label)}" aria-label="${escapeHtml(label)}" ` +
         `style="width:${width}em">`
       );
       last = re.lastIndex;

@@ -21,7 +21,7 @@ from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, quote, urlparse
 
 WEB_AGENT_DIR = Path(__file__).resolve().parent
 PLATFORM_DIR = WEB_AGENT_DIR.parent
@@ -65,7 +65,11 @@ if str(WEB_AGENT_DIR) not in sys.path:
     sys.path.insert(0, str(WEB_AGENT_DIR))
 
 from chat_runner import run_web_chat  # noqa: E402
-from cursor_runner import DEFAULT_TIMEOUT_S  # noqa: E402
+from cursor_runner import DEFAULT_MODEL, DEFAULT_TIMEOUT_S  # noqa: E402
+from external_agent_config import (  # noqa: E402
+    external_agents_from_config,
+    resolve_enabled_external_agent_ids,
+)
 from batch_progress import (  # noqa: E402
     build_batch_progress_message,
     clear_batch_progress,
@@ -80,11 +84,20 @@ from progress_message import (  # noqa: E402
 )
 from task_session import TaskInterrupted, TaskSession  # noqa: E402
 from dingtalk_web_sync import sync_all_from_conversation_store  # noqa: E402
-from web_image_store import (  # noqa: E402
-    ImageUploadError,
-    MAX_IMAGES_PER_MESSAGE,
+from web_file_store import (  # noqa: E402
+    ALLOWED_EXTENSIONS,
+    FileUploadError,
+    MAX_ATTACHMENTS_PER_MESSAGE,
+    MAX_FILE_BYTES,
+    MAX_IMAGE_BYTES,
+    StoredAttachment,
+    consume_pending_outputs,
+    content_type_for_path,
     local_path_from_api_path,
-    save_chat_images,
+    output_display_name,
+    resolve_output_file,
+    resolve_upload_file,
+    save_chat_attachments,
 )
 from web_session_store import get_session_store  # noqa: E402
 from web_admin_permission import is_web_admin, web_admin_denial_message  # noqa: E402
@@ -101,6 +114,14 @@ from web_dingtalk_oauth import (  # noqa: E402
     dingtalk_oauth_enabled,
     dingtalk_oauth_public_config,
     login_with_auth_code,
+)
+from web_favicon_proxy import fetch_favicon  # noqa: E402
+from web_bookmark_metadata import resolve_bookmark_metadata  # noqa: E402
+from bookmarks_store import (  # noqa: E402
+    load_bookmarks as _load_bookmarks,
+    merge_legacy_bookmarks,
+    normalize_bookmarks_payload as _normalize_bookmarks_payload,
+    save_bookmarks as _save_bookmarks,
 )
 
 logger = logging.getLogger("web-agent")
@@ -126,12 +147,117 @@ def _load_config() -> dict[str, Any]:
         return {}
 
 
+def _bookmarks_auth_ok(handler: SimpleHTTPRequestHandler) -> tuple[bool, str | None]:
+    if otp_auth_enabled() and current_web_user(handler) is None:
+        return False, "请先登录后再保存快捷入口"
+    return True, None
+
+
+def _handle_bookmarks_save(handler: SimpleHTTPRequestHandler, body: Any) -> None:
+    ok, err = _bookmarks_auth_ok(handler)
+    if not ok:
+        return _json_response(handler, {"error": err}, 401)
+    normalized = _normalize_bookmarks_payload(body)
+    if normalized is None:
+        return _json_response(handler, {"error": "invalid bookmarks payload"}, 400)
+    try:
+        _save_bookmarks(normalized)
+    except OSError as exc:
+        logger.exception("保存 bookmarks.json 失败")
+        return _json_response(handler, {"error": f"保存失败：{exc}"}, 500)
+    return _json_response(handler, {"ok": True, "bookmarks": normalized})
+
+
+def _handle_bookmarks_import_legacy(handler: SimpleHTTPRequestHandler, body: Any) -> None:
+    ok, err = _bookmarks_auth_ok(handler)
+    if not ok:
+        return _json_response(handler, {"error": err}, 401)
+    if not isinstance(body, dict):
+        return _json_response(handler, {"error": "invalid json"}, 400)
+    merged, added = merge_legacy_bookmarks(_load_bookmarks(), body)
+    if not added:
+        return _json_response(
+            handler,
+            {"ok": True, "bookmarks": merged, "imported": [], "imported_count": 0},
+        )
+    try:
+        _save_bookmarks(merged)
+    except OSError as exc:
+        logger.exception("导入 legacy bookmarks 失败")
+        return _json_response(handler, {"error": f"保存失败：{exc}"}, 500)
+    return _json_response(
+        handler,
+        {
+            "ok": True,
+            "bookmarks": merged,
+            "imported": added,
+            "imported_count": len(added),
+        },
+    )
+
+
+def _agent_models_from_config(cfg: dict[str, Any] | None = None) -> list[dict[str, str]]:
+    data = cfg if cfg is not None else _load_config()
+    default_id = str(data.get("defaultAgentModel") or DEFAULT_MODEL)
+    raw = data.get("agentModels")
+    models: list[dict[str, str]] = []
+    if isinstance(raw, list):
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            model_id = str(item.get("id") or "").strip()
+            if not model_id:
+                continue
+            models.append(
+                {
+                    "id": model_id,
+                    "label": str(item.get("label") or model_id).strip(),
+                    "description": str(item.get("description") or "").strip(),
+                }
+            )
+    if not models:
+        models = [{"id": default_id, "label": default_id, "description": ""}]
+    return models
+
+
+def _default_agent_model(cfg: dict[str, Any] | None = None) -> str:
+    data = cfg if cfg is not None else _load_config()
+    default_id = str(data.get("defaultAgentModel") or DEFAULT_MODEL).strip()
+    allowed = {item["id"] for item in _agent_models_from_config(data)}
+    if default_id in allowed:
+        return default_id
+    return next(iter(allowed), DEFAULT_MODEL)
+
+
+def _resolve_agent_model(raw: object, cfg: dict[str, Any] | None = None) -> str:
+    data = cfg if cfg is not None else _load_config()
+    allowed = {item["id"] for item in _agent_models_from_config(data)}
+    default_id = _default_agent_model(data)
+    model = str(raw or "").strip() or default_id
+    if model not in allowed:
+        return default_id
+    return model
+
+
 def _load_catalog_data() -> dict[str, Any]:
     if str(SCRIPTS_DIR) not in sys.path:
         sys.path.insert(0, str(SCRIPTS_DIR))
     from generate_catalog import _load_catalog_data as load_data  # noqa: WPS433
 
     return load_data()
+
+
+def _external_agents_meta(cfg: dict[str, Any] | None = None) -> list[dict[str, str | bool]]:
+    return [
+        {
+            "id": str(item["id"]),
+            "label": str(item.get("label") or item["id"]),
+            "description": str(item.get("description") or ""),
+            "url": str(item.get("url") or ""),
+            "defaultEnabled": bool(item.get("defaultEnabled")),
+        }
+        for item in external_agents_from_config(cfg)
+    ]
 
 
 def _platform_meta() -> dict[str, int | str]:
@@ -180,9 +306,17 @@ def _platform_meta() -> dict[str, int | str]:
         "skills_count": skills_count,
         "modules_count": modules_count,
         "capabilities_count": capabilities_count,
+        "defaultAgentModel": _default_agent_model(cfg),
+        "agentModels": _agent_models_from_config(cfg),
+        "externalAgents": _external_agents_meta(cfg),
         "quickPrompts": cfg.get("quickPrompts") or [],
         "quickPromptCount": int(cfg.get("quickPromptCount") or 4),
-        "maxImagesPerMessage": MAX_IMAGES_PER_MESSAGE,
+        "bookmarks": _load_bookmarks(),
+        "maxImagesPerMessage": MAX_ATTACHMENTS_PER_MESSAGE,
+        "maxAttachmentsPerMessage": MAX_ATTACHMENTS_PER_MESSAGE,
+        "maxImageBytes": MAX_IMAGE_BYTES,
+        "maxFileBytes": MAX_FILE_BYTES,
+        "allowedFileExtensions": sorted(ALLOWED_EXTENSIONS),
         "authRequired": auth_enabled(),
         "authPublicOnly": auth_enabled(),
         "otpAuthEnabled": otp_auth_enabled(),
@@ -244,6 +378,7 @@ class RunManager:
 RUN_MANAGER = RunManager()
 
 INTERRUPT_REPLY = "⚠️ 任务已中断。"
+RETRY_HINT = "💡 原消息已回填到输入框，请检查后重试。"
 
 
 def _notify_run_interrupted(run: ActiveRun, text: str) -> bool:
@@ -361,28 +496,91 @@ def _session_owner_from_user(user: Any) -> tuple[str, str]:
     return uid, label
 
 
+def _attachment_message_dict(item: StoredAttachment) -> dict[str, object]:
+    return item.to_message_dict()
+
+
+def _format_attachment_summary(attachments: list[StoredAttachment]) -> str:
+    if not attachments:
+        return ""
+    image_count = sum(1 for item in attachments if item.kind == "image")
+    file_count = sum(1 for item in attachments if item.kind != "image")
+    parts: list[str] = []
+    if image_count:
+        parts.append(f"{image_count} 张图片")
+    if file_count:
+        parts.append(f"{file_count} 个文件")
+    return f"[附带 {'、'.join(parts)}]"
+
+
+def _attachment_content_disposition(filename: str) -> str:
+    """RFC 5987：非 ASCII 文件名用 filename*，避免 latin-1 响应头编码失败。"""
+    name = (filename or "download").strip() or "download"
+    ascii_name = name.encode("ascii", "ignore").decode("ascii").strip("._ ") or "download"
+    if name.isascii():
+        return f'attachment; filename="{ascii_name}"'
+    quoted = quote(name, safe="")
+    return f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quoted}"
+
+
+def _serve_session_file(
+    handler: SimpleHTTPRequestHandler,
+    file_path: Path,
+    *,
+    download_name: str | None = None,
+) -> None:
+    content_type = content_type_for_path(file_path)
+    data = file_path.read_bytes()
+    handler.send_response(HTTPStatus.OK)
+    handler.send_header("Content-Type", content_type)
+    handler.send_header("Content-Length", str(len(data)))
+    handler.send_header("Cache-Control", "private, max-age=86400")
+    if download_name:
+        handler.send_header(
+            "Content-Disposition",
+            _attachment_content_disposition(download_name),
+        )
+    handler.end_headers()
+    handler.wfile.write(data)
+
+
 def _start_chat_run(
     session_id: str,
     message: str,
     *,
-    image_api_paths: list[str] | None = None,
+    attachments: list[StoredAttachment] | None = None,
     existing_run: ActiveRun | None = None,
+    model: str | None = None,
+    enabled_external_agents: list[str] | None = None,
 ) -> ActiveRun:
     store = get_session_store()
     user_key = store.user_key(session_id)
     task_kind = classify_task_kind(message)
+    attachment_list = list(attachments or [])
     local_image_paths = []
-    for api_path in image_api_paths or []:
-        local = local_path_from_api_path(api_path)
+    local_file_paths = []
+    for item in attachment_list:
+        local = local_path_from_api_path(item.api_path)
         if local is None:
-            raise ValueError(f"附图不存在: {api_path}")
-        local_image_paths.append(local)
+            raise ValueError(f"附件不存在: {item.api_path}")
+        if item.kind == "image":
+            local_image_paths.append(local)
+        else:
+            local_file_paths.append(local)
 
     display_message = message
-    if not display_message and image_api_paths:
-        display_message = f"[附带 {len(image_api_paths)} 张图片]"
+    if not display_message and attachment_list:
+        display_message = _format_attachment_summary(attachment_list)
 
-    store.append_message(session_id, "user", display_message, images=image_api_paths or [])
+    image_urls = [item.api_path for item in attachment_list if item.kind == "image"]
+    file_entries = [_attachment_message_dict(item) for item in attachment_list if item.kind != "image"]
+    store.append_message(
+        session_id,
+        "user",
+        display_message,
+        images=image_urls,
+        files=file_entries,
+    )
     if existing_run is not None:
         run = existing_run
     else:
@@ -396,6 +594,7 @@ def _start_chat_run(
     started_at = time.monotonic()
     run.started_at = started_at
     run.task_kind = task_kind
+    agent_model = _resolve_agent_model(model)
     progress_stop = threading.Event()
     _start_run_progress_watcher(
         run,
@@ -414,18 +613,31 @@ def _start_chat_run(
             last_markdown = markdown
             run.events.put({"type": "delta", "markdown": markdown})
 
+        def _append_assistant(text: str) -> None:
+            output_files = consume_pending_outputs(session_id)
+            store.append_message(
+                session_id,
+                "assistant",
+                text,
+                files=[item.to_message_dict() for item in output_files],
+            )
+
         try:
             final = run_web_chat(
                 session_id,
                 message,
                 image_paths=local_image_paths,
+                file_paths=local_file_paths,
+                attachment_names=[item.original_name for item in attachment_list],
                 on_render=on_render,
                 session_ctrl=run.task_session,
+                model=agent_model,
+                enabled_external_agents=enabled_external_agents,
             )
             elapsed = time.monotonic() - started_at
             body = final or last_markdown
             run.final_text = append_duration_footer(body, elapsed, task_kind=task_kind)
-            store.append_message(session_id, "assistant", run.final_text)
+            _append_assistant(run.final_text)
             status = "ok"
             run.events.put({"type": "done", "text": run.final_text})
         except TaskInterrupted:
@@ -435,7 +647,7 @@ def _start_chat_run(
                 elapsed,
                 task_kind=task_kind,
             )
-            store.append_message(session_id, "assistant", run.final_text)
+            _append_assistant(run.final_text)
             with run._notify_lock:
                 if not run.cancel_notified:
                     run.cancel_notified = True
@@ -446,11 +658,11 @@ def _start_chat_run(
             run.error = str(exc)
             logger.exception("Web chat run failed session=%s", session_id)
             run.final_text = append_duration_footer(
-                f"⚠️ {run.error}",
+                f"⚠️ {run.error}\n\n{RETRY_HINT}",
                 elapsed,
                 task_kind=task_kind,
             )
-            store.append_message(session_id, "assistant", run.final_text)
+            _append_assistant(run.final_text)
             run.events.put({"type": "error", "message": run.error, "text": run.final_text})
         finally:
             progress_stop.set()
@@ -503,7 +715,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
 
     def end_headers(self) -> None:
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         super().end_headers()
 
@@ -570,6 +782,32 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 logger.exception("Failed to load catalog data")
                 return _json_response(self, {"error": str(exc)}, 500)
 
+        if path == "/api/favicon":
+            qs = parse_qs(parsed.query)
+            target = str((qs.get("url") or [""])[0]).strip()
+            if not target:
+                return _json_response(self, {"error": "missing url"}, 400)
+            result = fetch_favicon(target)
+            if result is None:
+                self.send_error(HTTPStatus.NOT_FOUND, "favicon not found")
+                return
+            data, ctype = result
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "public, max-age=86400")
+            self.end_headers()
+            self.wfile.write(data)
+            return
+
+        if path == "/api/bookmarks/metadata":
+            qs = parse_qs(parsed.query)
+            target = str((qs.get("url") or [""])[0]).strip()
+            if not target:
+                return _json_response(self, {"error": "missing url"}, 400)
+            meta = resolve_bookmark_metadata(target)
+            return _json_response(self, meta)
+
         if path == "/api/sessions":
             sync_all_from_conversation_store()
             store = get_session_store()
@@ -601,6 +839,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     "content": msg.content,
                     "timestamp": msg.timestamp,
                     **({"images": msg.images} if msg.images else {}),
+                    **({"files": msg.files} if msg.files else {}),
                 }
                 for msg in store.get_messages(session_id)
             ]
@@ -608,29 +847,20 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
 
         m = re.match(rf"^/api/uploads/({SESSION_ID_PATTERN})/([a-zA-Z0-9._-]+)$", path)
         if m:
-            from web_image_store import resolve_upload_file
-
             file_path = resolve_upload_file(m.group(1), m.group(2))
             if file_path is None:
                 self.send_error(HTTPStatus.NOT_FOUND)
                 return
-            suffix = file_path.suffix.lower()
-            content_types = {
-                ".png": "image/png",
-                ".jpg": "image/jpeg",
-                ".jpeg": "image/jpeg",
-                ".gif": "image/gif",
-                ".webp": "image/webp",
-            }
-            content_type = content_types.get(suffix, "application/octet-stream")
-            data = file_path.read_bytes()
-            self.send_response(HTTPStatus.OK)
-            self.send_header("Content-Type", content_type)
-            self.send_header("Content-Length", str(len(data)))
-            self.send_header("Cache-Control", "private, max-age=86400")
-            self.end_headers()
-            self.wfile.write(data)
-            return
+            return _serve_session_file(self, file_path)
+
+        m = re.match(rf"^/api/outputs/({SESSION_ID_PATTERN})/([a-zA-Z0-9._-]+)$", path)
+        if m:
+            file_path = resolve_output_file(m.group(1), m.group(2))
+            if file_path is None:
+                self.send_error(HTTPStatus.NOT_FOUND)
+                return
+            download_name = output_display_name(m.group(1), m.group(2)) or file_path.name
+            return _serve_session_file(self, file_path, download_name=download_name)
 
         m = re.match(r"^/api/chat/stream/([a-f0-9]+)$", path)
         if m:
@@ -769,16 +999,26 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 return _json_response(self, {"error": "invalid json"}, 400)
             session_id = str(body.get("session_id") or "").strip()
             message = str(body.get("message") or "").strip()
-            raw_images = body.get("images")
-            image_items: list[dict[str, str]] = []
-            if isinstance(raw_images, list):
-                for item in raw_images:
+            agent_model = _resolve_agent_model(body.get("model"))
+            enabled_external_agents = resolve_enabled_external_agent_ids(
+                body.get("enabled_external_agents"),
+            )
+            raw_attachments = body.get("attachments")
+            if not isinstance(raw_attachments, list):
+                raw_attachments = []
+            legacy_images = body.get("images")
+            if isinstance(legacy_images, list):
+                for item in legacy_images:
                     if isinstance(item, dict):
-                        image_items.append(item)
-            if not session_id or (not message and not image_items):
+                        raw_attachments.append(item)
+            attachment_items: list[dict[str, str]] = []
+            for item in raw_attachments:
+                if isinstance(item, dict):
+                    attachment_items.append(item)
+            if not session_id or (not message and not attachment_items):
                 return _json_response(
                     self,
-                    {"error": "session_id required; message or images required"},
+                    {"error": "session_id required; message or attachments required"},
                     400,
                 )
             store = get_session_store()
@@ -801,8 +1041,8 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             )
             user_key = store.user_key(session_id)
             display_message = message
-            if not display_message and image_items:
-                display_message = f"[附带 {len(image_items)} 张图片]"
+            if not display_message and attachment_items:
+                display_message = "[附带附件]"
             run = RUN_MANAGER.create(session_id)
             run.task_session.begin(
                 message or display_message,
@@ -810,8 +1050,8 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 budget_s=float(DEFAULT_TIMEOUT_S),
             )
             try:
-                image_api_paths = save_chat_images(session_id, image_items)
-            except ImageUploadError as exc:
+                saved_attachments = save_chat_attachments(session_id, attachment_items)
+            except FileUploadError as exc:
                 run.task_session.end()
                 run.done.set()
                 return _json_response(self, {"error": str(exc)}, 400)
@@ -819,8 +1059,10 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 _start_chat_run(
                     session_id,
                     message,
-                    image_api_paths=image_api_paths,
+                    attachments=saved_attachments,
                     existing_run=run,
+                    model=agent_model,
+                    enabled_external_agents=enabled_external_agents,
                 )
             except Exception as exc:  # noqa: BLE001
                 run.task_session.end()
@@ -828,6 +1070,20 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 logger.exception("启动 Web chat 失败 session=%s", session_id)
                 return _json_response(self, {"error": str(exc)}, 500)
             return _json_response(self, {"run_id": run.run_id, "session_id": session_id})
+
+        if path == "/api/bookmarks":
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            return _handle_bookmarks_save(self, body)
+
+        if path == "/api/bookmarks/import-legacy":
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            return _handle_bookmarks_import_legacy(self, body)
 
         if path == "/api/chat/cancel":
             try:
@@ -846,6 +1102,20 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             return _json_response(self, {"ok": True})
 
         self.send_error(HTTPStatus.NOT_FOUND)
+
+    def do_PUT(self) -> None:
+        if not authorize_request(self, method="PUT"):
+            return
+        parsed = urlparse(self.path)
+        path = parsed.path.rstrip("/") or "/"
+        if path != "/api/bookmarks":
+            self.send_error(HTTPStatus.NOT_FOUND)
+            return
+        try:
+            body = _read_json_body(self)
+        except json.JSONDecodeError:
+            return _json_response(self, {"error": "invalid json"}, 400)
+        return _handle_bookmarks_save(self, body)
 
     def do_DELETE(self) -> None:
         if not authorize_request(self, method="DELETE"):
