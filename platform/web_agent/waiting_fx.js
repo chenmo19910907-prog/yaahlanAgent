@@ -72,10 +72,19 @@
     return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
   }
 
+  function isOwnerBarHoverTarget(event) {
+    const area = getChatArea();
+    if (!area || !event?.target) return false;
+    const bar = area.querySelector('.dingtalk-owner-bar');
+    if (!bar || bar.hidden) return false;
+    return bar.contains(event.target);
+  }
+
   function isWaitingHoverTarget(event) {
     const area = getChatArea();
     if (!area || !event) return false;
     if (!area.contains(event.target)) return false;
+    if (isOwnerBarHoverTarget(event)) return false;
     if (isPointInInputExclusionZone(event.clientX, event.clientY)) return false;
     return true;
   }

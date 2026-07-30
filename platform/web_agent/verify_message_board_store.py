@@ -23,7 +23,7 @@ from message_board_store import (  # noqa: E402
 
 
 class MessageBoardStoreTest(unittest.TestCase):
-    def test_user_only_sees_own_messages(self) -> None:
+    def test_everyone_sees_all_messages(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "message_board.json"
             create_message(
@@ -41,14 +41,17 @@ class MessageBoardStoreTest(unittest.TestCase):
                 path=path,
             )
 
-            mine = list_messages_for_viewer(
+            view_a = list_messages_for_viewer(
                 viewer_staff_id="user_a",
                 is_admin=False,
                 path=path,
             )
-            self.assertEqual(len(mine), 1)
-            self.assertEqual(mine[0]["content"], "A 的留言")
-            self.assertTrue(mine[0]["isMine"])
+            self.assertEqual(len(view_a), 2)
+            by_content = {item["content"]: item for item in view_a}
+            self.assertTrue(by_content["A 的留言"]["isMine"])
+            self.assertTrue(by_content["A 的留言"]["canDelete"])
+            self.assertFalse(by_content["B 的留言"]["isMine"])
+            self.assertFalse(by_content["B 的留言"]["canDelete"])
 
             admin_view = list_messages_for_viewer(
                 viewer_staff_id="admin",
@@ -59,6 +62,7 @@ class MessageBoardStoreTest(unittest.TestCase):
             labels = {item["authorLabel"] for item in admin_view}
             self.assertIn("用户A", labels)
             self.assertIn("匿名", labels)
+            self.assertFalse(any(item["canDelete"] for item in admin_view))
 
     def test_anonymous_own_label(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -128,23 +132,23 @@ class MessageBoardStoreTest(unittest.TestCase):
                     path=path,
                 )
 
-    def test_admin_can_delete_any(self) -> None:
+    def test_admin_cannot_delete_others(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "message_board.json"
             created = create_message(
                 staff_id="user_a",
                 display_name="用户A",
-                content="管理员删除",
+                content="管理员不可删",
                 show_real_name=False,
                 path=path,
             )
-            removed = delete_message(
-                message_id=created["id"],
-                viewer_staff_id="admin",
-                is_admin=True,
-                path=path,
-            )
-            self.assertTrue(removed)
+            with self.assertRaises(PermissionError):
+                delete_message(
+                    message_id=created["id"],
+                    viewer_staff_id="admin",
+                    is_admin=True,
+                    path=path,
+                )
 
     def test_normalize_guest_id(self) -> None:
         self.assertIsNone(normalize_guest_id(""))
@@ -165,7 +169,8 @@ class MessageBoardStoreTest(unittest.TestCase):
             mine = list_messages_for_viewer(viewer_staff_id="user_a", is_admin=False, path=path)
             self.assertTrue(mine[0]["canDelete"])
             other = list_messages_for_viewer(viewer_staff_id="user_b", is_admin=False, path=path)
-            self.assertEqual(other, [])
+            self.assertEqual(len(other), 1)
+            self.assertFalse(other[0]["canDelete"])
 
     def test_guest_author_label_and_delete(self) -> None:
         guest_id = "guest_" + "c" * 32
@@ -184,10 +189,11 @@ class MessageBoardStoreTest(unittest.TestCase):
             self.assertTrue(mine[0]["isGuestAuthor"])
             self.assertTrue(mine[0]["canDelete"])
             other_guest = "guest_" + "d" * 32
-            self.assertEqual(
-                list_messages_for_viewer(viewer_staff_id=other_guest, is_admin=False, path=path),
-                [],
+            guest_view = list_messages_for_viewer(
+                viewer_staff_id=other_guest, is_admin=False, path=path
             )
+            self.assertEqual(len(guest_view), 1)
+            self.assertFalse(guest_view[0]["canDelete"])
             removed = delete_message(
                 message_id=created["id"],
                 viewer_staff_id=guest_id,

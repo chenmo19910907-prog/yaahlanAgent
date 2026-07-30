@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>登录 · Yaahlan 智能工具 Agent</title>
   <script src="theme.js"></script>
+  <script src="logo.js"></script>
   <script>WebAgentTheme.applyThemeEarly();</script>
   <style>
     :root,
@@ -91,6 +92,25 @@
     .card-header-text {
       flex: 1;
       min-width: 0;
+    }
+    .login-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .login-brand-icon {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+    }
+    .login-brand-icon svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .login-brand h1 {
+      margin-bottom: 0;
     }
     h1 {
       font-size: 1.35rem;
@@ -404,7 +424,10 @@
   <div class="card">
     <div class="card-header">
       <div class="card-header-text">
-        <h1>Yaahlan 智能工具 Agent</h1>
+        <div class="login-brand">
+          <div class="login-brand-icon" id="login-brand-icon" aria-hidden="true"></div>
+          <h1>Yaahlan 智能工具 Agent</h1>
+        </div>
         <p class="subtitle" id="subtitle">网页版可通过钉钉机器人验证码登录；在钉钉内打开时将优先尝试自动登录。</p>
       </div>
       <div class="card-header-actions">
@@ -451,7 +474,7 @@
       <div class="message-board-head">
         <div>
           <h3 id="message-board-title">反馈</h3>
-          <p id="message-board-hint">遇到问题、优化建议、功能补充 都可以进行反馈，反馈内容仅自己可见</p>
+          <p id="message-board-hint">遇到问题、优化建议、功能补充 都可以进行反馈</p>
         </div>
       </div>
       <div class="message-board-list" id="message-board-list"></div>
@@ -470,7 +493,7 @@
 
   <script src="https://g.alicdn.com/dingding/dingtalk-jsapi/3.0.25/dingtalk.open.js"></script>
   <script src="dingtalk_oauth.js"></script>
-  <script src="message_board_panel.js"></script>
+  <script src="message_board_panel.js?v=20260730b"></script>
   <script>
     const phraseEl = document.getElementById('loginPhrase');
     const copyBtn = document.getElementById('copyBtn');
@@ -635,6 +658,10 @@
     try {
       if (typeof initThemeSettings === 'function') initThemeSettings();
     } catch (_) { /* theme.js 未加载时不阻断验证码登录 */ }
+    try {
+      const brandEl = document.getElementById('login-brand-icon');
+      if (brandEl && typeof WebAgentLogo !== 'undefined') brandEl.innerHTML = WebAgentLogo.svg();
+    } catch (_) { /* logo.js 未加载时不阻断登录 */ }
 
     let messageBoardPanel = null;
     function initMessageBoardPanel() {

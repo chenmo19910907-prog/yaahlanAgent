@@ -65,6 +65,10 @@ def is_public_auth_path(path: str) -> bool:
     p = (path or "").rstrip("/") or "/"
     if p in ("/login.html", "/login"):
         return True
+    if p in ("/keynote",):
+        return True
+    if p.startswith("/assets/fonts/"):
+        return True
     if p in LOGIN_PUBLIC_STATIC_PATHS:
         return True
     if p.startswith("/api/auth/"):

@@ -1,5 +1,5 @@
 /**
- * Web Agent 反馈：登录用户仅见自己的反馈；访客凭当次页面会话标识（刷新后不复现历史），管理员可见全部。
+ * Web Agent 反馈：所有人可见全部反馈，仅可删除自己的；访客凭当次页面会话标识发帖。
  */
 (function (global) {
   'use strict';
@@ -85,7 +85,7 @@
 
   MessageBoardPanel.prototype.renderHint = function renderHint() {
     if (!this.hintEl) return;
-    this.hintEl.textContent = '遇到问题、优化建议、功能补充 都可以进行反馈，反馈内容仅自己可见';
+    this.hintEl.textContent = '遇到问题、优化建议、功能补充 都可以进行反馈';
   };
 
   MessageBoardPanel.prototype.updateComposeVisibility = function updateComposeVisibility() {
@@ -127,7 +127,7 @@
       const adminMeta = this.isAdmin && item.staffId && !item.isMine
         ? `<span class="message-board-staff">${escapeHtml(item.staffId)}</span>`
         : '';
-      const canDelete = item.canDelete !== false && (item.canDelete || item.isMine || this.isAdmin);
+      const canDelete = !!item.canDelete;
       const deleteBtn = canDelete
         ? `<button type="button" class="message-board-delete" data-id="${escapeHtml(item.id)}" title="删除反馈" aria-label="删除反馈">删除</button>`
         : '';

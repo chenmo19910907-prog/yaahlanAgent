@@ -934,6 +934,18 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/3周年-砸金蛋测试.json \\\n  --anniversary-egg-user-id <userId> \\\n  --anniversary-egg-lang en"
     },
     {
+      "id": "recharge_rebate_simulate_recharge",
+      "name": "充值返利-模拟充值",
+      "category": "活动（Ultra Recharge / 充值返利）",
+      "description": "Ultra Recharge 测试环境模拟充值（voga-mts-vas-backdoor execute；rechargeRebateService.handleRecharge(userId, diamondsL)；触发笔笔返利/周月累计）",
+      "prompts": [
+        "Ultra Recharge 模拟充值 userId=<userId> <diamonds>钻",
+        "充值返利模拟充值 <userId> <diamonds>",
+        "handleRecharge <userId> <diamonds>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/充值返利-模拟充值.json \\\n  --recharge-rebate-user-id <userId> \\\n  --recharge-rebate-diamonds <diamonds>\n"
+    },
+    {
       "id": "user_active_days_query",
       "name": "用户-查询登录天数",
       "category": "用户活跃（yaahlan/user/internal/area-moa）",

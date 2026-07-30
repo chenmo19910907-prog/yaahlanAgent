@@ -489,6 +489,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--user-reg-time-user-id", help="用户-查询注册时间：用户 ID（userVipTaskDao.getUserRegTime）")
     parser.add_argument("--user-set-reg-time-user-id", help="用户-设置注册时间：用户 ID（userVipTaskDao.saveUserRegTime）")
     parser.add_argument(
+        "--recharge-rebate-user-id",
+        help="Ultra Recharge 模拟充值：用户 ID（rechargeRebateService.handleRecharge）",
+    )
+    parser.add_argument(
+        "--recharge-rebate-diamonds",
+        type=int,
+        help="Ultra Recharge 模拟充值：充值钻石数（实际入账钻，Long）",
+    )
+    parser.add_argument(
         "--user-set-reg-time-at",
         help="用户-设置注册时间：目标时间（毫秒时间戳 或 YYYY-MM-DD HH:MM:SS 或 yesterday/2天前 等）",
     )

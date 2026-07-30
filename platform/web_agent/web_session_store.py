@@ -153,6 +153,8 @@ class ChatMessage:
     timestamp: str = field(default_factory=_now_iso)
     images: list[str] = field(default_factory=list)
     files: list[dict[str, object]] = field(default_factory=list)
+    author_id: str = ""
+    author_label: str = ""
 
 
 @dataclass
@@ -168,7 +170,26 @@ class SessionMeta:
     dingtalk_owner_id: str = ""
     web_owner_id: str = ""
     web_owner_label: str = ""
+    web_collaborator_ids: list[str] = field(default_factory=list)
+    pinned_at: str = ""
     latest_preview: str = field(default="", repr=False)
+
+    @property
+    def is_pinned(self) -> bool:
+        return bool((self.pinned_at or "").strip())
+
+    def web_collaborator_id_set(self) -> set[str]:
+        return {
+            uid.strip()
+            for uid in self.web_collaborator_ids
+            if isinstance(uid, str) and uid.strip()
+        }
+
+    def is_collaborator(self, staff_id: str | None) -> bool:
+        viewer = (staff_id or "").strip()
+        if not viewer:
+            return False
+        return viewer in self.web_collaborator_id_set()
 
     def web_owner_display(self, *, known_labels: dict[str, str] | None = None) -> str:
         uid = (self.web_owner_id or "").strip()
@@ -216,7 +237,9 @@ class SessionMeta:
         viewer = (viewer_staff_id or "").strip()
         if not viewer:
             return True
-        return viewer != owner_id
+        if viewer == owner_id:
+            return False
+        return not self.is_collaborator(viewer)
 
     def to_dict(
         self,
@@ -248,13 +271,32 @@ class SessionMeta:
                 payload["web_owner_label"] = self.web_owner_label
             if self.web_owner_id:
                 payload["web_owner_id"] = self.web_owner_id
+            collab_ids = sorted(self.web_collaborator_id_set())
+            if collab_ids:
+                payload["web_collaborator_ids"] = collab_ids
+                labels = known_labels or {}
+                payload["web_collaborators"] = [
+                    {
+                        "staffId": uid,
+                        "displayName": (labels.get(uid) or "").strip() or uid,
+                    }
+                    for uid in collab_ids
+                ]
+            viewer = (viewer_staff_id or "").strip()
+            owner_id = (self.web_owner_id or "").strip()
+            if viewer and owner_id and viewer == owner_id:
+                payload["is_mine"] = True
+                payload["can_manage_collaborators"] = True
+            elif viewer and self.is_collaborator(viewer):
+                payload["is_collaborator"] = True
             if self.is_read_only_for_viewer(viewer_staff_id):
                 payload["read_only"] = True
-            elif viewer_staff_id and (self.web_owner_id or "").strip() == (viewer_staff_id or "").strip():
-                payload["is_mine"] = True
         preview = (self.latest_preview or "").strip()
         if preview:
             payload["latest_preview"] = preview
+        payload["pinned"] = self.is_pinned
+        if self.is_pinned:
+            payload["pinned_at"] = self.pinned_at
         return payload
 
 
@@ -303,6 +345,7 @@ class WebSessionStore:
         for sid, item in raw.items():
             if not isinstance(item, dict):
                 continue
+            raw_collabs = item.get("web_collaborator_ids")
             sessions[str(sid)] = SessionMeta(
                 id=str(sid),
                 title=str(item.get("title") or "新对话"),
@@ -315,6 +358,12 @@ class WebSessionStore:
                 dingtalk_owner_id=str(item.get("dingtalk_owner_id") or ""),
                 web_owner_id=str(item.get("web_owner_id") or ""),
                 web_owner_label=str(item.get("web_owner_label") or ""),
+                web_collaborator_ids=[
+                    str(uid).strip()
+                    for uid in raw_collabs
+                    if str(uid).strip()
+                ] if isinstance(raw_collabs, list) else [],
+                pinned_at=str(item.get("pinned_at") or "").strip(),
             )
         return sessions
 
@@ -332,6 +381,12 @@ class WebSessionStore:
                 "dingtalk_owner_id": meta.dingtalk_owner_id,
                 "web_owner_id": meta.web_owner_id,
                 "web_owner_label": meta.web_owner_label,
+                **(
+                    {"web_collaborator_ids": sorted(meta.web_collaborator_id_set())}
+                    if meta.web_collaborator_id_set()
+                    else {}
+                ),
+                **({"pinned_at": meta.pinned_at} if meta.is_pinned else {}),
             }
             for sid, meta in self._sessions.items()
         }
@@ -372,6 +427,8 @@ class WebSessionStore:
                         files.append(entry)
             if role not in ("user", "assistant") or (not content.strip() and not images and not files):
                 continue
+            author_id = str(item.get("author_id") or item.get("authorId") or "").strip()
+            author_label = str(item.get("author_label") or item.get("authorLabel") or "").strip()
             messages.append(
                 ChatMessage(
                     role=role,
@@ -379,6 +436,8 @@ class WebSessionStore:
                     timestamp=str(item.get("timestamp") or _now_iso()),
                     images=images,
                     files=files,
+                    author_id=author_id,
+                    author_label=author_label,
                 )
             )
         return messages
@@ -392,6 +451,8 @@ class WebSessionStore:
                 "timestamp": m.timestamp,
                 **({"images": m.images} if m.images else {}),
                 **({"files": m.files} if m.files else {}),
+                **({"author_id": m.author_id} if m.author_id else {}),
+                **({"author_label": m.author_label} if m.author_label else {}),
             }
             for m in messages
         ]
@@ -438,8 +499,11 @@ class WebSessionStore:
                     logger.warning("补全钉钉用户姓名失败: %s", exc)
             if dirty:
                 self._save_index()
-        items.sort(key=lambda s: s.updated_at, reverse=True)
-        return items
+        pinned = [s for s in items if s.is_pinned]
+        unpinned = [s for s in items if not s.is_pinned]
+        pinned.sort(key=lambda s: s.pinned_at)
+        unpinned.sort(key=lambda s: s.updated_at, reverse=True)
+        return pinned + unpinned
 
     def create_session(
         self,
@@ -629,6 +693,57 @@ class WebSessionStore:
             self._save_index()
         return True
 
+    def set_session_pinned(
+        self,
+        session_id: str,
+        *,
+        pinned: bool,
+    ) -> tuple[bool, str]:
+        """设置会话置顶（全局可见，落盘共享）。"""
+        with self._lock:
+            self._reload_index_if_stale()
+            meta = self._sessions.get(session_id)
+            if meta is None:
+                return False, "session not found"
+            meta.pinned_at = _now_iso() if pinned else ""
+            self._save_index()
+        return True, ""
+
+    def set_web_collaborators(
+        self,
+        session_id: str,
+        *,
+        owner_id: str,
+        collaborator_ids: list[str],
+    ) -> tuple[bool, str]:
+        """会话拥有者设置共同对话成员。"""
+        uid = (owner_id or "").strip()
+        if not uid:
+            return False, "missing owner"
+        normalized: list[str] = []
+        seen: set[str] = set()
+        for raw in collaborator_ids:
+            staff_id = str(raw or "").strip()
+            if not staff_id or staff_id == uid or staff_id in seen:
+                continue
+            seen.add(staff_id)
+            normalized.append(staff_id)
+        with self._lock:
+            self._reload_index_if_stale()
+            meta = self._sessions.get(session_id)
+            if meta is None:
+                return False, "session not found"
+            if meta.source != "web":
+                return False, "only web sessions support collaborators"
+            session_owner = (meta.web_owner_id or "").strip()
+            if not session_owner:
+                return False, "session owner not set"
+            if session_owner != uid:
+                return False, "forbidden"
+            meta.web_collaborator_ids = normalized
+            self._save_index()
+        return True, ""
+
     def is_read_only_for_viewer(
         self,
         session_id: str,
@@ -653,6 +768,8 @@ class WebSessionStore:
         *,
         images: list[str] | None = None,
         files: list[dict[str, object]] | None = None,
+        author_id: str = "",
+        author_label: str = "",
     ) -> ChatMessage | None:
         text = (content or "").strip()
         image_list = [path.strip() for path in (images or []) if str(path).strip()]
@@ -665,7 +782,14 @@ class WebSessionStore:
             if meta is None:
                 return None
             messages = self._load_messages(session_id)
-            msg = ChatMessage(role=role, content=text, images=image_list, files=file_list)
+            msg = ChatMessage(
+                role=role,
+                content=text,
+                images=image_list,
+                files=file_list,
+                author_id=(author_id or "").strip(),
+                author_label=(author_label or "").strip(),
+            )
             messages.append(msg)
             self._save_messages(session_id, messages)
             _apply_message_derived_meta(meta, messages)

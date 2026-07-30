@@ -646,6 +646,25 @@ def _op_user_reg_time_query(args: argparse.Namespace, payload: dict[str, Any]) -
     print(f"查询用户注册时间：userId={args.user_reg_time_user_id}", file=sys.stderr)
 
 
+def _op_recharge_rebate_simulate(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if args.recharge_rebate_diamonds is None:
+        raise ValueError("模拟充值时，必须同时提供 --recharge-rebate-diamonds")
+    user_id = str(args.recharge_rebate_user_id).strip()
+    diamonds = int(args.recharge_rebate_diamonds)
+    if not user_id:
+        raise ValueError("recharge_rebate_user_id 不能为空")
+    if diamonds <= 0:
+        raise ValueError("recharge_rebate_diamonds 必须为正整数")
+    expr = f'context.getBean("rechargeRebateService").handleRecharge("{user_id}",{diamonds}L)'
+    payload["url"] = "/service/voga-mts-vas-backdoor"
+    payload["method"] = "execute"
+    set_backdoor_execute_expr(payload, expr)
+    print(
+        f"Ultra Recharge 模拟充值：userId={user_id} diamonds={diamonds}",
+        file=sys.stderr,
+    )
+
+
 def _op_pk_rank_settle(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     offset = args.pk_rank_settle_week_offset  # 0=本周，-1=上周
     payload["url"] = "/service/room/internal/room-pk"
@@ -1232,6 +1251,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.user_home_country_user_id is not None, _op_user_home_country_update),
     (lambda a: a.user_set_reg_time_user_id is not None, _op_user_set_reg_time),
     (lambda a: a.user_reg_time_user_id is not None, _op_user_reg_time_query),
+    (lambda a: a.recharge_rebate_user_id is not None, _op_recharge_rebate_simulate),
     (lambda a: a.pk_rank_settle_week_offset is not None, _op_pk_rank_settle),
     (lambda a: a.pk_rank_query_week is not None, _op_pk_rank_query),
     (lambda a: a.pk_rank_user_id is not None, _op_pk_rank_add),

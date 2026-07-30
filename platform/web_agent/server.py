@@ -139,6 +139,8 @@ DEFAULT_PORT = 18766
 CONFIG_PATH = WEB_AGENT_DIR / "config.json"
 FAMILY_PK_EXPORTS_DIR = REPO_ROOT / "platform" / "family_pk_report" / "exports"
 SHOWCASE_URL_PREFIX = "/family-pk-showcase"
+KEYNOTE_URL_PREFIX = "/keynote"
+KEYNOTE_PREVIEW_HTML = WEB_AGENT_DIR / "data" / "keynote" / "preview.html"
 SSE_POLL_S = 0.25
 RUN_TTL_S = 3600
 PROGRESS_TICK_S = 1.0
@@ -710,6 +712,8 @@ def _start_chat_run(
     existing_run: ActiveRun | None = None,
     model: str | None = None,
     enabled_external_agents: list[str] | None = None,
+    author_id: str = "",
+    author_label: str = "",
 ) -> ActiveRun:
     store = get_session_store()
     user_key = store.user_key(session_id)
@@ -738,6 +742,8 @@ def _start_chat_run(
         display_message,
         images=image_urls,
         files=file_entries,
+        author_id=author_id,
+        author_label=author_label,
     )
     if existing_run is not None:
         run = existing_run
@@ -850,11 +856,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, directory=str(WEB_AGENT_DIR), **kwargs)
 
-    def _serve_family_pk_export(self, rel_path: str) -> None:
-        root = FAMILY_PK_EXPORTS_DIR.resolve()
-        target = (root / rel_path).resolve()
-        if not str(target).startswith(str(root)) or not target.is_file():
-            self.send_error(HTTPStatus.NOT_FOUND)
+    def _serve_static_file(self, target: Path, *, not_found_msg: str = "Not Found") -> None:
+        if not target.is_file():
+            self.send_error(HTTPStatus.NOT_FOUND, not_found_msg)
             return
         content_type, _ = mimetypes.guess_type(str(target))
         if not content_type:
@@ -869,11 +873,30 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _serve_family_pk_export(self, rel_path: str) -> None:
+        root = FAMILY_PK_EXPORTS_DIR.resolve()
+        target = (root / rel_path).resolve()
+        if not str(target).startswith(str(root)):
+            self.send_error(HTTPStatus.NOT_FOUND)
+            return
+        self._serve_static_file(target)
+
+    def _serve_keynote_preview(self) -> None:
+        self._serve_static_file(KEYNOTE_PREVIEW_HTML, not_found_msg="keynote preview not found")
+
     def log_message(self, fmt: str, *args: Any) -> None:
         if self.path.startswith("/api/"):
             super().log_message(fmt, *args)
 
     def end_headers(self) -> None:
+        path = urlparse(self.path).path
+        if not path.startswith("/api/") and path.rsplit(".", 1)[-1].lower() in {
+            "js",
+            "html",
+            "htm",
+        }:
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+            self.send_header("Pragma", "no-cache")
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
@@ -928,6 +951,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             self.path = "/chat.html"
             return super().do_GET()
 
+        if path == KEYNOTE_URL_PREFIX or path == f"{KEYNOTE_URL_PREFIX}/":
+            return self._serve_keynote_preview()
+
         if path == SHOWCASE_URL_PREFIX or path.startswith(f"{SHOWCASE_URL_PREFIX}/"):
             rel = path[len(SHOWCASE_URL_PREFIX) :].lstrip("/") or "index.html"
             return self._serve_family_pk_export(rel)
@@ -970,6 +996,26 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
 
         if path == "/api/message-board":
             return _handle_message_board_list(self)
+
+        if path == "/api/web-users":
+            sync_all_from_conversation_store()
+            store = get_session_store()
+            store.reload_from_disk()
+            viewer = current_web_user(self)
+            exclude = viewer.staff_id if viewer is not None else ""
+            query = (parse_qs(parsed.query).get("q") or [""])[0]
+            try:
+                from dingtalk_user_lookup import list_selectable_staff_users
+
+                users = list_selectable_staff_users(
+                    store.list_sessions(enrich_names=False),
+                    exclude_staff_id=exclude,
+                    query=query,
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("列出可选人员失败: %s", exc)
+                users = []
+            return _json_response(self, {"users": users, "total": len(users)})
 
         if path == "/api/sessions":
             sync_all_from_conversation_store()
@@ -1017,6 +1063,8 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     "timestamp": msg.timestamp,
                     **({"images": msg.images} if msg.images else {}),
                     **({"files": msg.files} if msg.files else {}),
+                    **({"author_id": msg.author_id} if msg.author_id else {}),
+                    **({"author_label": msg.author_label} if msg.author_label else {}),
                 }
                 for msg in store.get_messages(session_id)
             ]
@@ -1228,6 +1276,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 owner_id=owner_id,
                 owner_label=owner_label,
             )
+            author_id, author_label = _session_owner_from_user(viewer)
             user_key = store.user_key(session_id)
             display_message = message
             if not display_message and attachment_items:
@@ -1252,6 +1301,8 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     existing_run=run,
                     model=agent_model,
                     enabled_external_agents=enabled_external_agents,
+                    author_id=author_id,
+                    author_label=author_label,
                 )
             except Exception as exc:  # noqa: BLE001
                 run.task_session.end()
@@ -1304,6 +1355,79 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             return
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
+
+        m_collab = re.match(
+            rf"^/api/sessions/({SESSION_ID_PATTERN})/collaborators$",
+            path,
+        )
+        if m_collab:
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            session_id = m_collab.group(1)
+            viewer = current_web_user(self)
+            if viewer is None:
+                return _json_response(self, {"error": "unauthorized"}, 401)
+            raw_ids = body.get("collaborator_ids")
+            if not isinstance(raw_ids, list):
+                raw_ids = []
+            collaborator_ids = [str(item).strip() for item in raw_ids if str(item).strip()]
+            store = get_session_store()
+            ok, err = store.set_web_collaborators(
+                session_id,
+                owner_id=viewer.staff_id,
+                collaborator_ids=collaborator_ids,
+            )
+            if not ok:
+                status = 403 if err == "forbidden" else 404 if err == "session not found" else 400
+                return _json_response(self, {"error": err or "failed"}, status)
+            meta = store.get_session(session_id)
+            if meta is None:
+                return _json_response(self, {"error": "session not found"}, 404)
+            try:
+                from dingtalk_user_lookup import collect_known_labels
+
+                known = collect_known_labels(store.list_sessions(enrich_names=False))
+            except Exception:  # noqa: BLE001
+                known = {}
+            return _json_response(
+                self,
+                meta.to_dict(known_labels=known, viewer_staff_id=viewer.staff_id),
+            )
+
+        m_pin = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})/pin$", path)
+        if m_pin:
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            session_id = m_pin.group(1)
+            viewer = current_web_user(self)
+            if viewer is None:
+                return _json_response(self, {"error": "unauthorized"}, 401)
+            pinned = body.get("pinned")
+            if not isinstance(pinned, bool):
+                return _json_response(self, {"error": "pinned must be boolean"}, 400)
+            store = get_session_store()
+            ok, err = store.set_session_pinned(session_id, pinned=pinned)
+            if not ok:
+                status = 404 if err == "session not found" else 400
+                return _json_response(self, {"error": err or "failed"}, status)
+            meta = store.get_session(session_id)
+            if meta is None:
+                return _json_response(self, {"error": "session not found"}, 404)
+            try:
+                from dingtalk_user_lookup import collect_known_labels
+
+                known = collect_known_labels(store.list_sessions(enrich_names=False))
+            except Exception:  # noqa: BLE001
+                known = {}
+            return _json_response(
+                self,
+                meta.to_dict(known_labels=known, viewer_staff_id=viewer.staff_id),
+            )
+
         if path != "/api/bookmarks":
             self.send_error(HTTPStatus.NOT_FOUND)
             return

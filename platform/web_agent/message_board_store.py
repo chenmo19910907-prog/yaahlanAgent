@@ -1,4 +1,4 @@
-"""Web Agent 留言板：JSON 持久化，普通用户仅可见自己的留言。"""
+"""Web Agent 留言板：JSON 持久化，所有人可见全部留言，仅可删除自己的。"""
 
 from __future__ import annotations
 
@@ -166,7 +166,7 @@ def message_to_public(
         "createdAt": msg.get("createdAt") or "",
         "isMine": is_mine,
         "isGuestAuthor": is_guest_author,
-        "canDelete": is_mine or is_admin,
+        "canDelete": is_mine,
     }
     if is_admin:
         payload["staffId"] = msg.get("staffId") or ""
@@ -192,8 +192,6 @@ def list_messages_for_viewer(
     for item in messages_raw:
         msg = _normalize_message(item)
         if msg is None:
-            continue
-        if not is_admin and msg.get("staffId") != viewer:
             continue
         normalized.append(msg)
 
@@ -228,7 +226,7 @@ def delete_message(
         if msg is None:
             continue
         if msg.get("id") == target_id:
-            if not is_admin and msg.get("staffId") != viewer:
+            if msg.get("staffId") != viewer:
                 raise PermissionError("无权删除该反馈")
             removed = True
             continue
