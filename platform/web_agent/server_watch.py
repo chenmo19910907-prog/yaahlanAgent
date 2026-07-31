@@ -30,10 +30,54 @@ IGNORE_DIR_NAMES = {
     "bookmarks_backups",
     "messages",
     "exports",
+    # 演示页为静态 HTML，改 scenes / sync 不应重启服务（会中断进行中的 Agent）
+    "keynote",
 }
 IGNORE_FILE_PREFIXES = ("verify_",)
 RESTART_COOLDOWN_S = 10.0
 POST_RESTART_SETTLE_S = 2.0
+WATCH_SELF = WEB_AGENT_DIR / "server_watch.py"
+# 硬编码兜底：旧监视进程未热重启时，演示页变更也不触发服务重启
+_HARDCODED_IGNORE_DIRS = frozenset({"keynote"})
+
+
+def _ignore_dir_names() -> frozenset[str]:
+    return frozenset(IGNORE_DIR_NAMES) | _HARDCODED_IGNORE_DIRS
+
+
+def _is_ignored_watch_path(path: Path) -> bool:
+    if not path.is_file():
+        return True
+    try:
+        rel = path.relative_to(WEB_AGENT_DIR)
+    except ValueError:
+        return True
+    if any(part in _ignore_dir_names() for part in rel.parts[:-1]):
+        return True
+    if path.name.startswith(IGNORE_FILE_PREFIXES):
+        return True
+    if path.name in {"server.log", "server_watch.log", "restart.log"}:
+        return True
+    return False
+
+
+def _collect_changed_paths(old: dict[str, float], new: dict[str, float]) -> set[str]:
+    changed: set[str] = set()
+    for path, mtime in new.items():
+        if old.get(path) != mtime:
+            changed.add(path)
+    for path in old:
+        if path not in new:
+            changed.add(path)
+    return changed
+
+
+def _has_restart_worthy_changes(old: dict[str, float], new: dict[str, float]) -> bool:
+    for path_str in _collect_changed_paths(old, new):
+        if not _is_ignored_watch_path(Path(path_str)):
+            return True
+    return False
+
 
 logger = logging.getLogger("web-agent-watch")
 
@@ -254,6 +298,7 @@ def run_watch(
     mtimes = snapshot_mtimes()
     pending_change_at = 0.0
     last_restart_at = time.monotonic()
+    watch_self_mtime = WATCH_SELF.stat().st_mtime
 
     shutting_down = False
 
@@ -287,10 +332,23 @@ def run_watch(
             if time.monotonic() - last_restart_at < RESTART_COOLDOWN_S:
                 continue
 
+            try:
+                self_mtime = WATCH_SELF.stat().st_mtime
+            except OSError:
+                self_mtime = watch_self_mtime
+            if self_mtime != watch_self_mtime:
+                logger.info("server_watch.py 已变更，监视进程热重启…")
+                stop_child(child)
+                os.execv(sys.executable, [sys.executable, str(WATCH_SELF), *sys.argv[1:]])
+
             new_mtimes = snapshot_mtimes()
             if new_mtimes != mtimes:
-                if pending_change_at <= 0:
-                    pending_change_at = time.monotonic()
+                if _has_restart_worthy_changes(mtimes, new_mtimes):
+                    if pending_change_at <= 0:
+                        pending_change_at = time.monotonic()
+                else:
+                    mtimes = new_mtimes
+                    pending_change_at = 0.0
 
             if pending_change_at <= 0:
                 continue

@@ -5197,8 +5197,66 @@
       return el;
     }
 
+    function sleepMs(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    async function fetchActiveRun(sessionId) {
+      try {
+        return await api(`/api/sessions/${sessionId}/active-run`);
+      } catch {
+        return null;
+      }
+    }
+
+    async function hasAssistantReplySinceLastUser(sessionId) {
+      try {
+        const data = await api(`/api/sessions/${sessionId}/messages`);
+        const messages = data.messages || [];
+        let lastUserIdx = -1;
+        for (let i = messages.length - 1; i >= 0; i -= 1) {
+          if (messages[i].role === 'user') {
+            lastUserIdx = i;
+            break;
+          }
+        }
+        if (lastUserIdx < 0) return false;
+        for (let i = lastUserIdx + 1; i < messages.length; i += 1) {
+          if (messages[i].role === 'assistant' && String(messages[i].content || '').trim()) {
+            return true;
+          }
+        }
+      } catch { /* ignore */ }
+      return false;
+    }
+
+    async function recoverRunStream(sessionId, runId, reconnectAttempt = 0) {
+      const MAX_ATTEMPTS = 12;
+      const delays = [300, 500, 800, 1200, 2000, 3000, 4000, 5000, 5000, 5000, 5000, 5000];
+
+      for (let attempt = reconnectAttempt; attempt < MAX_ATTEMPTS; attempt += 1) {
+        if (attempt > reconnectAttempt) {
+          await sleepMs(delays[Math.min(attempt, delays.length - 1)]);
+        }
+
+        const active = await fetchActiveRun(sessionId);
+        if (active?.active && active.run_id) {
+          await attachRunStream(sessionId, active.run_id, { reconnectAttempt: attempt + 1 });
+          return;
+        }
+
+        if (await hasAssistantReplySinceLastUser(sessionId)) {
+          if (currentSessionId === sessionId) {
+            await loadMessages();
+          }
+          return;
+        }
+      }
+
+      throw new Error('流式连接中断');
+    }
+
     function attachRunStream(sessionId, runId, { reconnectAttempt = 0 } = {}) {
-      const MAX_RECONNECT = 3;
       let assistantEl = null;
 
       return new Promise((resolve, reject) => {
@@ -5285,27 +5343,46 @@
         };
 
         es.onerror = async () => {
+          if (es.readyState === EventSource.CONNECTING) return;
           es.close();
-          if (reconnectAttempt < MAX_RECONNECT) {
-            try {
-              const data = await api(`/api/sessions/${sessionId}/active-run`);
-              if (data.active && data.run_id) {
-                await attachRunStream(sessionId, data.run_id, {
-                  reconnectAttempt: reconnectAttempt + 1,
-                });
-                resolve();
-                return;
-              }
-            } catch { /* fall through */ }
+          try {
+            await recoverRunStream(sessionId, runId, reconnectAttempt);
+            resolve();
+          } catch (err) {
+            reject(err);
           }
-          reject(new Error('流式连接中断'));
         };
       });
     }
 
     async function tryReconnectActiveRun(sessionId) {
       const sid = String(sessionId || '').trim();
-      if (!sid || activeRuns.has(sid)) return;
+      if (!sid) return;
+
+      const existing = activeRuns.get(sid);
+      if (existing) {
+        const es = existing.eventSource;
+        if (es && es.readyState !== EventSource.CLOSED) return;
+        if (existing.pending && !existing.runId) return;
+        if (existing.runId) {
+          try {
+            await attachRunStream(sid, existing.runId);
+          } catch (err) {
+            if (currentSessionId === sid) {
+              document.getElementById('typing-indicator')?.remove();
+              const failText = appendRetryHint(`⚠️ ${err.message}`);
+              if (existing.shellEl) {
+                clearRunStatus(sid);
+                existing.shellEl.querySelector('.msg-body').innerHTML = renderMarkdown(failText);
+              } else {
+                appendMessage('assistant', failText);
+              }
+            }
+          }
+          return;
+        }
+      }
+
       let data;
       try {
         data = await api(`/api/sessions/${sid}/active-run`);
@@ -5425,6 +5502,10 @@
 
         await attachRunStream(sessionId, run_id);
       } catch (err) {
+        if (await hasAssistantReplySinceLastUser(sessionId)) {
+          if (currentSessionId === sessionId) await loadMessages();
+          return;
+        }
         const run = activeRuns.get(sessionId);
         if (run) run.failed = true;
         if (currentSessionId === sessionId) {
@@ -5858,10 +5939,8 @@
         try {
           await loadSessions();
           if (viewingId && currentSessionId === viewingId) {
-            if (!activeRuns.has(viewingId)) {
-              const active = sessionsCache.find((s) => s.id === viewingId)?.running;
-              if (active) await tryReconnectActiveRun(viewingId);
-            }
+            const sessionActive = sessionsCache.find((s) => s.id === viewingId)?.running;
+            if (sessionActive) await tryReconnectActiveRun(viewingId);
             if (wasDingtalk) {
               await loadMessages();
             }
@@ -5869,6 +5948,21 @@
         } catch { /* ignore poll errors */ }
       }, 15000);
     }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') return;
+      const sid = currentSessionId;
+      if (!sid) return;
+      void (async () => {
+        try {
+          await loadSessions();
+          const sessionActive = sessionsCache.find((s) => s.id === sid)?.running;
+          if (sessionActive || activeRuns.has(sid)) {
+            await tryReconnectActiveRun(sid);
+          }
+        } catch { /* ignore */ }
+      })();
+    });
 
     async function setUserMenuOpen(open) {
       const btn = document.getElementById('user-menu-btn');

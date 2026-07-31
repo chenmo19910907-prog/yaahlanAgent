@@ -138,7 +138,9 @@ DEFAULT_HOST = "0.0.0.0"
 DEFAULT_PORT = 18766
 CONFIG_PATH = WEB_AGENT_DIR / "config.json"
 FAMILY_PK_EXPORTS_DIR = REPO_ROOT / "platform" / "family_pk_report" / "exports"
+PLATFORM_GUIDE_DIR = REPO_ROOT / "platform" / "exports" / "cursor-platform-guide"
 SHOWCASE_URL_PREFIX = "/family-pk-showcase"
+PLATFORM_GUIDE_URL_PREFIX = "/platform-guide"
 KEYNOTE_URL_PREFIX = "/keynote"
 KEYNOTE_PREVIEW_HTML = WEB_AGENT_DIR / "keynote" / "preview.html"
 SSE_POLL_S = 0.25
@@ -881,6 +883,14 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             return
         self._serve_static_file(target)
 
+    def _serve_platform_guide(self, rel_path: str) -> None:
+        root = PLATFORM_GUIDE_DIR.resolve()
+        target = (root / rel_path).resolve()
+        if not str(target).startswith(str(root)):
+            self.send_error(HTTPStatus.NOT_FOUND)
+            return
+        self._serve_static_file(target, not_found_msg="platform guide not found")
+
     def _serve_keynote_preview(self) -> None:
         self._serve_static_file(KEYNOTE_PREVIEW_HTML, not_found_msg="keynote preview not found")
 
@@ -957,6 +967,12 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         if path == SHOWCASE_URL_PREFIX or path.startswith(f"{SHOWCASE_URL_PREFIX}/"):
             rel = path[len(SHOWCASE_URL_PREFIX) :].lstrip("/") or "index.html"
             return self._serve_family_pk_export(rel)
+
+        if path == PLATFORM_GUIDE_URL_PREFIX or path.startswith(
+            f"{PLATFORM_GUIDE_URL_PREFIX}/"
+        ):
+            rel = path[len(PLATFORM_GUIDE_URL_PREFIX) :].lstrip("/") or "index.html"
+            return self._serve_platform_guide(rel)
 
         if path == "/api/meta":
             return _json_response(self, _platform_meta())
