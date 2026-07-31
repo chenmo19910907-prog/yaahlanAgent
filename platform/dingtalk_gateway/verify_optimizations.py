@@ -141,6 +141,18 @@ def test_command_hints() -> None:
     assert suggest_command_hint("查询用户 100465989 详情") is None
 
 
+def test_agent_retry_policy() -> None:
+    from bridge_manager import AGENT_RUN_MAX_RETRIES, is_retryable_agent_error
+
+    assert AGENT_RUN_MAX_RETRIES == 3
+    assert is_retryable_agent_error(RuntimeError("Agent 启动失败: Unknown agent: agent-abc"))
+    assert is_retryable_agent_error(RuntimeError("Agent 执行失败: run-deadbeef"))
+    assert not is_retryable_agent_error(
+        RuntimeError("Agent 启动失败: Cannot use this model: composer-2.5-fast")
+    )
+    assert not is_retryable_agent_error(ValueError("prompt 与附图不能同时为空"))
+
+
 def test_format_exception_friendly() -> None:
     from reply_formatter import format_exception
 

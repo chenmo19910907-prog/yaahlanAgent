@@ -83,15 +83,7 @@
       backdrop-filter: blur(12px);
     }
     .card-header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 12px;
       margin-bottom: 22px;
-    }
-    .card-header-text {
-      flex: 1;
-      min-width: 0;
     }
     .login-brand {
       display: flex;
@@ -247,8 +239,15 @@
     .copy-btn:hover { background: var(--copy-hover-bg); }
     .copy-btn:active { transform: scale(0.98); }
     .copy-btn.copied { color: var(--success); background: var(--copied-bg); }
+    .login-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: stretch;
+    }
     .code-input {
       width: 100%;
+      min-width: 0;
       padding: 14px 16px;
       border-radius: 12px;
       border: 1px solid var(--border);
@@ -265,9 +264,8 @@
       box-shadow: 0 0 0 3px rgba(91, 140, 255, 0.15);
     }
     .login-btn {
-      width: 100%;
-      margin-top: 16px;
-      padding: 13px 16px;
+      min-width: 92px;
+      padding: 13px 18px;
       border: none;
       border-radius: 12px;
       background: linear-gradient(135deg, var(--accent), var(--accent-hover));
@@ -275,6 +273,8 @@
       font-size: 0.95rem;
       font-weight: 650;
       cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     .login-btn:disabled {
       opacity: 0.55;
@@ -315,11 +315,15 @@
       color: var(--accent);
       background: var(--accent-soft);
     }
-    .card-header-actions {
+    .card-footer {
       display: flex;
       align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
       gap: 8px;
-      flex-shrink: 0;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
     }
     .message-board-modal {
       display: flex; position: fixed; inset: 0; z-index: 110;
@@ -417,34 +421,20 @@
     @media (max-width: 420px) {
       body { padding: 16px; }
       .card { padding: 20px 16px; }
+      .login-row { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+      .login-btn { min-width: 76px; padding: 13px 14px; font-size: 0.9rem; }
+      .code-input { font-size: 1.15rem; letter-spacing: 0.28em; padding: 13px 10px; }
     }
   </style>
 </head>
 <body>
   <div class="card">
     <div class="card-header">
-      <div class="card-header-text">
-        <div class="login-brand">
-          <div class="login-brand-icon" id="login-brand-icon" aria-hidden="true"></div>
-          <h1>Yaahlan 智能工具 Agent</h1>
-        </div>
-        <p class="subtitle" id="subtitle">网页版可通过钉钉机器人验证码登录；在钉钉内打开时将优先尝试自动登录。</p>
+      <div class="login-brand">
+        <div class="login-brand-icon" id="login-brand-icon" aria-hidden="true"></div>
+        <h1>Yaahlan 智能工具 Agent</h1>
       </div>
-      <div class="card-header-actions">
-      <button type="button" class="theme-quick-btn is-dark" id="btn-theme-toggle" title="切换到白天模式" aria-label="切换白天/夜间模式">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
-          <path d="M9 18h6"/>
-          <path d="M10 22h4"/>
-          <path class="bulb-glass" d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>
-        </svg>
-      </button>
-      <button type="button" class="message-board-entry-btn" id="btn-message-board" title="反馈">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-        </svg>
-        反馈
-      </button>
-      </div>
+      <p class="subtitle" id="subtitle">网页版可通过钉钉机器人验证码登录；在钉钉内打开时将优先尝试自动登录。</p>
     </div>
 
     <div class="oauth-status" id="oauthStatus">正在通过钉钉验证身份…</div>
@@ -459,14 +449,40 @@
       </div>
 
       <p class="step">2. 在钉钉私聊中查收 8 位验证码，输入后登录</p>
-      <input id="codeInput" class="code-input" type="text" inputmode="numeric" maxlength="8"
-             autocomplete="one-time-code" placeholder="········" />
-      <button type="button" class="login-btn" id="loginBtn">登录</button>
+      <div class="login-row">
+        <input id="codeInput" class="code-input" type="text" inputmode="numeric" maxlength="8"
+               autocomplete="one-time-code" placeholder="········" />
+        <button type="button" class="login-btn" id="loginBtn">登录</button>
+      </div>
 
       <p class="hint">重新向机器人发送上述文案会更新验证码，并使此前网页登录失效。</p>
     </div>
 
     <p class="error" id="errorBox"></p>
+
+    <div class="card-footer">
+      <button type="button" class="theme-quick-btn is-dark" id="btn-theme-toggle" title="切换到白天模式" aria-label="切换白天/夜间模式">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+          <path d="M9 18h6"/>
+          <path d="M10 22h4"/>
+          <path class="bulb-glass" d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>
+        </svg>
+      </button>
+      <button type="button" class="message-board-entry-btn" id="btn-message-board" title="反馈">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        反馈
+      </button>
+      <button type="button" class="message-board-entry-btn" id="btn-about" title="关于 Yaahlan Web Agent">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 10v6"/>
+          <path d="M12 7h.01"/>
+        </svg>
+        关于
+      </button>
+    </div>
   </div>
 
   <div class="message-board-modal" id="message-board-modal" aria-hidden="true">
@@ -685,6 +701,9 @@
     }
     document.getElementById('btn-message-board')?.addEventListener('click', () => {
       setMessageBoardOpen(!messageBoardPanel?.open);
+    });
+    document.getElementById('btn-about')?.addEventListener('click', () => {
+      window.open('/keynote', '_blank', 'noopener,noreferrer');
     });
     document.getElementById('message-board-modal')?.addEventListener('click', (event) => {
       if (event.target.id === 'message-board-modal') setMessageBoardOpen(false);

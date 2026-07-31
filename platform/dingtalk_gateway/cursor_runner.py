@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import json
+import logging
 import sys
 import time
 from collections.abc import Callable, Sequence
@@ -19,7 +20,12 @@ from agent_stream_renderer import (
     thinking_text_from_step,
     tool_name_from_step,
 )
-from bridge_manager import is_transient_sdk_error, reset_sdk_bridge
+from bridge_manager import (
+    AGENT_RUN_MAX_RETRIES,
+    is_retryable_agent_error,
+    is_transient_sdk_error,
+    reset_sdk_bridge,
+)
 from user_agent_pool import get_user_agent_pool
 
 from env_loader import GATEWAY_DIR, load_env_local, require_env
@@ -34,6 +40,7 @@ EXECUTOR_CONFIG = GATEWAY_DIR / "config" / "executor.local.json"
 DEFAULT_MODEL = "composer-2.5"
 DEFAULT_TIMEOUT_S = 600
 DINGTALK_MAX_REPLY_CHARS = 3800
+logger = logging.getLogger("dingtalk-gateway")
 
 
 def repo_cwd() -> str:
@@ -44,6 +51,22 @@ def repo_cwd() -> str:
         if isinstance(root, str) and root.strip():
             return root.strip()
     return str(REPO_ROOT)
+
+
+def _should_reset_bridge_for_retry(exc: BaseException) -> bool:
+    message = str(exc).lower()
+    return is_transient_sdk_error(exc) or "unknown agent" in message
+
+
+def _format_agent_run_failure(exc: BaseException, *, retries: int) -> str:
+    if isinstance(exc, (CursorAgentError, NetworkError)):
+        detail = exc.message if hasattr(exc, "message") else exc
+        prefix = f"Agent 启动失败: {detail}"
+    else:
+        prefix = str(exc).strip() or type(exc).__name__
+    if retries > 0:
+        return f"{prefix}（已自动重试 {retries} 次仍失败）"
+    return prefix
 
 
 def _build_prompt_text(
@@ -330,11 +353,13 @@ def run_agent_prompt(
     interrupted = False
     result = None
     last_error: Exception | None = None
+    final_text: str | None = None
     keep_agent_open = False
     is_new_session = not use_pool
     active_run = None
+    max_attempts = AGENT_RUN_MAX_RETRIES + 1
 
-    for attempt in range(2):
+    for attempt in range(max_attempts):
         agent = None
         keep_agent_open = False
         active_run = None
@@ -422,6 +447,7 @@ def run_agent_prompt(
                     session=session,
                     user_key=user_key,
                 )
+            final_text = _finalize_run_result(result, session=session)
             last_error = None
             break
         except TaskInterrupted:
@@ -431,16 +457,27 @@ def run_agent_prompt(
             if use_pool and pool is not None and user_key:
                 pool.invalidate(user_key)
             raise
-        except (CursorAgentError, NetworkError) as exc:
+        except Exception as exc:
             last_error = exc
             safe_cancel_run(active_run)
             if use_pool and pool is not None and user_key:
                 pool.invalidate(user_key)
                 keep_agent_open = False
-            if attempt == 0 and is_transient_sdk_error(exc):
-                reset_sdk_bridge()
+            retries_left = max_attempts - attempt - 1
+            if retries_left > 0 and is_retryable_agent_error(exc):
+                if _should_reset_bridge_for_retry(exc):
+                    reset_sdk_bridge()
+                logger.warning(
+                    "Agent 运行失败，自动重试 %s/%s: %s",
+                    attempt + 1,
+                    AGENT_RUN_MAX_RETRIES,
+                    exc,
+                )
+                time.sleep(min(0.5 * (attempt + 1), 2.0))
                 continue
-            raise RuntimeError(f"Agent 启动失败: {exc.message if hasattr(exc, 'message') else exc}") from exc
+            raise RuntimeError(
+                _format_agent_run_failure(exc, retries=AGENT_RUN_MAX_RETRIES if attempt > 0 else 0)
+            ) from exc
         finally:
             should_close = agent is not None and (interrupted or not keep_agent_open)
             if should_close:
@@ -450,15 +487,15 @@ def run_agent_prompt(
                 except Exception:  # noqa: BLE001
                     pass
 
+    if final_text is not None:
+        return final_text
+
     if last_error is not None:
         raise RuntimeError(
-            f"Agent 启动失败: {last_error.message if hasattr(last_error, 'message') else last_error}"
+            _format_agent_run_failure(last_error, retries=AGENT_RUN_MAX_RETRIES)
         ) from last_error
 
-    if result is None:
-        raise RuntimeError("Agent 未返回结果")
-
-    return _finalize_run_result(result, session=session)
+    raise RuntimeError("Agent 未返回结果")
 
 
 def run_agent_prompt_streaming(

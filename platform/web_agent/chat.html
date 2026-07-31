@@ -99,8 +99,18 @@
       --warn-bg: rgba(245, 158, 11, 0.12);
       --warn-border: rgba(245, 158, 11, 0.28);
       --warn-text: #b45309;
-      --session-tag-bg: rgba(245, 158, 11, 0.14);
-      --session-tag-text: #b45309;
+      --owner-bar-bg: linear-gradient(90deg, rgba(219, 234, 254, 0.82), rgba(239, 246, 255, 0.62));
+      --owner-bar-border: rgba(59, 111, 245, 0.16);
+      --owner-bar-text: #334155;
+      --owner-bar-accent: #2563eb;
+      --owner-bar-meta: #64748b;
+      --owner-bar-sep: rgba(59, 111, 245, 0.38);
+      --owner-bar-btn-border: rgba(59, 111, 245, 0.24);
+      --owner-bar-btn-bg: rgba(255, 255, 255, 0.72);
+      --owner-bar-btn-color: #3b82f6;
+      --session-tag-bg: rgba(59, 111, 245, 0.12);
+      --session-tag-text: #2563eb;
+      --session-tag-border: rgba(59, 111, 245, 0.22);
       --placeholder-color: #94a3b8;
       --shadow-soft: 0 12px 28px rgba(15, 23, 42, 0.08);
       --shadow-msg: 0 10px 28px rgba(15, 23, 42, 0.06);
@@ -155,8 +165,18 @@
       --warn-bg: rgba(252, 211, 77, 0.08);
       --warn-border: rgba(252, 211, 77, 0.2);
       --warn-text: #fcd34d;
-      --session-tag-bg: rgba(252, 211, 77, 0.15);
-      --session-tag-text: #fcd34d;
+      --owner-bar-bg: linear-gradient(90deg, rgba(59, 111, 245, 0.14), rgba(59, 111, 245, 0.06));
+      --owner-bar-border: rgba(91, 140, 255, 0.18);
+      --owner-bar-text: rgba(214, 226, 255, 0.92);
+      --owner-bar-accent: #93c5fd;
+      --owner-bar-meta: rgba(164, 189, 230, 0.72);
+      --owner-bar-sep: rgba(91, 140, 255, 0.42);
+      --owner-bar-btn-border: rgba(91, 140, 255, 0.28);
+      --owner-bar-btn-bg: rgba(59, 111, 245, 0.12);
+      --owner-bar-btn-color: rgba(147, 197, 253, 0.9);
+      --session-tag-bg: rgba(59, 111, 245, 0.18);
+      --session-tag-text: #93c5fd;
+      --session-tag-border: rgba(91, 140, 255, 0.28);
       --placeholder-color: #98a2b4;
       --shadow-soft: 0 18px 42px rgba(0,0,0,0.18);
       --shadow-msg: 0 18px 50px rgba(0,0,0,0.18);
@@ -267,7 +287,7 @@
       font-weight: 600;
     }
     [data-theme="light"] .session-list {
-      background: var(--bg-soft);
+      background: transparent;
     }
     [data-theme="light"] .session-filter {
       background: var(--bg-soft);
@@ -277,6 +297,7 @@
       backdrop-filter: none;
     }
     [data-theme="light"] .header-actions button,
+    [data-theme="light"] .tool-actions-bar button,
     [data-theme="light"] .header-start .header-btn,
     [data-theme="light"] .topbar-brand .header-btn,
     [data-theme="light"] .panel-head .header-btn,
@@ -293,7 +314,6 @@
       box-shadow: var(--shadow-msg);
     }
     [data-theme="light"] .input-area {
-      border-top: 1px solid var(--input-area-border-top);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
     [data-theme="light"] .msg.assistant .msg-body:hover,
@@ -386,6 +406,106 @@
     .brand-icon svg, .empty-logo svg { width: 100%; height: 100%; display: block; }
     .brand h1 { font-size: 1rem; font-weight: 650; color: var(--text); }
     .header-actions { display: flex; gap: 10px; margin-left: auto; align-items: center; flex-wrap: wrap; justify-content: flex-end; flex-shrink: 0; }
+    .tool-actions-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      justify-content: space-between;
+      min-width: 0;
+    }
+    .tool-actions-bar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      flex-shrink: 0;
+    }
+    .sidebar-tool-actions-host {
+      flex-shrink: 0;
+      padding: 10px 12px 14px;
+      background: var(--bg-solid);
+      position: relative;
+      z-index: 3;
+      overflow: visible;
+    }
+    .sidebar-tool-actions-host:empty { display: none; }
+    .sidebar-tool-actions-host .tool-actions-wrap {
+      width: 100%;
+      gap: 8px;
+    }
+    body.sidebar-collapsed .header-actions .tool-actions-wrap {
+      width: auto;
+      min-width: 260px;
+    }
+    .sidebar-tool-actions-host .tool-actions-bar {
+      gap: 4px;
+    }
+    .sidebar-tool-actions-host .tool-actions-bar > button {
+      padding: 8px;
+      min-width: 36px;
+      justify-content: center;
+      gap: 0;
+      font-size: 0;
+      line-height: 0;
+      flex: 0 0 auto;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      border-radius: 8px;
+    }
+    .sidebar-tool-actions-host .tool-actions-bar > button:hover:not(:disabled),
+    .sidebar-tool-actions-host .tool-actions-bar > button.active {
+      background: var(--bg-hover);
+      border: none;
+      box-shadow: none;
+      transform: none;
+    }
+    .sidebar-tool-actions-host .tool-actions-bar > button:hover:not(:disabled) svg {
+      transform: none;
+    }
+    .sidebar-tool-actions-host .tool-actions-bar > button svg {
+      width: 16px;
+      height: 16px;
+    }
+    .sidebar-tool-actions-host .user-menu {
+      margin-left: auto;
+      flex-shrink: 0;
+      min-width: 0;
+      overflow: visible;
+    }
+    .sidebar-tool-actions-host .user-menu-btn {
+      max-width: min(168px, 100%);
+      min-width: 0;
+    }
+    .sidebar-tool-actions-host .user-menu-name {
+      max-width: 72px;
+    }
+    .sidebar-tool-actions-host .btn-login-header {
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .sidebar-tool-actions-host .tool-actions-wrap,
+    .sidebar-tool-actions-host .tool-actions-bar {
+      overflow: visible;
+    }
+    body:not(.sidebar-collapsed) .user-menu-dropdown.is-above:not(.is-portaled),
+    .sidebar-tool-actions-host .user-menu-dropdown:not(.is-portaled) {
+      top: auto;
+      bottom: calc(100% + 8px);
+      transform-origin: bottom right;
+    }
+    body:not(.sidebar-collapsed) .user-menu-dropdown.is-above.dropdown-opening,
+    .sidebar-tool-actions-host .user-menu-dropdown.dropdown-opening,
+    .user-menu-dropdown.is-portaled.is-above.dropdown-opening {
+      animation: dropdown-pop-in-up 200ms var(--ease-spring) both;
+    }
+    body:not(.sidebar-collapsed) .user-menu-dropdown.is-above.dropdown-closing,
+    .sidebar-tool-actions-host .user-menu-dropdown.dropdown-closing,
+    .user-menu-dropdown.is-portaled.is-above.dropdown-closing {
+      animation: dropdown-pop-out-up 160ms var(--ease-standard) both;
+    }
     .topbar-brand {
       grid-column: 1 / -1;
       grid-row: 1;
@@ -396,6 +516,10 @@
       min-height: 64px;
       padding: 12px 24px;
       pointer-events: none;
+    }
+    body:not(.sidebar-collapsed) .topbar-brand {
+      grid-column: 2;
+      justify-content: center;
     }
     .topbar-brand .brand {
       justify-content: center;
@@ -408,6 +532,7 @@
       text-overflow: ellipsis;
     }
     .header-actions button,
+    .tool-actions-bar button,
     .header-start .header-btn,
     .topbar-brand .header-btn,
     .panel-head .header-btn {
@@ -427,6 +552,7 @@
         padding 300ms var(--ease-spring);
     }
     .header-actions button svg,
+    .tool-actions-bar button svg,
     .header-start .header-btn svg,
     .topbar-brand .header-btn svg,
     .panel-head .header-btn svg {
@@ -434,6 +560,7 @@
       transition: transform 180ms var(--ease-standard);
     }
     .header-actions button:hover:not(:disabled),
+    .tool-actions-bar button:hover:not(:disabled),
     .header-start .header-btn:hover:not(:disabled),
     .topbar-brand .header-btn:hover:not(:disabled),
     .panel-head .header-btn:hover:not(:disabled) {
@@ -442,14 +569,17 @@
       box-shadow: 0 10px 24px rgba(0,0,0,0.16);
     }
     .header-actions button:hover:not(:disabled) svg,
+    .tool-actions-bar button:hover:not(:disabled) svg,
     .header-start .header-btn:hover:not(:disabled) svg,
     .topbar-brand .header-btn:hover:not(:disabled) svg,
     .panel-head .header-btn:hover:not(:disabled) svg { transform: translateY(-1px); }
     .header-actions button:active:not(:disabled),
+    .tool-actions-bar button:active:not(:disabled),
     .header-start .header-btn:active:not(:disabled),
     .topbar-brand .header-btn:active:not(:disabled),
     .panel-head .header-btn:active:not(:disabled) { transform: translateY(0) scale(0.98); }
     .header-actions button:disabled,
+    .tool-actions-bar button:disabled,
     .header-start .header-btn:disabled,
     .topbar-brand .header-btn:disabled,
     .panel-head .header-btn:disabled {
@@ -556,6 +686,14 @@
     }
     .user-menu-dropdown[hidden] { display: none; }
     .user-menu-dropdown { transform-origin: top right; }
+    .user-menu-dropdown.is-portaled {
+      position: fixed;
+      z-index: 120;
+      top: auto;
+      right: auto;
+      bottom: auto;
+      transform-origin: bottom right;
+    }
     .user-menu-dropdown.dropdown-opening { animation: dropdown-pop-in 200ms var(--ease-spring) both; }
     .user-menu-dropdown.dropdown-closing { animation: dropdown-pop-out 160ms var(--ease-standard) both; }
     .user-menu-dropdown button {
@@ -713,6 +851,9 @@
       .sidebar-collapse-btn { display: none; }
       body:not(.sidebar-collapsed) .sidebar-collapse-btn { display: inline-flex; }
       #btn-sidebar { display: inline-flex; }
+      body:not(.sidebar-collapsed) .topbar-brand {
+        grid-column: 1;
+      }
     }
     .left-panel {
       position: relative;
@@ -878,11 +1019,12 @@
       padding: 10px 11px; cursor: pointer;
       border: none;
       border-radius: 10px; margin-bottom: 8px;
-      background: var(--cap-bg);
+      background: transparent;
       transform: translateX(0);
       transition:
         transform 180ms var(--ease-standard),
         background 180ms var(--ease-standard),
+        color 180ms var(--ease-standard),
         border-color 180ms var(--ease-standard);
     }
     .session-item:hover {
@@ -897,17 +1039,13 @@
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .session-item.active .session-title { color: var(--text-soft); }
-    .session-meta { font-size: 0.72rem; color: var(--muted-soft); margin-top: 6px; }
-    .session-item.active .session-meta { color: var(--muted); }
-    .session-item.is-pinned {
-      border: 1px solid rgba(91, 140, 255, 0.38);
+    .input-hint,
+    .session-meta {
+      color: var(--muted-soft);
+      opacity: 0.58;
     }
-    .session-item.is-pinned:hover {
-      border-color: rgba(91, 140, 255, 0.55);
-    }
-    .session-item.is-pinned.active {
-      border-color: rgba(91, 140, 255, 0.55);
-    }
+    .session-meta { font-size: 0.72rem; margin-top: 6px; }
+    .session-item.active .session-meta { opacity: 0.68; }
     .session-item.session-item-pressed {
       transform: scale(0.985);
       background: var(--cap-bg-hover);
@@ -984,8 +1122,10 @@
     .session-context-menu button:hover { background: var(--bg-hover); }
     .session-source {
       display: inline-block; font-size: 0.68rem; padding: 1px 6px; border-radius: 4px;
-      background: var(--session-tag-bg); color: var(--session-tag-text); vertical-align: middle; margin-right: 4px;
-      opacity: 0.82;
+      background: var(--session-tag-bg); color: var(--session-tag-text);
+      border: 1px solid var(--session-tag-border);
+      vertical-align: middle; margin-right: 4px;
+      font-weight: 500;
     }
     .session-owner { color: inherit; }
     .dingtalk-owner-bar {
@@ -994,14 +1134,14 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      height: 32px;
+      height: 28px;
       padding: 0 24px;
       box-sizing: border-box;
-      font-size: 0.8rem;
+      font-size: 0.74rem;
       line-height: 1.45;
-      color: var(--warn-text);
-      background: var(--warn-bg);
-      border-bottom: 1px solid var(--warn-border);
+      color: var(--owner-bar-text);
+      background: var(--owner-bar-bg);
+      border-bottom: 1px solid var(--owner-bar-border);
     }
     .dingtalk-owner-bar[hidden] { display: none; }
     .owner-bar-label {
@@ -1011,6 +1151,23 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      letter-spacing: 0.01em;
+    }
+    .owner-bar-kind {
+      color: var(--owner-bar-accent);
+      font-weight: 500;
+    }
+    .owner-bar-sep {
+      color: var(--owner-bar-sep);
+      font-weight: 400;
+    }
+    .owner-bar-name {
+      color: var(--owner-bar-text);
+      font-weight: 600;
+    }
+    .owner-bar-meta {
+      color: var(--owner-bar-meta);
+      font-weight: 450;
     }
     .owner-bar-actions {
       display: inline-flex;
@@ -1024,14 +1181,15 @@
       height: 22px;
       padding: 0;
       border-radius: 6px;
-      border: 1px solid var(--warn-border);
-      background: rgba(255,255,255,0.06);
-      color: var(--warn-text);
+      border: 1px solid var(--owner-bar-btn-border);
+      background: var(--owner-bar-btn-bg);
+      color: var(--owner-bar-btn-color);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+      opacity: 0.88;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease, opacity 160ms ease;
     }
     .owner-bar-filter-btn[hidden] {
       display: none;
@@ -1040,9 +1198,10 @@
       display: none;
     }
     .owner-bar-filter-btn:hover {
-      background: rgba(91,140,255,0.12);
-      border-color: rgba(91,140,255,0.35);
-      color: var(--accent);
+      opacity: 1;
+      background: var(--accent-soft);
+      border-color: rgba(91,140,255,0.42);
+      color: var(--owner-bar-accent);
     }
     .owner-bar-filter-btn svg {
       width: 13px;
@@ -1157,6 +1316,7 @@
       padding: 50px var(--chat-gutter) 56px;
       min-width: 0;
       scroll-padding-bottom: 24px;
+      overflow-anchor: none;
     }
     .scroll-to-bottom-btn {
       position: absolute;
@@ -1515,7 +1675,7 @@
       100% { transform: scale(3.8); opacity: 0; }
     }
     .input-area {
-      padding: 20px var(--chat-gutter) 26px; border-top: 1px solid var(--input-area-border-top, rgba(255,255,255,0.07));
+      padding: 20px var(--chat-gutter) 26px;
       background: var(--bg-solid);
       overflow: visible;
     }
@@ -1744,6 +1904,14 @@
       from { opacity: 1; transform: translateY(0) scale(1); }
       to { opacity: 0; transform: translateY(-4px) scale(0.98); }
     }
+    @keyframes dropdown-pop-in-up {
+      from { opacity: 0; transform: translateY(6px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes dropdown-pop-out-up {
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to { opacity: 0; transform: translateY(6px) scale(0.98); }
+    }
     @keyframes panel-slide-out-left {
       from { opacity: 1; transform: translateX(0); }
       to { opacity: 0; transform: translateX(-16px); }
@@ -1752,7 +1920,7 @@
       from { opacity: 1; transform: translateX(0); }
       to { opacity: 0; transform: translateX(16px); }
     }
-    .input-hint { font-size: 0.72rem; color: var(--muted); margin: 10px auto 0; max-width: var(--content-width); position: relative; left: 2%; }
+    .input-hint { font-size: 0.72rem; margin: 10px auto 0; max-width: var(--content-width); position: relative; left: 2%; }
     .settings-modal {
       display: flex; position: fixed; inset: 0; background: var(--modal-overlay, rgba(0,0,0,0.6));
       align-items: center; justify-content: center; z-index: 100;
@@ -1990,10 +2158,7 @@
     }
     .settings-link:hover { border-color: var(--accent); color: var(--text); background: var(--accent-soft); }
     .settings-link svg { width: 16px; height: 16px; stroke: currentColor; flex-shrink: 0; }
-    .settings-back {
-      background: transparent; border: none; color: var(--muted); cursor: pointer;
-      font-size: 0.82rem; padding: 0; margin-bottom: 12px; display: inline-flex; align-items: center; gap: 4px;
-    }
+    a.settings-link { text-decoration: none; }
     .settings-box p { color: var(--muted); font-size: 0.88rem; line-height: 1.6; margin-bottom: 8px; }
     .settings-actions { margin-top: 18px; display: flex; justify-content: flex-end; }
     .settings-box .btn-close-modal {
@@ -2001,11 +2166,13 @@
       padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 0.86rem;
     }
     .header-actions button.active,
+    .tool-actions-bar button.active,
     .header-start .header-btn.active,
     .topbar-brand .header-btn.active {
       border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,0.12);
     }
-    .header-actions button.header-btn-active-flash {
+    .header-actions button.header-btn-active-flash,
+    .tool-actions-bar button.header-btn-active-flash {
       animation: header-btn-active-in-right 280ms var(--ease-spring) both;
     }
     .header-start .header-btn.header-btn-active-flash,
@@ -2710,6 +2877,7 @@
       </select>
     </div>
     <div class="session-list" id="session-list"></div>
+    <div class="sidebar-tool-actions-host" id="sidebar-tool-actions-host"></div>
     <div class="sidebar-resizer" id="sidebar-resizer" title="拖动调整历史会话宽度"></div>
   </aside>
 
@@ -2744,6 +2912,8 @@
       </div>
     </div>
     <div class="header-actions">
+      <div class="tool-actions-wrap" id="tool-actions-wrap">
+      <div class="tool-actions-bar" id="tool-actions-bar">
       <button type="button" id="btn-bookmarks" title="快捷入口">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
           <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
@@ -2763,7 +2933,7 @@
         </svg>
         设置
       </button>
-      <button type="button" class="btn-login-header" id="btn-login" hidden>登录</button>
+      </div>
       <div class="user-menu" id="user-menu" hidden>
         <button type="button" class="user-menu-btn" id="user-menu-btn" aria-haspopup="menu" aria-expanded="false">
           <span class="user-menu-avatar" id="user-menu-avatar" aria-hidden="true">U</span>
@@ -2781,6 +2951,8 @@
             退出登录
           </button>
         </div>
+      </div>
+      <button type="button" class="btn-login-header" id="btn-login" hidden>登录</button>
       </div>
     </div>
   </header>
@@ -2935,20 +3107,11 @@
           <div class="settings-label">其他</div>
           <button type="button" class="settings-link" id="btn-settings-about">
             <span>关于 Yaahlan Web Agent</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
           </button>
         </div>
         <div class="settings-actions">
           <button type="button" class="btn-close-modal" id="btn-settings-close">关闭</button>
-        </div>
-      </div>
-      <div id="settings-view-about" hidden>
-        <button type="button" class="settings-back" id="btn-settings-back">← 返回</button>
-        <h3>关于 Yaahlan Web Agent</h3>
-        <p>基于 Cursor Agent SDK 的 Web 对话界面，可直接调用仓库内各模块 execute 脚本、钉钉 MCP、Tunnel 抓包等能力。</p>
-        <p>会话历史保存在服务端，重启后可恢复。Agent 上下文按会话复用，支持多轮对话。</p>
-        <div class="settings-actions">
-          <button type="button" class="btn-close-modal" id="btn-about-close">关闭</button>
         </div>
       </div>
     </div>
@@ -2981,7 +3144,6 @@
       <div class="bookmarks-head">
         <div class="bookmarks-head-main">
           <h3 id="bookmarks-title">快捷入口</h3>
-          <p>团队共享的常用链接，全员同步；添加时自行填写名称与备注；点击图标打开，长按可编辑或删除；分类标题旁可改分类名</p>
         </div>
         <div class="bookmarks-head-actions">
           <button type="button" class="primary" id="btn-bookmarks-add">+ 添加</button>
@@ -3737,6 +3899,26 @@
       return container.scrollHeight - container.scrollTop - container.clientHeight <= threshold;
     }
 
+    function syncMessagesPinnedState(container) {
+      const el = container || getMessagesEl();
+      if (!el) return;
+      messagesPinnedToBottom = isMessagesNearBottom(el);
+      updateScrollToBottomBtn();
+    }
+
+    function captureMessagesScrollFromBottom() {
+      const container = getMessagesEl();
+      if (!container || messagesPinnedToBottom) return null;
+      return container.scrollHeight - container.scrollTop;
+    }
+
+    function restoreMessagesScrollFromBottom(fromBottom) {
+      const container = getMessagesEl();
+      if (!container || fromBottom == null) return;
+      container.scrollTop = Math.max(0, container.scrollHeight - fromBottom);
+      syncMessagesPinnedState(container);
+    }
+
     function scrollMessagesToBottom(options = {}) {
       const { force = false } = options;
       const container = getMessagesEl();
@@ -3744,12 +3926,7 @@
       if (!force && !messagesPinnedToBottom) return;
       if (force) messagesPinnedToBottom = true;
 
-      const anchor = container.querySelector('.msg:last-of-type, .typing:last-of-type, #typing-indicator');
-      if (anchor) {
-        anchor.scrollIntoView({ block: 'end', behavior: 'auto' });
-      } else {
-        container.scrollTop = container.scrollHeight;
-      }
+      container.scrollTop = container.scrollHeight;
       updateScrollToBottomBtn();
     }
 
@@ -3789,8 +3966,13 @@
       if (!container || container.dataset.scrollTrackBound) return;
       container.dataset.scrollTrackBound = '1';
       container.addEventListener('scroll', () => {
-        messagesPinnedToBottom = isMessagesNearBottom(container);
-        updateScrollToBottomBtn();
+        syncMessagesPinnedState(container);
+      }, { passive: true });
+      container.addEventListener('wheel', (event) => {
+        if (event.deltaY < 0) {
+          messagesPinnedToBottom = false;
+          updateScrollToBottomBtn();
+        }
       }, { passive: true });
       document.getElementById('btn-scroll-to-bottom')?.addEventListener('click', () => {
         scheduleScrollMessagesToBottom({ force: true });
@@ -3799,6 +3981,12 @@
         let resizeRaf = 0;
         const observer = new ResizeObserver(() => {
           if (!messagesPinnedToBottom) return;
+          const el = getMessagesEl();
+          if (!el || !isMessagesNearBottom(el)) {
+            messagesPinnedToBottom = false;
+            updateScrollToBottomBtn();
+            return;
+          }
           cancelAnimationFrame(resizeRaf);
           resizeRaf = requestAnimationFrame(() => scrollMessagesToBottom());
         });
@@ -3834,7 +4022,7 @@
         <div class="run-status"></div>
         <div class="msg-body"></div>`;
       container.appendChild(el);
-      scrollMessagesToBottom();
+      if (messagesPinnedToBottom) scrollMessagesToBottom();
       if (run) {
         run.shellEl = el;
         renderRunStatusEl(el.querySelector('.run-status'), run.status);
@@ -4190,6 +4378,16 @@
       if (actionsEl) actionsEl.hidden = !visible;
     }
 
+    function buildOwnerBarLabelHtml(kind, owner, meta = '') {
+      let html = `<span class="owner-bar-kind">${escapeHtml(kind)}</span>`;
+      html += `<span class="owner-bar-sep"> · </span>`;
+      html += `<span class="owner-bar-name">${escapeHtml(owner)}</span>`;
+      if (meta) {
+        html += `<span class="owner-bar-meta">${escapeHtml(meta)}</span>`;
+      }
+      return html;
+    }
+
     function updateDingtalkOwnerBar() {
       const bar = document.getElementById('dingtalk-owner-bar');
       const labelEl = document.getElementById('owner-bar-label');
@@ -4198,26 +4396,26 @@
       const owner = sessionOwnerName(item);
       if (item?.source === 'dingtalk' && owner) {
         bar.hidden = false;
-        labelEl.textContent = `钉钉会话 · ${owner}`;
+        labelEl.innerHTML = buildOwnerBarLabelHtml('钉钉会话', owner);
         syncCollaboratorFilterVisibility(false);
       } else if (item?.source === 'web' && owner) {
         bar.hidden = false;
         const collabNames = (item.web_collaborators || [])
           .map(c => (c.displayName || c.staffId || '').trim())
           .filter(Boolean);
-        let text = `网页会话 · ${owner}`;
+        let meta = '';
         if (collabNames.length) {
-          text += ` · 共同：${collabNames.join('、')}`;
+          meta = ` · 共同：${collabNames.join('、')}`;
         } else if (item.is_collaborator) {
-          text += ' · 共同对话';
+          meta = ' · 共同对话';
         } else if (isSessionReadOnly(item)) {
-          text += '（仅查看）';
+          meta = '（仅查看）';
         }
-        labelEl.textContent = text;
+        labelEl.innerHTML = buildOwnerBarLabelHtml('网页会话', owner, meta);
         syncCollaboratorFilterVisibility(isOwnWebSession(item));
       } else {
         bar.hidden = true;
-        labelEl.textContent = '';
+        labelEl.innerHTML = '';
         syncCollaboratorFilterVisibility(false);
       }
     }
@@ -4678,6 +4876,82 @@
       return window.matchMedia('(max-width: 640px)').matches;
     }
 
+    function isUserMenuDockedInSidebar() {
+      const wrap = document.getElementById('tool-actions-wrap');
+      const sidebarHost = document.getElementById('sidebar-tool-actions-host');
+      return !!(wrap && sidebarHost && sidebarHost.contains(wrap));
+    }
+
+    function resetUserMenuDropdownPlacement() {
+      const dropdown = document.getElementById('user-menu-dropdown');
+      const wrap = document.getElementById('user-menu');
+      if (!dropdown || !wrap) return;
+      dropdown.classList.remove('is-portaled', 'is-above');
+      dropdown.style.position = '';
+      dropdown.style.left = '';
+      dropdown.style.top = '';
+      dropdown.style.right = '';
+      dropdown.style.bottom = '';
+      dropdown.style.zIndex = '';
+      dropdown.style.visibility = '';
+      if (dropdown.parentElement !== wrap) {
+        wrap.appendChild(dropdown);
+      }
+    }
+
+    function positionUserMenuDropdown() {
+      const btn = document.getElementById('user-menu-btn');
+      const dropdown = document.getElementById('user-menu-dropdown');
+      if (!btn || !dropdown) return;
+      if (!isUserMenuDockedInSidebar()) {
+        resetUserMenuDropdownPlacement();
+        return;
+      }
+      dropdown.classList.add('is-portaled', 'is-above');
+      if (dropdown.parentElement !== document.body) {
+        document.body.appendChild(dropdown);
+      }
+      const wasHidden = dropdown.hidden;
+      dropdown.hidden = false;
+      dropdown.classList.remove('dropdown-opening', 'dropdown-closing');
+      dropdown.style.visibility = 'hidden';
+      dropdown.style.left = '0px';
+      dropdown.style.top = '0px';
+      void dropdown.offsetWidth;
+      const btnRect = btn.getBoundingClientRect();
+      const menuRect = dropdown.getBoundingClientRect();
+      const margin = 8;
+      let left = btnRect.right - menuRect.width;
+      let top = btnRect.top - menuRect.height - margin;
+      left = Math.min(Math.max(margin, left), Math.max(margin, window.innerWidth - menuRect.width - margin));
+      top = Math.max(margin, top);
+      dropdown.style.left = `${left}px`;
+      dropdown.style.top = `${top}px`;
+      dropdown.style.bottom = '';
+      dropdown.style.right = '';
+      dropdown.style.visibility = '';
+      if (wasHidden) dropdown.hidden = true;
+    }
+
+    function syncToolActionsPlacement() {
+      const wrap = document.getElementById('tool-actions-wrap');
+      const headerHost = document.querySelector('.header-actions');
+      const sidebarHost = document.getElementById('sidebar-tool-actions-host');
+      if (!wrap || !headerHost || !sidebarHost) return;
+      const dockInSidebar = !document.body.classList.contains('sidebar-collapsed');
+      const target = dockInSidebar ? sidebarHost : headerHost;
+      if (wrap.parentElement !== target) {
+        target.insertBefore(wrap, target.firstChild);
+      }
+      const btn = document.getElementById('user-menu-btn');
+      if (btn?.getAttribute('aria-expanded') === 'true') {
+        if (dockInSidebar) positionUserMenuDropdown();
+        else resetUserMenuDropdownPlacement();
+      } else {
+        resetUserMenuDropdownPlacement();
+      }
+    }
+
     async function setSidebarOpen(open, opts = {}) {
       const leftPanel = document.querySelector('.left-panel');
       const wasOpen = sidebarOpen;
@@ -4693,6 +4967,7 @@
       } else {
         leftPanel?.classList.remove('panel-opening', 'panel-closing');
       }
+      syncToolActionsPlacement();
     }
 
     function finishRun(sessionId) {
@@ -4855,9 +5130,10 @@
 
     async function loadMessages() {
       if (!currentSessionId) { showEmptyState(); return; }
+      const container = getMessagesEl();
+      const restoreFromBottom = captureMessagesScrollFromBottom();
       const data = await api(`/api/sessions/${currentSessionId}/messages`);
       const msgs = data.messages || [];
-      const container = document.getElementById('messages');
       if (!msgs.length) { showEmptyState(); return; }
       container.innerHTML = '';
       msgs.forEach(m => appendMessage(
@@ -4882,9 +5158,13 @@
           container.appendChild(typingEl);
         }
       }
-      scrollMessagesToBottom({ force: !isCurrentSessionStreaming() });
+      if (restoreFromBottom != null) {
+        restoreMessagesScrollFromBottom(restoreFromBottom);
+      } else {
+        scrollMessagesToBottom({ force: !isCurrentSessionStreaming() });
+        scheduleScrollMessagesToBottom({ force: !isCurrentSessionStreaming() });
+      }
       bindMessagesMediaLoadScroll(container);
-      scheduleScrollMessagesToBottom({ force: !isCurrentSessionStreaming() });
       updateScrollToBottomBtn();
     }
 
@@ -5056,7 +5336,7 @@
           activeRuns.get(sid).shellEl = shell;
           shell.querySelector('.msg-body').innerHTML = renderMarkdown(data.markdown);
           renderRunStatusEl(shell.querySelector('.run-status'), activeRuns.get(sid).status);
-          scrollMessagesToBottom();
+          if (messagesPinnedToBottom) scrollMessagesToBottom();
         } else if (data.ack_line || data.elapsed_line || data.batch_line) {
           const typingEl = document.createElement('div');
           typingEl.className = 'typing';
@@ -5248,8 +5528,6 @@
       renderSessionList();
     });
     async function openSettingsModal() {
-      document.getElementById('settings-view-main').hidden = false;
-      document.getElementById('settings-view-about').hidden = true;
       document.getElementById('settings-modal').classList.add('open');
       if (!getExternalAgentCatalog().length) {
         try {
@@ -5267,8 +5545,6 @@
       closeModelPicker();
       await animateOverlayClose(modal);
       modal.classList.remove('open');
-      document.getElementById('settings-view-main').hidden = false;
-      document.getElementById('settings-view-about').hidden = true;
     }
 
     function initThemeSettings() {
@@ -5292,14 +5568,8 @@
       document.addEventListener('click', () => closeModelPicker());
       document.getElementById('btn-settings').addEventListener('click', openSettingsModal);
       document.getElementById('btn-settings-close').addEventListener('click', closeSettingsModal);
-      document.getElementById('btn-about-close').addEventListener('click', closeSettingsModal);
       document.getElementById('btn-settings-about').addEventListener('click', () => {
-        document.getElementById('settings-view-main').hidden = true;
-        document.getElementById('settings-view-about').hidden = false;
-      });
-      document.getElementById('btn-settings-back').addEventListener('click', () => {
-        document.getElementById('settings-view-main').hidden = false;
-        document.getElementById('settings-view-about').hidden = true;
+        window.open('/keynote', '_blank', 'noopener,noreferrer');
       });
       document.getElementById('settings-modal').addEventListener('click', (e) => {
         if (e.target.id === 'settings-modal') closeSettingsModal();
@@ -5592,7 +5862,7 @@
               const active = sessionsCache.find((s) => s.id === viewingId)?.running;
               if (active) await tryReconnectActiveRun(viewingId);
             }
-            if (wasDingtalk || activeRuns.has(viewingId)) {
+            if (wasDingtalk) {
               await loadMessages();
             }
           }
@@ -5606,10 +5876,14 @@
       if (!btn || !dropdown) return;
       if (!open && !dropdown.hidden) {
         await setDropdownAnimated(dropdown, false);
+        resetUserMenuDropdownPlacement();
       } else if (open) {
+        if (isUserMenuDockedInSidebar()) positionUserMenuDropdown();
+        else resetUserMenuDropdownPlacement();
         setDropdownAnimated(dropdown, true);
       } else {
         dropdown.hidden = true;
+        resetUserMenuDropdownPlacement();
       }
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
@@ -5657,9 +5931,15 @@
     document.getElementById('btn-logout')?.addEventListener('click', () => {
       logoutCurrentUser();
     });
-    document.addEventListener('click', () => setUserMenuOpen(false));
-    document.getElementById('user-menu')?.addEventListener('click', (event) => {
-      event.stopPropagation();
+    document.addEventListener('click', (event) => {
+      const menu = document.getElementById('user-menu');
+      const dropdown = document.getElementById('user-menu-dropdown');
+      if (menu?.contains(event.target) || dropdown?.contains(event.target)) return;
+      setUserMenuOpen(false);
+    });
+    window.addEventListener('resize', () => {
+      const btn = document.getElementById('user-menu-btn');
+      if (btn?.getAttribute('aria-expanded') === 'true') positionUserMenuDropdown();
     });
 
     async function ensureAuthSession() {
