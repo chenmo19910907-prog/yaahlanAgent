@@ -9,8 +9,7 @@
   {
     "type": "lines",
     "lines": [
-      { "text": "如何做好一款", "lead": true },
-      { "text": "Agent", "lead": true, "en": true },
+      { "text": "如何做好一款 Agent", "lead": true },
       {
         "inline": ["简单", "易用", "美观"],
         "large": true,
