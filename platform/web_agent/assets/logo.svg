@@ -5,7 +5,7 @@
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
-  <rect width="24" height="24" rx="6" fill="#2a3140"/>
+  <rect width="24" height="24" rx="6" fill="#1a2540"/>
   <circle cx="12" cy="12" r="8.2" stroke="#5B8CFF" stroke-width="1.2" stroke-opacity="0.22"/>
   <circle cx="12" cy="12" r="6.4" stroke="#5B8CFF" stroke-width="1.8" stroke-opacity="0.42"/>
   <circle cx="12" cy="12" r="4.1" fill="#5B8CFF" fill-opacity="0.96" filter="url(#wa-logo-glow)"/>

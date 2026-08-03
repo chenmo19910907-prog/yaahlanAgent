@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Yaahlan Logo 底色对比</title>
+  <script src="logo.js"></script>
+  <style>
+    :root {
+      --page-bg: #0b0e14;
+      --card-bg: #151923;
+      --text: rgba(242, 245, 250, 0.92);
+      --muted: rgba(164, 173, 189, 0.62);
+      --accent: #5b8cff;
+      --border: rgba(148, 163, 184, 0.14);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(91, 140, 255, 0.12), transparent 55%),
+        linear-gradient(180deg, #0b0e14 0%, #101522 46%, #090b10 100%);
+      padding: 28px 20px 48px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.35rem;
+      font-weight: 650;
+      letter-spacing: 0.04em;
+    }
+    .sub {
+      margin: 0 0 28px;
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .sub code {
+      font-size: 0.82rem;
+      color: #93c5fd;
+      background: rgba(91, 140, 255, 0.1);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+      max-width: 1100px;
+    }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(18, 22, 31, 0.72);
+      overflow: hidden;
+      transition: border-color 0.25s, box-shadow 0.25s;
+    }
+    .card.is-current {
+      border-color: rgba(91, 140, 255, 0.45);
+      box-shadow: 0 0 0 1px rgba(91, 140, 255, 0.18);
+    }
+    .card-head {
+      padding: 12px 14px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-name {
+      font-size: 0.92rem;
+      font-weight: 650;
+      margin-bottom: 4px;
+    }
+    .card-hex {
+      font-size: 0.78rem;
+      color: #93c5fd;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .card-note {
+      margin-top: 4px;
+      font-size: 0.74rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .badge {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: #bfdbfe;
+      background: rgba(91, 140, 255, 0.18);
+      border: 1px solid rgba(91, 140, 255, 0.28);
+      vertical-align: 0.05em;
+    }
+    .preview-area {
+      padding: 22px 14px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      background: var(--page-bg);
+    }
+    .preview-area.on-sidebar {
+      background: #151923;
+    }
+    .preview-area.on-gradient {
+      background: linear-gradient(180deg, #0b0e14 0%, #101522 46%, #090b10 100%);
+    }
+    .size-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      width: 100%;
+    }
+    .logo-lg {
+      width: 88px;
+      height: 88px;
+      filter: drop-shadow(0 0 18px rgba(91, 140, 255, 0.28));
+    }
+    .logo-lg svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      animation: heartbeat 1.15s ease-in-out infinite;
+      transform-origin: center;
+    }
+    .logo-sm-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      font-size: 0.72rem;
+      color: rgba(164, 173, 189, 0.78);
+    }
+    .logo-sm {
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .logo-sm svg { width: 100%; height: 100%; display: block; }
+    .ctx-label {
+      font-size: 0.68rem;
+      color: rgba(164, 173, 189, 0.45);
+      letter-spacing: 0.06em;
+    }
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      12% { transform: scale(1.08); }
+      24% { transform: scale(1); }
+      36% { transform: scale(1.05); }
+      48%, 100% { transform: scale(1); }
+    }
+    .hint {
+      margin-top: 28px;
+      max-width: 1100px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+  </style>
+</head>
+<body>
+  <h1>Yaahlan Logo 底色对比</h1>
+  <p class="sub">当前使用 <code>#1a2540</code>（5 号蓝调底）· 心跳蓝 <code>#5B8CFF</code> 不变 · 下方为 Keynote 封面尺寸 + 顶栏小图标</p>
+  <div class="grid" id="grid"></div>
+  <p class="hint">看中某个编号直接告诉我，例如「用 3 号」或「#151923 那个」——我会同步改 <code>logo.js</code>、<code>assets/logo.svg</code> 和 Keynote。</p>
+  <script>
+    var OPTIONS = [
+      { id: 1, name: "当前 · 蓝灰", hex: "#2a3140", note: "原默认，圆角块略亮于页面", ctx: "on-gradient" },
+      { id: 2, name: "页面主底", hex: "#0b0e14", note: "与 chat 背景融合，几乎无块感", ctx: "on-gradient" },
+      { id: 3, name: "侧栏实底", hex: "#151923", note: "与 --bg-solid / 历史侧栏一致", ctx: "on-sidebar" },
+      { id: 4, name: "深蓝灰", hex: "#121820", note: "比当前更深，块边界更柔", ctx: "on-gradient" },
+      { id: 5, name: "蓝调底", hex: "#1a2540", note: "略偏品牌蓝，与心跳光晕更搭", current: true, ctx: "on-gradient" },
+      { id: 6, name: "中灰蓝", hex: "#343d52", note: "对比更强，图标块更「浮起」", ctx: "on-gradient" },
+      { id: 7, name: "透明底", hex: "none", note: "去掉圆角底，仅保留心跳圆环", ctx: "on-gradient" }
+    ];
+
+    function logoSvg(bg, glowId) {
+      var rect = bg === "none"
+        ? ""
+        : '<rect width="24" height="24" rx="6" fill="' + bg + '"/>';
+      return (
+        '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+        '<defs><filter id="' + glowId + '" x="-40%" y="-40%" width="180%" height="180%">' +
+        '<feGaussianBlur stdDeviation="0.9" result="b"/>' +
+        '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>' +
+        rect +
+        '<circle cx="12" cy="12" r="8.2" stroke="#5B8CFF" stroke-width="1.2" stroke-opacity="0.22"/>' +
+        '<circle cx="12" cy="12" r="6.4" stroke="#5B8CFF" stroke-width="1.8" stroke-opacity="0.42"/>' +
+        '<circle cx="12" cy="12" r="4.1" fill="#5B8CFF" fill-opacity="0.96" filter="url(#' + glowId + ')"/>' +
+        '</svg>'
+      );
+    }
+
+    var grid = document.getElementById("grid");
+    OPTIONS.forEach(function (opt) {
+      var gid = "preview-glow-" + opt.id;
+      var card = document.createElement("article");
+      card.className = "card" + (opt.current ? " is-current" : "");
+      card.innerHTML =
+        '<div class="card-head">' +
+          '<div class="card-name">' + opt.id + '. ' + opt.name +
+            (opt.current ? '<span class="badge">当前</span>' : '') +
+          '</div>' +
+          '<div class="card-hex">' + opt.hex + '</div>' +
+          '<div class="card-note">' + opt.note + '</div>' +
+        '</div>' +
+        '<div class="preview-area ' + (opt.ctx || "") + '">' +
+          '<div class="size-row">' +
+            '<div class="logo-lg">' + logoSvg(opt.hex, gid) + '</div>' +
+            '<div class="logo-sm-wrap">' +
+              '<span class="logo-sm">' + logoSvg(opt.hex, gid + "-sm") + '</span>' +
+              '<span>Yaahlan 智能工具 Agent</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="ctx-label">Keynote 封面 · 顶栏</div>' +
+        '</div>';
+      grid.appendChild(card);
+    });
+  </script>
+</body>
+</html>
