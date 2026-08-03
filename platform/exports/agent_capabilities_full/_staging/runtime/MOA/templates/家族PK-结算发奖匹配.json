@@ -1,0 +1,41 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/vas/internal/family-pk-moa",
+  "method": "runFamilyPkMatchTask",
+  "header": "",
+  "params": [
+    {
+      "title": "匹配日期",
+      "name": "1",
+      "txt": "2026-06-26",
+      "json": "",
+      "type": "string",
+      "value": "2026-06-26"
+    }
+  ],
+  "settings": {
+    "time": "60000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "family_pk_run_match_task",
+    "name": "家族PK-结算发奖匹配",
+    "category": "家族PK（vas/internal/family-pk-moa）",
+    "description": "测试环境跑家族 PK 定时任务（runFamilyPkMatchTask）。入参为 yyyy-MM-dd 日期字符串：对输入日期的前一日进行结算和发奖，并对输入日期重新匹配。若当日已有匹配数据，须先执行「家族PK-清除匹配数据」再调用本接口。须加 --timeout-ms 180000；ec=3041 超时时禁止 Agent 自动重试。修改模板 params[0].value 后执行",
+    "prompts": [
+      "执行 <date> 家族PK结算发奖并匹配",
+      "家族PK结算发奖匹配 date=<date>",
+      "跑家族PK匹配任务 <date>",
+      "重置 <date> 家族PK：先清除匹配数据再结算发奖"
+    ]
+  }
+}

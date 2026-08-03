@@ -1,0 +1,66 @@
+{
+  "modules": [
+    {
+      "id": "Admin",
+      "py_files": 27,
+      "json_files": 4,
+      "total_files": 33
+    },
+    {
+      "id": "MOA",
+      "py_files": 51,
+      "json_files": 83,
+      "total_files": 140
+    },
+    {
+      "id": "MOA-generative",
+      "py_files": 7,
+      "json_files": 18,
+      "total_files": 29
+    },
+    {
+      "id": "MSE",
+      "py_files": 9,
+      "json_files": 2,
+      "total_files": 12
+    },
+    {
+      "id": "Gift",
+      "py_files": 8,
+      "json_files": 1,
+      "total_files": 12
+    },
+    {
+      "id": "Risk",
+      "py_files": 10,
+      "json_files": 8,
+      "total_files": 22
+    },
+    {
+      "id": "Tunnel",
+      "py_files": 9,
+      "json_files": 1,
+      "total_files": 12
+    },
+    {
+      "id": "online",
+      "py_files": 6,
+      "json_files": 3,
+      "total_files": 11
+    },
+    {
+      "id": "DingTalk",
+      "py_files": 6,
+      "json_files": 4,
+      "total_files": 12
+    },
+    {
+      "id": "workflow",
+      "py_files": 10,
+      "json_files": 19,
+      "total_files": 30
+    }
+  ],
+  "gateway_scripts": 17,
+  "files": []
+}

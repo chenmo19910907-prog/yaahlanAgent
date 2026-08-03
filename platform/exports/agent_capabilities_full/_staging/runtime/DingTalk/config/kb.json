@@ -1,0 +1,9 @@
+{
+  "folderId": "yaahlan-testcases",
+  "folderUrl": "https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldCZEEZ3n1VGXn6lpz",
+  "recursive": true,
+  "maxDocuments": 300,
+  "maxFolderFetches": 80,
+  "skipLocaleSheets": true,
+  "runOptimizePipeline": true
+}

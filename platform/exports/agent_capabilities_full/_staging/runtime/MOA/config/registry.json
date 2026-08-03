@@ -1,0 +1,1173 @@
+{
+  "version": 1,
+  "generated_index_path": "MOA/使用方法.md",
+  "items": [
+    {
+      "id": "room_exp_add",
+      "name": "房间经验值-增加",
+      "category": "房间经验值（voga-mts-room-backdoor）",
+      "description": "给指定房间增加经验值（增量）",
+      "prompts": [
+        "给房间 <roomId> 增加 <exp> 经验值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间经验值-backdoor.json \\\n  --service-url /service/voga-mts-room-backdoor \\\n  --moa-method execute \\\n  --room-id <roomId> \\\n  --exp <exp>\n"
+    },
+    {
+      "id": "room_level_upgrade",
+      "name": "房间等级-升级到目标等级",
+      "category": "房间经验值（voga-mts-room-backdoor）",
+      "description": "把房间升级到目标等级（先查当前经验后补差；可用 --level-exp-mode min/max 控制目标经验）",
+      "prompts": [
+        "把房间 <roomId> 升级到 <level> 级",
+        "把房间 <roomId> 升级到 <level>级"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间经验值-backdoor.json \\\n  --service-url /service/voga-mts-room-backdoor \\\n  --moa-method execute \\\n  --room-id <roomId> \\\n  --level <level>\n"
+    },
+    {
+      "id": "room_query_current",
+      "name": "房间经验值-查询当前等级经验",
+      "category": "房间经验值（voga-mts-room-backdoor）",
+      "description": "查询房间当前经验值与等级（通过 addRoomActiveValue(roomId,0D)）",
+      "prompts": [
+        "查询房间 <roomId> 当前等级经验值",
+        "帮我查询房间 <roomId> 当前等级经验值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间经验值-backdoor.json \\\n  --service-url /service/voga-mts-room-backdoor \\\n  --moa-method execute \\\n  --room-id <roomId> \\\n  --query-current\n"
+    },
+    {
+      "id": "room_set_level",
+      "name": "房间-设置等级",
+      "category": "房间测试（room/internal/room-test-stage）",
+      "description": "测试环境直接设置房间等级（downgradeRoomLevelForTest；params=roomId, 目标等级 int）。与按经验值补差升级不同",
+      "prompts": [
+        "设置房间 <roomId> 等级为 <level> 级",
+        "把房间 <roomId> 设为 <level> 级"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-设置等级.json \\\n  --room-set-level-room-id <roomId> \\\n  --room-set-level <level>\n"
+    },
+    {
+      "id": "room_add_bots",
+      "name": "房间-增加机器人",
+      "category": "房间经验值（voga-mts-room-backdoor）",
+      "description": "给房间增加在线机器人（addOnlineUsersToRoom；params=roomId, 总数, 麦上数）",
+      "prompts": [
+        "给房间 <roomId> 增加 <total> 个机器人，其中 <onMic> 个麦上",
+        "房间 <roomId> 加 <total> 机器人 <onMic> 麦上"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-增加机器人.json \\\n  --room-bot-room-id <roomId> \\\n  --room-bot-total <total> \\\n  --room-bot-on-mic <onMic>\n"
+    },
+    {
+      "id": "room_online",
+      "name": "房间-增加在线人数",
+      "category": "房间经验值（voga-mts-room-backdoor）",
+      "description": "给房间增加在线人数（room-test-stage addOnlineUsersToRoom；params=roomId, 进房上限, 自动上麦数）",
+      "prompts": [
+        "给房间 <roomId> 增加在线人数，进房上限 <limit>，自动上麦 <mic>",
+        "房间 <roomId> 在线人数上限 <limit> 自动上麦 <mic>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-增加在线人数.json \\\n  --room-online-room-id <roomId> \\\n  --room-online-limit <limit> \\\n  --room-online-mic <mic>\n"
+    },
+    {
+      "id": "pk_rank_settle",
+      "name": "PK榜-周结算发奖",
+      "category": "全服榜单（room/external/room-admin-handle）",
+      "description": "PK 榜周结算并发奖（calculateAndDistributeWeekPrize；params[0]=int 周偏移，0=本周，-1=上周）",
+      "prompts": [
+        "PK榜本周结算发奖",
+        "PK榜上周结算发奖",
+        "PK榜 <week> 结算发奖"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/PK榜-周结算发奖.json \\\n  --pk-rank-settle-week-offset 0\n"
+    },
+    {
+      "id": "pk_rank_query",
+      "name": "PK榜-查询数值",
+      "category": "全服榜单（room/external/room-admin-handle）",
+      "description": "查询 PK 周榜 Redis 数据（roomClusterDao.get；key=new:pk:week:rank:record:YYYYMMDDweek；支持 YYYYMMDD/本周）",
+      "prompts": [
+        "查询本周 PK 榜数值",
+        "查 PK 榜 <week> 周数据",
+        "PK榜数值查询 <week>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/PK榜-查询数值.json \\\n  --pk-rank-query-week <YYYYMMDD或本周>\n"
+    },
+    {
+      "id": "pk_rank_value_add",
+      "name": "PK榜-增加PK值",
+      "category": "全服榜单（room/external/room-admin-handle）",
+      "description": "给指定用户增加 PK 榜值（pkRankService.handlePkRank；仅需 userId 和增量，第3/4参数固定）",
+      "prompts": [
+        "给用户 <userId> 增加 <value> PK值",
+        "PK榜 <userId> 加 <value>",
+        "增加 PK 榜上 <userId> 的 PK 值 <value>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/PK榜-增加PK值.json \\\n  --pk-rank-user-id <userId> \\\n  --pk-rank-value <value>\n"
+    },
+    {
+      "id": "room_hourly_top1_broadcast",
+      "name": "房间-下发小时榜全服通知",
+      "category": "全服榜单（room/external/room-admin-handle）",
+      "description": "发送小时榜 Top1 全服 IM 广播（sendImTop1Broadcast；params[0]=roomId string）",
+      "prompts": [
+        "给房间 <roomId> 下发小时榜全服通知",
+        "房间 <roomId> 发送小时榜全服通知"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-下发小时榜全服通知.json \\\n  --expr <roomId>\n"
+    },
+    {
+      "id": "user_rank_dispatch",
+      "name": "用户榜单-奖励下发（贡献/魅力 周榜/日榜/月榜）",
+      "category": "全服榜单（room/external/room-admin-handle）",
+      "description": "下发用户榜单奖励（WEEK/DAY 用 dispatchTotalUserRankListPrize；MONTH 自动用 V2；覆盖贡献/魅力周榜日榜月榜；params=周期类型 WEEK|DAY|MONTH、榜单周期 NOW|PRE、大区）",
+      "prompts": [
+        "下发 <area> 区贡献周榜奖励",
+        "下发 <area> 区魅力周榜奖励",
+        "下发 <area> 区贡献月榜奖励",
+        "下发 <area> 区魅力月榜奖励",
+        "贡献周榜奖励下发 <area>",
+        "魅力周榜奖励下发 <area>",
+        "贡献月榜奖励下发 <area>",
+        "魅力月榜奖励下发 <area>",
+        "用户榜单奖励下发 <area>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户榜单奖励-下发.json \\\n  --user-rank-area <area> \\\n  --user-rank-time-type WEEK \\\n  --user-rank-cycle NOW\n"
+    },
+    {
+      "id": "contrib_day_rank_dispatch",
+      "name": "贡献日榜-奖励下发",
+      "category": "全服榜单（room/external/room-admin-handle）",
+      "description": "全服贡献日榜奖励结算下发（dispatchTotalContributionRankListPrizeV2；固定参数1，params=大区枚举）",
+      "prompts": [
+        "下发 <area> 区贡献日榜奖励",
+        "贡献日榜奖励下发 <area>",
+        "全服贡献榜奖励下发 <area>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/贡献日榜奖励-下发.json \\\n  --contrib-day-rank-area <area>\n"
+    },
+    {
+      "id": "charm_day_rank_dispatch",
+      "name": "魅力日榜-奖励下发",
+      "category": "全服榜单（room/external/room-admin-handle）",
+      "description": "全服魅力日榜奖励结算下发（dispatchTotalCharmRankListPrizeV2；固定参数1，params=大区枚举）",
+      "prompts": [
+        "下发 <area> 区魅力日榜奖励",
+        "魅力日榜奖励下发 <area>",
+        "全服魅力榜奖励下发 <area>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/魅力日榜奖励-下发.json \\\n  --charm-day-rank-area <area>\n"
+    },
+    {
+      "id": "room_day_rank_dispatch",
+      "name": "房间日榜-奖励下发",
+      "category": "全服榜单（room/external/room-admin-handle）",
+      "description": "全服房间日榜奖励结算下发（dispatchTotalRoomDayRankListPrize；params=大区枚举）",
+      "prompts": [
+        "下发 <area> 区房间日榜奖励",
+        "房间日榜奖励下发 <area>",
+        "全服榜单奖励下发 <area>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间日榜奖励-下发.json \\\n  --room-day-rank-area <area>\n"
+    },
+    {
+      "id": "room_member_lv_exp_add",
+      "name": "房间成员-增加陪伴值",
+      "category": "房间成员等级（room-user-active-stage）",
+      "description": "给指定用户在房间内增加成员陪伴值（doorIncrMemberLv；params=roomId, userId, 增量）",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 增加 <exp> 成员经验值",
+        "房间 <roomId> 用户 <userId> 加 <exp> 陪伴值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间成员-增加陪伴值.json \\\n  --member-lv-room-id <roomId> \\\n  --member-lv-user-id <userId> \\\n  --member-lv-exp <exp>\n"
+    },
+    {
+      "id": "room_member_add",
+      "name": "房间成员-快速添加",
+      "category": "房间成员（voga-mts-room-backdoor）",
+      "description": "测试环境一键把用户加入房间成员（RoomMemberService.joinMember）。对齐客户端 apply+agree，跳过申请审批直接成为成员",
+      "prompts": [
+        "房间 <roomId> 快速添加成员 <userId>",
+        "把用户 <userId> 加入房间 <roomId> 成员",
+        "一键添加房间成员"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间成员-快速添加.json \\\n  --room-member-room-id <roomId> \\\n  --room-member-user-id <userId> \\\n  --room-member-area MENA\n"
+    },
+    {
+      "id": "room_member_lv_level_upgrade",
+      "name": "房间成员-升级到目标等级",
+      "category": "房间成员等级（room-user-active-stage）",
+      "description": "把用户在房间内的成员等级升到目标 lv（按陪伴值阈值与 --member-lv-current-exp 计算增量；可用 --level-exp-mode min/max）",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 升级到成员 lv<level>",
+        "房间 <roomId> 用户 <userId> 升到成员等级 <level>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间成员-增加陪伴值.json \\\n  --member-lv-room-id <roomId> \\\n  --member-lv-user-id <userId> \\\n  --member-lv-level <level> \\\n  --member-lv-current-exp <currentExp>\n"
+    },
+    {
+      "id": "vip_exp_add",
+      "name": "VIP经验值-增加",
+      "category": "VIP 经验值（voga-mts-user-vip-stage）",
+      "description": "给指定用户增加 VIP 经验值（增量）",
+      "prompts": [
+        "给用户 <userId> 增加 <vipExp> VIP经验值",
+        "给用户 <userId> 增加 <vipExp> VIP 经验值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/VIP-增加经验值.json \\\n  --vip-user-id <userId> \\\n  --vip-exp <vipExp>\n"
+    },
+    {
+      "id": "vip_level_upgrade",
+      "name": "VIP等级-升级到目标等级",
+      "category": "VIP 经验值（voga-mts-user-vip-stage）",
+      "description": "把用户升级到目标 VIP 等级（先 getVipInfo 查 value，再 addVipValue 补差；可用 --level-exp-mode min/max）",
+      "prompts": [
+        "用户 <userId> 升级到 VIP<level>",
+        "把用户 <userId> 升级到 VIP<level>",
+        "用户 <userId> 需要定制头像框，先升级到 VIP6",
+        "用户 <userId> 需要定制座驾，先升级到 VIP8"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/VIP-增加经验值.json \\\n  --vip-user-id <userId> \\\n  --vip-level <level>\n"
+    },
+    {
+      "id": "vip_query_current",
+      "name": "VIP经验值-查询当前等级经验",
+      "category": "VIP 经验值（voga-mts-user-vip-stage）",
+      "description": "查询用户当前 VIP 经验值与等级（通过 getVipInfo，读取 value 字段）",
+      "prompts": [
+        "查询用户 <userId> 当前VIP等级经验值",
+        "帮我查询用户 <userId> 当前VIP等级经验值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/VIP-增加经验值.json \\\n  --vip-user-id <userId> \\\n  --vip-query-current\n"
+    },
+    {
+      "id": "vip_delete_info",
+      "name": "VIP等级-清除VIP信息",
+      "category": "VIP 经验值（voga-mts-user-vip-stage）",
+      "description": "清除用户VIP等级信息（delVipInfo）",
+      "prompts": [
+        "清除用户 <userId> 的VIP等级",
+        "清除 <userId> 的VIP等级"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/VIP-清除信息.json \\\n  --vip-del-user-id <userId>\n"
+    },
+    {
+      "id": "vip_try_dispatch",
+      "name": "VIP体验卡-下发",
+      "category": "VIP 经验值（voga-mts-user-vip-stage）",
+      "description": "下发 VIP 体验等级（dispatchTryVip；params=userId、体验等级、时长秒）。App 展示 tryLevel，与 addVipValue 永久升级不同；若已有更高体验等级，低等级下发可能失败(ec:10011)",
+      "prompts": [
+        "给用户 <userId> 下发 <durationSeconds> 秒 VIP<level> 体验",
+        "给 <userId> 下发1天VIP5",
+        "用户 <userId> 体验 VIP<level> <durationSeconds> 秒"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/VIP-下发体验卡.json \\\n  --vip-try-user-id <userId> \\\n  --vip-try-level <level> \\\n  --vip-try-duration-seconds <durationSeconds>\n"
+    },
+    {
+      "id": "cp_ferris_wheel_set_tier",
+      "name": "CP摩天轮-设置档位",
+      "category": "CP摩天轮（vas/external/cp-stage）",
+      "description": "批量设置 CP 对摩天轮档位（batchSetCpFerrisWheelTierLevel；档位 1=D…5=S；CP 对格式小uid-大uid）",
+      "prompts": [
+        "设置 CP <smallUid>-<largeUid> 摩天轮档位为 <tier>",
+        "把 CP 对 <smallUid>-<largeUid> 设为摩天轮 <tier> 档",
+        "榜单所有 CP 设为摩天轮 5 档"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/CP摩天轮-设置档位.json \\\n  --cp-ferris-tier <tier> \\\n  --cp-pairs <smallUid-largeUid>[,<smallUid-largeUid>...]\n"
+    },
+    {
+      "id": "cp_ferris_wheel_distribute_bonus",
+      "name": "CP摩天轮-发放档位积分返奖",
+      "category": "CP摩天轮（vas/external/cp-stage）",
+      "description": "发放 CP 摩天轮档位积分返奖钻石（distributeCpFerrisWheelBonusDiamonds；params=大区）",
+      "prompts": [
+        "下发 CP 摩天轮档位积分返奖",
+        "发放 CP 摩天轮积分返奖钻石",
+        "MENA 区下发 CP 摩天轮档位奖"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/CP摩天轮-发放档位积分返奖.json \\\n  --cp-ferris-area MENA\n"
+    },
+    {
+      "id": "cp_ferris_wheel_week_prize",
+      "name": "CP摩天轮-发放周榜奖励",
+      "category": "CP摩天轮（vas/external/cp-stage）",
+      "description": "结算并发放 CP 摩天轮周榜 TOP30 奖池钻石（calculateAndDistributeCpFerrisWheelWeekPrize；params=大区）",
+      "prompts": [
+        "下发 CP 摩天轮周榜 TOP30 奖励",
+        "结算 CP 摩天轮周榜奖池",
+        "MENA 区发放 CP 摩天轮周榜奖励"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/CP摩天轮-发放周榜奖励.json \\\n  --cp-ferris-area MENA\n"
+    },
+    {
+      "id": "custom_gift_reset_upload",
+      "name": "定制礼物-重置上传次数",
+      "category": "定制礼物（voga-components/gateway/custom-gift-stage）",
+      "description": "重置用户定制礼物上传次数（resetExpireTime；params[0]=userId）",
+      "prompts": [
+        "重置用户 <userId> 定制礼物上传次数",
+        "重置 <userId> 的定制礼物上传次数"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/定制礼物-重置上传次数.json \\\n  --custom-gift-reset-user-id <userId>\n"
+    },
+    {
+      "id": "custom_gift_rank_active_add",
+      "name": "定制礼物榜单-增加活跃值",
+      "category": "定制礼物榜单（room/internal/room-rank-list-stage）",
+      "description": "给定制礼物增加榜单活跃值（mockCustomGiftRankData；params=周期 NOW/PRE/PRE_PRE、大区、giftId、活跃值 long）",
+      "prompts": [
+        "礼物 <giftId> 增加 <value> 活跃值",
+        "定制礼物 <giftId> 榜单活跃值 +<value>",
+        "礼物 <giftId> 上周活跃值 +<value>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/定制礼物榜单-增加活跃值.json \\\n  --custom-gift-rank-gift-id <giftId> \\\n  --custom-gift-rank-active-value <value> \\\n  --custom-gift-rank-period PRE \\\n  --custom-gift-rank-area MENA\n"
+    },
+    {
+      "id": "custom_gift_rank_delete",
+      "name": "定制礼物榜单-清除数据",
+      "category": "定制礼物榜单（room/internal/room-rank-list-stage）",
+      "description": "清除定制礼物榜单数据（delCustomGiftRankData；params=大区、giftId）",
+      "prompts": [
+        "清除礼物 <giftId> 定制礼物榜单",
+        "删除礼物 <giftId> 榜单数据",
+        "清除 <giftId> 定制礼物榜"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/定制礼物榜单-清除数据.json \\\n  --custom-gift-rank-gift-id <giftId> \\\n  --custom-gift-rank-delete \\\n  --custom-gift-rank-area MENA\n"
+    },
+    {
+      "id": "noble_exp_add",
+      "name": "贵族-增加月消费值",
+      "category": "贵族（voga-mts-user-wealth-charm-level-stage）",
+      "description": "给用户增加贵族月消费值（incrNobelLevel；params=userId, 增量 long）",
+      "prompts": [
+        "给用户 <userId> 增加 <exp> 贵族经验值",
+        "用户 <userId> 增加 <exp> 贵族月消费值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/贵族-增加月消费值.json \\\n  --noble-user-id <userId> \\\n  --noble-exp <exp>\n"
+    },
+    {
+      "id": "noble_level_upgrade",
+      "name": "贵族-升级到目标等级",
+      "category": "贵族（voga-mts-user-wealth-charm-level-stage）",
+      "description": "把用户升级到目标贵族等级（按 noble_level_exp_thresholds 与 --noble-current-exp 计算增量；可用 --level-exp-mode min/max）",
+      "prompts": [
+        "用户 <userId> 升级到贵族 lv<level>",
+        "给用户 <userId> 升到贵族 <level> 级"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/贵族-增加月消费值.json \\\n  --noble-user-id <userId> \\\n  --noble-level <level> \\\n  --noble-current-exp <currentExp>\n"
+    },
+    {
+      "id": "family_exp_add",
+      "name": "家族-增加声望值",
+      "category": "家族（internal/user/family-moa）",
+      "description": "给家族增加声望值（addFamilyActiveValueBySystem；params=familyId, 增量 long）",
+      "prompts": [
+        "给家族 <familyId> 增加 <exp> 经验值",
+        "家族 <familyId> 增加 <exp> 声望值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-增加声望值.json \\\n  --family-id <familyId> \\\n  --family-exp <exp>\n"
+    },
+    {
+      "id": "family_exp_decrease",
+      "name": "家族-衰减声望值",
+      "category": "家族（internal/user/family-moa）",
+      "description": "给家族衰减声望值（decreaseFamilyActiveValue；params=familyId, 负增量 long）",
+      "prompts": [
+        "给家族 <familyId> 衰减 <exp> 经验值",
+        "家族 <familyId> 减少 <exp> 声望值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-衰减声望值.json \\\n  --family-id <familyId> \\\n  --family-decrease-exp <exp>\n"
+    },
+    {
+      "id": "family_fund_tier_set",
+      "name": "家族-设置基金档位",
+      "category": "家族（internal/user/family-moa）",
+      "description": "设置家族基金档位（backdoor FamilyFundService.batchSetFamilyFundTierForTest；result=更新家族数）",
+      "prompts": [
+        "设置家族 <familyId> 基金档位为 <tier>",
+        "家族 <familyId> 基金档位 <tier>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-设置基金档位.json \\\n  --family-id <familyId> \\\n  --family-fund-tier <tier>\n"
+    },
+    {
+      "id": "family_fund_reward_setup",
+      "name": "家族-设置基金返奖钻石",
+      "category": "家族（internal/user/family-moa）",
+      "description": "一键设置家族基金返奖钻石（自动清贡献、设档位、设贡献值）",
+      "prompts": [
+        "家族 <familyId> 基金返奖 <diamonds> 钻石",
+        "设置家族 <familyId> 返奖 <diamonds>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-设置基金档位.json \\\n  --family-id <familyId> \\\n  --family-fund-reward-diamonds <diamonds>\n"
+    },
+    {
+      "id": "family_fund_contrib_add",
+      "name": "家族-增加基金贡献值",
+      "category": "家族（internal/user/family-moa）",
+      "description": "增加家族基金贡献值（voga-mts-user-backdoor execute；incrFundFamilyTotal；周期为周一 YYYYMMDD-week）",
+      "prompts": [
+        "给家族 <familyId> 在 <week> 周期增加 <contrib> 基金贡献值",
+        "家族 <familyId> 基金贡献 +<contrib>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-增加基金贡献值.json \\\n  --family-id <familyId> \\\n  --family-fund-contrib <contrib> \\\n  --family-fund-week <weekMonday>\n"
+    },
+    {
+      "id": "family_fund_contrib_query",
+      "name": "家族-查询基金贡献值",
+      "category": "家族（internal/user/family-moa）",
+      "description": "查询家族基金贡献值（incrFundFamilyTotal 增量 0）",
+      "prompts": [
+        "查询家族 <familyId> 基金贡献值",
+        "家族 <familyId> 基金值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-增加基金贡献值.json \\\n  --family-id <familyId> \\\n  --family-fund-contrib 0\n"
+    },
+    {
+      "id": "family_fund_clear",
+      "name": "家族-清除基金贡献值",
+      "category": "家族（internal/user/family-moa）",
+      "description": "清除家族基金贡献值（delFamilyFundRankTest；0=本周，-1=上周）",
+      "prompts": [
+        "清除家族 <familyId> 本周基金贡献值",
+        "清除家族 <familyId> 上周基金贡献值"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-清除基金贡献值.json \\\n  --family-id <familyId> \\\n  --family-fund-clear \\\n  --family-fund-week-offset <0|-1>\n"
+    },
+    {
+      "id": "family_member_fund_contrib_add",
+      "name": "家族-成员增加基金贡献值",
+      "category": "家族（internal/user/family-moa）",
+      "description": "给家族成员增加基金贡献值（batchIncrFundContribution；API 传值为贡献值×2）",
+      "prompts": [
+        "成员 <userId> 在家族 <familyId> 增加 <contrib> 基金贡献值",
+        "给家族成员 <userId> 加 <contrib> 基金"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-成员增加基金贡献值.json \\\n  --family-id <familyId> \\\n  --family-member-fund-user-id <userId> \\\n  --family-member-fund-contrib <contrib> \\\n  --family-fund-week <weekMonday>\n"
+    },
+    {
+      "id": "family_level_upgrade",
+      "name": "家族-升级到目标等级",
+      "category": "家族（internal/user/family-moa）",
+      "description": "把家族升到目标等级（先查当前声望值后补差；可用 --level-exp-mode min/max 控制目标经验）",
+      "prompts": [
+        "家族 <familyId> 升级到 lv<level>",
+        "给家族 <familyId> 升到 <level> 级"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-增加声望值.json \\\n  --family-id <familyId> \\\n  --family-level <level>\n"
+    },
+    {
+      "id": "family_query_current",
+      "name": "家族-查询当前声望值",
+      "category": "家族（internal/user/family-moa）",
+      "description": "查询家族当前声望值与等级（addFamilyActiveValueBySystem 增量 0，返回当前总值）",
+      "prompts": [
+        "查询家族 <familyId> 当前声望值",
+        "家族 <familyId> 当前等级"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-增加声望值.json \\\n  --family-id <familyId> \\\n  --family-query-current\n"
+    },
+    {
+      "id": "family_query_members",
+      "name": "家族-查询成员userId",
+      "category": "家族（internal/user/family-moa）",
+      "description": "按家族 ID 查询全部成员 userId（getFamilyMembers；params=familyId string）。可配合 Admin `--query-family` 查名称/等级/人数；或使用 `--family-detail` 一次返回详情+成员",
+      "prompts": [
+        "查询家族 <familyId> 全部成员 userId",
+        "家族 <familyId> 成员列表",
+        "根据家族 id <familyId> 获取所有家族成员 id"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-查询成员userId.json \\\n  --family-id <familyId> \\\n  --family-query-members\n"
+    },
+    {
+      "id": "family_query_create_time",
+      "name": "家族-查询创建时间",
+      "category": "家族（internal/user/family-moa）",
+      "description": "查询家族是否解散（getFamilyCreateTime；params=familyId string）。result 为创建时间毫秒时间戳；null 表示家族已解散或不存在",
+      "prompts": [
+        "查询家族 <familyId> 是否解散",
+        "家族 <familyId> 创建时间",
+        "查家族 <familyId> 是否还存在"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-查询创建时间.json \\\n  --family-id <familyId> \\\n  --family-query-create-time\n"
+    },
+    {
+      "id": "family_query_joined_by_user",
+      "name": "家族-按userId查家族id",
+      "category": "家族（internal/user/family-moa）",
+      "description": "按 userId 查询所属家族 ID（getUserJoinedFamily；params=userId string）。可配合 Admin `--query-family` 查家族详情；或使用 `--family-detail-by-user-id` 一次返回",
+      "prompts": [
+        "查询用户 <userId> 所属家族 id",
+        "用户 <userId> 在哪个家族",
+        "根据用户 id <userId> 查询家族 id"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-按userId查家族id.json \\\n  --family-query-joined-user-id <userId>\n"
+    },
+    {
+      "id": "family_detail_by_id",
+      "name": "家族-按familyId查详情",
+      "category": "家族（internal/user/family-moa）",
+      "description": "组合查询：Admin 家族管理（名称/等级/族长/人数等）+ MOA 成员 userId 列表",
+      "prompts": [
+        "查询家族 <familyId> 详情",
+        "家族 <familyId> 详细信息",
+        "查家族 <familyId> 成员和管理信息"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --family-id <familyId> \\\n  --family-detail\n"
+    },
+    {
+      "id": "family_detail_by_user",
+      "name": "家族-按userId查详情",
+      "category": "家族（internal/user/family-moa）",
+      "description": "组合查询：MOA 查所属家族 id → Admin 家族详情 + MOA 成员 userId 列表",
+      "prompts": [
+        "查询用户 <userId> 所在家族详情",
+        "用户 <userId> 家族详细信息",
+        "查用户 <userId> 的家族和成员"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --family-detail-by-user-id <userId>\n"
+    },
+    {
+      "id": "id_auth_query_real_person_record",
+      "name": "实名认证-查询认证记录",
+      "category": "实名认证（internal/user/id-auth-api）",
+      "description": "查询用户实名认证记录（queryRealPersonRecord）",
+      "prompts": [
+        "查询用户 <userId> 的认证结果",
+        "查询用户 <userId> 实名认证结果"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/实名认证-查询认证记录.json \\\n  --id-auth-user-id <userId>\n"
+    },
+    {
+      "id": "id_auth_fix_failure_by_reason",
+      "name": "实名认证-解决认证失败（清 reason 关联账号）",
+      "category": "实名认证（internal/user/id-auth-api）",
+      "description": "循环：查询认证记录 → 清除最近一条 reason 中的关联账号 → 再查；无 reason 则结束（最多 10 轮）",
+      "prompts": [
+        "解决用户 <userId> 认证失败",
+        "解决 <userId> 认证失败"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/实名认证-查询认证记录.json \\\n  --id-auth-fix-failure-user-id <userId>\n"
+    },
+    {
+      "id": "id_auth_reset_relation_expire_time",
+      "name": "实名认证-设置认证过期时间",
+      "category": "实名认证（internal/user/id-auth-api）",
+      "description": "设置用户认证过期时间（resetRelationPersonExpireTime，支持输入日期时间自动转毫秒时间戳）",
+      "prompts": [
+        "把用户 <userId> 的认证过期时间设置为 <time>",
+        "设置用户 <userId> 认证过期时间为 <time>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/实名认证-设置认证过期时间.json \\\n  --id-auth-reset-expire-user-id <userId> \\\n  --id-auth-expire-at tomorrow\n"
+    },
+    {
+      "id": "id_auth_del_relation_by_scene",
+      "name": "实名认证-按场景删除真人认证",
+      "category": "实名认证（internal/user/id-auth-api）",
+      "description": "按场景删除真人认证（delRelationPersonInfoByScene；DEALER=币商，ANCHOR=普通/主播）",
+      "prompts": [
+        "删除用户 <userId> 币商真人认证",
+        "清除用户 <userId> 币商真人认证",
+        "删除用户 <userId> 普通真人认证",
+        "删除用户 <userId> 主播真人认证"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/实名认证-按场景删除真人认证.json \\\n  --id-auth-del-relation-user-id <userId> \\\n  --id-auth-relation-scene DEALER\n"
+    },
+    {
+      "id": "id_auth_delete_person",
+      "name": "实名认证-清除认证信息",
+      "category": "实名认证（internal/user/id-auth-api）",
+      "description": "清除用户认证信息（internalAuthDeletePerson）",
+      "prompts": [
+        "清除用户 <userId> 的认证信息",
+        "删除用户 <userId> 的认证信息"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/实名认证-清除认证信息.json \\\n  --id-auth-delete-user-id <userId>\n"
+    },
+    {
+      "id": "user_login_query_by_phone",
+      "name": "用户-按手机号查 userId",
+      "category": "用户登录（yaahlan/mdp-user-login）",
+      "description": "按手机号查询 userId（queryLoginStatusV2；默认区号 86；result.data 为空表示未注册）",
+      "prompts": [
+        "查询手机号 <phone> 对应的 userId",
+        "手机号 <phone> 是否已注册",
+        "查 +86<phone> 的 userId"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-按手机号查userId.json \\\n  --query-user-by-phone <phone>\n"
+    },
+    {
+      "id": "ip_find",
+      "name": "IP-查询归属地",
+      "category": "用户后门（voga-mts-user-backdoor）",
+      "description": "根据 IP 地址查询归属地信息（pip-new-search-service findIp；params=ip string）",
+      "prompts": [
+        "查询 IP <ip> 归属地",
+        "查 <ip> 属于哪个国家",
+        "IP归属地 <ip>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/IP-查询归属地.json \\\n  --find-ip <ip>\n"
+    },
+    {
+      "id": "user_home_country_update",
+      "name": "用户-修改注册国家",
+      "category": "用户后门（voga-mts-user-backdoor）",
+      "description": "修改用户注册国家（mdp-user-service updateUser；appId 固定 2005；params=userId, homeCountry 国家代码）",
+      "prompts": [
+        "修改用户 <userId> 注册国家为 <country>",
+        "把用户 <userId> 注册国家改为 <country>",
+        "设置 <userId> homeCountry 为 <country>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-修改注册国家.json \\\n  --user-home-country-user-id <userId> \\\n  --user-home-country <country>\n"
+    },
+    {
+      "id": "user_set_reg_time",
+      "name": "用户-设置注册时间",
+      "category": "用户后门（voga-mts-user-backdoor）",
+      "description": "设置用户注册时间（userVipTaskDao.saveUserRegTime；params=userId, 毫秒时间戳L；支持直接传13位时间戳或 YYYY-MM-DD HH:MM:SS）",
+      "prompts": [
+        "设置用户 <userId> 注册时间为 <time>",
+        "把用户 <userId> 注册时间改为 <time>",
+        "saveUserRegTime <userId> <time>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-设置注册时间.json \\\n  --user-set-reg-time-user-id <userId> \\\n  --user-set-reg-time-at \"2024-01-01 00:00:00\"\n"
+    },
+    {
+      "id": "user_reg_time_query",
+      "name": "用户-查询注册时间",
+      "category": "用户后门（voga-mts-user-backdoor）",
+      "description": "查询用户注册时间（userVipTaskDao.getUserRegTime；params=userId string）",
+      "prompts": [
+        "查询用户 <userId> 注册时间",
+        "查 <userId> 注册时间",
+        "查询用户 <userId> 的注册日期"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-查询注册时间.json \\\n  --user-reg-time-user-id <userId>\n"
+    },
+    {
+      "id": "user_cancel_real",
+      "name": "用户-注销账号",
+      "category": "用户后门（voga-mts-user-backdoor）",
+      "description": "MOA 确认正式注销（cancelUserReal）；提示词「确认注销」即执行，不校验 App 客户端状态",
+      "prompts": [
+        "确认注销 <userId>",
+        "MOA 确认注销 <userId>",
+        "注销用户 <userId>",
+        "cancelUserReal <userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-注销账号.json \\\n  --cancel-user <userId>\n"
+    },
+    {
+      "id": "charm_query_current",
+      "name": "魅力-查询等级",
+      "category": "用户后门（voga-mts-user-backdoor）",
+      "description": "查询用户魅力等级与魅力值（getCharmInfoNoAvatar；返回 lv、charmValue、nextLevelNeedScore 等）",
+      "prompts": [
+        "查询用户 <userId> 魅力等级",
+        "查询 <userId> 魅力值",
+        "getCharmInfoNoAvatar <userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/魅力-查询等级.json \\\n  --charm-query-user-id <userId>\n"
+    },
+    {
+      "id": "wealth_query_current",
+      "name": "财富-查询等级",
+      "category": "用户后门（voga-mts-user-backdoor）",
+      "description": "查询用户财富等级与财富值（getWealthInfoNoAvatar；返回 lv、userWealthValue、nextLevelNeedScore 等）",
+      "prompts": [
+        "查询用户 <userId> 财富等级",
+        "查询 <userId> 财富值",
+        "getWealthInfoNoAvatar <userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/财富-查询等级.json \\\n  --wealth-query-user-id <userId>\n"
+    },
+    {
+      "id": "user_area_change",
+      "name": "用户-修改大区",
+      "category": "用户大区（yaahlan/components/callback/user-area）",
+      "description": "测试环境切换用户大区（changeAreaForTest；params[0]=userId, params[1]=大区代码）",
+      "prompts": [
+        "把用户 <userId> 大区改为 <area>",
+        "切换用户 <userId> 到 <area> 区",
+        "修改用户 <userId> 大区为 MENA"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-修改大区.json \\\n  --change-user-area-user-id <userId> \\\n  --user-area <area>\n"
+    },
+    {
+      "id": "diamond_query_account",
+      "name": "钻石-查询余额",
+      "category": "钻石（voga-base-service-middle-pay-stage）",
+      "description": "查询用户当前钻石余额（queryUserAccount，params[0]=userId string）",
+      "prompts": [
+        "查询用户 <userId> 当前钻石数",
+        "查询 <userId> 钻石余额"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/钻石-查询余额.json \\\n  --diamond-query-user-id <userId>\n"
+    },
+    {
+      "id": "diamond_provide",
+      "name": "钻石-发放",
+      "category": "钻石（voga-base-service-middle-pay-stage）",
+      "description": "给用户发放钻石（provideDiamond）；outOrderId 每次自动生成 system-随机5位数",
+      "prompts": [
+        "给用户 <userId> 增加 <num> 钻石",
+        "给用户 <userId> 发放 <num> 钻石"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/钻石-发放.json \\\n  --diamond-user-id <userId> \\\n  --diamond-num <num>\n"
+    },
+    {
+      "id": "pay_test_query_all",
+      "name": "送礼限制-查询测试账号",
+      "category": "支付测试（pay-middle/test）",
+      "description": "查询送礼/支付限制测试账号配置（getAllPayTest；params[0]=测试场景 ID，如 202401241150003）",
+      "prompts": [
+        "查询送礼限制测试账号 <scenarioId>",
+        "查看 pay 测试场景 <scenarioId>",
+        "getAllPayTest <scenarioId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/送礼限制-查询测试账号.json \\\n  --expr <scenarioId>\n"
+    },
+    {
+      "id": "package_gift_add",
+      "name": "背包礼物-下发",
+      "category": "背包礼物（voga-base-service-middle-gift-stage）",
+      "description": "给用户下发背包礼物（addPackageGift）。默认模板两种各100个。多种礼物须逐个下发（每种单独一次 MOA，不可一次 giftDetails 塞多种）；用 --package-gift-batch-base-ids",
+      "prompts": [
+        "给用户 <userId> 下发背包礼物",
+        "给用户 <userId> 下发100个两种背包礼物",
+        "多种背包礼物逐个下发 userId=<userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/背包礼物-下发.json \\\n  --package-gift-user-id <userId> \\\n  --package-gift-batch-base-ids <baseId1,baseId2,...> \\\n  --package-gift-num 100"
+    },
+    {
+      "id": "package_gift_send",
+      "name": "背包礼物-送礼",
+      "category": "背包礼物（voga-base-service-middle-gift-stage）",
+      "description": "MOA 可 addPackageGift 下发背包礼到送礼方；sendMiddlePackageGift 返回 true 通常不触发 v2/gift/send。真实送礼须 ADB 背包面板送出 + Tunnel gift/send。加 --package-gift-add-only 仅下发。",
+      "prompts": [
+        "给用户 <userId> 下发背包礼物",
+        "MOA 背包下发 Ocean Gem",
+        "背包送礼 Tunnel 验收 gift/send"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --package-gift-send \\\n  --package-gift-add-only \\\n  --package-gift-user-id <fromUserId> \\\n  --package-gift-base-id 2005001272 \\\n  --package-gift-num 1"
+    },
+    {
+      "id": "gift_panel_backpack_view",
+      "name": "礼物面板-查看背包",
+      "category": "礼物面板（yh-components/gift-panel）",
+      "description": "MOA 快速查背包：getGiftTabListV3（背包 Tab 礼物）+ propPackageList（背包道具）。ServiceUrl /service/yh-components/gift-panel，无需打开礼物面板；失败时 Tunnel 兜底。",
+      "prompts": [
+        "查看用户 <userId> 礼物面板背包",
+        "MOA 查询背包礼物 userId=<userId>",
+        "getGiftTabListV3 背包 MOA"
+      ],
+      "command": "python3 MOA/scripts/gift_panel_backpack_view.py \\\n  --user-id <userId> \\\n  [--room-id <roomId>] \\\n  [--moa-only]"
+    },
+    {
+      "id": "gift_panel_backpack_gifts",
+      "name": "礼物面板-查看背包礼物",
+      "category": "礼物面板（yh-components/gift-panel）",
+      "description": "MOA getGiftTabListV3 查背包 Tab 礼物（is_package=1，读 package.remain）。ServiceUrl /service/yh-components/gift-panel；无需打开礼物面板。",
+      "prompts": [
+        "MOA getGiftTabListV3 背包 userId=<userId>",
+        "查看背包礼物 userId=<userId>",
+        "快速查询背包礼物 userId=<userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/礼物面板-查看背包礼物.json \\\n  --gift-panel-backpack-user-id <userId> \\\n  [--gift-panel-backpack-room-id <roomId>] \\\n  --gift-panel-backpack-clear-hash"
+    },
+    {
+      "id": "gift_panel_backpack_props",
+      "name": "礼物面板-查看背包道具",
+      "category": "礼物面板（yh-components/gift-panel）",
+      "description": "MOA propPackageList 查背包道具（不含背包礼物）。ServiceUrl /service/yh-components/gift-panel。",
+      "prompts": [
+        "MOA propPackageList userId=<userId>",
+        "查看背包道具 userId=<userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/礼物面板-查看背包道具.json \\\n  --gift-panel-backpack-user-id <userId>"
+    },
+    {
+      "id": "package_gift_backpack_verify",
+      "name": "背包礼物-Tunnel背包验收",
+      "category": "背包礼物（voga-base-service-middle-gift-stage）",
+      "description": "用户打开礼物面板后，Tunnel getGiftTabListV3 背包 Tab 读 package.remain；按 bid 验收数量。propPackageList 仅道具。",
+      "prompts": [
+        "验收用户 <userId> 背包礼物 <baseProductId> 数量 <num>",
+        "Tunnel 查背包 Chocolate remain",
+        "背包礼物下发后抓包验收"
+      ],
+      "command": "python3 MOA/scripts/package_gift_backpack_tunnel_verify.py \\\n  --user-id <userId> \\\n  --bid <baseProductId> \\\n  --expect-remain <num> \\\n  --since 600"
+    },
+    {
+      "id": "anniversary_egg_mystery_count",
+      "name": "3周年砸金蛋-查神秘保底计数",
+      "category": "活动（3周年砸金蛋）",
+      "description": "year3Dao.testGetMysteryCount(type,userId,roomId) 查用户/房间/平台砸蛋次数；对照 MSE 保底模数预判再砸 N 次是否应下发神秘奖。房间默认自己的房间。",
+      "prompts": [
+        "查询砸金蛋神秘保底次数 userId=<userId>",
+        "查用户房间平台砸蛋次数判断神秘奖 userId=<userId> roomId=<roomId>"
+      ],
+      "command": "python3 MOA/scripts/anniversary_egg_mystery_count.py \\\n  --user-id <userId> \\\n  --room-id <roomId>"
+    },
+    {
+      "id": "anniversary_egg_smash_record",
+      "name": "3周年砸金蛋-造数并记录钉钉表",
+      "category": "活动（3周年砸金蛋）",
+      "description": "smashEgg：房间默认自己的房间；每砸一次立即写入钉钉「砸金蛋测试记录」。房间内/用户/平台砸蛋次数来自 year3Dao.testGetMysteryCount；验收同时校验本次砸蛋次数与房/用/平累加、神秘奖励、档次礼物。",
+      "prompts": [
+        "3周年砸金蛋记录到钉钉表 userId=<userId> 次数 <smashCount>",
+        "砸金蛋造数并写表 userId=<userId>"
+      ],
+      "command": "python3 MOA/scripts/anniversary_egg_smash_record.py \\\n  --workbook https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz \\\n  --user-id <userId> \\\n  --smash-count <smashCount>"
+    },
+    {
+      "id": "anniversary_egg_mse_to_workbook",
+      "name": "3周年砸金蛋-MSE配置同步钉钉表",
+      "category": "活动（3周年砸金蛋）",
+      "description": "拉取私有 Application 配置 activityConfig.Year3Anniversary，分析基础参数/奖池/神秘保底/金蛋等级/档次加成/头像框等，写入砸金蛋表 Sheet「金蛋活动配置」。",
+      "prompts": [
+        "同步3周年金蛋MSE配置到钉钉表",
+        "分析 Year3Anniversary 配置并写入金蛋活动配置 sheet"
+      ],
+      "command": "python3 platform/dingtalk_gateway/anniversary_egg_mse_to_workbook.py \\\n  --workbook https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz \\\n  --sheet-name 金蛋活动配置 \\\n  --namespace Application \\\n  --config-key activityConfig.Year3Anniversary \\\n  --cluster alpha"
+    },
+    {
+      "id": "anniversary_egg_lottery_to_workbook",
+      "name": "3周年砸金蛋-奖池配置同步钉钉表",
+      "category": "活动（3周年砸金蛋）",
+      "description": "读取 MSE eggPoolConfig 映射的 lotteryId，拉 CMS getLotteryList 奖池明细（类型/数量/权重/限量），写入 Sheet「金蛋奖池配置」。",
+      "prompts": [
+        "同步3周年砸金蛋奖池到钉钉表",
+        "整理砸金蛋 CMS 奖池并写入金蛋奖池配置 sheet"
+      ],
+      "command": "python3 platform/dingtalk_gateway/anniversary_egg_lottery_to_workbook.py \\\n  --workbook https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz \\\n  --sheet-name 金蛋奖池配置"
+    },
+    {
+      "id": "anniversary_egg_multi_account_verify",
+      "name": "3周年砸金蛋-多账号批量验收落表",
+      "category": "活动（3周年砸金蛋）",
+      "description": "手机号账号自送获次（随机1~15）、钻不足充100万，在账号房间中随机砸一次；写入「砸金蛋测试记录」。验收含：本次砸蛋次数、房/用/平累加、神秘奖励、金蛋等级档次礼物。次数来自 year3Dao.testGetMysteryCount。",
+      "prompts": [
+        "多账号砸金蛋验收 rounds=<rounds>",
+        "手机号13311111141到43砸金蛋验收落表"
+      ],
+      "command": "python3 MOA/scripts/anniversary_egg_multi_account_verify.py \\\n  --workbook https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz \\\n  --phones 13311111141,13311111142,13311111143 \\\n  --chance-min 1 --chance-max 15 \\\n  --rounds <rounds>"
+    },
+    {
+      "id": "anniversary_egg_smash_test",
+      "name": "3周年-砸金蛋测试",
+      "category": "活动（3周年砸金蛋）",
+      "description": "year3GiftService.smashEgg(userId, roomId, lang)。房间默认 Admin 自己的房间；本次砸蛋次数以返回值/getRemainChance 差值为准（剩余>10 期望砸10，≤10 期望砸剩余）。",
+      "prompts": [
+        "3周年砸金蛋 userId=<userId>",
+        "砸金蛋 userId=<userId>（自己的房间）",
+        "记录砸金蛋测试到钉钉表"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/3周年-砸金蛋测试.json \\\n  --anniversary-egg-user-id <userId> \\\n  --anniversary-egg-lang en"
+    },
+    {
+      "id": "user_active_days_query",
+      "name": "用户-查询登录天数",
+      "category": "用户活跃（yaahlan/user/internal/area-moa）",
+      "description": "查询用户在指定日期区间内的活跃/登录天数（calcUserActiveDays；params=userId, 起始YYYYMMDD, 结束YYYYMMDD）",
+      "prompts": [
+        "查询用户 <userId> 登录天数",
+        "用户 <userId> 在 <start> 到 <end> 登录了多少天"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file \"MOA/templates/查询用户登录天数.json\" \\\n  --expr <userId>\n"
+    },
+    {
+      "id": "user_app_language_query",
+      "name": "用户-查看 app 语言",
+      "category": "用户资料（voga-mts-user-profile-stage）",
+      "description": "查询用户 app 语言/版本信息（getUserVersionInfo；params={userId, lang}）",
+      "prompts": [
+        "查看用户 <userId> app 语言",
+        "查询 <userId> 的语言设置"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file \"MOA/templates/查看用户app语言.json\"\n"
+    },
+    {
+      "id": "user_prop_query_own",
+      "name": "装扮-查询用户拥有道具",
+      "category": "用户装扮（mdp-prop/user-prop-api-service-test）",
+      "description": "查询用户指定 propTypeCode 的已拥有装扮（queryOwnPropList）；类型对照见 MOA/config/prop_types.json",
+      "prompts": [
+        "查询用户 <userId> 的 <propTypeCode> 装扮",
+        "查 <userId> 资料页背景装扮",
+        "获取 <userId> 10144 类型装扮"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/装扮-查询用户拥有道具.json \\\n  --user-prop-query-user-id <userId> \\\n  --user-prop-type-code <propTypeCode>\n"
+    },
+    {
+      "id": "activity_mock_gift",
+      "name": "活动-模拟送礼",
+      "category": "活动（vas/gift-call-back）",
+      "description": "模拟送礼回调增加活动数据；--activity-gift-method 指定各活动方法名，order_id/时间戳自动生成",
+      "prompts": [
+        "活动模拟送礼 <fromUserId> 送给 <toUserId>",
+        "handleGiftRamadan2026 造活动送礼数据"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/活动-模拟送礼.json \\\n  --activity-gift-method handleGiftRamadan2026 \\\n  --activity-gift-from-user-id <fromUserId> \\\n  --activity-gift-to-user-id <toUserId>\n"
+    },
+    {
+      "id": "family_member_leave",
+      "name": "家族-移除成员",
+      "category": "家族（external/user/family-api）",
+      "description": "把用户移出所属家族（leave；header KV 含 userId，params json 含 userId）。用户主动退出或测试环境踢人均可调用",
+      "prompts": [
+        "把用户 <userId> 移出家族",
+        "移除家族成员 <userId>",
+        "用户 <userId> 退出家族"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-移除成员.json \\\n  --family-leave-user-id <userId>\n"
+    },
+    {
+      "id": "family_kick_member",
+      "name": "家族-踢出成员",
+      "category": "家族（external/user/family-api）",
+      "description": "家族长踢出成员（removeMember；对齐客户端 /yaahlan/family/removeMember）。执行前强制校验：操作人=家族长；被踢人在本家族且不是家族长",
+      "prompts": [
+        "家族长 <operatorId> 踢出成员 <remoteId>",
+        "踢出家族成员 <remoteId> 操作人 <operatorId>",
+        "removeMember 家族踢人"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-踢出成员.json \\\n  --family-kick-operator-id <operatorId> \\\n  --family-kick-remote-id <remoteId> \\\n  --family-id <familyId>\n"
+    },
+    {
+      "id": "family_pk_member_contrib_list",
+      "name": "家族PK-成员贡献列表",
+      "category": "家族PK（vas/activity/family-pk-v2-api）",
+      "description": "点击家族贡献 top3 头像打开的成员榜（getFamilyPkUserList）。对齐 /yaahlan/vas/familyPk/getFamilyPkUserList；默认自动翻页返回全部 memberList。",
+      "prompts": [
+        "家族PK成员贡献列表 familyId=<familyId> date=<date>",
+        "getFamilyPkUserList <userId> <familyId> <date>",
+        "查看家族成员贡献榜全部"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-成员贡献列表.json \\\n  --family-pk-member-list-user-id <userId> \\\n  --family-pk-member-list-family-id <familyId> \\\n  --family-pk-member-list-date <date>\n"
+    },
+    {
+      "id": "family_pk_request_page",
+      "name": "家族PK-请求页面",
+      "category": "家族PK（vas/activity/family-pk-v2-api）",
+      "description": "打开家族 PK 页主接口（getFamilyPkPage）。对齐客户端 /yaahlan/vas/familyPk/getFamilyPkPage；抓包样例 13311111118→100379555。返回 pkList/current/tierList 等页面数据。",
+      "prompts": [
+        "请求家族PK页面 userId=<userId> date=<date>",
+        "打开家族PK页 <userId> <date>",
+        "getFamilyPkPage <userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-请求页面.json \\\n  --family-pk-page-user-id <userId> \\\n  --family-pk-page-date <date>\n"
+    },
+    {
+      "id": "family_pk_modify_receive_daily_rank",
+      "name": "家族PK-修改收礼日榜",
+      "category": "家族PK（vas/internal/family-pk-moa）",
+      "description": "测试环境覆盖写入家族收礼日榜（modifyReceiveDailyRankForTest）。familyReceiveScore 为家族日榜分值（覆盖写）；memberUserId + memberReceiveScore 可选，同步覆盖成员收礼明细。修改模板 params[0].value 后执行",
+      "prompts": [
+        "修改家族 <familyId> <date> 收礼日榜分值为 <score>",
+        "家族PK修改收礼日榜 familyId=<familyId> date=<date> familyReceiveScore=<score>",
+        "覆盖写入家族收礼日榜"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-修改收礼日榜.json\n"
+    },
+    {
+      "id": "family_pk_query_receive_daily_rank",
+      "name": "家族PK-查询收礼日榜",
+      "category": "家族PK（vas/internal/family-pk-moa）",
+      "description": "测试环境查询家族收礼日榜（queryReceiveDailyRankForTest）。已解散家族通过 getFamilyCreateTime 判定并排除，有效名次顺延；params：date（yyyy-MM-dd）、limit（最大 500）",
+      "prompts": [
+        "查询 <date> 家族收礼日榜",
+        "家族PK查询收礼日榜 date=<date> limit=<limit>",
+        "查收礼日榜 top <limit>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --family-pk-query-receive-rank \\\n  --family-pk-date <date> \\\n  --family-pk-limit <limit>\n"
+    },
+    {
+      "id": "family_pk_incr_score",
+      "name": "家族PK-增加PK值",
+      "category": "家族PK（vas/internal/family-pk-moa）",
+      "description": "测试环境增加家族/成员 PK 值（incrFamilyPkScoreForTest）。同步累加家族 PK 榜与成员 PK 榜；updateBattleRank 默认 true 时同步更新对战榜。成功返回 familyPkScore、memberPkScore。修改模板 params[0].value 后执行",
+      "prompts": [
+        "给家族 <familyId> 成员 <memberUserId> 增加 <pkDelta> PK值",
+        "家族PK增加PK值 familyId=<familyId> memberUserId=<memberUserId> pkDelta=<pkDelta>",
+        "增加家族PK值 date=<date> pkDelta=<pkDelta>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-增加PK值.json\n"
+    },
+    {
+      "id": "family_pk_run_match_task",
+      "name": "家族PK-结算发奖匹配",
+      "category": "家族PK（vas/internal/family-pk-moa）",
+      "description": "测试环境跑家族 PK 定时任务（runFamilyPkMatchTask）。入参为 yyyy-MM-dd 日期字符串：对输入日期的前一日进行结算和发奖，并对输入日期重新匹配。若当日已有匹配数据，须先执行「家族PK-清除匹配数据」再调用本接口。须加 --timeout-ms 180000；返回 ec=3041 等超时时禁止自动重试，原样汇报失败由用户决定是否再跑。修改模板 params[0].value 后执行",
+      "prompts": [
+        "执行 <date> 家族PK结算发奖并匹配",
+        "家族PK结算发奖匹配 date=<date>",
+        "跑家族PK匹配任务 <date>",
+        "重置 <date> 家族PK：先清除匹配数据再结算发奖"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-结算发奖匹配.json \\\n  --timeout-ms 180000\n"
+    },
+    {
+      "id": "family_pk_delete_match_data",
+      "name": "家族PK-清除匹配数据",
+      "category": "家族PK（vas/internal/family-pk-moa）",
+      "description": "测试环境清除指定日期的家族 PK 匹配数据（deleteMatchDataForTest）。入参 date 为 yyyy-MM-dd。重置当天匹配并结算下发前一天奖励前，须先执行本接口清除当天匹配数据，再执行「家族PK-结算发奖匹配」。修改模板 params[0].value.date 后执行",
+      "prompts": [
+        "清除 <date> 家族PK匹配数据",
+        "家族PK清除匹配数据 date=<date>",
+        "删除家族PK匹配数据 <date>",
+        "重置 <date> 家族PK前先清除匹配数据"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-清除匹配数据.json\n"
+    },
+    {
+      "id": "user_follow_friend",
+      "name": "用户-关注好友",
+      "category": "用户关系（voga-mts-user-relation-stage）",
+      "description": "用户 A 关注用户 B（addUserRelation；relationType=1）。成为好友需相互关注，加 --follow-mutual 双向各调一次",
+      "prompts": [
+        "用户 <uid> 关注 <remoteUid>",
+        "让用户 <uid> 和 <remoteUid> 成为好友"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-关注好友.json \\\n  --follow-uid <uid> \\\n  --follow-remote-uid <remoteUid>\n"
+    },
+    {
+      "id": "family_delete",
+      "name": "家族-解散家族",
+      "category": "家族（external/user/family-api）",
+      "description": "族长解散家族（deleteFamily；header KV 含 userId，params json 含 familyId + userId）。须传族长 userId；解散后可用「家族-查询创建时间」验收 dissolved=true",
+      "prompts": [
+        "解散家族 <familyId> 族长 <userId>",
+        "删除家族 <familyId>",
+        "族长 <userId> 解散家族 <familyId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族-解散家族.json \\\n  --family-id <familyId> \\\n  --family-delete-owner-id <userId> \\\n  --family-delete\n"
+    },
+    {
+      "id": "family_pk_delete_member_pk_rank_data",
+      "name": "家族PK-删除全部PK值",
+      "category": "家族PK（vas/internal/family-pk-moa）",
+      "description": "测试环境删除指定日期、指定大区的家族 PK 全部成员 PK 榜数据（deleteMemberPkRankDataForTest）。入参 date 为 yyyy-MM-dd，area 默认 MENA。与「家族PK-清除匹配数据」不同：本接口清 PK 值/成员 PK 榜，不清匹配对手关系。修改模板 params[0].value 后执行",
+      "prompts": [
+        "删除 <date> 家族PK全部PK值",
+        "家族PK删除全部PK值 date=<date> area=<area>",
+        "清除 <date> 家族PK成员PK榜",
+        "删除指定日期家族PK全部PK值 area=MENA"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-删除全部PK值.json\n"
+    },
+    {
+      "id": "family_pk_query_receive_daily_rank_2",
+      "name": "家族PK-查询收礼日榜",
+      "category": "家族PK（vas/internal/family-pk-moa）",
+      "description": "测试环境查询家族收礼日榜（queryReceiveDailyRankForTest）。params：lang、date（yyyy-MM-dd）、limit（返回条数，最大 500）。默认排除已解散家族并顺延名次",
+      "prompts": [
+        "查询 <date> 家族收礼日榜",
+        "家族PK查询收礼日榜 date=<date> limit=<limit>",
+        "查收礼日榜 top <limit>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-查询收礼日榜.json\n"
+    },
+    {
+      "id": "family_pk_reset_settle_data",
+      "name": "家族PK-清除结算奖励",
+      "category": "家族PK（vas/internal/family-pk-moa）",
+      "description": "测试环境清除指定日期、大区的家族 PK 结算发奖数据（resetSettleDataForTest）。入参 date 为 yyyy-MM-dd，area 默认 MENA，rerunSettle 默认 false（清除后不重跑结算）。与「家族PK-清除匹配数据」「家族PK-删除全部PK值」不同：本接口仅清结算/发奖记录，便于重复发奖验收。修改模板 params[0].value 后执行",
+      "prompts": [
+        "清除 <date> 家族PK结算奖励",
+        "家族PK清除结算奖励 date=<date> area=<area>",
+        "重置 <date> 家族PK结算数据 area=MENA",
+        "清除家族PK结算发奖数据 rerunSettle=false"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族PK-清除结算奖励.json\n"
+    },
+    {
+      "id": "anniversary_year3_exchange_item",
+      "name": "3周年-兑换道具",
+      "category": "活动（3周年）",
+      "description": "3周年活动兑换商城道具（/service/vas/year3 exchangeItem；params=userId、lang、giftId）。MOA 参数为 JSON 对象，非数组。",
+      "prompts": [
+        "3周年兑换道具 userId=<userId> giftId=<giftId>",
+        "用户 <userId> 兑换3周年道具 <giftId>",
+        "year3 exchangeItem <userId> <giftId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/3周年-兑换道具.json\n"
+    },
+    {
+      "id": "feed_publish_comment",
+      "name": "动态-帖子评论",
+      "category": "动态（feed-comment-stage）",
+      "description": "测试环境给动态帖子发表评论（/service/feed/external/feed-comment-stage publishComment）。body 需 userId、feedId、content、source（默认 discover）。100 账号批量评论已验证 ec=200。",
+      "prompts": [
+        "用户 <userId> 给帖子 <feedId> 评论 <content>",
+        "动态评论 MOA publishComment",
+        "帖子评论 <feedId> <content>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/动态-帖子评论.json \\\n  --feed-comment-user-id <userId> \\\n  --feed-comment-feed-id <feedId> \\\n  --feed-comment-content <content>\n"
+    },
+    {
+      "id": "房间成员_同意申请",
+      "name": "房间成员-同意申请",
+      "category": "房间（room-member-stage）",
+      "description": "agree（/service/room/external/room-member-stage）",
+      "prompts": [
+        "执行 房间成员-同意申请"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间成员-同意申请.json\n"
+    },
+    {
+      "id": "房间成员_申请加入",
+      "name": "房间成员-申请加入",
+      "category": "房间（room-member-stage）",
+      "description": "apply（/service/room/external/room-member-stage）",
+      "prompts": [
+        "执行 房间成员-申请加入"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间成员-申请加入.json\n"
+    },
+    {
+      "id": "feed_like_comment",
+      "name": "动态-评论点赞",
+      "category": "动态（feed-interact-stage）",
+      "description": "测试环境给动态评论点赞（/service/feed/external/feed-interact-stage likeContent；action=LIKE_COMMENT）。contentId 填 commentId（非 feedId；可先 listComment 查评论 ID）。HTTP 对照 /yaahlan/feed-interact/likeContent。ec=40002 表示已点赞。",
+      "prompts": [
+        "用户 <userId> 给评论 <commentId> 点赞",
+        "动态评论点赞 MOA LIKE_COMMENT",
+        "帖子 <feedId> 下评论点赞"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/动态-评论点赞.json\n"
+    },
+    {
+      "id": "feed_gift_send",
+      "name": "动态-帖子送礼",
+      "category": "动态（/v2/gift/send · Stage HTTP）",
+      "description": "测试环境给动态帖子打赏送礼（HTTP /v2/gift/send；ext 含 feedId）。示例 giftId=2005001671（19 钻 New year fireworks）。无 MOA httpproxy，Agent 读模板 body + Gift/send_stage POST。",
+      "prompts": [
+        "用户 <userId> 给帖子 <feedId> 送 <giftId> 礼物",
+        "动态帖子送礼 <feedId> 价值19",
+        "帖子打赏 MOA feed gift send"
+      ],
+      "command": "python3 Gift/gift_execute.py \\\n  --scene private \\\n  --sender <userId> \\\n  --receivers <toUserId> \\\n  --gift-id 2005001671 \\\n  --num 1\n# 动态帖子须 ext.feedId=<feedId>，见 MOA/templates/动态-帖子送礼.json 抓包 body，Agent 用 Gift/send_stage POST /v2/gift/send\n"
+    },
+    {
+      "id": "user_batch_send_p2p_message",
+      "name": "用户-批量发消息",
+      "category": "用户工具（voga-mts-user-tool-stage）",
+      "description": "测试环境批量发私聊消息（batchSendP2pMessage；调一次约 600+ 测试号各发一条；params[0]=userId，params[1]=消息内容）。执行前请改模板 params 或使用 --payload 传入完整 JSON",
+      "prompts": [
+        "批量发消息 userId <userId> 内容 <message>",
+        "用 <userId> 批量发私聊 <message>",
+        "批量发私聊消息"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-批量发消息.json\n"
+    },
+    {
+      "id": "user_batch_send_greeting_message",
+      "name": "用户-批量发招呼消息",
+      "category": "用户工具（voga-mts-user-tool-stage）",
+      "description": "测试环境批量发私聊招呼（batchSendP2pMessage；调一次约 600+ 测试号各发一条招呼；params[0]=3966 固定场景号，params[1] 留空）。执行前可改模板 params 或使用 --payload 传入完整 JSON",
+      "prompts": [
+        "批量发招呼消息",
+        "批量打招呼",
+        "发招呼消息 3966"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-批量发招呼消息.json\n"
+    }
+  ]
+}

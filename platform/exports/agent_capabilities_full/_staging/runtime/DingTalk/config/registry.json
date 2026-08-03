@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "generated_index_path": "DingTalk/使用方法.md",
+  "default_folder_id": "yaahlan-testcases",
+  "default_folder_url": "https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldCZEEZ3n1VGXn6lpz",
+  "items": [
+    {
+      "id": "folder_show_registered",
+      "name": "目录-查看已登记目录",
+      "category": "钉钉目录",
+      "description": "列出 DingTalk/config/folders.json 中已登记的钉钉目录（含 Yaahlan 测试用例）",
+      "prompts": [
+        "有哪些已登记的钉钉目录",
+        "Yaahlan 测试用例目录在哪",
+        "版本迭代用例目录链接"
+      ],
+      "command": "python3 DingTalk/lookup_execute.py --show-folders"
+    },
+    {
+      "id": "folder_lookup",
+      "name": "目录-按关键词查文件链接",
+      "category": "钉钉目录",
+      "description": "在默认目录 yaahlan-testcases 中按文件名关键词查找表格 URL（如 2.5.4、消息）",
+      "prompts": [
+        "找 2.5.4 版本用例表链接",
+        "Yaahlan 用例目录里文件名含消息的表格",
+        "查一下这个目录里的某张表"
+      ],
+      "command": "python3 DingTalk/lookup_execute.py <关键词>"
+    },
+    {
+      "id": "folder_list_all",
+      "name": "目录-列举全部表格",
+      "category": "钉钉目录",
+      "description": "列举 yaahlan-testcases 目录下全部用例表格链接",
+      "prompts": [
+        "列举 Yaahlan 测试用例目录全部表格",
+        "版本迭代用例有哪些文件"
+      ],
+      "command": "python3 DingTalk/lookup_execute.py --list"
+    },
+    {
+      "id": "collect_links",
+      "name": "目录-列举全部表格链接",
+      "category": "钉钉目录",
+      "description": "通过 Box API 分页列举目录下全部子文档链接（默认 yaahlan-testcases 约 144 项）；无需开浏览器",
+      "prompts": [
+        "列举钉钉目录下全部用例表",
+        "导出版本迭代用例链接清单",
+        "遍历钉钉目录拿每个表格 URL"
+      ],
+      "command": "python3 DingTalk/collect_execute.py --only-spreadsheet"
+    },
+    {
+      "id": "collect_links_export",
+      "name": "目录-导出链接 JSON",
+      "category": "钉钉目录",
+      "description": "列举并导出 name/node_id/url/kind/extension 到 JSON 文件",
+      "prompts": [
+        "导出钉钉目录表格链接到 JSON",
+        "保存用例表清单到文件"
+      ],
+      "command": "python3 DingTalk/collect_execute.py --only-spreadsheet --output ~/Documents/cursor-mcp/dingExcel/folder-links.json"
+    },
+    {
+      "id": "kb_sync_list",
+      "name": "知识库-预览可同步版本表",
+      "category": "testcase-kb 同步",
+      "description": "列举目录内可识别的版本用例 Excel，不写入 testcase-kb",
+      "prompts": [
+        "预览钉钉目录有哪些版本用例表",
+        "list-only 钉钉用例同步"
+      ],
+      "command": "python3 DingTalk/kb_sync_execute.py --list-only"
+    },
+    {
+      "id": "kb_sync_full",
+      "name": "知识库-全量同步",
+      "category": "testcase-kb 同步",
+      "description": "按版本升序同步全部用例表到 testcase-kb/；较新版本覆盖同名模块；结束后跑优化流水线",
+      "prompts": [
+        "把钉钉用例整理到知识库",
+        "全量同步 testcase-kb",
+        "同步版本迭代用例到 testcase-kb"
+      ],
+      "command": "python3 DingTalk/kb_sync_execute.py"
+    },
+    {
+      "id": "kb_sync_activity",
+      "name": "知识库-同步运营活动用例",
+      "category": "testcase-kb 同步",
+      "description": "递归同步 yaahlan-activity-cases 目录（含 2026活动 等子文件夹）到 testcase-kb/",
+      "prompts": [
+        "把运营活动用例整理到知识库",
+        "同步活动用例到 testcase-kb",
+        "活动目录同步知识库"
+      ],
+      "command": "python3 DingTalk/kb_sync_execute.py --folder-id yaahlan-activity-cases"
+    },
+    {
+      "id": "kb_sync_workbook",
+      "name": "知识库-单表同步",
+      "category": "testcase-kb 同步",
+      "description": "仅同步指定表格 node URL 到 testcase-kb",
+      "prompts": [
+        "同步这一张钉钉用例表到知识库",
+        "把这个表格链接写入 testcase-kb"
+      ],
+      "command": "python3 DingTalk/kb_sync_execute.py --workbook-url <表格URL>"
+    },
+    {
+      "id": "kb_sync_version",
+      "name": "知识库-按版本同步",
+      "category": "testcase-kb 同步",
+      "description": "仅处理文件名匹配某一版本号（如 2.5.4）的工作簿",
+      "prompts": [
+        "只同步 2.5.4 版本用例到知识库",
+        "按版本同步 testcase-kb"
+      ],
+      "command": "python3 DingTalk/kb_sync_execute.py --only-version <x.y.z>"
+    },
+    {
+      "id": "prd_sync_full",
+      "name": "需求库-全量同步 PRD",
+      "category": "prd-kb 同步",
+      "description": "解析 yaahlan-prd 目录下全部需求文档正文，写入 prd-kb/",
+      "prompts": [
+        "把产品需求整理到知识库",
+        "同步 PRD 到 prd-kb",
+        "全量同步需求文档"
+      ],
+      "command": "python3 DingTalk/prd_sync_execute.py --folder-id yaahlan-prd"
+    },
+    {
+      "id": "prd_sync_version",
+      "name": "需求库-按版本同步 PRD",
+      "category": "prd-kb 同步",
+      "description": "仅同步文件名匹配某一版本号的需求文档",
+      "prompts": [
+        "同步 2.5.4 版本需求到知识库",
+        "按版本同步 PRD"
+      ],
+      "command": "python3 DingTalk/prd_sync_execute.py --folder-id yaahlan-prd --only-version <x.y.z>"
+    },
+    {
+      "id": "prd_sync_document",
+      "name": "需求库-单篇同步",
+      "category": "prd-kb 同步",
+      "description": "仅同步指定 PRD 文档 URL 到 prd-kb/",
+      "prompts": [
+        "同步这一篇需求文档到知识库",
+        "把这篇 PRD 写入 prd-kb"
+      ],
+      "command": "python3 DingTalk/prd_sync_execute.py --document-url <PRD文档URL>"
+    }
+  ]
+}

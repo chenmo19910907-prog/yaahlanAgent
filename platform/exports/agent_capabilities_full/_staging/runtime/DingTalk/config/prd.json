@@ -1,0 +1,8 @@
+{
+  "folderId": "yaahlan-prd",
+  "folderUrl": "https://alidocs.dingtalk.com/i/nodes/14lgGw3P8vveoPlPC2PdN56v85daZ90D",
+  "outputDir": "prd-kb",
+  "maxDocuments": 200,
+  "includeSpreadsheets": false,
+  "skipNamePatterns": ["^test\\.axls$", "^cursor生成", "待排期"]
+}

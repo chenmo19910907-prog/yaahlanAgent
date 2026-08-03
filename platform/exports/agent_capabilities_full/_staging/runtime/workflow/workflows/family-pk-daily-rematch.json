@@ -1,0 +1,58 @@
+{
+  "id": "family-pk-daily-rematch",
+  "name": "家族PK-重置匹配并下发前日奖励",
+  "category": "家族PK",
+  "description": "测试环境：先清除指定 PK 日期的匹配数据，再执行 runFamilyPkMatchTask（对前一日结算发奖，并对指定日期重新匹配）。",
+  "version": 1,
+  "params": {
+    "pkDate": {
+      "label": "PK日期",
+      "type": "date",
+      "required": true,
+      "prompt": "要重置匹配的 PK 日期 (yyyy-MM-dd)"
+    },
+    "timeoutMs": {
+      "label": "MOA超时毫秒",
+      "type": "integer",
+      "required": false,
+      "default": "180000",
+      "prompt": "runFamilyPkMatchTask 超时（默认 180000）"
+    }
+  },
+  "steps": [
+    {
+      "id": "clear_match",
+      "name": "清除匹配数据",
+      "run": {
+        "type": "moa_template",
+        "template": "MOA/templates/家族PK-清除匹配数据.json",
+        "patch": {
+          "params[0].value.date": "{{pkDate}}",
+          "params[0].json": "{\"date\":\"{{pkDate}}\"}",
+          "settings.time": 2000
+        },
+        "timeout_ms": 10000
+      },
+      "expect": {
+        "ec": [0, 200]
+      }
+    },
+    {
+      "id": "settle_rematch",
+      "name": "结算前一日发奖并重新匹配",
+      "run": {
+        "type": "moa_template",
+        "template": "MOA/templates/家族PK-结算发奖匹配.json",
+        "patch": {
+          "params[0].value": "{{pkDate}}",
+          "params[0].txt": "{{pkDate}}",
+          "settings.time": "{{timeoutMs}}"
+        },
+        "timeout_ms": "{{timeoutMs}}"
+      },
+      "expect": {
+        "ec": [0, 200]
+      }
+    }
+  ]
+}

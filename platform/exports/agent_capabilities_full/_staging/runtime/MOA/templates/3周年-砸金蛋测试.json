@@ -1,0 +1,40 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-vas-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "return context.getBean(\"year3GiftService\").smashEgg(\"100079102\",\"50861924\",\"en\");",
+      "json": "",
+      "type": "string",
+      "value": "return context.getBean(\"year3GiftService\").smashEgg(\"100079102\",\"50861924\",\"en\");"
+    }
+  ],
+  "settings": {
+    "time": "60000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "anniversary_egg_smash_test",
+    "name": "3周年-砸金蛋测试",
+    "category": "活动（3周年砸金蛋）",
+    "description": "year3GiftService.smashEgg(userId, roomId, lang)。房间默认 Admin 自己的房间；本次砸蛋次数以返回值/getRemainChance 差值为准（剩余>10 期望砸10，≤10 期望砸剩余）。",
+    "prompts": [
+      "3周年砸金蛋 userId=<userId>",
+      "砸金蛋 userId=<userId>（自己的房间）",
+      "记录砸金蛋测试到钉钉表"
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "id": "room-member-quick-add-form",
+  "name": "房间成员-快速添加",
+  "category": "房间",
+  "description": "测试环境快速添加房间成员：MOA room-member-stage.apply（申请人）→ agree（房主）。HTTP 对应 /yaahlan/room/member/apply 与 /member/agree。",
+  "version": 1,
+  "params": {
+    "applicantUserId": {
+      "label": "申请人userId",
+      "type": "string",
+      "required": true,
+      "prompt": "申请加入房间的用户"
+    },
+    "ownerUserId": {
+      "label": "房主userId",
+      "type": "string",
+      "required": true,
+      "prompt": "同意申请的房间主"
+    },
+    "roomId": {
+      "label": "roomId",
+      "type": "string",
+      "required": true,
+      "prompt": "目标房间 ID"
+    }
+  },
+  "steps": [
+    {
+      "id": "form_room_member",
+      "name": "MOA申请并同意添加成员",
+      "run": {
+        "type": "shell",
+        "command": "python3 MOA-generative/scripts/form_room_member_quick_add.py --applicant-user '{{applicantUserId}}' --owner-user '{{ownerUserId}}' --room-id '{{roomId}}'",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

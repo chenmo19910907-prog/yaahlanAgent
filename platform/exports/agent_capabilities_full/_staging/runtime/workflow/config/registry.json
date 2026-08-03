@@ -1,0 +1,538 @@
+{
+  "playbooks": [
+    {
+      "id": "tunnel_capture_common",
+      "title": "Tunnel 抓包常用验收",
+      "category": "抓包",
+      "summary": "按场景查 Tunnel：礼物送礼/面板/背包、家族PK、进房、动态发布、资料保存、弹窗信号。索引 adb/config/tunnel_capture_catalog.json。",
+      "defaults": {
+        "userId": "100007541",
+        "sinceSeconds": "600"
+      },
+      "steps": [
+        {
+          "order": 1,
+          "catalogId": "gift_send",
+          "name": "送礼 gift/send",
+          "note": "点 Send 后验收 response.ec=200",
+          "command": "python3 adb/adb_execute.py tunnel capture run gift_send --momoid <userId>"
+        },
+        {
+          "order": 2,
+          "catalogId": "gift_panel_tabs",
+          "name": "礼物面板 Tab",
+          "note": "打开橙色礼物盒后",
+          "command": "python3 adb/adb_execute.py tunnel capture run gift_panel_tabs --momoid <userId>"
+        },
+        {
+          "order": 3,
+          "catalogId": "gift_backpack",
+          "name": "背包礼物 remain",
+          "note": "MOA 下发后开面板；bid=baseProductId",
+          "command": "python3 adb/adb_execute.py tunnel capture run gift_backpack --momoid <userId> --set baseProductId=2005001494 --set num=10"
+        },
+        {
+          "order": 4,
+          "catalogId": "family_pk_page",
+          "name": "家族PK getFamilyPkPage",
+          "note": "切日期 tab 并刷新",
+          "command": "python3 adb/adb_execute.py tunnel capture run family_pk_page --momoid <userId>"
+        },
+        {
+          "order": 5,
+          "catalogId": "popup_login",
+          "name": "登录弹窗信号",
+          "command": "python3 adb/adb_execute.py tunnel capture run popup_login --momoid <userId>"
+        }
+      ],
+      "prompts": [
+        "抓包常用验收列表",
+        "tunnel capture list",
+        "执行抓包验收 gift_send userId=<userId>"
+      ],
+      "notes": [
+        "完整目录：python3 adb/adb_execute.py tunnel capture list",
+        "文档：adb/录制脚本/Tunnel抓包常用验收.md",
+        "提交表单类须优先抓包，不以 Toast 为准"
+      ]
+    },
+    {
+      "id": "family_pk_data_test",
+      "title": "家族PK数据测试（新表+六步总览）",
+      "category": "家族PK",
+      "summary": "新测试先新建钉钉表，再执行六步：参数表 → 家族列表 → 收礼榜与档位 → 匹配验收 → 成员 PK 与贡献榜验收 → 发奖实发对比。",
+      "defaults": {
+        "workbookUrl": "",
+        "pkDate": "2026-07-02",
+        "rankDate": "2026-07-01",
+        "userId": "100486375",
+        "timeoutMs": "180000"
+      },
+      "sheets": [
+        {
+          "name": "参数表",
+          "content": "MSE familyPkConfig 参数（含 minWinPk、minRewardPk、minDailyAvg 等）"
+        },
+        {
+          "name": "家族列表",
+          "content": "家族 ID/名称/成员 userId/族长；已过滤族长非 MENA 的家族"
+        },
+        {
+          "name": "家族PK档位",
+          "content": "收礼榜名次、匹配区间、档位达标 PK 与钻石"
+        },
+        {
+          "name": "匹配验收",
+          "content": "MOA getFamilyPkPage 对战与同区间匹配验收"
+        },
+        {
+          "name": "用户发钻测试",
+          "content": "成员 PK、应得钻石测算（榜单验收在第六步结算后回写）"
+        },
+        {
+          "name": "发钻实发验收",
+          "content": "用户信息、应发钻石、实发钻石、验收结果"
+        }
+      ],
+      "steps": [
+        {
+          "order": 0,
+          "workflowId": "family-pk-config-create-workbook",
+          "sheet": "（新建整表）",
+          "note": "新测试必做：在 family_pk_workbook_folder 目录新建 {pkDate}家族PK数据测试",
+          "operations": [
+            "读取 platform/dingtalk_gateway/config/family_pk_workbook_folder.json 父目录",
+            "创建钉钉 WORKBOOK，命名 {pkDate}家族PK数据测试",
+            "预建 Sheet：参数表、家族列表、家族PK档位、匹配验收、用户发钻测试、发钻实发验收、测试结果",
+            "输出 workbookUrl，供后续步骤 --workbook-url 使用"
+          ]
+        },
+        {
+          "order": 1,
+          "workflowId": "family-pk-config-mse-to-dingtalk",
+          "sheet": "参数表",
+          "note": "MSE voga-common/familyPkConfig → 参数表；mode=merge 可增量更新",
+          "operations": [
+            "MSE 拉取 voga-common / familyPkConfig 最新配置",
+            "解析 bracketGradients、minWinPk、minRewardPk、basePoolDiamond 等参数",
+            "merge 模式：在原「参数表」上更新数值、增删参数行（rebuild 则整表重建）",
+            "同步 configValue_JSON Sheet（原始 JSON 备份）",
+            "钉钉文档重命名为 {pkDate}家族PK数据测试"
+          ]
+        },
+        {
+          "order": 2,
+          "workflowId": "family-pk-config-pk-list-to-dingtalk",
+          "sheet": "家族列表",
+          "note": "开发者后台拉家族与成员；族长大区非 MENA 的家族剔除",
+          "operations": [
+            "Admin getAllFamilyList 分页拉取全量家族 ID/名称",
+            "Admin queryUserDetail 查族长大区，剔除非中东（MENA）族长家族",
+            "MOA 查询各家族成员 userId 列表",
+            "Admin queryUserDetail 补全成员手机号",
+            "标记是否族长，写入钉钉「家族列表」",
+            "钉钉文档重命名为 {pkDate}家族PK数据测试"
+          ]
+        },
+        {
+          "order": 3,
+          "workflowId": "family-pk-config-rank-rematch",
+          "sheet": "家族PK档位",
+          "note": "收礼榜按人数分段随机：>10 人 20 万~100 万，≤10 人 0~20 万；不重匹配",
+          "operations": [
+            "读「家族列表」统计各家族成员数",
+            "按人数分段随机收礼值：>10 人 20 万~100 万；≤10 人 0~20 万（0 不上榜）",
+            "MOA modifyReceiveDailyRankForTest 批量写入 rankDate 收礼日榜",
+            "MOA queryReceiveDailyRankForTest 读 rankDate 收礼榜（排除已解散家族）",
+            "按参数表 bracketGradients 计算各家族档位达标 PK 与钻石",
+            "写入钉钉「家族PK档位」"
+          ]
+        },
+        {
+          "order": 4,
+          "workflowId": "family-pk-config-match-verify",
+          "sheet": "匹配验收",
+          "note": "清除并重匹配 pkDate；MOA getFamilyPkPage 拉取对战列表验收",
+          "operations": [
+            "MOA clearMatchDataForTest 清除 pkDate 匹配数据",
+            "MOA runFamilyPkMatchTask(pkDate) 重新匹配家族 PK",
+            "MOA getFamilyPkPage 拉取 pkDate 对战列表（pkList）",
+            "读 rankDate 收礼榜，按 bracketGradients 验收同区间匹配",
+            "写入钉钉「匹配验收」（对战、区间、验收结果）"
+          ]
+        },
+        {
+          "order": 5,
+          "workflowId": "family-pk-config-member-pk-reward",
+          "sheet": "用户发钻测试",
+          "note": "清 PK → 全员随机造数 → 纠偏边界 → 测算应发钻（榜单验收在第六步结算后）",
+          "operations": [
+            "MOA clearAllFamilyPkScoreForTest 清除 pkDate 全部成员 PK",
+            "读「家族列表」全员；读参数表 minWinPk / minRewardPk",
+            "全员随机 incrFamilyPkScoreForTest（0~maxScore，默认 5 万）",
+            "读「匹配验收」选 1 组平局 + 1 组双方低于 minWinPk（优先小家族）纠偏 PK",
+            "按对战结果与奖池规则计算各成员应得钻石，写入「用户发钻测试」"
+          ]
+        },
+        {
+          "order": 6,
+          "workflowId": "family-pk-config-dispatch-verify",
+          "sheet": "发钻实发验收 / 用户发钻测试",
+          "note": "清结算 → 发奖 → 实发查钻验收 → MOA 贡献榜回写用户发钻测试",
+          "operations": [
+            "读测算结果汇总应得钻石与用户列表",
+            "MOA resetSettleDataForTest(pkDate) 清除结算发奖记录",
+            "MOA 批量查钻记录发奖前 baseline",
+            "MOA runFamilyPkMatchTask(pkDate+1) 下发 pkDate 奖励",
+            "MOA 批量查钻记录发奖后余额",
+            "对比应得 vs 实际增量，写入「发钻实发验收」",
+            "逐家族 MOA getFamilyPkUserList，榜单PK/榜单钻/榜单验收回写「用户发钻测试」"
+          ]
+        },
+        {
+          "order": 7,
+          "workflowId": "family-pk-config-test-result",
+          "sheet": "测试结果",
+          "note": "汇总六步验收数据，输出总体验收结论与发钻不一致明细",
+          "operations": [
+            "读取各步骤 Sheet 摘要行与验收列统计",
+            "汇总步骤 0~6 通过/失败/样本数",
+            "写入「测试结果」Sheet"
+          ]
+        }
+      ],
+      "prompts": [
+        "执行家族PK数据测试工作流 pkDate=<pkDate>",
+        "家族PK数据测试 六步 rankDate=<rankDate> pkDate=<pkDate>",
+        "重跑家族PK第4-5步"
+      ],
+      "notes": [
+        "新测试须先执行第 0 步新建钉钉表，勿复用历史 workbookUrl",
+        "钉钉表命名：{pkDate}家族PK数据测试",
+        "rankDate 默认为 pkDate 前一日；收礼榜造数写在 rankDate",
+        "收礼榜或参数变更后建议重跑第 3~6 步；仅重匹配后重跑第 4~5 步",
+        "第四步验收使用 MOA getFamilyPkPage（request.date=pkDate），无需 Tunnel 抓包与 App 刷新",
+        "第五步仅测算应得钻石写入「用户发钻测试」",
+        "第六步发奖后 MOA 贡献榜验收回写「用户发钻测试」榜单列，并写入「发钻实发验收」"
+      ]
+    },
+    {
+      "id": "anniversary_egg_data_test",
+      "title": "3周年砸金蛋数据测试（六步总览）",
+      "category": "3周年活动",
+      "summary": "MSE 金蛋配置 → 账号获次 → 批量砸蛋落表 → 概率保底验收 → 奖品到账验收 → 测试结果汇总。",
+      "defaults": {
+        "workbookUrl": "https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz",
+        "userId": "100486375",
+        "smashCount": "1",
+        "timeoutMs": "60000"
+      },
+      "sheets": [
+        { "name": "金蛋活动配置", "content": "MSE activityConfig.Year3Anniversary：奖池、权重、神秘保底、蛋等级" },
+        { "name": "砸金蛋测试记录", "content": "每次 smashEgg 一行：次数、蛋级、奖品、房/用/平计数、验收 verdict" },
+        { "name": "测试结果", "content": "各步样本数、通过数、失败数与总评" }
+      ],
+      "steps": [
+        {
+          "order": 0,
+          "workflowId": "anniversary-egg-smash-record",
+          "sheet": "（新建整表）",
+          "note": "新测试可用 --create-workbook 在测试目录新建独立表格",
+          "operations": [
+            "anniversary_egg_smash_record.py --create-workbook --parent-folder <nodeId>",
+            "预建 Sheet：金蛋活动配置、砸金蛋测试记录",
+            "输出 workbookUrl 供后续步骤使用"
+          ]
+        },
+        {
+          "order": 1,
+          "workflowId": "anniversary-egg-mse-to-workbook",
+          "sheet": "金蛋活动配置",
+          "note": "MSE Application/activityConfig.Year3Anniversary → 金蛋活动配置",
+          "operations": [
+            "MSE 拉取 activityConfig.Year3Anniversary",
+            "解析 storeLotteryId、userGuaranteeMod、roomGuaranteeMod、蛋升级门槛",
+            "写入钉钉 Sheet「金蛋活动配置」"
+          ]
+        },
+        {
+          "order": 2,
+          "workflowId": "batch-anchor-egg-chances",
+          "sheet": "砸金蛋测试记录",
+          "note": "主播/手机号账号自送获次，钻石不足补钻",
+          "operations": [
+            "batch_anchor_egg_chances 或 multi_account 前置：解析 userId/房间",
+            "自送 giftIds 礼物随机获次 1~15",
+            "MOA getEggHome 确认剩余次数"
+          ]
+        },
+        {
+          "order": 3,
+          "workflowId": "anniversary-egg-smash-record",
+          "sheet": "砸金蛋测试记录",
+          "note": "smashEgg 逐次 append；多账号可用 multi_account_verify",
+          "operations": [
+            "MOA smashEgg(userId, roomId) 默认自己的房间",
+            "testGetMysteryCount 写入房/用/平计数",
+            "append 至 Sheet「砸金蛋测试记录」"
+          ]
+        },
+        {
+          "order": 4,
+          "workflowId": "anniversary-egg-multi-account-verify",
+          "sheet": "砸金蛋测试记录",
+          "note": "对照配置验收权重、神秘保底 mod、蛋等级",
+          "operations": [
+            "读 Sheet「金蛋活动配置」奖池与保底 mod",
+            "evaluate_acceptance_verdict 写验收列",
+            "mystery_count 辅助核对保底触发"
+          ]
+        },
+        {
+          "order": 5,
+          "workflowId": "anniversary-egg-direct-smash-diamond-verify",
+          "sheet": "砸金蛋测试记录",
+          "note": "应发钻/VIP/装扮 vs 账户实发增量",
+          "operations": [
+            "发奖前后查钻、查 VIP 经验",
+            "evaluate_diamond_credit 写到账列",
+            "更新 verdict"
+          ]
+        },
+        {
+          "order": 6,
+          "workflowId": "anniversary-egg-test-result",
+          "sheet": "测试结果",
+          "note": "汇总六步验收结论（演示页 / 手工汇总）",
+          "operations": [
+            "统计各步样本与 pass/fail",
+            "写入 Sheet「测试结果」",
+            "刷新 family_pk_report 抽奖演示"
+          ]
+        }
+      ],
+      "prompts": [
+        "执行3周年砸金蛋数据测试 userId=<userId>",
+        "测试3周年砸金蛋，第 1 步 · MSE 配置同步入表"
+      ],
+      "notes": [
+        "勿与家族 PK 表混用；默认独立表 jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz",
+        "新测试可用 --create-workbook 新建表格",
+        "批量场景优先 anniversary_egg_multi_account_verify.py"
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": "family_pk_config_create_workbook",
+      "name": "家族PK配置-新建测试钉钉表",
+      "category": "家族PK",
+      "order": 0,
+      "description": "第 0 步（新测试必做）：在配置的 alidocs 目录新建钉钉表格 {pkDate}家族PK数据测试，预建各步骤 Sheet；输出 workbookUrl 供后续步骤使用。",
+      "prompts": [
+        "新建家族PK测试钉钉表 pkDate=<pkDate>",
+        "工作流 family-pk-config-create-workbook <pkDate>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-create-workbook --pk-date <pkDate>"
+    },
+    {
+      "id": "family_pk_config_mse_to_dingtalk",
+      "name": "家族PK配置-MSE同步到钉钉参数表",
+      "category": "家族PK",
+      "order": 1,
+      "description": "第一步：从 MSE voga-common 读取 familyPkConfig 最新配置，整理为参数表写入 Sheet「参数表」。merge 模式可在原表上更新数值、增删参数行。",
+      "prompts": [
+        "执行工作流 家族PK配置-MSE同步到钉钉参数表",
+        "工作流 family-pk-config-mse-to-dingtalk <workbookUrl> <pkDate> <namespace> <configKey> <paramSheet> <mode>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-mse-to-dingtalk --workbook-url <workbookUrl> --pk-date <pkDate> --namespace <namespace> --config-key <configKey> --param-sheet <paramSheet> --mode <mode>"
+    },
+    {
+      "id": "family_pk_config_pk_list_to_dingtalk",
+      "name": "家族PK配置-后台家族成员写入钉钉",
+      "category": "家族PK",
+      "order": 2,
+      "description": "第二步：从开发者后台 getAllFamilyList 拉取全部家族 ID/名称，补全成员 userId、手机号并标记族长；族长大区非中东（MENA）的家族剔除后写入 Sheet「家族列表」。",
+      "prompts": [
+        "执行工作流 家族PK配置-后台家族成员写入钉钉",
+        "工作流 family-pk-config-pk-list-to-dingtalk <workbookUrl> <sheetName> <pkDate>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-pk-list-to-dingtalk --workbook-url <workbookUrl> --sheet-name <sheetName> --pk-date <pkDate>"
+    },
+    {
+      "id": "family_pk_config_rank_rematch",
+      "name": "家族PK配置-收礼榜造数与档位测算",
+      "category": "家族PK",
+      "order": 3,
+      "description": "第三步：按 Sheet「家族列表」成员数分段随机写入 rankDate 收礼榜（>10 人：20 万~100 万；≤10 人：0~20 万），再按收礼榜+参数表计算 pkDate 各家族档位达标 PK 与钻石，写入 Sheet「家族PK档位」。不重匹配。",
+      "prompts": [
+        "执行工作流 家族PK配置-收礼榜造数与档位测算",
+        "工作流 family-pk-config-rank-rematch <workbookUrl> <rankDate> <pkDate>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-rank-rematch --workbook-url <workbookUrl> --rank-date <rankDate> --pk-date <pkDate>"
+    },
+    {
+      "id": "family_pk_config_match_verify",
+      "name": "家族PK配置-重匹配与验收写入钉钉",
+      "category": "家族PK",
+      "order": 4,
+      "description": "第四步：清除并重匹配 pkDate 家族 PK → MOA getFamilyPkPage 拉取对战列表 → 按收礼榜区间验收同区间匹配，写入 Sheet「匹配验收」。",
+      "prompts": [
+        "执行工作流 家族PK配置-重匹配与验收写入钉钉",
+        "工作流 family-pk-config-match-verify <workbookUrl> <userId> <pkDate>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-match-verify --workbook-url <workbookUrl> --user-id <userId> --pk-date <pkDate>"
+    },
+    {
+      "id": "family_pk_config_member_pk_reward",
+      "name": "家族PK配置-成员PK造数与发钻测算",
+      "category": "家族PK",
+      "order": 5,
+      "description": "第五步：清除 pkDate 全部成员 PK → 全员随机 PK → 纠偏边界场景 → 测算应得钻石写入「用户发钻测试」（榜单验收在第六步结算后）。",
+      "prompts": [
+        "执行工作流 家族PK配置-成员PK造数与发钻测算",
+        "工作流 family-pk-config-member-pk-reward <workbookUrl> <pkDate>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-member-pk-reward --workbook-url <workbookUrl> --pk-date <pkDate>"
+    },
+    {
+      "id": "family_pk_config_dispatch_verify",
+      "name": "家族PK配置-发奖与验收",
+      "category": "家族PK",
+      "order": 6,
+      "description": "第六步：resetSettleDataForTest 清结算 → runFamilyPkMatchTask(次日) 发奖 → 查钻对比应发 vs 实发写入「发钻实发验收」→ MOA 贡献榜验收回写「用户发钻测试」。",
+      "prompts": [
+        "执行工作流 家族PK配置-发奖与验收",
+        "工作流 family-pk-config-dispatch-verify <workbookUrl> <pkDate> <userId>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-dispatch-verify --workbook-url <workbookUrl> --pk-date <pkDate> --user-id <userId>"
+    },
+    {
+      "id": "family_pk_config_test_result",
+      "name": "家族PK配置-测试结果汇总",
+      "category": "家族PK",
+      "order": 7,
+      "description": "第七步：读取各步骤 Sheet 验收摘要，汇总写入「测试结果」（总体验收结论 + 发钻不一致明细）。",
+      "prompts": [
+        "执行工作流 家族PK配置-测试结果汇总",
+        "工作流 family-pk-config-test-result <workbookUrl> <pkDate>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-test-result --workbook-url <workbookUrl> --pk-date <pkDate> --user-id <userId>"
+    },
+    {
+      "id": "family_pk_config_reward_calc",
+      "name": "家族PK配置-档位PK与奖励测算",
+      "category": "家族PK",
+      "order": 20,
+      "description": "辅助：仅按收礼榜与参数表重算各家族档位达标 PK 与钻石，写入 Sheet「家族PK档位」（第三步已内置，可单独重跑）。",
+      "prompts": [
+        "执行工作流 家族PK配置-档位PK与奖励测算",
+        "工作流 family-pk-config-reward-calc <workbookUrl> <rankDate> <pkDate>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-reward-calc --workbook-url <workbookUrl> --rank-date <rankDate> --pk-date <pkDate>"
+    },
+    {
+      "id": "family_pk_config_sheet_to_json",
+      "name": "家族PK配置-钉钉参数表生成JSON",
+      "category": "家族PK",
+      "order": 21,
+      "description": "辅助：读取 Sheet「参数表」中已修改的数值，合并回 MSE 原始结构，写回 configValue_JSON Sheet。改参后执行；勿直接声称已发布到 MSE。",
+      "prompts": [
+        "执行工作流 家族PK配置-钉钉参数表生成JSON",
+        "工作流 family-pk-config-sheet-to-json <workbookUrl>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-config-sheet-to-json --workbook-url <workbookUrl>"
+    },
+    {
+      "id": "family_pk_daily_rematch",
+      "name": "家族PK-重置匹配并下发前日奖励",
+      "category": "家族PK",
+      "order": 22,
+      "description": "独立：清除 pkDate 匹配数据 → 结算前一日并发奖 → 重新匹配 pkDate。参数 pkDate、timeoutMs（默认 180000）。",
+      "prompts": [
+        "重置 <pkDate> 家族PK匹配并下发前日奖励",
+        "工作流 family-pk-daily-rematch pkDate=<pkDate>",
+        "家族PK每日重置匹配 pkDate=<pkDate>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-pk-daily-rematch --pk-date <pkDate> --timeout-ms <timeoutMs>"
+    },
+    {
+      "id": "package_gift_backpack_verify",
+      "name": "背包礼物-Tunnel背包验收",
+      "category": "背包礼物",
+      "description": "用户已在 App 打开礼物面板后，Tunnel 抓 getGiftTabListV3 → 背包 Tab 读 package.remain；按 bid 验收数量。propPackageList 仅道具不含礼物。",
+      "prompts": [
+        "执行工作流 背包礼物-Tunnel背包验收",
+        "工作流 package-gift-backpack-verify <userId> <baseProductId> <expectRemain> <sinceSeconds>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run package-gift-backpack-verify --user-id <userId> --base-product-id <baseProductId> --expect-remain <expectRemain> --since-seconds <sinceSeconds>"
+    },
+    {
+      "id": "package_gift_dispatch_verify",
+      "name": "背包礼物-下发与Tunnel验收",
+      "category": "背包礼物",
+      "description": "MOA addPackageGift 下发 → 用户在 App 打开礼物面板 → Tunnel getGiftTabListV3 背包 Tab 验收 package.remain。两步之间须手动开面板。",
+      "prompts": [
+        "执行工作流 背包礼物-下发与Tunnel验收",
+        "工作流 package-gift-dispatch-verify <userId> <baseProductId> <num> <sinceSeconds>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run package-gift-dispatch-verify --user-id <userId> --base-product-id <baseProductId> --num <num> --since-seconds <sinceSeconds>"
+    },
+    {
+      "id": "anniversary_egg_smash_record",
+      "name": "3周年砸金蛋-造数并记录",
+      "category": "3周年活动",
+      "description": "smashEgg：房间默认自己的房间；每砸一次立即写入钉钉「砸金蛋测试记录」（砸一次写一次）。",
+      "prompts": [
+        "执行工作流 3周年砸金蛋-造数并记录",
+        "工作流 anniversary-egg-smash-record <userId> <smashCount>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run anniversary-egg-smash-record --workbook https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldC4ow9vLPVGXn6lpz --user-id <userId> --smash-count <smashCount>"
+    },
+    {
+      "id": "moa_generative_run",
+      "name": "MOA-generative-抓包转MOA执行",
+      "category": "MOA-generative",
+      "description": "将 Tunnel 抓包 body + 调用链 ServiceUrl/Method 生成双写 header+params 的 MOA payload 并执行。默认业务拒绝（已签到/已点赞）也算成功；--strict 要求业务 success。",
+      "prompts": [
+        "执行工作流 MOA-generative-抓包转MOA执行",
+        "工作流 moa-generative-run <serviceUrl> <method> <bodyFile> <timeoutMs> <payloadOut> <strict>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run moa-generative-run --service-url <serviceUrl> --method <method> --body-file <bodyFile> --timeout-ms <timeoutMs> --payload-out <payloadOut> --strict <strict>"
+    },
+    {
+      "id": "intimate_buddy_form",
+      "name": "亲密关系-结挚友",
+      "category": "亲密关系",
+      "description": "测试环境结挚友：Gift --intimate-invite 发起（默认 gift 2005007129）→ MOA acceptIntimateInvitation 同意 → intimateHomePage 验收。可选先 dismiss。relationshipType 默认 2。",
+      "prompts": [
+        "执行工作流 亲密关系-结挚友",
+        "工作流 intimate-buddy-form <fromUserId> <toUserId> <giftId> <dismissFirst> <relationshipType>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run intimate-buddy-form --from-user-id <fromUserId> --to-user-id <toUserId> --gift-id <giftId> --dismiss-first <dismissFirst> --relationship-type <relationshipType>"
+    },
+    {
+      "id": "intimate_cp_form",
+      "name": "亲密关系-结CP",
+      "category": "亲密关系",
+      "description": "测试环境结CP：Gift --intimate-invite 发起（默认 cpGiftList 特价礼 2005006943）→ MOA acceptIntimateInvitation 同意 → intimateHomePage 验收。relationshipType 固定 1；可选先 dismiss。",
+      "prompts": [
+        "执行工作流 亲密关系-结CP",
+        "工作流 intimate-cp-form <fromUserId> <toUserId> <giftId> <dismissFirst>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run intimate-cp-form --from-user-id <fromUserId> --to-user-id <toUserId> --gift-id <giftId> --dismiss-first <dismissFirst>"
+    },
+    {
+      "id": "room_member_quick_add_form",
+      "name": "房间成员-快速添加",
+      "category": "房间",
+      "description": "测试环境快速添加房间成员：MOA room-member-stage.apply（申请人）→ agree（房主）。HTTP 对应 /yaahlan/room/member/apply 与 /member/agree。",
+      "prompts": [
+        "执行工作流 房间成员-快速添加",
+        "工作流 room-member-quick-add-form <applicantUserId> <ownerUserId> <roomId>",
+        "快速添加房间成员"
+      ],
+      "command": "python3 workflow/workflow_execute.py run room-member-quick-add-form --applicant-user-id <applicantUserId> --owner-user-id <ownerUserId> --room-id <roomId>"
+    }
+  ]
+}

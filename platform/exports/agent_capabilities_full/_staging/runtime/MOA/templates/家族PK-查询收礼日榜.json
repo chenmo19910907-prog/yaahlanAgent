@@ -1,0 +1,44 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/vas/internal/family-pk-moa",
+  "method": "queryReceiveDailyRankForTest",
+  "header": "",
+  "params": [
+    {
+      "name": 0,
+      "title": "",
+      "txt": "",
+      "json": "{\"lang\":\"zh\",\"date\":\"2026-06-25\",\"limit\":50}",
+      "type": "json",
+      "value": {
+        "lang": "zh",
+        "date": "2026-06-25",
+        "limit": 50
+      }
+    }
+  ],
+  "settings": {
+    "time": 2000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "family_pk_query_receive_daily_rank",
+    "name": "家族PK-查询收礼日榜",
+    "category": "家族PK（vas/internal/family-pk-moa）",
+    "description": "测试环境查询家族收礼日榜（queryReceiveDailyRankForTest）。params：lang、date（yyyy-MM-dd）、limit（返回条数，最大 500）。默认排除已解散家族并顺延名次",
+    "prompts": [
+      "查询 <date> 家族收礼日榜",
+      "家族PK查询收礼日榜 date=<date> limit=<limit>",
+      "查收礼日榜 top <limit>"
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/yaahlan-trick/external/app-task",
+  "method": "signIn",
+  "header": "{\"_uid_\":\"100079102\",\"uid\":\"100079102\",\"userId\":\"100079102\",\"lang\":\"ar\",\"area\":\"MENA\",\"appId\":\"2005\",\"source\":\"mission_popup\",\"pageName\":\"lottery\",\"os\":\"ios\",\"osType\":\"ios\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"_uid_\":\"100079102\",\"uid\":\"100079102\",\"userId\":\"100079102\",\"lang\":\"ar\",\"area\":\"MENA\",\"appId\":\"2005\",\"source\":\"mission_popup\",\"pageName\":\"lottery\",\"os\":\"ios\",\"osType\":\"ios\"}",
+      "type": "json",
+      "value": {
+        "_uid_": "100079102",
+        "uid": "100079102",
+        "userId": "100079102",
+        "lang": "ar",
+        "area": "MENA",
+        "appId": "2005",
+        "source": "mission_popup",
+        "pageName": "lottery",
+        "os": "ios",
+        "osType": "ios"
+      }
+    }
+  ],
+  "settings": {
+    "time": 10000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_meta": {
+    "httpPath": "/yaahlan/sign/signIn",
+    "note": "Minimal fields for illustration; use full Tunnel capture in practice. Already-signed-in business errors still mean MOA is reachable."
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/vas/year3",
+  "method": "exchangeItem",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "",
+      "json": "{\"userId\":\"100350014\",\"lang\":\"en\",\"giftId\":\"30000841\"}",
+      "type": "json",
+      "value": {
+        "userId": "100350014",
+        "lang": "en",
+        "giftId": "30000841"
+      }
+    }
+  ],
+  "settings": {
+    "time": "10000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "anniversary_year3_exchange_item",
+    "name": "3周年-兑换道具",
+    "category": "活动（3周年）",
+    "description": "3周年活动兑换商城道具（/service/vas/year3 exchangeItem；params=userId、lang、giftId）。MOA 参数为 JSON 对象，非数组。",
+    "prompts": [
+      "3周年兑换道具 userId=<userId> giftId=<giftId>",
+      "用户 <userId> 兑换3周年道具 <giftId>",
+      "year3 exchangeItem <userId> <giftId>"
+    ]
+  }
+}

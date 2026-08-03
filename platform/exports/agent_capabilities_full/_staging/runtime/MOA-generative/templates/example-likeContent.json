@@ -1,0 +1,43 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/feed/external/feed-interact-stage",
+  "method": "likeContent",
+  "header": "{\"uid\":\"100079102\",\"userId\":\"100079102\",\"action\":\"LIKE_FEED\",\"contentId\":\"7062814_100079102\",\"lang\":\"ar\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"ios\",\"osType\":\"ios\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"uid\":\"100079102\",\"userId\":\"100079102\",\"action\":\"LIKE_FEED\",\"contentId\":\"7062814_100079102\",\"lang\":\"ar\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"ios\",\"osType\":\"ios\"}",
+      "type": "json",
+      "value": {
+        "uid": "100079102",
+        "userId": "100079102",
+        "action": "LIKE_FEED",
+        "contentId": "7062814_100079102",
+        "lang": "ar",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "ios",
+        "osType": "ios"
+      }
+    }
+  ],
+  "settings": {
+    "time": 10000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_meta": {
+    "httpPath": "/yaahlan/feed-interact/likeContent",
+    "note": "contentId from listUserFeed / listFollowFeedV2; ec=40002 already-liked still means MOA works. Feed pages refresh and change posts."
+  }
+}

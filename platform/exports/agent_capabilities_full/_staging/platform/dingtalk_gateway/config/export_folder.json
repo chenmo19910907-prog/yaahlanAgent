@@ -1,0 +1,11 @@
+{
+  "id": "agent-export",
+  "name": "Agent 导出目录",
+  "description": "钉钉网关：完整表格 / CSV / JSON 导出落盘目录",
+  "folderUrl": "https://alidocs.dingtalk.com/i/nodes/m9bN7RYPWdlGBEgEtKPvv9gdWZd1wyK0",
+  "nodeId": "m9bN7RYPWdlGBEgEtKPvv9gdWZd1wyK0",
+  "inlineMaxChars": 3500,
+  "inlineMaxTableRows": 8,
+  "inlineMaxUserListRows": 10,
+  "preferOnlineSpreadsheetForTable": true
+}

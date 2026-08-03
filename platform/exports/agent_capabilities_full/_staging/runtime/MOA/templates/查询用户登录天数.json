@@ -1,0 +1,45 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/yaahlan/user/internal/area-moa",
+  "method": "calcUserActiveDays",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "100385989",
+      "json": "",
+      "type": "string",
+      "value": "100385989"
+    },
+    {
+      "title": "参数2",
+      "name": "2",
+      "txt": "20260510",
+      "json": "",
+      "type": "string",
+      "value": "20260510"
+    },
+    {
+      "title": "参数3",
+      "name": "3",
+      "txt": "20260601",
+      "json": "",
+      "type": "string",
+      "value": "20260601"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad"
+}

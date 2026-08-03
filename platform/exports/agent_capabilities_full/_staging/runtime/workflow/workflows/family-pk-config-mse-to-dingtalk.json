@@ -1,0 +1,63 @@
+{
+  "id": "family-pk-config-mse-to-dingtalk",
+  "name": "家族PK配置-MSE同步到钉钉参数表",
+  "category": "家族PK",
+  "description": "第一步：从 MSE voga-common 读取 familyPkConfig 最新配置，整理为参数表写入 Sheet1「参数表」。merge 模式可在原表上更新数值、增删参数行。",
+  "version": 1,
+  "params": {
+    "workbookUrl": {
+      "label": "钉钉表格",
+      "type": "string",
+      "required": true,
+      "default": "https://alidocs.dingtalk.com/i/nodes/N7dx2rn0JbZQqA9ACZ1MoaaRJMGjLRb3",
+      "prompt": "钉钉表格 URL 或 nodeId"
+    },
+    "pkDate": {
+      "label": "匹配日期",
+      "type": "date",
+      "required": true,
+      "default": "2026-07-02",
+      "prompt": "钉钉表重命名为 {pkDate}家族PK数据测试"
+    },
+    "namespace": {
+      "label": "MSE命名空间",
+      "type": "string",
+      "required": false,
+      "default": "voga-common"
+    },
+    "configKey": {
+      "label": "配置键",
+      "type": "string",
+      "required": false,
+      "default": "familyPkConfig"
+    },
+    "paramSheet": {
+      "label": "参数表Sheet名",
+      "type": "string",
+      "required": false,
+      "default": "",
+      "prompt": "留空则自动选 参数表 或第一个 sheet"
+    },
+    "mode": {
+      "label": "同步模式",
+      "type": "string",
+      "required": false,
+      "default": "merge",
+      "prompt": "merge=更新原表；rebuild=整表重建"
+    }
+  },
+  "steps": [
+    {
+      "id": "fetch_mse_and_write_sheet",
+      "name": "读取MSE配置并写入钉钉参数表",
+      "run": {
+        "type": "shell",
+        "command": "python3 platform/dingtalk_gateway/mse_sync_to_workbook.py \"{{workbookUrl}}\" --namespace {{namespace}} --config-key {{configKey}} --mode {{mode}} --pk-date {{pkDate}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

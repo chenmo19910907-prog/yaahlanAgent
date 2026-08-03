@@ -1,0 +1,72 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/mdp-gift/gift-query-service",
+  "method": "batchQueryCategoryPropAndGifts",
+  "header": "",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"appId\":2005,\"uid\":\"100366772\",\"ip\":\"172.18.124.247\",\"deviceId\":\"b5869e5ce06903563b756edb8b30fd31af802669\",\"innerVersion\":\"2.4.9\",\"rom\":\"15\",\"osType\":\"android\",\"channelKey\":\"primary\",\"model\":\"SM-S9360\",\"lang\":\"en\",\"category\":2005000189,\"giftId\":\"2005001671\",\"num\":1,\"isPackage\":0,\"isMulti\":0,\"ext\":\"{\\\"source\\\":\\\"p2p\\\",\\\"giftNum\\\":1,\\\"localTime\\\":\\\"1784272658304\\\",\\\"timeZone\\\":\\\"CST\\\",\\\"feedId\\\":\\\"7070612_100461128\\\"}\",\"ua\":\"Yaha2.4.9 Android/16 (SM-S9360; Android 15; Gapps 0; zh_CN; 1; Samsung)\",\"giftType\":0,\"giftSubType\":0,\"remoteIdList\":\"[\\\"100461128\\\"]\"}",
+      "type": "json",
+      "value": {
+        "appId": 2005,
+        "uid": "100366772",
+        "ip": "172.18.124.247",
+        "deviceId": "b5869e5ce06903563b756edb8b30fd31af802669",
+        "innerVersion": "2.4.9",
+        "rom": "15",
+        "osType": "android",
+        "channelKey": "primary",
+        "model": "SM-S9360",
+        "lang": "en",
+        "category": 2005000189,
+        "giftId": "2005001671",
+        "num": 1,
+        "isPackage": 0,
+        "isMulti": 0,
+        "ext": "{\"source\":\"p2p\",\"giftNum\":1,\"localTime\":\"1784272658304\",\"timeZone\":\"CST\",\"feedId\":\"7070612_100461128\"}",
+        "ua": "Yaha2.4.9 Android/16 (SM-S9360; Android 15; Gapps 0; zh_CN; 1; Samsung)",
+        "giftType": 0,
+        "giftSubType": 0,
+        "remoteIdList": "[\"100461128\"]"
+      }
+    }
+  ],
+  "_meta": {
+    "httpPath": "/yaahlan/v2/gift/send",
+    "execution": "Gift Stage HTTP POST {instance_ip}:8080/v2/gift/send（无 MOA httpproxy）",
+    "giftId": "2005001671",
+    "giftName": "New year fireworks",
+    "priceDiamond": 19,
+    "feedIdExample": "7070612_100461128",
+    "receiverExample": "100461128",
+    "extKeys": "source=p2p, feedId, giftNum, localTime, timeZone",
+    "note": "params[0].value 为 gift/send 抓包 body；执行时须 MOA 查礼物+用户设备后 POST"
+  },
+  "_registry": {
+    "id": "feed_gift_send",
+    "name": "动态-帖子送礼",
+    "category": "动态（/v2/gift/send · Stage HTTP）",
+    "description": "测试环境给动态帖子打赏送礼（HTTP /v2/gift/send；ext 含 feedId）。示例 giftId=2005001671（19 钻 New year fireworks）。无 MOA httpproxy，Agent 读模板 body + Gift/send_stage POST。",
+    "prompts": [
+      "用户 <userId> 给帖子 <feedId> 送 <giftId> 礼物",
+      "动态帖子送礼 <feedId> 价值19",
+      "帖子打赏 MOA feed gift send"
+    ]
+  }
+}

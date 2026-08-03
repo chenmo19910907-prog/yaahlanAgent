@@ -1,0 +1,63 @@
+{
+  "id": "family-pk-config-member-pk-reward",
+  "name": "家族PK配置-成员PK造数与发钻测算",
+  "category": "家族PK",
+  "description": "第五步：清除匹配日全部 PK → 全员随机 PK → 纠偏边界场景 → 测算应得钻石写入「用户发钻测试」（不含榜单验收，验收在第六步结算后）。",
+  "version": 4,
+  "params": {
+    "workbookUrl": {
+      "label": "钉钉表格",
+      "type": "string",
+      "required": true,
+      "default": "https://alidocs.dingtalk.com/i/nodes/N7dx2rn0JbZQqA9ACZ1MoaaRJMGjLRb3",
+      "prompt": "钉钉表格 URL 或 nodeId"
+    },
+    "pkDate": {
+      "label": "匹配日期",
+      "type": "date",
+      "required": true,
+      "default": "2026-07-02",
+      "prompt": "与 PK 匹配日期相同；钉钉表重命名为 {pkDate}家族PK数据测试"
+    },
+    "maxScore": {
+      "label": "随机PK上限",
+      "type": "integer",
+      "required": false,
+      "default": "50000",
+      "prompt": "成员 PK 随机增量 0~maxScore"
+    },
+    "seed": {
+      "label": "随机种子",
+      "type": "integer",
+      "required": false,
+      "default": "",
+      "prompt": "留空则每次随机"
+    }
+  },
+  "steps": [
+    {
+      "id": "clear_and_seed_member_pk",
+      "name": "清除并造数成员PK",
+      "run": {
+        "type": "shell",
+        "command": "python3 MOA/scripts/family_pk_member_pk_seed.py --workbook \"{{workbookUrl}}\" --pk-date {{pkDate}} --max-score {{maxScore}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    },
+    {
+      "id": "member_reward_to_sheet5",
+      "name": "应得钻石测算写入用户发钻测试",
+      "run": {
+        "type": "shell",
+        "command": "python3 platform/dingtalk_gateway/family_pk_member_reward_to_workbook.py --workbook \"{{workbookUrl}}\" --pk-date {{pkDate}} --skip-contrib-verify --sheet-name 用户发钻测试",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/vas/external/family-pk-page-stage",
+  "method": "getFamilyPkPage",
+  "header": "{\"userId\":\"100379555\",\"uid\":\"100379555\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"ios\",\"osType\":\"ios\",\"date\":\"2026-07-16\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100379555\",\"uid\":\"100379555\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"ios\",\"osType\":\"ios\",\"date\":\"2026-07-16\"}",
+      "type": "json",
+      "value": {
+        "userId": "100379555",
+        "uid": "100379555",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "ios",
+        "osType": "ios",
+        "date": "2026-07-16"
+      }
+    }
+  ],
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_meta": {
+    "httpPath": "/yaahlan/vas/familyPk/getFamilyPkPage",
+    "captureUserId": "100379555",
+    "capturePhone": "+86 13311111118",
+    "tunnelRequestId": "v63gaJ8BR2LVRzbvrkgx",
+    "tunnelTime": "2026/07/16 11:03:02",
+    "verified": false,
+    "candidateServiceUrl": "/service/vas/external/family-pk-page-stage",
+    "note": "Tunnel 抓包 ec=200；MOA 测试代理尚未解析到 ServiceUrl（No address found）。须在 MSE 调用链确认真实 ServiceUrl 后替换 url 再试跑。"
+  }
+}

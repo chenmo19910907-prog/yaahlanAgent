@@ -1,0 +1,43 @@
+{
+  "id": "family-pk-config-pk-list-to-dingtalk",
+  "name": "家族PK配置-后台家族成员写入钉钉",
+  "category": "家族PK",
+  "description": "第二步：从开发者后台 getAllFamilyList 拉取全部家族 ID/名称，补全成员 userId、手机号并标记族长；清除族长非中东（MENA）的家族后写入 Sheet2「家族列表」。",
+  "version": 2,
+  "params": {
+    "workbookUrl": {
+      "label": "钉钉表格",
+      "type": "string",
+      "required": true,
+      "default": "https://alidocs.dingtalk.com/i/nodes/N7dx2rn0JbZQqA9ACZ1MoaaRJMGjLRb3",
+      "prompt": "钉钉表格 URL 或 nodeId"
+    },
+    "sheetName": {
+      "label": "Sheet2名称",
+      "type": "string",
+      "required": false,
+      "default": "家族列表"
+    },
+    "pkDate": {
+      "label": "匹配日期",
+      "type": "date",
+      "required": true,
+      "default": "2026-07-02",
+      "prompt": "钉钉表重命名为 {pkDate}家族PK数据测试"
+    }
+  },
+  "steps": [
+    {
+      "id": "admin_families_to_sheet2",
+      "name": "后台家族列表写入Sheet2",
+      "run": {
+        "type": "shell",
+        "command": "python3 platform/dingtalk_gateway/family_pk_admin_families_to_workbook.py \"{{workbookUrl}}\" --sheet-name {{sheetName}} --pk-date {{pkDate}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

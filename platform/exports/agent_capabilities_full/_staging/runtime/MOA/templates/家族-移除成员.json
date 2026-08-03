@@ -1,0 +1,43 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/external/user/family-api",
+  "method": "leave",
+  "header": "{\"userId\":\"100357457\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": "",
+      "txt": "{\"\"}",
+      "json": "{\"userId\":\"100357457\"}",
+      "type": "json",
+      "value": {
+        "userId": "100357457"
+      }
+    }
+  ],
+  "settings": {
+    "time": 2000,
+    "group": "default",
+    "host": "",
+    "headerType": "KV"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "family_member_leave",
+    "name": "家族-移除成员",
+    "category": "家族（external/user/family-api）",
+    "description": "把用户移出所属家族（leave；header KV 含 userId，params json 含 userId）。用户主动退出或测试环境踢人均可调用",
+    "prompts": [
+      "把用户 <userId> 移出家族",
+      "移除家族成员 <userId>",
+      "用户 <userId> 退出家族"
+    ],
+    "cli": "--family-leave-user-id <userId>"
+  }
+}

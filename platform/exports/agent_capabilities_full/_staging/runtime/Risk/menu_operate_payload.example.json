@@ -1,0 +1,13 @@
+{
+  "menu_event": "8af999b5-73e7-4dab-9950-9b28bc4b6962",
+  "menu_type": "white",
+  "dimension": "mmuid",
+  "elements": [
+    "e4770cace4e2534c256c6b8f75ecbd1904c59d8fd8495e203bc2aec07908abd20f",
+    "22a2c3afd232144b378d278fbd6730301dda3aaca32743a910f332a9a1877cb94c",
+    "125476e669d6577d0c04aff83c1eec3ec6c22fac6e9dde4cadba2056b0c80e71f8"
+  ],
+  "action": "add",
+  "reason": "测试",
+  "token": "sec_risk_IHAH"
+}

@@ -1,0 +1,56 @@
+{
+  "id": "intimate-buddy-form",
+  "name": "亲密关系-结挚友",
+  "category": "亲密关系",
+  "description": "测试环境结挚友：Gift --intimate-invite 发起（默认 gift 2005007129）→ MOA acceptIntimateInvitation 同意 → intimateHomePage 验收。可选先 dismiss。relationshipType 默认 2。",
+  "version": 1,
+  "params": {
+    "fromUserId": {
+      "label": "发起方userId",
+      "type": "string",
+      "required": true,
+      "prompt": "送礼发起申请的一方"
+    },
+    "toUserId": {
+      "label": "接受方userId",
+      "type": "string",
+      "required": true,
+      "prompt": "同意申请的一方"
+    },
+    "giftId": {
+      "label": "申请礼物giftId",
+      "type": "string",
+      "required": false,
+      "default": "2005007129",
+      "prompt": "挚友预览 buddyGiftList 礼物；默认特价礼 2005007129"
+    },
+    "dismissFirst": {
+      "label": "先解除已有关系",
+      "type": "string",
+      "required": false,
+      "default": "1",
+      "prompt": "1=先 intimateDismiss（默认）；0=不解除"
+    },
+    "relationshipType": {
+      "label": "关系类型",
+      "type": "string",
+      "required": false,
+      "default": "2",
+      "prompt": "2=挚友；1=CP（须换 cpGiftList 的 giftId）"
+    }
+  },
+  "steps": [
+    {
+      "id": "form_pair",
+      "name": "Gift发起并MOA同意",
+      "run": {
+        "type": "shell",
+        "command": "python3 MOA-generative/scripts/form_intimate_pair.py --from-user '{{fromUserId}}' --to-user '{{toUserId}}' --gift-id '{{giftId}}' --dismiss-first {{dismissFirst}} --relationship-type '{{relationshipType}}'",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

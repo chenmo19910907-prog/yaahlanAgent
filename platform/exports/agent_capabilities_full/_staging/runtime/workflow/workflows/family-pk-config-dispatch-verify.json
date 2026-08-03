@@ -1,0 +1,67 @@
+{
+  "id": "family-pk-config-dispatch-verify",
+  "name": "家族PK配置-发奖与验收",
+  "category": "家族PK",
+  "description": "第六步：resetSettleDataForTest 清结算 → runFamilyPkMatchTask(次日) 发奖 → 查钻对比应发 vs 实发写入「发钻实发验收」→ MOA 贡献榜验收回写「用户发钻测试」。",
+  "version": 3,
+  "params": {
+    "workbookUrl": {
+      "label": "钉钉表格",
+      "type": "string",
+      "required": true,
+      "default": "https://alidocs.dingtalk.com/i/nodes/N7dx2rn0JbZQqA9ACZ1MoaaRJMGjLRb3",
+      "prompt": "钉钉表格 URL 或 nodeId"
+    },
+    "pkDate": {
+      "label": "匹配日期",
+      "type": "date",
+      "required": true,
+      "default": "2026-07-02",
+      "prompt": "与 PK 匹配日期相同；发奖任务默认对 pkDate 次日调用以结算本日"
+    },
+    "userId": {
+      "label": "MOA账号",
+      "type": "string",
+      "required": true,
+      "default": "100486375",
+      "prompt": "getFamilyPkUserList 请求 userId"
+    },
+    "settleDate": {
+      "label": "发奖任务日期",
+      "type": "date",
+      "required": false,
+      "default": "",
+      "prompt": "runFamilyPkMatchTask 入参，留空则 pkDate+1 天"
+    },
+    "timeoutMs": {
+      "label": "MOA超时毫秒",
+      "type": "integer",
+      "required": false,
+      "default": "180000",
+      "prompt": "runFamilyPkMatchTask 超时"
+    },
+    "area": {
+      "label": "大区",
+      "type": "string",
+      "required": false,
+      "default": "MENA"
+    }
+  },
+  "steps": [
+    {
+      "id": "dispatch_and_verify",
+      "name": "发奖实发验收与贡献榜回写",
+      "run": {
+        "type": "shell",
+        "command": "python3 platform/dingtalk_gateway/family_pk_dispatch_verify_to_workbook.py --workbook \"{{workbookUrl}}\" --pk-date {{pkDate}} --user-id {{userId}} --area {{area}} --timeout-ms {{timeoutMs}} --sheet-name 发钻实发验收",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": [
+          0,
+          2
+        ]
+      }
+    }
+  ]
+}

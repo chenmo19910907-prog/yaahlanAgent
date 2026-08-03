@@ -1,0 +1,291 @@
+{
+  "_comment_diamond_exp_rules": "送礼钻石与各经验值关系；详表见 MOA/config/钻石经验值规则.md",
+  "diamond_exp_rules": {
+    "sources": [
+      "documents/财富魅力等级.md",
+      "documents/vip等级.md",
+      "documents/贵族.md"
+    ],
+    "gift_diamond_basis": "礼物面板标价钻石数（非背包扣钻、非免费礼物）",
+    "wealth": {
+      "name": "财富值",
+      "side": "sender",
+      "trigger": "送出礼物",
+      "ratio_diamond_to_exp": 1,
+      "counts_gift_types": ["普通礼物", "道具礼物", "盲盒礼物", "幸运礼物"],
+      "excludes_gift_types": ["背包礼物", "免费礼物"],
+      "legacy_ratio_diamond_to_exp": 10,
+      "legacy_free_gift_counts": true,
+      "max_level": 35,
+      "threshold_key": "wealth_charm_level_exp_thresholds"
+    },
+    "charm": {
+      "name": "魅力值",
+      "side": "receiver",
+      "trigger": "收到礼物",
+      "ratio_diamond_to_exp": 1,
+      "counts_gift_types": ["普通礼物", "道具礼物", "盲盒礼物", "幸运礼物"],
+      "excludes_gift_types": ["背包礼物", "免费礼物"],
+      "legacy_ratio_diamond_to_exp": 10,
+      "legacy_free_gift_counts": true,
+      "max_level": 35,
+      "threshold_key": "wealth_charm_level_exp_thresholds"
+    },
+    "vip_growth": {
+      "name": "VIP成长值",
+      "max_level": 10,
+      "growth_cap": 145000000,
+      "threshold_key": "vip_level_exp_thresholds",
+      "channels": {
+        "recharge": {"diamond": 1, "growth": 1, "description": "充值"},
+        "purchase": {"diamond": 1, "growth": 3, "min_diamond": 1, "description": "购买成长值"}
+      }
+    },
+    "noble_consumption": {
+      "name": "贵族消费值",
+      "max_level": 6,
+      "threshold_key": "noble_level_exp_thresholds",
+      "spend_ratio_diamond_to_consumption": 1,
+      "purchase_ratio_diamond_to_consumption": 3,
+      "purchase_min_consumption": 3,
+      "counts_spend": [
+        "赠送面板普通/道具/幸运礼物",
+        "购买道具",
+        "购买特权",
+        "购买VIP成长值"
+      ],
+      "excludes_spend": ["游戏消耗钻石", "赠送背包礼物", "购买消费值本身"]
+    },
+    "game": {
+      "name": "游戏值",
+      "trigger": "游戏内获得",
+      "ratio_diamond_to_exp": 1,
+      "max_level": 21,
+      "note": "与礼物面板送礼独立累计"
+    },
+    "gift_send_effects": {
+      "panel_gift_diamond_d": {
+        "sender": ["wealth+d", "noble_consumption+d"],
+        "receiver": ["charm+d"],
+        "not_affected": ["vip_growth"]
+      },
+      "backpack_or_free_gift": {
+        "sender": [],
+        "receiver": [],
+        "noble_consumption": false
+      }
+    }
+  },
+  "wealth_charm_level_exp_thresholds": {
+    "1": 1,
+    "2": 500,
+    "3": 2000,
+    "4": 5000,
+    "5": 10000,
+    "6": 30000,
+    "7": 50000,
+    "8": 120000,
+    "9": 180000,
+    "10": 260000,
+    "11": 350000,
+    "12": 500000,
+    "13": 800000,
+    "14": 1500000,
+    "15": 2800000,
+    "16": 4800000,
+    "17": 8000000,
+    "18": 15000000,
+    "19": 32000000,
+    "20": 55000000,
+    "21": 80000000,
+    "22": 120000000,
+    "23": 180000000,
+    "24": 250000000,
+    "25": 350000000,
+    "26": 500000000,
+    "27": 800000000,
+    "28": 1150000000,
+    "29": 1600000000,
+    "30": 2100000000,
+    "31": 2800000000,
+    "32": 3700000000,
+    "33": 5000000000,
+    "34": 6800000000,
+    "35": 9200000000
+  },
+  "room_level_exp_thresholds": {
+    "1": 0,
+    "2": 200000,
+    "3": 1000000,
+    "4": 4500000,
+    "5": 18000000,
+    "6": 63000000,
+    "7": 189000000
+  },
+  "vip_level_exp_thresholds": {
+    "1": 1680,
+    "2": 67200,
+    "3": 201600,
+    "4": 604800,
+    "5": 1810000,
+    "6": 6050000,
+    "7": 15000000,
+    "8": 40000000,
+    "9": 60000000,
+    "10": 100000000
+  },
+  "member_level_exp_thresholds": {
+    "1": 0,
+    "2": 500,
+    "3": 2000,
+    "4": 5000,
+    "5": 10000,
+    "6": 30000,
+    "7": 50000,
+    "8": 120000,
+    "9": 180000,
+    "10": 260000,
+    "11": 350000,
+    "12": 500000,
+    "13": 800000,
+    "14": 1500000,
+    "15": 2800000,
+    "16": 4800000,
+    "17": 8000000,
+    "18": 15000000,
+    "19": 32000000,
+    "20": 55000000
+  },
+  "noble_level_exp_thresholds": {
+    "1": 25000,
+    "2": 400000,
+    "3": 1800000,
+    "4": 4000000,
+    "5": 12500000,
+    "6": 21000000
+  },
+  "family_level_exp_thresholds": {
+    "1": 0,
+    "2": 6000,
+    "3": 24000,
+    "4": 72000,
+    "5": 180000,
+    "6": 444000,
+    "7": 1092000,
+    "8": 2292000,
+    "9": 4524000,
+    "10": 8724000
+  },
+  "family_fund_tier_sub_rewards": {
+    "A": [
+      {"sub_tier": 0, "contribution": 0, "reward_diamonds": 0},
+      {"sub_tier": 1, "contribution": 1000000, "reward_diamonds": 80000},
+      {"sub_tier": 2, "contribution": 3000000, "reward_diamonds": 240000},
+      {"sub_tier": 3, "contribution": 4500000, "reward_diamonds": 360000},
+      {"sub_tier": 4, "contribution": 6000000, "reward_diamonds": 600000}
+    ],
+    "B": [
+      {"sub_tier": 0, "contribution": 0, "reward_diamonds": 0},
+      {"sub_tier": 1, "contribution": 100000, "reward_diamonds": 6000},
+      {"sub_tier": 2, "contribution": 350000, "reward_diamonds": 21000},
+      {"sub_tier": 3, "contribution": 450000, "reward_diamonds": 27000},
+      {"sub_tier": 4, "contribution": 600000, "reward_diamonds": 48000}
+    ],
+    "C": [
+      {"sub_tier": 0, "contribution": 0, "reward_diamonds": 0},
+      {"sub_tier": 1, "contribution": 10000, "reward_diamonds": 400},
+      {"sub_tier": 2, "contribution": 25000, "reward_diamonds": 1000},
+      {"sub_tier": 3, "contribution": 45000, "reward_diamonds": 1800},
+      {"sub_tier": 4, "contribution": 70000, "reward_diamonds": 4200}
+    ]
+  },
+  "diamond_provide": {
+    "activityId": "2005000496",
+    "taskId": "2005000497",
+    "signKey": "189ad0ec4e41438abf29e2f2874d94eb",
+    "outOrderIdPrefix": "system"
+  },
+  "user_area": {
+    "defaultArea": "MENA",
+    "codes": ["MENA", "TR", "RU", "SEA", "SA", "CN"]
+  },
+  "query_login_status": {
+    "appId": 2005,
+    "loginType": "MOBILE",
+    "areaCode": "86"
+  },
+  "user_prop_query": {
+    "appId": 2005,
+    "lang": "en"
+  },
+  "custom_gift_rank": {
+    "defaultUserId": "100493343",
+    "defaultPeriod": "PRE",
+    "defaultArea": "MENA",
+    "headerTemplate": {
+      "osVersion": "18.7.9",
+      "ip": "172.18.124.171",
+      "lang": "en",
+      "clientType": "2",
+      "imsi": 0,
+      "deviceId": "ea8836506ad680281c27e5e90dbb8e57b8f9af1717515355460f",
+      "country": "B1",
+      "appVersion": "2.5.2",
+      "show_prop": true,
+      "rom": "18.7.9",
+      "os": "ios",
+      "innerVersion": "1000",
+      "timeZone": "Asia/Shanghai",
+      "netQuality": 4,
+      "appId": 2005,
+      "model": "iPhone XR",
+      "channelKey": "primary",
+      "osType": "ios",
+      "showType": "present",
+      "mmuid": "ea8836506ad680281c27e5e90dbb8e57b8f9af1717515355460f"
+    }
+  },
+  "activity_mock_gift": {
+    "appId": 2005,
+    "flag": "test",
+    "orderStatus": 20,
+    "channel": 2,
+    "groupId": 2005000187,
+    "businessId": 2005000186,
+    "category": 2005000189,
+    "productId": 2005000200,
+    "productType": "0_0",
+    "productNum": 1,
+    "price": 2000,
+    "totalFee": 1,
+    "realFee": 1,
+    "paySource": 0,
+    "extraSource": "p2p",
+    "extraRole": "user",
+    "giftNum": 1,
+    "timeZone": "Asia/Shanghai",
+    "methods": {
+      "handleGiftRamadan2026": {
+        "productId": 2005003503,
+        "price": 99,
+        "realFee": 99,
+        "totalFee": 99
+      }
+    }
+  },
+  "package_gift": {
+    "outOrderIdPrefix": "PACKAGE_GIFT",
+    "outOrderIdMiddle": "100328136",
+    "category": "2005000189",
+    "source": 2005001287,
+    "signKey": "76b26f6deb1e4851b728e3b0770629db",
+    "realFee": "0",
+    "expireSeconds": 86339,
+    "sendDefaultBaseProductId": "2005001494",
+    "giftDetails": [
+      {"baseProductId": "2005001272", "productNum": 100},
+      {"baseProductId": "2005001282", "productNum": 100}
+    ]
+  }
+}
+

@@ -1,0 +1,43 @@
+{
+  "admin": {
+    "api": {
+      "baseUrl": "https://yaahlan-admin.wemomo.com"
+    },
+    "query_user_detail": {
+      "path": "/admin/user/queryUserDetail"
+    }
+  },
+  "moa": {
+    "defaults": {
+      "entryUrl": "https://mse.wemomo.com/apirest/httpproxy/moa/test",
+      "region": "overseas",
+      "env": "overseas",
+      "cluster": "overseas",
+      "server": "config",
+      "momoId": "df4c6f364f9fcae3",
+      "momoName": "e88aa376b29864ad",
+      "origin": "https://mse.wemomo.com",
+      "referer": "https://mse.wemomo.com/",
+      "requestSource": "moaProxy"
+    },
+    "query_login_status": {
+      "url": "/service/yaahlan/mdp-user-login",
+      "method": "queryLoginStatusV2",
+      "defaultAppId": 2005,
+      "defaultAreaCode": "966",
+      "templateFile": "templates/用户-按手机号查userId.json"
+    }
+  },
+  "tunnel": {
+    "defaults": {
+      "baseUrl": "https://tunnel.wemomo.com",
+      "gAppid": "All",
+      "gEnv": "overseas",
+      "mode": "tunnel",
+      "referer": "https://tunnel.wemomo.com/"
+    },
+    "list_requests": {
+      "path": "/api/requests"
+    }
+  }
+}

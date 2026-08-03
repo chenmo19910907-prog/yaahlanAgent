@@ -1,0 +1,9 @@
+{
+  "menu_event": "2cbed5b4-7cbb-4da5-bb47-048108dcdf75",
+  "menu_type": "black",
+  "dimension": "user_id",
+  "elements": ["100465989"],
+  "action": "delete",
+  "reason": "测试",
+  "token": "sec_risk_IHAH"
+}

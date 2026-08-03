@@ -1,0 +1,150 @@
+{
+  "api": {
+    "baseUrl": "https://yaahlan-admin-alpha.wemomo.com"
+  },
+  "query_user_detail": {
+    "path": "/admin/user/queryUserDetail"
+  },
+  "query_user_feed_list": {
+    "path": "/admin/user/queryUserFeedList",
+    "defaultIndex": 0,
+    "defaultCount": 20
+  },
+  "query_user_history_device_list": {
+    "path": "/yaahlan/backend/deviceHistory/queryUserHistoryDeviceList",
+    "defaultPage": 1,
+    "defaultPageSize": 20
+  },
+  "query_history_user_list_by_device_id": {
+    "path": "/yaahlan/backend/deviceHistory/queryHistoryUserListByDeviceId",
+    "defaultPage": 1,
+    "defaultPageSize": 20
+  },
+  "reset_custom_gift_upload": {
+    "path": "/mts/components/resetExpireTime"
+  },
+  "reset_custom_vehicle_cooldown": {
+    "path": "/backend/custom/resetCoolDown"
+  },
+  "reset_custom_prop_cooldown": {
+    "path": "/backend/custom/resetCoolDownProp",
+    "defaultPropType": "HEADER_FRAME"
+  },
+  "vip5_custom_gift_list": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/backend/vip5UserConfig/getListConfig",
+    "defaultPerPage": 100
+  },
+  "add_family_member": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/backend/family/addFamilyMember"
+  },
+  "query_family": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/backend/family/queryFamilyByIdAndName",
+    "defaultOffset": 0,
+    "defaultLimit": 20
+  },
+  "list_all_families": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/backend/family/getAllFamilyList",
+    "defaultOffset": 0,
+    "defaultLimit": 20
+  },
+  "add_guild_member": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/anchor/addAnchor/addAnchor"
+  },
+  "remove_guild_member": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/anchor-opt/batchDeleteAnchor"
+  },
+  "change_guild_member": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/anchor-opt/batchAnchorChangeTradeUnion"
+  },
+  "query_guild": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/anchor/tradeUnionList/tradeUnionPageList",
+    "defaultArea": "MENA",
+    "defaultPage": 1,
+    "defaultPageSize": 20
+  },
+  "query_cs_data": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/customerservice/queryCsData",
+    "defaultRole": 0,
+    "defaultEnable": 2,
+    "defaultPageIndex": 1,
+    "defaultPageSize": 20,
+    "defaultArea": ""
+  },
+  "save_cs_data": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/customerservice/saveCsData",
+    "defaultRoleList": [1],
+    "defaultEnable": 1,
+    "defaultTakingOrder": 1,
+    "defaultOptType": 1
+  },
+  "change_cs_taking_order": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/customerservice/changeTakingOrder"
+  },
+  "query_app_store_review_version": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/backend/pangu/getAppStoreReviewVersion",
+    "defaultAppName": "yaahlan"
+  },
+  "update_app_store_review_version": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/backend/pangu/updateAppStoreReviewVersion",
+    "defaultAppName": "yaahlan"
+  },
+  "query_gift_list": {
+    "baseUrl": "https://alpha-mdp-user-admin-api-stage.wemomo.com",
+    "path": "/giftAdmin/queryGiftList",
+    "defaultAppId": 2005,
+    "defaultPageNo": 1,
+    "defaultPageSize": 20
+  },
+  "query_prop_info": {
+    "baseUrl": "https://alpha-mdp-user-admin-api-stage.wemomo.com",
+    "path": "/propAdmin/queryPropInfo",
+    "defaultAppId": 2005,
+    "defaultPageNo": 1,
+    "defaultPageSize": 20
+  },
+  "cancel_user": {
+    "baseUrl": "https://alpha-mdp-user-admin-api-stage.wemomo.com",
+    "path": "/userAdmin/cancelUser",
+    "defaultAppId": 2005,
+    "protectedPhoneMin": 13311111111,
+    "protectedPhoneMax": 13311111130
+  },
+  "query_user_profile_list": {
+    "baseUrl": "https://alpha-mdp-user-admin-api-stage.wemomo.com",
+    "path": "/userAdmin/queryUserProfileList",
+    "defaultAppId": 2005,
+    "defaultPageNo": 1,
+    "defaultPageSize": 20,
+    "opsAdminUrl": "https://mdp-nova-alpha.wemomo.com/fep/momo/mdp-spacey/ops-admin/index.html#/userIndex/list"
+  },
+  "query_activity_lottery_list": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/activity/getLotteryList"
+  },
+  "add_im": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/activity/addIm"
+  },
+  "query_im_list": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/activity/getImList",
+    "defaultArea": "MENA"
+  },
+  "delete_im": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/activity/deleteIm"
+  }
+}

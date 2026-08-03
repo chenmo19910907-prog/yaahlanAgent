@@ -1,0 +1,79 @@
+{
+  "id": "family-pk-config-match-verify",
+  "name": "家族PK配置-重匹配与验收写入钉钉",
+  "category": "家族PK",
+  "description": "第四步：清除并重匹配 pkDate 家族 PK → MOA getFamilyPkPage 拉取对战列表 → 按收礼榜区间验收同区间匹配，写入 Sheet「匹配验收」。",
+  "version": 3,
+  "params": {
+    "workbookUrl": {
+      "label": "钉钉表格",
+      "type": "string",
+      "required": true,
+      "default": "https://alidocs.dingtalk.com/i/nodes/N7dx2rn0JbZQqA9ACZ1MoaaRJMGjLRb3",
+      "prompt": "钉钉表格 URL 或 nodeId"
+    },
+    "userId": {
+      "label": "验收账号",
+      "type": "string",
+      "required": true,
+      "default": "100486375",
+      "prompt": "MOA getFamilyPkPage 请求 userId（任意有家族账号即可）"
+    },
+    "pkDate": {
+      "label": "匹配日期",
+      "type": "date",
+      "required": true,
+      "default": "2026-07-02",
+      "prompt": "收礼榜次日；钉钉表重命名为 {pkDate}家族PK数据测试"
+    },
+    "rankDate": {
+      "label": "收礼榜日期",
+      "type": "date",
+      "required": false,
+      "default": "",
+      "prompt": "默认 pkDate 前一日"
+    },
+    "timeoutMs": {
+      "label": "MOA超时毫秒",
+      "type": "integer",
+      "required": false,
+      "default": "180000"
+    },
+    "area": {
+      "label": "大区",
+      "type": "string",
+      "required": false,
+      "default": "MENA",
+      "prompt": "getFamilyPkPage 请求 area"
+    }
+  },
+  "steps": [
+    {
+      "id": "clear_and_rematch",
+      "name": "清除并重匹配家族PK",
+      "run": {
+        "type": "shell",
+        "command": "python3 MOA/scripts/family_pk_rematch_only.py --pk-date {{pkDate}} --timeout-ms {{timeoutMs}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    },
+    {
+      "id": "match_verify_to_sheet4",
+      "name": "MOA匹配验收写入Sheet4",
+      "run": {
+        "type": "shell",
+        "command": "python3 platform/dingtalk_gateway/family_pk_match_verify_to_workbook.py --workbook \"{{workbookUrl}}\" --user-id {{userId}} --pk-date {{pkDate}} --area {{area}} --sheet-name 匹配验收",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": [
+          0,
+          2
+        ]
+      }
+    }
+  ]
+}
