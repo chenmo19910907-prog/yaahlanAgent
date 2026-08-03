@@ -63,10 +63,13 @@ def main() -> int:
         "使用MDP agent查询VIP",
         is_new_session=False,
         enabled_external_agents=["yaahlan_service"],
+        batch_progress_key="web:test123",
     )
-    assert "当前已勾选外部 Agent：服务端 Agent" in prompt_continue
-    assert "未勾选 MDP Agent" in prompt_continue
-    assert "即使用户消息点名也不得调用" in prompt_continue
+    assert "batch_key=web:test123" in prompt_continue
+    assert "【批量进度 batch_key】" not in prompt_continue
+    assert "<!-- 会话上下文" in prompt_continue
+    assert "外部 Agent：服务端 Agent；未勾选 MDP Agent" in prompt_continue
+    assert "即使用户消息点名也不得调用" not in prompt_continue
 
     prompt_disabled = build_web_prompt(
         "查 provideDiamond MOA",

@@ -109,18 +109,17 @@ _READONLY_WITH_MOA_REGISTRY_RULES = f"""\
 """
 
 
-def batch_progress_instruction(batch_progress_key: str) -> str:
+def batch_progress_instruction(batch_progress_key: str, *, compact: bool = True) -> str:
+    """注入 batch_key；默认 compact 仅一行，完整命令见系统规则「批量操作进度」。"""
     key = (batch_progress_key or "").strip()
     if not key:
         return ""
+    if compact:
+        return f"batch_key={key}"
     return (
-        f"【批量进度 batch_key】{key}\n"
+        f"batch_key={key}\n"
         "批量（≥3项）时：M=批量项总数，N=已完成的批量项数（不是项内 MOA/查询子步骤）。"
-        "每完整处理完一个批量项（如一个手机号）上报一次：\n"
-        f"python3 platform/dingtalk_gateway/batch_progress_report.py "
-        f'--user-key "{key}" --current N --total M --label "发钻石" [--detail "13311111111"]\n'
-        "例：10 个手机号发钻，处理完第 3 个后 `--current 3 --total 10`；项内查 userId+发钻不要分步上报。"
-        "最后一项（current=M）须附带完整结果：--result-text \"Markdown\" 或 --result-file /path/to/result.md"
+        "每完整处理完一个批量项上报一次，命令见上方系统规则「批量操作进度」。"
     )
 
 

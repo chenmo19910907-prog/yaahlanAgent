@@ -132,6 +132,13 @@ class WebAuthTest(unittest.TestCase):
                     self.assertTrue(is_anonymous_allowed(handler, method=method))
                     self.assertTrue(authorize_request(handler, method=method))
 
+    def test_otp_guest_can_read_web_docs(self) -> None:
+        env = {"WEB_AGENT_OTP_AUTH": "1"}
+        handler = _FakeHandler(path="/api/web-docs", client="8.8.8.8")
+        with patch("web_auth.load_env_local", lambda: None), patch.dict(os.environ, env, clear=True):
+            self.assertTrue(is_anonymous_allowed(handler, method="GET"))
+            self.assertTrue(authorize_request(handler, method="GET"))
+
     def test_localhost_bypasses_otp_auth(self) -> None:
         env = {"WEB_AGENT_OTP_AUTH": "1"}
         handler = _FakeHandler(client="127.0.0.1", path="/api/chat")

@@ -16,6 +16,8 @@ CONTENT_FILE = "dQPGYqjpJYgLbY0YCZkZMpGDWakx1Z5N_content.json"
 SOURCE_HTML = "dQPGYqjpJYgLbY0YCZkZMpGDWakx1Z5N.html"
 OUTPUT_DIR = REPO_ROOT / "platform" / "exports" / "cursor-platform-guide"
 OUTPUT_HTML = OUTPUT_DIR / "index.html"
+# 必须用绝对路径：页面 URL 为 /platform-guide（无尾斜杠）时相对 images/ 会解析到 /images/
+IMAGE_URL_PREFIX = "/platform-guide/images"
 SOURCE_DOC_URL = (
     "https://alidocs.dingtalk.com/i/nodes/dQPGYqjpJYgLbY0YCZkZMpGDWakx1Z5N"
 )
@@ -327,7 +329,7 @@ def _render_with_state_machine(
                 if not dest.is_file():
                     dest.write_bytes(img_path.read_bytes())
                 out.append(
-                    f'<figure class="shot"><img src="images/{html.escape(dest.name)}" alt="操作示例" loading="lazy" /></figure>'
+                    f'<figure class="shot"><img src="{IMAGE_URL_PREFIX}/{html.escape(dest.name)}" alt="操作示例" loading="lazy" /></figure>'
                 )
             else:
                 out.append(

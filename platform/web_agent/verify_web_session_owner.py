@@ -12,7 +12,7 @@ from pathlib import Path
 WEB_AGENT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(WEB_AGENT_DIR))
 
-from web_session_store import WebSessionStore  # noqa: E402
+from web_session_store import WebSessionStore, filter_sessions_by_search  # noqa: E402
 
 
 class WebSessionOwnerLockTest(unittest.TestCase):
@@ -251,6 +251,85 @@ class WebSessionOwnerLockTest(unittest.TestCase):
             ordered = [item.id for item in store.list_sessions(enrich_names=False)]
             self.assertEqual(ordered[:2], [sid_b, sid_c])
             self.assertEqual(ordered[2], sid_a)
+
+
+class WebSessionSearchTest(unittest.TestCase):
+    def test_filter_sessions_by_search_matches_question_answer_and_owner(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            sid = "searchsess000001"
+            index.write_text(
+                json.dumps(
+                    {
+                        sid: {
+                            "title": "4707充值90万钻石",
+                            "created_at": "2026-08-03T08:00:00+00:00",
+                            "updated_at": "2026-08-03T09:00:00+00:00",
+                            "message_count": 3,
+                            "source": "web",
+                            "web_owner_id": "alice",
+                            "web_owner_label": "Alice",
+                        }
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            (messages_dir / f"{sid}.json").write_text(
+                json.dumps(
+                    [
+                        {
+                            "role": "user",
+                            "content": "4707充值90万钻石",
+                            "timestamp": "2026-08-03T08:00:00+00:00",
+                        },
+                        {
+                            "role": "assistant",
+                            "content": "provideDiamond 返回 redis client error",
+                            "timestamp": "2026-08-03T09:00:00+00:00",
+                        },
+                        {
+                            "role": "user",
+                            "content": "再试一次",
+                            "timestamp": "2026-08-03T09:01:00+00:00",
+                        },
+                    ],
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            items = store.list_sessions(enrich_names=False)
+            by_title = filter_sessions_by_search(
+                items,
+                "充值",
+                load_messages=store.get_messages,
+            )
+            self.assertEqual(len(by_title), 1)
+            self.assertIn("充值", by_title[0][1])
+            by_answer = filter_sessions_by_search(
+                items,
+                "provideDiamond",
+                load_messages=store.get_messages,
+            )
+            self.assertEqual(len(by_answer), 1)
+            self.assertTrue(by_answer[0][1].startswith("答 ·"))
+            by_owner = filter_sessions_by_search(
+                items,
+                "alice",
+                load_messages=store.get_messages,
+                known_labels={"alice": "Alice"},
+            )
+            self.assertEqual(len(by_owner), 1)
+            empty = filter_sessions_by_search(
+                items,
+                "不存在的关键词xyz",
+                load_messages=store.get_messages,
+            )
+            self.assertEqual(empty, [])
 
 
 if __name__ == "__main__":

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Keynote 口语演讲稿 · Yaahlan 智能工具 Agent</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: rgba(18, 24, 42, 0.96);
+      --text: #e8edf8;
+      --muted: #9aa8c7;
+      --accent: #5b8cff;
+      --accent-soft: rgba(91, 140, 255, 0.12);
+      --border: rgba(255, 255, 255, 0.08);
+      --speech-bg: rgba(91, 140, 255, 0.06);
+      --demo-bg: rgba(56, 189, 248, 0.06);
+      --sidebar-w: 220px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: radial-gradient(900px 500px at 10% -10%, rgba(91,140,255,.14), transparent 60%), var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+      min-height: 100vh;
+    }
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 20px 12px 32px;
+      border-right: 1px solid var(--border);
+      background: rgba(8, 12, 24, 0.85);
+      backdrop-filter: blur(10px);
+    }
+    .sidebar h2 {
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 8px 10px;
+    }
+    .sidebar .brand {
+      font-size: 14px;
+      font-weight: 600;
+      margin: 0 8px 16px;
+      color: var(--text);
+    }
+    .sidebar a {
+      display: block;
+      padding: 6px 10px;
+      border-radius: 8px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .sidebar a:hover { background: var(--accent-soft); color: var(--text); }
+    .sidebar a.active { background: var(--accent-soft); color: #dbe4ff; }
+    .sidebar .sec-label {
+      font-size: 11px;
+      color: var(--accent);
+      padding: 12px 10px 4px;
+      font-weight: 600;
+    }
+    .main { padding: 28px 32px 64px; max-width: 900px; }
+    .hero {
+      margin-bottom: 28px;
+      padding: 22px 26px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--panel);
+    }
+    .hero h1 { font-size: clamp(22px, 4vw, 28px); margin-bottom: 10px; }
+    .hero-links { display: flex; flex-wrap: wrap; gap: 10px 16px; font-size: 14px; }
+    .hero-links a { color: var(--accent); text-decoration: none; }
+    .hero-links a:hover { text-decoration: underline; }
+    .hero-meta { margin-top: 10px; color: var(--muted); font-size: 13px; }
+    .doc h1 { font-size: 1.35rem; margin: 0 0 12px; color: #fff; }
+    .doc h2 {
+      font-size: 1.15rem;
+      margin: 2.4em 0 0;
+      padding: 14px 18px;
+      border: 1px solid var(--border);
+      border-radius: 14px 14px 0 0;
+      background: var(--panel);
+      color: #dbe4ff;
+      scroll-margin-top: 16px;
+    }
+    .doc h2:first-of-type { margin-top: 0; }
+    .doc h2 + * { border-top: none; }
+    .page-body {
+      padding: 0 18px 18px;
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 14px 14px;
+      background: var(--panel);
+      margin-bottom: 8px;
+    }
+    .doc blockquote {
+      margin: 0;
+      padding: 10px 14px;
+      border-left: 3px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      background: var(--accent-soft);
+      color: #c7d2ea;
+      font-size: 13px;
+    }
+    .doc p { margin: 0.55em 0; }
+    .doc p strong:first-child {
+      display: inline-block;
+      min-width: 3.2em;
+      color: var(--accent);
+      font-size: 13px;
+      letter-spacing: .02em;
+    }
+    .doc p:has(strong:first-child) {
+      padding: 10px 14px;
+      border-radius: 10px;
+      margin-top: 12px;
+    }
+    .doc .label-speech {
+      background: var(--speech-bg);
+      border: 1px solid rgba(91, 140, 255, 0.15);
+    }
+    .doc .label-demo {
+      background: var(--demo-bg);
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      color: #bae6fd;
+      font-size: 13px;
+    }
+    .doc ul, .doc ol { margin: 0.5em 0 0.5em 1.2em; }
+    .doc li { margin: 0.3em 0; }
+    .doc hr {
+      border: none;
+      border-top: 1px dashed var(--border);
+      margin: 2em 0;
+    }
+    .doc table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 4px;
+      font-size: 14px;
+    }
+    .doc th, .doc td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .doc th { background: rgba(91, 140, 255, 0.12); color: #dbe4ff; font-weight: 600; }
+    .doc td:first-child { color: #c7d2ea; white-space: nowrap; width: 1%; }
+    .doc code {
+      background: rgba(0,0,0,.28);
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-size: 0.9em;
+    }
+    .doc strong { color: #fff; }
+    .loading, .error { color: var(--muted); text-align: center; padding: 48px 0; }
+    .error { color: #fca5a5; }
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar {
+        position: static;
+        height: auto;
+        max-height: 220px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+      .main { padding: 20px 16px 48px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">Keynote 演讲稿</div>
+      <h2>目录</h2>
+      <nav id="toc"></nav>
+    </aside>
+    <main class="main">
+      <div class="hero">
+        <h1>Keynote 口语演讲稿</h1>
+        <div class="hero-links">
+          <a href="/keynote" target="_blank" rel="noopener">打开 Keynote 演示</a>
+          <a href="speech_scripts.md" target="_blank" rel="noopener">原始 Markdown</a>
+        </div>
+        <p class="hero-meta">28 页 · 预计 19–23 分钟 · 空格逐步 · ↓ 跳页</p>
+      </div>
+      <article class="doc" id="doc"><p class="loading">加载中…</p></article>
+    </main>
+  </div>
+  <script>
+    function escapeHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function inlineMd(text) {
+      return escapeHtml(text)
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    }
+
+    function slugFromHeading(text) {
+      const m = text.match(/^P\d+/);
+      return m ? m[0].toLowerCase() : text.replace(/\s+/g, '-').slice(0, 24);
+    }
+
+    function mdToHtml(md) {
+      const lines = md.replace(/\r\n/g, '\n').split('\n');
+      const out = [];
+      const toc = [];
+      let inUl = false;
+      let inOl = false;
+      let inTable = false;
+      let tableRows = [];
+      let pageOpen = false;
+
+      function closeLists() {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        if (inOl) { out.push('</ol>'); inOl = false; }
+      }
+
+      function closePage() {
+        if (pageOpen) {
+          out.push('</div>');
+          pageOpen = false;
+        }
+      }
+
+      function flushTable() {
+        if (!inTable || !tableRows.length) return;
+        out.push('<table>');
+        tableRows.forEach((row, i) => {
+          const tag = i === 0 ? 'th' : 'td';
+          out.push('<tr>' + row.map(c => `<${tag}>${inlineMd(c.trim())}</${tag}>`).join('') + '</tr>');
+        });
+        out.push('</table>');
+        tableRows = [];
+        inTable = false;
+      }
+
+      for (const raw of lines) {
+        const line = raw.trimEnd();
+        const t = line.trim();
+
+        if (t.startsWith('|') && t.endsWith('|')) {
+          closeLists();
+          if (/^\|[\s\-:|]+\|$/.test(t)) continue;
+          if (!inTable) inTable = true;
+          tableRows.push(t.slice(1, -1).split('|'));
+          continue;
+        }
+        flushTable();
+
+        if (!t) { closeLists(); continue; }
+        if (t === '---') {
+          closeLists();
+          closePage();
+          out.push('<hr>');
+          continue;
+        }
+        if (t.startsWith('### ')) {
+          closeLists();
+          if (!pageOpen) out.push('<div class="page-body">'), pageOpen = true;
+          out.push(`<h3>${inlineMd(t.slice(4))}</h3>`);
+          continue;
+        }
+        if (t.startsWith('## ')) {
+          closeLists();
+          closePage();
+          const title = t.slice(3);
+          const id = slugFromHeading(title);
+          if (/^P\d+/.test(title)) {
+            toc.push({ id, title });
+          }
+          out.push(`<h2 id="${id}">${inlineMd(title)}</h2>`);
+          if (/^P\d+/.test(title)) {
+            out.push('<div class="page-body">');
+            pageOpen = true;
+          }
+          continue;
+        }
+        if (t.startsWith('# ')) {
+          closeLists();
+          closePage();
+          out.push(`<h1>${inlineMd(t.slice(2))}</h1>`);
+          continue;
+        }
+        if (t.startsWith('> ')) {
+          closeLists();
+          if (!pageOpen) out.push('<div class="page-body">'), pageOpen = true;
+          out.push(`<blockquote><p>${inlineMd(t.slice(2))}</p></blockquote>`);
+          continue;
+        }
+        if (/^-\s+/.test(t)) {
+          if (!pageOpen) out.push('<div class="page-body">'), pageOpen = true;
+          if (!inUl) { closeLists(); out.push('<ul>'); inUl = true; }
+          out.push(`<li>${inlineMd(t.replace(/^-\s+/, ''))}</li>`);
+          continue;
+        }
+        if (/^\d+\.\s+/.test(t)) {
+          if (!pageOpen) out.push('<div class="page-body">'), pageOpen = true;
+          if (!inOl) { closeLists(); out.push('<ol>'); inOl = true; }
+          out.push(`<li>${inlineMd(t.replace(/^\d+\.\s+/, ''))}</li>`);
+          continue;
+        }
+        closeLists();
+        if (!pageOpen) out.push('<div class="page-body">'), pageOpen = true;
+        const labelMatch = t.match(/^\*\*([^*]+)\*\*\s*(.*)$/);
+        if (labelMatch && ['口述', '演示', '标题', '描述', '收尾'].includes(labelMatch[1])) {
+          const label = labelMatch[1];
+          const rest = labelMatch[2];
+          const cls = label === '演示' ? 'label-demo' : 'label-speech';
+          out.push(`<p class="${cls}"><strong>${label}</strong> ${inlineMd(rest)}</p>`);
+        } else {
+          out.push(`<p>${inlineMd(t)}</p>`);
+        }
+      }
+      flushTable();
+      closeLists();
+      closePage();
+      return { html: out.join('\n'), toc };
+    }
+
+    function buildToc(toc) {
+      const nav = document.getElementById('toc');
+      let lastSec = '';
+      const secMap = { P0: '开场', P1: '功能', P2: '智能' };
+      toc.forEach(item => {
+        const num = parseInt(item.id.replace('p', ''), 10);
+        let sec = '开场';
+        if (num >= 4 && num <= 9) sec = 'UI';
+        else if (num >= 10 && num <= 19) sec = '功能';
+        else if (num >= 20 && num <= 27) sec = '智能';
+        else if (num >= 27) sec = '结束';
+        if (sec !== lastSec) {
+          nav.insertAdjacentHTML('beforeend', `<div class="sec-label">${sec}</div>`);
+          lastSec = sec;
+        }
+        const short = item.title.replace(/^P\d+\s·\s*/, '');
+        nav.insertAdjacentHTML('beforeend',
+          `<a href="#${item.id}" data-id="${item.id}">${item.id.toUpperCase()} · ${escapeHtml(short.slice(0, 16))}${short.length > 16 ? '…' : ''}</a>`);
+      });
+    }
+
+    fetch('speech_scripts.md', { cache: 'no-store' })
+      .then(r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+      })
+      .then(md => {
+        const { html, toc } = mdToHtml(md);
+        document.getElementById('doc').innerHTML = html;
+        buildToc(toc);
+        const links = document.querySelectorAll('#toc a');
+        const observer = new IntersectionObserver(entries => {
+          entries.forEach(e => {
+            if (e.isIntersecting) {
+              links.forEach(a => a.classList.toggle('active', a.dataset.id === e.target.id));
+            }
+          });
+        }, { rootMargin: '-20% 0px -70% 0px' });
+        toc.forEach(item => {
+          const el = document.getElementById(item.id);
+          if (el) observer.observe(el);
+        });
+      })
+      .catch(err => {
+        document.getElementById('doc').innerHTML =
+          '<p class="error">加载失败：' + escapeHtml(String(err.message || err)) + '</p>';
+      });
+  </script>
+</body>
+</html>

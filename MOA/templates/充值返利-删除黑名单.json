@@ -1,0 +1,41 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-vas-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "context.getBean(\"fundFlowDao\").deleteUserBlacklist(\"100118850\")",
+      "json": "",
+      "type": "string",
+      "value": "context.getBean(\"fundFlowDao\").deleteUserBlacklist(\"100118850\")"
+    }
+  ],
+  "settings": {
+    "time": "60000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "recharge_rebate_delete_blacklist",
+    "name": "充值返利-删除黑名单",
+    "category": "活动（Ultra Recharge / 充值返利）",
+    "description": "Ultra Recharge 充值活动删除用户黑名单（voga-mts-vas-backdoor execute；fundFlowDao.deleteUserBlacklist(userId)）",
+    "prompts": [
+      "充值活动删除黑名单 userId=<userId>",
+      "Ultra Recharge 移除黑名单 <userId>",
+      "deleteUserBlacklist <userId>"
+    ],
+    "cli": "--recharge-rebate-blacklist-remove-user-id <userId>"
+  }
+}

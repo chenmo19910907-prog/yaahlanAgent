@@ -146,5 +146,14 @@
   "delete_im": {
     "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
     "path": "/yaahlan/cms/activity/deleteIm"
+  },
+  "query_banner_list": {
+    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
+    "path": "/yaahlan/cms/backend/banner/getBannerList",
+    "defaultArea": "MENA",
+    "defaultType": 5,
+    "defaultStatus": -1,
+    "defaultPage": 1,
+    "defaultPerPage": 10
   }
 }

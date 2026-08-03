@@ -418,6 +418,61 @@
       cursor: pointer;
       flex-shrink: 0;
     }
+    .about-modal {
+      display: flex; position: fixed; inset: 0; z-index: 120;
+      background: rgba(0,0,0,0.6);
+      align-items: center; justify-content: center; padding: 24px;
+      visibility: hidden; opacity: 0; pointer-events: none;
+      transition: opacity 220ms ease, visibility 0s linear 220ms;
+    }
+    .about-modal.open {
+      visibility: visible; opacity: 1; pointer-events: auto;
+      transition: opacity 280ms ease, visibility 0s linear 0s;
+    }
+    .about-bubble {
+      position: relative;
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 20px; width: min(520px, 94vw); max-height: min(82vh, 720px);
+      display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: var(--card-shadow);
+    }
+    .about-head {
+      padding: 18px 22px 12px; border-bottom: 1px solid var(--border);
+    }
+    .about-head h3 { font-size: 1.08rem; font-weight: 600; margin-bottom: 8px; }
+    .about-intro { font-size: 0.84rem; color: var(--muted); line-height: 1.65; }
+    .about-body {
+      flex: 1; overflow: auto; padding: 14px 22px 18px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .about-docs-label {
+      font-size: 0.72rem; font-weight: 600; letter-spacing: .04em;
+      color: var(--muted); margin-bottom: 8px;
+    }
+    .about-docs-links { display: flex; flex-direction: column; gap: 8px; }
+    .about-doc-link {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--phrase-bg); color: var(--text); text-decoration: none;
+      transition: border-color 180ms, background 180ms;
+    }
+    .about-doc-link:hover { border-color: var(--accent); background: var(--accent-soft); }
+    .about-doc-link-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .about-doc-title { font-size: 0.88rem; font-weight: 600; }
+    .about-doc-desc { font-size: 0.76rem; color: var(--muted); line-height: 1.45; }
+    .about-doc-icon { width: 16px; height: 16px; stroke: var(--muted); flex-shrink: 0; }
+    .about-doc-link:hover .about-doc-icon { stroke: var(--accent); }
+    .about-docs-empty {
+      color: var(--muted); text-align: center; padding: 24px 12px; font-size: 0.86rem;
+    }
+    .about-actions {
+      border-top: 1px solid var(--border); padding: 14px 22px 18px;
+      display: flex; justify-content: flex-end;
+    }
+    .about-actions button {
+      background: var(--accent); border: none; color: #fff;
+      padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 0.86rem;
+    }
     @media (max-width: 420px) {
       body { padding: 16px; }
       .card { padding: 20px 16px; }
@@ -507,9 +562,23 @@
     </div>
   </div>
 
+  <div class="about-modal" id="about-modal" aria-hidden="true">
+    <div class="about-bubble" id="about-bubble" role="dialog" aria-labelledby="about-title">
+      <div class="about-head">
+        <h3 id="about-title">关于 Yaahlan Web Agent</h3>
+        <p class="about-intro" id="about-intro"></p>
+      </div>
+      <div class="about-body" id="about-docs-list"></div>
+      <div class="about-actions">
+        <button type="button" id="btn-about-close">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://g.alicdn.com/dingding/dingtalk-jsapi/3.0.25/dingtalk.open.js"></script>
   <script src="dingtalk_oauth.js"></script>
   <script src="message_board_panel.js?v=20260730b"></script>
+  <script src="about_panel.js?v=20260803b"></script>
   <script>
     const phraseEl = document.getElementById('loginPhrase');
     const copyBtn = document.getElementById('copyBtn');
@@ -668,6 +737,9 @@
     codeInput.addEventListener('input', () => {
       codeInput.value = codeInput.value.replace(/\D/g, '').slice(0, 8);
       errorBox.classList.remove('show');
+      if (codeInput.value.length === 8) {
+        doLogin();
+      }
     });
 
     showOtpFallback();
@@ -680,6 +752,7 @@
     } catch (_) { /* logo.js 未加载时不阻断登录 */ }
 
     let messageBoardPanel = null;
+    let aboutPanel = null;
     function initMessageBoardPanel() {
       if (typeof MessageBoardPanel === 'undefined') return;
       messageBoardPanel = new MessageBoardPanel({
@@ -699,16 +772,33 @@
       if (!messageBoardPanel) return;
       messageBoardPanel.setOpen(open);
     }
+    function initAboutPanel() {
+      if (typeof WebAgentAboutPanel === 'undefined') return;
+      aboutPanel = new WebAgentAboutPanel({
+        modalEl: document.getElementById('about-modal'),
+        bubbleEl: document.getElementById('about-bubble'),
+        titleEl: document.getElementById('about-title'),
+        introEl: document.getElementById('about-intro'),
+        listEl: document.getElementById('about-docs-list'),
+        closeEl: document.getElementById('btn-about-close'),
+      });
+      aboutPanel.bind();
+    }
+    function setAboutOpen(open) {
+      if (!aboutPanel) return;
+      aboutPanel.setOpen(open);
+    }
+    document.getElementById('btn-about')?.addEventListener('click', () => {
+      setAboutOpen(true);
+    });
     document.getElementById('btn-message-board')?.addEventListener('click', () => {
       setMessageBoardOpen(!messageBoardPanel?.open);
-    });
-    document.getElementById('btn-about')?.addEventListener('click', () => {
-      window.open('/keynote', '_blank', 'noopener,noreferrer');
     });
     document.getElementById('message-board-modal')?.addEventListener('click', (event) => {
       if (event.target.id === 'message-board-modal') setMessageBoardOpen(false);
     });
     initMessageBoardPanel();
+    initAboutPanel();
 
     bootstrap();
   </script>

@@ -7,6 +7,7 @@ import json
 import logging
 import threading
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -100,6 +101,109 @@ def _preview_from_messages(messages: list[ChatMessage]) -> str:
     if len(text) > 56:
         return text[:56] + "…"
     return text
+
+
+def _normalize_search_query(query: str) -> str:
+    return " ".join((query or "").strip().split()).casefold()
+
+
+def _snippet_around(text: str, query: str, *, max_len: int = 80) -> str:
+    plain = " ".join((text or "").split())
+    if not plain:
+        return ""
+    q = _normalize_search_query(query)
+    if not q:
+        return plain[:max_len] + ("…" if len(plain) > max_len else "")
+    lower = plain.casefold()
+    idx = lower.find(q)
+    if idx < 0:
+        return plain[:max_len] + ("…" if len(plain) > max_len else "")
+    start = max(0, idx - 24)
+    end = min(len(plain), idx + len(q) + 36)
+    chunk = plain[start:end].strip()
+    prefix = "…" if start > 0 else ""
+    suffix = "…" if end < len(plain) else ""
+    return f"{prefix}{chunk}{suffix}"
+
+
+def _session_people_blob(
+    meta: SessionMeta,
+    known_labels: dict[str, str] | None,
+) -> str:
+    labels = known_labels or {}
+    parts: list[str] = []
+    if meta.source == "dingtalk":
+        parts.extend([meta.dingtalk_label, meta.dingtalk_owner_id])
+        owner_id = (meta.dingtalk_owner_id or "").strip()
+        if owner_id:
+            parts.append(labels.get(owner_id, ""))
+    else:
+        parts.extend([meta.web_owner_label, meta.web_owner_id])
+        owner_id = (meta.web_owner_id or "").strip()
+        if owner_id:
+            parts.append(labels.get(owner_id, ""))
+        for uid in meta.web_collaborator_ids:
+            collab_id = (uid or "").strip()
+            if not collab_id:
+                continue
+            parts.append(collab_id)
+            parts.append(labels.get(collab_id, ""))
+    return " ".join(part.strip() for part in parts if part and part.strip())
+
+
+def session_matches_search(
+    meta: SessionMeta,
+    messages: list[ChatMessage],
+    query: str,
+    *,
+    known_labels: dict[str, str] | None = None,
+) -> str:
+    """命中则返回展示用摘要，否则返回空字符串。"""
+    q = _normalize_search_query(query)
+    if not q:
+        return ""
+    for field in (meta.title, meta.latest_preview):
+        text = (field or "").strip()
+        if text and q in text.casefold():
+            return _snippet_around(text, q)
+    people = _session_people_blob(meta, known_labels)
+    if people and q in people.casefold():
+        return _snippet_around(people, q)
+    for msg in reversed(messages):
+        content = (msg.content or "").strip().replace("\n", " ")
+        author = (msg.author_label or msg.author_id or "").strip()
+        blob_parts = [content]
+        if author:
+            blob_parts.append(author)
+        blob = " ".join(part for part in blob_parts if part)
+        if not blob or q not in blob.casefold():
+            continue
+        role_tag = "问" if msg.role == "user" else "答"
+        return f"{role_tag} · {_snippet_around(blob, q)}"
+    return ""
+
+
+def filter_sessions_by_search(
+    sessions: list[SessionMeta],
+    query: str,
+    *,
+    load_messages: Callable[[str], list[ChatMessage]],
+    known_labels: dict[str, str] | None = None,
+) -> list[tuple[SessionMeta, str]]:
+    q = _normalize_search_query(query)
+    if not q:
+        return [(meta, "") for meta in sessions]
+    matched: list[tuple[SessionMeta, str]] = []
+    for meta in sessions:
+        snippet = session_matches_search(
+            meta,
+            load_messages(meta.id),
+            q,
+            known_labels=known_labels,
+        )
+        if snippet:
+            matched.append((meta, snippet))
+    return matched
 
 
 def _apply_message_derived_meta(meta: SessionMeta, messages: list[ChatMessage]) -> bool:

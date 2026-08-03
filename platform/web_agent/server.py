@@ -65,7 +65,6 @@ if str(GATEWAY_DIR) not in sys.path:
 if str(WEB_AGENT_DIR) not in sys.path:
     sys.path.insert(0, str(WEB_AGENT_DIR))
 
-from chat_runner import run_web_chat  # noqa: E402
 from cursor_runner import DEFAULT_MODEL, DEFAULT_TIMEOUT_S  # noqa: E402
 from external_agent_config import (  # noqa: E402
     external_agents_from_config,
@@ -76,14 +75,14 @@ from batch_progress import (  # noqa: E402
     clear_batch_progress,
     read_batch_progress,
 )
-from duration_history import classify_task_kind, get_duration_store  # noqa: E402
+from duration_history import classify_task_kind  # noqa: E402
 from progress_message import (  # noqa: E402
     append_duration_footer,
     build_streaming_progress_status_line,
     build_task_ack_message,
     resolve_task_estimate_seconds,
 )
-from task_session import TaskInterrupted, TaskSession  # noqa: E402
+from task_session import TaskSession  # noqa: E402
 from dingtalk_web_sync import sync_all_from_conversation_store  # noqa: E402
 from web_file_store import (  # noqa: E402
     ALLOWED_EXTENSIONS,
@@ -92,7 +91,6 @@ from web_file_store import (  # noqa: E402
     MAX_FILE_BYTES,
     MAX_IMAGE_BYTES,
     StoredAttachment,
-    consume_pending_outputs,
     content_type_for_path,
     local_path_from_api_path,
     output_display_name,
@@ -100,7 +98,15 @@ from web_file_store import (  # noqa: E402
     resolve_upload_file,
     save_chat_attachments,
 )
-from web_session_store import get_session_store  # noqa: E402
+from web_session_store import filter_sessions_by_search, get_session_store  # noqa: E402
+from web_run_store import (  # noqa: E402
+    RUN_STATUS_DONE,
+    RUN_STATUS_ERROR,
+    RUN_STATUS_INTERRUPTED,
+    RUN_STATUS_RUNNING,
+    RunMeta,
+    get_run_store,
+)
 from web_admin_permission import is_web_admin, web_admin_denial_message  # noqa: E402
 from web_auth import authorize_request, auth_enabled, logout_current_session  # noqa: E402
 from web_otp_auth import (  # noqa: E402
@@ -142,7 +148,8 @@ PLATFORM_GUIDE_DIR = REPO_ROOT / "platform" / "exports" / "cursor-platform-guide
 SHOWCASE_URL_PREFIX = "/family-pk-showcase"
 PLATFORM_GUIDE_URL_PREFIX = "/platform-guide"
 KEYNOTE_URL_PREFIX = "/keynote"
-KEYNOTE_PREVIEW_HTML = WEB_AGENT_DIR / "keynote" / "preview.html"
+KEYNOTE_DIR = WEB_AGENT_DIR / "keynote"
+KEYNOTE_PREVIEW_HTML = KEYNOTE_DIR / "preview.html"
 SSE_POLL_S = 0.25
 RUN_TTL_S = 3600
 PROGRESS_TICK_S = 1.0
@@ -366,6 +373,22 @@ def _external_agents_meta(cfg: dict[str, Any] | None = None) -> list[dict[str, s
     ]
 
 
+WEB_DOCS_PATH = WEB_AGENT_DIR / "config" / "web_docs.json"
+
+
+def _load_web_docs() -> dict[str, Any]:
+    if not WEB_DOCS_PATH.is_file():
+        return {"title": "关于 Yaahlan Web Agent", "intro": "", "categories": []}
+    try:
+        data = json.loads(WEB_DOCS_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.warning("读取 web_docs.json 失败: %s", exc)
+        return {"title": "关于 Yaahlan Web Agent", "intro": "", "categories": []}
+    if not isinstance(data, dict):
+        return {"title": "关于 Yaahlan Web Agent", "intro": "", "categories": []}
+    return data
+
+
 def _platform_meta() -> dict[str, int | str]:
     cfg = _load_config()
     title = str(cfg.get("title") or "Yaahlan 智能工具 Agent")
@@ -507,13 +530,16 @@ class RunManager:
         self._lock = threading.Lock()
         self._runs: dict[str, ActiveRun] = {}
 
-    def create(self, session_id: str) -> ActiveRun:
-        run_id = uuid.uuid4().hex[:12]
-        run = ActiveRun(run_id=run_id, session_id=session_id)
+    def register(self, run: ActiveRun) -> ActiveRun:
         with self._lock:
-            self._runs[run_id] = run
+            self._runs[run.run_id] = run
             self._purge_old()
         return run
+
+    def create(self, session_id: str, *, run_id: str | None = None) -> ActiveRun:
+        rid = run_id or uuid.uuid4().hex[:12]
+        run = ActiveRun(run_id=rid, session_id=session_id)
+        return self.register(run)
 
     def get(self, run_id: str) -> ActiveRun | None:
         with self._lock:
@@ -555,12 +581,22 @@ def _notify_run_interrupted(run: ActiveRun, text: str) -> bool:
         run.cancel_notified = True
         run.final_text = body
     run.emit_event({"type": "done", "text": body})
+    run.done.set()
     return True
 
 
 def _interrupt_active_run(run: ActiveRun) -> bool:
     """尽力中断 Agent run，并立即通知前端。"""
     from user_agent_pool import get_user_agent_pool
+
+    store = get_run_store()
+    store.request_cancel(run.run_id)
+    meta = store.get_run(run.run_id)
+    if meta is not None and meta.worker_pid > 0:
+        try:
+            os.kill(meta.worker_pid, signal.SIGTERM)
+        except OSError as exc:
+            logger.debug("终止 worker pid=%s 失败: %s", meta.worker_pid, exc)
 
     cancel_result = run.task_session.request_cancel()
     if cancel_result is None:
@@ -571,7 +607,259 @@ def _interrupt_active_run(run: ActiveRun) -> bool:
     except Exception as exc:  # noqa: BLE001
         logger.warning("中断时 invalidate Agent 失败 session=%s: %s", run.session_id, exc)
     _notify_run_interrupted(run, INTERRUPT_REPLY)
+    if run.final_text:
+        get_session_store().append_message(run.session_id, "assistant", run.final_text)
+    get_run_store().mark_status(run.run_id, RUN_STATUS_INTERRUPTED)
     return cancel_result is not False
+
+
+def _apply_snapshot_to_run(run: ActiveRun, snap) -> None:
+    run.last_ack_line = snap.last_ack_line
+    run.last_elapsed_line = snap.last_elapsed_line
+    run.last_batch_line = snap.last_batch_line
+    run.last_markdown = snap.last_markdown
+    run.final_text = snap.final_text
+    run.error = snap.error
+
+
+def _active_run_from_store_meta(meta: RunMeta) -> ActiveRun:
+    store = get_run_store()
+    snap = store.get_snapshot(meta.run_id)
+    run = RUN_MANAGER.create(meta.session_id, run_id=meta.run_id)
+    run.task_kind = classify_task_kind(meta.message)
+    run.started_at = time.monotonic()
+    _apply_snapshot_to_run(run, snap)
+    if meta.status != RUN_STATUS_RUNNING:
+        run.done.set()
+    return run
+
+
+def _get_or_recover_run(run_id: str) -> ActiveRun | None:
+    run = RUN_MANAGER.get(run_id)
+    if run is not None:
+        return run
+    store = get_run_store()
+    meta = store.get_run(run_id)
+    if meta is None:
+        return None
+    if meta.status == RUN_STATUS_RUNNING and meta.worker_pid > 0 and store.is_worker_alive(run_id):
+        run = _active_run_from_store_meta(meta)
+        progress_stop = threading.Event()
+        _start_run_event_tailer(run, progress_stop=progress_stop)
+        _start_run_progress_watcher(
+            run,
+            user_key=get_session_store().user_key(meta.session_id),
+            message=meta.message,
+            started_at=run.started_at,
+            progress_stop=progress_stop,
+        )
+        return run
+    if meta.status == RUN_STATUS_RUNNING and meta.worker_pid > 0:
+        _finalize_orphan_run(meta)
+    elif meta.status == RUN_STATUS_RUNNING and meta.worker_pid <= 0:
+        _spawn_run_worker(meta.run_id)
+        run = _active_run_from_store_meta(meta)
+        progress_stop = threading.Event()
+        _start_run_event_tailer(run, progress_stop=progress_stop)
+        _start_run_progress_watcher(
+            run,
+            user_key=get_session_store().user_key(meta.session_id),
+            message=meta.message,
+            started_at=run.started_at,
+            progress_stop=progress_stop,
+        )
+        return run
+    run = _active_run_from_store_meta(meta)
+    return run
+
+
+def _finalize_orphan_run(meta: RunMeta) -> None:
+    """worker 已退出但 meta 仍为 running 时落盘结束态，便于前端拉消息。"""
+    store = get_run_store()
+    snap = store.get_snapshot(meta.run_id)
+    session_store = get_session_store()
+    messages = session_store.get_messages(meta.session_id)
+    has_reply = False
+    for msg in reversed(messages):
+        if msg.role == "assistant":
+            has_reply = True
+            break
+        if msg.role == "user":
+            break
+    if has_reply:
+        store.mark_status(meta.run_id, RUN_STATUS_DONE)
+        return
+    err_text = append_duration_footer(
+        f"⚠️ 任务因服务重启中断\n\n{RETRY_HINT}",
+        0.0,
+        task_kind=classify_task_kind(meta.message),
+    )
+    session_store.append_message(meta.session_id, "assistant", err_text)
+    store.append_event(meta.run_id, {"type": "error", "message": "worker lost", "text": err_text})
+    store.mark_status(meta.run_id, RUN_STATUS_ERROR)
+    if not snap.final_text:
+        store.update_snapshot(meta.run_id, {"type": "error", "message": "worker lost", "text": err_text})
+
+
+def _spawn_run_worker(run_id: str) -> int:
+    log_path = WEB_AGENT_DIR / "data" / "runs" / run_id / "worker.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_fp = open(log_path, "a", encoding="utf-8")
+    proc = subprocess.Popen(
+        [
+            _resolve_python_executable(),
+            str(WEB_AGENT_DIR / "run_worker.py"),
+            "--run-id",
+            run_id,
+        ],
+        cwd=str(REPO_ROOT),
+        stdout=log_fp,
+        stderr=subprocess.STDOUT,
+        start_new_session=True,
+    )
+    get_run_store().set_worker_pid(run_id, proc.pid)
+    logger.info("spawn run worker run=%s pid=%s", run_id, proc.pid)
+    return proc.pid
+
+
+def _start_run_event_tailer(run: ActiveRun, *, progress_stop: threading.Event) -> None:
+    store = get_run_store()
+
+    def tailer() -> None:
+        while not progress_stop.is_set():
+            events, _ = store.read_new_events(run.run_id)
+            for event in events:
+                etype = event.get("type")
+                if etype == "ack":
+                    run.last_ack_line = str(event.get("line") or "")
+                elif etype == "status":
+                    run.last_elapsed_line = str(event.get("elapsed_line") or "")
+                    run.last_batch_line = str(event.get("batch_line") or "")
+                elif etype == "delta":
+                    markdown = event.get("markdown")
+                    if markdown:
+                        run.last_markdown = str(markdown)
+                elif etype == "done":
+                    if run.done.is_set():
+                        continue
+                    run.final_text = str(event.get("text") or "")
+                    run.emit_event(event)
+                    run.done.set()
+                    run.task_session.end()
+                    progress_stop.set()
+                    return
+                elif etype == "error":
+                    if run.done.is_set():
+                        continue
+                    run.error = str(event.get("message") or "")
+                    run.final_text = str(event.get("text") or "")
+                    run.emit_event(event)
+                    run.done.set()
+                    run.task_session.end()
+                    progress_stop.set()
+                    return
+                run.emit_event(event)
+            meta = store.get_run(run.run_id)
+            if meta is not None and meta.status != RUN_STATUS_RUNNING:
+                if not run.done.is_set():
+                    snap = store.get_snapshot(run.run_id)
+                    _apply_snapshot_to_run(run, snap)
+                    if run.error:
+                        run.emit_event(
+                            {
+                                "type": "error",
+                                "message": run.error,
+                                "text": run.final_text,
+                            }
+                        )
+                    else:
+                        run.emit_event({"type": "done", "text": run.final_text})
+                    run.done.set()
+                progress_stop.set()
+                return
+            if (
+                meta is not None
+                and meta.worker_pid > 0
+                and not store.is_worker_alive(run.run_id)
+            ):
+                _finalize_orphan_run(meta)
+                snap = store.get_snapshot(run.run_id)
+                _apply_snapshot_to_run(run, snap)
+                if run.error:
+                    run.emit_event(
+                        {"type": "error", "message": run.error, "text": run.final_text}
+                    )
+                else:
+                    run.emit_event({"type": "done", "text": run.final_text})
+                run.done.set()
+                progress_stop.set()
+                return
+            time.sleep(SSE_POLL_S)
+
+    threading.Thread(
+        target=tailer,
+        daemon=True,
+        name=f"web-run-tail-{run.run_id}",
+    ).start()
+
+
+def recover_active_runs_on_startup() -> None:
+    store = get_run_store()
+    store.cleanup_old_runs()
+    for meta in store.list_active_runs():
+        if store.is_worker_alive(meta.run_id):
+            if RUN_MANAGER.find_active_by_session(meta.session_id) is not None:
+                continue
+            run = _active_run_from_store_meta(meta)
+            progress_stop = threading.Event()
+            _start_run_event_tailer(run, progress_stop=progress_stop)
+            _start_run_progress_watcher(
+                run,
+                user_key=get_session_store().user_key(meta.session_id),
+                message=meta.message,
+                started_at=run.started_at,
+                progress_stop=progress_stop,
+            )
+            logger.info(
+                "恢复进行中任务 run=%s session=%s worker_pid=%s",
+                meta.run_id,
+                meta.session_id,
+                meta.worker_pid,
+            )
+        elif meta.worker_pid > 0:
+            _finalize_orphan_run(meta)
+            logger.info("清理孤儿任务 run=%s session=%s", meta.run_id, meta.session_id)
+        else:
+            logger.info("恢复未 spawn 的任务 run=%s session=%s，重新拉起 worker", meta.run_id, meta.session_id)
+            _spawn_run_worker(meta.run_id)
+            run = _active_run_from_store_meta(meta)
+            progress_stop = threading.Event()
+            _start_run_event_tailer(run, progress_stop=progress_stop)
+            _start_run_progress_watcher(
+                run,
+                user_key=get_session_store().user_key(meta.session_id),
+                message=meta.message,
+                started_at=run.started_at,
+                progress_stop=progress_stop,
+            )
+
+
+def _resolve_active_run_for_session(session_id: str) -> ActiveRun | None:
+    run = RUN_MANAGER.find_active_by_session(session_id)
+    if run is not None:
+        return run
+    store = get_run_store()
+    meta = store.find_active_by_session(session_id)
+    if meta is None:
+        return None
+    if store.is_worker_alive(meta.run_id):
+        return _get_or_recover_run(meta.run_id)
+    if meta.worker_pid > 0:
+        _finalize_orphan_run(meta)
+    elif meta.status == RUN_STATUS_RUNNING:
+        _spawn_run_worker(meta.run_id)
+        return _get_or_recover_run(meta.run_id)
+    return None
 
 
 def _json_response(handler: SimpleHTTPRequestHandler, payload: object, status: int = 200) -> None:
@@ -718,19 +1006,20 @@ def _start_chat_run(
     author_label: str = "",
 ) -> ActiveRun:
     store = get_session_store()
+    run_store = get_run_store()
     user_key = store.user_key(session_id)
     task_kind = classify_task_kind(message)
     attachment_list = list(attachments or [])
-    local_image_paths = []
-    local_file_paths = []
+    local_image_paths: list[str] = []
+    local_file_paths: list[str] = []
     for item in attachment_list:
         local = local_path_from_api_path(item.api_path)
         if local is None:
             raise ValueError(f"附件不存在: {item.api_path}")
         if item.kind == "image":
-            local_image_paths.append(local)
+            local_image_paths.append(str(local))
         else:
-            local_file_paths.append(local)
+            local_file_paths.append(str(local))
 
     display_message = message
     if not display_message and attachment_list:
@@ -747,20 +1036,41 @@ def _start_chat_run(
         author_id=author_id,
         author_label=author_label,
     )
+
     if existing_run is not None:
         run = existing_run
     else:
         run = RUN_MANAGER.create(session_id)
-        run.task_session.begin(
-            message or display_message,
-            conversation_id=user_key,
-            budget_s=float(DEFAULT_TIMEOUT_S),
+
+    agent_model = _resolve_agent_model(model)
+    external_ids = list(enabled_external_agents or [])
+    run_store.create_run(
+        RunMeta(
+            run_id=run.run_id,
+            session_id=session_id,
+            message=message,
+            display_message=display_message,
+            model=agent_model,
+            enabled_external_agents=external_ids,
+            author_id=author_id,
+            author_label=author_label,
+            image_paths=local_image_paths,
+            file_paths=local_file_paths,
+            attachment_names=[item.original_name for item in attachment_list],
+            worker_pid=0,
+            status=RUN_STATUS_RUNNING,
+            started_at=time.time(),
         )
+    )
+    run.task_session.begin(
+        message or display_message,
+        conversation_id=user_key,
+        budget_s=float(DEFAULT_TIMEOUT_S),
+    )
     clear_batch_progress(user_key)
     started_at = time.monotonic()
     run.started_at = started_at
     run.task_kind = task_kind
-    agent_model = _resolve_agent_model(model)
     progress_stop = threading.Event()
     _start_run_progress_watcher(
         run,
@@ -769,82 +1079,8 @@ def _start_chat_run(
         started_at=started_at,
         progress_stop=progress_stop,
     )
-
-    def worker() -> None:
-        last_markdown = ""
-        status = "error"
-
-        def on_render(markdown: str) -> None:
-            nonlocal last_markdown
-            last_markdown = markdown
-            run.emit_event({"type": "delta", "markdown": markdown})
-
-        def _append_assistant(text: str) -> None:
-            output_files = consume_pending_outputs(session_id)
-            store.append_message(
-                session_id,
-                "assistant",
-                text,
-                files=[item.to_message_dict() for item in output_files],
-            )
-
-        try:
-            final = run_web_chat(
-                session_id,
-                message,
-                image_paths=local_image_paths,
-                file_paths=local_file_paths,
-                attachment_names=[item.original_name for item in attachment_list],
-                on_render=on_render,
-                session_ctrl=run.task_session,
-                model=agent_model,
-                enabled_external_agents=enabled_external_agents,
-            )
-            elapsed = time.monotonic() - started_at
-            body = final or last_markdown
-            run.final_text = append_duration_footer(body, elapsed, task_kind=task_kind)
-            _append_assistant(run.final_text)
-            status = "ok"
-            run.emit_event({"type": "done", "text": run.final_text})
-        except TaskInterrupted:
-            elapsed = time.monotonic() - started_at
-            run.final_text = append_duration_footer(
-                INTERRUPT_REPLY,
-                elapsed,
-                task_kind=task_kind,
-            )
-            _append_assistant(run.final_text)
-            with run._notify_lock:
-                if not run.cancel_notified:
-                    run.cancel_notified = True
-                    run.emit_event({"type": "done", "text": run.final_text})
-            status = "interrupted"
-        except Exception as exc:  # noqa: BLE001
-            elapsed = time.monotonic() - started_at
-            run.error = str(exc)
-            logger.exception("Web chat run failed session=%s", session_id)
-            run.final_text = append_duration_footer(
-                f"⚠️ {run.error}\n\n{RETRY_HINT}",
-                elapsed,
-                task_kind=task_kind,
-            )
-            _append_assistant(run.final_text)
-            run.emit_event(
-                {"type": "error", "message": run.error, "text": run.final_text}
-            )
-        finally:
-            progress_stop.set()
-            clear_batch_progress(user_key)
-            run.task_session.end()
-            if status != "interrupted":
-                get_duration_store().record(
-                    task_kind,
-                    time.monotonic() - started_at,
-                    status=status,
-                )
-            run.done.set()
-
-    threading.Thread(target=worker, daemon=True, name=f"web-chat-{run.run_id}").start()
+    _spawn_run_worker(run.run_id)
+    _start_run_event_tailer(run, progress_stop=progress_stop)
     return run
 
 
@@ -852,6 +1088,13 @@ def is_port_open(host: str, port: int) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.settimeout(0.3)
         return sock.connect_ex((host, port)) == 0
+
+
+def _content_type_with_charset(content_type: str) -> str:
+    ct = (content_type or "application/octet-stream").strip()
+    if ct.lower().startswith("text/") and "charset=" not in ct.lower():
+        return f"{ct}; charset=utf-8"
+    return ct
 
 
 class WebAgentHandler(SimpleHTTPRequestHandler):
@@ -865,6 +1108,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         content_type, _ = mimetypes.guess_type(str(target))
         if not content_type:
             content_type = "application/octet-stream"
+        content_type = _content_type_with_charset(content_type)
         data = target.read_bytes()
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", content_type)
@@ -893,6 +1137,14 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
 
     def _serve_keynote_preview(self) -> None:
         self._serve_static_file(KEYNOTE_PREVIEW_HTML, not_found_msg="keynote preview not found")
+
+    def _serve_keynote_file(self, rel_path: str) -> None:
+        root = KEYNOTE_DIR.resolve()
+        target = (root / rel_path).resolve()
+        if not str(target).startswith(str(root)):
+            self.send_error(HTTPStatus.NOT_FOUND)
+            return
+        self._serve_static_file(target, not_found_msg="keynote file not found")
 
     def log_message(self, fmt: str, *args: Any) -> None:
         if self.path.startswith("/api/"):
@@ -926,7 +1178,13 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
-        path = parsed.path.rstrip("/") or "/"
+        raw_path = parsed.path or "/"
+        if raw_path == PLATFORM_GUIDE_URL_PREFIX:
+            self.send_response(HTTPStatus.MOVED_PERMANENTLY)
+            self.send_header("Location", f"{PLATFORM_GUIDE_URL_PREFIX}/")
+            self.end_headers()
+            return
+        path = raw_path.rstrip("/") or "/"
 
         if path in ("/login.html", "/login"):
             self.path = "/login.html"
@@ -963,6 +1221,16 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
 
         if path == KEYNOTE_URL_PREFIX or path == f"{KEYNOTE_URL_PREFIX}/":
             return self._serve_keynote_preview()
+
+        if path == f"{KEYNOTE_URL_PREFIX}/speech_scripts":
+            return self._serve_keynote_file("speech_scripts.html")
+
+        if path == f"{KEYNOTE_URL_PREFIX}/pk-atm-guide":
+            return self._serve_keynote_file("pk_atm_guide.html")
+
+        if path.startswith(f"{KEYNOTE_URL_PREFIX}/"):
+            rel = path[len(KEYNOTE_URL_PREFIX) :].lstrip("/")
+            return self._serve_keynote_file(rel)
 
         if path == SHOWCASE_URL_PREFIX or path.startswith(f"{SHOWCASE_URL_PREFIX}/"):
             rel = path[len(SHOWCASE_URL_PREFIX) :].lstrip("/") or "index.html"
@@ -1013,6 +1281,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         if path == "/api/message-board":
             return _handle_message_board_list(self)
 
+        if path == "/api/web-docs":
+            return _json_response(self, _load_web_docs())
+
         if path == "/api/web-users":
             sync_all_from_conversation_store()
             store = get_session_store()
@@ -1046,14 +1317,25 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 known = collect_known_labels(items)
             except Exception:  # noqa: BLE001
                 known = {}
+            search_q = (parse_qs(parsed.query).get("q") or [""])[0].strip()
+            if search_q:
+                pairs = filter_sessions_by_search(
+                    items,
+                    search_q,
+                    load_messages=store.get_messages,
+                    known_labels=known,
+                )
+            else:
+                pairs = [(meta, "") for meta in items]
             sessions = [
                 {
-                    **s.to_dict(known_labels=known, viewer_staff_id=viewer_staff_id),
-                    "running": RUN_MANAGER.find_active_by_session(s.id) is not None,
+                    **meta.to_dict(known_labels=known, viewer_staff_id=viewer_staff_id),
+                    "running": _resolve_active_run_for_session(meta.id) is not None,
+                    **({"search_snippet": snippet} if snippet else {}),
                 }
-                for s in items
+                for meta, snippet in pairs
             ]
-            return _json_response(self, {"sessions": sessions})
+            return _json_response(self, {"sessions": sessions, "query": search_q})
 
         m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})/active-run$", path)
         if m:
@@ -1061,7 +1343,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             store = get_session_store()
             if store.get_session(session_id) is None:
                 return _json_response(self, {"error": "session not found"}, 404)
-            run = RUN_MANAGER.find_active_by_session(session_id)
+            run = _resolve_active_run_for_session(session_id)
             if run is None:
                 return _json_response(self, {"active": False})
             return _json_response(self, run.to_active_run_dict())
@@ -1115,7 +1397,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         self.wfile.flush()
 
     def _handle_sse(self, run_id: str) -> None:
-        run = RUN_MANAGER.get(run_id)
+        run = _get_or_recover_run(run_id)
         if run is None:
             self.send_error(HTTPStatus.NOT_FOUND, "run not found")
             return
@@ -1293,20 +1575,21 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 owner_label=owner_label,
             )
             author_id, author_label = _session_owner_from_user(viewer)
-            user_key = store.user_key(session_id)
-            display_message = message
-            if not display_message and attachment_items:
-                display_message = "[附带附件]"
+            active = _resolve_active_run_for_session(session_id)
+            if active is not None and not active.done.is_set():
+                return _json_response(
+                    self,
+                    {
+                        "error": "该会话仍有任务进行中，请等待完成或中断后重试",
+                        "run_id": active.run_id,
+                        "session_id": session_id,
+                    },
+                    409,
+                )
             run = RUN_MANAGER.create(session_id)
-            run.task_session.begin(
-                message or display_message,
-                conversation_id=user_key,
-                budget_s=float(DEFAULT_TIMEOUT_S),
-            )
             try:
                 saved_attachments = save_chat_attachments(session_id, attachment_items)
             except FileUploadError as exc:
-                run.task_session.end()
                 run.done.set()
                 return _json_response(self, {"error": str(exc)}, 400)
             try:
@@ -1355,9 +1638,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 return _json_response(self, {"error": "invalid json"}, 400)
             run_id = str(body.get("run_id") or "").strip()
             session_id = str(body.get("session_id") or "").strip()
-            run = RUN_MANAGER.get(run_id) if run_id else None
+            run = _get_or_recover_run(run_id) if run_id else None
             if run is None and session_id:
-                run = RUN_MANAGER.find_active_by_session(session_id)
+                run = _resolve_active_run_for_session(session_id)
             if run is None:
                 return _json_response(self, {"error": "run not found"}, 404)
             if not _interrupt_active_run(run):
@@ -1478,6 +1761,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
 
 def serve(host: str, port: int) -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    recover_active_runs_on_startup()
     server = ThreadingHTTPServer((host, port), WebAgentHandler)
     print(f"Web Agent: http://{host}:{port}/")
 

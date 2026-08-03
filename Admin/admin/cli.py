@@ -10,6 +10,7 @@ import sys
 import urllib.parse
 
 from .activity import parse_query_lottery_list_summary
+from .banner import parse_query_banner_list_summary
 from .im_activity import (
     delete_im_task,
     delete_im_tasks_above_id,
@@ -336,6 +337,29 @@ def build_parser() -> argparse.ArgumentParser:
         "--im-name-contains",
         help="IM 任务名称模糊筛选（配合 --query-im-list，如 im-type-smoke）",
     )
+    parser.add_argument(
+        "--query-banner-list",
+        action="store_true",
+        help="查询 Banner 配置列表（getBannerList；可按 --banner-type / --banner-area / --banner-id 筛选）",
+    )
+    parser.add_argument(
+        "--banner-type",
+        type=int,
+        help="Banner 类型 type（配合 --query-banner-list；默认 5=活动）",
+    )
+    parser.add_argument(
+        "--banner-status",
+        type=int,
+        help="Banner 状态 status（配合 --query-banner-list；默认 -1=全部）",
+    )
+    parser.add_argument("--banner-area", help="Banner 分区 area（配合 --query-banner-list；默认 MENA）")
+    parser.add_argument("--banner-id", help="Banner ID（配合 --query-banner-list）")
+    parser.add_argument(
+        "--banner-name-contains",
+        help="Banner 名称模糊筛选（配合 --query-banner-list）",
+    )
+    parser.add_argument("--banner-page", type=int, help="页码 page（配合 --query-banner-list；默认 1）")
+    parser.add_argument("--banner-per-page", type=int, help="每页条数 perPage（配合 --query-banner-list；默认 10）")
     parser.add_argument(
         "--delete-im-task",
         action="store_true",
@@ -851,6 +875,38 @@ def _resolve_query_activity_lottery_list_request(args: argparse.Namespace) -> tu
     return url, {}
 
 
+def _resolve_query_banner_list_request(args: argparse.Namespace) -> tuple[str, dict[str, object]]:
+    cfg = defaults("query_banner_list")
+    base_url = _resolve_gateway_base_url(cfg)
+    path = str(cfg.get("path", "/yaahlan/cms/backend/banner/getBannerList"))
+    area = str(args.banner_area or cfg.get("defaultArea") or "MENA").strip() or "MENA"
+    banner_type = (
+        int(args.banner_type)
+        if args.banner_type is not None
+        else int(cfg.get("defaultType", 5))
+    )
+    banner_status = (
+        int(args.banner_status)
+        if args.banner_status is not None
+        else int(cfg.get("defaultStatus", -1))
+    )
+    page = int(args.banner_page if args.banner_page is not None else cfg.get("defaultPage", 1))
+    per_page = int(
+        args.banner_per_page if args.banner_per_page is not None else cfg.get("defaultPerPage", 10)
+    )
+    banner_id = str(args.banner_id or "").strip()
+    url = f"{base_url}{path}"
+    body: dict[str, object] = {
+        "bannerId": banner_id,
+        "page": page,
+        "perPage": per_page,
+        "status": banner_status,
+        "type": banner_type,
+        "area": area,
+    }
+    return url, body
+
+
 def _resolve_change_cs_taking_order_request(args: argparse.Namespace) -> tuple[str, dict[str, object]]:
     user_id = str(args.cs_user_id or "").strip()
     if not user_id:
@@ -1280,6 +1336,12 @@ def main() -> int:
                 print(f"POST {url}", file=sys.stderr)
                 print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
             resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
+        elif args.query_banner_list:
+            url, body = _resolve_query_banner_list_request(args)
+            if args.dump_body:
+                print(f"POST {url}", file=sys.stderr)
+                print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
+            resp = http_post_json(url, body, timeout_s=max(args.timeout_ms, 1000) / 1000.0)
         elif args.query_app_store_review_version:
             url, body = _resolve_query_app_store_review_version_request(args)
             if args.dump_body:
@@ -1454,6 +1516,38 @@ def main() -> int:
             lottery_name=str(args.lottery_name or "").strip() or None,
         )
         print(json.dumps(summary, ensure_ascii=False, indent=2))
+    elif args.query_banner_list:
+        if not gateway_success(resp.get("status")):
+            print(f"Banner 列表接口返回失败: status={resp.get('status')}, msg={resp.get('msg')}", file=sys.stderr)
+            print(json.dumps(resp, ensure_ascii=False, indent=2))
+            return 3
+        cfg = defaults("query_banner_list")
+        area = str(args.banner_area or cfg.get("defaultArea") or "MENA").strip() or "MENA"
+        banner_type = (
+            int(args.banner_type)
+            if args.banner_type is not None
+            else int(cfg.get("defaultType", 5))
+        )
+        banner_status = (
+            int(args.banner_status)
+            if args.banner_status is not None
+            else int(cfg.get("defaultStatus", -1))
+        )
+        page = int(args.banner_page if args.banner_page is not None else cfg.get("defaultPage", 1))
+        per_page = int(
+            args.banner_per_page if args.banner_per_page is not None else cfg.get("defaultPerPage", 10)
+        )
+        summary = parse_query_banner_list_summary(
+            resp.get("data"),
+            area=area,
+            banner_type=banner_type,
+            status=banner_status,
+            page=page,
+            per_page=per_page,
+            banner_id=str(args.banner_id or "").strip() or None,
+            name_contains=str(args.banner_name_contains or "").strip() or None,
+        )
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
     elif args.save_cs_data:
         cfg = defaults("save_cs_data")
         default_roles = cfg.get("defaultRoleList")
@@ -1585,6 +1679,7 @@ def main() -> int:
         or args.list_all_families
         or args.query_app_store_review_version
         or args.update_app_store_review_version
+        or args.query_banner_list
     ):
         if not gateway_success(resp.get("status")):
             print(f"Gateway 返回失败: status={resp.get('status')}, msg={resp.get('msg')}", file=sys.stderr)

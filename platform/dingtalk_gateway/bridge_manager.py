@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import logging
 import os
+import secrets
 import threading
 
+from cursor_sdk import _store_callback, _tool_callback
 from cursor_sdk._client import _default_client, close_default_client
 
 from user_agent_pool import reset_user_agent_pool
@@ -16,6 +18,32 @@ AGENT_RUN_MAX_RETRIES = 3
 
 _lock = threading.Lock()
 _workspace: str | None = None
+_auth_token_patch_applied = False
+
+
+def cli_safe_callback_auth_token() -> str:
+    """生成不会以 '-' 开头的 callback token。
+
+    cursor-sdk-bridge 的 CLI 解析器会把以 '-' 开头的值误判为下一参数，
+    导致 ``Missing value for --tool-callback-auth-token``（约 1/64 概率）。
+    """
+    for _ in range(64):
+        token = secrets.token_urlsafe(32)
+        if token and not token.startswith("-"):
+            return token
+    raise RuntimeError("无法生成 CLI 安全的 callback auth token")
+
+
+def _ensure_cursor_sdk_auth_token_patch() -> None:
+    global _auth_token_patch_applied
+    if _auth_token_patch_applied:
+        return
+    _tool_callback._new_auth_token = cli_safe_callback_auth_token
+    _store_callback._new_auth_token = cli_safe_callback_auth_token
+    _auth_token_patch_applied = True
+
+
+_ensure_cursor_sdk_auth_token_patch()
 
 
 def init_sdk_bridge(workspace: str) -> None:
@@ -59,6 +87,10 @@ def is_transient_sdk_error(exc: BaseException) -> bool:
     if name in {"InternalServerError", "APITimeoutError", "NetworkError"}:
         return True
     message = str(exc).lower()
+    if "missing value for --tool-callback-auth-token" in message:
+        return True
+    if "missing value for --store-callback-auth-token" in message:
+        return True
     return "internal error" in message or "internal:" in message
 
 

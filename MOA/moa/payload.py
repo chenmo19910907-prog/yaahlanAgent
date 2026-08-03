@@ -646,6 +646,28 @@ def _op_user_reg_time_query(args: argparse.Namespace, payload: dict[str, Any]) -
     print(f"查询用户注册时间：userId={args.user_reg_time_user_id}", file=sys.stderr)
 
 
+def _op_recharge_rebate_blacklist_add(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(args.recharge_rebate_blacklist_user_id).strip()
+    if not user_id:
+        raise ValueError("recharge_rebate_blacklist_user_id 不能为空")
+    expr = f'context.getBean("fundFlowDao").setUserBlacklist("{user_id}")'
+    payload["url"] = "/service/voga-mts-vas-backdoor"
+    payload["method"] = "execute"
+    set_backdoor_execute_expr(payload, expr)
+    print(f"Ultra Recharge 添加黑名单：userId={user_id}", file=sys.stderr)
+
+
+def _op_recharge_rebate_blacklist_remove(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(args.recharge_rebate_blacklist_remove_user_id).strip()
+    if not user_id:
+        raise ValueError("recharge_rebate_blacklist_remove_user_id 不能为空")
+    expr = f'context.getBean("fundFlowDao").deleteUserBlacklist("{user_id}")'
+    payload["url"] = "/service/voga-mts-vas-backdoor"
+    payload["method"] = "execute"
+    set_backdoor_execute_expr(payload, expr)
+    print(f"Ultra Recharge 删除黑名单：userId={user_id}", file=sys.stderr)
+
+
 def _op_recharge_rebate_simulate(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     if args.recharge_rebate_diamonds is None:
         raise ValueError("模拟充值时，必须同时提供 --recharge-rebate-diamonds")
@@ -1251,6 +1273,8 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.user_home_country_user_id is not None, _op_user_home_country_update),
     (lambda a: a.user_set_reg_time_user_id is not None, _op_user_set_reg_time),
     (lambda a: a.user_reg_time_user_id is not None, _op_user_reg_time_query),
+    (lambda a: a.recharge_rebate_blacklist_user_id is not None, _op_recharge_rebate_blacklist_add),
+    (lambda a: a.recharge_rebate_blacklist_remove_user_id is not None, _op_recharge_rebate_blacklist_remove),
     (lambda a: a.recharge_rebate_user_id is not None, _op_recharge_rebate_simulate),
     (lambda a: a.pk_rank_settle_week_offset is not None, _op_pk_rank_settle),
     (lambda a: a.pk_rank_query_week is not None, _op_pk_rank_query),

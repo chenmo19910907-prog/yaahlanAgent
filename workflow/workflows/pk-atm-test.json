@@ -1,0 +1,111 @@
+{
+  "id": "pk-atm-test",
+  "name": "PK提款机-跨房PK造数验收",
+  "category": "PK提款机",
+  "description": "2.5.9 PK 提款机完整验收：拉服务配置（MOA 或本地梯度表）→ 随机匹配跨房 PK → 麦上机器人 → 测试号麦上送礼 → 记录 PK/余额并计算应得返钻 → 结束 PK → 校验钻石增量与预期一致。",
+  "version": 1,
+  "params": {
+    "phoneA": {
+      "label": "A方手机号",
+      "type": "string",
+      "required": false,
+      "default": "13311111113",
+      "prompt": "房主 A，默认 13311111113"
+    },
+    "phoneB": {
+      "label": "B方手机号",
+      "type": "string",
+      "required": false,
+      "default": "13311111114",
+      "prompt": "房主 B，默认 13311111114"
+    },
+    "botTotal": {
+      "label": "每房机器人数",
+      "type": "integer",
+      "required": false,
+      "default": "5"
+    },
+    "botOnMic": {
+      "label": "每房麦上机器人数",
+      "type": "integer",
+      "required": false,
+      "default": "5"
+    },
+    "giftCount": {
+      "label": "送礼账号数",
+      "type": "integer",
+      "required": false,
+      "default": "20"
+    },
+    "giftMinDiamonds": {
+      "label": "单笔最小钻石",
+      "type": "integer",
+      "required": false,
+      "default": "1"
+    },
+    "giftMaxDiamonds": {
+      "label": "单笔最大钻石",
+      "type": "integer",
+      "required": false,
+      "default": "1000"
+    },
+    "preGiftWait": {
+      "label": "送礼前等待秒",
+      "type": "integer",
+      "required": false,
+      "default": "20"
+    },
+    "postGiftWait": {
+      "label": "送礼后结束PK前等待秒",
+      "type": "integer",
+      "required": false,
+      "default": "20"
+    },
+    "postCloseWait": {
+      "label": "结束PK后发钻等待秒",
+      "type": "integer",
+      "required": false,
+      "default": "8"
+    },
+    "matchTimeout": {
+      "label": "匹配超时秒",
+      "type": "integer",
+      "required": false,
+      "default": "120"
+    },
+    "outDir": {
+      "label": "报告目录",
+      "type": "string",
+      "required": false,
+      "default": ".tmp"
+    },
+    "personalPkThreshold": {
+      "label": "个人PK门槛覆盖",
+      "type": "integer",
+      "required": false,
+      "default": "",
+      "prompt": "留空则用服务配置/默认文件"
+    },
+    "minCombinedPk": {
+      "label": "场次PK门槛覆盖",
+      "type": "integer",
+      "required": false,
+      "default": "",
+      "prompt": "留空则用服务配置/默认文件"
+    }
+  },
+  "steps": [
+    {
+      "id": "pk_atm_full_run",
+      "name": "PK提款机全流程",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/pk_atm_test_run.py --phone-a {{phoneA}} --phone-b {{phoneB}} --bot-total {{botTotal}} --bot-on-mic {{botOnMic}} --gift-count {{giftCount}} --gift-min-diamonds {{giftMinDiamonds}} --gift-max-diamonds {{giftMaxDiamonds}} --pre-gift-wait {{preGiftWait}} --post-gift-wait {{postGiftWait}} --post-close-wait {{postCloseWait}} --match-timeout {{matchTimeout}} --out-dir {{outDir}} --personal-pk-threshold {{personalPkThreshold}} --min-combined-pk {{minCombinedPk}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

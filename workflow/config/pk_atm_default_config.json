@@ -1,0 +1,14 @@
+{
+  "minCombinedPk": 500000,
+  "personalPkThreshold": 0,
+  "firstWinMultiplier": 2,
+  "tiers": [
+    {"maxCombinedPk": 500000, "poolDiamonds": 2000, "ratioPct": 4},
+    {"maxCombinedPk": 3000000, "poolDiamonds": 12000, "ratioPct": 4},
+    {"maxCombinedPk": 8000000, "poolDiamonds": 40000, "ratioPct": 5},
+    {"maxCombinedPk": 15000000, "poolDiamonds": 75000, "ratioPct": 5},
+    {"maxCombinedPk": 25000000, "poolDiamonds": 150000, "ratioPct": 6},
+    {"maxCombinedPk": 40000000, "poolDiamonds": 240000, "ratioPct": 6}
+  ],
+  "note": "2.5.9 用例文档梯度表（单位：PK 值）；personalPkThreshold=0 表示未从服务端拉到个人门槛时不过滤。"
+}

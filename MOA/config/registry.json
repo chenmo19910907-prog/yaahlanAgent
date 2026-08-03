@@ -946,6 +946,30 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/充值返利-模拟充值.json \\\n  --recharge-rebate-user-id <userId> \\\n  --recharge-rebate-diamonds <diamonds>\n"
     },
     {
+      "id": "recharge_rebate_add_blacklist",
+      "name": "充值返利-添加黑名单",
+      "category": "活动（Ultra Recharge / 充值返利）",
+      "description": "Ultra Recharge 充值活动添加用户黑名单（voga-mts-vas-backdoor execute；fundFlowDao.setUserBlacklist(userId)）",
+      "prompts": [
+        "充值活动添加黑名单 userId=<userId>",
+        "Ultra Recharge 黑名单 <userId>",
+        "setUserBlacklist <userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/充值返利-添加黑名单.json \\\n  --recharge-rebate-blacklist-user-id <userId>\n"
+    },
+    {
+      "id": "recharge_rebate_delete_blacklist",
+      "name": "充值返利-删除黑名单",
+      "category": "活动（Ultra Recharge / 充值返利）",
+      "description": "Ultra Recharge 充值活动删除用户黑名单（voga-mts-vas-backdoor execute；fundFlowDao.deleteUserBlacklist(userId)）",
+      "prompts": [
+        "充值活动删除黑名单 userId=<userId>",
+        "Ultra Recharge 移除黑名单 <userId>",
+        "deleteUserBlacklist <userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/充值返利-删除黑名单.json \\\n  --recharge-rebate-blacklist-remove-user-id <userId>\n"
+    },
+    {
       "id": "user_active_days_query",
       "name": "用户-查询登录天数",
       "category": "用户活跃（yaahlan/user/internal/area-moa）",
@@ -1252,6 +1276,42 @@
         "发招呼消息 3966"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-批量发招呼消息.json\n"
+    },
+    {
+      "id": "across_room_pk_apply_invite",
+      "name": "跨房PK-指定邀请",
+      "category": "房间PK（room/external/room-pk-api）",
+      "description": "测试环境发起跨房 PK 指定邀请（applyAcrossRoomPk）。body 需 userId（操作人）、roomId（发起方房间）、acrossRoomId（目标房间）、acrossPkType=2（指定邀请）、pkMinute（5/10/30）、hostSeat（0=无主持人位）。Tunnel 100079102 实测 ec=200。",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 邀请房间 <acrossRoomId> 跨房PK",
+        "跨房PK指定邀请 roomId=<roomId> acrossRoomId=<acrossRoomId>",
+        "MOA applyAcrossRoomPk 指定邀请"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/跨房PK-指定邀请.json\n"
+    },
+    {
+      "id": "across_room_pk_accept_invite",
+      "name": "跨房PK-接受邀请",
+      "category": "房间PK（room/external/room-pk-api）",
+      "description": "测试环境接受跨房 PK 指定邀请（acceptAcrossRoomPkInvite）。body 需 userId（操作人/房主或管理员）、roomId（被邀请方房间）、acrossRoomId（发起方房间）、inviteId（邀请 ID，来自邀请弹窗/IM）。Tunnel 100006869 实测 ec=200。",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 接受来自 <acrossRoomId> 的跨房PK邀请",
+        "跨房PK接受邀请 inviteId=<inviteId>",
+        "MOA acceptAcrossRoomPkInvite"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/跨房PK-接受邀请.json\n"
+    },
+    {
+      "id": "across_room_pk_close",
+      "name": "跨房PK-结束PK",
+      "category": "房间PK（room/external/room-pk-api）",
+      "description": "测试环境结束跨房 PK（closeAcrossRoomPk）。body 需 userId（操作人/房主或管理员）、roomId、acrossRoomId（对方房间）、acrossRoomPkId（当前 PK 场次 ID）。Tunnel 100079102 实测 ec=200。",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 结束跨房PK",
+        "结束跨房PK acrossRoomPkId=<acrossRoomPkId>",
+        "MOA closeAcrossRoomPk 结束PK"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/跨房PK-结束PK.json\n"
     }
   ]
 }

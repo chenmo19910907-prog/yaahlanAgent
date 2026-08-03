@@ -1,0 +1,50 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/room/external/room-pk-api",
+  "method": "closeAcrossRoomPk",
+  "header": "{\"userId\":\"100079102\",\"roomId\":\"50861924\",\"acrossRoomId\":\"80949067\",\"acrossRoomPkId\":\"01KZ375AZ1ZAYMP3WART1KT8PM\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100079102\",\"roomId\":\"50861924\",\"acrossRoomId\":\"80949067\",\"acrossRoomPkId\":\"01KZ375AZ1ZAYMP3WART1KT8PM\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\"}",
+      "type": "json",
+      "value": {
+        "userId": "100079102",
+        "roomId": "50861924",
+        "acrossRoomId": "80949067",
+        "acrossRoomPkId": "01KZ375AZ1ZAYMP3WART1KT8PM",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "android",
+        "osType": "android"
+      }
+    }
+  ],
+  "_registry": {
+    "id": "across_room_pk_close",
+    "name": "跨房PK-结束PK",
+    "category": "房间PK（room/external/room-pk-api）",
+    "description": "测试环境结束跨房 PK（closeAcrossRoomPk）。body 需 userId（操作人/房主或管理员）、roomId、acrossRoomId（对方房间）、acrossRoomPkId（当前 PK 场次 ID）。Tunnel 100079102 `_id=jANzxp8Bpk1mjMPPm_ig` 实测 ec=200。",
+    "prompts": [
+      "用户 <userId> 在房间 <roomId> 结束跨房PK",
+      "结束跨房PK acrossRoomPkId=<acrossRoomPkId>",
+      "MOA closeAcrossRoomPk 结束PK"
+    ]
+  }
+}

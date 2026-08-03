@@ -141,7 +141,7 @@ def build_web_prompt(
 ) -> str:
     body = (user_text or "").strip()
     extras: list[str] = []
-    batch_note = batch_progress_instruction(batch_progress_key)
+    batch_note = batch_progress_instruction(batch_progress_key, compact=True)
     if batch_note:
         extras.append(batch_note)
     if enabled_external_agents is not None:
@@ -158,26 +158,39 @@ def build_web_prompt(
                     for agent_id, item in catalog.items()
                     if agent_id not in enabled_external_agents
                 ]
-                disabled_note = ""
-                if disabled_labels:
-                    disabled_note = (
-                        f"未勾选 {', '.join(disabled_labels)}："
-                        "即使用户消息点名也不得调用；"
+                if is_new_session:
+                    disabled_note = ""
+                    if disabled_labels:
+                        disabled_note = (
+                            f"未勾选 {', '.join(disabled_labels)}："
+                            "即使用户消息点名也不得调用；"
+                        )
+                    extras.append(
+                        f"当前已勾选外部 Agent：{', '.join(labels)}。"
+                        f"{disabled_note}"
+                        "接口/代码类且本地无登记时，仅可调用已勾选 Agent 的查询脚本。"
                     )
-                extras.append(
-                    f"当前已勾选外部 Agent：{', '.join(labels)}。"
-                    f"{disabled_note}"
-                    "接口/代码类且本地无登记时，仅可调用已勾选 Agent 的查询脚本。"
-                )
+                else:
+                    disabled_part = (
+                        f"；未勾选 {', '.join(disabled_labels)}"
+                        if disabled_labels
+                        else ""
+                    )
+                    extras.append(
+                        f"外部 Agent：{', '.join(labels)}{disabled_part}"
+                    )
         else:
             agent_labels = "、".join(
                 str(item.get("label") or item.get("id")) for item in catalog.values()
             ) or "外部 Agent"
-            extras.append(
-                f"当前**未勾选**{agent_labels}："
-                "禁止调用外部 Agent 查询脚本；"
-                "仅用本仓库 registry/mappings/抓包。"
-            )
+            if is_new_session:
+                extras.append(
+                    f"当前**未勾选**{agent_labels}："
+                    "禁止调用外部 Agent 查询脚本；"
+                    "仅用本仓库 registry/mappings/抓包。"
+                )
+            else:
+                extras.append(f"外部 Agent：未勾选（{agent_labels}）")
     if image_count > 0:
         extras.append(
             f"用户附带了 {image_count} 张图片（已随消息传入），请结合附图理解需求并作答。"
@@ -193,7 +206,12 @@ def build_web_prompt(
     if links:
         extras.append("用户消息中的链接：\n" + "\n".join(f"- {url}" for url in links if url.strip()))
     if extras:
-        body = "\n\n".join([body, *extras]) if body else "\n\n".join(extras)
+        ctx = "\n".join(extras)
+        if is_new_session:
+            body = "\n\n".join([body, ctx]) if body else ctx
+        else:
+            ctx_block = f"<!-- 会话上下文\n{ctx}\n-->"
+            body = "\n\n".join([body, ctx_block]) if body else ctx_block
 
     if is_new_session:
         rules = _build_web_rules(enabled_external_agents)

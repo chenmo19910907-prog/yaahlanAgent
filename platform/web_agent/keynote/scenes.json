@@ -30,6 +30,16 @@
     ]
   },
   {
+    "type": "agent-preview",
+    "title": "Yaahlan 智能工具 Agent",
+    "subtitle": "真实界面 · 三态切换",
+    "views": [
+      { "id": "history", "label": "历史会话", "detail": "侧栏浏览 · 按人筛选 · 钉钉同步标识" },
+      { "id": "chat", "label": "新对话", "detail": "空态快捷提问 · 顶栏品牌居中" },
+      { "id": "catalog", "label": "工具台能力", "detail": "245 能力目录 · MOA 录制 · 填参执行" }
+    ]
+  },
+  {
     "type": "center",
     "label": "UI",
     "text": "界面上的小心思",
@@ -107,34 +117,48 @@
   {
     "type": "feature",
     "label": "功能 · 05",
+    "title": "重启不断流，断点可重连",
+    "desc": "Agent 在独立 worker 中执行；HTTP 服务热重启时 worker 继续跑，事件落盘后自动恢复 SSE 推流——思考中改代码也不丢任务。",
+    "demo": "run-recovery"
+  },
+  {
+    "type": "feature",
+    "label": "功能 · 06",
     "title": "钉钉验证码登录，操作可审计",
     "desc": "向机器人发送固定文案获取验证码，登录后与工号绑定；会话归属到人，敏感操作可追溯。",
     "demo": "dingtalk-auth"
   },
   {
     "type": "feature",
-    "label": "功能 · 06",
+    "label": "功能 · 07",
     "title": "会话归属清晰，同事可共创",
     "desc": "会话归属创建者，他人默认只读；可按人员筛选历史。创建者可邀请同事加入，在同一会话中一起提问。",
     "demo": "session-isolation"
   },
   {
     "type": "feature",
-    "label": "功能 · 07",
+    "label": "功能 · 08",
     "title": "常用会话，一键置顶",
     "desc": "右键或长按即可置顶，固定显示在列表顶部；点击图钉取消，全员共享排序，重要任务不再被淹没。",
     "demo": "session-pin"
   },
   {
     "type": "feature",
-    "label": "功能 · 08",
+    "label": "功能 · 09",
+    "title": "历史会话，全局搜索",
+    "desc": "侧栏搜索框一次检索问题、用户名与 Agent 回答；命中会话展示蓝色摘要，直达历史对话，不必逐条翻找。",
+    "demo": "global-search"
+  },
+  {
+    "type": "feature",
+    "label": "功能 · 10",
     "title": "能力目录一览，零门槛上手",
     "desc": "新对话空态提供快捷提问；右侧「能力」面板汇总 200+ 登记能力，按模块浏览、搜索筛选，点「执行」自动填入提问栏。",
     "demo": "catalog-onboard"
   },
   {
     "type": "feature",
-    "label": "功能 · 09",
+    "label": "功能 · 11",
     "title": "常用工具，一键直达",
     "desc": "顶栏「快捷」集中内网与外网常用工具，按分类收纳；点击即新标签页打开，查后台、抓包、切平台不必反复找地址。",
     "demo": "bookmarks-jump"
@@ -203,20 +227,34 @@
   {
     "type": "feature",
     "label": "智能 · 05",
+    "title": "工具台 MOA 录制，表单一键生成",
+    "desc": "能力侧栏点「MOA 录制」，选截图 / 完整请求 / 抓包行为 / 服务端代码四种方式填表；生成后自动写入提问栏，侧栏保持打开，确认后再发送。",
+    "demo": "moa-record"
+  },
+  {
+    "type": "feature",
+    "label": "智能 · 06",
     "title": "录制工作流，复杂活动一次跑通",
     "desc": "Agent 描述多步流程后落库为 Workflow，改参即可复跑；3周年砸金蛋从 MSE 配置同步、账号获次、批量砸蛋到概率保底与到账验收，六步贯通钉钉表全量验收。",
     "demo": "anniversary-egg-workflow"
   },
   {
     "type": "feature",
-    "label": "智能 · 06",
+    "label": "智能 · 07",
     "title": "登记即上线，能力自生长",
     "desc": "各模块在 config/registry.json 登记 name / category / command；跑 generate_index 后自动刷新使用方法与工具台 catalog——新能力落库即全员可见、可执行。",
     "demo": "registry-sync"
   },
   {
+    "type": "feature",
+    "title": "双周用量，显著提升",
+    "desc": "7/28 体验优化后，工作日日均请求约 2.3 倍、活跃峰值翻倍。",
+    "demo": "usage-growth",
+    "layout": "stack"
+  },
+  {
     "type": "center",
-    "titleLines": ["让工作", "更顺手"],
+    "text": "让工作，更顺手",
     "subtitle": "Yaahlan 智能工具 Agent"
   }
 ]

@@ -140,6 +140,42 @@
       "command": "python3 workflow/workflow_execute.py run moa-generative-run \\\n  --service-url /service/room/external/room-member-stage \\\n  --method agree \\\n  --body-file MOA-generative/templates/example-room-member-agree.body.json \\\n  --strict 0"
     },
     {
+      "id": "moa_generative_apply_across_room_pk",
+      "name": "生成式MOA-跨房PK指定邀请",
+      "category": "房间PK（room/external/room-pk-api）",
+      "description": "HTTP /yaahlan/room/acrossRoomPk/applyAcrossRoomPk → /service/room/external/room-pk-api + applyAcrossRoomPk。body 需 userId、roomId、acrossRoomId、acrossPkType=2、pkMinute、hostSeat。",
+      "prompts": [
+        "生成式MOA 跨房PK指定邀请",
+        "MOA applyAcrossRoomPk 指定邀请",
+        "抓包转MOA applyAcrossRoomPk"
+      ],
+      "command": "python3 workflow/workflow_execute.py run moa-generative-run \\\n  --service-url /service/room/external/room-pk-api \\\n  --method applyAcrossRoomPk \\\n  --body-file MOA-generative/templates/example-applyAcrossRoomPk.body.json \\\n  --strict 1"
+    },
+    {
+      "id": "moa_generative_accept_across_room_pk_invite",
+      "name": "生成式MOA-跨房PK接受邀请",
+      "category": "房间PK（room/external/room-pk-api）",
+      "description": "HTTP /yaahlan/room/acrossRoomPk/acceptAcrossRoomPkInvite → /service/room/external/room-pk-api + acceptAcrossRoomPkInvite。body 需 userId、roomId（被邀请方）、acrossRoomId（发起方）、inviteId。",
+      "prompts": [
+        "生成式MOA 跨房PK接受邀请",
+        "MOA acceptAcrossRoomPkInvite",
+        "抓包转MOA acceptAcrossRoomPkInvite"
+      ],
+      "command": "python3 workflow/workflow_execute.py run moa-generative-run \\\n  --service-url /service/room/external/room-pk-api \\\n  --method acceptAcrossRoomPkInvite \\\n  --body-file MOA-generative/templates/example-acceptAcrossRoomPkInvite.body.json \\\n  --strict 0"
+    },
+    {
+      "id": "moa_generative_close_across_room_pk",
+      "name": "生成式MOA-跨房PK结束PK",
+      "category": "房间PK（room/external/room-pk-api）",
+      "description": "HTTP /yaahlan/room/acrossRoomPk/closeAcrossRoomPk → /service/room/external/room-pk-api + closeAcrossRoomPk。body 需 userId、roomId、acrossRoomId、acrossRoomPkId。",
+      "prompts": [
+        "生成式MOA 跨房PK结束",
+        "MOA closeAcrossRoomPk 结束PK",
+        "抓包转MOA closeAcrossRoomPk"
+      ],
+      "command": "python3 workflow/workflow_execute.py run moa-generative-run \\\n  --service-url /service/room/external/room-pk-api \\\n  --method closeAcrossRoomPk \\\n  --body-file MOA-generative/templates/example-closeAcrossRoomPk.body.json \\\n  --strict 0"
+    },
+    {
       "id": "moa_generative_gift_panel_backpack_gifts",
       "name": "生成式MOA-礼物面板背包礼物",
       "category": "礼物面板（yh-components/gift-panel）",

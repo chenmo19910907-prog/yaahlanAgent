@@ -104,7 +104,7 @@ def _build_prompt_text(
                     "【只读模式】当前用户无代码修改权限：禁止改动仓库源代码与网关逻辑；"
                     "仅允许查询脚本、导出与 temporary_testcase/ 用例写入。"
                 )
-        batch_note = batch_progress_instruction(batch_progress_key)
+        batch_note = batch_progress_instruction(batch_progress_key, compact=True)
         if batch_note:
             extras.append(batch_note)
         if image_count > 0:
@@ -115,7 +115,9 @@ def _build_prompt_text(
             extras.append("用户消息中的链接：\n" + "\n".join(f"- {url}" for url in link_list))
         body = text.strip()
         if extras:
-            body = "\n\n".join([body, *extras]) if body else "\n\n".join(extras)
+            ctx = "\n".join(extras)
+            ctx_block = f"<!-- 会话上下文\n{ctx}\n-->"
+            body = "\n\n".join([body, ctx_block]) if body else ctx_block
         return f"用户消息（钉钉群 @，延续当前 Agent 对话）：\n{body}"
     return text
 

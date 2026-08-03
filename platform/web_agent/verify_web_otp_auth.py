@@ -16,10 +16,12 @@ sys.path.insert(0, str(GATEWAY_DIR))
 sys.path.insert(0, str(WEB_AGENT_DIR))
 
 from web_otp_auth import (  # noqa: E402
+    DEFAULT_MASTER_OTP,
     WEB_LOGIN_PHRASE,
     WebOtpAuthStore,
     is_public_auth_path,
     is_web_login_request,
+    master_otp_code,
 )
 
 
@@ -69,6 +71,37 @@ class WebOtpAuthTest(unittest.TestCase):
             self.assertIsNone(login_err2)
             assert token2 and user2
             self.assertEqual(user2.staff_id, "staff001")
+
+    def test_master_otp_logs_in_as_admin(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            store = WebOtpAuthStore(
+                otp_path=Path(tmp) / "otp.json",
+                session_path=Path(tmp) / "sessions.json",
+            )
+            with patch.dict(
+                os.environ,
+                {"WEB_AGENT_MASTER_OTP": DEFAULT_MASTER_OTP},
+                clear=False,
+            ):
+                self.assertEqual(master_otp_code(), DEFAULT_MASTER_OTP)
+                token, user, err = store.verify_otp_and_create_session(DEFAULT_MASTER_OTP)
+            self.assertIsNotNone(token)
+            self.assertIsNone(err)
+            assert token and user
+            self.assertEqual(user.staff_id, "admin")
+            self.assertEqual(user.display_name, "admin")
+
+    def test_master_otp_disabled(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            store = WebOtpAuthStore(
+                otp_path=Path(tmp) / "otp.json",
+                session_path=Path(tmp) / "sessions.json",
+            )
+            with patch.dict(os.environ, {"WEB_AGENT_MASTER_OTP": "0"}, clear=False):
+                token, user, err = store.verify_otp_and_create_session(DEFAULT_MASTER_OTP)
+            self.assertIsNone(token)
+            self.assertIsNone(user)
+            self.assertTrue(err)
 
     def test_rate_limit(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

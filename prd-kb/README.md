@@ -2,7 +2,7 @@
 
 > **文档类型**：按业务模块整理的产品需求要点（非逐篇 PRD 文档）
 > **来源目录**：[产品需求文档](https://alidocs.dingtalk.com/i/nodes/14lgGw3P8vveoPlPC2PdN56v85daZ90D)
-> **最近整理**：2026-07-22 17:09:56 +0800
+> **最近整理**：2026-08-03 11:49:38 +0800
 
 与 `testcase-kb/`（验收要点）互补：本目录保留**产品侧需求规则与业务逻辑**，供 `prd-review`、用例生成前理解需求。
 「待排期需求」不纳入知识库。
@@ -19,7 +19,7 @@ python3 scripts/prd_kb_build.py --input-dir prd-kb/.raw --output-dir prd-kb
 | 指标 | 值 |
 |------|-----|
 | 模块文件 | 21 |
-| 来源 PRD 篇数 | 83 |
+| 来源 PRD 篇数 | 84 |
 
 ## 模块索引
 

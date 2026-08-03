@@ -141,10 +141,25 @@ def test_command_hints() -> None:
     assert suggest_command_hint("查询用户 100465989 详情") is None
 
 
+def test_bridge_callback_auth_token_cli_safe() -> None:
+    from bridge_manager import cli_safe_callback_auth_token
+
+    for _ in range(500):
+        token = cli_safe_callback_auth_token()
+        assert token
+        assert not token.startswith("-")
+
+
 def test_agent_retry_policy() -> None:
     from bridge_manager import AGENT_RUN_MAX_RETRIES, is_retryable_agent_error
 
     assert AGENT_RUN_MAX_RETRIES == 3
+    assert is_retryable_agent_error(
+        RuntimeError(
+            "Bridge exited before discovery with status 1: "
+            "Missing value for --tool-callback-auth-token"
+        )
+    )
     assert is_retryable_agent_error(RuntimeError("Agent 启动失败: Unknown agent: agent-abc"))
     assert is_retryable_agent_error(RuntimeError("Agent 执行失败: run-deadbeef"))
     assert not is_retryable_agent_error(
@@ -395,6 +410,10 @@ def main() -> int:
     print("[OK] test_conversation_persistence")
     test_command_hints()
     print("[OK] test_command_hints")
+    test_bridge_callback_auth_token_cli_safe()
+    print("[OK] test_bridge_callback_auth_token_cli_safe")
+    test_agent_retry_policy()
+    print("[OK] test_agent_retry_policy")
     test_format_exception_friendly()
     print("[OK] test_format_exception_friendly")
     test_truncate_guide()

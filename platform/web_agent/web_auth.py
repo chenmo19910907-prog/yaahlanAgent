@@ -223,6 +223,8 @@ def is_anonymous_allowed(handler: BaseHTTPRequestHandler, *, method: str = "GET"
             return True
         if path == "/api/message-board" or path.startswith("/api/message-board/"):
             return True
+        if path == "/api/web-docs":
+            return True
         if _SESSION_MESSAGES_RE.match(path):
             return True
     if verb == "POST" and path == "/api/auth/logout":
