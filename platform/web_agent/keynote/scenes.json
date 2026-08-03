@@ -103,23 +103,23 @@
   {
     "type": "feature",
     "label": "功能 · 03",
-    "title": "流式输出，执行状态可见",
-    "desc": "Agent 回复逐字流式呈现；执行中实时显示已用时与任务状态，长任务心中有数。",
+    "title": "流式传输，思考只显有效信息",
+    "desc": "回复逐字 SSE 流式推送；思考阶段不倾倒内部推理，仅展示已收到、已用时与工具摘要等有效状态，长任务心中有数。",
     "demo": "stream-output"
   },
   {
     "type": "feature",
     "label": "功能 · 04",
-    "title": "执行可中断，提问自动回填",
-    "desc": "Agent 执行中随时点停；原提问自动回到输入框，改一句即可重试，不必从头输入。",
-    "demo": "cancel-restore"
+    "title": "实时耗时，批量进度可见",
+    "desc": "执行过程实时显示已用时；批量任务同步展示 N/M 进度与预计剩余，长任务心中有数。",
+    "demo": "task-progress"
   },
   {
     "type": "feature",
     "label": "功能 · 05",
-    "title": "实时耗时，批量进度可见",
-    "desc": "执行过程实时显示已用时；批量任务同步展示 N/M 进度与预计剩余，长任务心中有数。",
-    "demo": "task-progress"
+    "title": "执行可中断，提问自动回填",
+    "desc": "Agent 执行中随时点停；原提问自动回到输入框，改一句即可重试，不必从头输入。",
+    "demo": "cancel-restore"
   },
   {
     "type": "feature",
