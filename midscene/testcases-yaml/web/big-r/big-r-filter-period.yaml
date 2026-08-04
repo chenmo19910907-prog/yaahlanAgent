@@ -1,0 +1,69 @@
+# TC-BIGR-WEB-003 | P0 | 大R后台时间维度筛选
+# 验证切换周汇总/月汇总/自定义时间后表格刷新
+
+web:
+  url: "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/big-r"
+  cookie: ".generated/admin-cookies.json"
+  viewportWidth: 1440
+  viewportHeight: 900
+  waitForNetworkIdle:
+    timeout: 15000
+    continueOnNetworkIdleError: true
+
+agent:
+  testId: "TC-BIGR-WEB-003"
+  groupName: "大R后台-时间筛选"
+  generateReport: true
+  reportFileName: "big-r-filter-period"
+  aiActContext: >
+    页面有时间维度筛选：周汇总(WEEK_SUMMARY)、月汇总(MONTH_SUMMARY)、自定义日期范围。
+    切换时间维度后会重新请求数据并刷新表格。
+    可能显示为 radio button、dropdown、或 segmented control。
+
+tasks:
+  - name: "TC-BIGR-WEB-003-01 识别当前时间维度"
+    flow:
+      - sleep: 4000
+      - aiQuery: >
+          {
+            currentPeriod: string,
+            periodOptions: string[],
+            dateRangeVisible: boolean,
+            dateRangeText: string | null
+          },
+          识别：
+          - currentPeriod: 当前选中的时间维度（如"月汇总"、"周汇总"）
+          - periodOptions: 所有可选的时间维度选项
+          - dateRangeVisible: 是否显示日期范围
+          - dateRangeText: 显示的日期范围文本（如 "2026-08-01 ~ 2026-08-03"）
+
+  - name: "TC-BIGR-WEB-003-02 切换时间维度"
+    flow:
+      - ai: >
+          找到时间维度筛选控件，如果当前是"月汇总"则切换到"周汇总"，
+          如果当前是"周汇总"则切换到"月汇总"。
+          点击对应的选项完成切换。
+      - sleep: 3000
+
+      - aiAssert: >
+          时间维度已成功切换，表格数据已重新加载（loading 消失，有数据行或显示"暂无数据"）
+        errorMessage: "TC-BIGR-WEB-003-02 切换时间维度后数据未刷新"
+
+      - aiQuery: >
+          {
+            currentPeriod: string,
+            dateRangeText: string | null,
+            dataRowCount: number
+          },
+          切换后的时间维度和数据情况
+
+  - name: "TC-BIGR-WEB-003-03 查询按钮触发"
+    flow:
+      - ai: >
+          如果页面有"查询"或"搜索"按钮，点击它触发数据刷新。
+          如果没有独立查询按钮（切换选项即自动刷新），则跳过此步。
+      - sleep: 2000
+
+      - aiAssert: >
+          页面正常，没有出现报错弹窗或红色错误提示
+        errorMessage: "TC-BIGR-WEB-003-03 点击查询后出现错误"

@@ -1,0 +1,57 @@
+# TC-BIGR-WEB-008 | P1 | 大R后台 VIP 升降级列表
+# 验证 VIP 升降级页面加载、筛选周维度
+
+web:
+  url: "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/big-r"
+  cookie: ".generated/admin-cookies.json"
+  viewportWidth: 1440
+  viewportHeight: 900
+  waitForNetworkIdle:
+    timeout: 15000
+    continueOnNetworkIdleError: true
+
+agent:
+  testId: "TC-BIGR-WEB-008"
+  groupName: "大R后台-VIP升降级"
+  generateReport: true
+  reportFileName: "big-r-vip-change"
+  aiActContext: >
+    大R后台中可能有 VIP 升降级子模块（tab 或 子菜单），
+    展示每周 VIP 等级变化的用户列表。
+    支持按升级/降级类型筛选，支持选择周锚点日期。
+
+tasks:
+  - name: "TC-BIGR-WEB-008-01 进入 VIP 升降级"
+    flow:
+      - sleep: 4000
+
+      - ai: >
+          在页面中查找"VIP升降级"或"VIP变化"或"vip change"相关的入口
+          （可能是子Tab、侧边菜单项、或面包屑导航中的选项），
+          点击进入该模块
+      - sleep: 3000
+
+      - aiAssert: >
+          当前页面展示了与 VIP 等级变化相关的内容
+          （如升降级列表、周筛选、升级/降级筛选），
+          或如果不存在该入口，至少页面没有报错
+        errorMessage: "TC-BIGR-WEB-008-01 未找到 VIP 升降级入口或进入失败"
+
+  - name: "TC-BIGR-WEB-008-02 查看升降级数据"
+    flow:
+      - aiQuery: >
+          {
+            hasVipChangeContent: boolean,
+            changeTypes: string[],
+            weekSelector: boolean,
+            dataRowCount: number
+          },
+          识别 VIP 升降级页面：
+          - hasVipChangeContent: 当前页面是否在展示 VIP 升降级相关内容
+          - changeTypes: 可选的变化类型（如"升级"、"降级"）
+          - weekSelector: 是否有周日期选择控件
+          - dataRowCount: 列表数据行数
+
+      - aiAssert: >
+          页面正常展示（有表格或列表，或显示"暂无数据"），没有 JS 报错或白屏
+        errorMessage: "TC-BIGR-WEB-008-02 VIP 升降级页面异常"

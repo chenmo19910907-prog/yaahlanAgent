@@ -1,0 +1,50 @@
+# 大R后台登录初始化（setup 脚本）
+# 通过 cookie 注入 SSO token 后加载页面，确保已登录状态
+# 配合 --share-browser-context 使后续脚本复用登录态
+#
+# 运行前须执行: node scripts/gen-admin-cookies.mjs
+
+web:
+  url: "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/big-r"
+  cookie: ".generated/admin-cookies.json"
+  viewportWidth: 1440
+  viewportHeight: 900
+  waitForNetworkIdle:
+    timeout: 15000
+    continueOnNetworkIdleError: true
+
+agent:
+  testId: "BIGR-SETUP-LOGIN"
+  groupName: "大R后台-登录初始化"
+  generateReport: true
+  reportFileName: "big-r-setup-login"
+  aiActContext: >
+    这是 Yaahlan 运营后台的大R用户管理页面。
+    页面使用中文界面，顶部有导航菜单，主体区域是数据表格。
+    如果出现登录弹窗或 SSO 跳转，说明 cookie 已过期需要重新生成。
+
+tasks:
+  - name: "BIGR-SETUP-001 验证页面加载并进入大R管理"
+    flow:
+      - sleep: 3000
+
+      - aiAssert: >
+          页面已成功加载，显示了大R用户管理相关的内容（如表格、筛选条件、Tab栏等），
+          没有出现登录页面或 SSO 认证跳转。
+          如果看到「大R用户」「VIP」「充值」「查询」等关键词，说明已正确登录。
+        errorMessage: "BIGR-SETUP-001 失败：页面未正确加载或 SSO token 已过期，请重新执行 node scripts/gen-admin-cookies.mjs"
+
+      - aiQuery: >
+          {
+            pageTitle: string,
+            hasTable: boolean,
+            hasFilterPanel: boolean,
+            currentTab: string | null,
+            loginRequired: boolean
+          },
+          识别当前页面状态：
+          - pageTitle: 页面标题或面包屑中显示的模块名称
+          - hasTable: 页面中是否显示了数据表格
+          - hasFilterPanel: 是否有筛选/查询面板
+          - currentTab: 当前激活的 Tab 标签名称（如"VIP用户"、"充值用户"）
+          - loginRequired: 是否需要登录（出现登录表单或跳转）

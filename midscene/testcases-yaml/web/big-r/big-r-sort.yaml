@@ -1,0 +1,75 @@
+# TC-BIGR-WEB-004 | P0 | 大R后台表格排序
+# 验证点击表头排序后数据正确重新排列
+
+web:
+  url: "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/big-r"
+  cookie: ".generated/admin-cookies.json"
+  viewportWidth: 1440
+  viewportHeight: 900
+  waitForNetworkIdle:
+    timeout: 15000
+    continueOnNetworkIdleError: true
+
+agent:
+  testId: "TC-BIGR-WEB-004"
+  groupName: "大R后台-排序"
+  generateReport: true
+  reportFileName: "big-r-sort"
+  aiActContext: >
+    大R用户表格支持按列排序。点击表头列名可切换升序/降序。
+    排序列通常有箭头图标指示当前排序方向。
+    主要排序列包括：充值金额(USD)、消费金额、在线时长等数值列。
+
+tasks:
+  - name: "TC-BIGR-WEB-004-01 默认排序状态"
+    flow:
+      - sleep: 4000
+      - aiQuery: >
+          {
+            sortableColumns: string[],
+            currentSortColumn: string | null,
+            currentSortDirection: "asc" | "desc" | null,
+            firstThreeValues: string[]
+          },
+          识别：
+          - sortableColumns: 哪些列有排序图标（可排序）
+          - currentSortColumn: 当前按哪一列排序
+          - currentSortDirection: 当前排序方向（升序/降序）
+          - firstThreeValues: 当前排序列的前三行数值
+
+  - name: "TC-BIGR-WEB-004-02 点击充值金额列排序"
+    flow:
+      - ai: >
+          找到表头中与"充值"或"recharge"或"USD"相关的列名，
+          点击该列表头触发排序（如果已是降序则再点一次变为升序）
+      - sleep: 3000
+
+      - aiQuery: >
+          {
+            sortColumn: string,
+            sortDirection: "asc" | "desc" | null,
+            topFiveValues: string[]
+          },
+          排序后状态：排序列名、方向、前五行该列的值
+
+      - aiAssert: >
+          排序已生效：表格前几行数据的充值金额列呈现有序排列
+          （降序：从大到小；升序：从小到大），
+          或者排序方向箭头指示已变化
+        errorMessage: "TC-BIGR-WEB-004-02 排序未生效或方向不正确"
+
+  - name: "TC-BIGR-WEB-004-03 切换排序方向"
+    flow:
+      - ai: 再次点击同一列表头，切换排序方向
+      - sleep: 3000
+
+      - aiAssert: >
+          排序方向已切换（箭头图标改变或数据顺序反转）
+        errorMessage: "TC-BIGR-WEB-004-03 再次点击排序方向未切换"
+
+      - aiQuery: >
+          {
+            sortDirection: "asc" | "desc" | null,
+            topFiveValues: string[]
+          },
+          切换后的排序方向和前五行值

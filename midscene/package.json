@@ -27,6 +27,13 @@
     "yaml:ios:games-from-list:resume": "node game.env/run-ios-games-from-list.mjs --from=Mines",
     "yaml:ios:recharge": "node scripts/midscene-run.mjs --platform=ios './testcases-yaml/ios/recharge-p1.yaml'",
     "yaml:web:eid2026": "npx midscene ./testcases-yaml/web/run-eid2026.yaml",
+    "yaml:web:big-r:setup": "node scripts/gen-admin-cookies.mjs && npx midscene ./testcases-yaml/web/big-r/setup-login.yaml",
+    "yaml:web:big-r": "node scripts/gen-admin-cookies.mjs && npx midscene --setup ./testcases-yaml/web/big-r/setup-login.yaml --share-browser-context ./testcases-yaml/web/big-r/big-r-page-load.yaml ./testcases-yaml/web/big-r/big-r-tab-switch.yaml ./testcases-yaml/web/big-r/big-r-filter-period.yaml ./testcases-yaml/web/big-r/big-r-sort.yaml ./testcases-yaml/web/big-r/big-r-search.yaml ./testcases-yaml/web/big-r/big-r-pagination.yaml ./testcases-yaml/web/big-r/big-r-user-detail.yaml",
+    "yaml:web:big-r:smoke": "node scripts/gen-admin-cookies.mjs && npx midscene ./testcases-yaml/web/big-r/big-r-page-load.yaml",
+    "yaml:web:big-r:single": "node scripts/gen-admin-cookies.mjs && npx midscene",
+    "yaml:web:big-r:all": "node scripts/gen-admin-cookies.mjs && npx midscene --share-browser-context ./testcases-yaml/web/big-r/big-r-*.yaml",
+    "test:web:big-r": "node scripts/gen-admin-cookies.mjs && npx tsx testcases-ts/web/big-r-admin.test.ts",
+    "test:web:big-r:smoke": "node scripts/gen-admin-cookies.mjs && npx tsx testcases-ts/web/big-r-admin.test.ts --smoke",
     "test:eid2026:app": "npx tsx testcases-ts/web/run-eid2026.ts",
     "test:eid2026:app:smoke": "npx tsx testcases-ts/web/run-eid2026.ts --smoke"
   },

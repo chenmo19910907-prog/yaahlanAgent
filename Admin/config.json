@@ -155,5 +155,24 @@
     "defaultStatus": -1,
     "defaultPage": 1,
     "defaultPerPage": 10
+  },
+  "big_rich": {
+    "frontendUrl": "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/big-r",
+    "apiPrefix": "",
+    "defaultLimit": 20,
+    "defaultIndex": 0,
+    "paths": {
+      "page_list": "/admin/big-rich/pageList",
+      "export_list": "/admin/big-rich/exportList",
+      "vip_change_page": "/admin/big-rich/vip-change/page",
+      "vip_change_export": "/admin/big-rich/vip-change/export",
+      "daily_vip4_page": "/admin/big-rich/daily-vip4/page",
+      "daily_vip4_export": "/admin/big-rich/daily-vip4/export",
+      "detail_disburse_scene": "/admin/big-rich/detail/disburseScene",
+      "detail_gift_top50": "/admin/big-rich/detail/giftTop50",
+      "detail_recv_top50": "/admin/big-rich/detail/recvTop50",
+      "detail_game_top": "/admin/big-rich/detail/gameTop",
+      "detail_recharge_top20": "/admin/big-rich/detail/rechargeTop20"
+    }
   }
 }

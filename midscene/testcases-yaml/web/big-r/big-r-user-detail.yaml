@@ -1,0 +1,75 @@
+# TC-BIGR-WEB-007 | P0 | 大R后台用户详情弹窗
+# 验证点击用户行后展开/打开详情，显示消费分布、送礼TOP、游戏TOP等
+
+web:
+  url: "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/big-r"
+  cookie: ".generated/admin-cookies.json"
+  viewportWidth: 1440
+  viewportHeight: 900
+  waitForNetworkIdle:
+    timeout: 15000
+    continueOnNetworkIdleError: true
+
+agent:
+  testId: "TC-BIGR-WEB-007"
+  groupName: "大R后台-用户详情"
+  generateReport: true
+  reportFileName: "big-r-user-detail"
+  aiActContext: >
+    表格中的用户行可以点击展开或跳转到详情页/弹窗，
+    展示该用户的消费场景分布（钻石分布）、送礼 TOP50、游戏收益 TOP 等子模块。
+    详情可能以抽屉(Drawer)、弹窗(Modal)或新区域展示。
+
+tasks:
+  - name: "TC-BIGR-WEB-007-01 点击用户行打开详情"
+    flow:
+      - sleep: 4000
+
+      - ai: >
+          在表格第一行数据中，找到可以点击查看详情的元素
+          （可能是用户 ID 链接、"查看"按钮、或展开箭头），
+          点击它打开用户详情
+      - sleep: 3000
+
+      - aiAssert: >
+          用户详情已展示，可以看到以下任一内容：
+          - 用户基本信息（ID、昵称、国家等）
+          - 消费/充值汇总数据
+          - 场景分布（如 GIFT、GAME 等消费类别）
+          - 送礼排行或游戏排行列表
+        errorMessage: "TC-BIGR-WEB-007-01 点击后未展示用户详情"
+
+  - name: "TC-BIGR-WEB-007-02 验证详情内容完整性"
+    flow:
+      - aiQuery: >
+          {
+            userId: string | null,
+            nickname: string | null,
+            sections: string[],
+            hasRechargeData: boolean,
+            hasDisburseData: boolean,
+            hasChartOrTable: boolean
+          },
+          提取详情页内容：
+          - userId: 详情中展示的用户 ID
+          - nickname: 用户昵称
+          - sections: 详情中的模块/标题列表（如"消费分布"、"送礼TOP"、"游戏"）
+          - hasRechargeData: 是否显示充值数据
+          - hasDisburseData: 是否显示消费/支出数据
+          - hasChartOrTable: 是否有图表或子表格
+
+      - aiAssert: >
+          详情页内容非空，至少展示了用户 ID 和部分统计数据（充值或消费金额），
+          不是空白或加载中状态
+        errorMessage: "TC-BIGR-WEB-007-02 详情内容为空或加载失败"
+
+  - name: "TC-BIGR-WEB-007-03 关闭详情回到列表"
+    flow:
+      - ai: >
+          关闭用户详情（点击关闭按钮 X、或点击弹窗外部、或返回按钮），
+          回到用户列表页
+      - sleep: 2000
+
+      - aiAssert: >
+          已回到列表页面，数据表格重新可见，详情弹窗/抽屉已消失
+        errorMessage: "TC-BIGR-WEB-007-03 无法关闭详情回到列表"

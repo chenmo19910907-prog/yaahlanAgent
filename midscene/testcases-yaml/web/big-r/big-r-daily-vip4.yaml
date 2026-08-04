@@ -1,0 +1,50 @@
+# TC-BIGR-WEB-009 | P1 | 大R后台每日新增VIP4
+# 验证每日新增 VIP4 用户列表页面正常
+
+web:
+  url: "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/big-r"
+  cookie: ".generated/admin-cookies.json"
+  viewportWidth: 1440
+  viewportHeight: 900
+  waitForNetworkIdle:
+    timeout: 15000
+    continueOnNetworkIdleError: true
+
+agent:
+  testId: "TC-BIGR-WEB-009"
+  groupName: "大R后台-每日VIP4"
+  generateReport: true
+  reportFileName: "big-r-daily-vip4"
+  aiActContext: >
+    大R后台中可能有"每日新增VIP4"子模块，
+    展示每天新达到 VIP4 等级的用户列表，支持按日期筛选。
+
+tasks:
+  - name: "TC-BIGR-WEB-009-01 进入每日新增VIP4"
+    flow:
+      - sleep: 4000
+
+      - ai: >
+          在页面中查找"每日新增VIP4"或"daily vip4"或"新增VIP"相关的入口
+          （可能是 Tab、子菜单、或导航项），点击进入
+      - sleep: 3000
+
+      - aiQuery: >
+          {
+            hasDailyVip4Content: boolean,
+            dateSelector: boolean,
+            dataRowCount: number,
+            pageTitle: string | null
+          },
+          识别每日 VIP4 页面：
+          - hasDailyVip4Content: 当前页面是否展示每日新增 VIP4 内容
+          - dateSelector: 是否有日期选择控件
+          - dataRowCount: 列表数据行数
+          - pageTitle: 当前页面标题/面包屑
+
+  - name: "TC-BIGR-WEB-009-02 验证页面状态"
+    flow:
+      - aiAssert: >
+          页面正常（有数据列表或"暂无数据"提示），没有 JS 报错或白屏。
+          如果有日期选择器，它应该默认选中昨天或今天。
+        errorMessage: "TC-BIGR-WEB-009-02 每日新增VIP4页面异常"

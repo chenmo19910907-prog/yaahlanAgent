@@ -413,6 +413,87 @@
         "100465989 需要定制座驾"
       ],
       "command": "# ① 升到 VIP8（MOA）\npython3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/VIP-增加经验值.json \\\n  --vip-user-id <userId> \\\n  --vip-level 8\n\n# ② 重置座驾上传冷却（Admin）\npython3 Admin/admin_execute.py \\\n  --reset-custom-vehicle-cooldown \\\n  --custom-vehicle-remote-id <userId>"
+    },
+    {
+      "id": "big_r_list_endpoints",
+      "name": "大R-列出API",
+      "category": "大R用户管理（yaahlan-admin）",
+      "description": "列出开发者后台大R用户管理全部接口 URL（前端 #/big-r；网关 /yaahlan/api/admin/big-rich/*）",
+      "prompts": [
+        "大R后台有哪些接口",
+        "列出大R API",
+        "big-r list endpoints"
+      ],
+      "command": "python3 Admin/scripts/big_r_verify.py list-endpoints"
+    },
+    {
+      "id": "big_r_page_list",
+      "name": "大R-查询列表",
+      "category": "大R用户管理（yaahlan-admin）",
+      "description": "查询大R主列表 pageList（VIP用户 tab userType=2 / 充值用户 tab userType=1；支持 periodType、排序、userId 搜索）",
+      "prompts": [
+        "查询大R VIP用户列表",
+        "大R列表按充值金额排序",
+        "搜索大R用户 <userId>"
+      ],
+      "command": "python3 Admin/scripts/big_r_verify.py page-list --tab vip --order-by rechargeUsd --sort desc --limit 20"
+    },
+    {
+      "id": "big_r_user_detail",
+      "name": "大R-用户明细",
+      "category": "大R用户管理（yaahlan-admin）",
+      "description": "查询单用户明细：钻石消耗分布、送礼/收礼 TOP、游戏 TOP、充值渠道 TOP（5 个 detail 接口）",
+      "prompts": [
+        "查询大R用户 <userId> 明细",
+        "大R用户 <userId> 钻石消耗分布",
+        "大R用户 <userId> 送礼TOP"
+      ],
+      "command": "python3 Admin/scripts/big_r_verify.py user-detail --user-id <userId>"
+    },
+    {
+      "id": "big_r_verify_smoke",
+      "name": "大R-冒烟验收",
+      "category": "大R用户管理（yaahlan-admin）",
+      "description": "大R后台 API 冒烟：VIP/充值列表、rechargeUsd 降序、userId 搜索、明细、VIP升降级、每日新增VIP4",
+      "prompts": [
+        "大R后台冒烟",
+        "验收大R API",
+        "执行大R smoke"
+      ],
+      "command": "python3 Admin/scripts/big_r_verify.py smoke --user-id <userId> --limit 10"
+    },
+    {
+      "id": "big_r_verify_report",
+      "name": "大R-生成可视化报告",
+      "category": "大R用户管理（yaahlan-admin）",
+      "description": "执行 smoke 并输出 HTML/Markdown 可视化报告（通过率卡片 + 检查项表格）",
+      "prompts": [
+        "大R冒烟并生成HTML报告",
+        "大R验收可视化报告"
+      ],
+      "command": "python3 Admin/scripts/big_r_verify.py smoke --limit 10 --out-json .tmp/big_r_smoke.json --out-html .tmp/big_r_smoke_report.html --quiet && open .tmp/big_r_smoke_report.html"
+    },
+    {
+      "id": "big_r_verify_sort",
+      "name": "大R-校验排序",
+      "category": "大R用户管理（yaahlan-admin）",
+      "description": "调用 pageList 两次（asc/desc），校验 orderBy 字段排序单调性",
+      "prompts": [
+        "校验大R列表排序",
+        "大R rechargeUsd 排序验收"
+      ],
+      "command": "python3 Admin/scripts/big_r_verify.py verify-sort --order-by rechargeUsd --limit 20"
+    },
+    {
+      "id": "big_r_verify_search",
+      "name": "大R-校验搜索",
+      "category": "大R用户管理（yaahlan-admin）",
+      "description": "按 userId 精确搜索 pageList，断言仅返回 1 条且 userId 匹配",
+      "prompts": [
+        "校验大R搜索 <userId>",
+        "大R userId 搜索验收"
+      ],
+      "command": "python3 Admin/scripts/big_r_verify.py verify-search --user-id <userId>"
     }
   ]
 }

@@ -1,0 +1,71 @@
+# TC-BIGR-WEB-006 | P1 | 大R后台表格翻页
+# 验证翻页控件可用，下一页/上一页数据加载正确
+
+web:
+  url: "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/big-r"
+  cookie: ".generated/admin-cookies.json"
+  viewportWidth: 1440
+  viewportHeight: 900
+  waitForNetworkIdle:
+    timeout: 15000
+    continueOnNetworkIdleError: true
+
+agent:
+  testId: "TC-BIGR-WEB-006"
+  groupName: "大R后台-翻页"
+  generateReport: true
+  reportFileName: "big-r-pagination"
+  aiActContext: >
+    表格底部有分页控件。通常包含：当前页码、总页数/总条数、
+    上一页/下一页按钮、可能有跳转到指定页的输入框。
+    每页默认显示 20 或 50 条数据。
+
+tasks:
+  - name: "TC-BIGR-WEB-006-01 识别分页状态"
+    flow:
+      - sleep: 4000
+
+      - aiQuery: >
+          {
+            currentPage: number | null,
+            totalPages: number | null,
+            totalRecords: string | null,
+            pageSize: number | null,
+            hasNextButton: boolean,
+            hasPrevButton: boolean,
+            firstRowUserId: string | null
+          },
+          识别分页控件：
+          - currentPage: 当前页码
+          - totalPages: 总页数
+          - totalRecords: 总记录数文字
+          - pageSize: 每页条数
+          - hasNextButton: 是否有下一页按钮
+          - hasPrevButton: 是否有上一页按钮
+          - firstRowUserId: 当前页第一行用户 ID
+
+  - name: "TC-BIGR-WEB-006-02 点击下一页"
+    flow:
+      - ai: 点击"下一页"按钮或分页区域的向右箭头
+      - sleep: 3000
+
+      - aiAssert: >
+          已翻到下一页：当前页码变为 2（或比之前大 1），
+          表格数据已更新（第一行用户 ID 与前一页不同）
+        errorMessage: "TC-BIGR-WEB-006-02 翻页未生效"
+
+      - aiQuery: >
+          {
+            currentPage: number | null,
+            firstRowUserId: string | null
+          },
+          翻页后的页码和第一行用户 ID
+
+  - name: "TC-BIGR-WEB-006-03 返回上一页"
+    flow:
+      - ai: 点击"上一页"按钮或分页区域的向左箭头
+      - sleep: 3000
+
+      - aiAssert: >
+          已返回上一页：页码恢复为 1（或减 1），表格数据正确加载
+        errorMessage: "TC-BIGR-WEB-006-03 返回上一页失败"

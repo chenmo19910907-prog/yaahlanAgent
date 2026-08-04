@@ -1,0 +1,63 @@
+# TC-BIGR-WEB-002 | P0 | 大R后台 Tab 切换（VIP用户 / 充值用户）
+# 验证切换 Tab 后数据重新加载，表格列差异正确
+
+web:
+  url: "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/big-r"
+  cookie: ".generated/admin-cookies.json"
+  viewportWidth: 1440
+  viewportHeight: 900
+  waitForNetworkIdle:
+    timeout: 15000
+    continueOnNetworkIdleError: true
+
+agent:
+  testId: "TC-BIGR-WEB-002"
+  groupName: "大R后台-Tab切换"
+  generateReport: true
+  reportFileName: "big-r-tab-switch"
+  aiActContext: >
+    这是大R用户管理页面。页面有 VIP用户 和 充值用户 两个主 Tab。
+    切换 Tab 后表格数据应该重新加载，两个 Tab 的表格列可能有差异。
+
+tasks:
+  - name: "TC-BIGR-WEB-002-01 默认 Tab 识别"
+    flow:
+      - sleep: 4000
+      - aiQuery: >
+          {
+            activeTab: string,
+            totalCount: string | null,
+            firstRowUserId: string | null
+          },
+          识别当前激活的 Tab 名称、表格底部分页显示的总条数、第一行用户 ID
+
+  - name: "TC-BIGR-WEB-002-02 切换到另一个 Tab"
+    flow:
+      - ai: >
+          查看当前激活的 Tab，如果当前是"VIP用户"或类似标签，
+          点击"充值用户"或第二个 Tab 标签；
+          如果当前是"充值用户"，则点击"VIP用户"或第一个 Tab 标签。
+      - sleep: 3000
+
+      - aiAssert: >
+          Tab 已切换成功：当前高亮的 Tab 与刚才不同，
+          表格数据已重新加载（可能总条数不同或表头列有变化）
+        errorMessage: "TC-BIGR-WEB-002-02 Tab 切换后数据未更新"
+
+      - aiQuery: >
+          {
+            activeTab: string,
+            totalCount: string | null,
+            tableHeaders: string[],
+            firstRowUserId: string | null
+          },
+          切换后的 Tab 名称、总条数、表头列名、第一行用户 ID
+
+  - name: "TC-BIGR-WEB-002-03 切换回原 Tab"
+    flow:
+      - ai: 点击第一个 Tab 标签（VIP用户），切换回去
+      - sleep: 3000
+
+      - aiAssert: >
+          已切换回第一个 Tab，表格数据正常加载
+        errorMessage: "TC-BIGR-WEB-002-03 切回原 Tab 失败"

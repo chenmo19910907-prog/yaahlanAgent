@@ -1,0 +1,64 @@
+# TC-BIGR-WEB-001 | P0 | 大R后台页面加载与布局验证
+# 验证页面基础结构：导航、Tab栏、筛选面板、数据表格完整渲染
+
+web:
+  url: "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/big-r"
+  cookie: ".generated/admin-cookies.json"
+  viewportWidth: 1440
+  viewportHeight: 900
+  waitForNetworkIdle:
+    timeout: 15000
+    continueOnNetworkIdleError: true
+
+agent:
+  testId: "TC-BIGR-WEB-001"
+  groupName: "大R后台-页面加载"
+  generateReport: true
+  reportFileName: "big-r-page-load"
+  aiActContext: >
+    这是 Yaahlan 运营管理后台的大R用户管理页面。
+    页面顶部有侧边导航栏，主区域包含 Tab 切换（VIP用户/充值用户）、
+    时间筛选（周汇总/月汇总/自定义）、排序控件和数据表格。
+    表格列通常包含：用户ID、昵称、国家、财富等级、充值金额、消费明细等。
+
+tasks:
+  - name: "TC-BIGR-WEB-001-01 页面基础结构完整性"
+    flow:
+      - sleep: 4000
+
+      - aiAssert: >
+          页面成功加载，可以看到：
+          1. 页面左侧或顶部有导航菜单
+          2. 主内容区有 Tab 切换栏（至少 2 个标签）
+          3. 有日期/时间相关的筛选控件
+          4. 有一个数据表格，表头包含多列信息
+        errorMessage: "TC-BIGR-WEB-001-01 页面结构不完整，缺少关键 UI 组件"
+
+      - aiQuery: >
+          {
+            tabs: string[],
+            activeTab: string,
+            filterControls: string[],
+            tableHeaders: string[],
+            dataRowCount: number,
+            hasPageInfo: boolean
+          },
+          提取页面布局信息：
+          - tabs: 所有可见的 Tab 标签名称列表
+          - activeTab: 当前高亮/激活的 Tab 名称
+          - filterControls: 筛选区域可见的控件（如"周汇总"、"月汇总"、日期选择器）
+          - tableHeaders: 表格表头列名列表（按从左到右顺序）
+          - dataRowCount: 表格中可见数据行数（不含表头）
+          - hasPageInfo: 是否有分页信息（如"共XX条"或翻页按钮）
+
+  - name: "TC-BIGR-WEB-001-02 默认数据加载"
+    flow:
+      - aiAssert: >
+          表格中已加载数据，至少有 1 行数据显示（不是空表格或 loading 状态）。
+          如果显示"暂无数据"则判定失败。
+        errorMessage: "TC-BIGR-WEB-001-02 默认加载无数据返回"
+
+      - aiAssert: >
+          表格中的数据行包含用户 ID（数字）、昵称、国家/地区标识，
+          至少有一列显示金额或数值数据。
+        errorMessage: "TC-BIGR-WEB-001-02 表格数据列缺少关键字段"

@@ -1,0 +1,80 @@
+# TC-BIGR-WEB-005 | P0 | 大R后台用户搜索
+# 验证按 userId 精确搜索，搜索结果正确展示
+
+web:
+  url: "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/big-r"
+  cookie: ".generated/admin-cookies.json"
+  viewportWidth: 1440
+  viewportHeight: 900
+  waitForNetworkIdle:
+    timeout: 15000
+    continueOnNetworkIdleError: true
+
+agent:
+  testId: "TC-BIGR-WEB-005"
+  groupName: "大R后台-搜索"
+  generateReport: true
+  reportFileName: "big-r-search"
+  aiActContext: >
+    页面有搜索框可以按用户 ID 搜索。搜索后表格仅显示匹配用户。
+    清除搜索后恢复全量数据。搜索框可能标有"请输入用户ID"等 placeholder。
+
+tasks:
+  - name: "TC-BIGR-WEB-005-01 定位搜索框"
+    flow:
+      - sleep: 4000
+
+      - aiQuery: >
+          {
+            hasSearchInput: boolean,
+            searchPlaceholder: string | null,
+            hasSearchButton: boolean,
+            totalBeforeSearch: string | null
+          },
+          识别搜索相关控件：
+          - hasSearchInput: 是否有输入框可以搜索用户
+          - searchPlaceholder: 搜索框的 placeholder 文字
+          - hasSearchButton: 是否有独立的搜索按钮
+          - totalBeforeSearch: 搜索前表格总条数
+
+      - aiAssert: >
+          页面有可用的搜索输入框（用于输入用户 ID 或关键词）
+        errorMessage: "TC-BIGR-WEB-005-01 未找到搜索输入框"
+
+  - name: "TC-BIGR-WEB-005-02 输入用户ID搜索"
+    flow:
+      - ai: >
+          找到搜索输入框（通常有 placeholder 如"用户ID"或"搜索"），
+          清除已有内容，输入 "100004310"
+      - sleep: 500
+
+      - ai: >
+          如果有"搜索"或"查询"按钮，点击它；
+          否则按 Enter 键触发搜索
+      - sleep: 3000
+
+      - aiAssert: >
+          搜索结果已显示：表格只显示匹配的用户数据（通常 1 条），
+          表格中可以看到用户ID "100004310" 相关的行
+        errorMessage: "TC-BIGR-WEB-005-02 搜索无结果或未过滤"
+
+      - aiQuery: >
+          {
+            resultCount: number,
+            firstRowUserId: string | null,
+            firstRowNickname: string | null,
+            totalAfterSearch: string | null
+          },
+          搜索后：结果行数、第一行用户ID和昵称、总条数
+
+  - name: "TC-BIGR-WEB-005-03 清除搜索恢复全量"
+    flow:
+      - ai: >
+          清除搜索框中的内容（点击清除按钮/全选删除），
+          然后点击搜索按钮或按 Enter 恢复全量数据
+      - sleep: 3000
+
+      - aiAssert: >
+          搜索已清除，表格恢复为多条数据（比搜索时多），
+          不再只显示单个用户
+        errorMessage: "TC-BIGR-WEB-005-03 清除搜索后未恢复全量数据"
