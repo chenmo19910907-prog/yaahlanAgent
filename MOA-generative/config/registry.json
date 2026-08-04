@@ -152,6 +152,18 @@
       "command": "python3 workflow/workflow_execute.py run moa-generative-run \\\n  --service-url /service/room/external/room-pk-api \\\n  --method applyAcrossRoomPk \\\n  --body-file MOA-generative/templates/example-applyAcrossRoomPk.body.json \\\n  --strict 1"
     },
     {
+      "id": "moa_generative_apply_across_room_pk_random_match",
+      "name": "生成式MOA-跨房PK随机匹配",
+      "category": "房间PK（room/external/room-pk-api）",
+      "description": "HTTP /yaahlan/room/acrossRoomPk/applyAcrossRoomPk → /service/room/external/room-pk-api + applyAcrossRoomPk。body 需 userId、roomId、acrossPkType=1（随机匹配）、acrossRoomId 为空、pkMinute、hostSeat。Tunnel 100079102 `_id=VmdPzJ8BR2LVRzbvVZwa` 实测 ec=200。",
+      "prompts": [
+        "生成式MOA 跨房PK随机匹配",
+        "MOA applyAcrossRoomPk 随机匹配",
+        "13311111113 发起跨房PK匹配"
+      ],
+      "command": "python3 workflow/workflow_execute.py run moa-generative-run \\\n  --service-url /service/room/external/room-pk-api \\\n  --method applyAcrossRoomPk \\\n  --body-file MOA-generative/templates/example-applyAcrossRoomPk-random-match.body.json \\\n  --strict 0"
+    },
+    {
       "id": "moa_generative_accept_across_room_pk_invite",
       "name": "生成式MOA-跨房PK接受邀请",
       "category": "房间PK（room/external/room-pk-api）",
@@ -174,6 +186,18 @@
         "抓包转MOA closeAcrossRoomPk"
       ],
       "command": "python3 workflow/workflow_execute.py run moa-generative-run \\\n  --service-url /service/room/external/room-pk-api \\\n  --method closeAcrossRoomPk \\\n  --body-file MOA-generative/templates/example-closeAcrossRoomPk.body.json \\\n  --strict 0"
+    },
+    {
+      "id": "moa_generative_get_across_room_pk_info",
+      "name": "生成式MOA-跨房PK赛况信息",
+      "category": "房间PK（room/external/room-pk-api）",
+      "description": "HTTP /yaahlan/room/acrossRoomPk/getAcrossRoomPkInfo → /service/room/external/room-pk-api + getAcrossRoomPkInfo。body 需 userId、roomId，可选 acrossRoomPkId；返回 stage、双方房间信息与 roomRankValue/acrossRoomRankValue。",
+      "prompts": [
+        "生成式MOA getAcrossRoomPkInfo",
+        "MOA 查询跨房PK赛况",
+        "跨房PK对战信息 roomId=<roomId>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run moa-generative-run \\\n  --service-url /service/room/external/room-pk-api \\\n  --method getAcrossRoomPkInfo \\\n  --body-file MOA-generative/templates/example-getAcrossRoomPkInfo.body.json \\\n  --strict 0"
     },
     {
       "id": "moa_generative_gift_panel_backpack_gifts",

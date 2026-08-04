@@ -163,7 +163,7 @@ def sync() -> None:
     chrome_css = _between(
         preview,
         "  .mock-chrome { display: flex;",
-        "  .radial-title { position: absolute;",
+        "  .radial-title {",
     )
     layout_css = _between(preview, "  .mock-layout-session-title {", "  .mock-motion-sub {")
     app_hbtn_css = _between(preview, "  .mock-app-hbtn {\n    display: inline-flex;", "  .mock-app-chat {")
@@ -207,7 +207,7 @@ def sync() -> None:
 
     keynote = _sub_once(
         keynote,
-        r"  \.mock-chrome \{ display: flex;.*?(?=  \.radial-title \{ position: absolute;)",
+        r"  \.mock-chrome \{ display: flex;.*?(?=  \.radial-title \{)",
         chrome_css,
         "mock-chrome CSS",
     )

@@ -29,16 +29,6 @@
     ]
   },
   {
-    "type": "agent-preview",
-    "title": "Yaahlan 智能工具 Agent",
-    "subtitle": "真实界面 · 三态切换",
-    "views": [
-      { "id": "history", "label": "历史会话", "detail": "侧栏浏览 · 按人筛选 · 钉钉同步标识" },
-      { "id": "chat", "label": "新对话", "detail": "空态快捷提问 · 顶栏品牌居中" },
-      { "id": "catalog", "label": "工具台能力", "detail": "245 能力目录 · MOA 录制 · 填参执行" }
-    ]
-  },
-  {
     "type": "center",
     "label": "UI",
     "text": "界面上的小心思",
@@ -78,6 +68,17 @@
     "title": "丝滑动效，处处顺手",
     "desc": "统一 spring 缓动贯穿全局；输入框随内容亮起光晕、聚焦时微微上浮，历史会话滑过轻跃而出——每一帧都连贯。",
     "demo": "motion"
+  },
+  {
+    "type": "agent-preview",
+    "label": "UI · 06",
+    "title": "真实界面 · 三态切换",
+    "subtitle": "历史会话 · 新对话 · 工具台能力，一屏看懂 Yaahlan 智能工具 Agent",
+    "views": [
+      { "id": "history", "label": "历史会话", "detail": "侧栏浏览 · 按人筛选 · 钉钉同步标识" },
+      { "id": "chat", "label": "新对话", "detail": "空态快捷提问 · 顶栏品牌居中" },
+      { "id": "catalog", "label": "工具台能力", "detail": "245 能力目录 · MOA 录制 · 填参执行" }
+    ]
   },
   {
     "type": "center",
@@ -144,34 +145,41 @@
   {
     "type": "feature",
     "label": "功能 · 09",
+    "title": "执行完成，结果发钉钉",
+    "desc": "输入框下方可勾选「结果发钉钉」；勾选后任务成功完成，最终结果自动推送到当前登录用户的钉钉私聊，离开网页也能收到。",
+    "demo": "dingtalk-push"
+  },
+  {
+    "type": "feature",
+    "label": "功能 · 10",
+    "title": "会话标题，随时改名",
+    "desc": "历史会话右键「修改标题」，标题原地变为输入框；Enter 或失焦保存，留空则恢复自动标题（首条提问摘要）。",
+    "demo": "session-rename"
+  },
+  {
+    "type": "feature",
+    "label": "功能 · 11",
     "title": "常用会话，一键置顶",
     "desc": "右键或长按即可置顶，固定显示在列表顶部；点击图钉取消，全员共享排序，重要任务不再被淹没。",
     "demo": "session-pin"
   },
   {
     "type": "feature",
-    "label": "功能 · 10",
+    "label": "功能 · 12",
     "title": "历史会话，全局搜索",
     "desc": "侧栏搜索框一次检索问题、用户名与 Agent 回答；命中会话展示蓝色摘要，直达历史对话，不必逐条翻找。",
     "demo": "global-search"
   },
   {
     "type": "feature",
-    "label": "功能 · 11",
+    "label": "功能 · 13",
     "title": "关于 · 文档枢纽",
     "desc": "设置 → 关于，一站式打开 Keynote 演示、平台搭建指南、Showcase 案例；新同学不必记内网地址。",
     "demo": "about-hub"
   },
   {
     "type": "feature",
-    "label": "功能 · 12",
-    "title": "能力目录一览，零门槛上手",
-    "desc": "新对话空态提供快捷提问；右侧「能力」面板汇总 200+ 登记能力，按模块浏览、搜索筛选，点「执行」自动填入提问栏。",
-    "demo": "catalog-onboard"
-  },
-  {
-    "type": "feature",
-    "label": "功能 · 13",
+    "label": "功能 · 14",
     "title": "常用工具，一键直达",
     "desc": "顶栏「快捷」集中内网与外网常用工具，按分类收纳；点击即新标签页打开，查后台、抓包、切平台不必反复找地址。",
     "demo": "bookmarks-jump"
@@ -254,16 +262,23 @@
   {
     "type": "feature",
     "label": "智能 · 07",
+    "title": "登记即上线，能力自生长",
+    "desc": "登记一次，全员可用——新能力落库后自动同步使用说明与能力目录，200+ 条目持续生长；对话里按模块浏览、搜索筛选，点「执行」即可填入提问栏。",
+    "demo": "catalog-onboard"
+  },
+  {
+    "type": "feature",
+    "label": "智能 · 08",
     "title": "录制工作流，复杂活动一次跑通",
     "desc": "Agent 描述多步流程后落库为 Workflow，改参即可复跑；3周年砸金蛋从 MSE 配置同步、账号获次、批量砸蛋到概率保底与到账验收，六步贯通钉钉表全量验收。",
     "demo": "anniversary-egg-workflow"
   },
   {
     "type": "feature",
-    "label": "智能 · 08",
-    "title": "登记即上线，能力自生长",
-    "desc": "各模块在 config/registry.json 登记 name / category / command；跑 generate_index 后自动刷新使用方法与工具台 catalog——新能力落库即全员可见、可执行。",
-    "demo": "registry-sync"
+    "label": "智能 · 09",
+    "title": "接口自动化，多设备协同",
+    "desc": "不靠手点 App——MOA / Gift 等接口编排驱动多台真机、多账号跨房联动；匹配、上麦、送礼到结束四步全自动，录成工作流改参即可复跑。",
+    "demo": "pk-atm-workflow"
   },
   {
     "type": "feature",

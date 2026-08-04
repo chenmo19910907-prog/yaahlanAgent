@@ -498,6 +498,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="Ultra Recharge 模拟充值：充值钻石数（实际入账钻，Long）",
     )
     parser.add_argument(
+        "--recharge-rebate-flow-user-id",
+        help="Ultra Recharge 增加流水：用户 ID（fundFlowService.incrRechargeFlow）",
+    )
+    parser.add_argument(
+        "--recharge-rebate-flow-diamonds",
+        type=int,
+        help="Ultra Recharge 增加流水：充值钻石数（与模拟充值一致，Long）",
+    )
+    parser.add_argument(
+        "--recharge-rebate-flow-date",
+        help="Ultra Recharge 增加流水：日期 yyyyMMdd（默认当天，Asia/Shanghai）",
+    )
+    parser.add_argument(
         "--recharge-rebate-blacklist-user-id",
         help="Ultra Recharge 添加黑名单：用户 ID（fundFlowDao.setUserBlacklist）",
     )

@@ -39,6 +39,8 @@ class RunMeta:
     status: str
     started_at: float
     cancel_requested: bool = False
+    push_result_to_dingtalk: bool = False
+    push_dingtalk_staff_id: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -57,6 +59,8 @@ class RunMeta:
             "status": self.status,
             "started_at": float(self.started_at),
             "cancel_requested": bool(self.cancel_requested),
+            "push_result_to_dingtalk": bool(self.push_result_to_dingtalk),
+            "push_dingtalk_staff_id": str(self.push_dingtalk_staff_id or ""),
         }
 
     @classmethod
@@ -79,6 +83,8 @@ class RunMeta:
             status=str(data.get("status") or RUN_STATUS_RUNNING),
             started_at=float(data.get("started_at") or 0.0),
             cancel_requested=bool(data.get("cancel_requested")),
+            push_result_to_dingtalk=bool(data.get("push_result_to_dingtalk")),
+            push_dingtalk_staff_id=str(data.get("push_dingtalk_staff_id") or ""),
         )
 
 
@@ -87,6 +93,7 @@ class RunSnapshot:
     last_ack_line: str = ""
     last_elapsed_line: str = ""
     last_batch_line: str = ""
+    last_external_line: str = ""
     last_markdown: str = ""
     final_text: str = ""
     error: str | None = None
@@ -96,6 +103,7 @@ class RunSnapshot:
             "last_ack_line": self.last_ack_line,
             "last_elapsed_line": self.last_elapsed_line,
             "last_batch_line": self.last_batch_line,
+            "last_external_line": self.last_external_line,
             "last_markdown": self.last_markdown,
             "final_text": self.final_text,
             "error": self.error,
@@ -108,6 +116,7 @@ class RunSnapshot:
             last_ack_line=str(data.get("last_ack_line") or ""),
             last_elapsed_line=str(data.get("last_elapsed_line") or ""),
             last_batch_line=str(data.get("last_batch_line") or ""),
+            last_external_line=str(data.get("last_external_line") or ""),
             last_markdown=str(data.get("last_markdown") or ""),
             final_text=str(data.get("final_text") or ""),
             error=str(err) if err else None,
@@ -194,6 +203,7 @@ class WebRunStore:
         elif etype == "status":
             snap.last_elapsed_line = str(event.get("elapsed_line") or "")
             snap.last_batch_line = str(event.get("batch_line") or "")
+            snap.last_external_line = str(event.get("external_line") or "")
         elif etype == "delta":
             markdown = event.get("markdown")
             if markdown:

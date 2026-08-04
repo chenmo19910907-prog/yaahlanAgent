@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -22,6 +23,10 @@ if str(WEB_AGENT_DIR) not in sys.path:
 from batch_progress import clear_batch_progress  # noqa: E402
 from cursor_runner import DEFAULT_TIMEOUT_S  # noqa: E402
 from duration_history import classify_task_kind, get_duration_store  # noqa: E402
+from external_agent_progress import (  # noqa: E402
+    USER_KEY_ENV,
+    clear_external_agent_progress,
+)
 from progress_message import append_duration_footer  # noqa: E402
 from task_session import TaskInterrupted, TaskSession  # noqa: E402
 from user_agent_pool import get_user_agent_pool  # noqa: E402
@@ -61,6 +66,27 @@ def _emit(store, run_id: str, event: dict) -> None:
     store.append_event(run_id, event)
 
 
+def _maybe_push_result_to_dingtalk(meta, text: str, *, success: bool) -> dict | None:
+    if not success or not meta.push_result_to_dingtalk:
+        return None
+    staff_id = (meta.push_dingtalk_staff_id or meta.author_id or "").strip()
+    if not staff_id:
+        return {"ok": False, "error": "缺少钉钉用户标识"}
+    try:
+        from web_dingtalk_push import push_web_result_to_dingtalk  # noqa: WPS433
+
+        push_web_result_to_dingtalk(staff_id, text)
+        return {"ok": True}
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "钉钉推送失败 run=%s staff=%s: %s",
+            meta.run_id,
+            staff_id[:12],
+            exc,
+        )
+        return {"ok": False, "error": str(exc)}
+
+
 def _run_once(run_id: str) -> int:
     store = get_run_store()
     meta = store.get_run(run_id)
@@ -74,6 +100,8 @@ def _run_once(run_id: str) -> int:
     session_store = get_session_store()
     session_id = meta.session_id
     user_key = session_store.user_key(session_id)
+    if user_key:
+        os.environ[USER_KEY_ENV] = user_key
     task_kind = classify_task_kind(meta.message)
     session_ctrl = FileBackedTaskSession(run_id)
     session_ctrl.begin(
@@ -116,7 +144,11 @@ def _run_once(run_id: str) -> int:
         body = final or last_markdown
         final_text = append_duration_footer(body, elapsed, task_kind=task_kind)
         _append_assistant(final_text)
-        _emit(store, run_id, {"type": "done", "text": final_text})
+        dingtalk_push = _maybe_push_result_to_dingtalk(meta, final_text, success=True)
+        done_event: dict = {"type": "done", "text": final_text}
+        if dingtalk_push is not None:
+            done_event["dingtalk_push"] = dingtalk_push
+        _emit(store, run_id, done_event)
         store.mark_status(run_id, RUN_STATUS_DONE)
         status = "ok"
         return 0
@@ -151,6 +183,8 @@ def _run_once(run_id: str) -> int:
         return 1
     finally:
         clear_batch_progress(user_key)
+        clear_external_agent_progress(user_key)
+        os.environ.pop(USER_KEY_ENV, None)
         session_ctrl.end()
         if status != "interrupted":
             get_duration_store().record(

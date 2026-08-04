@@ -16,9 +16,17 @@ if str(GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR))
 
 from env_loader import load_env_local  # noqa: E402
+from external_agent_progress import (  # noqa: E402
+    clear_external_agent_progress,
+    report_external_agent_error,
+    report_external_agent_querying,
+    resolve_user_key,
+)
 
 DEFAULT_API_URL = "https://ai-yaahlan.wemomo.com/api/chat/stream"
 TOKEN_ENV_KEYS = ("YAAHLAN_SERVICE_AGENT_TOKEN", "SERVICE_AGENT_TOKEN")
+AGENT_ID = "yaahlan_service"
+AGENT_LABEL = "服务端 Agent"
 
 
 def resolve_token(explicit: str | None = None) -> str:
@@ -102,6 +110,7 @@ def query_service_agent(
 def main() -> int:
     parser = argparse.ArgumentParser(description="查询 Yaahlan 服务 Agent")
     parser.add_argument("--message", required=True, help="提问内容")
+    parser.add_argument("--user-key", default=None, help="Web Agent batch_key（默认读 WEB_AGENT_BATCH_KEY）")
     parser.add_argument("--conversation-id", default=None, help="续聊 conversation_id")
     parser.add_argument("--token", default=None, help="Bearer JWT（默认读 .env.local）")
     parser.add_argument("--api-url", default=DEFAULT_API_URL, help="SSE API 地址")
@@ -110,13 +119,34 @@ def main() -> int:
     args = parser.parse_args()
 
     token = resolve_token(args.token)
-    answer, conv_id = query_service_agent(
-        args.message.strip(),
-        token=token,
-        api_url=args.api_url.strip() or DEFAULT_API_URL,
-        conversation_id=args.conversation_id,
-        timeout_s=max(10, int(args.timeout)),
-    )
+    user_key = resolve_user_key(args.user_key)
+    if user_key:
+        report_external_agent_querying(
+            user_key,
+            agent_id=AGENT_ID,
+            agent_label=AGENT_LABEL,
+            message=args.message.strip(),
+        )
+    try:
+        answer, conv_id = query_service_agent(
+            args.message.strip(),
+            token=token,
+            api_url=args.api_url.strip() or DEFAULT_API_URL,
+            conversation_id=args.conversation_id,
+            timeout_s=max(10, int(args.timeout)),
+        )
+    except RuntimeError as exc:
+        if user_key:
+            report_external_agent_error(
+                user_key,
+                agent_id=AGENT_ID,
+                agent_label=AGENT_LABEL,
+                error=str(exc),
+            )
+        raise
+    else:
+        if user_key:
+            clear_external_agent_progress(user_key)
     if args.json:
         print(json.dumps({"answer": answer, "conversation_id": conv_id}, ensure_ascii=False))
     else:

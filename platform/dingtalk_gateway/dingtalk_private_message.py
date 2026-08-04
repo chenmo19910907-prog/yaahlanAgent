@@ -34,20 +34,22 @@ def _get_access_token(client: Any | None) -> str | None:
         return None
 
 
-def send_robot_private_text(
+def _send_robot_private(
     staff_id: str,
-    text: str,
     *,
+    msg_key: str,
+    msg_param: dict[str, str],
     client: Any | None = None,
     robot_code: str | None = None,
+    log_label: str = "消息",
 ) -> None:
-    """向指定用户私聊发送文本。"""
     uid = (staff_id or "").strip()
-    body_text = (text or "").strip()
     if not uid:
         raise ValueError("staff_id 不能为空")
-    if not body_text:
-        raise ValueError("text 不能为空")
+    if not msg_key.strip():
+        raise ValueError("msg_key 不能为空")
+    if not msg_param:
+        raise ValueError("msg_param 不能为空")
 
     load_env_local()
     access_token = _get_access_token(client)
@@ -58,8 +60,8 @@ def send_robot_private_text(
     payload = {
         "robotCode": code,
         "userIds": [uid],
-        "msgKey": "sampleText",
-        "msgParam": json.dumps({"content": body_text}, ensure_ascii=False),
+        "msgKey": msg_key.strip(),
+        "msgParam": json.dumps(msg_param, ensure_ascii=False),
     }
     url = f"{DINGTALK_OPENAPI_ENDPOINT}/v1.0/robot/oToMessages/batchSend"
     headers = {
@@ -83,4 +85,48 @@ def send_robot_private_text(
             raise RuntimeError(
                 f"私聊发送失败：用户 {uid} 被过滤（可能未与机器人建立单聊）"
             )
-    logger.info("私聊文本已发送 staff=%s… detail=%s", uid[:12], detail)
+    logger.info("私聊%s已发送 staff=%s… detail=%s", log_label, uid[:12], detail)
+
+
+def send_robot_private_text(
+    staff_id: str,
+    text: str,
+    *,
+    client: Any | None = None,
+    robot_code: str | None = None,
+) -> None:
+    """向指定用户私聊发送文本。"""
+    body_text = (text or "").strip()
+    if not body_text:
+        raise ValueError("text 不能为空")
+    _send_robot_private(
+        staff_id,
+        msg_key="sampleText",
+        msg_param={"content": body_text},
+        client=client,
+        robot_code=robot_code,
+        log_label="文本",
+    )
+
+
+def send_robot_private_markdown(
+    staff_id: str,
+    title: str,
+    text: str,
+    *,
+    client: Any | None = None,
+    robot_code: str | None = None,
+) -> None:
+    """向指定用户私聊发送 Markdown。"""
+    body_text = (text or "").strip()
+    title_text = (title or "").strip() or "Web Agent 结果"
+    if not body_text:
+        raise ValueError("text 不能为空")
+    _send_robot_private(
+        staff_id,
+        msg_key="sampleMarkdown",
+        msg_param={"title": title_text, "text": body_text},
+        client=client,
+        robot_code=robot_code,
+        log_label="Markdown",
+    )

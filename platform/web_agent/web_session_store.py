@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import json
 import logging
+import os
 import threading
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -47,6 +50,15 @@ def _title_from_text(text: str) -> str:
     if not body:
         return "新对话"
     return body[:40] + ("…" if len(body) > 40 else "")
+
+
+def _normalize_custom_title(text: str) -> str:
+    body = (text or "").strip()
+    if not body:
+        return ""
+    if len(body) > 80:
+        return body[:80]
+    return body
 
 
 def _latest_user_prompt(messages: list[ChatMessage]) -> str:
@@ -162,7 +174,7 @@ def session_matches_search(
     q = _normalize_search_query(query)
     if not q:
         return ""
-    for field in (meta.title, meta.latest_preview):
+    for field in (meta.title, meta.custom_title, meta.latest_preview):
         text = (field or "").strip()
         if text and q in text.casefold():
             return _snippet_around(text, q)
@@ -276,7 +288,15 @@ class SessionMeta:
     web_owner_label: str = ""
     web_collaborator_ids: list[str] = field(default_factory=list)
     pinned_at: str = ""
+    custom_title: str = ""
     latest_preview: str = field(default="", repr=False)
+
+    def display_title(self) -> str:
+        custom = (self.custom_title or "").strip()
+        if custom:
+            return custom
+        auto = (self.title or "").strip()
+        return auto or "新对话"
 
     @property
     def is_pinned(self) -> bool:
@@ -353,7 +373,8 @@ class SessionMeta:
     ) -> dict[str, object]:
         payload: dict[str, object] = {
             "id": self.id,
-            "title": self.title,
+            "title": self.display_title(),
+            "auto_title": self.title,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "message_count": self.message_count,
@@ -398,6 +419,9 @@ class SessionMeta:
         preview = (self.latest_preview or "").strip()
         if preview:
             payload["latest_preview"] = preview
+        custom = (self.custom_title or "").strip()
+        if custom:
+            payload["custom_title"] = custom
         payload["pinned"] = self.is_pinned
         if self.is_pinned:
             payload["pinned_at"] = self.pinned_at
@@ -413,9 +437,25 @@ class WebSessionStore:
         self._index_path = index_path
         self._messages_dir = messages_dir
         self._lock = threading.Lock()
+        self._index_lock_path = index_path.parent / ".sessions.lock"
         self._index_mtime: float = 0.0
         self._sessions: dict[str, SessionMeta] = {}
+        self._custom_title_touched: set[str] = set()
         self._reload_index_if_stale(force=True)
+
+    @contextmanager
+    def _exclusive_index(self) -> Iterator[None]:
+        """跨进程（Web 服务 / run_worker / 钉钉网关）读写 sessions.json 时串行化。"""
+        with self._lock:
+            self._index_lock_path.parent.mkdir(parents=True, exist_ok=True)
+            fd = os.open(str(self._index_lock_path), os.O_CREAT | os.O_RDWR)
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX)
+                self._reload_index_if_stale(force=True)
+                yield
+            finally:
+                fcntl.flock(fd, fcntl.LOCK_UN)
+                os.close(fd)
 
     def _index_mtime_on_disk(self) -> float:
         try:
@@ -468,10 +508,36 @@ class WebSessionStore:
                     if str(uid).strip()
                 ] if isinstance(raw_collabs, list) else [],
                 pinned_at=str(item.get("pinned_at") or "").strip(),
+                custom_title=str(item.get("custom_title") or "").strip(),
             )
         return sessions
 
+    def _merge_independent_fields_from_disk(self) -> None:
+        """落盘前合并另一进程已写入的独立字段，避免旧内存覆盖 custom_title / 置顶等。"""
+        disk_sessions = self._load_index()
+        if not disk_sessions:
+            return
+        for sid, meta in self._sessions.items():
+            disk_meta = disk_sessions.get(sid)
+            if disk_meta is None:
+                continue
+            disk_custom = (disk_meta.custom_title or "").strip()
+            if (
+                disk_custom
+                and not (meta.custom_title or "").strip()
+                and sid not in self._custom_title_touched
+            ):
+                meta.custom_title = disk_meta.custom_title
+            if (disk_meta.pinned_at or "").strip() and not (meta.pinned_at or "").strip():
+                meta.pinned_at = disk_meta.pinned_at
+            if disk_meta.web_collaborator_ids and not meta.web_collaborator_ids:
+                meta.web_collaborator_ids = list(disk_meta.web_collaborator_ids)
+        for sid, disk_meta in disk_sessions.items():
+            if sid not in self._sessions:
+                self._sessions[sid] = disk_meta
+
     def _save_index(self) -> None:
+        self._merge_independent_fields_from_disk()
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         payload = {
             sid: {
@@ -491,6 +557,7 @@ class WebSessionStore:
                     else {}
                 ),
                 **({"pinned_at": meta.pinned_at} if meta.is_pinned else {}),
+                **({"custom_title": meta.custom_title} if (meta.custom_title or "").strip() else {}),
             }
             for sid, meta in self._sessions.items()
         }
@@ -566,7 +633,7 @@ class WebSessionStore:
         )
 
     def list_sessions(self, *, enrich_names: bool = True) -> list[SessionMeta]:
-        with self._lock:
+        with self._exclusive_index():
             self._reload_index_if_stale()
             dirty = False
             for meta in self._sessions.values():
@@ -626,8 +693,7 @@ class WebSessionStore:
             web_owner_id=(owner_id or "").strip(),
             web_owner_label=(owner_label or "").strip(),
         )
-        with self._lock:
-            self._reload_index_if_stale()
+        with self._exclusive_index():
             self._sessions[sid] = meta
             self._save_index()
         self._save_messages(sid, [])
@@ -639,8 +705,7 @@ class WebSessionStore:
             return self._sessions.get(session_id)
 
     def delete_session(self, session_id: str) -> bool:
-        with self._lock:
-            self._reload_index_if_stale()
+        with self._exclusive_index():
             if session_id not in self._sessions:
                 return False
             del self._sessions[session_id]
@@ -671,8 +736,7 @@ class WebSessionStore:
         session_id = dingtalk_session_id(key)
         nick = (label or "").strip()
         uid = (owner_id or "").strip() or parse_dingtalk_user_id(key)
-        with self._lock:
-            self._reload_index_if_stale()
+        with self._exclusive_index():
             meta = self._sessions.get(session_id)
             if meta is None:
                 now = _now_iso()
@@ -739,8 +803,7 @@ class WebSessionStore:
         reply = (assistant_reply or "").strip()
         if not prompt or not reply:
             return False
-        with self._lock:
-            self._reload_index_if_stale()
+        with self._exclusive_index():
             meta = self._sessions.get(session_id)
             if meta is None:
                 return False
@@ -784,8 +847,7 @@ class WebSessionStore:
         label = (owner_label or "").strip()
         if not uid:
             return False
-        with self._lock:
-            self._reload_index_if_stale()
+        with self._exclusive_index():
             meta = self._sessions.get(session_id)
             if meta is None or meta.source != "web":
                 return False
@@ -804,13 +866,34 @@ class WebSessionStore:
         pinned: bool,
     ) -> tuple[bool, str]:
         """设置会话置顶（全局可见，落盘共享）。"""
-        with self._lock:
-            self._reload_index_if_stale()
+        with self._exclusive_index():
             meta = self._sessions.get(session_id)
             if meta is None:
                 return False, "session not found"
             meta.pinned_at = _now_iso() if pinned else ""
             self._save_index()
+        return True, ""
+
+    def set_session_custom_title(
+        self,
+        session_id: str,
+        *,
+        title: str,
+    ) -> tuple[bool, str]:
+        """设置会话外显标题；空字符串表示恢复为自动标题。"""
+        with self._exclusive_index():
+            meta = self._sessions.get(session_id)
+            if meta is None:
+                return False, "session not found"
+            messages = self._load_messages(session_id)
+            if messages:
+                _apply_message_derived_meta(meta, messages)
+            self._custom_title_touched.add(session_id)
+            try:
+                meta.custom_title = _normalize_custom_title(title)
+                self._save_index()
+            finally:
+                self._custom_title_touched.discard(session_id)
         return True, ""
 
     def set_web_collaborators(
@@ -832,8 +915,7 @@ class WebSessionStore:
                 continue
             seen.add(staff_id)
             normalized.append(staff_id)
-        with self._lock:
-            self._reload_index_if_stale()
+        with self._exclusive_index():
             meta = self._sessions.get(session_id)
             if meta is None:
                 return False, "session not found"
@@ -880,8 +962,7 @@ class WebSessionStore:
         file_list = [entry for entry in (files or []) if isinstance(entry, dict)]
         if not text and not image_list and not file_list:
             return None
-        with self._lock:
-            self._reload_index_if_stale()
+        with self._exclusive_index():
             meta = self._sessions.get(session_id)
             if meta is None:
                 return None

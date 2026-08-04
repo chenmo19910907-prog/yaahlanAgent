@@ -2,7 +2,7 @@
   "id": "pk-atm-test",
   "name": "PK提款机-跨房PK造数验收",
   "category": "PK提款机",
-  "description": "2.5.9 PK 提款机完整验收：拉服务配置（MOA 或本地梯度表）→ 随机匹配跨房 PK → 麦上机器人 → 测试号麦上送礼 → 记录 PK/余额并计算应得返钻 → 结束 PK → 校验钻石增量与预期一致。",
+  "description": "2.5.9 PK 提款机完整验收：拉服务配置（MOA 或本地梯度表）→ 随机匹配跨房 PK → 麦上机器人 → 测试号麦上送礼 → 生成式 MOA 验收 PK 赛况/对战信息与 PK 值 → 记录 PK/余额并计算应得返钻 → 结束 PK → 校验钻石增量 → 生成式 MOA 验收提款排名/吸底/本周总提款（接口待抓包时跳过 MOA 层）。",
   "version": 1,
   "params": {
     "phoneA": {
@@ -73,6 +73,13 @@
       "required": false,
       "default": "120"
     },
+    "pkMinute": {
+      "label": "PK时长分钟",
+      "type": "integer",
+      "required": false,
+      "default": "5",
+      "prompt": "随机匹配 PK 时长，5/10/30"
+    },
     "outDir": {
       "label": "报告目录",
       "type": "string",
@@ -100,7 +107,7 @@
       "name": "PK提款机全流程",
       "run": {
         "type": "shell",
-        "command": "python3 workflow/scripts/pk_atm_test_run.py --phone-a {{phoneA}} --phone-b {{phoneB}} --bot-total {{botTotal}} --bot-on-mic {{botOnMic}} --gift-count {{giftCount}} --gift-min-diamonds {{giftMinDiamonds}} --gift-max-diamonds {{giftMaxDiamonds}} --pre-gift-wait {{preGiftWait}} --post-gift-wait {{postGiftWait}} --post-close-wait {{postCloseWait}} --match-timeout {{matchTimeout}} --out-dir {{outDir}} --personal-pk-threshold {{personalPkThreshold}} --min-combined-pk {{minCombinedPk}}",
+        "command": "python3 workflow/scripts/pk_atm_test_run.py --phone-a {{phoneA}} --phone-b {{phoneB}} --bot-total {{botTotal}} --bot-on-mic {{botOnMic}} --gift-count {{giftCount}} --gift-min-diamonds {{giftMinDiamonds}} --gift-max-diamonds {{giftMaxDiamonds}} --pre-gift-wait {{preGiftWait}} --post-gift-wait {{postGiftWait}} --post-close-wait {{postCloseWait}} --match-timeout {{matchTimeout}} --pk-minute {{pkMinute}} --out-dir {{outDir}} --personal-pk-threshold {{personalPkThreshold}} --min-combined-pk {{minCombinedPk}}",
         "cwd": "."
       },
       "expect": {

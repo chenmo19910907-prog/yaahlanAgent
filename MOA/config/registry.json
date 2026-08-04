@@ -946,6 +946,18 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/充值返利-模拟充值.json \\\n  --recharge-rebate-user-id <userId> \\\n  --recharge-rebate-diamonds <diamonds>\n"
     },
     {
+      "id": "recharge_rebate_incr_flow",
+      "name": "充值返利-增加流水",
+      "category": "活动（Ultra Recharge / 充值返利）",
+      "description": "Ultra Recharge 模拟充值后补记充值流水（voga-mts-vas-backdoor execute；fundFlowService.incrRechargeFlow(userId, yyyyMMdd, diamondsL)）",
+      "prompts": [
+        "充值活动增加流水 userId=<userId> <diamonds>钻",
+        "incrRechargeFlow <userId> <yyyyMMdd> <diamonds>",
+        "模拟充值后增加流水 <userId> <diamonds>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/充值返利-增加流水.json \\\n  --recharge-rebate-flow-user-id <userId> \\\n  --recharge-rebate-flow-diamonds <diamonds> \\\n  --recharge-rebate-flow-date <yyyyMMdd>\n"
+    },
+    {
       "id": "recharge_rebate_add_blacklist",
       "name": "充值返利-添加黑名单",
       "category": "活动（Ultra Recharge / 充值返利）",
@@ -1288,6 +1300,18 @@
         "MOA applyAcrossRoomPk 指定邀请"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/跨房PK-指定邀请.json\n"
+    },
+    {
+      "id": "across_room_pk_apply_random_match",
+      "name": "跨房PK-随机匹配",
+      "category": "房间PK（room/external/room-pk-api）",
+      "description": "测试环境发起跨房 PK 随机匹配（applyAcrossRoomPk）。body 需 userId（操作人）、roomId（发起方房间）、acrossPkType=1（随机匹配）、acrossRoomId 为空；pkMinute（5/10/30）、hostSeat（0=无主持人位）。Tunnel 100079102 `_id=VmdPzJ8BR2LVRzbvVZwa` 实测 ec=200。",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 发起跨房PK随机匹配",
+        "跨房PK随机匹配 roomId=<roomId> pkMinute=<pkMinute>",
+        "MOA applyAcrossRoomPk 随机匹配"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/跨房PK-随机匹配.json\n"
     },
     {
       "id": "across_room_pk_accept_invite",

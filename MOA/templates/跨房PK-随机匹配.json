@@ -1,0 +1,52 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/room/external/room-pk-api",
+  "method": "applyAcrossRoomPk",
+  "header": "{\"userId\":\"100079102\",\"roomId\":\"50861924\",\"acrossRoomId\":\"\",\"acrossPkType\":\"1\",\"hostSeat\":\"0\",\"pkMinute\":\"10\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100079102\",\"roomId\":\"50861924\",\"acrossRoomId\":\"\",\"acrossPkType\":\"1\",\"hostSeat\":\"0\",\"pkMinute\":\"10\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\"}",
+      "type": "json",
+      "value": {
+        "userId": "100079102",
+        "roomId": "50861924",
+        "acrossRoomId": "",
+        "acrossPkType": "1",
+        "hostSeat": "0",
+        "pkMinute": "10",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "android",
+        "osType": "android"
+      }
+    }
+  ],
+  "_registry": {
+    "id": "across_room_pk_apply_random_match",
+    "name": "跨房PK-随机匹配",
+    "category": "房间PK（room/external/room-pk-api）",
+    "description": "测试环境发起跨房 PK 随机匹配（applyAcrossRoomPk）。body 需 userId（操作人）、roomId（发起方房间）、acrossPkType=1（随机匹配）、acrossRoomId 为空；pkMinute（5/10/30）、hostSeat（0=无主持人位）。Tunnel 100079102 `_id=VmdPzJ8BR2LVRzbvVZwa` 实测 ec=200。",
+    "prompts": [
+      "用户 <userId> 在房间 <roomId> 发起跨房PK随机匹配",
+      "跨房PK随机匹配 roomId=<roomId> pkMinute=<pkMinute>",
+      "MOA applyAcrossRoomPk 随机匹配"
+    ]
+  }
+}

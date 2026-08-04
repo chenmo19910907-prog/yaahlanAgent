@@ -332,5 +332,114 @@ class WebSessionSearchTest(unittest.TestCase):
             self.assertEqual(empty, [])
 
 
+class WebSessionCustomTitleTest(unittest.TestCase):
+    def test_custom_title_overrides_display_and_clears_to_auto(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            sid = "customtitle00001"
+            index.write_text(
+                json.dumps(
+                    {
+                        sid: {
+                            "title": "自动标题来自首问",
+                            "created_at": "2026-08-03T08:00:00+00:00",
+                            "updated_at": "2026-08-03T09:00:00+00:00",
+                            "message_count": 1,
+                            "source": "web",
+                            "web_owner_id": "alice",
+                            "web_owner_label": "Alice",
+                        }
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            (messages_dir / f"{sid}.json").write_text(
+                json.dumps(
+                    [{"role": "user", "content": "自动标题来自首问", "timestamp": "2026-08-03T09:00:00+00:00"}],
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            meta = store.get_session(sid)
+            assert meta is not None
+            self.assertEqual(meta.display_title(), "自动标题来自首问")
+
+            ok, err = store.set_session_custom_title(sid, title="我的自定义标题")
+            self.assertTrue(ok)
+            self.assertEqual(err, "")
+            meta = store.get_session(sid)
+            assert meta is not None
+            self.assertEqual(meta.custom_title, "我的自定义标题")
+            self.assertEqual(meta.display_title(), "我的自定义标题")
+            payload = meta.to_dict()
+            self.assertEqual(payload["title"], "我的自定义标题")
+            self.assertEqual(payload["auto_title"], "自动标题来自首问")
+
+            ok, err = store.set_session_custom_title(sid, title="")
+            self.assertTrue(ok)
+            meta = store.get_session(sid)
+            assert meta is not None
+            self.assertEqual(meta.custom_title, "")
+            self.assertEqual(meta.display_title(), "自动标题来自首问")
+
+    def test_custom_title_not_lost_when_stale_store_saves_after_rename(self) -> None:
+        """模拟 Web 服务与 worker 多进程：worker 内存过期时不应覆盖 custom_title。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            sid = "staletitle000001"
+            index.write_text(
+                json.dumps(
+                    {
+                        sid: {
+                            "title": "自动标题",
+                            "created_at": "2026-08-03T08:00:00+00:00",
+                            "updated_at": "2026-08-03T09:00:00+00:00",
+                            "message_count": 1,
+                            "source": "web",
+                        }
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            (messages_dir / f"{sid}.json").write_text(
+                json.dumps(
+                    [{"role": "user", "content": "自动标题", "timestamp": "2026-08-03T09:00:00+00:00"}],
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            stale_store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            other_store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            ok, err = other_store.set_session_custom_title(sid, title="PK提款机协作案例")
+            self.assertTrue(ok)
+            self.assertEqual(err, "")
+
+            # 模拟 worker 在 reload 后、落盘前另一进程写入 custom_title 的竞态
+            from contextlib import contextmanager
+
+            @contextmanager
+            def _skip_exclusive_reload():
+                with stale_store._lock:
+                    yield
+
+            stale_store._exclusive_index = _skip_exclusive_reload  # type: ignore[method-assign]
+            stale_store.append_message(sid, "assistant", "回复内容")
+
+            fresh_store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            meta = fresh_store.get_session(sid)
+            assert meta is not None
+            self.assertEqual(meta.custom_title, "PK提款机协作案例")
+            self.assertEqual(meta.display_title(), "PK提款机协作案例")
+
+
 if __name__ == "__main__":
     unittest.main()

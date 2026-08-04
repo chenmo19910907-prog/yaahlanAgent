@@ -1138,6 +1138,146 @@
     border-top: 1px solid rgba(148, 163, 184, 0.08); flex-shrink: 0;
   }
 
+  .mock-dtp-body {
+    display: flex; flex-direction: column; width: 100%; height: 100%;
+    background: #0b0e14; overflow: hidden;
+  }
+  .mock-dtp-split { flex: 1; display: flex; min-height: 0; }
+  .mock-dtp-web {
+    flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0;
+    border-right: 1px solid rgba(148, 163, 184, 0.12);
+  }
+  .mock-dtp-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 8px; font-size: 0.4rem; color: rgba(164, 173, 189, 0.72);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08); flex-shrink: 0;
+  }
+  .mock-dtp-chat {
+    flex: 1; min-height: 0; padding: 8px 10px; display: flex; flex-direction: column; gap: 5px;
+    overflow: hidden;
+  }
+  .mock-dtp-msg {
+    max-width: 90%; padding: 5px 7px; border-radius: 8px; font-size: 0.4rem; line-height: 1.4;
+    opacity: 0; transform: translateY(4px); transition: opacity 0.45s, transform 0.45s;
+  }
+  .mock-dtp-msg.is-show { opacity: 1; transform: translateY(0); }
+  .mock-dtp-msg.user {
+    align-self: flex-end; background: rgba(91, 140, 255, 0.18); color: rgba(242, 245, 250, 0.9);
+  }
+  .mock-dtp-msg.bot {
+    align-self: flex-start; background: rgba(255, 255, 255, 0.04); color: rgba(164, 173, 189, 0.82);
+  }
+  .mock-dtp-composer { padding: 0 8px 4px; flex-shrink: 0; }
+  .mock-dtp-input-wrap {
+    display: flex; align-items: center; gap: 6px;
+    border: 1px solid rgba(148, 163, 184, 0.16); border-radius: 8px;
+    background: rgba(11, 14, 20, 0.72); padding: 5px 8px; min-height: 18px;
+  }
+  .mock-dtp-input { flex: 1; font-size: 0.38rem; color: rgba(164, 173, 189, 0.42); }
+  .mock-dtp-send {
+    width: 14px; height: 14px; border-radius: 50%; background: #5B8CFF;
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .mock-dtp-send svg { width: 8px; height: 8px; stroke: #fff; fill: none; stroke-width: 2; }
+  .mock-dtp-hint-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 0 8px 6px; font-size: 0.34rem; color: rgba(164, 173, 189, 0.42);
+  }
+  .mock-dtp-push {
+    display: inline-flex; align-items: center; gap: 4px; color: rgba(164, 173, 189, 0.55);
+    transition: color 0.35s;
+  }
+  .mock-dtp-push.is-checked { color: rgba(147, 197, 253, 0.92); }
+  .mock-dtp-push.is-pulse { animation: capPulse 0.8s ease-in-out infinite; }
+  .mock-dtp-check {
+    width: 8px; height: 8px; border-radius: 2px; border: 1px solid rgba(148, 163, 184, 0.45);
+    position: relative; flex-shrink: 0; transition: border-color 0.35s, background 0.35s;
+  }
+  .mock-dtp-push.is-checked .mock-dtp-check {
+    border-color: rgba(91, 140, 255, 0.75); background: rgba(91, 140, 255, 0.28);
+  }
+  .mock-dtp-push.is-checked .mock-dtp-check::after {
+    content: ''; position: absolute; left: 2px; top: 0; width: 3px; height: 5px;
+    border: solid #93c5fd; border-width: 0 1px 1px 0; transform: rotate(45deg);
+  }
+  .mock-dtp-ding {
+    width: 38%; flex-shrink: 0; display: flex; flex-direction: column; min-height: 0; background: #151923;
+  }
+  .mock-dtp-ding-head {
+    padding: 6px 8px; font-size: 0.38rem; font-weight: 600; color: #93c5fd;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08); flex-shrink: 0;
+  }
+  .mock-dtp-ding-chat {
+    flex: 1; min-height: 0; padding: 8px; display: flex; flex-direction: column; gap: 5px;
+  }
+  .mock-dtp-ding-result {
+    align-self: flex-start; background: rgba(255, 255, 255, 0.04); color: rgba(164, 173, 189, 0.82);
+    border-left: 2px solid rgba(91, 140, 255, 0.45);
+  }
+  .mock-dtp-ding-result.is-show { opacity: 1; transform: translateY(0); }
+  .mock-dtp-caption {
+    padding: 5px 8px; text-align: center; font-size: 0.42rem;
+    color: rgba(164, 173, 189, 0.45); letter-spacing: 0.04em;
+    border-top: 1px solid rgba(148, 163, 184, 0.08); flex-shrink: 0;
+  }
+
+  .mock-srn-body {
+    display: flex; flex-direction: column; width: 100%; height: 100%;
+    background: #0b0e14; overflow: hidden;
+  }
+  .mock-srn-layout { flex: 1; display: flex; min-height: 0; position: relative; }
+  .mock-srn-side {
+    width: 42%; flex-shrink: 0; border-right: 1px solid rgba(148, 163, 184, 0.12);
+    padding: 7px 6px; display: flex; flex-direction: column; gap: 5px; background: #151923;
+  }
+  .mock-srn-side-head {
+    font-size: 0.38rem; color: rgba(164, 173, 189, 0.48); letter-spacing: 0.06em; padding: 0 2px;
+  }
+  .mock-srn-list { display: flex; flex-direction: column; gap: 4px; position: relative; }
+  .mock-srn-item {
+    padding: 5px 6px; border-radius: 7px; font-size: 0.42rem; color: rgba(164, 173, 189, 0.72);
+    line-height: 1.35; transition: background 0.45s, color 0.45s, box-shadow 0.45s;
+  }
+  .mock-srn-item.is-active {
+    background: rgba(91, 140, 255, 0.18); color: rgba(242, 245, 250, 0.96);
+  }
+  .mock-srn-item.is-target {
+    background: rgba(91, 140, 255, 0.1); box-shadow: 0 0 0 1px rgba(91, 140, 255, 0.22);
+  }
+  .mock-srn-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mock-srn-title-input {
+    display: none; width: 100%; box-sizing: border-box;
+    font-size: 0.42rem; font-weight: 500; color: rgba(242, 245, 250, 0.92);
+    background: rgba(11, 14, 20, 0.72); border: 1px solid rgba(91, 140, 255, 0.45);
+    border-radius: 5px; padding: 2px 5px; outline: none;
+  }
+  .mock-srn-item.is-editing .mock-srn-title { display: none; }
+  .mock-srn-item.is-editing .mock-srn-title-input { display: block; }
+  .mock-srn-meta { font-size: 0.36rem; color: rgba(164, 173, 189, 0.48); margin-top: 2px; }
+  .mock-srn-menu {
+    position: absolute; z-index: 2; min-width: 72px;
+    background: #1a2030; border: 1px solid rgba(148, 163, 184, 0.18); border-radius: 8px;
+    padding: 3px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    opacity: 0; transform: scale(0.96); pointer-events: none;
+    transition: opacity 0.35s, transform 0.35s;
+  }
+  .mock-srn-menu.is-show { opacity: 1; transform: scale(1); }
+  .mock-srn-menu-btn {
+    display: block; width: 100%; text-align: left; border: 0; background: transparent;
+    color: rgba(242, 245, 250, 0.82); font-size: 0.4rem; padding: 4px 7px; border-radius: 5px;
+  }
+  .mock-srn-menu-btn.is-highlight { background: rgba(91, 140, 255, 0.14); color: #93c5fd; }
+  .mock-srn-main {
+    flex: 1; min-width: 0; padding: 10px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .mock-srn-main-title { font-size: 0.52rem; font-weight: 600; color: rgba(242, 245, 250, 0.88); }
+  .mock-srn-main-sub { font-size: 0.4rem; color: rgba(164, 173, 189, 0.48); letter-spacing: 0.06em; }
+  .mock-srn-caption {
+    padding: 5px 8px; text-align: center; font-size: 0.42rem;
+    color: rgba(164, 173, 189, 0.45); letter-spacing: 0.04em;
+    border-top: 1px solid rgba(148, 163, 184, 0.08); flex-shrink: 0;
+  }
+
   .mock-cat-body {
     display: flex; flex-direction: column; width: 100%; height: 100%;
     background: #0b0e14; overflow: hidden;
@@ -2861,6 +3001,495 @@
     box-shadow: 0 24px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08) inset;
   }
   .mock-egg-body { height: 100% !important; }
+  .mock-pk-body { height: 100% !important; }
+  .mock-pk-mobile-body {
+    height: 100% !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 2px 0;
+    gap: 6px;
+    min-height: 0;
+  }
+  .mock-pk-dual {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: clamp(8px, 1.6vw, 14px);
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+  }
+  .mock-pk-phone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+  .mock-pk-bezel {
+    width: clamp(88px, 9.2vw, 118px);
+    aspect-ratio: 9 / 19.5;
+    border-radius: 14px;
+    padding: 3px;
+    background: linear-gradient(145deg, #3a4048 0%, #1a1e24 55%, #0e1014 100%);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08) inset;
+    position: relative;
+  }
+  .mock-pk-notch {
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28%;
+    height: 3px;
+    border-radius: 99px;
+    background: rgba(0,0,0,0.55);
+    z-index: 3;
+  }
+  .mock-pk-screen {
+    width: 100%;
+    height: 100%;
+    border-radius: 11px;
+    overflow: hidden;
+    position: relative;
+    background: #101820;
+  }
+  .mock-pk-theme-a { background: linear-gradient(180deg, #1a5c42 0%, #0f2e24 38%, #0a1812 100%); }
+  .mock-pk-theme-b { background: linear-gradient(180deg, #152238 0%, #0a1420 42%, #060a10 100%); }
+  .mock-pk-room {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .mock-pk-room-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 5px 2px;
+    font-size: 0.24rem;
+    color: rgba(255,255,255,0.88);
+    font-weight: 650;
+    flex-shrink: 0;
+    z-index: 2;
+  }
+  .mock-pk-room-x { opacity: 0.55; font-size: 0.3rem; line-height: 1; }
+  .mock-pk-audience {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2px;
+    padding: 1px 6px 2px;
+    align-content: start;
+    transition: opacity 0.45s;
+    z-index: 1;
+  }
+  .mock-pk-room.is-matched .mock-pk-audience,
+  .mock-pk-room.is-onmic .mock-pk-audience,
+  .mock-pk-room.is-gifting .mock-pk-audience,
+  .mock-pk-room.is-ended .mock-pk-audience { opacity: 0.12; }
+  .mock-pk-seat {
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+  }
+  .mock-pk-theme-a .mock-pk-seat:nth-child(odd) { background: rgba(255, 160, 70, 0.22); border-color: rgba(255, 160, 70, 0.35); }
+  .mock-pk-theme-b .mock-pk-seat { background: rgba(80, 140, 255, 0.16); border-color: rgba(80, 140, 255, 0.28); }
+  .mock-pk-battle {
+    position: absolute;
+    left: 0; right: 0;
+    top: 14%;
+    bottom: 14%;
+    opacity: 0;
+    transition: opacity 0.5s;
+    z-index: 3;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+  }
+  .mock-pk-room.is-matched .mock-pk-battle,
+  .mock-pk-room.is-onmic .mock-pk-battle,
+  .mock-pk-room.is-gifting .mock-pk-battle,
+  .mock-pk-room.is-ended .mock-pk-battle { opacity: 1; }
+  .mock-pk-scorebar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0 3px 2px;
+    flex-shrink: 0;
+  }
+  .mock-pk-score-red, .mock-pk-score-blue {
+    font-size: 0.18rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    min-width: 18px;
+    line-height: 1.1;
+  }
+  .mock-pk-score-red { color: #ffb4a8; text-align: left; }
+  .mock-pk-score-blue { color: #a8c8ff; text-align: right; }
+  .mock-pk-score-track {
+    flex: 1;
+    height: 4px;
+    border-radius: 99px;
+    background: rgba(37, 99, 184, 0.55);
+    overflow: hidden;
+    position: relative;
+  }
+  .mock-pk-score-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 50%;
+    background: linear-gradient(90deg, #e74c3c, #c0392b);
+    border-radius: 99px;
+    transition: width 0.6s ease;
+  }
+  .mock-pk-room.is-gifting .mock-pk-score-fill,
+  .mock-pk-room.is-ended .mock-pk-score-fill { width: 47%; }
+  .mock-pk-battle-split {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    position: relative;
+  }
+  .mock-pk-battle-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2px 1px 1px;
+    min-width: 0;
+    position: relative;
+  }
+  .mock-pk-battle-red { background: linear-gradient(180deg, rgba(192,57,43,0.95) 0%, rgba(120,20,12,0.92) 100%); }
+  .mock-pk-battle-blue { background: linear-gradient(180deg, rgba(37,99,184,0.95) 0%, rgba(18,53,106,0.92) 100%); }
+  .mock-pk-host {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    border: 1px solid rgba(255,255,255,0.65);
+    background: linear-gradient(135deg, #fbbf24, #f97316);
+    margin-bottom: 2px;
+    flex-shrink: 0;
+  }
+  .mock-pk-mic-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    width: 100%;
+    flex: 1;
+    align-content: center;
+    padding: 0 1px;
+  }
+  .mock-pk-mic-slot {
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 1px dashed rgba(255,255,255,0.28);
+    background: rgba(0,0,0,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.16rem;
+    line-height: 1;
+    transition: background 0.4s, border-style 0.4s;
+  }
+  .mock-pk-room.is-onmic .mock-pk-mic-slot::after { content: '◻'; opacity: 0.45; font-size: 0.14rem; }
+  .mock-pk-room.is-gifting .mock-pk-mic-slot,
+  .mock-pk-room.is-ended .mock-pk-mic-slot {
+    border-style: solid;
+    border-color: rgba(255,255,255,0.45);
+    background: linear-gradient(135deg, rgba(255,200,120,0.55), rgba(255,120,60,0.45));
+  }
+  .mock-pk-room.is-gifting .mock-pk-battle-blue .mock-pk-mic-slot,
+  .mock-pk-room.is-ended .mock-pk-battle-blue .mock-pk-mic-slot {
+    background: linear-gradient(135deg, rgba(120,180,255,0.55), rgba(60,120,220,0.45));
+  }
+  .mock-pk-room.is-gifting .mock-pk-mic-slot::after,
+  .mock-pk-room.is-ended .mock-pk-mic-slot::after { content: none; }
+  .mock-pk-rank-row {
+    display: flex;
+    gap: 2px;
+    margin-top: 1px;
+    flex-shrink: 0;
+  }
+  .mock-pk-rank-badge {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    font-size: 0.12rem;
+    line-height: 7px;
+    text-align: center;
+    font-weight: 700;
+    color: rgba(0,0,0,0.75);
+  }
+  .mock-pk-rank-badge:nth-child(1) { background: #ffd54a; }
+  .mock-pk-rank-badge:nth-child(2) { background: #cfd8dc; }
+  .mock-pk-rank-badge:nth-child(3) { background: #bcaaa4; }
+  .mock-pk-battle-brand {
+    position: absolute;
+    left: 50%;
+    bottom: 8%;
+    transform: translateX(-50%);
+    font-size: 0.2rem;
+    font-weight: 800;
+    line-height: 1.1;
+    text-align: center;
+    color: #ffd54a;
+    text-shadow: 0 0 8px rgba(255, 140, 0, 0.55);
+    z-index: 4;
+    pointer-events: none;
+  }
+  .mock-pk-battle-hint {
+    position: absolute;
+    left: 50%;
+    top: 38%;
+    transform: translateX(-50%);
+    font-size: 0.2rem;
+    color: rgba(255,255,255,0.88);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.4s;
+    z-index: 5;
+    text-align: center;
+  }
+  .mock-pk-battle-hint strong { color: #ffd54a; font-size: 0.24rem; }
+  .mock-pk-room.is-onmic .mock-pk-battle-hint { opacity: 1; }
+  .mock-pk-gift-flash {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 35% 45%, rgba(255,180,60,0.35) 0%, transparent 42%),
+                radial-gradient(circle at 65% 55%, rgba(255,120,200,0.28) 0%, transparent 38%);
+    opacity: 0;
+    z-index: 6;
+    pointer-events: none;
+  }
+  .mock-pk-room.is-gifting .mock-pk-gift-flash {
+    opacity: 1;
+    animation: mockPkGiftFlash 1.4s ease-in-out infinite;
+  }
+  .mock-pk-end-banner {
+    position: absolute;
+    left: 50%;
+    top: 32%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    opacity: 0;
+    z-index: 7;
+    transition: opacity 0.45s;
+  }
+  .mock-pk-room.is-ended .mock-pk-end-banner { opacity: 1; }
+  .mock-pk-end-title {
+    font-size: 0.26rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    letter-spacing: 0.04em;
+  }
+  .mock-pk-end-result {
+    font-size: 0.2rem;
+    padding: 2px 6px;
+    border-radius: 99px;
+    font-weight: 700;
+  }
+  .mock-pk-end-win { background: rgba(255, 213, 74, 0.92); color: #5c3a00; }
+  .mock-pk-end-lose { background: rgba(255,255,255,0.18); color: rgba(255,255,255,0.85); }
+  .mock-pk-phone-a .mock-pk-end-win { display: none; }
+  .mock-pk-phone-b .mock-pk-end-win { display: inline-block; }
+  .mock-pk-phone-a .mock-pk-end-lose { display: inline-block; }
+  .mock-pk-phone-b .mock-pk-end-lose { display: none; }
+  .mock-pk-match {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 52%;
+    background: linear-gradient(180deg, rgba(8,10,14,0) 0%, rgba(8,10,14,0.92) 18%, rgba(8,10,14,0.98) 100%);
+    display: flex;
+    flex-direction: column;
+    padding: 0 5px 5px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.5s, transform 0.5s;
+    pointer-events: none;
+    z-index: 8;
+  }
+  .mock-pk-room.is-matching .mock-pk-match { opacity: 1; transform: none; }
+  .mock-pk-match-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.26rem;
+    color: rgba(255,255,255,0.72);
+    padding: 2px 1px 4px;
+  }
+  .mock-pk-match-collapse { font-size: 0.22rem; opacity: 0.55; }
+  .mock-pk-match-stage {
+    flex: 1;
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+    min-height: 0;
+    transform: skewX(-8deg);
+    margin: 0 -2px;
+    position: relative;
+  }
+  .mock-pk-side {
+    flex: 1;
+    border-radius: 6px 6px 4px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 4px 2px;
+    min-width: 0;
+  }
+  .mock-pk-side-red { background: linear-gradient(180deg, #c0392b 0%, #8b1a12 100%); }
+  .mock-pk-side-blue { background: linear-gradient(180deg, #2563b8 0%, #12356a 100%); }
+  .mock-pk-brand {
+    position: absolute;
+    left: 50%;
+    top: 42%;
+    transform: translate(-50%, -50%) skewX(8deg);
+    font-size: 0.24rem;
+    font-weight: 800;
+    line-height: 1.15;
+    text-align: center;
+    color: #ffd54a;
+    text-shadow: 0 0 8px rgba(255, 140, 0, 0.65), 0 1px 0 rgba(0,0,0,0.8);
+    letter-spacing: 0.02em;
+    z-index: 5;
+    pointer-events: none;
+  }
+  .mock-pk-avatar {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,0.75);
+    background: linear-gradient(135deg, #fbbf24, #f97316);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+  }
+  .mock-pk-avatar-opponent {
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+    border-style: dashed;
+    opacity: 0.55;
+    transition: opacity 0.45s, background 0.45s, border-style 0.45s;
+  }
+  .mock-pk-room.is-matched .mock-pk-avatar-opponent {
+    opacity: 1;
+    border-style: solid;
+    background: linear-gradient(135deg, #60a5fa, #2563eb);
+  }
+  .mock-pk-match-label {
+    font-size: 0.2rem;
+    color: rgba(255,255,255,0.78);
+    letter-spacing: 0.02em;
+    transition: opacity 0.35s;
+  }
+  .mock-pk-room.is-matched .mock-pk-match-label { opacity: 0; }
+  .mock-pk-room.is-matching .mock-pk-match-label { animation: mockPkPulse 1.1s ease-in-out infinite; }
+  .mock-pk-cancel-btn {
+    margin-top: 4px;
+    text-align: center;
+    font-size: 0.24rem;
+    color: rgba(255,255,255,0.82);
+    background: rgba(255,255,255,0.08);
+    border-radius: 99px;
+    padding: 4px 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .mock-pk-timer { display: block; font-size: 0.22rem; opacity: 0.65; margin-top: 1px; font-variant-numeric: tabular-nums; }
+  .mock-pk-toast {
+    position: absolute;
+    left: 50%;
+    bottom: 30%;
+    transform: translateX(-50%) translateY(6px);
+    background: rgba(40, 44, 52, 0.94);
+    color: rgba(255,255,255,0.92);
+    font-size: 0.2rem;
+    padding: 3px 6px;
+    border-radius: 99px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.45s, transform 0.45s;
+    z-index: 9;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  }
+  .mock-pk-room.is-matched .mock-pk-toast { opacity: 1; transform: translateX(-50%); }
+  .mock-pk-countdown {
+    position: absolute;
+    left: 0; right: 0;
+    bottom: 22%;
+    text-align: center;
+    font-size: 0.22rem;
+    color: rgba(255,255,255,0.88);
+    opacity: 0;
+    transition: opacity 0.45s;
+    z-index: 9;
+  }
+  .mock-pk-countdown strong { color: #ffd54a; font-size: 0.28rem; }
+  .mock-pk-room.is-matched .mock-pk-countdown { opacity: 1; }
+  .mock-pk-footer {
+    position: absolute;
+    left: 0; right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 3px 4px 4px;
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,0.55));
+    opacity: 0;
+    transition: opacity 0.45s;
+    z-index: 2;
+  }
+  .mock-pk-room.is-gifting .mock-pk-footer,
+  .mock-pk-room.is-ended .mock-pk-footer { opacity: 1; }
+  .mock-pk-footer-gift {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    background: linear-gradient(135deg, #ff8c42, #ff5e62);
+    box-shadow: 0 0 6px rgba(255, 120, 60, 0.45);
+  }
+  .mock-pk-footer-input {
+    flex: 1;
+    margin: 0 3px;
+    height: 8px;
+    border-radius: 99px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .mock-pk-phone-label {
+    font-size: 0.3rem;
+    color: rgba(164, 173, 189, 0.62);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+  .mock-pk-mobile-caption {
+    text-align: center;
+    font-size: 0.36rem;
+    color: rgba(164, 173, 189, 0.52);
+    padding: 0 4px;
+    min-height: 1.2em;
+    flex-shrink: 0;
+  }
+  @keyframes mockPkPulse {
+    0%, 100% { opacity: 0.45; }
+    50% { opacity: 1; }
+  }
+  @keyframes mockPkGiftFlash {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 0.85; }
+  }
+  .feat-demo:has(.mock-pk-body) {
+    background: transparent;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08) inset;
+  }
   .mock-wf-title-bar {
     font-size: 0.42rem; font-weight: 600; color: rgba(231, 235, 241, 0.88);
     letter-spacing: 0.05em; padding: 2px 4px 5px;
@@ -3270,7 +3899,7 @@
 <div id="progress"></div>
 <div id="dots"></div>
 <div id="kn-beat-flash" class="kn-beat-flash" aria-hidden="true"></div>
-<script id="kn-data" type="application/json">[{"type":"hero","brand":"Yaahlan","titleCn":"智能工具","titleEn":"Agent","subtitle":"让工作，更顺手"},{"type":"lines","lines":[{"text":"如何做好一款 Agent","lead":true},{"inline":["简单","易用","美观"],"large":true,"separator":true},{"text":"有人用，才是硬道理","small":true}]},{"type":"lines","lines":[{"text":"我问朋友：什么是好设计？"},{"text":"他说，","suffix":{"text":"简约","large":true,"accent":true}}]},{"type":"agent-preview","title":"Yaahlan 智能工具 Agent","subtitle":"真实界面 · 三态切换","views":[{"id":"history","label":"历史会话","detail":"侧栏浏览 · 按人筛选 · 钉钉同步标识"},{"id":"chat","label":"新对话","detail":"空态快捷提问 · 顶栏品牌居中"},{"id":"catalog","label":"工具台能力","detail":"245 能力目录 · MOA 录制 · 填参执行"}]},{"type":"center","label":"UI","text":"界面上的小心思","subtitle":"细节里，见用心"},{"type":"feature","label":"UI · 01","title":"产品语言，与 Logo 统一配色","desc":"心跳蓝从 Logo 延伸至按钮、链接与 hover 态；「智能工具 Agent」「快捷」「能力」等产品用语全站一致，日/夜主题同步切换。","demo":"brand"},{"type":"feature","label":"UI · 02","title":"会跳动的思考光标","desc":"执行时以品牌光标替代系统鼠标，跟随指针律动；移出对话区自动还原，完成时一次轻反馈。","demo":"waiting"},{"type":"feature","label":"UI · 03","title":"白天夜间，自如切换","desc":"按北京时间 08:00 / 17:00 自动切换；输入栏亦可手动切换，品牌色在两种模式下始终如一。","demo":"theme"},{"type":"feature","label":"UI · 04","title":"历史会话，两种布局","desc":"点「历史」展开侧栏浏览会话；点边缘按钮收起，对话区自动变宽，顶栏品牌居中显示。","demo":"sidebar"},{"type":"feature","label":"UI · 05","title":"丝滑动效，处处顺手","desc":"统一 spring 缓动贯穿全局；输入框随内容亮起光晕、聚焦时微微上浮，历史会话滑过轻跃而出——每一帧都连贯。","demo":"motion"},{"type":"center","label":"功能","titleLines":["简约","而不简单"],"subtitle":"大巧不工"},{"type":"feature","label":"功能 · 01","title":"钉钉对话，网页同步","desc":"机器人每轮对话自动同步至网页历史；带「钉钉」标识、按发起人归档，完整记录随时可查。","demo":"dingtalk-sync"},{"type":"feature","label":"功能 · 02","title":"附件随问随传，结果一键下载","desc":"输入框支持 📎 选择、拖拽与粘贴，导入图片及 csv/xlsx/pdf/zip 等文档；Agent 生成的报告与压缩包可在对话中直接下载。","demo":"file-attach-export"},{"type":"feature","label":"功能 · 03","title":"流式传输，思考只显有效信息","desc":"回复逐字 SSE 流式推送；思考阶段不倾倒内部推理，仅展示已收到、已用时与工具摘要等有效状态，长任务心中有数。","demo":"stream-output"},{"type":"feature","label":"功能 · 04","title":"实时耗时，批量进度可见","desc":"执行过程实时显示已用时；批量任务同步展示 N/M 进度与预计剩余，长任务心中有数。","demo":"task-progress"},{"type":"feature","label":"功能 · 05","title":"执行可中断，提问自动回填","desc":"Agent 执行中随时点停；原提问自动回到输入框，改一句即可重试，不必从头输入。","demo":"cancel-restore"},{"type":"feature","label":"功能 · 06","title":"重启不断流，断点可重连","desc":"Agent 在独立 worker 中执行；HTTP 服务热重启时 worker 继续跑，事件落盘后自动恢复 SSE 推流——思考中改代码也不丢任务。","demo":"run-recovery"},{"type":"feature","label":"功能 · 07","title":"钉钉验证码登录，操作可审计","desc":"向机器人发送固定文案获取验证码，登录后与工号绑定；会话归属到人，敏感操作可追溯。","demo":"dingtalk-auth"},{"type":"feature","label":"功能 · 08","title":"会话归属清晰，同事可共创","desc":"会话归属创建者，他人默认只读；可按人员筛选历史。创建者可邀请同事加入，在同一会话中一起提问。","demo":"session-isolation"},{"type":"feature","label":"功能 · 09","title":"常用会话，一键置顶","desc":"右键或长按即可置顶，固定显示在列表顶部；点击图钉取消，全员共享排序，重要任务不再被淹没。","demo":"session-pin"},{"type":"feature","label":"功能 · 10","title":"历史会话，全局搜索","desc":"侧栏搜索框一次检索问题、用户名与 Agent 回答；命中会话展示蓝色摘要，直达历史对话，不必逐条翻找。","demo":"global-search"},{"type":"feature","label":"功能 · 11","title":"关于 · 文档枢纽","desc":"设置 → 关于，一站式打开 Keynote 演示、平台搭建指南、Showcase 案例；新同学不必记内网地址。","demo":"about-hub"},{"type":"feature","label":"功能 · 12","title":"能力目录一览，零门槛上手","desc":"新对话空态提供快捷提问；右侧「能力」面板汇总 200+ 登记能力，按模块浏览、搜索筛选，点「执行」自动填入提问栏。","demo":"catalog-onboard"},{"type":"feature","label":"功能 · 13","title":"常用工具，一键直达","desc":"顶栏「快捷」集中内网与外网常用工具，按分类收纳；点击即新标签页打开，查后台、抓包、切平台不必反复找地址。","demo":"bookmarks-jump"},{"type":"center","label":"智能","titleLines":["是工具平台","更是智能工厂"],"subtitle":"越搭越快"},{"type":"feature","label":"智能 · 01","title":"日常测试，开口就能做","desc":"自然语言提问，Agent 全自动执行，覆盖测试同学日常基本工作：","textOnly":true,"capabilities":[{"name":"Admin 查数","detail":"用户详情、在线状态、登录设备、公会信息"},{"name":"MOA 查 userId","detail":"手机号 / 区号反查 userId，批量查注册"},{"name":"MOA 造数","detail":"发钻、改等级、砸蛋、公会 PK 等测试数据"},{"name":"Tunnel 抓包","detail":"按 userId 查 HTTP 请求列表与报文详情"},{"name":"接口验收","detail":"核对接口入参、返回字段与 ec 码"},{"name":"Stage 送礼","detail":"测试环境房间 / 私聊 / 群组送礼验证"},{"name":"PRD 与用例","detail":"读钉钉需求文档 · 测试点扩写 · 输出 Markdown / Excel"},{"name":"风控 · 设备落库","detail":"手机号 / 设备风控解除 · mmuid / 机型同步测试机知识库"}]},{"type":"feature","label":"智能 · 02","title":"工具组合，一句话搞定","desc":"Agent 自动识别意图，按需组合 Admin / MOA / Tunnel / Gift 等模块；不必分别查命令、拼参数。","textOnly":true,"capabilities":[{"name":"手机号 → 发钻","detail":"MOA 反查 userId · 调用发钻接口 · 返回余额变化"},{"name":"手机号 → 风控解除","detail":"Admin 取登录设备 · 解除风控 · mmuid 落库知识库"},{"name":"userId → 查数 + 抓包","detail":"Admin 用户详情 · Tunnel 同步查 HTTP 请求与报文"},{"name":"送礼 → 接口验收","detail":"Stage 环境送礼 · Tunnel 核对 /v2/gift/send 入参与 ec"},{"name":"家族信息一览","detail":"MOA 查所属家族 · Admin 家族详情 · 成员 userId 列表"},{"name":"PRD → 测试用例","detail":"读钉钉需求文档 · 测试点扩写 · 输出 Markdown / Excel"}]},{"type":"feature","label":"智能 · 03","title":"生成式 MOA，抓包即能力","desc":"App 未录入的接口？Tunnel 抓包 + MSE 调用链生成 payload——操作账号（送礼、结 CP、加成员）与查页面数据（资产、CP、家族 PK）两类 MOA 均可落地。","textOnly":true,"capabilities":[{"name":"抓包转 MOA","detail":"Tunnel 抓 body · MSE 查 ServiceUrl/Method · 生成 payload"},{"name":"结 CP / 挚友","detail":"Gift 发起邀请 · MOA 同意 · 操作账号"},{"name":"房间成员","detail":"apply 申请 · agree 同意 · 快速添加成员"},{"name":"帖子互动","detail":"评论 · 点赞 · 签到 · 操作账号"},{"name":"CP 页面数据","detail":"爱意宝箱 · CP 勋章 · 查页面数据"},{"name":"用户资产","detail":"铭牌 · 钻石记录 · 礼物背包 Tab"},{"name":"家族 PK 数据","detail":"对战列表 · 成员贡献榜 · 查页面数据"}]},{"type":"feature","label":"智能 · 04","title":"外部 Agent，按需启用","desc":"设置中勾选服务端 Agent 或 MDP Agent；未勾选时不调用外部查询，走本地 registry；勾选后下一条消息起生效。","demo":"external-agent"},{"type":"feature","label":"智能 · 05","title":"查接口实现，直接生成 MOA","desc":"勾选服务端 Agent 后，查 ServiceUrl / Method / 参数定义，直接生成 MOA 并调通。未勾选时不调用外部查询，走本地 registry 与 mappings。","demo":"service-agent-moa"},{"type":"feature","label":"智能 · 06","title":"工具台 MOA 录制，表单一键生成","desc":"能力侧栏点「MOA 录制」，选截图 / 完整请求 / 抓包行为 / 服务端代码四种方式填表；生成后自动写入提问栏，侧栏保持打开，确认后再发送。","demo":"moa-record"},{"type":"feature","label":"智能 · 07","title":"录制工作流，复杂活动一次跑通","desc":"Agent 描述多步流程后落库为 Workflow，改参即可复跑；3周年砸金蛋从 MSE 配置同步、账号获次、批量砸蛋到概率保底与到账验收，六步贯通钉钉表全量验收。","demo":"anniversary-egg-workflow"},{"type":"feature","label":"智能 · 08","title":"登记即上线，能力自生长","desc":"各模块在 config/registry.json 登记 name / category / command；跑 generate_index 后自动刷新使用方法与工具台 catalog——新能力落库即全员可见、可执行。","demo":"registry-sync"},{"type":"feature","title":"双周用量，显著提升","desc":"7/28 体验优化后，工作日日均请求约 2.3 倍、活跃峰值翻倍。","demo":"usage-growth","layout":"stack"},{"type":"center","text":"让工作，更顺手","subtitle":"Yaahlan 智能工具 Agent"}]</script>
+<script id="kn-data" type="application/json">[{"type":"hero","brand":"Yaahlan","titleCn":"智能工具","titleEn":"Agent","subtitle":"让工作，更顺手"},{"type":"lines","lines":[{"text":"如何做好一款 Agent","lead":true},{"inline":["简单","易用","美观"],"large":true,"separator":true},{"text":"有人用，才是硬道理","small":true}]},{"type":"lines","lines":[{"text":"我问朋友：什么是好设计？"},{"text":"他说，","suffix":{"text":"简约","large":true,"accent":true}}]},{"type":"center","label":"UI","text":"界面上的小心思","subtitle":"细节里，见用心"},{"type":"feature","label":"UI · 01","title":"产品语言，与 Logo 统一配色","desc":"心跳蓝从 Logo 延伸至按钮、链接与 hover 态；「智能工具 Agent」「快捷」「能力」等产品用语全站一致，日/夜主题同步切换。","demo":"brand"},{"type":"feature","label":"UI · 02","title":"会跳动的思考光标","desc":"执行时以品牌光标替代系统鼠标，跟随指针律动；移出对话区自动还原，完成时一次轻反馈。","demo":"waiting"},{"type":"feature","label":"UI · 03","title":"白天夜间，自如切换","desc":"按北京时间 08:00 / 17:00 自动切换；输入栏亦可手动切换，品牌色在两种模式下始终如一。","demo":"theme"},{"type":"feature","label":"UI · 04","title":"历史会话，两种布局","desc":"点「历史」展开侧栏浏览会话；点边缘按钮收起，对话区自动变宽，顶栏品牌居中显示。","demo":"sidebar"},{"type":"feature","label":"UI · 05","title":"丝滑动效，处处顺手","desc":"统一 spring 缓动贯穿全局；输入框随内容亮起光晕、聚焦时微微上浮，历史会话滑过轻跃而出——每一帧都连贯。","demo":"motion"},{"type":"agent-preview","label":"UI · 06","title":"真实界面 · 三态切换","subtitle":"历史会话 · 新对话 · 工具台能力，一屏看懂 Yaahlan 智能工具 Agent","views":[{"id":"history","label":"历史会话","detail":"侧栏浏览 · 按人筛选 · 钉钉同步标识"},{"id":"chat","label":"新对话","detail":"空态快捷提问 · 顶栏品牌居中"},{"id":"catalog","label":"工具台能力","detail":"245 能力目录 · MOA 录制 · 填参执行"}]},{"type":"center","label":"功能","titleLines":["简约","而不简单"],"subtitle":"大巧不工"},{"type":"feature","label":"功能 · 01","title":"钉钉对话，网页同步","desc":"机器人每轮对话自动同步至网页历史；带「钉钉」标识、按发起人归档，完整记录随时可查。","demo":"dingtalk-sync"},{"type":"feature","label":"功能 · 02","title":"附件随问随传，结果一键下载","desc":"输入框支持 📎 选择、拖拽与粘贴，导入图片及 csv/xlsx/pdf/zip 等文档；Agent 生成的报告与压缩包可在对话中直接下载。","demo":"file-attach-export"},{"type":"feature","label":"功能 · 03","title":"流式传输，思考只显有效信息","desc":"回复逐字 SSE 流式推送；思考阶段不倾倒内部推理，仅展示已收到、已用时与工具摘要等有效状态，长任务心中有数。","demo":"stream-output"},{"type":"feature","label":"功能 · 04","title":"实时耗时，批量进度可见","desc":"执行过程实时显示已用时；批量任务同步展示 N/M 进度与预计剩余，长任务心中有数。","demo":"task-progress"},{"type":"feature","label":"功能 · 05","title":"执行可中断，提问自动回填","desc":"Agent 执行中随时点停；原提问自动回到输入框，改一句即可重试，不必从头输入。","demo":"cancel-restore"},{"type":"feature","label":"功能 · 06","title":"重启不断流，断点可重连","desc":"Agent 在独立 worker 中执行；HTTP 服务热重启时 worker 继续跑，事件落盘后自动恢复 SSE 推流——思考中改代码也不丢任务。","demo":"run-recovery"},{"type":"feature","label":"功能 · 07","title":"钉钉验证码登录，操作可审计","desc":"向机器人发送固定文案获取验证码，登录后与工号绑定；会话归属到人，敏感操作可追溯。","demo":"dingtalk-auth"},{"type":"feature","label":"功能 · 08","title":"会话归属清晰，同事可共创","desc":"会话归属创建者，他人默认只读；可按人员筛选历史。创建者可邀请同事加入，在同一会话中一起提问。","demo":"session-isolation"},{"type":"feature","label":"功能 · 09","title":"执行完成，结果发钉钉","desc":"输入框下方可勾选「结果发钉钉」；勾选后任务成功完成，最终结果自动推送到当前登录用户的钉钉私聊，离开网页也能收到。","demo":"dingtalk-push"},{"type":"feature","label":"功能 · 10","title":"会话标题，随时改名","desc":"历史会话右键「修改标题」，标题原地变为输入框；Enter 或失焦保存，留空则恢复自动标题（首条提问摘要）。","demo":"session-rename"},{"type":"feature","label":"功能 · 11","title":"常用会话，一键置顶","desc":"右键或长按即可置顶，固定显示在列表顶部；点击图钉取消，全员共享排序，重要任务不再被淹没。","demo":"session-pin"},{"type":"feature","label":"功能 · 12","title":"历史会话，全局搜索","desc":"侧栏搜索框一次检索问题、用户名与 Agent 回答；命中会话展示蓝色摘要，直达历史对话，不必逐条翻找。","demo":"global-search"},{"type":"feature","label":"功能 · 13","title":"关于 · 文档枢纽","desc":"设置 → 关于，一站式打开 Keynote 演示、平台搭建指南、Showcase 案例；新同学不必记内网地址。","demo":"about-hub"},{"type":"feature","label":"功能 · 14","title":"常用工具，一键直达","desc":"顶栏「快捷」集中内网与外网常用工具，按分类收纳；点击即新标签页打开，查后台、抓包、切平台不必反复找地址。","demo":"bookmarks-jump"},{"type":"center","label":"智能","titleLines":["是工具平台","更是智能工厂"],"subtitle":"越搭越快"},{"type":"feature","label":"智能 · 01","title":"日常测试，开口就能做","desc":"自然语言提问，Agent 全自动执行，覆盖测试同学日常基本工作：","textOnly":true,"capabilities":[{"name":"Admin 查数","detail":"用户详情、在线状态、登录设备、公会信息"},{"name":"MOA 查 userId","detail":"手机号 / 区号反查 userId，批量查注册"},{"name":"MOA 造数","detail":"发钻、改等级、砸蛋、公会 PK 等测试数据"},{"name":"Tunnel 抓包","detail":"按 userId 查 HTTP 请求列表与报文详情"},{"name":"接口验收","detail":"核对接口入参、返回字段与 ec 码"},{"name":"Stage 送礼","detail":"测试环境房间 / 私聊 / 群组送礼验证"},{"name":"PRD 与用例","detail":"读钉钉需求文档 · 测试点扩写 · 输出 Markdown / Excel"},{"name":"风控 · 设备落库","detail":"手机号 / 设备风控解除 · mmuid / 机型同步测试机知识库"}]},{"type":"feature","label":"智能 · 02","title":"工具组合，一句话搞定","desc":"Agent 自动识别意图，按需组合 Admin / MOA / Tunnel / Gift 等模块；不必分别查命令、拼参数。","textOnly":true,"capabilities":[{"name":"手机号 → 发钻","detail":"MOA 反查 userId · 调用发钻接口 · 返回余额变化"},{"name":"手机号 → 风控解除","detail":"Admin 取登录设备 · 解除风控 · mmuid 落库知识库"},{"name":"userId → 查数 + 抓包","detail":"Admin 用户详情 · Tunnel 同步查 HTTP 请求与报文"},{"name":"送礼 → 接口验收","detail":"Stage 环境送礼 · Tunnel 核对 /v2/gift/send 入参与 ec"},{"name":"家族信息一览","detail":"MOA 查所属家族 · Admin 家族详情 · 成员 userId 列表"},{"name":"PRD → 测试用例","detail":"读钉钉需求文档 · 测试点扩写 · 输出 Markdown / Excel"}]},{"type":"feature","label":"智能 · 03","title":"生成式 MOA，抓包即能力","desc":"App 未录入的接口？Tunnel 抓包 + MSE 调用链生成 payload——操作账号（送礼、结 CP、加成员）与查页面数据（资产、CP、家族 PK）两类 MOA 均可落地。","textOnly":true,"capabilities":[{"name":"抓包转 MOA","detail":"Tunnel 抓 body · MSE 查 ServiceUrl/Method · 生成 payload"},{"name":"结 CP / 挚友","detail":"Gift 发起邀请 · MOA 同意 · 操作账号"},{"name":"房间成员","detail":"apply 申请 · agree 同意 · 快速添加成员"},{"name":"帖子互动","detail":"评论 · 点赞 · 签到 · 操作账号"},{"name":"CP 页面数据","detail":"爱意宝箱 · CP 勋章 · 查页面数据"},{"name":"用户资产","detail":"铭牌 · 钻石记录 · 礼物背包 Tab"},{"name":"家族 PK 数据","detail":"对战列表 · 成员贡献榜 · 查页面数据"}]},{"type":"feature","label":"智能 · 04","title":"外部 Agent，按需启用","desc":"设置中勾选服务端 Agent 或 MDP Agent；未勾选时不调用外部查询，走本地 registry；勾选后下一条消息起生效。","demo":"external-agent"},{"type":"feature","label":"智能 · 05","title":"查接口实现，直接生成 MOA","desc":"勾选服务端 Agent 后，查 ServiceUrl / Method / 参数定义，直接生成 MOA 并调通。未勾选时不调用外部查询，走本地 registry 与 mappings。","demo":"service-agent-moa"},{"type":"feature","label":"智能 · 06","title":"工具台 MOA 录制，表单一键生成","desc":"能力侧栏点「MOA 录制」，选截图 / 完整请求 / 抓包行为 / 服务端代码四种方式填表；生成后自动写入提问栏，侧栏保持打开，确认后再发送。","demo":"moa-record"},{"type":"feature","label":"智能 · 07","title":"登记即上线，能力自生长","desc":"登记一次，全员可用——新能力落库后自动同步使用说明与能力目录，200+ 条目持续生长；对话里按模块浏览、搜索筛选，点「执行」即可填入提问栏。","demo":"catalog-onboard"},{"type":"feature","label":"智能 · 08","title":"录制工作流，复杂活动一次跑通","desc":"Agent 描述多步流程后落库为 Workflow，改参即可复跑；3周年砸金蛋从 MSE 配置同步、账号获次、批量砸蛋到概率保底与到账验收，六步贯通钉钉表全量验收。","demo":"anniversary-egg-workflow"},{"type":"feature","label":"智能 · 09","title":"接口自动化，多设备协同","desc":"不靠手点 App——MOA / Gift 等接口编排驱动多台真机、多账号跨房联动；匹配、上麦、送礼到结束四步全自动，录成工作流改参即可复跑。","demo":"pk-atm-workflow"},{"type":"feature","title":"双周用量，显著提升","desc":"7/28 体验优化后，工作日日均请求约 2.3 倍、活跃峰值翻倍。","demo":"usage-growth","layout":"stack"},{"type":"center","text":"让工作，更顺手","subtitle":"Yaahlan 智能工具 Agent"}]</script>
 <script>
 (function () {
   'use strict';
@@ -3298,6 +3927,8 @@
   var sessionIsolationTimer = null;
   var sessionPinTimer = null;
   var globalSearchTimer = null;
+  var dingtalkPushTimer = null;
+  var sessionRenameTimer = null;
   var catalogOnboardTimer = null;
   var bookmarksJumpTimer = null;
   var cancelRestoreTimer = null;
@@ -3309,6 +3940,8 @@
   var serviceAgentMoaTimer = null;
   var moaRecordTimer = null;
   var anniversaryEggWorkflowTimer = null;
+  var pkAtmWorkflowTimer = null;
+  var pkAtmWorkflowTickTimer = null;
   var registrySyncTimer = null;
   var usageGrowthTimer = null;
   var agentPreviewTimer = null;
@@ -3726,6 +4359,97 @@
     );
   }
 
+  function pkMobileSeatsHtml(count) {
+    var n = count || 10;
+    var html = '';
+    for (var i = 0; i < n; i++) html += '<span class="mock-pk-seat"></span>';
+    return html;
+  }
+
+  function pkMicGridHtml() {
+    var html = '';
+    for (var i = 0; i < 9; i++) html += '<span class="mock-pk-mic-slot"></span>';
+    return html;
+  }
+
+  function pkRankBadgesHtml() {
+    return '<span class="mock-pk-rank-badge">1</span><span class="mock-pk-rank-badge">2</span><span class="mock-pk-rank-badge">3</span>';
+  }
+
+  function buildPkMobilePhoneHtml(side) {
+    var isA = side === 'a';
+    var roomName = isA ? 'Christian P' : 'Voice Room';
+    var theme = isA ? 'mock-pk-theme-a' : 'mock-pk-theme-b';
+    var label = isA ? '13311111112' : '13311111113';
+    return (
+      '<div class="mock-pk-phone mock-pk-phone-' + side + '">' +
+        '<div class="mock-pk-bezel">' +
+          '<div class="mock-pk-notch"></div>' +
+          '<div class="mock-pk-screen ' + theme + '">' +
+            '<div class="mock-pk-room mock-pk-room-el">' +
+              '<div class="mock-pk-room-bar">' +
+                '<span class="mock-pk-room-name">' + roomName + '</span>' +
+                '<span class="mock-pk-room-x">×</span>' +
+              '</div>' +
+              '<div class="mock-pk-audience mock-pk-audience-el">' + pkMobileSeatsHtml(10) + '</div>' +
+              '<div class="mock-pk-battle mock-pk-battle-el">' +
+                '<div class="mock-pk-scorebar">' +
+                  '<span class="mock-pk-score-red mock-pk-score-red-el">0</span>' +
+                  '<div class="mock-pk-score-track"><div class="mock-pk-score-fill mock-pk-score-fill-el"></div></div>' +
+                  '<span class="mock-pk-score-blue mock-pk-score-blue-el">0</span>' +
+                '</div>' +
+                '<div class="mock-pk-battle-split">' +
+                  '<div class="mock-pk-battle-side mock-pk-battle-red">' +
+                    '<div class="mock-pk-host"></div>' +
+                    '<div class="mock-pk-mic-grid">' + pkMicGridHtml() + '</div>' +
+                    '<div class="mock-pk-rank-row">' + pkRankBadgesHtml() + '</div>' +
+                  '</div>' +
+                  '<div class="mock-pk-battle-side mock-pk-battle-blue">' +
+                    '<div class="mock-pk-host"></div>' +
+                    '<div class="mock-pk-mic-grid">' + pkMicGridHtml() + '</div>' +
+                    '<div class="mock-pk-rank-row">' + pkRankBadgesHtml() + '</div>' +
+                  '</div>' +
+                  '<div class="mock-pk-battle-brand">Cross-room<br>PK</div>' +
+                  '<div class="mock-pk-battle-hint mock-pk-battle-hint-el">Starts after <strong class="mock-pk-onmic-sec-el">15</strong> seconds</div>' +
+                  '<div class="mock-pk-gift-flash mock-pk-gift-flash-el"></div>' +
+                  '<div class="mock-pk-end-banner mock-pk-end-banner-el">' +
+                    '<div class="mock-pk-end-title">PK Ended</div>' +
+                    '<span class="mock-pk-end-result mock-pk-end-win">Victory</span>' +
+                    '<span class="mock-pk-end-result mock-pk-end-lose">Defeat</span>' +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
+              '<div class="mock-pk-match mock-pk-match-el">' +
+                '<div class="mock-pk-match-bar">' +
+                  '<span>Matching...</span><span class="mock-pk-match-collapse">Collapse</span>' +
+                '</div>' +
+                '<div class="mock-pk-match-stage">' +
+                  '<div class="mock-pk-side mock-pk-side-red">' +
+                    '<div class="mock-pk-avatar mock-pk-avatar-self"></div>' +
+                  '</div>' +
+                  '<div class="mock-pk-brand">Cross-room<br>PK</div>' +
+                  '<div class="mock-pk-side mock-pk-side-blue">' +
+                    '<div class="mock-pk-avatar mock-pk-avatar-opponent mock-pk-avatar-opponent-el"></div>' +
+                    '<span class="mock-pk-match-label mock-pk-match-label-el">Matching...</span>' +
+                  '</div>' +
+                '</div>' +
+                '<div class="mock-pk-cancel-btn">Cancel <span class="mock-pk-timer mock-pk-timer-el">00:03</span></div>' +
+              '</div>' +
+              '<div class="mock-pk-toast mock-pk-toast-el">Cross-room PK Matching Successful</div>' +
+              '<div class="mock-pk-countdown mock-pk-countdown-el">Starting in <strong class="mock-pk-start-sec-el">3</strong> Seconds</div>' +
+              '<div class="mock-pk-footer">' +
+                '<span class="mock-pk-footer-gift"></span>' +
+                '<span class="mock-pk-footer-input"></span>' +
+                '<span class="mock-pk-footer-gift"></span>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="mock-pk-phone-label">' + label + '</div>' +
+      '</div>'
+    );
+  }
+
   function demoHtml(id) {
     var chrome = '<div class="mock-chrome"><span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span></div>';
     if (id === 'waiting') {
@@ -4114,6 +4838,80 @@
         '</div>'
       );
     }
+    if (id === 'dingtalk-push') {
+      return (
+        '<div class="mock-body mock-dtp-body">' +
+          '<div class="mock-dtp-split">' +
+            '<div class="mock-dtp-web">' +
+              '<div class="mock-dtp-header">' + mockBrandLine() + mockHdr() + '</div>' +
+              '<div class="mock-dtp-chat">' +
+                '<div class="mock-dtp-msg user mock-dtp-user-msg is-show">查 13311111111 的 userId</div>' +
+                '<div class="mock-dtp-msg bot mock-dtp-web-result">userId：<strong>4707</strong> · 注册 2024-03-12</div>' +
+              '</div>' +
+              '<div class="mock-dtp-composer">' +
+                '<div class="mock-dtp-input-wrap">' +
+                  '<div class="mock-dtp-input">输入问题…</div>' +
+                  '<span class="mock-dtp-send" aria-hidden="true">' +
+                    '<svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>' +
+                  '</span>' +
+                '</div>' +
+              '</div>' +
+              '<div class="mock-dtp-hint-row">' +
+                '<span>Enter 发送 · Shift+Enter 换行</span>' +
+                '<span class="mock-dtp-push mock-dtp-push-el">' +
+                  '<span class="mock-dtp-check"></span>结果发钉钉' +
+                '</span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="mock-dtp-ding">' +
+              '<div class="mock-dtp-ding-head">钉钉 · 智能工具 Agent</div>' +
+              '<div class="mock-dtp-ding-chat">' +
+                '<div class="mock-dtp-msg bot mock-dtp-ding-result mock-dtp-ding-result-el">' +
+                  'userId：<strong>4707</strong> · 注册 2024-03-12' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="mock-dtp-caption mock-dtp-caption-el">勾选 · 执行完成 · 钉钉私聊送达</div>' +
+        '</div>'
+      );
+    }
+    if (id === 'session-rename') {
+      return (
+        '<div class="mock-body mock-srn-body">' +
+          '<div class="mock-srn-layout">' +
+            '<aside class="mock-srn-side">' +
+              '<div class="mock-srn-side-head">历史会话</div>' +
+              '<div class="mock-srn-list mock-srn-list-el">' +
+                '<div class="mock-srn-item mock-srn-a">' +
+                  '<div class="mock-srn-title">Keynote 介绍</div>' +
+                  '<input class="mock-srn-title-input" type="text" value="" readonly />' +
+                  '<div class="mock-srn-meta">陈墨 · 95 条</div>' +
+                '</div>' +
+                '<div class="mock-srn-item mock-srn-b is-active">' +
+                  '<div class="mock-srn-title mock-srn-title-el">4707充值90万钻石</div>' +
+                  '<input class="mock-srn-title-input mock-srn-title-input-el" type="text" value="4707充值90万钻石" readonly />' +
+                  '<div class="mock-srn-meta">陈墨 · 3 条</div>' +
+                '</div>' +
+                '<div class="mock-srn-item mock-srn-c">' +
+                  '<div class="mock-srn-title">客诉分析</div>' +
+                  '<input class="mock-srn-title-input" type="text" value="" readonly />' +
+                  '<div class="mock-srn-meta">史磊 · 8 条</div>' +
+                '</div>' +
+              '</div>' +
+              '<div class="mock-srn-menu mock-srn-menu-el">' +
+                '<button type="button" class="mock-srn-menu-btn mock-srn-menu-rename">修改标题</button>' +
+              '</div>' +
+            '</aside>' +
+            '<div class="mock-srn-main">' +
+              '<div class="mock-srn-main-title mock-srn-main-title-el">4707充值90万钻石</div>' +
+              '<div class="mock-srn-main-sub mock-srn-main-sub-el">对话区</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="mock-srn-caption mock-srn-caption-el">右键改名 · 原地编辑 · 留空恢复自动标题</div>' +
+        '</div>'
+      );
+    }
     if (id === 'session-pin') {
       return (
         '<div class="mock-body mock-pin-body">' +
@@ -4232,7 +5030,7 @@
               '</div>' +
             '</aside>' +
           '</div>' +
-          '<div class="mock-cat-caption mock-cat-caption-el">快捷提问 · 能力目录 · 填参执行</div>' +
+          '<div class="mock-cat-caption mock-cat-caption-el">新能力自动登记 · 能力目录 · 填参执行</div>' +
         '</div>'
       );
     }
@@ -4752,6 +5550,17 @@
             '</div>' +
             '<div class="mock-wf-caption mock-wf-caption-el">录制一次 · 改参复跑 · 全量落表验收</div>' +
           '</div>' +
+        '</div>'
+      );
+    }
+    if (id === 'pk-atm-workflow') {
+      return (
+        '<div class="mock-body mock-pk-body mock-pk-mobile-body">' +
+          '<div class="mock-pk-dual">' +
+            buildPkMobilePhoneHtml('a') +
+            buildPkMobilePhoneHtml('b') +
+          '</div>' +
+          '<div class="mock-pk-mobile-caption mock-pk-mobile-caption-el">接口自动化 · applyAcrossRoomPk 双房匹配</div>' +
         '</div>'
       );
     }
@@ -5516,6 +6325,140 @@
     }
 
     sessionPinTimer = demoTimeout(runPhase, 400);
+  }
+
+  function stopDingtalkPushDemo(demo) {
+    if (dingtalkPushTimer) {
+      clearTimeout(dingtalkPushTimer);
+      dingtalkPushTimer = null;
+    }
+    if (!demo) return;
+    var push = demo.querySelector('.mock-dtp-push-el');
+    var webResult = demo.querySelector('.mock-dtp-web-result');
+    var dingResult = demo.querySelector('.mock-dtp-ding-result-el');
+    if (push) push.classList.remove('is-checked', 'is-pulse');
+    if (webResult) webResult.classList.remove('is-show');
+    if (dingResult) dingResult.classList.remove('is-show');
+  }
+
+  function startDingtalkPushDemo(demo) {
+    stopDingtalkPushDemo(demo);
+    var push = demo.querySelector('.mock-dtp-push-el');
+    var webResult = demo.querySelector('.mock-dtp-web-result');
+    var dingResult = demo.querySelector('.mock-dtp-ding-result-el');
+    var caption = demo.querySelector('.mock-dtp-caption-el');
+    if (!push) return;
+
+    var phases = [
+      { label: '勾选 · 结果发钉钉', duration: 2600, run: function () {
+        push.classList.remove('is-checked', 'is-pulse');
+        if (webResult) webResult.classList.remove('is-show');
+        if (dingResult) dingResult.classList.remove('is-show');
+        push.classList.add('is-pulse');
+      }},
+      { label: '执行完成 · Web 展示', duration: 2800, run: function () {
+        push.classList.add('is-checked');
+        push.classList.remove('is-pulse');
+        if (webResult) webResult.classList.add('is-show');
+        if (dingResult) dingResult.classList.remove('is-show');
+      }},
+      { label: '同步推送 · 钉钉私聊', duration: 3200, run: function () {
+        if (dingResult) dingResult.classList.add('is-show');
+      }}
+    ];
+    var idx = 0;
+
+    function runPhase() {
+      var phase = phases[idx];
+      if (caption) caption.textContent = phase.label;
+      phase.run();
+      idx = (idx + 1) % phases.length;
+      dingtalkPushTimer = demoTimeout(runPhase, phase.duration);
+    }
+
+    dingtalkPushTimer = demoTimeout(runPhase, 400);
+  }
+
+  function stopSessionRenameDemo(demo) {
+    if (sessionRenameTimer) {
+      clearTimeout(sessionRenameTimer);
+      sessionRenameTimer = null;
+    }
+    if (!demo) return;
+    var itemB = demo.querySelector('.mock-srn-b');
+    var menu = demo.querySelector('.mock-srn-menu-el');
+    var menuRename = demo.querySelector('.mock-srn-menu-rename');
+    var titleEl = demo.querySelector('.mock-srn-title-el');
+    var inputEl = demo.querySelector('.mock-srn-title-input-el');
+    var mainTitle = demo.querySelector('.mock-srn-main-title-el');
+    var mainSub = demo.querySelector('.mock-srn-main-sub-el');
+    if (itemB) itemB.classList.remove('is-target', 'is-editing');
+    if (menu) menu.classList.remove('is-show');
+    if (menuRename) menuRename.classList.remove('is-highlight');
+    if (titleEl) titleEl.textContent = '4707充值90万钻石';
+    if (inputEl) inputEl.value = '4707充值90万钻石';
+    if (mainTitle) mainTitle.textContent = '4707充值90万钻石';
+    if (mainSub) mainSub.textContent = '对话区';
+  }
+
+  function startSessionRenameDemo(demo) {
+    stopSessionRenameDemo(demo);
+    var itemB = demo.querySelector('.mock-srn-b');
+    var menu = demo.querySelector('.mock-srn-menu-el');
+    var menuRename = demo.querySelector('.mock-srn-menu-rename');
+    var titleEl = demo.querySelector('.mock-srn-title-el');
+    var inputEl = demo.querySelector('.mock-srn-title-input-el');
+    var mainTitle = demo.querySelector('.mock-srn-main-title-el');
+    var mainSub = demo.querySelector('.mock-srn-main-sub-el');
+    var caption = demo.querySelector('.mock-srn-caption-el');
+    if (!itemB) return;
+
+    var phases = [
+      { label: '历史会话 · 自动标题', duration: 2400, run: function () {
+        itemB.classList.remove('is-target', 'is-editing');
+        if (menu) menu.classList.remove('is-show');
+        if (menuRename) menuRename.classList.remove('is-highlight');
+        if (titleEl) titleEl.textContent = '4707充值90万钻石';
+        if (inputEl) inputEl.value = '4707充值90万钻石';
+        if (mainTitle) mainTitle.textContent = '4707充值90万钻石';
+        if (mainSub) mainSub.textContent = '对话区';
+      }},
+      { label: '右键 · 修改标题', duration: 2600, run: function () {
+        itemB.classList.add('is-target');
+        if (menu) {
+          menu.style.top = '46%';
+          menu.style.left = '18%';
+          menu.classList.add('is-show');
+        }
+        if (menuRename) menuRename.classList.add('is-highlight');
+      }},
+      { label: '原地编辑 · 输入新标题', duration: 2800, run: function () {
+        if (menu) menu.classList.remove('is-show');
+        if (menuRename) menuRename.classList.remove('is-highlight');
+        itemB.classList.remove('is-target');
+        itemB.classList.add('is-editing');
+        if (inputEl) inputEl.value = '充值失败排查';
+        if (mainSub) mainSub.textContent = '编辑中…';
+      }},
+      { label: '保存 · 外显替换', duration: 3000, run: function () {
+        itemB.classList.remove('is-editing');
+        if (titleEl) titleEl.textContent = '充值失败排查';
+        if (inputEl) inputEl.value = '充值失败排查';
+        if (mainTitle) mainTitle.textContent = '充值失败排查';
+        if (mainSub) mainSub.textContent = '自定义标题已保存';
+      }}
+    ];
+    var idx = 0;
+
+    function runPhase() {
+      var phase = phases[idx];
+      if (caption) caption.textContent = phase.label;
+      phase.run();
+      idx = (idx + 1) % phases.length;
+      sessionRenameTimer = demoTimeout(runPhase, phase.duration);
+    }
+
+    sessionRenameTimer = demoTimeout(runPhase, 400);
   }
 
   function stopGlobalSearchDemo(demo) {
@@ -6837,6 +7780,152 @@
     anniversaryEggWorkflowTimer = demoTimeout(runPhase, 300);
   }
 
+  var PK_ATM_PHASES = ['is-matching', 'is-matched', 'is-onmic', 'is-gifting', 'is-ended'];
+
+  function stopPkAtmWorkflowDemo(demo) {
+    if (pkAtmWorkflowTimer) {
+      clearTimeout(pkAtmWorkflowTimer);
+      pkAtmWorkflowTimer = null;
+    }
+    if (pkAtmWorkflowTickTimer) {
+      clearInterval(pkAtmWorkflowTickTimer);
+      pkAtmWorkflowTickTimer = null;
+    }
+    if (!demo) return;
+    demo.querySelectorAll('.mock-pk-room-el').forEach(function (room) {
+      PK_ATM_PHASES.forEach(function (p) { room.classList.remove(p); });
+    });
+    demo.querySelectorAll('.mock-pk-timer-el').forEach(function (el) {
+      el.textContent = '00:03';
+    });
+    demo.querySelectorAll('.mock-pk-start-sec-el').forEach(function (el) {
+      el.textContent = '3';
+    });
+    demo.querySelectorAll('.mock-pk-onmic-sec-el').forEach(function (el) {
+      el.textContent = '15';
+    });
+    demo.querySelectorAll('.mock-pk-score-red-el').forEach(function (el) {
+      el.textContent = '0';
+    });
+    demo.querySelectorAll('.mock-pk-score-blue-el').forEach(function (el) {
+      el.textContent = '0';
+    });
+    var caption = demo.querySelector('.mock-pk-mobile-caption-el');
+    if (caption) caption.textContent = '匹配 · MOA applyAcrossRoomPk';
+  }
+
+  function startPkAtmWorkflowDemo(demo) {
+    stopPkAtmWorkflowDemo(demo);
+    var rooms = demo.querySelectorAll('.mock-pk-room-el');
+    var caption = demo.querySelector('.mock-pk-mobile-caption-el');
+    if (!rooms.length) return;
+
+    function setPhase(phase) {
+      rooms.forEach(function (room) {
+        PK_ATM_PHASES.forEach(function (p) { room.classList.remove(p); });
+        if (phase) room.classList.add(phase);
+      });
+    }
+
+    function setMatchTimer(sec) {
+      var text = sec < 10 ? '00:0' + sec : '00:' + sec;
+      demo.querySelectorAll('.mock-pk-timer-el').forEach(function (el) {
+        el.textContent = text;
+      });
+    }
+
+    function setStartCountdown(sec) {
+      demo.querySelectorAll('.mock-pk-start-sec-el').forEach(function (el) {
+        el.textContent = String(sec);
+      });
+    }
+
+    function setOnmicCountdown(sec) {
+      demo.querySelectorAll('.mock-pk-onmic-sec-el').forEach(function (el) {
+        el.textContent = String(sec);
+      });
+    }
+
+    function setBattleScores(red, blue) {
+      demo.querySelectorAll('.mock-pk-score-red-el').forEach(function (el) {
+        el.textContent = red;
+      });
+      demo.querySelectorAll('.mock-pk-score-blue-el').forEach(function (el) {
+        el.textContent = blue;
+      });
+    }
+
+    function clearTick() {
+      if (pkAtmWorkflowTickTimer) {
+        clearInterval(pkAtmWorkflowTickTimer);
+        pkAtmWorkflowTickTimer = null;
+      }
+    }
+
+    var phases = [
+      { label: '匹配', duration: 3600, run: function () {
+        setPhase('is-matching');
+        if (caption) caption.textContent = '接口匹配 · applyAcrossRoomPk 双房随机';
+        setMatchTimer(3);
+        var tick = 3;
+        clearTick();
+        pkAtmWorkflowTickTimer = setInterval(function () {
+          tick -= 1;
+          if (tick >= 1) setMatchTimer(tick);
+          else clearTick();
+        }, 900);
+      }},
+      { label: '匹配成功', duration: 3000, run: function () {
+        clearTick();
+        setPhase('is-matched');
+        if (caption) caption.textContent = '匹配成功 · Cross-room PK Matching Successful';
+        setStartCountdown(3);
+        var cd = 3;
+        pkAtmWorkflowTickTimer = setInterval(function () {
+          cd -= 1;
+          if (cd >= 1) setStartCountdown(cd);
+          else clearTick();
+        }, 850);
+      }},
+      { label: '用户上麦', duration: 3200, run: function () {
+        clearTick();
+        setPhase('is-onmic');
+        if (caption) caption.textContent = '接口上麦 · MOA 机器人麦位就位';
+        setBattleScores('0', '0');
+        setOnmicCountdown(15);
+        var sec = 15;
+        pkAtmWorkflowTickTimer = setInterval(function () {
+          sec -= 1;
+          if (sec >= 12) setOnmicCountdown(sec);
+          else clearTick();
+        }, 700);
+      }},
+      { label: '房间送礼', duration: 3600, run: function () {
+        clearTick();
+        setPhase('is-gifting');
+        if (caption) caption.textContent = '接口送礼 · Gift send 涨 PK 值';
+        setBattleScores('82,600', '92,600');
+      }},
+      { label: '结束 PK', duration: 3200, run: function () {
+        clearTick();
+        setPhase('is-ended');
+        if (caption) caption.textContent = '接口结束 · closeAcrossRoomPk 验收';
+        setBattleScores('82,600', '92,600');
+      }}
+    ];
+    var idx = 0;
+
+    function runPhase() {
+      var phase = phases[idx];
+      phase.run();
+      var duration = phase.duration;
+      idx = (idx + 1) % phases.length;
+      pkAtmWorkflowTimer = demoTimeout(runPhase, duration);
+    }
+
+    pkAtmWorkflowTimer = demoTimeout(runPhase, 300);
+  }
+
   function stopRegistrySyncDemo(demo) {
     if (registrySyncTimer) {
       clearTimeout(registrySyncTimer);
@@ -7322,6 +8411,10 @@
       else stopDingtalkAuthDemo(demo);
       if (s.demo === 'session-isolation' && stepIdx >= 2) startSessionIsolationDemo(demo);
       else stopSessionIsolationDemo(demo);
+      if (s.demo === 'dingtalk-push' && stepIdx >= 2) startDingtalkPushDemo(demo);
+      else stopDingtalkPushDemo(demo);
+      if (s.demo === 'session-rename' && stepIdx >= 2) startSessionRenameDemo(demo);
+      else stopSessionRenameDemo(demo);
       if (s.demo === 'session-pin' && stepIdx >= 2) startSessionPinDemo(demo);
       else stopSessionPinDemo(demo);
       if (s.demo === 'global-search' && stepIdx >= 2) startGlobalSearchDemo(demo);
@@ -7354,6 +8447,8 @@
       else stopMoaRecordDemo(demo);
       if (s.demo === 'anniversary-egg-workflow' && stepIdx >= 2) startAnniversaryEggWorkflowDemo(demo);
       else stopAnniversaryEggWorkflowDemo(demo);
+      if (s.demo === 'pk-atm-workflow' && stepIdx >= 2) startPkAtmWorkflowDemo(demo);
+      else stopPkAtmWorkflowDemo(demo);
       if (s.demo === 'registry-sync' && stepIdx >= 2) startRegistrySyncDemo(demo);
       else stopRegistrySyncDemo(demo);
       if (s.demo === 'usage-growth' && stepIdx >= 2) startUsageGrowthDemo(demo);
@@ -7735,7 +8830,10 @@
     }
     if (s.type === 'radial') return (s.title || '总结页').trim();
     if (s.type === 'agent-map') return (s.label ? s.label + ' · ' : '') + (s.title || '总览').trim();
-    if (s.type === 'agent-preview') return (s.title || 'Agent 预览').trim();
+    if (s.type === 'agent-preview') {
+      var apTitle = (s.title || 'Agent 预览').trim();
+      return (s.label ? s.label + ' · ' : '') + (apTitle.length > 14 ? apTitle.slice(0, 14) + '…' : apTitle);
+    }
     return '第 ' + (i + 1) + ' 页';
   }
 
@@ -7965,6 +9063,7 @@
     'stream-output': 15000,
     'external-agent': 12000,
     'anniversary-egg-workflow': 26000,
+    'pk-atm-workflow': 21000,
     'moa-record': 14000,
     'service-agent-moa': 16000,
     'registry-sync': 12000,
@@ -7974,6 +9073,8 @@
     'file-attach-export': 12000,
     'dingtalk-auth': 14000,
     'session-isolation': 14000,
+    'dingtalk-push': 12000,
+    'session-rename': 12000,
     'global-search': 12000,
     'catalog-onboard': 12000,
     'bookmarks-jump': 12000

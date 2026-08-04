@@ -7,7 +7,7 @@
       "items": [
         {
           "title": "Web Agent Keynote 演示",
-          "desc": "28 页产品演示：UI 细节、功能亮点、智能工厂与双周用量",
+          "desc": "30 页产品演示：UI 细节、功能亮点、智能工厂与双周用量",
           "url": "/keynote"
         }
       ]
@@ -22,7 +22,7 @@
         },
         {
           "title": "PK 提款机：从零到 MOA 与自动化",
-          "desc": "真实协作案例：读 PRD → 抓包落 MOA → 对话迭代 → 沉淀工作流",
+          "desc": "真实协作案例：读 PRD → 抓包落 MOA → 对话迭代 C1～C8 → 赛况/返钻/提款排名验收 → 工作流 pk-atm-test",
           "url": "/keynote/pk-atm-guide"
         }
       ]

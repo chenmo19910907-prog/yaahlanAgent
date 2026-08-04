@@ -18,9 +18,17 @@ if str(GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR))
 
 from env_loader import load_env_local  # noqa: E402
+from external_agent_progress import (  # noqa: E402
+    clear_external_agent_progress,
+    report_external_agent_error,
+    report_external_agent_querying,
+    resolve_user_key,
+)
 
 DEFAULT_BASE_URL = "http://172.18.50.12:8080"
 BASE_URL_ENV_KEYS = ("MIDDLEWARE_AGENT_URL", "MDP_MIDDLEWARE_AGENT_URL")
+AGENT_ID = "mdp_middleware"
+AGENT_LABEL = "MDP Agent"
 TASK_HANDOFF_RE = re.compile(r"_task_handoff:(\{.*?\})_", re.DOTALL)
 THINKING_RE = re.compile(r"_thinking:\{.*?\}_\s*", re.DOTALL)
 
@@ -196,6 +204,7 @@ def query_middleware_agent(
 def main() -> int:
     parser = argparse.ArgumentParser(description="查询 MDP Agent")
     parser.add_argument("--message", required=True, help="提问内容")
+    parser.add_argument("--user-key", default=None, help="Web Agent batch_key（默认读 WEB_AGENT_BATCH_KEY）")
     parser.add_argument("--session-id", default=None, help="续聊 session_id")
     parser.add_argument("--base-url", default=None, help="MDP Agent 根地址（默认读 .env.local）")
     parser.add_argument("--poll-timeout", type=int, default=180, help="后台任务轮询超时秒数")
@@ -204,13 +213,34 @@ def main() -> int:
     args = parser.parse_args()
 
     base_url = resolve_base_url(args.base_url)
-    answer, session_id, task_id = query_middleware_agent(
-        args.message.strip(),
-        base_url=base_url,
-        session_id=args.session_id,
-        poll_task_timeout_s=max(30, int(args.poll_timeout)),
-        chat_timeout_s=max(10, int(args.timeout)),
-    )
+    user_key = resolve_user_key(args.user_key)
+    if user_key:
+        report_external_agent_querying(
+            user_key,
+            agent_id=AGENT_ID,
+            agent_label=AGENT_LABEL,
+            message=args.message.strip(),
+        )
+    try:
+        answer, session_id, task_id = query_middleware_agent(
+            args.message.strip(),
+            base_url=base_url,
+            session_id=args.session_id,
+            poll_task_timeout_s=max(30, int(args.poll_timeout)),
+            chat_timeout_s=max(10, int(args.timeout)),
+        )
+    except RuntimeError as exc:
+        if user_key:
+            report_external_agent_error(
+                user_key,
+                agent_id=AGENT_ID,
+                agent_label=AGENT_LABEL,
+                error=str(exc),
+            )
+        raise
+    else:
+        if user_key:
+            clear_external_agent_progress(user_key)
     if args.json:
         print(
             json.dumps(

@@ -12,9 +12,10 @@
 | 2026-07-15 | `/yaahlan/user/intimate/intimateHomePage` | `/service/yaahlan/user/intimate-api` | `intimateHomePage` | CP/挚友空间主页；body 需 `userId`、`intimateId`、`relationshipType`；返回 `cpMedalTab.list`（CP 勋章：medalName/num/obtainTime/imageUrl/dynamicImageUrl）、`intimateInfo` 等；无关系 ec=404；MOA 实测 `100486375`（13311111112） |
 | 2026-07-15 | `/yaahlan/room/member/apply` | `/service/room/external/room-member-stage` | `apply` | body：`userId`（申请人）、`roomId`；Tunnel 未录到 apply 包，body 由 agree 抓包推断，MOA 实测 ec=200 |
 | 2026-07-15 | `/yaahlan/room/member/agree` | `/service/room/external/room-member-stage` | `agree` | body：`userId`（房主）、`roomId`、`remoteId`（申请人）；已加入再调 ec=20210111 |
-| 2026-08-03 | `/yaahlan/room/acrossRoomPk/applyAcrossRoomPk` | `/service/room/external/room-pk-api` | `applyAcrossRoomPk` | body：`userId`、`roomId`（发起方）、`acrossRoomId`（目标）、`acrossPkType`（2=指定邀请）、`pkMinute`（5/10/30）、`hostSeat`（0=无主持人位）；Tunnel `100079102` `_id=ZPxoxp8Bpk1mjMPPZg6N`；MOA 实测 ec=200 |
+| 2026-08-03 | `/yaahlan/room/acrossRoomPk/applyAcrossRoomPk` | `/service/room/external/room-pk-api` | `applyAcrossRoomPk` | body：`userId`、`roomId`（发起方）、`acrossPkType`（1=随机匹配 / 2=指定邀请）、`pkMinute`（5/10/30）、`hostSeat`（0=无主持人位）；**随机匹配**：`acrossRoomId` 为空，`acrossPkType=1`，Tunnel `100079102` `_id=VmdPzJ8BR2LVRzbvVZwa`（2026-08-04 18:26）；**指定邀请**：`acrossRoomId` 为目标房间，`acrossPkType=2`，Tunnel `_id=ZPxoxp8Bpk1mjMPPZg6N`；MOA 实测 ec=200 |
 | 2026-08-03 | `/yaahlan/room/acrossRoomPk/acceptAcrossRoomPkInvite` | `/service/room/external/room-pk-api` | `acceptAcrossRoomPkInvite` | body：`userId`、`roomId`（被邀请方）、`acrossRoomId`（发起方）、`inviteId`；Tunnel `100006869` `_id=_QBtxp8Bpk1mjMPPugzU`；MOA 代理调通；重放需有效 inviteId |
 | 2026-08-03 | `/yaahlan/room/acrossRoomPk/closeAcrossRoomPk` | `/service/room/external/room-pk-api` | `closeAcrossRoomPk` | body：`userId`、`roomId`、`acrossRoomId`（对方房间）、`acrossRoomPkId`（当前 PK 场次）；Tunnel `100079102` `_id=jANzxp8Bpk1mjMPPm_ig`；MOA 实测 ec=200 |
+| 2026-08-04 | `/yaahlan/room/acrossRoomPk/getAcrossRoomPkInfo` | `/service/room/external/room-pk-api` | `getAcrossRoomPkInfo` | body：`userId`、`roomId`、可选 `acrossRoomPkId`；返回 `stage`/`currentRoomInfo`/`acrossRoomInfo`/`roomRankValue`/`acrossRoomRankValue`/`roomRankList`；PK 提款机 workflow 用于 PK 结束前赛况/对战验收 |
 | 2026-07-16 | `/yaahlan/vas/familyPk/getFamilyPkPage` | `/service/vas/activity/family-pk-v2-api` | `getFamilyPkPage` | body：`userId`/`uid`、`date`（tab 日期）、`area`；返回 `pkList`/`current`/`tierList`。旧版 `family-pk` + `home` 仅活动入口摘要，非本页 |
 | 2026-07-16 | `/yaahlan/vas/familyPk/getFamilyPkUserList` | `/service/vas/activity/family-pk-v2-api` | `getFamilyPkUserList` | body：`userId`、`familyId`、`date`、`limit`、`offset`；点击贡献 top3 头像弹窗；返回 `memberList`/`userInfo`/`hasNext` |
 | 2026-07-17 | `/yaahlan/component/giftPanel/getGiftTabListV3` | `/service/yh-components/gift-panel` | `getGiftTabListV3` | MOA Redis 直连 + httpproxy；背包 Tab 读 `package.remain`；无需打开礼物面板 |
@@ -25,6 +26,28 @@
 | 2026-07-28 | `/yaahlan/trick/cpLoveChest/getCpLoveChestHomepage` | `/service/yaahlan-trick/external/cp-love-chest` | `getCpLoveChestHomepage` | params=`userId`,`cpUserId`；读 `data.currentLoveValue`（15天周期爱意值）；**不是** cp-moa loveValue |
 | 2026-07-28 | （MOA 后门） | `/service/yaahlan/user/cp-moa` | `addCpLoveValue` | params=`userId`,`remoteId`,`value`(long)；**CP 总恩爱值 loveValue**；须已有 CP；**不更新**宝箱 currentLoveValue |
 | 2026-07-28 | （MOA 后门） | `/service/vas/external/cp-stage` | `addCpFerrisWheelValue` | params=`userId1`,`userId2`,`value`(long)；摩天轮活动期周期榜；**不是**宝箱 currentLoveValue |
+
+## 待抓包验证（PK 提款机 · 赛况列表 tab）
+
+> 活动页「PK 赛况」列表（最多 50 场进行中跨房 PK）HTTP 路径 **尚未** 在测试环境 MOA 代理实测通过。`pk_atm_test_run.py` 会尝试下列候选；映射确认后移入上表。
+
+| 候选 HTTP（待确认） | 候选 MOA `url` | 候选 `method` | 备注 |
+|---------------------|----------------|---------------|------|
+| `/yaahlan/vas/.../getPkSituationList`（待抓包） | `/service/vas/activity/across-room-pk-withdraw-v2-api` | `home` / `getPkSituationList` / `getPkStatusList` | 测试环境 MSE 可能报 No address found |
+| 同上 | `/service/vas/activity/pk-withdraw-api` | `home` / `getPkSituationList` | 旧版 withdraw 服务候选 |
+
+抓包句式：`抓包13311111113打开PK提款机赛况tab的tunnel，并记录到MOA`
+
+## 待抓包验证（PK 提款机 · 提款排名 tab）
+
+> 活动页「提款排名」榜单、吸底「本周已提款💎y」、页头「本周已被提走奖金」HTTP 路径 **尚未** MOA 实测通过。
+
+| 候选 HTTP（待确认） | 候选 MOA `url` | 候选 `method` | 备注 |
+|---------------------|----------------|---------------|------|
+| `/yaahlan/vas/.../getWithdrawRankList`（待抓包） | `/service/room/external/room-pk-api` | `getAcrossRoomPkWithdrawRankList` / `getAcrossRoomPkWithdrawRank` / `getAcrossRoomPkWithdrawPage` | 当前测试环境 Method not found |
+| 同上 | `/service/vas/activity/across-room-pk-withdraw-v2-api` | `home` / `getWithdrawRankList` / `getWithdrawRank` | MSE 可能未注册 |
+
+抓包句式：`抓包13311111113打开PK提款机提款排名tab的tunnel，并记录到MOA`
 
 ## 配套 HTTP（非 MOA，仅对照）
 

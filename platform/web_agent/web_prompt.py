@@ -84,10 +84,12 @@ def _external_agent_rules(enabled_ids: list[str]) -> str:
             lines.append(f"  - {desc}")
         if script:
             query_line = f"  - 查询：`python3 {script} --message \"<问题>\"`"
+            query_line += "（Web Agent 会自动注入 batch_key 并展示查询进度"
             if token_env:
                 query_line += (
-                    f"（Token 读 `platform/dingtalk_gateway/.env.local` 的 `{token_env}`）"
+                    f"；Token 读 `platform/dingtalk_gateway/.env.local` 的 `{token_env}`"
                 )
+            query_line += "）"
             lines.append(query_line)
     disabled = [item for item in all_agents if str(item.get("id")) not in enabled_ids]
     if disabled:

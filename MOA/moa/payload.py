@@ -687,6 +687,38 @@ def _op_recharge_rebate_simulate(args: argparse.Namespace, payload: dict[str, An
     )
 
 
+def _recharge_rebate_flow_date_yyyymmdd(raw: str | None) -> str:
+    from datetime import datetime as _dt
+    from zoneinfo import ZoneInfo as _ZoneInfo
+
+    value = (raw or "").strip()
+    if not value:
+        return _dt.now(_ZoneInfo("Asia/Shanghai")).strftime("%Y%m%d")
+    if len(value) != 8 or not value.isdigit():
+        raise ValueError("recharge_rebate_flow_date 须为 yyyyMMdd，如 20260804")
+    return value
+
+
+def _op_recharge_rebate_incr_flow(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if args.recharge_rebate_flow_diamonds is None:
+        raise ValueError("增加流水时，必须同时提供 --recharge-rebate-flow-diamonds")
+    user_id = str(args.recharge_rebate_flow_user_id).strip()
+    diamonds = int(args.recharge_rebate_flow_diamonds)
+    if not user_id:
+        raise ValueError("recharge_rebate_flow_user_id 不能为空")
+    if diamonds <= 0:
+        raise ValueError("recharge_rebate_flow_diamonds 必须为正整数")
+    date_str = _recharge_rebate_flow_date_yyyymmdd(args.recharge_rebate_flow_date)
+    expr = f'context.getBean("fundFlowService").incrRechargeFlow("{user_id}","{date_str}",{diamonds}L)'
+    payload["url"] = "/service/voga-mts-vas-backdoor"
+    payload["method"] = "execute"
+    set_backdoor_execute_expr(payload, expr)
+    print(
+        f"Ultra Recharge 增加流水：userId={user_id} date={date_str} diamonds={diamonds}",
+        file=sys.stderr,
+    )
+
+
 def _op_pk_rank_settle(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     offset = args.pk_rank_settle_week_offset  # 0=本周，-1=上周
     payload["url"] = "/service/room/internal/room-pk"
@@ -1275,6 +1307,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.user_reg_time_user_id is not None, _op_user_reg_time_query),
     (lambda a: a.recharge_rebate_blacklist_user_id is not None, _op_recharge_rebate_blacklist_add),
     (lambda a: a.recharge_rebate_blacklist_remove_user_id is not None, _op_recharge_rebate_blacklist_remove),
+    (lambda a: a.recharge_rebate_flow_user_id is not None, _op_recharge_rebate_incr_flow),
     (lambda a: a.recharge_rebate_user_id is not None, _op_recharge_rebate_simulate),
     (lambda a: a.pk_rank_settle_week_offset is not None, _op_pk_rank_settle),
     (lambda a: a.pk_rank_query_week is not None, _op_pk_rank_query),

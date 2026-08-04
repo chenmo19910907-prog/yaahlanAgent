@@ -75,6 +75,11 @@ from batch_progress import (  # noqa: E402
     clear_batch_progress,
     read_batch_progress,
 )
+from external_agent_progress import (  # noqa: E402
+    build_external_agent_progress_message,
+    clear_external_agent_progress,
+    read_external_agent_progress,
+)
 from duration_history import classify_task_kind  # noqa: E402
 from progress_message import (  # noqa: E402
     append_duration_footer,
@@ -469,6 +474,7 @@ class ActiveRun:
     last_ack_line: str = ""
     last_elapsed_line: str = ""
     last_batch_line: str = ""
+    last_external_line: str = ""
     last_markdown: str = ""
     _notify_lock: threading.Lock = field(default_factory=threading.Lock)
 
@@ -479,6 +485,7 @@ class ActiveRun:
         elif etype == "status":
             self.last_elapsed_line = str(event.get("elapsed_line") or "")
             self.last_batch_line = str(event.get("batch_line") or "")
+            self.last_external_line = str(event.get("external_line") or "")
         elif etype == "delta":
             markdown = event.get("markdown")
             if markdown:
@@ -490,12 +497,13 @@ class ActiveRun:
         events: list[dict[str, Any]] = []
         if self.last_ack_line:
             events.append({"type": "ack", "line": self.last_ack_line})
-        if self.last_elapsed_line or self.last_batch_line:
+        if self.last_elapsed_line or self.last_batch_line or self.last_external_line:
             events.append(
                 {
                     "type": "status",
                     "elapsed_line": self.last_elapsed_line,
                     "batch_line": self.last_batch_line,
+                    "external_line": self.last_external_line,
                 }
             )
         if self.last_markdown:
@@ -521,6 +529,7 @@ class ActiveRun:
             "ack_line": self.last_ack_line,
             "elapsed_line": self.last_elapsed_line,
             "batch_line": self.last_batch_line,
+            "external_line": self.last_external_line,
             "markdown": self.last_markdown,
         }
 
@@ -617,6 +626,7 @@ def _apply_snapshot_to_run(run: ActiveRun, snap) -> None:
     run.last_ack_line = snap.last_ack_line
     run.last_elapsed_line = snap.last_elapsed_line
     run.last_batch_line = snap.last_batch_line
+    run.last_external_line = snap.last_external_line
     run.last_markdown = snap.last_markdown
     run.final_text = snap.final_text
     run.error = snap.error
@@ -735,6 +745,7 @@ def _start_run_event_tailer(run: ActiveRun, *, progress_stop: threading.Event) -
                 elif etype == "status":
                     run.last_elapsed_line = str(event.get("elapsed_line") or "")
                     run.last_batch_line = str(event.get("batch_line") or "")
+                    run.last_external_line = str(event.get("external_line") or "")
                 elif etype == "delta":
                     markdown = event.get("markdown")
                     if markdown:
@@ -914,11 +925,15 @@ def _start_run_progress_watcher(
             state = read_batch_progress(user_key)
             if state is not None:
                 batch_line = build_batch_progress_message(state)
+            external_line = build_external_agent_progress_message(
+                read_external_agent_progress(user_key)
+            )
             run.emit_event(
                 {
                     "type": "status",
                     "elapsed_line": elapsed_line,
                     "batch_line": batch_line,
+                    "external_line": external_line,
                 }
             )
 
@@ -1004,6 +1019,8 @@ def _start_chat_run(
     enabled_external_agents: list[str] | None = None,
     author_id: str = "",
     author_label: str = "",
+    push_result_to_dingtalk: bool = False,
+    push_dingtalk_staff_id: str = "",
 ) -> ActiveRun:
     store = get_session_store()
     run_store = get_run_store()
@@ -1060,6 +1077,8 @@ def _start_chat_run(
             worker_pid=0,
             status=RUN_STATUS_RUNNING,
             started_at=time.time(),
+            push_result_to_dingtalk=bool(push_result_to_dingtalk),
+            push_dingtalk_staff_id=(push_dingtalk_staff_id or "").strip(),
         )
     )
     run.task_session.begin(
@@ -1068,6 +1087,7 @@ def _start_chat_run(
         budget_s=float(DEFAULT_TIMEOUT_S),
     )
     clear_batch_progress(user_key)
+    clear_external_agent_progress(user_key)
     started_at = time.monotonic()
     run.started_at = started_at
     run.task_kind = task_kind
@@ -1538,6 +1558,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             enabled_external_agents = resolve_enabled_external_agent_ids(
                 body.get("enabled_external_agents"),
             )
+            push_result_to_dingtalk = bool(body.get("push_result_to_dingtalk"))
             raw_attachments = body.get("attachments")
             if not isinstance(raw_attachments, list):
                 raw_attachments = []
@@ -1575,6 +1596,15 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 owner_label=owner_label,
             )
             author_id, author_label = _session_owner_from_user(viewer)
+            push_dingtalk_staff_id = ""
+            if push_result_to_dingtalk:
+                if viewer is None or not (viewer.staff_id or "").strip():
+                    return _json_response(
+                        self,
+                        {"error": "需要钉钉登录后才能推送结果到钉钉"},
+                        400,
+                    )
+                push_dingtalk_staff_id = viewer.staff_id.strip()
             active = _resolve_active_run_for_session(session_id)
             if active is not None and not active.done.is_set():
                 return _json_response(
@@ -1602,6 +1632,8 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     enabled_external_agents=enabled_external_agents,
                     author_id=author_id,
                     author_label=author_label,
+                    push_result_to_dingtalk=push_result_to_dingtalk,
+                    push_dingtalk_staff_id=push_dingtalk_staff_id,
                 )
             except Exception as exc:  # noqa: BLE001
                 run.task_session.end()
@@ -1710,6 +1742,38 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 return _json_response(self, {"error": "pinned must be boolean"}, 400)
             store = get_session_store()
             ok, err = store.set_session_pinned(session_id, pinned=pinned)
+            if not ok:
+                status = 404 if err == "session not found" else 400
+                return _json_response(self, {"error": err or "failed"}, status)
+            meta = store.get_session(session_id)
+            if meta is None:
+                return _json_response(self, {"error": "session not found"}, 404)
+            try:
+                from dingtalk_user_lookup import collect_known_labels
+
+                known = collect_known_labels(store.list_sessions(enrich_names=False))
+            except Exception:  # noqa: BLE001
+                known = {}
+            return _json_response(
+                self,
+                meta.to_dict(known_labels=known, viewer_staff_id=viewer.staff_id),
+            )
+
+        m_title = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})/title$", path)
+        if m_title:
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            session_id = m_title.group(1)
+            viewer = current_web_user(self)
+            if viewer is None:
+                return _json_response(self, {"error": "unauthorized"}, 401)
+            if "title" not in body:
+                return _json_response(self, {"error": "title required"}, 400)
+            title = str(body.get("title") or "")
+            store = get_session_store()
+            ok, err = store.set_session_custom_title(session_id, title=title)
             if not ok:
                 status = 404 if err == "session not found" else 400
                 return _json_response(self, {"error": err or "failed"}, status)

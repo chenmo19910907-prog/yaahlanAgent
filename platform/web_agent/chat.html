@@ -817,7 +817,13 @@
       from { opacity: 0.7; transform: translateX(10px); }
       to { opacity: 1; transform: translateX(0); }
     }
-    body.is-resizing { cursor: col-resize !important; user-select: none !important; }
+    body.is-resizing {
+      cursor: col-resize !important;
+      user-select: none !important;
+      transition: none !important;
+    }
+    body.is-resizing .main { transition: none !important; }
+    body.is-resizing .sidebar-collapse-btn { transition: none !important; }
     body.is-resizing * { cursor: col-resize !important; }
     @media (max-width: 960px) {
       body.catalog-open:not(.sidebar-collapsed) {
@@ -1144,6 +1150,29 @@
     .session-title-row .session-title {
       min-width: 0;
     }
+    .session-item.is-editing-title .session-title { display: none; }
+    .session-title-input-wrap {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+    }
+    .session-item.is-editing-title .session-title-input-wrap { display: flex; }
+    .session-title-input {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.86rem;
+      font-weight: 500;
+      color: var(--text-soft);
+      background: var(--search-bg);
+      border: 1px solid rgba(91, 140, 255, 0.55);
+      border-radius: 6px;
+      padding: 2px 6px;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(91, 140, 255, 0.12);
+    }
+    .session-title-input::placeholder { color: var(--placeholder-color); }
+    .session-title-input:disabled { opacity: 0.65; }
     .session-context-menu {
       position: fixed;
       z-index: 120;
@@ -1639,6 +1668,7 @@
     .run-status-line { line-height: 1.45; }
     .run-status-ack { color: var(--link-color); }
     .run-status-batch { color: var(--muted); font-size: 0.75rem; opacity: 0.88; }
+    .run-status-external { color: var(--link-color); font-size: 0.8125rem; opacity: 0.95; }
     .run-status-elapsed { color: var(--muted); font-style: italic; }
     body.agent-waiting:not(.is-resizing) .chat-area.agent-waiting-hover {
       cursor: none;
@@ -1806,6 +1836,78 @@
       box-shadow: var(--input-wrap-shadow);
       transform: translateY(0);
       transition: transform 220ms var(--ease-standard), border-color 220ms var(--ease-standard), box-shadow 220ms var(--ease-standard), background 220ms var(--ease-standard);
+    }
+    .dingtalk-push-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      font-size: 0.72rem;
+      color: var(--muted-soft);
+      opacity: 0.58;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .dingtalk-push-toggle input {
+      width: 14px;
+      height: 14px;
+      margin: 0;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .dingtalk-push-toggle.is-disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .dingtalk-push-toggle.is-disabled input {
+      cursor: not-allowed;
+    }
+    .dingtalk-push-toggle.is-checked {
+      color: var(--text-soft);
+      opacity: 0.72;
+    }
+    .web-toast {
+      position: fixed;
+      left: 50%;
+      bottom: 96px;
+      transform: translateX(-50%) translateY(12px);
+      z-index: 1200;
+      max-width: min(92vw, 420px);
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-panel);
+      color: var(--text);
+      font-size: 0.82rem;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms var(--ease-standard), transform 180ms var(--ease-standard);
+    }
+    .web-toast.is-visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .web-toast.is-error {
+      border-color: var(--warn-border, rgba(239, 68, 68, 0.45));
+      color: var(--warn-text, #fca5a5);
+    }
+    .settings-toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.86rem;
+      color: var(--text-soft);
+      cursor: pointer;
+      user-select: none;
+    }
+    .settings-toggle-row input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: var(--accent);
     }
     .input-wrap.has-content {
       border-color: var(--input-wrap-border);
@@ -1980,7 +2082,21 @@
       from { opacity: 1; transform: translateX(0); }
       to { opacity: 0; transform: translateX(16px); }
     }
-    .input-hint { font-size: 0.72rem; margin: 10px auto 0; max-width: var(--content-width); position: relative; left: 2%; }
+    .input-hint-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 10px;
+      width: 100%;
+      margin-right: -52px;
+      padding: 0 2%;
+      box-sizing: border-box;
+    }
+    body:not(.sidebar-collapsed) .input-hint-row {
+      margin-right: 0;
+    }
+    .input-hint { font-size: 0.72rem; flex: 1; min-width: 0; }
     .settings-modal {
       display: flex; position: fixed; inset: 0; background: var(--modal-overlay, rgba(0,0,0,0.6));
       align-items: center; justify-content: center; z-index: 100;
@@ -2004,7 +2120,14 @@
       position: relative;
       z-index: 1;
     }
-    .settings-box h3 { margin-bottom: 16px; font-size: 1.05rem; }
+    .settings-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .settings-head h3 { margin: 0; font-size: 1.05rem; }
     .settings-section { margin-bottom: 18px; }
     .settings-label {
       font-size: 0.78rem; color: var(--muted); margin-bottom: 10px; font-weight: 600;
@@ -2209,56 +2332,74 @@
       opacity: 0.72;
       line-height: 1.45;
     }
-    .settings-link {
-      width: 100%; text-align: left; min-height: 42px; padding: 10px 14px;
-      border-radius: 10px; border: 1px solid var(--border); background: var(--bg-soft);
-      color: var(--text-soft); cursor: pointer; font-size: 0.86rem;
-      display: flex; align-items: center; justify-content: space-between;
-      transition: border-color 180ms, background 180ms, color 180ms;
-    }
-    .settings-link:hover { border-color: var(--accent); color: var(--text); background: var(--accent-soft); }
-    .settings-link svg { width: 16px; height: 16px; stroke: currentColor; flex-shrink: 0; }
-    a.settings-link { text-decoration: none; }
-    .settings-box p { color: var(--muted); font-size: 0.88rem; line-height: 1.6; margin-bottom: 8px; }
-    .settings-actions {
-      margin-top: 18px;
+    .settings-footer-links {
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-    }
-    .settings-feedback-btn {
-      display: inline-flex;
-      align-items: center;
       gap: 8px;
-      padding: 8px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
+      margin-top: 22px;
+    }
+    .settings-link {
+      flex: 1;
+      min-width: 0;
+      text-align: left;
+      min-height: 34px;
+      padding: 7px 12px;
+      border-radius: 9px;
+      border: none;
       background: var(--bg-soft);
       color: var(--text-soft);
       cursor: pointer;
-      font-size: 0.86rem;
-      transition: border-color 180ms, background 180ms, color 180ms;
+      font-size: 0.78rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      transition: background 180ms, color 180ms;
+    }
+    .settings-footer-links .settings-link {
+      flex: 0 0 auto;
+      justify-content: center;
+      gap: 6px;
+    }
+    .settings-link:hover { color: var(--text); background: var(--accent-soft); }
+    .settings-link span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .settings-link svg { width: 14px; height: 14px; stroke: currentColor; flex-shrink: 0; }
+    a.settings-link { text-decoration: none; }
+    .settings-box p { color: var(--muted); font-size: 0.88rem; line-height: 1.6; margin-bottom: 8px; }
+    .settings-feedback-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      min-height: 34px;
+      padding: 7px 12px;
+      border-radius: 9px;
+      border: none;
+      background: var(--bg-soft);
+      color: var(--text-soft);
+      cursor: pointer;
+      font-size: 0.78rem;
+      transition: background 180ms, color 180ms;
     }
     .settings-feedback-btn svg {
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
       stroke: currentColor;
       flex-shrink: 0;
     }
     .settings-feedback-btn:hover {
-      border-color: var(--accent);
       color: var(--text);
       background: var(--accent-soft);
     }
     .settings-feedback-btn.active {
-      border-color: var(--accent);
       color: var(--accent);
       background: rgba(59, 130, 246, 0.12);
-    }
-    .settings-box .btn-close-modal {
-      background: var(--accent); border: none; color: #fff;
-      padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 0.86rem;
     }
     .header-actions button.active,
     .tool-actions-bar button.active,
@@ -3342,7 +3483,13 @@
             </button>
             </div>
           </div>
-          <div class="input-hint">Enter 发送 · Shift+Enter 换行 · 📎 或拖拽/粘贴附件 · 支持图片与 csv/xlsx/pdf/zip/txt/md/json 等</div>
+          <div class="input-hint-row" id="input-hint-row">
+            <div class="input-hint">Enter 发送 · Shift+Enter 换行 · 📎 或拖拽/粘贴附件 · 支持图片与 csv/xlsx/pdf/zip/txt/md/json 等</div>
+            <label class="dingtalk-push-toggle" id="dingtalk-push-toggle" title="执行完成后将最终结果发送到您的钉钉私聊">
+              <input type="checkbox" id="chk-push-dingtalk" />
+              <span>结果发钉钉</span>
+            </label>
+          </div>
         </div>
       </div>
     </section>
@@ -3379,6 +3526,7 @@
   </div>
 
   <div class="session-context-menu" id="session-context-menu" role="menu" hidden>
+    <button type="button" id="session-context-rename-btn" role="menuitem">修改标题</button>
     <button type="button" id="session-context-pin-btn" role="menuitem">置顶</button>
   </div>
 
@@ -3406,7 +3554,10 @@
   <div class="settings-modal" id="settings-modal">
     <div class="settings-box" id="settings-box">
       <div id="settings-view-main">
-        <h3>设置</h3>
+        <div class="settings-head">
+          <h3>设置</h3>
+          <button type="button" class="btn-close" id="btn-settings-close" title="关闭" aria-label="关闭">×</button>
+        </div>
         <div class="settings-section">
           <div class="settings-label">外观</div>
           <div class="theme-toggle" role="group" aria-label="主题模式">
@@ -3425,32 +3576,35 @@
             </button>
             <div class="model-picker-menu" id="model-picker-menu" role="listbox" hidden></div>
           </div>
-          <p class="settings-hint" id="model-hint">下一条消息起生效</p>
         </div>
         <div class="settings-section">
           <div class="settings-label">外部 Agent</div>
           <div class="external-agent-list" id="external-agent-list"></div>
-          <p class="settings-hint" id="external-agent-hint">未勾选时不调用外部查询接口</p>
         </div>
         <div class="settings-section">
           <div class="settings-label">其他</div>
-          <button type="button" class="settings-link" id="btn-settings-about">
-            <span>关于 Yaahlan Web Agent</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10v6"/><path d="M12 7h.01"/></svg>
-          </button>
-        </div>
-        <div class="settings-actions">
-          <button type="button" class="settings-feedback-btn" id="btn-message-board" title="反馈" aria-label="反馈">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-            <span>反馈</span>
-          </button>
-          <button type="button" class="btn-close-modal" id="btn-settings-close">关闭</button>
+          <label class="settings-toggle-row" for="settings-push-default">
+            <input type="checkbox" id="settings-push-default" />
+            <span>默认勾选「结果发钉钉」</span>
+          </label>
+          <div class="settings-footer-links">
+            <button type="button" class="settings-link" id="btn-settings-about" title="关于 Yaahlan Web Agent" aria-label="关于">
+              <span>关于</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10v6"/><path d="M12 7h.01"/></svg>
+            </button>
+            <button type="button" class="settings-feedback-btn" id="btn-message-board" title="反馈" aria-label="反馈">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              <span>反馈</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
   </div>
+
+  <div class="web-toast" id="web-toast" role="status" aria-live="polite" hidden></div>
 
   <div class="message-board-modal" id="message-board-modal" aria-hidden="true">
     <div class="message-board-bubble" id="message-board-bubble" role="dialog" aria-labelledby="message-board-title">
@@ -3591,7 +3745,7 @@
     /** @type {{ staffId?: string, displayName?: string, isAdmin?: boolean } | null} */
     let currentAuthUser = null;
     let otpAuthEnabled = true;
-    /** @type {Map<string, { eventSource: EventSource, runId: string, cancelling?: boolean, failed?: boolean, status: { ack: string, batch: string, elapsed: string }, shellEl: HTMLElement | null, sentDraft?: { text: string, images: typeof pendingImages } }>} */
+    /** @type {Map<string, { eventSource: EventSource, runId: string, cancelling?: boolean, failed?: boolean, status: { ack: string, batch: string, external: string, elapsed: string }, shellEl: HTMLElement | null, sentDraft?: { text: string, images: typeof pendingImages } }>} */
     const activeRuns = new Map();
     const MESSAGES_SCROLL_NEAR_BOTTOM_PX = 80;
     /** 用户未手动上滑时，流式更新才跟随滚到底；执行完成后强制滚到底 */
@@ -4434,6 +4588,94 @@
 
     const MODEL_KEY = 'web_agent_model';
     const EXTERNAL_AGENTS_KEY = 'web_agent_enabled_external_agents';
+    const PUSH_RESULT_DEFAULT_KEY = 'web_agent_push_result_default';
+    let webToastTimer = null;
+
+    function canUseDingtalkPush() {
+      return !!(currentAuthUser?.staffId || '').trim();
+    }
+
+    function loadPushResultDefaultChecked() {
+      return localStorage.getItem(PUSH_RESULT_DEFAULT_KEY) === '1';
+    }
+
+    function savePushResultDefaultChecked(checked) {
+      localStorage.setItem(PUSH_RESULT_DEFAULT_KEY, checked ? '1' : '0');
+    }
+
+    function isPushResultChecked() {
+      const el = document.getElementById('chk-push-dingtalk');
+      return !!el?.checked;
+    }
+
+    function setPushResultChecked(checked) {
+      const el = document.getElementById('chk-push-dingtalk');
+      if (!el) return;
+      el.checked = !!checked;
+      syncPushResultToggleUi();
+    }
+
+    function syncPushResultToggleUi() {
+      const wrap = document.getElementById('dingtalk-push-toggle');
+      const checkbox = document.getElementById('chk-push-dingtalk');
+      if (!wrap || !checkbox) return;
+      const busy = isCurrentSessionStreaming();
+      const readonly = currentSessionReadOnly || isGuestMode();
+      const allowed = canUseDingtalkPush();
+      const hidden = readonly || isGuestMode();
+      wrap.hidden = hidden;
+      wrap.classList.toggle('is-checked', !!checkbox.checked);
+      wrap.classList.toggle('is-disabled', !allowed || busy || readonly);
+      checkbox.disabled = !allowed || busy || readonly;
+      if (!allowed) {
+        wrap.title = '请先使用钉钉账号登录后再推送结果';
+      } else if (busy) {
+        wrap.title = '执行中不可修改推送选项';
+      } else {
+        wrap.title = '执行完成后将最终结果发送到您的钉钉私聊';
+      }
+    }
+
+    function showWebToast(message, { error = false, durationMs = 3200 } = {}) {
+      const el = document.getElementById('web-toast');
+      if (!el) return;
+      el.textContent = message || '';
+      el.hidden = false;
+      el.classList.toggle('is-error', !!error);
+      requestAnimationFrame(() => el.classList.add('is-visible'));
+      if (webToastTimer) clearTimeout(webToastTimer);
+      webToastTimer = window.setTimeout(() => {
+        el.classList.remove('is-visible');
+        window.setTimeout(() => {
+          el.hidden = true;
+        }, 200);
+      }, durationMs);
+    }
+
+    function handleDingtalkPushResult(payload) {
+      if (!payload || typeof payload !== 'object') return;
+      if (payload.ok) {
+        showWebToast('结果已发送到钉钉私聊');
+        return;
+      }
+      const err = String(payload.error || '推送失败').trim();
+      showWebToast(`钉钉推送失败：${err}`, { error: true, durationMs: 4200 });
+    }
+
+    function initPushResultControls() {
+      setPushResultChecked(loadPushResultDefaultChecked());
+      document.getElementById('chk-push-dingtalk')?.addEventListener('change', syncPushResultToggleUi);
+      const settingsDefault = document.getElementById('settings-push-default');
+      if (settingsDefault) {
+        settingsDefault.checked = loadPushResultDefaultChecked();
+        settingsDefault.addEventListener('change', () => {
+          savePushResultDefaultChecked(!!settingsDefault.checked);
+          setPushResultChecked(!!settingsDefault.checked);
+        });
+      }
+      syncPushResultToggleUi();
+    }
+
     const DEFAULT_AGENT_MODELS = [
       { id: 'composer-2.5', label: 'Composer 2.5（默认）', description: '默认推荐，能力完整' },
     ];
@@ -4526,19 +4768,8 @@
             .map((el) => el.dataset.agentId)
             .filter(Boolean);
           saveEnabledExternalAgents(next);
-          updateExternalAgentHint(next);
         });
       });
-      updateExternalAgentHint(Array.from(enabled));
-    }
-
-    function updateExternalAgentHint(enabledIds) {
-      const hint = document.getElementById('external-agent-hint');
-      if (!hint) return;
-      const count = enabledIds.length;
-      hint.textContent = count
-        ? `已勾选 ${count} 个 · 下一条消息起生效`
-        : '未勾选时不调用外部查询接口';
     }
 
     function getDefaultModelId() {
@@ -4614,13 +4845,6 @@
         label.textContent = currentItem ? getModelDisplayLabel(currentItem) : current;
       }
       localStorage.setItem(MODEL_KEY, current);
-      updateModelHint(current);
-    }
-
-    function updateModelHint(_modelId) {
-      const hint = document.getElementById('model-hint');
-      if (!hint) return;
-      hint.textContent = '下一条消息起生效';
     }
 
     function applyModelSelection(modelId) {
@@ -4636,7 +4860,6 @@
       const models = getModelCatalog();
       const item = models.find((entry) => String(entry.id || '') === next);
       if (label) label.textContent = item ? getModelDisplayLabel(item) : next;
-      updateModelHint(next);
       closeModelPicker();
     }
 
@@ -4757,6 +4980,9 @@
       if (status.batch) {
         lines.push(`<div class="run-status-line run-status-batch">${escapeHtml(status.batch)}</div>`);
       }
+      if (status.external) {
+        lines.push(`<div class="run-status-line run-status-external">${escapeHtml(status.external)}</div>`);
+      }
       if (status.elapsed) {
         lines.push(`<div class="run-status-line run-status-elapsed">${escapeHtml(status.elapsed)}</div>`);
       }
@@ -4820,8 +5046,13 @@
     }
 
     function renderSessionList() {
+      if (sessionRenameTarget && sessionRenameInputEl && !sessionRenameSaving) {
+        return;
+      }
+      if (!sessionRenameSaving) cancelSessionTitleEdit();
       const list = document.getElementById('session-list');
       if (!list) return;
+      const scrollTop = list.scrollTop;
       list.innerHTML = '';
       const filtered = sessionsCache;
       if (!filtered.length) {
@@ -4857,6 +5088,7 @@
           <div class="session-item-main">
             <div class="session-title-row">
               <div class="session-title">${sourceBadge}${escapeHtml(s.title)}</div>
+              <div class="session-title-input-wrap"></div>
             </div>
             <div class="session-meta">${ownerLine}${relLine}${s.message_count || 0} 条${running}</div>
             ${searchHit}
@@ -4865,6 +5097,7 @@
         bindSessionItemInteractions(el, s);
         list.appendChild(el);
       });
+      list.scrollTop = scrollTop;
       syncSessionReadOnly(currentSessionId);
     }
 
@@ -4965,9 +5198,38 @@
       document.getElementById('session-list')?.addEventListener('scroll', handler, true);
     }
 
+    function sortSessionsCache() {
+      const pinned = sessionsCache.filter(s => s.pinned);
+      const unpinned = sessionsCache.filter(s => !s.pinned);
+      pinned.sort((a, b) => String(a.pinned_at || '').localeCompare(String(b.pinned_at || '')));
+      unpinned.sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')));
+      sessionsCache = pinned.concat(unpinned);
+    }
+
+    function patchSessionPinState(sessionId, pinned) {
+      const idx = sessionsCache.findIndex(s => s.id === sessionId);
+      if (idx < 0) return null;
+      const prev = { ...sessionsCache[idx] };
+      const next = { ...prev, pinned: !!pinned };
+      if (pinned) {
+        next.pinned_at = new Date().toISOString();
+      } else {
+        delete next.pinned_at;
+      }
+      sessionsCache[idx] = next;
+      sortSessionsCache();
+      return prev;
+    }
+
+    const sessionPinBusy = new Set();
+
     async function toggleSessionPinned(session) {
       if (!session?.id || isGuestMode()) return;
+      if (sessionPinBusy.has(session.id)) return;
       const nextPinned = !session.pinned;
+      sessionPinBusy.add(session.id);
+      const prevSnapshot = patchSessionPinState(session.id, nextPinned);
+      renderSessionList();
       try {
         const res = await fetch(`/api/sessions/${encodeURIComponent(session.id)}/pin`, {
           method: 'PUT',
@@ -4976,12 +5238,125 @@
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
+          if (prevSnapshot) {
+            const idx = sessionsCache.findIndex(s => s.id === session.id);
+            if (idx >= 0) sessionsCache[idx] = prevSnapshot;
+            sortSessionsCache();
+          }
+          renderSessionList();
           alert(data.error || '操作失败');
           return;
         }
-        await loadSessions();
+        const idx = sessionsCache.findIndex(s => s.id === session.id);
+        if (idx >= 0) sessionsCache[idx] = { ...sessionsCache[idx], ...data };
+        sortSessionsCache();
+        renderSessionList();
       } catch (_) {
+        if (prevSnapshot) {
+          const idx = sessionsCache.findIndex(s => s.id === session.id);
+          if (idx >= 0) sessionsCache[idx] = prevSnapshot;
+          sortSessionsCache();
+        }
+        renderSessionList();
         alert('操作失败，请稍后重试');
+      } finally {
+        sessionPinBusy.delete(session.id);
+      }
+    }
+
+    let sessionRenameTarget = null;
+    let sessionRenameSaving = false;
+    let sessionRenameInputEl = null;
+    let sessionRenameOriginalValue = '';
+
+    function cancelSessionTitleEdit() {
+      if (!sessionRenameTarget) return;
+      const el = document.querySelector(`.session-item[data-id="${CSS.escape(sessionRenameTarget.id)}"]`);
+      if (el) {
+        el.classList.remove('is-editing-title');
+        el.querySelector('.session-title-input-wrap')?.replaceChildren();
+      }
+      sessionRenameTarget = null;
+      sessionRenameInputEl = null;
+      sessionRenameOriginalValue = '';
+    }
+
+    function startSessionTitleEdit(session, anchorEl) {
+      if (!session?.id || isGuestMode()) return;
+      cancelSessionTitleEdit();
+      const el = anchorEl || document.querySelector(`.session-item[data-id="${CSS.escape(session.id)}"]`);
+      if (!el) return;
+      sessionRenameTarget = session;
+      const currentTitle = (session.custom_title || session.title || '').trim();
+      sessionRenameOriginalValue = currentTitle;
+      el.classList.add('is-editing-title');
+      const titleDiv = el.querySelector('.session-title');
+      const wrap = el.querySelector('.session-title-input-wrap');
+      if (!titleDiv || !wrap) return;
+      const sourceBadge = titleDiv.querySelector('.session-source');
+      wrap.replaceChildren();
+      if (sourceBadge) wrap.appendChild(sourceBadge.cloneNode(true));
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'session-title-input';
+      input.maxLength = 80;
+      input.value = currentTitle;
+      input.placeholder = '留空恢复自动标题';
+      input.setAttribute('aria-label', '会话标题');
+      input.autocomplete = 'off';
+      wrap.appendChild(input);
+      sessionRenameInputEl = input;
+      input.focus();
+      input.select();
+      input.addEventListener('keydown', (event) => {
+        event.stopPropagation();
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          input.blur();
+        } else if (event.key === 'Escape') {
+          event.preventDefault();
+          cancelSessionTitleEdit();
+        }
+      });
+      input.addEventListener('blur', () => {
+        void saveSessionCustomTitle();
+      });
+      input.addEventListener('click', (event) => event.stopPropagation());
+      input.addEventListener('pointerdown', (event) => event.stopPropagation());
+    }
+
+    async function saveSessionCustomTitle() {
+      if (sessionRenameSaving || !sessionRenameTarget?.id) return;
+      const input = sessionRenameInputEl;
+      if (!input) return;
+      const title = (input.value || '').trim();
+      if (title === sessionRenameOriginalValue) {
+        cancelSessionTitleEdit();
+        renderSessionList();
+        return;
+      }
+      sessionRenameSaving = true;
+      input.disabled = true;
+      const targetId = sessionRenameTarget.id;
+      try {
+        const data = await api(`/api/sessions/${encodeURIComponent(targetId)}/title`, {
+          method: 'PUT',
+          body: JSON.stringify({ title }),
+        });
+        const idx = sessionsCache.findIndex(s => s.id === targetId);
+        if (idx >= 0) sessionsCache[idx] = { ...sessionsCache[idx], ...data };
+        sessionRenameTarget = null;
+        sessionRenameInputEl = null;
+        sessionRenameOriginalValue = '';
+        renderSessionList();
+      } catch (err) {
+        alert(err?.message || '保存失败，请稍后重试');
+        if (sessionRenameInputEl) {
+          sessionRenameInputEl.disabled = false;
+          sessionRenameInputEl.focus();
+        }
+      } finally {
+        sessionRenameSaving = false;
       }
     }
 
@@ -5032,6 +5407,11 @@
       el.addEventListener('pointerleave', cancelLongPress);
       el.addEventListener('pointercancel', cancelLongPress);
       el.addEventListener('click', (event) => {
+        if (el.classList.contains('is-editing-title')) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
         if (sessionLongPressTriggered) {
           event.preventDefault();
           sessionLongPressTriggered = false;
@@ -5053,6 +5433,15 @@
       const target = sessionContextTarget;
       hideSessionContextMenu();
       if (target) await toggleSessionPinned(target);
+    });
+
+    document.getElementById('session-context-rename-btn')?.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const target = sessionContextTarget;
+      const anchorEl = sessionContextAnchorEl;
+      hideSessionContextMenu();
+      if (target) startSessionTitleEdit(target, anchorEl);
     });
 
     document.getElementById('msg-context-copy-btn')?.addEventListener('click', async (event) => {
@@ -5305,7 +5694,7 @@
     function updateReadOnlyState() {
       const input = document.getElementById('input');
       const inputWrap = document.querySelector('.input-wrap');
-      const defaultHint = document.querySelector('.input-area .input-hint');
+      const hintRow = document.getElementById('input-hint-row');
       const item = sessionsCache.find(s => s.id === currentSessionId);
       if (isGuestMode()) {
         clearRetryPlaceholder();
@@ -5314,7 +5703,7 @@
         input.placeholder = GUEST_PLACEHOLDER;
         input.classList.add('readonly-input');
         inputWrap?.classList.add('readonly');
-        if (defaultHint) defaultHint.hidden = true;
+        if (hintRow) hintRow.hidden = true;
         clearPendingAttachments();
       } else if (currentSessionReadOnly) {
         clearRetryPlaceholder();
@@ -5323,7 +5712,7 @@
         input.placeholder = readonlyPlaceholder(item);
         input.classList.add('readonly-input');
         inputWrap?.classList.add('readonly');
-        if (defaultHint) defaultHint.hidden = true;
+        if (hintRow) hintRow.hidden = true;
         clearPendingAttachments();
       } else {
         input.readOnly = false;
@@ -5332,9 +5721,10 @@
         }
         input.classList.remove('readonly-input');
         inputWrap?.classList.remove('readonly');
-        if (defaultHint) defaultHint.hidden = false;
+        if (hintRow) hintRow.hidden = false;
       }
       document.getElementById('readonly-hint')?.remove();
+      syncPushResultToggleUi();
       updateInputState();
     }
 
@@ -5385,6 +5775,7 @@
       if (window.WaitingFx) {
         WaitingFx.setActive(busy && !currentSessionReadOnly);
       }
+      syncPushResultToggleUi();
     }
 
     function findActiveAssistantShell(sessionId) {
@@ -5466,7 +5857,7 @@
       const run = activeRuns.get(sessionId);
       if (!run || run.cancelling) return;
       run.cancelling = true;
-      updateRunStatus(sessionId, { ack: '', batch: '', elapsed: '中断发起中…' });
+      updateRunStatus(sessionId, { ack: '', batch: '', external: '', elapsed: '中断发起中…' });
       updateInputState();
       try {
         await api('/api/chat/cancel', {
@@ -6103,6 +6494,7 @@
             updateRunStatus(sessionId, {
               elapsed: data.elapsed_line || '',
               batch: data.batch_line || '',
+              external: data.external_line || '',
             });
           } else if (data.type === 'delta') {
             if (!isViewing()) return;
@@ -6133,6 +6525,7 @@
               }
               scrollMessagesToBottom({ force: true });
             }
+            handleDingtalkPushResult(data.dingtalk_push);
             es.close();
             resolve();
           } else if (data.type === 'error') {
@@ -6210,6 +6603,7 @@
         status: {
           ack: data.ack_line || '',
           batch: data.batch_line || '',
+          external: data.external_line || '',
           elapsed: data.elapsed_line || '',
         },
         shellEl: null,
@@ -6255,6 +6649,9 @@
     }
 
     async function sendMessage(text, options = {}) {
+      if (sessionRenameTarget && sessionRenameInputEl) {
+        await saveSessionCustomTitle();
+      }
       const message = (text || document.getElementById('input').value).trim();
       const attachmentSource = Array.isArray(options.attachments) ? options.attachments : pendingAttachments;
       const attachmentsToSend = attachmentSource.map(item => ({
@@ -6295,7 +6692,7 @@
         eventSource: null,
         runId: '',
         cancelling: false,
-        status: { ack: '', batch: '', elapsed: '' },
+        status: { ack: '', batch: '', external: '', elapsed: '' },
         shellEl: null,
         sentDraft,
       });
@@ -6312,6 +6709,7 @@
             enabled_external_agents: Array.isArray(options.enabledExternalAgents)
               ? options.enabledExternalAgents
               : getEnabledExternalAgents(),
+            push_result_to_dingtalk: isPushResultChecked(),
           }),
         });
 
@@ -6472,6 +6870,8 @@
       }
       renderModelOptions();
       renderExternalAgentOptions();
+      const settingsDefault = document.getElementById('settings-push-default');
+      if (settingsDefault) settingsDefault.checked = loadPushResultDefaultChecked();
       closeModelPicker();
     }
 
@@ -6536,11 +6936,15 @@
 
       function clamp(n, min, max) { return Math.min(max, Math.max(min, n)); }
 
-      function applySidebarWidth(w) {
+      function setSidebarWidth(w, persist) {
         const width = clamp(w, getSidebarMinWidth(), MAX);
         root.style.setProperty('--sidebar-width', width + 'px');
-        localStorage.setItem(SIDEBAR_KEY, String(width));
+        if (persist) localStorage.setItem(SIDEBAR_KEY, String(width));
         return width;
+      }
+
+      function applySidebarWidth(w) {
+        return setSidebarWidth(w, true);
       }
       applySidebarWidthRef = applySidebarWidth;
 
@@ -6549,22 +6953,31 @@
 
       const handle = document.getElementById('sidebar-resizer');
       if (!handle) return;
-      handle.addEventListener('mousedown', (e) => {
+      handle.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
         e.preventDefault();
+        handle.setPointerCapture(e.pointerId);
         const startX = e.clientX;
         const startWidth = parseInt(getComputedStyle(root).getPropertyValue('--sidebar-width'), 10) || DEFAULT;
         document.body.classList.add('is-resizing');
 
         function onMove(ev) {
-          applySidebarWidth(startWidth + (ev.clientX - startX));
+          if (ev.pointerId !== e.pointerId) return;
+          setSidebarWidth(startWidth + (ev.clientX - startX), false);
         }
-        function onUp() {
+        function onUp(ev) {
+          if (ev.pointerId !== e.pointerId) return;
           document.body.classList.remove('is-resizing');
-          document.removeEventListener('mousemove', onMove);
-          document.removeEventListener('mouseup', onUp);
+          try { handle.releasePointerCapture(e.pointerId); } catch (_) { /* already released */ }
+          handle.removeEventListener('pointermove', onMove);
+          handle.removeEventListener('pointerup', onUp);
+          handle.removeEventListener('pointercancel', onUp);
+          const finalWidth = parseInt(getComputedStyle(root).getPropertyValue('--sidebar-width'), 10) || DEFAULT;
+          localStorage.setItem(SIDEBAR_KEY, String(finalWidth));
         }
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
+        handle.addEventListener('pointermove', onMove);
+        handle.addEventListener('pointerup', onUp);
+        handle.addEventListener('pointercancel', onUp);
       });
     }
 
@@ -6582,43 +6995,51 @@
 
       function clamp(n, min, max) { return Math.min(max, Math.max(min, n)); }
 
-      function applyPanelWidth(w) {
+      function applyPanelWidth(w, persist = true) {
         const width = clamp(w, MIN_PANEL, MAX_PANEL);
         root.style.setProperty('--catalog-width', width + 'px');
-        localStorage.setItem(PANEL_KEY, String(width));
+        if (persist) localStorage.setItem(PANEL_KEY, String(width));
         return width;
       }
 
-      function applyNavWidth(w) {
+      function applyNavWidth(w, persist = true) {
         const width = clamp(w, MIN_NAV, MAX_NAV);
         root.style.setProperty('--catalog-nav-width', width + 'px');
         if (nav) nav.style.width = width + 'px';
-        localStorage.setItem(NAV_KEY, String(width));
+        if (persist) localStorage.setItem(NAV_KEY, String(width));
         return width;
       }
 
       applyPanelWidth(Number(localStorage.getItem(PANEL_KEY)) || DEFAULT_PANEL);
       applyNavWidth(Number(localStorage.getItem(NAV_KEY)) || DEFAULT_NAV);
 
-      function bindHorizontalDrag(handle, getStartWidth, setWidth, invertDelta) {
+      function bindHorizontalDrag(handle, getStartWidth, setWidth, invertDelta, persistWidth) {
         if (!handle) return;
-        handle.addEventListener('mousedown', (e) => {
+        handle.addEventListener('pointerdown', (e) => {
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
           e.preventDefault();
+          handle.setPointerCapture(e.pointerId);
           const startX = e.clientX;
           const startWidth = getStartWidth();
           document.body.classList.add('is-resizing');
 
           function onMove(ev) {
+            if (ev.pointerId !== e.pointerId) return;
             const delta = ev.clientX - startX;
-            setWidth(startWidth + (invertDelta ? -delta : delta));
+            setWidth(startWidth + (invertDelta ? -delta : delta), false);
           }
-          function onUp() {
+          function onUp(ev) {
+            if (ev.pointerId !== e.pointerId) return;
             document.body.classList.remove('is-resizing');
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('mouseup', onUp);
+            try { handle.releasePointerCapture(e.pointerId); } catch (_) { /* already released */ }
+            handle.removeEventListener('pointermove', onMove);
+            handle.removeEventListener('pointerup', onUp);
+            handle.removeEventListener('pointercancel', onUp);
+            persistWidth();
           }
-          document.addEventListener('mousemove', onMove);
-          document.addEventListener('mouseup', onUp);
+          handle.addEventListener('pointermove', onMove);
+          handle.addEventListener('pointerup', onUp);
+          handle.addEventListener('pointercancel', onUp);
         });
       }
 
@@ -6626,13 +7047,15 @@
         document.getElementById('catalog-panel-resizer'),
         () => parseInt(getComputedStyle(root).getPropertyValue('--catalog-width'), 10) || DEFAULT_PANEL,
         applyPanelWidth,
-        true
+        true,
+        () => applyPanelWidth(parseInt(getComputedStyle(root).getPropertyValue('--catalog-width'), 10) || DEFAULT_PANEL, true)
       );
       bindHorizontalDrag(
         document.getElementById('catalog-nav-resizer'),
         () => parseInt(getComputedStyle(root).getPropertyValue('--catalog-nav-width'), 10) || DEFAULT_NAV,
         applyNavWidth,
-        false
+        false,
+        () => applyNavWidth(parseInt(getComputedStyle(root).getPropertyValue('--catalog-nav-width'), 10) || DEFAULT_NAV, true)
       );
     }
 
@@ -7001,6 +7424,7 @@
         setupMarkdownLinkNewTab();
         setupMessagesScrollTracking();
         initThemeSettings();
+        initPushResultControls();
         await loadMeta();
         initSidebarResize();
         initCatalogResize();

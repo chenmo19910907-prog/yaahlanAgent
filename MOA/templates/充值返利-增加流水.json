@@ -1,0 +1,41 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-vas-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "context.getBean(\"fundFlowService\").incrRechargeFlow(\"100142559\",\"20260804\",10000L)",
+      "json": "",
+      "type": "string",
+      "value": "context.getBean(\"fundFlowService\").incrRechargeFlow(\"100142559\",\"20260804\",10000L)"
+    }
+  ],
+  "settings": {
+    "time": "60000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "recharge_rebate_incr_flow",
+    "name": "充值返利-增加流水",
+    "category": "活动（Ultra Recharge / 充值返利）",
+    "description": "Ultra Recharge 模拟充值后补记充值流水（voga-mts-vas-backdoor execute；fundFlowService.incrRechargeFlow(userId, yyyyMMdd, diamondsL)）",
+    "prompts": [
+      "充值活动增加流水 userId=<userId> <diamonds>钻",
+      "incrRechargeFlow <userId> <yyyyMMdd> <diamonds>",
+      "模拟充值后增加流水 <userId> <diamonds>"
+    ],
+    "cli": "--recharge-rebate-flow-user-id <userId> --recharge-rebate-flow-diamonds <diamonds> [--recharge-rebate-flow-date <yyyyMMdd>]"
+  }
+}
