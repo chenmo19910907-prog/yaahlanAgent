@@ -12,7 +12,7 @@ from pathlib import Path
 WEB_AGENT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(WEB_AGENT_DIR))
 
-from web_session_store import WebSessionStore, filter_sessions_by_search  # noqa: E402
+from web_session_store import WebSessionStore, filter_sessions_by_scope, filter_sessions_by_search  # noqa: E402
 
 
 class WebSessionOwnerLockTest(unittest.TestCase):
@@ -330,6 +330,59 @@ class WebSessionSearchTest(unittest.TestCase):
                 load_messages=store.get_messages,
             )
             self.assertEqual(empty, [])
+
+
+class WebSessionScopeFilterTest(unittest.TestCase):
+    def test_filter_sessions_by_scope_mine_only(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            index.write_text(
+                json.dumps(
+                    {
+                        "mine000000000001": {
+                            "title": "我的会话",
+                            "created_at": "2026-08-03T08:00:00+00:00",
+                            "updated_at": "2026-08-03T09:00:00+00:00",
+                            "message_count": 1,
+                            "source": "web",
+                            "web_owner_id": "alice",
+                            "web_owner_label": "Alice",
+                        },
+                        "other00000000001": {
+                            "title": "他人会话",
+                            "created_at": "2026-08-03T08:00:00+00:00",
+                            "updated_at": "2026-08-03T09:00:00+00:00",
+                            "message_count": 1,
+                            "source": "web",
+                            "web_owner_id": "bob",
+                            "web_owner_label": "Bob",
+                        },
+                        "ding000000000001": {
+                            "title": "钉钉会话",
+                            "created_at": "2026-08-03T08:00:00+00:00",
+                            "updated_at": "2026-08-03T09:00:00+00:00",
+                            "message_count": 1,
+                            "source": "dingtalk",
+                            "dingtalk_owner_id": "alice",
+                        },
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            items = store.list_sessions(enrich_names=False)
+            all_items = filter_sessions_by_scope(items, "all", viewer_staff_id="alice")
+            mine_items = filter_sessions_by_scope(items, "mine", viewer_staff_id="alice")
+            self.assertEqual(len(all_items), 3)
+            self.assertEqual(
+                {item.id for item in mine_items},
+                {"mine000000000001", "ding000000000001"},
+            )
+            self.assertEqual(filter_sessions_by_scope(items, "mine", viewer_staff_id=""), [])
 
 
 class WebSessionCustomTitleTest(unittest.TestCase):

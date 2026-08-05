@@ -218,6 +218,30 @@ def filter_sessions_by_search(
     return matched
 
 
+def _session_owner_staff_id(meta: SessionMeta) -> str:
+    if meta.source == "dingtalk":
+        owner = (meta.dingtalk_owner_id or "").strip()
+        if owner:
+            return owner
+        return parse_dingtalk_user_id(meta.dingtalk_key)
+    return (meta.web_owner_id or "").strip()
+
+
+def filter_sessions_by_scope(
+    sessions: list[SessionMeta],
+    scope: str,
+    *,
+    viewer_staff_id: str | None = None,
+) -> list[SessionMeta]:
+    normalized = (scope or "all").strip().lower()
+    if normalized != "mine":
+        return sessions
+    viewer = (viewer_staff_id or "").strip()
+    if not viewer:
+        return []
+    return [meta for meta in sessions if _session_owner_staff_id(meta) == viewer]
+
+
 def _auto_titles_from_messages(messages: list[ChatMessage]) -> set[str]:
     titles: set[str] = set()
     for msg in messages:

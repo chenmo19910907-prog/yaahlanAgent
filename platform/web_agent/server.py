@@ -102,7 +102,7 @@ from web_file_store import (  # noqa: E402
     resolve_upload_file,
     save_chat_attachments,
 )
-from web_session_store import filter_sessions_by_search, get_session_store  # noqa: E402
+from web_session_store import filter_sessions_by_search, filter_sessions_by_scope, get_session_store  # noqa: E402
 from web_run_store import (  # noqa: E402
     RUN_STATUS_DONE,
     RUN_STATUS_ERROR,
@@ -1370,6 +1370,12 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             except Exception:  # noqa: BLE001
                 known = {}
             search_q = (parse_qs(parsed.query).get("q") or [""])[0].strip()
+            scope = (parse_qs(parsed.query).get("scope") or ["all"])[0].strip().lower()
+            items = filter_sessions_by_scope(
+                items,
+                scope,
+                viewer_staff_id=viewer_staff_id,
+            )
             if search_q:
                 pairs = filter_sessions_by_search(
                     items,
@@ -1387,7 +1393,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 }
                 for meta, snippet in pairs
             ]
-            return _json_response(self, {"sessions": sessions, "query": search_q})
+            return _json_response(self, {"sessions": sessions, "query": search_q, "scope": scope})
 
         m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})/active-run$", path)
         if m:

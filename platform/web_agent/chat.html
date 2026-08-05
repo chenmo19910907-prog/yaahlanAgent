@@ -1053,6 +1053,35 @@
       background-color: rgba(255,255,255,0.06);
     }
     .session-filter-search::placeholder { color: var(--placeholder-color); }
+    .session-filter-scope-btn {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 42px;
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 8px;
+      border: none;
+      background: var(--search-bg);
+      color: var(--muted);
+      font: inherit;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 180ms var(--ease-standard), color 180ms var(--ease-standard);
+    }
+    .session-filter-scope-btn:hover,
+    .session-filter-scope-btn:focus-visible {
+      background: var(--accent-soft);
+      color: var(--accent);
+      outline: none;
+    }
+    .session-filter-scope-btn.is-mine {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .session-filter-scope-btn[hidden] { display: none; }
     .session-search-hit {
       margin-top: 4px;
       font-size: 0.68rem;
@@ -3548,6 +3577,8 @@
       <input type="search" id="session-search" class="session-filter-search"
         placeholder="搜索问题、用户名或回答…" autocomplete="off"
         aria-label="搜索历史会话">
+      <button type="button" id="btn-session-scope" class="session-filter-scope-btn"
+        title="全部历史会话 · 点击切换为我的" aria-label="筛选：全部历史会话">全部</button>
     </div>
     <div class="session-list" id="session-list"></div>
     <div class="sidebar-tool-actions-host" id="sidebar-tool-actions-host"></div>
@@ -4076,6 +4107,8 @@
     }
     let sessionSearchQuery = '';
     let sessionSearchTimer = 0;
+    const SESSION_SCOPE_STORAGE_KEY = 'web_agent_session_scope';
+    let sessionScopeFilter = loadSessionScopeFilter();
     let currentSessionReadOnly = false;
     /** @type {Array<{ id: string, name: string, mime: string, previewUrl: string, data_base64: string }>} */
     /** @type {Array<{ id: string, name: string, mime: string, kind: 'image'|'file', previewUrl?: string, data_base64: string }>} */
@@ -5748,6 +5781,40 @@
       return '<button type="button" class="session-custom-title-edit" title="修改标题" aria-label="修改标题"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/></svg></button>';
     }
 
+    function loadSessionScopeFilter() {
+      const value = (localStorage.getItem(SESSION_SCOPE_STORAGE_KEY) || 'all').trim().toLowerCase();
+      return value === 'mine' ? 'mine' : 'all';
+    }
+
+    function saveSessionScopeFilter(scope) {
+      sessionScopeFilter = scope === 'mine' ? 'mine' : 'all';
+      localStorage.setItem(SESSION_SCOPE_STORAGE_KEY, sessionScopeFilter);
+      syncSessionScopeButtonUi();
+    }
+
+    function syncSessionScopeButtonUi() {
+      const btn = document.getElementById('btn-session-scope');
+      if (!btn) return;
+      if (isGuestMode()) {
+        btn.hidden = true;
+        return;
+      }
+      btn.hidden = false;
+      const isMine = sessionScopeFilter === 'mine';
+      btn.textContent = isMine ? '我的' : '全部';
+      btn.classList.toggle('is-mine', isMine);
+      btn.title = isMine
+        ? '我的历史会话 · 点击切换为全部'
+        : '全部历史会话 · 点击切换为我的';
+      btn.setAttribute('aria-label', isMine ? '筛选：我的历史会话' : '筛选：全部历史会话');
+    }
+
+    function toggleSessionScopeFilter() {
+      if (isGuestMode()) return;
+      saveSessionScopeFilter(sessionScopeFilter === 'mine' ? 'all' : 'mine');
+      loadSessions().catch(err => console.error('loadSessions', err));
+    }
+
     function renderSessionList() {
       if (sessionRenameTarget && sessionRenameInputEl && !sessionRenameSaving) {
         return;
@@ -5761,7 +5828,9 @@
       if (!filtered.length) {
         const hint = sessionSearchQuery.trim()
           ? '未找到匹配的会话<br><span style="font-size:0.72rem;opacity:0.85">可尝试问题、用户名或回答中的关键词</span>'
-          : '暂无历史会话<br><span style="font-size:0.72rem;opacity:0.85">点击「新对话」开始</span>';
+          : sessionScopeFilter === 'mine'
+            ? '暂无我的历史会话<br><span style="font-size:0.72rem;opacity:0.85">点击「全部」查看所有会话</span>'
+            : '暂无历史会话<br><span style="font-size:0.72rem;opacity:0.85">点击「新对话」开始</span>';
         list.innerHTML = `<div class="session-filter-empty">${hint}</div>`;
         syncSessionReadOnly(currentSessionId);
         return;
@@ -6913,9 +6982,10 @@
 
     async function loadSessions() {
       const q = sessionSearchQuery.trim();
-      const url = q
-        ? `/api/sessions?q=${encodeURIComponent(q)}`
-        : '/api/sessions';
+      const params = new URLSearchParams();
+      if (q) params.set('q', q);
+      if (sessionScopeFilter === 'mine') params.set('scope', 'mine');
+      const url = params.toString() ? `/api/sessions?${params}` : '/api/sessions';
       const data = await api(url);
       sessionsCache = data.sessions || [];
       renderSessionList();
@@ -7613,6 +7683,10 @@
         scheduleSessionSearchReload();
       }
     });
+    document.getElementById('btn-session-scope')?.addEventListener('click', (event) => {
+      event.preventDefault();
+      toggleSessionScopeFilter();
+    });
     async function openSettingsModal() {
       document.getElementById('settings-modal').classList.add('open');
       if (!getExternalAgentCatalog().length) {
@@ -8108,6 +8182,7 @@
       updateReadOnlyState();
       if (bookmarksPanel) bookmarksPanel.setAdmin(!!currentAuthUser?.isAdmin);
       if (messageBoardPanel) messageBoardPanel.setAdmin(!!currentAuthUser?.isAdmin);
+      syncSessionScopeButtonUi();
       updateDingtalkOwnerBar();
       refreshSidebarWidthBounds();
     }
