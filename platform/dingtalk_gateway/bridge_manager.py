@@ -49,12 +49,20 @@ _ensure_cursor_sdk_auth_token_patch()
 def init_sdk_bridge(workspace: str) -> None:
     """网关启动时初始化 Bridge（使用仓库根目录，而非 dingtalk_gateway 子目录）。"""
     global _workspace
+    ws = (workspace or "").strip()
     with _lock:
-        _workspace = workspace
-        os.chdir(workspace)
+        if _workspace == ws:
+            return
+        _workspace = ws
+        os.chdir(ws)
         close_default_client()
         _default_client()
-        logger.info("Cursor SDK Bridge 已初始化，workspace=%s", workspace)
+        logger.info("Cursor SDK Bridge 已初始化，workspace=%s", ws)
+
+
+def bridge_initialized() -> bool:
+    with _lock:
+        return bool(_workspace)
 
 
 def reset_sdk_bridge() -> None:

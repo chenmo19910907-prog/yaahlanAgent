@@ -345,7 +345,14 @@ class WebRunStore:
         meta = self.get_run(run_id)
         if meta is None:
             return False
-        return self.is_pid_alive(meta.worker_pid)
+        pid = int(meta.worker_pid or 0)
+        if pid <= 0:
+            return False
+        if pid == os.getpid():
+            from web_run_executor import is_run_thread_alive
+
+            return is_run_thread_alive(run_id)
+        return self.is_pid_alive(pid)
 
     def cleanup_old_runs(self, *, max_age_s: float = 86400.0) -> None:
         cutoff = time.time() - max_age_s

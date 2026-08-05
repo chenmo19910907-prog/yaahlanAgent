@@ -687,7 +687,7 @@ def _get_or_recover_run(run_id: str) -> ActiveRun | None:
     if meta.status == RUN_STATUS_RUNNING and meta.worker_pid > 0:
         _finalize_orphan_run(meta)
     elif meta.status == RUN_STATUS_RUNNING and meta.worker_pid <= 0:
-        _spawn_run_worker(meta.run_id)
+        _start_run_worker(meta.run_id)
         run = _active_run_from_store_meta(meta)
         progress_stop = threading.Event()
         _start_run_event_tailer(run, progress_stop=progress_stop)
@@ -733,25 +733,10 @@ def _finalize_orphan_run(meta: RunMeta) -> None:
         store.update_snapshot(meta.run_id, {"type": "error", "message": "worker lost", "text": err_text})
 
 
-def _spawn_run_worker(run_id: str) -> int:
-    log_path = WEB_AGENT_DIR / "data" / "runs" / run_id / "worker.log"
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    log_fp = open(log_path, "a", encoding="utf-8")
-    proc = subprocess.Popen(
-        [
-            _resolve_python_executable(),
-            str(WEB_AGENT_DIR / "run_worker.py"),
-            "--run-id",
-            run_id,
-        ],
-        cwd=str(REPO_ROOT),
-        stdout=log_fp,
-        stderr=subprocess.STDOUT,
-        start_new_session=True,
-    )
-    get_run_store().set_worker_pid(run_id, proc.pid)
-    logger.info("spawn run worker run=%s pid=%s", run_id, proc.pid)
-    return proc.pid
+def _start_run_worker(run_id: str) -> int:
+    from web_run_executor import start_run_in_background
+
+    return start_run_in_background(run_id)
 
 
 def _start_run_event_tailer(run: ActiveRun, *, progress_stop: threading.Event) -> None:
@@ -870,7 +855,7 @@ def recover_active_runs_on_startup() -> None:
             logger.info("清理孤儿任务 run=%s session=%s", meta.run_id, meta.session_id)
         else:
             logger.info("恢复未 spawn 的任务 run=%s session=%s，重新拉起 worker", meta.run_id, meta.session_id)
-            _spawn_run_worker(meta.run_id)
+            _start_run_worker(meta.run_id)
             run = _active_run_from_store_meta(meta)
             progress_stop = threading.Event()
             _start_run_event_tailer(run, progress_stop=progress_stop)
@@ -896,7 +881,7 @@ def _resolve_active_run_for_session(session_id: str) -> ActiveRun | None:
     if meta.worker_pid > 0:
         _finalize_orphan_run(meta)
     elif meta.status == RUN_STATUS_RUNNING:
-        _spawn_run_worker(meta.run_id)
+        _start_run_worker(meta.run_id)
         return _get_or_recover_run(meta.run_id)
     return None
 
@@ -1131,7 +1116,7 @@ def _start_chat_run(
         started_at=started_at,
         progress_stop=progress_stop,
     )
-    _spawn_run_worker(run.run_id)
+    _start_run_worker(run.run_id)
     _start_run_event_tailer(run, progress_stop=progress_stop)
     return run
 
@@ -1865,6 +1850,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
 
 def serve(host: str, port: int) -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    from web_run_executor import init_agent_runtime
+
+    init_agent_runtime()
     recover_active_runs_on_startup()
     server = ThreadingHTTPServer((host, port), WebAgentHandler)
     print(f"Web Agent: http://{host}:{port}/")

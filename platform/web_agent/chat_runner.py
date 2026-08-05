@@ -11,7 +11,7 @@ GATEWAY_DIR = Path(__file__).resolve().parents[1] / "dingtalk_gateway"
 if str(GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR))
 
-from bridge_manager import init_sdk_bridge  # noqa: E402
+from bridge_manager import bridge_initialized, init_sdk_bridge  # noqa: E402
 from cursor_runner import (  # noqa: E402
     DEFAULT_MODEL,
     DEFAULT_TIMEOUT_S,
@@ -31,11 +31,13 @@ _BRIDGE_INIT = False
 
 def ensure_bridge() -> None:
     global _BRIDGE_INIT
-    if not _BRIDGE_INIT:
-        init_sdk_bridge(repo_cwd())
-        pool = get_user_agent_pool()
-        pool.start_idle_sweeper()
+    if _BRIDGE_INIT or bridge_initialized():
         _BRIDGE_INIT = True
+        return
+    init_sdk_bridge(repo_cwd())
+    pool = get_user_agent_pool()
+    pool.start_idle_sweeper()
+    _BRIDGE_INIT = True
 
 
 def run_web_chat(
