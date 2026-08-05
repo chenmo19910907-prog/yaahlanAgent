@@ -80,6 +80,35 @@ def main() -> int:
     assert "service_agent_query.py" in prompt_disabled
     assert "middleware_agent_query.py" in prompt_disabled
 
+    prompt_standard = build_web_prompt("查用户", is_new_session=False, reply_mode="standard")
+    assert "回复详略" not in prompt_standard
+
+    prompt_concise = build_web_prompt("查用户", is_new_session=False, reply_mode="concise")
+    assert "回复详略（精简）" in prompt_concise
+    assert "实现要点" in prompt_concise
+
+    from web_prompt import finalize_web_reply_text, should_append_duration_footer
+
+    assert should_append_duration_footer("standard") is True
+    assert should_append_duration_footer("detailed") is True
+    assert should_append_duration_footer("concise") is False
+    assert "本次耗时" not in finalize_web_reply_text(
+        "结论",
+        88.0,
+        task_kind="generic",
+        reply_mode="concise",
+    )
+    assert "本次耗时" in finalize_web_reply_text(
+        "结论",
+        88.0,
+        task_kind="generic",
+        reply_mode="standard",
+    )
+
+    prompt_detailed = build_web_prompt("查用户", is_new_session=False, reply_mode="detailed")
+    assert "回复详略（详细）" in prompt_detailed
+    assert "思考过程" in prompt_detailed
+
     print("verify_external_agent_settings: OK")
     return 0
 

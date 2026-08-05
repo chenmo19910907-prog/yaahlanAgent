@@ -27,12 +27,12 @@ from external_agent_progress import (  # noqa: E402
     USER_KEY_ENV,
     clear_external_agent_progress,
 )
-from progress_message import append_duration_footer  # noqa: E402
 from task_session import TaskInterrupted, TaskSession  # noqa: E402
 from user_agent_pool import get_user_agent_pool  # noqa: E402
 
 from chat_runner import run_web_chat  # noqa: E402
 from web_file_store import consume_pending_outputs  # noqa: E402
+from web_prompt import finalize_web_reply_text  # noqa: E402
 from web_run_store import (  # noqa: E402
     RUN_STATUS_DONE,
     RUN_STATUS_ERROR,
@@ -114,10 +114,13 @@ def _run_once(run_id: str) -> int:
     last_markdown = ""
     status = "error"
 
-    def on_render(markdown: str) -> None:
+    def on_render(markdown: str, process: dict | None = None) -> None:
         nonlocal last_markdown
         last_markdown = markdown
-        _emit(store, run_id, {"type": "delta", "markdown": markdown})
+        event: dict = {"type": "delta", "markdown": markdown}
+        if isinstance(process, dict):
+            event["process"] = process
+        _emit(store, run_id, event)
 
     def _append_assistant(text: str) -> None:
         output_files = consume_pending_outputs(session_id)
@@ -139,10 +142,17 @@ def _run_once(run_id: str) -> int:
             session_ctrl=session_ctrl,
             model=meta.model or None,
             enabled_external_agents=meta.enabled_external_agents or None,
+            reply_mode=meta.reply_mode or None,
         )
         elapsed = time.monotonic() - started_at
         body = final or last_markdown
-        final_text = append_duration_footer(body, elapsed, task_kind=task_kind)
+        final_text = finalize_web_reply_text(
+            body,
+            elapsed,
+            task_kind=task_kind,
+            prompt=meta.message,
+            reply_mode=meta.reply_mode,
+        )
         _append_assistant(final_text)
         dingtalk_push = _maybe_push_result_to_dingtalk(meta, final_text, success=True)
         done_event: dict = {"type": "done", "text": final_text}
@@ -154,10 +164,12 @@ def _run_once(run_id: str) -> int:
         return 0
     except TaskInterrupted:
         elapsed = time.monotonic() - started_at
-        final_text = append_duration_footer(
+        final_text = finalize_web_reply_text(
             INTERRUPT_REPLY,
             elapsed,
             task_kind=task_kind,
+            prompt=meta.message,
+            reply_mode=meta.reply_mode,
         )
         _append_assistant(final_text)
         _emit(store, run_id, {"type": "done", "text": final_text})
@@ -168,10 +180,12 @@ def _run_once(run_id: str) -> int:
         elapsed = time.monotonic() - started_at
         err_msg = str(exc)
         logger.exception("Web chat worker failed run=%s session=%s", run_id, session_id)
-        final_text = append_duration_footer(
+        final_text = finalize_web_reply_text(
             f"⚠️ {err_msg}\n\n{RETRY_HINT}",
             elapsed,
             task_kind=task_kind,
+            prompt=meta.message,
+            reply_mode=meta.reply_mode,
         )
         _append_assistant(final_text)
         _emit(

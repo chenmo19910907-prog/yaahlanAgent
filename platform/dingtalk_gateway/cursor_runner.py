@@ -7,7 +7,7 @@ import json
 import logging
 import sys
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +16,7 @@ from cursor_sdk.errors import NetworkError
 
 from agent_stream_renderer import (
     AgentStreamRenderer,
+    append_process_summary,
     assistant_text_chunk,
     thinking_text_from_step,
     tool_name_from_step,
@@ -139,8 +140,9 @@ def _consume_run_stream(
     on_render: Callable[[str], None] | None,
     show_thinking: bool = True,
     card_compact: bool = False,
+    web_stream: bool = False,
     render_min_interval_s: float = 2.0,
-) -> None:
+) -> AgentStreamRenderer:
     """消费 run.events()，节流回调 on_render；结束后 run.wait() 可取终态。"""
     renderer = AgentStreamRenderer(show_thinking=show_thinking)
     deadline = time.monotonic() + timeout_s if timeout_s > 0 else None
@@ -149,6 +151,8 @@ def _consume_run_stream(
     last_render_at = 0.0
 
     def _render_markdown() -> str:
+        if web_stream:
+            return renderer.markdown_for_web()
         if card_compact:
             return renderer.markdown_for_card()
         return renderer.markdown()
@@ -158,14 +162,21 @@ def _consume_run_stream(
         if not on_render:
             return
         md = _render_markdown()
-        if card_compact and not md:
+        if card_compact and not web_stream and not md:
             return
         now = time.monotonic()
-        # 卡片模式：每次增量都下推，节流与尾帧 flush 交给卡片层（_enqueue），
-        # 避免增量在节流窗口内聚集后 Agent 转入长思考/工具、导致最后文本永不刷新而冻结。
-        if not force and not card_compact and now - last_render_at < render_min_interval_s:
+        # Web 流式：每次增量都下推，避免思考区长时间冻结在首帧。
+        if (
+            not force
+            and not web_stream
+            and not card_compact
+            and now - last_render_at < render_min_interval_s
+        ):
             return
-        on_render(md)
+        if web_stream:
+            on_render(md, renderer.web_process_payload())
+        else:
+            on_render(md)
         last_render_at = now
         rendered = True
 
@@ -184,9 +195,13 @@ def _consume_run_stream(
             )
 
         changed = False
+        force_render = False
         update = event.interaction_update
         if update is not None:
             changed = renderer.apply(update) or changed
+            utype = getattr(update, "type", "") if not isinstance(update, Mapping) else str(update.get("type") or "")
+            if utype in ("tool-call-started", "tool-call-completed"):
+                force_render = True
 
         sdk_message = event.sdk_message
         if sdk_message is not None:
@@ -204,7 +219,7 @@ def _consume_run_stream(
         step = event.step
         if step is not None:
             thinking = thinking_text_from_step(step)
-            if thinking and renderer.append_thinking(thinking):
+            if thinking and renderer.update_thinking(thinking):
                 changed = True
             name = tool_name_from_step(step)
             if name:
@@ -213,15 +228,17 @@ def _consume_run_stream(
                     seen_tool_steps.add(key)
                     if renderer.append_tool_step(name):
                         changed = True
+                        force_render = True
 
         if changed:
-            _maybe_render()
+            _maybe_render(force=force_render)
 
         if event.done and event.result is not None and event.result_is_full:
             break
 
     if on_render and not rendered:
         _maybe_render(force=True)
+    return renderer
 
 
 def _finalize_run_result(result, *, session: TaskSession | None) -> str:
@@ -325,7 +342,9 @@ def run_agent_prompt(
     on_render: Callable[[str], None] | None = None,
     show_thinking: bool = True,
     card_compact: bool = False,
+    web_stream: bool = False,
     render_min_interval_s: float = 2.0,
+    include_process_in_final: bool = False,
 ) -> str:
     """运行本地 Agent，返回 assistant 最终文本。支持附图（最多 5 张）与链接上下文。"""
     text = prompt.strip()
@@ -426,7 +445,7 @@ def run_agent_prompt(
                 session.register_run(agent, run)
                 session.check_cancelled()
             if stream:
-                _consume_run_stream(
+                renderer = _consume_run_stream(
                     run,
                     timeout_s=float(timeout_s),
                     session=session,
@@ -434,6 +453,7 @@ def run_agent_prompt(
                     on_render=on_render,
                     show_thinking=show_thinking,
                     card_compact=card_compact,
+                    web_stream=web_stream,
                     render_min_interval_s=render_min_interval_s,
                 )
                 result = _wait_run(
@@ -443,6 +463,7 @@ def run_agent_prompt(
                     user_key=user_key,
                 )
             else:
+                renderer = None
                 result = _wait_run(
                     run,
                     timeout_s=float(timeout_s),
@@ -450,6 +471,10 @@ def run_agent_prompt(
                     user_key=user_key,
                 )
             final_text = _finalize_run_result(result, session=session)
+            if include_process_in_final and renderer is not None:
+                process_md = renderer.process_summary_markdown()
+                if process_md:
+                    final_text = append_process_summary(final_text, process_md)
             last_error = None
             break
         except TaskInterrupted:
@@ -517,9 +542,11 @@ def run_agent_prompt_streaming(
     allow_code_modify: bool = True,
     allow_moa_registry: bool = False,
     show_thinking: bool = True,
+    include_process_in_final: bool = False,
+    web_stream: bool = False,
 ) -> str:
     """流式运行 Agent：thinking/text/tool 事件经 on_render 推送，返回最终文本。"""
-    from agent_stream_card import DEFAULT_MIN_INTERVAL_S
+    from agent_stream_card import DEFAULT_MIN_INTERVAL_S, WEB_STREAM_RENDER_INTERVAL_S
 
     return run_agent_prompt(
         prompt,
@@ -538,8 +565,12 @@ def run_agent_prompt_streaming(
         stream=True,
         on_render=on_render,
         show_thinking=show_thinking,
-        card_compact=True,
-        render_min_interval_s=DEFAULT_MIN_INTERVAL_S,
+        card_compact=not web_stream,
+        web_stream=web_stream,
+        render_min_interval_s=(
+            WEB_STREAM_RENDER_INTERVAL_S if web_stream else DEFAULT_MIN_INTERVAL_S
+        ),
+        include_process_in_final=include_process_in_final,
     )
 
 

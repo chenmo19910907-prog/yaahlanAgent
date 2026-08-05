@@ -82,7 +82,6 @@ from external_agent_progress import (  # noqa: E402
 )
 from duration_history import classify_task_kind  # noqa: E402
 from progress_message import (  # noqa: E402
-    append_duration_footer,
     build_streaming_progress_status_line,
     build_task_ack_message,
     resolve_task_estimate_seconds,
@@ -112,6 +111,7 @@ from web_run_store import (  # noqa: E402
     RunMeta,
     get_run_store,
 )
+from web_prompt import normalize_reply_mode, finalize_web_reply_text  # noqa: E402
 from web_admin_permission import is_web_admin, web_admin_denial_message  # noqa: E402
 from web_auth import authorize_request, auth_enabled, logout_current_session  # noqa: E402
 from web_otp_auth import (  # noqa: E402
@@ -476,6 +476,8 @@ class ActiveRun:
     last_batch_line: str = ""
     last_external_line: str = ""
     last_markdown: str = ""
+    last_process: dict[str, Any] | None = None
+    reply_mode: str = "standard"
     _notify_lock: threading.Lock = field(default_factory=threading.Lock)
 
     def emit_event(self, event: dict[str, Any]) -> None:
@@ -490,6 +492,12 @@ class ActiveRun:
             markdown = event.get("markdown")
             if markdown:
                 self.last_markdown = str(markdown)
+            proc = event.get("process")
+            if isinstance(proc, dict):
+                from web_run_store import _merge_process_payload
+
+                prev = self.last_process if isinstance(self.last_process, dict) else None
+                self.last_process = _merge_process_payload(prev, proc)
         self.events.put(event)
 
     def snapshot_events(self) -> list[dict[str, Any]]:
@@ -506,8 +514,11 @@ class ActiveRun:
                     "external_line": self.last_external_line,
                 }
             )
-        if self.last_markdown:
-            events.append({"type": "delta", "markdown": self.last_markdown})
+        if self.last_markdown or self.last_process:
+            evt: dict[str, Any] = {"type": "delta", "markdown": self.last_markdown}
+            if isinstance(self.last_process, dict):
+                evt["process"] = self.last_process
+            events.append(evt)
         if self.done.is_set():
             if self.error:
                 events.append(
@@ -531,6 +542,7 @@ class ActiveRun:
             "batch_line": self.last_batch_line,
             "external_line": self.last_external_line,
             "markdown": self.last_markdown,
+            "process": self.last_process,
         }
 
 
@@ -583,7 +595,12 @@ def _notify_run_interrupted(run: ActiveRun, text: str) -> bool:
     body = (text or INTERRUPT_REPLY).strip() or INTERRUPT_REPLY
     if run.started_at > 0:
         elapsed = max(0.0, time.monotonic() - run.started_at)
-        body = append_duration_footer(body, elapsed, task_kind=run.task_kind)
+        body = finalize_web_reply_text(
+            body,
+            elapsed,
+            task_kind=run.task_kind,
+            reply_mode=run.reply_mode,
+        )
     with run._notify_lock:
         if run.cancel_notified:
             return False
@@ -628,6 +645,8 @@ def _apply_snapshot_to_run(run: ActiveRun, snap) -> None:
     run.last_batch_line = snap.last_batch_line
     run.last_external_line = snap.last_external_line
     run.last_markdown = snap.last_markdown
+    if isinstance(getattr(snap, "last_process", None), dict):
+        run.last_process = snap.last_process
     run.final_text = snap.final_text
     run.error = snap.error
 
@@ -637,6 +656,7 @@ def _active_run_from_store_meta(meta: RunMeta) -> ActiveRun:
     snap = store.get_snapshot(meta.run_id)
     run = RUN_MANAGER.create(meta.session_id, run_id=meta.run_id)
     run.task_kind = classify_task_kind(meta.message)
+    run.reply_mode = normalize_reply_mode(meta.reply_mode)
     run.started_at = time.monotonic()
     _apply_snapshot_to_run(run, snap)
     if meta.status != RUN_STATUS_RUNNING:
@@ -699,10 +719,12 @@ def _finalize_orphan_run(meta: RunMeta) -> None:
     if has_reply:
         store.mark_status(meta.run_id, RUN_STATUS_DONE)
         return
-    err_text = append_duration_footer(
+    err_text = finalize_web_reply_text(
         f"⚠️ 任务因服务重启中断\n\n{RETRY_HINT}",
         0.0,
         task_kind=classify_task_kind(meta.message),
+        prompt=meta.message,
+        reply_mode=meta.reply_mode,
     )
     session_store.append_message(meta.session_id, "assistant", err_text)
     store.append_event(meta.run_id, {"type": "error", "message": "worker lost", "text": err_text})
@@ -750,6 +772,12 @@ def _start_run_event_tailer(run: ActiveRun, *, progress_stop: threading.Event) -
                     markdown = event.get("markdown")
                     if markdown:
                         run.last_markdown = str(markdown)
+                    proc = event.get("process")
+                    if isinstance(proc, dict):
+                        from web_run_store import _merge_process_payload
+
+                        prev = run.last_process if isinstance(run.last_process, dict) else None
+                        run.last_process = _merge_process_payload(prev, proc)
                 elif etype == "done":
                     if run.done.is_set():
                         continue
@@ -1021,6 +1049,7 @@ def _start_chat_run(
     author_label: str = "",
     push_result_to_dingtalk: bool = False,
     push_dingtalk_staff_id: str = "",
+    reply_mode: str | None = None,
 ) -> ActiveRun:
     store = get_session_store()
     run_store = get_run_store()
@@ -1061,6 +1090,7 @@ def _start_chat_run(
 
     agent_model = _resolve_agent_model(model)
     external_ids = list(enabled_external_agents or [])
+    normalized_reply_mode = normalize_reply_mode(reply_mode)
     run_store.create_run(
         RunMeta(
             run_id=run.run_id,
@@ -1079,6 +1109,7 @@ def _start_chat_run(
             started_at=time.time(),
             push_result_to_dingtalk=bool(push_result_to_dingtalk),
             push_dingtalk_staff_id=(push_dingtalk_staff_id or "").strip(),
+            reply_mode=normalized_reply_mode,
         )
     )
     run.task_session.begin(
@@ -1091,6 +1122,7 @@ def _start_chat_run(
     started_at = time.monotonic()
     run.started_at = started_at
     run.task_kind = task_kind
+    run.reply_mode = normalized_reply_mode
     progress_stop = threading.Event()
     _start_run_progress_watcher(
         run,
@@ -1559,6 +1591,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 body.get("enabled_external_agents"),
             )
             push_result_to_dingtalk = bool(body.get("push_result_to_dingtalk"))
+            reply_mode = normalize_reply_mode(body.get("reply_mode"))
             raw_attachments = body.get("attachments")
             if not isinstance(raw_attachments, list):
                 raw_attachments = []
@@ -1634,6 +1667,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     author_label=author_label,
                     push_result_to_dingtalk=push_result_to_dingtalk,
                     push_dingtalk_staff_id=push_dingtalk_staff_id,
+                    reply_mode=reply_mode,
                 )
             except Exception as exc:  # noqa: BLE001
                 run.task_session.end()

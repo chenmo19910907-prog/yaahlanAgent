@@ -4,7 +4,11 @@
 from __future__ import annotations
 
 from agent_stream_card import AgentStreamCard
-from agent_stream_renderer import AgentStreamRenderer, assistant_text_chunk
+from agent_stream_renderer import (
+    AgentStreamRenderer,
+    append_process_summary,
+    assistant_text_chunk,
+)
 
 
 def test_thinking_and_answer() -> None:
@@ -381,6 +385,85 @@ def test_markdown_for_card_compact() -> None:
     assert r2.markdown_for_card() == "思考中…"
 
 
+def test_markdown_for_web_detailed_thinking() -> None:
+    r = AgentStreamRenderer()
+    r.apply({"type": "thinking-delta", "text": "先查 Admin\n再核对 Tunnel 抓包"})
+    r.apply({"type": "tool-call-started", "toolCall": {"name": "Shell"}})
+    md = r.markdown_for_web()
+    assert "思考中" in md
+    assert "先查 Admin" in md
+    assert "Tunnel 抓包" in md
+    assert "先查 Admin\n再核对 Tunnel 抓包" in md
+    assert "### 执行工作" in md
+    assert "Shell" in md
+    assert md != "思考中…"
+
+
+def test_markdown_for_web_multiline_thinking() -> None:
+    r = AgentStreamRenderer()
+    r.apply(
+        {
+            "type": "thinking-delta",
+            "text": "先查本地 registry 和 mappings\n无登记则继续查服务端",
+        }
+    )
+    md = r.markdown_for_web()
+    assert "先查本地 registry 和 mappings" in md
+    assert "无登记则继续查服务端" in md
+    assert "先查本地 registry 和 mappings\n无登记则继续查服务端" in md
+
+
+def test_markdown_for_web_early_answer_as_thinking() -> None:
+    """工具调用前 assistant 流式正文应归入思考区（SDK 常无 thinkingMessage）。"""
+    r = AgentStreamRenderer()
+    r.update_answer("正在了解 Web Agent 的思考操作流程")
+    md = r.markdown_for_web()
+    payload = r.web_process_payload()
+    assert "### 思考中" in md
+    assert "正在了解 Web Agent" in md
+    assert payload["thinking"] == "正在了解 Web Agent 的思考操作流程"
+    r.append_tool_step("Grep")
+    payload2 = r.web_process_payload()
+    assert payload2["thinking"] == "正在了解 Web Agent 的思考操作流程"
+    md2 = r.markdown_for_web()
+    assert "### 思考中" in md2
+    assert "### 执行工作" in md2
+    assert "Grep" in md2
+
+
+def test_sanitize_web_thinking_strips_prompt_echo() -> None:
+    from agent_stream_renderer import sanitize_web_thinking
+
+    raw = "正在回顾 Web Agent 相关上下文与近期改动，以便继续深入思考。\n用户"
+    assert sanitize_web_thinking(raw) == (
+        "正在回顾 Web Agent 相关上下文与近期改动，以便继续深入思考。"
+    )
+    assert sanitize_web_thinking("用户消息（延续当前 Web Agent 对话）：") == ""
+
+
+def test_update_thinking_snapshot_vs_delta() -> None:
+    r = AgentStreamRenderer()
+    assert r.update_thinking("先查本地")
+    assert r.update_thinking("先查本地 registry")
+    assert r._thinking == "先查本地 registry"
+
+    r2 = AgentStreamRenderer()
+    r2.update_thinking("第一段")
+    r2.update_thinking("第二段")
+    assert r2._thinking == "第一段第二段"
+
+
+def test_markdown_for_web_long_thinking_tail() -> None:
+    r = AgentStreamRenderer()
+    from agent_stream_renderer import WEB_THINKING_MAX_CHARS
+
+    r.apply({"type": "thinking-delta", "text": "x" * (WEB_THINKING_MAX_CHARS + 200)})
+    md = r.markdown_for_web()
+    assert md.startswith("### 思考中")
+    assert len(md) < WEB_THINKING_MAX_CHARS + 200
+    assert md.count("x") >= WEB_THINKING_MAX_CHARS - 20
+
+
 def test_update_answer_snapshot_vs_delta() -> None:
     # 全量快照增长：替换而非重复
     r = AgentStreamRenderer()
@@ -426,10 +509,44 @@ def test_ensure_stream_state_on_legacy_instance() -> None:
     assert hasattr(card, "_last_flushed_body")
 
 
+def test_process_summary_for_final() -> None:
+    r = AgentStreamRenderer()
+    r.apply({"type": "thinking-delta", "text": "先查 Admin 再核对 Tunnel"})
+    r.apply({"type": "tool-call-started", "toolCall": {"name": "Shell"}})
+    r.apply({"type": "tool-call-completed", "toolCall": {"name": "Shell"}})
+    summary = r.process_summary_markdown()
+    assert "### 思考过程" in summary
+    assert "Admin" in summary
+    assert "### 执行工作" in summary
+    assert "Shell" in summary
+    merged = append_process_summary("结论正文", summary)
+    assert merged.startswith("结论正文")
+    assert "---" in merged
+    assert "### 思考过程" in merged
+
+
+def test_sanitize_web_thinking_strips_prompt_echo() -> None:
+    from agent_stream_renderer import sanitize_web_thinking
+
+    raw = "正在排查问题\n用户\n用户消息（延续当前 Web Agent 对话）：\n继续分析"
+    cleaned = sanitize_web_thinking(raw)
+    assert "正在排查问题" in cleaned
+    assert "继续分析" in cleaned
+    assert "用户消息" not in cleaned
+    assert cleaned.strip() != "用户"
+
+
 def main() -> int:
     test_thinking_and_answer()
     test_tool_lines()
+    test_process_summary_for_final()
     test_markdown_for_card_compact()
+    test_markdown_for_web_detailed_thinking()
+    test_markdown_for_web_multiline_thinking()
+    test_markdown_for_web_early_answer_as_thinking()
+    test_sanitize_web_thinking_strips_prompt_echo()
+    test_update_thinking_snapshot_vs_delta()
+    test_markdown_for_web_long_thinking_tail()
     test_update_answer_snapshot_vs_delta()
     test_empty_defaults()
     test_assistant_chunk()

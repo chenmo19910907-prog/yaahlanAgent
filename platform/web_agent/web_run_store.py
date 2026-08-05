@@ -22,6 +22,26 @@ RUN_STATUS_ERROR = "error"
 RUN_STATUS_INTERRUPTED = "interrupted"
 
 
+def _merge_process_payload(
+    prev: dict[str, Any] | None,
+    new: dict[str, Any],
+) -> dict[str, Any]:
+    """流式 process 快照：思考/工具链只增不减，避免重连后回退到短片段。"""
+    out = dict(new)
+    if not isinstance(prev, dict):
+        return out
+    prev_thinking = str(prev.get("thinking") or "")
+    new_thinking = str(new.get("thinking") or "")
+    if len(prev_thinking) > len(new_thinking):
+        out["thinking"] = prev_thinking
+    prev_tools = prev.get("tools")
+    new_tools = new.get("tools")
+    if isinstance(prev_tools, list) and isinstance(new_tools, list):
+        if len(prev_tools) > len(new_tools):
+            out["tools"] = list(prev_tools)
+    return out
+
+
 @dataclass
 class RunMeta:
     run_id: str
@@ -41,6 +61,7 @@ class RunMeta:
     cancel_requested: bool = False
     push_result_to_dingtalk: bool = False
     push_dingtalk_staff_id: str = ""
+    reply_mode: str = "standard"
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -61,6 +82,7 @@ class RunMeta:
             "cancel_requested": bool(self.cancel_requested),
             "push_result_to_dingtalk": bool(self.push_result_to_dingtalk),
             "push_dingtalk_staff_id": str(self.push_dingtalk_staff_id or ""),
+            "reply_mode": str(self.reply_mode or "standard"),
         }
 
     @classmethod
@@ -85,6 +107,7 @@ class RunMeta:
             cancel_requested=bool(data.get("cancel_requested")),
             push_result_to_dingtalk=bool(data.get("push_result_to_dingtalk")),
             push_dingtalk_staff_id=str(data.get("push_dingtalk_staff_id") or ""),
+            reply_mode=str(data.get("reply_mode") or "standard"),
         )
 
 
@@ -95,11 +118,12 @@ class RunSnapshot:
     last_batch_line: str = ""
     last_external_line: str = ""
     last_markdown: str = ""
+    last_process: dict[str, Any] | None = None
     final_text: str = ""
     error: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "last_ack_line": self.last_ack_line,
             "last_elapsed_line": self.last_elapsed_line,
             "last_batch_line": self.last_batch_line,
@@ -108,16 +132,21 @@ class RunSnapshot:
             "final_text": self.final_text,
             "error": self.error,
         }
+        if isinstance(self.last_process, dict):
+            payload["last_process"] = self.last_process
+        return payload
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> RunSnapshot:
         err = data.get("error")
+        proc = data.get("last_process")
         return cls(
             last_ack_line=str(data.get("last_ack_line") or ""),
             last_elapsed_line=str(data.get("last_elapsed_line") or ""),
             last_batch_line=str(data.get("last_batch_line") or ""),
             last_external_line=str(data.get("last_external_line") or ""),
             last_markdown=str(data.get("last_markdown") or ""),
+            last_process=proc if isinstance(proc, dict) else None,
             final_text=str(data.get("final_text") or ""),
             error=str(err) if err else None,
         )
@@ -208,6 +237,10 @@ class WebRunStore:
             markdown = event.get("markdown")
             if markdown:
                 snap.last_markdown = str(markdown)
+            proc = event.get("process")
+            if isinstance(proc, dict):
+                prev = snap.last_process if isinstance(snap.last_process, dict) else None
+                snap.last_process = _merge_process_payload(prev, proc)
         elif etype == "done":
             snap.final_text = str(event.get("text") or "")
         elif etype == "error":

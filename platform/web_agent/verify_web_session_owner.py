@@ -441,5 +441,162 @@ class WebSessionCustomTitleTest(unittest.TestCase):
             self.assertEqual(meta.display_title(), "PK提款机协作案例")
 
 
+    def test_legacy_title_promoted_to_custom_title(self) -> None:
+        """旧版仅写入 title 的手动标题，应在刷新 meta 时迁移到 custom_title。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            sid = "legacytitle00001"
+            index.write_text(
+                json.dumps(
+                    {
+                        sid: {
+                            "title": "PK提款机协作案例",
+                            "created_at": "2026-08-03T08:00:00+00:00",
+                            "updated_at": "2026-08-03T09:00:00+00:00",
+                            "message_count": 2,
+                            "source": "web",
+                        }
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            (messages_dir / f"{sid}.json").write_text(
+                json.dumps(
+                    [
+                        {
+                            "role": "user",
+                            "content": "首条提问",
+                            "timestamp": "2026-08-03T09:00:00+00:00",
+                        },
+                        {
+                            "role": "user",
+                            "content": "第二条提问内容",
+                            "timestamp": "2026-08-03T10:00:00+00:00",
+                        },
+                    ],
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            store.list_sessions()
+            meta = store.get_session(sid)
+            assert meta is not None
+            self.assertEqual(meta.custom_title, "PK提款机协作案例")
+            self.assertEqual(meta.title, "第二条提问内容")
+            self.assertEqual(meta.display_title(), "PK提款机协作案例")
+
+    def test_new_question_does_not_lock_old_auto_title_as_custom(self) -> None:
+        """历史会话追加新提问时，不应把首问自动标题误判为 custom_title。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            sid = "oldsession000001"
+            first_q = "4707充值90万钻石"
+            second_q = "取消置顶无效了"
+            index.write_text(
+                json.dumps(
+                    {
+                        sid: {
+                            "title": first_q,
+                            "created_at": "2026-08-03T08:00:00+00:00",
+                            "updated_at": "2026-08-03T09:00:00+00:00",
+                            "message_count": 2,
+                            "source": "web",
+                        }
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            (messages_dir / f"{sid}.json").write_text(
+                json.dumps(
+                    [
+                        {
+                            "role": "user",
+                            "content": first_q,
+                            "timestamp": "2026-08-03T09:00:00+00:00",
+                        },
+                        {
+                            "role": "assistant",
+                            "content": "首条回复",
+                            "timestamp": "2026-08-03T09:01:00+00:00",
+                        },
+                    ],
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            store.append_message(sid, "user", second_q)
+            meta = store.get_session(sid)
+            assert meta is not None
+            self.assertEqual(meta.custom_title, "")
+            self.assertEqual(meta.title, second_q)
+            self.assertEqual(meta.display_title(), second_q)
+
+    def test_mistaken_custom_title_cleared_on_next_refresh(self) -> None:
+        """已误写入 custom_title 的旧自动标题，刷新 meta 后应自动清除。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            sid = "mistaketitle0001"
+            first_q = "4707充值90万钻石"
+            second_q = "取消置顶无效了"
+            index.write_text(
+                json.dumps(
+                    {
+                        sid: {
+                            "title": second_q,
+                            "custom_title": first_q,
+                            "created_at": "2026-08-03T08:00:00+00:00",
+                            "updated_at": "2026-08-03T10:00:00+00:00",
+                            "message_count": 3,
+                            "source": "web",
+                        }
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            (messages_dir / f"{sid}.json").write_text(
+                json.dumps(
+                    [
+                        {
+                            "role": "user",
+                            "content": first_q,
+                            "timestamp": "2026-08-03T09:00:00+00:00",
+                        },
+                        {
+                            "role": "assistant",
+                            "content": "首条回复",
+                            "timestamp": "2026-08-03T09:01:00+00:00",
+                        },
+                        {
+                            "role": "user",
+                            "content": second_q,
+                            "timestamp": "2026-08-03T10:00:00+00:00",
+                        },
+                    ],
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            store.list_sessions()
+            meta = store.get_session(sid)
+            assert meta is not None
+            self.assertEqual(meta.custom_title, "")
+            self.assertEqual(meta.display_title(), second_q)
+
+
 if __name__ == "__main__":
     unittest.main()

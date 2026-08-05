@@ -9,14 +9,28 @@
   {
     "type": "lines",
     "lines": [
+      { "text": "从能用的工具", "lead": true },
+      { "text": "到成熟的产品", "lead": true },
+      { "text": "做一款真正有竞争力的 Agent", "small": true }
+    ]
+  },
+  {
+    "type": "lines",
+    "lines": [
       { "text": "如何做好一款 Agent", "lead": true },
       {
         "inline": ["简单", "易用", "美观"],
         "large": true,
         "separator": true
       },
-      { "text": "有人用，才是硬道理", "small": true }
+      { "text": "体验过关，才谈留存", "small": true }
     ]
+  },
+  {
+    "type": "center",
+    "label": "UI",
+    "text": "界面上的小心思",
+    "subtitle": "细节里，见用心"
   },
   {
     "type": "lines",
@@ -27,12 +41,6 @@
         "suffix": { "text": "简约", "large": true, "accent": true }
       }
     ]
-  },
-  {
-    "type": "center",
-    "label": "UI",
-    "text": "界面上的小心思",
-    "subtitle": "细节里，见用心"
   },
   {
     "type": "feature",
@@ -66,7 +74,7 @@
     "type": "feature",
     "label": "UI · 05",
     "title": "丝滑动效，处处顺手",
-    "desc": "统一 spring 缓动贯穿全局；输入框随内容亮起光晕、聚焦时微微上浮，历史会话滑过轻跃而出——每一帧都连贯。",
+    "desc": "统一动效曲线贯穿全局；输入框随内容亮起光晕、聚焦时微微上浮，历史会话滑过轻跃而出——每一帧都连贯。",
     "demo": "motion"
   },
   {
@@ -77,7 +85,7 @@
     "views": [
       { "id": "history", "label": "历史会话", "detail": "侧栏浏览 · 按人筛选 · 钉钉同步标识" },
       { "id": "chat", "label": "新对话", "detail": "空态快捷提问 · 顶栏品牌居中" },
-      { "id": "catalog", "label": "工具台能力", "detail": "245 能力目录 · MOA 录制 · 填参执行" }
+      { "id": "catalog", "label": "工具台能力", "detail": "250+ 能力目录 · MOA 录制 · 填参执行" }
     ]
   },
   {
@@ -104,7 +112,7 @@
     "type": "feature",
     "label": "功能 · 03",
     "title": "流式传输，思考只显有效信息",
-    "desc": "回复逐字 SSE 流式推送；思考阶段不倾倒内部推理，仅展示已收到、已用时与工具摘要等有效状态，长任务心中有数。",
+    "desc": "回复逐字流式推送；思考阶段不倾倒内部推理，仅展示已收到、已用时与工具摘要，进度一目了然。",
     "demo": "stream-output"
   },
   {
@@ -125,7 +133,7 @@
     "type": "feature",
     "label": "功能 · 06",
     "title": "重启不断流，断点可重连",
-    "desc": "Agent 在独立 worker 中执行；HTTP 服务热重启时 worker 继续跑，事件落盘后自动恢复 SSE 推流——思考中改代码也不丢任务。",
+    "desc": "任务在后台独立执行；服务重启后继续跑，断线自动重连——任务不丢、结果照收。",
     "demo": "run-recovery"
   },
   {
@@ -173,9 +181,9 @@
   {
     "type": "feature",
     "label": "功能 · 13",
-    "title": "关于 · 文档枢纽",
-    "desc": "设置 → 关于，一站式打开 Keynote 演示、平台搭建指南、Showcase 案例；新同学不必记内网地址。",
-    "demo": "about-hub"
+    "title": "回复详略，三档切换",
+    "desc": "输入框下方一键切换精简 / 标准 / 详细；精简只给结论，详细附思考过程与工具执行摘要，同一问题按需选粒度。",
+    "demo": "reply-mode"
   },
   {
     "type": "feature",
@@ -218,15 +226,14 @@
       { "name": "手机号 → 风控解除", "detail": "Admin 取登录设备 · 解除风控 · mmuid 落库知识库" },
       { "name": "userId → 查数 + 抓包", "detail": "Admin 用户详情 · Tunnel 同步查 HTTP 请求与报文" },
       { "name": "送礼 → 接口验收", "detail": "Stage 环境送礼 · Tunnel 核对 /v2/gift/send 入参与 ec" },
-      { "name": "家族信息一览", "detail": "MOA 查所属家族 · Admin 家族详情 · 成员 userId 列表" },
-      { "name": "PRD → 测试用例", "detail": "读钉钉需求文档 · 测试点扩写 · 输出 Markdown / Excel" }
+      { "name": "家族信息一览", "detail": "MOA 查所属家族 · Admin 家族详情 · 成员 userId 列表" }
     ]
   },
   {
     "type": "feature",
     "label": "智能 · 03",
     "title": "生成式 MOA，抓包即能力",
-    "desc": "App 未录入的接口？Tunnel 抓包 + MSE 调用链生成 payload——操作账号（送礼、结 CP、加成员）与查页面数据（资产、CP、家族 PK）两类 MOA 均可落地。",
+    "desc": "新接口没脚本？抓包 + 调用链分析即可生成 MOA——操作账号（送礼、结 CP、加成员）与查页面数据（资产、CP、家族 PK）均可落地。",
     "textOnly": true,
     "capabilities": [
       { "name": "抓包转 MOA", "detail": "Tunnel 抓 body · MSE 查 ServiceUrl/Method · 生成 payload" },
@@ -242,15 +249,27 @@
     "type": "feature",
     "label": "智能 · 04",
     "title": "外部 Agent，按需启用",
-    "desc": "设置中勾选服务端 Agent 或 MDP Agent；未勾选时不调用外部查询，走本地 registry；勾选后下一条消息起生效。",
+    "desc": "设置中勾选服务端 Agent 或 MDP Agent；未勾选时走本地能力清单，勾选后下一条消息起生效。",
     "demo": "external-agent"
   },
   {
     "type": "feature",
     "label": "智能 · 05",
     "title": "查接口实现，直接生成 MOA",
-    "desc": "勾选服务端 Agent 后，查 ServiceUrl / Method / 参数定义，直接生成 MOA 并调通。未勾选时不调用外部查询，走本地 registry 与 mappings。",
-    "demo": "service-agent-moa"
+    "desc": "勾选服务端 Agent 后，本地能力清单无登记时，查接口地址、方法与参数，直接生成 MOA 并调通测试环境。",
+    "textOnly": true,
+    "capabilities": [
+      { "name": "房间麦位", "detail": "pullSeatInfo · 查当前房间麦上 userId 列表" },
+      { "name": "麦位 RPC", "detail": "getJoinSeatUserIdSet / getSeatValInfo · userId 或麦位详情、无 HTTP 时" },
+      { "name": "跨房 PK", "detail": "applyAcrossRoomPk · 随机 / 指定邀请；getAcrossRoomPkInfo · 赛况；closeAcrossRoomPk · 结束" },
+      { "name": "房间成员", "detail": "apply + agree · 快速添加成员" },
+      { "name": "用户等级", "detail": "getUserLevelInfo · 财富 / 魅力 / VIP 等级查询" },
+      { "name": "CP / 挚友", "detail": "intimateHomePage · CP 勋章；acceptIntimateInvitation · 同意申请" },
+      { "name": "用户资产", "detail": "diamondHistory · 钻石记录；getGiftTabListV3 · 背包礼物 Tab" },
+      { "name": "家族 PK", "detail": "getFamilyPkPage · 对战列表；getFamilyPkUserList · 成员贡献榜" },
+      { "name": "铭牌 / 特权", "detail": "nameplatePageData · 铭牌页；propRenewal · 定制座驾延期" },
+      { "name": "帖子互动", "detail": "likeContent · 点赞；publishComment · 评论；signIn · 签到" }
+    ]
   },
   {
     "type": "feature",
@@ -263,7 +282,7 @@
     "type": "feature",
     "label": "智能 · 07",
     "title": "登记即上线，能力自生长",
-    "desc": "登记一次，全员可用——新能力落库后自动同步使用说明与能力目录，200+ 条目持续生长；对话里按模块浏览、搜索筛选，点「执行」即可填入提问栏。",
+    "desc": "登记一次，全员可用——新能力落库后自动同步使用说明与能力目录，250+ 条目持续生长；对话里按模块浏览、搜索筛选，点「执行」即可填入提问栏。",
     "demo": "catalog-onboard"
   },
   {
@@ -290,6 +309,6 @@
   {
     "type": "center",
     "text": "让工作，更顺手",
-    "subtitle": "Yaahlan 智能工具 Agent"
+    "subtitle": "Yaahlan 智能工具 Agent · 内网即用"
   }
 ]

@@ -1094,8 +1094,57 @@
       background: var(--session-active-bg);
     }
     .session-title {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      min-width: 0;
       font-size: 0.86rem; color: var(--muted); font-weight: 500;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .session-title-text {
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .session-custom-title-edit {
+      display: inline-flex;
+      flex-shrink: 0;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      margin-left: 2px;
+      padding: 0;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--muted-soft);
+      opacity: 0.55;
+      cursor: pointer;
+      transition: color 140ms var(--ease-standard), opacity 140ms var(--ease-standard), background 140ms var(--ease-standard);
+    }
+    .session-custom-title-edit:hover,
+    .session-custom-title-edit:focus-visible {
+      color: var(--accent);
+      opacity: 1;
+      background: var(--accent-soft);
+      outline: none;
+    }
+    .session-item.active .session-custom-title-edit {
+      color: var(--text-soft);
+      opacity: 0.5;
+    }
+    .session-item.active .session-custom-title-edit:hover,
+    .session-item.active .session-custom-title-edit:focus-visible {
+      color: var(--accent);
+      opacity: 1;
+    }
+    .session-custom-title-edit svg {
+      width: 12px;
+      height: 12px;
+      fill: currentColor;
+      stroke: none;
+      pointer-events: none;
     }
     .session-item.active .session-title { color: var(--text-soft); }
     .input-hint,
@@ -1204,11 +1253,18 @@
     .session-context-menu button:hover { background: var(--bg-hover); }
     .session-context-menu button.copied { color: var(--success, #34d399); }
     .session-source {
-      display: inline-block; font-size: 0.68rem; padding: 1px 6px; border-radius: 4px;
-      background: var(--session-tag-bg); color: var(--session-tag-text);
+      display: inline-flex;
+      flex-shrink: 0;
+      align-items: center;
+      font-size: 0.68rem;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: var(--session-tag-bg);
+      color: var(--session-tag-text);
       border: 1px solid var(--session-tag-border);
-      vertical-align: middle; margin-right: 4px;
       font-weight: 500;
+      white-space: nowrap;
+      line-height: 1.2;
     }
     .session-owner { color: inherit; }
     .dingtalk-owner-bar {
@@ -1592,6 +1648,107 @@
     .msg.assistant .msg-body {
       background: var(--assistant-bg); border: 1px solid var(--border);
     }
+    .msg.assistant.streaming .msg-body {
+      overflow: visible;
+      max-height: none;
+      width: 100%;
+    }
+    .msg.assistant.streaming .stream-body {
+      width: 100%;
+      min-width: 0;
+      overflow: visible;
+      max-height: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .msg.assistant.streaming .stream-section-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 6px;
+      letter-spacing: 0.04em;
+    }
+    .msg.assistant.streaming .stream-section {
+      width: 100%;
+      min-width: 0;
+    }
+    .msg.assistant.streaming .stream-text.stream-muted {
+      color: var(--muted);
+      font-style: italic;
+    }
+    .msg.assistant.streaming .stream-thinking {
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-x: hidden;
+      overflow-y: auto;
+      max-height: min(60vh, 520px);
+      -webkit-line-clamp: unset;
+      line-height: 1.55;
+      color: var(--text);
+      opacity: 0.92;
+    }
+    .msg.assistant.streaming .stream-list {
+      margin: 0;
+      padding-left: 1.35em;
+      list-style: disc;
+      width: 100%;
+    }
+    .msg.assistant.streaming .stream-list li,
+    .msg.assistant.streaming .stream-text,
+    .msg.assistant.streaming .stream-placeholder {
+      line-height: 1.55;
+      color: var(--text);
+      opacity: 0.92;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow: visible;
+      max-height: none;
+    }
+    .msg.assistant.streaming .stream-list li {
+      margin: 0.28em 0;
+    }
+    .msg.assistant.streaming .stream-tool-list li {
+      list-style: circle;
+    }
+    .msg.assistant.streaming .msg-body .markdown-body {
+      overflow: visible;
+      max-height: none;
+    }
+    .msg.assistant.streaming .msg-body .markdown-body blockquote,
+    .msg.assistant.streaming .msg-body .markdown-body p,
+    .msg.assistant.streaming .msg-body .markdown-body li,
+    .msg.assistant.streaming .msg-body .markdown-body ul {
+      overflow: visible;
+      max-height: none;
+      -webkit-line-clamp: unset;
+      display: block;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.assistant.streaming .msg-body .markdown-body blockquote {
+      font-size: 0.88rem;
+      line-height: 1.55;
+      color: var(--text);
+      opacity: 0.92;
+    }
+    .msg.assistant.streaming .msg-body .markdown-body ul {
+      margin: 0.35em 0 0.65em;
+      padding-left: 1.35em;
+      list-style: disc;
+    }
+    .msg.assistant.streaming .msg-body .markdown-body li {
+      margin: 0.28em 0;
+      line-height: 1.55;
+      color: var(--text);
+      opacity: 0.92;
+    }
+    .msg.assistant.streaming .msg-body .markdown-body h2 {
+      font-size: 0.92rem;
+      margin: 0 0 0.35em;
+      color: var(--muted);
+      font-weight: 600;
+    }
     .msg-body pre {
       background: var(--code-bg); padding: 12px; border-radius: 10px; overflow-x: auto;
       font-size: 0.82rem; margin: 10px 0; border: 1px solid var(--border);
@@ -1837,36 +1994,82 @@
       transform: translateY(0);
       transition: transform 220ms var(--ease-standard), border-color 220ms var(--ease-standard), box-shadow 220ms var(--ease-standard), background 220ms var(--ease-standard);
     }
-    .dingtalk-push-toggle {
+    .dingtalk-push-toggle,
+    .reply-mode-toggle {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       flex-shrink: 0;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: none;
+      background: var(--btn-subtle-bg);
       font-size: 0.72rem;
-      color: var(--muted-soft);
-      opacity: 0.58;
+      font-weight: 500;
+      color: var(--muted);
       cursor: pointer;
       user-select: none;
       white-space: nowrap;
+      line-height: 1.2;
+      transition:
+        background 180ms var(--ease-standard),
+        color 180ms var(--ease-standard),
+        box-shadow 180ms var(--ease-standard),
+        transform 120ms var(--ease-standard);
+    }
+    .reply-mode-toggle {
+      font-family: inherit;
     }
     .dingtalk-push-toggle input {
-      width: 14px;
-      height: 14px;
+      width: 13px;
+      height: 13px;
       margin: 0;
       accent-color: var(--accent);
       cursor: pointer;
       flex-shrink: 0;
     }
-    .dingtalk-push-toggle.is-disabled {
+    .dingtalk-push-toggle.is-disabled,
+    .reply-mode-toggle:disabled {
       opacity: 0.45;
       cursor: not-allowed;
     }
     .dingtalk-push-toggle.is-disabled input {
       cursor: not-allowed;
     }
-    .dingtalk-push-toggle.is-checked {
+    .dingtalk-push-toggle:hover:not(.is-disabled),
+    .reply-mode-toggle:hover:not(:disabled) {
+      background: var(--bg-hover);
       color: var(--text-soft);
-      opacity: 0.72;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    .dingtalk-push-toggle:active:not(.is-disabled),
+    .reply-mode-toggle:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+    .dingtalk-push-toggle.is-checked {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .dingtalk-push-toggle.is-checked:hover:not(.is-disabled) {
+      color: var(--accent-hover);
+    }
+    .input-hint-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .reply-mode-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .reply-mode-toggle svg {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+      fill: currentColor;
     }
     .web-toast {
       position: fixed;
@@ -2334,72 +2537,76 @@
     }
     .settings-footer-links {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
+      align-items: stretch;
+      gap: 10px;
       margin-top: 22px;
     }
     .settings-link {
       flex: 1;
       min-width: 0;
-      text-align: left;
-      min-height: 34px;
-      padding: 7px 12px;
-      border-radius: 9px;
-      border: none;
+      text-align: center;
+      min-height: 42px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
       background: var(--bg-soft);
       color: var(--text-soft);
       cursor: pointer;
-      font-size: 0.78rem;
+      font-size: 0.84rem;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
       gap: 8px;
-      transition: background 180ms, color 180ms;
+      transition: border-color 180ms, background 180ms, color 180ms;
     }
     .settings-footer-links .settings-link {
-      flex: 0 0 auto;
+      flex: 1;
       justify-content: center;
-      gap: 6px;
+      gap: 8px;
     }
-    .settings-link:hover { color: var(--text); background: var(--accent-soft); }
+    .settings-link:hover { border-color: var(--accent); color: var(--text); background: var(--accent-soft); }
     .settings-link span {
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .settings-link svg { width: 14px; height: 14px; stroke: currentColor; flex-shrink: 0; }
+    .settings-link svg { width: 18px; height: 18px; stroke: currentColor; flex-shrink: 0; }
     a.settings-link { text-decoration: none; }
     .settings-box p { color: var(--muted); font-size: 0.88rem; line-height: 1.6; margin-bottom: 8px; }
     .settings-feedback-btn {
+      flex: 1;
+      min-width: 0;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      flex-shrink: 0;
-      min-height: 34px;
-      padding: 7px 12px;
-      border-radius: 9px;
-      border: none;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
       background: var(--bg-soft);
       color: var(--text-soft);
       cursor: pointer;
-      font-size: 0.78rem;
-      transition: background 180ms, color 180ms;
+      font-size: 0.84rem;
+      transition: border-color 180ms, background 180ms, color 180ms;
     }
     .settings-feedback-btn svg {
-      width: 14px;
-      height: 14px;
+      width: 18px;
+      height: 18px;
       stroke: currentColor;
       flex-shrink: 0;
     }
     .settings-feedback-btn:hover {
+      border-color: var(--accent);
       color: var(--text);
       background: var(--accent-soft);
     }
     .settings-feedback-btn.active {
+      border-color: var(--accent);
       color: var(--accent);
-      background: rgba(59, 130, 246, 0.12);
+      background: var(--accent-soft);
+      font-weight: 600;
     }
     .header-actions button.active,
     .tool-actions-bar button.active,
@@ -3485,10 +3692,18 @@
           </div>
           <div class="input-hint-row" id="input-hint-row">
             <div class="input-hint">Enter 发送 · Shift+Enter 换行 · 📎 或拖拽/粘贴附件 · 支持图片与 csv/xlsx/pdf/zip/txt/md/json 等</div>
-            <label class="dingtalk-push-toggle" id="dingtalk-push-toggle" title="执行完成后将最终结果发送到您的钉钉私聊">
-              <input type="checkbox" id="chk-push-dingtalk" />
-              <span>结果发钉钉</span>
-            </label>
+            <div class="input-hint-actions">
+              <button type="button" class="reply-mode-toggle" id="reply-mode-toggle" data-mode="standard" title="点击切换回复详略：精简 / 标准 / 详细">
+                <span class="reply-mode-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"></svg>
+                </span>
+                <span class="reply-mode-label">标准回复</span>
+              </button>
+              <label class="dingtalk-push-toggle" id="dingtalk-push-toggle" title="执行完成后将最终结果发送到您的钉钉私聊">
+                <input type="checkbox" id="chk-push-dingtalk" />
+                <span>结果发钉钉</span>
+              </label>
+            </div>
           </div>
         </div>
       </div>
@@ -4525,18 +4740,414 @@
       });
     }
 
-    function renderMarkdown(text) {
+    function normalizeStreamingMarkdown(text) {
+      let s = String(text || '').trim()
+        .replace(/^🤔\s*\*\*思考中\*\*/gm, '### 思考中')
+        .replace(/^\*\*执行工作\*\*\s*$/gm, '### 执行工作');
+      s = s.replace(/^(### [^\n]+)\n(?!\n)/gm, '$1\n\n');
+      return s;
+    }
+
+    function normalizeToolLine(line) {
+      return String(line || '')
+        .replace(/^>\s*/, '')
+        .replace(/^[-*·]\s*/, '')
+        .replace(/^[🔧✅]\s*/u, '')
+        .trim();
+    }
+
+    function parseStreamingSections(markdown) {
+      const normalized = normalizeStreamingMarkdown(markdown);
+      const sections = [];
+      let rest = normalized;
+      const headerRe = /^### ([^\n]+)\n\n/;
+      while (headerRe.test(rest)) {
+        const m = rest.match(/^### ([^\n]+)\n\n/);
+        rest = rest.slice(m[0].length);
+        const nextIdx = rest.search(/^### /m);
+        const body = (nextIdx >= 0 ? rest.slice(0, nextIdx) : rest).trim();
+        sections.push({ title: m[1].trim(), body });
+        rest = nextIdx >= 0 ? rest.slice(nextIdx) : '';
+      }
+      return { sections, preview: rest.trim() };
+    }
+
+    function processFromMarkdown(markdown) {
+      const { sections } = parseStreamingSections(normalizeStreamingMarkdown(markdown));
+      let thinking = '';
+      const tools = [];
+      sections.forEach((sec) => {
+        if (sec.title === '思考中') {
+          thinking = normalizeThinkingBody(sec.body);
+        } else if (sec.title === '执行工作') {
+          sec.body.split('\n').map((l) => normalizeToolLine(l)).filter(Boolean).forEach((t) => tools.push(t));
+        }
+      });
+      return { thinking, tools };
+    }
+
+    function isPromptEchoLine(line) {
+      const t = String(line || '').trim();
+      if (!t) return false;
+      if (t === '用户') return true;
+      if (/^用户消息/.test(t)) return true;
+      if (/^---+$/.test(t)) return true;
+      if (/^<!--/.test(t)) return true;
+      if (/^会话上下文/.test(t)) return true;
+      return false;
+    }
+
+    function normalizeThinkingBody(body) {
+      return String(body || '')
+        .split('\n')
+        .map((l) => l.replace(/^>\s*/, '').replace(/^[-*·]\s*/, '').trim())
+        .filter((l) => l && !isPromptEchoLine(l))
+        .join('\n');
+    }
+
+    function looksLikeToolLine(line) {
+      const t = String(line || '').trim();
+      if (!t || /^⏳/.test(t)) return false;
+      if (/^[🔧✅·]/.test(t)) return true;
+      return /^(Shell|Grep|Read|Glob|Task|Write|StrReplace|Delete|Await|CallMcpTool|GetMcpTools|Fetch|WebFetch|WebSearch|EditNotebook|TodoWrite|SwitchMode|Cursor)\b/i.test(t);
+    }
+
+    function renderThinkingSectionHtml(thinking) {
+      const text = normalizeThinkingBody(thinking);
+      if (!text) return '';
+      return `<section class="stream-section stream-section-think">
+        <div class="stream-section-title">思考中</div>
+        <div class="stream-thinking">${escapeHtml(text)}</div>
+      </section>`;
+    }
+
+    function renderToolsSectionHtml(tools) {
+      const lines = (Array.isArray(tools) ? tools : [])
+        .map((t) => String(t || '').trim())
+        .filter(Boolean);
+      if (!lines.length) return '';
+      return `<section class="stream-section stream-section-tools">
+        <div class="stream-section-title">执行工作</div>
+        <ul class="stream-list stream-tool-list">${lines.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}</ul>
+      </section>`;
+    }
+
+    function extractStreamAnswerPreview(markdown, payload) {
+      const md = String(markdown || '').trim();
+      if (!md) return '';
+      const normalized = normalizeStreamingMarkdown(md);
+      const { sections } = parseStreamingSections(normalized);
+      const parts = [];
+      const toolSet = new Set(
+        (Array.isArray(payload?.tools) ? payload.tools : [])
+          .map((t) => String(t || '').replace(/\s*…\s*$/, '').trim())
+          .filter(Boolean),
+      );
+
+      sections
+        .filter((s) => s.title !== '思考中' && s.title !== '执行工作')
+        .forEach((s) => {
+          const body = String(s.body || '').trim();
+          if (body && !/^⏳/.test(body)) parts.push(body);
+        });
+
+      const toolSec = sections.find((s) => s.title === '执行工作');
+      if (toolSec) {
+        const bodyLines = String(toolSec.body || '')
+          .split('\n')
+          .map((l) => normalizeToolLine(l))
+          .filter(Boolean);
+        const extra = bodyLines.filter((l) => {
+          const key = l.replace(/\s*…\s*$/, '').trim();
+          return !toolSet.has(key) && !looksLikeToolLine(l);
+        });
+        if (extra.length) parts.push(extra.join('\n'));
+      }
+
+      let tail = normalized;
+      if (sections.length) {
+        const last = sections[sections.length - 1];
+        const marker = `### ${last.title}\n\n`;
+        const idx = normalized.lastIndexOf(marker);
+        if (idx >= 0) {
+          tail = normalized.slice(idx + marker.length).trim();
+          if (last.title === '思考中') {
+            const thinking = normalizeThinkingBody(payload?.thinking || last.body);
+            if (thinking && tail.startsWith(thinking)) {
+              tail = tail.slice(thinking.length).trim();
+            } else if (thinking && tail === thinking) {
+              tail = '';
+            }
+          } else if (last.title === '执行工作') {
+            const known = new Set(
+              String(last.body || '')
+                .split('\n')
+                .map((l) => normalizeToolLine(l))
+                .filter(Boolean),
+            );
+            const unknown = tail
+              .split('\n')
+              .map((l) => normalizeToolLine(l))
+              .filter((l) => l && !known.has(l) && !looksLikeToolLine(l));
+            tail = unknown.join('\n').trim();
+          }
+        }
+      }
+      if (tail && !/^⏳/.test(tail) && !looksLikeToolLine(tail)) {
+        parts.push(tail);
+      }
+
+      return parts
+        .map((p) => String(p || '').trim())
+        .filter(Boolean)
+        .join('\n\n')
+        .trim();
+    }
+
+    function renderProcessPanel(process) {
+      const thinking = String(process?.thinking || '').trim();
+      const tools = Array.isArray(process?.tools) ? process.tools.map((t) => String(t || '').trim()).filter(Boolean) : [];
+      const sections = [];
+      const thinkHtml = renderThinkingSectionHtml(thinking);
+      if (thinkHtml) sections.push(thinkHtml);
+      const toolsHtml = renderToolsSectionHtml(tools);
+      if (toolsHtml) sections.push(toolsHtml);
+      if (!sections.length) return '';
+      return `<div class="stream-body stream-process">${sections.join('')}</div>`;
+    }
+
+    function renderStreamingBody(markdown) {
+      const text = String(markdown || '').trim();
+      if (!text) {
+        return `<div class="stream-body"><div class="stream-placeholder">${escapeHtml('⏳ Agent 启动中…')}</div></div>`;
+      }
+      const normalized = normalizeStreamingMarkdown(text);
+      if (normalized.startsWith('⏳') && !normalized.includes('###')) {
+        return `<div class="stream-body"><div class="stream-text stream-status">${escapeHtml(normalized)}</div></div>`;
+      }
+      const { sections, preview } = parseStreamingSections(normalized);
+      if (!sections.length && !preview) {
+        return `<div class="stream-body"><div class="stream-text">${escapeHtml(normalized).replace(/\n/g, '<br>')}</div></div>`;
+      }
+      let html = '<div class="stream-body">';
+      sections.forEach((sec) => {
+        const kind = sec.title === '思考中' ? 'think' : (sec.title === '执行工作' ? 'tools' : 'other');
+        html += `<section class="stream-section stream-section-${kind}">`;
+        html += `<div class="stream-section-title">${escapeHtml(sec.title)}</div>`;
+        if (sec.title === '思考中') {
+          html += `<div class="stream-thinking">${escapeHtml(normalizeThinkingBody(sec.body))}</div>`;
+        } else if (sec.title === '执行工作') {
+          const toolLines = sec.body.split('\n').map((l) => normalizeToolLine(l)).filter(Boolean);
+          if (toolLines.length) {
+            html += `<ul class="stream-list stream-tool-list">${toolLines.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}</ul>`;
+          } else {
+            html += `<div class="stream-text stream-muted">等待工具输出…</div>`;
+          }
+        } else {
+          html += `<div class="stream-text">${escapeHtml(sec.body).replace(/\n/g, '<br>')}</div>`;
+        }
+        html += '</section>';
+      });
+      if (preview) {
+        const previewLines = preview.split('\n').map((l) => normalizeToolLine(l)).filter(Boolean);
+        const hasThinkSec = sections.some((s) => s.title === '思考中');
+        const hasToolSec = sections.some((s) => s.title === '执行工作');
+        const allToolLike = previewLines.length > 0 && previewLines.every(looksLikeToolLine);
+        if (allToolLike && !hasToolSec) {
+          html += renderToolsSectionHtml(previewLines);
+        } else if (!hasThinkSec && !/^⏳/.test(preview) && !allToolLike) {
+          html += renderThinkingSectionHtml(preview);
+        } else if (!/^⏳/.test(preview)) {
+          html += `<section class="stream-section stream-section-preview"><div class="stream-text">${escapeHtml(preview).replace(/\n/g, '<br>')}</div></section>`;
+        }
+      }
+      html += '</div>';
+      return html;
+    }
+
+    function renderMarkdown(text, options = {}) {
+      const { streaming = false } = options;
       try {
+        const parseOpts = { gfm: true, breaks: !!streaming };
         if (typeof marked?.use === 'function') {
-          marked.use({ gfm: true, breaks: false });
+          marked.use(parseOpts);
         } else if (marked?.setOptions) {
-          marked.setOptions({ gfm: true, breaks: false });
+          marked.setOptions(parseOpts);
         }
         const html = withLinksOpenInNewTab(marked.parse(text || ''));
         return `<div class="markdown-body">${html}</div>`;
       } catch {
         return `<div class="markdown-body">${(text || '').replace(/</g, '&lt;').replace(/\n/g, '<br>')}</div>`;
       }
+    }
+
+    function extractPlainStreamingText(markdown) {
+      const md = String(markdown || '').trim();
+      if (!md || /^⏳ Agent/.test(md)) return '';
+      const normalized = normalizeStreamingMarkdown(md);
+      const { sections, preview } = parseStreamingSections(normalized);
+      const thinkSec = sections.find((s) => s.title === '思考中');
+      if (thinkSec) return normalizeThinkingBody(thinkSec.body);
+      if (!sections.length) return preview || normalized;
+      return preview || '';
+    }
+
+    function pickLongerText(a, b) {
+      const left = String(a || '').trim();
+      const right = String(b || '').trim();
+      if (!left) return right;
+      if (!right) return left;
+      return right.length > left.length ? right : left;
+    }
+
+    function streamStateKey(markdown, process) {
+      const proc = (process && typeof process === 'object') ? process : {};
+      const tools = Array.isArray(proc.tools) ? proc.tools : [];
+      return JSON.stringify({
+        md: String(markdown || ''),
+        thinking: String(proc.thinking || ''),
+        tools,
+      });
+    }
+
+    function mergeProcessPayload(process, markdown) {
+      const fromMd = processFromMarkdown(markdown);
+      const plain = extractPlainStreamingText(markdown);
+      const p = (process && typeof process === 'object') ? process : {};
+      const thinking = pickLongerText(
+        pickLongerText(p.thinking, fromMd.thinking),
+        plain,
+      );
+      const mdTools = fromMd.tools;
+      const procTools = Array.isArray(p.tools) ? p.tools.map((t) => String(t || '').trim()).filter(Boolean) : [];
+      const tools = procTools.length >= mdTools.length ? procTools : mdTools;
+      return { thinking, tools };
+    }
+
+    function resolveStreamThinking(markdown, payload) {
+      const merged = payload || { thinking: '', tools: [] };
+      let thinking = String(merged.thinking || '').trim();
+      const md = String(markdown || '').trim();
+      if (!thinking && md && !/^⏳ Agent/.test(md)) {
+        const fromMd = processFromMarkdown(md);
+        thinking = String(fromMd.thinking || extractPlainStreamingText(md) || '').trim();
+        if (!thinking && !md.includes('###')) {
+          thinking = md;
+        }
+      }
+      return thinking;
+    }
+
+    function buildStreamDisplay(markdown, process, prevDisplay) {
+      const prev = prevDisplay || { thinking: '', tools: [] };
+      const incoming = mergeProcessPayload(process, markdown);
+      const thinking = pickLongerText(
+        prev.thinking,
+        resolveStreamThinking(markdown, incoming),
+      );
+      const tools = (Array.isArray(incoming.tools) && incoming.tools.length >= (prev.tools || []).length)
+        ? incoming.tools
+        : (prev.tools || []);
+      return { thinking, tools };
+    }
+
+    function rememberRunStreamState(sessionId, markdown, process) {
+      const run = activeRuns.get(sessionId);
+      if (!run) return null;
+      const prevDisplay = run.lastStream?.display || { thinking: '', tools: [] };
+      const display = buildStreamDisplay(markdown, process, prevDisplay);
+      run.lastStream = {
+        markdown: String(markdown || ''),
+        process: (process && typeof process === 'object') ? process : null,
+        display,
+      };
+      return display;
+    }
+
+    function refreshStreamingShellFromRun(sessionId) {
+      const run = activeRuns.get(sessionId);
+      if (!run?.lastStream?.display) return;
+      const shell = run.shellEl || ensureStreamingShell(sessionId);
+      updateStreamingMsgBody(shell, run.lastStream.display);
+    }
+
+    function stopRunStreamPoll(sessionId) {
+      const run = activeRuns.get(sessionId);
+      if (!run?.streamPollTimer) return;
+      clearInterval(run.streamPollTimer);
+      run.streamPollTimer = null;
+    }
+
+    function startRunStreamPoll(sessionId) {
+      const sid = String(sessionId || '').trim();
+      if (!sid) return;
+      stopRunStreamPoll(sid);
+      const run = activeRuns.get(sid);
+      if (!run) return;
+      run.streamPollTimer = setInterval(async () => {
+        const current = activeRuns.get(sid);
+        if (!current?.runId || current.cancelling) {
+          stopRunStreamPoll(sid);
+          return;
+        }
+        if (sid !== currentSessionId) return;
+        try {
+          const active = await api(`/api/sessions/${sid}/active-run`);
+          if (!active?.active || !active.run_id) {
+            stopRunStreamPoll(sid);
+            return;
+          }
+          const md = String(active.markdown || '');
+          const proc = active.process;
+          const prevDisplay = current.lastStream?.display || { thinking: '', tools: [] };
+          const nextDisplay = buildStreamDisplay(md, proc, prevDisplay);
+          if (
+            nextDisplay.thinking === prevDisplay.thinking
+            && JSON.stringify(nextDisplay.tools) === JSON.stringify(prevDisplay.tools || [])
+          ) {
+            return;
+          }
+          const display = rememberRunStreamState(sid, md, proc);
+          const shell = current.shellEl || ensureStreamingShell(sid);
+          updateStreamingMsgBody(shell, display || nextDisplay);
+          if (active.ack_line || active.elapsed_line || active.batch_line || active.external_line) {
+            renderRunStatusEl(shell.querySelector('.run-status'), {
+              ack: active.ack_line || '',
+              elapsed: active.elapsed_line || '',
+              batch: active.batch_line || '',
+              external: active.external_line || '',
+            });
+          }
+        } catch {
+          /* 轮询失败忽略，SSE 仍为主通道 */
+        }
+      }, 800);
+    }
+
+    function updateStreamingMsgBody(shell, display) {
+      if (!shell) return;
+      const bodyEl = shell.querySelector('.msg-body');
+      if (!bodyEl) return;
+      const payload = (display && typeof display === 'object')
+        ? display
+        : { thinking: '', tools: [] };
+      const sections = [];
+      const thinkHtml = renderThinkingSectionHtml(payload.thinking);
+      if (thinkHtml) sections.push(thinkHtml);
+      const toolsHtml = renderToolsSectionHtml(payload.tools);
+      if (toolsHtml) sections.push(toolsHtml);
+      let html = '';
+      if (sections.length) {
+        html = `<div class="stream-body stream-process">${sections.join('')}</div>`;
+      } else {
+        html = '<div class="stream-body"><div class="stream-placeholder">⏳ Agent 启动中…</div></div>';
+      }
+      bodyEl.innerHTML = html;
+      const thinkEl = bodyEl.querySelector('.stream-thinking');
+      if (thinkEl) {
+        thinkEl.scrollTop = thinkEl.scrollHeight;
+      }
+      scrollMessagesToBottom();
     }
 
     function setupMarkdownLinkNewTab() {
@@ -4589,6 +5200,18 @@
     const MODEL_KEY = 'web_agent_model';
     const EXTERNAL_AGENTS_KEY = 'web_agent_enabled_external_agents';
     const PUSH_RESULT_DEFAULT_KEY = 'web_agent_push_result_default';
+    const REPLY_MODE_STORAGE_KEY = 'web_agent_reply_mode';
+    const REPLY_MODES = ['concise', 'standard', 'detailed'];
+    const REPLY_MODE_LABELS = {
+      concise: '精简回复',
+      standard: '标准回复',
+      detailed: '详细回复',
+    };
+    const REPLY_MODE_TITLES = {
+      concise: '当前：精简回复 · 点击切换为标准 / 详细',
+      standard: '当前：标准回复（与原有回复一致）· 点击切换为详细 / 精简',
+      detailed: '当前：详细回复 · 点击切换为精简 / 标准',
+    };
     let webToastTimer = null;
 
     function canUseDingtalkPush() {
@@ -4660,6 +5283,78 @@
       }
       const err = String(payload.error || '推送失败').trim();
       showWebToast(`钉钉推送失败：${err}`, { error: true, durationMs: 4200 });
+    }
+
+    function normalizeReplyMode(mode) {
+      const value = String(mode || '').trim();
+      return REPLY_MODES.includes(value) ? value : 'standard';
+    }
+
+    /** 详略等级图标：递增高柱，亮柱数 = 当前档位（精简 1 / 标准 2 / 详细 3） */
+    function renderReplyModeIcon(mode) {
+      const level = { concise: 1, standard: 2, detailed: 3 }[normalizeReplyMode(mode)] || 2;
+      const bars = [
+        { x: 5, y: 15, h: 5 },
+        { x: 10.5, y: 11, h: 9 },
+        { x: 16, y: 7, h: 13 },
+      ];
+      return bars.map((bar, index) => {
+        const active = index < level;
+        return `<rect x="${bar.x}" y="${bar.y}" width="3.5" height="${bar.h}" rx="1" opacity="${active ? 1 : 0.24}"/>`;
+      }).join('');
+    }
+
+    function syncReplyModeIcon(mode) {
+      const svg = document.querySelector('#reply-mode-toggle .reply-mode-icon svg');
+      if (!svg) return;
+      svg.innerHTML = renderReplyModeIcon(mode);
+    }
+
+    function loadReplyMode() {
+      return normalizeReplyMode(localStorage.getItem(REPLY_MODE_STORAGE_KEY));
+    }
+
+    function saveReplyMode(mode) {
+      localStorage.setItem(REPLY_MODE_STORAGE_KEY, normalizeReplyMode(mode));
+    }
+
+    function getReplyMode() {
+      const btn = document.getElementById('reply-mode-toggle');
+      return normalizeReplyMode(btn?.dataset.mode || loadReplyMode());
+    }
+
+    function syncReplyModeToggleUi() {
+      const btn = document.getElementById('reply-mode-toggle');
+      if (!btn) return;
+      const mode = normalizeReplyMode(btn.dataset.mode || loadReplyMode());
+      btn.dataset.mode = mode;
+      btn.setAttribute('aria-label', REPLY_MODE_LABELS[mode]);
+      const labelEl = btn.querySelector('.reply-mode-label');
+      if (labelEl) labelEl.textContent = REPLY_MODE_LABELS[mode];
+      syncReplyModeIcon(mode);
+      const busy = isCurrentSessionStreaming();
+      const readonly = currentSessionReadOnly || isGuestMode();
+      btn.hidden = readonly;
+      btn.disabled = readonly || busy;
+      btn.title = busy ? '执行中不可修改回复详略' : REPLY_MODE_TITLES[mode];
+    }
+
+    function cycleReplyMode() {
+      const btn = document.getElementById('reply-mode-toggle');
+      if (!btn || btn.disabled) return;
+      const current = normalizeReplyMode(btn.dataset.mode || loadReplyMode());
+      const next = REPLY_MODES[(REPLY_MODES.indexOf(current) + 1) % REPLY_MODES.length];
+      btn.dataset.mode = next;
+      saveReplyMode(next);
+      syncReplyModeToggleUi();
+    }
+
+    function initReplyModeControls() {
+      const btn = document.getElementById('reply-mode-toggle');
+      if (!btn) return;
+      btn.dataset.mode = loadReplyMode();
+      btn.addEventListener('click', cycleReplyMode);
+      syncReplyModeToggleUi();
     }
 
     function initPushResultControls() {
@@ -5045,6 +5740,14 @@
       return info.label || info.id || '';
     }
 
+    function sessionHasCustomTitle(item) {
+      return Boolean((item?.custom_title || '').trim());
+    }
+
+    function sessionCustomTitleEditBtnHtml() {
+      return '<button type="button" class="session-custom-title-edit" title="修改标题" aria-label="修改标题"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/></svg></button>';
+    }
+
     function renderSessionList() {
       if (sessionRenameTarget && sessionRenameInputEl && !sessionRenameSaving) {
         return;
@@ -5084,10 +5787,11 @@
         const searchHit = (s.search_snippet || '').trim()
           ? `<div class="session-search-hit">${escapeHtml(s.search_snippet)}</div>`
           : '';
+        const customTitleEditBtn = sessionHasCustomTitle(s) ? sessionCustomTitleEditBtnHtml() : '';
         el.innerHTML = `
           <div class="session-item-main">
             <div class="session-title-row">
-              <div class="session-title">${sourceBadge}${escapeHtml(s.title)}</div>
+              <div class="session-title">${sourceBadge}<span class="session-title-text">${escapeHtml(s.title)}</span>${customTitleEditBtn}</div>
               <div class="session-title-input-wrap"></div>
             </div>
             <div class="session-meta">${ownerLine}${relLine}${s.message_count || 0} 条${running}</div>
@@ -5226,7 +5930,8 @@
     async function toggleSessionPinned(session) {
       if (!session?.id || isGuestMode()) return;
       if (sessionPinBusy.has(session.id)) return;
-      const nextPinned = !session.pinned;
+      const cached = sessionsCache.find(s => s.id === session.id) || session;
+      const nextPinned = !cached.pinned;
       sessionPinBusy.add(session.id);
       const prevSnapshot = patchSessionPinState(session.id, nextPinned);
       renderSessionList();
@@ -5268,6 +5973,13 @@
     let sessionRenameSaving = false;
     let sessionRenameInputEl = null;
     let sessionRenameOriginalValue = '';
+    let sessionRenameSavePromise = null;
+
+    async function waitForPendingSessionTitleSave() {
+      if (sessionRenameSavePromise) {
+        await sessionRenameSavePromise.catch(() => {});
+      }
+    }
 
     function cancelSessionTitleEdit() {
       if (!sessionRenameTarget) return;
@@ -5338,17 +6050,30 @@
       sessionRenameSaving = true;
       input.disabled = true;
       const targetId = sessionRenameTarget.id;
-      try {
+      const saveTask = (async () => {
+        const idx = sessionsCache.findIndex(s => s.id === targetId);
+        if (idx >= 0) {
+          sessionsCache[idx] = {
+            ...sessionsCache[idx],
+            title,
+            custom_title: title,
+          };
+          renderSessionList();
+        }
         const data = await api(`/api/sessions/${encodeURIComponent(targetId)}/title`, {
           method: 'PUT',
           body: JSON.stringify({ title }),
         });
-        const idx = sessionsCache.findIndex(s => s.id === targetId);
-        if (idx >= 0) sessionsCache[idx] = { ...sessionsCache[idx], ...data };
+        const nextIdx = sessionsCache.findIndex(s => s.id === targetId);
+        if (nextIdx >= 0) sessionsCache[nextIdx] = { ...sessionsCache[nextIdx], ...data };
         sessionRenameTarget = null;
         sessionRenameInputEl = null;
         sessionRenameOriginalValue = '';
         renderSessionList();
+      })();
+      sessionRenameSavePromise = saveTask;
+      try {
+        await saveTask;
       } catch (err) {
         alert(err?.message || '保存失败，请稍后重试');
         if (sessionRenameInputEl) {
@@ -5357,6 +6082,7 @@
         }
       } finally {
         sessionRenameSaving = false;
+        if (sessionRenameSavePromise === saveTask) sessionRenameSavePromise = null;
       }
     }
 
@@ -5388,9 +6114,23 @@
           await toggleSessionPinned(session);
         });
       }
+      const titleEditBtn = el.querySelector('.session-custom-title-edit');
+      if (titleEditBtn) {
+        titleEditBtn.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (isGuestMode()) return;
+          startSessionTitleEdit(session, el);
+        });
+        titleEditBtn.addEventListener('pointerdown', (event) => {
+          event.stopPropagation();
+          cancelLongPress();
+        });
+      }
       el.addEventListener('pointerdown', (event) => {
         if (event.button !== 0) return;
         if (event.target.closest('.session-pin-unpin')) return;
+        if (event.target.closest('.session-custom-title-edit')) return;
         if (!document.getElementById('session-context-menu')?.hidden) {
           hideSessionContextMenu();
         }
@@ -5412,6 +6152,7 @@
           event.stopPropagation();
           return;
         }
+        if (event.target.closest('.session-custom-title-edit')) return;
         if (sessionLongPressTriggered) {
           event.preventDefault();
           sessionLongPressTriggered = false;
@@ -5725,6 +6466,7 @@
       }
       document.getElementById('readonly-hint')?.remove();
       syncPushResultToggleUi();
+      syncReplyModeToggleUi();
       updateInputState();
     }
 
@@ -5776,6 +6518,7 @@
         WaitingFx.setActive(busy && !currentSessionReadOnly);
       }
       syncPushResultToggleUi();
+      syncReplyModeToggleUi();
     }
 
     function findActiveAssistantShell(sessionId) {
@@ -6156,12 +6899,16 @@
       if (run?.cancelWatchdog) {
         clearTimeout(run.cancelWatchdog);
       }
+      stopRunStreamPoll(sessionId);
       activeRuns.delete(sessionId);
-      if (sessionId === currentSessionId) {
-        updateInputState();
-        loadMessages();
-      }
-      loadSessions();
+      void (async () => {
+        await waitForPendingSessionTitleSave();
+        if (sessionId === currentSessionId) {
+          updateInputState();
+          loadMessages();
+        }
+        await loadSessions();
+      })();
     }
 
     async function loadSessions() {
@@ -6331,6 +7078,7 @@
         if (run?.shellEl) {
           container.appendChild(run.shellEl);
           renderRunStatusEl(run.shellEl.querySelector('.run-status'), run.status || {});
+          refreshStreamingShellFromRun(sessionId);
         } else {
           const typingEl = document.createElement('div');
           typingEl.className = 'typing';
@@ -6483,6 +7231,7 @@
         });
         updateInputState();
         loadSessions();
+        startRunStreamPoll(sessionId);
 
         const isViewing = () => currentSessionId === sessionId;
 
@@ -6502,8 +7251,8 @@
               assistantEl = ensureStreamingShell(sessionId);
               activeRuns.get(sessionId).shellEl = assistantEl;
             }
-            assistantEl.querySelector('.msg-body').innerHTML = renderMarkdown(data.markdown || '');
-            scrollMessagesToBottom();
+            const display = rememberRunStreamState(sessionId, data.markdown || '', data.process);
+            if (display) updateStreamingMsgBody(assistantEl, display);
           } else if (data.type === 'done') {
             const doneRun = activeRuns.get(sessionId);
             if (doneRun?.cancelWatchdog) {
@@ -6613,13 +7362,15 @@
       renderSessionList();
 
       if (currentSessionId === sid) {
-        if (data.markdown) {
+        if (data.ack_line || data.elapsed_line || data.batch_line || data.external_line || data.markdown || data.process) {
           const shell = ensureStreamingShell(sid);
           activeRuns.get(sid).shellEl = shell;
-          shell.querySelector('.msg-body').innerHTML = renderMarkdown(data.markdown);
           renderRunStatusEl(shell.querySelector('.run-status'), activeRuns.get(sid).status);
-          if (messagesPinnedToBottom) scrollMessagesToBottom();
-        } else if (data.ack_line || data.elapsed_line || data.batch_line) {
+          if (data.markdown || data.process) {
+            const display = rememberRunStreamState(sid, data.markdown || '', data.process);
+            if (display) updateStreamingMsgBody(shell, display);
+          }
+        } else {
           const typingEl = document.createElement('div');
           typingEl.className = 'typing';
           typingEl.id = 'typing-indicator';
@@ -6710,6 +7461,7 @@
               ? options.enabledExternalAgents
               : getEnabledExternalAgents(),
             push_result_to_dingtalk: isPushResultChecked(),
+            reply_mode: getReplyMode(),
           }),
         });
 
@@ -7425,6 +8177,7 @@
         setupMessagesScrollTracking();
         initThemeSettings();
         initPushResultControls();
+        initReplyModeControls();
         await loadMeta();
         initSidebarResize();
         initCatalogResize();

@@ -60,6 +60,30 @@ class WebRunStoreTests(unittest.TestCase):
         snap = self.store.get_snapshot("abc123")
         self.assertEqual(snap.last_markdown, "partial")
 
+    def test_append_delta_persists_process(self) -> None:
+        self.store.create_run(self._sample_meta())
+        proc = {"thinking": "先查 Admin", "tools": ["Shell"]}
+        self.store.append_event(
+            "abc123",
+            {"type": "delta", "markdown": "### 思考中\n\n先查 Admin", "process": proc},
+        )
+        snap = self.store.get_snapshot("abc123")
+        self.assertEqual(snap.last_process, proc)
+
+    def test_append_delta_merges_longer_process(self) -> None:
+        self.store.create_run(self._sample_meta())
+        self.store.append_event(
+            "abc123",
+            {"type": "delta", "process": {"thinking": "正在全面排查", "tools": []}},
+        )
+        self.store.append_event(
+            "abc123",
+            {"type": "delta", "process": {"thinking": "正在", "tools": ["Shell"]}},
+        )
+        snap = self.store.get_snapshot("abc123")
+        self.assertEqual(snap.last_process["thinking"], "正在全面排查")
+        self.assertEqual(snap.last_process["tools"], ["Shell"])
+
     def test_read_new_events_advances_tail(self) -> None:
         self.store.create_run(self._sample_meta())
         self.store.append_event("abc123", {"type": "ack", "line": "收到"})

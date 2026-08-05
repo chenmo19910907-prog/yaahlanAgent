@@ -12,8 +12,54 @@ if str(GATEWAY_DIR) not in sys.path:
 from external_agent_config import external_agents_by_id  # noqa: E402
 from gateway_prompt import batch_progress_instruction  # noqa: E402
 from gift_defaults import gateway_gift_rule_line  # noqa: E402
+from progress_message import append_duration_footer  # noqa: E402
 
 _GIFT_RULE = gateway_gift_rule_line()
+
+VALID_REPLY_MODES = frozenset({"concise", "standard", "detailed"})
+
+
+def normalize_reply_mode(mode: str | None) -> str:
+    value = str(mode or "").strip()
+    return value if value in VALID_REPLY_MODES else "standard"
+
+
+def _reply_mode_instruction(mode: str | None) -> str | None:
+    """标准模式不注入额外指令，保持现有回复风格与内容粒度。"""
+    normalized = normalize_reply_mode(mode)
+    if normalized == "concise":
+        return (
+            "**回复详略（精简）**：用最短可验收表述；只给结论与必要数字/链接；"
+            "省略背景、过程、实现要点、使用说明与冗余说明；"
+            "不要追加下一步建议或耗时/预估类尾注；表格仅保留关键列。"
+        )
+    if normalized == "detailed":
+        return (
+            "**回复详略（详细）**：在常规回复基础上补充操作步骤、依据来源、"
+            "边界与异常说明；查数/榜单可展示更多条目；必要时给出下一步建议。"
+            "正文专注结论与细节；系统会在文末附上本次思考过程与工具执行摘要，正文无需重复罗列。"
+        )
+    return None
+
+
+def should_append_duration_footer(mode: str | None) -> bool:
+    """精简模式不追加「本次耗时」尾注。"""
+    return normalize_reply_mode(mode) != "concise"
+
+
+def finalize_web_reply_text(
+    body: str,
+    elapsed_s: float,
+    *,
+    task_kind: str | None = None,
+    prompt: str | None = None,
+    reply_mode: str | None = None,
+) -> str:
+    text = (body or "").rstrip()
+    if not should_append_duration_footer(reply_mode):
+        return text
+    return append_duration_footer(text, elapsed_s, task_kind=task_kind, prompt=prompt)
+
 
 _WEB_RULES_BASE = f"""\
 你是 Yaahlan 智能工具平台 Web Agent，在浏览器无人值守场景下运行。
@@ -140,9 +186,13 @@ def build_web_prompt(
     attachment_names: list[str] | None = None,
     links: list[str] | None = None,
     enabled_external_agents: list[str] | None = None,
+    reply_mode: str | None = None,
 ) -> str:
     body = (user_text or "").strip()
     extras: list[str] = []
+    reply_note = _reply_mode_instruction(reply_mode)
+    if reply_note:
+        extras.append(reply_note)
     batch_note = batch_progress_instruction(batch_progress_key, compact=True)
     if batch_note:
         extras.append(batch_note)

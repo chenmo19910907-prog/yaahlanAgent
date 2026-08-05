@@ -27,6 +27,7 @@ def _stream_render_interval_s() -> float:
 
 
 DEFAULT_MIN_INTERVAL_S = _stream_render_interval_s()
+WEB_STREAM_RENDER_INTERVAL_S = 0.35
 # 内存态每秒更新；卡片 API 按 DEFAULT_MIN_INTERVAL_S 合并刷新，减轻抖动
 PROGRESS_TICK_S = 1.0
 # AI 流式卡片在部分单聊场景 streaming API 不刷新；默认用 Markdown 卡片 update

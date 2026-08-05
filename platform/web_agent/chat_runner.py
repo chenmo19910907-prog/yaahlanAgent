@@ -21,7 +21,7 @@ from cursor_runner import (  # noqa: E402
 from task_session import TaskSession  # noqa: E402
 from user_agent_pool import get_user_agent_pool  # noqa: E402
 
-from web_prompt import build_web_prompt  # noqa: E402
+from web_prompt import build_web_prompt, normalize_reply_mode  # noqa: E402
 from web_session_store import get_session_store  # noqa: E402
 
 logger = logging.getLogger("web-agent")
@@ -50,6 +50,7 @@ def run_web_chat(
     timeout_s: int = DEFAULT_TIMEOUT_S,
     model: str | None = None,
     enabled_external_agents: list[str] | None = None,
+    reply_mode: str | None = None,
 ) -> str:
     """在指定 Web 会话中运行 Agent，返回最终 assistant 文本。"""
     ensure_bridge()
@@ -70,6 +71,7 @@ def run_web_chat(
         file_paths=file_list,
         attachment_names=attachment_names,
         enabled_external_agents=enabled_external_agents,
+        reply_mode=reply_mode,
     )
 
     return run_agent_prompt_streaming(
@@ -83,5 +85,7 @@ def run_web_chat(
         session=session_ctrl,
         timeout_s=timeout_s,
         show_thinking=True,
+        web_stream=True,
+        include_process_in_final=normalize_reply_mode(reply_mode) == "detailed",
         model=model or DEFAULT_MODEL,
     )

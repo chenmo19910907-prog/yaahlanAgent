@@ -218,12 +218,73 @@ def filter_sessions_by_search(
     return matched
 
 
-def _apply_message_derived_meta(meta: SessionMeta, messages: list[ChatMessage]) -> bool:
+def _auto_titles_from_messages(messages: list[ChatMessage]) -> set[str]:
+    titles: set[str] = set()
+    for msg in messages:
+        if msg.role != "user":
+            continue
+        text = (msg.content or "").strip()
+        if text:
+            titles.add(_title_from_text(text))
+    return titles
+
+
+def _maybe_revert_mistaken_custom_title(
+    meta: SessionMeta, messages: list[ChatMessage]
+) -> bool:
+    """误将历史自动标题写入 custom_title 时，在新提问刷新后恢复为自动标题。"""
+    custom = (meta.custom_title or "").strip()
+    if not custom:
+        return False
+    latest_user = _latest_user_prompt(messages)
+    latest_auto = _title_from_text(latest_user) if latest_user else "新对话"
+    if (meta.title or "").strip() != latest_auto:
+        return False
+    if custom == latest_auto:
+        return False
+    if custom not in _auto_titles_from_messages(messages):
+        return False
+    meta.custom_title = ""
+    return True
+
+
+def _maybe_promote_legacy_custom_title(
+    meta: SessionMeta, messages: list[ChatMessage]
+) -> bool:
+    """旧版把手动标题写在 title 字段时，迁移到 custom_title。"""
+    if (meta.custom_title or "").strip():
+        return False
+    stored = (meta.title or "").strip()
+    if not stored or stored == "新对话":
+        return False
+    if stored in _auto_titles_from_messages(messages):
+        return False
+    latest_user = _latest_user_prompt(messages)
+    auto = _title_from_text(latest_user) if latest_user else "新对话"
+    if stored == auto:
+        return False
+    meta.custom_title = _normalize_custom_title(stored)
+    meta.title = auto
+    return True
+
+
+def _apply_message_derived_meta(
+    meta: SessionMeta,
+    messages: list[ChatMessage],
+    *,
+    custom_title_touched: set[str] | None = None,
+) -> bool:
     """用消息内容刷新标题（最新提问）、排序时间与条数。"""
     if not messages:
         meta.latest_preview = ""
         return False
     changed = False
+    if _maybe_revert_mistaken_custom_title(meta, messages):
+        changed = True
+        if custom_title_touched is not None and meta.id:
+            custom_title_touched.add(meta.id)
+    if _maybe_promote_legacy_custom_title(meta, messages):
+        changed = True
     latest_user = _latest_user_prompt(messages)
     if latest_user:
         new_title = _title_from_text(latest_user)
@@ -441,6 +502,7 @@ class WebSessionStore:
         self._index_mtime: float = 0.0
         self._sessions: dict[str, SessionMeta] = {}
         self._custom_title_touched: set[str] = set()
+        self._pinned_touched: set[str] = set()
         self._reload_index_if_stale(force=True)
 
     @contextmanager
@@ -528,7 +590,11 @@ class WebSessionStore:
                 and sid not in self._custom_title_touched
             ):
                 meta.custom_title = disk_meta.custom_title
-            if (disk_meta.pinned_at or "").strip() and not (meta.pinned_at or "").strip():
+            if (
+                (disk_meta.pinned_at or "").strip()
+                and not (meta.pinned_at or "").strip()
+                and sid not in self._pinned_touched
+            ):
                 meta.pinned_at = disk_meta.pinned_at
             if disk_meta.web_collaborator_ids and not meta.web_collaborator_ids:
                 meta.web_collaborator_ids = list(disk_meta.web_collaborator_ids)
@@ -644,9 +710,12 @@ class WebSessionStore:
                     meta.dingtalk_owner_id = owner_id
                     dirty = True
             items = list(self._sessions.values())
+            reverted_custom_titles: set[str] = set()
             for meta in items:
                 messages = self._load_messages(meta.id)
-                if messages and _apply_message_derived_meta(meta, messages):
+                if messages and _apply_message_derived_meta(
+                    meta, messages, custom_title_touched=reverted_custom_titles
+                ):
                     dirty = True
             items = [s for s in items if s.message_count > 0]
             if enrich_names and items:
@@ -669,7 +738,12 @@ class WebSessionStore:
                 except Exception as exc:  # noqa: BLE001
                     logger.warning("补全钉钉用户姓名失败: %s", exc)
             if dirty:
-                self._save_index()
+                self._custom_title_touched.update(reverted_custom_titles)
+                try:
+                    self._save_index()
+                finally:
+                    for sid in reverted_custom_titles:
+                        self._custom_title_touched.discard(sid)
         pinned = [s for s in items if s.is_pinned]
         unpinned = [s for s in items if not s.is_pinned]
         pinned.sort(key=lambda s: s.pinned_at)
@@ -812,13 +886,21 @@ class WebSessionStore:
             if _turn_already_synced(messages, prompt, reply):
                 return False
 
+            reverted_custom_titles: set[str] = set()
             if messages and messages[-1].role == "assistant":
                 for msg in reversed(messages[:-1]):
                     if msg.role == "user" and msg.content == prompt:
                         messages[-1] = ChatMessage(role="assistant", content=reply)
                         self._save_messages(session_id, messages)
-                        _apply_message_derived_meta(meta, messages)
-                        self._save_index()
+                        _apply_message_derived_meta(
+                            meta, messages, custom_title_touched=reverted_custom_titles
+                        )
+                        self._custom_title_touched.update(reverted_custom_titles)
+                        try:
+                            self._save_index()
+                        finally:
+                            for sid in reverted_custom_titles:
+                                self._custom_title_touched.discard(sid)
                         return True
                     if msg.role == "user":
                         break
@@ -831,8 +913,15 @@ class WebSessionStore:
                 messages.append(ChatMessage(role="user", content=prompt))
             messages.append(ChatMessage(role="assistant", content=reply))
             self._save_messages(session_id, messages)
-            _apply_message_derived_meta(meta, messages)
-            self._save_index()
+            _apply_message_derived_meta(
+                meta, messages, custom_title_touched=reverted_custom_titles
+            )
+            self._custom_title_touched.update(reverted_custom_titles)
+            try:
+                self._save_index()
+            finally:
+                for sid in reverted_custom_titles:
+                    self._custom_title_touched.discard(sid)
         return True
 
     def ensure_web_owner(
@@ -870,8 +959,12 @@ class WebSessionStore:
             meta = self._sessions.get(session_id)
             if meta is None:
                 return False, "session not found"
-            meta.pinned_at = _now_iso() if pinned else ""
-            self._save_index()
+            self._pinned_touched.add(session_id)
+            try:
+                meta.pinned_at = _now_iso() if pinned else ""
+                self._save_index()
+            finally:
+                self._pinned_touched.discard(session_id)
         return True, ""
 
     def set_session_custom_title(
@@ -886,14 +979,20 @@ class WebSessionStore:
             if meta is None:
                 return False, "session not found"
             messages = self._load_messages(session_id)
+            reverted_custom_titles: set[str] = set()
             if messages:
-                _apply_message_derived_meta(meta, messages)
+                _apply_message_derived_meta(
+                    meta, messages, custom_title_touched=reverted_custom_titles
+                )
+            self._custom_title_touched.update(reverted_custom_titles)
             self._custom_title_touched.add(session_id)
             try:
                 meta.custom_title = _normalize_custom_title(title)
                 self._save_index()
             finally:
                 self._custom_title_touched.discard(session_id)
+                for sid in reverted_custom_titles:
+                    self._custom_title_touched.discard(sid)
         return True, ""
 
     def set_web_collaborators(
@@ -977,8 +1076,16 @@ class WebSessionStore:
             )
             messages.append(msg)
             self._save_messages(session_id, messages)
-            _apply_message_derived_meta(meta, messages)
-            self._save_index()
+            reverted_custom_titles: set[str] = set()
+            _apply_message_derived_meta(
+                meta, messages, custom_title_touched=reverted_custom_titles
+            )
+            self._custom_title_touched.update(reverted_custom_titles)
+            try:
+                self._save_index()
+            finally:
+                for sid in reverted_custom_titles:
+                    self._custom_title_touched.discard(sid)
         return msg
 
     def user_key(self, session_id: str) -> str:
