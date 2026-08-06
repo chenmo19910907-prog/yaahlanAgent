@@ -35,6 +35,18 @@ python3 platform/open_catalog.py
 
 `projects/yaahlan/project.json` 控制品牌、登录口令、工具台 sources 路径等；换项目 = 新建 `projects/<id>/` 并切换环境变量。
 
+## Web Agent
+
+浏览器对话入口，默认 **http://127.0.0.1:18766/chat.html**（端口见 `web_agent/config.json`）。
+
+```bash
+bash platform/web_agent/run.sh --serve
+# 或
+platform/dingtalk_gateway/.venv/bin/python3 platform/web_agent/open_web_agent.py
+```
+
+须使用带 **`cursor-sdk`** 的 venv（`platform/dingtalk_gateway/.venv`），勿用系统 Python。鉴权配置：`web_agent/.env.example` → `.env.local`。
+
 ## 数据来源
 
 | 工具模块 | registry |

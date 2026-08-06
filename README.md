@@ -1,6 +1,6 @@
 # 钉钉测试用例自动生成（Yaahlan 分支）
 
-基于 Cursor Agent Skills 与钉钉 MCP，从钉钉需求文档与项目规则生成结构化测试用例，并可同步到钉钉 Excel。本仓库 **`yaahlan`** 分支主要用于 **Yaahlan** 用例自动化，并附带 **MOA**、**Risk**、**Admin** 等本地测试辅助脚本；其他业务可在同流程下扩展。
+基于 Cursor Agent Skills 与钉钉 MCP，从钉钉需求文档与项目规则生成结构化测试用例，并可同步到钉钉 Excel。本仓库 **`yaahlan`** 分支主要用于 **Yaahlan** 用例自动化，并附带 **MOA**、**Risk**、**Admin** 等本地测试辅助脚本；通过 **`AGENT_PROJECT`** 可切换多 App 项目数据包（config / 知识库 / registry / adb 录制脚本路径），详见 [projects/README.md](projects/README.md)。
 
 > **新同事 / 新电脑**：`git pull` 后 MOA 不能直接用是正常的（Cookie 不入库）。请按 **[新手上手.md](新手上手.md)** 配置 `MOA/.env.local` 等本地文件（约 10 分钟）。
 
@@ -23,10 +23,10 @@
 - **Admin**（`Admin/`）：调用 Yaahlan 测试后台，支持 **按 userId 查询用户全量详情**（`queryUserDetail`）；详见 [Admin/README.md](Admin/README.md) 与 [Admin/使用方法.md](Admin/使用方法.md)
 - **online**（`online/`）：**线上/生产**环境统一入口（Admin + MOA overseas + Tunnel overseas）；须提示词含「线上环境」；详见 [online/README.md](online/README.md) 与 [online/使用方法.md](online/使用方法.md)
 - **Tunnel**（`Tunnel/`）：查询 [tunnel.wemomo.com](https://tunnel.wemomo.com) 抓包记录，按 userId 拉 HTTP 请求列表与 request/response；Cookie 可复用 MOA；礼物面板 Customize 排序与自定义礼物周榜见 [adb/录制脚本/礼物面板抓包.md](adb/录制脚本/礼物面板抓包.md)；详见 [Tunnel/README.md](Tunnel/README.md) 与 [Tunnel/使用方法.md](Tunnel/使用方法.md)
-- **platform**（`platform/`）：**工具平台能力目录**网页（汇总 Admin/MOA/Risk/Tunnel/online/DingTalk registry）；提到「**工具平台**」「**输入工作台**」「**新手引导**」「**说明书**」等时执行 `python3 platform/open_catalog.py` 打开浏览器；详见 [platform/README.md](platform/README.md)
+- **platform**（`platform/`）：**工具平台能力目录**网页（汇总 Admin/MOA/Risk/Tunnel/online/DingTalk registry）；提到「**工具平台**」「**输入工作台**」「**新手引导**」「**说明书**」等时执行 `python3 platform/open_catalog.py` 打开浏览器；**Web Agent** 浏览器对话入口见 [platform/README.md](platform/README.md) 与下文「Web Agent」；详见 [platform/README.md](platform/README.md)
 - **DingTalk**（`DingTalk/`）：列举钉钉 alidocs 目录、同步用例到 `testcase-kb/`、同步 PRD 到 `prd-kb/`；详见 [DingTalk/README.md](DingTalk/README.md)
 - **Report**（`Report/`）：从版本用例 xlsx 生成内网/外网测试总结 HTML；详见 [Report/README.md](Report/README.md)、[Report/使用方法.md](Report/使用方法.md)
-- **adb**（`adb/`）：真机 UI 自动化（截屏 → 读图算坐标 → 点击，仅保留最新 10 张截图）；支持与 **Tunnel** 联动的 `run`（操作 + 截图 + 抓包校验）；**录制脚本库**按发版回归一级模块存放 **片段**，命令 `macro`；**P0 自动化用例**（`autotest`：PRD/手工用例 → 可执行 JSON → 真机跑测 → HTML 报告）见 [adb/自动化用例/README.md](adb/自动化用例/README.md)；详见 [adb/README.md](adb/README.md)、[adb/使用方法.md](adb/使用方法.md)、[adb/录制脚本/README.md](adb/录制脚本/README.md)
+- **adb**（`adb/`）：真机 UI 自动化（截屏 → 读图算坐标 → 点击，仅保留最新 10 张截图）；支持与 **Tunnel** 联动的 `run`（操作 + 截图 + 抓包校验）；**录制脚本库**按发版回归一级模块存放 **片段**，命令 `macro`；**P0 自动化用例**（`autotest`：PRD/手工用例 → 可执行 JSON → 真机跑测 → HTML 报告）见 [adb/自动化用例/README.md](adb/自动化用例/README.md)；录制脚本根与 App 包名随 **`AGENT_PROJECT`** 切换（默认 `adb/录制脚本`）；详见 [adb/README.md](adb/README.md)、[adb/使用方法.md](adb/使用方法.md)、[adb/录制脚本/README.md](adb/录制脚本/README.md)
 - **midscene**（`midscene/`）：基于 [Midscene.js](https://midscenejs.com/) 的 **AI 视觉驱动**双端自动化（iOS WDA + Android ADB）；YAML / TypeScript 用例，覆盖登录、充值、游戏中心（greedy / slots / others）等；详见 [midscene/README.md](midscene/README.md)
 - **intent-test**（`intent-test/`）：基于 Midscene 的 **意图驱动** UI 自动化层；用 `intent.action` + `expected` 表达用户目标，编译后执行；可从 `temporary_testcase/*.md` 转化；详见 [intent-test/README.md](intent-test/README.md)
 
@@ -82,9 +82,18 @@ auto-generate-testcase/
 │   ├── export_catalog.py              # 导出离线 HTML 到桌面
 │   ├── catalog.html                   # 能力目录页（自动生成）
 │   ├── config/
-│   │   └── sources.json               # 模块来源与一级分类归并规则
+│   │   └── sources.json               # 向后兼容 fallback
 │   ├── scripts/                       # generate_catalog / cursor_bridge 等
+│   ├── web_agent/                     # Web Agent HTTP 服务（127.0.0.1:18766）
+│   │   ├── open_web_agent.py          # 启动并打开浏览器
+│   │   ├── run.sh                     # 推荐：自动选带 cursor-sdk 的 venv
+│   │   └── config.json
 │   └── dingtalk_gateway/              # 钉钉机器人网关（可选）
+├── projects/                          # 多 App 项目数据包（AGENT_PROJECT）
+│   ├── README.md                      # 切换项目、bootstrap、paths 说明
+│   ├── yaahlan/project.json           # 默认项目
+│   ├── example/                       # 第二个 App 示例
+│   └── scripts/bootstrap_project_configs.py
 ├── prd-kb/                            # 产品需求知识库（按业务模块整理，非逐篇 PRD）
 │   └── README.md
 ├── Report/                            # 版本用例 xlsx → 内网/外网测试总结 HTML
@@ -187,8 +196,24 @@ auto-generate-testcase/
 
 - **Cursor**：支持 Agent Skills 和 MCP 的版本
 - **Python 3**：运行 `MOA/`、`Risk/` 本地脚本（标准库即可，无额外依赖）
+- **Web Agent**（可选）：需 `platform/dingtalk_gateway/.venv` 内已安装 `cursor-sdk`（见下文「Web Agent」）；勿用系统 Python 直接启动
 - **钉钉文档权限**：需求文档需开启访问权限
 - **MCP 配置**：需配置钉钉文档、钉钉 Excel 读写相关环境变量
+
+## 多项目（AGENT_PROJECT）
+
+通过环境变量 **`AGENT_PROJECT`**（或 `PROJECT`）选择项目，默认 `yaahlan`。各项目的 config、知识库、registry、工具台品牌、**adb 录制脚本 / 自动化用例路径**、App 包名等由 `projects/<id>/project.json` 的 `paths` / `app` 决定；**运行时代码**（`MOA/moa_execute.py`、`adb/adb_execute.py`、`workflow/` 等）仍共用仓库目录。
+
+```bash
+export AGENT_PROJECT=yaahlan          # 默认
+python3 platform/open_catalog.py
+
+export AGENT_PROJECT=example          # 示例第二 App
+python3 projects/scripts/bootstrap_project_configs.py example
+python3 platform/project/smoke_projects.py
+```
+
+新建 App：复制 `projects/_template` → `projects/<id>`，执行 bootstrap，改 `project.json` 品牌与业务配置。细则见 [projects/README.md](projects/README.md)。
 
 ## MCP 配置
 
@@ -251,7 +276,23 @@ python3 online/online_execute.py tunnel --momoid <userId> --since 3600
 
 典型链路：**手机号 → MOA 得 userId → Admin 查详情/在线 → Tunnel 验收接口**。完整口令与命令见 [online/README.md](online/README.md) 与 [online/使用方法.md](online/使用方法.md)。
 
-### 5. 风控名单操作
+### 5. Web Agent（浏览器对话）
+
+本地 HTTP 服务，默认 **http://127.0.0.1:18766/**（chat 页：`/chat.html`）。须使用已安装 **`cursor-sdk`** 的 Python（`platform/dingtalk_gateway/.venv`），**不要**用系统 `python3` 直接启动（会缺依赖或端口冲突）。
+
+```bash
+# 推荐：watch 热重载 + 自动选 venv
+bash platform/web_agent/run.sh --serve
+
+# 或一键启动并打开浏览器
+platform/dingtalk_gateway/.venv/bin/python3 platform/web_agent/open_web_agent.py
+```
+
+首次使用在登录页完成鉴权（钉钉 H5 免登或 OTP）；配置见 `platform/web_agent/.env.example` → `.env.local`。
+
+**无法连接时**：确认 18766 端口仅有一个进程（`lsof -i :18766`）；若有残留占用，执行 `bash platform/web_agent/run.sh --serve` 前先清理旧 watch 进程，或重启终端后再跑上述命令。
+
+### 6. 风控名单操作
 
 ```bash
 # 可选：仅当需覆盖 token / 域名时
@@ -263,7 +304,7 @@ python3 Risk/risk_execute.py --release-test-device --device-name "GalaxyA80" --r
 
 支持：解除设备/手机号风控、充值/活动风控添加与解除。设备解除默认读取 `testcase-kb/test_devices.json`，Android/鸿蒙取 **mmuidv3 字段值**，iOS 取 **mmuid 字段值**（接口 dimension 均为 `mmuid`）。详见 [Risk/README.md](Risk/README.md)。
 
-### 6. 测试报告生成
+### 7. 测试报告生成
 
 ```bash
 python3 -m venv Report/.venv && source Report/.venv/bin/activate
@@ -274,14 +315,17 @@ python3 Report/report_execute.py /path/to/v2.4.4版本用例.xlsx
 
 在同目录生成 `{文件名}_内网测试总结.html` 与 `{文件名}_外网测试总结.html`。详见 [Report/README.md](Report/README.md)。
 
-### 7. ADB 真机录制脚本（Yaahlan）
+### 8. ADB 真机录制脚本（Yaahlan）
 
-前置：`adb devices` 可见 `device`；目标 App 为 **Yaahlan**（非桌面 Yaha）。换机坐标适配见 `adb/录制脚本/设备适配/README.md`。
+前置：`adb devices` 可见 `device`；目标 App 为 **Yaahlan**（非桌面 Yaha）。换机坐标适配见 `adb/录制脚本/设备适配/README.md`。切换项目时录制脚本根随 `AGENT_PROJECT` 变化（example 项目 bootstrap 后默认 symlink 至仓库 `adb/录制脚本`）。
 
 ```bash
 python3 adb/adb_execute.py scripts          # 按模块列出片段
 python3 adb/adb_execute.py macro 手机号登录 --text 13311111115 --no-capture
 python3 adb/adb_execute.py macro 发布纯文本动态 --text 5555 --no-capture
+
+# 校验索引（随 AGENT_PROJECT 解析脚本根）
+python3 adb/scripts/validate_index.py
 ```
 
 - **片段**：单段已验证操作，`macro <中文名>`（目录仅归档，调用用中文名或 id）；多步流程逐段 macro + 片段间验收
@@ -289,7 +333,7 @@ python3 adb/adb_execute.py macro 发布纯文本动态 --text 5555 --no-capture
 
 详见 [adb/README.md](adb/README.md)、[adb/使用方法.md](adb/使用方法.md)、[adb/录制脚本/KB对照.md](adb/录制脚本/KB对照.md)。
 
-### 7. 用例格式
+### 9. 用例格式
 
 | 字段 | 说明 |
 |------|------|
@@ -324,6 +368,7 @@ python3 adb/adb_execute.py macro 发布纯文本动态 --text 5555 --no-capture
 | [online/README.md](online/README.md) | 线上环境统一入口（Admin + MOA + Tunnel） |
 | [online/使用方法.md](online/使用方法.md) | online 能力口令与命令（自动生成） |
 | [platform/README.md](platform/README.md) | 工具平台能力目录网页（`open_catalog.py`） |
+| [projects/README.md](projects/README.md) | 多项目 AGENT_PROJECT、bootstrap、adb/MOA 路径 |
 | [Risk/README.md](Risk/README.md) | 海外风控开放接口与测试机解除 |
 | [adb/README.md](adb/README.md) | ADB 设计原则、协作流程、自动录制 |
 | [adb/使用方法.md](adb/使用方法.md) | ADB 命令速查（提示词 ↔ CLI） |
