@@ -494,6 +494,19 @@
         "大R userId 搜索验收"
       ],
       "command": "python3 Admin/scripts/big_r_verify.py verify-search --user-id <userId>"
+    },
+    {
+      "id": "big_r_import_data",
+      "name": "大R-造数导入",
+      "category": "大R用户管理（yaahlan-admin）",
+      "description": "大R后台 Stage 造数全流程：生成1000用户天级宽表Excel → 上传CDN(static.wemomo.com) → MOA importUserDayIndexSummary → MOA rebuildBigRichFromWideTableRange",
+      "prompts": [
+        "大R后台造数 <日期>",
+        "导入大R测试数据 <startDate> <endDate>",
+        "大R Stage 造数并导入",
+        "生成大R数据文件"
+      ],
+      "command": "python3 Admin/scripts/big_r_import_data.py --dates <startDate> <endDate> --static-cookie <COOKIE> --moa-cookie <COOKIE>"
     }
   ]
 }
