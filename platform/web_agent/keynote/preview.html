@@ -4110,6 +4110,15 @@
   body.kn-embed .mock-map-center {
     background: var(--kn-embed-bg);
   }
+  /* 空态轮播 embed：与 chat --bg-solid 对齐；内层 caption 由外层 empty-feature-title 展示 */
+  body.kn-embed .feat-demo [class$="-caption"] {
+    display: none !important;
+  }
+  body.kn-embed .mock-bm-chat,
+  body.kn-embed .mock-bm-tabbar,
+  body.kn-embed .mock-ab-app {
+    background: var(--kn-embed-bg);
+  }
 </style>
 </head>
 <body tabindex="0">
