@@ -18,7 +18,12 @@ from pathlib import Path
 from typing import List, Tuple
 
 SCRIPTS = Path(__file__).resolve().parent
-ROOT = SCRIPTS.parent / "testcase-kb"
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
+
+from project_paths import testcase_kb_root  # noqa: E402
+
+ROOT = testcase_kb_root()
 
 SKIP_H2 = frozenset({"目录", "---", "知识地图（阶段）", "知识地图（阶段）"})
 

@@ -12,7 +12,12 @@ from pathlib import Path
 from typing import List, Tuple
 
 SCRIPTS = Path(__file__).resolve().parent
-ROOT_DEFAULT = SCRIPTS.parent / "testcase-kb"
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
+
+from project_paths import testcase_kb_root  # noqa: E402
+
+ROOT_DEFAULT = testcase_kb_root()
 
 
 def _load_module(name: str, filename: str):

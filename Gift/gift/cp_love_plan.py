@@ -11,7 +11,21 @@ from typing import Any
 
 from gift.send_stage import StageGiftError, query_gift
 
-_CONFIG_PATH = Path(__file__).resolve().parents[1] / "config" / "cp_love_gift.json"
+def _cp_love_config_path() -> Path:
+    try:
+        import sys
+
+        platform_dir = Path(__file__).resolve().parents[2] / "platform"
+        if str(platform_dir) not in sys.path:
+            sys.path.insert(0, str(platform_dir))
+        from project.bootstrap import module_path
+
+        return module_path("giftCpLoveConfig", "Gift/config/cp_love_gift.json")
+    except (ImportError, FileNotFoundError, ValueError, OSError):
+        return Path(__file__).resolve().parents[1] / "config" / "cp_love_gift.json"
+
+
+_CONFIG_PATH = _cp_love_config_path()
 
 # 单次 /v2/gift/send 允许的最大 num（爱意值造数场景实测可至 50 万）
 DEFAULT_MAX_NUM_PER_SEND = 500_000

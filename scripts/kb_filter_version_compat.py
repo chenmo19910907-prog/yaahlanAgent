@@ -12,9 +12,17 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from project_paths import testcase_kb_root  # noqa: E402
+
+ROOT = testcase_kb_root()
 from typing import List
 
-ROOT = Path(__file__).resolve().parent.parent / "testcase-kb"
+
 SCRIPTS = Path(__file__).resolve().parent
 
 

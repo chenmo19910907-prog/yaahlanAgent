@@ -38,10 +38,11 @@ from alidocs_excel_export import (  # noqa: E402
 from export_delivery import load_export_config, parse_markdown_table  # noqa: E402
 from family_pk_tab_to_workbook import _ensure_sheet, _write_sheet_replace  # noqa: E402
 from mse_sync_to_workbook import _sheet_cell  # noqa: E402
+from project_paths import temporary_testcase_dir  # noqa: E402
 
 import httpx  # noqa: E402
 
-DEFAULT_MD = REPO_ROOT / "temporary_testcase/Ultra_Recharge_造数验收.md"
+DEFAULT_MD = temporary_testcase_dir() / "Ultra_Recharge_造数验收.md"
 
 SECTION_SHEETS: list[tuple[str, str]] = [
     ("三、造数验收主表", "造数验收"),

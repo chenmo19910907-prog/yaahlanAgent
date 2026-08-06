@@ -6,12 +6,19 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
 import unicodedata
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from project_paths import bug_kb_root, prd_kb_root, repo_root, testcase_kb_root  # noqa: E402
+
+REPO_ROOT = repo_root()
 
 KB_RANK_FILE = "榜单.md"
 KB_ACTIVITY_FILE = "活动.md"
@@ -279,23 +286,23 @@ def split_prd_file(
 
 def split_all_knowledge_bases() -> None:
     jobs = [
-        ("prd-kb", split_prd_file, False),
-        ("bug-kb", split_bug_archive_file, False),
+        (prd_kb_root(), split_prd_file, False),
+        (bug_kb_root(), split_bug_archive_file, False),
     ]
     for folder, splitter, online in jobs:
-        src = REPO_ROOT / folder / "榜单与活动.md"
+        src = folder / "榜单与活动.md"
         if not src.is_file():
-            print(f"跳过 {folder}: 无 榜单与活动.md")
+            print(f"跳过 {folder.name}: 无 榜单与活动.md")
             continue
-        rank_out = REPO_ROOT / folder / KB_RANK_FILE
-        activity_out = REPO_ROOT / folder / KB_ACTIVITY_FILE
+        rank_out = folder / KB_RANK_FILE
+        activity_out = folder / KB_ACTIVITY_FILE
         if splitter is split_prd_file:
             n_rank, n_act = split_prd_file(src, rank_out=rank_out, activity_out=activity_out)
         else:
             n_rank, n_act = split_bug_archive_file(
                 src, rank_out=rank_out, activity_out=activity_out, online=online
             )
-        print(f"{folder}: 榜单 {n_rank} · 活动 {n_act}")
+        print(f"{folder.name}: 榜单 {n_rank} · 活动 {n_act}")
 
 
 def sheet_anchor(sheet: str) -> str:
@@ -422,7 +429,7 @@ def resplit_existing(rank_out: Path, activity_out: Path) -> Tuple[int, int]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="拆分各知识库 榜单与活动 → 榜单/活动")
-    tc_root = REPO_ROOT / "testcase-kb"
+    tc_root = testcase_kb_root()
     ap.add_argument(
         "--src",
         type=Path,

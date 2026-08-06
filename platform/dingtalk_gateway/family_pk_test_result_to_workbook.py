@@ -29,6 +29,22 @@ if (
 if str(GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR))
 
+from repo_paths import (
+    admin_execute_path,
+    admin_module_dir,
+    batch_progress_script,
+    get_repo_root,
+    gift_execute_path,
+    gift_module_dir,
+    moa_execute_path,
+    moa_module_dir,
+    moa_template,
+    mse_execute_path,
+    mse_module_dir,
+    stage_gateway_url,
+    tmp_dir,
+)
+
 from family_pk_calc_utils import family_pk_workbook_title, rename_family_pk_workbook  # noqa: E402
 from family_pk_reorder_sheets import reorder_family_pk_sheets  # noqa: E402
 from family_pk_tab_to_workbook import (  # noqa: E402
@@ -519,7 +535,7 @@ def export_test_result_to_workbook(
         write_test_result_sheet_async(workbook, rows, sheet_name=sheet_name)
     )
     workbook_title = family_pk_workbook_title(pk_date)
-    out_path = REPO_ROOT / ".tmp" / f"family_pk_test_result_{pk_date}.json"
+    out_path = tmp_dir() / f"family_pk_test_result_{pk_date}.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     summary.update(
         {

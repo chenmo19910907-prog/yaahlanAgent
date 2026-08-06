@@ -13,9 +13,17 @@ from .client import MoaClient
 from .family import parse_family_members_summary, parse_user_joined_family_summary
 from .payload import load_payload
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-_MEMBERS_TEMPLATE = _REPO_ROOT / "MOA" / "templates" / "家族-查询成员userId.json"
-_JOINED_TEMPLATE = _REPO_ROOT / "MOA" / "templates" / "家族-按userId查家族id.json"
+_MEMBERS_TEMPLATE = moa_template("家族-查询成员userId.json")
+_JOINED_TEMPLATE = moa_template("家族-按userId查家族id.json")
+
+from .project_paths import (
+    admin_execute_path,
+    get_repo_root,
+    gift_module_dir,
+    moa_execute_path,
+    moa_template,
+)
+
 
 
 def _clone_args(args: argparse.Namespace, **overrides: Any) -> argparse.Namespace:
@@ -40,7 +48,7 @@ def _query_admin_family_info(family_id: str) -> dict[str, Any]:
 
     cmd = [
         "python3",
-        str(_REPO_ROOT / "Admin" / "admin_execute.py"),
+        str(admin_execute_path()),
         "--query-family",
         "--family-id",
         family_id,
@@ -48,7 +56,7 @@ def _query_admin_family_info(family_id: str) -> dict[str, Any]:
     try:
         proc = subprocess.run(
             cmd,
-            cwd=str(_REPO_ROOT),
+            cwd=str(get_repo_root()),
             capture_output=True,
             text=True,
             timeout=30,

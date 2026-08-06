@@ -10,7 +10,12 @@ import sys
 from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent
-ROOT = SCRIPTS.parent / "testcase-kb"
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
+
+from project_paths import testcase_kb_root  # noqa: E402
+
+ROOT = testcase_kb_root()
 
 
 def run(script: str, root: Path, extra: list[str] | None = None) -> None:

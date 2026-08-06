@@ -99,14 +99,30 @@ def device_record_needs_update(record: dict[str, Any], login_device: dict[str, A
     return False
 
 
+def _default_project_id() -> str:
+    try:
+        import sys
+        from pathlib import Path
+
+        platform_dir = Path(__file__).resolve().parents[2] / "platform"
+        if str(platform_dir) not in sys.path:
+            sys.path.insert(0, str(platform_dir))
+        from project.loader import get_project_id
+
+        return get_project_id()
+    except (ImportError, FileNotFoundError, ValueError):
+        return "yaahlan"
+
+
 def build_device_record_from_login(
     login_device: dict[str, Any],
     *,
     phone: str = "",
     user_id: str = "",
-    project: str = "yaahlan",
+    project: str | None = None,
 ) -> dict[str, str]:
     """由 Admin loginDevice 构造知识库设备条目。"""
+    project = (project or _default_project_id()).strip() or "yaahlan"
     mmuid = str(login_device.get("mmuid") or "").strip()
     mmuidv3 = str(login_device.get("mmuidv3") or "").strip()
     ua_info = parse_yaahlan_ua(str(login_device.get("ua") or ""))
@@ -166,7 +182,7 @@ def upsert_login_device_record(
     *,
     phone: str = "",
     user_id: str = "",
-    project: str = "yaahlan",
+    project: str | None = None,
 ) -> dict[str, Any]:
     """将最近登录设备写入知识库；已存在则补全缺失字段。"""
     path = Path(kb_path)

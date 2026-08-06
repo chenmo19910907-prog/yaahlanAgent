@@ -27,8 +27,24 @@ if (
 
 if str(GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR))
+
+from repo_paths import (
+    admin_execute_path,
+    admin_module_dir,
+    batch_progress_script,
+    get_repo_root,
+    gift_execute_path,
+    gift_module_dir,
+    moa_execute_path,
+    moa_module_dir,
+    moa_template,
+    mse_execute_path,
+    mse_module_dir,
+    stage_gateway_url,
+    tmp_dir,
+)
 if str(REPO_ROOT / "Admin") not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT / "Admin"))
+    sys.path.insert(0, str(admin_module_dir()))
 
 from alidocs_excel_export import _excel_env, _get_token_and_operator  # noqa: E402
 from anniversary_egg_mse_to_workbook import (  # noqa: E402
@@ -114,7 +130,7 @@ def _lookup_prop_names(prop_ids: list[str]) -> dict[str, dict[str, Any]]:
         from admin.env import load_local_env
         from admin.prop import lookup_prop_names
 
-        load_local_env(str(REPO_ROOT / "Admin"))
+        load_local_env(str(admin_module_dir()))
         return lookup_prop_names(ids)
     except Exception:
         return {}
@@ -378,7 +394,7 @@ def build_lottery_rows(
 def fetch_lottery_pools(*, force_refresh: bool = True) -> dict[int, dict[str, Any]]:
     from admin.env import load_local_env
 
-    load_local_env(str(REPO_ROOT / "Admin"))
+    load_local_env(str(admin_module_dir()))
     from admin.activity import fetch_lottery_pools_by_id
 
     return fetch_lottery_pools_by_id(force_refresh=force_refresh)

@@ -14,7 +14,7 @@ from typing import Any
 
 GATEWAY_DIR = Path(__file__).resolve().parent
 REPO_ROOT = GATEWAY_DIR.parents[1]
-_ADMIN_DIR = REPO_ROOT / "Admin"
+_ADMIN_DIR = admin_module_dir()
 _EXCEL_VENV = (
     REPO_ROOT / ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/venv/bin/python3.13"
 )
@@ -28,6 +28,22 @@ if (
 
 if str(GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR))
+
+from repo_paths import (
+    admin_execute_path,
+    admin_module_dir,
+    batch_progress_script,
+    get_repo_root,
+    gift_execute_path,
+    gift_module_dir,
+    moa_execute_path,
+    moa_module_dir,
+    moa_template,
+    mse_execute_path,
+    mse_module_dir,
+    stage_gateway_url,
+    tmp_dir,
+)
 if str(_ADMIN_DIR) not in sys.path:
     sys.path.insert(0, str(_ADMIN_DIR))
 
@@ -65,7 +81,7 @@ def list_all_families(*, page_size: int = 100) -> list[dict[str, Any]]:
         body = _run_json(
             [
                 sys.executable,
-                str(REPO_ROOT / "Admin/admin_execute.py"),
+                str(admin_execute_path()),
                 "--list-all-families",
                 "--family-offset",
                 str(offset),
@@ -92,7 +108,7 @@ def query_owner_area(owner_id: str, *, cache: dict[str, str]) -> str:
     body = _run_json(
         [
             sys.executable,
-            str(REPO_ROOT / "Admin/admin_execute.py"),
+            str(admin_execute_path()),
             "--query-user-id",
             owner,
         ]
@@ -151,7 +167,7 @@ def export_admin_families_to_workbook(
     workbook_title = ""
     if pk_date and str(pk_date).strip():
         workbook_title = rename_family_pk_workbook(workbook, str(pk_date).strip())
-    out_path = REPO_ROOT / ".tmp" / "family_pk_admin_families_sheet2.json"
+    out_path = tmp_dir() / "family_pk_admin_families_sheet2.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     summary = {
         "workbookUrl": doc_url,

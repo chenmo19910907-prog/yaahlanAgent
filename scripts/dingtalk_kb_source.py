@@ -14,9 +14,35 @@ from typing import Any, Dict, List, Optional, Tuple
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS = Path(__file__).resolve().parent
-DEFAULT_CONFIG = ROOT / "DingTalk" / "config" / "kb.json"
-FOLDERS_CONFIG = ROOT / "DingTalk" / "config" / "folders.json"
 _LEGACY_CONFIG = SCRIPTS / "dingtalk_kb_config.json"
+
+
+def _default_kb_config_path() -> Path:
+    try:
+        import sys
+
+        platform_dir = ROOT / "platform"
+        if str(platform_dir) not in sys.path:
+            sys.path.insert(0, str(platform_dir))
+        from project.bootstrap import module_path
+
+        return module_path("dingtalkKb", "DingTalk/config/kb.json")
+    except (ImportError, FileNotFoundError, ValueError, OSError):
+        return ROOT / "DingTalk" / "config" / "kb.json"
+
+
+def _folders_config_path() -> Path:
+    try:
+        import sys
+
+        platform_dir = ROOT / "platform"
+        if str(platform_dir) not in sys.path:
+            sys.path.insert(0, str(platform_dir))
+        from project.bootstrap import module_path
+
+        return module_path("dingtalkFolders", "DingTalk/config/folders.json")
+    except (ImportError, FileNotFoundError, ValueError, OSError):
+        return ROOT / "DingTalk" / "config" / "folders.json"
 
 _VERSION_RE = re.compile(r"(?:[vV])?\.?\s*(\d+)\s*\.\s*(\d+)\s*\.\s*(\d+)")
 _ALIDOCS_BASE = "https://alidocs.dingtalk.com"
@@ -37,19 +63,20 @@ class DingtalkWorkbook:
 def load_json_config(path: Path | None = None) -> dict[str, Any]:
     if path is not None:
         cfg_path = path
-    elif DEFAULT_CONFIG.is_file():
-        cfg_path = DEFAULT_CONFIG
-    elif _LEGACY_CONFIG.is_file():
-        cfg_path = _LEGACY_CONFIG
     else:
-        return {}
+        cfg_path = _default_kb_config_path()
+        if not cfg_path.is_file() and _LEGACY_CONFIG.is_file():
+            cfg_path = _LEGACY_CONFIG
+        elif not cfg_path.is_file():
+            return {}
     return json.loads(cfg_path.read_text(encoding="utf-8"))
 
 
 def load_folders_config() -> dict[str, Any]:
-    if not FOLDERS_CONFIG.is_file():
+    path = _folders_config_path()
+    if not path.is_file():
         return {"folders": []}
-    return json.loads(FOLDERS_CONFIG.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def list_registered_folders() -> List[Dict[str, Any]]:

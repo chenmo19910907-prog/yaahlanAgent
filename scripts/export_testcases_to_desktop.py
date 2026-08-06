@@ -10,7 +10,13 @@ from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_SRC = ROOT / "temporary_testcase"
+_SCRIPTS = ROOT / "scripts"
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from project_paths import temporary_testcase_dir  # noqa: E402
+
+DEFAULT_SRC = temporary_testcase_dir()
 
 
 def main() -> int:

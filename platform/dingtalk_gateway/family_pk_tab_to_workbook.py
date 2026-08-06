@@ -28,6 +28,22 @@ if (
 if str(GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR))
 
+from repo_paths import (
+    admin_execute_path,
+    admin_module_dir,
+    batch_progress_script,
+    get_repo_root,
+    gift_execute_path,
+    gift_module_dir,
+    moa_execute_path,
+    moa_module_dir,
+    moa_template,
+    mse_execute_path,
+    mse_module_dir,
+    stage_gateway_url,
+    tmp_dir,
+)
+
 from alidocs_excel_export import (  # noqa: E402
     DOC_API,
     _col_letter,
@@ -90,7 +106,7 @@ def query_family_owner(family_id: str) -> str:
     body = _run_json(
         [
             sys.executable,
-            str(REPO_ROOT / "Admin/admin_execute.py"),
+            str(admin_execute_path()),
             "--query-family",
             "--family-id",
             family_id,
@@ -107,9 +123,9 @@ def query_family_members(family_id: str) -> list[str]:
     proc = subprocess.run(
         [
             sys.executable,
-            str(REPO_ROOT / "MOA/moa_execute.py"),
+            str(moa_execute_path()),
             "--payload-file",
-            str(REPO_ROOT / "MOA/templates/家族-查询成员userId.json"),
+            str(moa_template("家族-查询成员userId.json")),
             "--family-id",
             family_id,
             "--family-query-members",
@@ -136,7 +152,7 @@ def query_user_phone(user_id: str, cache: dict[str, str]) -> str:
     body = _run_json(
         [
             sys.executable,
-            str(REPO_ROOT / "Admin/admin_execute.py"),
+            str(admin_execute_path()),
             "--query-user-id",
             user_id,
         ]

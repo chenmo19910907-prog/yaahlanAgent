@@ -14,14 +14,22 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-ADMIN_DIR = REPO_ROOT / "Admin"
-INACTIVE_KB = REPO_ROOT / "testcase-kb" / "admin_user_pool_inactive.json"
-ACTIVE_KB = REPO_ROOT / "testcase-kb" / "admin_user_pool_active.json"
-LEGACY_KB = REPO_ROOT / "testcase-kb" / "admin_user_pool.json"
+sys.path.insert(0, str(REPO_ROOT / "Admin" / "scripts"))
+
+from admin_project_paths import (  # noqa: E402
+    admin_module_dir,
+    admin_user_pool_paths,
+    moa_execute_path,
+    repo_root,
+    testcase_kb_root,
+)
+
+LEGACY_KB, INACTIVE_KB, ACTIVE_KB = admin_user_pool_paths()
+_KB_ROOT = testcase_kb_root()
 EXPORT_CONFIG = REPO_ROOT / "platform" / "dingtalk_gateway" / "config" / "export_folder.json"
 USER_KEY_DEFAULT = "cidwuF5xkEMvaZMDWWu8BtHbg==:user:32274159141215328"
 
-sys.path.insert(0, str(ADMIN_DIR))
+sys.path.insert(0, str(admin_module_dir()))
 
 from admin.client import http_post_json  # noqa: E402
 from admin.config import defaults  # noqa: E402
@@ -147,7 +155,7 @@ def _query_user_detail(user_id: str) -> dict[str, Any]:
 def _query_family_name(user_id: str) -> str:
     cmd = [
         sys.executable,
-        str(REPO_ROOT / "MOA" / "moa_execute.py"),
+        str(moa_execute_path()),
         "--family-detail-by-user-id",
         user_id,
     ]
@@ -299,9 +307,9 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    load_local_env(str(ADMIN_DIR))
+    load_local_env(str(admin_module_dir()))
 
-    local_path = REPO_ROOT / "testcase-kb" / "admin_user_pool_profiles.json"
+    local_path = _KB_ROOT / "admin_user_pool_profiles.json"
     if args.from_kb:
         if not local_path.is_file():
             print(f"本地快照不存在: {local_path}", file=sys.stderr)
@@ -460,7 +468,7 @@ def main() -> int:
         writer = csv.writer(handle)
         writer.writerows(sheet_rows)
 
-    local_path = REPO_ROOT / "testcase-kb" / "admin_user_pool_profiles.json"
+    local_path = _KB_ROOT / "admin_user_pool_profiles.json"
     local_payload = {
         "kbPath": str(local_path.relative_to(REPO_ROOT)),
         "description": "账号池用户资料快照（手机号/昵称/公会/家族）",

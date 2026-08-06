@@ -14,11 +14,35 @@ import urllib.error
 import urllib.request
 from typing import Any, Dict, List, Optional, Tuple
 
-APP_ID = 2005
-CMDB_URL = (
-    "http://cmdb.momo.com/open/hubble-app-instances/"
-    "?appkey=momo.ibt.yaahlan.service.yaahlan-web&corp=alpha&env=stage"
-)
+
+def _project_app() -> tuple[int, str]:
+    try:
+        import sys
+        from pathlib import Path
+
+        platform_dir = Path(__file__).resolve().parents[2] / "platform"
+        if str(platform_dir) not in sys.path:
+            sys.path.insert(0, str(platform_dir))
+        from project.loader import app_id, cmdb_instances_url
+
+        return app_id(), cmdb_instances_url()
+    except (ImportError, FileNotFoundError, ValueError, OSError):
+        return 2005, (
+            "http://cmdb.momo.com/open/hubble-app-instances/"
+            "?appkey=momo.ibt.yaahlan.service.yaahlan-web&corp=alpha&env=stage"
+        )
+
+
+def _app_id() -> int:
+    return _project_app()[0]
+
+
+def _cmdb_url() -> str:
+    return _project_app()[1]
+
+
+APP_ID = _app_id()
+CMDB_URL = _cmdb_url()
 DEFAULT_CMDB_TOKEN = "61430279892c78e0587d58b338288ac06e7641fb"
 DEFAULT_PACKAGE_ID = "12321312"
 MOA_LOOKUP_HOST = "moa_lookup_alpha.momo.com"

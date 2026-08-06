@@ -17,11 +17,32 @@ def load_config() -> dict[str, Any]:
     global _CONFIG_CACHE
     if _CONFIG_CACHE is not None:
         return _CONFIG_CACHE
-    path = os.path.join(_base_dir(), "config.json")
+    try:
+        import sys
+        from pathlib import Path
+
+        platform_dir = Path(__file__).resolve().parents[2] / "platform"
+        if str(platform_dir) not in sys.path:
+            sys.path.insert(0, str(platform_dir))
+        from project.bootstrap import module_path
+
+        path = str(module_path("riskConfig", "Risk/config.json"))
+    except (ImportError, FileNotFoundError, ValueError, OSError):
+        path = os.path.join(_base_dir(), "config.json")
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
     if not isinstance(data, dict):
         raise ValueError("Risk/config.json 必须是 object")
+    registry = data.get("test_device_registry")
+    if isinstance(registry, dict):
+        try:
+            from project.bootstrap import module_path as _mp
+
+            registry["kb_json_path"] = str(
+                _mp("testDevices", registry.get("kb_json_path") or "testcase-kb/test_devices.json")
+            )
+        except (ImportError, FileNotFoundError, ValueError, OSError):
+            pass
     _CONFIG_CACHE = data
     return data
 

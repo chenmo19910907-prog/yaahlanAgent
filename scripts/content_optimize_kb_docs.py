@@ -24,7 +24,9 @@ _SCRIPTS = Path(__file__).resolve().parent
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
-ROOT_DEFAULT = _SCRIPTS.parent / "testcase-kb"
+from project_paths import testcase_kb_root  # noqa: E402
+
+ROOT_DEFAULT = testcase_kb_root()
 
 HASH5_RE = re.compile(r"^#####\s+(.+?)\s+·\s+(.+?)\s*$")
 from kb_version import (  # noqa: E402

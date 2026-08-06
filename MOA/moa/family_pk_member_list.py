@@ -12,9 +12,17 @@ from .client import MoaClient, extract_ec_em_result, extract_inner_result, outer
 from .params import set_family_pk_member_list_params
 from .payload import load_payload
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-_TEMPLATE = _REPO_ROOT / "MOA" / "templates" / "家族PK-成员贡献列表.json"
+_TEMPLATE = moa_template("家族PK-成员贡献列表.json")
 _MAX_PAGES = 100
+
+from .project_paths import (
+    admin_execute_path,
+    get_repo_root,
+    gift_module_dir,
+    moa_execute_path,
+    moa_template,
+)
+
 
 
 def needs_family_pk_member_list(args: argparse.Namespace) -> bool:

@@ -11,11 +11,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-_REPO = Path(__file__).resolve().parents[2]
-_SERVICE_URL = "/service/yaahlan/user/intimate-api"
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from project_api import load_body_template, repo_root, service_url  # noqa: E402
+
+_REPO = repo_root()
+_SERVICE_URL = service_url("intimateApiService", "/service/yaahlan/user/intimate-api")
 _METHOD = "intimateHomePage"
-_TEMPLATE_BODY = _REPO / "MOA-generative/templates/example-intimateHomePage.body.json"
-_CP_LOVE_CHEST_URL = "/service/yaahlan-trick/external/cp-love-chest"
+_TEMPLATE_BODY = load_body_template("templates/example-intimateHomePage.body.json")
+_CP_LOVE_CHEST_URL = service_url("cpLoveChestService", "/service/yaahlan-trick/external/cp-love-chest")
 
 
 def _id_candidates(user_id: str, cp_user_id: str) -> list[str]:

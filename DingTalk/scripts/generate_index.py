@@ -36,7 +36,17 @@ def _item_anchor(item: dict[str, Any]) -> str:
 
 def _folders_as_items() -> list[dict[str, Any]]:
     """将 folders.json 中的目录登记转为能力清单条目（单一数据源）。"""
-    folders_path = _DINGTALK / "config" / "folders.json"
+    try:
+        import sys
+
+        platform_dir = _ROOT / "platform"
+        if str(platform_dir) not in sys.path:
+            sys.path.insert(0, str(platform_dir))
+        from project.bootstrap import module_path
+
+        folders_path = module_path("dingtalkFolders", "DingTalk/config/folders.json")
+    except (ImportError, FileNotFoundError, ValueError, OSError):
+        folders_path = _DINGTALK / "config" / "folders.json"
     if not folders_path.is_file():
         return []
     data = _read_json(folders_path)

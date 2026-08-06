@@ -36,6 +36,15 @@ PLATFORM_DIR = WEB_AGENT_DIR.parent
 REPO_ROOT = PLATFORM_DIR.parent
 GATEWAY_DIR = PLATFORM_DIR / "dingtalk_gateway"
 
+
+def _subprocess_env() -> dict[str, str]:
+    if str(PLATFORM_DIR) not in sys.path:
+        sys.path.insert(0, str(PLATFORM_DIR))
+    from project.runtime_env import merge_project_env
+
+    return merge_project_env()
+
+
 INTERRUPT_REPLY = "⚠️ 任务已中断。"
 RETRY_HINT = "💡 原消息已回填到输入框，请检查后重试。"
 
@@ -293,6 +302,7 @@ def start_run_in_subprocess(run_id: str) -> int:
     log_path = WEB_AGENT_DIR / "data" / "runs" / rid / "worker.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     log_fp = open(log_path, "a", encoding="utf-8")
+    env = _subprocess_env()
     proc = subprocess.Popen(
         [
             _resolve_python_executable(),
@@ -301,6 +311,7 @@ def start_run_in_subprocess(run_id: str) -> int:
             rid,
         ],
         cwd=str(REPO_ROOT),
+        env=env,
         stdout=log_fp,
         stderr=subprocess.STDOUT,
         start_new_session=True,

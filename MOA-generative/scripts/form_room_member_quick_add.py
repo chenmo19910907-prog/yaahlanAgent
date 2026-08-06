@@ -18,8 +18,14 @@ import time
 from pathlib import Path
 from typing import Any
 
-_REPO = Path(__file__).resolve().parents[2]
-_URL = "/service/room/external/room-member-stage"
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from project_api import repo_root, service_url  # noqa: E402
+
+_REPO = repo_root()
+_URL = service_url("roomMemberStageService", "/service/room/external/room-member-stage")
 
 
 def _safe_json_loads(raw: str) -> dict[str, Any]:

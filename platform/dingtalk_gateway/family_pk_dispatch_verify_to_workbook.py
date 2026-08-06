@@ -30,6 +30,22 @@ if (
 if str(GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR))
 
+from repo_paths import (
+    admin_execute_path,
+    admin_module_dir,
+    batch_progress_script,
+    get_repo_root,
+    gift_execute_path,
+    gift_module_dir,
+    moa_execute_path,
+    moa_module_dir,
+    moa_template,
+    mse_execute_path,
+    mse_module_dir,
+    stage_gateway_url,
+    tmp_dir,
+)
+
 from family_pk_calc_utils import rename_family_pk_workbook  # noqa: E402
 from family_pk_member_reward_to_workbook import (  # noqa: E402
     compute_member_reward_rows,
@@ -59,9 +75,9 @@ DISPATCH_HEADER = [
     "验收",
 ]
 
-_SETTLE_TPL = REPO_ROOT / "MOA/templates/家族PK-结算发奖匹配.json"
-_CLEAR_SETTLE_TPL = REPO_ROOT / "MOA/templates/家族PK-清除结算奖励.json"
-_DIAMOND_TPL = REPO_ROOT / "MOA/templates/钻石-查询余额.json"
+_SETTLE_TPL = moa_template("家族PK-结算发奖匹配.json")
+_CLEAR_SETTLE_TPL = moa_template("家族PK-清除结算奖励.json")
+_DIAMOND_TPL = moa_template("钻石-查询余额.json")
 
 
 def _normalize_date(text: str) -> str:
@@ -79,7 +95,7 @@ def query_diamond(user_id: str) -> int:
     proc = subprocess.run(
         [
             sys.executable,
-            str(REPO_ROOT / "MOA/moa_execute.py"),
+            str(moa_execute_path()),
             "--payload-file",
             str(_DIAMOND_TPL),
             "--diamond-query-user-id",
@@ -115,7 +131,7 @@ def _run_moa_payload(payload: Path, *, timeout_ms: int = 30000) -> dict[str, Any
     proc = subprocess.run(
         [
             sys.executable,
-            str(REPO_ROOT / "MOA/moa_execute.py"),
+            str(moa_execute_path()),
             "--payload-file",
             str(payload),
             "--timeout-ms",
@@ -143,7 +159,7 @@ def run_clear_settlement(pk_date: str, *, area: str = "MENA") -> dict[str, Any]:
     tpl = json.loads(_CLEAR_SETTLE_TPL.read_text(encoding="utf-8"))
     tpl["params"][0]["value"] = body
     tpl["params"][0]["json"] = json.dumps(body, ensure_ascii=False)
-    payload = REPO_ROOT / ".tmp" / f"family_pk_clear_settle_{pk_date}.json"
+    payload = tmp_dir() / f"family_pk_clear_settle_{pk_date}.json"
     payload.parent.mkdir(parents=True, exist_ok=True)
     payload.write_text(json.dumps(tpl, ensure_ascii=False), encoding="utf-8")
     return _run_moa_payload(payload)
@@ -154,7 +170,7 @@ def run_settlement(settle_date: str, *, timeout_ms: int) -> dict[str, Any]:
     tpl["params"][0]["value"] = settle_date
     tpl["params"][0]["txt"] = settle_date
     tpl.setdefault("settings", {})["time"] = str(timeout_ms)
-    payload = REPO_ROOT / ".tmp" / f"family_pk_settle_{settle_date}.json"
+    payload = tmp_dir() / f"family_pk_settle_{settle_date}.json"
     payload.parent.mkdir(parents=True, exist_ok=True)
     payload.write_text(json.dumps(tpl, ensure_ascii=False), encoding="utf-8")
     return _run_moa_payload(payload, timeout_ms=timeout_ms)
@@ -373,7 +389,7 @@ def export_dispatch_verify_to_workbook(
         "workbookTitle": workbook_title,
         "sheetName": sheet_name,
     }
-    out_path = REPO_ROOT / ".tmp" / f"family_pk_dispatch_verify_{pk_date}.json"
+    out_path = tmp_dir() / f"family_pk_dispatch_verify_{pk_date}.json"
     out_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     summary["reportPath"] = str(out_path)
 

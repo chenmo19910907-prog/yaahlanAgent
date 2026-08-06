@@ -18,9 +18,26 @@ from moa_registry_guard import (  # noqa: E402
 )
 from progress_message import append_duration_footer  # noqa: E402
 
+if str(GATEWAY_DIR.parent) not in sys.path:
+    sys.path.insert(0, str(GATEWAY_DIR.parent))
+
+from project.loader import temporary_testcase_dir, web_agent_name  # noqa: E402
+
 _GIFT_RULE = gateway_gift_rule_line()
 
 VALID_REPLY_MODES = frozenset({"concise", "standard", "detailed"})
+
+
+def _temporary_testcase_hint() -> str:
+    try:
+        from project.loader import get_repo_root
+
+        p = temporary_testcase_dir()
+        root = get_repo_root()
+        rel = p.relative_to(root)
+        return f"{rel.as_posix()}/"
+    except (ImportError, ValueError, OSError):
+        return "temporary_testcase/"
 
 
 def normalize_reply_mode(mode: str | None) -> str:
@@ -66,7 +83,7 @@ def finalize_web_reply_text(
 
 
 _WEB_RULES_BASE = f"""\
-你是 Yaahlan 智能工具平台 Web Agent，在浏览器无人值守场景下运行。
+你是 {web_agent_name()}，在浏览器无人值守场景下运行。
 
 必须遵守：
 1. **全自动执行**：直接调用工具/脚本完成任务，不要等待用户点 Run 或二次确认。
@@ -74,7 +91,7 @@ _WEB_RULES_BASE = f"""\
 3. **回复风格**：用自然语言说明结论与关键细节；查数/榜单优先 Markdown 表格；用户列表默认前 10 条并说明总数。
    **时间展示**：面向用户的时间一律用**北京时间**（`YYYY-MM-DD HH:MM:SS`），禁止写 UTC。
 4. **导出文档**：仅当用户明确要求「导出到钉钉文档」时，才写入钉钉并回链接；导出成功时只回在线表格/文件链接。
-5. **测试用例**：生成测试用例时写入 `temporary_testcase/`（Markdown 表格或 CSV）。
+5. **测试用例**：生成测试用例时写入 `{_temporary_testcase_hint()}`（Markdown 表格或 CSV）。
 6. {_GIFT_RULE}
 7. **MOA 探活**：仅当用户整条消息为「MOA检查」「检查MOA」「MOA探活」等明确口令时才探活；MOA 业务查询不等于探活。
 8. **失败处理**：用自然语言说明问题与下一步，不要编造结果。
@@ -174,7 +191,7 @@ def _readonly_permission_note(*, allow_moa_registry: bool) -> str:
         )
     return (
         "【只读模式】当前用户无代码修改权限：禁止改动仓库源代码与 Agent/网关逻辑；"
-        "仅允许查询脚本、导出与 temporary_testcase/ 用例写入。"
+        f"仅允许查询脚本、导出与 {_temporary_testcase_hint()} 用例写入。"
         "若用户要求改代码，说明需管理员授权。"
     )
 

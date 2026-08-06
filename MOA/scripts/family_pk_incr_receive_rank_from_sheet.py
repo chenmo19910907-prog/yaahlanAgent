@@ -13,10 +13,11 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
-_REPO = Path(__file__).resolve().parents[2]
+from moa_script_paths import moa_execute_path, repo_root, tmp_dir
+
 _DEFAULT_SHEET = (
-    _REPO
-    / ".tmp/family-pk-list/家族成员全量含手机号-20260625-165701.axls/93NwLYZXWyg4ozlzCNanyzR4JkyEqBQm_content.json"
+    tmp_dir()
+    / "family-pk-list/家族成员全量含手机号-20260625-165701.axls/93NwLYZXWyg4ozlzCNanyzR4JkyEqBQm_content.json"
 )
 
 
@@ -43,7 +44,7 @@ def _query_raw_rank_map(rank_date: str) -> dict[str, int]:
     proc = subprocess.run(
         [
             "python3",
-            str(_REPO / "MOA/moa_execute.py"),
+            str(moa_execute_path()),
             "--family-pk-query-receive-rank",
             "--family-pk-date",
             rank_date,
@@ -51,7 +52,7 @@ def _query_raw_rank_map(rank_date: str) -> dict[str, int]:
             "500",
             "--family-pk-include-dissolved",
         ],
-        cwd=str(_REPO),
+        cwd=str(repo_root()),
         capture_output=True,
         text=True,
         timeout=120,
@@ -103,12 +104,12 @@ def _modify_rank(rank_date: str, family_id: str, score: int) -> dict[str, Any]:
         "momoId": "df4c6f364f9fcae3",
         "momoName": "e88ea376b29864ad",
     }
-    payload_path = _REPO / ".tmp" / f"modify_rank_{family_id}.json"
+    payload_path = tmp_dir() / f"modify_rank_{family_id}.json"
     payload_path.parent.mkdir(parents=True, exist_ok=True)
     payload_path.write_text(json.dumps(tpl, ensure_ascii=False), encoding="utf-8")
     proc = subprocess.run(
-        ["python3", str(_REPO / "MOA/moa_execute.py"), "--payload-file", str(payload_path)],
-        cwd=str(_REPO),
+        ["python3", str(moa_execute_path()), "--payload-file", str(payload_path)],
+        cwd=str(repo_root()),
         capture_output=True,
         text=True,
         timeout=30,
@@ -178,7 +179,7 @@ def main() -> int:
                 }
             )
 
-    out_path = _REPO / ".tmp" / f"family_receive_rank_incr_{rank_date}.json"
+    out_path = tmp_dir() / f"family_receive_rank_incr_{rank_date}.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     summary: dict[str, Any] = {
         "date": rank_date,

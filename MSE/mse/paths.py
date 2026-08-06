@@ -10,7 +10,18 @@ def mse_dir() -> str:
 
 
 def config_json_path() -> str:
-    return os.path.join(mse_dir(), "config.json")
+    try:
+        import sys
+        from pathlib import Path
+
+        platform_dir = Path(__file__).resolve().parents[2] / "platform"
+        if str(platform_dir) not in sys.path:
+            sys.path.insert(0, str(platform_dir))
+        from project.bootstrap import module_path
+
+        return str(module_path("mseConfig", "MSE/config.json"))
+    except (ImportError, FileNotFoundError, ValueError, OSError):
+        return os.path.join(mse_dir(), "config.json")
 
 
 def registry_path() -> str:

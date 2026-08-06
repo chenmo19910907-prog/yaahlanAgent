@@ -22,9 +22,17 @@ import subprocess
 import sys
 from collections import defaultdict
 from pathlib import Path
+
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from project_paths import testcase_kb_root  # noqa: E402
+
+ROOT = testcase_kb_root()
 from typing import Dict, List, Optional, Set, Tuple
 
-ROOT = Path(__file__).resolve().parent.parent / "testcase-kb"
+
 SCRIPTS = Path(__file__).resolve().parent
 
 # 文件名前缀 -> (parent_key, 合并后文件名)

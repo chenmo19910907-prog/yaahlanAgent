@@ -8,10 +8,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from export_delivery import load_export_config, parse_markdown_table
+from project_paths import temporary_testcase_dir
 
 logger = logging.getLogger("dingtalk-gateway")
 
-TESTCASE_DIR_NAME = "temporary_testcase"
 SUPPORTED_SUFFIXES = {".md", ".csv"}
 TESTCASE_PROMPT_RE = re.compile(
     r"(生成|编写|产出|写|整理|补充|扩写).{0,12}(测试用例|用例表|用例|case)",
@@ -33,14 +33,27 @@ def is_testcase_generation_prompt(prompt: str) -> bool:
         return False
     if TESTCASE_PROMPT_RE.search(text):
         return True
+    try:
+        hint = temporary_testcase_dir().name.lower()
+        if hint and hint in text.lower():
+            return True
+    except (ImportError, FileNotFoundError, ValueError, OSError):
+        pass
     if "temporary_testcase" in text.lower():
         return True
     return False
 
 
+def _resolve_testcase_dir(repo_root: Path | str) -> Path:
+    try:
+        return temporary_testcase_dir()
+    except (ImportError, FileNotFoundError, ValueError, OSError):
+        return Path(repo_root) / "temporary_testcase"
+
+
 def find_recent_testcase_files(repo_root: Path | str, *, since_wall_ts: float) -> list[Path]:
     root = Path(repo_root)
-    testcase_dir = root / TESTCASE_DIR_NAME
+    testcase_dir = _resolve_testcase_dir(root)
     if not testcase_dir.is_dir():
         return []
     threshold = since_wall_ts - 1.0
@@ -138,7 +151,7 @@ def export_generated_testcases_safe(
         logger.exception("测试用例自动导出失败")
         return [
             TestcaseExportItem(
-                source=Path(TESTCASE_DIR_NAME),
+                source=_resolve_testcase_dir(repo_root),
                 name="测试用例",
                 error=str(exc),
             )

@@ -17,10 +17,20 @@ import zipfile
 from pathlib import Path
 
 GATEWAY_DIR = Path(__file__).resolve().parent
-REPO_ROOT = GATEWAY_DIR.parent.parent
-REPORT_ROOT = REPO_ROOT / "Report"
+if str(GATEWAY_DIR) not in sys.path:
+    sys.path.insert(0, str(GATEWAY_DIR))
+
+from repo_paths import (  # noqa: E402
+    dingtalk_lookup_execute,
+    get_repo_root,
+    report_module_dir,
+    scripts_dir,
+)
+
+REPO_ROOT = get_repo_root()
+REPORT_ROOT = report_module_dir()
 REPORT_VENV_PY = REPORT_ROOT / ".venv" / "bin" / "python"
-LOOKUP_PY = REPO_ROOT / "DingTalk" / "lookup_execute.py"
+LOOKUP_PY = dingtalk_lookup_execute()
 REPORT_EXPORT_DIR = GATEWAY_DIR / "exports" / "reports"
 
 _VERSION_IN_NAME_RE = re.compile(r"(\d+\.\d+\.\d+)")
@@ -30,9 +40,9 @@ def _apply_dingtalk_excel_env() -> None:
     keys = ("DINGTALK_AEGIS_KEY", "DINGTALK_AEGIS_SECRET", "DINGTALK_WORKID")
     if all(os.environ.get(k) for k in keys):
         return
-    scripts_dir = REPO_ROOT / "scripts"
-    if str(scripts_dir) not in sys.path:
-        sys.path.insert(0, str(scripts_dir))
+    scripts_root = scripts_dir()
+    if str(scripts_root) not in sys.path:
+        sys.path.insert(0, str(scripts_root))
     try:
         from mcp_paths import load_mcp_env
 

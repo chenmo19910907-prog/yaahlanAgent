@@ -11,6 +11,7 @@ ENV_LOCAL = GATEWAY_DIR / ".env.local"
 
 def load_env_local() -> None:
     if not ENV_LOCAL.is_file():
+        _ensure_agent_project()
         return
     for raw_line in ENV_LOCAL.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
@@ -22,6 +23,23 @@ def load_env_local() -> None:
         # 始终以 .env.local 为准，便于运行中切换卡片模式等配置而无需重启进程
         if key:
             os.environ[key] = value
+    _ensure_agent_project()
+
+
+def _ensure_agent_project() -> None:
+    if os.environ.get("AGENT_PROJECT") or os.environ.get("PROJECT"):
+        return
+    try:
+        import sys
+
+        platform_dir = GATEWAY_DIR.parent
+        if str(platform_dir) not in sys.path:
+            sys.path.insert(0, str(platform_dir))
+        from project.runtime_env import ensure_project_env
+
+        ensure_project_env()
+    except (ImportError, OSError, ValueError):
+        pass
 
 
 def require_env(name: str) -> str:

@@ -87,7 +87,7 @@ def _fetch_config(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     cmd = [
         "python3",
-        str(REPO_ROOT / "MSE/mse_execute.py"),
+        str(mse_execute_path()),
         "--namespace",
         namespace,
         "--config-key",

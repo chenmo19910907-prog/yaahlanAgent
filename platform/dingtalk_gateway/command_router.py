@@ -21,6 +21,22 @@ from route_patterns import (
 from task_session import TaskSession, run_subprocess_cancellable
 
 GATEWAY_DIR = Path(__file__).resolve().parent
+
+from repo_paths import (
+    admin_execute_path,
+    admin_module_dir,
+    batch_progress_script,
+    get_repo_root,
+    gift_execute_path,
+    gift_module_dir,
+    moa_execute_path,
+    moa_module_dir,
+    moa_template,
+    mse_execute_path,
+    mse_module_dir,
+    stage_gateway_url,
+    tmp_dir,
+)
 REPO_ROOT = GATEWAY_DIR.parent.parent
 
 
@@ -78,9 +94,9 @@ def try_route(user_text: str, session: TaskSession | None = None) -> RoutedResul
         code, stdout, stderr = run_subprocess_cancellable(
             [
                 sys.executable,
-                str(REPO_ROOT / "MOA" / "moa_execute.py"),
+                str(moa_execute_path()),
                 "--payload-file",
-                str(REPO_ROOT / "MOA" / "templates" / "VIP-增加经验值.json"),
+                str(moa_template("VIP-增加经验值.json")),
                 "--vip-user-id",
                 user_id,
                 "--vip-level",

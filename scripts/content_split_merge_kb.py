@@ -19,7 +19,13 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-ROOT = Path(__file__).resolve().parent.parent / "testcase-kb"
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from project_paths import testcase_kb_root  # noqa: E402
+
+ROOT = testcase_kb_root()
 
 # 加载 content_optimize_kb_docs
 _SPEC = importlib.util.spec_from_file_location(

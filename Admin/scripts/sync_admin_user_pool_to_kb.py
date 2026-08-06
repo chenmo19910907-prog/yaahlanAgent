@@ -14,24 +14,34 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-ADMIN_DIR = REPO_ROOT / "Admin"
-KB_PATH = REPO_ROOT / "testcase-kb" / "admin_user_pool.json"
-INACTIVE_KB_PATH = REPO_ROOT / "testcase-kb" / "admin_user_pool_inactive.json"
-ACTIVE_KB_PATH = REPO_ROOT / "testcase-kb" / "admin_user_pool_active.json"
-UNLIMITED_TARGET = 10**9
-TEST_DEVICES_PATH = REPO_ROOT / "testcase-kb" / "test_devices.json"
-ONLINE_ACCOUNTS_PATH = REPO_ROOT / "testcase-kb" / "online_test_accounts.json"
-ANCHOR_LIST_URL = (
-    "https://melon-gateway-alpha-stage.immomo.com"
-    "/yaahlan/cms/anchor/anchorList/anchorList"
+sys.path.insert(0, str(REPO_ROOT / "Admin" / "scripts"))
+
+from admin_project_paths import (  # noqa: E402
+    admin_module_dir,
+    admin_user_pool_paths,
+    online_test_accounts_path,
+    test_devices_json_path,
+    testcase_kb_root,
 )
-GUILD_LIST_URL = (
-    "https://melon-gateway-alpha-stage.immomo.com"
-    "/yaahlan/cms/anchor/tradeUnionList/tradeUnionPageList"
+
+KB_PATH, INACTIVE_KB_PATH, ACTIVE_KB_PATH = admin_user_pool_paths()
+UNLIMITED_TARGET = 10**9
+TEST_DEVICES_PATH = test_devices_json_path()
+ONLINE_ACCOUNTS_PATH = online_test_accounts_path()
+_KB_ROOT = testcase_kb_root()
+sys.path.insert(0, str(REPO_ROOT / "platform"))
+
+from project.loader import stage_gateway_url  # noqa: E402
+
+ANCHOR_LIST_URL = stage_gateway_url(
+    "anchorList", "/yaahlan/cms/anchor/anchorList/anchorList"
+)
+GUILD_LIST_URL = stage_gateway_url(
+    "guildList", "/yaahlan/cms/anchor/tradeUnionList/tradeUnionPageList"
 )
 USER_KEY_DEFAULT = "cidwuF5xkEMvaZMDWWu8BtHbg==:user:32274159141215328"
 
-sys.path.insert(0, str(ADMIN_DIR))
+sys.path.insert(0, str(admin_module_dir()))
 
 from admin.client import http_get_json, http_post_json  # noqa: E402
 from admin.config import defaults  # noqa: E402

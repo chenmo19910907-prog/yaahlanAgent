@@ -322,7 +322,11 @@ def _op_cp_ferris_wheel_value_add(args: argparse.Namespace, payload: dict[str, A
 
 
 def _op_change_user_area(args: argparse.Namespace, payload: dict[str, Any]) -> None:
-    payload["url"] = "/service/yaahlan/components/callback/user-area"
+    from .project_paths import moa_service_url
+
+    payload["url"] = moa_service_url(
+        "userAreaCallback", "/service/yaahlan/components/callback/user-area"
+    )
     payload["method"] = "changeAreaForTest"
     area = normalize_user_area(args.user_area)
     set_change_user_area_params(payload, user_id=args.change_user_area_user_id, area_code=area)
@@ -336,7 +340,9 @@ def _op_change_user_area(args: argparse.Namespace, payload: dict[str, Any]) -> N
 
 
 def _op_query_user_by_phone(args: argparse.Namespace, payload: dict[str, Any]) -> None:
-    payload["url"] = "/service/yaahlan/mdp-user-login"
+    from .project_paths import moa_service_url
+
+    payload["url"] = moa_service_url("mdpUserLogin", "/service/yaahlan/mdp-user-login")
     payload["method"] = "queryLoginStatusV2"
     area_code, mobile = normalize_mobile_login(args.query_user_by_phone, resolve_phone_area_code(args))
     set_query_login_status_params(
@@ -516,12 +522,15 @@ def _op_user_rank_dispatch(args: argparse.Namespace, payload: dict[str, Any]) ->
     cycle = (args.user_rank_cycle or "NOW").upper()
     # MONTH 使用 V2 方法，WEEK/DAY 使用原方法
     method_name = "dispatchTotalUserRankListPrizeV2" if time_type == "MONTH" else "dispatchTotalUserRankListPrize"
+    from .project_paths import app_area_enum_fqcn
+
+    area_enum = app_area_enum_fqcn()
     expr = (
         f'context.getBean("roomGiftRankListServiceImpl")'
         f".{method_name}("
         f"com.immomo.voga.mts.room.api.enums.rank.RoomGiftRankListTimeTypeEnum.{time_type},"
         f"com.immomo.voga.mts.room.api.enums.rank.RoomGiftRankListCycleEnum.{cycle},"
-        f"com.immomo.yaahlan.business.utils.enums.AreaEnum.{area})"
+        f"{area_enum}.{area})"
     )
     payload["url"] = "/service/voga-mts-room-backdoor"
     payload["method"] = "execute"
@@ -534,11 +543,14 @@ def _op_user_rank_dispatch(args: argparse.Namespace, payload: dict[str, Any]) ->
 
 
 def _op_contrib_day_rank_dispatch(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    from .project_paths import app_area_enum_fqcn
+
     area = (args.contrib_day_rank_area or "MENA").upper()
+    area_enum = app_area_enum_fqcn()
     expr = (
         f'context.getBean("roomGiftRankListServiceImpl")'
         f".dispatchTotalContributionRankListPrizeV2("
-        f"1,com.immomo.yaahlan.business.utils.enums.AreaEnum.{area})"
+        f"1,{area_enum}.{area})"
     )
     payload["url"] = "/service/voga-mts-room-backdoor"
     payload["method"] = "execute"
@@ -551,11 +563,14 @@ def _op_contrib_day_rank_dispatch(args: argparse.Namespace, payload: dict[str, A
 
 
 def _op_charm_day_rank_dispatch(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    from .project_paths import app_area_enum_fqcn
+
     area = (args.charm_day_rank_area or "MENA").upper()
+    area_enum = app_area_enum_fqcn()
     expr = (
         f'context.getBean("roomGiftRankListServiceImpl")'
         f".dispatchTotalCharmRankListPrizeV2("
-        f"1,com.immomo.yaahlan.business.utils.enums.AreaEnum.{area})"
+        f"1,{area_enum}.{area})"
     )
     payload["url"] = "/service/voga-mts-room-backdoor"
     payload["method"] = "execute"
@@ -568,11 +583,14 @@ def _op_charm_day_rank_dispatch(args: argparse.Namespace, payload: dict[str, Any
 
 
 def _op_room_day_rank_dispatch(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    from .project_paths import app_area_enum_fqcn
+
     area = (args.room_day_rank_area or "MENA").upper()
+    area_enum = app_area_enum_fqcn()
     expr = (
         f'context.getBean("roomGiftRankListServiceImpl")'
         f".dispatchTotalRoomDayRankListPrize("
-        f"com.immomo.yaahlan.business.utils.enums.AreaEnum.{area})"
+        f"{area_enum}.{area})"
     )
     payload["url"] = "/service/voga-mts-room-backdoor"
     payload["method"] = "execute"

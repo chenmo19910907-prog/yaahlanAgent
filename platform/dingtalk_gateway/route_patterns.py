@@ -3,8 +3,18 @@
 from __future__ import annotations
 
 import re
+import sys
+from pathlib import Path
 
 from export_delivery import is_view_all_follow_up
+
+_PLATFORM_DIR = Path(__file__).resolve().parents[1]
+if str(_PLATFORM_DIR) not in sys.path:
+    sys.path.insert(0, str(_PLATFORM_DIR))
+
+from project.loader import web_login_pattern  # noqa: E402
+
+WEB_LOGIN_RE = web_login_pattern()
 
 _MOA_REGISTRY_INTENT_RE = re.compile(
     r"(?:"
@@ -37,10 +47,6 @@ REPORT_NL_RE = re.compile(
 )
 REPORT_URL_RE = re.compile(
     r"^(?:生成\s*)?测试报告\s+(https://alidocs\.dingtalk\.com/\S+)\s*$",
-    re.I,
-)
-WEB_LOGIN_RE = re.compile(
-    r"^请求访问\s*Yaahlan\s*智能工具\s*Agent\s*$",
     re.I,
 )
 ADMIN_APPLY_APPROVE_RE = re.compile(

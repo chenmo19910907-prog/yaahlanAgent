@@ -18,15 +18,21 @@ if TYPE_CHECKING:
     from http.server import BaseHTTPRequestHandler
 
 WEB_AGENT_DIR = Path(__file__).resolve().parent
+PLATFORM_DIR = WEB_AGENT_DIR.parent
 DATA_DIR = WEB_AGENT_DIR / "data"
 OTP_STORE_PATH = DATA_DIR / "web_otp_store.json"
 SESSION_STORE_PATH = DATA_DIR / "web_auth_sessions.json"
 
-WEB_LOGIN_PHRASE = "请求访问Yaahlan 智能工具 Agent"
-WEB_LOGIN_RE = re.compile(
-    r"^请求访问\s*Yaahlan\s*智能工具\s*Agent\s*$",
-    re.I,
-)
+import sys
+
+if str(PLATFORM_DIR) not in sys.path:
+    sys.path.insert(0, str(PLATFORM_DIR))
+
+from project.loader import web_login_pattern as _web_login_pattern  # noqa: E402
+from project.loader import web_login_phrase as _web_login_phrase  # noqa: E402
+
+WEB_LOGIN_PHRASE = _web_login_phrase()
+WEB_LOGIN_RE = _web_login_pattern()
 COOKIE_NAME = "web_agent_session"
 OTP_LENGTH = 8
 OTP_TTL_S = 300

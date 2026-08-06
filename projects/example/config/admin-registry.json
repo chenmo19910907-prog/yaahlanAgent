@@ -1,0 +1,512 @@
+{
+  "version": 1,
+  "generated_index_path": "Admin/使用方法.md",
+  "items": [
+    {
+      "id": "query_user_detail",
+      "name": "用户-查询详情",
+      "category": "用户（yaahlan-admin）",
+      "description": "按 userId 查询用户全量详情（queryUserDetail；昵称、手机、等级、钻石、房间、公会、设备 mmuid/mmuidv3、业务状态等）",
+      "prompts": [
+        "查询用户 <userId> 详情",
+        "查 userId <userId> 的资料",
+        "用户 <userId> 房间 ID 是多少"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-user-id <userId>"
+    },
+    {
+      "id": "query_user_feed_list",
+      "name": "用户-查询动态列表",
+      "category": "用户（yaahlan-admin）",
+      "description": "按 userId 分页查询用户全部动态（queryUserFeedList；feedId、发布时间、点赞/评论/打赏、图文视频数量等）",
+      "prompts": [
+        "查询用户 <userId> 的动态列表",
+        "查 <userId> 发了哪些动态",
+        "用户 <userId> 动态 feed 列表"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-user-feed-list --query-user-id <userId>"
+    },
+    {
+      "id": "query_user_history_device_list",
+      "name": "用户-查询历史登录设备",
+      "category": "用户（yaahlan-admin）",
+      "description": "按 userId 查询账号历史登录设备列表（deviceHistory/queryUserHistoryDeviceList；mmuidv3、IP、UA、最近登录时间等）",
+      "prompts": [
+        "查询用户 <userId> 历史登录设备",
+        "查 <userId> 登录过的设备",
+        "用户 <userId> 设备 mmuidv3 列表"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-user-history-devices --history-device-user-id <userId>"
+    },
+    {
+      "id": "query_history_user_list_by_device_id",
+      "name": "用户-查询设备历史登录账号",
+      "category": "用户（yaahlan-admin）",
+      "description": "按 mmuidv3 查询该设备历史登录过的账号列表（deviceHistory/queryHistoryUserListByDeviceId；userId、昵称、是否主播、公会等）",
+      "prompts": [
+        "查询设备 <mmuidv3> 登录过的账号",
+        "查 mmuidv3 <mmuidv3> 历史用户列表",
+        "这台设备登录过哪些 userId"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-device-history-users --history-device-mmuidv3 <mmuidv3>"
+    },
+    {
+      "id": "query_device_current_account",
+      "name": "设备-查询当前登录账号",
+      "category": "用户（yaahlan-admin）",
+      "description": "按测试机名称或 mmuidv3 查当前登录 userId：test_devices.json 取 mmuidv3 → queryHistoryUserListByDeviceId 取最近 updateTime → queryUserDetail 校验 loginDevice（详见 .cursor/skills/device-current-account/SKILL.md）",
+      "prompts": [
+        "红米12当前登录的账号是什么",
+        "这台设备登录的是哪个账号",
+        "后台查询设备当前登录用户",
+        "查测试机当前 userId"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-device-history-users --history-device-mmuidv3 <mmuidv3> && python3 Admin/admin_execute.py --query-user-id <userId>"
+    },
+    {
+      "id": "query_user_profile_list",
+      "name": "用户-查询列表",
+      "category": "用户（mdp-nova / userAdmin）",
+      "description": "查询测试环境用户列表（userAdmin/queryUserProfileList；同 ops-admin 用户列表页；可按 userId/昵称/手机号/mmuidv3/设备ID 等筛选）",
+      "prompts": [
+        "查询用户列表",
+        "按 userId <userId> 查用户列表",
+        "按手机号 <phone> 查用户列表",
+        "按 mmuidv3 <mmuidv3> 查用户列表"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --query-user-list \\\n  --user-list-page-no 1 \\\n  --user-list-page-size 20\n"
+    },
+    {
+      "id": "batch_mutual_friends_from_user_list",
+      "name": "用户-批量互关结好友",
+      "category": "用户（mdp-nova / userAdmin + MOA）",
+      "description": "从 ops-admin 用户列表选取 userId，通过 addUserRelation 双向互关为目标用户增加好友。须 Admin/.env.local 配置 MDP 鉴权；MOA 走 Stage Redis 直连",
+      "prompts": [
+        "给用户 <userId> 从列表互关增加 <count> 个好友",
+        "从用户列表给 <userId> 批量结好友 <count> 个",
+        "用户 <userId> 批量互关结好友"
+      ],
+      "command": "python3 Admin/scripts/batch_mutual_friends_from_user_list.py \\\n  --target-user-id <userId> \\\n  --count <count>\n"
+    },
+    {
+      "id": "cancel_user",
+      "name": "用户-注销账号",
+      "category": "用户（mdp-nova / userAdmin）",
+      "description": "注销用户账号（userAdmin/cancelUser；不可逆）。须 --cancel-user-confirm 二次确认；13311111111~13311111130 受保护不可注销",
+      "prompts": [
+        "注销用户 <userId> 账号",
+        "注销 userId <userId>",
+        "后台 cancelUser <userId>"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --cancel-user \\\n  --cancel-user-id <userId> \\\n  --cancel-user-confirm"
+    },
+    {
+      "id": "query_prop_info",
+      "name": "道具-查询配置列表",
+      "category": "道具（mdp-nova / propAdmin）",
+      "description": "查询 Yaahlan 装扮/道具后台配置（POST propAdmin/queryPropInfo；body 含 appId/propId 等；按 propId 精确查如 30003666）。与 MOA queryOwnPropList 互补：本接口查配置，MOA 查用户拥有。鉴权：Admin/.env.local 的 MDP_AEGIS_TOKEN、CLOUD-AEGIS-TOKEN。",
+      "prompts": [
+        "查询道具配置列表",
+        "查道具 propId <propId> 信息",
+        "道具 <propName> 的 propId 是多少",
+        "头框道具配置有哪些",
+        "后台道具 queryPropInfo"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-prop-list --prop-page-no 1 --prop-page-size 20"
+    },
+    {
+      "id": "query_gift_list",
+      "name": "礼物-查询列表",
+      "category": "礼物（mdp-nova / giftAdmin）",
+      "description": "查询 Yaahlan 全量礼物配置（giftAdmin/queryGiftList）。已上线背包礼物：giftType=1、giftStatus=1（giftSubType 留空）；返回 baseId、名称、价格、状态",
+      "prompts": [
+        "查询礼物列表",
+        "查已上线背包礼物列表",
+        "查礼物 baseId <baseId> 信息",
+        "礼物 <productName> 的 baseId 是多少",
+        "后台礼物配置 queryGiftList"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-gift-list --gift-type 1 --gift-status 1 --gift-page-no 1 --gift-page-size 20"
+    },
+    {
+      "id": "query_custom_gift_list",
+      "name": "定制礼物-查询列表",
+      "category": "定制礼物（melon-gateway）",
+      "description": "查询 VIP5 定制礼物 userId ↔ giftId 映射（getListConfig）",
+      "prompts": [
+        "查询定制礼物列表",
+        "用户 <userId> 的定制礼物 id 是多少",
+        "查 <userId> 自定义礼物 giftId"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-custom-gift-list --custom-gift-user-id <userId>"
+    },
+    {
+      "id": "reset_custom_gift_upload",
+      "name": "定制礼物-重置上传时间",
+      "category": "定制礼物（yaahlan-admin）",
+      "description": "重置用户定制礼物上传次数/过期时间（resetExpireTime；params=userId）。与 MOA resetExpireTime 等效，走 Yaahlan 测试后台",
+      "prompts": [
+        "重置用户 <userId> 定制礼物上传次数",
+        "重置 <userId> 自定义礼物上传时间",
+        "清除 <userId> 定制礼物上传冷却"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --reset-custom-gift-upload \\\n  --custom-gift-reset-user-id <userId>"
+    },
+    {
+      "id": "reset_custom_vehicle_cooldown",
+      "name": "定制座驾-重置上传冷却",
+      "category": "定制座驾（yaahlan-admin）",
+      "description": "重置用户定制座驾上传冷却时间（resetCoolDown；params=remoteId，即 userId）。需 VIP8 才可定制座驾；用户座驾审核中或当前可定制时不支持重置",
+      "prompts": [
+        "重置用户 <userId> 定制座驾上传时间",
+        "重置 <userId> 自定义座驾上传冷却",
+        "清除 <userId> 定制座驾 cooldown",
+        "用户 <userId> 需要定制座驾，先升 VIP8 再重置座驾上传冷却",
+        "<userId> 需要定制座驾"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --reset-custom-vehicle-cooldown \\\n  --custom-vehicle-remote-id <userId>"
+    },
+    {
+      "id": "reset_custom_prop_cooldown",
+      "name": "定制头像框-重置上传冷却",
+      "category": "定制道具（yaahlan-admin）",
+      "description": "重置用户定制道具上传冷却（resetCoolDownProp；params=remoteId、propType）。头像框默认 propType=HEADER_FRAME；需 VIP6 才可定制头像框；审核中或当前可定制时可能不支持重置",
+      "prompts": [
+        "重置用户 <userId> 自定义头像框上传时间",
+        "重置 <userId> 定制头像框 cooldown",
+        "清除 <userId> HEADER_FRAME 上传冷却",
+        "用户 <userId> 需要定制头像框，先升 VIP6 再重置头像框上传冷却",
+        "<userId> 需要定制头像框"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --reset-custom-prop-cooldown \\\n  --custom-prop-remote-id <userId> \\\n  --custom-prop-type HEADER_FRAME"
+    },
+    {
+      "id": "query_family",
+      "name": "家族-查询信息",
+      "category": "家族（melon-gateway）",
+      "description": "按家族 ID 或名称查询家族信息（queryFamilyByIdAndName；含头像、等级、家族长、人数、活跃人数、加入/退出总数）。成员 userId 列表可配合 MOA `--family-query-members` 或 `--family-detail`",
+      "prompts": [
+        "查询家族 <familyId> 信息",
+        "查家族 <familyName> 详情",
+        "家族 <familyId> 当前人数"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-family --family-id <familyId>"
+    },
+    {
+      "id": "list_all_families",
+      "name": "家族-查询全部列表",
+      "category": "家族（melon-gateway）",
+      "description": "分页查询全部家族列表（getAllFamilyList；含家族长 familyOwnerId、等级、人数等）。无需 familyId/familyName 筛选",
+      "prompts": [
+        "查询全部家族列表",
+        "列出所有家族",
+        "家族列表 offset <offset> limit <limit>"
+      ],
+      "command": "python3 Admin/admin_execute.py --list-all-families --family-offset <offset> --family-limit <limit>"
+    },
+    {
+      "id": "add_family_member",
+      "name": "家族-增加成员",
+      "category": "家族（melon-gateway）",
+      "description": "把用户加入指定家族（addFamilyMember；params=familyId, userId）。若用户已在该家族，msg 会提示添加失败",
+      "prompts": [
+        "在家族 <familyId> 增加用户 <userId>",
+        "把 <userId> 加入家族 <familyId>",
+        "家族 <familyId> 添加成员 <userId>"
+      ],
+      "command": "python3 Admin/admin_execute.py --add-family-member --family-id <familyId> --family-user-id <userId>"
+    },
+    {
+      "id": "add_guild_member",
+      "name": "公会-用户加入",
+      "category": "公会（melon-gateway / cms/anchor）",
+      "description": "把用户加入指定公会（addAnchor；params=tradeId 或 tradeUnion、userIds）。userIds 可逗号分隔多个用户",
+      "prompts": [
+        "用户 <userId> 加入公会 <tradeId>",
+        "把 <userId> 加入公会 <tradeUnion>",
+        "公会 <tradeId> 添加成员 <userId>"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --add-guild-member \\\n  --trade-id <tradeId> \\\n  --guild-user-id <userId>"
+    },
+    {
+      "id": "remove_guild_member",
+      "name": "公会-用户移除",
+      "category": "公会（melon-gateway / cms/anchor）",
+      "description": "把用户从公会移除（batchDeleteAnchor；params=anchorIdList）。可逗号分隔多个 userId",
+      "prompts": [
+        "用户 <userId> 移除公会",
+        "把 <userId> 踢出公会",
+        "移除公会成员 <userId>"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --remove-guild-member \\\n  --guild-user-id <userId>"
+    },
+    {
+      "id": "change_guild_member",
+      "name": "公会-用户转移",
+      "category": "公会（melon-gateway / cms/anchor）",
+      "description": "把用户转移到目标公会（batchAnchorChangeTradeUnion；params=tradeUnion、userIdSet）。userIdSet 可逗号分隔多个 userId",
+      "prompts": [
+        "用户 <userId> 转移到公会 <tradeUnion>",
+        "把 <userId> 转到公会 <tradeUnion>",
+        "<userId> 加入公会 <tradeUnion>（已在其他公会时转移）"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --change-guild-member \\\n  --trade-union <tradeUnion> \\\n  --guild-user-id <userId>"
+    },
+    {
+      "id": "query_guild",
+      "name": "公会-查询信息",
+      "category": "公会（melon-gateway / cms/anchor）",
+      "description": "按公会长 userId、公会 ID 或名称查询公会信息（tradeUnionPageList；含母公会、子公会、提现方式、主播人数、分成比例等）",
+      "prompts": [
+        "查询公会长 <userId> 的公会信息",
+        "查公会 <tradeUnion> 详情",
+        "公会 ID <tradeId> 有多少主播"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --query-guild \\\n  --guild-leader-id <userId>"
+    },
+    {
+      "id": "query_cs_data",
+      "name": "客服-查询账号列表",
+      "category": "客服（melon-gateway / cms/customerservice）",
+      "description": "分页查询客服账号列表（queryCsData；可按 userId、role、enable、area 筛选；含昵称、角色、接单状态、今日单量等）",
+      "prompts": [
+        "查询客服账号列表",
+        "查 userId <userId> 是否是客服",
+        "列出全部客服账号"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-cs-data --cs-page-index 1 --cs-page-size 20"
+    },
+    {
+      "id": "save_cs_data",
+      "name": "客服-新增/编辑账号",
+      "category": "客服（melon-gateway / cms/customerservice）",
+      "description": "新增或编辑客服账号（saveCsData）。默认创建 VIP客服（roleList=1）、启用、接单。身份：1 VIP；2 游戏；3 语音房；4 Admin；5 公会通知审核；6 公会运营。optType：1 创建；2 编辑",
+      "prompts": [
+        "给 <userId> 添加 VIP 客服",
+        "新增客服账号 <userId>",
+        "<userId> 添加 VIP 客服"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --save-cs-data \\\n  --cs-user-id <userId> \\\n  --cs-role-list 1 \\\n  --cs-enable 1 \\\n  --cs-taking-order 1 \\\n  --cs-opt-type 1"
+    },
+    {
+      "id": "change_cs_taking_order",
+      "name": "客服-修改接单状态",
+      "category": "客服（melon-gateway / cms/customerservice）",
+      "description": "修改客服接单状态（changeTakingOrder；params=userId、takingOrder）。0 不接单；1 接单",
+      "prompts": [
+        "修改客服 <userId> 接单状态",
+        "<userId> 停止接单",
+        "客服 <userId> 开始接单"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --change-cs-taking-order \\\n  --cs-user-id <userId> \\\n  --cs-taking-order 0"
+    },
+    {
+      "id": "query_activity_lottery_list",
+      "name": "活动-查询奖池配置列表",
+      "category": "活动（melon-gateway / cms/activity）",
+      "description": "查询后台全部奖池及奖品配置（getLotteryList；body={}；返回 id/name/lotteryList，含 rate、limit、type、奖品 id）。可按 lotteryId 或名称筛选，对照 MSE activityConfig.Year3Anniversary 奖池 lotteryId",
+      "prompts": [
+        "查询活动奖池配置列表",
+        "查奖池 lotteryId <lotteryId> 的奖励配置",
+        "getLotteryList 奖池 <lotteryId>",
+        "三周年砸金蛋奖池 lotteryId <lotteryId> 配置"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-activity-lottery-list --lottery-id <lotteryId>"
+    },
+    {
+      "id": "schedule_im_message_types",
+      "name": "活动-IM六种消息类型定时下发",
+      "category": "活动（melon-gateway / cms/activity）",
+      "description": "为 IM 配置后台 6 种消息类型各创建一条「type=2 定时任务下发 + sendType=0~5 消息类型 + 近30天活跃 + 英阿双语文案」任务，默认从 1 分钟后起每分钟一种（addIm）",
+      "prompts": [
+        "IM六种消息类型每分钟下发测试",
+        "批量创建 IM 消息类型定时任务",
+        "schedule im message types smoke",
+        "活动 IM 配置六种类型定时下发"
+      ],
+      "command": "python3 Admin/admin_execute.py --schedule-im-message-types --im-area MENA"
+    },
+    {
+      "id": "query_im_list",
+      "name": "活动-查询IM配置任务列表",
+      "category": "活动（melon-gateway / cms/activity）",
+      "description": "查询 IM 配置后台任务列表（getImList；body={area}；返回 id/name/type/sendType/sendStatus/sendTime 等；type=下发类型，sendType=消息类型）",
+      "prompts": [
+        "查询 IM 配置任务列表",
+        "getImList 中东区 IM 任务",
+        "查 IM 任务 im-type-smoke",
+        "活动 IM 配置列表"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-im-list --im-area MENA"
+    },
+    {
+      "id": "query_banner_list",
+      "name": "活动-查询Banner列表",
+      "category": "活动（melon-gateway / cms/backend/banner）",
+      "description": "查询后台 Banner 配置列表（getBannerList；body 含 bannerId/page/perPage/status/type/area；type=5 为活动 banner；status=-1 为全部）",
+      "prompts": [
+        "查询活动 banner 列表",
+        "getBannerList 活动 banner 中东区",
+        "查 banner 类型 <type> 列表",
+        "查看 banner 配置 bannerId <bannerId>"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-banner-list --banner-type 5 --banner-area MENA"
+    },
+    {
+      "id": "delete_im_task",
+      "name": "活动-删除IM配置任务",
+      "category": "活动（melon-gateway / cms/activity）",
+      "description": "删除 IM 配置任务（deleteIm；body={id, area}）。支持单条 --delete-im-task --im-task-id，或批量 --delete-im-tasks-above-id",
+      "prompts": [
+        "删除 IM 配置任务 <taskId>",
+        "deleteIm 任务 <taskId>",
+        "清理 IM 任务 id 大于 <id>",
+        "删除中东区 IM smoke 测试任务"
+      ],
+      "command": "python3 Admin/admin_execute.py --delete-im-task --im-task-id <taskId> --im-area MENA"
+    },
+    {
+      "id": "query_app_store_review_version",
+      "name": "版本-查询 App Store 审核版本",
+      "category": "版本（melon-gateway / backend/pangu）",
+      "description": "查询 iOS App Store 审核版本与 Android versionCode（getAppStoreReviewVersion；params=appName，默认 yaahlan）",
+      "prompts": [
+        "查询 iOS 审核版本",
+        "当前 App Store 审核版本是多少",
+        "yaahlan 审核版本",
+        "getAppStoreReviewVersion"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-app-store-review-version"
+    },
+    {
+      "id": "update_app_store_review_version",
+      "name": "版本-设置 App Store 审核版本",
+      "category": "版本（melon-gateway / backend/pangu）",
+      "description": "设置 iOS App Store 审核版本与 Android versionCode（updateAppStoreReviewVersion；params=appName、iosVersion、androidVersionCode）",
+      "prompts": [
+        "设置 iOS 审核版本为 <iosVersion>",
+        "把 App Store 审核版本改成 <iosVersion>",
+        "updateAppStoreReviewVersion <iosVersion>"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --update-app-store-review-version \\\n  --ios-version <iosVersion> \\\n  --android-version-code <androidVersionCode>"
+    },
+    {
+      "id": "setup_custom_avatar_frame",
+      "name": "定制头像框-开通流程",
+      "category": "定制装扮工作流（MOA + Admin）",
+      "description": "定制头像框需 VIP6。按顺序执行：① MOA 升到 VIP6；② Admin 重置 HEADER_FRAME 上传冷却（resetCoolDownProp）",
+      "prompts": [
+        "用户 <userId> 需要定制头像框",
+        "<userId> 需要定制头像框，先升级 VIP6 再重置上传",
+        "100465989 需要定制头像框"
+      ],
+      "command": "# ① 升到 VIP6（MOA）\npython3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/VIP-增加经验值.json \\\n  --vip-user-id <userId> \\\n  --vip-level 6\n\n# ② 重置头像框上传冷却（Admin）\npython3 Admin/admin_execute.py \\\n  --reset-custom-prop-cooldown \\\n  --custom-prop-remote-id <userId> \\\n  --custom-prop-type HEADER_FRAME"
+    },
+    {
+      "id": "setup_custom_vehicle",
+      "name": "定制座驾-开通流程",
+      "category": "定制装扮工作流（MOA + Admin）",
+      "description": "定制座驾需 VIP8。按顺序执行：① MOA 升到 VIP8；② Admin 重置座驾上传冷却（resetCoolDown）",
+      "prompts": [
+        "用户 <userId> 需要定制座驾",
+        "<userId> 需要定制座驾，先升级 VIP8 再重置上传",
+        "100465989 需要定制座驾"
+      ],
+      "command": "# ① 升到 VIP8（MOA）\npython3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/VIP-增加经验值.json \\\n  --vip-user-id <userId> \\\n  --vip-level 8\n\n# ② 重置座驾上传冷却（Admin）\npython3 Admin/admin_execute.py \\\n  --reset-custom-vehicle-cooldown \\\n  --custom-vehicle-remote-id <userId>"
+    },
+    {
+      "id": "big_r_list_endpoints",
+      "name": "大R-列出API",
+      "category": "大R用户管理（yaahlan-admin）",
+      "description": "列出开发者后台大R用户管理全部接口 URL（前端 #/big-r；网关 /yaahlan/api/admin/big-rich/*）",
+      "prompts": [
+        "大R后台有哪些接口",
+        "列出大R API",
+        "big-r list endpoints"
+      ],
+      "command": "python3 Admin/scripts/big_r_verify.py list-endpoints"
+    },
+    {
+      "id": "big_r_page_list",
+      "name": "大R-查询列表",
+      "category": "大R用户管理（yaahlan-admin）",
+      "description": "查询大R主列表 pageList（VIP用户 tab userType=2 / 充值用户 tab userType=1；支持 periodType、排序、userId 搜索）",
+      "prompts": [
+        "查询大R VIP用户列表",
+        "大R列表按充值金额排序",
+        "搜索大R用户 <userId>"
+      ],
+      "command": "python3 Admin/scripts/big_r_verify.py page-list --tab vip --order-by rechargeUsd --sort desc --limit 20"
+    },
+    {
+      "id": "big_r_user_detail",
+      "name": "大R-用户明细",
+      "category": "大R用户管理（yaahlan-admin）",
+      "description": "查询单用户明细：钻石消耗分布、送礼/收礼 TOP、游戏 TOP、充值渠道 TOP（5 个 detail 接口）",
+      "prompts": [
+        "查询大R用户 <userId> 明细",
+        "大R用户 <userId> 钻石消耗分布",
+        "大R用户 <userId> 送礼TOP"
+      ],
+      "command": "python3 Admin/scripts/big_r_verify.py user-detail --user-id <userId>"
+    },
+    {
+      "id": "big_r_verify_smoke",
+      "name": "大R-冒烟验收",
+      "category": "大R用户管理（yaahlan-admin）",
+      "description": "大R后台 API 冒烟：VIP/充值列表、rechargeUsd 降序、userId 搜索、明细、VIP升降级、每日新增VIP4",
+      "prompts": [
+        "大R后台冒烟",
+        "验收大R API",
+        "执行大R smoke"
+      ],
+      "command": "python3 Admin/scripts/big_r_verify.py smoke --user-id <userId> --limit 10"
+    },
+    {
+      "id": "big_r_verify_report",
+      "name": "大R-生成可视化报告",
+      "category": "大R用户管理（yaahlan-admin）",
+      "description": "执行 smoke 并输出 HTML/Markdown 可视化报告（通过率卡片 + 检查项表格）",
+      "prompts": [
+        "大R冒烟并生成HTML报告",
+        "大R验收可视化报告"
+      ],
+      "command": "python3 Admin/scripts/big_r_verify.py smoke --limit 10 --out-json .tmp/big_r_smoke.json --out-html .tmp/big_r_smoke_report.html --quiet && open .tmp/big_r_smoke_report.html"
+    },
+    {
+      "id": "big_r_verify_sort",
+      "name": "大R-校验排序",
+      "category": "大R用户管理（yaahlan-admin）",
+      "description": "调用 pageList 两次（asc/desc），校验 orderBy 字段排序单调性",
+      "prompts": [
+        "校验大R列表排序",
+        "大R rechargeUsd 排序验收"
+      ],
+      "command": "python3 Admin/scripts/big_r_verify.py verify-sort --order-by rechargeUsd --limit 20"
+    },
+    {
+      "id": "big_r_verify_search",
+      "name": "大R-校验搜索",
+      "category": "大R用户管理（yaahlan-admin）",
+      "description": "按 userId 精确搜索 pageList，断言仅返回 1 条且 userId 匹配",
+      "prompts": [
+        "校验大R搜索 <userId>",
+        "大R userId 搜索验收"
+      ],
+      "command": "python3 Admin/scripts/big_r_verify.py verify-search --user-id <userId>"
+    },
+    {
+      "id": "big_r_import_data",
+      "name": "大R-造数导入",
+      "category": "大R用户管理（yaahlan-admin）",
+      "description": "大R后台 Stage 造数全流程：生成1000用户天级宽表Excel → 上传CDN(static.wemomo.com) → MOA importUserDayIndexSummary → MOA rebuildBigRichFromWideTableRange",
+      "prompts": [
+        "大R后台造数 <日期>",
+        "导入大R测试数据 <startDate> <endDate>",
+        "大R Stage 造数并导入",
+        "生成大R数据文件"
+      ],
+      "command": "python3 Admin/scripts/big_r_import_data.py --dates <startDate> <endDate> --static-cookie <COOKIE> --moa-cookie <COOKIE>"
+    }
+  ]
+}

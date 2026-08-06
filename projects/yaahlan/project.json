@@ -1,0 +1,77 @@
+{
+  "id": "yaahlan",
+  "displayName": "Yaahlan",
+  "description": "Yaahlan App 测试环境智能工具 Agent（默认项目）",
+  "paths": {
+    "sources": "projects/yaahlan/sources.json",
+    "testDevices": "testcase-kb/test_devices.json",
+    "bookmarks": "platform/web_agent/config/bookmarks.json",
+    "giftDefaults": "platform/dingtalk_gateway/config/gift_defaults.json",
+    "adminConfig": "Admin/config.json",
+    "onlineConfig": "online/config.json",
+    "moaThresholds": "MOA/config/thresholds.json",
+    "moaTemplates": "MOA/templates",
+    "moaRuntimeYaml": "MOA/config/moa.yaml",
+    "mseConfig": "MSE/config.json",
+    "riskConfig": "Risk/config.json",
+    "giftCpLoveConfig": "Gift/config/cp_love_gift.json",
+    "dingtalkKb": "DingTalk/config/kb.json",
+    "dingtalkFolders": "DingTalk/config/folders.json",
+    "testcaseKbRoot": "testcase-kb",
+    "prdKbRoot": "prd-kb",
+    "bugKbRoot": "bug-kb",
+    "onlineTestAccounts": "testcase-kb/online_test_accounts.json",
+    "temporaryTestcase": "temporary_testcase",
+    "moaGenerativeRoot": "MOA-generative",
+    "workflowRoot": "workflow"
+  },
+  "agent": {
+    "title": "Yaahlan 智能工具 Agent",
+    "subtitle": "钉钉 Agent · MOA/Admin 查数 · Tunnel 抓包 · Stage 送礼 · 用例生成",
+    "catalogTitle": "Yaahlan 智能工具平台",
+    "catalogExportBasename": "Yaahlan智能工具平台",
+    "webLoginPhrase": "请求访问Yaahlan 智能工具 Agent",
+    "webLoginMatchParts": ["请求访问", "Yaahlan", "智能工具", "Agent"],
+    "gatewayAgentName": "Yaahlan 智能工具平台网关 Agent",
+    "webAgentName": "Yaahlan 智能工具平台 Web Agent",
+    "httpUserAgent": "YaahlanWebAgent/1.0",
+    "gatewayLifecyclePrefix": "Yaahlan 智能工具网关"
+  },
+  "app": {
+    "androidPackage": "com.immomo.biz.yaahlan",
+    "appId": 2005,
+    "cmdbAppKey": "momo.ibt.yaahlan.service.yaahlan-web",
+    "cmdbCorp": "alpha",
+    "cmdbEnv": "stage",
+    "javaAreaEnumFqcn": "com.immomo.yaahlan.business.utils.enums.AreaEnum"
+  },
+  "tunnel": {
+    "mockBaseUrl": "http://gw-api-alpha.yaahlan.fun",
+    "defaultGAppid": "All",
+    "defaultGEnv": "alpha"
+  },
+  "api": {
+    "stageGatewayBase": "https://melon-gateway-alpha-stage.immomo.com",
+    "httpPrefix": "/yaahlan",
+    "moaServicePrefix": "/service/yaahlan",
+    "moaTrickServicePrefix": "/service/yaahlan-trick",
+    "familyPkH5Path": "/yaahlan-fe/yaahlan-family-pk/index.html?_bid=1006677&_ui=256&_ui_mode=0&_ui_bg=ffffff&_wk=1&_resize=0",
+    "endpoints": {
+      "anchorList": "/yaahlan/cms/anchor/anchorList/anchorList",
+      "guildList": "/yaahlan/cms/anchor/tradeUnionList/tradeUnionPageList",
+      "diamondHistoryService": "/service/yaahlan/components/wallet-api",
+      "intimateApiService": "/service/yaahlan/user/intimate-api",
+      "cpLoveChestService": "/service/yaahlan-trick/external/cp-love-chest",
+      "roomMemberStageService": "/service/room/external/room-member-stage",
+      "nameplatePage": "/yaahlan/userProfile/nameplatePageData",
+      "roomMemberApply": "/yaahlan/room/member/apply",
+      "roomMemberAgree": "/yaahlan/room/member/agree",
+      "userAreaCallback": "/service/yaahlan/components/callback/user-area",
+      "mdpUserLogin": "/service/yaahlan/mdp-user-login",
+      "cpMoa": "/service/yaahlan/user/cp-moa"
+    }
+  },
+  "prompts": {
+    "giftCpLoveRule": "**CP 宝箱周期爱意值造数**：无直改 MOA（`addCpLoveValue` 只改 cp-moa 总恩爱值 loveValue，不更新宝箱 currentLoveValue）。须 Stage 私聊送礼（1 钻 = 1 爱意值）。**默认礼物：面板 Rose `2005000233`（1 钻，名称 Rose；禁止 roses/`2005001776` 及 `2005004730`）。**先 `python3 Gift/scripts/plan_cp_love_gift.py --delta <增量>`；**禁止**固定 `--num 10000` 小步循环；优先 1 次 HTTP，`--num` 按规划（Rose 1 钻时 num=增量）。"
+  }
+}

@@ -3,10 +3,17 @@
 from __future__ import annotations
 
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from project_paths import bug_kb_root, prd_kb_root, repo_root, testcase_kb_root  # noqa: E402
+
+ROOT = repo_root()
 
 
 @dataclass(frozen=True)
@@ -173,9 +180,9 @@ MODULE_FILES = {
 
 DIR_KIND = {
     "documents": ROOT / "documents",
-    "testcase_kb": ROOT / "testcase-kb",
-    "prd_kb": ROOT / "prd-kb",
-    "bug_kb": ROOT / "bug-kb",
+    "testcase_kb": testcase_kb_root(),
+    "prd_kb": prd_kb_root(),
+    "bug_kb": bug_kb_root(),
     "templates": ROOT / "templates",
 }
 

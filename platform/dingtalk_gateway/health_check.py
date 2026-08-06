@@ -12,6 +12,22 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 GATEWAY_DIR = Path(__file__).resolve().parent
+
+from repo_paths import (
+    admin_execute_path,
+    admin_module_dir,
+    batch_progress_script,
+    get_repo_root,
+    gift_execute_path,
+    gift_module_dir,
+    moa_execute_path,
+    moa_module_dir,
+    moa_template,
+    mse_execute_path,
+    mse_module_dir,
+    stage_gateway_url,
+    tmp_dir,
+)
 REPO_ROOT = GATEWAY_DIR.parent.parent
 
 from env_loader import ENV_LOCAL, load_env_local, require_env
@@ -147,7 +163,7 @@ def main() -> int:
             deep_ok, deep_detail = _probe_sdk_deep()
             ok_all &= _check("SDK Agent pong (--deep)", deep_ok, deep_detail)
 
-    moa_env = REPO_ROOT / "MOA" / ".env.local"
+    moa_env = moa_module_dir() / '.env.local'
     ok_all &= _check("MOA/.env.local", moa_env.is_file(), "存在" if moa_env.is_file() else "缺失")
 
     ok_all &= _check(".env.local", ENV_LOCAL.is_file(), str(ENV_LOCAL))

@@ -8,10 +8,12 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
-_REPO = Path(__file__).resolve().parents[2]
-_CLEAR_TPL = _REPO / "MOA/templates/家族PK-清除匹配数据.json"
-_MATCH_TPL = _REPO / "MOA/templates/家族PK-结算发奖匹配.json"
+from moa_script_paths import moa_execute_path, moa_template, repo_root, tmp_dir
+
+_CLEAR_TPL = moa_template("家族PK-清除匹配数据.json")
+_MATCH_TPL = moa_template("家族PK-结算发奖匹配.json")
 
 
 def _patch_template(path: Path, *, pk_date: str, timeout_ms: int | None = None) -> Path:
@@ -24,7 +26,7 @@ def _patch_template(path: Path, *, pk_date: str, timeout_ms: int | None = None) 
         tpl["params"][0]["txt"] = pk_date
         if timeout_ms is not None:
             tpl.setdefault("settings", {})["time"] = str(timeout_ms)
-    out = _REPO / ".tmp" / f"family_pk_rematch_{path.stem}_{pk_date}.json"
+    out = tmp_dir() / f"family_pk_rematch_{path.stem}_{pk_date}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(tpl, ensure_ascii=False), encoding="utf-8")
     return out
@@ -32,8 +34,8 @@ def _patch_template(path: Path, *, pk_date: str, timeout_ms: int | None = None) 
 
 def _run_payload(payload_path: Path) -> dict[str, Any]:
     proc = subprocess.run(
-        [sys.executable, str(_REPO / "MOA/moa_execute.py"), "--payload-file", str(payload_path)],
-        cwd=str(_REPO),
+        [sys.executable, str(moa_execute_path()), "--payload-file", str(payload_path)],
+        cwd=str(repo_root()),
         capture_output=True,
         text=True,
         timeout=600,

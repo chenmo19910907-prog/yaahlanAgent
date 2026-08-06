@@ -14,6 +14,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+_SCRIPTS = ROOT / "scripts"
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from project_paths import bug_kb_root, prd_kb_root, testcase_kb_root  # noqa: E402
+
+DEFAULT_KB_DIR = testcase_kb_root()
 
 _NS = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
 _CELL_REF = __import__("re").compile(r"^([A-Z]+)(\d+)$")
@@ -199,7 +206,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--output-dir",
-        default=str(ROOT / "testcase-kb"),
+        default=str(DEFAULT_KB_DIR),
         help="知识库输出目录（默认 testcase-kb/）",
     )
     args = parser.parse_args()

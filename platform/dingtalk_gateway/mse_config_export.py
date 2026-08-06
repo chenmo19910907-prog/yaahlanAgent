@@ -74,7 +74,7 @@ def _apply_set_args(config: dict[str, Any], set_args: list[str]) -> tuple[dict[s
 def _fetch_mse_config(*, namespace: str, config_key: str) -> dict[str, Any]:
     cmd = [
         "python3",
-        str(REPO_ROOT / "MSE/mse_execute.py"),
+        str(mse_execute_path()),
         "--namespace",
         namespace,
         "--config-key",

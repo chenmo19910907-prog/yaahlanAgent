@@ -14,6 +14,23 @@ from log_redact import redact_for_log
 logger = logging.getLogger("dingtalk-gateway")
 
 
+def _subprocess_env() -> dict[str, str]:
+    try:
+        import sys
+        from pathlib import Path
+
+        platform_dir = Path(__file__).resolve().parents[1]
+        if str(platform_dir) not in sys.path:
+            sys.path.insert(0, str(platform_dir))
+        from project.runtime_env import merge_project_env
+
+        return merge_project_env()
+    except (ImportError, OSError, ValueError):
+        import os
+
+        return dict(os.environ)
+
+
 def safe_cancel_run(run: Any | None) -> bool:
     """尽力取消 Agent run；run.id 尚未就绪时可能失败，由 agent.close 兜底。"""
     if run is None:
@@ -185,9 +202,11 @@ def run_subprocess_cancellable(
 ) -> tuple[int, str, str]:
     if session:
         session.check_cancelled()
+    env = _subprocess_env()
     proc = subprocess.Popen(
         list(cmd),
         cwd=cwd,
+        env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,

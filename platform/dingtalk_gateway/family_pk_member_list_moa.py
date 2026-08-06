@@ -10,7 +10,23 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-_TEMPLATE = REPO_ROOT / "MOA" / "templates" / "家族PK-成员贡献列表.json"
+
+from repo_paths import (
+    admin_execute_path,
+    admin_module_dir,
+    batch_progress_script,
+    get_repo_root,
+    gift_execute_path,
+    gift_module_dir,
+    moa_execute_path,
+    moa_module_dir,
+    moa_template,
+    mse_execute_path,
+    mse_module_dir,
+    stage_gateway_url,
+    tmp_dir,
+)
+_TEMPLATE = moa_template("家族PK-成员贡献列表.json")
 _MAX_PAGES = 100
 
 
@@ -45,7 +61,7 @@ def _run_member_list_page(
     proc = subprocess.run(
         [
             sys.executable,
-            str(REPO_ROOT / "MOA/moa_execute.py"),
+            str(moa_execute_path()),
             "--payload-file",
             str(_TEMPLATE),
             "--family-pk-member-list-user-id",

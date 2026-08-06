@@ -14,12 +14,19 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-GATEWAY_DIR = REPO_ROOT / "platform" / "dingtalk_gateway"
-_EXCEL_VENV = (
-    REPO_ROOT / ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/venv/bin/python3.13"
+from moa_script_paths import (
+    batch_progress_script,
+    dingtalk_excel_python,
+    ensure_gateway_path,
+    ensure_moa_gift_paths,
+    gift_execute_path,
+    moa_execute_path,
+    moa_template,
+    repo_root,
+    tmp_dir,
 )
 
+_EXCEL_VENV = dingtalk_excel_python()
 if (
     __name__ == "__main__"
     and _EXCEL_VENV.is_file()
@@ -27,12 +34,8 @@ if (
 ):
     os.execv(str(_EXCEL_VENV), [str(_EXCEL_VENV), str(Path(__file__).resolve()), *sys.argv[1:]])
 
-if str(GATEWAY_DIR) not in sys.path:
-    sys.path.insert(0, str(GATEWAY_DIR))
-if str(REPO_ROOT / "MOA") not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT / "MOA"))
-if str(REPO_ROOT / "Gift") not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT / "Gift"))
+GATEWAY_DIR = ensure_gateway_path()
+ensure_moa_gift_paths()
 
 from anniversary_egg_smash_to_workbook import (  # noqa: E402
     DEFAULT_SHEET,
@@ -62,7 +65,7 @@ DEFAULT_WORKBOOK = (
 def _run_json(cmd: list[str], *, timeout: int = 120) -> dict[str, Any]:
     proc = subprocess.run(
         cmd,
-        cwd=str(REPO_ROOT),
+        cwd=str(repo_root()),
         capture_output=True,
         text=True,
         timeout=timeout,
@@ -82,9 +85,9 @@ def resolve_phone_user(phone: str) -> dict[str, str]:
     data = _run_json(
         [
             "python3",
-            str(REPO_ROOT / "MOA/moa_execute.py"),
+            str(moa_execute_path()),
             "--payload-file",
-            str(REPO_ROOT / "MOA/templates/用户-按手机号查userId.json"),
+            str(moa_template("用户-按手机号查userId.json")),
             "--query-user-by-phone",
             phone,
         ]
@@ -342,7 +345,7 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
         "--progress-file",
-        default=str(REPO_ROOT / ".tmp" / "anniversary_egg_direct_diamond_progress.jsonl"),
+        default=str(tmp_dir() / "anniversary_egg_direct_diamond_progress.jsonl"),
     )
     args = parser.parse_args()
 
@@ -370,7 +373,7 @@ def main() -> int:
             return
         cmd = [
             "python3",
-            str(REPO_ROOT / "platform/dingtalk_gateway/batch_progress_report.py"),
+            str(batch_progress_script()),
             "--user-key",
             args.user_key,
             "--current",
@@ -384,7 +387,7 @@ def main() -> int:
             cmd.extend(["--detail", f"第{current}组"])
         if result_text:
             cmd.extend(["--result-text", result_text])
-        subprocess.run(cmd, cwd=str(REPO_ROOT), check=False)
+        subprocess.run(cmd, cwd=str(repo_root()), check=False)
 
     _report_progress(0)
 

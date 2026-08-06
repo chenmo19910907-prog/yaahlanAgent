@@ -13,8 +13,9 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-_REPO = Path(__file__).resolve().parents[2]
-_GATEWAY = _REPO / "platform" / "dingtalk_gateway"
+from moa_script_paths import gateway_dir, moa_execute_path, repo_root, tmp_dir, workflow_execute_path
+
+_GATEWAY = gateway_dir()
 if str(_GATEWAY) not in sys.path:
     sys.path.insert(0, str(_GATEWAY))
 
@@ -110,12 +111,12 @@ def _modify_rank(rank_date: str, family_id: str, score: int) -> dict[str, Any]:
         "momoId": "df4c6f364f9fcae3",
         "momoName": "e88aa376b29864ad",
     }
-    payload_path = _REPO / ".tmp" / f"modify_rank_{family_id}_{rank_date}.json"
+    payload_path = tmp_dir() / f"modify_rank_{family_id}_{rank_date}.json"
     payload_path.parent.mkdir(parents=True, exist_ok=True)
     payload_path.write_text(json.dumps(tpl, ensure_ascii=False), encoding="utf-8")
     proc = subprocess.run(
-        [sys.executable, str(_REPO / "MOA/moa_execute.py"), "--payload-file", str(payload_path)],
-        cwd=str(_REPO),
+        [sys.executable, str(moa_execute_path()), "--payload-file", str(payload_path)],
+        cwd=str(repo_root()),
         capture_output=True,
         text=True,
         timeout=30,
@@ -134,7 +135,7 @@ def _run_rematch(pk_date: str, timeout_ms: int) -> dict[str, Any]:
     proc = subprocess.run(
         [
             sys.executable,
-            str(_REPO / "workflow/workflow_execute.py"),
+            str(workflow_execute_path()),
             "run",
             "family-pk-daily-rematch",
             "--pk-date",
@@ -142,7 +143,7 @@ def _run_rematch(pk_date: str, timeout_ms: int) -> dict[str, Any]:
             "--timeout-ms",
             str(timeout_ms),
         ],
-        cwd=str(_REPO),
+        cwd=str(repo_root()),
         capture_output=True,
         text=True,
         timeout=max(300, timeout_ms // 1000 + 120),
@@ -199,7 +200,7 @@ def run_prepare(
             }
         )
 
-    out_path = _REPO / ".tmp" / f"family_receive_rank_set_{rank_date}.json"
+    out_path = tmp_dir() / f"family_receive_rank_set_{rank_date}.json"
     summary: dict[str, Any] = {
         "rankDate": rank_date,
         "pkDate": pk_date or _next_day(rank_date),

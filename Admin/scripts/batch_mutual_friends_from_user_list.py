@@ -10,11 +10,12 @@ from dataclasses import asdict
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-ADMIN_DIR = REPO_ROOT / "Admin"
-MOA_DIR = REPO_ROOT / "MOA"
+sys.path.insert(0, str(REPO_ROOT / "Admin" / "scripts"))
 
-sys.path.insert(0, str(ADMIN_DIR))
-sys.path.insert(0, str(MOA_DIR))
+from admin_project_paths import admin_module_dir, moa_module_dir  # noqa: E402
+
+sys.path.insert(0, str(admin_module_dir()))
+sys.path.insert(0, str(moa_module_dir()))
 
 from admin.env import load_local_env as load_admin_env  # noqa: E402
 from admin.user_list import (  # noqa: E402
@@ -90,7 +91,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
-    load_admin_env(str(ADMIN_DIR))
+    load_admin_env(str(admin_module_dir()))
 
     target_user_id = str(args.target_user_id).strip()
     if not target_user_id:

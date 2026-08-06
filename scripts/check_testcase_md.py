@@ -10,7 +10,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DIR = ROOT / "temporary_testcase"
+_SCRIPTS = ROOT / "scripts"
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from project_paths import temporary_testcase_dir  # noqa: E402
+
+DEFAULT_DIR = temporary_testcase_dir()
 
 STEP_COL_NAMES = frozenset({"测试步骤", "步骤"})
 EXPECT_COL_NAMES = frozenset({"预期结果", "期望结果", "预期"})

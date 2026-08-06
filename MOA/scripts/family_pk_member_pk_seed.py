@@ -14,8 +14,9 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
-_REPO = Path(__file__).resolve().parents[2]
-_GATEWAY = _REPO / "platform" / "dingtalk_gateway"
+from moa_script_paths import gateway_dir, moa_execute_path, moa_template, repo_root, tmp_dir
+
+_GATEWAY = gateway_dir()
 if str(_GATEWAY) not in sys.path:
     sys.path.insert(0, str(_GATEWAY))
 
@@ -28,7 +29,7 @@ from mse_workbook_utils import fetch_workbook_sheets_async, node_id  # noqa: E40
 DEFAULT_WORKBOOK = "https://alidocs.dingtalk.com/i/nodes/N7dx2rn0JbZQqA9ACZ1MoaaRJMGjLRb3"
 DEFAULT_SHEET = "家族列表"
 DEFAULT_MATCH_SHEET = "匹配验收"
-_CLEAR_PK_TPL = _REPO / "MOA/templates/家族PK-删除全部PK值.json"
+_CLEAR_PK_TPL = moa_template("家族PK-删除全部PK值.json")
 _ALL_SCENARIOS = ["win", "tie", "pk_low", "member_low", "bye_win", "bye_pk_low", "random"]
 
 
@@ -98,12 +99,12 @@ def _clear_pk(pk_date: str, area: str = "MENA") -> dict[str, Any]:
     body = {"date": pk_date, "area": area}
     tpl["params"][0]["value"] = body
     tpl["params"][0]["json"] = json.dumps(body, ensure_ascii=False)
-    payload = _REPO / ".tmp" / f"family_pk_clear_pk_{pk_date}.json"
+    payload = tmp_dir() / f"family_pk_clear_pk_{pk_date}.json"
     payload.parent.mkdir(parents=True, exist_ok=True)
     payload.write_text(json.dumps(tpl, ensure_ascii=False), encoding="utf-8")
     proc = subprocess.run(
-        [sys.executable, str(_REPO / "MOA/moa_execute.py"), "--payload-file", str(payload)],
-        cwd=str(_REPO),
+        [sys.executable, str(moa_execute_path()), "--payload-file", str(payload)],
+        cwd=str(repo_root()),
         capture_output=True,
         text=True,
         timeout=120,
@@ -139,11 +140,11 @@ def _incr_pk(pk_date: str, family_id: str, member_user_id: str, pk_delta: int) -
         "momoId": "df4c6f364f9fcae3",
         "momoName": "e88aa376b29864ad",
     }
-    payload = _REPO / ".tmp" / f"incr_pk_{family_id}_{member_user_id}_{pk_date}.json"
+    payload = tmp_dir() / f"incr_pk_{family_id}_{member_user_id}_{pk_date}.json"
     payload.write_text(json.dumps(tpl, ensure_ascii=False), encoding="utf-8")
     proc = subprocess.run(
-        [sys.executable, str(_REPO / "MOA/moa_execute.py"), "--payload-file", str(payload)],
-        cwd=str(_REPO),
+        [sys.executable, str(moa_execute_path()), "--payload-file", str(payload)],
+        cwd=str(repo_root()),
         capture_output=True,
         text=True,
         timeout=30,
@@ -571,7 +572,7 @@ def run_member_pk_seed(
         "failed": [],
     }
 
-    out_path = _REPO / ".tmp" / f"family_pk_member_pk_seed_{pk_date}.json"
+    out_path = tmp_dir() / f"family_pk_member_pk_seed_{pk_date}.json"
     if dry_run:
         summary["dryRun"] = True
         out_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")

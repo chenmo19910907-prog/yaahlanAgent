@@ -64,6 +64,18 @@ if str(GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR))
 if str(WEB_AGENT_DIR) not in sys.path:
     sys.path.insert(0, str(WEB_AGENT_DIR))
+if str(PLATFORM_DIR) not in sys.path:
+    sys.path.insert(0, str(PLATFORM_DIR))
+
+from project.loader import (  # noqa: E402
+    get_project_id,
+    load_sources,
+    web_agent_subtitle,
+    web_agent_title,
+)
+from project.runtime_env import ensure_project_env  # noqa: E402
+
+ensure_project_env()
 
 from cursor_runner import DEFAULT_MODEL, DEFAULT_TIMEOUT_S  # noqa: E402
 from external_agent_config import (  # noqa: E402
@@ -500,10 +512,8 @@ def _load_feature_demos(cfg: dict[str, Any]) -> list[dict[str, str]]:
 
 def _platform_meta() -> dict[str, int | str]:
     cfg = _load_config()
-    title = str(cfg.get("title") or "Yaahlan 智能工具 Agent")
-    subtitle = str(
-        cfg.get("subtitle") or "钉钉 Agent · MOA/Admin 查数 · Tunnel 抓包 · Stage 送礼 · 用例生成"
-    )
+    title = str(cfg.get("title") or web_agent_title())
+    subtitle = str(cfg.get("subtitle") or web_agent_subtitle())
 
     mcp_count = 0
     mcp_example = REPO_ROOT / ".cursor" / "mcp.example.json"
@@ -520,26 +530,25 @@ def _platform_meta() -> dict[str, int | str]:
 
     modules_count = 0
     capabilities_count = 0
-    sources = PLATFORM_DIR / "config" / "sources.json"
-    if sources.is_file():
-        try:
-            data = json.loads(sources.read_text(encoding="utf-8"))
-            modules = data.get("modules") or []
-            if isinstance(modules, list):
-                modules_count = len(modules)
-            for mod in modules if isinstance(modules, list) else []:
-                registry = REPO_ROOT / str(mod.get("registry", ""))
-                if registry.is_file():
-                    reg = json.loads(registry.read_text(encoding="utf-8"))
-                    items = reg.get("items") or reg.get("capabilities") or []
-                    if isinstance(items, list):
-                        capabilities_count += len(items)
-        except (OSError, json.JSONDecodeError):
-            pass
+    try:
+        data = load_sources()
+        modules = data.get("modules") or []
+        if isinstance(modules, list):
+            modules_count = len(modules)
+        for mod in modules if isinstance(modules, list) else []:
+            registry = REPO_ROOT / str(mod.get("registry", ""))
+            if registry.is_file():
+                reg = json.loads(registry.read_text(encoding="utf-8"))
+                items = reg.get("items") or reg.get("capabilities") or []
+                if isinstance(items, list):
+                    capabilities_count += len(items)
+    except (OSError, json.JSONDecodeError, FileNotFoundError, ValueError):
+        pass
 
     return {
         "title": title,
         "subtitle": subtitle,
+        "projectId": get_project_id(),
         "mcp_count": mcp_count,
         "skills_count": skills_count,
         "modules_count": modules_count,

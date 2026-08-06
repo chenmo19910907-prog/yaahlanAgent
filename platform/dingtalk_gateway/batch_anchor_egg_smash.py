@@ -11,8 +11,24 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO_ROOT / "Admin"))
-sys.path.insert(0, str(REPO_ROOT / "MOA"))
+
+from repo_paths import (
+    admin_execute_path,
+    admin_module_dir,
+    batch_progress_script,
+    get_repo_root,
+    gift_execute_path,
+    gift_module_dir,
+    moa_execute_path,
+    moa_module_dir,
+    moa_template,
+    mse_execute_path,
+    mse_module_dir,
+    stage_gateway_url,
+    tmp_dir,
+)
+sys.path.insert(0, str(admin_module_dir()))
+sys.path.insert(0, str(moa_module_dir()))
 
 from admin.client import http_post_json  # noqa: E402
 from admin.env import load_local_env  # noqa: E402
@@ -22,15 +38,14 @@ from moa.anniversary_egg import (  # noqa: E402
     smash_egg_once,
 )
 
-ANCHOR_LIST_URL = (
-    "https://melon-gateway-alpha-stage.immomo.com"
-    "/yaahlan/cms/anchor/anchorList/anchorList"
+ANCHOR_LIST_URL = stage_gateway_url(
+    "anchorList", "/yaahlan/cms/anchor/anchorList/anchorList"
 )
 USER_KEY_DEFAULT = "cidwuF5xkEMvaZMDWWu8BtHbg==:user:32274159141215328"
 
 
 def fetch_anchor_user_ids(limit: int) -> list[str]:
-    load_local_env(str(REPO_ROOT / "Admin"))
+    load_local_env(str(admin_module_dir()))
     user_ids: list[str] = []
     offset = 0
     while len(user_ids) < limit:

@@ -59,7 +59,7 @@ def _lookup_gift_names(gift_ids: list[str]) -> dict[str, dict[str, Any]]:
     if not gift_ids:
         return out
     try:
-        sys.path.insert(0, str(REPO_ROOT / "Gift"))
+        sys.path.insert(0, str(gift_module_dir()))
         from gift.send_stage import query_gift  # noqa: E402
     except Exception:
         return out
@@ -102,7 +102,7 @@ def fetch_year3_mse_config(
     """返回 (parsed_config, mse_meta)。"""
     cmd = [
         "python3",
-        str(REPO_ROOT / "MSE/mse_execute.py"),
+        str(mse_execute_path()),
         "--namespace",
         namespace,
         "--config-key",

@@ -12,10 +12,11 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
-_REPO = Path(__file__).resolve().parents[2]
+from moa_script_paths import moa_execute_path, repo_root, tmp_dir
+
 _DEFAULT_SHEET = (
-    _REPO
-    / ".tmp/family-pk-list/家族成员全量含手机号-20260625-165701.axls/93NwLYZXWyg4ozlzCNanyzR4JkyEqBQm_content.json"
+    tmp_dir()
+    / "family-pk-list/家族成员全量含手机号-20260625-165701.axls/93NwLYZXWyg4ozlzCNanyzR4JkyEqBQm_content.json"
 )
 
 
@@ -88,12 +89,12 @@ def _incr_pk(rank_date: str, family_id: str, member_user_id: str, pk_delta: int)
         "momoId": "df4c6f364f9fcae3",
         "momoName": "e88ea376b29864ad",
     }
-    payload_path = _REPO / ".tmp" / f"incr_pk_{family_id}_{member_user_id}.json"
+    payload_path = tmp_dir() / f"incr_pk_{family_id}_{member_user_id}.json"
     payload_path.parent.mkdir(parents=True, exist_ok=True)
     payload_path.write_text(json.dumps(tpl, ensure_ascii=False), encoding="utf-8")
     proc = subprocess.run(
-        ["python3", str(_REPO / "MOA/moa_execute.py"), "--payload-file", str(payload_path)],
-        cwd=str(_REPO),
+        ["python3", str(moa_execute_path()), "--payload-file", str(payload_path)],
+        cwd=str(repo_root()),
         capture_output=True,
         text=True,
         timeout=30,
@@ -146,7 +147,7 @@ def main() -> int:
                 }
             )
 
-    out_path = _REPO / ".tmp" / f"family_pk_member_incr_{rank_date}.json"
+    out_path = tmp_dir() / f"family_pk_member_incr_{rank_date}.json"
     summary: dict[str, Any] = {
         "summary": {
             "date": rank_date,

@@ -22,8 +22,14 @@ import time
 from pathlib import Path
 from typing import Any
 
-_REPO = Path(__file__).resolve().parents[2]
-_URL = "/service/yaahlan/user/intimate-api"
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from project_api import repo_root, service_url  # noqa: E402
+
+_REPO = repo_root()
+_URL = service_url("intimateApiService", "/service/yaahlan/user/intimate-api")
 _DEFAULT_BUDDY_GIFT = "2005007129"  # buddyGiftList 特价礼（已抓包验证）
 _DEFAULT_CP_GIFT = "2005004592"  # cpGiftList Neon Heart 1500钻（13311111112 抓包 intimateInvitePreviewPage）
 

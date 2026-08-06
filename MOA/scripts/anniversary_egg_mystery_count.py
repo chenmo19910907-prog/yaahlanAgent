@@ -6,15 +6,11 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-GATEWAY_DIR = REPO_ROOT / "platform" / "dingtalk_gateway"
+from moa_script_paths import ensure_gateway_path, ensure_moa_gift_paths
 
-if str(REPO_ROOT / "MOA") not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT / "MOA"))
-if str(GATEWAY_DIR) not in sys.path:
-    sys.path.insert(0, str(GATEWAY_DIR))
+GATEWAY_DIR = ensure_gateway_path()
+ensure_moa_gift_paths()
 
 from anniversary_egg_smash_to_workbook import load_activity_rules  # noqa: E402
 from moa.anniversary_egg import (  # noqa: E402

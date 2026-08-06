@@ -15,14 +15,18 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
 
-ROOT_DEFAULT = (
-    Path(__file__).resolve().parent.parent / "testcase-kb"
-)
+from project_paths import testcase_kb_root  # noqa: E402
+
+ROOT_DEFAULT = testcase_kb_root()
 
 
 @dataclass

@@ -1,0 +1,26 @@
+{
+  "description": "CP 爱意值批量送礼默认礼物（礼物面板 Gift Tab · 名称须为 Rose，非 roses）",
+  "defaultGiftId": "2005000233",
+  "defaultGiftName": "Rose",
+  "displayName": "Rose",
+  "forbiddenGiftIds": [
+    "2005004730",
+    "2005001776",
+    "2005001778",
+    "2005001774",
+    "2005005416"
+  ],
+  "candidateGiftIds": ["2005000233"],
+  "panelSource": {
+    "userId": "100465989",
+    "phone": "13311111111",
+    "method": "getGiftTabListV3",
+    "serviceUrl": "/service/yh-components/gift-panel"
+  },
+  "roseGiftsFromPanel": [
+    { "name": "Rose", "id": "2005000233", "price": 1, "tab": "Gift", "note": "唯一默认；面板名 Rose（非 roses）" },
+    { "name": "roses", "id": "2005001776", "price": 99, "tab": "Gift", "forbidden": true },
+    { "name": "roses", "id": "2005001778", "price": 1999, "tab": "Gift", "forbidden": true },
+    { "name": "roses", "id": "2005001774", "price": 18888, "tab": "Gift", "forbidden": true }
+  ]
+}

@@ -1,4 +1,7 @@
 {
+  "_meta": {
+    "note": "向后兼容 fallback；优先使用 projects/<AGENT_PROJECT>/sources.json"
+  },
   "version": 3,
   "top_level_rules": [
     { "group": "用户", "prefixes": ["用户"] },

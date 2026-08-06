@@ -29,6 +29,22 @@ if (
 if str(GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR))
 
+from repo_paths import (
+    admin_execute_path,
+    admin_module_dir,
+    batch_progress_script,
+    get_repo_root,
+    gift_execute_path,
+    gift_module_dir,
+    moa_execute_path,
+    moa_module_dir,
+    moa_template,
+    mse_execute_path,
+    mse_module_dir,
+    stage_gateway_url,
+    tmp_dir,
+)
+
 from family_pk_calc_utils import (  # noqa: E402
     bracket_for_rank,
     calc_family_tier_rows,
@@ -109,7 +125,7 @@ def load_receive_rank(rank_date: str) -> dict[str, dict[str, Any]]:
     proc = subprocess.run(
         [
             sys.executable,
-            str(REPO_ROOT / "MOA/moa_execute.py"),
+            str(moa_execute_path()),
             "--family-pk-query-receive-rank",
             "--family-pk-date",
             rank_date,
@@ -291,7 +307,7 @@ def export_reward_calc_to_workbook(
         write_reward_calc_sheet_async(workbook, sheet_rows, sheet_name=sheet_name)
     )
     workbook_title = rename_family_pk_workbook(workbook, pk_date)
-    out_path = REPO_ROOT / ".tmp" / f"family_pk_reward_calc_{pk_date}.json"
+    out_path = tmp_dir() / f"family_pk_reward_calc_{pk_date}.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     summary["workbookUrl"] = doc_url
     summary["workbookTitle"] = workbook_title

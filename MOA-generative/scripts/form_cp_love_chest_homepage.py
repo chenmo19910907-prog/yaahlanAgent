@@ -11,10 +11,16 @@ import time
 from pathlib import Path
 from typing import Any
 
-_REPO = Path(__file__).resolve().parents[2]
-_SERVICE_URL = "/service/yaahlan-trick/external/cp-love-chest"
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from project_api import load_body_template, repo_root, service_url  # noqa: E402
+
+_REPO = repo_root()
+_SERVICE_URL = service_url("cpLoveChestService", "/service/yaahlan-trick/external/cp-love-chest")
 _METHOD = "getCpLoveChestHomepage"
-_TEMPLATE_BODY = _REPO / "MOA-generative/templates/example-getCpLoveChestHomepage.body.json"
+_TEMPLATE_BODY = load_body_template("templates/example-getCpLoveChestHomepage.body.json")
 
 
 def _build_body(user_id: str, template: dict[str, Any]) -> dict[str, Any]:

@@ -12,8 +12,14 @@ from typing import Any
 
 _MODULE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _REPO_ROOT = os.path.dirname(_MODULE_DIR)
-_REGISTRY = os.path.join(_MODULE_DIR, "config", "registry.json")
-_USAGE = os.path.join(_MODULE_DIR, "使用方法.md")
+_SCRIPTS = os.path.join(_MODULE_DIR, "scripts")
+if _SCRIPTS not in sys.path:
+    sys.path.insert(0, _SCRIPTS)
+
+from project_api import generative_root  # noqa: E402
+
+_REGISTRY = str(generative_root() / "config" / "registry.json")
+_USAGE = str(generative_root() / "使用方法.md")
 
 
 def _read_json(path: str) -> dict[str, Any]:

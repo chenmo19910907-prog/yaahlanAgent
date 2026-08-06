@@ -10,6 +10,11 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+_SCRIPTS = ROOT / "scripts"
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from project_paths import bug_kb_root, temporary_testcase_dir, testcase_kb_root  # noqa: E402
 
 
 def _load_env_file(path: Path) -> dict[str, str]:
@@ -115,15 +120,15 @@ def main() -> int:
     )
 
     print("\n=== 用例工作区 ===")
-    tmp = ROOT / "temporary_testcase"
+    tmp = temporary_testcase_dir()
     md_count = len(list(tmp.glob("*.md"))) if tmp.is_dir() else 0
     _check("temporary_testcase", tmp.is_dir(), f"{md_count} 个 .md")
 
-    for sub, label in (
-        ("testcase-kb", "testcase-kb"),
-        ("bug-kb", "bug-kb"),
+    for path_fn, label in (
+        (testcase_kb_root, "testcase-kb"),
+        (bug_kb_root, "bug-kb"),
     ):
-        p = ROOT / sub
+        p = path_fn()
         _check(label, p.is_dir(), "存在" if p.is_dir() else "缺失")
 
     if not args.skip_probe:

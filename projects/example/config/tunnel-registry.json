@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "generated_index_path": "Tunnel/使用方法.md",
+  "items": [
+    {
+      "id": "list_requests",
+      "name": "抓包-查询用户请求列表",
+      "category": "Tunnel 抓包",
+      "description": "按 userId（momoid）查询最近 HTTP 请求列表；支持 keyword、g_appid、g_env 过滤；列表项已含 request/response 体",
+      "prompts": [
+        "查用户 <userId> 最近抓包",
+        "tunnel 查 <userId> 最近 1 小时请求",
+        "抓包看 <userId> 送了什么礼物接口"
+      ],
+      "command": "python3 Tunnel/tunnel_execute.py --momoid <userId> --since 3600"
+    },
+    {
+      "id": "list_requests_keyword",
+      "name": "抓包-按关键字过滤",
+      "category": "Tunnel 抓包",
+      "description": "在请求 URL 中按关键字过滤（如 gift、sendGift、heartbeat）",
+      "prompts": [
+        "抓包查 <userId> 送礼接口",
+        "tunnel keyword gift <userId>",
+        "看 <userId> 最近 login 相关请求"
+      ],
+      "command": "python3 Tunnel/tunnel_execute.py --momoid <userId> --keyword gift --since 3600"
+    },
+    {
+      "id": "request_detail",
+      "name": "抓包-单条请求详情",
+      "category": "Tunnel 抓包",
+      "description": "按 _id 输出单条请求的 request/response JSON（需先从列表拿到 _id）",
+      "prompts": [
+        "tunnel 详情 <requestId>",
+        "展开抓包 <requestId> 的请求响应"
+      ],
+      "command": "python3 Tunnel/tunnel_execute.py --momoid <userId> --request-id <requestId> --since 7200"
+    },
+    {
+      "id": "list_requests_json",
+      "name": "抓包-完整 JSON 输出",
+      "category": "Tunnel 抓包",
+      "description": "输出完整列表 JSON，便于 Agent 解析 ec/em/data 与每条 request/response",
+      "prompts": [
+        "tunnel json <userId>",
+        "抓包原始数据 <userId>"
+      ],
+      "command": "python3 Tunnel/tunnel_execute.py --momoid <userId> --since 3600 --output json"
+    },
+    {
+      "id": "tunnel_capture_list",
+      "name": "抓包-常用验收目录",
+      "category": "Tunnel 抓包",
+      "description": "列出已登记的常用抓包验收项（礼物/房间/弹窗/家族PK 等）；详见 adb/config/tunnel_capture_catalog.json",
+      "prompts": [
+        "抓包常用验收列表",
+        "tunnel capture list",
+        "有哪些抓包验收"
+      ],
+      "command": "python3 adb/adb_execute.py tunnel capture list"
+    },
+    {
+      "id": "tunnel_capture_run",
+      "name": "抓包-执行常用验收",
+      "category": "Tunnel 抓包",
+      "description": "按 catalog id 执行验收（如 gift_send、gift_backpack、family_pk_page）；须先完成 trigger 操作",
+      "prompts": [
+        "抓包验收 gift_send userId=<userId>",
+        "tunnel capture run gift_backpack <userId>",
+        "验收背包礼物抓包"
+      ],
+      "command": "python3 adb/adb_execute.py tunnel capture run <captureId> --momoid <userId> --since 600"
+    },
+    {
+      "id": "mock_param_set",
+      "name": "Mock-字段覆盖(param_mock)",
+      "category": "Tunnel Mock",
+      "description": "对指定 momoid+URI 的 response 字段做 Mock（POST /api/param_mock）。适合改 CP 爱意宝箱 data.countdownSec 等单字段；App 须重进页面触发请求。",
+      "prompts": [
+        "tunnel mock 用户 <userId> 接口 <keyword|uri> 字段 <key> 改为 <value>",
+        "mock CP 爱意宝箱倒计时 <userId> <seconds> 秒",
+        "抓包 mock data.countdownSec"
+      ],
+      "command": "python3 Tunnel/tunnel_mock_execute.py field --momoid <userId> --keyword <keyword> --key <fieldPath> --value <value> --since 3600"
+    },
+    {
+      "id": "mock_param_list",
+      "name": "Mock-查看字段覆盖",
+      "category": "Tunnel Mock",
+      "description": "列出 param_mock 字段覆盖（GET /api/param_mock）",
+      "prompts": [
+        "查看用户 <userId> tunnel mock 字段",
+        "tunnel param mock list <userId>"
+      ],
+      "command": "python3 Tunnel/tunnel_mock_execute.py param-list --momoid <userId> --keyword <keyword> --since 3600"
+    },
+    {
+      "id": "mock_case_list",
+      "name": "Mock-查看整包规则",
+      "category": "Tunnel Mock",
+      "description": "列出 mock_cases 整包响应 Mock（GET /api/mock_cases）",
+      "prompts": [
+        "查看用户 <userId> tunnel mock 整包",
+        "tunnel mock list <userId>"
+      ],
+      "command": "python3 Tunnel/tunnel_mock_execute.py list --momoid <userId> --keyword <keyword> --since 3600"
+    },
+    {
+      "id": "mock_case_create",
+      "name": "Mock-创建整包响应",
+      "category": "Tunnel Mock",
+      "description": "基于抓包 response 或 JSON 文件创建 mock_cases（POST /api/mock_cases）；可 --enable 立即生效",
+      "prompts": [
+        "tunnel mock 整包 用户 <userId> 接口 <keyword>",
+        "用最近抓包创建 mock response"
+      ],
+      "command": "python3 Tunnel/tunnel_mock_execute.py case-create --momoid <userId> --keyword <keyword> --since 3600 --enable"
+    },
+    {
+      "id": "mock_case_stop",
+      "name": "Mock-停用整包规则",
+      "category": "Tunnel Mock",
+      "description": "停用 mock_cases（PATCH action=stop）",
+      "prompts": [
+        "关闭用户 <userId> tunnel mock",
+        "tunnel mock stop <userId>"
+      ],
+      "command": "python3 Tunnel/tunnel_mock_execute.py case-stop --momoid <userId> --keyword <keyword> --since 3600"
+    }
+  ]
+}

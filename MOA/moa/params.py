@@ -90,7 +90,9 @@ def set_cp_love_value_add_params(
         raise ValueError("userId 与 remoteId 均不能为空")
     if value == 0:
         raise ValueError("value 不能为 0")
-    payload["url"] = "/service/yaahlan/user/cp-moa"
+    from .project_paths import moa_service_url
+
+    payload["url"] = moa_service_url("cpMoa", "/service/yaahlan/user/cp-moa")
     payload["method"] = "addCpLoveValue"
     payload["params"] = three_params_str_str_long(user_id, remote_id, value)
 

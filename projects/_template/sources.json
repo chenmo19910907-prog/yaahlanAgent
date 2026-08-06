@@ -1,0 +1,17 @@
+{
+  "version": 3,
+  "top_level_rules": [
+    { "group": "平台", "names": ["Admin", "MOA", "Tunnel"] }
+  ],
+  "top_level_order": ["平台"],
+  "env_check": {
+    "label": "检查环境配置",
+    "prompt": "@新手上手.md 运行环境检查"
+  },
+  "catalog_include_playbooks": false,
+  "cursor_bridge": {
+    "host": "127.0.0.1",
+    "port": 18765
+  },
+  "modules": []
+}

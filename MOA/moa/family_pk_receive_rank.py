@@ -13,9 +13,17 @@ from .family import parse_family_create_time_summary
 from .params import json_param, set_family_create_time_query_params
 from .payload import load_payload
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-_CREATE_TIME_TEMPLATE = _REPO_ROOT / "MOA" / "templates" / "家族-查询创建时间.json"
-_RANK_TEMPLATE = _REPO_ROOT / "MOA" / "templates" / "家族PK-查询收礼日榜.json"
+_CREATE_TIME_TEMPLATE = moa_template("家族-查询创建时间.json")
+_RANK_TEMPLATE = moa_template("家族PK-查询收礼日榜.json")
+
+from .project_paths import (
+    admin_execute_path,
+    get_repo_root,
+    gift_module_dir,
+    moa_execute_path,
+    moa_template,
+)
+
 
 
 def _clone_args(args: argparse.Namespace, **overrides: Any) -> argparse.Namespace:

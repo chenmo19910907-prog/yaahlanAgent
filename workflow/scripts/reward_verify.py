@@ -12,10 +12,26 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-_REPO = Path(__file__).resolve().parents[2]
-_PROP_TYPES_PATH = _REPO / "MOA/config/prop_types.json"
-_DIAMOND_HISTORY_BODY = _REPO / "MOA-generative/templates/example-diamondHistory.body.json"
-_DIAMOND_HISTORY_SERVICE = "/service/yaahlan/components/wallet-api"
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from project_api import (  # noqa: E402
+    moa_execute_path,
+    moa_generative_root,
+    moa_module_dir,
+    moa_template,
+    repo_root,
+    service_url,
+    tmp_dir,
+)
+
+_REPO = repo_root()
+_PROP_TYPES_PATH = moa_module_dir() / "config/prop_types.json"
+_DIAMOND_HISTORY_BODY = moa_generative_root() / "templates/example-diamondHistory.body.json"
+_DIAMOND_HISTORY_SERVICE = service_url(
+    "diamondHistoryService", "/service/yaahlan/components/wallet-api"
+)
 _DIAMOND_HISTORY_METHOD = "diamondHistory"
 _DEFAULT_PROP_TYPES = (
     "10043",
@@ -61,7 +77,7 @@ def query_diamond(user_id: str) -> int | None:
     rc, out, _ = _run(
         [
             "python3",
-            "MOA/moa_execute.py",
+            str(moa_execute_path()),
             "--payload-file",
             "MOA/templates/钻石-查询余额.json",
             "--diamond-query-user-id",
@@ -240,7 +256,7 @@ def query_props(user_id: str, prop_type: str) -> dict[str, dict[str, Any]]:
     rc, out, _ = _run(
         [
             "python3",
-            "MOA/moa_execute.py",
+            str(moa_execute_path()),
             "--payload-file",
             "MOA/templates/装扮-查询用户拥有道具.json",
             "--user-prop-query-user-id",

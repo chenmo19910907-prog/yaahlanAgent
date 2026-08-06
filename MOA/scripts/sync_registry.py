@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""将 MOA/templates 下未登记的新模板自动写入 config/registry.json，并刷新 使用方法.md。"""
+"""将当前项目 moaTemplates 下未登记的新模板自动写入 config/registry.json，并刷新 使用方法.md。"""
 
 from __future__ import annotations
 
@@ -11,11 +11,22 @@ import subprocess
 import sys
 from typing import Any
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_SCRIPTS = os.path.dirname(os.path.abspath(__file__))
+_MOA = os.path.dirname(_SCRIPTS)
+sys.path.insert(0, _SCRIPTS)
+sys.path.insert(0, _MOA)
 
-from moa.paths import moa_dir, registry_path, templates_dir
+from moa.paths import moa_dir, registry_path, templates_dir  # noqa: E402
+from moa_script_paths import (  # noqa: E402
+    moa_execute_repo_rel,
+    moa_template_repo_rel,
+    moa_templates_repo_rel,
+)
 
-_TEMPLATE_REF_RE = re.compile(r"MOA/templates/([^\s\"'\\]+)")
+
+def _template_ref_res() -> list[re.Pattern[str]]:
+    bases = {moa_templates_repo_rel().rstrip("/"), "MOA/templates"}
+    return [re.compile(rf"{re.escape(base)}/([^\s\"'\\]+)") for base in sorted(bases)]
 
 
 def _read_json(path: str) -> dict[str, Any]:
@@ -69,8 +80,9 @@ def _collect_registered_templates(items: list[Any]) -> set[str]:
         cmd = item.get("command")
         if not isinstance(cmd, str):
             continue
-        for match in _TEMPLATE_REF_RE.finditer(cmd):
-            registered.add(match.group(1))
+        for pattern in _template_ref_res():
+            for match in pattern.finditer(cmd):
+                registered.add(match.group(1))
     return registered
 
 
@@ -96,8 +108,9 @@ def _unique_id(base: str, used: set[str]) -> str:
 
 def _build_command(template_rel: str, cli_suffix: str) -> str:
     suffix = cli_suffix.strip()
+    execute = moa_execute_repo_rel()
     lines = [
-        "python3 MOA/moa_execute.py \\",
+        f"python3 {execute} \\",
         f"  --payload-file {template_rel}" + (" \\" if suffix else ""),
     ]
     for part in suffix.split():
@@ -140,7 +153,7 @@ def _infer_registry_item(
     elif isinstance(meta.get("commandSuffix"), str):
         cli_suffix = meta["commandSuffix"].strip()
 
-    template_rel = f"MOA/templates/{template_file}"
+    template_rel = moa_template_repo_rel(template_file)
     return {
         "id": item_id,
         "name": name.strip(),
@@ -193,6 +206,8 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", help="仅打印将新增的条目，不写文件")
     parser.add_argument("--no-generate", action="store_true", help="入库后不刷新 使用方法.md 与 catalog")
     args = parser.parse_args()
+
+    print(f"sync_registry: 模板目录 {templates_dir()} → command 前缀 {moa_templates_repo_rel()}/")
 
     added = sync_registry(dry_run=args.dry_run)
     if not added:

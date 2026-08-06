@@ -8,9 +8,17 @@ import time
 from pathlib import Path
 from typing import Any, Callable
 
+from .project_paths import (
+    admin_execute_path,
+    get_repo_root,
+    gift_module_dir,
+    moa_execute_path,
+    moa_template,
+)
+
+
 from moa.gift_panel_backpack import fetch_gift_panel_backpack_via_moa
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
 _PERMANENT_END_MS = 7258089599000
 _MS_PER_DAY = 86_400_000
 # 砸金蛋常见装扮类型（queryOwnPropList；propPackageList 不含已拥有装扮）
@@ -170,7 +178,7 @@ def sum_prop_days_added(
 
 def _call_query_own_prop_list(user_id: str, prop_type_code: str) -> list[dict[str, Any]]:
     """MOA queryOwnPropList：查用户已拥有装扮（非背包 propPackageList）。"""
-    gift_dir = _REPO_ROOT / "Gift"
+    gift_dir = gift_module_dir()
     if str(gift_dir) not in sys.path:
         sys.path.insert(0, str(gift_dir))
     from gift.send_stage import StageGiftError, call_moa

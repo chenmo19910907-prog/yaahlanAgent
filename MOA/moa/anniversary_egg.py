@@ -9,8 +9,16 @@ import sys
 from pathlib import Path
 from typing import Any
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-_BACKDOOR_TPL = _REPO_ROOT / "MOA" / "templates" / "3周年-砸金蛋测试.json"
+from .project_paths import (
+    admin_execute_path,
+    get_repo_root,
+    gift_module_dir,
+    moa_execute_path,
+    moa_template,
+)
+
+
+_BACKDOOR_TPL = moa_template("3周年-砸金蛋测试.json")
 ANNIVERSARY_EGG_DEFAULT_BATCH = 10
 # testGetMysteryCount 第一参：type=2 为活动内用户/房间/平台累计砸蛋次数（砸蛋后会 +N）；
 # type=1 为质量平台另一套读数，砸蛋前后不变，不可用于「砸前+N=砸后」验收。
@@ -37,11 +45,11 @@ def resolve_own_room_id(user_id: str) -> str:
     proc = subprocess.run(
         [
             _moa_python(),
-            str(_REPO_ROOT / "Admin" / "admin_execute.py"),
+            str(admin_execute_path()),
             "--query-user-id",
             user_id,
         ],
-        cwd=str(_REPO_ROOT),
+        cwd=str(get_repo_root()),
         capture_output=True,
         text=True,
         timeout=60,
@@ -78,19 +86,19 @@ def _run_backdoor_expr(expr: str, *, timeout_ms: int = 60000) -> Any:
             "value": expr,
         }
     ]
-    tmp = _REPO_ROOT / ".tmp" / "anniversary_egg_backdoor.json"
+    tmp = get_repo_root() / ".tmp" / "anniversary_egg_backdoor.json"
     tmp.parent.mkdir(parents=True, exist_ok=True)
     tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
     proc = subprocess.run(
         [
             _moa_python(),
-            str(_REPO_ROOT / "MOA" / "moa_execute.py"),
+            str(moa_execute_path()),
             "--payload-file",
             str(tmp),
             "--timeout-ms",
             str(timeout_ms),
         ],
-        cwd=str(_REPO_ROOT),
+        cwd=str(get_repo_root()),
         capture_output=True,
         text=True,
         timeout=max(timeout_ms // 1000 + 90, 120),

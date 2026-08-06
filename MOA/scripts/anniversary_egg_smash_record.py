@@ -11,12 +11,15 @@ import sys
 from pathlib import Path
 from typing import Any
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-GATEWAY_DIR = REPO_ROOT / "platform" / "dingtalk_gateway"
-_EXCEL_VENV = (
-    REPO_ROOT / ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/venv/bin/python3.13"
+from moa_script_paths import (
+    dingtalk_excel_python,
+    ensure_gateway_path,
+    ensure_moa_gift_paths,
+    moa_template,
+    tmp_dir,
 )
 
+_EXCEL_VENV = dingtalk_excel_python()
 if (
     __name__ == "__main__"
     and _EXCEL_VENV.is_file()
@@ -24,8 +27,7 @@ if (
 ):
     os.execv(str(_EXCEL_VENV), [str(_EXCEL_VENV), str(Path(__file__).resolve()), *sys.argv[1:]])
 
-if str(GATEWAY_DIR) not in sys.path:
-    sys.path.insert(0, str(GATEWAY_DIR))
+GATEWAY_DIR = ensure_gateway_path()
 
 from anniversary_egg_smash_to_workbook import (  # noqa: E402
     DEFAULT_SHEET,
@@ -37,7 +39,7 @@ from anniversary_egg_smash_to_workbook import (  # noqa: E402
     record_to_row,
 )
 
-MOA_TPL = REPO_ROOT / "MOA/templates/3周年-砸金蛋测试.json"
+MOA_TPL = moa_template("3周年-砸金蛋测试.json")
 
 
 def _parse_json_blob(text: str) -> dict[str, Any]:
@@ -133,7 +135,7 @@ def run_moa_smash_once(
 ) -> dict[str, Any]:
     """调用 smashEgg 一次；本次砸蛋次数由返回值/剩余次数差值判定。"""
     del remaining  # 次数不再依赖入参估算，统一走 getRemainChance 差值
-    sys.path.insert(0, str(REPO_ROOT / "MOA"))
+    ensure_moa_gift_paths()
     from moa.anniversary_egg import smash_egg_once  # noqa: E402
 
     result = smash_egg_once(
@@ -197,7 +199,7 @@ def run_moa_smash_and_record(
     workbook_name: str = "",
 ) -> dict[str, Any]:
     """砸一次 →（真实结果）写一次；次数耗尽则提前结束。"""
-    sys.path.insert(0, str(REPO_ROOT / "MOA"))
+    ensure_moa_gift_paths()
     from moa.anniversary_egg import is_real_smash_result  # noqa: E402
 
     calls = 1 if smash_count is None else int(smash_count)
@@ -213,7 +215,7 @@ def run_moa_smash_and_record(
         __import__("datetime").timezone.utc
     ).strftime("%Y%m%dT%H%M%SZ")
     backup_path = (
-        REPO_ROOT / ".tmp" / f"anniversary_egg_smash_{user_id}_{stamp}.jsonl"
+        tmp_dir() / f"anniversary_egg_smash_{user_id}_{stamp}.jsonl"
     )
     created_url: str | None = None
 
@@ -363,7 +365,7 @@ def main() -> int:
 
     room_id = (args.room_id or "").strip()
     if not room_id and not args.response_json:
-        sys.path.insert(0, str(REPO_ROOT / "MOA"))
+        ensure_moa_gift_paths()
         from moa.anniversary_egg import resolve_own_room_id  # noqa: E402
 
         room_id = resolve_own_room_id(args.user_id)

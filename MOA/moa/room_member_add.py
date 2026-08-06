@@ -13,8 +13,16 @@ from .config import build_room_member_is_member_expr, build_room_member_join_exp
 from .params import set_backdoor_execute_expr
 from .payload import load_payload
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-_TEMPLATE = _REPO_ROOT / "MOA" / "templates" / "房间成员-快速添加.json"
+_TEMPLATE = moa_template("房间成员-快速添加.json")
+
+from .project_paths import (
+    admin_execute_path,
+    get_repo_root,
+    gift_module_dir,
+    moa_execute_path,
+    moa_template,
+)
+
 
 
 def needs_room_member_add(args: argparse.Namespace) -> bool:

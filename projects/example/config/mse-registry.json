@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "generated_index_path": "MSE/使用方法.md",
+  "items": [
+    {
+      "id": "list_voga_common",
+      "name": "配置-列出 voga-common",
+      "category": "MSE 服务配置",
+      "description": "读取 vas 服务公有 namespace voga-common 下的配置清单（stage/alpha）；默认展示前 20 条 configKey",
+      "prompts": [
+        "读取 voga-common 配置列表",
+        "列出 MSE voga-common 公有配置",
+        "查 stage 环境 voga-common 有哪些配置"
+      ],
+      "command": "python3 MSE/mse_execute.py --namespace voga-common --limit 20"
+    },
+    {
+      "id": "get_config_key",
+      "name": "配置-按 key 读取",
+      "category": "MSE 服务配置",
+      "description": "按 configKey 精确读取单条配置内容与说明；支持任意 namespace/appKey",
+      "prompts": [
+        "读取 voga-common 配置 <configKey>",
+        "查 MSE 配置 key=<configKey>",
+        "getConfigs familyPkConfig"
+      ],
+      "command": "python3 MSE/mse_execute.py --namespace voga-common --config-key <configKey>"
+    },
+    {
+      "id": "grep_config_key",
+      "name": "配置-关键字过滤",
+      "category": "MSE 服务配置",
+      "description": "在 namespace 结果中按 configKey 子串过滤（客户端 grep）",
+      "prompts": [
+        "voga-common 里查 family 相关配置",
+        "grep voga-common pk 配置"
+      ],
+      "command": "python3 MSE/mse_execute.py --namespace voga-common --grep family --limit 30"
+    },
+    {
+      "id": "list_voga_activity",
+      "name": "配置-列出 voga-activity",
+      "category": "MSE 服务配置",
+      "description": "读取 vas 服务公有 namespace voga-activity（活动配置）下的配置清单（stage/alpha）；默认展示前 20 条 configKey",
+      "prompts": [
+        "读取 voga-activity 配置列表",
+        "列出 MSE voga-activity 公有活动配置",
+        "查 stage 环境 voga-activity 有哪些配置",
+        "搜索公有 voga-activity 配置"
+      ],
+      "command": "python3 MSE/mse_execute.py --namespace voga-activity --limit 20"
+    },
+    {
+      "id": "grep_voga_activity",
+      "name": "配置-voga-activity 关键字过滤",
+      "category": "MSE 服务配置",
+      "description": "在 voga-activity namespace 中按 configKey 子串过滤（活动相关配置 grep）",
+      "prompts": [
+        "voga-activity 里查 gift 相关配置",
+        "grep voga-activity 礼物代言配置",
+        "活动配置里查 valentine 相关 key"
+      ],
+      "command": "python3 MSE/mse_execute.py --namespace voga-activity --grep gift --limit 30"
+    },
+    {
+      "id": "get_voga_activity_config_key",
+      "name": "配置-voga-activity 按 key 读取",
+      "category": "MSE 服务配置",
+      "description": "在 voga-activity namespace 按 configKey 精确读取单条活动配置内容与说明",
+      "prompts": [
+        "读取 voga-activity 配置 <configKey>",
+        "查 MSE 活动配置 giftSpokespersonWhiteList",
+        "getConfigs voga-activity giftSpokespersonWhiteList"
+      ],
+      "command": "python3 MSE/mse_execute.py --namespace voga-activity --config-key <configKey>"
+    },
+    {
+      "id": "list_application",
+      "name": "配置-列出 Application（私有）",
+      "category": "MSE 服务配置",
+      "description": "读取 vas 服务私有 application 配置清单（MSE 控制台「私有/application」；API nameSpace 为空，stage/alpha）",
+      "prompts": [
+        "读取 Application 私有配置列表",
+        "列出 MSE 私有 application 配置",
+        "查 stage 环境 vas 服务私有配置有哪些",
+        "搜索私有 application 配置"
+      ],
+      "command": "python3 MSE/mse_execute.py --namespace Application --limit 20"
+    },
+    {
+      "id": "grep_application",
+      "name": "配置-Application 关键字过滤",
+      "category": "MSE 服务配置",
+      "description": "在 Application（私有）namespace 中按 configKey 子串过滤",
+      "prompts": [
+        "Application 里查 gift 相关配置",
+        "grep 私有 application 礼物代言配置",
+        "私有配置里查 challenge 相关 key"
+      ],
+      "command": "python3 MSE/mse_execute.py --namespace Application --grep gift --limit 30"
+    },
+    {
+      "id": "get_application_config_key",
+      "name": "配置-Application 按 key 读取",
+      "category": "MSE 服务配置",
+      "description": "在 Application（私有）namespace 按 configKey 精确读取单条服务配置",
+      "prompts": [
+        "读取 Application 配置 <configKey>",
+        "查 MSE 私有配置 giftSpokespersonTaskConfig",
+        "getConfigs Application giftSpokespersonTaskConfig"
+      ],
+      "command": "python3 MSE/mse_execute.py --namespace Application --config-key <configKey>"
+    }
+  ]
+}

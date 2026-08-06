@@ -85,6 +85,19 @@ def default_test_device_kb_path() -> str:
     except (ImportError, ValueError, OSError):
         pass
 
+    try:
+        import sys
+        from pathlib import Path
+
+        platform_dir = Path(_project_root()) / "platform"
+        if str(platform_dir) not in sys.path:
+            sys.path.insert(0, str(platform_dir))
+        from project.loader import test_devices_path
+
+        return str(test_devices_path())
+    except (ImportError, FileNotFoundError, ValueError, OSError):
+        pass
+
     return os.path.join(_project_root(), "testcase-kb", "test_devices.json")
 
 

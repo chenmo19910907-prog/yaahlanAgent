@@ -28,8 +28,10 @@ _SCRIPTS = Path(__file__).resolve().parent
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
+from project_paths import temporary_testcase_dir, testcase_kb_root  # noqa: E402
+
 DEFAULT_SOURCE_DIR = Path("/Users/user/Desktop/未命名文件夹")
-DEFAULT_OUTPUT_DOC_DIR = Path(__file__).resolve().parent.parent / "testcase-kb"
+DEFAULT_OUTPUT_DOC_DIR = testcase_kb_root()
 
 # 固定大模块文件映射（尽量少文件）
 # 同步时跳过土语/俄语专项（与 kb_filter_locales.py 一致）

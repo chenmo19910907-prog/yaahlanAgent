@@ -29,6 +29,22 @@ if (
 if str(GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR))
 
+from repo_paths import (
+    admin_execute_path,
+    admin_module_dir,
+    batch_progress_script,
+    get_repo_root,
+    gift_execute_path,
+    gift_module_dir,
+    moa_execute_path,
+    moa_module_dir,
+    moa_template,
+    mse_execute_path,
+    mse_module_dir,
+    stage_gateway_url,
+    tmp_dir,
+)
+
 from family_pk_contrib_verify import format_contrib_verify_cell, verify_contrib_for_families  # noqa: E402
 from family_pk_calc_utils import (  # noqa: E402
     compute_member_expected_diamonds,
@@ -167,7 +183,7 @@ def load_receive_rank(rank_date: str) -> dict[str, dict[str, Any]]:
     proc = subprocess.run(
         [
             sys.executable,
-            str(REPO_ROOT / "MOA/moa_execute.py"),
+            str(moa_execute_path()),
             "--family-pk-query-receive-rank",
             "--family-pk-date",
             rank_date,
@@ -367,7 +383,7 @@ def compute_member_reward_rows(
 ) -> tuple[list[dict[str, Any]], dict[str, str], dict[tuple[str, str], str]]:
     """根据造数 PK + 匹配验收最新对战，按家族总 PK 重算胜负与应得钻石。"""
     pk_date = _normalize_date(pk_date)
-    report_path = seed_report or (REPO_ROOT / ".tmp" / f"family_pk_member_pk_seed_{pk_date}.json")
+    report_path = seed_report or (tmp_dir() / f"family_pk_member_pk_seed_{pk_date}.json")
     if not report_path.is_file():
         raise RuntimeError(f"未找到造数报告: {report_path}，请先执行第五步 family_pk_member_pk_seed.py")
 
@@ -484,7 +500,7 @@ def export_member_reward_to_workbook(
         tier_sheet=tier_sheet,
         match_sheet=match_sheet,
     )
-    report_path = seed_report or (REPO_ROOT / ".tmp" / f"family_pk_member_pk_seed_{pk_date}.json")
+    report_path = seed_report or (tmp_dir() / f"family_pk_member_pk_seed_{pk_date}.json")
     seed_data = json.loads(report_path.read_text(encoding="utf-8"))
     battles, bye = load_battles_from_match_sheet(workbook, sheet_name=match_sheet)
 
@@ -538,7 +554,7 @@ def export_member_reward_to_workbook(
         "battleSource": "match_sheet",
         "seedReport": str(report_path),
     }
-    out_path = REPO_ROOT / ".tmp" / f"family_pk_member_reward_{pk_date}.json"
+    out_path = tmp_dir() / f"family_pk_member_reward_{pk_date}.json"
     out_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     summary["reportPath"] = str(out_path)
     return summary

@@ -14,9 +14,25 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO_ROOT / "Admin"))
-sys.path.insert(0, str(REPO_ROOT / "MOA"))
-sys.path.insert(0, str(REPO_ROOT / "Gift"))
+
+from repo_paths import (
+    admin_execute_path,
+    admin_module_dir,
+    batch_progress_script,
+    get_repo_root,
+    gift_execute_path,
+    gift_module_dir,
+    moa_execute_path,
+    moa_module_dir,
+    moa_template,
+    mse_execute_path,
+    mse_module_dir,
+    stage_gateway_url,
+    tmp_dir,
+)
+sys.path.insert(0, str(admin_module_dir()))
+sys.path.insert(0, str(moa_module_dir()))
+sys.path.insert(0, str(gift_module_dir()))
 
 from admin.client import http_post_json  # noqa: E402
 from admin.env import load_local_env  # noqa: E402
@@ -26,9 +42,8 @@ from moa.anniversary_egg import get_egg_home  # noqa: E402
 GIFT_ID = "2005057191"  # lipstick 199 钻
 DIAMOND_PER_CHANCE = 500
 TOP_UP_DIAMONDS = 1_000_000
-ANCHOR_LIST_URL = (
-    "https://melon-gateway-alpha-stage.immomo.com"
-    "/yaahlan/cms/anchor/anchorList/anchorList"
+ANCHOR_LIST_URL = stage_gateway_url(
+    "anchorList", "/yaahlan/cms/anchor/anchorList/anchorList"
 )
 USER_KEY_DEFAULT = "cidwuF5xkEMvaZMDWWu8BtHbg==:user:32274159141215328"
 
@@ -62,7 +77,7 @@ def report_progress(
 ) -> None:
     cmd = [
         sys.executable,
-        str(REPO_ROOT / "platform/dingtalk_gateway/batch_progress_report.py"),
+        str(batch_progress_script()),
         "--user-key",
         user_key,
         "--current",
@@ -80,7 +95,7 @@ def report_progress(
 
 
 def fetch_anchor_user_ids(limit: int) -> list[str]:
-    load_local_env(str(REPO_ROOT / "Admin"))
+    load_local_env(str(admin_module_dir()))
     user_ids: list[str] = []
     offset = 0
     while len(user_ids) < limit:
@@ -130,7 +145,7 @@ def send_self_gift(*, user_id: str, gift_num: int) -> dict[str, Any]:
     return run_json(
         [
             "python3",
-            str(REPO_ROOT / "Gift/gift_execute.py"),
+            str(gift_execute_path()),
             "--scene",
             "private",
             "--sender",

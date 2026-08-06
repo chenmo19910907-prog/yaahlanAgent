@@ -11,11 +11,12 @@ import urllib.parse
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-ADMIN_DIR = REPO_ROOT / "Admin"
-MOA_DIR = REPO_ROOT / "MOA"
+sys.path.insert(0, str(REPO_ROOT / "Admin" / "scripts"))
 
-sys.path.insert(0, str(ADMIN_DIR))
-sys.path.insert(0, str(MOA_DIR))
+from admin_project_paths import admin_module_dir, moa_module_dir  # noqa: E402
+
+sys.path.insert(0, str(admin_module_dir()))
+sys.path.insert(0, str(moa_module_dir()))
 
 from admin.client import http_get_json  # noqa: E402
 from admin.config import defaults  # noqa: E402
@@ -79,8 +80,8 @@ def main() -> int:
     parser.add_argument("--user-ids", help="逗号分隔 userId；指定时跳过定制礼物列表查询")
     args = parser.parse_args()
 
-    load_admin_env(str(ADMIN_DIR))
-    load_moa_env(str(MOA_DIR))
+    load_admin_env(str(admin_module_dir()))
+    load_moa_env(str(moa_module_dir()))
 
     if args.user_ids:
         user_ids = [u.strip() for u in args.user_ids.split(",") if u.strip()]

@@ -14,21 +14,38 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO_ROOT / "Admin"))
+
+from repo_paths import (
+    admin_execute_path,
+    admin_module_dir,
+    batch_progress_script,
+    get_repo_root,
+    gift_execute_path,
+    gift_module_dir,
+    moa_execute_path,
+    moa_module_dir,
+    moa_template,
+    mse_execute_path,
+    mse_module_dir,
+    stage_gateway_url,
+    tmp_dir,
+)
+sys.path.insert(0, str(admin_module_dir()))
 sys.path.insert(0, str(REPO_ROOT / "Risk"))
 sys.path.insert(0, str(REPO_ROOT / "platform" / "dingtalk_gateway"))
 
 from admin.client import http_post_json  # noqa: E402
-from admin.config import defaults  # noqa: E402
+from admin.config import defaults, load_online_config  # noqa: E402
 from admin.env import load_local_env, load_online_env  # noqa: E402
 from admin.user import parse_user_history_device_summary  # noqa: E402
 from mse_workbook_utils import fetch_workbook_sheets_async  # noqa: E402
+from project_paths import test_devices_json_path  # noqa: E402
 from risk.device_kb import upsert_login_device_record  # noqa: E402
 
 DEFAULT_WORKBOOK_URL = (
     "https://alidocs.dingtalk.com/i/nodes/dQPGYqjpJYgLbY0YCxOYmbg3Wakx1Z5N"
 )
-DEFAULT_KB_PATH = REPO_ROOT / "testcase-kb" / "test_devices.json"
+DEFAULT_KB_PATH = test_devices_json_path()
 
 
 @dataclass
@@ -97,9 +114,14 @@ async def load_accounts(workbook_url: str) -> list[AccountRow]:
 
 
 def fetch_user_history_devices(user_id: str, *, page_size: int = 100) -> list[dict[str, Any]]:
-    base_url = os.environ.get("ADMIN_ONLINE_BASE_URL", "https://yaahlan-admin.wemomo.com").strip()
+    online_admin = load_online_config()
+    api = online_admin.get("api")
+    api_cfg = api if isinstance(api, dict) else {}
+    base_url = os.environ.get("ADMIN_ONLINE_BASE_URL", "").strip() or str(
+        api_cfg.get("baseUrl") or "https://yaahlan-admin.wemomo.com"
+    ).rstrip("/")
     path = str(
-        defaults("query_user_history_device_list").get(
+        defaults("query_user_history_device_list", online=True).get(
             "path", "/yaahlan/backend/deviceHistory/queryUserHistoryDeviceList"
         )
     )
@@ -214,8 +236,8 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
-    load_local_env(str(REPO_ROOT / "Admin"))
-    load_online_env(str(REPO_ROOT / "Admin"))
+    load_local_env(str(admin_module_dir()))
+    load_online_env(str(admin_module_dir()))
 
     kb_path = Path(args.kb_path)
     accounts = asyncio.run(load_accounts(args.workbook_url))

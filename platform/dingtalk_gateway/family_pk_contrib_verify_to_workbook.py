@@ -26,6 +26,22 @@ if (
 if str(GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR))
 
+from repo_paths import (
+    admin_execute_path,
+    admin_module_dir,
+    batch_progress_script,
+    get_repo_root,
+    gift_execute_path,
+    gift_module_dir,
+    moa_execute_path,
+    moa_module_dir,
+    moa_template,
+    mse_execute_path,
+    mse_module_dir,
+    stage_gateway_url,
+    tmp_dir,
+)
+
 from family_pk_member_reward_to_workbook import (  # noqa: E402
     DEFAULT_SHEET,
     export_user_reward_contrib_verify_to_workbook,
@@ -51,7 +67,7 @@ def export_contrib_verify_to_workbook(
         area=area,
     )
     contrib = summary.get("contribVerify") or {}
-    out_path = REPO_ROOT / ".tmp" / f"family_pk_contrib_verify_{pk_date}.json"
+    out_path = tmp_dir() / f"family_pk_contrib_verify_{pk_date}.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(contrib, ensure_ascii=False, indent=2), encoding="utf-8")
     contrib["workbookUrl"] = summary.get("workbookUrl")

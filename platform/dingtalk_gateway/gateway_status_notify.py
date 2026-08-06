@@ -20,6 +20,12 @@ from dingtalk_stream.utils import DINGTALK_OPENAPI_ENDPOINT
 
 from env_loader import GATEWAY_DIR, load_env_local, require_env
 
+_PLATFORM_DIR = GATEWAY_DIR.parent
+if str(_PLATFORM_DIR) not in sys.path:
+    sys.path.insert(0, str(_PLATFORM_DIR))
+
+from project.loader import gateway_lifecycle_prefix  # noqa: E402
+
 if TYPE_CHECKING:
     import dingtalk_stream
     from dingtalk_stream import ChatbotMessage
@@ -182,13 +188,14 @@ def notify_gateway_started(*, client: Any | None = None) -> None:
 
     from gateway_restart import read_and_clear_restart_context
 
+    prefix = gateway_lifecycle_prefix()
     host = _executor_hostname()
     ctx = read_and_clear_restart_context()
     if ctx and ctx.get("trigger") == "code_update":
         operator = str(ctx.get("operator") or "未知").strip() or "未知"
         summary = _format_changed_files_summary(ctx.get("changedFiles"))
         text = (
-            f"✅ Yaahlan 智能工具网关已启动\n"
+            f"✅ {prefix}已启动\n"
             f"原因：代码更新后重启（{operator}）\n"
             f"变更：{summary}\n"
             f"执行机：{host}\n"
@@ -196,7 +203,7 @@ def notify_gateway_started(*, client: Any | None = None) -> None:
         )
     else:
         text = (
-            f"✅ Yaahlan 智能工具网关已启动\n"
+            f"✅ {prefix}已启动\n"
             f"执行机：{host}\n"
             f"@机器人 发消息即可使用"
         )
@@ -216,7 +223,7 @@ def notify_gateway_stopping(*, reason: str = "服务停止", client: Any | None 
 
     host = _executor_hostname()
     text = (
-        f"⏹ Yaahlan 智能工具网关已关闭\n"
+        f"⏹ {gateway_lifecycle_prefix()}已关闭\n"
         f"执行机：{host}\n"
         f"原因：{reason}\n"
         f"暂停期间 @ 不会响应"

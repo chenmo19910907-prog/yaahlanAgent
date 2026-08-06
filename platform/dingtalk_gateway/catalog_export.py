@@ -15,8 +15,15 @@ REPO_ROOT = GATEWAY_DIR.parent.parent
 PLATFORM_DIR = REPO_ROOT / "platform"
 SCRIPTS_DIR = PLATFORM_DIR / "scripts"
 EXPORT_DIR = GATEWAY_DIR / "exports" / "catalog"
-HTML_NAME = "Yaahlan智能工具平台.html"
-ZIP_NAME = "Yaahlan智能工具平台.zip"
+
+
+def _catalog_export_names() -> tuple[str, str]:
+    if str(PLATFORM_DIR) not in sys.path:
+        sys.path.insert(0, str(PLATFORM_DIR))
+    from project.loader import catalog_export_basename
+
+    base = catalog_export_basename()
+    return f"{base}.html", f"{base}.zip"
 
 
 def _ensure_scripts_path() -> None:
@@ -36,12 +43,13 @@ def export_catalog_for_dingtalk() -> dict[str, object]:
         raise RuntimeError("catalog-standalone.html 未生成")
 
     EXPORT_DIR.mkdir(parents=True, exist_ok=True)
-    html_path = EXPORT_DIR / HTML_NAME
+    html_name, zip_name = _catalog_export_names()
+    html_path = EXPORT_DIR / html_name
     shutil.copy2(standalone, html_path)
 
-    zip_path = EXPORT_DIR / ZIP_NAME
+    zip_path = EXPORT_DIR / zip_name
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.write(html_path, arcname=HTML_NAME)
+        zf.write(html_path, arcname=html_name)
 
     data = _load_catalog_data()
     total_items = int(data.get("total_items") or 0)
@@ -50,9 +58,9 @@ def export_catalog_for_dingtalk() -> dict[str, object]:
     return {
         "ok": True,
         "html": html_path,
-        "html_name": HTML_NAME,
+        "html_name": html_name,
         "zip": zip_path,
-        "zip_name": ZIP_NAME,
+        "zip_name": zip_name,
         "total_items": total_items,
         "module_count": module_count,
         "summary": (
@@ -65,8 +73,8 @@ def export_catalog_for_dingtalk() -> dict[str, object]:
 def _format_success(result: dict[str, object]) -> str:
     modules = result.get("module_count")
     items = result.get("total_items")
-    html_name = str(result.get("html_name") or HTML_NAME)
-    zip_name = str(result.get("zip_name") or ZIP_NAME)
+    html_name = str(result.get("html_name") or _catalog_export_names()[0])
+    zip_name = str(result.get("zip_name") or _catalog_export_names()[1])
     lines = [
         "[OK] 工具平台离线版已生成。",
         f"附件 {zip_name} 内含复制按钮版 HTML（{html_name}），请下载解压后用浏览器打开。",

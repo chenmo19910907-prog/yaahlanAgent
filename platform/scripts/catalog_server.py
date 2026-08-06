@@ -19,28 +19,32 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 PLATFORM_DIR = SCRIPT_DIR.parent
 REPO_ROOT = PLATFORM_DIR.parent
 
+if str(PLATFORM_DIR) not in sys.path:
+    sys.path.insert(0, str(PLATFORM_DIR))
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
+
+from project.loader import load_sources  # noqa: E402
 
 from cursor_bridge import send_prompt_to_cursor  # noqa: E402
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 18765
-SOURCES_PATH = PLATFORM_DIR / "config" / "sources.json"
 
 
 def _read_bridge_config() -> tuple[str, int]:
     host = DEFAULT_HOST
     port = DEFAULT_PORT
-    if SOURCES_PATH.is_file():
-        with open(SOURCES_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
+    try:
+        data = load_sources()
         bridge = data.get("cursor_bridge")
         if isinstance(bridge, dict):
             if isinstance(bridge.get("host"), str) and bridge["host"].strip():
                 host = bridge["host"].strip()
             if isinstance(bridge.get("port"), int) and bridge["port"] > 0:
                 port = bridge["port"]
+    except (OSError, json.JSONDecodeError, FileNotFoundError, ValueError):
+        pass
     return host, port
 
 

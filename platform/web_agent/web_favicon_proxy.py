@@ -10,6 +10,21 @@ from urllib.request import Request, urlopen
 logger = logging.getLogger("web-agent")
 
 _USER_AGENT = "YaahlanWebAgent/1.0"
+
+
+def _http_user_agent() -> str:
+    try:
+        import sys
+        from pathlib import Path
+
+        platform_dir = Path(__file__).resolve().parents[1]
+        if str(platform_dir) not in sys.path:
+            sys.path.insert(0, str(platform_dir))
+        from project.loader import http_user_agent
+
+        return http_user_agent()
+    except (ImportError, FileNotFoundError, ValueError):
+        return _USER_AGENT
 _MAX_BYTES = 256 * 1024
 _TIMEOUT_S = 8
 
@@ -58,7 +73,7 @@ def fetch_favicon(page_url: str) -> tuple[bytes, str] | None:
     """按候选顺序拉取 favicon；成功返回 (bytes, content_type)。"""
     for candidate in favicon_candidates(page_url):
         try:
-            req = Request(candidate, headers={"User-Agent": _USER_AGENT})
+            req = Request(candidate, headers={"User-Agent": _http_user_agent()})
             with urlopen(req, timeout=_TIMEOUT_S) as resp:
                 data = resp.read(_MAX_BYTES + 1)
                 if len(data) > _MAX_BYTES or len(data) < 32:

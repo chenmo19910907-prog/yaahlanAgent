@@ -15,6 +15,25 @@ from .paths import tunnel_dir
 from .summary import format_list_summary, format_request_detail
 
 
+def _project_tunnel_default(key: str, fallback: str) -> str:
+    try:
+        import sys
+        from pathlib import Path
+
+        platform_dir = Path(__file__).resolve().parents[2] / "platform"
+        if str(platform_dir) not in sys.path:
+            sys.path.insert(0, str(platform_dir))
+        from project.loader import tunnel_default_g_appid, tunnel_default_g_env
+
+        if key == "g_appid":
+            return tunnel_default_g_appid()
+        if key == "g_env":
+            return tunnel_default_g_env()
+    except (ImportError, FileNotFoundError, ValueError, OSError):
+        pass
+    return fallback
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Tunnel 抓包平台本地查询")
     parser.add_argument(
@@ -37,12 +56,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--keyword", default="", help="URL/接口关键字过滤")
     parser.add_argument(
         "--g-appid",
-        default=os.environ.get("TUNNEL_G_APPID", "All"),
+        default=os.environ.get("TUNNEL_G_APPID") or _project_tunnel_default("g_appid", "All"),
         help="应用过滤，如 All / yaahlan / sc_dev_all",
     )
     parser.add_argument(
         "--g-env",
-        default=os.environ.get("TUNNEL_G_ENV", "alpha"),
+        default=os.environ.get("TUNNEL_G_ENV") or _project_tunnel_default("g_env", "alpha"),
         help="环境过滤，如 alpha / overseas",
     )
     parser.add_argument(

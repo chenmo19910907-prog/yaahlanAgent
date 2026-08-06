@@ -8,9 +8,17 @@ import sys
 from pathlib import Path
 from typing import Any
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-GIFT_TEMPLATE = REPO_ROOT / "MOA" / "templates" / "礼物面板-查看背包礼物.json"
-PROP_TEMPLATE = REPO_ROOT / "MOA" / "templates" / "礼物面板-查看背包道具.json"
+from .project_paths import (
+    admin_execute_path,
+    get_repo_root,
+    gift_module_dir,
+    moa_execute_path,
+    moa_template,
+)
+
+
+GIFT_TEMPLATE = moa_template("礼物面板-查看背包礼物.json")
+PROP_TEMPLATE = moa_template("礼物面板-查看背包道具.json")
 
 # MSE 调用链 / components-backdoor: moa.serviceUri.gateway.gift-panel
 GIFT_PANEL_SERVICE_URL = "/service/yh-components/gift-panel"
@@ -26,7 +34,7 @@ PROP_SERVICE_URL_CANDIDATES = GIFT_SERVICE_URL_CANDIDATES
 
 
 def _call_moa_direct(service_uri: str, method: str, body: dict[str, Any]) -> dict[str, Any]:
-    gift_dir = REPO_ROOT / "Gift"
+    gift_dir = gift_module_dir()
     if str(gift_dir) not in sys.path:
         sys.path.insert(0, str(gift_dir))
     from gift.send_stage import StageGiftError, call_moa
@@ -118,7 +126,7 @@ def _run_moa_httpproxy(
 ) -> dict[str, Any]:
     cmd = [
         sys.executable,
-        str(REPO_ROOT / "MOA/moa_execute.py"),
+        str(moa_execute_path()),
         "--payload-file",
         str(template),
         "--gift-panel-backpack-user-id",
@@ -137,7 +145,7 @@ def _run_moa_httpproxy(
 
     proc = subprocess.run(
         cmd,
-        cwd=str(REPO_ROOT),
+        cwd=str(get_repo_root()),
         capture_output=True,
         text=True,
         timeout=max(timeout_s + 10, 30),

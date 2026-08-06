@@ -28,6 +28,8 @@ if (
 if str(GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR))
 
+from repo_paths import api_family_pk_h5_path  # noqa: E402
+
 from alidocs_excel_export import _excel_env, _get_token_and_operator  # noqa: E402
 from mse_param_sheet_to_json import (  # noqa: E402
     JSON_SHEET,
@@ -76,10 +78,7 @@ DEFAULT_OPTIONAL = {
     "rewardRiskRuleId": "",
     "groupBarThrottleSec": 30,
     "roomBroadcastThrottleSec": 30,
-    "activityH5Path": (
-        "/yaahlan-fe/yaahlan-family-pk/index.html?_bid=1006677&_ui=256"
-        "&_ui_mode=0&_ui_bg=ffffff&_wk=1&_resize=0"
-    ),
+    "activityH5Path": api_family_pk_h5_path(),
     "bannerImageUrl": "",
     "groupStartImageUrl": "",
     "familyPkBgImg": "",

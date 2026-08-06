@@ -10,7 +10,17 @@ _ONLINE_CONFIG: dict[str, Any] | None = None
 
 
 def online_config_path() -> Path:
-    return Path(__file__).resolve().parents[2] / "online" / "config.json"
+    try:
+        import sys
+
+        platform_dir = Path(__file__).resolve().parents[2] / "platform"
+        if str(platform_dir) not in sys.path:
+            sys.path.insert(0, str(platform_dir))
+        from project.bootstrap import module_path
+
+        return module_path("onlineConfig", "online/config.json")
+    except (ImportError, FileNotFoundError, ValueError, OSError):
+        return Path(__file__).resolve().parents[2] / "online" / "config.json"
 
 
 def load_online_config() -> dict[str, Any]:

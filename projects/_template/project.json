@@ -1,0 +1,79 @@
+{
+  "id": "example",
+  "displayName": "Example App",
+  "description": "新项目模板：复制为 projects/<your-app>/ 并修改路径与品牌",
+  "paths": {
+    "sources": "projects/example/sources.json",
+    "testDevices": "projects/example/knowledge/test_devices.json",
+    "bookmarks": "projects/example/bookmarks.json",
+    "giftDefaults": "platform/dingtalk_gateway/config/gift_defaults.json",
+    "adminConfig": "projects/example/config/admin.json",
+    "onlineConfig": "projects/example/config/online.json",
+    "moaThresholds": "projects/example/config/moa-thresholds.json",
+    "moaTemplates": "projects/example/moa/templates",
+    "moaRuntimeYaml": "projects/example/config/moa.yaml",
+    "moaRegistry": "projects/example/moa/config/registry.json",
+    "adminRegistry": "projects/example/config/admin-registry.json",
+    "mseRegistry": "projects/example/config/mse-registry.json",
+    "giftRegistry": "projects/example/config/gift-registry.json",
+    "riskRegistry": "projects/example/config/risk-registry.json",
+    "tunnelRegistry": "projects/example/config/tunnel-registry.json",
+    "onlineRegistry": "projects/example/config/online-registry.json",
+    "dingtalkRegistry": "projects/example/config/dingtalk-registry.json",
+    "mseConfig": "projects/example/config/mse.json",
+    "riskConfig": "projects/example/config/risk.json",
+    "giftCpLoveConfig": "projects/example/config/cp_love_gift.json",
+    "dingtalkKb": "projects/example/config/dingtalk-kb.json",
+    "dingtalkFolders": "projects/example/config/dingtalk-folders.json",
+    "testcaseKbRoot": "projects/example/knowledge/testcase-kb",
+    "prdKbRoot": "projects/example/knowledge/prd-kb",
+    "bugKbRoot": "projects/example/knowledge/bug-kb",
+    "onlineTestAccounts": "projects/example/knowledge/online_test_accounts.json",
+    "temporaryTestcase": "projects/example/temporary_testcase",
+    "moaGenerativeRoot": "projects/example/moa-generative",
+    "workflowRoot": "projects/example/workflow"
+  },
+  "agent": {
+    "title": "Example 智能工具 Agent",
+    "subtitle": "MOA/Admin 查数 · Tunnel 抓包 · 用例生成",
+    "catalogTitle": "Example 智能工具平台",
+    "catalogExportBasename": "Example智能工具平台",
+    "webLoginPhrase": "请求访问Example 智能工具 Agent",
+    "webLoginMatchParts": ["请求访问", "Example", "智能工具", "Agent"],
+    "gatewayAgentName": "Example 智能工具平台网关 Agent",
+    "webAgentName": "Example 智能工具平台 Web Agent",
+    "httpUserAgent": "ExampleWebAgent/1.0",
+    "gatewayLifecyclePrefix": "Example 智能工具网关"
+  },
+  "app": {
+    "androidPackage": "com.example.app",
+    "appId": 0,
+    "cmdbAppKey": "com.example.service",
+    "cmdbCorp": "alpha",
+    "cmdbEnv": "stage"
+  },
+  "tunnel": {
+    "mockBaseUrl": "http://gw-api-alpha.example.fun",
+    "defaultGAppid": "All",
+    "defaultGEnv": "alpha"
+  },
+  "api": {
+    "stageGatewayBase": "https://gateway-alpha.example.com",
+    "httpPrefix": "/example",
+    "moaServicePrefix": "/service/example",
+    "moaTrickServicePrefix": "/service/example-trick",
+    "familyPkH5Path": "/example-fe/family-pk/index.html",
+    "endpoints": {
+      "anchorList": "/example/cms/anchor/anchorList",
+      "guildList": "/example/cms/anchor/tradeUnionList",
+      "diamondHistoryService": "/service/example/components/wallet-api",
+      "intimateApiService": "/service/example/user/intimate-api",
+      "cpLoveChestService": "/service/example-trick/external/cp-love-chest",
+      "roomMemberStageService": "/service/room/external/room-member-stage",
+      "nameplatePage": "/example/userProfile/nameplatePageData",
+      "roomMemberApply": "/example/room/member/apply",
+      "roomMemberAgree": "/example/room/member/agree"
+    }
+  },
+  "prompts": {}
+}

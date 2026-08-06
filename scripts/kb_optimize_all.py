@@ -20,9 +20,17 @@ import sys
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
+
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from project_paths import testcase_kb_root  # noqa: E402
+
+ROOT = testcase_kb_root()
 from typing import Dict, List, Optional, Set, Tuple
 
-ROOT = Path(__file__).resolve().parent.parent / "testcase-kb"
+
 SCRIPTS = Path(__file__).resolve().parent
 
 _SPEC_OPT = importlib.util.spec_from_file_location(

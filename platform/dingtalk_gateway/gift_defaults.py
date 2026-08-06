@@ -81,6 +81,20 @@ def gateway_gift_rule_line() -> str:
 
 
 def gateway_cp_love_rule_line() -> str:
+    try:
+        import sys
+        from pathlib import Path
+
+        platform_dir = Path(__file__).resolve().parents[1]
+        if str(platform_dir) not in sys.path:
+            sys.path.insert(0, str(platform_dir))
+        from project.loader import gift_cp_love_rule_line
+
+        custom = gift_cp_love_rule_line()
+        if custom:
+            return custom
+    except (ImportError, FileNotFoundError, ValueError):
+        pass
     return (
         "**CP 宝箱周期爱意值造数**：无直改 MOA（`addCpLoveValue` 只改 cp-moa 总恩爱值 loveValue，不更新宝箱 currentLoveValue）。须 Stage 私聊送礼（1 钻 = 1 爱意值）。"
         "**默认礼物：面板 Rose `2005000233`（1 钻，名称 Rose；禁止 roses/`2005001776` 及 `2005004730`）。**"

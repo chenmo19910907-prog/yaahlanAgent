@@ -16,10 +16,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-_REPO = Path(__file__).resolve().parents[2]
-_HTTP_PATH = "/yaahlan/userProfile/nameplatePageData"
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from project_api import api_http_prefix, load_body_template, repo_root, service_url  # noqa: E402
+
+_REPO = repo_root()
+_HTTP_PATH = service_url("nameplatePage", f"{api_http_prefix()}/userProfile/nameplatePageData")
 _TUNNEL_KEYWORD = "userProfile/nameplatePageData"
-_TEMPLATE_BODY = _REPO / "MOA-generative/templates/example-nameplatePageData.body.json"
+_TEMPLATE_BODY = load_body_template("templates/example-nameplatePageData.body.json")
 _CACHE_DIR = _REPO / ".tmp" / "nameplate_cache"
 _DEFAULT_SINCE_TIERS = (7200, 86400, 604800)
 

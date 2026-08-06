@@ -62,13 +62,44 @@ def normalize_uri(uri: str) -> str:
         raise ValueError("uri 不能为空")
     if value.startswith("http://") or value.startswith("https://"):
         return value
+    try:
+        import sys
+        from pathlib import Path
+
+        platform_dir = Path(__file__).resolve().parents[2] / "platform"
+        if str(platform_dir) not in sys.path:
+            sys.path.insert(0, str(platform_dir))
+        from project.loader import tunnel_mock_base_url
+
+        base = tunnel_mock_base_url()
+    except (ImportError, FileNotFoundError, ValueError, OSError):
+        base = "http://gw-api-alpha.yaahlan.fun"
     if value.startswith("/"):
-        return f"http://gw-api-alpha.yaahlan.fun{value}"
-    return f"http://gw-api-alpha.yaahlan.fun/{value.lstrip('/')}"
+        return f"{base}{value}"
+    return f"{base}/{value.lstrip('/')}"
 
 
-def _env_params(*, g_appid: str = "All", g_env: str = "alpha") -> dict[str, str]:
-    return {"g_appid": g_appid, "g_env": g_env}
+def _default_env_params() -> tuple[str, str]:
+    try:
+        import sys
+        from pathlib import Path
+
+        platform_dir = Path(__file__).resolve().parents[2] / "platform"
+        if str(platform_dir) not in sys.path:
+            sys.path.insert(0, str(platform_dir))
+        from project.loader import tunnel_default_g_appid, tunnel_default_g_env
+
+        return tunnel_default_g_appid(), tunnel_default_g_env()
+    except (ImportError, FileNotFoundError, ValueError, OSError):
+        return "All", "alpha"
+
+
+def _env_params(*, g_appid: str | None = None, g_env: str | None = None) -> dict[str, str]:
+    default_appid, default_env = _default_env_params()
+    return {
+        "g_appid": g_appid if g_appid is not None else default_appid,
+        "g_env": g_env if g_env is not None else default_env,
+    }
 
 
 def list_mock_cases(

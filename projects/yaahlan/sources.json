@@ -1,0 +1,150 @@
+{
+  "version": 3,
+  "top_level_rules": [
+    { "group": "用户", "prefixes": ["用户"] },
+    { "group": "实名认证", "prefixes": ["实名认证"] },
+    { "group": "CP", "prefixes": ["CP"] },
+    { "group": "VIP", "names": ["VIP 经验值", "贵族"] },
+    { "group": "房间", "prefixes": ["房间", "全服榜单"] },
+    { "group": "礼物", "names": ["礼物", "背包礼物", "Stage送礼", "Gift"], "prefixes": ["礼物面板"] },
+    { "group": "定制", "prefixes": ["定制"] },
+    { "group": "道具", "names": ["道具"] },
+    { "group": "活动", "prefixes": ["活动", "3周年"] },
+    { "group": "动态", "prefixes": ["动态"] },
+    { "group": "家族", "prefixes": ["家族"] },
+    { "group": "公会", "prefixes": ["公会"] },
+    { "group": "风控", "keywords": ["风控", "通用名单"] },
+    { "group": "抓包", "names": ["Tunnel 抓包", "抓包"], "prefixes": ["抓包转MOA"] },
+    { "group": "奖励验收", "prefixes": ["奖励验收"] },
+    { "group": "支付", "names": ["钻石", "支付测试"] },
+    { "group": "知识库", "prefixes": ["testcase-kb", "prd-kb"], "names": ["钉钉目录"] },
+    { "group": "工作流", "names": ["工作流"] },
+    { "group": "平台", "names": ["Admin", "MOA", "MSE", "MOA-generative", "生成式MOA", "MSE 服务配置"] }
+  ],
+  "top_level_order": [
+    "用户",
+    "实名认证",
+    "VIP",
+    "房间",
+    "礼物",
+    "定制",
+    "道具",
+    "活动",
+    "动态",
+    "CP",
+    "家族",
+    "公会",
+    "风控",
+    "抓包",
+    "奖励验收",
+    "支付",
+    "客服",
+    "版本",
+    "测试机",
+    "线上环境",
+    "知识库",
+    "工作流",
+    "平台"
+  ],
+  "env_check": {
+    "label": "检查环境配置",
+    "prompt": "@新手上手.md 运行环境检查"
+  },
+  "catalog_include_playbooks": false,
+  "cursor_bridge": {
+    "host": "127.0.0.1",
+    "port": 18765
+  },
+  "modules": [
+    {
+      "id": "admin",
+      "label": "yaahlan后台",
+      "subtitle": "Yaahlan 测试后台 · alpha",
+      "env": "test",
+      "registry": "Admin/config/registry.json",
+      "usage_doc": "Admin/使用方法.md",
+      "entry": "python3 Admin/admin_execute.py"
+    },
+    {
+      "id": "moa",
+      "label": "MOA",
+      "subtitle": "MSE httpproxy · stage",
+      "env": "test",
+      "registry": "MOA/config/registry.json",
+      "usage_doc": "MOA/使用方法.md",
+      "entry": "python3 MOA/moa_execute.py"
+    },
+    {
+      "id": "moa-generative",
+      "label": "MOA-generative",
+      "subtitle": "抓包 body → 双写 MOA payload · stage",
+      "env": "test",
+      "registry": "MOA-generative/config/registry.json",
+      "usage_doc": "MOA-generative/使用方法.md",
+      "entry": "python3 MOA-generative/scripts/run_generative_moa.py"
+    },
+    {
+      "id": "mse",
+      "label": "MSE配置",
+      "subtitle": "服务配置 · voga-common / stage",
+      "env": "test",
+      "registry": "MSE/config/registry.json",
+      "usage_doc": "MSE/使用方法.md",
+      "entry": "python3 MSE/mse_execute.py"
+    },
+    {
+      "id": "gift",
+      "label": "Stage送礼",
+      "subtitle": "HTTP /v2/gift/send · stage",
+      "env": "test",
+      "registry": "Gift/config/registry.json",
+      "usage_doc": "Gift/使用方法.md",
+      "entry": "python3 Gift/gift_execute.py"
+    },
+    {
+      "id": "risk",
+      "label": "风险控制",
+      "subtitle": "海外风控开放接口",
+      "env": "test",
+      "registry": "Risk/config/registry.json",
+      "usage_doc": "Risk/使用方法.md",
+      "entry": "python3 Risk/risk_execute.py"
+    },
+    {
+      "id": "tunnel",
+      "label": "Tunnel抓包",
+      "subtitle": "抓包 · g_env=alpha",
+      "env": "test",
+      "registry": "Tunnel/config/registry.json",
+      "usage_doc": "Tunnel/使用方法.md",
+      "entry": "python3 Tunnel/tunnel_execute.py"
+    },
+    {
+      "id": "online",
+      "label": "线上环境能力",
+      "subtitle": "线上/生产 · Admin + MOA + Tunnel",
+      "env": "online",
+      "registry": "online/config/registry.json",
+      "usage_doc": "online/使用方法.md",
+      "entry": "python3 online/online_execute.py"
+    },
+    {
+      "id": "dingtalk",
+      "label": "钉钉文档",
+      "subtitle": "钉钉目录 / 知识库同步",
+      "env": "tool",
+      "registry": "DingTalk/config/registry.json",
+      "usage_doc": "DingTalk/使用方法.md",
+      "entry": "python3 DingTalk/lookup_execute.py"
+    },
+    {
+      "id": "workflow",
+      "label": "工作流",
+      "subtitle": "多步流程录制与参数化复用",
+      "env": "tool",
+      "registry": "workflow/config/registry.json",
+      "usage_doc": "workflow/使用方法.md",
+      "entry": "python3 workflow/workflow_execute.py"
+    }
+  ]
+}

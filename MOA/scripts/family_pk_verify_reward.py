@@ -13,23 +13,33 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
-_REPO = Path(__file__).resolve().parents[2]
-_PK_INCR = _REPO / ".tmp/family_pk_member_incr_2026-06-28.json"
+from moa_script_paths import moa_execute_path, moa_template, mse_execute_path, repo_root, tmp_dir
+
+_PK_INCR = tmp_dir() / "family_pk_member_incr_2026-06-28.json"
 _SHEET = (
-    _REPO
-    / ".tmp/family-pk-list/家族成员全量含手机号-20260625-165701.axls/93NwLYZXWyg4ozlzCNanyzR4JkyEqBQm_content.json"
+    tmp_dir()
+    / "family-pk-list/家族成员全量含手机号-20260625-165701.axls/93NwLYZXWyg4ozlzCNanyzR4JkyEqBQm_content.json"
 )
-_DIAMOND_TPL = _REPO / "MOA/templates/钻石-查询余额.json"
-_SETTLE_TPL = _REPO / "MOA/templates/家族PK-结算发奖匹配.json"
+_DIAMOND_TPL = moa_template("钻石-查询余额.json")
+_SETTLE_TPL = moa_template("家族PK-结算发奖匹配.json")
 _TUNNEL_MOMOID = "100127100"
 
 
 def _run(cmd: list[str], *, cwd: Path | None = None) -> str:
-    return subprocess.check_output(cmd, cwd=cwd or _REPO, text=True, stderr=subprocess.STDOUT)
+    return subprocess.check_output(cmd, cwd=cwd or repo_root(), text=True, stderr=subprocess.STDOUT)
 
 
 def load_mse_config() -> dict[str, Any]:
-    raw = _run(["python3", "MSE/mse_execute.py", "--namespace", "voga-common", "--config-key", "familyPkConfig"])
+    raw = _run(
+        [
+            "python3",
+            str(mse_execute_path()),
+            "--namespace",
+            "voga-common",
+            "--config-key",
+            "familyPkConfig",
+        ]
+    )
     return json.loads(raw[raw.find("{") : raw.rfind("}") + 1])
 
 
@@ -37,7 +47,7 @@ def load_receive_rank(rank_date: str) -> dict[str, dict[str, Any]]:
     raw = _run(
         [
             "python3",
-            "MOA/moa_execute.py",
+            str(moa_execute_path()),
             "--family-pk-query-receive-rank",
             "--family-pk-date",
             rank_date,
@@ -275,7 +285,7 @@ def query_diamond(uid: str) -> int:
     raw = _run(
         [
             "python3",
-            "MOA/moa_execute.py",
+            str(moa_execute_path()),
             "--payload-file",
             str(_DIAMOND_TPL),
             "--diamond-query-user-id",
@@ -306,9 +316,9 @@ def run_settlement(settle_input_date: str) -> dict[str, Any]:
     tpl["params"][0]["value"] = settle_input_date
     tpl["params"][0]["txt"] = settle_input_date
     tpl["settings"]["time"] = "120000"
-    tmp = _REPO / ".tmp/family_pk_settle_run.json"
+    tmp = tmp_dir() / "family_pk_settle_run.json"
     tmp.write_text(json.dumps(tpl, ensure_ascii=False), encoding="utf-8")
-    raw = _run(["python3", "MOA/moa_execute.py", "--payload-file", str(tmp)])
+    raw = _run(["python3", str(moa_execute_path()), "--payload-file", str(tmp)])
     return json.loads(raw[raw.find("{") :])
 
 
@@ -323,7 +333,7 @@ def main() -> int:
     pk_date = args.pk_date
     settle_date = args.settle_date or date.today().isoformat()
     rank_date = (date.fromisoformat(pk_date) - timedelta(days=1)).isoformat()
-    out_path = _REPO / f".tmp/family_pk_reward_verify_{pk_date}.json"
+    out_path = tmp_dir() / f"family_pk_reward_verify_{pk_date}.json"
 
     config = load_mse_config()
     rank_map = load_receive_rank(pk_date)

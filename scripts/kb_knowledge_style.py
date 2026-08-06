@@ -13,10 +13,19 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
 from pathlib import Path
+
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from project_paths import testcase_kb_root  # noqa: E402
+
+ROOT_DEFAULT = testcase_kb_root()
 from typing import List, Optional, Tuple
 
-ROOT_DEFAULT = Path(__file__).resolve().parent.parent / "testcase-kb"
+
 
 STEP_RE = re.compile(r"^- \*\*步骤\*\*：(.+)$", re.M)
 EXPECT_RE = re.compile(r"^  - \*\*预期\*\*：(.+)$", re.M)

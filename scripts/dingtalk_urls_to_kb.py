@@ -19,7 +19,12 @@ from typing import Any, List
 
 SCRIPTS = Path(__file__).resolve().parent
 ROOT = SCRIPTS.parent
-KB_ROOT = ROOT / "testcase-kb"
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
+
+from project_paths import testcase_kb_root  # noqa: E402
+
+KB_ROOT = testcase_kb_root()
 EXCEL_SERVER = (
     ROOT
     / ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/server_read.py"

@@ -18,8 +18,16 @@ PLATFORM_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PLATFORM_DIR))
 
 from display_time import now_display_time  # noqa: E402
+from project.catalog_paths import module_registry_path  # noqa: E402
+from project.loader import (  # noqa: E402
+    catalog_export_basename,
+    catalog_title,
+    get_project_id,
+    load_sources,
+    sources_path,
+    web_agent_subtitle,
+)
 REPO_ROOT = PLATFORM_DIR.parent
-SOURCES_PATH = PLATFORM_DIR / "config" / "sources.json"
 OUT_HTML = PLATFORM_DIR / "catalog.html"
 OUT_HTML_STANDALONE = PLATFORM_DIR / "catalog-standalone.html"
 
@@ -209,7 +217,7 @@ def _load_playbooks(sources: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _load_catalog_data() -> dict[str, Any]:
-    sources = _read_json(SOURCES_PATH)
+    sources = load_sources()
     modules_cfg = sources.get("modules")
     if not isinstance(modules_cfg, list):
         raise ValueError("sources.json modules 必须是数组")
@@ -233,7 +241,7 @@ def _load_catalog_data() -> dict[str, Any]:
         mod_label = str(mod.get("label", mod_id)).strip()
         mod_env = str(mod.get("env", "")).strip()
         registry_rel = str(mod.get("registry", "")).strip()
-        registry_path = REPO_ROOT / registry_rel
+        registry_path = module_registry_path(mod_id, registry_rel)
         if not registry_path.is_file():
             raise FileNotFoundError(f"缺少 registry: {registry_path}")
 
@@ -324,7 +332,7 @@ def _warn_unlisted_registries(modules_cfg: list[Any], exclude: set[str]) -> None
         if rel in configured or rel in exclude:
             continue
         print(
-            f"WARN platform: {rel} 未登记到 platform/config/sources.json，不会出现在工具台",
+            f"WARN platform: {rel} 未登记到 {sources_path()}，不会出现在工具台",
             file=sys.stderr,
         )
 
@@ -337,7 +345,7 @@ def _catalog_exclude_registries(sources: dict[str, Any]) -> set[str]:
 
 
 def _prepare_catalog_data() -> dict[str, Any]:
-    sources = _read_json(SOURCES_PATH)
+    sources = load_sources()
     modules_cfg = sources.get("modules")
     if isinstance(modules_cfg, list):
         _warn_unlisted_registries(modules_cfg, _catalog_exclude_registries(sources))
@@ -376,6 +384,9 @@ def refresh_catalog(*, quiet: bool = False) -> int:
 
 
 def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
+    page_title = catalog_title()
+    export_name = catalog_export_basename()
+    header_sub = web_agent_subtitle()
     payload = json.dumps(data, ensure_ascii=False)
     payload_safe = payload.replace("</", "<\\/")
     btn_class = "prompt-copy" if export_mode else "prompt-run"
@@ -383,7 +394,7 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
     btn_title = "复制完整提示语" if export_mode else "填入 Cursor 输入框"
     export_link = "" if export_mode else (
         '<a class="export-btn" href="catalog-standalone.html" '
-        'download="Yaahlan智能工具平台.html">导出到桌面</a>'
+        f'download="{export_name}.html">导出到桌面</a>'
     )
     footer_text = (
         "独立离线版 · 复制按钮写入剪贴板，粘贴到 Cursor 使用"
@@ -503,7 +514,7 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Yaahlan 智能工具平台</title>
+  <title>{page_title}</title>
   <style>
     :root {{
       --bg: #f4f6f9;
@@ -742,8 +753,8 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
 </head>
 <body>
   <header>
-    <h1>Yaahlan 智能工具平台</h1>
-    <p>跨 Admin / MOA / Risk / Tunnel / 线上 / 钉钉</p>
+    <h1>{page_title}</h1>
+    <p>{header_sub}</p>
     <div class="meta" id="meta"></div>
   </header>
   <div class="layout">
@@ -1090,7 +1101,7 @@ def main() -> int:
                 capture_output=True,
                 text=True,
             )
-            bridge = _read_json(SOURCES_PATH).get("cursor_bridge") or {"host": "127.0.0.1", "port": 18765}
+            bridge = load_sources().get("cursor_bridge") or {"host": "127.0.0.1", "port": 18765}
             url = f"http://{bridge['host']}:{bridge['port']}/catalog.html"
         except (subprocess.CalledProcessError, RuntimeError, KeyError):
             url = OUT_HTML.as_uri()

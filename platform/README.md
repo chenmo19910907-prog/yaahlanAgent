@@ -22,7 +22,18 @@ python3 platform/open_catalog.py
 - 每项左侧 **点击能力名称** 可展开/收起 **提示语**；可变参数为输入框；**执行** 经本地 bridge 填入 Cursor 当前聊天输入框（已打开则复用现有窗口，未打开则启动 Cursor）
 - 支持按能力名、分类、来源、提示语搜索；左侧按一级模块筛选
 
-归并规则：`platform/config/sources.json` 的 `top_level_rules`（如 `用户*` → 用户、`定制*` → 定制）
+归并规则：`projects/<AGENT_PROJECT>/sources.json` 的 `top_level_rules`（默认 `yaahlan`；旧路径 `platform/config/sources.json` 作 fallback）
+
+## 多项目（AGENT_PROJECT）
+
+平台壳与 Yaahlan 业务数据已解耦入口，见 [`projects/README.md`](../projects/README.md)。
+
+```bash
+export AGENT_PROJECT=yaahlan   # 默认
+python3 platform/open_catalog.py
+```
+
+`projects/yaahlan/project.json` 控制品牌、登录口令、工具台 sources 路径等；换项目 = 新建 `projects/<id>/` 并切换环境变量。
 
 ## 数据来源
 
@@ -35,7 +46,7 @@ python3 platform/open_catalog.py
 | 线上环境能力 | `online/config/registry.json` |
 | 钉钉文档 | `DingTalk/config/registry.json` |
 
-配置清单：`platform/config/sources.json`（含 `top_level_rules` 归并规则与 `top_level_order` 侧栏排序）
+配置清单：`projects/yaahlan/sources.json`（由 `AGENT_PROJECT` 选择；`platform/config/sources.json` 为向后兼容 fallback）
 
 ## 维护
 
