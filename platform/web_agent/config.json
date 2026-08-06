@@ -68,22 +68,39 @@
     }
   ],
   "quickPromptCount": 4,
+  "featureDemoRotateMs": 10000,
+  "featureDemoPreviewIds": [
+    "dingtalk-sync",
+    "stream-output",
+    "catalog-onboard",
+    "reply-mode"
+  ],
+  "emptyIntro": {
+    "tagline": "",
+    "rotateMs": 4200,
+    "views": [
+      { "label": "MOA 查数", "detail": "手机号反查 userId · 发钻改等级 · 模板一键执行" },
+      { "label": "Tunnel 抓包", "detail": "按 userId 查 HTTP 请求 · 核对 ec/em · Mock 验收" },
+      { "label": "用例生成", "detail": "读钉钉 PRD · 测试点扩写 · 同步 Excel" },
+      { "label": "Stage 送礼", "detail": "房间/私聊/群组送礼 · 接口验收一条龙" }
+    ]
+  },
   "quickPrompts": [
     "查一下 Gift 模块 Stage 送礼怎么用",
     "工具平台有哪些 MOA 能力？",
     "解析 PRD 并生成测试用例",
-    "用 Tunnel 抓包查某 userId 最近请求",
+    "Tunnel 查 100465989 最近 /gift/send 请求并展示 ec/em",
     "给 test 环境 userId 100153721 下发 1 天 VIP5",
     "查一下家族 PK 相关 MOA 模板有哪些",
     "读取 MSE familyPkConfig 当前配置",
     "Admin 查用户 100465989 详情",
-    "MOA 查手机号对应的 userId",
+    "MOA 查手机号 13311111111（+86）对应的 userId",
     "生成家族 PK 门槛调整的测试用例",
     "解除测试环境某手机号的风控",
     "查设备当前登录的是哪个账号",
-    "送礼：chatroom 场景 sender 给 receiver 送 giftId",
+    "Stage 房间送礼：100465989 给 100153721 送 Neon Heart（2005004592）",
     "工具平台 Gift 和 MOA 背包送礼有什么区别",
     "帮我总结 Stage 送礼实现并导出说明",
-    "查某 userId 最近 1 小时 Tunnel 抓包"
+    "100465989 最近 1 小时送礼抓包，核对 request/response"
   ]
 }

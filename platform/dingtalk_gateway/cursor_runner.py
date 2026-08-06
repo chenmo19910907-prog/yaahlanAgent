@@ -97,8 +97,8 @@ def _build_prompt_text(
             if allow_moa_registry or is_moa_registry_open_to_all():
                 extras.append(
                     "【只读 · 可 MOA 入库】当前用户无网关代码修改权限，但可登记 MOA 能力："
-                    "仅允许改动 MOA/templates/、运行 sync_registry.py、"
-                    "更新 MOA/config/registry.json 与 MOA/使用方法.md；禁止改 gateway/.cursor 等。"
+                    "仅允许改动 MOA/templates/、运行 sync_registry.py（自动刷新文档与 catalog）、"
+                    "更新 MOA/config/registry.json；禁止改 gateway/.cursor 等。"
                 )
             else:
                 extras.append(

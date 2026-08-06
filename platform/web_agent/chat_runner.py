@@ -12,6 +12,12 @@ if str(GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR))
 
 from bridge_manager import bridge_initialized, init_sdk_bridge  # noqa: E402
+from code_modify_guard import guard_readonly_agent_reply  # noqa: E402
+from code_modify_permission import (  # noqa: E402
+    allow_moa_registry_in_readonly,
+    code_modify_denial_message,
+    looks_like_code_modify_request,
+)
 from cursor_runner import (  # noqa: E402
     DEFAULT_MODEL,
     DEFAULT_TIMEOUT_S,
@@ -21,6 +27,7 @@ from cursor_runner import (  # noqa: E402
 from task_session import TaskSession  # noqa: E402
 from user_agent_pool import get_user_agent_pool  # noqa: E402
 
+from web_admin_permission import is_web_admin  # noqa: E402
 from web_prompt import build_web_prompt, normalize_reply_mode  # noqa: E402
 from web_session_store import get_session_store  # noqa: E402
 
@@ -44,6 +51,7 @@ def run_web_chat(
     session_id: str,
     message: str,
     *,
+    staff_id: str | None = None,
     image_paths: list[str | Path] | None = None,
     file_paths: list[str | Path] | None = None,
     attachment_names: list[str] | None = None,
@@ -65,6 +73,11 @@ def run_web_chat(
     image_list = list(image_paths or [])
     file_list = list(file_paths or [])
 
+    code_allowed = is_web_admin(staff_id=staff_id)
+    allow_moa_registry = allow_moa_registry_in_readonly(code_modify_allowed=code_allowed)
+    if looks_like_code_modify_request(message) and not code_allowed:
+        return code_modify_denial_message()
+
     prompt = build_web_prompt(
         message,
         is_new_session=is_new,
@@ -74,20 +87,28 @@ def run_web_chat(
         attachment_names=attachment_names,
         enabled_external_agents=enabled_external_agents,
         reply_mode=reply_mode,
+        allow_code_modify=code_allowed,
+        allow_moa_registry=allow_moa_registry,
     )
 
-    return run_agent_prompt_streaming(
+    raw = run_agent_prompt_streaming(
         prompt,
         image_paths=image_list,
         on_render=on_render,
         user_key=user_key,
         sender_name=f"Web-{session_id[:8]}",
         use_gateway_rules=False,
-        allow_code_modify=True,
+        allow_code_modify=code_allowed,
+        allow_moa_registry=allow_moa_registry,
         session=session_ctrl,
         timeout_s=timeout_s,
         show_thinking=True,
         web_stream=True,
         include_process_in_final=normalize_reply_mode(reply_mode) == "detailed",
         model=model or DEFAULT_MODEL,
+    )
+    return guard_readonly_agent_reply(
+        raw,
+        allow_code_modify=code_allowed,
+        allow_moa_registry=allow_moa_registry,
     )

@@ -12,6 +12,10 @@ if str(GATEWAY_DIR) not in sys.path:
 from external_agent_config import external_agents_by_id  # noqa: E402
 from gateway_prompt import batch_progress_instruction  # noqa: E402
 from gift_defaults import gateway_gift_rule_line  # noqa: E402
+from moa_registry_guard import (  # noqa: E402
+    looks_like_moa_registry_intent,
+    moa_registry_instruction,
+)
 from progress_message import append_duration_footer  # noqa: E402
 
 _GIFT_RULE = gateway_gift_rule_line()
@@ -68,6 +72,7 @@ _WEB_RULES_BASE = f"""\
 1. **全自动执行**：直接调用工具/脚本完成任务，不要等待用户点 Run 或二次确认。
 2. **测试环境默认**：未出现「线上环境」时，只用 Admin/MOA/Tunnel 测试环境脚本，禁止调用 online/。
 3. **回复风格**：用自然语言说明结论与关键细节；查数/榜单优先 Markdown 表格；用户列表默认前 10 条并说明总数。
+   **时间展示**：面向用户的时间一律用**北京时间**（`YYYY-MM-DD HH:MM:SS`），禁止写 UTC。
 4. **导出文档**：仅当用户明确要求「导出到钉钉文档」时，才写入钉钉并回链接；导出成功时只回在线表格/文件链接。
 5. **测试用例**：生成测试用例时写入 `temporary_testcase/`（Markdown 表格或 CSV）。
 6. {_GIFT_RULE}
@@ -77,7 +82,8 @@ _WEB_RULES_BASE = f"""\
    `python3 platform/dingtalk_gateway/batch_progress_report.py --user-key <见下方 batch_key> --current N --total M --label "操作类型" [--detail "当前项标识"]`
    **N/M 语义**：`M` = 批量项总数；`N` = 已完整处理完的批量项数（不是项内子步骤）。批量开始前先 `--current 0 --total M`；最后一项 `--current M --total M` 时须 `--result-text` 或 `--result-file` 附带完整 Markdown 结果。
 10. **钉钉发文件先 zip**：若需经钉钉机器人发送本地文件附件，**必须先打成 `.zip`** 再发；导出到钉钉文档/在线表格只回链接，不走 zip。
-11. **Web 文件收发**：
+11. **代码修改权限**：仅管理员（`config/code_modify_allowlist.json` 及本地 `.local.json` 登记账号）可修改 `platform/web_agent/`、`platform/dingtalk_gateway/`、`.cursor/` 等代码逻辑；**MOA 能力入库**（`MOA/templates/` + `sync_registry.py` + `MOA/config/registry.json`）与**工具台 MOA 录制**入库**全员可用**，不受只读限制。
+12. **Web 文件收发**：
    - 用户可能上传图片或普通文件（csv/xlsx/pdf/zip/txt/md/json 等），路径会在下方列出，请用 Read/Shell 等工具读取处理。
    - 需要向用户回传可下载文件时，执行：
      `python3 platform/web_agent/web_share_file.py --user-key <batch_key> --path <本地文件路径> [--name 展示文件名]`
@@ -98,7 +104,7 @@ def _external_agent_rules(enabled_ids: list[str]) -> str:
             sorted({str(item.get("queryScript") or "").strip() for item in all_agents if str(item.get("queryScript") or "").strip()})
         )
         lines = [
-            f"12. **外部 Agent**：用户**未勾选**任何外部 Agent（可选：{agent_labels}）。",
+            f"13. **外部 Agent**：用户**未勾选**任何外部 Agent（可选：{agent_labels}）。",
             "**硬性禁止**：",
             f"- 不得执行 {forbidden_scripts or '任何外部 Agent 查询脚本'}；",
             f"- 不得请求 {forbidden_urls or '外部 Agent API'}；",
@@ -110,7 +116,7 @@ def _external_agent_rules(enabled_ids: list[str]) -> str:
         return "\n".join(lines)
 
     lines = [
-        "12. **外部 Agent（用户已在设置中勾选启用）**：",
+        "13. **外部 Agent（用户已在设置中勾选启用）**：",
         "**仅当用户在设置中勾选对应项后**，才可调用其查询脚本获取接口实现等信息。",
         "用户问 HTTP 路径、MOA ServiceUrl/method、后端实现、调用链、请求/响应字段含义等开发/代码类问题时，",
         "本地 registry / mappings 无登记时，**须调用下方已勾选的外部 Agent 脚本查询**，再据此落地 MOA/验收。",
@@ -158,7 +164,27 @@ def _external_agent_rules(enabled_ids: list[str]) -> str:
     return "\n".join(lines)
 
 
-def _build_web_rules(enabled_external_agents: list[str] | None = None) -> str:
+def _readonly_permission_note(*, allow_moa_registry: bool) -> str:
+    if allow_moa_registry:
+        return (
+            "【只读 · 可 MOA 入库】当前用户无代码修改权限，但可登记 MOA 能力："
+            "仅允许改动 MOA/templates/、运行 sync_registry.py（自动刷新文档与 catalog）、"
+            "更新 MOA/config/registry.json；工具台 MOA 录制入库同样允许；"
+            "禁止改 platform/web_agent/、platform/dingtalk_gateway/、.cursor/ 等。"
+        )
+    return (
+        "【只读模式】当前用户无代码修改权限：禁止改动仓库源代码与 Agent/网关逻辑；"
+        "仅允许查询脚本、导出与 temporary_testcase/ 用例写入。"
+        "若用户要求改代码，说明需管理员授权。"
+    )
+
+
+def _build_web_rules(
+    enabled_external_agents: list[str] | None = None,
+    *,
+    allow_code_modify: bool = True,
+    allow_moa_registry: bool = False,
+) -> str:
     enabled_ids = list(enabled_external_agents or [])
     external_rules = _external_agent_rules(enabled_ids)
     capability_tail = (
@@ -173,7 +199,11 @@ def _build_web_rules(enabled_external_agents: list[str] | None = None) -> str:
         ]
         if labels:
             capability_tail += f" 已启用外部 Agent：{', '.join(labels)}。"
-    return f"{_WEB_RULES_BASE}\n{external_rules}\n\n{capability_tail}"
+    rules = f"{_WEB_RULES_BASE}\n{external_rules}\n\n{capability_tail}"
+    if allow_code_modify:
+        return rules
+    readonly = _readonly_permission_note(allow_moa_registry=allow_moa_registry)
+    return f"{readonly}\n\n{rules}"
 
 
 def build_web_prompt(
@@ -187,9 +217,13 @@ def build_web_prompt(
     links: list[str] | None = None,
     enabled_external_agents: list[str] | None = None,
     reply_mode: str | None = None,
+    allow_code_modify: bool = True,
+    allow_moa_registry: bool = False,
 ) -> str:
     body = (user_text or "").strip()
     extras: list[str] = []
+    if not allow_code_modify:
+        extras.append(_readonly_permission_note(allow_moa_registry=allow_moa_registry))
     reply_note = _reply_mode_instruction(reply_mode)
     if reply_note:
         extras.append(reply_note)
@@ -257,6 +291,8 @@ def build_web_prompt(
         extras.append("用户上传的文件（本地绝对路径）：\n" + "\n".join(lines))
     if links:
         extras.append("用户消息中的链接：\n" + "\n".join(f"- {url}" for url in links if url.strip()))
+    if looks_like_moa_registry_intent(body):
+        extras.append(moa_registry_instruction())
     if extras:
         ctx = "\n".join(extras)
         if is_new_session:
@@ -266,6 +302,10 @@ def build_web_prompt(
             body = "\n\n".join([body, ctx_block]) if body else ctx_block
 
     if is_new_session:
-        rules = _build_web_rules(enabled_external_agents)
+        rules = _build_web_rules(
+            enabled_external_agents,
+            allow_code_modify=allow_code_modify,
+            allow_moa_registry=allow_moa_registry,
+        )
         return f"{rules}\n\n---\n\n用户消息：\n{body}"
     return f"用户消息（延续当前 Web Agent 对话）：\n{body}"

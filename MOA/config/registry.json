@@ -1290,6 +1290,18 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-批量发招呼消息.json\n"
     },
     {
+      "id": "im_send_p2p_message",
+      "name": "私聊-发送消息",
+      "category": "消息（voga-base-service-im-stage）",
+      "description": "测试环境模拟 userId A 给 userId B 发私聊（sendP2PMessageWithNoGreet，extra.is_greet=0 避免招呼拦截；默认双方可见且落库）。支持 TEXT/IMG/AUDIO/VIDEO/CUSTOM。CUSTOM 默认 preset=text_goto（eventId 1000090，客户端可展示）；可选 notice/small_image_goto/big_image_goto。",
+      "prompts": [
+        "用户 <fromUid> 给用户 <toUid> 发私聊 <text>",
+        "用户 <fromUid> 给 <toUid> 发 CUSTOM 文本跳转 <text>",
+        "私聊发消息 MOA sendP2PMessage type=<TEXT|IMG|AUDIO|VIDEO|CUSTOM>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/私聊-发送消息.json \\\n  --p2p-from-uid <fromUid> \\\n  --p2p-to-uid <toUid> \\\n  --p2p-type CUSTOM \\\n  --p2p-custom-preset text_goto \\\n  --p2p-text <text>\n"
+    },
+    {
       "id": "across_room_pk_apply_invite",
       "name": "跨房PK-指定邀请",
       "category": "房间PK（room/external/room-pk-api）",
@@ -1336,6 +1348,30 @@
         "MOA closeAcrossRoomPk 结束PK"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/跨房PK-结束PK.json\n"
+    },
+    {
+      "id": "room_barrage_internal",
+      "name": "房间-发言飘屏（内部）",
+      "category": "房间（room/internal/room-notice-stage）",
+      "description": "测试环境内部下发发言飘屏（sendBarrageMessage；不扣钻；params=req JSON, num=1）。req 含 userId/roomId/unlockLevel(2/7/12/17)/lang/json.content。发送前请改模板中 userId、roomId、unlockLevel 与文案。App 验收须在目标房间内。",
+      "prompts": [
+        "房间 <roomId> 内部发言飘屏 userId <userId> Lv<unlockLevel>",
+        "内部飘屏 <roomId> <userId> unlockLevel <unlockLevel>",
+        "sendBarrageMessage 房间 <roomId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-发言飘屏-内部.json\n"
+    },
+    {
+      "id": "room_barrage_external",
+      "name": "房间-发言飘屏（对外）",
+      "category": "房间（yaahlan/room/external/room-im-api）",
+      "description": "对外发言飘屏 roomSendBarrage（10 钻/条；间隔建议 ≥8s）。发送账号须已在房间内（客户端 room/heart/heartbeat 建立会话），否则 MOA 可能仅扣钻不回推 IM。执行前改模板 userId/roomId/mmuid/unlockLevel/文案。",
+      "prompts": [
+        "房间 <roomId> 对外发言飘屏 userId <userId> Lv<unlockLevel>",
+        "roomSendBarrage <roomId> <userId>",
+        "对外飘屏 <roomId> <userId> unlockLevel <unlockLevel>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-发言飘屏-对外.json\n"
     }
   ]
 }

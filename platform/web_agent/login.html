@@ -438,9 +438,10 @@
       box-shadow: var(--card-shadow);
     }
     .about-head {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
       padding: 18px 22px 12px; border-bottom: 1px solid var(--border);
     }
-    .about-head h3 { font-size: 1.08rem; font-weight: 600; margin-bottom: 8px; }
+    .about-head h3 { font-size: 1.08rem; font-weight: 600; margin: 0 0 8px; }
     .about-intro { font-size: 0.84rem; color: var(--muted); line-height: 1.65; }
     .about-body {
       flex: 1; overflow: auto; padding: 14px 22px 18px;
@@ -466,13 +467,14 @@
     .about-docs-empty {
       color: var(--muted); text-align: center; padding: 24px 12px; font-size: 0.86rem;
     }
-    .about-actions {
-      border-top: 1px solid var(--border); padding: 14px 22px 18px;
-      display: flex; justify-content: flex-end;
+    .btn-close {
+      background: transparent; border: none; color: var(--muted);
+      cursor: pointer; font-size: 1.15rem; line-height: 1;
+      padding: 4px 8px; border-radius: 6px; flex-shrink: 0;
+      transition: transform 180ms ease, color 180ms ease, background 180ms ease;
     }
-    .about-actions button {
-      background: var(--accent); border: none; color: #fff;
-      padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 0.86rem;
+    .btn-close:hover {
+      color: var(--text); background: rgba(255, 255, 255, 0.06); transform: rotate(90deg);
     }
     @media (max-width: 420px) {
       body { padding: 16px; }
@@ -566,18 +568,19 @@
   <div class="about-modal" id="about-modal" aria-hidden="true">
     <div class="about-bubble" id="about-bubble" role="dialog" aria-labelledby="about-title">
       <div class="about-head">
-        <h3 id="about-title">关于 Yaahlan Web Agent</h3>
-        <p class="about-intro" id="about-intro"></p>
+        <div>
+          <h3 id="about-title">关于 Yaahlan Web Agent</h3>
+          <p class="about-intro" id="about-intro"></p>
+        </div>
+        <button type="button" class="btn-close" id="btn-about-close" title="关闭" aria-label="关闭">×</button>
       </div>
       <div class="about-body" id="about-docs-list"></div>
-      <div class="about-actions">
-        <button type="button" id="btn-about-close">关闭</button>
-      </div>
     </div>
   </div>
 
   <script src="https://g.alicdn.com/dingding/dingtalk-jsapi/3.0.25/dingtalk.open.js"></script>
   <script src="dingtalk_oauth.js"></script>
+  <script src="analytics.js"></script>
   <script src="message_board_panel.js?v=20260730b"></script>
   <script src="about_panel.js?v=20260803b"></script>
   <script>

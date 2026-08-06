@@ -285,6 +285,26 @@ def stop_child(child: subprocess.Popen[bytes], *, wait_s: float = 8.0) -> None:
         pass
 
 
+def _active_worker_run_count() -> int:
+    """进行中的 worker 任务数（用于延后源码监视重启）。"""
+    if str(GATEWAY_DIR) not in sys.path:
+        sys.path.insert(0, str(GATEWAY_DIR))
+    if str(WEB_AGENT_DIR) not in sys.path:
+        sys.path.insert(0, str(WEB_AGENT_DIR))
+    try:
+        from web_run_store import RUN_STATUS_RUNNING, get_run_store
+
+        store = get_run_store()
+        return sum(
+            1
+            for meta in store.list_active_runs()
+            if meta.status == RUN_STATUS_RUNNING and store.is_worker_alive(meta.run_id)
+        )
+    except Exception as exc:
+        logger.warning("检查活跃任务失败: %s", exc)
+        return 0
+
+
 def run_watch(
     *,
     host: str,
@@ -353,6 +373,14 @@ def run_watch(
             if pending_change_at <= 0:
                 continue
             if time.monotonic() - pending_change_at < debounce_s:
+                continue
+
+            active_runs = _active_worker_run_count()
+            if active_runs > 0:
+                logger.info(
+                    "有 %d 个 Agent 任务执行中，延后重启 Web Agent",
+                    active_runs,
+                )
                 continue
 
             logger.info("检测到源码变更，重启 Web Agent（监视 %d 个文件）", len(mtimes))

@@ -8,10 +8,12 @@
   },
   {
     "type": "lines",
+    "align": "left",
     "lines": [
-      { "text": "从能用的工具", "lead": true },
-      { "text": "到成熟的产品", "lead": true },
-      { "text": "做一款真正有竞争力的 Agent", "small": true }
+      { "text": "能用的工具", "lead": true },
+      { "text": "到", "dim": true },
+      { "text": "成熟的产品", "leadLg": true },
+      { "text": "做一款商业级的 Agent", "small": true }
     ]
   },
   {
@@ -84,7 +86,7 @@
     "subtitle": "历史会话 · 新对话 · 工具台能力，一屏看懂 Yaahlan 智能工具 Agent",
     "views": [
       { "id": "history", "label": "历史会话", "detail": "侧栏浏览 · 按人筛选 · 钉钉同步标识" },
-      { "id": "chat", "label": "新对话", "detail": "空态快捷提问 · 顶栏品牌居中" },
+      { "id": "chat", "label": "新对话", "detail": "Logo 空态 · 顶栏品牌居中" },
       { "id": "catalog", "label": "工具台能力", "detail": "250+ 能力目录 · MOA 录制 · 填参执行" }
     ]
   },
@@ -193,6 +195,14 @@
     "demo": "bookmarks-jump"
   },
   {
+    "type": "feature",
+    "label": "功能 · 15",
+    "title": "空态演示轮播，指引新用户",
+    "desc": "新对话空态嵌入各能力演示动画，标题与说明自动轮播；无需先提问，一眼看懂平台能做什么。",
+    "demo": "new-chat",
+    "emptyCarousel": false
+  },
+  {
     "type": "center",
     "label": "智能",
     "titleLines": ["是工具平台", "更是智能工厂"],
@@ -274,27 +284,41 @@
   {
     "type": "feature",
     "label": "智能 · 06",
+    "title": "Tunnel Mock，抓包即改返回",
+    "desc": "不用改服务端——对指定 userId + 接口覆盖 response 字段或整包响应；App 重进页面即生效，适合 CP 倒计时、动态点赞礼物数等验收。",
+    "textOnly": true,
+    "capabilities": [
+      { "name": "字段覆盖 param_mock", "detail": "改单字段如 data.countdownSec、likeCount、rewardCount" },
+      { "name": "整包 mock_cases", "detail": "基于抓包 response 创建完整 Mock 并 --enable 生效" },
+      { "name": "查看 / 停用规则", "detail": "param-list / list 列规则，case-stop 关闭整包 Mock" },
+      { "name": "CP 爱意宝箱", "detail": "mock 倒计时 countdownSec，验收宝箱 UI" },
+      { "name": "动态详情", "detail": "feedDetail 整包 mock 点赞 likeCount、礼物 rewardCount" }
+    ]
+  },
+  {
+    "type": "feature",
+    "label": "智能 · 07",
     "title": "工具台 MOA 录制，表单一键生成",
     "desc": "能力侧栏点「MOA 录制」，选截图 / 完整请求 / 抓包行为 / 服务端代码四种方式填表；生成后自动写入提问栏，侧栏保持打开，确认后再发送。",
     "demo": "moa-record"
   },
   {
     "type": "feature",
-    "label": "智能 · 07",
+    "label": "智能 · 08",
     "title": "登记即上线，能力自生长",
     "desc": "登记一次，全员可用——新能力落库后自动同步使用说明与能力目录，250+ 条目持续生长；对话里按模块浏览、搜索筛选，点「执行」即可填入提问栏。",
     "demo": "catalog-onboard"
   },
   {
     "type": "feature",
-    "label": "智能 · 08",
+    "label": "智能 · 09",
     "title": "录制工作流，复杂活动一次跑通",
     "desc": "Agent 描述多步流程后落库为 Workflow，改参即可复跑；3周年砸金蛋从 MSE 配置同步、账号获次、批量砸蛋到概率保底与到账验收，六步贯通钉钉表全量验收。",
     "demo": "anniversary-egg-workflow"
   },
   {
     "type": "feature",
-    "label": "智能 · 09",
+    "label": "智能 · 10",
     "title": "接口自动化，多设备协同",
     "desc": "不靠手点 App——MOA / Gift 等接口编排驱动多台真机、多账号跨房联动；匹配、上麦、送礼到结束四步全自动，录成工作流改参即可复跑。",
     "demo": "pk-atm-workflow"
@@ -304,7 +328,8 @@
     "title": "双周用量，显著提升",
     "desc": "7/28 体验优化后，工作日日均请求约 2.3 倍、活跃峰值翻倍。",
     "demo": "usage-growth",
-    "layout": "stack"
+    "layout": "stack",
+    "emptyCarousel": false
   },
   {
     "type": "center",

@@ -79,6 +79,7 @@ from progress_message import (
 from queue_persist import get_queue_persist
 from reply_formatter import format_exception, format_group_reply
 from route_patterns import is_web_login_request, normalize_fuzzy_fast_command, normalize_report_prompt
+from route_patterns import is_admin_apply_decision_request
 from task_session import TaskInterrupted, TaskSession
 from testcase_auto_export import (
     export_generated_testcases_safe,
@@ -87,6 +88,7 @@ from testcase_auto_export import (
 from user_agent_pool import get_user_agent_pool
 from web_agent_sync import sync_exchange_to_web_agent
 from web_login_route import handle_web_login_request
+from admin_apply_route import handle_admin_apply_decision_message
 
 logger = logging.getLogger("dingtalk-gateway")
 
@@ -521,6 +523,27 @@ def process_inbound_task(
                 sender_staff_id=sender_staff_id,
                 sender_name=sender_name,
                 conversation_type=incoming.conversation_type,
+                client=getattr(handler, "dingtalk_client", None),
+            )
+            _reply_final(
+                handler,
+                incoming,
+                inbound,
+                group_reply,
+                started=started,
+                task_kind=task_kind,
+                user_key=user_key,
+                user_prompt=prompt,
+                sender_name=sender_name,
+                sender_staff_id=sender_staff_id,
+            )
+            return "ok"
+
+        if is_admin_apply_decision_request(prompt):
+            task_kind = classify_task_kind(prompt, route_kind="admin_apply")
+            group_reply = handle_admin_apply_decision_message(
+                text=prompt,
+                sender_staff_id=sender_staff_id,
                 client=getattr(handler, "dingtalk_client", None),
             )
             _reply_final(

@@ -14,7 +14,7 @@ GATEWAY_DIR = WEB_AGENT_DIR.parent / "dingtalk_gateway"
 sys.path.insert(0, str(GATEWAY_DIR))
 sys.path.insert(0, str(WEB_AGENT_DIR))
 
-from web_run_executor import is_run_thread_alive, start_run_in_background  # noqa: E402
+from web_run_executor import _start_run_in_thread, is_run_thread_alive, start_run_in_background  # noqa: E402
 from web_run_store import RUN_STATUS_RUNNING, RunMeta, WebRunStore  # noqa: E402
 
 
@@ -31,14 +31,14 @@ class WebRunExecutorTests(unittest.TestCase):
         rid = "test-run-alive"
         import web_run_executor as ex
 
-        with ex._RUN_THREADS_LOCK:
+        with ex._RUN_LOCK:
             ex._RUN_THREADS[rid] = thread
         thread.start()
         self.assertTrue(started.wait(timeout=2.0))
         self.assertTrue(is_run_thread_alive(rid))
         release.set()
         thread.join(timeout=2.0)
-        with ex._RUN_THREADS_LOCK:
+        with ex._RUN_LOCK:
             ex._RUN_THREADS.pop(rid, None)
         self.assertFalse(is_run_thread_alive(rid))
 
@@ -77,20 +77,20 @@ class WebRunExecutorTests(unittest.TestCase):
             original = ex.execute_web_run
             ex.execute_web_run = stub_execute  # type: ignore[method-assign]
             try:
-                pid1 = start_run_in_background(rid)
+                pid1 = _start_run_in_thread(rid)
                 time.sleep(0.05)
-                pid2 = start_run_in_background(rid)
+                pid2 = _start_run_in_thread(rid)
                 self.assertEqual(pid1, pid2)
                 self.assertTrue(is_run_thread_alive(rid))
             finally:
                 blocker.set()
                 if is_run_thread_alive(rid):
-                    with ex._RUN_THREADS_LOCK:
+                    with ex._RUN_LOCK:
                         t = ex._RUN_THREADS.get(rid)
                     if t is not None:
                         t.join(timeout=2.0)
                 ex.execute_web_run = original  # type: ignore[method-assign]
-                with ex._RUN_THREADS_LOCK:
+                with ex._RUN_LOCK:
                     ex._RUN_THREADS.pop(rid, None)
 
 

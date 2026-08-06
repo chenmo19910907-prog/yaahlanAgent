@@ -15,6 +15,22 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
+from typing import Any
+
+
+def sort_sessions_for_display(sessions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """置顶优先；未置顶中思考中优先于其余，组内按 updated_at 降序。"""
+    pinned = [s for s in sessions if s.get("pinned")]
+    unpinned = [s for s in sessions if not s.get("pinned")]
+    pinned.sort(key=lambda s: str(s.get("pinned_at") or ""))
+    running = [s for s in unpinned if s.get("running")]
+    idle = [s for s in unpinned if not s.get("running")]
+    by_updated = lambda s: str(s.get("updated_at") or "")
+    running.sort(key=by_updated, reverse=True)
+    idle.sort(key=by_updated, reverse=True)
+    return pinned + running + idle
+
+
 logger = logging.getLogger("web-agent")
 
 WEB_AGENT_DIR = Path(__file__).resolve().parent
@@ -401,12 +417,14 @@ class SessionMeta:
         return viewer in self.web_collaborator_id_set()
 
     def web_owner_display(self, *, known_labels: dict[str, str] | None = None) -> str:
+        from dingtalk_user_lookup import resolve_staff_display_name
+
         uid = (self.web_owner_id or "").strip()
-        if uid and known_labels:
-            mapped = (known_labels.get(uid) or "").strip()
-            if mapped:
-                return mapped
-        label = (self.web_owner_label or "").strip()
+        label = resolve_staff_display_name(
+            uid,
+            known_labels=known_labels,
+            fallback_label=(self.web_owner_label or "").strip(),
+        )
         if label:
             return label
         if uid:
@@ -414,23 +432,16 @@ class SessionMeta:
         return ""
 
     def owner_display(self, *, known_labels: dict[str, str] | None = None) -> str:
-        label = (self.dingtalk_label or "").strip()
+        from dingtalk_user_lookup import resolve_staff_display_name
+
         owner_id = (self.dingtalk_owner_id or "").strip() or parse_dingtalk_user_id(
             self.dingtalk_key
         )
-        if not label and owner_id and known_labels:
-            label = (known_labels.get(owner_id) or "").strip()
-        if not label and owner_id:
-            try:
-                from dingtalk_user_lookup import resolve_dingtalk_name
-
-                label = resolve_dingtalk_name(
-                    owner_id,
-                    known=known_labels,
-                    try_api=False,
-                )
-            except Exception:  # noqa: BLE001
-                label = ""
+        label = resolve_staff_display_name(
+            owner_id,
+            known_labels=known_labels,
+            fallback_label=(self.dingtalk_label or "").strip(),
+        )
         if label:
             return label
         if owner_id:
@@ -468,27 +479,39 @@ class SessionMeta:
         }
         if self.source == "dingtalk":
             payload["read_only"] = True
-            payload["dingtalk_owner"] = self.owner_display(known_labels=known_labels)
-            if self.dingtalk_label:
-                payload["dingtalk_label"] = self.dingtalk_label
+            owner = self.owner_display(known_labels=known_labels)
+            payload["dingtalk_owner"] = owner
+            if owner:
+                payload["dingtalk_label"] = owner
+            elif self.dingtalk_label:
+                from dingtalk_user_lookup import chinese_display_name
+
+                payload["dingtalk_label"] = chinese_display_name(self.dingtalk_label)
             if self.dingtalk_owner_id:
                 payload["dingtalk_owner_id"] = self.dingtalk_owner_id
         elif self.source == "web":
             owner = self.web_owner_display(known_labels=known_labels)
             if owner:
                 payload["web_owner"] = owner
-            if self.web_owner_label:
-                payload["web_owner_label"] = self.web_owner_label
+                payload["web_owner_label"] = owner
+            elif self.web_owner_label:
+                from dingtalk_user_lookup import chinese_display_name
+
+                payload["web_owner_label"] = chinese_display_name(self.web_owner_label)
             if self.web_owner_id:
                 payload["web_owner_id"] = self.web_owner_id
             collab_ids = sorted(self.web_collaborator_id_set())
             if collab_ids:
                 payload["web_collaborator_ids"] = collab_ids
-                labels = known_labels or {}
+                from dingtalk_user_lookup import _public_display_name, resolve_staff_display_name
+
                 payload["web_collaborators"] = [
                     {
                         "staffId": uid,
-                        "displayName": (labels.get(uid) or "").strip() or uid,
+                        "displayName": _public_display_name(
+                            resolve_staff_display_name(uid, known_labels=known_labels),
+                            uid,
+                        ),
                     }
                     for uid in collab_ids
                 ]
@@ -744,11 +767,11 @@ class WebSessionStore:
             items = [s for s in items if s.message_count > 0]
             if enrich_names and items:
                 try:
-                    from dingtalk_user_lookup import collect_known_labels, enrich_session_owner_labels
+                    from dingtalk_user_lookup import collect_all_staff_labels, enrich_session_owner_labels
 
                     if enrich_session_owner_labels(items):
                         dirty = True
-                    known = collect_known_labels(items)
+                    known = collect_all_staff_labels(items)
                     for meta in items:
                         if meta.source != "web":
                             continue

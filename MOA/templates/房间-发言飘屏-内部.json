@@ -1,0 +1,60 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/room/internal/room-notice-stage",
+  "method": "sendBarrageMessage",
+  "header": "{\"userId\":\"100368725\",\"roomId\":\"63302693\",\"unlockLevel\":2,\"lang\":\"en\",\"json\":\"{\\\"content\\\": \\\"[内部飘屏 Lv2] 示例文案\\\"}\"}",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": {
+        "userId": "100368725",
+        "roomId": "63302693",
+        "unlockLevel": 2,
+        "lang": "en",
+        "json": "{\"content\": \"[内部飘屏 Lv2] 示例文案\"}"
+      },
+      "type": "json",
+      "json": "{\"userId\":\"100368725\",\"roomId\":\"63302693\",\"unlockLevel\":2,\"lang\":\"en\",\"json\":\"{\\\"content\\\": \\\"[内部飘屏 Lv2] 示例文案\\\"}\"}",
+      "value": {
+        "userId": "100368725",
+        "roomId": "63302693",
+        "unlockLevel": 2,
+        "lang": "en",
+        "json": "{\"content\": \"[内部飘屏 Lv2] 示例文案\"}"
+      }
+    },
+    {
+      "title": "参数2",
+      "name": "2",
+      "txt": "1",
+      "type": "int",
+      "json": "",
+      "value": "1"
+    }
+  ],
+  "settings": {
+    "time": "30000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "room_barrage_internal",
+    "name": "房间-发言飘屏（内部）",
+    "category": "房间（room/internal/room-notice-stage）",
+    "description": "测试环境内部下发发言飘屏（sendBarrageMessage；不扣钻；params=req JSON, num=1）。req 含 userId/roomId/unlockLevel(2/7/12/17)/lang/json.content。发送前请改模板中 userId、roomId、unlockLevel 与文案。App 验收须在目标房间内。",
+    "prompts": [
+      "房间 <roomId> 内部发言飘屏 userId <userId> Lv<unlockLevel>",
+      "内部飘屏 <roomId> <userId> unlockLevel <unlockLevel>",
+      "sendBarrageMessage 房间 <roomId>"
+    ]
+  }
+}

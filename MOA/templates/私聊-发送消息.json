@@ -1,0 +1,69 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-base-service-im-stage",
+  "method": "sendP2PMessageWithNoGreet",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": {
+        "fromUid": "100438156",
+        "receiverList": ["100361661"],
+        "imDataTypeEnum": "TEXT",
+        "text": "测试私聊消息",
+        "mustReach": true,
+        "imCallBackTag": 0,
+        "extra": {"is_greet": 0},
+        "messageExtraDto": {
+          "needPush": true,
+          "sendMode": "SEND_SENDER_AND_RECEIVER",
+          "needSaveMsg": true,
+          "addUnReadCount": true
+        }
+      },
+      "json": "{\"fromUid\":\"100438156\",\"receiverList\":[\"100361661\"],\"imDataTypeEnum\":\"TEXT\",\"text\":\"测试私聊消息\",\"mustReach\":true,\"imCallBackTag\":0,\"extra\":{\"is_greet\":0},\"messageExtraDto\":{\"needPush\":true,\"sendMode\":\"SEND_SENDER_AND_RECEIVER\",\"needSaveMsg\":true,\"addUnReadCount\":true}}",
+      "type": "json",
+      "value": {
+        "fromUid": "100438156",
+        "receiverList": ["100361661"],
+        "imDataTypeEnum": "TEXT",
+        "text": "测试私聊消息",
+        "mustReach": true,
+        "imCallBackTag": 0,
+        "extra": {"is_greet": 0},
+        "messageExtraDto": {
+          "needPush": true,
+          "sendMode": "SEND_SENDER_AND_RECEIVER",
+          "needSaveMsg": true,
+          "addUnReadCount": true
+        }
+      }
+    }
+  ],
+  "settings": {
+    "time": "5000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "im_send_p2p_message",
+    "name": "私聊-发送消息",
+    "category": "消息（voga-base-service-im-stage）",
+    "description": "测试环境模拟 userId A 给 userId B 发私聊（sendP2PMessageWithNoGreet，extra.is_greet=0 避免招呼拦截；默认双方可见且落库）。CUSTOM 用 --p2p-custom-preset（默认 text_goto/eventId 1000090）。",
+    "prompts": [
+      "用户 <fromUid> 给用户 <toUid> 发私聊 <text>",
+      "用户 <fromUid> 给 <toUid> 发图片 <url>",
+      "私聊发消息 MOA sendP2PMessageWithNoGreet type=<TEXT|IMG|AUDIO|VIDEO|CUSTOM>"
+    ],
+    "cli": "--p2p-from-uid <fromUid> --p2p-to-uid <toUid> [--p2p-type TEXT|IMG|AUDIO|VIDEO|CUSTOM] ..."
+  }
+}

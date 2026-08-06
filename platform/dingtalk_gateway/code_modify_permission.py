@@ -128,3 +128,50 @@ def looks_like_code_modify_request(prompt: str) -> bool:
 
 def code_modify_denial_message() -> str:
     return load_code_modify_allowlist().deny_message
+
+
+def get_admin_notify_staff_ids() -> list[str]:
+    """管理员审批通知接收人（环境变量优先，否则白名单全部）。"""
+    import os
+
+    from env_loader import load_env_local
+
+    load_env_local()
+    raw = os.environ.get("WEB_AGENT_ADMIN_NOTIFY_STAFF_ID", "").strip()
+    if raw:
+        ids = [part.strip() for part in raw.split(",") if part.strip()]
+        if ids:
+            return ids
+    cfg = load_code_modify_allowlist()
+    return sorted(cfg.allowed_staff_ids)
+
+
+def add_staff_to_local_allowlist(staff_id: str) -> bool:
+    """追加 staffId 到 local allowlist；已存在则返回 False。"""
+    uid = (staff_id or "").strip()
+    if not uid:
+        raise ValueError("staff_id 不能为空")
+    cfg = load_code_modify_allowlist()
+    if uid in cfg.allowed_staff_ids:
+        return False
+
+    local_data: dict[str, object] = {}
+    if ALLOWLIST_LOCAL_PATH.is_file():
+        local_data = json.loads(ALLOWLIST_LOCAL_PATH.read_text(encoding="utf-8"))
+        if not isinstance(local_data, dict):
+            local_data = {}
+
+    existing = _normalize_ids(local_data.get("allowedStaffIds"))
+    if uid in existing:
+        reload_code_modify_allowlist()
+        return False
+
+    existing.append(uid)
+    local_data["allowedStaffIds"] = existing
+    ALLOWLIST_LOCAL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    ALLOWLIST_LOCAL_PATH.write_text(
+        json.dumps(local_data, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    reload_code_modify_allowlist()
+    return True

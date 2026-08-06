@@ -1,11 +1,14 @@
-"""Web Agent 任务执行：HTTP 进程内线程运行（复用 Bridge/Agent 池，避免子进程冷启动）。"""
+"""Web Agent 任务执行：默认子进程 worker（与 HTTP 解耦，服务重启不中断）；可选进程内线程调试。"""
 
 from __future__ import annotations
 
 import logging
 import os
+import subprocess
+import sys
 import threading
 import time
+from pathlib import Path
 from typing import Any
 
 from batch_progress import clear_batch_progress
@@ -28,11 +31,17 @@ from web_session_store import get_session_store
 
 logger = logging.getLogger("web-agent")
 
+WEB_AGENT_DIR = Path(__file__).resolve().parent
+PLATFORM_DIR = WEB_AGENT_DIR.parent
+REPO_ROOT = PLATFORM_DIR.parent
+GATEWAY_DIR = PLATFORM_DIR / "dingtalk_gateway"
+
 INTERRUPT_REPLY = "⚠️ 任务已中断。"
 RETRY_HINT = "💡 原消息已回填到输入框，请检查后重试。"
 
 _RUN_THREADS: dict[str, threading.Thread] = {}
-_RUN_THREADS_LOCK = threading.Lock()
+_RUN_PROCS: dict[str, subprocess.Popen[bytes]] = {}
+_RUN_LOCK = threading.Lock()
 
 
 class FileBackedTaskSession(TaskSession):
@@ -53,9 +62,41 @@ def is_run_thread_alive(run_id: str) -> bool:
     rid = (run_id or "").strip()
     if not rid:
         return False
-    with _RUN_THREADS_LOCK:
+    with _RUN_LOCK:
         thread = _RUN_THREADS.get(rid)
+        proc = _RUN_PROCS.get(rid)
+    if proc is not None:
+        return proc.poll() is None
     return thread is not None and thread.is_alive()
+
+
+def _python_can_import_cursor_sdk(python: Path) -> bool:
+    try:
+        proc = subprocess.run(
+            [str(python), "-c", "import cursor_sdk"],
+            capture_output=True,
+            timeout=5,
+            check=False,
+        )
+        return proc.returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
+def _resolve_python_executable() -> str:
+    candidates = (
+        GATEWAY_DIR / ".venv" / "bin" / "python3",
+        REPO_ROOT / ".venv" / "bin" / "python3",
+    )
+    fallback: str | None = None
+    for path in candidates:
+        if not path.is_file() or not os.access(path, os.X_OK):
+            continue
+        resolved = str(path)
+        if _python_can_import_cursor_sdk(path):
+            return resolved
+        fallback = fallback or resolved
+    return fallback or sys.executable
 
 
 def _emit(store: Any, run_id: str, event: dict[str, Any]) -> None:
@@ -132,6 +173,7 @@ def execute_web_run(run_id: str) -> int:
         final = run_web_chat(
             session_id,
             meta.message,
+            staff_id=meta.author_id or None,
             image_paths=meta.image_paths,
             file_paths=meta.file_paths,
             attachment_names=meta.attachment_names,
@@ -205,8 +247,8 @@ def execute_web_run(run_id: str) -> int:
             )
 
 
-def start_run_in_background(run_id: str) -> int:
-    """在 HTTP 服务进程内后台线程执行 run，复用已预热的 Bridge/Agent。"""
+def _start_run_in_thread(run_id: str) -> int:
+    """进程内线程（调试用 WEB_AGENT_INPROCESS_RUN=1）。"""
     rid = (run_id or "").strip()
     if not rid:
         raise ValueError("run_id 不能为空")
@@ -220,7 +262,7 @@ def start_run_in_background(run_id: str) -> int:
         try:
             execute_web_run(rid)
         finally:
-            with _RUN_THREADS_LOCK:
+            with _RUN_LOCK:
                 _RUN_THREADS.pop(rid, None)
 
     thread = threading.Thread(
@@ -228,12 +270,52 @@ def start_run_in_background(run_id: str) -> int:
         daemon=True,
         name=f"web-run-{rid}",
     )
-    with _RUN_THREADS_LOCK:
+    with _RUN_LOCK:
         _RUN_THREADS[rid] = thread
     store.set_worker_pid(rid, os.getpid())
     thread.start()
     logger.info("start in-process run=%s pid=%s", rid, os.getpid())
     return os.getpid()
+
+
+def start_run_in_subprocess(run_id: str) -> int:
+    """独立 worker 子进程：HTTP 服务重启不中断 Agent 执行。"""
+    rid = (run_id or "").strip()
+    if not rid:
+        raise ValueError("run_id 不能为空")
+
+    store = get_run_store()
+    meta = store.get_run(rid)
+    if meta is not None and meta.worker_pid > 0 and store.is_worker_alive(rid):
+        logger.info("run %s worker pid=%s 仍在运行", rid, meta.worker_pid)
+        return int(meta.worker_pid)
+
+    log_path = WEB_AGENT_DIR / "data" / "runs" / rid / "worker.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_fp = open(log_path, "a", encoding="utf-8")
+    proc = subprocess.Popen(
+        [
+            _resolve_python_executable(),
+            str(WEB_AGENT_DIR / "run_worker.py"),
+            "--run-id",
+            rid,
+        ],
+        cwd=str(REPO_ROOT),
+        stdout=log_fp,
+        stderr=subprocess.STDOUT,
+        start_new_session=True,
+    )
+    with _RUN_LOCK:
+        _RUN_PROCS[rid] = proc
+    store.set_worker_pid(rid, proc.pid)
+    logger.info("spawn run worker run=%s pid=%s", rid, proc.pid)
+    return int(proc.pid)
+
+
+def start_run_in_background(run_id: str) -> int:
+    if os.environ.get("WEB_AGENT_INPROCESS_RUN") == "1":
+        return _start_run_in_thread(run_id)
+    return start_run_in_subprocess(run_id)
 
 
 def init_agent_runtime() -> None:

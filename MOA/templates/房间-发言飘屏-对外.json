@@ -1,0 +1,53 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/yaahlan/room/external/room-im-api",
+  "method": "roomSendBarrage",
+  "header": "{\"roomId\":\"63302693\",\"userId\":\"100368725\",\"lang\":\"en\",\"area\":\"MENA\",\"appVersion\":\"2.4.9\",\"yahaVersion\":\"2.5.1\",\"osVersion\":\"17.3.1\",\"mmuid\":\"68947f05c879bbcaa90dc2dc8f3e4209b08a17da17476453596a\",\"clientType\":\"2\",\"osType\":\"ios\",\"unlockLevel\":2,\"json\":\"{\\\"content\\\": \\\"[对外飘屏 Lv2] 示例文案\\\"}\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"roomId\":\"63302693\",\"userId\":\"100368725\",\"lang\":\"en\",\"area\":\"MENA\",\"appVersion\":\"2.4.9\",\"yahaVersion\":\"2.5.1\",\"osVersion\":\"17.3.1\",\"mmuid\":\"68947f05c879bbcaa90dc2dc8f3e4209b08a17da17476453596a\",\"clientType\":\"2\",\"osType\":\"ios\",\"unlockLevel\":2,\"json\":\"{\\\"content\\\": \\\"[对外飘屏 Lv2] 示例文案\\\"}\"}",
+      "type": "json",
+      "value": {
+        "roomId": "63302693",
+        "userId": "100368725",
+        "lang": "en",
+        "area": "MENA",
+        "appVersion": "2.4.9",
+        "yahaVersion": "2.5.1",
+        "osVersion": "17.3.1",
+        "mmuid": "68947f05c879bbcaa90dc2dc8f3e4209b08a17da17476453596a",
+        "clientType": "2",
+        "osType": "ios",
+        "unlockLevel": 2,
+        "json": "{\"content\": \"[对外飘屏 Lv2] 示例文案\"}"
+      }
+    }
+  ],
+  "settings": {
+    "time": "30000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "room_barrage_external",
+    "name": "房间-发言飘屏（对外）",
+    "category": "房间（yaahlan/room/external/room-im-api）",
+    "description": "对外发言飘屏 roomSendBarrage（10 钻/条；间隔建议 ≥8s）。发送账号须已在房间内（客户端 room/heart/heartbeat 建立会话），否则 MOA 可能仅扣钻不回推 IM。执行前改模板 userId/roomId/mmuid/unlockLevel/文案。",
+    "prompts": [
+      "房间 <roomId> 对外发言飘屏 userId <userId> Lv<unlockLevel>",
+      "roomSendBarrage <roomId> <userId>",
+      "对外飘屏 <roomId> <userId> unlockLevel <unlockLevel>"
+    ]
+  }
+}

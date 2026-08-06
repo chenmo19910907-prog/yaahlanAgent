@@ -50,7 +50,7 @@
         const title = escapeHtml(item.title || '未命名文档');
         const desc = item.desc ? `<span class="about-doc-desc">${escapeHtml(item.desc)}</span>` : '';
         return `
-          <a class="about-doc-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">
+          <a class="about-doc-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" data-analytics-doc="${title}" data-analytics-url="${escapeHtml(url)}">
             <span class="about-doc-link-main">
               <span class="about-doc-title">${title}</span>
               ${desc}
@@ -108,6 +108,9 @@
     this.modalEl.classList.toggle('open', next);
     this.modalEl.setAttribute('aria-hidden', next ? 'false' : 'true');
     if (next) {
+      if (global.WebAgentAnalytics) {
+        global.WebAgentAnalytics.track('panel_open', { panel: 'about' });
+      }
       try {
         await this.loadData();
       } catch (_) { /* render 已展示错误 */ }
@@ -119,7 +122,15 @@
     this.modalEl?.addEventListener('click', (event) => {
       if (event.target === this.modalEl) this.setOpen(false);
     });
-    this.listEl?.addEventListener('click', (event) => event.stopPropagation());
+    this.listEl?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const link = event.target.closest('.about-doc-link');
+      if (!link || !global.WebAgentAnalytics) return;
+      global.WebAgentAnalytics.track('about_doc_click', {
+        title: link.getAttribute('data-analytics-doc') || link.textContent || '',
+        url: link.getAttribute('data-analytics-url') || link.getAttribute('href') || '',
+      });
+    });
     this.bubbleEl?.addEventListener('click', (event) => event.stopPropagation());
   };
 

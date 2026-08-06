@@ -191,7 +191,7 @@ def _run_generate_index() -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="MOA 新模板自动入库 registry.json")
     parser.add_argument("--dry-run", action="store_true", help="仅打印将新增的条目，不写文件")
-    parser.add_argument("--no-generate", action="store_true", help="入库后不刷新 使用方法.md")
+    parser.add_argument("--no-generate", action="store_true", help="入库后不刷新 使用方法.md 与 catalog")
     args = parser.parse_args()
 
     added = sync_registry(dry_run=args.dry_run)
@@ -204,6 +204,10 @@ def main() -> int:
 
     if not args.dry_run and not args.no_generate:
         _run_generate_index()
+        if added:
+            print("sync_registry: 已刷新 MOA/使用方法.md 与 platform/catalog.html")
+        else:
+            print("sync_registry: 已同步文档（使用方法.md + catalog）")
     return 0
 
 

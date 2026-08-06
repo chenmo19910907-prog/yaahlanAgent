@@ -253,6 +253,20 @@ class WebSessionOwnerLockTest(unittest.TestCase):
             self.assertEqual(ordered[2], sid_a)
 
 
+class SortSessionsForDisplayTest(unittest.TestCase):
+    def test_running_unpinned_after_pinned_before_idle(self) -> None:
+        from web_session_store import sort_sessions_for_display
+
+        sessions = [
+            {"id": "idle_new", "pinned": False, "updated_at": "2026-08-05T12:00:00+00:00", "running": False},
+            {"id": "run_old", "pinned": False, "updated_at": "2026-08-05T10:00:00+00:00", "running": True},
+            {"id": "pin", "pinned": True, "pinned_at": "2026-08-05T08:00:00+00:00", "updated_at": "2026-08-05T09:00:00+00:00", "running": True},
+            {"id": "run_new", "pinned": False, "updated_at": "2026-08-05T11:00:00+00:00", "running": True},
+        ]
+        ordered = [s["id"] for s in sort_sessions_for_display(sessions)]
+        self.assertEqual(ordered, ["pin", "run_new", "run_old", "idle_new"])
+
+
 class WebSessionSearchTest(unittest.TestCase):
     def test_filter_sessions_by_search_matches_question_answer_and_owner(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -649,6 +663,40 @@ class WebSessionCustomTitleTest(unittest.TestCase):
             assert meta is not None
             self.assertEqual(meta.custom_title, "")
             self.assertEqual(meta.display_title(), second_q)
+
+
+class WebSessionOwnerDisplayTest(unittest.TestCase):
+    def test_dingtalk_owner_display_prefers_multi_source_label(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            sid = "dingtalkowner001"
+            index.write_text(
+                json.dumps(
+                    {
+                        sid: {
+                            "title": "钉钉 · Kaibo",
+                            "created_at": "2026-08-03T08:00:00+00:00",
+                            "updated_at": "2026-08-03T09:00:00+00:00",
+                            "message_count": 1,
+                            "source": "dingtalk",
+                            "dingtalk_key": "cid:user:uid_kaibo",
+                            "dingtalk_label": "Kaibo",
+                            "dingtalk_owner_id": "uid_kaibo",
+                        }
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            meta = store.get_session(sid)
+            assert meta is not None
+            payload = meta.to_dict(known_labels={"uid_kaibo": "王凯波"})
+            self.assertEqual(payload["dingtalk_owner"], "王凯波")
+            self.assertEqual(payload["dingtalk_label"], "王凯波")
 
 
 if __name__ == "__main__":

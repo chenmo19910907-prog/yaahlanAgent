@@ -72,6 +72,7 @@ from .params import (
     set_user_prop_query_params,
     set_user_follow_params,
     set_feed_comment_params,
+    set_p2p_message_params,
 )
 from .time_utils import resolve_expire_ms, resolve_family_fund_week_key
 from .user_area import describe_user_area, normalize_user_area
@@ -1085,6 +1086,28 @@ def _feed_comment_mode(args: argparse.Namespace) -> bool:
     )
 
 
+def _p2p_message_mode(args: argparse.Namespace) -> bool:
+    if getattr(args, "p2p_from_uid", None) is not None or getattr(args, "p2p_to_uid", None) is not None:
+        return True
+    return any(
+        getattr(args, name, None) is not None
+        for name in (
+            "p2p_text",
+            "p2p_url",
+            "p2p_thumb_url",
+            "p2p_cover_url",
+            "p2p_audio_time",
+            "p2p_video_time",
+            "p2p_wh_ratio",
+            "p2p_custom_event_id",
+            "p2p_custom_data_json",
+            "p2p_custom_preset",
+            "p2p_goto_text",
+            "p2p_goto_click",
+        )
+    )
+
+
 def _op_feed_comment(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     user_id = str(args.feed_comment_user_id or "").strip()
     feed_id = str(args.feed_comment_feed_id or "").strip()
@@ -1103,6 +1126,41 @@ def _op_feed_comment(args: argparse.Namespace, payload: dict[str, Any]) -> None:
         area=str(args.feed_comment_area or "MENA"),
         lang=str(args.feed_comment_lang or "en"),
         os_name=str(args.feed_comment_os or "android"),
+    )
+
+
+def _op_p2p_message(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    from_uid = str(args.p2p_from_uid or "").strip()
+    to_uid = str(args.p2p_to_uid or "").strip()
+    msg_type = str(args.p2p_type or "TEXT").strip().upper()
+    if not from_uid or not to_uid:
+        raise ValueError("私聊发消息须同时提供 --p2p-from-uid 与 --p2p-to-uid")
+    custom_data: dict[str, Any] | None = None
+    if args.p2p_custom_data_json:
+        raw = str(args.p2p_custom_data_json).strip()
+        parsed = json.loads(raw)
+        if not isinstance(parsed, dict):
+            raise ValueError("--p2p-custom-data-json 必须是 JSON object")
+        custom_data = parsed
+    print(f"私聊发消息: {from_uid} -> {to_uid} type={msg_type}", file=sys.stderr)
+    set_p2p_message_params(
+        payload,
+        from_uid,
+        to_uid,
+        msg_type,
+        text=args.p2p_text,
+        url=args.p2p_url,
+        thumb_url=args.p2p_thumb_url,
+        cover_url=args.p2p_cover_url,
+        audio_time=args.p2p_audio_time,
+        video_time=args.p2p_video_time,
+        wh_ratio=args.p2p_wh_ratio,
+        custom_event_id=args.p2p_custom_event_id,
+        custom_data=custom_data,
+        custom_preset=args.p2p_custom_preset,
+        goto_text=args.p2p_goto_text,
+        goto_click=args.p2p_goto_click,
+        send_mode=args.p2p_send_mode,
     )
 
 
@@ -1334,6 +1392,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.family_leave_user_id is not None, _op_family_leave),
     (lambda a: a.follow_uid is not None or a.follow_remote_uid is not None, _op_user_follow),
     (lambda a: _feed_comment_mode(a), _op_feed_comment),
+    (lambda a: _p2p_message_mode(a), _op_p2p_message),
     (lambda a: _family_add_mode(a), _op_family_exp),
     (lambda a: a.noble_user_id is not None, _op_noble),
     (lambda a: a.vip_user_id is not None, _op_vip),

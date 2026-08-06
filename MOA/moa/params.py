@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import random
 import time
 from typing import Any
 
 from .config import section_defaults
+from .p2p_custom_presets import build_p2p_custom_preset
 
 CUSTOM_GIFT_RANK_PERIODS = frozenset({"NOW", "PRE", "PRE_PRE"})
 
@@ -1147,3 +1149,155 @@ def set_feed_comment_params(
     payload["url"] = "/service/feed/external/feed-comment-stage"
     payload["method"] = "publishComment"
     payload["params"] = [json_param(body)]
+
+
+_P2P_MSG_TYPES = frozenset({"TEXT", "IMG", "AUDIO", "VIDEO", "CUSTOM"})
+
+
+_P2P_SEND_MODES = frozenset({"SEND_RECEIVER_ONLY", "SEND_SENDER_ONLY", "SEND_SENDER_AND_RECEIVER"})
+
+
+def _p2p_message_extra(
+    *,
+    send_mode: str = "SEND_SENDER_AND_RECEIVER",
+    need_push: bool = True,
+    need_save_msg: bool = True,
+    add_unread_count: bool = True,
+) -> dict[str, Any]:
+    mode = str(send_mode or "SEND_SENDER_AND_RECEIVER").strip().upper()
+    if mode not in _P2P_SEND_MODES:
+        raise ValueError(f"sendMode 不支持 {mode}，可选: {', '.join(sorted(_P2P_SEND_MODES))}")
+    return {
+        "needPush": need_push,
+        "sendMode": mode,
+        "needSaveMsg": need_save_msg,
+        "addUnReadCount": add_unread_count,
+    }
+
+
+def _encode_custom_im_data(data_info: dict[str, Any]) -> str:
+    raw = json.dumps(data_info, ensure_ascii=False, separators=(",", ":"))
+    return base64.b64encode(raw.encode("utf-8")).decode("ascii")
+
+
+def set_p2p_message_params(
+    payload: dict[str, Any],
+    from_uid: str,
+    to_uid: str,
+    msg_type: str = "TEXT",
+    *,
+    text: str | None = None,
+    url: str | None = None,
+    thumb_url: str | None = None,
+    cover_url: str | None = None,
+    audio_time: int | None = None,
+    video_time: int | None = None,
+    wh_ratio: float | None = None,
+    custom_event_id: int | None = None,
+    custom_data: dict[str, Any] | None = None,
+    custom_preset: str | None = None,
+    goto_text: str | None = None,
+    goto_click: str | None = None,
+    send_mode: str = "SEND_SENDER_AND_RECEIVER",
+    need_push: bool = True,
+    need_save_msg: bool = True,
+    add_unread_count: bool = True,
+) -> None:
+    sender = str(from_uid).strip()
+    receiver = str(to_uid).strip()
+    kind = str(msg_type or "TEXT").strip().upper()
+    if not sender:
+        raise ValueError("fromUid 不能为空")
+    if not receiver:
+        raise ValueError("toUid 不能为空")
+    if sender == receiver:
+        raise ValueError("fromUid 与 toUid 不能相同")
+    if kind not in _P2P_MSG_TYPES:
+        raise ValueError(f"p2p-type 不支持 {kind}，可选: {', '.join(sorted(_P2P_MSG_TYPES))}")
+
+    body: dict[str, Any] = {
+        "fromUid": sender,
+        "receiverList": [receiver],
+        "imDataTypeEnum": kind,
+        "mustReach": True,
+        "imCallBackTag": 0,
+        "extra": {"is_greet": 0},
+        "messageExtraDto": _p2p_message_extra(
+            send_mode=send_mode,
+            need_push=need_push,
+            need_save_msg=need_save_msg,
+            add_unread_count=add_unread_count,
+        ),
+    }
+
+    if kind == "TEXT":
+        content = str(text or "").strip()
+        if not content:
+            raise ValueError("TEXT 类型须提供 --p2p-text")
+        body["text"] = content
+    elif kind == "IMG":
+        img_url = str(url or "").strip()
+        if not img_url:
+            raise ValueError("IMG 类型须提供 --p2p-url")
+        body["url"] = img_url
+        body["thumbUrl"] = str(thumb_url or img_url).strip() or img_url
+    elif kind == "AUDIO":
+        audio_url = str(url or "").strip()
+        if not audio_url:
+            raise ValueError("AUDIO 类型须提供 --p2p-url")
+        if audio_time is None:
+            raise ValueError("AUDIO 类型须提供 --p2p-audio-time（秒）")
+        body["url"] = audio_url
+        body["audioTime"] = int(audio_time)
+    elif kind == "VIDEO":
+        video_url = str(url or "").strip()
+        if not video_url:
+            raise ValueError("VIDEO 类型须提供 --p2p-url")
+        if video_time is None:
+            raise ValueError("VIDEO 类型须提供 --p2p-video-time（秒）")
+        cover = str(cover_url or "").strip()
+        if not cover:
+            raise ValueError("VIDEO 类型须提供 --p2p-cover-url")
+        body["url"] = video_url
+        body["videoTime"] = int(video_time)
+        body["whRatio"] = float(wh_ratio if wh_ratio is not None else 1.0)
+        body["coverUrl"] = cover
+    else:
+        event_id = custom_event_id
+        data_info = custom_data
+        if event_id is not None and data_info:
+            pass
+        elif custom_preset or (event_id is None and not data_info):
+            preset = custom_preset or "text_goto"
+            event_id, data_info = build_p2p_custom_preset(
+                preset,
+                sender,
+                receiver,
+                text=text,
+                url=url,
+                goto_text=goto_text,
+                goto_click=goto_click,
+            )
+        else:
+            raise ValueError(
+                "CUSTOM 类型须提供 --p2p-custom-preset，或同时提供 --p2p-custom-event-id 与 --p2p-custom-data-json"
+            )
+        body["customIMDataDto"] = {
+            "eventId": int(event_id),
+            "dataInfo": data_info,
+            "data": _encode_custom_im_data(data_info),
+        }
+
+    payload["url"] = "/service/voga-base-service-im-stage"
+    payload["method"] = "sendP2PMessageWithNoGreet"
+    payload["params"] = [json_param(body)]
+
+
+def set_p2p_text_message_params(
+    payload: dict[str, Any],
+    from_uid: str,
+    to_uid: str,
+    text: str,
+    **kwargs: Any,
+) -> None:
+    set_p2p_message_params(payload, from_uid, to_uid, "TEXT", text=text, **kwargs)

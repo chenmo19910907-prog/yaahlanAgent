@@ -505,13 +505,31 @@
           return;
         }
         const url = tile.getAttribute('data-url');
-        if (url) window.open(url, '_blank', 'noopener,noreferrer');
+        if (url) {
+          if (global.WebAgentAnalytics) {
+            global.WebAgentAnalytics.track('bookmark_click', {
+              url,
+              label: tile.getAttribute('data-label') || '',
+              category_id: tile.getAttribute('data-category-id') || '',
+            });
+          }
+          window.open(url, '_blank', 'noopener,noreferrer');
+        }
       });
       tile.addEventListener('keydown', (event) => {
         if (event.key !== 'Enter' && event.key !== ' ') return;
         event.preventDefault();
         const url = tile.getAttribute('data-url');
-        if (url) window.open(url, '_blank', 'noopener,noreferrer');
+        if (url) {
+          if (global.WebAgentAnalytics) {
+            global.WebAgentAnalytics.track('bookmark_click', {
+              url,
+              label: tile.getAttribute('data-label') || '',
+              category_id: tile.getAttribute('data-category-id') || '',
+            });
+          }
+          window.open(url, '_blank', 'noopener,noreferrer');
+        }
       });
     });
   };
@@ -662,6 +680,14 @@
     cat.items = [...(cat.items || []), item];
     try {
       await this.saveTeamBookmarks();
+      if (global.WebAgentAnalytics) {
+        global.WebAgentAnalytics.track('bookmark_save', {
+          action: 'add',
+          url,
+          label,
+          category_id: category.id,
+        });
+      }
       this.refreshCategorySelect();
       this.render();
       return true;
@@ -871,7 +897,12 @@
     this.open = !!next;
     if (this.modalEl) this.modalEl.classList.toggle('open', this.open);
     if (this.open) {
-      if (!wasOpen) this.refreshFromServer();
+      if (!wasOpen) {
+        if (global.WebAgentAnalytics) {
+          global.WebAgentAnalytics.track('panel_open', { panel: 'bookmarks' });
+        }
+        this.refreshFromServer();
+      }
       this.render();
     } else {
       this.hideContextMenu();

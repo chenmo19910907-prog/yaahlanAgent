@@ -43,6 +43,14 @@ WEB_LOGIN_RE = re.compile(
     r"^请求访问\s*Yaahlan\s*智能工具\s*Agent\s*$",
     re.I,
 )
+ADMIN_APPLY_APPROVE_RE = re.compile(
+    r"^同意管理员申请\s+([a-f0-9]{8})\s*$",
+    re.I,
+)
+ADMIN_APPLY_REJECT_RE = re.compile(
+    r"^拒绝管理员申请\s+([a-f0-9]{8})\s*$",
+    re.I,
+)
 
 # 含这些特征视为自然语言任务，不做模糊口令归一
 _NL_TASK_RE = re.compile(
@@ -93,12 +101,30 @@ def is_web_login_request(text: str) -> bool:
     return bool(WEB_LOGIN_RE.match((text or "").strip()))
 
 
+def parse_admin_apply_decision(text: str) -> tuple[str, bool] | None:
+    """解析管理员申请审批口令 → (token, approve)。"""
+    t = (text or "").strip()
+    m = ADMIN_APPLY_APPROVE_RE.match(t)
+    if m:
+        return m.group(1).lower(), True
+    m = ADMIN_APPLY_REJECT_RE.match(t)
+    if m:
+        return m.group(1).lower(), False
+    return None
+
+
+def is_admin_apply_decision_request(text: str) -> bool:
+    return parse_admin_apply_decision(text) is not None
+
+
 def is_likely_fast_route(text: str) -> bool:
     """入队时判断是否走 fast 队列（不与 Agent 任务互斥）。"""
     t = (text or "").strip()
     if not t:
         return False
     if is_web_login_request(t):
+        return True
+    if is_admin_apply_decision_request(t):
         return True
     if is_view_all_follow_up(t):
         return True

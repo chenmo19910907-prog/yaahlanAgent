@@ -10,11 +10,14 @@ import subprocess
 import sys
 import webbrowser
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 PLATFORM_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PLATFORM_DIR))
+
+from display_time import now_display_time  # noqa: E402
 REPO_ROOT = PLATFORM_DIR.parent
 SOURCES_PATH = PLATFORM_DIR / "config" / "sources.json"
 OUT_HTML = PLATFORM_DIR / "catalog.html"
@@ -300,7 +303,7 @@ def _load_catalog_data() -> dict[str, Any]:
             cursor_bridge["port"] = bridge_cfg["port"]
 
     return {
-        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "generated_at": now_display_time(),
         "total_items": total_items,
         "module_count": len(modules),
         "modules": modules,
@@ -759,8 +762,9 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
   <script id="catalog-data" type="application/json">{payload_safe}</script>
   <script>
     const DATA = JSON.parse(document.getElementById('catalog-data').textContent);
+    const genAt = DATA.generated_at ? ` · ${{DATA.generated_at}} 生成` : '';
     document.getElementById('meta').textContent =
-      `${{DATA.module_count}} 个一级模块 · ${{DATA.total_items}} 项能力`;
+      `${{DATA.module_count}} 个一级模块 · ${{DATA.total_items}} 项能力${{genAt}}`;
 
     let activeModule = 'all';
     let query = '';

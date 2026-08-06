@@ -14,6 +14,7 @@ BASE = Path(__file__).resolve().parent
 WEB_AGENT = BASE.parent
 PREVIEW = BASE / "preview.html"
 KEYNOTE = BASE / "Web_Agent_Keynote.html"
+CONFIG = WEB_AGENT / "config.json"
 MOA_PANEL = WEB_AGENT / "moa_record_panel.js"
 CHAT_HTML = WEB_AGENT / "chat.html"
 
@@ -140,15 +141,93 @@ def _inject_moa_record_copy(text: str, block: str) -> str:
     )
 
 
+def build_ui_copy_block() -> str:
+    cfg = json.loads(CONFIG.read_text(encoding="utf-8"))
+    chat_text = CHAT_HTML.read_text(encoding="utf-8")
+
+    input_ph = re.search(r'id="input"[^>]*placeholder="([^"]+)"', chat_text)
+    retry_ph = re.search(r"const RETRY_PLACEHOLDER = '([^']+)'", chat_text)
+    retry_hint = re.search(r"const RETRY_HINT_MARKDOWN = '([^']+)'", chat_text)
+    ding_readonly = re.search(r"const DINGTALK_READONLY_PLACEHOLDER = '([^']+)'", chat_text)
+    web_readonly = re.search(r"const WEB_READONLY_PLACEHOLDER = '([^']+)'", chat_text)
+    catalog_title = re.search(r'id="btn-catalog"[^>]*title="([^"]+)"', chat_text)
+    if not all([input_ph, retry_ph, retry_hint, ding_readonly, web_readonly, catalog_title]):
+        raise SystemExit("chat.html UI 文案解析不完整")
+
+    empty_intro = cfg.get("emptyIntro") if isinstance(cfg.get("emptyIntro"), dict) else {}
+    views = empty_intro.get("views") if isinstance(empty_intro.get("views"), list) else []
+    view_lines = ",\n".join(
+        "      { label: "
+        + _js_str(str(v.get("label") or ""))
+        + ", detail: "
+        + _js_str(str(v.get("detail") or ""))
+        + " }"
+        for v in views
+        if isinstance(v, dict)
+    )
+    quick_prompts = cfg.get("quickPrompts") if isinstance(cfg.get("quickPrompts"), list) else []
+    prompt_lines = ",\n".join("      " + _js_str(str(p)) for p in quick_prompts)
+    preview_ids = (
+        cfg.get("featureDemoPreviewIds")
+        if isinstance(cfg.get("featureDemoPreviewIds"), list)
+        else []
+    )
+    preview_id_lines = ",\n".join("      " + _js_str(str(d)) for d in preview_ids if d)
+
+    return (
+        "  var UI_COPY = {\n"
+        f"    title: {_js_str(str(cfg.get('title') or 'Yaahlan 智能工具 Agent'))},\n"
+        f"    subtitle: {_js_str(str(cfg.get('subtitle') or ''))},\n"
+        f"    inputPh: {_js_str(input_ph.group(1))},\n"
+        f"    retryPh: {_js_str(retry_ph.group(1))},\n"
+        f"    retryHint: {_js_str(retry_hint.group(1))},\n"
+        f"    dingReadonly: {_js_str(ding_readonly.group(1))},\n"
+        f"    webReadonly: {_js_str(web_readonly.group(1))},\n"
+        f"    catalogTitle: {_js_str(catalog_title.group(1))},\n"
+        f"    quickPromptCount: {int(cfg.get('quickPromptCount') or 4)},\n"
+        f"    featureDemoRotateMs: {int(cfg.get('featureDemoRotateMs') or 10000)},\n"
+        "    featureDemoPreviewIds: [\n"
+        f"{preview_id_lines}\n"
+        "    ],\n"
+        "    emptyIntro: {\n"
+        f"      tagline: {_js_str(str(empty_intro.get('tagline') or ''))},\n"
+        f"      rotateMs: {int(empty_intro.get('rotateMs') or 4200)},\n"
+        "      views: [\n"
+        f"{view_lines}\n"
+        "      ]\n"
+        "    },\n"
+        "    quickPrompts: [\n"
+        f"{prompt_lines}\n"
+        "    ]\n"
+        "  };\n"
+    )
+
+
+_UI_COPY_END = "  var MOA_RECORD_COPY = {"
+
+
+def _inject_ui_copy(text: str, block: str) -> str:
+    if "var UI_COPY = {" not in text:
+        raise SystemExit("未找到 UI_COPY 块")
+    return _sub_once(
+        text,
+        r"  var UI_COPY = \{.*?(?=  var MOA_RECORD_COPY = \{)",
+        block,
+        "UI_COPY",
+    )
+
+
 def sync() -> None:
     moa_copy_block = build_moa_record_copy_block()
+    ui_copy_block = build_ui_copy_block()
     preview = PREVIEW.read_text(encoding="utf-8")
+    preview = _inject_ui_copy(preview, ui_copy_block)
     preview = _inject_moa_record_copy(preview, moa_copy_block)
     PREVIEW.write_text(preview, encoding="utf-8")
 
     keynote = KEYNOTE.read_text(encoding="utf-8")
 
-    ui_block = _between(preview, "  var UI_COPY = {", "  function countSteps(scene) {")
+    ui_block = _between(preview, "  var UI_COPY = {", _UI_COPY_END)
     moa_block = _between(preview, "  var MOA_RECORD_COPY = {", "  var ICON = {")
     demo_block = _between(preview, "  function demoHtml(id) {", "  function radialCenterHtml() {")
     waiting_block = (
@@ -174,7 +253,7 @@ def sync() -> None:
     if "var UI_COPY = {" in keynote:
         keynote = _sub_once(
             keynote,
-            r"  var UI_COPY = \{.*?(?=  function countSteps\(scene\) \{)",
+            r"  var UI_COPY = \{.*?(?=  var MOA_RECORD_COPY = \{)",
             ui_block,
             "UI_COPY",
         )
@@ -269,6 +348,20 @@ def sync() -> None:
         )
 
     build_ap = _between(preview, "  function mockApHeaderBtn(label, icon, active) {", "  function demoHtml(id) {")
+    empty_intro_js = _between(preview, "  function mockEmptyIntroHtml(activeIdx) {", "  function mockComposerInput(ph, focus) {")
+    if "function mockEmptyIntroHtml" in keynote:
+        keynote = _sub_once(
+            keynote,
+            r"  function mockEmptyIntroHtml\(activeIdx\) \{.*?(?=  function mockComposerInput\(ph, focus\) \{)",
+            empty_intro_js,
+            "mockEmptyIntroHtml",
+        )
+    else:
+        keynote = keynote.replace(
+            "  function mockComposerInput(ph, focus) {",
+            empty_intro_js + "  function mockComposerInput(ph, focus) {",
+            1,
+        )
     if "function mockApHeaderBtn" in keynote:
         keynote = _sub_once(
             keynote,

@@ -17,6 +17,7 @@
       --bg: #0b0e14;
       --bg-panel: rgba(20, 24, 33, 0.86);
       --bg-solid: #151923;
+      --sidebar-bg: #171b26;
       --bg-soft: #1a202b;
       --bg-hover: #232a38;
       --bg-input: rgba(23, 27, 36, 0.92);
@@ -46,6 +47,7 @@
       --bg: #eef2f8;
       --bg-panel: rgba(255, 255, 255, 0.92);
       --bg-solid: #ffffff;
+      --sidebar-bg: #fbfcfd;
       --bg-soft: #f5f7fb;
       --bg-hover: #e8edf5;
       --bg-input: rgba(255, 255, 255, 0.96);
@@ -272,7 +274,7 @@
       background: var(--panel-bg);
     }
     [data-theme="light"] .left-panel {
-      background: var(--bg-solid);
+      background: var(--sidebar-bg);
     }
     [data-theme="light"] .session-filter-search {
       background-color: var(--bg-soft);
@@ -292,7 +294,7 @@
       background: var(--bg-soft);
     }
     [data-theme="light"] .sidebar-collapse-btn {
-      background: var(--bg-solid);
+      background: var(--sidebar-bg);
       backdrop-filter: none;
     }
     [data-theme="light"] .header-actions button,
@@ -427,7 +429,7 @@
     .sidebar-tool-actions-host {
       flex-shrink: 0;
       padding: 10px 12px 14px;
-      background: var(--bg-solid);
+      background: var(--sidebar-bg);
       position: relative;
       z-index: 1;
       overflow: visible;
@@ -519,7 +521,10 @@
       flex-shrink: 0;
     }
     .sidebar-tool-actions-host .user-menu-name {
-      max-width: 72px;
+      max-width: 56px;
+    }
+    .sidebar-tool-actions-host .user-menu-btn.is-admin {
+      max-width: 188px;
     }
     .sidebar-tool-actions-host .btn-login-header {
       margin-left: auto;
@@ -677,6 +682,9 @@
       background: rgba(91,140,255,0.14);
       color: var(--text);
     }
+    .user-menu-btn.is-admin {
+      max-width: 196px;
+    }
     .user-menu-avatar {
       width: 22px;
       height: 22px;
@@ -695,6 +703,31 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       max-width: 96px;
+    }
+    .user-menu-identity {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .user-menu-admin-badge {
+      flex-shrink: 0;
+      font-size: 0.58rem;
+      font-weight: 650;
+      line-height: 1.2;
+      padding: 1px 5px;
+      border-radius: 999px;
+      border: 1px solid rgba(91,140,255,0.32);
+      background: rgba(91,140,255,0.14);
+      color: rgba(147, 197, 253, 0.96);
+      letter-spacing: 0.02em;
+    }
+    .user-menu-admin-badge[hidden] { display: none; }
+    [data-theme="light"] .user-menu-admin-badge {
+      border-color: rgba(59, 130, 246, 0.28);
+      background: rgba(59, 130, 246, 0.1);
+      color: rgba(37, 99, 235, 0.92);
     }
     .user-menu-chevron {
       width: 14px;
@@ -874,7 +907,7 @@
         width: min(var(--sidebar-width, 280px), 88vw);
         max-width: 88vw;
         z-index: 40;
-        background: var(--bg-solid);
+        background: var(--sidebar-bg);
         backdrop-filter: none;
         box-shadow: 8px 0 32px rgba(0, 0, 0, 0.18);
         pointer-events: auto;
@@ -906,7 +939,7 @@
       grid-column: 1;
       grid-row: 1 / 3;
       border-right: 1px solid var(--border);
-      background: var(--bg-solid);
+      background: var(--sidebar-bg);
       backdrop-filter: none;
       display: flex;
       flex-direction: column;
@@ -1560,7 +1593,33 @@
       48%, 100% { transform: scale(1); }
     }
     .empty-state h2 { color: var(--text); font-size: 1.3rem; }
-    .empty-state p { font-size: 0.9rem; max-width: 420px; }
+    .empty-state p { font-size: 0.9rem; max-width: 520px; }
+    .empty-feature-carousel {
+      max-width: 828px; width: 100%; display: flex; flex-direction: column;
+      align-items: stretch; gap: 10px; margin-top: 4px;
+      transition: opacity 0.25s;
+    }
+    .empty-feature-carousel.is-fading { opacity: 0.35; }
+    .empty-feature-caption {
+      text-align: center; display: flex; flex-direction: column; gap: 4px;
+    }
+    .empty-feature-title {
+      font-size: 1.05rem; font-weight: 650; color: var(--text); line-height: 1.35;
+    }
+    .empty-feature-tag {
+      color: var(--accent); font-weight: 600; margin-right: 0.35em;
+    }
+    .empty-feature-viewport {
+      width: 100%; border-radius: 12px; overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 0 0 1px rgba(91, 140, 255, 0.06);
+      background: var(--bg-solid);
+      height: min(41.4vh, 396px); min-height: 270px;
+    }
+    .empty-feature-frame {
+      width: 100%; height: 100%; border: 0; display: block;
+      pointer-events: none;
+    }
     .messages.messages-exit {
       animation: messages-fade-out 220ms var(--ease-standard) both;
       pointer-events: none;
@@ -1580,8 +1639,9 @@
       animation: empty-part-rise 440ms var(--ease-spring) both;
       animation-delay: 190ms;
     }
-    .empty-state-enter .quick-prompts button {
-      animation: empty-prompt-rise 400ms var(--ease-spring) both;
+    .empty-state-enter .empty-feature-carousel {
+      animation: empty-part-rise 440ms var(--ease-spring) both;
+      animation-delay: 230ms;
     }
     @keyframes messages-fade-out {
       from { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
@@ -1979,7 +2039,7 @@
       height: 40px;
       padding: 0;
       border-radius: 10px;
-      border: 1px solid var(--border);
+      border: none;
       background: var(--phrase-bg, rgba(255,255,255,0.04));
       color: var(--muted);
       cursor: pointer;
@@ -1987,7 +2047,7 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+      transition: color 0.15s ease, background 0.15s ease, transform 0.15s ease;
     }
     .input-side-btn svg {
       width: 18px;
@@ -1996,14 +2056,12 @@
       flex-shrink: 0;
     }
     .input-side-btn:hover {
-      border-color: rgba(91, 140, 255, 0.55);
       color: var(--accent);
       background: var(--accent-soft);
       transform: translateY(-1px);
     }
     .input-side-btn:active { transform: scale(0.98); }
     .input-side-btn.active {
-      border-color: var(--accent);
       color: var(--accent);
       background: var(--accent-soft);
     }
@@ -2214,7 +2272,7 @@
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .attach-btn {
-      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04); border: none;
       color: var(--muted); width: 44px; height: 44px; border-radius: 12px;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
       flex-shrink: 0; align-self: center;
@@ -2224,7 +2282,6 @@
     .attach-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .theme-quick-btn.is-light {
       color: #d97706;
-      border-color: rgba(217, 119, 6, 0.28);
       background: rgba(251, 191, 36, 0.12);
     }
     .theme-quick-btn.is-light:hover {
@@ -3130,9 +3187,10 @@
       box-shadow: 0 28px 64px rgba(0,0,0,0.28);
     }
     .about-head {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
       padding: 18px 22px 12px; border-bottom: 1px solid var(--border);
     }
-    .about-head h3 { font-size: 1.08rem; font-weight: 600; margin-bottom: 8px; }
+    .about-head h3 { font-size: 1.08rem; font-weight: 600; margin: 0 0 8px; }
     .about-intro {
       font-size: 0.84rem; color: var(--muted); line-height: 1.65;
     }
@@ -3161,14 +3219,6 @@
     .about-doc-link:hover .about-doc-icon { stroke: var(--accent); }
     .about-docs-empty {
       color: var(--muted); text-align: center; padding: 24px 12px; font-size: 0.86rem;
-    }
-    .about-actions {
-      border-top: 1px solid var(--border); padding: 14px 22px 18px;
-      display: flex; justify-content: flex-end;
-    }
-    .about-actions button {
-      background: var(--accent); border: none; color: #fff;
-      padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 0.86rem;
     }
     @media (max-width: 760px) {
       .topbar-brand {
@@ -3641,12 +3691,21 @@
       <div class="user-menu" id="user-menu" hidden>
         <button type="button" class="user-menu-btn" id="user-menu-btn" aria-haspopup="menu" aria-expanded="false">
           <span class="user-menu-avatar" id="user-menu-avatar" aria-hidden="true">U</span>
-          <span class="user-menu-name" id="user-menu-name">用户</span>
+          <span class="user-menu-identity">
+            <span class="user-menu-name" id="user-menu-name">用户</span>
+            <span class="user-menu-admin-badge" id="user-menu-admin-badge" hidden>管理员</span>
+          </span>
           <svg class="user-menu-chevron" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
             <path d="M6 9l6 6 6-6"/>
           </svg>
         </button>
         <div class="user-menu-dropdown" id="user-menu-dropdown" role="menu" hidden>
+          <button type="button" id="btn-apply-admin" role="menuitem" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+              <path d="M12 3l2.09 6.26L21 9.27l-5 3.64L17.18 21 12 17.27 6.82 21 8 12.91l-5-3.64 6.91-1.01L12 3z"/>
+            </svg>
+            申请管理员
+          </button>
           <button type="button" id="btn-logout" role="menuitem">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -3902,13 +3961,13 @@
   <div class="about-modal" id="about-modal" aria-hidden="true">
     <div class="about-bubble" id="about-bubble" role="dialog" aria-labelledby="about-title">
       <div class="about-head">
-        <h3 id="about-title">关于 Yaahlan Web Agent</h3>
-        <p class="about-intro" id="about-intro"></p>
+        <div>
+          <h3 id="about-title">关于 Yaahlan Web Agent</h3>
+          <p class="about-intro" id="about-intro"></p>
+        </div>
+        <button type="button" class="btn-close" id="btn-about-close" title="关闭" aria-label="关闭">×</button>
       </div>
       <div class="about-body" id="about-docs-list"></div>
-      <div class="about-actions">
-        <button type="button" id="btn-about-close">关闭</button>
-      </div>
     </div>
   </div>
 
@@ -3977,6 +4036,7 @@
 
   <script src="https://g.alicdn.com/dingding/dingtalk-jsapi/3.0.25/dingtalk.open.js"></script>
   <script src="dingtalk_oauth.js"></script>
+  <script src="analytics.js"></script>
   <script src="bookmarks_panel.js"></script>
   <script src="message_board_panel.js?v=20260730b"></script>
   <script src="about_panel.js?v=20260803b"></script>
@@ -4087,6 +4147,7 @@
     }
 
     let sessionsCache = [];
+    let sessionsCacheAll = [];
     const sessionMessagesCache = new Map();
     const SESSION_MESSAGES_CACHE_LIMIT = 24;
 
@@ -4107,6 +4168,9 @@
     }
     let sessionSearchQuery = '';
     let sessionSearchTimer = 0;
+    function trackEvent(event, props = {}) {
+      if (window.WebAgentAnalytics) window.WebAgentAnalytics.track(event, props);
+    }
     const SESSION_SCOPE_STORAGE_KEY = 'web_agent_session_scope';
     let sessionScopeFilter = loadSessionScopeFilter();
     let currentSessionReadOnly = false;
@@ -5323,17 +5387,17 @@
       return REPLY_MODES.includes(value) ? value : 'standard';
     }
 
-    /** 详略等级图标：递增高柱，亮柱数 = 当前档位（精简 1 / 标准 2 / 详细 3） */
+    /** 详略等级图标：递增多行文本线，亮行数 = 当前档位（精简 1 / 标准 2 / 详细 3） */
     function renderReplyModeIcon(mode) {
       const level = { concise: 1, standard: 2, detailed: 3 }[normalizeReplyMode(mode)] || 2;
-      const bars = [
-        { x: 5, y: 15, h: 5 },
-        { x: 10.5, y: 11, h: 9 },
-        { x: 16, y: 7, h: 13 },
+      const lines = [
+        { x: 5, y: 6.5, w: 14 },
+        { x: 5, y: 11, w: 14 },
+        { x: 5, y: 15.5, w: 10 },
       ];
-      return bars.map((bar, index) => {
+      return lines.map((line, index) => {
         const active = index < level;
-        return `<rect x="${bar.x}" y="${bar.y}" width="3.5" height="${bar.h}" rx="1" opacity="${active ? 1 : 0.24}"/>`;
+        return `<rect x="${line.x}" y="${line.y}" width="${line.w}" height="2" rx="1" opacity="${active ? 1 : 0.24}"/>`;
       }).join('');
     }
 
@@ -5721,7 +5785,7 @@
       const run = activeRuns.get(sessionId);
       if (run?.shellEl) return run.shellEl;
       const container = document.getElementById('messages');
-      if (container.querySelector('.empty-state')) container.innerHTML = '';
+      if (container.querySelector('.empty-state')) dismissEmptyState(container);
       document.getElementById('typing-indicator')?.remove();
       const el = document.createElement('div');
       el.className = 'msg assistant streaming';
@@ -5770,7 +5834,7 @@
 
     function sessionOwnerName(item) {
       const info = sessionOwnerInfo(item);
-      return info.label || info.id || '';
+      return publicDisplayName(info.label || info.id || '');
     }
 
     function sessionHasCustomTitle(item) {
@@ -5792,6 +5856,28 @@
       syncSessionScopeButtonUi();
     }
 
+    function sessionMatchesScope(item) {
+      if (sessionScopeFilter !== 'mine') return true;
+      if (isGuestMode()) return false;
+      const viewerId = (currentAuthUser?.staffId || '').trim();
+      if (!viewerId) return false;
+      if (item?.is_mine === true) return true;
+      const ownerId = item?.source === 'dingtalk'
+        ? (item.dingtalk_owner_id || '').trim()
+        : (item.web_owner_id || '').trim();
+      return !!ownerId && ownerId === viewerId;
+    }
+
+    function applySessionScopeFilter(list) {
+      if (sessionScopeFilter !== 'mine') return list.slice();
+      return list.filter(sessionMatchesScope);
+    }
+
+    function syncSessionsCacheFromAll() {
+      sessionsCache = applySessionScopeFilter(sessionsCacheAll);
+      sortSessionsCache();
+    }
+
     function syncSessionScopeButtonUi() {
       const btn = document.getElementById('btn-session-scope');
       if (!btn) return;
@@ -5811,8 +5897,15 @@
 
     function toggleSessionScopeFilter() {
       if (isGuestMode()) return;
-      saveSessionScopeFilter(sessionScopeFilter === 'mine' ? 'all' : 'mine');
-      loadSessions().catch(err => console.error('loadSessions', err));
+      const nextScope = sessionScopeFilter === 'mine' ? 'all' : 'mine';
+      saveSessionScopeFilter(nextScope);
+      trackEvent('session_scope_change', { scope: nextScope });
+      if (sessionSearchQuery.trim()) {
+        loadSessions().catch(err => console.error('loadSessions', err));
+        return;
+      }
+      syncSessionsCacheFromAll();
+      renderSessionList();
     }
 
     function renderSessionList() {
@@ -5971,12 +6064,20 @@
       document.getElementById('session-list')?.addEventListener('scroll', handler, true);
     }
 
+    function sessionIsRunning(session) {
+      return !!(session && (activeRuns.has(session.id) || session.running));
+    }
+
     function sortSessionsCache() {
       const pinned = sessionsCache.filter(s => s.pinned);
       const unpinned = sessionsCache.filter(s => !s.pinned);
       pinned.sort((a, b) => String(a.pinned_at || '').localeCompare(String(b.pinned_at || '')));
-      unpinned.sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')));
-      sessionsCache = pinned.concat(unpinned);
+      const running = unpinned.filter(s => sessionIsRunning(s));
+      const idle = unpinned.filter(s => !sessionIsRunning(s));
+      const byUpdated = (a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || ''));
+      running.sort(byUpdated);
+      idle.sort(byUpdated);
+      sessionsCache = pinned.concat(running, idle);
     }
 
     function patchSessionPinState(sessionId, pinned) {
@@ -6329,7 +6430,7 @@
       } else if (item?.source === 'web' && owner) {
         bar.hidden = false;
         const collabNames = (item.web_collaborators || [])
-          .map(c => (c.displayName || c.staffId || '').trim())
+          .map(c => publicDisplayName((c.displayName || c.staffId || '').trim()))
           .filter(Boolean);
         let meta = '';
         if (collabNames.length) {
@@ -6409,7 +6510,7 @@
       }
       list.innerHTML = filtered.map(user => {
         const staffId = (user.staffId || '').trim();
-        const name = escapeHtml((user.displayName || '未知用户').trim());
+        const name = escapeHtml(publicDisplayName((user.displayName || '未知用户').trim()));
         const checked = collaboratorDraftIds.has(staffId) ? ' checked' : '';
         return `
           <label class="collaborators-item">
@@ -6983,11 +7084,20 @@
     async function loadSessions() {
       const q = sessionSearchQuery.trim();
       const params = new URLSearchParams();
-      if (q) params.set('q', q);
-      if (sessionScopeFilter === 'mine') params.set('scope', 'mine');
+      if (q) {
+        params.set('q', q);
+        if (sessionScopeFilter === 'mine') params.set('scope', 'mine');
+      }
       const url = params.toString() ? `/api/sessions?${params}` : '/api/sessions';
       const data = await api(url);
-      sessionsCache = data.sessions || [];
+      const rows = data.sessions || [];
+      if (q) {
+        sessionsCache = rows;
+        sortSessionsCache();
+      } else {
+        sessionsCacheAll = rows;
+        syncSessionsCacheFromAll();
+      }
       renderSessionList();
     }
 
@@ -7003,6 +7113,7 @@
     }
 
     let creatingSession = false;
+    let sessionBootstrapPromise = null;
 
     function setNewSessionButtonsDisabled(disabled) {
       ['btn-new', 'btn-new-header'].forEach((id) => {
@@ -7028,38 +7139,61 @@
         goToLogin();
         return;
       }
+      if (sessionBootstrapPromise) {
+        await sessionBootstrapPromise;
+        if (opts.animate) showEmptyState({ animate: true });
+        return;
+      }
       if (creatingSession) return;
+
       const animate = !!opts.animate;
+      const prevSessionId = currentSessionId;
+
       if (animate) {
         creatingSession = true;
         setNewSessionButtonsDisabled(true);
       }
-      try {
-        clearPendingAttachments();
-        const exitPromise = animate ? animateMessagesExit() : Promise.resolve();
-        const cleanupPromise = (async () => {
-          if (!currentSessionId) return;
-          try {
-            const data = await api(`/api/sessions/${currentSessionId}/messages`);
-            if (!(data.messages || []).length) {
-              await api(`/api/sessions/${currentSessionId}`, { method: 'DELETE' });
-            }
-          } catch { /* ignore */ }
-        })();
-        await Promise.all([exitPromise, cleanupPromise]);
-        const s = await api('/api/sessions', { method: 'POST', body: JSON.stringify({ title: '新对话' }) });
-        currentSessionId = s.id;
-        currentSessionReadOnly = false;
-        persistSessionId(currentSessionId);
-        await loadSessions();
-        updateDingtalkOwnerBar();
-        updateReadOnlyState();
-        if (animate) {
-          showEmptyState({ animate: true });
-        } else {
-          await loadMessages();
+
+      clearPendingAttachments();
+      currentSessionId = '';
+      currentSessionReadOnly = false;
+      clearPersistedSessionId();
+      renderSessionList();
+      updateDingtalkOwnerBar();
+      updateReadOnlyState();
+
+      sessionBootstrapPromise = (async () => {
+        try {
+          if (prevSessionId) {
+            try {
+              const data = await api(`/api/sessions/${prevSessionId}/messages`);
+              if (!(data.messages || []).length) {
+                await api(`/api/sessions/${prevSessionId}`, { method: 'DELETE' });
+              }
+            } catch { /* ignore */ }
+          }
+          const s = await api('/api/sessions', { method: 'POST', body: JSON.stringify({ title: '新对话' }) });
+          currentSessionId = s.id;
+          persistSessionId(currentSessionId);
+          updateDingtalkOwnerBar();
+          updateReadOnlyState();
+          renderSessionList();
+          void loadSessions();
+        } finally {
+          sessionBootstrapPromise = null;
         }
-        document.getElementById('input').focus();
+      })();
+
+      try {
+        if (animate) {
+          await animateMessagesExit();
+          showEmptyState({ animate: true });
+          document.getElementById('input').focus();
+        } else {
+          await sessionBootstrapPromise;
+          await loadMessages();
+          document.getElementById('input').focus();
+        }
       } finally {
         if (animate) {
           creatingSession = false;
@@ -7083,24 +7217,144 @@
       if (el && !el.firstChild) el.innerHTML = agentLogoHtml();
     }
 
-    function pickRotatingPrompts(pool, count) {
-      const items = [...(pool || [])];
-      const n = Math.max(1, Math.min(count || 4, items.length));
-      for (let i = items.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [items[i], items[j]] = [items[j], items[i]];
+    function dismissEmptyState(container) {
+      if (!container.querySelector('.empty-state')) return false;
+      stopFeatureDemoCarousel();
+      container.innerHTML = '';
+      return true;
+    }
+
+    function featureDemoLabelPrefix(label) {
+      if (!label) return '';
+      const s = String(label).trim();
+      const dot = s.indexOf('·');
+      return (dot >= 0 ? s.slice(0, dot) : s).trim();
+    }
+
+    function buildFeatureDemoTitleHtml(label, title) {
+      const prefix = featureDemoLabelPrefix(label);
+      const t = escapeHtml(title || '');
+      if (!prefix) return t;
+      const sep = String(label || '').includes('·') ? ' · ' : ' ';
+      return `<span class="empty-feature-tag">${escapeHtml(prefix)}${sep}</span>${t}`;
+    }
+
+    function buildFeatureDemoCarouselHtml(demos, rotateMs, startIdx) {
+      if (!demos.length) return '';
+      const idx = Number.isFinite(startIdx) ? startIdx : 0;
+      const d0 = demos[((idx % demos.length) + demos.length) % demos.length];
+      return `
+        <div class="empty-feature-carousel" data-rotate-ms="${Number(rotateMs) || 10000}" data-start-idx="${idx}">
+          <div class="empty-feature-viewport">
+            <iframe class="empty-feature-frame" title="${escapeHtml(d0.title || '功能演示')}" src="/keynote?embed=${encodeURIComponent(d0.demo || '')}" loading="lazy" tabindex="-1"></iframe>
+          </div>
+          <div class="empty-feature-caption">
+            <div class="empty-feature-title">${buildFeatureDemoTitleHtml(d0.label, d0.title)}</div>
+          </div>
+        </div>`;
+    }
+
+    let featureDemoTimer = null;
+
+    function stopFeatureDemoCarousel() {
+      if (featureDemoTimer) {
+        clearInterval(featureDemoTimer);
+        featureDemoTimer = null;
       }
-      return items.slice(0, n);
+    }
+
+    function chatInputFocusSnapshot() {
+      const input = document.getElementById('input');
+      if (!input || document.activeElement !== input) return null;
+      return {
+        input,
+        start: input.selectionStart,
+        end: input.selectionEnd,
+      };
+    }
+
+    function restoreChatInputFocus(snapshot) {
+      if (!snapshot?.input) return;
+      snapshot.input.focus({ preventScroll: true });
+      if (Number.isFinite(snapshot.start) && Number.isFinite(snapshot.end)) {
+        snapshot.input.setSelectionRange(snapshot.start, snapshot.end);
+      }
+    }
+
+    function mountFeatureDemoCarousel(root, demos, rotateMs, startIdx) {
+      stopFeatureDemoCarousel();
+      if (!root || !demos.length) return;
+      const captionTitle = root.querySelector('.empty-feature-title');
+      const frame = root.querySelector('.empty-feature-frame');
+      if (!frame || !captionTitle) return;
+
+      const initialIdx = Number.isFinite(startIdx)
+        ? startIdx
+        : Number(root.dataset.startIdx);
+      let activeIdx = Number.isFinite(initialIdx)
+        ? (((initialIdx % demos.length) + demos.length) % demos.length)
+        : 0;
+      let paused = false;
+      const ms = Number(root.dataset.rotateMs) || Number(rotateMs) || 10000;
+
+      function pickRandomDemoIdx(excludeIdx) {
+        if (demos.length <= 1) return 0;
+        if (demos.length === 2) return excludeIdx === 0 ? 1 : 0;
+        let next = excludeIdx;
+        while (next === excludeIdx) {
+          next = Math.floor(Math.random() * demos.length);
+        }
+        return next;
+      }
+
+      function setActive(idx, fade) {
+        activeIdx = ((idx % demos.length) + demos.length) % demos.length;
+        const d = demos[activeIdx];
+        const focusSnapshot = chatInputFocusSnapshot();
+        const apply = () => {
+          captionTitle.innerHTML = buildFeatureDemoTitleHtml(d.label, d.title);
+          frame.title = d.title || '功能演示';
+          frame.src = `/keynote?embed=${encodeURIComponent(d.demo || '')}`;
+          restoreChatInputFocus(focusSnapshot);
+          if (focusSnapshot) {
+            frame.addEventListener('load', () => restoreChatInputFocus(focusSnapshot), { once: true });
+          }
+        };
+        if (!fade || prefersReducedMotion()) {
+          root.classList.remove('is-fading');
+          apply();
+          return;
+        }
+        root.classList.add('is-fading');
+        window.setTimeout(() => {
+          apply();
+          root.classList.remove('is-fading');
+        }, 200);
+      }
+
+      root.addEventListener('mouseenter', () => { paused = true; });
+      root.addEventListener('mouseleave', () => { paused = false; });
+
+      setActive(activeIdx, false);
+
+      if (demos.length > 1 && !prefersReducedMotion()) {
+        featureDemoTimer = window.setInterval(() => {
+          if (paused) return;
+          setActive(pickRandomDemoIdx(activeIdx), true);
+        }, ms);
+      }
     }
 
     function showEmptyState(opts = {}) {
-      const pool = meta.quickPrompts || [
-        '查一下 Gift 模块 Stage 送礼怎么用',
-        '工具平台有哪些 MOA 能力？',
-        '解析 PRD 并生成测试用例',
-        '用 Tunnel 抓包查某 userId 最近请求',
-      ];
-      const prompts = pickRotatingPrompts(pool, meta.quickPromptCount || 4);
+      stopFeatureDemoCarousel();
+      const demos = Array.isArray(meta.featureDemos) ? meta.featureDemos : [];
+      const rotateMs = meta.featureDemoRotateMs || 10000;
+      const startIdx = demos.length ? Math.floor(Math.random() * demos.length) : 0;
+      const featureHtml = buildFeatureDemoCarouselHtml(
+        demos,
+        rotateMs,
+        startIdx,
+      );
       const container = document.getElementById('messages');
       const animate = !!opts.animate && !prefersReducedMotion();
       container.classList.remove('messages-exit');
@@ -7109,24 +7363,16 @@
           <div class="empty-logo">${agentLogoHtml()}</div>
           <h2>${escapeHtml(meta.title || 'Yaahlan 智能工具 Agent')}</h2>
           <p>${escapeHtml(meta.subtitle || '钉钉 Agent · MOA/Admin 查数 · Tunnel 抓包 · Stage 送礼 · 用例生成')}</p>
-          <div class="quick-prompts">
-            ${prompts.map(p => `<button type="button" data-prompt="${escapeHtml(p)}">${escapeHtml(p)}</button>`).join('')}
-          </div>
+          ${featureHtml}
         </div>`;
       const emptyEl = container.querySelector('.empty-state');
-      const promptBtns = container.querySelectorAll('.quick-prompts button');
+      const featureEl = container.querySelector('.empty-feature-carousel');
+      if (featureEl) mountFeatureDemoCarousel(featureEl, demos, rotateMs, startIdx);
       if (animate && emptyEl) {
-        promptBtns.forEach((btn, index) => {
-          btn.style.animationDelay = `${260 + index * 58}ms`;
-        });
         emptyEl.addEventListener('animationend', () => {
           emptyEl.classList.remove('empty-state-enter');
-          promptBtns.forEach((btn) => { btn.style.animationDelay = ''; });
         }, { once: true });
       }
-      container.querySelectorAll('[data-prompt]').forEach(btn => {
-        btn.addEventListener('click', () => sendMessage(btn.dataset.prompt));
-      });
       updateScrollToBottomBtn();
     }
 
@@ -7185,14 +7431,23 @@
       renderLoadedMessages(sessionId, msgs, cached?.length ? null : restoreFromBottom);
     }
 
+    function publicDisplayName(label) {
+      const name = String(label || '').trim();
+      if (!name) return name;
+      const parts = name.match(/[\u3400-\u4DBF\u4E00-\u9FFF]+/g);
+      if (parts && parts.length) return parts.join('');
+      return name;
+    }
+
     function authUserDisplayName(user) {
       if (!user) return '你';
-      return (user.displayName || user.staffId || '用户').trim() || '你';
+      const raw = (user.displayName || user.staffId || '用户').trim() || '你';
+      return publicDisplayName(raw) || '你';
     }
 
     function appendMessage(role, content, scroll = true, images = [], files = [], timestamp = '', authorLabel = '') {
       const container = document.getElementById('messages');
-      if (container.querySelector('.empty-state')) container.innerHTML = '';
+      if (container.querySelector('.empty-state')) dismissEmptyState(container);
       const el = document.createElement('div');
       el.className = `msg ${role}`;
       const label = role === 'user'
@@ -7429,6 +7684,7 @@
         sentDraft: null,
       });
       updateInputState();
+      sortSessionsCache();
       renderSessionList();
 
       if (currentSessionId === sid) {
@@ -7486,7 +7742,10 @@
         return;
       }
 
-      if (!currentSessionId) await createSession();
+      if (!currentSessionId) {
+        if (sessionBootstrapPromise) await sessionBootstrapPromise;
+        else await createSession();
+      }
 
       const sessionId = currentSessionId;
       const previewImages = attachmentSource
@@ -7518,6 +7777,8 @@
         sentDraft,
       });
       updateInputState();
+      sortSessionsCache();
+      renderSessionList();
 
       try {
         const { run_id } = await api('/api/chat', {
@@ -7688,6 +7949,7 @@
       toggleSessionScopeFilter();
     });
     async function openSettingsModal() {
+      trackEvent('panel_open', { panel: 'settings' });
       document.getElementById('settings-modal').classList.add('open');
       if (!getExternalAgentCatalog().length) {
         try {
@@ -7743,6 +8005,7 @@
       const panel = document.getElementById('catalog-panel');
       const wasOpen = catalogOpen;
       catalogOpen = open;
+      if (open && !wasOpen) trackEvent('panel_open', { panel: 'catalog' });
       panel.classList.toggle('open', open);
       document.body.classList.toggle('catalog-open', open);
       setHeaderBtnActive(document.getElementById('btn-catalog'), open, opts);
@@ -7970,6 +8233,7 @@
 
     async function setMessageBoardOpen(open, opts = {}) {
       if (!messageBoardPanel) return;
+      if (open && !messageBoardPanel.open) trackEvent('panel_open', { panel: 'message_board' });
       if (!open && messageBoardPanel.open && !opts.skipAnimation && document.body.classList.contains('layout-ready')) {
         const modal = document.getElementById('message-board-modal');
         await animateOverlayClose(modal);
@@ -7989,6 +8253,7 @@
         mainEl: document.getElementById('catalog-main'),
         onRunPrompt: (text) => {
           if (!text) return;
+          trackEvent('catalog_prompt_run', { length: String(text).length });
           const input = document.getElementById('input');
           input.value = text;
           autoResizeInput();
@@ -8040,6 +8305,7 @@
 
     async function setMoaRecordOpen(open, opts = {}) {
       if (!moaRecordPanel) return;
+      if (open && !moaRecordPanel.open) trackEvent('panel_open', { panel: 'moa_record' });
       await moaRecordPanel.setOpen(open, opts);
       const modal = document.getElementById('moa-record-modal');
       if (modal) modal.setAttribute('aria-hidden', open ? 'false' : 'true');
@@ -8161,27 +8427,105 @@
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
 
+    function isGuestStaffId(staffId) {
+      return /^guest_[a-f0-9]{32}$/.test(String(staffId || '').trim());
+    }
+
+    function userIsWebAdmin(user) {
+      return !!(user?.isAdmin || user?.adminApplyStatus?.isAdmin);
+    }
+
+    function syncAdminApplyMenuItem() {
+      const btn = document.getElementById('btn-apply-admin');
+      if (!btn) return;
+      const user = currentAuthUser;
+      const canApply = user && !userIsWebAdmin(user) && !isGuestStaffId(user.staffId);
+      if (!canApply) {
+        btn.hidden = true;
+        btn.disabled = false;
+        return;
+      }
+      const status = user.adminApplyStatus?.status || 'none';
+      btn.hidden = false;
+      btn.disabled = status === 'pending';
+      if (status === 'pending') {
+        btn.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 7v5l3 2"/>
+          </svg>
+          申请审核中`;
+        btn.title = '已通知管理员，请等待钉钉审批';
+      } else {
+        btn.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+            <path d="M12 3l2.09 6.26L21 9.27l-5 3.64L17.18 21 12 17.27 6.82 21 8 12.91l-5-3.64 6.91-1.01L12 3z"/>
+          </svg>
+          申请管理员`;
+        btn.title = '提交后将通过钉钉通知管理员审批';
+      }
+    }
+
+    async function submitAdminApply() {
+      const btn = document.getElementById('btn-apply-admin');
+      if (!btn || btn.disabled) return;
+      btn.disabled = true;
+      try {
+        const data = await api('/api/admin/apply', { method: 'POST' });
+        if (currentAuthUser) {
+          currentAuthUser.adminApplyStatus = data.status || { status: 'pending' };
+        }
+        syncAdminApplyMenuItem();
+        setUserMenuOpen(false);
+        if (data.warning) {
+          showWebToast(data.warning, { durationMs: 5200 });
+        } else {
+          showWebToast('已提交申请，管理员将在钉钉收到通知');
+        }
+      } catch (err) {
+        showWebToast(err.message || '申请失败', { error: true, durationMs: 4200 });
+        syncAdminApplyMenuItem();
+      }
+    }
+
     function initAuthUI(authData) {
       otpAuthEnabled = authData?.otpAuthEnabled !== false;
       currentAuthUser = authData?.loggedIn && authData?.user ? authData.user : null;
+      if (window.WebAgentAnalytics) {
+        WebAgentAnalytics.setUser(currentAuthUser?.staffId || '');
+      }
       const loginBtn = document.getElementById('btn-login');
       const wrap = document.getElementById('user-menu');
+      const btn = document.getElementById('user-menu-btn');
       const nameEl = document.getElementById('user-menu-name');
       const avatarEl = document.getElementById('user-menu-avatar');
+      const adminBadgeEl = document.getElementById('user-menu-admin-badge');
       setUserMenuOpen(false);
       if (currentAuthUser && wrap && nameEl && avatarEl) {
         const displayName = authUserDisplayName(currentAuthUser);
+        const isAdmin = userIsWebAdmin(currentAuthUser);
         nameEl.textContent = displayName;
         avatarEl.textContent = displayName.slice(0, 1).toUpperCase();
+        if (adminBadgeEl) adminBadgeEl.hidden = !isAdmin;
+        if (btn) {
+          btn.classList.toggle('is-admin', isAdmin);
+          btn.setAttribute('aria-label', isAdmin ? `${displayName}，管理员` : displayName);
+        }
         wrap.hidden = false;
         if (loginBtn) loginBtn.hidden = true;
       } else {
         if (wrap) wrap.hidden = true;
+        if (adminBadgeEl) adminBadgeEl.hidden = true;
+        if (btn) {
+          btn.classList.remove('is-admin');
+          btn.removeAttribute('aria-label');
+        }
         if (loginBtn) loginBtn.hidden = !otpAuthEnabled;
       }
       updateReadOnlyState();
       if (bookmarksPanel) bookmarksPanel.setAdmin(!!currentAuthUser?.isAdmin);
       if (messageBoardPanel) messageBoardPanel.setAdmin(!!currentAuthUser?.isAdmin);
+      syncAdminApplyMenuItem();
       syncSessionScopeButtonUi();
       updateDingtalkOwnerBar();
       refreshSidebarWidthBounds();
@@ -8202,6 +8546,9 @@
       const btn = document.getElementById('user-menu-btn');
       const open = btn?.getAttribute('aria-expanded') === 'true';
       setUserMenuOpen(!open);
+    });
+    document.getElementById('btn-apply-admin')?.addEventListener('click', () => {
+      submitAdminApply();
     });
     document.getElementById('btn-logout')?.addEventListener('click', () => {
       logoutCurrentUser();

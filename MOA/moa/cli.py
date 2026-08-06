@@ -195,6 +195,36 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--feed-comment-area", default="MENA", help="帖子评论：area（默认 MENA）")
     parser.add_argument("--feed-comment-lang", default="en", help="帖子评论：lang（默认 en）")
     parser.add_argument("--feed-comment-os", default="android", help="帖子评论：os/osType（默认 android）")
+    parser.add_argument("--p2p-from-uid", help="私聊发消息：发送方 userId")
+    parser.add_argument("--p2p-to-uid", help="私聊发消息：接收方 userId")
+    parser.add_argument(
+        "--p2p-type",
+        default="TEXT",
+        choices=["TEXT", "IMG", "AUDIO", "VIDEO", "CUSTOM"],
+        help="私聊消息类型（默认 TEXT）",
+    )
+    parser.add_argument("--p2p-text", help="TEXT：文本内容")
+    parser.add_argument("--p2p-url", help="IMG/AUDIO/VIDEO：资源 URL")
+    parser.add_argument("--p2p-thumb-url", help="IMG：缩略图 URL（默认同 --p2p-url）")
+    parser.add_argument("--p2p-cover-url", help="VIDEO：封面图 URL")
+    parser.add_argument("--p2p-audio-time", type=int, help="AUDIO：时长（秒）")
+    parser.add_argument("--p2p-video-time", type=int, help="VIDEO：时长（秒）")
+    parser.add_argument("--p2p-wh-ratio", type=float, help="VIDEO：宽高比（默认 1.0）")
+    parser.add_argument("--p2p-custom-event-id", type=int, help="CUSTOM：手动 eventId（覆盖 preset）")
+    parser.add_argument("--p2p-custom-data-json", help="CUSTOM：手动 dataInfo JSON（覆盖 preset）")
+    parser.add_argument(
+        "--p2p-custom-preset",
+        choices=["text_goto", "notice", "small_image_goto", "big_image_goto"],
+        help="CUSTOM：客户端已支持 preset（默认 text_goto=1000090）",
+    )
+    parser.add_argument("--p2p-goto-text", help="CUSTOM preset：跳转按钮文案")
+    parser.add_argument("--p2p-goto-click", help="CUSTOM preset：yaahlan:// 或 goto:// 链接")
+    parser.add_argument(
+        "--p2p-send-mode",
+        default="SEND_SENDER_AND_RECEIVER",
+        choices=["SEND_RECEIVER_ONLY", "SEND_SENDER_ONLY", "SEND_SENDER_AND_RECEIVER"],
+        help="消息可见范围（默认 SEND_SENDER_AND_RECEIVER，双方可见）",
+    )
     parser.add_argument(
         "--family-detail",
         action="store_true",

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import threading
 import time
 import urllib.error
@@ -62,22 +63,65 @@ def _save_cache(data: dict[str, str]) -> None:
     _cache = dict(data)
 
 
+_CJK_NAME_RE = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]+")
+
+
+def chinese_display_name(label: str) -> str:
+    """中文+英文混排姓名仅保留中文；纯英文或无中文则原样返回。"""
+    name = (label or "").strip()
+    if not name:
+        return name
+    parts = _CJK_NAME_RE.findall(name)
+    if parts:
+        return "".join(parts)
+    return name
+
+
+def _has_cjk(label: str) -> bool:
+    return bool(_CJK_NAME_RE.search(label or ""))
+
+
+def _prefer_staff_label(prev: str, new: str) -> str:
+    """合并两候选展示名：优先含中文、更长者。"""
+    left = (prev or "").strip()
+    right = (new or "").strip()
+    if not left:
+        return right
+    if not right:
+        return left
+    left_cjk = _has_cjk(left)
+    right_cjk = _has_cjk(right)
+    if right_cjk and not left_cjk:
+        return right
+    if left_cjk and not right_cjk:
+        return left
+    left_pub = chinese_display_name(left)
+    right_pub = chinese_display_name(right)
+    if len(right_pub) > len(left_pub):
+        return right
+    if len(left_pub) > len(right_pub):
+        return left
+    return right
+
+
 def _merge_staff_label(known: dict[str, str], staff_id: str, display_name: str) -> None:
     uid = (staff_id or "").strip()
     label = (display_name or "").strip()
     if not uid:
         return
+    if label == uid:
+        return
     prev = known.get(uid, "")
     if not prev:
         known[uid] = label
         return
-    if label and (not prev or label != uid):
-        known[uid] = label
+    if label:
+        known[uid] = _prefer_staff_label(prev, label)
 
 
 def _public_display_name(label: str, staff_id: str = "") -> str:
     """对外展示名：不回落为 staffId 数字编号。"""
-    name = (label or "").strip()
+    name = chinese_display_name((label or "").strip())
     sid = (staff_id or "").strip()
     if name and name != sid:
         return name
@@ -87,6 +131,50 @@ def _public_display_name(label: str, staff_id: str = "") -> str:
 def _staff_user(staff_id: str, label: str) -> dict[str, str]:
     sid = (staff_id or "").strip()
     return {"staffId": sid, "displayName": _public_display_name(label, sid)}
+
+
+def resolve_staff_display_name(
+    staff_id: str,
+    *,
+    known_labels: dict[str, str] | None = None,
+    fallback_label: str = "",
+    try_api: bool = False,
+) -> str:
+    """多元汇总解析 staffId 展示名：known_labels → fallback → 可选 API。"""
+    uid = (staff_id or "").strip()
+    best = ""
+    labels = known_labels or {}
+    if uid:
+        mapped = (labels.get(uid) or "").strip()
+        if mapped:
+            best = mapped
+    fallback = (fallback_label or "").strip()
+    if fallback:
+        best = _prefer_staff_label(best, fallback) if best else fallback
+    if uid and try_api:
+        try:
+            api_name = resolve_dingtalk_name(uid, known=labels, try_api=True)
+        except Exception:  # noqa: BLE001
+            api_name = ""
+        if api_name:
+            best = _prefer_staff_label(best, api_name) if best else api_name
+    return chinese_display_name(best)
+
+
+def lookup_staff_public_name(
+    staff_id: str,
+    fallback_label: str = "",
+    *,
+    sessions: list[SessionMeta] | None = None,
+) -> str:
+    """按多元汇总返回对外展示名（含未知用户兜底）。"""
+    known = collect_all_staff_labels(sessions or [])
+    resolved = resolve_staff_display_name(
+        staff_id,
+        known_labels=known,
+        fallback_label=fallback_label,
+    )
+    return _public_display_name(resolved or fallback_label, staff_id)
 
 
 def collect_known_labels(sessions: list[SessionMeta]) -> dict[str, str]:
@@ -333,7 +421,12 @@ def load_org_roster(*, refresh: bool = False) -> list[dict[str, str]]:
     return users
 
 
-def collect_all_staff_labels(sessions: list[SessionMeta]) -> dict[str, str]:
+def collect_all_staff_labels(
+    sessions: list[SessionMeta],
+    *,
+    try_api_for_ascii: bool = True,
+    max_api_lookups: int = 12,
+) -> dict[str, str]:
     """汇总所有已知人员：会话、登录、留言板、姓名缓存、企业通讯录。"""
     known = collect_known_labels(sessions)
     known.update(collect_web_auth_staff_labels())
@@ -342,6 +435,17 @@ def collect_all_staff_labels(sessions: list[SessionMeta]) -> dict[str, str]:
         known.update(_load_cache())
     for user in load_org_roster():
         _merge_staff_label(known, user["staffId"], user["displayName"])
+    if try_api_for_ascii:
+        api_calls = 0
+        for uid, label in list(known.items()):
+            if api_calls >= max_api_lookups:
+                break
+            if _has_cjk(label):
+                continue
+            resolved = resolve_dingtalk_name(uid, known=known, try_api=True)
+            api_calls += 1
+            if resolved:
+                known[uid] = _prefer_staff_label(label, resolved)
     return known
 
 
@@ -401,32 +505,36 @@ def resolve_dingtalk_name(
     known: dict[str, str] | None = None,
     try_api: bool = True,
 ) -> str:
-    """解析 userId 为展示名；失败则返回空字符串。"""
+    """解析 userId 为展示名；优先中文真实姓名，失败则返回空字符串。"""
     uid = (user_id or "").strip()
     if not uid:
         return ""
 
     with _lock:
-        cache = _load_cache()
-        if uid in cache:
-            return cache[uid]
-        if known and uid in known:
-            name = known[uid]
-            cache[uid] = name
-            _save_cache(cache)
-            return name
+        cached = (_load_cache().get(uid) or "").strip()
 
-    if try_api:
-        name = _fetch_name_from_api(uid)
-        if name:
-            with _lock:
-                cache = _load_cache()
-                cache[uid] = name
+    known_name = (known or {}).get(uid, "").strip() if known else ""
+
+    best = ""
+    for candidate in (cached, known_name):
+        if candidate:
+            best = _prefer_staff_label(best, candidate) if best else candidate
+
+    if try_api and not _has_cjk(best):
+        api_name = (_fetch_name_from_api(uid) or "").strip()
+        if api_name:
+            best = _prefer_staff_label(best, api_name) if best else api_name
+
+    if best:
+        with _lock:
+            cache = _load_cache()
+            prev = (cache.get(uid) or "").strip()
+            merged = _prefer_staff_label(prev, best) if prev else best
+            if merged != prev:
+                cache[uid] = merged
                 _save_cache(cache)
-            return name
+        return best
 
-    if known and uid in known:
-        return known[uid]
     return ""
 
 
@@ -485,30 +593,30 @@ def enrich_session_owner_labels(
     try_api: bool = True,
     max_api_lookups: int = 8,
 ) -> int:
-    """补全 dingtalk_label 为空的会话；返回更新条数。"""
-    known = collect_known_labels(sessions)
-    with _lock:
-        cache = _load_cache()
-        known.update(cache)
+    """用多元汇总补全/升级 dingtalk_label；返回更新条数。"""
+    known = collect_all_staff_labels(sessions)
 
     updated = 0
     api_calls = 0
     for meta in sessions:
         if meta.source != "dingtalk":
             continue
-        if (meta.dingtalk_label or "").strip():
-            continue
         uid = (meta.dingtalk_owner_id or "").strip()
         if not uid:
             continue
-        name = known.get(uid, "")
-        if not name and try_api and api_calls < max_api_lookups:
-            name = resolve_dingtalk_name(uid, known=known, try_api=True)
+        stored = (meta.dingtalk_label or "").strip()
+        resolved = (known.get(uid) or "").strip()
+        if not resolved and try_api and api_calls < max_api_lookups:
+            resolved = resolve_dingtalk_name(uid, known=known, try_api=True)
             api_calls += 1
-        if not name:
+            if resolved:
+                known[uid] = resolved
+        if not resolved:
             continue
-        meta.dingtalk_label = name
-        known[uid] = name
-        updated += 1
+        best = _prefer_staff_label(stored, resolved) if stored else resolved
+        if best and best != stored:
+            meta.dingtalk_label = best
+            known[uid] = best
+            updated += 1
 
     return updated

@@ -45,7 +45,7 @@ def moa_registry_instruction() -> str:
         "moa_execute --vip-query-current 探活或 test_all。\n"
         "**禁止**用业务接口试跑代替入库。\n"
         "标准流程：依据附图/描述在 MOA/templates/ 建 JSON（含 key，可选 _registry）"
-        "→ python3 MOA/scripts/sync_registry.py "
-        "→ 确认 MOA/config/registry.json 与 MOA/使用方法.md。\n"
+        "→ python3 MOA/scripts/sync_registry.py（自动入库并刷新 MOA/使用方法.md 与 catalog）"
+        "→ 确认 MOA/config/registry.json 已登记。\n"
         "回复须含：能力名、模板路径、registry id、命令示例。"
     )

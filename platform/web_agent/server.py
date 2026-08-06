@@ -102,7 +102,8 @@ from web_file_store import (  # noqa: E402
     resolve_upload_file,
     save_chat_attachments,
 )
-from web_session_store import filter_sessions_by_search, filter_sessions_by_scope, get_session_store  # noqa: E402
+from analytics_store import get_analytics_store  # noqa: E402
+from web_session_store import filter_sessions_by_search, filter_sessions_by_scope, get_session_store, sort_sessions_for_display  # noqa: E402
 from web_run_store import (  # noqa: E402
     RUN_STATUS_DONE,
     RUN_STATUS_ERROR,
@@ -113,7 +114,8 @@ from web_run_store import (  # noqa: E402
 )
 from web_prompt import normalize_reply_mode, finalize_web_reply_text  # noqa: E402
 from web_admin_permission import is_web_admin, web_admin_denial_message  # noqa: E402
-from web_auth import authorize_request, auth_enabled, logout_current_session  # noqa: E402
+from web_admin_apply import application_status_for_staff, submit_application  # noqa: E402
+from web_auth import authorize_request, auth_enabled, logout_current_session, _effective_client_ip  # noqa: E402
 from web_otp_auth import (  # noqa: E402
     WEB_LOGIN_PHRASE,
     current_web_user,
@@ -142,6 +144,7 @@ from message_board_store import (  # noqa: E402
     normalize_create_payload as _normalize_message_board_payload,
     normalize_guest_id as _normalize_message_board_guest_id,
 )
+from dingtalk_user_lookup import lookup_staff_public_name  # noqa: E402
 
 logger = logging.getLogger("web-agent")
 
@@ -159,6 +162,58 @@ SSE_POLL_S = 0.25
 RUN_TTL_S = 3600
 PROGRESS_TICK_S = 1.0
 SESSION_ID_PATTERN = r"[a-z0-9]+"
+ANALYTICS_SCRIPT_TAG = '<script src="/analytics.js"></script>'
+
+
+def _inject_analytics_script(html: str) -> str:
+    if "/analytics.js" in html or "WebAgentAnalytics" in html:
+        return html
+    if "</body>" in html:
+        return html.replace("</body>", f"{ANALYTICS_SCRIPT_TAG}\n</body>", 1)
+    return html + ANALYTICS_SCRIPT_TAG
+
+
+def _record_analytics(
+    handler: SimpleHTTPRequestHandler,
+    *,
+    event: str,
+    page: str = "",
+    props: dict[str, Any] | None = None,
+    source: str = "server",
+) -> None:
+    user = current_web_user(handler)
+    get_analytics_store().record_event(
+        event=event,
+        page=page or urlparse(handler.path).path,
+        staff_id=user.staff_id if user is not None else "",
+        display_name=user.display_name if user is not None else "",
+        source=source,
+        props=props,
+        ip=_effective_client_ip(handler),
+    )
+
+
+def _handle_analytics_event_post(handler: SimpleHTTPRequestHandler) -> None:
+    try:
+        body = _read_json_body(handler)
+    except json.JSONDecodeError:
+        return _json_response(handler, {"error": "invalid json"}, 400)
+    event = str(body.get("event") or "").strip()
+    if not event:
+        return _json_response(handler, {"error": "missing event"}, 400)
+    page = str(body.get("page") or urlparse(handler.path).path).strip()
+    props = body.get("props") if isinstance(body.get("props"), dict) else {}
+    user = current_web_user(handler)
+    ok = get_analytics_store().record_event(
+        event=event,
+        page=page,
+        staff_id=user.staff_id if user is not None else "",
+        display_name=user.display_name if user is not None else "",
+        source="client",
+        props=props,
+        ip=_effective_client_ip(handler),
+    )
+    return _json_response(handler, {"ok": ok})
 
 
 def _load_config() -> dict[str, Any]:
@@ -394,6 +449,55 @@ def _load_web_docs() -> dict[str, Any]:
     return data
 
 
+KEYNOTE_SCENES_JSON = KEYNOTE_DIR / "scenes.json"
+
+
+def _load_feature_demos(cfg: dict[str, Any]) -> list[dict[str, str]]:
+    override = cfg.get("featureDemos")
+    if isinstance(override, list) and override:
+        out: list[dict[str, str]] = []
+        for item in override:
+            if not isinstance(item, dict) or not item.get("demo"):
+                continue
+            if item.get("emptyCarousel") is False:
+                continue
+            out.append(
+                {
+                    "label": str(item.get("label") or ""),
+                    "title": str(item.get("title") or ""),
+                    "desc": str(item.get("desc") or ""),
+                    "demo": str(item.get("demo") or ""),
+                    "layout": str(item.get("layout") or ""),
+                }
+            )
+        return out
+    try:
+        scenes = json.loads(KEYNOTE_SCENES_JSON.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.warning("读取 scenes.json 失败: %s", exc)
+        return []
+    if not isinstance(scenes, list):
+        return []
+    demos: list[dict[str, str]] = []
+    for scene in scenes:
+        if not isinstance(scene, dict):
+            continue
+        if scene.get("type") != "feature" or not scene.get("demo") or scene.get("textOnly"):
+            continue
+        if scene.get("emptyCarousel") is False:
+            continue
+        demos.append(
+            {
+                "label": str(scene.get("label") or ""),
+                "title": str(scene.get("title") or ""),
+                "desc": str(scene.get("desc") or ""),
+                "demo": str(scene.get("demo") or ""),
+                "layout": str(scene.get("layout") or ""),
+            }
+        )
+    return demos
+
+
 def _platform_meta() -> dict[str, int | str]:
     cfg = _load_config()
     title = str(cfg.get("title") or "Yaahlan 智能工具 Agent")
@@ -445,6 +549,9 @@ def _platform_meta() -> dict[str, int | str]:
         "externalAgents": _external_agents_meta(cfg),
         "quickPrompts": cfg.get("quickPrompts") or [],
         "quickPromptCount": int(cfg.get("quickPromptCount") or 4),
+        "emptyIntro": cfg.get("emptyIntro") or {},
+        "featureDemos": _load_feature_demos(cfg),
+        "featureDemoRotateMs": int(cfg.get("featureDemoRotateMs") or 10000),
         "bookmarks": _load_bookmarks(),
         "maxImagesPerMessage": MAX_ATTACHMENTS_PER_MESSAGE,
         "maxAttachmentsPerMessage": MAX_ATTACHMENTS_PER_MESSAGE,
@@ -575,6 +682,14 @@ class RunManager:
                 if run.session_id == sid and not run.done.is_set():
                     return run
         return None
+
+    def active_session_ids(self) -> set[str]:
+        with self._lock:
+            return {
+                (run.session_id or "").strip()
+                for run in self._runs.values()
+                if not run.done.is_set() and (run.session_id or "").strip()
+            }
 
     def _purge_old(self) -> None:
         if len(self._runs) <= 50:
@@ -868,6 +983,19 @@ def recover_active_runs_on_startup() -> None:
             )
 
 
+def _active_run_session_ids() -> set[str]:
+    """一次扫描活跃 run，供会话列表批量标记 running（避免 O(会话数×run 数)）。"""
+    ids = RUN_MANAGER.active_session_ids()
+    store = get_run_store()
+    for meta in store.list_active_runs():
+        sid = (meta.session_id or "").strip()
+        if not sid or sid in ids:
+            continue
+        if store.is_worker_alive(meta.run_id):
+            ids.add(sid)
+    return ids
+
+
 def _resolve_active_run_for_session(session_id: str) -> ActiveRun | None:
     run = RUN_MANAGER.find_active_by_session(session_id)
     if run is not None:
@@ -961,7 +1089,10 @@ def _session_owner_context(user: Any) -> tuple[str, str, float]:
     if user is None:
         return "", "", 0.0
     uid = str(getattr(user, "staff_id", "") or "").strip()
-    label = str(getattr(user, "display_name", "") or uid or "").strip()
+    label = lookup_staff_public_name(
+        uid,
+        str(getattr(user, "display_name", "") or uid or "").strip(),
+    )
     try:
         auth_created = float(getattr(user, "auth_created_at", 0) or 0)
     except (TypeError, ValueError):
@@ -1138,7 +1269,13 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, directory=str(WEB_AGENT_DIR), **kwargs)
 
-    def _serve_static_file(self, target: Path, *, not_found_msg: str = "Not Found") -> None:
+    def _serve_static_file(
+        self,
+        target: Path,
+        *,
+        not_found_msg: str = "Not Found",
+        inject_analytics: bool = False,
+    ) -> None:
         if not target.is_file():
             self.send_error(HTTPStatus.NOT_FOUND, not_found_msg)
             return
@@ -1147,6 +1284,11 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             content_type = "application/octet-stream"
         content_type = _content_type_with_charset(content_type)
         data = target.read_bytes()
+        if inject_analytics and target.suffix.lower() in {".html", ".htm"}:
+            try:
+                data = _inject_analytics_script(data.decode("utf-8")).encode("utf-8")
+            except UnicodeDecodeError:
+                pass
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(data)))
@@ -1162,7 +1304,10 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         if not str(target).startswith(str(root)):
             self.send_error(HTTPStatus.NOT_FOUND)
             return
-        self._serve_static_file(target)
+        self._serve_static_file(
+            target,
+            inject_analytics=target.suffix.lower() in {".html", ".htm"},
+        )
 
     def _serve_platform_guide(self, rel_path: str) -> None:
         root = PLATFORM_GUIDE_DIR.resolve()
@@ -1170,10 +1315,18 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         if not str(target).startswith(str(root)):
             self.send_error(HTTPStatus.NOT_FOUND)
             return
-        self._serve_static_file(target, not_found_msg="platform guide not found")
+        self._serve_static_file(
+            target,
+            not_found_msg="platform guide not found",
+            inject_analytics=target.suffix.lower() in {".html", ".htm"},
+        )
 
     def _serve_keynote_preview(self) -> None:
-        self._serve_static_file(KEYNOTE_PREVIEW_HTML, not_found_msg="keynote preview not found")
+        self._serve_static_file(
+            KEYNOTE_PREVIEW_HTML,
+            not_found_msg="keynote preview not found",
+            inject_analytics=True,
+        )
 
     def _serve_keynote_file(self, rel_path: str) -> None:
         root = KEYNOTE_DIR.resolve()
@@ -1181,7 +1334,11 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         if not str(target).startswith(str(root)):
             self.send_error(HTTPStatus.NOT_FOUND)
             return
-        self._serve_static_file(target, not_found_msg="keynote file not found")
+        self._serve_static_file(
+            target,
+            not_found_msg="keynote file not found",
+            inject_analytics=target.suffix.lower() in {".html", ".htm"},
+        )
 
     def log_message(self, fmt: str, *args: Any) -> None:
         if self.path.startswith("/api/"):
@@ -1227,7 +1384,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             self.path = "/login.html"
             return super().do_GET()
 
-        if path in ("/theme.js", "/dingtalk_oauth.js"):
+        if path in ("/theme.js", "/dingtalk_oauth.js", "/analytics.js"):
             return super().do_GET()
 
         if path == "/api/auth/status":
@@ -1239,15 +1396,34 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 "dingtalkOAuth": dingtalk_oauth_public_config(),
             }
             if user is not None:
-                payload["user"] = {
+                admin = is_web_admin(staff_id=user.staff_id)
+                user_payload: dict[str, Any] = {
                     "staffId": user.staff_id,
-                    "displayName": user.display_name or user.staff_id,
-                    "isAdmin": is_web_admin(staff_id=user.staff_id),
+                    "displayName": lookup_staff_public_name(
+                        user.staff_id, user.display_name or user.staff_id
+                    ),
+                    "isAdmin": admin,
                 }
+                if not admin:
+                    user_payload["adminApplyStatus"] = application_status_for_staff(
+                        user.staff_id
+                    )
+                payload["user"] = user_payload
             return _json_response(self, payload)
 
         if path == "/api/auth/dingtalk-config":
             return _json_response(self, dingtalk_oauth_public_config())
+
+        if path == "/api/admin/apply/status":
+            user = current_web_user(self)
+            if user is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            if is_web_admin(staff_id=user.staff_id):
+                return _json_response(self, {"status": "approved", "isAdmin": True})
+            return _json_response(
+                self,
+                application_status_for_staff(user.staff_id),
+            )
 
         if not authorize_request(self, method="GET"):
             return
@@ -1258,6 +1434,24 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
 
         if path == KEYNOTE_URL_PREFIX or path == f"{KEYNOTE_URL_PREFIX}/":
             return self._serve_keynote_preview()
+
+        if path == "/api/analytics/stats":
+            viewer = current_web_user(self)
+            if viewer is None or not is_web_admin(staff_id=viewer.staff_id):
+                return _json_response(self, {"error": web_admin_denial_message()}, 403)
+            qs = parse_qs(parsed.query)
+            try:
+                days = int(str((qs.get("days") or ["30"])[0]).strip() or "30")
+            except ValueError:
+                days = 30
+            try:
+                limit = int(str((qs.get("limit") or ["100"])[0]).strip() or "100")
+            except ValueError:
+                limit = 100
+            return _json_response(
+                self,
+                get_analytics_store().summarize(days=days, limit=limit),
+            )
 
         if path == f"{KEYNOTE_URL_PREFIX}/speech_scripts":
             return self._serve_keynote_file("speech_scripts.html")
@@ -1349,9 +1543,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             viewer_staff_id = viewer.staff_id if viewer is not None else None
             items = store.list_sessions()
             try:
-                from dingtalk_user_lookup import collect_known_labels
+                from dingtalk_user_lookup import collect_all_staff_labels
 
-                known = collect_known_labels(items)
+                known = collect_all_staff_labels(items)
             except Exception:  # noqa: BLE001
                 known = {}
             search_q = (parse_qs(parsed.query).get("q") or [""])[0].strip()
@@ -1370,14 +1564,15 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 )
             else:
                 pairs = [(meta, "") for meta in items]
-            sessions = [
+            active_session_ids = _active_run_session_ids()
+            sessions = sort_sessions_for_display([
                 {
                     **meta.to_dict(known_labels=known, viewer_staff_id=viewer_staff_id),
-                    "running": _resolve_active_run_for_session(meta.id) is not None,
+                    "running": meta.id in active_session_ids,
                     **({"search_snippet": snippet} if snippet else {}),
                 }
                 for meta, snippet in pairs
-            ]
+            ])
             return _json_response(self, {"sessions": sessions, "query": search_q, "scope": scope})
 
         m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})/active-run$", path)
@@ -1497,12 +1692,26 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             code = str(body.get("code") or "").strip()
             token, user, err = get_web_otp_store().verify_otp_and_create_session(code)
             if not token or user is None:
+                _record_analytics(
+                    self,
+                    event="login_fail",
+                    page="/login.html",
+                    props={"method": "otp"},
+                )
                 return _json_response(self, {"error": err or "登录失败"}, 401)
+            _record_analytics(
+                self,
+                event="login_success",
+                page="/login.html",
+                props={"method": "otp"},
+            )
             payload = {
                 "ok": True,
                 "user": {
                     "staffId": user.staff_id,
-                    "displayName": user.display_name or user.staff_id,
+                    "displayName": lookup_staff_public_name(
+                        user.staff_id, user.display_name or user.staff_id
+                    ),
                 },
             }
             body_bytes = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -1528,12 +1737,26 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 logger.exception("钉钉 OAuth 登录异常")
                 return _json_response(self, {"error": f"钉钉登录异常：{exc}"}, 500)
             if not token or user is None:
+                _record_analytics(
+                    self,
+                    event="login_fail",
+                    page="/login.html",
+                    props={"method": "dingtalk_oauth"},
+                )
                 return _json_response(self, {"error": err or "钉钉登录失败"}, 401)
+            _record_analytics(
+                self,
+                event="login_success",
+                page="/login.html",
+                props={"method": "dingtalk_oauth"},
+            )
             payload = {
                 "ok": True,
                 "user": {
                     "staffId": user.staff_id,
-                    "displayName": user.display_name or user.staff_id,
+                    "displayName": lookup_staff_public_name(
+                        user.staff_id, user.display_name or user.staff_id
+                    ),
                 },
             }
             body_bytes = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -1546,8 +1769,35 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             return
 
         if path == "/api/auth/logout":
+            _record_analytics(self, event="logout", page="/chat.html")
             logout_current_session(self)
             return _json_response(self, {"ok": True})
+
+        if path == "/api/admin/apply":
+            user = current_web_user(self)
+            if user is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            if is_web_admin(staff_id=user.staff_id):
+                return _json_response(self, {"error": "你已是管理员"}, 400)
+            application, err = submit_application(
+                staff_id=user.staff_id,
+                display_name=lookup_staff_public_name(
+                    user.staff_id, user.display_name or user.staff_id
+                ),
+            )
+            if application is None:
+                return _json_response(self, {"error": err or "申请失败"}, 400)
+            status = application_status_for_staff(user.staff_id)
+            payload: dict[str, Any] = {
+                "ok": True,
+                "status": status,
+            }
+            if err:
+                payload["warning"] = err
+            return _json_response(self, payload)
+
+        if path == "/api/analytics/event":
+            return _handle_analytics_event_post(self)
 
         if not authorize_request(self, method="POST"):
             return
@@ -1563,6 +1813,12 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 title=title,
                 owner_id=owner_id,
                 owner_label=owner_label,
+            )
+            _record_analytics(
+                self,
+                event="session_create",
+                page="/chat.html",
+                props={"session_id": meta.id},
             )
             return _json_response(
                 self,
@@ -1665,6 +1921,19 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 run.done.set()
                 logger.exception("启动 Web chat 失败 session=%s", session_id)
                 return _json_response(self, {"error": str(exc)}, 500)
+            _record_analytics(
+                self,
+                event="chat_send",
+                page="/chat.html",
+                props={
+                    "session_id": session_id,
+                    "model": agent_model,
+                    "external_agents": len(enabled_external_agents),
+                    "attachments": len(saved_attachments),
+                    "push_dingtalk": push_result_to_dingtalk,
+                    "reply_mode": reply_mode,
+                },
+            )
             return _json_response(self, {"run_id": run.run_id, "session_id": session_id})
 
         if path == "/api/bookmarks":
@@ -1702,6 +1971,12 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 return _json_response(self, {"error": "run not found"}, 404)
             if not _interrupt_active_run(run):
                 return _json_response(self, {"error": "当前任务无法中断"}, 409)
+            _record_analytics(
+                self,
+                event="chat_cancel",
+                page="/chat.html",
+                props={"session_id": run.session_id, "run_id": run.run_id},
+            )
             return _json_response(self, {"ok": True})
 
         self.send_error(HTTPStatus.NOT_FOUND)
@@ -1742,9 +2017,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             if meta is None:
                 return _json_response(self, {"error": "session not found"}, 404)
             try:
-                from dingtalk_user_lookup import collect_known_labels
+                from dingtalk_user_lookup import collect_all_staff_labels
 
-                known = collect_known_labels(store.list_sessions(enrich_names=False))
+                known = collect_all_staff_labels(store.list_sessions(enrich_names=False))
             except Exception:  # noqa: BLE001
                 known = {}
             return _json_response(
@@ -1774,9 +2049,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             if meta is None:
                 return _json_response(self, {"error": "session not found"}, 404)
             try:
-                from dingtalk_user_lookup import collect_known_labels
+                from dingtalk_user_lookup import collect_all_staff_labels
 
-                known = collect_known_labels(store.list_sessions(enrich_names=False))
+                known = collect_all_staff_labels(store.list_sessions(enrich_names=False))
             except Exception:  # noqa: BLE001
                 known = {}
             return _json_response(
@@ -1806,9 +2081,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             if meta is None:
                 return _json_response(self, {"error": "session not found"}, 404)
             try:
-                from dingtalk_user_lookup import collect_known_labels
+                from dingtalk_user_lookup import collect_all_staff_labels
 
-                known = collect_known_labels(store.list_sessions(enrich_names=False))
+                known = collect_all_staff_labels(store.list_sessions(enrich_names=False))
             except Exception:  # noqa: BLE001
                 known = {}
             return _json_response(
