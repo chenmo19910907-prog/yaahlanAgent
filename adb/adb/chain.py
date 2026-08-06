@@ -302,9 +302,10 @@ def run_chain(
             entry["screenshot"] = cap["path"]
         elif kind == "launch_app":
             from .launch import launch_app as do_launch
+            from .project_paths import get_project_id
 
             result["coldStartTime"] = int(time.time())
-            app_key = str(step.get("launch_app", "yaahlan"))
+            app_key = str(step.get("launch_app", get_project_id()))
             launch_info = do_launch(serial=serial, app_key=app_key)
             entry["launchApp"] = app_key
             entry["launch"] = launch_info

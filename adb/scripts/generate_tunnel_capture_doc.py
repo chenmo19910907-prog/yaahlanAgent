@@ -8,9 +8,13 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-_REPO = Path(__file__).resolve().parents[2]
-_CATALOG = _REPO / "adb" / "config" / "tunnel_capture_catalog.json"
-_OUT = _REPO / "adb" / "录制脚本" / "Tunnel抓包常用验收.md"
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from adb_script_paths import adb_scripts_root, repo_root  # noqa: E402
+
+_CATALOG = repo_root() / "adb" / "config" / "tunnel_capture_catalog.json"
 
 
 def main() -> int:
@@ -88,8 +92,9 @@ def main() -> int:
         ]
     )
 
-    _OUT.write_text("\n".join(lines), encoding="utf-8")
-    print(f"generated: {_OUT}")
+    out_path = adb_scripts_root() / "Tunnel抓包常用验收.md"
+    out_path.write_text("\n".join(lines), encoding="utf-8")
+    print(f"generated: {out_path}")
     return 0
 
 

@@ -140,6 +140,43 @@ class SecondProjectTest(unittest.TestCase):
         env = merge_project_env()
         self.assertEqual(env.get("AGENT_PROJECT"), "example")
 
+    def test_example_adb_scripts_root(self) -> None:
+        from project.loader import adb_autotest_root, adb_scripts_root
+
+        self._switch("yaahlan")
+        self.assertEqual(adb_scripts_root(), REPO_ROOT / "adb/录制脚本")
+        self.assertEqual(adb_autotest_root(), REPO_ROOT / "adb/自动化用例")
+
+        self._switch("example")
+        self.assertEqual(
+            adb_scripts_root(),
+            REPO_ROOT / "projects/example/adb/scripts",
+        )
+        self.assertEqual(
+            adb_autotest_root(),
+            REPO_ROOT / "projects/example/adb/autotest",
+        )
+
+    def test_adb_resolve_app_target_from_project(self) -> None:
+        sys.path.insert(0, str(REPO_ROOT / "adb"))
+        self._switch("example")
+        from adb.apps import resolve_app_target
+
+        target = resolve_app_target()
+        self.assertEqual(target["package"], "com.immomo.biz.yaahlan")
+
+        self._switch("yaahlan")
+        yaahlan = resolve_app_target()
+        self.assertEqual(yaahlan["package"], "com.immomo.biz.yaahlan")
+
+    def test_adb_script_paths_import(self) -> None:
+        sys.path.insert(0, str(REPO_ROOT / "adb" / "scripts"))
+        self._switch("example")
+        from adb_script_paths import adb_scripts_root
+
+        root = adb_scripts_root()
+        self.assertTrue((root / "索引.json").is_file())
+
 
 if __name__ == "__main__":
     raise SystemExit(unittest.main())

@@ -1,4 +1,4 @@
-"""自动化用例目录路径（按需求分文件夹）。"""
+"""自动化用例目录路径（按需求分文件夹，随 AGENT_PROJECT 切换根目录）。"""
 
 from __future__ import annotations
 
@@ -6,7 +6,17 @@ from pathlib import Path
 
 from ..paths import ADB_ROOT
 
-AUTOTEST_ROOT = ADB_ROOT / "自动化用例"
+
+def autotest_root() -> Path:
+    try:
+        from ..project_paths import adb_autotest_root
+
+        return adb_autotest_root()
+    except (ImportError, FileNotFoundError, ValueError, OSError):
+        return ADB_ROOT / "自动化用例"
+
+
+AUTOTEST_ROOT = autotest_root()
 LEGACY_CASES_DIR = AUTOTEST_ROOT / "cases"
 REPORTS_DIR = AUTOTEST_ROOT / "reports"
 REPORT_JSON_PATH = REPORTS_DIR / "report.json"
@@ -19,7 +29,7 @@ TEMPLATES_DIR = AUTOTEST_ROOT / "templates"
 
 
 def requirement_dir(folder: str) -> Path:
-    return AUTOTEST_ROOT / folder.strip()
+    return autotest_root() / folder.strip()
 
 
 def requirement_cases_dir(folder: str) -> Path:

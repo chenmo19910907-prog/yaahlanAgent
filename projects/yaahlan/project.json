@@ -23,7 +23,9 @@
     "onlineTestAccounts": "testcase-kb/online_test_accounts.json",
     "temporaryTestcase": "temporary_testcase",
     "moaGenerativeRoot": "MOA-generative",
-    "workflowRoot": "workflow"
+    "workflowRoot": "workflow",
+    "adbScriptsRoot": "adb/录制脚本",
+    "adbAutotestRoot": "adb/自动化用例"
   },
   "agent": {
     "title": "Yaahlan 智能工具 Agent",

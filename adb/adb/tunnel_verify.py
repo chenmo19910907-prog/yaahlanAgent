@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .recorded_scripts import scripts_root
+from .project_paths import repo_root
 
 
 @dataclass(frozen=True)
@@ -28,7 +29,7 @@ class TunnelVerifyOptions:
 
 
 def _repo_root() -> Path:
-    return Path(__file__).resolve().parents[2]
+    return repo_root()
 
 
 def _ensure_tunnel_import() -> Any:

@@ -43,8 +43,9 @@ def enter_account(
     fa0 = get_foreground_activity(serial=serial)
     if fa0.get("hint") not in ("login", "register"):
         from .launch import launch_app
+        from .project_paths import get_project_id
 
-        launch_app(serial=serial, app_key="yaahlan")
+        launch_app(serial=serial, app_key=get_project_id())
         time.sleep(2)
 
     if skip_moa_check:

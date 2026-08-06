@@ -4,14 +4,12 @@ from __future__ import annotations
 
 import json
 import subprocess
-from pathlib import Path
 from typing import Any
 
 from .device import AdbError
+from .project_paths import moa_execute_path, moa_template, repo_root
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-_MOA_TEMPLATE = _REPO_ROOT / "MOA/templates/VIP-下发体验卡.json"
-_MOA_EXECUTE = _REPO_ROOT / "MOA/moa_execute.py"
+_MOA_TEMPLATE = moa_template("VIP-下发体验卡.json")
 _DEFAULT_DURATION_SECONDS = 86400
 
 
@@ -30,14 +28,15 @@ def dispatch_vip_try(
     if duration_seconds <= 0:
         raise ValueError("duration_seconds 必须为正整数")
 
+    execute = moa_execute_path()
     if not _MOA_TEMPLATE.is_file():
         raise AdbError(f"缺少 MOA 模板: {_MOA_TEMPLATE}")
-    if not _MOA_EXECUTE.is_file():
-        raise AdbError(f"缺少 MOA 入口: {_MOA_EXECUTE}")
+    if not execute.is_file():
+        raise AdbError(f"缺少 MOA 入口: {execute}")
 
     cmd = [
         "python3",
-        str(_MOA_EXECUTE),
+        str(execute),
         "--payload-file",
         str(_MOA_TEMPLATE),
         "--vip-try-user-id",
@@ -52,7 +51,7 @@ def dispatch_vip_try(
             cmd,
             capture_output=True,
             text=True,
-            cwd=str(_REPO_ROOT),
+            cwd=str(repo_root()),
             timeout=25,
             check=False,
         )

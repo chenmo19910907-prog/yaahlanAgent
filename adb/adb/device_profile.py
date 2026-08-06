@@ -9,11 +9,23 @@ from pathlib import Path
 from typing import Any
 
 from .device import AdbError, display_size, run_adb
+from .project_paths import adb_scripts_root
 
-_ADAPT_DIR = Path(__file__).resolve().parent.parent / "录制脚本" / "设备适配"
-_REFERENCE_FILE = _ADAPT_DIR / "基准设备.json"
-_INDEX_FILE = _ADAPT_DIR / "索引.json"
-_PROFILES_DIR = _ADAPT_DIR / "档案"
+
+def adapt_dir() -> Path:
+    return adb_scripts_root() / "设备适配"
+
+
+def _reference_file() -> Path:
+    return adapt_dir() / "基准设备.json"
+
+
+def _index_file() -> Path:
+    return adapt_dir() / "索引.json"
+
+
+def _profiles_dir() -> Path:
+    return adapt_dir() / "档案"
 
 
 @dataclass(frozen=True)
@@ -53,10 +65,6 @@ class AdaptationContext:
     warnings: tuple[str, ...] = ()
 
 
-def adapt_dir() -> Path:
-    return _ADAPT_DIR
-
-
 def _clamp_pct(v: float) -> float:
     return max(0.0, min(1.0, v))
 
@@ -77,9 +85,10 @@ def _write_json(path: Path, data: dict[str, Any]) -> None:
 
 
 def load_reference() -> dict[str, Any]:
-    if not _REFERENCE_FILE.is_file():
-        raise FileNotFoundError(f"缺少基准设备文件: {_REFERENCE_FILE}")
-    return _read_json(_REFERENCE_FILE)
+    ref = _reference_file()
+    if not ref.is_file():
+        raise FileNotFoundError(f"缺少基准设备文件: {ref}")
+    return _read_json(ref)
 
 
 def transform_from_dict(raw: dict[str, Any] | None) -> PctTransform:
@@ -126,9 +135,10 @@ def _getprop(serial: str, key: str) -> str:
 
 
 def list_profile_paths() -> list[Path]:
-    if not _PROFILES_DIR.is_dir():
+    profiles = _profiles_dir()
+    if not profiles.is_dir():
         return []
-    return sorted(_PROFILES_DIR.glob("*.json"))
+    return sorted(profiles.glob("*.json"))
 
 
 def load_profile(path: Path) -> dict[str, Any]:
@@ -390,7 +400,7 @@ def register_profile(
     notes: str = "",
     reason: str = "initial",
 ) -> Path:
-    path = _PROFILES_DIR / f"{profile_id}.json"
+    path = _profiles_dir() / f"{profile_id}.json"
     reference = load_reference()
     now = datetime.now(timezone.utc).isoformat()
     payload: dict[str, Any]
@@ -458,7 +468,7 @@ def update_reference_from_device(device: DeviceInfo) -> dict[str, Any]:
     ref["width"] = device.width
     ref["height"] = device.height
     ref["recordedAt"] = datetime.now(timezone.utc).isoformat()
-    _write_json(_REFERENCE_FILE, ref)
+    _write_json(_reference_file(), ref)
     return ref
 
 
@@ -470,12 +480,13 @@ def _register_in_index(
     device_model: str,
     device: DeviceInfo,
 ) -> None:
-    index = _read_json(_INDEX_FILE) if _INDEX_FILE.is_file() else {"profiles": []}
+    idx_path = _index_file()
+    index = _read_json(idx_path) if idx_path.is_file() else {"profiles": []}
     profiles = index.setdefault("profiles", [])
     if not isinstance(profiles, list):
         profiles = []
         index["profiles"] = profiles
-    rel = path.relative_to(_ADAPT_DIR).as_posix()
+    rel = path.relative_to(adapt_dir()).as_posix()
     profiles = [p for p in profiles if not (isinstance(p, dict) and p.get("id") == profile_id)]
     profiles.append(
         {
@@ -488,11 +499,11 @@ def _register_in_index(
         }
     )
     index["profiles"] = profiles
-    _write_json(_INDEX_FILE, index)
+    _write_json(idx_path, index)
 
 
 def get_profile_by_id(profile_id: str) -> tuple[Path, dict[str, Any]]:
-    path = _PROFILES_DIR / f"{profile_id}.json"
+    path = _profiles_dir() / f"{profile_id}.json"
     if not path.is_file():
         raise ValueError(f"未找到档案 {profile_id!r}")
     return path, load_profile(path)
@@ -508,4 +519,4 @@ def save_calibrate_draft(path: Path, data: dict[str, Any]) -> None:
 
 def default_draft_path(serial: str) -> Path:
     safe = serial.replace("/", "_")[:32]
-    return _ADAPT_DIR / "校准草稿" / f"{safe}.json"
+    return adapt_dir() / "校准草稿" / f"{safe}.json"

@@ -1,4 +1,4 @@
-"""从 adb/录制脚本 加载片段（支持中文名与英文 id）。"""
+"""从 adb 录制脚本库加载片段（支持中文名与英文 id）。"""
 
 from __future__ import annotations
 
@@ -7,18 +7,20 @@ import re
 from pathlib import Path
 from typing import Any
 
+from .paths import scripts_root as _scripts_root
 from .standard_nickname import standard_nickname
-
-_SCRIPTS_ROOT = Path(__file__).resolve().parent.parent / "录制脚本"
-_INDEX_PATH = _SCRIPTS_ROOT / "索引.json"
 
 
 def scripts_root() -> Path:
-    return _SCRIPTS_ROOT
+    return _scripts_root()
+
+
+def _index_path() -> Path:
+    return scripts_root() / "索引.json"
 
 
 def _load_index() -> dict[str, Any]:
-    data = json.loads(_INDEX_PATH.read_text(encoding="utf-8"))
+    data = json.loads(_index_path().read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ValueError("索引.json 根节点须为 object")
     return data
@@ -72,6 +74,7 @@ def resolve_key(key: str, *, kind: str | None = None) -> tuple[str, str, Path]:
     key = key.strip()
     if not key:
         raise ValueError("脚本名不能为空")
+    root = scripts_root()
     matches: list[tuple[dict[str, Any], Path]] = []
     for entry in _load_index().get("items", []):
         if not isinstance(entry, dict):
@@ -85,7 +88,7 @@ def resolve_key(key: str, *, kind: str | None = None) -> tuple[str, str, Path]:
         rel = entry.get("file")
         if not rel:
             continue
-        path = _SCRIPTS_ROOT / str(rel)
+        path = root / str(rel)
         matches.append((entry, path))
     if not matches:
         hint = _format_known(kind)

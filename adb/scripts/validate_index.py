@@ -7,8 +7,11 @@ import json
 import sys
 from pathlib import Path
 
-_PKG = Path(__file__).resolve().parent.parent
-_SCRIPTS = _PKG / "录制脚本"
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from adb_script_paths import adb_scripts_root  # noqa: E402
 _INDEX = _SCRIPTS / "索引.json"
 
 
@@ -20,7 +23,7 @@ def _load_json(path: Path) -> dict:
 
 
 def validate_index(*, scripts_root: Path | None = None) -> list[str]:
-    root = scripts_root or _SCRIPTS
+    root = scripts_root or adb_scripts_root()
     index_path = root / "索引.json"
     errors: list[str] = []
 
@@ -105,7 +108,7 @@ def validate_index(*, scripts_root: Path | None = None) -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    errors = validate_index()
+    errors = validate_index(scripts_root=adb_scripts_root())
     if errors:
         print("索引校验失败:", file=sys.stderr)
         for err in errors:

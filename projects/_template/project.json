@@ -31,7 +31,9 @@
     "onlineTestAccounts": "projects/example/knowledge/online_test_accounts.json",
     "temporaryTestcase": "projects/example/temporary_testcase",
     "moaGenerativeRoot": "projects/example/moa-generative",
-    "workflowRoot": "projects/example/workflow"
+    "workflowRoot": "projects/example/workflow",
+    "adbScriptsRoot": "projects/example/adb/scripts",
+    "adbAutotestRoot": "projects/example/adb/autotest"
   },
   "agent": {
     "title": "Example 智能工具 Agent",

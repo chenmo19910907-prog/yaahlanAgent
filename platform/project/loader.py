@@ -227,6 +227,46 @@ def gift_cp_love_config_path() -> Path:
     return path_key("giftCpLoveConfig", "Gift/config/cp_love_gift.json")
 
 
+def adb_scripts_root() -> Path:
+    return path_key("adbScriptsRoot", "adb/录制脚本")
+
+
+def adb_autotest_root() -> Path:
+    return path_key("adbAutotestRoot", "adb/自动化用例")
+
+
+def app_android_package() -> str:
+    return str(_app_cfg().get("androidPackage") or "com.immomo.biz.yaahlan")
+
+
+def app_android_activity() -> str:
+    return str(_app_cfg().get("androidActivity") or ".personalityIcon4")
+
+
+def app_android_launch_mode() -> str:
+    return str(_app_cfg().get("androidLaunchMode") or "launcher")
+
+
+def app_android_launch_wait_ms() -> int:
+    raw = _app_cfg().get("androidLaunchWaitMs")
+    try:
+        return int(raw) if raw is not None else 4000
+    except (TypeError, ValueError):
+        return 4000
+
+
+def app_android_splash_ad_max_ms() -> int:
+    raw = _app_cfg().get("androidSplashAdMaxMs")
+    try:
+        return int(raw) if raw is not None else 8000
+    except (TypeError, ValueError):
+        return 8000
+
+
+def app_android_splash_ad_script_id() -> str:
+    return str(_app_cfg().get("androidSplashAdScriptId") or "dismiss-splash-ad")
+
+
 def dingtalk_kb_config_path() -> Path:
     return path_key("dingtalkKb", "DingTalk/config/kb.json")
 

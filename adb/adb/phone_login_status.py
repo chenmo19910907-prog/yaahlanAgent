@@ -4,14 +4,12 @@ from __future__ import annotations
 
 import json
 import subprocess
-from pathlib import Path
 from typing import Any
 
 from .device import AdbError
+from .project_paths import moa_execute_path, moa_template, repo_root
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-_MOA_TEMPLATE = _REPO_ROOT / "MOA/templates/用户-按手机号查userId.json"
-_MOA_EXECUTE = _REPO_ROOT / "MOA/moa_execute.py"
+_MOA_TEMPLATE = moa_template("用户-按手机号查userId.json")
 
 
 def query_phone_login_status(
@@ -28,12 +26,13 @@ def query_phone_login_status(
 
     if not _MOA_TEMPLATE.is_file():
         raise AdbError(f"缺少 MOA 模板: {_MOA_TEMPLATE}")
-    if not _MOA_EXECUTE.is_file():
-        raise AdbError(f"缺少 MOA 入口: {_MOA_EXECUTE}")
+    execute = moa_execute_path()
+    if not execute.is_file():
+        raise AdbError(f"缺少 MOA 入口: {execute}")
 
     cmd = [
         "python3",
-        str(_MOA_EXECUTE),
+        str(execute),
         "--payload-file",
         str(_MOA_TEMPLATE),
         "--query-user-by-phone",
@@ -46,7 +45,7 @@ def query_phone_login_status(
             cmd,
             capture_output=True,
             text=True,
-            cwd=str(_REPO_ROOT),
+            cwd=str(repo_root()),
             timeout=25,
             check=False,
         )

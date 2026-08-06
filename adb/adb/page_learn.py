@@ -16,6 +16,7 @@ from .activity import get_foreground_activity
 from .device import display_size, run_adb
 from .fragment_locator import locator_fields_from_probe
 from .recorded_scripts import list_catalog, load_test_accounts, scripts_root
+from .project_paths import moa_template, repo_root
 from .ui_locator import find_element_at_point, probe_locator_at_point
 from .vip_grant import dispatch_vip_try
 
@@ -394,7 +395,8 @@ def probe_entry(
 
     if vip_level and auto_vip and user_id:
         dispatch_vip_try(user_id, vip_level)
-        entry.kbRef.append("MOA/templates/VIP-下发体验卡.json")
+        tpl = moa_template("VIP-下发体验卡.json")
+        entry.kbRef.append(str(tpl.relative_to(repo_root())))
         _back_after_probe(serial, activity)
         _tap_entry(serial, entry)
         xml = _dump_ui_xml(serial)

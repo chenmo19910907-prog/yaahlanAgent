@@ -1,6 +1,6 @@
 # 多项目 Agent 配置
 
-通过 **`AGENT_PROJECT`**（或 `PROJECT`）选择项目，默认 `yaahlan`。**adb 模块不在此体系内**，仍按仓库固定路径运行。
+通过 **`AGENT_PROJECT`**（或 `PROJECT`）选择项目，默认 `yaahlan`。**adb 录制脚本 / 自动化用例 / App 包名** 亦随 `paths.adbScriptsRoot`、`paths.adbAutotestRoot` 与 `app.androidPackage` 切换；**adb 运行时代码**（`adb_execute.py`、Python 库）仍固定于仓库 `adb/`。
 
 ## 目录
 
@@ -37,6 +37,7 @@ python3 Admin/admin_execute.py --query-user-id 100465989
 | `testcaseKbRoot` / `prdKbRoot` / `bugKbRoot` | 知识库根目录 |
 | `testDevices` / `onlineTestAccounts` | 测试机与账号池 |
 | `temporaryTestcase` | 生成用例落盘目录 |
+| `adbScriptsRoot` / `adbAutotestRoot` | ADB 录制脚本库、P0 自动化用例根（新项目 bootstrap 默认 symlink 至 `adb/录制脚本`、`adb/自动化用例`） |
 
 ## 环境与业务（`app` / `tunnel`）
 
@@ -69,6 +70,8 @@ python3 platform/open_catalog.py          # 标题随 AGENT_PROJECT 品牌变化
 | `moa/templates` | `MOA/templates` |
 | `workflow` | `workflow/` |
 | `moa-generative` | `MOA-generative/` |
+| `adb/scripts` | `adb/录制脚本` |
+| `adb/autotest` | `adb/自动化用例` |
 
 **运行时**（`moa_execute.py`、`workflow_execute.py`、Python 库）始终共用仓库 `MOA/`、`workflow/`，仅 **数据目录** 随 `paths.*` 切换。
 
@@ -105,6 +108,7 @@ python3 platform/open_catalog.py          # 标题随 AGENT_PROJECT 品牌变化
 | `platform/dingtalk_gateway/repo_paths.py` | 网关 family PK / anchor 脚本 |
 | `scripts/project_paths.py` | 知识库 / 用例目录 |
 | `MOA/scripts/moa_script_paths.py` | MOA 脚本：`moa_template_repo_rel()` / 网关 / tmp |
+| `adb/adb/project_paths.py` / `adb/scripts/adb_script_paths.py` | ADB 录制脚本根、MOA/Admin execute |
 | `MOA-generative/scripts/project_api.py` | ServiceUrl / body 模板 |
 | `workflow/scripts/project_api.py` | 工作流 MOA 路径 |
 

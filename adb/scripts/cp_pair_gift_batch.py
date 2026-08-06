@@ -19,8 +19,13 @@ import time
 from pathlib import Path
 from typing import Any
 
-_REPO = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_REPO / "adb"))
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from adb_script_paths import adb_execute_path, repo_root  # noqa: E402
+
+sys.path.insert(0, str(repo_root() / "adb"))
 
 from adb.actions import input_text, keyevent, tap  # noqa: E402
 from adb.activity import get_foreground_activity  # noqa: E402
@@ -35,8 +40,8 @@ from adb.ui_locator import (  # noqa: E402
 )
 import xml.etree.ElementTree as ET  # noqa: E402
 
-PROGRESS_PATH = _REPO / "adb/.state/cp_pair_gift_progress.json"
-ADB_EXEC = ["python3", str(_REPO / "adb/adb_execute.py")]
+PROGRESS_PATH = repo_root() / "adb/.state/cp_pair_gift_progress.json"
+ADB_EXEC = ["python3", str(adb_execute_path())]
 
 DEFAULT_SERIAL_A = "172.18.210.109:5555"
 DEFAULT_SERIAL_B = "172.18.208.184:5555"
@@ -74,7 +79,7 @@ def run_cli(serial: str, *args: str, timeout: int = 180) -> dict[str, Any]:
     cmd = [*ADB_EXEC, "-s", serial, *args]
     proc = subprocess.run(
         cmd,
-        cwd=str(_REPO),
+        cwd=str(repo_root()),
         capture_output=True,
         text=True,
         timeout=timeout,

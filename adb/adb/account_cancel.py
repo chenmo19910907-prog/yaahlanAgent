@@ -9,10 +9,9 @@ from typing import Any
 
 from .ai_operate import prepare_vision_cycle
 from .device import AdbError
+from .project_paths import moa_execute_path, moa_template, repo_root
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-_MOA_TEMPLATE = _REPO_ROOT / "MOA/templates/用户-注销账号.json"
-_MOA_EXECUTE = _REPO_ROOT / "MOA/moa_execute.py"
+_MOA_TEMPLATE = moa_template("用户-注销账号.json")
 
 CLIENT_CANCEL_WORKFLOW = [
     "Me → 设置（齿轮）→ Account security → 底部 Delete account",
@@ -59,12 +58,13 @@ def confirm_cancel_via_moa(user_id: str) -> dict[str, Any]:
 
     if not _MOA_TEMPLATE.is_file():
         raise AdbError(f"缺少 MOA 模板: {_MOA_TEMPLATE}")
-    if not _MOA_EXECUTE.is_file():
-        raise AdbError(f"缺少 MOA 入口: {_MOA_EXECUTE}")
+    execute = moa_execute_path()
+    if not execute.is_file():
+        raise AdbError(f"缺少 MOA 入口: {execute}")
 
     cmd = [
         "python3",
-        str(_MOA_EXECUTE),
+        str(execute),
         "--payload-file",
         str(_MOA_TEMPLATE),
         "--cancel-user",
@@ -75,7 +75,7 @@ def confirm_cancel_via_moa(user_id: str) -> dict[str, Any]:
             cmd,
             capture_output=True,
             text=True,
-            cwd=str(_REPO_ROOT),
+            cwd=str(repo_root()),
             timeout=45,
             check=False,
         )

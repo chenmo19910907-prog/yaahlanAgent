@@ -69,6 +69,8 @@ PATH_KEYS_AFTER_BOOTSTRAP = {
     "testDevices": "knowledge/test_devices.json",
     "moaGenerativeRoot": "moa-generative",
     "workflowRoot": "workflow",
+    "adbScriptsRoot": "adb/scripts",
+    "adbAutotestRoot": "adb/autotest",
 }
 
 
@@ -194,6 +196,16 @@ def bootstrap(
             project_dir / "moa-generative",
             REPO / "MOA-generative",
             label="moa-generative",
+        )
+        _ensure_dir_symlink(
+            project_dir / "adb" / "scripts",
+            REPO / "adb" / "录制脚本",
+            label="adb/scripts",
+        )
+        _ensure_dir_symlink(
+            project_dir / "adb" / "autotest",
+            REPO / "adb" / "自动化用例",
+            label="adb/autotest",
         )
     _ensure_module_registries(project_dir, force_copy=copy_registry)
     _ensure_knowledge_dirs(project_dir)

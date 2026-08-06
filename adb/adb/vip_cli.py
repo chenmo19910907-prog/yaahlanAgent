@@ -4,17 +4,15 @@ from __future__ import annotations
 
 import argparse
 import subprocess
-from pathlib import Path
 from typing import Any
 
 from .device import AdbError
+from .project_paths import moa_execute_path, moa_template, repo_root
 from .recorded_scripts import load_test_accounts
 from .vip_grant import dispatch_vip_try
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-_MOA_EXECUTE = _REPO_ROOT / "MOA/moa_execute.py"
-_VIP_EXP_TEMPLATE = _REPO_ROOT / "MOA/templates/VIP-增加经验值.json"
-_VIP_DEL_TEMPLATE = _REPO_ROOT / "MOA/templates/VIP-清除信息.json"
+_VIP_EXP_TEMPLATE = moa_template("VIP-增加经验值.json")
+_VIP_DEL_TEMPLATE = moa_template("VIP-清除信息.json")
 
 
 def add_vip_subparsers(sub: argparse._SubParsersAction) -> None:
@@ -61,19 +59,20 @@ def _resolve_user_id(*, user_id: str | None, account: str | None) -> str:
     return uid
 
 
-def _run_moa(template: Path, extra: list[str]) -> dict[str, Any]:
-    if not _MOA_EXECUTE.is_file():
-        raise AdbError(f"缺少 MOA 入口: {_MOA_EXECUTE}")
+def _run_moa(template, extra: list[str]) -> dict[str, Any]:
+    execute = moa_execute_path()
+    if not execute.is_file():
+        raise AdbError(f"缺少 MOA 入口: {execute}")
     if not template.is_file():
         raise AdbError(f"缺少 MOA 模板: {template}")
     import json
 
-    cmd = ["python3", str(_MOA_EXECUTE), "--payload-file", str(template), *extra]
+    cmd = ["python3", str(execute), "--payload-file", str(template), *extra]
     proc = subprocess.run(
         cmd,
         capture_output=True,
         text=True,
-        cwd=str(_REPO_ROOT),
+        cwd=str(repo_root()),
         timeout=25,
         check=False,
     )

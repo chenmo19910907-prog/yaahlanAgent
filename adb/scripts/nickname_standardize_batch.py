@@ -25,8 +25,13 @@ import json
 import sys
 from pathlib import Path
 
-_REPO = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_REPO / "adb"))
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from adb_script_paths import admin_execute_path, repo_root  # noqa: E402
+
+sys.path.insert(0, str(repo_root() / "adb"))
 
 from adb.phone_login_status import query_phone_login_status  # noqa: E402
 from adb.standard_nickname import standard_nickname  # noqa: E402
@@ -39,14 +44,15 @@ def run_admin(cmd: list[str], *, timeout: int = 40):
         cmd,
         capture_output=True,
         text=True,
-        cwd=str(_REPO),
+        cwd=str(repo_root()),
         timeout=timeout,
         check=False,
     )
 
 
 def admin_nickname(user_id: str) -> str | None:
-    proc = run_admin(["python3", "Admin/admin_execute.py", "--query-user-id", user_id])
+    execute = admin_execute_path()
+    proc = run_admin(["python3", str(execute), "--query-user-id", user_id])
     if proc.returncode != 0:
         return None
     try:
@@ -120,7 +126,7 @@ def workflow_for(row: dict) -> list[str]:
         "python3 adb/adb_execute.py macro 资料页进入编辑页 --force-script --no-capture",
         "python3 adb/adb_execute.py activity  # 期望 EditProfileActivity",
         f"python3 adb/adb_execute.py macro 资料页修改昵称为标准昵称 --text {phone} --force-script",
-        f"python3 Admin/admin_execute.py --query-user-id {uid}  # 期望 nickname={expected}",
+        f"python3 {admin_execute_path()} --query-user-id {uid}  # 期望 nickname={expected}",
     ]
 
 

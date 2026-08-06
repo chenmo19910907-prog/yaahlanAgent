@@ -22,8 +22,14 @@ from mcp.types import (
     Tool,
 )
 
-# 仓库根 → adb 包
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+# 仓库根 → adb 包（运行时代码固定于 adb/；录制脚本根随 AGENT_PROJECT）
+_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+
+from adb.project_paths import repo_root  # noqa: E402
+
+_REPO_ROOT = repo_root()
 _ADB_ROOT = _REPO_ROOT / "adb"
 if str(_ADB_ROOT) not in sys.path:
     sys.path.insert(0, str(_ADB_ROOT))

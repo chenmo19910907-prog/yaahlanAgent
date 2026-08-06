@@ -8,10 +8,10 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
-from .apps import YAAHLAN
+from .apps import resolve_app_target
 from .device import AdbError, run_adb
 
-_DEFAULT_PACKAGE = YAAHLAN["package"]
+_DEFAULT_PACKAGE = resolve_app_target().get("package")
 _MAX_MATCH_LINE_LEN = 500
 _MAX_MATCH_LINES = 10
 
@@ -38,10 +38,13 @@ def resolve_app_package(*, app: str | None = None, package: str | None = None) -
     if key in ("none", "all", "off", "false", "0"):
         return None
     if key in ("yaahlan", "yaha"):
-        from .apps import YAHA
+        from .apps import YAHA, YAAHLAN
 
-        return YAAHLAN["package"] if key == "yaahlan" else YAHA["package"]
-    return str(app).strip()
+        return str(YAAHLAN["package"]) if key == "yaahlan" else str(YAHA["package"])
+    try:
+        return str(resolve_app_target(key)["package"])
+    except ValueError:
+        return str(app).strip()
 
 
 def clear_logcat_buffer(*, serial: str) -> dict[str, Any]:

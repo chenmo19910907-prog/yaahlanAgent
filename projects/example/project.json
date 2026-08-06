@@ -31,7 +31,9 @@
     "riskRegistry": "projects/example/config/risk-registry.json",
     "giftRegistry": "projects/example/config/gift-registry.json",
     "tunnelRegistry": "projects/example/config/tunnel-registry.json",
-    "dingtalkRegistry": "projects/example/config/dingtalk-registry.json"
+    "dingtalkRegistry": "projects/example/config/dingtalk-registry.json",
+    "adbScriptsRoot": "projects/example/adb/scripts",
+    "adbAutotestRoot": "projects/example/adb/autotest"
   },
   "agent": {
     "title": "Example 智能工具 Agent",
