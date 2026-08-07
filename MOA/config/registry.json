@@ -46,6 +46,63 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-设置等级.json \\\n  --room-set-level-room-id <roomId> \\\n  --room-set-level <level>\n"
     },
     {
+      "id": "room_owner_absence_downgrade",
+      "name": "房间-房主未回房触发降级",
+      "category": "房间经验值（voga-mts-room-backdoor）",
+      "description": "模拟房主连续 6 天未回自己房间并触发活跃度衰减（简化版：updateRoomOwnerActiveTime + addRoomToDeductCandidates + reduceRoomActiveValue）",
+      "prompts": [
+        "模拟房间 <roomId> 房主连续5天未回房触发降级",
+        "房间 <roomId> 房主6天未回房触发活跃度下降"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-房主未回房触发降级.json \\\n  --service-url /service/voga-mts-room-backdoor \\\n  --moa-method execute \\\n  --expr 'long ts=System.currentTimeMillis()-6L*86400000L; context.getBean(\"roomProfileDao\").updateRoomOwnerActiveTime(\"<roomId>\", ts); context.getBean(\"roomProfileDao\").addRoomToDeductCandidates(\"<roomId>\", ts); context.getBean(\"roomActiveValueDeductTask\").reduceRoomActiveValue(); return context.getBean(\"roomProfileDao\").getRoomActiveValue(\"<roomId>\");'\n"
+    },
+    {
+      "id": "room_owner_absence_downgrade_real",
+      "name": "房间-房主未回房真实降级（含弹窗标记）",
+      "category": "房间经验值（voga-mts-room-backdoor）",
+      "description": "完整模拟 v1.34.9 房主 6 天未回房降级：先建议 LV6 → reduceRoomActiveValue 扣活跃度 → handleRoomLevelDropSideEffects 写弹窗标记 → handleMemberEnterRoom 模拟回房。batch 全量任务易超时，已改用 reduceRoomActiveValue；每日同房间仅扣一次。",
+      "prompts": [
+        "房间 <roomId> 房主真实降级并准备等级页弹窗",
+        "模拟房间 <roomId> 房主未回房真实降级",
+        "房间 <roomId> 触发活跃度下降弹窗数据"
+      ],
+      "command": "python3 MOA/moa_execute.py --payload-file MOA/templates/房间-设置等级.json --room-set-level-room-id <roomId> --room-set-level 6 && python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-房主未回房真实降级.json \\\n  --service-url /service/voga-mts-room-backdoor \\\n  --moa-method execute \\\n  --moa-time 120000 \\\n  --expr 'String room=\"<roomId>\"; String owner=\"<ownerId>\"; com.immomo.voga.mts.room.service.RoomProfileService svc=context.getBean(com.immomo.voga.mts.room.service.RoomProfileService.class); context.getBean(\"roomProfileDao\").removeRoomFromDeductCandidates(room); long ts=System.currentTimeMillis()-6L*86400000L; long avBefore=context.getBean(\"roomProfileDao\").getRoomActiveValue(room); int lvBefore=svc.getRoomLevel(room); context.getBean(\"roomProfileDao\").updateRoomOwnerActiveTime(room, ts); context.getBean(\"roomProfileDao\").addRoomToDeductCandidates(room, ts); context.getBean(\"roomActiveValueDeductTask\").reduceRoomActiveValue(); long avAfter=context.getBean(\"roomProfileDao\").getRoomActiveValue(room); int lvAfter=svc.getRoomLevel(room); long deduct=avBefore-avAfter; if(deduct<=0){ deduct=(long)(avBefore*0.05); context.getBean(\"roomProfileDao\").addRoomActiveValue(room, -deduct*1.0); context.getBean(\"roomProfileDao\").addRoomActiveReductionHistory(room, deduct); svc.setRoomLevelActiveValueInReduction(room, true); avAfter=context.getBean(\"roomProfileDao\").getRoomActiveValue(room); lvAfter=svc.getRoomLevel(room); } if(deduct>0){ context.getBean(\"roomActiveValueDeductTask\").handleRoomLevelDropSideEffects(room, owner, lvBefore, lvAfter, \"MENA\"); } context.getBean(\"roomMemberService\").handleMemberEnterRoom(owner, room); context.getBean(\"roomProfileDao\").updateRoomOwnerActiveTime(room, System.currentTimeMillis()); Object prompt=svc.getLevelPageRespV2(room, owner, \"en\").getLevelAttenuationPrompt(); return \"avBefore=\"+avBefore+\",avAfter=\"+avAfter+\",deduct=\"+deduct+\",lv=\"+lvBefore+\"->\"+lvAfter+\",hist=\"+context.getBean(\"roomProfileDao\").queryRoomActiveReductionHistories(room)+\",prompt=\"+prompt;'\n"
+    },
+    {
+      "id": "room_owner_absence_downgrade_keep_level",
+      "name": "房间-房主未回房降级（保持当前等级）",
+      "category": "房间经验值（voga-mts-room-backdoor）",
+      "description": "不先升 LV6：从房间当前等级/活跃度出发，模拟房主 6 天未回房扣 5% 活跃度；仅当跨档时才 handleRoomLevelDropSideEffects。低等级房间通常仍为原等级，弹窗无「等级降至 x」。",
+      "prompts": [
+        "房间 <roomId> 房主未回房扣活跃度保持等级",
+        "从当前等级模拟房间 <roomId> 房主未回房降级",
+        "房间 <roomId> 不升等级触发活跃度下降"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-房主未回房降级-保持当前等级.json \\\n  --service-url /service/voga-mts-room-backdoor \\\n  --moa-method execute \\\n  --moa-time 120000 \\\n  --expr 'String room=\"<roomId>\"; String owner=\"<ownerId>\"; com.immomo.voga.mts.room.service.RoomProfileService svc=context.getBean(com.immomo.voga.mts.room.service.RoomProfileService.class); context.getBean(\"roomProfileDao\").removeRoomFromDeductCandidates(room); context.getBean(\"roomProfileDao\").delRoomActiveReductionHistory(room); svc.setRoomLevelActiveValueInReduction(room, false); long ts=System.currentTimeMillis()-6L*86400000L; long avBefore=context.getBean(\"roomProfileDao\").getRoomActiveValue(room); int lvBefore=svc.getRoomLevel(room); context.getBean(\"roomProfileDao\").updateRoomOwnerActiveTime(room, ts); context.getBean(\"roomProfileDao\").addRoomToDeductCandidates(room, ts); context.getBean(\"roomActiveValueDeductTask\").reduceRoomActiveValue(); long avAfter=context.getBean(\"roomProfileDao\").getRoomActiveValue(room); int lvAfter=svc.getRoomLevel(room); long deduct=avBefore-avAfter; if(deduct<=0){ deduct=(long)(avBefore*0.05); context.getBean(\"roomProfileDao\").addRoomActiveValue(room, -deduct*1.0); context.getBean(\"roomProfileDao\").addRoomActiveReductionHistory(room, deduct); svc.setRoomLevelActiveValueInReduction(room, true); context.getBean(\"roomProfileDao\").setActiveValueIsInReduction(room, \"1\"); avAfter=context.getBean(\"roomProfileDao\").getRoomActiveValue(room); lvAfter=svc.getRoomLevel(room); } if(deduct>0 && lvAfter<lvBefore){ context.getBean(\"roomActiveValueDeductTask\").handleRoomLevelDropSideEffects(room, owner, lvBefore, lvAfter, \"MENA\"); } context.getBean(\"roomMemberService\").handleMemberEnterRoom(owner, room); context.getBean(\"roomProfileDao\").updateRoomOwnerActiveTime(room, System.currentTimeMillis()); Object prompt=svc.getLevelPageRespV2(room, owner, \"en\").getLevelAttenuationPrompt(); return \"avBefore=\"+avBefore+\",avAfter=\"+avAfter+\",deduct=\"+deduct+\",lv=\"+lvBefore+\"->\"+lvAfter+\",hist=\"+context.getBean(\"roomProfileDao\").queryRoomActiveReductionHistories(room)+\",inReduction=\"+context.getBean(\"roomProfileDao\").checkActiveValueIsInReduction(room)+\",prompt=\"+prompt;'\n"
+    },
+    {
+      "id": "room_level_page_prompt_query",
+      "name": "房间-查询等级页衰减弹窗",
+      "category": "房间经验值（voga-mts-room-backdoor）",
+      "description": "backdoor 查询 getLevelPageRespV2.levelAttenuationPrompt（服务端弹窗数据；非 null 时客户端打开等级页应弹「活跃度下降」）",
+      "prompts": [
+        "查询房间 <roomId> 等级页降级弹窗数据",
+        "房间 <roomId> levelAttenuationPrompt"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-查询等级页衰减弹窗.json \\\n  --service-url /service/voga-mts-room-backdoor \\\n  --moa-method execute \\\n  --expr 'com.immomo.voga.mts.room.service.RoomProfileService svc=context.getBean(com.immomo.voga.mts.room.service.RoomProfileService.class); com.immomo.voga.mts.room.api.resp.level.LevelPageResp r=svc.getLevelPageRespV2(\"<roomId>\",\"<ownerId>\",\"en\"); Object p=r.getLevelAttenuationPrompt(); return \"level=\"+r.getLevel()+\",activeValue=\"+r.getActiveValue()+\",levelAttenuationPrompt=\"+p;'\n"
+    },
+    {
+      "id": "room_level_page_prompt_mock",
+      "name": "房间-等级页衰减弹窗Mock",
+      "category": "房间经验值（voga-mts-room-backdoor）",
+      "description": "测试环境 stage 服务端 roomLevelPageData.levelAttenuationPrompt 常为 null。Tunnel Mock 须拆字段注入（整对象 JSON 字符串不生效）：data.levelAttenuationPrompt.title + .attenuationPrompt，并启用整包 mock_case。",
+      "prompts": [
+        "Mock 房间 <roomId> 等级页衰减弹窗",
+        "房间等级页弹窗 Mock <ownerId>"
+      ],
+      "command": "python3 Tunnel/tunnel_mock_execute.py param-set --momoid <ownerId> --uri http://gw-api-alpha.yaahlan.fun/yaahlan/room/profile/get/roomLevelPageData --key data.levelAttenuationPrompt.title --value \"Activity level decreased\" && python3 Tunnel/tunnel_mock_execute.py param-set --momoid <ownerId> --uri http://gw-api-alpha.yaahlan.fun/yaahlan/room/profile/get/roomLevelPageData --key data.levelAttenuationPrompt.attenuationPrompt --value \"You have not returned to your room for 6 consecutive days. Activity level decreased by 3,150,000. Level dropped to 5.\" && python3 Tunnel/tunnel_mock_execute.py case-start --momoid <ownerId> --uri http://gw-api-alpha.yaahlan.fun/yaahlan/room/profile/get/roomLevelPageData\n"
+    },
+    {
       "id": "room_add_bots",
       "name": "房间-增加机器人",
       "category": "房间经验值（voga-mts-room-backdoor）",
@@ -1372,6 +1429,16 @@
         "对外飘屏 <roomId> <userId> unlockLevel <unlockLevel>"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-发言飘屏-对外.json\n"
+    },
+    {
+      "id": "房间_等级页衰减弹窗_mock说明",
+      "name": "房间-等级页衰减弹窗-Mock说明",
+      "category": "房间（voga-mts-room-backdoor）",
+      "description": "execute（/service/voga-mts-room-backdoor）",
+      "prompts": [
+        "执行 房间-等级页衰减弹窗-Mock说明"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-等级页衰减弹窗-Mock说明.json\n"
     }
   ]
 }

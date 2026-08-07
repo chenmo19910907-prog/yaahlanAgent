@@ -1,0 +1,29 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-room-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "String room=\"43412561\"; String owner=\"100401365\"; com.immomo.voga.mts.room.service.RoomProfileService svc=context.getBean(com.immomo.voga.mts.room.service.RoomProfileService.class); context.getBean(\"roomProfileDao\").removeRoomFromDeductCandidates(room); long ts=System.currentTimeMillis()-6L*86400000L; long avBefore=context.getBean(\"roomProfileDao\").getRoomActiveValue(room); int lvBefore=svc.getRoomLevel(room); context.getBean(\"roomProfileDao\").updateRoomOwnerActiveTime(room, ts); context.getBean(\"roomProfileDao\").addRoomToDeductCandidates(room, ts); context.getBean(\"roomActiveValueDeductTask\").reduceRoomActiveValue(); long avAfter=context.getBean(\"roomProfileDao\").getRoomActiveValue(room); int lvAfter=svc.getRoomLevel(room); long deduct=avBefore-avAfter; if(deduct<=0){ deduct=(long)(avBefore*0.05); context.getBean(\"roomProfileDao\").addRoomActiveValue(room, -deduct*1.0); context.getBean(\"roomProfileDao\").addRoomActiveReductionHistory(room, deduct); svc.setRoomLevelActiveValueInReduction(room, true); context.getBean(\"roomProfileDao\").setActiveValueIsInReduction(room, \"1\"); avAfter=context.getBean(\"roomProfileDao\").getRoomActiveValue(room); lvAfter=svc.getRoomLevel(room); } if(deduct>0){ context.getBean(\"roomActiveValueDeductTask\").handleRoomLevelDropSideEffects(room, owner, lvBefore, lvAfter, \"MENA\"); } context.getBean(\"roomMemberService\").handleMemberEnterRoom(owner, room); context.getBean(\"roomProfileDao\").updateRoomOwnerActiveTime(room, System.currentTimeMillis()); Object prompt=svc.getLevelPageRespV2(room, owner, \"en\").getLevelAttenuationPrompt(); return \"avBefore=\"+avBefore+\",avAfter=\"+avAfter+\",deduct=\"+deduct+\",lv=\"+lvBefore+\"->\"+lvAfter+\",hist=\"+context.getBean(\"roomProfileDao\").queryRoomActiveReductionHistories(room)+\",inReduction=\"+context.getBean(\"roomProfileDao\").checkActiveValueIsInReduction(room)+\",prompt=\"+prompt;",
+      "json": "",
+      "type": "string",
+      "value": "String room=\"43412561\"; String owner=\"100401365\"; com.immomo.voga.mts.room.service.RoomProfileService svc=context.getBean(com.immomo.voga.mts.room.service.RoomProfileService.class); context.getBean(\"roomProfileDao\").removeRoomFromDeductCandidates(room); long ts=System.currentTimeMillis()-6L*86400000L; long avBefore=context.getBean(\"roomProfileDao\").getRoomActiveValue(room); int lvBefore=svc.getRoomLevel(room); context.getBean(\"roomProfileDao\").updateRoomOwnerActiveTime(room, ts); context.getBean(\"roomProfileDao\").addRoomToDeductCandidates(room, ts); context.getBean(\"roomActiveValueDeductTask\").reduceRoomActiveValue(); long avAfter=context.getBean(\"roomProfileDao\").getRoomActiveValue(room); int lvAfter=svc.getRoomLevel(room); long deduct=avBefore-avAfter; if(deduct<=0){ deduct=(long)(avBefore*0.05); context.getBean(\"roomProfileDao\").addRoomActiveValue(room, -deduct*1.0); context.getBean(\"roomProfileDao\").addRoomActiveReductionHistory(room, deduct); svc.setRoomLevelActiveValueInReduction(room, true); context.getBean(\"roomProfileDao\").setActiveValueIsInReduction(room, \"1\"); avAfter=context.getBean(\"roomProfileDao\").getRoomActiveValue(room); lvAfter=svc.getRoomLevel(room); } if(deduct>0){ context.getBean(\"roomActiveValueDeductTask\").handleRoomLevelDropSideEffects(room, owner, lvBefore, lvAfter, \"MENA\"); } context.getBean(\"roomMemberService\").handleMemberEnterRoom(owner, room); context.getBean(\"roomProfileDao\").updateRoomOwnerActiveTime(room, System.currentTimeMillis()); Object prompt=svc.getLevelPageRespV2(room, owner, \"en\").getLevelAttenuationPrompt(); return \"avBefore=\"+avBefore+\",avAfter=\"+avAfter+\",deduct=\"+deduct+\",lv=\"+lvBefore+\"->\"+lvAfter+\",hist=\"+context.getBean(\"roomProfileDao\").queryRoomActiveReductionHistories(room)+\",inReduction=\"+context.getBean(\"roomProfileDao\").checkActiveValueIsInReduction(room)+\",prompt=\"+prompt;"
+    }
+  ],
+  "settings": {
+      "time": "120000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad"
+}

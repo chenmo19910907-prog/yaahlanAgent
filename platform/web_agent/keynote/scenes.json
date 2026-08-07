@@ -21,11 +21,12 @@
     "lines": [
       { "text": "如何做好一款 Agent", "lead": true },
       {
-        "inline": ["简单", "易用", "美观"],
+        "inline": ["美观", "实用", "智能"],
         "large": true,
-        "separator": true
+        "separator": true,
+        "accent": true
       },
-      { "text": "体验过关，才谈留存", "small": true }
+      { "text": "体验好，才是硬道理", "small": true }
     ]
   },
   {

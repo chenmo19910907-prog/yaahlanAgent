@@ -1,0 +1,29 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-room-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "com.immomo.voga.mts.room.service.RoomProfileService svc=context.getBean(com.immomo.voga.mts.room.service.RoomProfileService.class); com.immomo.voga.mts.room.api.resp.level.LevelPageResp r=svc.getLevelPageRespV2(\"43412561\",\"100401365\",\"en\"); Object p=r.getLevelAttenuationPrompt(); return \"level=\"+r.getLevel()+\",activeValue=\"+r.getActiveValue()+\",levelAttenuationPrompt=\"+p;",
+      "json": "",
+      "type": "string",
+      "value": "com.immomo.voga.mts.room.service.RoomProfileService svc=context.getBean(com.immomo.voga.mts.room.service.RoomProfileService.class); com.immomo.voga.mts.room.api.resp.level.LevelPageResp r=svc.getLevelPageRespV2(\"43412561\",\"100401365\",\"en\"); Object p=r.getLevelAttenuationPrompt(); return \"level=\"+r.getLevel()+\",activeValue=\"+r.getActiveValue()+\",levelAttenuationPrompt=\"+p;"
+    }
+  ],
+  "settings": {
+    "time": "30000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad"
+}

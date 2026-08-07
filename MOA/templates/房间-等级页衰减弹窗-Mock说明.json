@@ -1,0 +1,37 @@
+{
+  "type": "moa",
+  "key": "room-level-page-prompt-mock-doc",
+  "url": "/service/voga-mts-room-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "return \"Tunnel Mock: roomLevelPageData.data.levelAttenuationPrompt\";",
+      "json": "",
+      "type": "string",
+      "value": "return \"Tunnel Mock: roomLevelPageData.data.levelAttenuationPrompt\";"
+    }
+  ],
+  "settings": {
+    "time": "5000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "note": "本模板仅登记能力；实际执行 Tunnel Mock CLI，非 MOA backdoor",
+    "uri": "http://gw-api-alpha.yaahlan.fun/yaahlan/room/profile/get/roomLevelPageData",
+    "promptShape": {
+      "title": "Activity level decreased",
+      "attenuationPrompt": "You have not returned to your room for 6 consecutive days. Activity level decreased by 3,150,000. Level dropped to 5."
+    }
+  }
+}

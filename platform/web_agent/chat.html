@@ -17,7 +17,8 @@
       --bg: #0b0e14;
       --bg-panel: rgba(20, 24, 33, 0.86);
       --bg-solid: #151923;
-      --sidebar-bg: #171b26;
+      --workspace-bg: transparent;
+      --sidebar-bg: rgba(15, 20, 30, 0.76);
       --bg-soft: #1a202b;
       --bg-hover: #232a38;
       --bg-input: rgba(23, 27, 36, 0.92);
@@ -42,63 +43,72 @@
       --panel-radius: 14px;
       --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
       --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+      --page-gradient:
+        linear-gradient(135deg, rgba(91, 140, 255, 0.18) 0%, rgba(91, 140, 255, 0.04) 22%, transparent 42%),
+        linear-gradient(225deg, rgba(66, 211, 178, 0.13) 0%, rgba(66, 211, 178, 0.035) 24%, transparent 46%),
+        linear-gradient(180deg, #0b0e14 0%, #101522 46%, #090b10 100%);
     }
     [data-theme="light"] {
-      --bg: #eef2f8;
-      --bg-panel: rgba(255, 255, 255, 0.92);
+      --bg: #f4f6fa;
+      --bg-panel: rgba(255, 255, 255, 0.86);
       --bg-solid: #ffffff;
-      --sidebar-bg: #fbfcfd;
-      --bg-soft: #f5f7fb;
-      --bg-hover: #e8edf5;
-      --bg-input: rgba(255, 255, 255, 0.96);
+      --workspace-bg: transparent;
+      --sidebar-bg: rgba(255, 255, 255, 0.76);
+      --bg-soft: #eef2f8;
+      --bg-hover: #e2e8f0;
+      --bg-input: rgba(255, 255, 255, 0.92);
       --border: rgba(15, 23, 42, 0.1);
       --border-strong: rgba(15, 23, 42, 0.16);
       --text: #0f172a;
       --text-soft: #334155;
       --muted: #64748b;
       --muted-soft: #94a3b8;
-      --accent: #3b6ff5;
-      --accent-hover: #2f5fe0;
-      --accent-soft: rgba(59, 111, 245, 0.12);
+      --accent: #5b8cff;
+      --accent-hover: #4a78e8;
+      --accent-soft: rgba(91, 140, 255, 0.14);
       --teal: #0d9488;
       --violet: #6d28d9;
-      --user-bg: rgba(219, 234, 254, 0.92);
-      --assistant-bg: rgba(255, 255, 255, 0.94);
+      --user-bg: rgba(219, 234, 254, 0.84);
+      --assistant-bg: rgba(255, 255, 255, 0.82);
+      --page-gradient:
+        linear-gradient(135deg, rgba(91, 140, 255, 0.18) 0%, rgba(91, 140, 255, 0.04) 22%, transparent 42%),
+        linear-gradient(225deg, rgba(66, 211, 178, 0.13) 0%, rgba(66, 211, 178, 0.035) 24%, transparent 46%),
+        linear-gradient(180deg, #f4f6fa 0%, #eef2f8 46%, #e6eaf2 100%);
       --success: #16a34a;
       --danger: #dc2626;
       --modal-overlay: rgba(15, 23, 42, 0.35);
-      --header-bg: rgba(255, 255, 255, 0.86);
-      --panel-bg: rgba(255, 255, 255, 0.92);
-      --catalog-bg: rgba(255, 255, 255, 0.94);
-      --input-area-bg: linear-gradient(180deg, rgba(238,242,248,0.35), rgba(255,255,255,0.96));
-      --input-wrap-bg: #ffffff;
-      --input-wrap-border: rgba(59, 111, 245, 0.42);
-      --input-wrap-glow: 0 0 0 1px rgba(59, 111, 245, 0.1), 0 0 10px rgba(59, 111, 245, 0.14);
-      --input-wrap-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
-      --input-wrap-focus-border: rgba(59, 111, 245, 0.72);
-      --input-wrap-focus-glow: 0 0 0 1px rgba(59, 111, 245, 0.18), 0 0 14px rgba(59, 111, 245, 0.22);
-      --card-bg: rgba(255, 255, 255, 0.96);
-      --card-bg-hover: #ffffff;
+      --header-bg: rgba(255, 255, 255, 0.78);
+      --panel-bg: rgba(255, 255, 255, 0.76);
+      --catalog-bg: rgba(255, 255, 255, 0.78);
+      --input-area-bg: linear-gradient(180deg, rgba(244,246,250,0.2), rgba(255,255,255,0.76)), linear-gradient(90deg, rgba(91,140,255,0.05), rgba(66,211,178,0.035));
+      --input-wrap-bg: rgba(255, 255, 255, 0.9);
+      --input-wrap-border: rgba(91, 140, 255, 0.42);
+      --input-wrap-glow: 0 0 0 1px rgba(91, 140, 255, 0.12), 0 0 10px rgba(91, 140, 255, 0.14);
+      --input-wrap-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+      --input-wrap-focus-border: rgba(91, 140, 255, 0.72);
+      --input-wrap-focus-glow: 0 0 0 1px rgba(91, 140, 255, 0.2), 0 0 14px rgba(91, 140, 255, 0.18);
+      --card-bg: rgba(255, 255, 255, 0.72);
+      --card-bg-hover: rgba(255, 255, 255, 0.78);
       --card-border-hover: rgba(15, 23, 42, 0.12);
-      --search-bg: #f8fafc;
-      --cap-bg: #ffffff;
-      --cap-bg-hover: #f1f5f9;
-      --cap-bg-open: rgba(59, 111, 245, 0.08);
-      --session-active-bg: #e2eeff;
-      --prompt-bg: #f8fafc;
-      --prompt-panel-bg: #f1f5f9;
-      --code-bg: #f1f5f9;
-      --code-inline-bg: #e2e8f0;
+      --search-bg: rgba(255, 255, 255, 0.54);
+      --cap-bg: rgba(15, 23, 42, 0.015);
+      --cap-bg-hover: rgba(15, 23, 42, 0.04);
+      --cap-bg-open: rgba(91, 140, 255, 0.1);
+      --session-active-bg: rgba(91, 140, 255, 0.12);
+      --prompt-bg: rgba(255, 255, 255, 0.72);
+      --prompt-panel-bg: rgba(244, 246, 250, 0.5);
+      --code-bg: rgba(241, 245, 249, 0.92);
+      --code-inline-bg: #eef2f8;
       --code-text: #0f172a;
       --link-color: #2563eb;
       --nav-active-color: #1d4ed8;
-      --nav-active-bg: rgba(59, 111, 245, 0.12);
+      --nav-active-bg: rgba(91, 140, 255, 0.14);
       --nav-count-active: #1e40af;
-      --module-icon-bg: rgba(59, 111, 245, 0.12);
+      --module-icon-bg: rgba(91, 140, 255, 0.12);
       --module-icon-color: #2563eb;
       --cap-icon-bg: rgba(13, 148, 136, 0.1);
       --cap-icon-color: #0f766e;
-      --tag-bg: rgba(59, 111, 245, 0.1);
+      --tag-bg: rgba(91, 140, 255, 0.1);
       --tag-color: #2563eb;
       --warn-bg: rgba(245, 158, 11, 0.12);
       --warn-border: rgba(245, 158, 11, 0.28);
@@ -112,25 +122,25 @@
       --owner-bar-btn-border: transparent;
       --owner-bar-btn-bg: transparent;
       --owner-bar-btn-color: rgba(100, 116, 139, 0.75);
-      --session-tag-bg: rgba(59, 111, 245, 0.12);
+      --session-tag-bg: rgba(91, 140, 255, 0.12);
       --session-tag-text: #2563eb;
-      --session-tag-border: rgba(59, 111, 245, 0.22);
+      --session-tag-border: rgba(91, 140, 255, 0.22);
       --placeholder-color: #94a3b8;
-      --shadow-soft: 0 12px 28px rgba(15, 23, 42, 0.08);
-      --shadow-msg: 0 10px 28px rgba(15, 23, 42, 0.06);
+      --shadow-soft: 0 18px 42px rgba(15, 23, 42, 0.08);
+      --shadow-msg: 0 18px 50px rgba(15, 23, 42, 0.06);
       --chip-code-color: #2563eb;
       --playbook-num-color: #2563eb;
       --source-test-color: #0f766e;
       --source-online-color: #b45309;
       --btn-subtle-bg: rgba(15, 23, 42, 0.04);
-      --input-area-border-top: rgba(15, 23, 42, 0.16);
-      --dropdown-bg: rgba(255, 255, 255, 0.98);
-      --dropdown-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+      --input-area-border-top: rgba(15, 23, 42, 0.08);
+      --dropdown-bg: rgba(255, 255, 255, 0.96);
+      --dropdown-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
       --dropdown-logout-hover-bg: rgba(220, 38, 38, 0.08);
       --dropdown-logout-hover-color: #dc2626;
-      --scroll-bottom-bg: rgba(255, 255, 255, 0.96);
-      --scroll-bottom-bg-hover: #ffffff;
-      --scroll-bottom-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+      --scroll-bottom-bg: rgba(255, 255, 255, 0.94);
+      --scroll-bottom-bg-hover: rgba(255, 255, 255, 0.98);
+      --scroll-bottom-shadow: 0 12px 32px rgba(15, 23, 42, 0.1);
     }
     [data-theme="dark"] {
       --header-bg: rgba(13, 17, 25, 0.78);
@@ -150,7 +160,7 @@
       --cap-bg: rgba(255,255,255,0.015);
       --cap-bg-hover: rgba(255,255,255,0.04);
       --cap-bg-open: rgba(91,140,255,0.1);
-      --session-active-bg: #1A2D4B;
+      --session-active-bg: rgba(59,130,246,0.12);
       --prompt-bg: rgba(20,24,33,0.72);
       --prompt-panel-bg: rgba(11,14,20,0.5);
       --code-bg: rgba(8,10,15,0.92);
@@ -203,10 +213,7 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
         "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      background:
-        linear-gradient(135deg, rgba(91, 140, 255, 0.18) 0%, rgba(91, 140, 255, 0.04) 22%, transparent 42%),
-        linear-gradient(225deg, rgba(66, 211, 178, 0.13) 0%, rgba(66, 211, 178, 0.035) 24%, transparent 46%),
-        linear-gradient(180deg, #0b0e14 0%, #101522 46%, #090b10 100%);
+      background: var(--page-gradient);
       color: var(--text);
       height: 100vh;
       overflow: hidden;
@@ -251,18 +258,15 @@
         linear-gradient(90deg, rgba(0,0,0,0.18), transparent 18%, transparent 82%, rgba(0,0,0,0.22));
     }
     [data-theme="light"] body {
-      background:
-        linear-gradient(135deg, rgba(59, 111, 245, 0.12) 0%, rgba(59, 111, 245, 0.03) 24%, transparent 44%),
-        linear-gradient(225deg, rgba(13, 148, 136, 0.1) 0%, rgba(13, 148, 136, 0.03) 26%, transparent 48%),
-        linear-gradient(180deg, #eef2f8 0%, #f8fafc 52%, #e9eef5 100%);
+      background: var(--page-gradient);
     }
     [data-theme="light"] body::before {
       background:
-        linear-gradient(120deg, transparent 0 18%, rgba(109, 40, 217, 0.05) 30%, transparent 48%),
-        linear-gradient(245deg, transparent 0 26%, rgba(13, 148, 136, 0.04) 42%, transparent 62%),
-        repeating-linear-gradient(90deg, rgba(15,23,42,0.025) 0 1px, transparent 1px 88px),
-        repeating-linear-gradient(0deg, rgba(15,23,42,0.02) 0 1px, transparent 1px 88px);
-      opacity: 0.55;
+        linear-gradient(120deg, transparent 0 18%, rgba(128, 103, 255, 0.06) 30%, transparent 48%),
+        linear-gradient(245deg, transparent 0 26%, rgba(66, 211, 178, 0.05) 42%, transparent 62%),
+        repeating-linear-gradient(90deg, rgba(91, 140, 255, 0.045) 0 1px, transparent 1px 88px),
+        repeating-linear-gradient(0deg, rgba(91, 140, 255, 0.035) 0 1px, transparent 1px 88px);
+      opacity: 0.78;
     }
     [data-theme="light"] body::after {
       background:
@@ -275,6 +279,7 @@
     }
     [data-theme="light"] .left-panel {
       background: var(--sidebar-bg);
+      backdrop-filter: blur(24px);
     }
     [data-theme="light"] .session-filter-search {
       background-color: var(--bg-soft);
@@ -306,16 +311,13 @@
       background: var(--btn-subtle-bg);
     }
     [data-theme="light"] .msg.assistant .msg-body {
-      background: var(--bg-solid);
+      background: var(--assistant-bg);
       border-color: var(--border);
       box-shadow: var(--shadow-msg);
     }
     [data-theme="light"] .msg.user .msg-body {
       background: var(--user-bg);
       box-shadow: var(--shadow-msg);
-    }
-    [data-theme="light"] .input-area {
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
     [data-theme="light"] .msg.assistant .msg-body:hover,
     [data-theme="light"] .msg.user .msg-body:hover {
@@ -352,7 +354,7 @@
       background: rgba(15, 23, 42, 0.06);
     }
     [data-theme="light"] .catalog-nav button.active .count {
-      background: rgba(59, 111, 245, 0.18);
+      background: rgba(91, 140, 255, 0.18);
     }
     [data-theme="light"] .source-badge {
       background: rgba(15, 23, 42, 0.04);
@@ -562,7 +564,7 @@
       pointer-events: none;
     }
     body:not(.sidebar-collapsed) .topbar-brand {
-      grid-column: 2;
+      grid-column: 2 / -1;
       justify-content: center;
     }
     .topbar-brand .brand {
@@ -799,7 +801,7 @@
       min-height: 0;
       min-width: 0;
       z-index: 2;
-      background: var(--bg-solid);
+      background: var(--workspace-bg);
       transition: grid-template-columns 300ms var(--ease-spring);
     }
     body:not(.sidebar-collapsed) .main {
@@ -940,7 +942,7 @@
       grid-row: 1 / 3;
       border-right: 1px solid var(--border);
       background: var(--sidebar-bg);
-      backdrop-filter: none;
+      backdrop-filter: blur(24px);
       display: flex;
       flex-direction: column;
       min-height: 0;
@@ -1149,7 +1151,7 @@
         border-color 180ms var(--ease-standard);
     }
     .session-item:hover {
-      background: var(--cap-bg-hover);
+      background: var(--bg-hover);
       transform: translateX(2px);
     }
     .session-item.active {
@@ -1333,7 +1335,7 @@
       flex-shrink: 0;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
       gap: 12px;
       height: 24px;
       padding: 0 24px;
@@ -1344,9 +1346,15 @@
       background: var(--owner-bar-bg);
     }
     .dingtalk-owner-bar[hidden] { display: none; }
+    .owner-bar-main {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      max-width: 100%;
+    }
     .owner-bar-label {
       min-width: 0;
-      flex: 1;
       line-height: 1.45;
       white-space: nowrap;
       overflow: hidden;
@@ -1368,14 +1376,12 @@
     .owner-bar-meta {
       color: var(--owner-bar-meta);
       font-weight: 400;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .owner-bar-actions {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      flex-shrink: 0;
-    }
+    .owner-bar-meta:empty { display: none; }
     .owner-bar-filter-btn {
       width: 20px;
       height: 20px;
@@ -1388,13 +1394,11 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
       opacity: 1;
       transition: background 160ms ease, border-color 160ms ease, color 160ms ease, opacity 160ms ease;
     }
     .owner-bar-filter-btn[hidden] {
-      display: none;
-    }
-    .owner-bar-actions[hidden] {
       display: none;
     }
     .owner-bar-filter-btn:hover {
@@ -1500,7 +1504,7 @@
       grid-column: 1;
       grid-row: 1;
       display: flex; flex-direction: column; min-height: 0; min-width: 0;
-      background: var(--bg-solid);
+      background: var(--workspace-bg);
     }
     body.catalog-open .chat-area {
       border-top-right-radius: var(--sidebar-divider-radius, 14px);
@@ -1513,7 +1517,7 @@
       min-height: 0;
       display: flex;
       flex-direction: column;
-      background: var(--bg-solid);
+      background: var(--workspace-bg);
     }
     .messages {
       flex: 1; overflow-y: auto;
@@ -2012,7 +2016,9 @@
     }
     .input-area {
       padding: 20px var(--chat-gutter) 26px;
-      background: var(--bg-solid);
+      border-top: none;
+      background: var(--input-area-bg);
+      backdrop-filter: blur(18px);
       overflow: visible;
     }
     .input-stack {
@@ -3723,8 +3729,9 @@
   <div class="main">
     <section class="chat-area">
       <div class="dingtalk-owner-bar" id="dingtalk-owner-bar" hidden>
-        <span class="owner-bar-label" id="owner-bar-label"></span>
-        <div class="owner-bar-actions">
+        <div class="owner-bar-main">
+          <span class="owner-bar-label" id="owner-bar-label"></span>
+          <span class="owner-bar-meta" id="owner-bar-meta"></span>
           <button type="button" class="owner-bar-filter-btn" id="btn-session-collaborators" title="共同对话 · 选择参与人员" hidden aria-label="选择共同对话人员">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M4 6h16"/>
@@ -6401,31 +6408,27 @@
 
     function syncCollaboratorFilterVisibility(show) {
       const filterBtn = document.getElementById('btn-session-collaborators');
-      const actionsEl = document.querySelector('#dingtalk-owner-bar .owner-bar-actions');
-      const visible = !!show;
-      if (filterBtn) filterBtn.hidden = !visible;
-      if (actionsEl) actionsEl.hidden = !visible;
+      if (filterBtn) filterBtn.hidden = !show;
     }
 
-    function buildOwnerBarLabelHtml(kind, owner, meta = '') {
+    function buildOwnerBarLabelHtml(kind, owner) {
       let html = `<span class="owner-bar-kind">${escapeHtml(kind)}</span>`;
       html += `<span class="owner-bar-sep"> · </span>`;
       html += `<span class="owner-bar-name">${escapeHtml(owner)}</span>`;
-      if (meta) {
-        html += `<span class="owner-bar-meta">${escapeHtml(meta)}</span>`;
-      }
       return html;
     }
 
     function updateDingtalkOwnerBar() {
       const bar = document.getElementById('dingtalk-owner-bar');
       const labelEl = document.getElementById('owner-bar-label');
+      const metaEl = document.getElementById('owner-bar-meta');
       if (!bar || !labelEl) return;
       const item = sessionsCache.find(s => s.id === currentSessionId);
       const owner = sessionOwnerName(item);
       if (item?.source === 'dingtalk' && owner) {
         bar.hidden = false;
         labelEl.innerHTML = buildOwnerBarLabelHtml('钉钉会话', owner);
+        if (metaEl) metaEl.textContent = '';
         syncCollaboratorFilterVisibility(false);
       } else if (item?.source === 'web' && owner) {
         bar.hidden = false;
@@ -6440,11 +6443,13 @@
         } else if (isSessionReadOnly(item)) {
           meta = '（仅查看）';
         }
-        labelEl.innerHTML = buildOwnerBarLabelHtml('网页会话', owner, meta);
+        labelEl.innerHTML = buildOwnerBarLabelHtml('网页会话', owner);
+        if (metaEl) metaEl.textContent = meta;
         syncCollaboratorFilterVisibility(isOwnWebSession(item));
       } else {
         bar.hidden = true;
         labelEl.innerHTML = '';
+        if (metaEl) metaEl.textContent = '';
         syncCollaboratorFilterVisibility(false);
       }
     }
@@ -7281,12 +7286,100 @@
       }
     }
 
+    function emptyFeatureEmbedSolidBg() {
+      const viewport = document.querySelector('.empty-feature-viewport');
+      const source = viewport || document.documentElement;
+      const bg = getComputedStyle(source).getPropertyValue('--bg-solid').trim();
+      return bg || '#151923';
+    }
+
+    const EMPTY_FEATURE_EMBED_SOLID_SELECTORS = [
+      'body.kn-embed #stage',
+      'body.kn-embed .feat-demo',
+      'body.kn-embed .feat-demo:has(.mock-app-body)',
+      'body.kn-embed .feat-demo .mock-body',
+      'body.kn-embed .mock-ap',
+      'body.kn-embed .mock-ap-column',
+      'body.kn-embed .mock-tp-body',
+      'body.kn-embed .mock-so-body',
+      'body.kn-embed .mock-rm-body',
+      'body.kn-embed .mock-ea-body',
+      'body.kn-embed .mock-rr-body',
+      'body.kn-embed .mock-dt-body',
+      'body.kn-embed .mock-iso-body',
+      'body.kn-embed .mock-motion-body',
+      'body.kn-embed .mock-layout-body',
+      'body.kn-embed .mock-catalog-body',
+      'body.kn-embed .mock-co-body',
+      'body.kn-embed .mock-pin-body',
+      'body.kn-embed .mock-svc-body',
+      'body.kn-embed .mock-egg-body',
+      'body.kn-embed .mock-pk-body',
+      'body.kn-embed .mock-reg-body',
+      'body.kn-embed .mock-usage-body',
+      'body.kn-embed .mock-fae-body',
+      'body.kn-embed .mock-wf-body',
+      'body.kn-embed .mock-mr-body',
+      'body.kn-embed .mock-bm-body',
+      'body.kn-embed .mock-sb-body',
+      'body.kn-embed .mock-map-center',
+      'body.kn-embed .mock-main',
+      'body.kn-embed .mock-tp-layout',
+      'body.kn-embed .mock-tp-chat',
+      'body.kn-embed .mock-so-layout',
+      'body.kn-embed .mock-so-chat',
+      'body.kn-embed .mock-rm-layout',
+      'body.kn-embed .mock-cr-layout',
+      'body.kn-embed .mock-cr-chat',
+      'body.kn-embed .mock-rr-layout',
+      'body.kn-embed .mock-rr-chat',
+      'body.kn-embed .mock-bm-chat',
+      'body.kn-embed .mock-bm-tabbar',
+      'body.kn-embed .mock-ab-app',
+    ].join(',\n');
+
+    function buildEmptyFeatureEmbedSolidCss(bg) {
+      return `
+        html.kn-embed, body.kn-embed {
+          --kn-embed-bg: ${bg} !important;
+          --mock-page-bg: ${bg} !important;
+          --mock-page-gradient: ${bg} !important;
+          --mock-workspace-bg: ${bg} !important;
+          background: ${bg} !important;
+        }
+        ${EMPTY_FEATURE_EMBED_SOLID_SELECTORS} {
+          background: ${bg} !important;
+        }
+        body.kn-embed .mock-app[data-theme="dark"] { --ma-bg: ${bg} !important; }
+        body.kn-embed .mock-app[data-theme="light"] { --ma-bg: #eef2f8 !important; }
+      `;
+    }
+
+    function applyEmptyFeatureEmbedSolidBg(frame) {
+      try {
+        const doc = frame?.contentDocument;
+        if (!doc?.body?.classList.contains('kn-embed')) return;
+        const bg = emptyFeatureEmbedSolidBg();
+        let style = doc.getElementById('chat-empty-embed-solid');
+        if (!style) {
+          style = doc.createElement('style');
+          style.id = 'chat-empty-embed-solid';
+          doc.head.appendChild(style);
+        }
+        style.textContent = buildEmptyFeatureEmbedSolidCss(bg);
+      } catch (_) {
+        /* iframe 未就绪时忽略 */
+      }
+    }
+
     function mountFeatureDemoCarousel(root, demos, rotateMs, startIdx) {
       stopFeatureDemoCarousel();
       if (!root || !demos.length) return;
       const captionTitle = root.querySelector('.empty-feature-title');
       const frame = root.querySelector('.empty-feature-frame');
       if (!frame || !captionTitle) return;
+
+      frame.addEventListener('load', () => applyEmptyFeatureEmbedSolidBg(frame));
 
       const initialIdx = Number.isFinite(startIdx)
         ? startIdx

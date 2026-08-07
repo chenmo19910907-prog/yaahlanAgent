@@ -1,0 +1,29 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-room-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "long ts=System.currentTimeMillis()-6L*86400000L; context.getBean(\"roomProfileDao\").updateRoomOwnerActiveTime(\"43412561\", ts); context.getBean(\"roomProfileDao\").addRoomToDeductCandidates(\"43412561\", ts); context.getBean(\"roomActiveValueDeductTask\").reduceRoomActiveValue(); return context.getBean(\"roomProfileDao\").getRoomActiveValue(\"43412561\");",
+      "json": "",
+      "type": "string",
+      "value": "long ts=System.currentTimeMillis()-6L*86400000L; context.getBean(\"roomProfileDao\").updateRoomOwnerActiveTime(\"43412561\", ts); context.getBean(\"roomProfileDao\").addRoomToDeductCandidates(\"43412561\", ts); context.getBean(\"roomActiveValueDeductTask\").reduceRoomActiveValue(); return context.getBean(\"roomProfileDao\").getRoomActiveValue(\"43412561\");"
+    }
+  ],
+  "settings": {
+    "time": "60000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad"
+}
