@@ -73,7 +73,8 @@
     "dingtalk-sync",
     "stream-output",
     "catalog-onboard",
-    "reply-mode"
+    "reply-mode",
+    "message-share"
   ],
   "emptyIntro": {
     "tagline": "",

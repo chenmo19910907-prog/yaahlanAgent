@@ -61,6 +61,17 @@ def test_duration_footer() -> None:
             assert "本次耗时 45秒" in body
 
 
+def test_strip_duration_footer() -> None:
+    from progress_message import strip_duration_footer
+
+    body = strip_duration_footer(
+        "查询完成。\n\n⏱ 本次耗时 42秒（预估约 45秒：同类任务）",
+    )
+    assert body == "查询完成。"
+    assert strip_duration_footer("仅正文") == "仅正文"
+    assert strip_duration_footer("") == ""
+
+
 def test_heartbeat_elapsed_only() -> None:
     session = TaskSession()
     with patch("task_session.time.monotonic", side_effect=[1000.0, 1150.0]):
@@ -96,6 +107,8 @@ def main() -> int:
     print("[OK] test_queue_message")
     test_duration_footer()
     print("[OK] test_duration_footer")
+    test_strip_duration_footer()
+    print("[OK] test_strip_duration_footer")
     test_heartbeat_elapsed_only()
     print("[OK] test_heartbeat_elapsed_only")
     test_interrupted_task_has_no_duration_footer()

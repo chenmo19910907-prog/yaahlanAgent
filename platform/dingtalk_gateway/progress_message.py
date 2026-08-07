@@ -229,6 +229,16 @@ def append_duration_footer(
     return f"{body}\n\n{footer}"
 
 
+def strip_duration_footer(message: str) -> str:
+    """移除文末「⏱ 本次耗时 …」尾注（分享等场景不展示耗时）。"""
+    lines = (message or "").replace("\r\n", "\n").split("\n")
+    while lines and lines[-1].strip().startswith("⏱ 本次耗时"):
+        lines.pop()
+    while lines and not lines[-1].strip():
+        lines.pop()
+    return "\n".join(lines).rstrip()
+
+
 def _clamp_heartbeat_seconds(value: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, value))
 

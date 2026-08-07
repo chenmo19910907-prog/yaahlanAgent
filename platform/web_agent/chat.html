@@ -1741,6 +1741,67 @@
     .msg.assistant .msg-body {
       background: var(--assistant-bg); border: 1px solid var(--border);
     }
+    .msg.assistant .msg-body-wrap {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      min-width: 0;
+    }
+    .msg.assistant .msg-body-wrap > .msg-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .msg.assistant .msg-actions {
+      display: flex;
+      flex-shrink: 0;
+      align-self: flex-end;
+    }
+    .msg.assistant.streaming .msg-actions { display: none; }
+    .msg-share-btn {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: var(--muted-soft);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: color 180ms var(--ease-standard), background 180ms var(--ease-standard);
+    }
+    .msg-share-btn svg {
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
+      flex-shrink: 0;
+    }
+    .msg-share-btn:hover {
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+    .msg-share-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .collaborators-item-self {
+      color: var(--muted-soft);
+      font-size: 0.82em;
+    }
+    .collaborators-item-kind {
+      display: inline-flex;
+      align-items: center;
+      margin-left: 8px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      line-height: 1.4;
+      color: var(--accent);
+      background: var(--accent-soft);
+      vertical-align: middle;
+    }
     .msg.assistant.streaming .msg-body {
       overflow: visible;
       max-height: none;
@@ -3842,8 +3903,21 @@
     <button type="button" id="session-context-pin-btn" role="menuitem">置顶</button>
   </div>
 
-  <div class="session-context-menu" id="msg-context-menu" role="menu" hidden>
-    <button type="button" id="msg-context-copy-btn" role="menuitem">复制</button>
+  <div class="collaborators-modal" id="forward-modal" aria-hidden="true">
+    <div class="collaborators-box" role="dialog" aria-labelledby="forward-title">
+      <div class="collaborators-head">
+        <h3 id="forward-title">分享到钉钉</h3>
+        <p>勾选接收人或群聊后点击分享；人员走钉钉私聊，群聊由机器人在群内发送。</p>
+        <input type="search" class="collaborators-search" id="forward-search"
+               placeholder="搜索姓名…" autocomplete="off" aria-label="搜索接收人" />
+        <div class="collaborators-meta" id="forward-meta" aria-live="polite"></div>
+      </div>
+      <div class="collaborators-list" id="forward-list"></div>
+      <div class="collaborators-actions">
+        <button type="button" id="btn-forward-cancel">取消</button>
+        <button type="button" class="primary" id="btn-forward-confirm">分享</button>
+      </div>
+    </div>
   </div>
 
   <div class="collaborators-modal" id="collaborators-modal" aria-hidden="true">
@@ -4292,11 +4366,6 @@
       });
     }
 
-    let messageContextTarget = null;
-    let messageContextBodyClone = null;
-    let messageContextPlainText = '';
-    let messageContextDismissHandler = null;
-
     function toAbsoluteUrl(url) {
       const target = (url || '').trim();
       if (!target || target.startsWith('data:') || target.startsWith('blob:')) return target;
@@ -4333,7 +4402,7 @@
     function normalizeMessageCopyClone(rootEl) {
       if (!rootEl) return null;
       const clone = rootEl.cloneNode(true);
-      clone.querySelectorAll('.run-status').forEach((node) => node.remove());
+      clone.querySelectorAll('.run-status, .msg-actions').forEach((node) => node.remove());
       clone.querySelectorAll('img').forEach((img) => {
         const src = img.getAttribute('src');
         if (src && !src.startsWith('data:') && !src.startsWith('blob:')) {
@@ -4361,6 +4430,57 @@
       if (!url) return `[${label}]`;
       if (url.startsWith('data:') || url.startsWith('blob:')) return `[${label}]`;
       return `[${label}] ${url}`;
+    }
+
+    function shareIconHtml() {
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
+    }
+
+    function setMessageMarkdown(bodyEl, markdown) {
+      if (!bodyEl) return;
+      const md = String(markdown || '').trim();
+      if (md) bodyEl.dataset.markdown = md;
+      else delete bodyEl.dataset.markdown;
+    }
+
+    function stripDurationFooter(text) {
+      const lines = String(text || '').replace(/\r\n/g, '\n').split('\n');
+      while (lines.length && /^\s*⏱\s*本次耗时\s/.test(lines[lines.length - 1])) {
+        lines.pop();
+      }
+      while (lines.length && !lines[lines.length - 1].trim()) {
+        lines.pop();
+      }
+      return lines.join('\n').trim();
+    }
+
+    function getMessageMarkdown(bodyEl) {
+      if (!bodyEl) return '';
+      const stored = (bodyEl.dataset.markdown || '').trim();
+      if (stored) return stripDurationFooter(stored);
+      return stripDurationFooter(extractMessagePlainText(bodyEl));
+    }
+
+    function findPrecedingUserQuestion(assistantMsgEl) {
+      if (!assistantMsgEl) return '';
+      let prev = assistantMsgEl.previousElementSibling;
+      while (prev) {
+        if (prev.classList.contains('user')) {
+          const bodyEl = prev.querySelector('.msg-body');
+          return bodyEl ? extractMessagePlainText(bodyEl) : '';
+        }
+        if (prev.classList.contains('assistant')) break;
+        prev = prev.previousElementSibling;
+      }
+      return '';
+    }
+
+    function setAssistantMessageBody(msgEl, markdown) {
+      const bodyEl = msgEl?.querySelector('.msg-body');
+      if (!bodyEl) return;
+      const md = String(markdown || '').trim();
+      bodyEl.innerHTML = renderMarkdown(md || '（无回复）');
+      setMessageMarkdown(bodyEl, md);
     }
 
     function extractMessagePlainText(bodyEl) {
@@ -4527,104 +4647,56 @@
       return true;
     }
 
-    function hideMessageContextMenu() {
-      const menu = document.getElementById('msg-context-menu');
-      if (menu && !menu.hidden && typeof setDropdownAnimated === 'function') {
-        setDropdownAnimated(menu, false).then(() => { menu.hidden = true; });
-      } else if (menu) {
-        menu.hidden = true;
-      }
-      messageContextTarget = null;
-      messageContextBodyClone = null;
-      messageContextPlainText = '';
-      detachMessageContextDismiss();
+    function unwrapAssistantMessageBody(msgEl) {
+      const wrap = msgEl?.querySelector(':scope > .msg-body-wrap');
+      if (!wrap) return;
+      const bodyEl = wrap.querySelector(':scope > .msg-body');
+      if (bodyEl) wrap.parentElement.insertBefore(bodyEl, wrap);
+      wrap.remove();
     }
 
-    function ensureMessageContextMenuPortal() {
-      const menu = document.getElementById('msg-context-menu');
-      if (menu && menu.parentElement !== document.body) {
-        document.body.appendChild(menu);
-      }
-      return menu;
+    function ensureAssistantMessageBodyWrap(bodyEl) {
+      if (!bodyEl) return null;
+      const parent = bodyEl.parentElement;
+      if (parent?.classList.contains('msg-body-wrap')) return parent;
+      const wrap = document.createElement('div');
+      wrap.className = 'msg-body-wrap';
+      parent.insertBefore(wrap, bodyEl);
+      wrap.appendChild(bodyEl);
+      return wrap;
     }
 
-    function positionMessageContextMenu(clientX, clientY) {
-      const menu = ensureMessageContextMenuPortal();
-      if (!menu) return;
-      menu.classList.remove('dropdown-opening', 'dropdown-closing');
-      menu.hidden = false;
-      menu.style.left = '0px';
-      menu.style.top = '0px';
-      void menu.offsetWidth;
-      const rect = menu.getBoundingClientRect();
-      const margin = 8;
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      let left = clientX;
-      let top = clientY;
-      if (left + rect.width + margin > vw) left = clientX - rect.width;
-      if (top + rect.height + margin > vh) top = clientY - rect.height;
-      left = Math.min(Math.max(margin, left), Math.max(margin, vw - rect.width - margin));
-      top = Math.min(Math.max(margin, top), Math.max(margin, vh - rect.height - margin));
-      menu.style.left = `${left}px`;
-      menu.style.top = `${top}px`;
-      if (typeof setDropdownAnimated === 'function') setDropdownAnimated(menu, true);
+    function removeAssistantShareButton(msgEl) {
+      msgEl?.querySelector('.msg-actions')?.remove();
+      unwrapAssistantMessageBody(msgEl);
     }
 
-    function detachMessageContextDismiss() {
-      if (!messageContextDismissHandler) return;
-      const handler = messageContextDismissHandler;
-      document.removeEventListener('pointerdown', handler, true);
-      document.removeEventListener('click', handler, true);
-      document.removeEventListener('keydown', handler, true);
-      getMessagesEl()?.removeEventListener('scroll', handler, true);
-      messageContextDismissHandler = null;
-    }
-
-    function showMessageContextMenu(msgEl, clientX, clientY) {
-      hideSessionContextMenu();
-      const menu = document.getElementById('msg-context-menu');
-      const copyBtn = document.getElementById('msg-context-copy-btn');
-      if (!menu || !copyBtn || !msgEl) return;
-      messageContextTarget = msgEl;
+    function ensureAssistantShareButton(msgEl) {
+      if (!msgEl || !msgEl.classList.contains('assistant')) return;
+      if (msgEl.classList.contains('streaming')) return;
       const bodyEl = msgEl.querySelector('.msg-body');
-      messageContextBodyClone = bodyEl ? bodyEl.cloneNode(true) : null;
-      messageContextPlainText = bodyEl ? extractMessagePlainText(bodyEl) : '';
-      if (!messageContextPlainText && bodyEl) {
-        messageContextPlainText = (bodyEl.innerText || bodyEl.textContent || '').replace(/\s+/g, ' ').trim();
+      if (!bodyEl || !messageBodyHasCopyContent(bodyEl)) {
+        removeAssistantShareButton(msgEl);
+        return;
       }
-      copyBtn.textContent = '复制';
-      copyBtn.classList.remove('copied');
-      positionMessageContextMenu(clientX, clientY);
-      const handler = (event) => {
-        if (menu.hidden) return;
-        if (event.type === 'keydown') {
-          if (event.key === 'Escape') hideMessageContextMenu();
-          return;
-        }
-        if (menu.contains(event.target)) return;
-        if (messageContextTarget?.contains(event.target)) return;
-        hideMessageContextMenu();
-      };
-      messageContextDismissHandler = handler;
-      document.addEventListener('pointerdown', handler, true);
-      document.addEventListener('click', handler, true);
-      document.addEventListener('keydown', handler, true);
-      getMessagesEl()?.addEventListener('scroll', handler, true);
+      if (msgEl.querySelector('.msg-share-btn')) return;
+      const wrap = ensureAssistantMessageBodyWrap(bodyEl);
+      const actions = document.createElement('div');
+      actions.className = 'msg-actions';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'msg-share-btn';
+      btn.title = '分享到钉钉';
+      btn.setAttribute('aria-label', '分享到钉钉');
+      btn.innerHTML = shareIconHtml();
+      actions.appendChild(btn);
+      wrap.appendChild(actions);
     }
 
-    function setupMessageCopyContextMenu() {
+    function setupMessageCopyHandler() {
       const container = getMessagesEl();
       if (!container || container.dataset.msgCopyBound === '1') return;
       container.dataset.msgCopyBound = '1';
-      container.addEventListener('contextmenu', (event) => {
-        const msgEl = event.target.closest('.msg');
-        if (!msgEl || event.target.closest('.msg-file-link')) return;
-        event.preventDefault();
-        event.stopPropagation();
-        hideMessageContextMenu();
-        showMessageContextMenu(msgEl, event.clientX, event.clientY);
-      });
       container.addEventListener('copy', (event) => {
         const bodyEl = event.target.closest('.msg-body');
         if (!bodyEl) return;
@@ -4646,6 +4718,32 @@
           event.clipboardData.setData('text/plain', plainText);
           event.clipboardData.setData('text/html', html);
         }
+      });
+    }
+
+    function setupMessageShareActions() {
+      const container = getMessagesEl();
+      if (!container || container.dataset.msgShareBound === '1') return;
+      container.dataset.msgShareBound = '1';
+      container.addEventListener('click', async (event) => {
+        const btn = event.target.closest('.msg-share-btn');
+        if (!btn) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const msgEl = btn.closest('.msg.assistant');
+        if (!msgEl) return;
+        const bodyEl = msgEl.querySelector('.msg-body');
+        const markdown = bodyEl ? getMessageMarkdown(bodyEl) : '';
+        if (!markdown) {
+          alert('暂无内容可分享');
+          return;
+        }
+        if (isGuestMode()) {
+          alert('请先登录后再分享消息');
+          return;
+        }
+        const question = findPrecedingUserQuestion(msgEl);
+        await openForwardModal(markdown, 'assistant', question);
       });
     }
 
@@ -5790,7 +5888,11 @@
 
     function ensureStreamingShell(sessionId) {
       const run = activeRuns.get(sessionId);
-      if (run?.shellEl) return run.shellEl;
+      if (run?.shellEl) {
+        removeAssistantShareButton(run.shellEl);
+        run.shellEl.classList.add('streaming');
+        return run.shellEl;
+      }
       const container = document.getElementById('messages');
       if (container.querySelector('.empty-state')) dismissEmptyState(container);
       document.getElementById('typing-indicator')?.remove();
@@ -6046,7 +6148,6 @@
 
     function showSessionContextMenu(session, clientX, clientY, anchorEl) {
       if (isGuestMode()) return;
-      hideMessageContextMenu();
       const menu = document.getElementById('session-context-menu');
       const pinBtn = document.getElementById('session-context-pin-btn');
       if (!menu || !pinBtn || !session?.id) return;
@@ -6362,34 +6463,216 @@
       if (target) startSessionTitleEdit(target, anchorEl);
     });
 
-    document.getElementById('msg-context-copy-btn')?.addEventListener('click', async (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      const msgEl = messageContextTarget;
-      const bodyClone = messageContextBodyClone;
-      const plainSnapshot = messageContextPlainText;
-      const copyBtn = document.getElementById('msg-context-copy-btn');
-      if (!msgEl && !bodyClone) {
-        hideMessageContextMenu();
+    let forwardDraftIds = new Set();
+    let forwardSaving = false;
+    let forwardPendingText = '';
+    let forwardPendingRole = '';
+    let forwardPendingQuestion = '';
+
+    function forwardSearchText() {
+      const input = document.getElementById('forward-search');
+      return (input?.value || '').trim().toLowerCase();
+    }
+
+    function forwardDraftKey(kind, id) {
+      return `${kind}:${(id || '').trim()}`;
+    }
+
+    function parseForwardDraftKey(key) {
+      const raw = String(key || '').trim();
+      const idx = raw.indexOf(':');
+      if (idx <= 0) return { kind: 'staff', id: raw };
+      return { kind: raw.slice(0, idx), id: raw.slice(idx + 1) };
+    }
+
+    function buildShareableForwardTargets() {
+      const groups = shareableWebGroups.map(group => ({
+        kind: 'group',
+        id: (group.conversationId || '').trim(),
+        displayName: (group.displayName || '').trim(),
+      })).filter(item => item.id && item.displayName);
+      const users = shareableWebUsers.map(user => ({
+        kind: 'staff',
+        id: (user.staffId || '').trim(),
+        displayName: (user.displayName || '未知用户').trim(),
+      })).filter(item => item.id);
+      return [...groups, ...users];
+    }
+
+    function filterForwardTargets(targets, query) {
+      if (!query) return targets;
+      const needle = query.trim().toLowerCase();
+      return targets.filter(item => (item.displayName || '').trim().toLowerCase().includes(needle));
+    }
+
+    function updateForwardMeta(total, shown, query) {
+      const meta = document.getElementById('forward-meta');
+      if (!meta) return;
+      if (!total) {
+        meta.textContent = '';
         return;
       }
+      const selected = forwardDraftIds.size;
+      if (query) {
+        meta.textContent = `显示 ${shown} / 共 ${total} 项${selected ? ` · 已选 ${selected} 项` : ''}`;
+      } else {
+        meta.textContent = `共 ${total} 项${selected ? ` · 已选 ${selected} 项` : ''}`;
+      }
+    }
+
+    function forwardTargetDisplayName(target) {
+      const raw = (target.displayName || '').trim();
+      if (target.kind === 'group') return raw || '未知群聊';
+      return publicDisplayName(raw || '未知用户');
+    }
+
+    function showForwardListLoading() {
+      const list = document.getElementById('forward-list');
+      if (!list) return;
+      list.innerHTML = '<div class="collaborators-empty">加载中…</div>';
+      updateForwardMeta(0, 0, '');
+    }
+
+    function renderForwardList() {
+      const list = document.getElementById('forward-list');
+      if (!list) return;
+      const query = forwardSearchText();
+      const targets = buildShareableForwardTargets();
+      if (!targets.length) {
+        list.innerHTML = '<div class="collaborators-empty">暂无可选人员或群聊（需先有同事登录网页 Agent、同步钉钉会话或机器人群内活动）</div>';
+        updateForwardMeta(0, 0, query);
+        return;
+      }
+      const filtered = filterForwardTargets(targets, query);
+      updateForwardMeta(targets.length, filtered.length, query);
+      if (!filtered.length) {
+        list.innerHTML = '<div class="collaborators-empty">未找到匹配人员或群聊</div>';
+        return;
+      }
+      const viewerId = (currentAuthUser?.staffId || '').trim();
+      list.innerHTML = filtered.map(target => {
+        const draftKey = forwardDraftKey(target.kind, target.id);
+        const name = escapeHtml(forwardTargetDisplayName(target));
+        const kindTag = target.kind === 'group'
+          ? ' <span class="collaborators-item-kind">群聊</span>'
+          : '';
+        const selfTag = target.kind === 'staff' && target.id && target.id === viewerId
+          ? ' <span class="collaborators-item-self">（我）</span>'
+          : '';
+        const checked = forwardDraftIds.has(draftKey) ? ' checked' : '';
+        return `
+          <label class="collaborators-item">
+            <input type="checkbox" data-target-kind="${escapeHtml(target.kind)}" data-target-id="${escapeHtml(target.id)}"${checked} />
+            <span class="collaborators-item-main">
+              <span class="collaborators-item-name">${name}${kindTag}${selfTag}</span>
+            </span>
+          </label>`;
+      }).join('');
+      list.querySelectorAll('input[type="checkbox"]').forEach(input => {
+        input.addEventListener('change', () => {
+          const kind = (input.dataset.targetKind || 'staff').trim();
+          const targetId = (input.dataset.targetId || '').trim();
+          if (!targetId) return;
+          const draftKey = forwardDraftKey(kind, targetId);
+          if (input.checked) forwardDraftIds.add(draftKey);
+          else forwardDraftIds.delete(draftKey);
+          updateForwardMeta(
+            buildShareableForwardTargets().length,
+            filterForwardTargets(buildShareableForwardTargets(), forwardSearchText()).length,
+            forwardSearchText(),
+          );
+        });
+      });
+    }
+
+    async function setForwardModalOpen(open) {
+      const modal = document.getElementById('forward-modal');
+      if (!modal) return;
+      if (!open) {
+        if (modal.classList.contains('open')) {
+          await animateOverlayClose(modal);
+          modal.classList.remove('open');
+        }
+        modal.setAttribute('aria-hidden', 'true');
+        forwardPendingText = '';
+        forwardPendingRole = '';
+        forwardPendingQuestion = '';
+        forwardDraftIds = new Set();
+        return;
+      }
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      document.getElementById('forward-search')?.focus();
+    }
+
+    async function openForwardModal(text, role, questionText = '') {
+      forwardPendingText = (text || '').trim();
+      forwardPendingRole = (role || '').trim();
+      forwardPendingQuestion = (questionText || '').trim();
+      forwardDraftIds = new Set();
+      const searchInput = document.getElementById('forward-search');
+      if (searchInput) searchInput.value = '';
+      const hasCachedTargets = shareableWebUsers.length > 0 || shareableWebGroups.length > 0;
+      if (hasCachedTargets) renderForwardList();
+      else showForwardListLoading();
+      void setForwardModalOpen(true);
+      await loadShareableWebUsers();
+      renderForwardList();
+    }
+
+    async function submitMessageForward() {
+      if (forwardSaving) return;
+      if (!forwardPendingText) {
+        alert('暂无内容可分享');
+        await setForwardModalOpen(false);
+        return;
+      }
+      if (!forwardDraftIds.size) {
+        alert('请至少选择一位接收人或群聊');
+        return;
+      }
+      const recipientStaffIds = [];
+      const recipientGroupIds = [];
+      forwardDraftIds.forEach((draftKey) => {
+        const parsed = parseForwardDraftKey(draftKey);
+        if (parsed.kind === 'group' && parsed.id) recipientGroupIds.push(parsed.id);
+        else if (parsed.id) recipientStaffIds.push(parsed.id);
+      });
+      forwardSaving = true;
+      const confirmBtn = document.getElementById('btn-forward-confirm');
+      if (confirmBtn) confirmBtn.disabled = true;
       try {
-        const ok = await copyMessageContent(msgEl, bodyClone, plainSnapshot);
-        if (!ok) {
-          const hasContent = !!(plainSnapshot || bodyClone || msgEl?.querySelector('.msg-body'));
-          alert(hasContent ? '复制失败，请检查浏览器剪贴板权限后重试' : '暂无内容可复制');
+        const res = await fetch('/api/messages/forward', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: forwardPendingText,
+            message_role: forwardPendingRole,
+            question_text: forwardPendingQuestion,
+            recipient_staff_ids: recipientStaffIds,
+            recipient_group_ids: recipientGroupIds,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          alert(data.error || '分享失败');
           return;
         }
-        if (copyBtn) {
-          copyBtn.textContent = '已复制';
-          copyBtn.classList.add('copied');
+        const sentCount = Number(data.sent_count) || 0;
+        const failedCount = Number(data.failed_count) || 0;
+        if (failedCount > 0) {
+          showWebToast(`已分享 ${sentCount} 项，${failedCount} 项失败`, { durationMs: 4200 });
+        } else {
+          showWebToast(`已分享至 ${sentCount} 个目标`);
         }
-        setTimeout(() => hideMessageContextMenu(), 420);
-      } catch {
-        alert('复制失败，请稍后重试');
-        hideMessageContextMenu();
+        await setForwardModalOpen(false);
+      } catch (_) {
+        alert('分享失败，请稍后重试');
+      } finally {
+        forwardSaving = false;
+        if (confirmBtn) confirmBtn.disabled = false;
       }
-    });
+    }
 
     function readonlyPlaceholder(item) {
       if (item?.source === 'dingtalk') return DINGTALK_READONLY_PLACEHOLDER;
@@ -6455,6 +6738,9 @@
     }
 
     let selectableWebUsers = [];
+    let shareableWebUsers = [];
+    let shareableWebGroups = [];
+    let shareableWebUsersLoadPromise = null;
     let collaboratorDraftIds = new Set();
     let collaboratorsSaving = false;
 
@@ -6468,6 +6754,28 @@
       } catch (_) {
         return [];
       }
+    }
+
+    async function loadShareableWebUsers(options = {}) {
+      const force = options.force === true;
+      if (!force && shareableWebUsersLoadPromise) {
+        return shareableWebUsersLoadPromise;
+      }
+      shareableWebUsersLoadPromise = (async () => {
+        try {
+          const res = await fetch('/api/web-users?include_self=1');
+          if (!res.ok) return [];
+          const data = await res.json();
+          shareableWebUsers = Array.isArray(data.users) ? data.users : [];
+          shareableWebGroups = Array.isArray(data.groups) ? data.groups : [];
+          return shareableWebUsers;
+        } catch (_) {
+          return [];
+        } finally {
+          shareableWebUsersLoadPromise = null;
+        }
+      })();
+      return shareableWebUsersLoadPromise;
     }
 
     function collaboratorSearchText() {
@@ -6712,7 +7020,8 @@
       const run = activeRuns.get(sessionId);
       if (run) run.shellEl = shell;
       clearRunStatus(sessionId);
-      shell.querySelector('.msg-body').innerHTML = renderMarkdown(body);
+      setAssistantMessageBody(shell, body);
+      ensureAssistantShareButton(shell);
       scrollMessagesToBottom({ force: true });
     }
 
@@ -7303,6 +7612,7 @@
       'body.kn-embed .mock-tp-body',
       'body.kn-embed .mock-so-body',
       'body.kn-embed .mock-rm-body',
+      'body.kn-embed .mock-msf-body',
       'body.kn-embed .mock-ea-body',
       'body.kn-embed .mock-rr-body',
       'body.kn-embed .mock-dt-body',
@@ -7556,6 +7866,10 @@
       el.innerHTML = `
         ${buildMsgLabelHtml(label, timestamp || new Date().toISOString())}
         <div class="msg-body">${bodyHtml || attachmentHtml}</div>`;
+      if (role === 'assistant') {
+        setMessageMarkdown(el.querySelector('.msg-body'), text);
+        ensureAssistantShareButton(el);
+      }
       container.appendChild(el);
       bindMessagesMediaLoadScroll(container);
       if (scroll) scheduleScrollMessagesToBottom({ force: true });
@@ -7686,10 +8000,11 @@
               }
               clearRunStatus(sessionId);
               if (data.text) {
-                assistantEl.querySelector('.msg-body').innerHTML = renderMarkdown(data.text);
+                setAssistantMessageBody(assistantEl, data.text);
               } else if (!assistantEl.querySelector('.msg-body').innerHTML.trim()) {
-                assistantEl.querySelector('.msg-body').innerHTML = renderMarkdown('（无回复）');
+                setAssistantMessageBody(assistantEl, '（无回复）');
               }
+              ensureAssistantShareButton(assistantEl);
               scrollMessagesToBottom({ force: true });
             }
             handleDingtalkPushResult(data.dingtalk_push);
@@ -7705,7 +8020,8 @@
               }
               clearRunStatus(sessionId);
               const text = appendRetryHint(data.text || `⚠️ ${data.message || 'Agent 执行失败'}`);
-              assistantEl.querySelector('.msg-body').innerHTML = renderMarkdown(text);
+              setAssistantMessageBody(assistantEl, text);
+              ensureAssistantShareButton(assistantEl);
               scrollMessagesToBottom({ force: true });
             }
             es.close();
@@ -7745,6 +8061,8 @@
               if (existing.shellEl) {
                 clearRunStatus(sid);
                 existing.shellEl.querySelector('.msg-body').innerHTML = renderMarkdown(failText);
+                setMessageMarkdown(existing.shellEl.querySelector('.msg-body'), failText);
+                ensureAssistantShareButton(existing.shellEl);
               } else {
                 appendMessage('assistant', failText);
               }
@@ -7809,6 +8127,8 @@
           if (run?.shellEl) {
             clearRunStatus(sid);
             run.shellEl.querySelector('.msg-body').innerHTML = renderMarkdown(failText);
+            setMessageMarkdown(run.shellEl.querySelector('.msg-body'), failText);
+            ensureAssistantShareButton(run.shellEl);
           } else {
             appendMessage('assistant', failText);
           }
@@ -7908,6 +8228,8 @@
           if (run?.shellEl) {
             clearRunStatus(sessionId);
             run.shellEl.querySelector('.msg-body').innerHTML = renderMarkdown(failText);
+            setMessageMarkdown(run.shellEl.querySelector('.msg-body'), failText);
+            ensureAssistantShareButton(run.shellEl);
           } else {
             appendMessage('assistant', failText);
           }
@@ -8431,6 +8753,18 @@
     document.getElementById('collaborators-modal')?.addEventListener('click', (event) => {
       if (event.target.id === 'collaborators-modal') setCollaboratorsModalOpen(false);
     });
+    document.getElementById('btn-forward-cancel')?.addEventListener('click', () => {
+      setForwardModalOpen(false);
+    });
+    document.getElementById('btn-forward-confirm')?.addEventListener('click', () => {
+      submitMessageForward();
+    });
+    document.getElementById('forward-search')?.addEventListener('input', () => {
+      renderForwardList();
+    });
+    document.getElementById('forward-modal')?.addEventListener('click', (event) => {
+      if (event.target.id === 'forward-modal') setForwardModalOpen(false);
+    });
     document.getElementById('message-board-modal')?.addEventListener('click', (event) => {
       if (event.target.id === 'message-board-modal') setMessageBoardOpen(false);
     });
@@ -8622,6 +8956,7 @@
       syncSessionScopeButtonUi();
       updateDingtalkOwnerBar();
       refreshSidebarWidthBounds();
+      if (currentAuthUser) void loadShareableWebUsers();
     }
 
     async function logoutCurrentUser() {
@@ -8682,12 +9017,12 @@
       try {
         mountBrandLogo();
         ensureSessionContextMenuPortal();
-        ensureMessageContextMenuPortal();
         const authData = await ensureAuthSession();
         if (authData) initAuthUI(authData);
         setupInputAttachmentHandlers();
         setupMessageFileDownloads();
-        setupMessageCopyContextMenu();
+        setupMessageCopyHandler();
+        setupMessageShareActions();
         setupMarkdownLinkNewTab();
         setupMessagesScrollTracking();
         initThemeSettings();

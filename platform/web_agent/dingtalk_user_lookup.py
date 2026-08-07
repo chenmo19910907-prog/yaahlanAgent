@@ -19,6 +19,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger("web-agent")
 
 WEB_AGENT_DIR = Path(__file__).resolve().parent
+GATEWAY_DIR = WEB_AGENT_DIR.parent / "dingtalk_gateway"
+NOTIFY_GROUP_PATH = GATEWAY_DIR / "data" / "notify_group.json"
+GROUP_CHATS_PATH = GATEWAY_DIR / "data" / "group_chats.json"
+CONVERSATIONS_INDEX_PATH = GATEWAY_DIR / "data" / "conversations.json"
 NAME_CACHE_PATH = WEB_AGENT_DIR / "data" / "dingtalk_user_names.json"
 ORG_ROSTER_CACHE_PATH = WEB_AGENT_DIR / "data" / "dingtalk_org_roster.json"
 WEB_AUTH_SESSIONS_PATH = WEB_AGENT_DIR / "data" / "web_auth_sessions.json"
@@ -32,6 +36,7 @@ _org_roster_refresh_attempt_at: float = 0.0
 ORG_ROSTER_RETRY_S = 900
 # 共同对话选人列表不展示的系统/占位账号
 _COLLABORATOR_EXCLUDED_DISPLAY_NAMES = frozenset({"未知用户", "测试员"})
+_UNNAMED_GROUP_TITLE_RE = re.compile(r"^钉钉群(?:\s*·.*)?$")
 
 
 def _load_cache() -> dict[str, str]:
@@ -547,6 +552,154 @@ def is_selectable_collaborator(staff_id: str, display_name: str) -> bool:
     return bool(sid)
 
 
+def parse_dingtalk_open_conversation_id(dingtalk_key: str) -> str:
+    """从 conversation_key 解析群 openConversationId；单聊返回空串。"""
+    key = (dingtalk_key or "").strip()
+    if not key or key.startswith("dm:"):
+        return ""
+    marker = ":user:"
+    if marker in key:
+        return key.split(marker, 1)[0].strip()
+    if key.startswith("cid"):
+        return key
+    return ""
+
+
+def is_named_group_title(title: str) -> bool:
+    """群聊是否有真实名称（排除占位「钉钉群」及自动 fallback）。"""
+    name = (title or "").strip()
+    if not name:
+        return False
+    return _UNNAMED_GROUP_TITLE_RE.match(name) is None
+
+
+def _load_group_chat_index() -> dict[str, dict[str, object]]:
+    index: dict[str, dict[str, object]] = {}
+    if GROUP_CHATS_PATH.is_file():
+        try:
+            raw = json.loads(GROUP_CHATS_PATH.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            raw = {}
+        if isinstance(raw, dict):
+            for conv_id, item in raw.items():
+                key = str(conv_id or "").strip()
+                if key and isinstance(item, dict):
+                    index[key] = dict(item)
+    if NOTIFY_GROUP_PATH.is_file():
+        try:
+            notify_raw = json.loads(NOTIFY_GROUP_PATH.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            notify_raw = {}
+        if isinstance(notify_raw, dict):
+            conv_id = str(notify_raw.get("openConversationId") or "").strip()
+            title = str(notify_raw.get("conversationTitle") or "").strip()
+            if conv_id and title:
+                record = dict(index.get(conv_id) or {})
+                record.setdefault("conversationTitle", title)
+                index[conv_id] = record
+    return index
+
+
+def _load_notify_group_titles() -> dict[str, str]:
+    titles: dict[str, str] = {}
+    for conv_id, record in _load_group_chat_index().items():
+        title = str(record.get("conversationTitle") or "").strip()
+        if title:
+            titles[conv_id] = title
+    return titles
+
+
+def _collect_conversation_index_group_ids() -> set[str]:
+    ids: set[str] = set()
+    if not CONVERSATIONS_INDEX_PATH.is_file():
+        return ids
+    try:
+        raw = json.loads(CONVERSATIONS_INDEX_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return ids
+    if not isinstance(raw, dict):
+        return ids
+    for key in raw:
+        conv_id = parse_dingtalk_open_conversation_id(str(key))
+        if conv_id:
+            ids.add(conv_id)
+    return ids
+
+
+def _collect_candidate_group_ids(sessions: list[SessionMeta]) -> list[str]:
+    seen: set[str] = set()
+    ids: list[str] = []
+
+    def add(conversation_id: str) -> None:
+        conv_id = (conversation_id or "").strip()
+        if not conv_id or not conv_id.startswith("cid") or conv_id in seen:
+            return
+        seen.add(conv_id)
+        ids.append(conv_id)
+
+    for conv_id in _load_group_chat_index():
+        add(conv_id)
+    for conv_id in _collect_conversation_index_group_ids():
+        add(conv_id)
+    for meta in sessions:
+        if meta.source != "dingtalk":
+            continue
+        add(parse_dingtalk_open_conversation_id(meta.dingtalk_key))
+    return ids
+
+
+def _group_chat_entry(
+    conversation_id: str,
+    title_hint: str = "",
+    *,
+    index: dict[str, dict[str, object]] | None = None,
+) -> dict[str, str] | None:
+    conv_id = (conversation_id or "").strip()
+    if not conv_id:
+        return None
+    chat_index = index if index is not None else _load_group_chat_index()
+    title = (title_hint or str((chat_index.get(conv_id) or {}).get("conversationTitle") or "")).strip()
+    if not is_named_group_title(title):
+        return None
+    return {
+        "conversationId": conv_id,
+        "displayName": title,
+    }
+
+
+def list_selectable_group_chats(
+    sessions: list[SessionMeta],
+    *,
+    query: str = "",
+) -> list[dict[str, str]]:
+    """汇总可选群聊（过滤无名群，群名保留英文）。"""
+    index = _load_group_chat_index()
+    titles = _load_notify_group_titles()
+    candidate_ids = _collect_candidate_group_ids(sessions)
+    seen: set[str] = set()
+    groups: list[dict[str, str]] = []
+
+    def add_group(conversation_id: str, title_hint: str = "") -> None:
+        conv_id = (conversation_id or "").strip()
+        if not conv_id or conv_id in seen or not conv_id.startswith("cid"):
+            return
+        seen.add(conv_id)
+        hint = (title_hint or titles.get(conv_id) or "").strip()
+        entry = _group_chat_entry(
+            conv_id,
+            hint,
+            index=index,
+        )
+        if entry is not None:
+            groups.append(entry)
+
+    for conv_id in candidate_ids:
+        add_group(conv_id, titles.get(conv_id, ""))
+
+    groups.sort(key=lambda item: (item["displayName"], item["conversationId"]))
+    return filter_staff_users(groups, query)
+
+
 def filter_staff_users(
     users: list[dict[str, str]],
     query: str,
@@ -568,9 +721,10 @@ def list_selectable_staff_users(
     *,
     exclude_staff_id: str = "",
     query: str = "",
+    try_api_for_ascii: bool = True,
 ) -> list[dict[str, str]]:
     """汇总可选人员（会话/登录/留言板/姓名缓存/企业通讯录），按展示名排序。"""
-    known = collect_all_staff_labels(sessions)
+    known = collect_all_staff_labels(sessions, try_api_for_ascii=try_api_for_ascii)
     exclude = (exclude_staff_id or "").strip()
     users: list[dict[str, str]] = []
     seen: set[str] = set()

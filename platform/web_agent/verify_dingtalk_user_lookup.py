@@ -215,6 +215,50 @@ class DingtalkUserLookupTest(unittest.TestCase):
         self.assertEqual(len(filtered), 1)
         self.assertEqual(filtered[0]["displayName"], "张三")
 
+    def test_list_selectable_group_chats(self) -> None:
+        sessions = [
+            SessionMeta(
+                id="s1",
+                title="t",
+                created_at="2026-07-30T05:00:00+00:00",
+                updated_at="2026-07-30T05:00:00+00:00",
+                source="dingtalk",
+                dingtalk_key="cidGroupA==:user:uid_a",
+            ),
+        ]
+        with patch.object(
+            lookup,
+            "_collect_candidate_group_ids",
+            return_value=["cidGroupA==", "cidGroupB==", "cidGroupC=="],
+        ), patch.object(
+            lookup,
+            "_load_group_chat_index",
+            return_value={
+                "cidGroupB==": {"conversationTitle": "测试群 Yaahlan"},
+                "cidGroupA==": {"conversationTitle": "A 群"},
+            },
+        ):
+            groups = lookup.list_selectable_group_chats(sessions)
+        ids = {item["conversationId"] for item in groups}
+        self.assertIn("cidGroupA==", ids)
+        self.assertIn("cidGroupB==", ids)
+        self.assertNotIn("cidGroupC==", ids)
+        titles = {item["conversationId"]: item["displayName"] for item in groups}
+        self.assertEqual(titles["cidGroupB=="], "测试群 Yaahlan")
+
+    def test_is_named_group_title(self) -> None:
+        self.assertTrue(lookup.is_named_group_title("测试群"))
+        self.assertFalse(lookup.is_named_group_title(""))
+        self.assertFalse(lookup.is_named_group_title("钉钉群"))
+        self.assertFalse(lookup.is_named_group_title("钉钉群 · cidABC"))
+
+    def test_parse_dingtalk_open_conversation_id(self) -> None:
+        self.assertEqual(
+            lookup.parse_dingtalk_open_conversation_id("cidABC==:user:123"),
+            "cidABC==",
+        )
+        self.assertEqual(lookup.parse_dingtalk_open_conversation_id("dm:123"), "")
+
     def test_list_selectable_staff_users_excludes_placeholder_accounts(self) -> None:
         sessions: list[SessionMeta] = []
         with patch.object(

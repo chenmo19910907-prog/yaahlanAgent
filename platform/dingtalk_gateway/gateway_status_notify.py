@@ -92,8 +92,44 @@ def resolve_notify_conversation_id() -> str | None:
     return conv_id or None
 
 
+def touch_group_chat_record(incoming: ChatbotMessage) -> None:
+    """收到群消息时记录群标题索引。"""
+    if incoming.conversation_type != "2":
+        return
+    conv_id = (incoming.conversation_id or "").strip()
+    if not conv_id:
+        return
+    title = (incoming.conversation_title or "").strip()
+    if not title:
+        return
+    record = {
+        "conversationTitle": title,
+        "updatedAt": datetime.now(timezone.utc).isoformat(),
+    }
+    group_path = GATEWAY_DIR / "data" / "group_chats.json"
+    group_path.parent.mkdir(parents=True, exist_ok=True)
+    index: dict[str, dict[str, object]] = {}
+    if group_path.is_file():
+        try:
+            raw = json.loads(group_path.read_text(encoding="utf-8"))
+            if isinstance(raw, dict):
+                index = {
+                    str(key): dict(item)
+                    for key, item in raw.items()
+                    if str(key).strip() and isinstance(item, dict)
+                }
+        except (OSError, json.JSONDecodeError):
+            index = {}
+    index[conv_id] = record
+    group_path.write_text(
+        json.dumps(index, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
 def touch_notify_group(incoming: ChatbotMessage) -> None:
     """收到群消息时记住 openConversationId，供启停通知使用。"""
+    touch_group_chat_record(incoming)
     if incoming.conversation_type != "2":
         return
     conv_id = (incoming.conversation_id or "").strip()

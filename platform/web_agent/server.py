@@ -490,7 +490,7 @@ def _load_feature_demos(cfg: dict[str, Any]) -> list[dict[str, str]]:
         return []
     if not isinstance(scenes, list):
         return []
-    demos: list[dict[str, str]] = []
+    by_demo: dict[str, dict[str, str]] = {}
     for scene in scenes:
         if not isinstance(scene, dict):
             continue
@@ -498,16 +498,26 @@ def _load_feature_demos(cfg: dict[str, Any]) -> list[dict[str, str]]:
             continue
         if scene.get("emptyCarousel") is False:
             continue
-        demos.append(
-            {
-                "label": str(scene.get("label") or ""),
-                "title": str(scene.get("title") or ""),
-                "desc": str(scene.get("desc") or ""),
-                "demo": str(scene.get("demo") or ""),
-                "layout": str(scene.get("layout") or ""),
-            }
-        )
-    return demos
+        demo_id = str(scene.get("demo") or "")
+        by_demo[demo_id] = {
+            "label": str(scene.get("label") or ""),
+            "title": str(scene.get("title") or ""),
+            "desc": str(scene.get("desc") or ""),
+            "demo": demo_id,
+            "layout": str(scene.get("layout") or ""),
+        }
+    preview_ids = cfg.get("featureDemoPreviewIds")
+    if isinstance(preview_ids, list) and preview_ids:
+        picked: list[dict[str, str]] = []
+        for demo_id in preview_ids:
+            if not demo_id:
+                continue
+            item = by_demo.get(str(demo_id))
+            if item:
+                picked.append(item)
+        if picked:
+            return picked
+    return list(by_demo.values())
 
 
 def _platform_meta() -> dict[str, int | str]:
@@ -1525,24 +1535,38 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             return _json_response(self, _load_web_docs())
 
         if path == "/api/web-users":
-            sync_all_from_conversation_store()
+            # 分享/协作选人列表：/api/sessions 轮询已做增量同步，此处跳过以免阻塞弹窗
             store = get_session_store()
             store.reload_from_disk()
             viewer = current_web_user(self)
-            exclude = viewer.staff_id if viewer is not None else ""
+            include_self_raw = (parse_qs(parsed.query).get("include_self") or ["0"])[0].strip().lower()
+            include_self = include_self_raw in ("1", "true", "yes")
+            exclude = "" if include_self else (viewer.staff_id if viewer is not None else "")
             query = (parse_qs(parsed.query).get("q") or [""])[0]
             try:
-                from dingtalk_user_lookup import list_selectable_staff_users
+                from dingtalk_user_lookup import (
+                    list_selectable_group_chats,
+                    list_selectable_staff_users,
+                )
 
                 users = list_selectable_staff_users(
                     store.list_sessions(enrich_names=False),
                     exclude_staff_id=exclude,
                     query=query,
+                    try_api_for_ascii=False,
+                )
+                groups = list_selectable_group_chats(
+                    store.list_sessions(enrich_names=False),
+                    query=query,
                 )
             except Exception as exc:  # noqa: BLE001
                 logger.warning("列出可选人员失败: %s", exc)
                 users = []
-            return _json_response(self, {"users": users, "total": len(users)})
+                groups = []
+            return _json_response(
+                self,
+                {"users": users, "groups": groups, "total": len(users) + len(groups)},
+            )
 
         if path == "/api/sessions":
             sync_all_from_conversation_store()
@@ -1965,6 +1989,100 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             except json.JSONDecodeError:
                 return _json_response(self, {"error": "invalid json"}, 400)
             return _handle_message_board_create(self, body)
+
+        if path == "/api/messages/forward":
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            viewer = current_web_user(self)
+            if viewer is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            text = str(body.get("text") or "").strip()
+            message_role = str(body.get("message_role") or "").strip().lower()
+            question_text = str(body.get("question_text") or "").strip()
+            raw_ids = body.get("recipient_staff_ids")
+            if not isinstance(raw_ids, list):
+                raw_ids = []
+            recipient_ids = [str(item).strip() for item in raw_ids if str(item).strip()]
+            raw_group_ids = body.get("recipient_group_ids")
+            if not isinstance(raw_group_ids, list):
+                raw_group_ids = []
+            recipient_group_ids = [
+                str(item).strip() for item in raw_group_ids if str(item).strip()
+            ]
+            if not text:
+                return _json_response(self, {"error": "消息内容为空"}, 400)
+            if not recipient_ids and not recipient_group_ids:
+                return _json_response(self, {"error": "请选择至少一位接收人或群聊"}, 400)
+            store = get_session_store()
+            store.reload_from_disk()
+            try:
+                from dingtalk_user_lookup import (
+                    list_selectable_group_chats,
+                    list_selectable_staff_users,
+                )
+
+                allowed_staff = {
+                    user["staffId"]
+                    for user in list_selectable_staff_users(
+                        store.list_sessions(enrich_names=False),
+                        try_api_for_ascii=False,
+                    )
+                }
+                allowed_groups = {
+                    group["conversationId"]
+                    for group in list_selectable_group_chats(
+                        store.list_sessions(enrich_names=False),
+                    )
+                }
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("校验分享接收人失败: %s", exc)
+                allowed_staff = set()
+                allowed_groups = set()
+            invalid_staff = [uid for uid in recipient_ids if uid not in allowed_staff]
+            invalid_groups = [
+                gid for gid in recipient_group_ids if gid not in allowed_groups
+            ]
+            if invalid_staff or invalid_groups:
+                return _json_response(
+                    self,
+                    {"error": "包含不可选的接收人或群聊，请刷新列表后重试"},
+                    400,
+                )
+            sender_name = lookup_staff_public_name(
+                viewer.staff_id,
+                viewer.display_name or viewer.staff_id,
+            )
+            try:
+                from web_message_forward import forward_message_to_dingtalk
+
+                result = forward_message_to_dingtalk(
+                    recipient_ids,
+                    text,
+                    recipient_group_ids=recipient_group_ids,
+                    sender_name=sender_name,
+                    message_role=message_role,
+                    question_text=question_text,
+                )
+            except ValueError as exc:
+                return _json_response(self, {"error": str(exc)}, 400)
+            except RuntimeError as exc:
+                return _json_response(self, {"error": str(exc)}, 502)
+            except Exception as exc:  # noqa: BLE001
+                logger.exception("消息分享钉钉异常")
+                return _json_response(self, {"error": f"分享失败：{exc}"}, 500)
+            _record_analytics(
+                self,
+                event="message_forward",
+                page="/chat.html",
+                props={
+                    "sent_count": result.get("sent_count", 0),
+                    "failed_count": result.get("failed_count", 0),
+                    "recipient_count": len(recipient_ids) + len(recipient_group_ids),
+                },
+            )
+            return _json_response(self, result)
 
         if path == "/api/chat/cancel":
             try:
