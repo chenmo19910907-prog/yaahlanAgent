@@ -442,6 +442,95 @@ def set_family_pk_page_params(
     ]
 
 
+def set_pk_atm_match_reward_detail_params(
+    payload: dict[str, Any],
+    *,
+    user_id: str,
+    room_id: str,
+    pk_id: str,
+    area: str = "MENA",
+) -> None:
+    user_id = str(user_id).strip()
+    room_id = str(room_id).strip()
+    pk_id = str(pk_id).strip()
+    area = str(area or "MENA").strip().upper()
+    if not user_id or not room_id or not pk_id:
+        raise ValueError("user_id / room_id / pk_id 均不能为空")
+
+    body: dict[str, Any] = {}
+    params = payload.get("params")
+    if isinstance(params, list) and params:
+        first = params[0]
+        if isinstance(first, dict) and isinstance(first.get("value"), dict):
+            body = dict(first["value"])
+    if not body:
+        raise ValueError("PK提款机-PK结束返钻弹窗 payload 缺少 params[0].value")
+
+    body["userId"] = user_id
+    body["uid"] = user_id
+    body["roomId"] = room_id
+    body["pkId"] = pk_id
+    body["area"] = area
+    header_s = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+    payload["header"] = header_s
+    settings = payload.setdefault("settings", {})
+    if isinstance(settings, dict):
+        settings["headerType"] = "TXT"
+    payload["params"] = [
+        {
+            "name": 0,
+            "title": 0,
+            "txt": "",
+            "json": header_s,
+            "type": "json",
+            "value": body,
+        }
+    ]
+
+
+def set_pk_atm_withdraw_rank_params(
+    payload: dict[str, Any],
+    *,
+    user_id: str,
+    cycle: str = "1",
+    area: str = "MENA",
+) -> None:
+    user_id = str(user_id).strip()
+    cycle = str(cycle or "1").strip()
+    area = str(area or "MENA").strip().upper()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+
+    body: dict[str, Any] = {}
+    params = payload.get("params")
+    if isinstance(params, list) and params:
+        first = params[0]
+        if isinstance(first, dict) and isinstance(first.get("value"), dict):
+            body = dict(first["value"])
+    if not body:
+        raise ValueError("PK提款机-提款排名 payload 缺少 params[0].value")
+
+    body["userId"] = user_id
+    body["uid"] = user_id
+    body["cycle"] = cycle
+    body["area"] = area
+    header_s = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+    payload["header"] = header_s
+    settings = payload.setdefault("settings", {})
+    if isinstance(settings, dict):
+        settings["headerType"] = "TXT"
+    payload["params"] = [
+        {
+            "name": 0,
+            "title": 0,
+            "txt": "",
+            "json": header_s,
+            "type": "json",
+            "value": body,
+        }
+    ]
+
+
 def set_family_delete_params(payload: dict[str, Any], family_id: str, owner_user_id: str) -> None:
     family_id = str(family_id).strip()
     owner_user_id = str(owner_user_id).strip()

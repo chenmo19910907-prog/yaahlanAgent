@@ -67,12 +67,13 @@ flowchart LR
 | 规则 | 要点 |
 |------|------|
 | 计入活动 | 仅 **跨房 PK · 随机匹配**；指定邀请 / 再来一局 **不计入** |
-| 场次门槛 | 双方总 PK ≥ **50 万** 才有本场总奖金 |
-| 梯度发奖 | 双方总 PK 命中梯度 → 定 **本场总奖金（钻）** |
-| 个人瓜分 | 仅 **胜方**：`floor(个人 PK / 胜方总 PK × 本场总奖金)` |
+| 场次门槛 | PRD：**双方总 PK ≥ 50 万**；**alpha 实测 MSE** 见 §2.4（当前 **2 万**） |
+| 梯度发奖 | 双方总 PK 命中梯度 → 按 **返钻比例 %** 计算本场总奖金（alpha 见 §2.4） |
+| 个人瓜分 | 仅 **胜方**：个人 PK ≥ 个人门槛（alpha **1 千**）且 `floor(个人 PK / 胜方总 PK × 本场总奖金)` |
 | PK 换算 | 麦上送礼：**1 钻石 = 10 PK 值** |
+| 首胜翻倍 | alpha MSE 已开：`firstWinMultiplier = 2` |
 
-全量用例：`temporary_testcase/PK提款机_2.5.9_测试用例.md`（PK_001～PK_102）。
+全量用例：`temporary_testcase/PK提款机_2.5.9_测试用例.md`（PK_001～PK_102）。用例按 PRD 梯度编写；**造数验收以 MSE 为准**（§2.4）。
 
 ### 2.3 本阶段提问模板
 
@@ -82,6 +83,63 @@ flowchart LR
 生成{功能}全量测试用例并导出钉钉表格。
 {规则点} 在 PRD 里是否明确？不明确请列出待确认项和你的假设。
 ```
+
+### 2.4 服务配置（MSE alpha · pkAtmConfig）
+
+**来源**：MSE `voga-common` / `pkAtmConfig`，cluster/env/region 均为 **alpha**；appKey `momo.bpm.biz.gameplatform.overseas-voga-mts-room`。  
+**最后更新**：2026-08-07（v-chen.mo）。  
+**钉钉单表**：[PK提款机-pkAtmConfig-20260807](https://alidocs.dingtalk.com/i/nodes/oP0MALyR8k7Aow9wCY9wvqBd83bzYmDO)（Agent 导出目录，单 Sheet「活动配置」）。
+
+拉取命令：
+
+```bash
+python3 MSE/mse_execute.py \
+  --namespace voga-common --config-key pkAtmConfig \
+  --cluster alpha --env alpha --region alpha --output json
+
+# 写入 / 刷新钉钉表格（新建）
+python3 platform/dingtalk_gateway/pk_atm_mse_to_workbook.py \
+  --workbook-name "PK提款机-pkAtmConfig-YYYYMMDD"
+
+# 覆盖已有表格（推荐更新时用）
+python3 platform/dingtalk_gateway/pk_atm_mse_to_workbook.py \
+  --workbook-url "https://alidocs.dingtalk.com/i/nodes/oP0MALyR8k7Aow9wCY9wvqBd83bzYmDO"
+```
+
+#### 基础参数（alpha 当前值）
+
+| 键 | 值 | 说明 |
+|----|-----|------|
+| `enabled` | `true` | 活动总开关 |
+| `longTermEnabled` | `true` | 长期活动 |
+| `startTime` / `endTime` | 2026-01-01 ～ 2026-12-31 | 活动期 |
+| `dailyStartHour` / `dailyEndHour` | 0 / 24 | 每日时段 |
+| **`minTotalPkValue`** | **20,000** | 场次总 PK 门槛（PRD 50 万，测试环境已下调） |
+| **`minMemberRewardPk`** | **1,000** | 个人瓜分 PK 门槛 |
+| `broadcastMinDiamond` | 1,000 | 广播最低钻石 |
+| `firstWinEnabled` | `true` | 首胜翻倍开关 |
+| **`firstWinMultiplier`** | **2** | 首胜倍数 |
+
+#### 梯度表 `matchPoolGradients`（双方总 PK ≥ 左列 → 返钻比例）
+
+| minTotalPkValue | returnRatioPercent |
+|-----------------|-------------------|
+| 20,000 | 3% |
+| 100,000 | 3% |
+| 400,000 | 4% |
+| 1,000,000 | 5% |
+| 2,000,000 | 5% |
+| 5,000,000 | 6% |
+
+#### 发钻配置 `diamondDispatchConfig`
+
+| 键 | 值 |
+|----|-----|
+| `activityId` | `2005005017` |
+| `activityTaskId` | `2005005019` |
+| `activitySign` | `7e5721b379b14962a38f9d2e81376605` |
+
+**与工作流关系**：`pk_atm_test_run.py` 优先 MOA 拉运行时配置；拉不到时用 `workflow/config/pk_atm_default_config.json`（PRD 梯度兜底）。验收前可 `--min-combined-pk 20000 --personal-pk-threshold 1000` 对齐 alpha MSE。
 
 ---
 
@@ -230,10 +288,11 @@ PK结束前还要测试PK赛况页面展示PK中的信息，
 **开启跨房 PK（仅随机匹配）**：脚本 `_begin_random_match_cross_room_pk` 会
 
 1. 清理残留：`closeAcrossRoomPk`（若两房已在 PK）→ 双向 `rejectAcrossRoomPkInvite` → `cancelAcrossRoomPkMatch`（尽力）
-2. A 房 `applyAcrossRoomPk`（`acrossPkType=1`）→ 间隔 1 秒 → B 房 apply
-3. 若某房 `ec=20210111 pending`，再清理并重试一次
-4. 轮询 `getAcrossRoomPkInfo` 直到两房 `acrossRoomPkId` 一致（默认 `--match-timeout 120`）
-5. 报告 `.md` 含 **「随机匹配开启跨房 PK」** 章节（apply ec、pkId）
+2. **两房并行** `applyAcrossRoomPk`（`acrossPkType=1`）
+3. **匹配失败**（apply 失败 / 超时）→ 清理 → 重新发起（默认 `--match-retries 5`）
+4. **配错房间**（对手 roomId ≠ 期望）→ 立刻 `closeAcrossRoomPk` → 清理 → 重新发起
+5. 轮询直到两房互配成功（每轮 `--match-timeout 90`）
+6. 报告 `.md` 含 **「随机匹配开启跨房 PK」** 章节（apply ec、pkId、重试轮次）
 
 | 验收层 | MOA | 当前状态 |
 |--------|-----|----------|
@@ -339,7 +398,8 @@ flowchart TD
 |------|------|
 | 一键工作流 | `workflow/workflows/pk-atm-test.json` → `python3 workflow/workflow_execute.py run pk-atm-test` |
 | 执行脚本 | `workflow/scripts/pk_atm_test_run.py`（随机匹配开 PK + C6/C7/C8 验收） |
-| 默认梯度兜底 | `workflow/config/pk_atm_default_config.json`（配置 MOA 未映射时用） |
+| 默认梯度兜底 | `workflow/config/pk_atm_default_config.json`（PRD 梯度；MOA 未映射时用） |
+| MSE 配置导出 | `platform/dingtalk_gateway/pk_atm_mse_to_workbook.py` → 钉钉单表 §2.4 |
 | 随机匹配 MOA | `MOA/templates/跨房PK-随机匹配.json`、`MOA-generative/templates/example-applyAcrossRoomPk-random-match.body.json` |
 | 赛况 MOA 模板 | `MOA-generative/templates/example-getAcrossRoomPkInfo.body.json` |
 | MOA 映射表 | `MOA-generative/mappings.md`（已验证 + 待抓包候选） |
@@ -403,8 +463,8 @@ batch_key=web:fe0181e7b6ce418e
 
 1. **随机匹配 vs 指定邀请**：提款机必须随机匹配（`acrossPkType=1`）  
 2. **梯度单位**：「800 万 PK」= 8,000,000  
-3. **50 万门槛**：默认 20 笔小礼不够 → 预期返钻为 0 是否正常  
-4. **个人门槛**：PRD 未定时，是否等产品确认再写死  
+3. **场次门槛**：PRD 50 万；**alpha MSE 当前 2 万**（§2.4）— 默认 20 笔小礼在 alpha 可能已达标  
+4. **个人门槛**：alpha MSE **1 千 PK**（§2.4）；PRD 未定时以 MSE 为准  
 5. **赛况 / 排名 MOA**：未抓包前 C7/C8 的 MOA 层会跳过，以钻石差值兜底是否正常  
 
 ---
@@ -429,7 +489,16 @@ python3 workflow/workflow_execute.py run pk-atm-test \
   --phone-a 13311111112 --phone-b 13311111113
 ```
 
-冲 50 万梯度示例（对话跑通后再加压）：
+冲梯度示例（alpha 2 万门槛，对话跑通后再加压）：
+
+```bash
+python3 workflow/workflow_execute.py run pk-atm-test \
+  --phone-a 13311111112 --phone-b 13311111113 \
+  --min-combined-pk 20000 --personal-pk-threshold 1000 \
+  --gift-count 40 --gift-min-diamonds 100 --gift-max-diamonds 500
+```
+
+冲 PRD 50 万梯度（需大幅加压，仅对照用例文档）：
 
 ```bash
 python3 workflow/workflow_execute.py run pk-atm-test \
@@ -444,12 +513,13 @@ python3 workflow/workflow_execute.py run pk-atm-test \
 | 现象 | 过程上怎么处理 |
 |------|----------------|
 | 指定邀请 ec=20210111 | 改 **随机匹配**；工作流会先清理 pending 再 apply |
-| 随机匹配长时间不配 | 加大 `--match-timeout`；确认两房几乎同时 apply；换空闲测试号 |
+| 随机匹配长时间不配 | 加大 `--match-timeout` / `--match-retries`；确认两房并行 apply；换空闲测试号 |
+| 配到其他房间 | 脚本自动 `closeAcrossRoomPk` 后重试；报告会记 wrongMatch 轮次 |
 | 服务端 Agent 401 | 更新 `YAAHLAN_SERVICE_AGENT_TOKEN`（浏览器登录 ai-yaahlan 后复制 Bearer） |
 | 送礼了但 PK 不涨 | 修正句强调「送给 **麦上** 用户」+「等 20 秒」 |
-| 预期返钻全是 0 | 先问「双方总 PK 是否达 50 万」；不够则加大 `--gift-count` |
+| 预期返钻全是 0 | 先对照 §2.4 MSE 门槛（alpha **2 万** / 个人 **1 千**）；不够则加大 `--gift-count` |
 | AI 一次写大脚本 | 回到 C1 最小闭环，再用 C2～C8 修正 |
-| 配置接口调不通 | 显式说「先用本地梯度 JSON 兜底，后续再映射 MOA」 |
+| 配置接口调不通 | 显式说「先用本地梯度 JSON 兜底」并 `--min-combined-pk` / `--personal-pk-threshold` 对齐 MSE |
 | C7/C8 MOA 报 Method not found | 正常：排名/赛况列表 tab **待抓包**；先验收 C6 钻石差值，抓包后再 `--require-*` 强制 |
 
 ---
@@ -465,3 +535,5 @@ python3 workflow/workflow_execute.py run pk-atm-test \
 | 2026-08-04 | 工作流改为 **随机匹配开 PK**（清理→双房 apply→轮询配对）；新增 `--pk-minute` |
 | 2026-08-04 | MOA：随机匹配模板 + Tunnel `_id=VmdPzJ8BR2LVRzbvVZwa`；实测 13311111112/13 可配对 |
 | 2026-08-04 | Web Agent：服务端 Agent 查询进度展示；Token 配置说明 |
+| 2026-08-07 | §2.4：MSE alpha `pkAtmConfig` 入文档（门槛 2 万 / 个人 1 千 / 6 档梯度）；钉钉单表导出命令 |
+| 2026-08-07 | 随机匹配：失败/配错房间自动重试（并行 apply + close 错配 + `--match-retries`） |

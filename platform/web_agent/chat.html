@@ -1978,6 +1978,7 @@
     .run-status:empty { display: none; }
     .run-status-line { line-height: 1.45; }
     .run-status-ack { color: var(--link-color); }
+    .run-status-phase { color: var(--text); font-size: 0.8125rem; opacity: 0.95; }
     .run-status-batch { color: var(--muted); font-size: 0.75rem; opacity: 0.88; }
     .run-status-external { color: var(--link-color); font-size: 0.8125rem; opacity: 0.95; }
     .run-status-elapsed { color: var(--muted); font-style: italic; }
@@ -4132,7 +4133,7 @@
     /** @type {{ staffId?: string, displayName?: string, isAdmin?: boolean } | null} */
     let currentAuthUser = null;
     let otpAuthEnabled = true;
-    /** @type {Map<string, { eventSource: EventSource, runId: string, cancelling?: boolean, failed?: boolean, status: { ack: string, batch: string, external: string, elapsed: string }, shellEl: HTMLElement | null, sentDraft?: { text: string, images: typeof pendingImages } }>} */
+    /** @type {Map<string, { eventSource: EventSource, runId: string, cancelling?: boolean, failed?: boolean, status: { ack: string, phase: string, batch: string, external: string, elapsed: string }, shellEl: HTMLElement | null, sentDraft?: { text: string, images: typeof pendingImages } }>} */
     const activeRuns = new Map();
     const MESSAGES_SCROLL_NEAR_BOTTOM_PX = 80;
     /** 用户未手动上滑时，流式更新才跟随滚到底；执行完成后强制滚到底 */
@@ -4259,6 +4260,7 @@
     /** @type {Array<{ id: string, name: string, mime: string, kind: 'image'|'file', previewUrl?: string, data_base64: string }>} */
     let pendingAttachments = [];
     let inputComposing = false;
+    let inputComposeResizePending = false;
     const MAX_ATTACHMENTS = 5;
     const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
     const MAX_FILE_BYTES = 15 * 1024 * 1024;
@@ -4999,11 +5001,43 @@
       return false;
     }
 
+    function isLifecyclePhaseText(text) {
+      const t = String(text || '').trim();
+      if (!t) return false;
+      if (/^⏳\s*Agent\s*(启动|执行)中/.test(t)) return true;
+      if (/^正在连接\s*Agent/.test(t)) return true;
+      if (/^Agent\s*已启动/.test(t)) return true;
+      if (/^Agent\s*执行中[…\.]?$/.test(t)) return true;
+      return false;
+    }
+
+    function isRunStatusPhase(text) {
+      const t = String(text || '').trim();
+      return !!t && !isLifecyclePhaseText(t);
+    }
+
+    function runStatusForRender(status) {
+      const src = status || {};
+      return {
+        ack: src.ack || '',
+        batch: src.batch || '',
+        external: src.external || '',
+        elapsed: src.elapsed || '',
+        phase: isRunStatusPhase(src.phase) ? src.phase : '',
+      };
+    }
+
+    function sanitizeStreamThinking(thinking) {
+      const text = String(thinking || '').trim();
+      if (!text || isLifecyclePhaseText(text)) return '';
+      return text;
+    }
+
     function normalizeThinkingBody(body) {
       return String(body || '')
         .split('\n')
         .map((l) => l.replace(/^>\s*/, '').replace(/^[-*·]\s*/, '').trim())
-        .filter((l) => l && !isPromptEchoLine(l))
+        .filter((l) => l && !isPromptEchoLine(l) && !isLifecyclePhaseText(l))
         .join('\n');
     }
 
@@ -5014,12 +5048,14 @@
       return /^(Shell|Grep|Read|Glob|Task|Write|StrReplace|Delete|Await|CallMcpTool|GetMcpTools|Fetch|WebFetch|WebSearch|EditNotebook|TodoWrite|SwitchMode|Cursor)\b/i.test(t);
     }
 
-    function renderThinkingSectionHtml(thinking) {
-      const text = normalizeThinkingBody(thinking);
-      if (!text) return '';
+    function renderThinkingSectionHtml(thinking, phase) {
+      const text = sanitizeStreamThinking(normalizeThinkingBody(thinking));
+      const lifecycle = isLifecyclePhaseText(phase) ? String(phase || '').trim() : '';
+      const body = text || lifecycle;
+      if (!body) return '';
       return `<section class="stream-section stream-section-think">
         <div class="stream-section-title">思考中</div>
-        <div class="stream-thinking">${escapeHtml(text)}</div>
+        <div class="stream-thinking">${escapeHtml(body)}</div>
       </section>`;
     }
 
@@ -5216,23 +5252,24 @@
       const fromMd = processFromMarkdown(markdown);
       const plain = extractPlainStreamingText(markdown);
       const p = (process && typeof process === 'object') ? process : {};
-      const thinking = pickLongerText(
+      const thinking = sanitizeStreamThinking(pickLongerText(
         pickLongerText(p.thinking, fromMd.thinking),
         plain,
-      );
+      ));
       const mdTools = fromMd.tools;
       const procTools = Array.isArray(p.tools) ? p.tools.map((t) => String(t || '').trim()).filter(Boolean) : [];
       const tools = procTools.length >= mdTools.length ? procTools : mdTools;
-      return { thinking, tools };
+      const phase = String(p.phase || '').trim();
+      return { thinking, tools, phase };
     }
 
     function resolveStreamThinking(markdown, payload) {
-      const merged = payload || { thinking: '', tools: [] };
-      let thinking = String(merged.thinking || '').trim();
+      const merged = payload || { thinking: '', tools: [], phase: '' };
+      let thinking = sanitizeStreamThinking(String(merged.thinking || '').trim());
       const md = String(markdown || '').trim();
       if (!thinking && md && !/^⏳ Agent/.test(md)) {
         const fromMd = processFromMarkdown(md);
-        thinking = String(fromMd.thinking || extractPlainStreamingText(md) || '').trim();
+        thinking = sanitizeStreamThinking(String(fromMd.thinking || extractPlainStreamingText(md) || '').trim());
         if (!thinking && !md.includes('###')) {
           thinking = md;
         }
@@ -5241,16 +5278,19 @@
     }
 
     function buildStreamDisplay(markdown, process, prevDisplay) {
-      const prev = prevDisplay || { thinking: '', tools: [] };
+      const prev = prevDisplay || { thinking: '', tools: [], phase: '' };
       const incoming = mergeProcessPayload(process, markdown);
       const thinking = pickLongerText(
         prev.thinking,
         resolveStreamThinking(markdown, incoming),
       );
+      const sanitizedThinking = sanitizeStreamThinking(thinking);
       const tools = (Array.isArray(incoming.tools) && incoming.tools.length >= (prev.tools || []).length)
         ? incoming.tools
         : (prev.tools || []);
-      return { thinking, tools };
+      let phase = String(incoming.phase || prev.phase || '').trim();
+      if (sanitizedThinking) phase = '';
+      return { thinking: sanitizedThinking, tools, phase };
     }
 
     function rememberRunStreamState(sessionId, markdown, process) {
@@ -5300,30 +5340,64 @@
             return;
           }
           const md = String(active.markdown || '');
-          const proc = active.process;
-          const prevDisplay = current.lastStream?.display || { thinking: '', tools: [] };
+          let proc = active.process;
+          if (active.phase_line && isLifecyclePhaseText(active.phase_line)) {
+            proc = { ...(proc && typeof proc === 'object' ? proc : {}), phase: active.phase_line };
+          }
+          const prevDisplay = current.lastStream?.display || { thinking: '', tools: [], phase: '' };
           const nextDisplay = buildStreamDisplay(md, proc, prevDisplay);
           if (
             nextDisplay.thinking === prevDisplay.thinking
             && JSON.stringify(nextDisplay.tools) === JSON.stringify(prevDisplay.tools || [])
+            && nextDisplay.phase === prevDisplay.phase
           ) {
             return;
           }
           const display = rememberRunStreamState(sid, md, proc);
           const shell = current.shellEl || ensureStreamingShell(sid);
-          updateStreamingMsgBody(shell, display || nextDisplay);
-          if (active.ack_line || active.elapsed_line || active.batch_line || active.external_line) {
-            renderRunStatusEl(shell.querySelector('.run-status'), {
+          if (display) {
+            updateStreamingMsgBody(shell, display);
+            applyStreamPhaseFromDisplay(sid, display);
+          }
+          if (active.ack_line || active.phase_line || active.elapsed_line || active.batch_line || active.external_line) {
+            renderRunStatusEl(shell.querySelector('.run-status'), runStatusForRender({
               ack: active.ack_line || '',
+              phase: active.phase_line || '',
               elapsed: active.elapsed_line || '',
               batch: active.batch_line || '',
               external: active.external_line || '',
-            });
+            }));
           }
         } catch {
           /* 轮询失败忽略，SSE 仍为主通道 */
         }
       }, 800);
+    }
+
+    function applyStreamPhaseFromDisplay(sessionId, display) {
+      const phase = String(display?.phase || '').trim();
+      if (isLifecyclePhaseText(phase)) return;
+      if (phase) {
+        updateRunStatus(sessionId, { phase });
+      } else if (sanitizeStreamThinking(display?.thinking)) {
+        updateRunStatus(sessionId, { phase: '' });
+      }
+    }
+
+    function applyLifecyclePhaseToStream(sessionId, phase, { markdown = '', process = null } = {}) {
+      const run = activeRuns.get(sessionId);
+      if (!run) return;
+      const md = String(markdown || run.lastStream?.markdown || '');
+      const proc = {
+        ...(process && typeof process === 'object' ? process : (run.lastStream?.process || {})),
+        phase,
+      };
+      const prevDisplay = run.lastStream?.display || { thinking: '', tools: [], phase: '' };
+      const display = buildStreamDisplay(md, proc, prevDisplay);
+      rememberRunStreamState(sessionId, md, proc);
+      if (sessionId !== currentSessionId) return;
+      const shell = run.shellEl || ensureStreamingShell(sessionId);
+      updateStreamingMsgBody(shell, display);
     }
 
     function updateStreamingMsgBody(shell, display) {
@@ -5332,9 +5406,9 @@
       if (!bodyEl) return;
       const payload = (display && typeof display === 'object')
         ? display
-        : { thinking: '', tools: [] };
+        : { thinking: '', tools: [], phase: '' };
       const sections = [];
-      const thinkHtml = renderThinkingSectionHtml(payload.thinking);
+      const thinkHtml = renderThinkingSectionHtml(payload.thinking, payload.phase);
       if (thinkHtml) sections.push(thinkHtml);
       const toolsHtml = renderToolsSectionHtml(payload.tools);
       if (toolsHtml) sections.push(toolsHtml);
@@ -5342,7 +5416,7 @@
       if (sections.length) {
         html = `<div class="stream-body stream-process">${sections.join('')}</div>`;
       } else {
-        html = '<div class="stream-body"><div class="stream-placeholder">⏳ Agent 启动中…</div></div>';
+        html = '<div class="stream-body stream-body-empty"></div>';
       }
       bodyEl.innerHTML = html;
       const thinkEl = bodyEl.querySelector('.stream-thinking');
@@ -5870,18 +5944,22 @@
 
     function renderRunStatusEl(statusEl, status) {
       if (!statusEl) return;
+      const view = runStatusForRender(status);
       const lines = [];
-      if (status.ack) {
-        lines.push(`<div class="run-status-line run-status-ack">${escapeHtml(status.ack)}</div>`);
+      if (view.ack) {
+        lines.push(`<div class="run-status-line run-status-ack">${escapeHtml(view.ack)}</div>`);
       }
-      if (status.batch) {
-        lines.push(`<div class="run-status-line run-status-batch">${escapeHtml(status.batch)}</div>`);
+      if (view.phase) {
+        lines.push(`<div class="run-status-line run-status-phase">${escapeHtml(view.phase)}</div>`);
       }
-      if (status.external) {
-        lines.push(`<div class="run-status-line run-status-external">${escapeHtml(status.external)}</div>`);
+      if (view.batch) {
+        lines.push(`<div class="run-status-line run-status-batch">${escapeHtml(view.batch)}</div>`);
       }
-      if (status.elapsed) {
-        lines.push(`<div class="run-status-line run-status-elapsed">${escapeHtml(status.elapsed)}</div>`);
+      if (view.external) {
+        lines.push(`<div class="run-status-line run-status-external">${escapeHtml(view.external)}</div>`);
+      }
+      if (view.elapsed) {
+        lines.push(`<div class="run-status-line run-status-elapsed">${escapeHtml(view.elapsed)}</div>`);
       }
       statusEl.innerHTML = lines.join('');
     }
@@ -7577,21 +7655,35 @@
       }
     }
 
+    function isChatInputActive() {
+      const input = document.getElementById('input');
+      return !!(input && (document.activeElement === input || inputComposing));
+    }
+
     function chatInputFocusSnapshot() {
       const input = document.getElementById('input');
-      if (!input || document.activeElement !== input) return null;
+      if (!input || document.activeElement !== input || inputComposing) return null;
       return {
         input,
         start: input.selectionStart,
         end: input.selectionEnd,
+        value: input.value,
       };
     }
 
     function restoreChatInputFocus(snapshot) {
-      if (!snapshot?.input) return;
-      snapshot.input.focus({ preventScroll: true });
+      if (!snapshot?.input || inputComposing) return;
+      if (document.activeElement !== snapshot.input) {
+        snapshot.input.focus({ preventScroll: true });
+        return;
+      }
+      // 组字或输入过程中 value 已变：只保焦点，不强行还原旧 selection（Safari 会乱序插入拼音）
+      if (snapshot.value !== undefined && snapshot.input.value !== snapshot.value) return;
       if (Number.isFinite(snapshot.start) && Number.isFinite(snapshot.end)) {
-        snapshot.input.setSelectionRange(snapshot.start, snapshot.end);
+        const len = snapshot.input.value.length;
+        const start = Math.min(Math.max(0, snapshot.start), len);
+        const end = Math.min(Math.max(start, snapshot.end), len);
+        snapshot.input.setSelectionRange(start, end);
       }
     }
 
@@ -7711,15 +7803,17 @@
       }
 
       function setActive(idx, fade) {
+        if (isChatInputActive()) return;
         activeIdx = ((idx % demos.length) + demos.length) % demos.length;
         const d = demos[activeIdx];
         const focusSnapshot = chatInputFocusSnapshot();
         const apply = () => {
+          if (isChatInputActive()) return;
           captionTitle.innerHTML = buildFeatureDemoTitleHtml(d.label, d.title);
           frame.title = d.title || '功能演示';
           frame.src = `/keynote?embed=${encodeURIComponent(d.demo || '')}`;
           restoreChatInputFocus(focusSnapshot);
-          if (focusSnapshot) {
+          if (focusSnapshot && !isChatInputActive()) {
             frame.addEventListener('load', () => restoreChatInputFocus(focusSnapshot), { once: true });
           }
         };
@@ -7742,7 +7836,7 @@
 
       if (demos.length > 1 && !prefersReducedMotion()) {
         featureDemoTimer = window.setInterval(() => {
-          if (paused) return;
+          if (paused || isChatInputActive()) return;
           setActive(pickRandomDemoIdx(activeIdx), true);
         }, ms);
       }
@@ -7802,7 +7896,7 @@
           const typingEl = document.createElement('div');
           typingEl.className = 'typing';
           typingEl.id = 'typing-indicator';
-          typingEl.textContent = run?.status?.ack || run?.status?.elapsed || 'Agent 思考中…';
+          typingEl.textContent = run?.status?.phase || run?.status?.ack || run?.status?.elapsed || 'Agent 思考中…';
           container.appendChild(typingEl);
         }
       }
@@ -7972,11 +8066,28 @@
           if (data.type === 'ack') {
             updateRunStatus(sessionId, { ack: data.line || '' });
           } else if (data.type === 'status') {
-            updateRunStatus(sessionId, {
+            const patch = {
               elapsed: data.elapsed_line || '',
               batch: data.batch_line || '',
               external: data.external_line || '',
-            });
+            };
+            updateRunStatus(sessionId, patch);
+            if ('phase_line' in data) {
+              const phase = data.phase_line || '';
+              if (isLifecyclePhaseText(phase)) {
+                if (isViewing()) {
+                  if (!assistantEl) {
+                    assistantEl = ensureStreamingShell(sessionId);
+                    activeRuns.get(sessionId).shellEl = assistantEl;
+                  }
+                  applyLifecyclePhaseToStream(sessionId, phase);
+                } else {
+                  applyLifecyclePhaseToStream(sessionId, phase);
+                }
+              } else {
+                updateRunStatus(sessionId, { phase });
+              }
+            }
           } else if (data.type === 'delta') {
             if (!isViewing()) return;
             if (!assistantEl) {
@@ -7984,7 +8095,10 @@
               activeRuns.get(sessionId).shellEl = assistantEl;
             }
             const display = rememberRunStreamState(sessionId, data.markdown || '', data.process);
-            if (display) updateStreamingMsgBody(assistantEl, display);
+            if (display) {
+              updateStreamingMsgBody(assistantEl, display);
+              applyStreamPhaseFromDisplay(sessionId, display);
+            }
           } else if (data.type === 'done') {
             const doneRun = activeRuns.get(sessionId);
             if (doneRun?.cancelWatchdog) {
@@ -8087,6 +8201,7 @@
         cancelling: false,
         status: {
           ack: data.ack_line || '',
+          phase: isRunStatusPhase(data.phase_line) ? (data.phase_line || '') : '',
           batch: data.batch_line || '',
           external: data.external_line || '',
           elapsed: data.elapsed_line || '',
@@ -8099,11 +8214,16 @@
       renderSessionList();
 
       if (currentSessionId === sid) {
-        if (data.ack_line || data.elapsed_line || data.batch_line || data.external_line || data.markdown || data.process) {
+        if (data.ack_line || data.phase_line || data.elapsed_line || data.batch_line || data.external_line || data.markdown || data.process) {
           const shell = ensureStreamingShell(sid);
           activeRuns.get(sid).shellEl = shell;
           renderRunStatusEl(shell.querySelector('.run-status'), activeRuns.get(sid).status);
-          if (data.markdown || data.process) {
+          if (data.phase_line && isLifecyclePhaseText(data.phase_line)) {
+            applyLifecyclePhaseToStream(sid, data.phase_line, {
+              markdown: data.markdown || '',
+              process: data.process,
+            });
+          } else if (data.markdown || data.process) {
             const display = rememberRunStreamState(sid, data.markdown || '', data.process);
             if (display) updateStreamingMsgBody(shell, display);
           }
@@ -8111,7 +8231,7 @@
           const typingEl = document.createElement('div');
           typingEl.className = 'typing';
           typingEl.id = 'typing-indicator';
-          typingEl.textContent = data.ack_line || data.elapsed_line || 'Agent 思考中…';
+          typingEl.textContent = data.phase_line || data.ack_line || data.elapsed_line || 'Agent 思考中…';
           document.getElementById('messages')?.appendChild(typingEl);
         }
       }
@@ -8185,10 +8305,16 @@
         eventSource: null,
         runId: '',
         cancelling: false,
-        status: { ack: '', batch: '', external: '', elapsed: '' },
+        status: { ack: '', phase: '', batch: '', external: '', elapsed: '' },
         shellEl: null,
         sentDraft,
       });
+      if (currentSessionId === sessionId) {
+        const shell = ensureStreamingShell(sessionId);
+        activeRuns.get(sessionId).shellEl = shell;
+        const display = rememberRunStreamState(sessionId, '', { phase: '正在连接 Agent…' });
+        updateStreamingMsgBody(shell, display);
+      }
       updateInputState();
       sortSessionsCache();
       renderSessionList();
@@ -8244,6 +8370,11 @@
     }
 
     function autoResizeInput() {
+      if (inputComposing) {
+        inputComposeResizePending = true;
+        return;
+      }
+      inputComposeResizePending = false;
       const ta = document.getElementById('input');
       ta.style.height = 'auto';
       ta.style.height = Math.min(ta.scrollHeight, 160) + 'px';
@@ -8317,7 +8448,7 @@
     document.getElementById('input').addEventListener('input', () => {
       clearRetryPlaceholder();
       autoResizeInput();
-      updateInputState();
+      if (!inputComposing) updateInputState();
     });
     const chatInput = document.getElementById('input');
     chatInput.addEventListener('compositionstart', () => {
@@ -8325,6 +8456,8 @@
     });
     chatInput.addEventListener('compositionend', () => {
       inputComposing = false;
+      if (inputComposeResizePending) autoResizeInput();
+      updateInputState();
     });
     chatInput.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter' || e.shiftKey) return;

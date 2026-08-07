@@ -181,7 +181,7 @@ def _consume_run_stream(
         rendered = True
 
     if not card_compact:
-        renderer.set_status_hint("⏳ Agent 执行中…")
+        renderer.set_status_hint("Agent 已启动…")
     _maybe_render(force=True)
 
     for event in run.events():
@@ -213,7 +213,7 @@ def _consume_run_stream(
             elif msg_type == "status":
                 status = str(getattr(sdk_message, "status", "") or "")
                 if status in ("running", "in_progress", "IN_PROGRESS"):
-                    if renderer.set_status_hint("⏳ Agent 执行中…"):
+                    if renderer.set_status_hint("Agent 执行中…"):
                         changed = True
 
         step = event.step

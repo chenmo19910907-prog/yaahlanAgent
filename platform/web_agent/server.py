@@ -601,6 +601,7 @@ class ActiveRun:
     last_elapsed_line: str = ""
     last_batch_line: str = ""
     last_external_line: str = ""
+    last_phase_line: str = ""
     last_markdown: str = ""
     last_process: dict[str, Any] | None = None
     reply_mode: str = "standard"
@@ -611,9 +612,14 @@ class ActiveRun:
         if etype == "ack":
             self.last_ack_line = str(event.get("line") or "")
         elif etype == "status":
-            self.last_elapsed_line = str(event.get("elapsed_line") or "")
-            self.last_batch_line = str(event.get("batch_line") or "")
-            self.last_external_line = str(event.get("external_line") or "")
+            if "elapsed_line" in event:
+                self.last_elapsed_line = str(event.get("elapsed_line") or "")
+            if "batch_line" in event:
+                self.last_batch_line = str(event.get("batch_line") or "")
+            if "external_line" in event:
+                self.last_external_line = str(event.get("external_line") or "")
+            if "phase_line" in event:
+                self.last_phase_line = str(event.get("phase_line") or "")
         elif etype == "delta":
             markdown = event.get("markdown")
             if markdown:
@@ -624,6 +630,11 @@ class ActiveRun:
 
                 prev = self.last_process if isinstance(self.last_process, dict) else None
                 self.last_process = _merge_process_payload(prev, proc)
+                phase = str(proc.get("phase") or "").strip()
+                if phase:
+                    self.last_phase_line = phase
+                elif str(proc.get("thinking") or "").strip():
+                    self.last_phase_line = ""
         self.events.put(event)
 
     def snapshot_events(self) -> list[dict[str, Any]]:
@@ -631,13 +642,14 @@ class ActiveRun:
         events: list[dict[str, Any]] = []
         if self.last_ack_line:
             events.append({"type": "ack", "line": self.last_ack_line})
-        if self.last_elapsed_line or self.last_batch_line or self.last_external_line:
+        if self.last_elapsed_line or self.last_batch_line or self.last_external_line or self.last_phase_line:
             events.append(
                 {
                     "type": "status",
                     "elapsed_line": self.last_elapsed_line,
                     "batch_line": self.last_batch_line,
                     "external_line": self.last_external_line,
+                    "phase_line": self.last_phase_line,
                 }
             )
         if self.last_markdown or self.last_process:
@@ -667,6 +679,7 @@ class ActiveRun:
             "elapsed_line": self.last_elapsed_line,
             "batch_line": self.last_batch_line,
             "external_line": self.last_external_line,
+            "phase_line": self.last_phase_line,
             "markdown": self.last_markdown,
             "process": self.last_process,
         }
@@ -747,30 +760,35 @@ def _notify_run_interrupted(run: ActiveRun, text: str) -> bool:
 
 def _interrupt_active_run(run: ActiveRun) -> bool:
     """尽力中断 Agent run，并立即通知前端。"""
+    from run_child_processes import kill_run_child_processes
     from user_agent_pool import get_user_agent_pool
+    from web_run_executor import _terminate_worker_process, is_shared_worker_daemon_pid
 
     store = get_run_store()
     store.request_cancel(run.run_id)
-    meta = store.get_run(run.run_id)
-    if meta is not None and meta.worker_pid > 0:
-        try:
-            os.kill(meta.worker_pid, signal.SIGTERM)
-        except OSError as exc:
-            logger.debug("终止 worker pid=%s 失败: %s", meta.worker_pid, exc)
+    store.mark_status(run.run_id, RUN_STATUS_INTERRUPTED)
 
-    cancel_result = run.task_session.request_cancel()
-    if cancel_result is None:
-        run.task_session.arm_cancel()
-        cancel_result = run.task_session.request_cancel()
-    try:
-        get_user_agent_pool().invalidate(get_session_store().user_key(run.session_id))
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("中断时 invalidate Agent 失败 session=%s: %s", run.session_id, exc)
     _notify_run_interrupted(run, INTERRUPT_REPLY)
     if run.final_text:
         get_session_store().append_message(run.session_id, "assistant", run.final_text)
-    get_run_store().mark_status(run.run_id, RUN_STATUS_INTERRUPTED)
-    return cancel_result is not False
+
+    user_key = get_session_store().user_key(run.session_id)
+    if user_key:
+        kill_run_child_processes(user_key)
+    meta = store.get_run(run.run_id)
+    if meta is not None and meta.worker_pid > 0:
+        worker_pid = int(meta.worker_pid)
+        if not is_shared_worker_daemon_pid(worker_pid):
+            _terminate_worker_process(worker_pid)
+
+    run.task_session.arm_cancel()
+    run.task_session.request_cancel()
+    try:
+        if user_key:
+            get_user_agent_pool().invalidate(user_key)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("中断时 invalidate Agent 失败 session=%s: %s", run.session_id, exc)
+    return True
 
 
 def _apply_snapshot_to_run(run: ActiveRun, snap) -> None:
@@ -778,6 +796,7 @@ def _apply_snapshot_to_run(run: ActiveRun, snap) -> None:
     run.last_elapsed_line = snap.last_elapsed_line
     run.last_batch_line = snap.last_batch_line
     run.last_external_line = snap.last_external_line
+    run.last_phase_line = snap.last_phase_line
     run.last_markdown = snap.last_markdown
     if isinstance(getattr(snap, "last_process", None), dict):
         run.last_process = snap.last_process
@@ -798,6 +817,49 @@ def _active_run_from_store_meta(meta: RunMeta) -> ActiveRun:
     return run
 
 
+def _attach_run_tailers(run: ActiveRun, meta: RunMeta) -> None:
+    progress_stop = threading.Event()
+    _start_run_event_tailer(run, progress_stop=progress_stop)
+    _start_run_progress_watcher(
+        run,
+        user_key=get_session_store().user_key(meta.session_id),
+        message=meta.message,
+        started_at=run.started_at,
+        progress_stop=progress_stop,
+    )
+
+
+def _recover_running_meta(meta: RunMeta, *, allow_fresh_spawn: bool = False) -> ActiveRun:
+    """恢复 RUNNING 任务：仅挂 SSE，禁止对已有活动的 run 重复执行 Agent。"""
+    store = get_run_store()
+    if meta.status != RUN_STATUS_RUNNING:
+        return _active_run_from_store_meta(meta)
+
+    if store.is_worker_alive(meta.run_id):
+        run = _active_run_from_store_meta(meta)
+        if RUN_MANAGER.get(meta.run_id) is None:
+            _attach_run_tailers(run, meta)
+        return run
+
+    if meta.worker_pid > 0:
+        _finalize_orphan_run(meta)
+        return _active_run_from_store_meta(meta)
+
+    if store.has_run_activity(meta.run_id):
+        _finalize_orphan_run(meta)
+        return _active_run_from_store_meta(meta)
+
+    if allow_fresh_spawn and (time.time() - meta.started_at) < 120:
+        _start_run_worker(meta.run_id)
+        run = _active_run_from_store_meta(meta)
+        _attach_run_tailers(run, meta)
+        return run
+
+    if allow_fresh_spawn:
+        _finalize_orphan_run(meta)
+    return _active_run_from_store_meta(meta)
+
+
 def _get_or_recover_run(run_id: str) -> ActiveRun | None:
     run = RUN_MANAGER.get(run_id)
     if run is not None:
@@ -806,51 +868,59 @@ def _get_or_recover_run(run_id: str) -> ActiveRun | None:
     meta = store.get_run(run_id)
     if meta is None:
         return None
-    if meta.status == RUN_STATUS_RUNNING and meta.worker_pid > 0 and store.is_worker_alive(run_id):
-        run = _active_run_from_store_meta(meta)
-        progress_stop = threading.Event()
-        _start_run_event_tailer(run, progress_stop=progress_stop)
-        _start_run_progress_watcher(
-            run,
-            user_key=get_session_store().user_key(meta.session_id),
-            message=meta.message,
-            started_at=run.started_at,
-            progress_stop=progress_stop,
-        )
-        return run
-    if meta.status == RUN_STATUS_RUNNING and meta.worker_pid > 0:
-        _finalize_orphan_run(meta)
-    elif meta.status == RUN_STATUS_RUNNING and meta.worker_pid <= 0:
-        _start_run_worker(meta.run_id)
-        run = _active_run_from_store_meta(meta)
-        progress_stop = threading.Event()
-        _start_run_event_tailer(run, progress_stop=progress_stop)
-        _start_run_progress_watcher(
-            run,
-            user_key=get_session_store().user_key(meta.session_id),
-            message=meta.message,
-            started_at=run.started_at,
-            progress_stop=progress_stop,
-        )
-        return run
-    run = _active_run_from_store_meta(meta)
-    return run
+    return _recover_running_meta(meta, allow_fresh_spawn=False)
+
+
+def _run_cancelled_or_interrupted(meta: RunMeta) -> bool:
+    if meta.status == RUN_STATUS_INTERRUPTED:
+        return True
+    return bool(meta.cancel_requested)
+
+
+def _assistant_reply_since_last_user(session_id: str) -> bool:
+    session_store = get_session_store()
+    messages = session_store.get_messages(session_id)
+    for msg in reversed(messages):
+        if msg.role == "assistant":
+            return True
+        if msg.role == "user":
+            break
+    return False
+
+
+def _finalize_cancelled_run(meta: RunMeta) -> None:
+    """用户中断后 worker 已退出时的兜底落盘（避免误报服务重启）。"""
+    store = get_run_store()
+    fresh = store.get_run(meta.run_id)
+    if fresh is not None and fresh.status == RUN_STATUS_INTERRUPTED:
+        if _assistant_reply_since_last_user(meta.session_id):
+            return
+    if _assistant_reply_since_last_user(meta.session_id):
+        store.mark_status(meta.run_id, RUN_STATUS_INTERRUPTED)
+        return
+    body = finalize_web_reply_text(
+        INTERRUPT_REPLY,
+        0.0,
+        task_kind=classify_task_kind(meta.message),
+        prompt=meta.message,
+        reply_mode=meta.reply_mode,
+    )
+    get_session_store().append_message(meta.session_id, "assistant", body)
+    store.append_event(meta.run_id, {"type": "done", "text": body})
+    store.mark_status(meta.run_id, RUN_STATUS_INTERRUPTED)
+    snap = store.get_snapshot(meta.run_id)
+    if not snap.final_text:
+        store.update_snapshot(meta.run_id, {"type": "done", "text": body})
 
 
 def _finalize_orphan_run(meta: RunMeta) -> None:
     """worker 已退出但 meta 仍为 running 时落盘结束态，便于前端拉消息。"""
+    if _run_cancelled_or_interrupted(meta):
+        _finalize_cancelled_run(meta)
+        return
     store = get_run_store()
     snap = store.get_snapshot(meta.run_id)
-    session_store = get_session_store()
-    messages = session_store.get_messages(meta.session_id)
-    has_reply = False
-    for msg in reversed(messages):
-        if msg.role == "assistant":
-            has_reply = True
-            break
-        if msg.role == "user":
-            break
-    if has_reply:
+    if _assistant_reply_since_last_user(meta.session_id):
         store.mark_status(meta.run_id, RUN_STATUS_DONE)
         return
     err_text = finalize_web_reply_text(
@@ -860,7 +930,7 @@ def _finalize_orphan_run(meta: RunMeta) -> None:
         prompt=meta.message,
         reply_mode=meta.reply_mode,
     )
-    session_store.append_message(meta.session_id, "assistant", err_text)
+    get_session_store().append_message(meta.session_id, "assistant", err_text)
     store.append_event(meta.run_id, {"type": "error", "message": "worker lost", "text": err_text})
     store.mark_status(meta.run_id, RUN_STATUS_ERROR)
     if not snap.final_text:
@@ -884,9 +954,14 @@ def _start_run_event_tailer(run: ActiveRun, *, progress_stop: threading.Event) -
                 if etype == "ack":
                     run.last_ack_line = str(event.get("line") or "")
                 elif etype == "status":
-                    run.last_elapsed_line = str(event.get("elapsed_line") or "")
-                    run.last_batch_line = str(event.get("batch_line") or "")
-                    run.last_external_line = str(event.get("external_line") or "")
+                    if "elapsed_line" in event:
+                        run.last_elapsed_line = str(event.get("elapsed_line") or "")
+                    if "batch_line" in event:
+                        run.last_batch_line = str(event.get("batch_line") or "")
+                    if "external_line" in event:
+                        run.last_external_line = str(event.get("external_line") or "")
+                    if "phase_line" in event:
+                        run.last_phase_line = str(event.get("phase_line") or "")
                 elif etype == "delta":
                     markdown = event.get("markdown")
                     if markdown:
@@ -897,6 +972,11 @@ def _start_run_event_tailer(run: ActiveRun, *, progress_stop: threading.Event) -
 
                         prev = run.last_process if isinstance(run.last_process, dict) else None
                         run.last_process = _merge_process_payload(prev, proc)
+                        phase = str(proc.get("phase") or "").strip()
+                        if phase:
+                            run.last_phase_line = phase
+                        elif str(proc.get("thinking") or "").strip():
+                            run.last_phase_line = ""
                 elif etype == "done":
                     if run.done.is_set():
                         continue
@@ -937,7 +1017,6 @@ def _start_run_event_tailer(run: ActiveRun, *, progress_stop: threading.Event) -
                 return
             if (
                 meta is not None
-                and meta.worker_pid > 0
                 and not store.is_worker_alive(run.run_id)
             ):
                 _finalize_orphan_run(meta)
@@ -961,44 +1040,65 @@ def _start_run_event_tailer(run: ActiveRun, *, progress_stop: threading.Event) -
     ).start()
 
 
+def sweep_stale_running_runs() -> int:
+    """worker 已退出或僵尸时自动落盘结束态，避免前端一直「思考中」。"""
+    store = get_run_store()
+    finalized = 0
+    for meta in store.list_active_runs():
+        if meta.status != RUN_STATUS_RUNNING:
+            continue
+        if store.is_worker_alive(meta.run_id):
+            continue
+        _finalize_orphan_run(meta)
+        finalized += 1
+        logger.info(
+            "自动结束卡死任务 run=%s session=%s worker_pid=%s",
+            meta.run_id,
+            meta.session_id,
+            meta.worker_pid,
+        )
+    return finalized
+
+
+def _start_stale_run_sweeper(*, interval_s: float = 30.0) -> None:
+    def loop() -> None:
+        while True:
+            time.sleep(interval_s)
+            try:
+                sweep_stale_running_runs()
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("卡死任务 sweep 失败: %s", exc)
+
+    threading.Thread(
+        target=loop,
+        daemon=True,
+        name="web-stale-run-sweeper",
+    ).start()
+
+
 def recover_active_runs_on_startup() -> None:
     store = get_run_store()
     store.cleanup_old_runs()
+    sweep_stale_running_runs()
     for meta in store.list_active_runs():
-        if store.is_worker_alive(meta.run_id):
-            if RUN_MANAGER.find_active_by_session(meta.session_id) is not None:
-                continue
-            run = _active_run_from_store_meta(meta)
-            progress_stop = threading.Event()
-            _start_run_event_tailer(run, progress_stop=progress_stop)
-            _start_run_progress_watcher(
-                run,
-                user_key=get_session_store().user_key(meta.session_id),
-                message=meta.message,
-                started_at=run.started_at,
-                progress_stop=progress_stop,
-            )
+        if RUN_MANAGER.find_active_by_session(meta.session_id) is not None:
+            continue
+        _recover_running_meta(meta, allow_fresh_spawn=True)
+        refreshed = store.get_run(meta.run_id)
+        if refreshed is not None and store.is_worker_alive(meta.run_id):
             logger.info(
                 "恢复进行中任务 run=%s session=%s worker_pid=%s",
                 meta.run_id,
                 meta.session_id,
-                meta.worker_pid,
+                refreshed.worker_pid,
             )
-        elif meta.worker_pid > 0:
-            _finalize_orphan_run(meta)
+        elif refreshed is not None and refreshed.status != RUN_STATUS_RUNNING:
             logger.info("清理孤儿任务 run=%s session=%s", meta.run_id, meta.session_id)
         else:
-            logger.info("恢复未 spawn 的任务 run=%s session=%s，重新拉起 worker", meta.run_id, meta.session_id)
-            _start_run_worker(meta.run_id)
-            run = _active_run_from_store_meta(meta)
-            progress_stop = threading.Event()
-            _start_run_event_tailer(run, progress_stop=progress_stop)
-            _start_run_progress_watcher(
-                run,
-                user_key=get_session_store().user_key(meta.session_id),
-                message=meta.message,
-                started_at=run.started_at,
-                progress_stop=progress_stop,
+            logger.info(
+                "等待 worker 启动 run=%s session=%s（不重复 spawn）",
+                meta.run_id,
+                meta.session_id,
             )
 
 
@@ -1025,12 +1125,10 @@ def _resolve_active_run_for_session(session_id: str) -> ActiveRun | None:
         return None
     if store.is_worker_alive(meta.run_id):
         return _get_or_recover_run(meta.run_id)
-    if meta.worker_pid > 0:
+    if meta.worker_pid > 0 or store.has_run_activity(meta.run_id):
         _finalize_orphan_run(meta)
-    elif meta.status == RUN_STATUS_RUNNING:
-        _start_run_worker(meta.run_id)
-        return _get_or_recover_run(meta.run_id)
-    return None
+        return None
+    return _get_or_recover_run(meta.run_id)
 
 
 def _json_response(handler: SimpleHTTPRequestHandler, payload: object, status: int = 200) -> None:
@@ -2256,6 +2354,7 @@ def serve(host: str, port: int) -> None:
 
     init_agent_runtime()
     recover_active_runs_on_startup()
+    _start_stale_run_sweeper()
     server = ThreadingHTTPServer((host, port), WebAgentHandler)
     print(f"Web Agent: http://{host}:{port}/")
 

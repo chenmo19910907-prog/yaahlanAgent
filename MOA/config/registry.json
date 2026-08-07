@@ -1407,6 +1407,29 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/跨房PK-结束PK.json\n"
     },
     {
+      "id": "pk_atm_match_reward_detail",
+      "name": "PK提款机-PK结束返钻弹窗",
+      "category": "房间PK（room/external/room-pk-api）",
+      "description": "PK 结束后提款机返钻结果弹窗（getPkAtmMatchRewardDetail）。需 userId、roomId、pkId；返回 roomTotalDiamond、myInfo（myPkValue/myRewardDiamond）、memberList。",
+      "prompts": [
+        "查询 PK 结束返钻弹窗 userId=<userId> roomId=<roomId> pkId=<pkId>",
+        "getPkAtmMatchRewardDetail <userId> <roomId> <pkId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/PK提款机-PK结束返钻弹窗.json \\\n  --pk-atm-reward-detail-user-id <userId> \\\n  --pk-atm-reward-detail-room-id <roomId> \\\n  --pk-atm-reward-detail-pk-id <pkId>\n"
+    },
+    {
+      "id": "pk_atm_withdraw_rank",
+      "name": "PK提款机-提款排名",
+      "category": "房间PK（room/external/room-pk-api）",
+      "description": "PK 提款机活动页「提款排名」tab（getAcrossPkRewardRankV2）。返回 data.totalReward（本周已被提走奖金/活动下发总钻石）、data.list（提款排行榜）、data.currentUser（吸底本周已提款）。Tunnel 13311111111→100465989 `_id=El03258Bpk1mjMPPU0uO`（2026-08-07）。",
+      "prompts": [
+        "查询 PK 提款机提款排名 userId=<userId>",
+        "PK提款机本周总钻石 userId=<userId>",
+        "getAcrossPkRewardRankV2 <userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/PK提款机-提款排名.json \\\n  --pk-atm-withdraw-rank-user-id <userId>\n"
+    },
+    {
       "id": "room_barrage_internal",
       "name": "房间-发言飘屏（内部）",
       "category": "房间（room/internal/room-notice-stage）",

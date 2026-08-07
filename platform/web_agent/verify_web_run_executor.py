@@ -3,18 +3,26 @@
 
 from __future__ import annotations
 
+import os
 import sys
 import threading
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 WEB_AGENT_DIR = Path(__file__).resolve().parent
 GATEWAY_DIR = WEB_AGENT_DIR.parent / "dingtalk_gateway"
 sys.path.insert(0, str(GATEWAY_DIR))
 sys.path.insert(0, str(WEB_AGENT_DIR))
 
-from web_run_executor import _start_run_in_thread, is_run_thread_alive, start_run_in_background  # noqa: E402
+from web_run_executor import (  # noqa: E402
+    _start_run_in_thread,
+    _use_daemon_worker,
+    is_run_thread_alive,
+    start_run_in_background,
+    start_run_in_subprocess,
+)
 from web_run_store import RUN_STATUS_RUNNING, RunMeta, WebRunStore  # noqa: E402
 
 
@@ -92,6 +100,44 @@ class WebRunExecutorTests(unittest.TestCase):
                 ex.execute_web_run = original  # type: ignore[method-assign]
                 with ex._RUN_LOCK:
                     ex._RUN_THREADS.pop(rid, None)
+
+    def test_default_uses_one_shot_not_daemon(self) -> None:
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("WEB_AGENT_DAEMON_WORKER", None)
+            self.assertFalse(_use_daemon_worker())
+
+        import tempfile
+
+        import web_run_executor as ex
+
+        with tempfile.TemporaryDirectory() as tmp:
+            store = WebRunStore(root=Path(tmp) / "runs")
+            rid = "parallel1"
+            store.create_run(
+                RunMeta(
+                    run_id=rid,
+                    session_id="sess-a",
+                    message="hi",
+                    display_message="hi",
+                    model="composer",
+                    enabled_external_agents=[],
+                    author_id="u1",
+                    author_label="U",
+                    image_paths=[],
+                    file_paths=[],
+                    attachment_names=[],
+                    worker_pid=0,
+                    status=RUN_STATUS_RUNNING,
+                    started_at=1.0,
+                )
+            )
+            with mock.patch.object(ex, "get_run_store", return_value=store):
+                with mock.patch.object(ex, "_spawn_one_shot_worker", return_value=12345) as spawn_mock:
+                    with mock.patch.object(ex, "_dispatch_run_to_daemon") as daemon_mock:
+                        pid = start_run_in_subprocess(rid)
+            self.assertEqual(pid, 12345)
+            spawn_mock.assert_called_once_with(rid)
+            daemon_mock.assert_not_called()
 
 
 if __name__ == "__main__":

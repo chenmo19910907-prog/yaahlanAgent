@@ -536,6 +536,19 @@ def test_sanitize_web_thinking_strips_prompt_echo() -> None:
     assert cleaned.strip() != "用户"
 
 
+def test_web_process_payload_phase_before_thinking() -> None:
+    r = AgentStreamRenderer()
+    r.set_status_hint("Agent 已启动…")
+    assert r.markdown_for_web() == ""
+    payload = r.web_process_payload()
+    assert payload.get("phase") == "Agent 已启动…"
+    assert payload.get("thinking") == ""
+    r.apply({"type": "thinking-delta", "text": "先查 Admin"})
+    payload2 = r.web_process_payload()
+    assert "phase" not in payload2
+    assert "先查 Admin" in payload2["thinking"]
+
+
 def main() -> int:
     test_thinking_and_answer()
     test_tool_lines()
@@ -547,6 +560,7 @@ def main() -> int:
     test_sanitize_web_thinking_strips_prompt_echo()
     test_update_thinking_snapshot_vs_delta()
     test_markdown_for_web_long_thinking_tail()
+    test_web_process_payload_phase_before_thinking()
     test_update_answer_snapshot_vs_delta()
     test_empty_defaults()
     test_assistant_chunk()

@@ -11,10 +11,6 @@ from typing import Any
 from .client import MoaClient, extract_ec_em_result, extract_inner_result, outer_success
 from .params import set_family_pk_member_list_params
 from .payload import load_payload
-
-_TEMPLATE = moa_template("家族PK-成员贡献列表.json")
-_MAX_PAGES = 100
-
 from .project_paths import (
     admin_execute_path,
     get_repo_root,
@@ -22,6 +18,9 @@ from .project_paths import (
     moa_execute_path,
     moa_template,
 )
+
+_TEMPLATE = moa_template("家族PK-成员贡献列表.json")
+_MAX_PAGES = 100
 
 
 

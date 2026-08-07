@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import signal
 import subprocess
 import sys
 import threading
@@ -51,6 +52,44 @@ RETRY_HINT = "💡 原消息已回填到输入框，请检查后重试。"
 _RUN_THREADS: dict[str, threading.Thread] = {}
 _RUN_PROCS: dict[str, subprocess.Popen[bytes]] = {}
 _RUN_LOCK = threading.Lock()
+_SPAWN_LOCKS: dict[str, threading.Lock] = {}
+_SPAWN_LOCK_GUARD = threading.Lock()
+_DAEMON_PROC: subprocess.Popen[bytes] | None = None
+_DAEMON_LOCK = threading.Lock()
+_PYTHON_EXECUTABLE: str | None = None
+_ACTIVE_SESSION: TaskSession | None = None
+_WORKER_SIGNALS_INSTALLED = False
+_BOOTSTRAP_PHASE = "正在连接 Agent…"
+
+
+def _terminate_worker_process(worker_pid: int) -> None:
+    """终止 worker 及其子进程（Agent Shell / python 脚本）。"""
+    from run_child_processes import terminate_process_tree
+
+    pid = int(worker_pid)
+    if pid <= 0 or pid == os.getpid():
+        return
+    try:
+        terminate_process_tree(pid)
+    except OSError as exc:
+        logger.debug("终止 worker 进程树 pid=%s 失败: %s", pid, exc)
+
+
+def _install_worker_signal_handlers(session: TaskSession) -> None:
+    global _ACTIVE_SESSION, _WORKER_SIGNALS_INSTALLED
+    _ACTIVE_SESSION = session
+    if _WORKER_SIGNALS_INSTALLED:
+        return
+
+    def _on_stop(signum: int, _frame: object | None) -> None:
+        sess = _ACTIVE_SESSION
+        if sess is not None:
+            sess.request_cancel()
+        raise SystemExit(128 + signum)
+
+    signal.signal(signal.SIGTERM, _on_stop)
+    signal.signal(signal.SIGINT, _on_stop)
+    _WORKER_SIGNALS_INSTALLED = True
 
 
 class FileBackedTaskSession(TaskSession):
@@ -93,6 +132,9 @@ def _python_can_import_cursor_sdk(python: Path) -> bool:
 
 
 def _resolve_python_executable() -> str:
+    global _PYTHON_EXECUTABLE
+    if _PYTHON_EXECUTABLE:
+        return _PYTHON_EXECUTABLE
     candidates = (
         GATEWAY_DIR / ".venv" / "bin" / "python3",
         REPO_ROOT / ".venv" / "bin" / "python3",
@@ -103,9 +145,80 @@ def _resolve_python_executable() -> str:
             continue
         resolved = str(path)
         if _python_can_import_cursor_sdk(path):
+            _PYTHON_EXECUTABLE = resolved
             return resolved
         fallback = fallback or resolved
-    return fallback or sys.executable
+    _PYTHON_EXECUTABLE = fallback or sys.executable
+    return _PYTHON_EXECUTABLE
+
+
+def worker_daemon_pid() -> int:
+    proc = _DAEMON_PROC
+    if proc is None or proc.poll() is not None:
+        return 0
+    return int(proc.pid)
+
+
+def is_shared_worker_daemon_pid(pid: int) -> bool:
+    """是否为常驻 worker daemon（中断时不可杀，否则全员任务中断）。"""
+    root = int(pid)
+    if root <= 0:
+        return False
+    tracked = worker_daemon_pid()
+    if tracked > 0 and root == tracked:
+        return True
+    needle = "run_worker.py --daemon"
+    try:
+        proc = subprocess.run(
+            ["pgrep", "-f", needle],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    if proc.returncode != 0:
+        return False
+    for line in proc.stdout.splitlines():
+        text = line.strip()
+        if text.isdigit() and int(text) == root:
+            return True
+    return False
+
+
+def _use_daemon_worker() -> bool:
+    """常驻 daemon 为可选；默认每 run 独立子进程以支持多会话并行。"""
+    return os.environ.get("WEB_AGENT_DAEMON_WORKER") == "1"
+
+
+def _ensure_worker_daemon() -> subprocess.Popen[bytes]:
+    global _DAEMON_PROC
+    with _DAEMON_LOCK:
+        if _DAEMON_PROC is not None and _DAEMON_PROC.poll() is None:
+            return _DAEMON_PROC
+        log_path = WEB_AGENT_DIR / "data" / "worker_daemon.log"
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        log_fp = open(log_path, "a", encoding="utf-8")
+        env = _subprocess_env()
+        proc = subprocess.Popen(
+            [
+                _resolve_python_executable(),
+                str(WEB_AGENT_DIR / "run_worker.py"),
+                "--daemon",
+            ],
+            cwd=str(REPO_ROOT),
+            env=env,
+            stdin=subprocess.PIPE,
+            stdout=log_fp,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+            text=True,
+            bufsize=1,
+        )
+        _DAEMON_PROC = proc
+        logger.info("worker daemon 已启动 pid=%s", proc.pid)
+        return proc
 
 
 def _emit(store: Any, run_id: str, event: dict[str, Any]) -> None:
@@ -151,10 +264,19 @@ def execute_web_run(run_id: str) -> int:
         os.environ[USER_KEY_ENV] = user_key
     task_kind = classify_task_kind(meta.message)
     session_ctrl = FileBackedTaskSession(run_id)
+    _install_worker_signal_handlers(session_ctrl)
     session_ctrl.begin(
         meta.message or meta.display_message,
         conversation_id=user_key,
         budget_s=float(DEFAULT_TIMEOUT_S),
+    )
+    _emit(
+        store,
+        run_id,
+        {
+            "type": "status",
+            "phase_line": _BOOTSTRAP_PHASE,
+        },
     )
 
     started_at = time.monotonic()
@@ -211,6 +333,10 @@ def execute_web_run(run_id: str) -> int:
         status = "ok"
         return 0
     except TaskInterrupted:
+        if user_key:
+            from run_child_processes import kill_run_child_processes
+
+            kill_run_child_processes(user_key)
         elapsed = time.monotonic() - started_at
         final_text = finalize_web_reply_text(
             INTERRUPT_REPLY,
@@ -244,6 +370,9 @@ def execute_web_run(run_id: str) -> int:
         store.mark_status(run_id, RUN_STATUS_ERROR)
         return 1
     finally:
+        global _ACTIVE_SESSION
+        if _ACTIVE_SESSION is session_ctrl:
+            _ACTIVE_SESSION = None
         clear_batch_progress(user_key)
         clear_external_agent_progress(user_key)
         os.environ.pop(USER_KEY_ENV, None)
@@ -287,18 +416,33 @@ def _start_run_in_thread(run_id: str) -> int:
     return os.getpid()
 
 
-def start_run_in_subprocess(run_id: str) -> int:
-    """独立 worker 子进程：HTTP 服务重启不中断 Agent 执行。"""
-    rid = (run_id or "").strip()
-    if not rid:
-        raise ValueError("run_id 不能为空")
+def _spawn_lock_for(run_id: str) -> threading.Lock:
+    with _SPAWN_LOCK_GUARD:
+        lock = _SPAWN_LOCKS.get(run_id)
+        if lock is None:
+            lock = threading.Lock()
+            _SPAWN_LOCKS[run_id] = lock
+        return lock
 
+
+def _dispatch_run_to_daemon(rid: str) -> int:
     store = get_run_store()
-    meta = store.get_run(rid)
-    if meta is not None and meta.worker_pid > 0 and store.is_worker_alive(rid):
-        logger.info("run %s worker pid=%s 仍在运行", rid, meta.worker_pid)
-        return int(meta.worker_pid)
+    proc = _ensure_worker_daemon()
+    if proc.stdin is None:
+        raise RuntimeError("worker daemon stdin 不可用")
+    proc.stdin.write(f"{rid}\n")
+    proc.stdin.flush()
+    discovered = store.discover_worker_pid(rid)
+    if discovered > 0:
+        store.set_worker_pid(rid, discovered)
+        logger.info("dispatch run=%s -> worker pid=%s (via daemon)", rid, discovered)
+        return discovered
+    logger.info("dispatch run=%s -> daemon pid=%s (worker spawning)", rid, proc.pid)
+    return int(proc.pid)
 
+
+def _spawn_one_shot_worker(rid: str) -> int:
+    store = get_run_store()
     log_path = WEB_AGENT_DIR / "data" / "runs" / rid / "worker.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     log_fp = open(log_path, "a", encoding="utf-8")
@@ -319,8 +463,36 @@ def start_run_in_subprocess(run_id: str) -> int:
     with _RUN_LOCK:
         _RUN_PROCS[rid] = proc
     store.set_worker_pid(rid, proc.pid)
-    logger.info("spawn run worker run=%s pid=%s", rid, proc.pid)
+    logger.info("spawn one-shot worker run=%s pid=%s", rid, proc.pid)
     return int(proc.pid)
+
+
+def start_run_in_subprocess(run_id: str) -> int:
+    """派发 run 到独立 worker 子进程（默认并行）；可选 WEB_AGENT_DAEMON_WORKER=1 经 daemon 转发。"""
+    rid = (run_id or "").strip()
+    if not rid:
+        raise ValueError("run_id 不能为空")
+
+    store = get_run_store()
+    lock = _spawn_lock_for(rid)
+    with lock:
+        if store.is_worker_alive(rid):
+            meta = store.get_run(rid)
+            worker_pid = int(meta.worker_pid) if meta is not None else 0
+            logger.info("run %s worker pid=%s 仍在运行", rid, worker_pid)
+            return worker_pid
+
+        if _use_daemon_worker():
+            return _dispatch_run_to_daemon(rid)
+
+        with _RUN_LOCK:
+            proc = _RUN_PROCS.get(rid)
+            if proc is not None and proc.poll() is None:
+                store.set_worker_pid(rid, proc.pid)
+                logger.info("run %s 复用内存中 worker pid=%s", rid, proc.pid)
+                return int(proc.pid)
+
+        return _spawn_one_shot_worker(rid)
 
 
 def start_run_in_background(run_id: str) -> int:
@@ -330,8 +502,12 @@ def start_run_in_background(run_id: str) -> int:
 
 
 def init_agent_runtime() -> None:
-    """HTTP 服务启动时预热 Bridge 与 Agent 池。"""
+    """HTTP 服务启动时预热 Bridge、Agent 池；可选启动 worker daemon。"""
     from chat_runner import ensure_bridge
 
     ensure_bridge()
-    logger.info("Web Agent 运行时已预热（Bridge + Agent 池）")
+    if _use_daemon_worker():
+        _ensure_worker_daemon()
+        logger.info("Web Agent 运行时已预热（Bridge + Agent 池 + worker daemon）")
+    else:
+        logger.info("Web Agent 运行时已预热（Bridge + Agent 池 + 并行 one-shot worker）")

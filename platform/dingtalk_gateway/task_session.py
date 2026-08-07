@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import os
+import signal
 import subprocess
 import threading
 import time
@@ -29,6 +31,59 @@ def _subprocess_env() -> dict[str, str]:
         import os
 
         return dict(os.environ)
+
+
+def _list_child_pids(parent_pid: int) -> list[int]:
+    if parent_pid <= 0:
+        return []
+    try:
+        proc = subprocess.run(
+            ["pgrep", "-P", str(parent_pid)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return []
+    if proc.returncode != 0:
+        return []
+    pids: list[int] = []
+    for token in proc.stdout.strip().split():
+        if token.isdigit():
+            pids.append(int(token))
+    return pids
+
+
+def _kill_process_tree(root_pid: int, *, grace_s: float = 0.3) -> None:
+    """先终止子进程，再终止 root（用于中断 Agent Shell / python 脚本）。"""
+    if root_pid <= 0:
+        return
+    for child_pid in _list_child_pids(root_pid):
+        _kill_process_tree(child_pid, grace_s=grace_s)
+    try:
+        os.kill(root_pid, signal.SIGTERM)
+    except OSError:
+        return
+    if grace_s <= 0:
+        return
+    deadline = time.monotonic() + grace_s
+    while time.monotonic() < deadline:
+        try:
+            os.kill(root_pid, 0)
+        except OSError:
+            return
+        time.sleep(0.05)
+    try:
+        os.kill(root_pid, signal.SIGKILL)
+    except OSError:
+        pass
+
+
+def _terminate_child_processes(*, root_pid: int | None = None) -> None:
+    """终止当前进程的直接/间接子进程（不杀自身）。"""
+    parent = root_pid if root_pid is not None else os.getpid()
+    for child_pid in _list_child_pids(parent):
+        _kill_process_tree(child_pid)
 
 
 def safe_cancel_run(run: Any | None) -> bool:
@@ -62,6 +117,7 @@ class TaskSession:
         self._active_run: Any | None = None
         self._active_agent: Any | None = None
         self._active_subprocess: subprocess.Popen[str] | None = None
+        self._cleanup_applied = False
 
     def arm_cancel(self) -> None:
         """在 begin 之前也可预置中断（worker 已取任务但尚未 begin）。"""
@@ -80,6 +136,7 @@ class TaskSession:
             self._conversation_id = conversation_id or ""
             if not preserve_cancel:
                 self._cancel_requested.clear()
+            self._cleanup_applied = False
             self._current_prompt = prompt
             self._started_at = time.monotonic()
             self._budget_s = max(1.0, budget_s)
@@ -105,6 +162,7 @@ class TaskSession:
             self._active_run = None
             self._active_agent = None
             self._active_subprocess = None
+            self._cleanup_applied = False
 
     def is_busy(self) -> bool:
         with self._lock:
@@ -132,6 +190,7 @@ class TaskSession:
 
     def check_cancelled(self) -> None:
         if self._cancel_requested.is_set():
+            self._apply_cancel_cleanup()
             raise TaskInterrupted()
 
     def cancel_requested(self) -> bool:
@@ -150,28 +209,14 @@ class TaskSession:
         with self._lock:
             self._active_subprocess = proc
 
-    def request_cancel(self, conversation_id: str = "") -> bool | None:
-        """None=空闲，False=会话不匹配，True=已发起中断。"""
+    def _apply_cancel_cleanup(self) -> None:
         with self._lock:
-            if not self._busy:
-                return None
-            if conversation_id and self._conversation_id and conversation_id != self._conversation_id:
-                return False
-            self._cancel_requested.set()
+            if self._cleanup_applied:
+                return
+            self._cleanup_applied = True
             run = self._active_run
             agent = self._active_agent
             proc = self._active_subprocess
-            prompt = self._current_prompt
-            active_conv = self._conversation_id
-            phase = self._phase
-
-        logger.info(
-            "收到中断请求 conv=%s active_conv=%s phase=%s prompt=%s",
-            conversation_id or "-",
-            active_conv or "-",
-            phase or "-",
-            redact_for_log(prompt),
-        )
 
         safe_cancel_run(run)
 
@@ -190,6 +235,37 @@ class TaskSession:
             except subprocess.TimeoutExpired:
                 logger.warning("子进程 kill 后仍未退出: pid=%s", proc.pid)
 
+        active_conv = ""
+        with self._lock:
+            active_conv = self._conversation_id
+        if active_conv:
+            from run_child_processes import kill_run_child_processes
+
+            kill_run_child_processes(active_conv)
+
+        _terminate_child_processes()
+
+    def request_cancel(self, conversation_id: str = "") -> bool | None:
+        """None=空闲，False=会话不匹配，True=已发起中断。"""
+        with self._lock:
+            if not self._busy:
+                return None
+            if conversation_id and self._conversation_id and conversation_id != self._conversation_id:
+                return False
+            self._cancel_requested.set()
+            prompt = self._current_prompt
+            active_conv = self._conversation_id
+            phase = self._phase
+
+        logger.info(
+            "收到中断请求 conv=%s active_conv=%s phase=%s prompt=%s",
+            conversation_id or "-",
+            active_conv or "-",
+            phase or "-",
+            redact_for_log(prompt),
+        )
+
+        self._apply_cancel_cleanup()
         return True
 
 
@@ -211,22 +287,34 @@ def run_subprocess_cancellable(
         stderr=subprocess.PIPE,
         text=True,
     )
+    user_key = ""
     if session:
         session.register_subprocess(proc)
+        user_key = (session.busy_conversation_id() or "").strip()
+    if user_key:
+        from run_child_processes import register_run_child, unregister_run_child
+
+        register_run_child(user_key, proc.pid)
 
     deadline = time.monotonic() + timeout_s
     stdout = ""
     stderr = ""
-    while True:
-        if session:
-            session.check_cancelled()
-        try:
-            stdout, stderr = proc.communicate(timeout=0.5)
-            break
-        except subprocess.TimeoutExpired:
-            if time.monotonic() >= deadline:
-                proc.kill()
-                proc.communicate(timeout=3)
-                raise TimeoutError(f"命令超时（>{timeout_s}s）: {' '.join(cmd)}") from None
+    try:
+        while True:
+            if session:
+                session.check_cancelled()
+            try:
+                stdout, stderr = proc.communicate(timeout=0.5)
+                break
+            except subprocess.TimeoutExpired:
+                if time.monotonic() >= deadline:
+                    proc.kill()
+                    proc.communicate(timeout=3)
+                    raise TimeoutError(f"命令超时（>{timeout_s}s）: {' '.join(cmd)}") from None
+    finally:
+        if user_key:
+            from run_child_processes import unregister_run_child
+
+            unregister_run_child(user_key, proc.pid)
 
     return proc.returncode, stdout or "", stderr or ""

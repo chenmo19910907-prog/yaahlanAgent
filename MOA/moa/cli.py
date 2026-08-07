@@ -287,6 +287,42 @@ def build_parser() -> argparse.ArgumentParser:
         help="家族PK请求页面：大区（默认 MENA）",
     )
     parser.add_argument(
+        "--pk-atm-reward-detail-user-id",
+        help="PK结束返钻弹窗：userId（getPkAtmMatchRewardDetail）",
+    )
+    parser.add_argument(
+        "--pk-atm-reward-detail-room-id",
+        help="PK结束返钻弹窗：roomId",
+    )
+    parser.add_argument(
+        "--pk-atm-reward-detail-pk-id",
+        help="PK结束返钻弹窗：pkId；省略或 latest/auto 则自动解析最近 pkId",
+    )
+    parser.add_argument(
+        "--pk-atm-reward-detail-pk-id-auto",
+        action="store_true",
+        help="PK结束返钻弹窗：强制自动解析最近 pkId",
+    )
+    parser.add_argument(
+        "--pk-atm-reward-detail-area",
+        default="MENA",
+        help="PK结束返钻弹窗：大区（默认 MENA）",
+    )
+    parser.add_argument(
+        "--pk-atm-withdraw-rank-user-id",
+        help="PK提款机提款排名：userId（getAcrossPkRewardRankV2；对齐 /yaahlan/room/pk/getAcrossPkRewardRankV2）",
+    )
+    parser.add_argument(
+        "--pk-atm-withdraw-rank-cycle",
+        default="1",
+        help="PK提款机提款排名：周期 cycle（默认 1=本周）",
+    )
+    parser.add_argument(
+        "--pk-atm-withdraw-rank-area",
+        default="MENA",
+        help="PK提款机提款排名：大区（默认 MENA）",
+    )
+    parser.add_argument(
         "--family-pk-member-list-user-id",
         help="家族PK成员贡献列表：userId（getFamilyPkUserList）",
     )

@@ -36,6 +36,8 @@ from .params import (
     set_family_kick_member_params,
     set_family_pk_page_params,
     set_family_pk_member_list_params,
+    set_pk_atm_withdraw_rank_params,
+    set_pk_atm_match_reward_detail_params,
     set_gift_panel_backpack_params,
     set_family_delete_params,
     set_family_create_time_query_params,
@@ -1016,6 +1018,41 @@ def _op_family_pk_page(args: argparse.Namespace, payload: dict[str, Any]) -> Non
     set_family_pk_page_params(payload, user_id=user_id, date=date, area=area)
 
 
+def _pk_atm_match_reward_detail_mode(args: argparse.Namespace) -> bool:
+    return bool(getattr(args, "pk_atm_reward_detail_user_id", None))
+
+
+def _op_pk_atm_match_reward_detail(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    from .pk_atm import resolve_latest_pk_id
+
+    user_id = str(getattr(args, "pk_atm_reward_detail_user_id", None) or "").strip()
+    room_id = str(getattr(args, "pk_atm_reward_detail_room_id", None) or "").strip()
+    pk_id = str(getattr(args, "pk_atm_reward_detail_pk_id", None) or "").strip()
+    area = str(getattr(args, "pk_atm_reward_detail_area", None) or "MENA").strip().upper()
+    auto_pk = getattr(args, "pk_atm_reward_detail_pk_id_auto", False) or pk_id.lower() in {
+        "auto",
+        "latest",
+        "recent",
+    }
+    if auto_pk or not pk_id:
+        pk_id, source = resolve_latest_pk_id(user_id, room_id)
+        print(f"自动解析 pkId={pk_id} ({source})", file=sys.stderr)
+    set_pk_atm_match_reward_detail_params(
+        payload, user_id=user_id, room_id=room_id, pk_id=pk_id, area=area
+    )
+
+
+def _pk_atm_withdraw_rank_mode(args: argparse.Namespace) -> bool:
+    return bool(getattr(args, "pk_atm_withdraw_rank_user_id", None))
+
+
+def _op_pk_atm_withdraw_rank(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(getattr(args, "pk_atm_withdraw_rank_user_id", None) or "").strip()
+    cycle = str(getattr(args, "pk_atm_withdraw_rank_cycle", None) or "1").strip()
+    area = str(getattr(args, "pk_atm_withdraw_rank_area", None) or "MENA").strip().upper()
+    set_pk_atm_withdraw_rank_params(payload, user_id=user_id, cycle=cycle, area=area)
+
+
 def _room_member_add_mode(args: argparse.Namespace) -> bool:
     return bool(
         getattr(args, "room_member_room_id", None) or getattr(args, "room_member_user_id", None)
@@ -1405,6 +1442,8 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: _family_kick_mode(a), _op_family_kick),
     (lambda a: _gift_panel_backpack_mode(a), _op_gift_panel_backpack),
     (lambda a: _family_pk_page_mode(a), _op_family_pk_page),
+    (lambda a: _pk_atm_match_reward_detail_mode(a), _op_pk_atm_match_reward_detail),
+    (lambda a: _pk_atm_withdraw_rank_mode(a), _op_pk_atm_withdraw_rank),
     (lambda a: _family_pk_member_list_mode(a), _op_family_pk_member_list),
     (lambda a: _room_member_add_mode(a), _op_room_member_add),
     (lambda a: a.family_leave_user_id is not None, _op_family_leave),

@@ -325,7 +325,13 @@ class AgentStreamRenderer:
             text = _strip_tool_decoration(ln).lstrip("·").strip()
             if text:
                 tools.append(text)
-        return {"thinking": thinking, "tools": tools}
+        phase = ""
+        if not thinking and not tools and self._status_hint.strip():
+            phase = self._status_hint.strip()
+        payload: dict[str, Any] = {"thinking": thinking, "tools": tools}
+        if phase:
+            payload["phase"] = phase
+        return payload
 
     def markdown_for_web(self) -> str:
         """Web Agent 执行中白框：思考全文 + 工具链（不含回复预览，完成后再 renderMarkdown）。"""
@@ -340,10 +346,8 @@ class AgentStreamRenderer:
                 if parts:
                     parts.append("")
                 parts.append("### 执行工作\n\n" + "\n".join(tools))
-        elif self._status_hint and not parts:
-            parts.append(self._status_hint)
         if not parts:
-            return "⏳ Agent 启动中…"
+            return ""
         return "\n".join(parts)
 
     def process_summary_markdown(self) -> str:

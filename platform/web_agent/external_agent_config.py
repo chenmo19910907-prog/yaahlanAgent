@@ -39,6 +39,7 @@ def external_agents_from_config(cfg: dict[str, Any] | None = None) -> list[dict[
                 "url": str(item.get("url") or "").strip(),
                 "queryScript": str(item.get("queryScript") or "").strip(),
                 "tokenEnvKey": str(item.get("tokenEnvKey") or "").strip(),
+                "targetEnvironment": str(item.get("targetEnvironment") or "").strip().lower(),
                 "defaultEnabled": bool(item.get("defaultEnabled", False)),
             }
         )

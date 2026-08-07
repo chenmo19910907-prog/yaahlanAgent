@@ -2,52 +2,41 @@
   "id": "pk-atm-test",
   "name": "PK提款机-跨房PK造数验收",
   "category": "PK提款机",
-  "description": "2.5.9 PK 提款机完整验收：拉服务配置（MOA 或本地梯度表）→ 随机匹配跨房 PK → 麦上机器人 → 测试号麦上送礼 → 生成式 MOA 验收 PK 赛况/对战信息与 PK 值 → 记录 PK/余额并计算应得返钻 → 结束 PK → 校验钻石增量 → 生成式 MOA 验收提款排名/吸底/本周总提款（接口待抓包时跳过 MOA 层）。",
+  "description": "2.5.9 PK 提款机：alpha MSE 配置 → 随机匹配跨房 PK → 造数至目标总 PK → C7 赛况(Reward tab/getAcrossPkMatchStatusV2)+对战 → C8 提款排名(Ranking tab/getAcrossPkRewardRankV2) → 返钻验收。",
   "version": 1,
   "params": {
     "phoneA": {
       "label": "A方手机号",
       "type": "string",
       "required": false,
-      "default": "13311111113",
-      "prompt": "房主 A，默认 13311111113"
+      "default": "13311111112",
+      "prompt": "房主 A，默认 13311111112"
     },
     "phoneB": {
       "label": "B方手机号",
       "type": "string",
       "required": false,
-      "default": "13311111114",
-      "prompt": "房主 B，默认 13311111114"
-    },
-    "botTotal": {
-      "label": "每房机器人数",
-      "type": "integer",
-      "required": false,
-      "default": "5"
-    },
-    "botOnMic": {
-      "label": "每房麦上机器人数",
-      "type": "integer",
-      "required": false,
-      "default": "5"
+      "default": "13311111113",
+      "prompt": "房主 B，默认 13311111113"
     },
     "giftCount": {
       "label": "送礼账号数",
       "type": "integer",
       "required": false,
-      "default": "20"
+      "default": "50",
+      "prompt": "10万总PK约需1万钻，默认50笔×400~600钻"
     },
     "giftMinDiamonds": {
       "label": "单笔最小钻石",
       "type": "integer",
       "required": false,
-      "default": "1"
+      "default": "400"
     },
     "giftMaxDiamonds": {
       "label": "单笔最大钻石",
       "type": "integer",
       "required": false,
-      "default": "1000"
+      "default": "600"
     },
     "preGiftWait": {
       "label": "送礼前等待秒",
@@ -71,7 +60,15 @@
       "label": "匹配超时秒",
       "type": "integer",
       "required": false,
-      "default": "120"
+      "default": "90",
+      "prompt": "每轮随机匹配等待秒数"
+    },
+    "matchRetries": {
+      "label": "匹配重试轮数",
+      "type": "integer",
+      "required": false,
+      "default": "5",
+      "prompt": "配错房间或超时时重试"
     },
     "pkMinute": {
       "label": "PK时长分钟",
@@ -87,18 +84,25 @@
       "default": ".tmp"
     },
     "personalPkThreshold": {
-      "label": "个人PK门槛覆盖",
+      "label": "个人PK门槛",
       "type": "integer",
       "required": false,
-      "default": "",
-      "prompt": "留空则用服务配置/默认文件"
+      "default": "1000",
+      "prompt": "alpha MSE minMemberRewardPk"
     },
     "minCombinedPk": {
-      "label": "场次PK门槛覆盖",
+      "label": "场次PK门槛",
       "type": "integer",
       "required": false,
-      "default": "",
-      "prompt": "留空则用服务配置/默认文件"
+      "default": "20000",
+      "prompt": "alpha MSE minTotalPkValue"
+    },
+    "targetCombinedPk": {
+      "label": "目标双方总PK",
+      "type": "integer",
+      "required": false,
+      "default": "100000",
+      "prompt": "验收双方总 PK 须达到（默认10万，命中MSE 10万档）"
     }
   },
   "steps": [
@@ -107,7 +111,7 @@
       "name": "PK提款机全流程",
       "run": {
         "type": "shell",
-        "command": "python3 workflow/scripts/pk_atm_test_run.py --phone-a {{phoneA}} --phone-b {{phoneB}} --bot-total {{botTotal}} --bot-on-mic {{botOnMic}} --gift-count {{giftCount}} --gift-min-diamonds {{giftMinDiamonds}} --gift-max-diamonds {{giftMaxDiamonds}} --pre-gift-wait {{preGiftWait}} --post-gift-wait {{postGiftWait}} --post-close-wait {{postCloseWait}} --match-timeout {{matchTimeout}} --pk-minute {{pkMinute}} --out-dir {{outDir}} --personal-pk-threshold {{personalPkThreshold}} --min-combined-pk {{minCombinedPk}}",
+        "command": "python3 workflow/scripts/pk_atm_test_run.py --phone-a {{phoneA}} --phone-b {{phoneB}} --gift-count {{giftCount}} --gift-min-diamonds {{giftMinDiamonds}} --gift-max-diamonds {{giftMaxDiamonds}} --pre-gift-wait {{preGiftWait}} --post-gift-wait {{postGiftWait}} --post-close-wait {{postCloseWait}} --match-timeout {{matchTimeout}} --match-retries {{matchRetries}} --pk-minute {{pkMinute}} --out-dir {{outDir}} --personal-pk-threshold {{personalPkThreshold}} --min-combined-pk {{minCombinedPk}} --target-combined-pk {{targetCombinedPk}}",
         "cwd": "."
       },
       "expect": {

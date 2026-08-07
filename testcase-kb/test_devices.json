@@ -1,8 +1,8 @@
 {
   "kbPath": "testcase-kb/test_devices.json",
   "importSource": "/Users/user/Desktop/团队测试机统计表.xlsx",
-  "syncedAt": "2026-07-06 10:07:28 UTC",
-  "count": 152,
+  "syncedAt": "2026-08-07 07:28:00 UTC",
+  "count": 154,
   "devices": [
     {
       "项目": "yaahlan",
@@ -1982,7 +1982,33 @@
       "归属人": "",
       "持有人": "",
       "备注": "自动落库 2026-07-06；phone=13011119999；userId=105553941；ip=8.219.251.61"
+    },
+    {
+      "项目": "yaahlan",
+      "资产编号": "待补编号",
+      "设备品牌": "Apple",
+      "设备名称": "iPhone",
+      "mmuid": "7c7cb67d75ee5e4ebc0c74f8602c10879f5cef8516998668828a",
+      "mmuidv3": "",
+      "设备系统": "iOS",
+      "系统版本": "26.5.2",
+      "归属人": "",
+      "持有人": "",
+      "备注": "自动落库 2026-08-07；phone=966|13392972003；userId=101099533；ip=36.112.197.198"
+    },
+    {
+      "项目": "yaahlan",
+      "资产编号": "待补编号",
+      "设备品牌": "Vivo",
+      "设备名称": "V1816A",
+      "mmuid": "c1b9db42a836208a771d86b6dd1e57b96117ce79",
+      "mmuidv3": "fa820cc398ecac9b645a24586458ac7803e71256cf9e8adca2b772ab16465fa344",
+      "设备系统": "Android",
+      "系统版本": "9",
+      "归属人": "",
+      "持有人": "",
+      "备注": "自动落库 2026-08-07；phone=966|17700001111；userId=107713666；ip=84.75.158.1"
     }
   ],
-  "lastIncrementalUpdate": "upsert loginDevice phone=13011119999 userId=105553941"
+  "lastIncrementalUpdate": "upsert loginDevice phone=966|17700001111 userId=107713666"
 }

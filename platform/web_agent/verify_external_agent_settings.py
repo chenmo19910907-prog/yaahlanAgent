@@ -44,6 +44,7 @@ def main() -> int:
     )
     assert "service_agent_query.py" in prompt_enabled
     assert "服务端 Agent" in prompt_enabled
+    assert "--target-environment stage" in prompt_enabled
     assert "middleware_agent_query.py" in prompt_enabled
     assert "未勾选（禁止调用）" in prompt_enabled
     assert "即使用户消息里点名" in prompt_enabled

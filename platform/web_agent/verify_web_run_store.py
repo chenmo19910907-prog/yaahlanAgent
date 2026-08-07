@@ -3,10 +3,12 @@
 
 from __future__ import annotations
 
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 WEB_AGENT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(WEB_AGENT_DIR))
@@ -106,6 +108,26 @@ class WebRunStoreTests(unittest.TestCase):
         self.assertFalse(self.store.is_cancel_requested("abc123"))
         self.store.request_cancel("abc123")
         self.assertTrue(self.store.is_cancel_requested("abc123"))
+
+    def test_has_run_activity(self) -> None:
+        self.store.create_run(self._sample_meta())
+        self.assertFalse(self.store.has_run_activity("abc123"))
+        self.store.append_event("abc123", {"type": "ack", "line": "收到"})
+        self.assertTrue(self.store.has_run_activity("abc123"))
+
+    def test_discover_worker_pid_empty(self) -> None:
+        self.assertEqual(self.store.discover_worker_pid("nonexistent-run-id-xyz"), 0)
+
+    def test_is_pid_alive_rejects_zombie_stat(self) -> None:
+        with patch("web_run_store.subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=["ps"],
+                returncode=0,
+                stdout="Z+   ",
+                stderr="",
+            )
+            with patch("web_run_store.os.kill", return_value=None):
+                self.assertFalse(WebRunStore.is_pid_alive(99999))
 
 
 if __name__ == "__main__":

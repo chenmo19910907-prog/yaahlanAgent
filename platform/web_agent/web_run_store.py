@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import subprocess
 import threading
 import time
 from dataclasses import dataclass
@@ -117,6 +118,7 @@ class RunSnapshot:
     last_elapsed_line: str = ""
     last_batch_line: str = ""
     last_external_line: str = ""
+    last_phase_line: str = ""
     last_markdown: str = ""
     last_process: dict[str, Any] | None = None
     final_text: str = ""
@@ -128,6 +130,7 @@ class RunSnapshot:
             "last_elapsed_line": self.last_elapsed_line,
             "last_batch_line": self.last_batch_line,
             "last_external_line": self.last_external_line,
+            "last_phase_line": self.last_phase_line,
             "last_markdown": self.last_markdown,
             "final_text": self.final_text,
             "error": self.error,
@@ -145,6 +148,7 @@ class RunSnapshot:
             last_elapsed_line=str(data.get("last_elapsed_line") or ""),
             last_batch_line=str(data.get("last_batch_line") or ""),
             last_external_line=str(data.get("last_external_line") or ""),
+            last_phase_line=str(data.get("last_phase_line") or ""),
             last_markdown=str(data.get("last_markdown") or ""),
             last_process=proc if isinstance(proc, dict) else None,
             final_text=str(data.get("final_text") or ""),
@@ -230,9 +234,14 @@ class WebRunStore:
         if etype == "ack":
             snap.last_ack_line = str(event.get("line") or "")
         elif etype == "status":
-            snap.last_elapsed_line = str(event.get("elapsed_line") or "")
-            snap.last_batch_line = str(event.get("batch_line") or "")
-            snap.last_external_line = str(event.get("external_line") or "")
+            if "elapsed_line" in event:
+                snap.last_elapsed_line = str(event.get("elapsed_line") or "")
+            if "batch_line" in event:
+                snap.last_batch_line = str(event.get("batch_line") or "")
+            if "external_line" in event:
+                snap.last_external_line = str(event.get("external_line") or "")
+            if "phase_line" in event:
+                snap.last_phase_line = str(event.get("phase_line") or "")
         elif etype == "delta":
             markdown = event.get("markdown")
             if markdown:
@@ -241,6 +250,11 @@ class WebRunStore:
             if isinstance(proc, dict):
                 prev = snap.last_process if isinstance(snap.last_process, dict) else None
                 snap.last_process = _merge_process_payload(prev, proc)
+                phase = str(proc.get("phase") or "").strip()
+                if phase:
+                    snap.last_phase_line = phase
+                elif str(proc.get("thinking") or "").strip():
+                    snap.last_phase_line = ""
         elif etype == "done":
             snap.final_text = str(event.get("text") or "")
         elif etype == "error":
@@ -337,22 +351,90 @@ class WebRunStore:
             return False
         try:
             os.kill(pid, 0)
-            return True
         except OSError:
             return False
+        try:
+            proc = subprocess.run(
+                ["ps", "-p", str(pid), "-o", "stat="],
+                capture_output=True,
+                text=True,
+                timeout=1,
+                check=False,
+            )
+            stat = (proc.stdout or "").strip()
+            if stat.startswith("Z"):
+                return False
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+        return True
+
+    def discover_worker_pid(self, run_id: str) -> int:
+        """扫描 run_worker 子进程（meta.worker_pid 尚未写入时仍可发现）。"""
+        rid = (run_id or "").strip()
+        if not rid:
+            return 0
+        needle = f"run_worker.py --run-id {rid}"
+        try:
+            proc = subprocess.run(
+                ["pgrep", "-f", needle],
+                capture_output=True,
+                text=True,
+                timeout=2,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            return 0
+        if proc.returncode != 0:
+            return 0
+        for line in proc.stdout.splitlines():
+            text = line.strip()
+            if not text:
+                continue
+            try:
+                pid = int(text)
+            except ValueError:
+                continue
+            if pid > 0 and pid != os.getpid() and self.is_pid_alive(pid):
+                return pid
+        return 0
+
+    def has_run_activity(self, run_id: str) -> bool:
+        """是否已有 worker 输出或 SSE 事件（用于判断能否安全重跑）。"""
+        events_path = self._events_path(run_id)
+        try:
+            if events_path.is_file() and events_path.stat().st_size > 0:
+                return True
+        except OSError:
+            pass
+        worker_log = self._run_dir(run_id) / "worker.log"
+        try:
+            if worker_log.is_file() and worker_log.stat().st_size > 0:
+                return True
+        except OSError:
+            pass
+        return False
 
     def is_worker_alive(self, run_id: str) -> bool:
         meta = self.get_run(run_id)
         if meta is None:
             return False
-        pid = int(meta.worker_pid or 0)
-        if pid <= 0:
+        if meta.status != RUN_STATUS_RUNNING:
             return False
-        if pid == os.getpid():
-            from web_run_executor import is_run_thread_alive
+        pid = int(meta.worker_pid or 0)
+        if pid > 0:
+            if pid == os.getpid():
+                from web_run_executor import is_run_thread_alive
 
-            return is_run_thread_alive(run_id)
-        return self.is_pid_alive(pid)
+                return is_run_thread_alive(run_id)
+            if self.is_pid_alive(pid):
+                return True
+        discovered = self.discover_worker_pid(run_id)
+        if discovered > 0:
+            self.set_worker_pid(run_id, discovered)
+            return True
+        from web_run_executor import is_run_thread_alive
+
+        return is_run_thread_alive(run_id)
 
     def cleanup_old_runs(self, *, max_age_s: float = 86400.0) -> None:
         cutoff = time.time() - max_age_s

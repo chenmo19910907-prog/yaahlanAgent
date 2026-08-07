@@ -153,10 +153,21 @@ def _external_agent_rules(enabled_ids: list[str]) -> str:
             lines.append(f"  - {desc}")
         if script:
             query_line = f"  - 查询：`python3 {script} --message \"<问题>\"`"
+            target_env = str(item.get("targetEnvironment") or "").strip().lower()
+            if target_env in {"prod", "stage"}:
+                query_line = (
+                    f"  - 查询：`python3 {script} --message \"<问题>\" "
+                    f"--target-environment {target_env}`"
+                )
             query_line += "（Web Agent 会自动注入 batch_key 并展示查询进度"
             if token_env:
                 query_line += (
                     f"；Token 读 `platform/dingtalk_gateway/.env.local` 的 `{token_env}`"
+                )
+            if str(item.get("id") or "") == "yaahlan_service":
+                query_line += (
+                    "；默认 `--target-environment stage` 查测试环境代码；"
+                    "用户消息含「线上环境」时改 `--target-environment prod`"
                 )
             query_line += "）"
             lines.append(query_line)

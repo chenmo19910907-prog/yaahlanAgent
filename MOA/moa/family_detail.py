@@ -12,10 +12,6 @@ from typing import Any
 from .client import MoaClient
 from .family import parse_family_members_summary, parse_user_joined_family_summary
 from .payload import load_payload
-
-_MEMBERS_TEMPLATE = moa_template("家族-查询成员userId.json")
-_JOINED_TEMPLATE = moa_template("家族-按userId查家族id.json")
-
 from .project_paths import (
     admin_execute_path,
     get_repo_root,
@@ -23,6 +19,9 @@ from .project_paths import (
     moa_execute_path,
     moa_template,
 )
+
+_MEMBERS_TEMPLATE = moa_template("家族-查询成员userId.json")
+_JOINED_TEMPLATE = moa_template("家族-按userId查家族id.json")
 
 
 

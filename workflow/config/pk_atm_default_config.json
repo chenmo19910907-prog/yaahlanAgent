@@ -1,14 +1,14 @@
 {
-  "minCombinedPk": 500000,
-  "personalPkThreshold": 0,
+  "minCombinedPk": 20000,
+  "personalPkThreshold": 10000,
   "firstWinMultiplier": 2,
   "tiers": [
-    {"maxCombinedPk": 500000, "poolDiamonds": 2000, "ratioPct": 4},
-    {"maxCombinedPk": 3000000, "poolDiamonds": 12000, "ratioPct": 4},
-    {"maxCombinedPk": 8000000, "poolDiamonds": 40000, "ratioPct": 5},
-    {"maxCombinedPk": 15000000, "poolDiamonds": 75000, "ratioPct": 5},
-    {"maxCombinedPk": 25000000, "poolDiamonds": 150000, "ratioPct": 6},
-    {"maxCombinedPk": 40000000, "poolDiamonds": 240000, "ratioPct": 6}
+    {"maxCombinedPk": 20000, "poolDiamonds": 60, "ratioPct": 3},
+    {"maxCombinedPk": 100000, "poolDiamonds": 300, "ratioPct": 3},
+    {"maxCombinedPk": 400000, "poolDiamonds": 1600, "ratioPct": 4},
+    {"maxCombinedPk": 1000000, "poolDiamonds": 5000, "ratioPct": 5},
+    {"maxCombinedPk": 2000000, "poolDiamonds": 10000, "ratioPct": 5},
+    {"maxCombinedPk": 5000000, "poolDiamonds": 30000, "ratioPct": 6}
   ],
-  "note": "2.5.9 用例文档梯度表（单位：PK 值）；personalPkThreshold=0 表示未从服务端拉到个人门槛时不过滤。"
+  "note": "alpha MSE pkAtmConfig；poolDiamonds=档位PK/10×返钻%；personalPkThreshold=minMemberRewardPk（当前服务端 10000）"
 }

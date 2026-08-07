@@ -12,9 +12,6 @@ from .client import MoaClient, extract_ec_em_result, extract_inner_result, outer
 from .config import build_room_member_is_member_expr, build_room_member_join_expr
 from .params import set_backdoor_execute_expr
 from .payload import load_payload
-
-_TEMPLATE = moa_template("房间成员-快速添加.json")
-
 from .project_paths import (
     admin_execute_path,
     get_repo_root,
@@ -22,6 +19,8 @@ from .project_paths import (
     moa_execute_path,
     moa_template,
 )
+
+_TEMPLATE = moa_template("房间成员-快速添加.json")
 
 
 

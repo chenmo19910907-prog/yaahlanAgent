@@ -16,6 +16,9 @@
 | 2026-08-03 | `/yaahlan/room/acrossRoomPk/acceptAcrossRoomPkInvite` | `/service/room/external/room-pk-api` | `acceptAcrossRoomPkInvite` | body：`userId`、`roomId`（被邀请方）、`acrossRoomId`（发起方）、`inviteId`；Tunnel `100006869` `_id=_QBtxp8Bpk1mjMPPugzU`；MOA 代理调通；重放需有效 inviteId |
 | 2026-08-03 | `/yaahlan/room/acrossRoomPk/closeAcrossRoomPk` | `/service/room/external/room-pk-api` | `closeAcrossRoomPk` | body：`userId`、`roomId`、`acrossRoomId`（对方房间）、`acrossRoomPkId`（当前 PK 场次）；Tunnel `100079102` `_id=jANzxp8Bpk1mjMPPm_ig`；MOA 实测 ec=200 |
 | 2026-08-04 | `/yaahlan/room/acrossRoomPk/getAcrossRoomPkInfo` | `/service/room/external/room-pk-api` | `getAcrossRoomPkInfo` | body：`userId`、`roomId`、可选 `acrossRoomPkId`；返回 `stage`/`currentRoomInfo`/`acrossRoomInfo`/`roomRankValue`/`acrossRoomRankValue`/`roomRankList`；PK 提款机 workflow 用于 PK 结束前赛况/对战验收 |
+| 2026-08-07 | `/yaahlan/room/pk/getPkAtmMatchRewardDetail` | `/service/room/external/room-pk-api` | `getPkAtmMatchRewardDetail` | body：`userId`/`uid`、`roomId`、`pkId`；返回 `roomTotalDiamond`、`myInfo`（`myPkValue`/`myRewardDiamond`/`firstWinExtraDiamond`）、`memberList[]`；PK 结束返钻弹窗；Tunnel `100465989` `_id=0O86258B0MxPP6PX1qHt`（2026-08-07）；MOA 实测 ec=200 |
+| 2026-08-07 | `/yaahlan/room/pk/getAcrossPkRewardRankV2` | `/service/room/external/room-pk-api` | `getAcrossPkRewardRankV2` | body：`userId`/`uid`、`cycle`（`1`=本周 / `2`=上周）、`area`；返回 `data.totalReward`（本周已被提走奖金）、`data.list[]`（`rank`/`userId`/`rewardValue` 提款排行榜）、`data.currentUser`（吸底本周已提款）；H5 `pkNew.html` Ranking tab；MOA 模板 `PK提款机-提款排名.json`；MOA 实测 `107427060`（13311111111）ec=200 |
+| 2026-08-07 | `/yaahlan/room/acrossRoomPk/getPkAtmActivityPageConfig` | `/service/room/external/room-pk-api` | `getPkAtmActivityPageConfig` | body：`userId`/`uid`、`roomId`；返回 `weekKey`/`totalReward`（奖池上限）/`usedReward`（已提走）；H5 活动页配置；MOA 实测 `100079102` ec=200 |
 | 2026-07-16 | `/yaahlan/vas/familyPk/getFamilyPkPage` | `/service/vas/activity/family-pk-v2-api` | `getFamilyPkPage` | body：`userId`/`uid`、`date`（tab 日期）、`area`；返回 `pkList`/`current`/`tierList`。旧版 `family-pk` + `home` 仅活动入口摘要，非本页 |
 | 2026-07-16 | `/yaahlan/vas/familyPk/getFamilyPkUserList` | `/service/vas/activity/family-pk-v2-api` | `getFamilyPkUserList` | body：`userId`、`familyId`、`date`、`limit`、`offset`；点击贡献 top3 头像弹窗；返回 `memberList`/`userInfo`/`hasNext` |
 | 2026-07-17 | `/yaahlan/component/giftPanel/getGiftTabListV3` | `/service/yh-components/gift-panel` | `getGiftTabListV3` | MOA Redis 直连 + httpproxy；背包 Tab 读 `package.remain`；无需打开礼物面板 |
@@ -40,14 +43,14 @@
 
 ## 待抓包验证（PK 提款机 · 提款排名 tab）
 
-> 活动页「提款排名」榜单、吸底「本周已提款💎y」、页头「本周已被提走奖金」HTTP 路径 **尚未** MOA 实测通过。
+> ~~活动页「提款排名」榜单、吸底「本周已提款💎y」、页头「本周已被提走奖金」HTTP 路径 **尚未** MOA 实测通过。~~ **已验证**（2026-08-07）：`getAcrossPkRewardRankV2` → 见上表。MOA 模板 `MOA/templates/PK提款机-提款排名.json`。
 
 | 候选 HTTP（待确认） | 候选 MOA `url` | 候选 `method` | 备注 |
 |---------------------|----------------|---------------|------|
-| `/yaahlan/vas/.../getWithdrawRankList`（待抓包） | `/service/room/external/room-pk-api` | `getAcrossRoomPkWithdrawRankList` / `getAcrossRoomPkWithdrawRank` / `getAcrossRoomPkWithdrawPage` | 当前测试环境 Method not found |
-| 同上 | `/service/vas/activity/across-room-pk-withdraw-v2-api` | `home` / `getWithdrawRankList` / `getWithdrawRank` | MSE 可能未注册 |
+| ~~`/yaahlan/vas/.../getWithdrawRankList`（待抓包）~~ | `/service/room/external/room-pk-api` | **`getAcrossPkRewardRankV2`** | **已验证**；`totalReward` + `list` + `currentUser` |
+| 同上 | `/service/vas/activity/across-room-pk-withdraw-v2-api` | `home` / `getWithdrawRankList` / `getWithdrawRank` | MSE 可能未注册（旧候选） |
 
-抓包句式：`抓包13311111113打开PK提款机提款排名tab的tunnel，并记录到MOA`
+抓包句式：`抓包13311111111打开PK提款机提款排名tab的tunnel，并记录到MOA`
 
 ## 配套 HTTP（非 MOA，仅对照）
 

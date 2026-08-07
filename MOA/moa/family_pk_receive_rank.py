@@ -12,10 +12,6 @@ from .client import MoaClient
 from .family import parse_family_create_time_summary
 from .params import json_param, set_family_create_time_query_params
 from .payload import load_payload
-
-_CREATE_TIME_TEMPLATE = moa_template("家族-查询创建时间.json")
-_RANK_TEMPLATE = moa_template("家族PK-查询收礼日榜.json")
-
 from .project_paths import (
     admin_execute_path,
     get_repo_root,
@@ -23,6 +19,9 @@ from .project_paths import (
     moa_execute_path,
     moa_template,
 )
+
+_CREATE_TIME_TEMPLATE = moa_template("家族-查询创建时间.json")
+_RANK_TEMPLATE = moa_template("家族PK-查询收礼日榜.json")
 
 
 

@@ -1,0 +1,53 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/room/external/room-pk-api",
+  "method": "getAcrossPkRewardRankV2",
+  "header": "{\"userId\":\"100465989\",\"uid\":\"100465989\",\"cycle\":\"1\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\",\"originRsp\":1,\"dataType\":\"json\",\"_version_\":1000}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100465989\",\"uid\":\"100465989\",\"cycle\":\"1\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\",\"originRsp\":1,\"dataType\":\"json\",\"_version_\":1000}",
+      "type": "json",
+      "value": {
+        "userId": "100465989",
+        "uid": "100465989",
+        "cycle": "1",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "android",
+        "osType": "android",
+        "originRsp": 1,
+        "dataType": "json",
+        "_version_": 1000
+      }
+    }
+  ],
+  "_registry": {
+    "id": "pk_atm_withdraw_rank",
+    "name": "PK提款机-提款排名",
+    "category": "房间PK（room/external/room-pk-api）",
+    "description": "PK 提款机活动页「提款排名」tab（getAcrossPkRewardRankV2）。对齐 /yaahlan/room/pk/getAcrossPkRewardRankV2；Tunnel 13311111111→100465989 `_id=El03258Bpk1mjMPPU0uO`（2026-08-07）。返回 data.totalReward（本周已被提走奖金）、data.list（提款排行榜）、data.currentUser（吸底本周已提款）。",
+    "prompts": [
+      "查询 PK 提款机提款排名 userId=<userId>",
+      "PK提款机本周总钻石 userId=<userId>",
+      "getAcrossPkRewardRankV2 <userId>"
+    ],
+    "cli": "--pk-atm-withdraw-rank-user-id <userId> [--pk-atm-withdraw-rank-cycle 1] [--pk-atm-withdraw-rank-area MENA]"
+  }
+}

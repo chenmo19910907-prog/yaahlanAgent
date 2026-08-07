@@ -52,7 +52,9 @@ def main() -> int:
 
     html = (WEB_AGENT_DIR / "chat.html").read_text(encoding="utf-8")
     assert "run-status-external" in html, "chat.html 缺少 external 状态样式"
+    assert "run-status-phase" in html, "chat.html 缺少 phase 状态样式"
     assert "external_line" in html, "chat.html 未处理 external_line"
+    assert "phase_line" in html, "chat.html 未处理 phase_line"
 
     print("verify_external_agent_progress: OK")
     return 0

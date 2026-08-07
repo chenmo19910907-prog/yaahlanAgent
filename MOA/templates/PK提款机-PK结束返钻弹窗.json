@@ -1,0 +1,53 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/room/external/room-pk-api",
+  "method": "getPkAtmMatchRewardDetail",
+  "header": "{\"userId\":\"100465989\",\"uid\":\"100465989\",\"roomId\":\"38826842\",\"pkId\":\"01KZDKKH6RGEYM4SMMWZYMEMN2\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\",\"originRsp\":1,\"dataType\":\"json\",\"_version_\":1000}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100465989\",\"uid\":\"100465989\",\"roomId\":\"38826842\",\"pkId\":\"01KZDKKH6RGEYM4SMMWZYMEMN2\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\",\"originRsp\":1,\"dataType\":\"json\",\"_version_\":1000}",
+      "type": "json",
+      "value": {
+        "userId": "100465989",
+        "uid": "100465989",
+        "roomId": "38826842",
+        "pkId": "01KZDKKH6RGEYM4SMMWZYMEMN2",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "android",
+        "osType": "android",
+        "originRsp": 1,
+        "dataType": "json",
+        "_version_": 1000
+      }
+    }
+  ],
+  "_registry": {
+    "id": "pk_atm_match_reward_detail",
+    "name": "PK提款机-PK结束返钻弹窗",
+    "category": "房间PK（room/external/room-pk-api）",
+    "description": "PK 结束后提款机返钻结果弹窗（getPkAtmMatchRewardDetail）。需 userId、roomId、pkId；返回 roomTotalDiamond、myInfo、memberList。Tunnel 13311111111 `_id=0O86258B0MxPP6PX1qHt`（2026-08-07）。",
+    "prompts": [
+      "查询 PK 结束返钻弹窗 userId=<userId> roomId=<roomId> pkId=<pkId>",
+      "getPkAtmMatchRewardDetail <userId> <roomId> <pkId>"
+    ],
+    "cli": "--pk-atm-reward-detail-user-id <userId> --pk-atm-reward-detail-room-id <roomId> --pk-atm-reward-detail-pk-id <pkId>"
+  }
+}

@@ -24,6 +24,7 @@ from external_agent_progress import (  # noqa: E402
     report_external_agent_querying,
     resolve_user_key,
 )
+from run_child_processes import run_child_guard  # noqa: E402
 
 DEFAULT_BASE_URL = "http://172.18.50.12:8080"
 BASE_URL_ENV_KEYS = ("MIDDLEWARE_AGENT_URL", "MDP_MIDDLEWARE_AGENT_URL")
@@ -214,33 +215,34 @@ def main() -> int:
 
     base_url = resolve_base_url(args.base_url)
     user_key = resolve_user_key(args.user_key)
-    if user_key:
-        report_external_agent_querying(
-            user_key,
-            agent_id=AGENT_ID,
-            agent_label=AGENT_LABEL,
-            message=args.message.strip(),
-        )
-    try:
-        answer, session_id, task_id = query_middleware_agent(
-            args.message.strip(),
-            base_url=base_url,
-            session_id=args.session_id,
-            poll_task_timeout_s=max(30, int(args.poll_timeout)),
-            chat_timeout_s=max(10, int(args.timeout)),
-        )
-    except RuntimeError as exc:
+    with run_child_guard(user_key):
         if user_key:
-            report_external_agent_error(
+            report_external_agent_querying(
                 user_key,
                 agent_id=AGENT_ID,
                 agent_label=AGENT_LABEL,
-                error=str(exc),
+                message=args.message.strip(),
             )
-        raise
-    else:
-        if user_key:
-            clear_external_agent_progress(user_key)
+        try:
+            answer, session_id, task_id = query_middleware_agent(
+                args.message.strip(),
+                base_url=base_url,
+                session_id=args.session_id,
+                poll_task_timeout_s=max(30, int(args.poll_timeout)),
+                chat_timeout_s=max(10, int(args.timeout)),
+            )
+        except RuntimeError as exc:
+            if user_key:
+                report_external_agent_error(
+                    user_key,
+                    agent_id=AGENT_ID,
+                    agent_label=AGENT_LABEL,
+                    error=str(exc),
+                )
+            raise
+        else:
+            if user_key:
+                clear_external_agent_progress(user_key)
     if args.json:
         print(
             json.dumps(

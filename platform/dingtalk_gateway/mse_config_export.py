@@ -30,6 +30,7 @@ if str(GATEWAY_DIR) not in sys.path:
 
 from export_delivery import load_export_config  # noqa: E402
 from alidocs_excel_export import export_rows_to_folder  # noqa: E402
+from repo_paths import mse_execute_path  # noqa: E402
 
 _SET_RE = re.compile(r"^([^=]+)=(.+)$")
 

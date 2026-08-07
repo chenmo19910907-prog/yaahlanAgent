@@ -22,11 +22,35 @@ from external_agent_progress import (  # noqa: E402
     report_external_agent_querying,
     resolve_user_key,
 )
+from run_child_processes import run_child_guard  # noqa: E402
 
 DEFAULT_API_URL = "https://ai-yaahlan.wemomo.com/api/chat/stream"
 TOKEN_ENV_KEYS = ("YAAHLAN_SERVICE_AGENT_TOKEN", "SERVICE_AGENT_TOKEN")
+TARGET_ENV_ENV_KEYS = ("YAAHLAN_SERVICE_AGENT_TARGET_ENV", "SERVICE_AGENT_TARGET_ENV")
+VALID_TARGET_ENVIRONMENTS = frozenset({"prod", "stage"})
+DEFAULT_TARGET_ENVIRONMENT = "stage"
 AGENT_ID = "yaahlan_service"
 AGENT_LABEL = "服务端 Agent"
+
+
+def resolve_target_environment(explicit: str | None = None) -> str:
+    if explicit is not None:
+        value = explicit.strip().lower()
+        if not value:
+            return DEFAULT_TARGET_ENVIRONMENT
+        if value not in VALID_TARGET_ENVIRONMENTS:
+            allowed = ", ".join(sorted(VALID_TARGET_ENVIRONMENTS))
+            raise SystemExit(f"无效 target_environment={explicit!r}，允许值：{allowed}")
+        return value
+    load_env_local()
+    for key in TARGET_ENV_ENV_KEYS:
+        value = os.environ.get(key, "").strip().lower()
+        if value:
+            if value not in VALID_TARGET_ENVIRONMENTS:
+                allowed = ", ".join(sorted(VALID_TARGET_ENVIRONMENTS))
+                raise SystemExit(f"环境变量 {key}={value!r} 无效，允许值：{allowed}")
+            return value
+    return DEFAULT_TARGET_ENVIRONMENT
 
 
 def resolve_token(explicit: str | None = None) -> str:
@@ -52,14 +76,17 @@ def query_service_agent(
     audience_role: str = "tech",
     task_type: str = "business_analysis",
     runtime: str = "custom",
+    target_environment: str = DEFAULT_TARGET_ENVIRONMENT,
     timeout_s: int = 120,
 ) -> tuple[str, str | None]:
+    env = resolve_target_environment(target_environment)
     body = json.dumps(
         {
             "message": message,
             "audience_role": audience_role,
             "task_type": task_type,
             "runtime": runtime,
+            "target_environment": env,
             "conversation_id": conversation_id,
         },
         ensure_ascii=False,
@@ -114,41 +141,59 @@ def main() -> int:
     parser.add_argument("--conversation-id", default=None, help="续聊 conversation_id")
     parser.add_argument("--token", default=None, help="Bearer JWT（默认读 .env.local）")
     parser.add_argument("--api-url", default=DEFAULT_API_URL, help="SSE API 地址")
+    parser.add_argument(
+        "--target-environment",
+        "--target-env",
+        default=None,
+        help=f"代码环境 prod/stage（默认 {DEFAULT_TARGET_ENVIRONMENT}；可设 YAAHLAN_SERVICE_AGENT_TARGET_ENV）",
+    )
     parser.add_argument("--timeout", type=int, default=120, help="超时秒数")
     parser.add_argument("--json", action="store_true", help="输出 JSON（含 conversation_id）")
     args = parser.parse_args()
 
     token = resolve_token(args.token)
+    target_environment = resolve_target_environment(args.target_environment)
     user_key = resolve_user_key(args.user_key)
-    if user_key:
-        report_external_agent_querying(
-            user_key,
-            agent_id=AGENT_ID,
-            agent_label=AGENT_LABEL,
-            message=args.message.strip(),
-        )
-    try:
-        answer, conv_id = query_service_agent(
-            args.message.strip(),
-            token=token,
-            api_url=args.api_url.strip() or DEFAULT_API_URL,
-            conversation_id=args.conversation_id,
-            timeout_s=max(10, int(args.timeout)),
-        )
-    except RuntimeError as exc:
+    with run_child_guard(user_key):
         if user_key:
-            report_external_agent_error(
+            report_external_agent_querying(
                 user_key,
                 agent_id=AGENT_ID,
                 agent_label=AGENT_LABEL,
-                error=str(exc),
+                message=args.message.strip(),
             )
-        raise
-    else:
-        if user_key:
-            clear_external_agent_progress(user_key)
+        try:
+            answer, conv_id = query_service_agent(
+                args.message.strip(),
+                token=token,
+                api_url=args.api_url.strip() or DEFAULT_API_URL,
+                conversation_id=args.conversation_id,
+                target_environment=target_environment,
+                timeout_s=max(10, int(args.timeout)),
+            )
+        except RuntimeError as exc:
+            if user_key:
+                report_external_agent_error(
+                    user_key,
+                    agent_id=AGENT_ID,
+                    agent_label=AGENT_LABEL,
+                    error=str(exc),
+                )
+            raise
+        else:
+            if user_key:
+                clear_external_agent_progress(user_key)
     if args.json:
-        print(json.dumps({"answer": answer, "conversation_id": conv_id}, ensure_ascii=False))
+        print(
+            json.dumps(
+                {
+                    "answer": answer,
+                    "conversation_id": conv_id,
+                    "target_environment": target_environment,
+                },
+                ensure_ascii=False,
+            )
+        )
     else:
         print(answer)
         if conv_id:
