@@ -80,13 +80,37 @@
     return bar.contains(event.target);
   }
 
+  function isInteractiveHoverTarget(event) {
+    if (!event?.target?.closest) return false;
+    const el = event.target.closest('button, a[href], [role="button"], label[for]');
+    if (!el) return false;
+    if (el.matches(':disabled, [aria-disabled="true"]')) return false;
+    return true;
+  }
+
   function isWaitingHoverTarget(event) {
     const area = getChatArea();
     if (!area || !event) return false;
     if (!area.contains(event.target)) return false;
     if (isOwnerBarHoverTarget(event)) return false;
+    if (isInteractiveHoverTarget(event)) return false;
     if (isPointInInputExclusionZone(event.clientX, event.clientY)) return false;
     return true;
+  }
+
+  function clearWaitingHoverState() {
+    inChatArea = false;
+    visible = false;
+    const area = getChatArea();
+    if (area) area.classList.remove('agent-waiting-hover');
+    if (cursorEl && !finishing) {
+      cursorEl.classList.remove('is-visible', 'is-burst');
+    }
+  }
+
+  function pauseWaitingCursor() {
+    if (!active) return;
+    clearWaitingHoverState();
   }
 
   function syncChatAreaHover(event) {
@@ -94,8 +118,10 @@
   }
 
   function onMouseMove(event) {
+    if (!active) return;
     syncChatAreaHover(event);
     if (!inChatArea) return;
+    ensureCursor();
     pos.x = event.clientX;
     pos.y = event.clientY;
     if (!visible) {
@@ -109,25 +135,35 @@
     setInChatArea(false);
   }
 
+  function onVisibilityChange() {
+    pauseWaitingCursor();
+  }
+
+  function onWindowBlur() {
+    pauseWaitingCursor();
+  }
+
   function bindEvents() {
     if (bound) return;
     bound = true;
     document.addEventListener('mousemove', onMouseMove, { passive: true });
+    document.addEventListener('mousedown', onMouseMove, { passive: true });
+    document.addEventListener('mouseenter', onMouseMove, { passive: true });
     document.addEventListener('mouseleave', onMouseLeave);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('blur', onWindowBlur);
   }
 
   function unbindEvents() {
     if (!bound) return;
     bound = false;
     document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mousedown', onMouseMove);
+    document.removeEventListener('mouseenter', onMouseMove);
     document.removeEventListener('mouseleave', onMouseLeave);
-    inChatArea = false;
-    visible = false;
-    const area = getChatArea();
-    if (area) area.classList.remove('agent-waiting-hover');
-    if (cursorEl && !finishing) {
-      cursorEl.classList.remove('is-visible', 'is-burst');
-    }
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+    window.removeEventListener('blur', onWindowBlur);
+    clearWaitingHoverState();
   }
 
   function clearFinishTimer() {
