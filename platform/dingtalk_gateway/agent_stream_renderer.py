@@ -67,6 +67,23 @@ def _is_prompt_echo_line(line: str) -> bool:
     return any(p.match(s) for p in _PROMPT_ECHO_LINE_RES)
 
 
+_INTERIM_THOUGHT_MAX_CHARS = 800
+
+
+def _looks_like_interim_assistant_thought(text: str) -> bool:
+    """工具开始前 assistant 流式短句可当作思考；长报告/表格不算。"""
+    body = (text or "").strip()
+    if not body or len(body) > _INTERIM_THOUGHT_MAX_CHARS:
+        return False
+    if re.search(r"^#{1,3}\s", body, re.MULTILINE):
+        return False
+    if body.count("|") >= 2 and "---" in body:
+        return False
+    if body.count("\n") > 12:
+        return False
+    return True
+
+
 def sanitize_web_thinking(text: str) -> str:
     """Web 思考区：去掉 prompt 回显行（如单独一行的「用户」「用户消息…」）。"""
     if not text:
@@ -291,7 +308,9 @@ class AgentStreamRenderer:
         if pre:
             return pre
         if self._answer.strip() and not self._tool_lines:
-            return sanitize_web_thinking(self._answer.strip())
+            candidate = sanitize_web_thinking(self._answer.strip())
+            if _looks_like_interim_assistant_thought(candidate):
+                return candidate
         return ""
 
     def markdown(self) -> str:

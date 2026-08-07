@@ -6,6 +6,7 @@ import concurrent.futures
 import json
 import logging
 import sys
+import threading
 import time
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
@@ -41,6 +42,8 @@ EXECUTOR_CONFIG = GATEWAY_DIR / "config" / "executor.local.json"
 DEFAULT_MODEL = "composer-2.5"
 DEFAULT_TIMEOUT_S = 600
 DINGTALK_MAX_REPLY_CHARS = 3800
+_STREAM_HEARTBEAT_S = 1.5
+_STREAM_EXECUTING_AFTER_S = 3.0
 logger = logging.getLogger("dingtalk-gateway")
 
 
@@ -184,57 +187,82 @@ def _consume_run_stream(
         renderer.set_status_hint("Agent 已启动…")
     _maybe_render(force=True)
 
-    for event in run.events():
-        if session:
-            session.check_cancelled()
-        deadline = _next_agent_deadline(deadline, user_key=user_key)
-        if deadline is not None and time.monotonic() > deadline:
-            safe_cancel_run(run)
-            raise RuntimeError(
-                f"Agent 执行超时（>{int(timeout_s)}s），可发「重新执行」重试"
-            )
+    stream_started_at = time.monotonic()
+    stop_heartbeat = threading.Event()
 
-        changed = False
-        force_render = False
-        update = event.interaction_update
-        if update is not None:
-            changed = renderer.apply(update) or changed
-            utype = getattr(update, "type", "") if not isinstance(update, Mapping) else str(update.get("type") or "")
-            if utype in ("tool-call-started", "tool-call-completed"):
-                force_render = True
+    def _heartbeat_loop() -> None:
+        while not stop_heartbeat.wait(_STREAM_HEARTBEAT_S):
+            if session:
+                try:
+                    session.check_cancelled()
+                except TaskInterrupted:
+                    break
+            if time.monotonic() - stream_started_at >= _STREAM_EXECUTING_AFTER_S:
+                renderer.set_status_hint("Agent 执行中…")
+            _maybe_render(force=True)
 
-        sdk_message = event.sdk_message
-        if sdk_message is not None:
-            msg_type = getattr(sdk_message, "type", "")
-            if msg_type == "assistant":
-                chunk = assistant_text_chunk(sdk_message)
-                if renderer.update_answer(chunk):
+    heartbeat_thread = threading.Thread(
+        target=_heartbeat_loop,
+        daemon=True,
+        name="agent-stream-heartbeat",
+    )
+    heartbeat_thread.start()
+
+    try:
+        for event in run.events():
+            if session:
+                session.check_cancelled()
+            deadline = _next_agent_deadline(deadline, user_key=user_key)
+            if deadline is not None and time.monotonic() > deadline:
+                safe_cancel_run(run)
+                raise RuntimeError(
+                    f"Agent 执行超时（>{int(timeout_s)}s），可发「重新执行」重试"
+                )
+
+            changed = False
+            force_render = False
+            update = event.interaction_update
+            if update is not None:
+                changed = renderer.apply(update) or changed
+                utype = getattr(update, "type", "") if not isinstance(update, Mapping) else str(update.get("type") or "")
+                if utype in ("tool-call-started", "tool-call-completed"):
+                    force_render = True
+
+            sdk_message = event.sdk_message
+            if sdk_message is not None:
+                msg_type = getattr(sdk_message, "type", "")
+                if msg_type == "assistant":
+                    chunk = assistant_text_chunk(sdk_message)
+                    if renderer.update_answer(chunk):
+                        changed = True
+                elif msg_type == "status":
+                    status = str(getattr(sdk_message, "status", "") or "")
+                    if status in ("running", "in_progress", "IN_PROGRESS"):
+                        if renderer.set_status_hint("Agent 执行中…"):
+                            changed = True
+
+            step = event.step
+            if step is not None:
+                thinking = thinking_text_from_step(step)
+                if thinking and renderer.update_thinking(thinking):
                     changed = True
-            elif msg_type == "status":
-                status = str(getattr(sdk_message, "status", "") or "")
-                if status in ("running", "in_progress", "IN_PROGRESS"):
-                    if renderer.set_status_hint("Agent 执行中…"):
-                        changed = True
+                name = tool_name_from_step(step)
+                if name:
+                    key = f"{getattr(step, 'type', '')}:{name}"
+                    if key not in seen_tool_steps:
+                        seen_tool_steps.add(key)
+                        if renderer.append_tool_step(name):
+                            changed = True
+                            force_render = True
 
-        step = event.step
-        if step is not None:
-            thinking = thinking_text_from_step(step)
-            if thinking and renderer.update_thinking(thinking):
-                changed = True
-            name = tool_name_from_step(step)
-            if name:
-                key = f"{getattr(step, 'type', '')}:{name}"
-                if key not in seen_tool_steps:
-                    seen_tool_steps.add(key)
-                    if renderer.append_tool_step(name):
-                        changed = True
-                        force_render = True
+            if changed:
+                _maybe_render(force=force_render)
 
-        if changed:
-            _maybe_render(force=force_render)
-
-        if event.done and event.result is not None and event.result_is_full:
-            break
+            if event.done and event.result is not None and event.result_is_full:
+                break
+    finally:
+        stop_heartbeat.set()
+        heartbeat_thread.join(timeout=0.2)
 
     if on_render and not rendered:
         _maybe_render(force=True)

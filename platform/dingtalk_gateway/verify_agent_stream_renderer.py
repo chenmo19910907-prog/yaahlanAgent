@@ -536,6 +536,15 @@ def test_sanitize_web_thinking_strips_prompt_echo() -> None:
     assert cleaned.strip() != "用户"
 
 
+def test_web_display_thinking_skips_final_report_answer() -> None:
+    """长报告/表格不应在工具链出现前被当作思考区流式内容。"""
+    r = AgentStreamRenderer()
+    report = "本轮已跑完，**整体验收通过**。\n\n## 执行参数\n| 项 | 值 |\n|---|---|"
+    r.update_answer(report)
+    payload = r.web_process_payload()
+    assert payload.get("thinking") == ""
+
+
 def test_web_process_payload_phase_before_thinking() -> None:
     r = AgentStreamRenderer()
     r.set_status_hint("Agent 已启动…")
@@ -557,6 +566,7 @@ def main() -> int:
     test_markdown_for_web_detailed_thinking()
     test_markdown_for_web_multiline_thinking()
     test_markdown_for_web_early_answer_as_thinking()
+    test_web_display_thinking_skips_final_report_answer()
     test_sanitize_web_thinking_strips_prompt_echo()
     test_update_thinking_snapshot_vs_delta()
     test_markdown_for_web_long_thinking_tail()

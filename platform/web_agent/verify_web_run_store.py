@@ -85,6 +85,20 @@ class WebRunStoreTests(unittest.TestCase):
         snap = self.store.get_snapshot("abc123")
         self.assertEqual(snap.last_process["thinking"], "正在全面排查")
         self.assertEqual(snap.last_process["tools"], ["Shell"])
+        self.assertEqual(snap.last_phase_line, "")
+
+    def test_append_delta_tools_clears_lifecycle_phase(self) -> None:
+        self.store.create_run(self._sample_meta())
+        self.store.append_event(
+            "abc123",
+            {"type": "status", "phase_line": "Agent 已启动…"},
+        )
+        self.store.append_event(
+            "abc123",
+            {"type": "delta", "process": {"thinking": "", "tools": ["Shell …"], "phase": "Agent 已启动…"}},
+        )
+        snap = self.store.get_snapshot("abc123")
+        self.assertEqual(snap.last_phase_line, "")
 
     def test_read_new_events_advances_tail(self) -> None:
         self.store.create_run(self._sample_meta())

@@ -605,6 +605,7 @@ class ActiveRun:
     last_markdown: str = ""
     last_process: dict[str, Any] | None = None
     reply_mode: str = "standard"
+    tailers_attached: bool = False
     _notify_lock: threading.Lock = field(default_factory=threading.Lock)
 
     def emit_event(self, event: dict[str, Any]) -> None:
@@ -626,15 +627,15 @@ class ActiveRun:
                 self.last_markdown = str(markdown)
             proc = event.get("process")
             if isinstance(proc, dict):
-                from web_run_store import _merge_process_payload
+                from web_run_store import _merge_process_payload, _process_has_stream_content
 
                 prev = self.last_process if isinstance(self.last_process, dict) else None
                 self.last_process = _merge_process_payload(prev, proc)
                 phase = str(proc.get("phase") or "").strip()
-                if phase:
-                    self.last_phase_line = phase
-                elif str(proc.get("thinking") or "").strip():
+                if _process_has_stream_content(proc):
                     self.last_phase_line = ""
+                elif phase:
+                    self.last_phase_line = phase
         self.events.put(event)
 
     def snapshot_events(self) -> list[dict[str, Any]]:
@@ -805,6 +806,9 @@ def _apply_snapshot_to_run(run: ActiveRun, snap) -> None:
 
 
 def _active_run_from_store_meta(meta: RunMeta) -> ActiveRun:
+    existing = RUN_MANAGER.get(meta.run_id)
+    if existing is not None:
+        return existing
     store = get_run_store()
     snap = store.get_snapshot(meta.run_id)
     run = RUN_MANAGER.create(meta.session_id, run_id=meta.run_id)
@@ -818,6 +822,9 @@ def _active_run_from_store_meta(meta: RunMeta) -> ActiveRun:
 
 
 def _attach_run_tailers(run: ActiveRun, meta: RunMeta) -> None:
+    if run.tailers_attached:
+        return
+    run.tailers_attached = True
     progress_stop = threading.Event()
     _start_run_event_tailer(run, progress_stop=progress_stop)
     _start_run_progress_watcher(
@@ -835,10 +842,13 @@ def _recover_running_meta(meta: RunMeta, *, allow_fresh_spawn: bool = False) -> 
     if meta.status != RUN_STATUS_RUNNING:
         return _active_run_from_store_meta(meta)
 
+    existing = RUN_MANAGER.get(meta.run_id)
+    if existing is not None:
+        return existing
+
     if store.is_worker_alive(meta.run_id):
         run = _active_run_from_store_meta(meta)
-        if RUN_MANAGER.get(meta.run_id) is None:
-            _attach_run_tailers(run, meta)
+        _attach_run_tailers(run, meta)
         return run
 
     if meta.worker_pid > 0:
@@ -968,15 +978,15 @@ def _start_run_event_tailer(run: ActiveRun, *, progress_stop: threading.Event) -
                         run.last_markdown = str(markdown)
                     proc = event.get("process")
                     if isinstance(proc, dict):
-                        from web_run_store import _merge_process_payload
+                        from web_run_store import _merge_process_payload, _process_has_stream_content
 
                         prev = run.last_process if isinstance(run.last_process, dict) else None
                         run.last_process = _merge_process_payload(prev, proc)
                         phase = str(proc.get("phase") or "").strip()
-                        if phase:
-                            run.last_phase_line = phase
-                        elif str(proc.get("thinking") or "").strip():
+                        if _process_has_stream_content(proc):
                             run.last_phase_line = ""
+                        elif phase:
+                            run.last_phase_line = phase
                 elif etype == "done":
                     if run.done.is_set():
                         continue

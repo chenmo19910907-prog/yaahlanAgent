@@ -23,6 +23,13 @@ RUN_STATUS_ERROR = "error"
 RUN_STATUS_INTERRUPTED = "interrupted"
 
 
+def _process_has_stream_content(proc: dict[str, Any]) -> bool:
+    if str(proc.get("thinking") or "").strip():
+        return True
+    tools = proc.get("tools")
+    return isinstance(tools, list) and bool(tools)
+
+
 def _merge_process_payload(
     prev: dict[str, Any] | None,
     new: dict[str, Any],
@@ -251,10 +258,10 @@ class WebRunStore:
                 prev = snap.last_process if isinstance(snap.last_process, dict) else None
                 snap.last_process = _merge_process_payload(prev, proc)
                 phase = str(proc.get("phase") or "").strip()
-                if phase:
-                    snap.last_phase_line = phase
-                elif str(proc.get("thinking") or "").strip():
+                if _process_has_stream_content(proc):
                     snap.last_phase_line = ""
+                elif phase:
+                    snap.last_phase_line = phase
         elif etype == "done":
             snap.final_text = str(event.get("text") or "")
         elif etype == "error":

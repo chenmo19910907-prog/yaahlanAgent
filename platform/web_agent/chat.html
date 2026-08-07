@@ -5277,6 +5277,12 @@
       return thinking;
     }
 
+    function hasStreamProcessContent(process) {
+      if (!process || typeof process !== 'object') return false;
+      if (sanitizeStreamThinking(String(process.thinking || ''))) return true;
+      return Array.isArray(process.tools) && process.tools.length > 0;
+    }
+
     function buildStreamDisplay(markdown, process, prevDisplay) {
       const prev = prevDisplay || { thinking: '', tools: [], phase: '' };
       const incoming = mergeProcessPayload(process, markdown);
@@ -5289,7 +5295,7 @@
         ? incoming.tools
         : (prev.tools || []);
       let phase = String(incoming.phase || prev.phase || '').trim();
-      if (sanitizedThinking) phase = '';
+      if (sanitizedThinking || (Array.isArray(tools) && tools.length)) phase = '';
       return { thinking: sanitizedThinking, tools, phase };
     }
 
@@ -5341,7 +5347,7 @@
           }
           const md = String(active.markdown || '');
           let proc = active.process;
-          if (active.phase_line && isLifecyclePhaseText(active.phase_line)) {
+          if (active.phase_line && isLifecyclePhaseText(active.phase_line) && !hasStreamProcessContent(proc)) {
             proc = { ...(proc && typeof proc === 'object' ? proc : {}), phase: active.phase_line };
           }
           const prevDisplay = current.lastStream?.display || { thinking: '', tools: [], phase: '' };
@@ -5407,8 +5413,18 @@
       const payload = (display && typeof display === 'object')
         ? display
         : { thinking: '', tools: [], phase: '' };
+      let batchHint = '';
+      for (const r of activeRuns.values()) {
+        if (r.shellEl === shell) {
+          batchHint = String(r.status?.batch || '').trim();
+          break;
+        }
+      }
       const sections = [];
-      const thinkHtml = renderThinkingSectionHtml(payload.thinking, payload.phase);
+      let thinkHtml = renderThinkingSectionHtml(payload.thinking, payload.phase);
+      if (!sanitizeStreamThinking(payload.thinking) && batchHint && isLifecyclePhaseText(payload.phase)) {
+        thinkHtml = renderThinkingSectionHtml(batchHint, payload.phase);
+      }
       if (thinkHtml) sections.push(thinkHtml);
       const toolsHtml = renderToolsSectionHtml(payload.tools);
       if (toolsHtml) sections.push(toolsHtml);
