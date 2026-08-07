@@ -14,11 +14,13 @@
   }
   body { outline: none; }
   #stage {
-    position: fixed; inset: 0; left: 196px;
+    position: fixed; inset: 0; left: 0;
     display: flex; align-items: center; justify-content: center;
     background: radial-gradient(ellipse 70% 50% at 50% 42%, rgba(91,140,255,0.07) 0%, transparent 55%), #000;
     cursor: pointer;
+    transition: left 0.22s ease;
   }
+  body.kn-nav-open #stage { left: 196px; }
   #content-scale {
     transform-origin: center center;
     will-change: transform;
@@ -4184,8 +4186,38 @@
     backdrop-filter: blur(8px);
   }
   #kn-nav-title {
-    font-size: 0.62rem; font-weight: 600; letter-spacing: 0.22em;
-    color: rgba(255, 255, 255, 0.28); margin-bottom: 10px; padding: 0 6px;
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; margin-bottom: 10px; padding: 0 6px;
+    border: none; background: transparent; cursor: pointer;
+    font: inherit; font-size: 0.62rem; font-weight: 600; letter-spacing: 0.22em;
+    color: rgba(255, 255, 255, 0.28); text-align: left;
+    transition: color 0.15s, background 0.15s;
+  }
+  #kn-nav-title:hover { color: rgba(255, 255, 255, 0.48); }
+  body.kn-nav-open #kn-nav-title::after {
+    content: '◂'; writing-mode: horizontal-tb;
+    font-size: 0.85em; opacity: 0.35; flex-shrink: 0;
+  }
+  body.kn-nav-collapsed #kn-nav {
+    width: auto; height: auto; bottom: auto;
+    padding: 0; background: transparent; border: none;
+    backdrop-filter: none; overflow: visible;
+  }
+  body.kn-nav-collapsed #kn-nav-list { display: none; }
+  body.kn-nav-collapsed #kn-nav-title {
+    position: fixed; left: 0; top: 50%; transform: translateY(-50%);
+    width: auto; margin-bottom: 0; padding: 10px 7px 10px 5px;
+    background: rgba(6, 8, 12, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.08); border-left: none;
+    border-radius: 0 10px 10px 0;
+    color: rgba(255, 255, 255, 0.42);
+    writing-mode: vertical-rl; letter-spacing: 0.2em;
+    justify-content: center;
+    z-index: 200;
+  }
+  body.kn-nav-collapsed #kn-nav-title:hover {
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(6, 8, 12, 0.94);
   }
   #kn-nav-list { list-style: none; display: flex; flex-direction: column; gap: 3px; }
   .kn-nav-item {
@@ -4238,8 +4270,8 @@
     to { opacity: 1; transform: none; filter: none; }
   }
   @media (max-width: 820px) {
-    #kn-nav { width: 148px; padding: 10px 6px; font-size: 0.64rem; }
-    #stage { left: 148px !important; }
+    body.kn-nav-open #kn-nav { width: 148px; padding: 10px 6px; font-size: 0.64rem; }
+    body.kn-nav-open #stage { left: 148px !important; }
     #content.feature { flex-direction: column; }
     .feat-text { text-align: center; }
     .feat-demo-wrap { width: 100%; max-width: 100%; }
@@ -4359,9 +4391,9 @@
   }
 </style>
 </head>
-<body tabindex="0">
+<body tabindex="0" class="kn-nav-collapsed">
 <nav id="kn-nav" aria-label="页面目录">
-  <div id="kn-nav-title">目录</div>
+  <button type="button" id="kn-nav-title" aria-expanded="false" aria-controls="kn-nav-list">目录</button>
   <ol id="kn-nav-list"></ol>
 </nav>
 <div id="stage"><div id="content-scale"><div id="content"></div></div></div>
@@ -4369,7 +4401,7 @@
 <div id="progress"></div>
 <div id="dots"></div>
 <div id="kn-beat-flash" class="kn-beat-flash" aria-hidden="true"></div>
-<script id="kn-data" type="application/json">[{"type":"hero","brand":"Yaahlan","titleCn":"智能工具","titleEn":"Agent","subtitle":"让工作，更顺手"},{"type":"lines","align":"left","lines":[{"text":"能用的工具","lead":true},{"text":"到","dim":true},{"text":"成熟的产品","leadLg":true},{"text":"做一款商业级的 Agent","small":true}]},{"type":"lines","lines":[{"text":"如何做好一款 Agent","lead":true},{"inline":["美观","实用","智能"],"large":true,"separator":true,"accent":true},{"text":"体验好，才是硬道理","small":true}]},{"type":"center","label":"UI","text":"界面上的小心思","subtitle":"细节里，见用心"},{"type":"lines","lines":[{"text":"我问朋友：什么是好设计？"},{"text":"他说，","suffix":{"text":"简约","large":true,"accent":true}}]},{"type":"feature","label":"UI · 01","title":"产品语言，与 Logo 统一配色","desc":"心跳蓝从 Logo 延伸至按钮、链接与 hover 态；「智能工具 Agent」「快捷」「能力」等产品用语全站一致，日/夜主题同步切换。","demo":"brand"},{"type":"feature","label":"UI · 02","title":"会跳动的思考光标","desc":"执行时以品牌光标替代系统鼠标，跟随指针律动；移出对话区自动还原，完成时一次轻反馈。","demo":"waiting"},{"type":"feature","label":"UI · 03","title":"白天夜间，自如切换","desc":"按北京时间 08:00 / 17:00 自动切换；输入栏亦可手动切换，品牌色在两种模式下始终如一。","demo":"theme"},{"type":"feature","label":"UI · 04","title":"历史会话，两种布局","desc":"点「历史」展开侧栏浏览会话；点边缘按钮收起，对话区自动变宽，顶栏品牌居中显示。","demo":"sidebar"},{"type":"feature","label":"UI · 05","title":"丝滑动效，处处顺手","desc":"统一动效曲线贯穿全局；输入框随内容亮起光晕、聚焦时微微上浮，历史会话滑过轻跃而出——每一帧都连贯。","demo":"motion"},{"type":"agent-preview","label":"UI · 06","title":"真实界面 · 三态切换","subtitle":"历史会话 · 新对话 · 工具台能力，一屏看懂 Yaahlan 智能工具 Agent","views":[{"id":"history","label":"历史会话","detail":"侧栏浏览 · 按人筛选 · 钉钉同步标识"},{"id":"chat","label":"新对话","detail":"Logo 空态 · 顶栏品牌居中"},{"id":"catalog","label":"工具台能力","detail":"250+ 能力目录 · MOA 录制 · 填参执行"}]},{"type":"center","label":"功能","titleLines":["简约","而不简单"],"subtitle":"大巧不工"},{"type":"feature","label":"功能 · 01","title":"钉钉对话，网页同步","desc":"机器人每轮对话自动同步至网页历史；带「钉钉」标识、按发起人归档，完整记录随时可查。","demo":"dingtalk-sync"},{"type":"feature","label":"功能 · 02","title":"附件随问随传，结果一键下载","desc":"输入框支持 📎 选择、拖拽与粘贴，导入图片及 csv/xlsx/pdf/zip 等文档；Agent 生成的报告与压缩包可在对话中直接下载。","demo":"file-attach-export"},{"type":"feature","label":"功能 · 03","title":"流式传输，思考只显有效信息","desc":"回复逐字流式推送；思考阶段不倾倒内部推理，仅展示已收到、已用时与工具摘要，进度一目了然。","demo":"stream-output"},{"type":"feature","label":"功能 · 04","title":"实时耗时，批量进度可见","desc":"执行过程实时显示已用时；批量任务同步展示 N/M 进度与预计剩余，长任务心中有数。","demo":"task-progress"},{"type":"feature","label":"功能 · 05","title":"执行可中断，提问自动回填","desc":"Agent 执行中随时点停；原提问自动回到输入框，改一句即可重试，不必从头输入。","demo":"cancel-restore"},{"type":"feature","label":"功能 · 06","title":"重启不断流，断点可重连","desc":"任务在后台独立执行；服务重启后继续跑，断线自动重连——任务不丢、结果照收。","demo":"run-recovery"},{"type":"feature","label":"功能 · 07","title":"钉钉验证码登录，操作可审计","desc":"向机器人发送固定文案获取验证码，登录后与工号绑定；会话归属到人，敏感操作可追溯。","demo":"dingtalk-auth"},{"type":"feature","label":"功能 · 08","title":"会话归属清晰，同事可共创","desc":"会话归属创建者，他人默认只读；可按人员筛选历史。创建者可邀请同事加入，在同一会话中一起提问。","demo":"session-isolation"},{"type":"feature","label":"功能 · 09","title":"执行完成，结果发钉钉","desc":"输入框下方可勾选「结果发钉钉」；勾选后任务成功完成，最终结果自动推送到当前登录用户的钉钉私聊，离开网页也能收到。","demo":"dingtalk-push"},{"type":"feature","label":"功能 · 10","title":"会话标题，随时改名","desc":"历史会话右键「修改标题」，标题原地变为输入框；Enter 或失焦保存，留空则恢复自动标题（首条提问摘要）。","demo":"session-rename"},{"type":"feature","label":"功能 · 11","title":"常用会话，一键置顶","desc":"右键或长按即可置顶，固定显示在列表顶部；点击图钉取消，全员共享排序，重要任务不再被淹没。","demo":"session-pin"},{"type":"feature","label":"功能 · 12","title":"历史会话，全局搜索","desc":"侧栏搜索框一次检索问题、用户名与 Agent 回答；命中会话展示蓝色摘要，直达历史对话，不必逐条翻找。","demo":"global-search"},{"type":"feature","label":"功能 · 13","title":"回复详略，三档切换","desc":"输入框下方一键切换精简 / 标准 / 详细；精简只给结论，详细附思考过程与工具执行摘要，同一问题按需选粒度。","demo":"reply-mode"},{"type":"feature","label":"功能 · 14","title":"消息分享，私聊群聊皆可","desc":"点消息旁分享按钮，勾选同事或群聊即可转发；Agent 回复自动附带提问上下文，机器人私聊或群内 Markdown 送达。","demo":"message-share"},{"type":"feature","label":"功能 · 15","title":"空态演示轮播，指引新用户","desc":"新对话空态嵌入各能力演示动画，标题与说明自动轮播；无需先提问，一眼看懂平台能做什么。","demo":"new-chat","emptyCarousel":false},{"type":"center","label":"智能","titleLines":["是工具平台","更是智能工厂"],"subtitle":"越搭越快"},{"type":"feature","label":"智能 · 01","title":"日常测试，开口就能做","desc":"自然语言提问，Agent 全自动执行，覆盖测试同学日常基本工作：","textOnly":true,"capabilities":[{"name":"Admin 查数","detail":"用户详情、在线状态、登录设备、公会信息"},{"name":"MOA 查 userId","detail":"手机号 / 区号反查 userId，批量查注册"},{"name":"MOA 造数","detail":"发钻、改等级、砸蛋、公会 PK 等测试数据"},{"name":"Tunnel 抓包","detail":"按 userId 查 HTTP 请求列表与报文详情"},{"name":"接口验收","detail":"核对接口入参、返回字段与 ec 码"},{"name":"Stage 送礼","detail":"测试环境房间 / 私聊 / 群组送礼验证"},{"name":"PRD 与用例","detail":"读钉钉需求文档 · 测试点扩写 · 输出 Markdown / Excel"},{"name":"风控 · 设备落库","detail":"手机号 / 设备风控解除 · mmuid / 机型同步测试机知识库"}]},{"type":"feature","label":"智能 · 02","title":"工具组合，一句话搞定","desc":"Agent 自动识别意图，按需组合 Admin / MOA / Tunnel / Gift 等模块；不必分别查命令、拼参数。","textOnly":true,"capabilities":[{"name":"手机号 → 发钻","detail":"MOA 反查 userId · 调用发钻接口 · 返回余额变化"},{"name":"手机号 → 风控解除","detail":"Admin 取登录设备 · 解除风控 · mmuid 落库知识库"},{"name":"userId → 查数 + 抓包","detail":"Admin 用户详情 · Tunnel 同步查 HTTP 请求与报文"},{"name":"送礼 → 接口验收","detail":"Stage 环境送礼 · Tunnel 核对 /v2/gift/send 入参与 ec"},{"name":"家族信息一览","detail":"MOA 查所属家族 · Admin 家族详情 · 成员 userId 列表"}]},{"type":"feature","label":"智能 · 03","title":"生成式 MOA，抓包即能力","desc":"新接口没脚本？抓包 + 调用链分析即可生成 MOA——操作账号（送礼、结 CP、加成员）与查页面数据（资产、CP、家族 PK）均可落地。","textOnly":true,"capabilities":[{"name":"抓包转 MOA","detail":"Tunnel 抓 body · MSE 查 ServiceUrl/Method · 生成 payload"},{"name":"结 CP / 挚友","detail":"Gift 发起邀请 · MOA 同意 · 操作账号"},{"name":"房间成员","detail":"apply 申请 · agree 同意 · 快速添加成员"},{"name":"帖子互动","detail":"评论 · 点赞 · 签到 · 操作账号"},{"name":"CP 页面数据","detail":"爱意宝箱 · CP 勋章 · 查页面数据"},{"name":"用户资产","detail":"铭牌 · 钻石记录 · 礼物背包 Tab"},{"name":"家族 PK 数据","detail":"对战列表 · 成员贡献榜 · 查页面数据"}]},{"type":"feature","label":"智能 · 04","title":"外部 Agent，按需启用","desc":"设置中勾选服务端 Agent 或 MDP Agent；未勾选时走本地能力清单，勾选后下一条消息起生效。","demo":"external-agent"},{"type":"feature","label":"智能 · 05","title":"查接口实现，直接生成 MOA","desc":"勾选服务端 Agent 后，本地能力清单无登记时，查接口地址、方法与参数，直接生成 MOA 并调通测试环境。","textOnly":true,"capabilities":[{"name":"房间麦位","detail":"pullSeatInfo · 查当前房间麦上 userId 列表"},{"name":"麦位 RPC","detail":"getJoinSeatUserIdSet / getSeatValInfo · userId 或麦位详情、无 HTTP 时"},{"name":"跨房 PK","detail":"applyAcrossRoomPk · 随机 / 指定邀请；getAcrossRoomPkInfo · 赛况；closeAcrossRoomPk · 结束"},{"name":"房间成员","detail":"apply + agree · 快速添加成员"},{"name":"用户等级","detail":"getUserLevelInfo · 财富 / 魅力 / VIP 等级查询"},{"name":"CP / 挚友","detail":"intimateHomePage · CP 勋章；acceptIntimateInvitation · 同意申请"},{"name":"用户资产","detail":"diamondHistory · 钻石记录；getGiftTabListV3 · 背包礼物 Tab"},{"name":"家族 PK","detail":"getFamilyPkPage · 对战列表；getFamilyPkUserList · 成员贡献榜"},{"name":"铭牌 / 特权","detail":"nameplatePageData · 铭牌页；propRenewal · 定制座驾延期"},{"name":"帖子互动","detail":"likeContent · 点赞；publishComment · 评论；signIn · 签到"}]},{"type":"feature","label":"智能 · 06","title":"Tunnel Mock，抓包即改返回","desc":"不用改服务端——对指定 userId + 接口覆盖 response 字段或整包响应；App 重进页面即生效，适合 CP 倒计时、动态点赞礼物数等验收。","textOnly":true,"capabilities":[{"name":"字段覆盖 param_mock","detail":"改单字段如 data.countdownSec、likeCount、rewardCount"},{"name":"整包 mock_cases","detail":"基于抓包 response 创建完整 Mock 并 --enable 生效"},{"name":"查看 / 停用规则","detail":"param-list / list 列规则，case-stop 关闭整包 Mock"},{"name":"CP 爱意宝箱","detail":"mock 倒计时 countdownSec，验收宝箱 UI"},{"name":"动态详情","detail":"feedDetail 整包 mock 点赞 likeCount、礼物 rewardCount"}]},{"type":"feature","label":"智能 · 07","title":"工具台 MOA 录制，表单一键生成","desc":"能力侧栏点「MOA 录制」，选截图 / 完整请求 / 抓包行为 / 服务端代码四种方式填表；生成后自动写入提问栏，侧栏保持打开，确认后再发送。","demo":"moa-record"},{"type":"feature","label":"智能 · 08","title":"登记即上线，能力自生长","desc":"登记一次，全员可用——新能力落库后自动同步使用说明与能力目录，250+ 条目持续生长；对话里按模块浏览、搜索筛选，点「执行」即可填入提问栏。","demo":"catalog-onboard"},{"type":"feature","label":"智能 · 09","title":"录制工作流，复杂活动一次跑通","desc":"Agent 描述多步流程后落库为 Workflow，改参即可复跑；3周年砸金蛋从 MSE 配置同步、账号获次、批量砸蛋到概率保底与到账验收，六步贯通钉钉表全量验收。","demo":"anniversary-egg-workflow"},{"type":"feature","label":"智能 · 10","title":"接口自动化，多设备协同","desc":"不靠手点 App——MOA / Gift 等接口编排驱动多台真机、多账号跨房联动；匹配、上麦、送礼到结束四步全自动，录成工作流改参即可复跑。","demo":"pk-atm-workflow"},{"type":"feature","title":"双周用量，显著提升","desc":"7/28 体验优化后，工作日日均请求约 2.3 倍、活跃峰值翻倍。","demo":"usage-growth","layout":"stack","emptyCarousel":false},{"type":"center","text":"让工作，更顺手","subtitle":"Yaahlan 智能工具 Agent · 内网即用"}]</script>
+<script id="kn-data" type="application/json">[{"type":"hero","brand":"Yaahlan","titleCn":"智能工具","titleEn":"Agent","subtitle":"让工作，更顺手"},{"type":"lines","align":"left","lines":[{"text":"能用的工具","lead":true},{"text":"到","dim":true},{"text":"成熟的产品","leadLg":true},{"text":"做一款商业级的 Agent","small":true}]},{"type":"lines","lines":[{"text":"如何做好一款 Agent","lead":true},{"inline":["美观","实用","智能"],"large":true,"separator":true,"accent":true},{"text":"体验好，才是硬道理","small":true}]},{"type":"center","label":"UI","text":"界面上的小心思","subtitle":"细节里，见用心"},{"type":"lines","lines":[{"text":"我问朋友：什么是好设计？"},{"text":"他说，","suffix":{"text":"简约","large":true,"accent":true}}]},{"type":"feature","label":"UI · 01","title":"产品语言，与 Logo 统一配色","desc":"心跳蓝从 Logo 延伸至按钮、链接与 hover 态；「智能工具 Agent」「快捷」「能力」等产品用语全站一致，日/夜主题同步切换。","demo":"brand"},{"type":"feature","label":"UI · 02","title":"会跳动的思考光标","desc":"执行时以品牌光标替代系统鼠标，跟随指针律动；移出对话区自动还原，完成时一次轻反馈。","demo":"waiting"},{"type":"feature","label":"UI · 03","title":"白天夜间，自如切换","desc":"按北京时间 08:00 / 17:00 自动切换；输入栏亦可手动切换，品牌色在两种模式下始终如一。","demo":"theme"},{"type":"feature","label":"UI · 04","title":"历史会话，两种布局","desc":"点「历史」展开侧栏浏览会话；点边缘按钮收起，对话区自动变宽，顶栏品牌居中显示。","demo":"sidebar"},{"type":"feature","label":"UI · 05","title":"丝滑动效，处处顺手","desc":"统一动效曲线贯穿全局；输入框随内容亮起光晕、聚焦时微微上浮，历史会话滑过轻跃而出——每一帧都连贯。","demo":"motion"},{"type":"agent-preview","label":"UI · 06","title":"真实界面 · 三态切换","subtitle":"历史会话 · 新对话 · 工具台能力，一屏看懂 Yaahlan 智能工具 Agent","views":[{"id":"history","label":"历史会话","detail":"侧栏浏览 · 按人筛选 · 钉钉同步标识"},{"id":"chat","label":"新对话","detail":"Logo 空态 · 顶栏品牌居中"},{"id":"catalog","label":"工具台能力","detail":"250+ 能力目录 · MOA 录制 · 填参执行"}]},{"type":"center","label":"功能","titleLines":["简约","而不简单"],"subtitle":"大巧不工"},{"type":"feature","label":"功能 · 01","title":"钉钉对话，网页同步","desc":"机器人每轮对话自动同步至网页历史；带「钉钉」标识、按发起人归档，完整记录随时可查。","demo":"dingtalk-sync"},{"type":"feature","label":"功能 · 02","title":"附件随问随传，结果一键下载","desc":"输入框支持 📎 选择、拖拽与粘贴，导入图片及 csv/xlsx/pdf/zip 等文档；Agent 生成的报告与压缩包可在对话中直接下载。","demo":"file-attach-export"},{"type":"feature","label":"功能 · 03","title":"流式传输，思考只显有效信息","desc":"回复逐字流式推送；思考阶段不倾倒内部推理，仅展示已收到、已用时与工具摘要，进度一目了然。","demo":"stream-output"},{"type":"feature","label":"功能 · 04","title":"实时耗时，批量进度可见","desc":"执行过程实时显示已用时；批量任务同步展示 N/M 进度与预计剩余，长任务心中有数。","demo":"task-progress"},{"type":"feature","label":"功能 · 05","title":"执行可中断，提问自动回填","desc":"Agent 执行中随时点停；原提问自动回到输入框，改一句即可重试，不必从头输入。","demo":"cancel-restore"},{"type":"feature","label":"功能 · 06","title":"重启不断流，断点可重连","desc":"任务在后台独立执行；服务重启后继续跑，断线自动重连——任务不丢、结果照收。","demo":"run-recovery"},{"type":"feature","label":"功能 · 07","title":"钉钉验证码登录，操作可审计","desc":"向机器人发送固定文案获取验证码，登录后与工号绑定；会话归属到人，敏感操作可追溯。","demo":"dingtalk-auth"},{"type":"feature","label":"功能 · 08","title":"会话归属清晰，同事可共创","desc":"会话归属创建者，他人默认只读；可按人员筛选历史。创建者可邀请同事加入，在同一会话中一起提问。","demo":"session-isolation"},{"type":"feature","label":"功能 · 09","title":"执行完成，结果发钉钉","desc":"输入框下方可勾选「结果发钉钉」；勾选后任务成功完成，最终结果自动推送到当前登录用户的钉钉私聊，离开网页也能收到。","demo":"dingtalk-push"},{"type":"feature","label":"功能 · 10","title":"会话标题，随时改名","desc":"历史会话右键「修改标题」，标题原地变为输入框；Enter 或失焦保存，留空则恢复自动标题（首条提问摘要）。","demo":"session-rename"},{"type":"feature","label":"功能 · 11","title":"常用会话，一键置顶","desc":"右键或长按即可置顶，固定显示在列表顶部；点击图钉取消，全员共享排序，重要任务不再被淹没。","demo":"session-pin"},{"type":"feature","label":"功能 · 12","title":"历史会话，全局搜索","desc":"侧栏搜索框一次检索问题、用户名与 Agent 回答；命中会话展示蓝色摘要，直达历史对话，不必逐条翻找。","demo":"global-search"},{"type":"feature","label":"功能 · 13","title":"回复详略，三档切换","desc":"输入框下方一键切换精简 / 标准 / 详细；精简只给结论，详细附思考过程与工具执行摘要，同一问题按需选粒度。","demo":"reply-mode"},{"type":"feature","label":"功能 · 14","title":"回复一键分享，私聊群聊都能转","desc":"点消息旁分享，勾选同事或群聊；原提问随回复一并带上，机器人私聊或群内送达。","demo":"message-share"},{"type":"feature","label":"功能 · 15","title":"空态演示轮播，指引新用户","desc":"新对话空态嵌入各能力演示动画，标题与说明自动轮播；无需先提问，一眼看懂平台能做什么。","demo":"new-chat","emptyCarousel":false},{"type":"center","label":"智能","titleLines":["是工具平台","更是智能工厂"],"subtitle":"越搭越快"},{"type":"feature","label":"智能 · 01","title":"日常测试，开口就能做","desc":"自然语言提问，Agent 全自动执行，覆盖测试同学日常基本工作：","textOnly":true,"capabilities":[{"name":"Admin 查数","detail":"用户详情、在线状态、登录设备、公会信息"},{"name":"MOA 查 userId","detail":"手机号 / 区号反查 userId，批量查注册"},{"name":"MOA 造数","detail":"发钻、改等级、砸蛋、公会 PK 等测试数据"},{"name":"Tunnel 抓包","detail":"按 userId 查 HTTP 请求列表与报文详情"},{"name":"接口验收","detail":"核对接口入参、返回字段与 ec 码"},{"name":"Stage 送礼","detail":"测试环境房间 / 私聊 / 群组送礼验证"},{"name":"PRD 与用例","detail":"读钉钉需求文档 · 测试点扩写 · 输出 Markdown / Excel"},{"name":"风控 · 设备落库","detail":"手机号 / 设备风控解除 · mmuid / 机型同步测试机知识库"}]},{"type":"feature","label":"智能 · 02","title":"工具组合，一句话搞定","desc":"Agent 自动识别意图，按需组合 Admin / MOA / Tunnel / Gift 等模块；不必分别查命令、拼参数。","textOnly":true,"capabilities":[{"name":"手机号 → 发钻","detail":"MOA 反查 userId · 调用发钻接口 · 返回余额变化"},{"name":"手机号 → 风控解除","detail":"Admin 取登录设备 · 解除风控 · mmuid 落库知识库"},{"name":"userId → 查数 + 抓包","detail":"Admin 用户详情 · Tunnel 同步查 HTTP 请求与报文"},{"name":"送礼 → 接口验收","detail":"Stage 环境送礼 · Tunnel 核对 /v2/gift/send 入参与 ec"},{"name":"家族信息一览","detail":"MOA 查所属家族 · Admin 家族详情 · 成员 userId 列表"}]},{"type":"feature","label":"智能 · 03","title":"生成式 MOA，抓包即能力","desc":"新接口没脚本？抓包 + 调用链分析即可生成 MOA——操作账号（送礼、结 CP、加成员）与查页面数据（资产、CP、家族 PK）均可落地。","textOnly":true,"capabilities":[{"name":"抓包转 MOA","detail":"Tunnel 抓 body · MSE 查 ServiceUrl/Method · 生成 payload"},{"name":"结 CP / 挚友","detail":"Gift 发起邀请 · MOA 同意 · 操作账号"},{"name":"房间成员","detail":"apply 申请 · agree 同意 · 快速添加成员"},{"name":"帖子互动","detail":"评论 · 点赞 · 签到 · 操作账号"},{"name":"CP 页面数据","detail":"爱意宝箱 · CP 勋章 · 查页面数据"},{"name":"用户资产","detail":"铭牌 · 钻石记录 · 礼物背包 Tab"},{"name":"家族 PK 数据","detail":"对战列表 · 成员贡献榜 · 查页面数据"}]},{"type":"feature","label":"智能 · 04","title":"外部 Agent，按需启用","desc":"设置中勾选服务端 Agent 或 MDP Agent；未勾选时走本地能力清单，勾选后下一条消息起生效。","demo":"external-agent"},{"type":"feature","label":"智能 · 05","title":"查接口实现，直接生成 MOA","desc":"勾选服务端 Agent 后，本地能力清单无登记时，查接口地址、方法与参数，直接生成 MOA 并调通测试环境。","textOnly":true,"capabilities":[{"name":"房间麦位","detail":"pullSeatInfo · 查当前房间麦上 userId 列表"},{"name":"麦位 RPC","detail":"getJoinSeatUserIdSet / getSeatValInfo · userId 或麦位详情、无 HTTP 时"},{"name":"跨房 PK","detail":"applyAcrossRoomPk · 随机 / 指定邀请；getAcrossRoomPkInfo · 赛况；closeAcrossRoomPk · 结束"},{"name":"房间成员","detail":"apply + agree · 快速添加成员"},{"name":"用户等级","detail":"getUserLevelInfo · 财富 / 魅力 / VIP 等级查询"},{"name":"CP / 挚友","detail":"intimateHomePage · CP 勋章；acceptIntimateInvitation · 同意申请"},{"name":"用户资产","detail":"diamondHistory · 钻石记录；getGiftTabListV3 · 背包礼物 Tab"},{"name":"家族 PK","detail":"getFamilyPkPage · 对战列表；getFamilyPkUserList · 成员贡献榜"},{"name":"铭牌 / 特权","detail":"nameplatePageData · 铭牌页；propRenewal · 定制座驾延期"},{"name":"帖子互动","detail":"likeContent · 点赞；publishComment · 评论；signIn · 签到"}]},{"type":"feature","label":"智能 · 06","title":"Tunnel Mock，抓包即改返回","desc":"不用改服务端——对指定 userId + 接口覆盖 response 字段或整包响应；App 重进页面即生效，适合 CP 倒计时、动态点赞礼物数等验收。","textOnly":true,"capabilities":[{"name":"字段覆盖 param_mock","detail":"改单字段如 data.countdownSec、likeCount、rewardCount"},{"name":"整包 mock_cases","detail":"基于抓包 response 创建完整 Mock 并 --enable 生效"},{"name":"查看 / 停用规则","detail":"param-list / list 列规则，case-stop 关闭整包 Mock"},{"name":"CP 爱意宝箱","detail":"mock 倒计时 countdownSec，验收宝箱 UI"},{"name":"动态详情","detail":"feedDetail 整包 mock 点赞 likeCount、礼物 rewardCount"}]},{"type":"feature","label":"智能 · 07","title":"工具台 MOA 录制，表单一键生成","desc":"能力侧栏点「MOA 录制」，选截图 / 完整请求 / 抓包行为 / 服务端代码四种方式填表；生成后自动写入提问栏，侧栏保持打开，确认后再发送。","demo":"moa-record"},{"type":"feature","label":"智能 · 08","title":"登记即上线，能力自生长","desc":"登记一次，全员可用——新能力落库后自动同步使用说明与能力目录，250+ 条目持续生长；对话里按模块浏览、搜索筛选，点「执行」即可填入提问栏。","demo":"catalog-onboard"},{"type":"feature","label":"智能 · 09","title":"录制工作流，复杂活动一次跑通","desc":"Agent 描述多步流程后落库为 Workflow，改参即可复跑；3周年砸金蛋从 MSE 配置同步、账号获次、批量砸蛋到概率保底与到账验收，六步贯通钉钉表全量验收。","demo":"anniversary-egg-workflow"},{"type":"feature","label":"智能 · 10","title":"接口自动化，多设备协同","desc":"不靠手点 App——MOA / Gift 等接口编排驱动多台真机、多账号跨房联动；匹配、上麦、送礼到结束四步全自动，录成工作流改参即可复跑。","demo":"pk-atm-workflow"},{"type":"feature","title":"三周用量，显著提升","desc":"7/27 体验优化后，近三个自然周工作日日均请求约 3.6 倍、活跃峰值翻倍。","demo":"usage-growth","layout":"stack","emptyCarousel":false},{"type":"center","text":"让工作，更顺手","subtitle":"Yaahlan 智能工具 Agent · 内网即用"}]</script>
 <script>
 (function () {
   'use strict';
@@ -4421,7 +4453,7 @@
   var replyModeTimer = null;
   var streamOutputTimer = null;
   var externalAgentTimer = null;
-  var USAGE_BIWEEKLY = {"title":"Yaahlan 智能工具平台 · 近双周用量","range":["2026-07-21","2026-08-03"],"rangeLabel":"7/21 – 8/3","optimizeDate":"2026-07-28","optimizeLabel":"7/28 体验优化","source":"钉钉 + Web Agent · 工作日数据","days":[{"date":"2026-07-21","label":"7/21","requests":1,"users":1},{"date":"2026-07-22","label":"7/22","requests":69,"users":3},{"date":"2026-07-23","label":"7/23","requests":1,"users":1},{"date":"2026-07-24","label":"7/24","requests":144,"users":4},{"date":"2026-07-27","label":"7/27","requests":91,"users":3},{"date":"2026-07-28","label":"7/28","requests":159,"users":7},{"date":"2026-07-29","label":"7/29","requests":197,"users":4},{"date":"2026-07-30","label":"7/30","requests":128,"users":8},{"date":"2026-07-31","label":"7/31","requests":219,"users":7},{"date":"2026-08-03","label":"8/3","requests":5,"users":3}],"summary":{"beforeAvgRequests":61,"afterAvgRequests":142,"requestsLift":"2.3×","beforePeakUsers":4,"afterPeakUsers":8,"usersLift":"2×"}};
+  var USAGE_BIWEEKLY = {"title":"Yaahlan 智能工具平台 · 近三周用量","range":["2026-07-20","2026-08-07"],"rangeLabel":"7/20 – 8/7","optimizeDate":"2026-07-27","optimizeLabel":"7/27 体验优化","source":"钉钉 + Web Agent · 工作日数据","days":[{"date":"2026-07-20","label":"7/20","requests":13,"users":1},{"date":"2026-07-21","label":"7/21","requests":1,"users":1},{"date":"2026-07-22","label":"7/22","requests":69,"users":3},{"date":"2026-07-23","label":"7/23","requests":1,"users":1},{"date":"2026-07-24","label":"7/24","requests":144,"users":4},{"date":"2026-07-27","label":"7/27","requests":91,"users":3},{"date":"2026-07-28","label":"7/28","requests":159,"users":7},{"date":"2026-07-29","label":"7/29","requests":197,"users":4},{"date":"2026-07-30","label":"7/30","requests":133,"users":8},{"date":"2026-07-31","label":"7/31","requests":219,"users":7},{"date":"2026-08-03","label":"8/3","requests":236,"users":5},{"date":"2026-08-04","label":"8/4","requests":150,"users":5},{"date":"2026-08-05","label":"8/5","requests":118,"users":7},{"date":"2026-08-06","label":"8/6","requests":93,"users":6},{"date":"2026-08-07","label":"8/7","requests":271,"users":7}],"summary":{"beforeAvgRequests":46,"afterAvgRequests":167,"requestsLift":"3.6×","beforePeakUsers":4,"afterPeakUsers":8,"usersLift":"2×"}};
 
   var DEMO_NAMES = {
     user: '陈墨',
@@ -4458,6 +4490,8 @@
   var progress = document.getElementById('progress');
   var dots = document.getElementById('dots');
   var navList = document.getElementById('kn-nav-list');
+  var navTitle = document.getElementById('kn-nav-title');
+  var navOpen = false;
   var LOGO_SVG =
     '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
     '<defs><filter id="kn-logo-glow" x="-40%" y="-40%" width="180%" height="180%">' +
@@ -8820,7 +8854,7 @@
         '<div class="mock-usage-legend">' +
           '<span class="lg-req">日使用量（次）</span>' +
           '<span class="lg-users">使用人数</span>' +
-          '<span class="lg-opt">' + esc(data.optimizeLabel || '7/28 体验优化') + '</span>' +
+          '<span class="lg-opt">' + esc(data.optimizeLabel || '7/27 体验优化') + '</span>' +
         '</div>' +
         '<div class="mock-usage-caption mock-usage-caption-el">' +
           esc(data.source || '钉钉 + Web Agent') + ' · ' + esc(data.rangeLabel || '近双周') +
@@ -8835,8 +8869,8 @@
     var h = 360;
     var plotW = w - pad.l - pad.r;
     var plotH = h - pad.t - pad.b;
-    var maxReq = 240;
-    var maxUsers = 8;
+    var maxReq = Math.max(240, Math.ceil(Math.max.apply(null, days.map(function (d) { return d.requests || 0; })) / 40) * 40);
+    var maxUsers = Math.max(8, Math.ceil(Math.max.apply(null, days.map(function (d) { return d.users || 0; }))));
     var n = days.length;
     function xAt(i) { return pad.l + (n <= 1 ? 0 : (i / (n - 1)) * plotW); }
     function yReq(v) { return pad.t + plotH - (Math.min(v, maxReq) / maxReq) * plotH; }
@@ -8871,7 +8905,7 @@
     if (optIdx >= 0) {
       var ox = xAt(optIdx);
       parts.push('<line class="opt-line mock-usage-opt-line" x1="' + ox.toFixed(1) + '" y1="' + pad.t + '" x2="' + ox.toFixed(1) + '" y2="' + (pad.t + plotH) + '"/>');
-      parts.push('<text class="opt-label mock-usage-opt-label" x="' + (ox + 8).toFixed(1) + '" y="' + (pad.t + 14) + '">7/28 优化</text>');
+      parts.push('<text class="opt-label mock-usage-opt-label" x="' + (ox + 8).toFixed(1) + '" y="' + (pad.t + 14) + '">' + days[optIdx].label + ' 优化</text>');
     }
     var reqPath = pathFor('requests', yReq);
     var userPath = pathFor('users', yUser);
@@ -10002,11 +10036,31 @@
     }
   }
 
-  function syncFullscreenLayout() {
-    document.body.classList.toggle('kn-fullscreen', isFullscreen());
+  function syncNavLayout() {
+    var open = navOpen && !isFullscreen() &&
+      !document.body.classList.contains('kn-cinema') &&
+      !document.body.classList.contains('kn-embed');
+    document.body.classList.toggle('kn-nav-open', open);
+    document.body.classList.toggle('kn-nav-collapsed', !open);
+    if (navTitle) navTitle.setAttribute('aria-expanded', open ? 'true' : 'false');
     scheduleContentScale();
   }
 
+  function syncFullscreenLayout() {
+    document.body.classList.toggle('kn-fullscreen', isFullscreen());
+    if (isFullscreen()) navOpen = false;
+    syncNavLayout();
+  }
+
+  if (navTitle) {
+    navTitle.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (isFullscreen() || document.body.classList.contains('kn-cinema') ||
+          document.body.classList.contains('kn-embed')) return;
+      navOpen = !navOpen;
+      syncNavLayout();
+    });
+  }
   if (navList) {
     navList.addEventListener('click', function (e) {
       var btn = e.target.closest('.kn-nav-item');
@@ -10015,6 +10069,14 @@
       goToPage(btn.getAttribute('data-idx'));
     });
   }
+  document.addEventListener('click', function (e) {
+    if (!navOpen || isFullscreen()) return;
+    var nav = document.getElementById('kn-nav');
+    if (nav && !nav.contains(e.target)) {
+      navOpen = false;
+      syncNavLayout();
+    }
+  });
   document.addEventListener('fullscreenchange', syncFullscreenLayout);
   document.addEventListener('webkitfullscreenchange', syncFullscreenLayout);
 
@@ -10144,6 +10206,7 @@
   } else {
     applyHashPage();
     render();
+    syncNavLayout();
     initPromoMode();
   }
   } catch (err) {

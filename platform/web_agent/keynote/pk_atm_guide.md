@@ -7,10 +7,22 @@
 
 > 网页版由 `platform/web_agent/keynote/sync_pk_atm_guide.py` 同步；改本文后重跑该脚本即可刷新。
 
-**本文档讲什么**：记录一次真实协作——从 **读 PRD、澄清规则**，到 **抓包落 MOA、对话里跑通场景**，再到 **把工作流沉淀为可一键重跑的自动化**。  
-**本文档不讲什么**：脚本内部实现、API 字段字典、报告 JSON 结构（那些见仓库代码与 `workflow/使用方法.md`）。
+**本文档讲什么**：记录一次真实协作——从 **读 PRD、澄清规则**，到 **抓包落 MOA、对话里跑通场景（C1～C9）**，再到 **Sheet2 全链路验收 + 工作流沉淀**。  
+协作主路径：`读 PRD` → `抓包落 MOA` → `对话迭代 C1～C9` → `赛况 / 返钻弹窗 / 提款排名 / 吸底验收` → `pk_atm_dingtalk_sheet2_run.py`（或工作流 `pk-atm-test`）。
 
-**最终一键命令**（成果验证用）：
+**最终一键命令**（Web Agent / 对话内重跑，**推荐**）：
+
+```bash
+python3 workflow/scripts/pk_atm_dingtalk_sheet2_run.py \
+  --phone-a 13311111111 --phone-b 13311111115 \
+  --target-combined-pk 200000 \
+  --gift-min-diamonds 100 --gift-max-diamonds 1500 \
+  --gift-count 50 --personal-pk-threshold 10000
+```
+
+产出：`.tmp/pk_atm_sheet2_<pkId>.json` + 钉钉 Sheet「测试结果-<pkId 后缀>」。
+
+工作流入口（等价底层脚本 `pk_atm_test_run.py`）：
 
 ```bash
 python3 workflow/workflow_execute.py run pk-atm-test
@@ -69,9 +81,12 @@ flowchart LR
 | 计入活动 | 仅 **跨房 PK · 随机匹配**；指定邀请 / 再来一局 **不计入** |
 | 场次门槛 | PRD：**双方总 PK ≥ 50 万**；**alpha 实测 MSE** 见 §2.4（当前 **2 万**） |
 | 梯度发奖 | 双方总 PK 命中梯度 → 按 **返钻比例 %** 计算本场总奖金（alpha 见 §2.4） |
-| 个人瓜分 | 仅 **胜方**：个人 PK ≥ 个人门槛（alpha **1 千**）且 `floor(个人 PK / 胜方总 PK × 本场总奖金)` |
+| 个人瓜分 | 仅 **胜方**且 **个人 PK ≥ 个人门槛（当前 1 万）**；`floor(个人 PK / 胜方总 PK × 本场总奖金)`；**未达门槛应得 0、实发必须 0** |
 | PK 换算 | 麦上送礼：**1 钻石 = 10 PK 值** |
+| 返钻基数 | **送礼钻石（总 PK÷10）× 命中档位返钻 %**，向下取整得 **下发总钻石**；等价于 **总 PK × 0.3%/0.4%/…**（3% 档时） |
+| 梯度命中 | **双方总 PK ≥ 左列阈值时取满足条件的最高档**（不是「≤ 上限档」） |
 | 首胜翻倍 | alpha MSE 已开：`firstWinMultiplier = 2` |
+| 胜负判定 | **主动结束 PK 的一方记败**；另一方为胜方 |
 
 全量用例：`temporary_testcase/PK提款机_2.5.9_测试用例.md`（PK_001～PK_102）。用例按 PRD 梯度编写；**造数验收以 MSE 为准**（§2.4）。
 
@@ -115,21 +130,23 @@ python3 platform/dingtalk_gateway/pk_atm_mse_to_workbook.py \
 | `startTime` / `endTime` | 2026-01-01 ～ 2026-12-31 | 活动期 |
 | `dailyStartHour` / `dailyEndHour` | 0 / 24 | 每日时段 |
 | **`minTotalPkValue`** | **20,000** | 场次总 PK 门槛（PRD 50 万，测试环境已下调） |
-| **`minMemberRewardPk`** | **1,000** | 个人瓜分 PK 门槛 |
+| **`minMemberRewardPk`** | **10,000** | **个人瓜分 PK 门槛**（以服务端当前配置为准） |
 | `broadcastMinDiamond` | 1,000 | 广播最低钻石 |
 | `firstWinEnabled` | `true` | 首胜翻倍开关 |
 | **`firstWinMultiplier`** | **2** | 首胜倍数 |
 
-#### 梯度表 `matchPoolGradients`（双方总 PK ≥ 左列 → 返钻比例）
+#### 梯度表 `matchPoolGradients`（双方总 PK **≥** 左列 → 返钻比例）
 
-| minTotalPkValue | returnRatioPercent |
-|-----------------|-------------------|
-| 20,000 | 3% |
-| 100,000 | 3% |
-| 400,000 | 4% |
-| 1,000,000 | 5% |
-| 2,000,000 | 5% |
-| 5,000,000 | 6% |
+| minTotalPkValue | returnRatioPercent | 下发总钻示例（总 PK=223,430） |
+|-----------------|-------------------|-------------------------------|
+| 20,000 | 3% | floor(22343×3%) = **670** |
+| 100,000 | 3% | 同上档（取 **≥10 万** 最高档） |
+| 400,000 | 4% | floor(22343×4%) = 893（仅当总 PK≥40 万） |
+| 1,000,000 | 5% | |
+| 2,000,000 | 5% | |
+| 5,000,000 | 6% | |
+
+> **注意**：返钻 **3%** 指占 **送礼钻石** 的比例，即总 PK 的 **0.3%**（因 1 钻=10 PK）。
 
 #### 发钻配置 `diamondDispatchConfig`
 
@@ -139,7 +156,11 @@ python3 platform/dingtalk_gateway/pk_atm_mse_to_workbook.py \
 | `activityTaskId` | `2005005019` |
 | `activitySign` | `7e5721b379b14962a38f9d2e81376605` |
 
-**与工作流关系**：`pk_atm_test_run.py` 优先 MOA 拉运行时配置；拉不到时用 `workflow/config/pk_atm_default_config.json`（PRD 梯度兜底）。验收前可 `--min-combined-pk 20000 --personal-pk-threshold 1000` 对齐 alpha MSE。
+**与工作流关系**：`pk_atm_test_run.py` / `pk_atm_dingtalk_sheet2_run.py` 优先 MOA 拉运行时配置；拉不到或报告快照滞后时，以 `workflow/config/pk_atm_default_config.json` 为准（**个人门槛 10000**）。验收对齐：
+
+```bash
+--min-combined-pk 20000 --personal-pk-threshold 10000
+```
 
 ---
 
@@ -233,26 +254,49 @@ python3 workflow/workflow_execute.py run moa-generative-run \
 | C5 | **把以上能力结合到 PK 提款机测试中** | 临时步骤 → **产品化意图** |
 | C6 | 先拉配置 → 造 PK → 送礼 → 记 PK/余额/应得钻 → **再结束** → 校验钻石差值 | 补 **业务验收顺序**（结束前先快照余额） |
 | C7 | PK 结束前还要测 **PK 赛况页**：对战信息与 PK 值展示正确；用 **生成式 MOA** 模拟请求（赛况列表接口后续抓包补充） | 补 **结束前 UI 数据层验收**（不等结束 PK 才断言） |
-| C8 | PK 结束后测 **提款排名**：榜单序、吸底「本周已提款」、页头「本周已被提走奖金」与钻石增量一致；用 **生成式 MOA**（接口后续抓包补充） | 补 **结束后排名/汇总数据层验收** |
+| C8 | PK 结束后测 **提款排名**、**返钻弹窗**、活动页吸底「本周已提款」 | 补 **结束后排名/弹窗/汇总验收** |
+| C9 | **再跑一轮** `{总PK}万`，每人随机送礼 `{min}~{max}` 钻 | Web Agent 对话内参数化重跑 + Sheet2 写表 |
 
 ### 4.2 场景层推荐首问（模板①）
 
 ```text
-{手机号A}和{手机号B}同时发起跨房PK随机匹配，两房麦上各加{N}个机器人，
-等待{T}秒后找{M}个测试账号在两房随机送礼（{礼物规则}），
-{时序说明}后结束PK。
+再跑一轮总PK值{目标总PK}的，要求每个用户随机送礼{最小}到{最大}之间。
 ```
 
-本次使用的具体值：**13311111112 / 13311111113**（或 **13311111113 / 13311111114**），**5** 机器人，**20** 秒，**20** 账号，Rose **1～1000 钻**，PK 时长 **5 分钟**（`--pk-minute 5`）。
+或完整版：
+
+```text
+{手机号A}和{手机号B}同时发起跨房PK随机匹配，
+等待20秒后找50个测试账号在两房随机送礼（Rose {最小}~{最大}钻），
+全部送完后等待20秒再结束PK；验收总PK达{目标总PK}、返钻与Sheet2写表。
+```
+
+**Web Agent 对话内常用取值**（2026-08-07 实测）：
+
+| 参数 | 取值 |
+|------|------|
+| 账号 | **13311111111 / 13311111115**（或 11112/11113） |
+| 目标总 PK | **10 万 / 20 万 / 50 万**（`--target-combined-pk`） |
+| 送礼 | 每人随机 **100～1500** 钻 Rose |
+| 个人门槛 | **10000 PK**（服务端 `minMemberRewardPk`） |
+| PK 时长 | 10 分钟（sheet2 脚本默认） |
 
 ### 4.3 增量修正句（最省力，直接复制）
 
 **补送礼规则（C3）**
 
 ```text
-送礼时给麦上随机用户随机赠送1到1000钻石的礼物，
+送礼时给房主（麦上）随机赠送100到1500钻石的Rose礼物，
 全部送礼结束后，等待20秒再结束PK。
 ```
+
+**参数化重跑（C9 · Web Agent 最常用）**
+
+```text
+再跑一轮总PK值20万的，要求每个用户随机送礼100到1500之间。
+```
+
+（将 `20万` 换成 `10万` / `50万`，送礼区间按需改。）
 
 **补报告字段（C4）**
 
@@ -328,10 +372,9 @@ PK结束后还要测试PK提款排名，总排名的用户提款钻石数增加�
 
 | 验收层 | 字段/规则 | 当前状态 |
 |--------|-----------|----------|
-| **榜单序** | 前 50 名按当周领取钻石降序（PK_060～PK_066） | MOA 待抓包；映射后自动验 |
-| **吸底** | 「本周已提款💎y」增量 = 本场钻石到账 Δ（PK_067～PK_068） | 同上；各送礼账号各拉一次 |
-| **本周总提款** | 页头「本周已被提走奖金」增量 = 本场全员发钻之和（PK_012～PK_013） | 同上 |
-| **兜底** | 钱包钻石差值 = 预期返钻 | 已实现（C6） |
+| **返钻弹窗** | `getAcrossRoomPkRewardDetail` 等 | **已接入** sheet2 脚本；低于个人门槛用户 **不应有弹窗返钻** |
+| **活动页吸底 / 本周总提款** | `getAcrossPkRewardRankV2` + 活动页 query | **已接入** sheet2 脚本 |
+| **兜底** | 钱包钻石差值 = 预期返钻（仅 **个人 PK≥1 万** 的胜方用户参与瓜分） | 已实现（C6） |
 
 结束 PK **前**快照排名页 → 发钻等待 → **后**再拉 MOA 对比。接口未映射时 MOA 层跳过、不阻断工作流；`--require-withdraw-rank-api` 可强制。
 
@@ -349,38 +392,41 @@ flowchart TD
   D --> E[快照余额 + 提款排名页 before]
   E --> F[结束 PK]
   F --> G[等发钻 + 快照余额 after]
-  G --> H[C6 · 钻石差值 vs 预期返钻]
-  H --> I[C8 · 提款排名/吸底/本周总提款 MOA]
-  I --> J[报告 .tmp/pk_atm_report_*.md]
+  G --> H[C6 · 钻石差值 vs 预期返钻<br>胜方且 PK≥1万]
+  H --> I[C8 · 弹窗 + 提款排名/吸底/本周总提款]
+  I --> K[Sheet2 钉钉写表 + JSON 报告]
 ```
 
 | 阶段 | 修正句 | MOA / 断言 | 接口状态 |
 |------|--------|------------|----------|
-| **C6** | 结束前先记余额，结束后再比钻石差值 | 钱包 query_diamond | 已有 |
-| **C7** | PK 结束前测赛况页对战信息与 PK 值 | `getAcrossRoomPkInfo` | **已映射**；赛况列表 tab 待抓包 |
-| **C8** | PK 结束后测提款排名、吸底、本周总提款 | withdraw 排名系列候选 | **待抓包**；默认跳过 MOA 层 |
+| **C6** | 结束前先记余额，结束后再比钻石差值 | 钱包 query_diamond | 已有；**未达 1 万 PK 预期 0** |
+| **C7** | PK 结束前测赛况页对战信息与 PK 值 | `getAcrossRoomPkInfo` | **已映射** |
+| **C8** | PK 结束后测弹窗、提款排名、吸底、本周总提款 | 弹窗 + `getAcrossPkRewardRankV2` | **sheet2 已验** |
+| **C9** | 对话内改总 PK / 送礼区间重跑 | `pk_atm_dingtalk_sheet2_run.py` | **Web Agent 主路径** |
 
 报告章节对应关系：
 
 | 报告章节 | 来源 |
 |----------|------|
-| 随机匹配开启跨房 PK | 工作流匹配步骤 |
+| 随机匹配开启跨房 PK | 匹配步骤 |
 | PK 赛况与对战验收 | C7 |
-| 送礼人 PK 与钻石验收 | C6 |
-| 提款排名验收 | C8 |
+| 送礼人 PK 与钻石验收 | C6（含个人门槛 1 万） |
+| 返钻弹窗 / 提款排名 / 活动页吸底 | C8 |
+| **钉钉 Sheet2「测试结果-*」** | `pk_atm_dingtalk_sheet2_run.py` 自动新建 Sheet |
 
 ### 4.4 造数时建议写死的参数
 
-| 信息 | 本次取值 | 说明 |
-|------|----------|------|
+| 信息 | 当前推荐取值 | 说明 |
+|------|--------------|------|
 | 环境 | 测试环境 | 勿混用「线上环境」除非真要 online |
-| 房主 A | 13311111113 → room 50861924 | AI 可反查 userId |
-| 房主 B | 13311111112 → room 31668628（或 13311111114 → 80949067） | 同上 |
-| 匹配方式 | **随机匹配**（`acrossPkType=1`） | 工作流默认；指定邀请不计入提款机 |
-| PK 时长 | `--pk-minute 5`（可选 10/30） | 工作流参数 `pkMinute` |
-| 机器人 | 每房 5 个上麦 | 修正句 C2 |
-| 送礼 | 20 账号，麦上随机，1～1000 钻 | 修正句 C3 |
-| 等待 | 加机器人后 20s；送完再 20s；结束后 8s 查钻 | 时序靠修正句明确 |
+| 房主 A / B | **13311111111 / 13311111115** | 亦可 11112/11113；AI 反查 userId / roomId |
+| 匹配方式 | **随机匹配**（`acrossPkType=1`） | 指定邀请不计入提款机 |
+| PK 时长 | `--pk-minute 10`（sheet2 默认） | 可选 5/10/30 |
+| 送礼 | 50 账号，**100～1500 钻** Rose，打房主（麦上） | 每账号固定绑定一房 |
+| 目标总 PK | `--target-combined-pk`：**100000 / 200000 / 500000** | 未达标会自动 top-up 追加送礼 |
+| 个人门槛 | **`--personal-pk-threshold 10000`** | 送礼 PK <1 万：**应得 0、实发 0** |
+| 等待 | 送礼前 20s；送完 20s；结束后 20s 查钻 | sheet2 默认 |
+| 结束方 | 随机选一方 `closeAcrossRoomPk` | **主动结束方记败** |
 
 ---
 
@@ -396,10 +442,12 @@ flowchart TD
 
 | 类型 | 路径 |
 |------|------|
+| **Sheet2 全流程（推荐）** | `workflow/scripts/pk_atm_dingtalk_sheet2_run.py` → 造数 + 弹窗/吸底验收 + 钉钉写表 |
 | 一键工作流 | `workflow/workflows/pk-atm-test.json` → `python3 workflow/workflow_execute.py run pk-atm-test` |
 | 执行脚本 | `workflow/scripts/pk_atm_test_run.py`（随机匹配开 PK + C6/C7/C8 验收） |
-| 默认梯度兜底 | `workflow/config/pk_atm_default_config.json`（PRD 梯度；MOA 未映射时用） |
-| MSE 配置导出 | `platform/dingtalk_gateway/pk_atm_mse_to_workbook.py` → 钉钉单表 §2.4 |
+| 默认配置兜底 | `workflow/config/pk_atm_default_config.json`（**个人门槛 10000**、6 档梯度） |
+| 测试结果钉钉簿 | [PK提款机-pkAtmConfig / Sheet2 测试结果](https://alidocs.dingtalk.com/i/nodes/oP0MALyR8k7Aow9wCY9wvqBd83bzYmDO) |
+| MSE 配置导出 | `platform/dingtalk_gateway/pk_atm_mse_to_workbook.py` |
 | 随机匹配 MOA | `MOA/templates/跨房PK-随机匹配.json`、`MOA-generative/templates/example-applyAcrossRoomPk-random-match.body.json` |
 | 赛况 MOA 模板 | `MOA-generative/templates/example-getAcrossRoomPkInfo.body.json` |
 | MOA 映射表 | `MOA-generative/mappings.md`（已验证 + 待抓包候选） |
@@ -407,7 +455,7 @@ flowchart TD
 | PRD 摘要 | `prd-kb/房间PK.md` |
 | 工具台 | `python3 platform/open_catalog.py` → 工作流 → **PK提款机-跨房PK造数验收** |
 
-报告在 `.tmp/pk_atm_report_<pkId>.md`，跑完打开即可。重点章节：**PK 赛况与对战验收**（C7）、**送礼人 PK 与钻石验收**（C6）、**提款排名验收**（C8）。
+报告：`.tmp/pk_atm_sheet2_<pkId>.json` + 钉钉 Sheet「测试结果-*」。本地亦可能有 `.tmp/pk_atm_report_<pkId>.md`。
 
 ---
 
@@ -415,9 +463,9 @@ flowchart TD
 
 | 差 | 好 | 原因 |
 |----|-----|------|
-| 帮我测 PK 提款机 | 13311111112/13 **随机匹配**跨房 PK，…（见 §4.2 模板） | 缺账号、步骤、验收 |
+| 帮我测 PK 提款机 | **再跑一轮总PK值20万的，每人随机送礼100到1500** | 参数完整、可直跑 sheet2 |
 | 写个自动化脚本 | 把以上能力结合到 PK 提款机测试中 | 先有对话内跑通 |
-| 送礼测一下 | 给麦上随机用户 1～1000 钻 Rose，20 账号 | 缺对象、礼物、数量 |
+| 送礼测一下 | 100～1500 钻 Rose，50 账号，目标总 PK 20 万 | 缺账号/验收 |
 | 查为什么没发奖 | 记录应得钻和实际钻石差值，验证是否相符 | 给可执行断言 |
 | 一次录所有 PK 接口 | 13311111113 结束 PK，抓包并记录 MOA | 单接口易验收 |
 
@@ -425,11 +473,11 @@ flowchart TD
 
 | 信息 | 必填？ | 示例 |
 |------|--------|------|
-| 账号 | 造数必填 | 13311111112 / 13311111113（或 13/14） |
-| 等待时间 | 强建议 | 20 秒 |
-| 数量 | 强建议 | 5 机器人、20 送礼号 |
-| 业务名 | 强建议 | PK 提款机、随机匹配 |
-| 验收字段 | 写脚本时必填 | PK 值、占比、钻石差值 |
+| 账号 | 造数必填 | **13311111111 / 13311111115** |
+| 目标总 PK | 强建议 | **10 万 / 20 万 / 50 万** |
+| 送礼区间 | 强建议 | **100～1500 钻** |
+| 个人门槛 | 以服务端为准 | **10000 PK** |
+| 验收 | 写脚本时必填 | 总 PK、下发总钻、应得/实发、弹窗、吸底 |
 
 ---
 
@@ -462,10 +510,11 @@ batch_key=web:fe0181e7b6ce418e
 ### 7.3 人审节点（你自己过一眼）
 
 1. **随机匹配 vs 指定邀请**：提款机必须随机匹配（`acrossPkType=1`）  
-2. **梯度单位**：「800 万 PK」= 8,000,000  
-3. **场次门槛**：PRD 50 万；**alpha MSE 当前 2 万**（§2.4）— 默认 20 笔小礼在 alpha 可能已达标  
-4. **个人门槛**：alpha MSE **1 千 PK**（§2.4）；PRD 未定时以 MSE 为准  
-5. **赛况 / 排名 MOA**：未抓包前 C7/C8 的 MOA 层会跳过，以钻石差值兜底是否正常  
+2. **梯度命中**：总 PK **≥ 阈值取最高档**；3% = 送礼钻的 3% = 总 PK 的 0.3%  
+3. **场次门槛**：alpha MSE **2 万**；PRD 50 万  
+4. **个人门槛**：服务端 **1 万 PK**；**未达标胜方用户不应发钻**  
+5. **主动结束记败**：结束 PK 的一方为败方  
+6. **弹窗 / 吸底**：sheet2 脚本默认验收；低于 1 万 PK 跳过弹窗比对、只验实发=0  
 
 ---
 
@@ -482,28 +531,46 @@ batch_key=web:fe0181e7b6ce418e
 9. 粘贴 **§4.3 的 C8 提款排名验收句**（生成式 MOA · 结束后）  
 10. `把从零分析需求、提供MOA、搭建自动化的过程整理成学习文档`  
 
-验证：
+验证（**Web Agent 推荐 · Sheet2 全流程**）：
 
 ```bash
-python3 workflow/workflow_execute.py run pk-atm-test \
-  --phone-a 13311111112 --phone-b 13311111113
+# 20 万总 PK · 100~1500 钻
+python3 workflow/scripts/pk_atm_dingtalk_sheet2_run.py \
+  --phone-a 13311111111 --phone-b 13311111115 \
+  --target-combined-pk 200000 \
+  --gift-min-diamonds 100 --gift-max-diamonds 1500 \
+  --gift-count 50 --personal-pk-threshold 10000
+
+# 50 万总 PK（命中 4% 档）
+python3 workflow/scripts/pk_atm_dingtalk_sheet2_run.py \
+  --target-combined-pk 500000 \
+  --gift-min-diamonds 100 --gift-max-diamonds 1500 \
+  --personal-pk-threshold 10000
+
+# 10 万总 PK
+python3 workflow/scripts/pk_atm_dingtalk_sheet2_run.py \
+  --target-combined-pk 100000 \
+  --gift-min-diamonds 100 --gift-max-diamonds 1500 \
+  --personal-pk-threshold 10000
 ```
 
-冲梯度示例（alpha 2 万门槛，对话跑通后再加压）：
+工作流入口：
 
 ```bash
 python3 workflow/workflow_execute.py run pk-atm-test \
-  --phone-a 13311111112 --phone-b 13311111113 \
-  --min-combined-pk 20000 --personal-pk-threshold 1000 \
-  --gift-count 40 --gift-min-diamonds 100 --gift-max-diamonds 500
+  --phone-a 13311111111 --phone-b 13311111115 \
+  --target-combined-pk 200000 \
+  --gift-min-diamonds 100 --gift-max-diamonds 1500 \
+  --personal-pk-threshold 10000
 ```
 
-冲 PRD 50 万梯度（需大幅加压，仅对照用例文档）：
+冲 alpha 场次门槛（2 万即达标）：
 
 ```bash
-python3 workflow/workflow_execute.py run pk-atm-test \
-  --phone-a 13311111112 --phone-b 13311111113 \
-  --gift-count 120 --gift-min-diamonds 500 --gift-max-diamonds 1000
+python3 workflow/scripts/pk_atm_dingtalk_sheet2_run.py \
+  --target-combined-pk 20000 \
+  --gift-min-diamonds 100 --gift-max-diamonds 500 \
+  --personal-pk-threshold 10000
 ```
 
 ---
@@ -517,10 +584,11 @@ python3 workflow/workflow_execute.py run pk-atm-test \
 | 配到其他房间 | 脚本自动 `closeAcrossRoomPk` 后重试；报告会记 wrongMatch 轮次 |
 | 服务端 Agent 401 | 更新 `YAAHLAN_SERVICE_AGENT_TOKEN`（浏览器登录 ai-yaahlan 后复制 Bearer） |
 | 送礼了但 PK 不涨 | 修正句强调「送给 **麦上** 用户」+「等 20 秒」 |
-| 预期返钻全是 0 | 先对照 §2.4 MSE 门槛（alpha **2 万** / 个人 **1 千**）；不够则加大 `--gift-count` |
-| AI 一次写大脚本 | 回到 C1 最小闭环，再用 C2～C8 修正 |
-| 配置接口调不通 | 显式说「先用本地梯度 JSON 兜底」并 `--min-combined-pk` / `--personal-pk-threshold` 对齐 MSE |
-| C7/C8 MOA 报 Method not found | 正常：排名/赛况列表 tab **待抓包**；先验收 C6 钻石差值，抓包后再 `--require-*` 强制 |
+| 预期返钻全是 0 | 对照 §2.4：**个人 PK 是否 ≥1 万**、是否胜方、是否主动结束记败 |
+| 下发总钻与配置不符 | 检查梯度是否按 **≥ 阈值最高档** 命中；3% 档总 PK 0.3% |
+| 低于 1 万 PK 仍发钻 | **缺陷**；sheet2 会标「个人PK未达门槛不应发钻」 |
+| 小奖池实发略高于 floor 公式 | 低总 PK 场偶发；弹窗与实发一致时以 **弹窗/实发** 为准，可问服务端 Agent 取整规则 |
+| 配置接口 / 报告快照滞后 | 以 `pk_atm_default_config.json` 为准（**个人门槛 10000**）；重写 Sheet 用 `--from-report --rewrite-only` |
 
 ---
 
@@ -537,3 +605,7 @@ python3 workflow/workflow_execute.py run pk-atm-test \
 | 2026-08-04 | Web Agent：服务端 Agent 查询进度展示；Token 配置说明 |
 | 2026-08-07 | §2.4：MSE alpha `pkAtmConfig` 入文档（门槛 2 万 / 个人 1 千 / 6 档梯度）；钉钉单表导出命令 |
 | 2026-08-07 | 随机匹配：失败/配错房间自动重试（并行 apply + close 错配 + `--match-retries`） |
+| 2026-08-07 | **Sheet2 全流程** `pk_atm_dingtalk_sheet2_run.py`；弹窗 + 吸底验收；Web Agent 参数化重跑 C9 |
+| 2026-08-07 | **梯度匹配修正**：总 PK **≥ 阈值取最高档**；返钻 3% = 总 PK×0.3% |
+| 2026-08-07 | **个人门槛以服务端为准：10000 PK**；未达标胜方用户应得/实发均为 0 |
+| 2026-08-07 | 实测账号 11111/11115；目标总 PK 10万/20万/50万 + 送礼 100~1500 钻 |

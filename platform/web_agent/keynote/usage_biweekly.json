@@ -1,26 +1,109 @@
 {
-  "title": "Yaahlan 智能工具平台 · 近双周用量",
-  "range": ["2026-07-21", "2026-08-03"],
-  "rangeLabel": "7/21 – 8/3",
-  "optimizeDate": "2026-07-28",
-  "optimizeLabel": "7/28 体验优化",
+  "title": "Yaahlan 智能工具平台 · 近三周用量",
+  "range": [
+    "2026-07-20",
+    "2026-08-07"
+  ],
+  "rangeLabel": "7/20 – 8/7",
+  "optimizeDate": "2026-07-27",
+  "optimizeLabel": "7/27 体验优化",
   "source": "钉钉 + Web Agent · 工作日数据",
   "days": [
-    { "date": "2026-07-21", "label": "7/21", "requests": 1, "users": 1 },
-    { "date": "2026-07-22", "label": "7/22", "requests": 69, "users": 3 },
-    { "date": "2026-07-23", "label": "7/23", "requests": 1, "users": 1 },
-    { "date": "2026-07-24", "label": "7/24", "requests": 144, "users": 4 },
-    { "date": "2026-07-27", "label": "7/27", "requests": 91, "users": 3 },
-    { "date": "2026-07-28", "label": "7/28", "requests": 159, "users": 7 },
-    { "date": "2026-07-29", "label": "7/29", "requests": 197, "users": 4 },
-    { "date": "2026-07-30", "label": "7/30", "requests": 128, "users": 8 },
-    { "date": "2026-07-31", "label": "7/31", "requests": 219, "users": 7 },
-    { "date": "2026-08-03", "label": "8/3", "requests": 5, "users": 3 }
+    {
+      "date": "2026-07-20",
+      "label": "7/20",
+      "requests": 13,
+      "users": 1
+    },
+    {
+      "date": "2026-07-21",
+      "label": "7/21",
+      "requests": 1,
+      "users": 1
+    },
+    {
+      "date": "2026-07-22",
+      "label": "7/22",
+      "requests": 69,
+      "users": 3
+    },
+    {
+      "date": "2026-07-23",
+      "label": "7/23",
+      "requests": 1,
+      "users": 1
+    },
+    {
+      "date": "2026-07-24",
+      "label": "7/24",
+      "requests": 144,
+      "users": 4
+    },
+    {
+      "date": "2026-07-27",
+      "label": "7/27",
+      "requests": 91,
+      "users": 3
+    },
+    {
+      "date": "2026-07-28",
+      "label": "7/28",
+      "requests": 159,
+      "users": 7
+    },
+    {
+      "date": "2026-07-29",
+      "label": "7/29",
+      "requests": 197,
+      "users": 4
+    },
+    {
+      "date": "2026-07-30",
+      "label": "7/30",
+      "requests": 133,
+      "users": 8
+    },
+    {
+      "date": "2026-07-31",
+      "label": "7/31",
+      "requests": 219,
+      "users": 7
+    },
+    {
+      "date": "2026-08-03",
+      "label": "8/3",
+      "requests": 236,
+      "users": 5
+    },
+    {
+      "date": "2026-08-04",
+      "label": "8/4",
+      "requests": 150,
+      "users": 5
+    },
+    {
+      "date": "2026-08-05",
+      "label": "8/5",
+      "requests": 118,
+      "users": 7
+    },
+    {
+      "date": "2026-08-06",
+      "label": "8/6",
+      "requests": 93,
+      "users": 6
+    },
+    {
+      "date": "2026-08-07",
+      "label": "8/7",
+      "requests": 271,
+      "users": 7
+    }
   ],
   "summary": {
-    "beforeAvgRequests": 61,
-    "afterAvgRequests": 142,
-    "requestsLift": "2.3×",
+    "beforeAvgRequests": 46,
+    "afterAvgRequests": 167,
+    "requestsLift": "3.6×",
     "beforePeakUsers": 4,
     "afterPeakUsers": 8,
     "usersLift": "2×"

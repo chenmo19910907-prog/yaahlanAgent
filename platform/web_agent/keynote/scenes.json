@@ -326,8 +326,8 @@
   },
   {
     "type": "feature",
-    "title": "双周用量，显著提升",
-    "desc": "7/28 体验优化后，工作日日均请求约 2.3 倍、活跃峰值翻倍。",
+    "title": "三周用量，显著提升",
+    "desc": "7/27 体验优化后，近三个自然周工作日日均请求约 3.6 倍、活跃峰值翻倍。",
     "demo": "usage-growth",
     "layout": "stack",
     "emptyCarousel": false
