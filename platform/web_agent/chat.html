@@ -2593,7 +2593,6 @@
     .external-agent-item {
       display: flex;
       align-items: center;
-      justify-content: space-between;
       gap: 10px;
       padding: 10px 12px;
       border: 1px solid var(--border);
@@ -2655,31 +2654,6 @@
       font-size: 0.86rem;
       font-weight: 600;
       color: var(--text);
-    }
-    .external-agent-open {
-      flex-shrink: 0;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 6px 10px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      color: var(--text-soft);
-      font-size: 0.78rem;
-      text-decoration: none;
-      transition: border-color 180ms, background 180ms, color 180ms;
-    }
-    .external-agent-open:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: var(--accent-soft);
-    }
-    .external-agent-open svg {
-      width: 14px;
-      height: 14px;
-      stroke: currentColor;
-      flex-shrink: 0;
     }
     .settings-hint {
       margin-top: 6px;
@@ -5722,26 +5696,15 @@
       container.innerHTML = agents.map((item) => {
         const id = String(item.id || '').trim();
         const label = escapeHtml(String(item.label || id));
-        const url = String(item.url || '').trim();
         const checked = enabled.has(id) ? ' checked' : '';
-        const openBtn = url
-          ? `<a class="external-agent-open" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" title="打开 ${label}">
-              打开
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M14 3h7v7"/><path d="M10 14 21 3"/><path d="M21 14v7h-7"/><path d="M3 10V3h7"/></svg>
-            </a>`
-          : '';
         return `
           <div class="external-agent-item${checked ? ' is-checked' : ''}">
             <label class="external-agent-check" for="external-agent-${escapeHtml(id)}">
               <input type="checkbox" id="external-agent-${escapeHtml(id)}" data-agent-id="${escapeHtml(id)}"${checked} />
               <span class="external-agent-name">${label}</span>
             </label>
-            ${openBtn}
           </div>`;
       }).join('');
-      container.querySelectorAll('.external-agent-open').forEach((link) => {
-        link.addEventListener('click', (event) => event.stopPropagation());
-      });
       container.querySelectorAll('input[type="checkbox"]').forEach((input) => {
         input.addEventListener('change', () => {
           const item = input.closest('.external-agent-item');
