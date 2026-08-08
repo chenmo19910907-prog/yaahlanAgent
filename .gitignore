@@ -68,3 +68,4 @@ temporary_testcase/*
 # MOA payload / 工作流中间产物（见 scripts/tmp_cleanup.py）
 .tmp/*
 !.tmp/.gitkeep
+docs/
