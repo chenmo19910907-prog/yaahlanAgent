@@ -1,0 +1,41 @@
+{
+  "title": "关于 Yaahlan Web Agent",
+  "intro": "Yaahlan 智能工具 Agent 是面向测试与研发的对话式工作台：支持钉钉与网页同步对话，串联 MOA 造数、Admin 查数、Tunnel 抓包、用例生成等能力。下方整理了内网可访问的学习与演示文档，点击即可在新标签页打开。",
+  "categories": [
+    {
+      "name": "产品演示",
+      "items": [
+        {
+          "title": "Web Agent Keynote 演示",
+          "desc": "30 页产品演示：UI 细节、功能亮点、智能工厂与双周用量",
+          "url": "../keynote/"
+        }
+      ]
+    },
+    {
+      "name": "搭建与学习",
+      "items": [
+        {
+          "title": "用 Cursor 搭建智能工具平台",
+          "desc": "从 MOA 到 Admin、Tunnel、钉钉文档、ADB 自动化的完整搭建历程",
+          "url": "../platform-guide/"
+        },
+        {
+          "title": "PK 提款机：从零到 MOA 与自动化",
+          "desc": "真实协作案例：读 PRD → 抓包落 MOA → 对话迭代 C1～C8 → 赛况/返钻/提款排名验收 → 工作流 pk-atm-test",
+          "url": "../keynote/pk-atm-guide"
+        }
+      ]
+    },
+    {
+      "name": "案例展示",
+      "items": [
+        {
+          "title": "家族 PK 测试 Showcase",
+          "desc": "复杂活动数据造表与验收演示",
+          "url": "../family-pk-showcase/"
+        }
+      ]
+    }
+  ]
+}

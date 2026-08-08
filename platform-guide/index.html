@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>用 Cursor 搭建 Yaahlan 智能工具平台</title>
+  <link rel="stylesheet" href="../web-agent/assets/fonts/misans/Normal/MiSans-Normal.min.css" />
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: rgba(18, 24, 42, 0.92);
+      --text: #e8edf8;
+      --muted: #9aa8c7;
+      --accent: #5b8cff;
+      --accent-soft: rgba(91, 140, 255, 0.14);
+      --border: rgba(255, 255, 255, 0.08);
+      --prompt-bg: rgba(91, 140, 255, 0.08);
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "MiSans Normal", "PingFang SC", sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, rgba(91,140,255,.18), transparent 60%),
+                  radial-gradient(900px 500px at 90% 0%, rgba(56,189,248,.08), transparent 55%),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 820px);
+      gap: 32px;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 24px 80px;
+    }
+    .toc {
+      position: sticky;
+      top: 24px;
+      align-self: start;
+      padding: 18px 16px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+    }
+    .toc h2 {
+      font-size: 13px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .toc a {
+      display: block;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      transition: .18s ease;
+    }
+    .toc a:hover { color: var(--text); background: var(--accent-soft); }
+    main { min-width: 0; }
+    .hero, .preface, .chapter {
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+      padding: 28px 32px;
+      margin-bottom: 24px;
+    }
+    .eyebrow {
+      color: var(--accent);
+      font-size: 13px;
+      letter-spacing: .06em;
+      margin-bottom: 10px;
+    }
+    .hero h1, .chapter h2, .preface h2 {
+      font-size: clamp(28px, 4vw, 36px);
+      line-height: 1.25;
+      margin-bottom: 12px;
+    }
+    .lead, .chapter-intro, .block-desc {
+      color: var(--muted);
+      font-size: 16px;
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 14px;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      transition: .18s ease;
+    }
+    .btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+    .btn.primary:hover { filter: brightness(1.08); }
+    .btn.ghost { color: var(--text); background: transparent; }
+    .btn.ghost:hover { background: var(--accent-soft); }
+    .chapter-index {
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .block { margin-top: 22px; padding-top: 8px; border-top: 1px solid var(--border); }
+    .block h3 { font-size: 20px; margin-bottom: 8px; }
+    .block h4, .block h4.sub-step {
+      font-size: 15px;
+      color: #c7d2ea;
+      margin: 14px 0 8px;
+      font-weight: 600;
+    }
+    .prompt {
+      margin: 10px 0 14px;
+      padding: 14px 16px 14px 18px;
+      border-left: 3px solid var(--accent);
+      border-radius: 0 12px 12px 0;
+      background: var(--prompt-bg);
+      color: #dbe4ff;
+      font-size: 15px;
+    }
+    .prompt-label {
+      display: block;
+      font-size: 12px;
+      color: var(--accent);
+      margin-bottom: 6px;
+      letter-spacing: .04em;
+    }
+    .shot {
+      margin: 16px 0;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,.2);
+    }
+    .shot img { display: block; width: 100%; height: auto; }
+    .shot-placeholder {
+      min-height: 120px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .footer-note {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      padding: 12px 0 24px;
+    }
+    @media (max-width: 960px) {
+      .layout { grid-template-columns: 1fr; }
+      .toc { position: static; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="toc">
+      <h2>目录</h2>
+      <a href="#top">概览</a>
+      <a href="#preface">前言</a>
+      <a href="#kb">知识库搭建</a>
+      <a href="#moa">MOA 能力</a>
+      <a href="#risk">风控解除</a>
+      <a href="#admin">Admin 后台</a>
+      <a href="#tunnel">Tunnel 抓包</a>
+      <a href="#dingtalk-doc">钉钉文档</a>
+      <a href="#acceptance">平台验收</a>
+      <a href="#adb-auto">ADB 视觉自动化</a>
+    </aside>
+    <main>
+<section class="hero" id="top">
+  <p class="eyebrow">Yaahlan · 智能工具平台</p>
+  <h1>用 Cursor 搭建智能工具平台</h1>
+  <p class="lead">从 MOA 一句话造数，到 Admin / Tunnel / 钉钉文档 / ADB 自动化——能力逐步沉淀、持续生长。</p>
+  <div class="hero-actions">
+    <a class="btn primary" href="https://alidocs.dingtalk.com/i/nodes/dQPGYqjpJYgLbY0YCZkZMpGDWakx1Z5N" target="_blank" rel="noopener">查看钉钉原文档</a>
+    <a class="btn ghost" href="../keynote/" target="_blank" rel="noopener">产品演示页</a>
+  </div>
+</section>
+<section class="preface" id="preface">
+  <h2>前言</h2>
+  <p>最初只是想用自然语言给 Yaahlan 账号「加数值」——接入 MOA 后效果超出预期。随后陆续扩展 Admin、Tunnel、钉钉文档、风控等能力，边用边沉淀，逐步搭成 <strong>Yaahlan 智能工具平台</strong>。多轮迭代下来，日常测试效率提升显著，能力仍在持续扩展。</p>
+</section>
+<section class="chapter" id="kb">
+  <p class="chapter-index">一</p>
+  <h2>知识库搭建</h2>
+  <p class="chapter-intro">先把 Yaahlan 的用例与历史 Bug 沉淀为结构化知识库，让 Agent 有上下文可依。</p>
+  <div class="block">
+    <h3>1、导入测试用例知识库</h3>
+    <p class="block-desc">导入历史版本全部测试用例；冲突以最新版本为准，拆模块持续调优。</p>
+  </div>
+  <div class="block">
+    <h3>2、导入历史bug知识库</h3>
+    <p class="block-desc">同步导入历史 Bug，模块划分与用例库保持一致。</p>
+  </div>
+</section>
+<section class="chapter" id="moa">
+  <p class="chapter-index">二</p>
+  <h2>MOA 能力</h2>
+  <p class="chapter-intro">从单条 MOA 录入到自然语言造数、多 MOA 协同，逐步把常用操作脚本化。</p>
+  <div class="block">
+    <h3>1、MOA的导入</h3>
+    <p class="block-desc">首次用网页检查器粘贴完整请求；后续可直接贴截图 + 功能说明。</p>
+    <h4 class="sub-step">a、首次导入MOA使用网页检查器导入执行后全部请求信息并说明其功能</h4>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>这是一个升级VIP等级的MOA，给用户100066819增加10000VIP经验值，增加0经验值可以实现查询功能，帮我写成可以运行的脚本。</blockquote>
+    <h4 class="sub-step">b、再次导入MOA可以直接粘贴请求方式截图并说明功能</h4>
+<figure class="shot"><img src="images/c0bc791b564b97d8aae6edea74d11fd9.png" alt="操作示例" loading="lazy" /></figure>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>这是升级房间等级的MOA，将房间31668628增加10000000经验值，增加0经验值可以实现查询功能，帮我写成可以运行的脚本。</blockquote>
+  </div>
+  <div class="block">
+    <h3>2、使用自然语言完成MOA操作</h3>
+    <p class="block-desc">录入脚本后，用一句话完成查数、改数。</p>
+    <p>给100465989增加100VIP经验值</p>
+<figure class="shot"><img src="images/b9e9b3f610c860727f11bdc191669254.png" alt="操作示例" loading="lazy" /></figure>
+  </div>
+  <div class="block">
+    <h3>3、将MOA操作与知识库中的数值做关联</h3>
+    <p class="block-desc">Agent 理解 VIP 等级、资料卡背景等业务语义，自动换算目标数值。</p>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>将100465989升级到VIP3</blockquote>
+<figure class="shot"><img src="images/148ec262b697d1d88ac0550bf098adb9.png" alt="操作示例" loading="lazy" /></figure>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>升级100465989的VIP，使其拥有mini资料卡背景</blockquote>
+<figure class="shot"><img src="images/5d4d58b444896cfa21d4e55d5addf1e8.png" alt="操作示例" loading="lazy" /></figure>
+  </div>
+  <div class="block">
+    <h3>4、多MOA协同操作</h3>
+    <p class="block-desc">复杂场景组合多条 MOA，批量造数、准备上传数据。</p>
+    <h4 class="sub-step">a、录入更多MOA，实现复杂操作</h4>
+<figure class="shot"><img src="images/ebbdd1e558024c3886b3f92d8dcc6542.png" alt="操作示例" loading="lazy" /></figure>
+    <h4 class="sub-step">b、进行复杂功能操作</h4>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>解决13311111151认证失败问题</blockquote>
+<figure class="shot"><img src="images/25fa3db8a0bb7d9c9d9f320e45009b6e.png" alt="操作示例" loading="lazy" /></figure>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>100079102需要上传定制礼物，帮我准备数据</blockquote>
+<figure class="shot"><img src="images/17bfaf23e614798ad08f57fe4db00586.png" alt="操作示例" loading="lazy" /></figure>
+    <h4 class="sub-step">c、使用MOA和数据整理批量造数据</h4>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>将13311111111到13311111199对应的用户id和数据整理成字典{“id”:“数据”}，数据按步长100递增</blockquote>
+<figure class="shot"><img src="images/624f98535f8ac97cbff3f6fae26809ae.png" alt="操作示例" loading="lazy" /></figure>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>将13311111111到13311111119都下发1钻石和1个背包礼物</blockquote>
+<figure class="shot"><img src="images/2ceadde9fd51cdf8f98c5d75dce05c9f.png" alt="操作示例" loading="lazy" /></figure>
+  </div>
+</section>
+<section class="chapter" id="risk">
+  <p class="chapter-index">三</p>
+  <h2>风控解除</h2>
+  <p class="chapter-intro">解除登录风控、同步测试机信息，与设备知识库联动。</p>
+  <div class="block">
+    <h3>1、录入风控请求方法</h3>
+    <p class="block-desc">登记解除设备 / 手机号风控的请求方式。</p>
+<figure class="shot"><img src="images/010f6ced073f070719c0b906cd8981fd.png" alt="操作示例" loading="lazy" /></figure>
+  </div>
+  <div class="block">
+    <h3>2、将当前测试机信息导入知识库</h3>
+    <p class="block-desc">mmuid、机型等写入 test_devices，便于按设备指代账号。</p>
+<figure class="shot"><img src="images/6124e8fe38fad977552083f8860aa9fe.png" alt="操作示例" loading="lazy" /></figure>
+  </div>
+  <div class="block">
+    <h3>3、批量解除风控设备</h3>
+    <p class="block-desc">按持有人或全量解除登录风控。</p>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>解除陈墨持有手机的登录风控</blockquote>
+<figure class="shot"><img src="images/e6e11b65ba8fbca957b16969a55d1efd.png" alt="操作示例" loading="lazy" /></figure>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>解除全部设备的登录风控</blockquote>
+<figure class="shot"><img src="images/e6aecce773f42498576553b40d79c469.png" alt="操作示例" loading="lazy" /></figure>
+  </div>
+</section>
+<section class="chapter" id="admin">
+  <p class="chapter-index">四</p>
+  <h2>Admin 后台</h2>
+  <p class="chapter-intro">Admin 查数与 MOA 造数组合，支持手机号、角色等多种身份指代。</p>
+  <div class="block">
+    <h3>1、后台功能的导入</h3>
+    <p class="block-desc">与 MOA 类似：检查器导入或补充更多 Admin 接口。</p>
+    <h4 class="sub-step">a、使用网页检查器导入执行后全部请求信息并说明其功能</h4>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>这是查询用户信息的后台，查询用户100066819的用户信息，帮我写成可以运行的脚本。</blockquote>
+    <h4 class="sub-step">b、导入更多后台功能</h4>
+<figure class="shot"><img src="images/7a137cca21acc409e3979e9cb0353a81.png" alt="操作示例" loading="lazy" /></figure>
+  </div>
+  <div class="block">
+    <h3>2、使用开发后台功能</h3>
+    <p class="block-desc">查公会、设客服等后台操作。</p>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>查询100465989账号有没有加入公会</blockquote>
+<figure class="shot"><img src="images/814a3d6be7138f732442928b6f9f07ab.png" alt="操作示例" loading="lazy" /></figure>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>把100079102设置为vip客服和房间客服</blockquote>
+<figure class="shot"><img src="images/1100dc44ccca1a49238456ed1b0d1738.png" alt="操作示例" loading="lazy" /></figure>
+  </div>
+  <div class="block">
+    <h3>3、MOA和开发后台联动操作</h3>
+    <p class="block-desc">跨模块编排：查号段 → 改分区 → 查在线。</p>
+    <h4 class="sub-step">a、进行更加多样的操作</h4>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>查看13311111111到13311111199中所有用户的公会并分类，将不是中东区的账号切换到中东区，并查询哪些账号在线</blockquote>
+<figure class="shot"><img src="images/7d4aae8f7cfcdfba4572d12d01d6286b.png" alt="操作示例" loading="lazy" /></figure>
+    <h4 class="sub-step">b、用更多身份代替用户id进行操作</h4>
+    <p>可以用任意身份指代一个用户或圈定你一个群体，用手机号、用户id、房间号、xx家族长、xx公会长等都能指向用户，用xx客服、xx公会成员、上传了定制礼物的用户、xx设备登录的账号等都能指向一个群体</p>
+  </div>
+  <div class="block">
+    <h3>4、尝试更多可能性</h3>
+    <p class="block-desc">用「可能是谁的账号」等模糊身份指代用户。</p>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>判断100351697可能是谁的账号</blockquote>
+<figure class="shot"><img src="images/dcba69569f704b2c684aaf5979a668f3.png" alt="操作示例" loading="lazy" /></figure>
+  </div>
+</section>
+<section class="chapter" id="tunnel">
+  <p class="chapter-index">五</p>
+  <h2>Tunnel 抓包</h2>
+  <p class="chapter-intro">抓包查数、问题分析、Mock 造数，与 MOA / Admin 串联验收。</p>
+  <div class="block">
+    <h3>1、录入tunnel抓包请求，并说明请求详情</h3>
+    <p class="block-desc">登记 Tunnel 查询方式与字段含义。</p>
+<figure class="shot"><img src="images/5b45104834b60a36250a53cbb3702f59.png" alt="操作示例" loading="lazy" /></figure>
+  </div>
+  <div class="block">
+    <h3>2、抓包能力应用</h3>
+    <p class="block-desc">分析失败原因、提取礼物 ID、Mock 分页数据等。</p>
+    <h4 class="sub-step">a、分析账号问题</h4>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>13311111126最近一次进房失败，抓包分析一下原因</blockquote>
+<figure class="shot"><img src="images/40ae953a44303bb80164d3ef6653ff56.png" alt="操作示例" loading="lazy" /></figure>
+    <h4 class="sub-step">b、查询数据信息</h4>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>13311111138抓包查看love bow的礼物id</blockquote>
+<figure class="shot"><img src="images/5e60485ac08e2ad2959942e8c106ff4f.png" alt="操作示例" loading="lazy" /></figure>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>100465989的抓包，把100006869的用户名抓出来</blockquote>
+<figure class="shot"><img src="images/4c1a57bbbeb99c0666311bc10498c1e0.png" alt="操作示例" loading="lazy" /></figure>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>抓包红米12当前登录的账号，查看阿语下CP空间中CP礼物的名字</blockquote>
+<figure class="shot"><img src="images/02a5ae96a6f1ef8131091f5004f34817.png" alt="操作示例" loading="lazy" /></figure>
+    <h4 class="sub-step">c、抓包数据处理</h4>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>抓包100414599，获取CP摩天轮上期榜单top10数据，整理用户信息排名和贡献值，将榜单中5到10名升级1分钟VIP5</blockquote>
+<figure class="shot"><img src="images/937c3a15c2c431f680b03ae102ce7e5c.png" alt="操作示例" loading="lazy" /></figure>
+    <h4 class="sub-step">d、造mock数据</h4>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>100486375抓包CP空间的CP礼物，当前只展示8个CP礼物，帮我造MOCK数据到30个礼物</blockquote>
+<figure class="shot"><img src="images/d4fbbe10ef81aeb9eda88d9a9ac5e6d5.png" alt="操作示例" loading="lazy" /></figure>
+  </div>
+</section>
+<section class="chapter" id="dingtalk-doc">
+  <p class="chapter-index">六</p>
+  <h2>钉钉文档</h2>
+  <p class="chapter-intro">读取版本用例与需求文档，同步到知识库，支撑用例与 PRD 工作流。</p>
+  <div class="block">
+    <h3>1、增加读取钉钉文档目录能力</h3>
+    <p class="block-desc">脚本读取 alidocs 目录，录制常用文档链接。</p>
+    <h4 class="sub-step">a、编写可以读取钉钉目录中文件的脚本</h4>
+<figure class="shot"><img src="images/ef208b22d60f692d267ecccedf11911a.png" alt="操作示例" loading="lazy" /></figure>
+    <h4 class="sub-step">b、录制钉钉文档目录链接并说明目录中的文档概况</h4>
+<figure class="shot"><img src="images/95dcb2f0b7ac52517a154198d553bbfe.png" alt="操作示例" loading="lazy" /></figure>
+  </div>
+  <div class="block">
+    <h3>2、调用已登记目录中的任意文档</h3>
+    <p class="block-desc">查版本用例、同步知识库、查研发测试负责人等。</p>
+    <h4 class="sub-step">a、读取2.2.2版本的用例有哪些功能</h4>
+<figure class="shot"><img src="images/51e4f45a79f691a083bf41fb8e8d80b9.png" alt="操作示例" loading="lazy" /></figure>
+    <h4 class="sub-step">b、将2.2.4版本用例整理到知识库</h4>
+<figure class="shot"><img src="images/7ef171aa4e2e3bbe915dc450cf7d19b9.png" alt="操作示例" loading="lazy" /></figure>
+    <h4 class="sub-step">c、团战PK功能的研发测试产品都是谁</h4>
+<figure class="shot"><img src="images/627ad70fac227de83c310dda3006d8b3.png" alt="操作示例" loading="lazy" /></figure>
+    <h4 class="sub-step">d、同步钉钉文档中未纳入知识库的用例文档和需求文档</h4>
+<figure class="shot"><img src="images/093864a2c959e2f00618da153795f842.png" alt="操作示例" loading="lazy" /></figure>
+    <h4 class="sub-step">e、财富等级改版是哪个版本</h4>
+<figure class="shot"><img src="images/b35945c1d328a9c0da5a82b3d91e98ad.png" alt="操作示例" loading="lazy" /></figure>
+    <h4 class="sub-step">f、财富魅力等级和财富魅力值的关系如下，记录到知识库中</h4>
+<figure class="shot"><img src="images/9d5294976fef8ac6eada6e84658ff926.png" alt="操作示例" loading="lazy" /></figure>
+<figure class="shot"><img src="images/744bcbe90f183e3e06d3a808ee3f05f6.png" alt="操作示例" loading="lazy" /></figure>
+  </div>
+</section>
+<section class="chapter" id="acceptance">
+  <p class="chapter-index">七</p>
+  <h2>平台验收</h2>
+  <p class="chapter-intro">录制规则与 MOA，结合抓包完成活动验收与数值核对。</p>
+  <div class="block">
+    <h3>1、根据活动期间CP贡献值下发钻石奖励，根据不同档位下方不同数量的奖励</h3>
+    <p class="block-desc">录制规则 + MOA + 抓包，分档验收奖励下发。</p>
+<figure class="shot"><img src="images/ba412a5a8cbc995973aa41afd712c325.png" alt="操作示例" loading="lazy" /></figure>
+    <h4 class="sub-step">a、使用测试工具平台录制规则</h4>
+<figure class="shot"><img src="images/1c61e570dd6e54c18a6f719afed3dc05.png" alt="操作示例" loading="lazy" /></figure>
+    <h4 class="sub-step">b、使用测试工具平台录制MOA</h4>
+<figure class="shot"><img src="images/6725a6f9c0caecc946ef99e8de5e15f0.png" alt="操作示例" loading="lazy" /></figure>
+<figure class="shot"><img src="images/721cc0b52072113061a641ded7e43af9.png" alt="操作示例" loading="lazy" /></figure>
+    <h4 class="sub-step">c、抓包获取榜单中最新的CP数据</h4>
+<figure class="shot"><img src="images/a906dbe4c726ee467c1b639807ec9324.png" alt="操作示例" loading="lazy" /></figure>
+    <h4 class="sub-step">d、设置CP所属的档位</h4>
+<figure class="shot"><img src="images/a8c7fba8b87a588f08322874c55c2b66.png" alt="操作示例" loading="lazy" /></figure>
+    <h4 class="sub-step">e、计算奖励下发前后钻石数和需求是否一致</h4>
+<figure class="shot"><img src="images/59ce6127e103f1369bbf66bccc12fbcf.png" alt="操作示例" loading="lazy" /></figure>
+    <h4 class="sub-step">f、测试其他档位</h4>
+<figure class="shot"><img src="images/c143530cca33c433f1cf083225598bbd.png" alt="操作示例" loading="lazy" /></figure>
+  </div>
+  <div class="block">
+    <h3>2、测试送礼后账号各数值是否正确</h3>
+    <p class="block-desc">送礼前后对比榜单与资产数值。</p>
+    <h4 class="sub-step">a、获取送礼前数值（涉及榜单数值的浏览一下各榜单）</h4>
+<figure class="shot"><img src="images/da1af48afeb848e251250a0032a5bb68.png" alt="操作示例" loading="lazy" /></figure>
+    <h4 class="sub-step">b、手机上赠送礼物（涉及榜单数值的浏览一下各榜单）</h4>
+    <h4 class="sub-step">c、查询送礼后数值变更</h4>
+<figure class="shot shot-placeholder"><span>操作截图 · 见钉钉原文档</span></figure>
+  </div>
+</section>
+<section class="chapter" id="adb-auto">
+  <p class="chapter-index">八</p>
+  <h2>ADB 视觉自动化</h2>
+  <p class="chapter-intro">ADB 视觉自动化：截图 → 分析 → 操作 → 片段沉淀，与工具平台协同造数验收。</p>
+  <div class="block">
+    <h3>1、搭建测试环境</h3>
+    <p class="block-desc">截图识页、逐步操作、片段沉淀与设备坐标映射。</p>
+    <h4 class="sub-step">a、对当前页面进行自动截图并读取截取的图片，根据知识库分析当前所处的页面，以及元素所处位置，计算出需要点击坐标（可以对截图进行压缩，通过压缩比例还原对应坐标）</h4>
+    <h4 class="sub-step">b、根据知识库判断完成任务需要的操作流程，每操作一步截图一次，只保留最近十次的截图多余的删除</h4>
+    <h4 class="sub-step">c、全部操作结束后截图并自动判断完成情况和预期是否一致，如果没有问题就把操作流程固化为可复用的片段</h4>
+    <h4 class="sub-step">d、后续执行中运行到已有的片段则自动引用，不再截图判断，如果操作失败自动分析原因并修改片段</h4>
+    <h4 class="sub-step">e、录制的片段中加入设备信息，如果是未知设备则使用截图操作计算坐标的映射关系，找到规律后将映射关系记录到设备信息中</h4>
+    <h4 class="sub-step">f、随机录制片段能力，给定命令读取某个功能的知识库，或读取某个页面的所有按钮，尝试运行各种可行的操作，把操作成功的固定为片段，需要连续操作则调用对应片段，并在片段间用截图验证，使用自然语言描述业务流程也可以快速录制和调用片段</h4>
+    <h4 class="sub-step">g、如果检测当前UI为阿语，需要使用镜像坐标进行片段操作</h4>
+  </div>
+  <div class="block">
+    <h3>2、拓展能力</h3>
+    <p class="block-desc">与工具平台协同：缺钻自动下发、多机联动、抓包验收。</p>
+    <h4 class="sub-step">a、结合智能测试工具平台协同实现更多功能</h4>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>送礼时钻石不足自动下发钻石，改名时没有修改次数自动升级VIP，登录账号时先判断账号注册登录状态等</blockquote>
+    <h4 class="sub-step">b、无线连接多个设备后，通过实时截图对照，实现多机联动</h4>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>将两个账号缔结为CP关系</blockquote>
+    <h4 class="sub-step">c、配合tunnel抓包确认操作结果</h4>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>送礼前抓包礼物面板获取所有礼物名字价格和位置，并赠送指定礼物</blockquote>
+    <blockquote class="prompt"><span class="prompt-label">示例提问</span>如果发现操作结果和预期不符，也会自动调用抓包能力分析失败原因</blockquote>
+  </div>
+  <div class="block">
+    <h3>3、使用自动化工具造测试数据</h3>
+    <p class="block-desc">注册发动态、批量缔结 CP 并送礼造贡献值。</p>
+    <h4 class="sub-step">a、打开yaahlan，退出当前账号，在133111112XX号段中注册一个新账号，注册后发布一个带视频的动态，最后注销账号</h4>
+    <h4 class="sub-step">b、在给定测试号段内登录账号，每两个一组缔结CP，并在缔结成功后通过对方私信随机赠送不同价值和数量的礼物获得cp贡献值，完成操作后切换下一组账号</h4>
+  </div>
+  <div class="block">
+    <h3>4、优化方案</h3>
+    <p class="block-desc">提升视觉读取链路的每一步耗时。</p>
+    <h4 class="sub-step">a、写一套基于视觉的实时读取功能</h4>
+    <h4 class="sub-step">b、【读取】-【分析】-【操作】的链路已确认，需要提升每一步的耗时</h4>
+  </div>
+</section>
+      <p class="footer-note">整理自钉钉文档 · 文案已优化 · Yaahlan 智能工具平台</p>
+    </main>
+  </div>
+</body>
+</html>

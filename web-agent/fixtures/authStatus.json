@@ -1,0 +1,13 @@
+{
+  "loggedIn": true,
+  "otpAuthEnabled": false,
+  "loginPhrase": "",
+  "dingtalkOAuth": {
+    "enabled": false
+  },
+  "user": {
+    "staffId": "demo-user",
+    "displayName": "陈墨（演示）",
+    "isAdmin": true
+  }
+}

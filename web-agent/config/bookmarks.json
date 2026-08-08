@@ -1,0 +1,146 @@
+{
+  "categories": [
+    {
+      "id": "team-ms5kemez",
+      "label": "内网平台",
+      "items": [
+        {
+          "id": "bookmark-ms5kemhb",
+          "label": "管理后台",
+          "url": "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/home",
+          "icon": "link",
+          "description": "开发者后台"
+        },
+        {
+          "id": "bookmark-ms5kikr1",
+          "label": "创新中台",
+          "url": "https://mdp-nova-alpha.wemomo.com/fep/momo/mdp-spacey/innovation-platform/index.html#/",
+          "icon": "link",
+          "description": "中台后台"
+        },
+        {
+          "id": "mse",
+          "label": "MSE 配置",
+          "url": "https://mse.wemomo.com",
+          "icon": "tool",
+          "description": "服务配置 / MOA"
+        }
+      ]
+    },
+    {
+      "id": "team-ms5kjnmi",
+      "label": "外网平台",
+      "items": [
+        {
+          "id": "bookmark-ms5kk3ld",
+          "label": "MSE 配置",
+          "url": "https://mse.wemomo.com/#/config/app?corp=overseas&env=overseas&serviceType=moa&appKey=momo.bpm.biz.gameplatform.overseas-voga-mts-room&shareId=c5bc301c6a684beb8236c99475a547b7&type=share",
+          "icon": "link",
+          "description": "MOA"
+        },
+        {
+          "id": "bookmark-ms5k7ypo",
+          "label": "管理后台",
+          "url": "https://www.yaahlan.fun/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/manage",
+          "icon": "link",
+          "description": "开发者后台"
+        }
+      ]
+    },
+    {
+      "id": "team-ms5kl1xl",
+      "label": "内部工具",
+      "items": [
+        {
+          "id": "bookmark-ms5kl1xl",
+          "label": "Figma",
+          "url": "https://www.figma.com/design/dX2pELrDX0Fykai5tDvOsx/Yaahlan客户端2.0?node-id=98409-321698&p=f&t=tB4XDjSPfzCVGgM6-0",
+          "icon": "link",
+          "description": "设计图平台"
+        },
+        {
+          "id": "bookmark-ms5klerk",
+          "label": "Bug平台",
+          "url": "https://teambition.wemomo.com/project/603c619f128c30001daff853/bug",
+          "icon": "link",
+          "description": "提交查看bug"
+        },
+        {
+          "id": "bookmark-ms5kmjmi",
+          "label": "代码质量平台",
+          "url": "https://cosmos-compass-web.immomo.com/cpm/codeCoverage/testReport?appid=&_bid=0",
+          "icon": "link",
+          "description": "覆盖率测试"
+        },
+        {
+          "id": "tunnel_mock",
+          "label": "Tunnel",
+          "url": "https://tunnel.wemomo.com",
+          "icon": "tunnel",
+          "description": "抓包 Mock"
+        },
+        {
+          "id": "bookmark-ms5rk5sd",
+          "label": "HoloWAN",
+          "url": "http://172.18.253.249:8080",
+          "icon": "link",
+          "description": "弱网测试"
+        }
+      ]
+    },
+    {
+      "id": "team-ms5kvo5l",
+      "label": "钉钉文档",
+      "items": [
+        {
+          "id": "bookmark-ms5kvo5l",
+          "label": "QA业务看板",
+          "url": "https://alidocs.dingtalk.com/i/nodes/R1zknDm0WR3AZLeLhNBlwX42VBQEx5rG?corpId=",
+          "icon": "link"
+        },
+        {
+          "id": "bookmark-ms5ktxu2",
+          "label": "测试用例",
+          "url": "https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldCZEEZ3n1VGXn6lpz",
+          "icon": "link"
+        },
+        {
+          "id": "bookmark-ms5kugsw",
+          "label": "产品需求文档",
+          "url": "https://alidocs.dingtalk.com/i/nodes/14lgGw3P8vveoPlPC2PdN56v85daZ90D",
+          "icon": "link"
+        },
+        {
+          "id": "bookmark-ms5kyot9",
+          "label": "需求排期表",
+          "url": "https://alidocs.dingtalk.com/i/nodes/MNDoBb60VLrMNyOyCmdjOyrr8lemrZQ3?iframeQuery=entrance%3Ddata%26sheetId%3DAfRittZ%26viewId%3DcaaUsJp",
+          "icon": "link"
+        },
+        {
+          "id": "bookmark-ms5kzgd3",
+          "label": "Yaahlan翻译",
+          "url": "https://alidocs.dingtalk.com/i/nodes/ZgpG2NdyVXrA0gOgCx07o2kO8MwvDqPk?iframeQuery=utm_source%3Dportal%26utm_medium%3Dportal_recent&rnd=0.7370414797648992",
+          "icon": "link"
+        }
+      ]
+    },
+    {
+      "id": "team-ms5kn58b",
+      "label": "外部工具",
+      "items": [
+        {
+          "id": "bookmark-ms5kn58b",
+          "label": "时间戳转换",
+          "url": "https://www.jyshare.com/front-end/852/?utm_source=heifan",
+          "icon": "link"
+        },
+        {
+          "id": "bookmark-ms5knhvc",
+          "label": "SVGA",
+          "url": "https://svga.dev",
+          "icon": "link"
+        }
+      ]
+    }
+  ]
+}

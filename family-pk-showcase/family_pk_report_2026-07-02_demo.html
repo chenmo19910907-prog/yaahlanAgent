@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>家族PK数据测试报告 · 2026-07-02</title>
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --brand: #2563eb;
+      --pass: #059669;
+      --warn: #d97706;
+      --fail: #dc2626;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(180deg, #eef2ff 0%, var(--bg) 220px);
+      color: var(--text);
+      line-height: 1.55;
+    }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 28px 20px 56px; }
+    .hero {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 28px 28px 22px;
+      box-shadow: 0 10px 30px rgba(37, 99, 235, 0.08);
+    }
+    .hero-top { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+    .eyebrow { color: var(--brand); font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+    h1 { margin: 8px 0 6px; font-size: 28px; }
+    .subtitle { color: var(--muted); margin: 0; }
+    .badge {
+      display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 999px;
+      font-size: 13px; font-weight: 700;
+    }
+    .badge.pass { background: #d1fae5; color: var(--pass); }
+    .badge.warn { background: #fef3c7; color: var(--warn); }
+    .badge.fail { background: #fee2e2; color: var(--fail); }
+    .badge.pending { background: #e5e7eb; color: #374151; }
+    .kpi-grid {
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 22px;
+    }
+    .kpi {
+      background: #f8fafc; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+    }
+    .kpi .label { color: var(--muted); font-size: 12px; }
+    .kpi .value { font-size: 24px; font-weight: 800; margin-top: 4px; }
+    .links { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 10px; }
+    .links a {
+      color: var(--brand); text-decoration: none; background: #eff6ff; border-radius: 8px;
+      padding: 8px 12px; font-size: 13px; font-weight: 600;
+    }
+    section.panel {
+      margin-top: 22px; background: var(--card); border: 1px solid var(--line);
+      border-radius: 16px; padding: 22px 24px;
+    }
+    section.panel h2 { margin: 0 0 14px; font-size: 20px; }
+    section.panel h3 { margin: 0 0 10px; font-size: 16px; }
+    .steps-grid {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px;
+    }
+    .step-card {
+      border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: #fcfdff;
+    }
+    .step-card.pass { border-color: #a7f3d0; }
+    .step-card.fail { border-color: #fecaca; background: #fffafa; }
+    .step-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .step-no { font-size: 12px; color: var(--muted); font-weight: 700; }
+    .step-card h3 { margin: 8px 0 6px; font-size: 15px; }
+    .step-note, .step-extra { color: var(--muted); font-size: 13px; margin: 0 0 8px; }
+    .step-stats { display: flex; gap: 10px; font-size: 12px; font-weight: 700; }
+    .step-stats .ok { color: var(--pass); }
+    .step-stats .bad { color: var(--fail); }
+    details { margin-top: 8px; font-size: 13px; }
+    details summary { cursor: pointer; color: var(--brand); font-weight: 600; }
+    details ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 8px 6px; text-align: left; }
+    th { color: var(--muted); font-weight: 700; }
+    .bad { color: var(--fail); font-weight: 700; }
+    .ok-text { color: var(--pass); font-weight: 700; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .capability-list { display: grid; gap: 10px; }
+    .cap-item {
+      border-left: 4px solid var(--brand); padding: 10px 12px; background: #f8fafc; border-radius: 8px;
+    }
+    .cap-item strong { display: block; margin-bottom: 4px; }
+    .history-table td a { color: var(--brand); font-weight: 600; text-decoration: none; }
+    .footer { margin-top: 24px; color: var(--muted); font-size: 12px; text-align: center; }
+    @media (max-width: 960px) {
+      .kpi-grid, .steps-grid, .grid-2 { grid-template-columns: 1fr; }
+    }
+    </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="hero-top">
+        <div>
+          <div class="eyebrow">Family PK · Automated Data Test</div>
+          <h1>家族 PK 数据测试验收报告</h1>
+          <p class="subtitle">PK 日期 2026-07-02 · 收礼榜 2026-07-01 · 执行于 2026-07-02 18:30:00</p>
+        </div>
+        <span class="badge pass">通过</span>
+      </div>
+      <p class="subtitle"><strong>总体验收通过</strong> — 可进入上线评审</p>
+      
+        <p class="subtitle" style="margin-top:12px;padding:10px 12px;background:#eff6ff;border-radius:8px;color:#1d4ed8">
+          <strong>示例报告</strong> — 数据来自 config/sample_summary.json，用于演示页附录；真实验收请跑完工作流后扫描 .tmp 生成。
+        </p>
+        
+      <div class="kpi-grid">
+        <div class="kpi"><div class="label">覆盖家族</div><div class="value">72</div></div>
+        <div class="kpi"><div class="label">覆盖成员</div><div class="value">418</div></div>
+        <div class="kpi"><div class="label">应发钻合计</div><div class="value">1,250,000</div></div>
+        <div class="kpi"><div class="label">实发不一致</div><div class="value bad">0</div></div>
+      </div>
+      <div class="links"><a href="https://alidocs.dingtalk.com/i/nodes/demo-family-pk-workbook" target="_blank" rel="noopener">钉钉测试表 · 2026-07-02家族PK数据测试</a></div>
+    </header>
+
+    <section class="panel">
+      <h2>六步自动化验收进度</h2>
+      <p class="muted">从 MSE 参数同步到发钻实发对比，全流程由工作流 + MOA + 钉钉表串联，无需人工逐条核对。</p>
+      <div class="steps-grid">
+        
+            <article class="step-card pass">
+              <div class="step-head">
+                <span class="step-no">Step 1</span>
+                <span class="badge pass">通过</span>
+              </div>
+              <h3>参数表</h3>
+              <p class="step-note">MSE voga-common/familyPkConfig → 参数表；mode=merge 可增量更新</p>
+              <div class="step-stats">
+                <span>样本 12</span>
+                <span class="ok">通过 12</span>
+                <span class="bad">失败 0</span>
+              </div>
+              <p class="step-extra">MSE familyPkConfig 全量同步</p>
+              <details>
+                <summary>自动化做了什么</summary>
+                <ul><li>MSE 拉取 voga-common / familyPkConfig 最新配置</li><li>解析 bracketGradients、minWinPk、minRewardPk、basePoolDiamond 等参数</li><li>merge 模式：在原「参数表」上更新数值、增删参数行（rebuild 则整表重建）</li><li>同步 configValue_JSON Sheet（原始 JSON 备份）</li><li class='muted'>…共 5 项操作</li></ul>
+              </details>
+            </article>
+            
+
+            <article class="step-card pass">
+              <div class="step-head">
+                <span class="step-no">Step 2</span>
+                <span class="badge pass">通过</span>
+              </div>
+              <h3>家族列表</h3>
+              <p class="step-note">开发者后台拉家族与成员；族长大区非 MENA 的家族剔除</p>
+              <div class="step-stats">
+                <span>样本 72</span>
+                <span class="ok">通过 72</span>
+                <span class="bad">失败 0</span>
+              </div>
+              <p class="step-extra">Admin 全量家族，已过滤非 MENA 族长</p>
+              <details>
+                <summary>自动化做了什么</summary>
+                <ul><li>Admin getAllFamilyList 分页拉取全量家族 ID/名称</li><li>Admin queryUserDetail 查族长大区，剔除非中东（MENA）族长家族</li><li>MOA 查询各家族成员 userId 列表</li><li>Admin queryUserDetail 补全成员手机号</li><li class='muted'>…共 6 项操作</li></ul>
+              </details>
+            </article>
+            
+
+            <article class="step-card pass">
+              <div class="step-head">
+                <span class="step-no">Step 3</span>
+                <span class="badge pass">通过</span>
+              </div>
+              <h3>家族PK档位</h3>
+              <p class="step-note">收礼榜按人数分段随机：&gt;10 人 20 万~100 万，≤10 人 0~20 万；不重匹配</p>
+              <div class="step-stats">
+                <span>样本 72</span>
+                <span class="ok">通过 72</span>
+                <span class="bad">失败 0</span>
+              </div>
+              <p class="step-extra">收礼榜造数 + 档位测算</p>
+              <details>
+                <summary>自动化做了什么</summary>
+                <ul><li>读「家族列表」统计各家族成员数</li><li>按人数分段随机收礼值：&gt;10 人 20 万~100 万；≤10 人 0~20 万（0 不上榜）</li><li>MOA modifyReceiveDailyRankForTest 批量写入 rankDate 收礼日榜</li><li>MOA queryReceiveDailyRankForTest 读 rankDate 收礼榜（排除已解散家族）</li><li class='muted'>…共 6 项操作</li></ul>
+              </details>
+            </article>
+            
+
+            <article class="step-card pass">
+              <div class="step-head">
+                <span class="step-no">Step 4</span>
+                <span class="badge pass">通过</span>
+              </div>
+              <h3>匹配验收</h3>
+              <p class="step-note">清除并重匹配 pkDate；MOA getFamilyPkPage 拉取对战列表验收</p>
+              <div class="step-stats">
+                <span>样本 36</span>
+                <span class="ok">通过 36</span>
+                <span class="bad">失败 0</span>
+              </div>
+              <p class="step-extra">同区间匹配 36 组全部通过</p>
+              <details>
+                <summary>自动化做了什么</summary>
+                <ul><li>MOA clearMatchDataForTest 清除 pkDate 匹配数据</li><li>MOA runFamilyPkMatchTask(pkDate) 重新匹配家族 PK</li><li>MOA getFamilyPkPage 拉取 pkDate 对战列表（pkList）</li><li>读 rankDate 收礼榜，按 bracketGradients 验收同区间匹配</li><li class='muted'>…共 5 项操作</li></ul>
+              </details>
+            </article>
+            
+
+            <article class="step-card pass">
+              <div class="step-head">
+                <span class="step-no">Step 5</span>
+                <span class="badge pass">通过</span>
+              </div>
+              <h3>用户发钻测试</h3>
+              <p class="step-note">清 PK → 全员随机造数 → 纠偏边界 → 测算应发钻（榜单验收在第六步结算后）</p>
+              <div class="step-stats">
+                <span>样本 418</span>
+                <span class="ok">通过 72</span>
+                <span class="bad">失败 0</span>
+              </div>
+              <p class="step-extra">成员 418 · 榜单验收失败 0</p>
+              <details>
+                <summary>自动化做了什么</summary>
+                <ul><li>MOA clearAllFamilyPkScoreForTest 清除 pkDate 全部成员 PK</li><li>读「家族列表」全员；读参数表 minWinPk / minRewardPk</li><li>全员随机 incrFamilyPkScoreForTest（0~maxScore，默认 5 万）</li><li>读「匹配验收」选 1 组平局 + 1 组双方低于 minWinPk（优先小家族）纠偏 PK</li><li class='muted'>…共 5 项操作</li></ul>
+              </details>
+            </article>
+            
+
+            <article class="step-card pass">
+              <div class="step-head">
+                <span class="step-no">Step 6</span>
+                <span class="badge pass">通过</span>
+              </div>
+              <h3>发钻实发验收 / 用户发钻测试</h3>
+              <p class="step-note">清结算 → 发奖 → 实发查钻验收 → MOA 贡献榜回写用户发钻测试</p>
+              <div class="step-stats">
+                <span>样本 418</span>
+                <span class="ok">通过 418</span>
+                <span class="bad">失败 0</span>
+              </div>
+              <p class="step-extra"></p>
+              <details>
+                <summary>自动化做了什么</summary>
+                <ul><li>读测算结果汇总应得钻石与用户列表</li><li>MOA resetSettleDataForTest(pkDate) 清除结算发奖记录</li><li>MOA 批量查钻记录发奖前 baseline</li><li>MOA runFamilyPkMatchTask(pkDate+1) 下发 pkDate 奖励</li><li class='muted'>…共 7 项操作</li></ul>
+              </details>
+            </article>
+            
+      </div>
+    </section>
+
+    
+        <section class="panel">
+          <h2>发钻实发差异</h2>
+          <p class="empty ok-text">无不一致记录，应发与实发全部对齐。</p>
+        </section>
+        
+
+    <section class="panel">
+      <h2>测试自动化能力说明</h2>
+      <p class="muted">面向跨部门同步：本方案将家族 PK 复杂数据链路沉淀为可重复执行的标准流程。</p>
+      <div class="capability-list">
+        <div class="cap-item">
+          <strong>配置驱动</strong>
+          MSE `familyPkConfig` 自动同步至钉钉参数表，改参后可 merge 更新并重跑后续步骤。
+        </div>
+        <div class="cap-item">
+          <strong>全量家族覆盖</strong>
+          Admin 拉取全量家族与成员，自动过滤非 MENA 族长；单次可覆盖 418 名成员。
+        </div>
+        <div class="cap-item">
+          <strong>MOA 造数 + 验收</strong>
+          收礼榜随机造数、匹配重跑、成员 PK 边界纠偏、结算发奖与贡献榜回写，均由 MOA 脚本批量完成。
+        </div>
+        <div class="cap-item">
+          <strong>结构化产出</strong>
+          七张 Sheet + JSON 摘要 + 本 HTML 报告，便于测试、开发、产品同一页面对齐结论。
+        </div>
+      </div>
+    </section>
+
+    <p class="footer">Generated by auto-generate-testcase · family_pk_report · 2026-07-30 22:13</p>
+  </div>
+</body>
+</html>

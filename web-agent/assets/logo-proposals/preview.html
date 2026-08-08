@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Web Agent Logo 方案预览</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f1117;
+      color: #e8eaed;
+      margin: 0;
+      padding: 32px 24px 48px;
+    }
+    h1 { font-size: 1.25rem; font-weight: 650; margin: 0 0 8px; }
+    p.sub { color: #9aa0a6; margin: 0 0 28px; font-size: 0.9rem; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      max-width: 960px;
+    }
+    .card {
+      background: #1a1d27;
+      border: 1px solid #2a2f3a;
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .card h2 { font-size: 0.95rem; margin: 0 0 4px; }
+    .card .tag { font-size: 0.75rem; color: #42D3B2; margin-bottom: 14px; }
+    .card p { font-size: 0.82rem; color: #9aa0a6; line-height: 1.55; margin: 0 0 16px; }
+    .sizes { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+    .sizes img { display: block; border-radius: 8px; }
+    .sizes .s48 { width: 48px; height: 48px; }
+    .sizes .s24 { width: 24px; height: 24px; }
+    .sizes .s16 { width: 16px; height: 16px; }
+    .on-light {
+      margin-top: 12px;
+      background: #f5f7fb;
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .on-light span { font-size: 0.75rem; color: #5f6368; }
+  </style>
+</head>
+<body>
+  <h1>Yaahlan 智能工具 Agent · Logo 方案（5 选 1）</h1>
+  <p class="sub">统一底：蓝→青渐变圆角方块（#5B8CFF → #42D3B2），与现有 UI accent 一致</p>
+  <div class="grid">
+    <div class="card">
+      <h2>方案 1 · 工具台栅格</h2>
+      <div class="tag">推荐 · 与「工具平台」语义最贴合</div>
+      <p>2×2 栅格：三格代表 MOA/Admin/Tunnel 等能力模块，第四格星芒代表 AI 调度。当前 logo.js 即此方案。</p>
+      <div class="sizes">
+        <img class="s48" src="01-tool-grid.svg" alt="方案1 48px"/>
+        <img class="s24" src="01-tool-grid.svg" alt="方案1 24px"/>
+        <img class="s16" src="01-tool-grid.svg" alt="方案1 16px"/>
+      </div>
+      <div class="on-light"><img class="s24" src="01-tool-grid.svg" alt=""/><span>浅色背景</span></div>
+    </div>
+    <div class="card">
+      <h2>方案 2 · 对话气泡</h2>
+      <div class="tag">强调 Web Agent 对话入口</div>
+      <p>圆角气泡 + 三点输入态 + 右下角星芒。一眼看出是「能对话的智能助手」，弱化工具台概念。</p>
+      <div class="sizes">
+        <img class="s48" src="02-chat-spark.svg" alt="方案2 48px"/>
+        <img class="s24" src="02-chat-spark.svg" alt="方案2 24px"/>
+        <img class="s16" src="02-chat-spark.svg" alt="方案2 16px"/>
+      </div>
+      <div class="on-light"><img class="s24" src="02-chat-spark.svg" alt=""/><span>浅色背景</span></div>
+    </div>
+    <div class="card">
+      <h2>方案 3 · Y 字母标</h2>
+      <div class="tag">品牌记忆点最强</div>
+      <p>Yaahlan 首字母 Y：上叉像路由分发，下竖 + 圆点像执行落点。极简字母标，适合 favicon 与侧边栏小尺寸。</p>
+      <div class="sizes">
+        <img class="s48" src="03-y-monogram.svg" alt="方案3 48px"/>
+        <img class="s24" src="03-y-monogram.svg" alt="方案3 24px"/>
+        <img class="s16" src="03-y-monogram.svg" alt="方案3 16px"/>
+      </div>
+      <div class="on-light"><img class="s24" src="03-y-monogram.svg" alt=""/><span>浅色背景</span></div>
+    </div>
+    <div class="card">
+      <h2>方案 4 · 轨道节点</h2>
+      <div class="tag">强调 Agent 调度多能力</div>
+      <p>中心白圆 = Agent 核心，三颗卫星 = 外部工具/模块，连线暗示编排与分发。偏「平台中枢」气质。</p>
+      <div class="sizes">
+        <img class="s48" src="04-orbit-node.svg" alt="方案4 48px"/>
+        <img class="s24" src="04-orbit-node.svg" alt="方案4 24px"/>
+        <img class="s16" src="04-orbit-node.svg" alt="方案4 16px"/>
+      </div>
+      <div class="on-light"><img class="s24" src="04-orbit-node.svg" alt=""/><span>浅色背景</span></div>
+    </div>
+    <div class="card">
+      <h2>方案 5 · 闪电执行</h2>
+      <div class="tag">强调「一键跑能力 / 快」</div>
+      <p>单枚闪电符号，语义是快速执行 registry 能力。最简约，但与其他 AI 产品闪电图标相似度较高。</p>
+      <div class="sizes">
+        <img class="s48" src="05-lightning-run.svg" alt="方案5 48px"/>
+        <img class="s24" src="05-lightning-run.svg" alt="方案5 24px"/>
+        <img class="s16" src="05-lightning-run.svg" alt="方案5 16px"/>
+      </div>
+      <div class="on-light"><img class="s24" src="05-lightning-run.svg" alt=""/><span>浅色背景</span></div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,2550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <title>工具平台驱动的复杂活动数据造表测试工作流</title>
+  <style>:root {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --brand: #2563eb;
+      --brand-soft: #eff6ff;
+      --pass: #059669;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, .04);
+      --shadow-md: 0 8px 24px rgba(15, 23, 42, .06);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .topbar {
+      position: sticky; top: 0; z-index: 20;
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,.92);
+      border-bottom: 1px solid var(--line);
+    }
+    .topbar-inner {
+      max-width: 1120px; margin: 0 auto; padding: 10px 20px;
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;
+    }
+    .brand-mini { font-weight: 800; color: var(--brand); font-size: 14px; }
+    .nav { display: flex; gap: 8px; flex-wrap: wrap; }
+    .nav a {
+      text-decoration: none; color: var(--muted); font-size: 13px; font-weight: 700;
+      padding: 6px 12px; border-radius: 999px;
+    }
+    .nav a:hover { background: var(--brand-soft); color: var(--brand); }
+    .nav a.active { background: var(--brand); color: #fff; }
+    .tab-panels { margin-top: 0; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .tab-panel > .section { margin-bottom: 0; }
+    .tab-bar {
+      margin: 0 0 24px; padding: 4px;
+      background: #fff; border: 1px solid var(--line); border-radius: 14px;
+      box-shadow: var(--shadow-sm);
+    }
+    .tab-bar .tab-nav { gap: 4px; padding: 4px; }
+    .tab-bar .nav a {
+      font-size: 14px; padding: 10px 16px; border-radius: 10px;
+      transition: background .15s ease, color .15s ease;
+    }
+    .sub-tabs { margin-top: 0; }
+    .sub-tab-bar {
+      margin: 0 0 20px; padding: 0 2px 0;
+      border-bottom: 2px solid var(--line);
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+    }
+    .sub-tab-nav { flex-wrap: nowrap; min-width: min-content; gap: 0; }
+    .sub-tab-nav a {
+      white-space: nowrap; font-size: 13px; padding: 10px 14px;
+      border-radius: 0; border-bottom: 2px solid transparent; margin-bottom: -2px;
+      color: var(--muted); background: transparent;
+    }
+    .sub-tab-nav a:hover { background: transparent; color: var(--brand); }
+    .sub-tab-nav a.active {
+      background: transparent; color: var(--brand);
+      border-bottom-color: var(--brand);
+    }
+    .sub-tab-panel { display: none; }
+    .sub-tab-panel.active { display: block; }
+    .sub-tab-panel .demo-wf-step {
+      margin-bottom: 0; padding-bottom: 0; border-bottom: none;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 24px 72px; }
+    .hero {
+      background:
+        radial-gradient(ellipse 90% 120% at 100% 0%, rgba(147, 197, 253, 0.55) 0%, transparent 58%),
+        radial-gradient(ellipse 70% 90% at 0% 100%, rgba(30, 58, 138, 0.65) 0%, transparent 52%),
+        linear-gradient(125deg, #0f245c 0%, #1e40af 32%, #2563eb 62%, #3b82f6 82%, #60a5fa 100%);
+      color: #fff; border-radius: var(--radius-lg); padding: 40px 36px; margin-bottom: 32px;
+      box-shadow: var(--shadow-md);
+    }
+    .hero .eyebrow { opacity: .85; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; }
+    .hero h1 { margin: 10px 0 12px; font-size: clamp(24px, 4vw, 30px); line-height: 1.25; font-weight: 800; letter-spacing: -.02em; }
+    .hero p { margin: 0; opacity: .92; max-width: 720px; font-size: 15px; line-height: 1.7; }
+    .section {
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-lg);
+      padding: 32px 32px 28px; margin-bottom: 24px; box-shadow: var(--shadow-sm);
+    }
+    .section-flush { padding: 20px; background: transparent; border: none; box-shadow: none; }
+    .section-intro {
+      margin-bottom: 24px; padding: 16px 18px 16px 20px;
+      background: linear-gradient(90deg, #f8fafc 0%, #fff 100%);
+      border-left: 4px solid var(--brand); border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    }
+    .section-intro p { margin: 0; color: #334155; font-size: 15px; line-height: 1.75; }
+    .section-intro p + p { margin-top: 12px; }
+    .theory-pillars {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;
+    }
+    .theory-pillar {
+      margin-top: 0; padding: 20px 22px; border: 1px solid var(--line); border-radius: var(--radius-md);
+      background: #f8fafc; height: 100%;
+    }
+    .theory-pillar h3 { margin: 0 0 10px; font-size: 16px; line-height: 1.4; color: var(--text); }
+    .theory-pillar p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.75; }
+    .theory-visuals { display: grid; gap: 20px; margin-bottom: 20px; }
+    .theory-chart {
+      padding: 20px 22px; border: 1px solid var(--line); border-radius: var(--radius-md);
+      background: #fff;
+    }
+    .theory-chart h3 {
+      margin: 0 0 6px; font-size: 16px; font-weight: 800; color: var(--text);
+    }
+    .theory-chart-caption {
+      margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.65;
+    }
+    .rule-chain-diagram { padding: 0; overflow: hidden; border-color: #dbeafe; }
+    .rule-chain-diagram > .rule-chain-head {
+      padding: 20px 22px 0;
+    }
+    .rule-chain-diagram > .rule-chain-head h3 { margin-bottom: 4px; }
+    .rule-chain-board {
+      margin: 16px 18px 18px;
+      padding: 18px 18px 16px;
+      border-radius: 14px;
+      background: linear-gradient(165deg, #f8fafc 0%, #eef2ff 48%, #f0f9ff 100%);
+      border: 1px solid #dbeafe;
+    }
+    .rule-chain-dimensions {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
+    }
+    .rule-dim {
+      background: #fff; border-radius: 10px; overflow: hidden;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
+      border: 1px solid rgba(148, 163, 184, .25);
+    }
+    .rule-dim-label {
+      display: block; padding: 7px 12px; font-size: 11px; font-weight: 800;
+      letter-spacing: .07em;
+    }
+    .rule-dim.driver .rule-dim-label { background: #eff6ff; color: #1d4ed8; }
+    .rule-dim.time .rule-dim-label { background: #f5f3ff; color: #6d28d9; }
+    .rule-dim.subject .rule-dim-label { background: #ecfdf5; color: #047857; }
+    .rule-dim-items {
+      padding: 10px 12px 12px; font-size: 13px; color: #475569; line-height: 1.55;
+    }
+    .rule-dim-item { white-space: nowrap; }
+    .rule-dim-item + .rule-dim-item::before {
+      content: "·"; margin: 0 5px; color: #cbd5e1; font-weight: 700;
+    }
+    .rule-chain-merge {
+      display: flex; justify-content: center; align-items: center;
+      height: 28px; margin: 6px 0 4px; position: relative;
+    }
+    .rule-chain-merge::before {
+      content: ""; width: 2px; height: 100%;
+      background: linear-gradient(180deg, #cbd5e1 0%, #2563eb 100%);
+      border-radius: 1px;
+    }
+    .rule-chain-merge span {
+      position: absolute; bottom: -2px; font-size: 10px; font-weight: 800;
+      letter-spacing: .12em; color: #64748b; background: #eef2ff; padding: 0 8px;
+    }
+    .rule-chain-pipeline {
+      display: flex; align-items: stretch; border-radius: 12px; overflow: hidden;
+      border: 1px solid #bfdbfe; background: #fff;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, .08);
+    }
+    .rule-pipeline-step {
+      flex: 1 1 0; min-width: 0; position: relative; text-align: center;
+      padding: 14px 6px 12px; background: #fff;
+    }
+    .rule-pipeline-step + .rule-pipeline-step {
+      border-left: 1px solid #e2e8f0;
+    }
+    .rule-pipeline-step:not(:last-child)::after {
+      content: ""; position: absolute; right: -6px; top: 50%; z-index: 2;
+      transform: translateY(-50%);
+      border-top: 6px solid transparent; border-bottom: 6px solid transparent;
+      border-left: 6px solid #2563eb;
+    }
+    .rule-pipeline-no {
+      display: inline-flex; width: 24px; height: 24px; align-items: center; justify-content: center;
+      border-radius: 999px; background: linear-gradient(135deg, #2563eb, #3b82f6);
+      color: #fff; font-size: 11px; font-weight: 800; margin-bottom: 8px;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, .28);
+    }
+    .rule-pipeline-text {
+      display: block; font-size: 12px; font-weight: 700; color: #1e293b; line-height: 1.35;
+      padding: 0 2px;
+    }
+    .rule-chain-verdict {
+      display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; margin-top: 14px;
+    }
+    .rule-chain-verdict span {
+      padding: 10px 12px; border-radius: 10px; font-size: 12px; line-height: 1.55;
+    }
+    .rule-chain-verdict .ui {
+      background: rgba(255,255,255,.72); color: #64748b; border: 1px dashed #cbd5e1;
+    }
+    .rule-chain-verdict .data {
+      background: #fff; color: #1e40af; border: 1px solid #93c5fd;
+      font-weight: 600; box-shadow: 0 1px 4px rgba(37, 99, 235, .08);
+    }
+    .rule-chain-verdict .data::before {
+      content: "关键"; display: inline-block; margin-right: 6px; padding: 1px 6px;
+      border-radius: 4px; background: #2563eb; color: #fff; font-size: 10px; font-weight: 800;
+      vertical-align: middle;
+    }
+    .theory-compare-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .theory-compare-table th,
+    .theory-compare-table td {
+      border: 1px solid var(--line); padding: 10px 12px; vertical-align: top; line-height: 1.6;
+    }
+    .theory-compare-table th {
+      background: #f8fafc; color: var(--muted); font-size: 12px; font-weight: 800;
+    }
+    .theory-compare-table td:first-child { font-weight: 700; color: var(--text); white-space: nowrap; }
+    .theory-compare-table td:nth-child(2) { color: #b45309; background: #fffbeb; }
+    .theory-compare-table td:nth-child(3) { color: #047857; background: #f0fdf4; }
+    .theory-chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .effort-chart-block + .effort-chart-block { margin-top: 14px; }
+    .effort-chart-label {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+      font-size: 12px; font-weight: 800; color: var(--muted);
+    }
+    .effort-bar-track {
+      display: flex; height: 28px; border-radius: 999px; overflow: hidden; background: #f1f5f9;
+      border: 1px solid var(--line);
+    }
+    .effort-bar-seg {
+      display: flex; align-items: center; justify-content: center; min-width: 0;
+      color: #fff; font-size: 11px; font-weight: 800; white-space: nowrap; padding: 0 8px;
+    }
+    .effort-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+    .effort-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+    .effort-legend-dot { width: 10px; height: 10px; border-radius: 999px; flex-shrink: 0; }
+    .effort-highlight {
+      margin-top: 14px; padding: 10px 14px; border-radius: 10px; background: var(--brand-soft);
+      color: #1d4ed8; font-size: 14px; font-weight: 800; text-align: center;
+    }
+    .acceptance-split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .acceptance-col {
+      padding: 14px 16px; border-radius: 12px; border: 1px solid var(--line);
+    }
+    .acceptance-col.before { background: #fffbeb; border-color: #fde68a; }
+    .acceptance-col.after { background: #f0fdf4; border-color: #bbf7d0; }
+    .acceptance-col h4 { margin: 0 0 10px; font-size: 13px; font-weight: 800; }
+    .acceptance-col.before h4 { color: #b45309; }
+    .acceptance-col.after h4 { color: #047857; }
+    .acceptance-col ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.65; color: #334155; }
+    .acceptance-col li + li { margin-top: 6px; }
+    .sub-panel {
+      margin-top: 28px; padding: 24px 24px 22px; border-radius: var(--radius-md); border: 1px solid var(--line);
+      scroll-margin-top: 72px;
+    }
+    .sub-panel:first-of-type { margin-top: 4px; }
+    .sub-panel-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .sub-panel-head h3 { margin: 0; font-size: 17px; letter-spacing: -.01em; font-weight: 800; }
+    .sub-badge {
+      font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 999px;
+    }
+    .sub-panel.principle { background: #f8fbff; border-color: #dbeafe; }
+    .sub-panel.principle .sub-badge { background: #dbeafe; color: #1d4ed8; }
+    .sub-panel.platform { background: #f7fdf9; border-color: #bbf7d0; }
+    .sub-panel.platform .sub-badge { background: #d1fae5; color: #047857; }
+    .sub-panel.ranking { background: #f8fbff; border-color: #dbeafe; }
+    .sub-panel.ranking .sub-badge { background: #dbeafe; color: #1d4ed8; }
+    .sub-panel.lottery { background: #faf7ff; border-color: #ddd6fe; }
+    .sub-panel.lottery .sub-badge { background: #ede9fe; color: #6d28d9; }
+    .sub-lead { margin: 0 0 20px; color: var(--muted); font-size: 14px; line-height: 1.75; max-width: 920px; }
+    .metric-grid {
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 18px;
+    }
+    .metric {
+      background: #f8fafc; border: 1px solid var(--line); border-radius: 12px; padding: 14px;
+    }
+    .metric .label { font-size: 12px; color: var(--muted); }
+    .metric .value { font-size: 22px; font-weight: 800; margin-top: 4px; color: var(--brand); }
+    .sub-tagline {
+      margin: -6px 0 12px; font-size: 15px; font-weight: 700; color: #047857;
+    }
+    .flow-track {
+      display: flex; align-items: stretch; gap: 0; overflow-x: auto; padding-bottom: 2px;
+    }
+    .flow-arrow {
+      flex: 0 0 28px; display: flex; align-items: center; justify-content: center;
+      color: #94a3b8; font-size: 18px; font-weight: 700; user-select: none;
+    }
+    .flow-step {
+      flex: 1 1 0; min-width: 168px; padding: 16px 16px 14px; border-radius: 14px;
+      background: #fff; border: 1px solid rgba(148,163,184,.35);
+      box-shadow: 0 1px 2px rgba(15,23,42,.04);
+    }
+    .flow-step .step-index {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 999px; font-size: 12px; font-weight: 800;
+      margin-bottom: 10px;
+    }
+    .sub-panel.principle .flow-step .step-index { background: #dbeafe; color: #1d4ed8; }
+    .sub-panel.platform .flow-step .step-index { background: #d1fae5; color: #047857; }
+    .sub-panel.ranking .flow-step .step-index { background: #dbeafe; color: #1d4ed8; }
+    .sub-panel.lottery .flow-step .step-index { background: #ede9fe; color: #6d28d9; }
+    .flow-step strong {
+      display: block; margin-bottom: 8px; font-size: 15px; line-height: 1.4; color: var(--text);
+    }
+    .flow-step span { display: block; color: var(--muted); font-size: 13px; line-height: 1.65; }
+    .sub-panel.platform .flow-step.featured {
+      border-color: #86efac; background: linear-gradient(180deg, #fff 0%, #f0fdf4 100%);
+      box-shadow: 0 8px 24px rgba(5,150,105,.08);
+    }
+    .demo-block {
+      margin-top: 0; padding: 24px 26px; border: 1px solid var(--line); border-radius: var(--radius-md);
+      background: #fff; box-shadow: var(--shadow-sm);
+    }
+    .demo-block.ranking { border-top: 4px solid #2563eb; }
+    .demo-block.lottery { border-top: 4px solid #7c3aed; }
+    .demo-title { margin: 0; font-size: 18px; font-weight: 800; line-height: 1.35; letter-spacing: -.01em; }
+    .demo-title-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--line);
+    }
+    .demo-detail-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 0;
+    }
+    .demo-detail-card {
+      padding: 18px 20px; border-radius: var(--radius-md); border: 1px solid var(--line); background: #f8fafc;
+    }
+    .demo-detail-card h4 {
+      margin: 0 0 12px; font-size: 14px; font-weight: 800; color: var(--text);
+      padding-bottom: 10px; border-bottom: 1px solid var(--line);
+    }
+    .demo-detail-card ul {
+      margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; line-height: 1.7;
+    }
+    .demo-detail-card li + li { margin-top: 8px; }
+    .demo-wf-step {
+      margin-bottom: 0; padding: 4px 0 0;
+    }
+    .demo-wf-step-head {
+      margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--line);
+    }
+    .demo-wf-step-badge {
+      display: inline-block; margin-bottom: 8px; padding: 4px 12px; border-radius: 999px;
+      background: var(--brand-soft); color: var(--brand); font-size: 12px; font-weight: 800;
+    }
+    .demo-wf-step-title {
+      margin: 0 0 6px; font-size: 20px; line-height: 1.35; font-weight: 800; letter-spacing: -.01em;
+    }
+    .demo-wf-step-meta { margin: 0; color: #047857; font-weight: 600; font-size: 14px; }
+    .demo-wf-parts {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;
+    }
+    .demo-wf-part-wide { grid-column: 1 / -1; }
+    .demo-wf-part-preview { grid-column: 1 / -1; }
+    .demo-wf-part {
+      padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--radius-md); background: #fcfdff;
+    }
+    .demo-wf-part h5 {
+      margin: 0 0 12px; font-size: 12px; font-weight: 800; color: var(--muted);
+      letter-spacing: .06em; text-transform: uppercase;
+    }
+    .demo-placeholder {
+      padding: 28px 20px; border: 1px dashed var(--line); border-radius: var(--radius-md);
+      color: var(--muted); font-size: 14px; text-align: center; background: #f8fafc;
+    }
+    .demo-steps-title {
+      margin: 20px 0 14px; font-size: 15px; font-weight: 700; color: var(--text);
+    }
+    .demo-run-btn {
+      flex-shrink: 0; padding: 8px 18px; border: none; border-radius: 999px;
+      background: #2563eb; color: #fff; font-size: 13px; font-weight: 700; cursor: pointer;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, .22);
+      transition: background .15s ease, transform .1s ease;
+    }
+    .demo-run-btn:hover { background: #1d4ed8; }
+    .demo-run-btn:active { transform: translateY(1px); }
+    .demo-run-btn:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; }
+    .demo-wf-part-preview {
+      padding: 0; overflow: auto; background: #fff; width: 100%;
+      max-height: 520px; -webkit-overflow-scrolling: touch;
+    }
+    .demo-wf-part-preview h5 {
+      padding: 14px 18px 0; margin-bottom: 10px;
+    }
+    .demo-wf-media-only { margin-top: 0; border-top: 1px solid var(--line); }
+    .demo-wf-media-only .media-box {
+      background: #fff;
+    }
+    .demo-wf-media-only .media-box img {
+      height: auto; max-height: none; width: 100%; display: block; background: #fff;
+    }
+    .demo-wf-media-only .media-caption {
+      padding: 8px 12px; font-size: 11px;
+    }
+    .wf-record-name {
+      margin: 0 0 8px; font-size: 13px; font-weight: 700; color: #1e40af; line-height: 1.5;
+    }
+    .wf-record-summary {
+      margin: 0; color: var(--muted); font-size: 13px; line-height: 1.7;
+    }
+    .wf-record-script {
+      margin: 0; padding: 14px 16px; border-left: 3px solid #93c5fd; background: #f8fafc;
+      color: var(--text); font-size: 14px; line-height: 1.75; border-radius: 0 8px 8px 0;
+    }
+    .wf-record-prompts {
+      margin: 10px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; line-height: 1.65;
+    }
+    .demo-tool-list { list-style: none; padding-left: 0; margin: 0; }
+    .demo-tool-list li {
+      color: var(--muted); font-size: 13px; line-height: 1.7;
+    }
+    .demo-tool-list li strong { color: var(--text); font-weight: 700; }
+    .demo-tool-list li + li { margin-top: 8px; }
+    .demo-tool-support-list {
+      list-style: none; padding-left: 0; margin: 0;
+    }
+    .demo-tool-support-list li {
+      color: var(--muted); font-size: 13px; line-height: 1.7;
+    }
+    .demo-tool-support-list li + li { margin-top: 8px; }
+    .demo-tool-support-text {
+      margin: 0; color: var(--muted); font-size: 13px; line-height: 1.7;
+    }
+    .demo-wf-part-preview .sheet-preview {
+      border: none; border-radius: 0; border-top: 1px solid var(--line);
+    }
+    .demo-workbook-ref {
+      margin: -4px 0 14px; font-size: 13px; color: var(--muted);
+    }
+    .demo-workbook-ref a { color: #2563eb; font-weight: 600; text-decoration: none; }
+    .demo-workbook-ref a:hover { text-decoration: underline; }
+    .sheet-preview {
+      border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff;
+    }
+    .sheet-preview-caption {
+      padding: 8px 12px; background: #f8fafc; border-bottom: 1px solid var(--line);
+      font-size: 12px; font-weight: 700; color: var(--muted);
+    }
+    .sheet-preview table { margin: 0; font-size: 12px; }
+    .sheet-preview th {
+      background: #f1f5f9; color: var(--muted); font-weight: 700; white-space: nowrap;
+    }
+    .sheet-preview td, .sheet-preview th { padding: 8px 10px; border-bottom: 1px solid var(--line); }
+    .sheet-preview tr:last-child td { border-bottom: none; }
+    .sheet-preview td.pass { color: var(--pass); font-weight: 700; }
+    .summary-list {
+      margin: 8px 0 0; padding: 0; list-style: none;
+    }
+    .summary-cards li {
+      margin: 0; padding: 14px 16px 14px 40px; color: #334155; font-size: 14px; line-height: 1.75;
+      background: #f8fafc; border: 1px solid var(--line); border-radius: var(--radius-md);
+      position: relative;
+    }
+    .summary-cards li::before {
+      content: ""; position: absolute; left: 16px; top: 19px; width: 8px; height: 8px;
+      border-radius: 999px; background: var(--brand);
+    }
+    .summary-cards li + li { margin-top: 10px; }
+    .type-block {
+      margin-top: 28px; padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: #fcfdff;
+    }
+    .type-block.ranking { border-top: 4px solid #2563eb; }
+    .type-block.lottery { border-top: 4px solid #7c3aed; }
+    .type-head {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 14px;
+    }
+    .type-head h3 { margin: 0; font-size: 20px; }
+    .type-meta { color: var(--muted); font-size: 13px; margin: 4px 0 0; }
+    .status-badge {
+      font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+    }
+    .status-badge.shipped { background: #d1fae5; color: var(--pass); }
+    .status-badge.building { background: #ede9fe; color: #6d28d9; }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 14px; }
+    .tag {
+      font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #f1f5f9; color: #475569;
+    }
+    .sheet-row { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+    .sheet-row strong { color: var(--text); }
+    .entry-box {
+      margin: 12px 0 16px; padding: 10px 12px; background: #0f172a; border-radius: 10px;
+      font-family: ui-monospace, monospace; font-size: 11px; color: #cbd5e1; word-break: break-all;
+    }
+    .compare-table-wrap { overflow-x: auto; margin-top: 14px; }
+    .flow-summary {
+      margin: 0 0 12px; padding: 10px 12px; background: var(--brand-soft); border-radius: 10px;
+      font-size: 13px; color: #1e40af;
+    }
+    .workflow-meta {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; font-size: 13px; color: var(--muted);
+    }
+    .workflow-meta span {
+      background: #f1f5f9; padding: 4px 10px; border-radius: 999px;
+    }
+    .notes-list {
+      margin: 0 0 18px; padding-left: 18px; color: var(--muted); font-size: 13px; line-height: 1.7;
+    }
+    .taxonomy-block { margin-bottom: 22px; }
+    .taxonomy-block h3 { margin: 0 0 10px; font-size: 16px; }
+    .type-list { display: grid; gap: 10px; margin: 0 0 16px; padding: 0; list-style: none; }
+    .type-item {
+      border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: #f8fafc;
+    }
+    .type-item strong { display: block; margin-bottom: 4px; font-size: 14px; }
+    .type-item span { display: block; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .type-item .type-status {
+      display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 700;
+      color: #1d4ed8; background: #eff6ff; padding: 2px 8px; border-radius: 999px;
+    }
+    .type-item .type-status.pending { color: #64748b; background: #f1f5f9; }
+    .step-meta {
+      margin: 6px 0 0; font-size: 12px; color: var(--muted); font-family: ui-monospace, monospace;
+    }
+    .cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .list-card {
+      background: #f8fafc; border-radius: 12px; padding: 16px 18px; border: 1px solid var(--line);
+    }
+    .list-card h3 { margin: 0 0 10px; font-size: 15px; }
+    .list-card ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; }
+    .list-card li + li { margin-top: 6px; }
+    .demo-step {
+      display: grid; grid-template-columns: 1fr 1.1fr; gap: 20px; align-items: start;
+      padding: 18px 0; border-bottom: 1px dashed var(--line);
+    }
+    .demo-step:last-child { border-bottom: none; padding-bottom: 0; }
+    .demo-step.reverse { grid-template-columns: 1.1fr 1fr; }
+    .demo-step.reverse .demo-text { order: 2; }
+    .demo-step.reverse .demo-media { order: 1; }
+    .step-tag {
+      display: inline-block; background: var(--brand-soft); color: var(--brand);
+      font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 999px; margin-bottom: 8px;
+    }
+    .demo-text h3 { margin: 0 0 8px; font-size: 18px; }
+    .demo-text p { margin: 0; color: var(--muted); font-size: 14px; }
+    .media-box {
+      border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #0f172a;
+    }
+    .media-box img, .media-box video { display: block; width: 100%; max-height: 360px; object-fit: contain; background: #0f172a; }
+    .media-caption { margin: 0; padding: 10px 12px; font-size: 12px; color: #cbd5e1; background: #111827; }
+    .media-box.placeholder { background: #f1f5f9; min-height: 220px; display: flex; flex-direction: column; }
+    .ph-inner {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 8px; padding: 24px; text-align: center; color: var(--muted); font-size: 13px;
+    }
+    .ph-inner code { background: #e2e8f0; padding: 2px 6px; border-radius: 6px; font-size: 12px; color: #334155; }
+    .arch-layers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+    .arch-layer {
+      border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: #f8fafc;
+    }
+    .arch-layer h4 { margin: 0 0 8px; font-size: 14px; color: var(--brand); }
+    .arch-layer ul { margin: 0; padding-left: 16px; font-size: 13px; color: var(--muted); }
+    .flow-bar {
+      background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 12px 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; overflow-x: auto;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 10px 8px; text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-weight: 700; }
+    .platform-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .plat-card {
+      border-left: 4px solid var(--brand); background: #f8fafc; border-radius: 10px; padding: 12px 14px;
+    }
+    .plat-card strong { display: block; margin-bottom: 4px; }
+    .plat-card span { color: var(--muted); font-size: 13px; }
+    .plat-card code { display: block; margin-top: 8px; font-size: 11px; color: #334155; word-break: break-all; }
+    .principle-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .principle { border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+    .principle strong { display: block; margin-bottom: 6px; }
+    .principle p { margin: 0; color: var(--muted); font-size: 13px; }
+    .appendix { margin-top: 8px; }
+    .appendix a { color: var(--brand); font-weight: 700; text-decoration: none; }
+    .demo-tag { font-size: 11px; color: var(--muted); margin-left: 6px; font-weight: 600; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .badge.pass { background: #d1fae5; color: var(--pass); }
+    .badge.warn { background: #fef3c7; color: #d97706; }
+    .badge.fail { background: #fee2e2; color: #dc2626; }
+    .footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 8px; }
+    @media (max-width: 960px) {
+      .wrap { padding: 20px 16px 56px; }
+      .hero { padding: 28px 22px; }
+      .section { padding: 22px 18px 20px; }
+      .theory-pillars, .theory-chart-grid, .rule-chain-dimensions, .rule-chain-verdict,
+      .acceptance-split, .metric-grid, .cols-2, .demo-wf-parts, .demo-step, .demo-step.reverse,
+      .arch-layers, .platform-grid, .principle-grid {
+        grid-template-columns: 1fr;
+      }
+      .demo-wf-part-wide, .demo-wf-part-preview { grid-column: auto; }
+      .demo-title-row { flex-direction: column; align-items: stretch; }
+      .demo-run-btn { align-self: flex-start; }
+      .flow-track { flex-direction: column; gap: 8px; }
+      .flow-arrow { flex: none; transform: rotate(90deg); height: 20px; }
+      .flow-step { min-width: 0; }
+      .demo-detail-grid { grid-template-columns: 1fr; }
+      .rule-chain-pipeline { flex-direction: column; }
+      .rule-pipeline-step:not(:last-child)::after { display: none; }
+      .rule-pipeline-step + .rule-pipeline-step { border-left: none; border-top: 1px solid #e2e8f0; }
+      .rule-pipeline-step:first-child { border-radius: 12px 12px 0 0; }
+      .rule-pipeline-step:last-child { border-radius: 0 0 12px 12px; }
+    }
+    /* 2026 UI refresh: presentation only; behavior and data stay untouched. */
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --text: #18212f;
+      --muted: #667085;
+      --line: #e5e9ef;
+      --brand: #146c63;
+      --brand-soft: #edf7f5;
+      --pass: #168365;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --shadow-sm: 0 1px 2px rgba(16, 24, 40, .03), 0 6px 20px rgba(16, 24, 40, .035);
+      --shadow-md: 0 24px 54px rgba(16, 24, 40, .12);
+    }
+    body {
+      background:
+        radial-gradient(circle at 8% 2%, rgba(20, 108, 99, .06), transparent 24rem),
+        var(--bg);
+      color: var(--text); font-size: 14px; line-height: 1.68;
+    }
+    .topbar {
+      background: rgba(246, 248, 250, .88); border-bottom-color: rgba(208, 213, 221, .78);
+      backdrop-filter: blur(18px) saturate(130%);
+    }
+    .topbar-inner { max-width: 1240px; min-height: 58px; padding: 0 28px; }
+    .brand-mini {
+      color: #263445; font-size: 13px; font-weight: 720; letter-spacing: .01em;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .brand-mini::before {
+      content: ""; width: 10px; height: 10px; border-radius: 3px;
+      background: var(--brand); box-shadow: 0 0 0 5px rgba(20, 108, 99, .10);
+    }
+    .wrap { max-width: 1240px; padding: 36px 28px 80px; }
+    .hero {
+      min-height: 260px; margin-bottom: 22px; padding: 54px 56px;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      background:
+        linear-gradient(90deg, rgba(8, 24, 38, .1) 1px, transparent 1px),
+        linear-gradient(rgba(8, 24, 38, .1) 1px, transparent 1px),
+        radial-gradient(circle at 86% 18%, rgba(71, 191, 171, .42), transparent 25%),
+        linear-gradient(128deg, #071b2c 0%, #10394a 56%, #146c63 100%);
+      background-size: 44px 44px, 44px 44px, auto, auto;
+      border: 1px solid rgba(255,255,255,.08); border-radius: 22px;
+      box-shadow: var(--shadow-md); position: relative; overflow: hidden;
+    }
+    .hero::after {
+      content: "WORKFLOW / DATA / QA"; position: absolute; right: 42px; top: 34px;
+      font: 650 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: .18em; color: rgba(255,255,255,.5);
+    }
+    .hero h1 { max-width: 760px; margin: 0 0 14px; font-size: clamp(30px, 4vw, 46px); font-weight: 760; letter-spacing: -.045em; }
+    .hero p { font-size: 16px; color: rgba(255,255,255,.72); letter-spacing: .01em; }
+    .tab-bar {
+      position: sticky; top: 70px; z-index: 15; margin: 0 0 22px; padding: 6px;
+      background: rgba(255,255,255,.9); border-color: rgba(208,213,221,.8);
+      border-radius: 14px; box-shadow: 0 10px 30px rgba(16,24,40,.07);
+      backdrop-filter: blur(16px);
+    }
+    .tab-bar .tab-nav { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); padding: 0; }
+    .tab-bar .nav a { text-align: center; padding: 11px 12px; font-size: 13px; font-weight: 650; color: #667085; }
+    .tab-bar .nav a:hover { color: #24443f; background: #f2f6f5; }
+    .tab-bar .nav a.active { color: #fff; background: #153b3d; box-shadow: 0 6px 16px rgba(21,59,61,.17); }
+    .section {
+      padding: 34px; margin-bottom: 20px; border-color: var(--line);
+      border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+    }
+    .section-flush { padding: 26px 0 0; }
+    .section-intro {
+      padding: 18px 20px; margin-bottom: 26px; background: #f7f9fa;
+      border: 1px solid #e7ebef; border-left: 3px solid var(--brand); border-radius: 10px;
+    }
+    .section-intro p { color: #475467; }
+    .theory-chart, .theory-pillar, .acceptance-col, .list-card, .type-item, .principle, .arch-layer {
+      border-color: #e6eaee; background: #fafbfc;
+    }
+    .theory-chart { padding: 24px; background: #fff; }
+    .theory-chart h3, .theory-pillar h3 { letter-spacing: -.015em; }
+    .rule-chain-diagram { border-color: #d9e6e3; }
+    .rule-chain-board { background: #f4f8f7; border-color: #dce9e6; }
+    .rule-dim.driver .rule-dim-label, .flow-step:nth-child(1) .flow-step-no { background: #edf7f5; color: #146c63; }
+    .rule-chain-merge::before { background: linear-gradient(180deg, #d0d5dd, var(--brand)); }
+    .rule-chain-merge span { background: #f4f8f7; }
+    .rule-chain-pipeline { border-color: #b9d8d2; box-shadow: none; }
+    .rule-pipeline-step:not(:last-child)::after { border-left-color: var(--brand); }
+    .rule-pipeline-no { background: #146c63; box-shadow: none; }
+    .rule-chain-verdict .data { color: #0d6259; border-color: #9bc8c0; }
+    .rule-chain-verdict .data::before { background: var(--brand); }
+    .metric-card, .flow-step, .demo-detail-card, .demo-wf-part {
+      border-color: #e4e9ed; background: #fff; box-shadow: none;
+    }
+    .metric-card:hover, .theory-pillar:hover { border-color: #bdd5d1; }
+    .sub-tab-bar { margin-bottom: 24px; border-bottom: 1px solid var(--line); }
+    .sub-tab-nav a { padding: 12px 15px; font-weight: 620; }
+    .sub-tab-nav a:hover, .sub-tab-nav a.active { color: var(--brand); }
+    .sub-tab-nav a.active { border-bottom-color: var(--brand); }
+    .demo-block { border-color: #e3e8ec; border-radius: 18px; background: #fff; }
+    .demo-block.ranking { border-top-color: var(--brand); }
+    .demo-title { color: #18212f; letter-spacing: -.025em; }
+    .demo-title-row { padding-bottom: 20px; border-bottom-color: #edf0f2; }
+    .demo-run-btn {
+      background: #153b3d; border-color: #153b3d; border-radius: 9px;
+      box-shadow: none; transition: transform .15s ease, background .15s ease;
+    }
+    .demo-run-btn:hover { background: #0d2f31; transform: translateY(-1px); }
+    .demo-wf-step { border-color: #e2e8eb; border-radius: 16px; box-shadow: none; }
+    .demo-wf-step-head { background: #f7f9f9; border-bottom-color: #e5e9ec; }
+    .demo-wf-step-badge, .step-tag { background: var(--brand-soft); color: var(--brand); }
+    .demo-wf-part h5 { color: #344054; letter-spacing: .02em; }
+    .wf-record-script { border-left-color: #81b8ae; background: #f7faf9; }
+    .demo-tool-list li strong { color: #263445; }
+    .media-box { border-color: #dfe5e8; background: #f4f6f7; }
+    .media-box img, .media-box video { background: #f4f6f7; }
+    .media-caption { color: #667085; background: #f7f8f9; border-top: 1px solid #e6eaed; }
+    .summary-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .summary-cards li, .summary-cards li + li { margin: 0; padding: 20px 20px 20px 44px; background: #f8faf9; }
+    .summary-cards li::before { background: var(--brand); top: 26px; }
+    .type-block { background: #fafbfc; }
+    .type-block.ranking { border-top-color: var(--brand); }
+    .status-badge.shipped, .badge.pass { background: #e8f5f1; color: #14745c; }
+    .tag, .workflow-meta span { background: #f0f2f4; color: #475467; }
+    .entry-box, .flow-bar { background: #132b36; }
+    .flow-summary { background: var(--brand-soft); color: #155e56; }
+    .platform-grid { gap: 14px; }
+    .plat-card { border-left: 3px solid var(--brand); background: #f7f9f9; }
+    table { line-height: 1.55; }
+    th { background: #f7f8fa; color: #475467; }
+    th, td { padding: 11px 10px; }
+    .footer { margin-top: 22px; color: #98a2b3; }
+    a:focus-visible, button:focus-visible { outline: 3px solid rgba(20,108,99,.25); outline-offset: 2px; }
+    @media (max-width: 960px) {
+      .wrap { padding: 22px 16px 56px; }
+      .topbar-inner { padding: 0 18px; }
+      .hero { min-height: 220px; padding: 34px 28px; border-radius: 18px; }
+      .hero h1 { font-size: clamp(27px, 8vw, 38px); }
+      .hero::after { right: 24px; top: 24px; }
+      .tab-bar { top: 66px; overflow-x: auto; }
+      .tab-bar .tab-nav { display: flex; min-width: max-content; }
+      .tab-bar .nav a { min-width: 112px; }
+      .section { padding: 24px 20px; }
+      .summary-cards { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .brand-mini { font-size: 12px; }
+      .hero { min-height: 210px; padding: 30px 22px; }
+      .hero::after { display: none; }
+      .hero p { font-size: 14px; }
+      .section { padding: 20px 16px; border-radius: 14px; }
+      .tab-bar { margin-left: -2px; margin-right: -2px; }
+    }
+    /* Dark industrial refinement: charcoal surfaces + safety orange. */
+    :root {
+      --bg: #0c0d0f;
+      --card: #15171a;
+      --text: #f2f0eb;
+      --muted: #9b9da1;
+      --line: #2b2e32;
+      --brand: #ff7a1a;
+      --brand-soft: rgba(255, 122, 26, .12);
+      --pass: #57c79a;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --shadow-sm: 0 1px 0 rgba(255,255,255,.025), 0 18px 44px rgba(0,0,0,.2);
+      --shadow-md: 0 34px 90px rgba(0,0,0,.42);
+    }
+    body {
+      background:
+        radial-gradient(circle at 88% 7%, rgba(255,122,26,.08), transparent 27rem),
+        linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+        #0c0d0f;
+      background-size: auto, 100% 80px, auto;
+      color: var(--text); font-size: 15px;
+    }
+    .topbar { background: rgba(12,13,15,.82); border-bottom-color: #25272a; }
+    .topbar-inner { max-width: 1380px; min-height: 68px; padding: 0 40px; }
+    .brand-mini { color: #d8d7d3; letter-spacing: .025em; }
+    .brand-mini::before { background: var(--brand); box-shadow: 0 0 0 5px rgba(255,122,26,.12); }
+    .wrap { max-width: 1380px; padding: 52px 40px 112px; }
+    .hero {
+      min-height: 360px; margin-bottom: 34px; padding: 72px 70px;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        radial-gradient(circle at 82% 22%, rgba(255,122,26,.28), transparent 25%),
+        linear-gradient(132deg, #151719 0%, #202226 58%, #301d12 100%);
+      background-size: 52px 52px, 52px 52px, auto, auto;
+      border-color: #323438; border-radius: 26px; box-shadow: var(--shadow-md);
+    }
+    .hero::before {
+      content: ""; position: absolute; left: 70px; top: 66px; width: 54px; height: 4px;
+      background: var(--brand); border-radius: 99px;
+    }
+    .hero::after { right: 52px; top: 46px; color: rgba(255,255,255,.38); }
+    .hero h1 { max-width: 900px; margin-bottom: 20px; font-size: clamp(38px, 4.6vw, 60px); line-height: 1.16; }
+    .hero p { font-size: 17px; color: #b9b7b1; }
+    .tab-bar {
+      top: 82px; margin-bottom: 34px; padding: 7px;
+      background: rgba(21,23,26,.88); border-color: #303337;
+      box-shadow: 0 18px 46px rgba(0,0,0,.32);
+    }
+    .tab-bar .nav a { padding: 14px 14px; color: #989a9e; }
+    .tab-bar .nav a:hover { color: #f0eee9; background: #242629; }
+    .tab-bar .nav a.active { color: #17120e; background: var(--brand); box-shadow: 0 8px 24px rgba(255,122,26,.2); }
+    .section { padding: 48px; margin-bottom: 30px; background: #15171a; border-color: #2b2e32; }
+    .section-flush { padding: 34px 0 0; background: transparent; }
+    .section-intro { padding: 24px 26px; margin-bottom: 38px; background: #1b1d20; border-color: #303338; border-left-color: var(--brand); }
+    .section-intro p, .theory-pillar p, .theory-chart-caption, .wf-record-summary,
+    .demo-tool-list li, .demo-tool-support-list li, .demo-tool-support-text,
+    .demo-workbook-ref, .demo-text p, .principle p, .list-card ul, .notes-list,
+    .type-item span, .sheet-row, .type-meta { color: var(--muted); }
+    .theory-visuals { gap: 30px; margin-bottom: 30px; }
+    .theory-pillars, .theory-chart-grid { gap: 22px; }
+    .theory-chart, .theory-pillar, .acceptance-col, .list-card, .type-item, .principle, .arch-layer {
+      background: #1b1d20; border-color: #303338;
+    }
+    .theory-chart { padding: 32px; }
+    .rule-chain-diagram { border-color: #3b332d; }
+    .rule-chain-board { margin: 24px 26px 26px; padding: 26px; background: #121416; border-color: #33363a; }
+    .rule-dim { background: #1c1e21; border-color: #34373b; }
+    .rule-dim-label { background: #25272a !important; color: #d8d7d3 !important; }
+    .rule-dim.driver .rule-dim-label { color: var(--brand) !important; }
+    .rule-dim-items { color: #a8aaad; }
+    .rule-chain-merge span { background: #121416; }
+    .rule-chain-merge::before { background: linear-gradient(180deg, #414449, var(--brand)); }
+    .rule-chain-pipeline { background: #1b1d20; border-color: #45413e; }
+    .rule-pipeline-step { background: #1b1d20; }
+    .rule-pipeline-step + .rule-pipeline-step { border-color: #34373b; }
+    .rule-pipeline-no { color: #17120e; background: var(--brand); }
+    .rule-pipeline-text { color: #e2e0dc; }
+    .rule-chain-verdict .ui { color: #9b9da1; background: #191b1e; border-color: #3a3d41; }
+    .rule-chain-verdict .data { color: #ffae72; background: #211a15; border-color: #6a4125; }
+    .rule-chain-verdict .data::before { color: #17120e; background: var(--brand); }
+    .metric-grid, .demo-detail-grid, .demo-wf-parts { gap: 20px; }
+    .metric-card, .flow-step, .demo-detail-card, .demo-wf-part { background: #1b1d20; border-color: #303338; }
+    .metric-card:hover, .theory-pillar:hover { border-color: #674328; }
+    .flow-track { gap: 14px; }
+    .flow-arrow { color: var(--brand); }
+    .sub-tab-bar { margin-bottom: 34px; border-color: #303338; }
+    .sub-tab-nav a { padding: 15px 18px; color: #8e9094; }
+    .sub-tab-nav a:hover, .sub-tab-nav a.active { color: var(--brand); }
+    .demo-block { padding: 38px; background: #15171a; border-color: #303338; }
+    .demo-block.ranking, .type-block.ranking { border-top-color: var(--brand); }
+    .demo-title { color: #f2f0eb; font-size: 26px; }
+    .demo-title-row { padding-bottom: 28px; margin-bottom: 30px; border-color: #303338; }
+    .demo-run-btn { color: #17120e; background: var(--brand); border-color: var(--brand); font-weight: 800; }
+    .demo-run-btn:hover { background: #ff913f; }
+    .demo-wf-step { margin-bottom: 30px; background: #181a1d; border-color: #303338; }
+    .demo-wf-step-head { padding: 24px 26px; background: #1f2124; border-color: #303338; }
+    .demo-wf-step-badge, .step-tag { color: #ff9a50; background: rgba(255,122,26,.12); }
+    .demo-wf-part { padding: 22px; }
+    .demo-wf-part h5 { color: #d8d7d3; }
+    .wf-record-script { color: #d8d7d3; background: #151719; border-left-color: var(--brand); }
+    .demo-tool-list li strong, .wf-record-name, .demo-text h3 { color: #efede8; }
+    .media-box { border-color: #34373b; background: #101113; }
+    .media-box img, .media-box video { background: #f4f4f2; }
+    .media-caption { color: #aaa9a5; background: #1b1d20; border-color: #303338; }
+    .sheet-preview { background: #17191c; border-color: #303338; }
+    .sheet-preview-caption, .sheet-preview th { background: #202226; border-color: #34373b; color: #aaa; }
+    .sheet-preview td, .sheet-preview th { border-color: #303338; }
+    .summary-cards { gap: 20px; }
+    .summary-cards li, .summary-cards li + li { padding: 28px 26px 28px 52px; color: #c6c5c1; background: #1b1d20; border-color: #303338; }
+    .summary-cards li::before { top: 36px; background: var(--brand); }
+    .type-block { padding: 30px; background: #181a1d; border-color: #303338; }
+    .type-block.lottery { border-top-color: #8b5cf6; }
+    .tag, .workflow-meta span { color: #aaa; background: #242629; }
+    .status-badge.shipped, .badge.pass { color: #6bd8aa; background: rgba(87,199,154,.12); }
+    .entry-box, .flow-bar { background: #090a0b; color: #bfc1c4; border: 1px solid #2d3034; }
+    .flow-summary { color: #ffad70; background: rgba(255,122,26,.1); }
+    .platform-grid { gap: 20px; }
+    .plat-card { padding: 18px 20px; background: #1b1d20; border-left-color: var(--brand); }
+    .plat-card span, .plat-card code { color: #9b9da1; }
+    .theory-compare-table th, th { color: #aaa; background: #202226; }
+    .theory-compare-table td, th, td { border-color: #303338; }
+    .theory-compare-table td:first-child { color: #e8e6e1; }
+    .theory-compare-table td:nth-child(2) { color: #e9b47a; background: #211c17; }
+    .theory-compare-table td:nth-child(3) { color: #75cda8; background: #17211d; }
+    .effort-bar-track { background: #242629; border-color: #34373b; }
+    .effort-highlight { color: #ffad70; background: rgba(255,122,26,.1); }
+    .footer { margin-top: 34px; color: #65676b; }
+    a:focus-visible, button:focus-visible { outline-color: rgba(255,122,26,.42); }
+    @media (max-width: 960px) {
+      .topbar-inner { padding: 0 20px; }
+      .wrap { padding: 28px 18px 70px; }
+      .hero { min-height: 270px; padding: 46px 34px; }
+      .hero::before { left: 34px; top: 38px; }
+      .tab-bar { top: 78px; }
+      .section { padding: 30px 24px; }
+      .demo-block { padding: 26px 20px; }
+    }
+    @media (max-width: 560px) {
+      .hero { min-height: 245px; padding: 42px 24px 34px; }
+      .hero::before { left: 24px; top: 30px; width: 42px; }
+      .hero h1 { font-size: 30px; }
+      .section { padding: 24px 18px; }
+      .theory-chart { padding: 22px 18px; }
+      .rule-chain-board { margin: 18px 12px; padding: 18px 14px; }
+    }
+    /* Reference-led redesign: open header, signal blue, unified line icon language. */
+    :root {
+      --bg: #090b0d;
+      --card: #101316;
+      --text: #f4f6f8;
+      --muted: #9298a2;
+      --line: rgba(137, 151, 174, .16);
+      --brand: #6b96ff;
+      --brand-soft: rgba(107, 150, 255, .11);
+      --pass: #60d5a7;
+      --shadow-sm: none;
+      --shadow-md: 0 32px 100px rgba(0,0,0,.36);
+    }
+    html { color-scheme: dark; }
+    body {
+      background:
+        radial-gradient(circle at 78% 0%, rgba(72,105,191,.1), transparent 32rem),
+        linear-gradient(90deg, transparent 0, transparent calc(100% - 1px), rgba(107,150,255,.025) 100%),
+        #090b0d;
+      background-size: auto, 80px 100%, auto;
+      color: var(--text); font-size: 15px; line-height: 1.75;
+    }
+    .topbar { position: relative; background: transparent; border: 0; backdrop-filter: none; }
+    .topbar-inner { max-width: 1440px; min-height: 82px; padding: 0 54px; }
+    .brand-mini { color: #b5bac2; font-size: 12px; letter-spacing: .07em; text-transform: uppercase; }
+    .brand-mini::before {
+      width: 18px; height: 18px; border: 1px solid rgba(107,150,255,.55); border-radius: 3px;
+      background:
+        linear-gradient(90deg, transparent 42%, var(--brand) 42%, var(--brand) 58%, transparent 58%),
+        linear-gradient(transparent 42%, var(--brand) 42%, var(--brand) 58%, transparent 58%);
+      box-shadow: none;
+    }
+    .wrap { max-width: 1440px; padding: 0 54px 130px; }
+    .hero {
+      min-height: 610px; margin: 0 0 28px; padding: 112px 0 100px;
+      display: grid; grid-template-columns: minmax(0, .9fr) minmax(520px, 1.1fr); align-items: center; gap: 80px;
+      background: transparent; border: 0; border-radius: 0; box-shadow: none; overflow: visible;
+    }
+    .hero::before {
+      content: ""; position: absolute; width: 560px; height: 560px; left: 56%; top: 0;
+      background: radial-gradient(circle, rgba(78,115,215,.13), transparent 65%);
+      filter: blur(10px); pointer-events: none;
+    }
+    .hero::after { display: none; }
+    .hero h1 { max-width: 680px; margin: 0 0 26px; font-size: clamp(48px, 5.6vw, 78px); line-height: 1.08; font-weight: 420; letter-spacing: -.055em; }
+    .hero h1::before {
+      content: "01  /  WORKFLOW-DRIVEN QA"; display: block; margin-bottom: 26px;
+      color: var(--brand); font: 600 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em;
+    }
+    .hero p { max-width: 560px; margin: 0; color: #949aa4; font-size: 16px; line-height: 1.9; }
+    .hero-console {
+      position: relative; min-height: 440px; border: 1px dashed rgba(107,150,255,.22);
+      background:
+        linear-gradient(rgba(107,150,255,.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(107,150,255,.055) 1px, transparent 1px),
+        rgba(13,16,20,.34);
+      background-size: 52px 52px; box-shadow: inset 0 0 80px rgba(0,0,0,.32);
+    }
+    .hero-console::before, .hero-console::after {
+      content: ""; position: absolute; width: 7px; height: 7px; background: var(--brand); box-shadow: 0 0 16px rgba(107,150,255,.8);
+    }
+    .hero-console::before { left: -4px; top: -4px; }
+    .hero-console::after { right: -4px; bottom: -4px; }
+    .signal-card {
+      position: absolute; padding: 18px; background: rgba(18,21,25,.9); border: 1px solid rgba(132,148,173,.2);
+      box-shadow: 0 20px 60px rgba(0,0,0,.22); backdrop-filter: blur(14px);
+    }
+    .signal-card strong { display: block; margin-top: 14px; font-size: 13px; font-weight: 560; color: #e8ebef; }
+    .signal-card small { color: #737b87; font-size: 10px; letter-spacing: .08em; }
+    .signal-icon { width: 22px; height: 22px; color: var(--brand); }
+    .signal-a { width: 190px; left: 10%; top: 12%; }
+    .signal-b { width: 220px; right: 8%; top: 30%; }
+    .signal-c { width: 250px; left: 25%; bottom: 10%; }
+    .signal-line { position: absolute; height: 1px; background: linear-gradient(90deg, transparent, var(--brand), transparent); opacity: .5; }
+    .signal-line.one { width: 44%; left: 25%; top: 39%; transform: rotate(14deg); }
+    .signal-line.two { width: 36%; left: 28%; top: 66%; transform: rotate(-21deg); }
+    .signal-dots { display: flex; gap: 7px; margin-top: 16px; }
+    .signal-dots i { width: 5px; height: 18px; background: #2b3446; }
+    .signal-dots i:nth-child(2), .signal-dots i:nth-child(4) { background: var(--brand); box-shadow: 0 0 12px rgba(107,150,255,.55); }
+    .tab-bar {
+      top: 12px; margin: 0 0 72px; padding: 0; background: rgba(9,11,13,.76);
+      border: 0; border-bottom: 1px solid var(--line); border-radius: 0; box-shadow: none; backdrop-filter: blur(18px);
+    }
+    .tab-bar .tab-nav { gap: 36px; display: flex; justify-content: flex-start; }
+    .tab-bar .nav a {
+      min-width: 0; padding: 18px 2px; color: #777e89; background: transparent !important;
+      border-radius: 0; text-align: left; box-shadow: none !important; position: relative;
+      transition: color .25s ease, transform .25s ease;
+    }
+    .tab-bar .nav a::before {
+      content: ""; display: inline-block; width: 17px; height: 17px; margin-right: 9px; vertical-align: -3px;
+      background: currentColor; opacity: .9; mask-size: contain; mask-repeat: no-repeat; mask-position: center;
+    }
+    .tab-bar .nav a:nth-child(1)::before { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3Cpath d='M12 8v4l3 2'/%3E%3C/svg%3E"); }
+    .tab-bar .nav a:nth-child(2)::before { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='4' width='6' height='6' rx='1'/%3E%3Crect x='14' y='4' width='6' height='6' rx='1'/%3E%3Crect x='9' y='14' width='6' height='6' rx='1'/%3E%3Cpath d='M7 10v2h10v-2M12 12v2'/%3E%3C/svg%3E"); }
+    .tab-bar .nav a:nth-child(3)::before { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 19V9M12 19V5M19 19v-7'/%3E%3Cpath d='M3 19h18'/%3E%3C/svg%3E"); }
+    .tab-bar .nav a:nth-child(4)::before { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 4h10l3 6-8 10-8-10 3-6Z'/%3E%3Cpath d='m4 10 8 3 8-3M12 13V4'/%3E%3C/svg%3E"); }
+    .tab-bar .nav a:nth-child(5)::before { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 4 4L19 6'/%3E%3Cpath d='M20 12a8 8 0 1 1-4-7'/%3E%3C/svg%3E"); }
+    .tab-bar .nav a::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: var(--brand); transform: scaleX(0); transition: transform .25s ease; }
+    .tab-bar .nav a:hover { color: #dce2eb; transform: translateY(-1px); }
+    .tab-bar .nav a.active { color: var(--brand); }
+    .tab-bar .nav a.active::after { transform: scaleX(1); }
+    .tab-panel.active { animation: panelIn .42s cubic-bezier(.2,.8,.2,1); }
+    @keyframes panelIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    .section { padding: 0; margin-bottom: 110px; background: transparent; border: 0; border-radius: 0; box-shadow: none; }
+    .section-flush { padding: 0; }
+    .section-intro {
+      max-width: 850px; padding: 0 0 0 28px; margin: 0 0 74px; background: transparent;
+      border: 0; border-left: 1px solid var(--brand); border-radius: 0;
+    }
+    .section-intro p { color: #a2a8b1; font-size: 16px; line-height: 1.9; }
+    .theory-visuals { gap: 64px; }
+    .theory-chart, .theory-pillar, .acceptance-col, .list-card, .type-item, .principle, .arch-layer {
+      background: rgba(15,18,21,.56); border-color: var(--line); border-radius: 2px;
+    }
+    .theory-chart { padding: 36px; }
+    .theory-chart h3, .theory-pillar h3 { color: #e7ebf1; font-weight: 480; }
+    .theory-chart-caption, .theory-pillar p { color: #8d949f; }
+    .theory-pillars, .theory-chart-grid { gap: 1px; background: var(--line); }
+    .theory-pillar { padding: 32px; border: 0; }
+    .rule-chain-diagram { border: 1px solid var(--line); }
+    .rule-chain-board { background: #0c0f12; border-color: var(--line); border-radius: 2px; }
+    .rule-dim, .rule-chain-pipeline, .rule-pipeline-step { background: #121519; border-color: var(--line); border-radius: 2px; }
+    .rule-dim-label { background: #171b20 !important; color: #b9c0ca !important; }
+    .rule-dim.driver .rule-dim-label { color: var(--brand) !important; }
+    .rule-pipeline-no { color: #09101e; background: var(--brand); }
+    .rule-chain-verdict .data { color: #b9caff; background: #101726; border-color: rgba(107,150,255,.38); }
+    .rule-chain-verdict .data::before { color: #09101e; background: var(--brand); }
+    .metric-grid, .demo-detail-grid, .demo-wf-parts { gap: 1px; background: var(--line); }
+    .metric-card, .flow-step, .demo-detail-card, .demo-wf-part { background: #101316; border: 0; border-radius: 0; }
+    .metric-card:hover, .theory-pillar:hover { background: #141820; border-color: rgba(107,150,255,.35); }
+    .sub-tab-bar { margin-bottom: 60px; border-color: var(--line); }
+    .sub-tab-nav { gap: 28px; }
+    .sub-tab-nav a { padding: 15px 1px; color: #777e88; }
+    .sub-tab-nav a:hover, .sub-tab-nav a.active { color: var(--brand); }
+    .demo-block { padding: 0; background: transparent; border: 0; }
+    .demo-title-row { padding-bottom: 28px; margin-bottom: 54px; border-color: var(--line); }
+    .demo-title { color: #f1f4f8; font-size: 32px; font-weight: 450; }
+    .demo-run-btn {
+      cursor: pointer; font-weight: 600; letter-spacing: .02em;
+      transition: transform .18s ease, box-shadow .25s ease, background .2s ease, color .2s ease, border-color .2s ease;
+    }
+    .demo-run-btn:focus-visible { outline: 2px solid rgba(107,150,255,.55); outline-offset: 2px; }
+    .demo-wf-step { margin-bottom: 1px; background: transparent; border: 1px solid var(--line); border-radius: 2px; }
+    .demo-wf-step-head { padding: 28px 30px; background: #101316; border-color: var(--line); }
+    .demo-wf-step-badge, .step-tag { color: #9cb7ff; background: var(--brand-soft); border-radius: 3px; }
+    .demo-wf-part { padding: 28px; }
+    .demo-wf-part h5 { color: #c6ccd5; }
+    .wf-record-script { color: #c8ced8; background: #0c0f12; border-left-color: var(--brand); }
+    .media-box { border-color: var(--line); border-radius: 2px; }
+    .media-caption { background: #101316; border-color: var(--line); }
+    .summary-cards { gap: 1px; background: var(--line); }
+    .summary-cards li, .summary-cards li + li { color: #b8bec8; background: #101316; border: 0; border-radius: 0; }
+    .summary-cards li::before { background: var(--brand); box-shadow: 0 0 14px rgba(107,150,255,.6); }
+    .type-block { background: rgba(15,18,21,.5); border-color: var(--line); border-radius: 2px; }
+    .type-block.ranking { border-top-color: var(--brand); }
+    .flow-summary { color: #b6c6f4; background: var(--brand-soft); }
+    .plat-card { background: #101316; border-left-color: var(--brand); border-radius: 0; }
+    .theory-compare-table th, th { color: #a7afba; background: #15191e; }
+    .theory-compare-table td, th, td { border-color: var(--line); }
+    .theory-compare-table td:nth-child(2) { color: #c7b68b; background: #15140f; }
+    .theory-compare-table td:nth-child(3) { color: #91c9b2; background: #0f1715; }
+    .effort-highlight { color: #b9caff; background: var(--brand-soft); }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+    @media (max-width: 1100px) {
+      .hero { grid-template-columns: 1fr; min-height: auto; padding: 80px 0; gap: 64px; }
+      .hero-console { min-height: 400px; }
+    }
+    @media (max-width: 960px) {
+      .topbar-inner { padding: 0 22px; }
+      .wrap { padding: 0 22px 80px; }
+      .hero { padding: 64px 0 72px; }
+      .hero h1 { font-size: clamp(42px, 10vw, 60px); }
+      .tab-bar { top: 0; margin-bottom: 52px; overflow-x: auto; }
+      .tab-bar .tab-nav { min-width: max-content; gap: 26px; }
+      .tab-bar .nav a { min-width: auto; }
+      .section { margin-bottom: 80px; }
+      .theory-chart { padding: 26px 22px; }
+    }
+    @media (max-width: 620px) {
+      .brand-mini { line-height: 1.35; }
+      .hero { padding: 48px 0 58px; gap: 48px; }
+      .hero h1 { font-size: 38px; }
+      .hero h1::before { margin-bottom: 20px; }
+      .hero-console { min-height: 360px; }
+      .signal-a { left: 4%; }
+      .signal-b { right: 4%; }
+      .signal-c { left: 10%; }
+      .section-intro { margin-bottom: 50px; padding-left: 20px; }
+      .demo-title { font-size: 26px; }
+    }
+    /* Contrast audit: remove legacy light surfaces and simplify empty states. */
+    .tab-bar {
+      border-bottom: 1px solid rgba(107,150,255,.34);
+      box-shadow: inset 0 -1px 0 rgba(255,255,255,.035);
+    }
+    .tab-bar::after {
+      content: ""; position: absolute; left: 0; bottom: -1px; width: 56px; height: 2px;
+      background: linear-gradient(90deg, var(--brand), transparent); pointer-events: none;
+    }
+    .tab-bar .nav a::after { height: 2px; bottom: -1px; box-shadow: 0 0 12px rgba(107,150,255,.5); }
+    .sub-panel,
+    .sub-panel.principle,
+    .sub-panel.platform,
+    .sub-panel.ranking,
+    .sub-panel.lottery {
+      margin-top: 1px; padding: 38px 34px 34px; background: #0e1114;
+      border: 1px solid var(--line); border-radius: 2px;
+    }
+    .sub-panel:first-of-type { margin-top: 0; }
+    .sub-panel-head { margin-bottom: 22px; }
+    .sub-panel-head h3 { color: #e7ebf0; font-size: 18px; font-weight: 520; }
+    .sub-badge,
+    .sub-panel.principle .sub-badge,
+    .sub-panel.platform .sub-badge,
+    .sub-panel.ranking .sub-badge,
+    .sub-panel.lottery .sub-badge {
+      color: #9db7ff; background: rgba(107,150,255,.12); border: 1px solid rgba(107,150,255,.2);
+      border-radius: 3px;
+    }
+    .sub-tagline { color: #d9dfe8; font-weight: 520; }
+    .sub-lead { color: #8f97a3; }
+    .sub-panel .flow-track { gap: 12px; }
+    .sub-panel .flow-arrow { flex-basis: 22px; color: #6b96ff; opacity: .72; }
+    .sub-panel .flow-step,
+    .sub-panel.platform .flow-step.featured {
+      padding: 22px 20px; background: #15191d; border: 1px solid rgba(137,151,174,.17);
+      border-radius: 2px; box-shadow: none;
+    }
+    .sub-panel .flow-step:hover { background: #181d24; border-color: rgba(107,150,255,.32); }
+    .sub-panel .flow-step .step-index,
+    .sub-panel.principle .flow-step .step-index,
+    .sub-panel.platform .flow-step .step-index,
+    .sub-panel.ranking .flow-step .step-index,
+    .sub-panel.lottery .flow-step .step-index {
+      color: #a9bfff; background: rgba(107,150,255,.13); border: 1px solid rgba(107,150,255,.22);
+    }
+    .sub-panel .flow-step strong { color: #e5e9ef; font-weight: 540; }
+    .sub-panel .flow-step span { color: #8e96a1; }
+    .acceptance-col.before, .acceptance-col.after {
+      background: #111519; border-color: var(--line);
+    }
+    .acceptance-col.before h4 { color: #d2bb86; }
+    .acceptance-col.after h4 { color: #84c6aa; }
+    .acceptance-col ul { color: #a0a7b1; }
+    .metric { background: #12161a; border-color: var(--line); }
+    .media-box.placeholder, .ph-inner code { background: #12161a; color: #aeb5bf; }
+    .badge.warn { color: #d7bc7a; background: rgba(215,188,122,.1); }
+    .badge.fail { color: #ef8f97; background: rgba(239,143,151,.1); }
+    .empty-demo {
+      min-height: 280px; display: grid; place-items: center; padding: 64px 30px;
+      border-top: 1px solid rgba(107,150,255,.42); border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(107,150,255,.035), transparent 70%);
+      text-align: center;
+    }
+    .empty-demo-inner { max-width: 620px; }
+    .empty-demo-icon {
+      width: 38px; height: 38px; margin: 0 auto 24px; color: var(--brand); opacity: .8;
+    }
+    .empty-demo h3 { margin: 0 0 14px; color: #eef1f5; font-size: 28px; font-weight: 460; letter-spacing: -.025em; }
+    .empty-demo p { margin: 0; color: #858d98; font-size: 15px; }
+    @media (max-width: 960px) {
+      .sub-panel, .sub-panel.principle, .sub-panel.platform, .sub-panel.ranking, .sub-panel.lottery { padding: 28px 22px; }
+      .sub-panel .flow-track { gap: 10px; }
+    }
+    /* Ranking demo header: lighter hierarchy, no legacy banner frame. */
+    .demo-block.ranking { border: 0; border-top: 0; border-radius: 0; }
+    .demo-block.ranking .demo-title-row {
+      position: relative; align-items: flex-end; min-height: 112px;
+      margin: 0 0 52px; padding: 38px 0 30px;
+      border-top: 1px solid rgba(107,150,255,.38);
+      border-bottom: 1px solid var(--line);
+    }
+    .demo-block.ranking .demo-title-row::before {
+      content: "03  /  RANKING DEMO"; position: absolute; left: 0; top: 15px;
+      color: #789df7; font: 600 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: .1em;
+    }
+    .demo-block.ranking .demo-title {
+      max-width: calc(100% - 150px); color: #eef1f5;
+      font-size: clamp(26px, 3vw, 38px); line-height: 1.2; font-weight: 440; letter-spacing: -.035em;
+    }
+    @media (max-width: 620px) {
+      .demo-block.ranking .demo-title-row { align-items: flex-start; padding-top: 42px; }
+      .demo-block.ranking .demo-title { max-width: none; font-size: 28px; }
+    }
+
+/* 参考稿未覆盖、但当前 Showcase 仍使用的组件样式（暗色主题适配） */
+:root {
+  --sticky-sub-top: 57px;
+}
+.tab-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+.sub-tab-bar {
+  position: sticky;
+  top: var(--sticky-sub-top);
+  z-index: 29;
+  background: rgba(9, 11, 13, 0.94);
+  backdrop-filter: blur(18px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: none;
+}
+.sub-tab-nav a {
+  margin-bottom: 0;
+}
+.sub-tab-bar::-webkit-scrollbar {
+  height: 4px;
+}
+.sub-tab-bar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+}
+.brand-mini { display: flex; align-items: center; gap: 10px; }
+.brand-mini::before { content: ""; display: inline-block; flex-shrink: 0; }
+.hero { position: relative; }
+.demo-detail-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background: transparent;
+}
+.demo-intro-hub {
+  padding: 28px 30px; border: 1px solid var(--line); border-radius: 2px;
+  background: linear-gradient(135deg, rgba(30,58,138,.55) 0%, rgba(37,99,235,.35) 55%, rgba(59,130,246,.22) 100%);
+  color: #eef2ff;
+}
+.demo-intro-hub-lead { margin: 0 0 20px; max-width: 680px; font-size: 15px; line-height: 1.75; color: #c7d2fe; }
+.demo-intro-hub-flow { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+.demo-intro-hub-phase {
+  flex: 1 1 100px; min-width: 88px; max-width: 140px; padding: 12px 10px; border-radius: 2px; text-align: center;
+  background: rgba(15,18,21,.45); border: 1px solid var(--line);
+}
+.demo-intro-hub-phase b { display: block; font-size: 14px; font-weight: 700; margin-bottom: 3px; color: #eef2ff; }
+.demo-intro-hub-phase span { display: block; font-size: 11px; color: #94a3b8; line-height: 1.4; }
+.demo-intro-hub-arrow { flex: 0 0 auto; color: #64748b; font-size: 14px; font-weight: 800; user-select: none; }
+.demo-intro-hub-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); }
+.demo-intro-hub-metric { padding: 12px 8px; text-align: center; background: rgba(15,18,21,.72); border: 0; }
+.demo-intro-hub-metric strong { display: block; font-size: 24px; font-weight: 800; line-height: 1.1; color: var(--brand); }
+.demo-intro-hub-metric span { display: block; margin-top: 4px; font-size: 11px; color: #94a3b8; }
+.demo-intro-section { border: 1px solid var(--line); border-radius: 2px; background: rgba(15,18,21,.56); overflow: hidden; }
+.demo-intro-section-rules { border-top: 2px solid var(--brand); }
+.demo-intro-section-pain { border-top: 2px solid #d97706; }
+.demo-intro-section-head { padding: 18px 22px 14px; border-bottom: 1px solid var(--line); background: #101316; }
+.demo-intro-section-head h4 { margin: 0 0 6px; font-size: 17px; font-weight: 700; color: #e7ebf1; }
+.demo-intro-section-lead { margin: 0; color: #8d949f; font-size: 13px; line-height: 1.65; }
+.demo-intro-points { display: flex; flex-direction: column; gap: 0; margin: 0; padding: 8px 16px 16px; list-style: none; }
+.demo-intro-section-rules .demo-intro-points { position: relative; padding-left: 12px; }
+.demo-intro-section-rules .demo-intro-points::before {
+  content: ""; position: absolute; left: 29px; top: 28px; bottom: 28px; width: 1px;
+  background: linear-gradient(180deg, rgba(107,150,255,.45), rgba(107,150,255,.12)); border-radius: 999px;
+}
+.demo-intro-section-pain .demo-intro-points { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; padding: 0; background: var(--line); }
+.demo-intro-point { position: relative; padding: 14px 16px 12px 14px; border: 0; background: #101316; border-left: 2px solid var(--brand); }
+.demo-intro-section-rules .demo-intro-point { margin-left: 8px; }
+.demo-intro-section-pain .demo-intro-point { border-left-color: #d97706; }
+.demo-intro-point-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.demo-intro-point-index {
+  flex: 0 0 24px; width: 24px; height: 24px; border-radius: 2px; display: inline-flex; align-items: center;
+  justify-content: center; font-size: 12px; font-weight: 800; position: relative; z-index: 1;
+  background: var(--brand); color: #09101e;
+}
+.demo-intro-section-pain .demo-intro-point-index { background: #d97706; color: #fff; }
+.demo-intro-point-tag { font-size: 15px; font-weight: 700; color: #e7ebf1; }
+.demo-intro-point-body { margin: 0; padding-left: 34px; font-size: 14px; line-height: 1.72; color: #b8bec8; }
+.demo-intro-section-pain .demo-intro-point-body { padding-left: 0; }
+.demo-intro-point-foot { margin: 10px 0 0 34px; font-size: 12px; font-weight: 700; color: #858d98; }
+.demo-intro-section-pain .demo-intro-point-foot { margin-left: 0; color: #fbbf24; }
+.demo-intro-sheet {
+  display: inline-block; margin: 0 1px; padding: 1px 7px; border-radius: 2px;
+  background: var(--brand-soft); color: #b9caff; font-size: 12px; font-weight: 700; white-space: nowrap;
+}
+.demo-intro-section-pain .demo-intro-sheet { background: rgba(217,119,6,.15); color: #fbbf24; }
+.demo-wf-step-main { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 8px; min-width: 0; }
+.demo-wf-step-head {
+  display: flex; flex-wrap: nowrap; align-items: center; gap: 12px;
+}
+.demo-wf-step-thumb {
+  margin: 0; padding: 0; line-height: 0; flex: 0 0 72px; width: 72px; border-radius: 2px;
+  overflow: hidden; border: 1px solid var(--line); background: #0c0f12;
+}
+.demo-wf-step-thumb.demo-zoom-trigger {
+  cursor: zoom-in; font: inherit; appearance: none; -webkit-appearance: none; display: block; text-align: inherit;
+}
+.demo-wf-step-thumb.demo-zoom-trigger:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.demo-wf-step-thumb img {
+  display: block; width: 100%; height: auto; margin: 0; max-height: 156px;
+  object-fit: contain; object-position: center center; pointer-events: none;
+}
+.demo-wf-part-wide.has-thumb { padding-top: 12px; padding-bottom: 12px; overflow: hidden; }
+.demo-wf-part-wide-row { display: flex; align-items: center; gap: 12px; }
+.demo-wf-part-wide-main { flex: 1 1 auto; min-width: 0; }
+.sub-panel .sub-lead {
+  margin-bottom: 36px;
+}
+.sub-panel .sub-lead + .flow-track {
+  margin-top: 8px;
+}
+.flow-parallel { flex: 1 1 auto; display: flex; flex-direction: column; gap: 12px; justify-content: center; min-width: 168px; }
+.flow-parallel-branch { display: flex; align-items: stretch; gap: 0; }
+.flow-parallel-branch .flow-step { flex: 1 1 auto; }
+.flow-parallel-branch .flow-arrow { flex: 0 0 24px; font-size: 16px; }
+.flow-parallel-lead {
+  flex: 1 1 0;
+  min-width: 168px;
+  display: flex;
+  align-items: stretch;
+}
+.flow-parallel-lead > .flow-parallel {
+  flex: 1 1 auto;
+  width: 100%;
+}
+.flow-track-grouped > .flow-group > .flow-parallel-lead {
+  min-width: 0;
+}
+.flow-track-grouped {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+.flow-track-grouped > .flow-group {
+  display: flex;
+  align-items: stretch;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 12px 14px 14px;
+  border: 2px dashed rgba(107, 150, 255, 0.38);
+  border-radius: 4px;
+  background: rgba(16, 19, 22, 0.45);
+}
+.flow-track-grouped > .flow-arrow-outer {
+  flex: 0 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b96ff;
+  font-size: 18px;
+  font-weight: 700;
+  opacity: 0.72;
+  user-select: none;
+}
+@media (max-width: 960px) {
+  .flow-track-grouped {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .flow-track-grouped > .flow-arrow-outer {
+    flex: none;
+    height: 24px;
+    transform: rotate(90deg);
+  }
+}
+.demo-lightbox {
+  position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center;
+  padding: 24px; opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .2s ease, visibility .2s ease;
+}
+.demo-lightbox.open { opacity: 1; visibility: visible; pointer-events: auto; }
+.demo-lightbox-backdrop { position: absolute; inset: 0; background: rgba(4, 6, 8, .88); cursor: zoom-out; }
+.demo-lightbox-panel {
+  position: relative; z-index: 1; margin: 0; max-width: min(92vw, 420px); max-height: 92vh;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.demo-lightbox-panel img {
+  display: block; width: auto; height: auto; max-width: min(92vw, 420px); max-height: calc(92vh - 56px);
+  object-fit: contain; border-radius: 2px; box-shadow: 0 24px 48px rgba(0, 0, 0, .45); background: #0c0f12;
+}
+.demo-lightbox-caption {
+  margin: 0; padding: 0 8px; color: #c6ccd5; font-size: 13px; font-weight: 600;
+  text-align: center; line-height: 1.5; max-width: min(92vw, 420px);
+}
+.demo-lightbox-close {
+  position: fixed; top: 16px; right: 16px; z-index: 201; width: 40px; height: 40px; border: none;
+  border-radius: 2px; background: rgba(255, 255, 255, .1); color: #fff; font-size: 24px; line-height: 1; cursor: pointer;
+}
+.demo-lightbox-close:hover { background: rgba(255, 255, 255, .18); }
+.demo-toast {
+  position: fixed; left: 50%; bottom: 28px; z-index: 100; transform: translateX(-50%) translateY(12px); opacity: 0;
+  pointer-events: none; transition: opacity .2s ease, transform .2s ease; padding: 10px 16px; border-radius: 2px;
+  background: rgba(16, 19, 22, .94); color: #eef2ff; font-size: 13px; font-weight: 600;
+  border: 1px solid var(--line); max-width: min(92vw, 420px); text-align: center;
+}
+.demo-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.demo-wf-part-preview,
+.demo-wf-media-only .media-box {
+  background: #0c0f12;
+}
+.demo-wf-media-only .media-box img,
+.media-box img {
+  background: #0c0f12 !important;
+}
+.media-caption {
+  background: #101316;
+  color: #8d949f;
+  border-color: var(--line);
+}
+.demo-block.lottery {
+  border: 0;
+  border-top: 0;
+  border-radius: 0;
+}
+.demo-block.ranking .demo-title-row::before,
+.demo-block.lottery .demo-title-row::before {
+  content: none;
+  display: none;
+}
+.demo-block.ranking .demo-title-row,
+.demo-block.lottery .demo-title-row {
+  min-height: 0;
+  padding-top: 30px;
+}
+.demo-block.lottery .demo-title-row {
+  position: relative;
+  align-items: flex-end;
+  margin: 0 0 52px;
+  padding: 30px 0 30px;
+  border-top: 1px solid rgba(107, 150, 255, 0.38);
+  border-bottom: 1px solid var(--line);
+}
+.demo-block.lottery .demo-title {
+  max-width: calc(100% - 150px);
+  color: #eef1f5;
+  font-size: clamp(26px, 3vw, 38px);
+  line-height: 1.2;
+  font-weight: 440;
+  letter-spacing: -0.035em;
+}
+.demo-block.ranking .demo-run-btn,
+.demo-block.lottery .demo-run-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 14px;
+  color: #b9caff;
+  background: rgba(107, 150, 255, 0.08);
+  border: 1px solid rgba(107, 150, 255, 0.42);
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: none;
+}
+.demo-block.ranking .demo-run-btn::before,
+.demo-block.lottery .demo-run-btn::before {
+  content: "";
+  display: inline-block;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  margin-right: 0;
+  vertical-align: 0;
+  background: currentColor;
+  opacity: 0.92;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3Cpath d='M4 4h16v16H4z'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+.demo-block.ranking .demo-run-btn:hover,
+.demo-block.lottery .demo-run-btn:hover {
+  color: #08101f;
+  background: var(--brand);
+  border-color: var(--brand);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(107, 150, 255, 0.18);
+}
+.demo-block.ranking .demo-run-btn:active,
+.demo-block.lottery .demo-run-btn:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 4px 14px rgba(107, 150, 255, 0.16);
+}
+@media (max-width: 620px) {
+  .demo-block.ranking .demo-title-row,
+  .demo-block.lottery .demo-title-row {
+    align-items: flex-start;
+    padding-top: 30px;
+  }
+  .demo-block.lottery .demo-title {
+    max-width: none;
+    font-size: 28px;
+  }
+}
+@media (max-width: 960px) {
+  .demo-intro-hub-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .demo-intro-section-pain .demo-intro-points { grid-template-columns: 1fr; }
+  .flow-parallel-branch { flex-direction: column; gap: 8px; }
+  .flow-parallel-branch .flow-arrow { transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    
+    <header class="hero">
+      <div class="hero-copy">
+        <h1>工具平台驱动的复杂活动数据造表测试工作流</h1>
+        <p>从能力登记到 Workflow 装配，贯通造数、验收</p>
+      </div>
+      
+      <div class="hero-console" aria-hidden="true">
+        <span class="signal-line one"></span><span class="signal-line two"></span>
+        <div class="signal-card signal-a">
+          <svg class="signal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 19V9m6 10V5m6 14v-7"/><path d="M4 19h16"/></svg>
+          <strong>参数与数据源</strong><small>SIGNAL INPUT</small>
+          <span class="signal-dots"><i></i><i></i><i></i><i></i><i></i></span>
+        </div>
+        <div class="signal-card signal-b">
+          <svg class="signal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/><path d="M10 7h4a3 3 0 0 1 3 3v4M7 10v7h7"/></svg>
+          <strong>Workflow 装配</strong><small>PROCESS ENGINE</small>
+          <span class="signal-dots"><i></i><i></i><i></i><i></i><i></i></span>
+        </div>
+        <div class="signal-card signal-c">
+          <svg class="signal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"/><path d="M20 12a8 8 0 1 1-4-7"/></svg>
+          <strong>全量验收</strong><small>PASS / FAIL VERIFIED</small>
+          <span class="signal-dots"><i></i><i></i><i></i><i></i><i></i></span>
+        </div>
+      </div>
+
+    </header>
+
+
+    <div class="tab-bar"><nav class="nav tab-nav"><a href="#background" class="tab-link active" data-tab="background">背景介绍</a><a href="#workflows" class="tab-link" data-tab="workflows">工作流框架</a><a href="#demo-ranking" class="tab-link" data-tab="demo-ranking">榜单活动演示</a><a href="#demo-lottery" class="tab-link" data-tab="demo-lottery">抽奖活动演示</a></nav></div>
+
+    <div class="tab-panels"><div class="tab-panel active" data-tab="background" role="tabpanel">
+    <section class="section">
+      <div class="section-intro"><p>复杂活动测试的核心矛盾在数据：规则链长、样本难代表全量。以下用图表说明问题、解法与提效逻辑。</p></div>
+      <div class="theory-visuals">
+    <div class="theory-chart">
+      <h3>传统做法 vs 数据造表测试</h3>
+      <table class="theory-compare-table">
+        <thead><tr><th>维度</th><th>传统做法</th><th>流程化做法</th></tr></thead>
+        <tbody><tr><td>建表造数</td><td>每轮从零手工建表、人工造数</td><td>批量造数、快速落表，改参即重跑</td></tr><tr><td>验收方式</td><td>抽查少量样本，边界 case 易漏</td><td>钉钉表逐条 mark pass/fail</td></tr><tr><td>验证迭代</td><td>强调重复操作，每轮手工全量重来</td><td>强调快速多轮验证，改参局部重跑</td></tr><tr><td>结论可信度</td><td>样本难代表全量</td><td>榜单全量家族成员、抽奖多账号批量</td></tr></tbody>
+      </table>
+    </div>
+    
+    <div class="theory-chart-grid">
+      
+    <div class="theory-chart">
+      <h3>聚焦数据侧，带动整体提效</h3>
+      <p class="theory-chart-caption">数据测试约占活动测试 60%；若数据侧提效 80%，整体工作量约降至 52%，接近 50% 提效。</p>
+      <div class="effort-chart-block">
+        <div class="effort-chart-label"><span>现状</span><span>100%</span></div>
+        
+    <div class="effort-bar-track"><div class="effort-bar-seg" style="width:60%;background:#2563eb" title="数据测试 60%">60%</div><div class="effort-bar-seg" style="width:40%;background:#94a3b8" title="UI 测试 40%">40%</div></div>
+    <div class="effort-legend"><span class="effort-legend-item"><span class="effort-legend-dot" style="background:#2563eb"></span>数据测试</span><span class="effort-legend-item"><span class="effort-legend-dot" style="background:#94a3b8"></span>UI 测试</span></div>
+    
+      </div>
+      <div class="effort-chart-block">
+        <div class="effort-chart-label"><span>数据侧提效 80% 后</span><span>52%</span></div>
+        
+    <div class="effort-bar-track"><div class="effort-bar-seg" style="width:12%;background:#2563eb" title="数据测试 12%">12%</div><div class="effort-bar-seg" style="width:40%;background:#94a3b8" title="UI 测试 40%">40%</div></div>
+    <div class="effort-legend"><span class="effort-legend-item"><span class="effort-legend-dot" style="background:#2563eb"></span>数据测试</span><span class="effort-legend-item"><span class="effort-legend-dot" style="background:#94a3b8"></span>UI 测试</span></div>
+    
+      </div>
+      <div class="effort-highlight">整体 100% → 52%</div>
+    </div>
+    
+      
+    <div class="theory-chart">
+      <h3>造表落库，全量验收</h3>
+      <p class="theory-chart-caption">以钉钉表承载预期与实测，验收结论建立在完整数据之上。</p>
+      <div class="acceptance-split">
+        <div class="acceptance-col before">
+          <h4>传统抽查</h4>
+          <ul><li>人工造数</li><li>样本有限</li><li>结论难服众</li><li>边界 case 易漏</li></ul>
+        </div>
+        <div class="acceptance-col after">
+          <h4>造表全量验收</h4>
+          <ul><li>批量造数落表</li><li>全量 pass/fail</li><li>可复现可汇报</li><li>边界 case 可构造</li></ul>
+        </div>
+      </div>
+    </div>
+    
+    </div>
+    </div>
+      
+    </section>
+    </div><div class="tab-panel" data-tab="workflows" role="tabpanel">
+    <section class="section">
+      <div class="section-intro"><p>复杂活动数据测试可抽象为统一骨架，榜单类与抽奖类共享「参数 → 数据源 → 造数 → 验收」，按活动类型扩展中间环节。</p></div>
+      
+    <div class="sub-panel platform">
+      <div class="sub-panel-head"><span class="sub-badge">平台</span><h3>平台依赖 · 智能工具平台</h3></div>
+      <p class="sub-tagline">是工具平台，更是工具工厂，让流程越搭越快</p>
+      <p class="sub-lead">工作流运行在智能工具平台之上：Admin、MOA、MSE、钉钉、Workflow 等能力统一登记、检索与执行。新工具接入后可快速衍生多种参数化用法；按场景组合升级后，再装配为覆盖造数到验收的完整流程。</p>
+      <div class="flow-track"><div class="flow-step">
+              <span class="step-index">1</span>
+              <strong>工具</strong>
+              <span>原子能力入库，一次登记、多处复用</span>
+            </div><div class="flow-arrow" aria-hidden="true">→</div><div class="flow-step">
+              <span class="step-index">2</span>
+              <strong>复杂工具</strong>
+              <span>多工具编排组合，形成可独立重跑的流程片段</span>
+            </div><div class="flow-arrow" aria-hidden="true">→</div><div class="flow-step featured">
+              <span class="step-index">3</span>
+              <strong>工作流</strong>
+              <span>片段串联装配，贯通参数同步到结果验收</span>
+            </div></div>
+    </div>
+    
+      
+    <div class="sub-panel principle">
+      <div class="sub-panel-head"><span class="sub-badge">原理</span><h3>核心原理</h3></div>
+      <p class="sub-lead">以规则为起点、以验收为终点，四步形成可重复执行的数据测试闭环。</p>
+      <div class="flow-track"><div class="flow-step">
+              <span class="step-index">1</span>
+              <strong>确定活动规则</strong>
+              <span>汇聚 MSE 配置、需求文档、测试用例与人工经验，形成统一的计值与发奖规则。</span>
+            </div><div class="flow-arrow" aria-hidden="true">→</div><div class="flow-step">
+              <span class="step-index">2</span>
+              <strong>录制工具能力</strong>
+              <span>在智能工具平台沉淀造数、查数、改参与验收操作，转化为可参数化调用的 Workflow。</span>
+            </div><div class="flow-arrow" aria-hidden="true">→</div><div class="flow-step">
+              <span class="step-index">3</span>
+              <strong>造数与预期测算</strong>
+              <span>批量写入测试数据，按规则计算预期结果，落库钉钉表供后续对照。</span>
+            </div><div class="flow-arrow" aria-hidden="true">→</div><div class="flow-step">
+              <span class="step-index">4</span>
+              <strong>对照验证</strong>
+              <span>获取实际结果，与 Sheet 预期逐条比对，输出通过/失败及汇总结论。</span>
+            </div></div>
+    </div>
+    
+      
+    <div class="sub-panel recording">
+      <div class="sub-panel-head"><span class="sub-badge">录制</span><h3>工作流录制方法</h3></div>
+      <p class="sub-lead">输入工作流步骤、参数与落表字段后，平台按三步自动生成该步可执行方案：录制工作流脚本 → 匹配工具支持 → 展开平台实现。</p>
+      <div class="flow-track">
+      <div class="flow-parallel-lead"><div class="flow-parallel"><div class="flow-parallel-branch">
+              
+              <div class="flow-step">
+              <span class="step-index">1</span>
+              <strong>录制工作流</strong>
+              <span>用自然语言描述本步目标、前置条件、操作链路与验收口径，形成可落库的 Workflow 脚本。</span>
+            </div>
+            </div><div class="flow-parallel-branch">
+              
+              <div class="flow-step">
+              <span class="step-index">2</span>
+              <strong>提供工具支持</strong>
+              <span>从能力目录检索并列出本步依赖的工具；缺能力时提示需新登记的能力项。</span>
+            </div>
+            </div></div></div>
+      <div class="flow-arrow" aria-hidden="true">→</div>
+      <div class="flow-step featured">
+              <span class="step-index">3</span>
+              <strong>生成平台实现</strong>
+              <span>将脚本拆解为 Admin / MOA / MSE / 钉钉等具体调用步骤，含参数映射与落表字段。</span>
+            </div>
+    </div>
+    </div>
+    
+      
+    <div class="sub-panel ranking">
+      <div class="sub-panel-head"><span class="sub-badge">流程</span><h3>数据测试流程</h3></div>
+      <div class="flow-track flow-track-grouped">
+      <div class="flow-group"><div class="flow-step">
+              <span class="step-index">S1</span>
+              <strong>MSE 参数获取</strong>
+              <span>同步活动配置至参数表，作为后续造数与验收基准。</span>
+            </div><div class="flow-arrow" aria-hidden="true">→</div><div class="flow-step">
+              <span class="step-index">S2</span>
+              <strong>建立数据源</strong>
+              <span>拉取并过滤家族、成员等主体，生成可批量操作的数据源。</span>
+            </div></div>
+      <div class="flow-arrow flow-arrow-outer" aria-hidden="true">→</div>
+      <div class="flow-group"><div class="flow-step">
+              <span class="step-index">S3</span>
+              <strong>数据构造</strong>
+              <span>按规则写入榜值，同步测算档位与中间结果。</span>
+            </div><div class="flow-parallel"><div class="flow-parallel-branch">
+              <div class="flow-arrow" aria-hidden="true">→</div>
+              <div class="flow-step">
+              <span class="step-index">S4</span>
+              <strong>客户端请求结果验证</strong>
+              <span>对齐客户端接口拉取榜单与匹配结果，与 Sheet 预期逐项核对。</span>
+            </div>
+            </div><div class="flow-parallel-branch">
+              <div class="flow-arrow" aria-hidden="true">→</div>
+              <div class="flow-step">
+              <span class="step-index">S5</span>
+              <strong>奖励下发验收</strong>
+              <span>触发结算发奖，核对应发与实发，形成总体验收结论。</span>
+            </div>
+            </div></div></div>
+    </div>
+    </div>
+    
+      
+    </section>
+    </div><div class="tab-panel" data-tab="demo-ranking" role="tabpanel">
+    <section class="section section-flush">
+      
+    <div class="sub-tabs" data-sub-tabs>
+      <div class="sub-tab-bar">
+        <nav class="nav sub-tab-nav"><a href="#family-pk-intro" class="sub-tab-link active" data-sub-tab="intro">活动介绍</a><a href="#family-pk-step-1" class="sub-tab-link" data-sub-tab="step-1">参数配置同步</a><a href="#family-pk-step-2" class="sub-tab-link" data-sub-tab="step-2">家族成员清单</a><a href="#family-pk-step-3" class="sub-tab-link" data-sub-tab="step-3">收礼档位测算</a><a href="#family-pk-step-4" class="sub-tab-link" data-sub-tab="step-4">对战匹配验收</a><a href="#family-pk-step-5" class="sub-tab-link" data-sub-tab="step-5">成员应发测算</a><a href="#family-pk-step-6" class="sub-tab-link" data-sub-tab="step-6">发钻实发对比</a><a href="#family-pk-step-7" class="sub-tab-link" data-sub-tab="step-7">测试结果汇总</a></nav>
+      </div>
+      <div class="sub-tab-panel active" data-sub-tab="intro">
+    <div class="demo-block ranking">
+      <div class="demo-title-row">
+        <h3 class="demo-title">榜单类活动演示 · 家族 PK</h3>
+        <button type="button" class="demo-run-btn" data-prompt="测试2026-07-17日家族PK，第 1 步 · MSE 配置同步入表">演示</button>
+      </div>
+      
+      <div class="demo-detail-grid">
+    <section class="demo-intro-section demo-intro-section-rules">
+      <header class="demo-intro-section-head">
+        <h4>活动规则</h4>
+        <p class="demo-intro-section-lead">家族 PK 按前一日收礼日榜分区间、次日零点匹配对手、晚间 PK 争夺、活动结束后结算发奖。</p>
+      </header>
+      <div class="demo-intro-points">
+    <article class="demo-intro-point">
+      <div class="demo-intro-point-head"><span class="demo-intro-point-index" aria-hidden="true">1</span><span class="demo-intro-point-tag">区间划分</span></div>
+      <p class="demo-intro-point-body">根据家族收礼日榜（仅统计同家族成员互送收礼）按日榜排名划分为 6 个区间：TOP1-4、5-10、11-20、21-50、51-100、101+。各区间内家族按「日均成员收礼值×系数」设定 5 个达标 PK 档位，档位越高可加成钻石越多；App 展示达标 PK 值、可获钻石及达标标记。</p>
+      
+    </article>
+    
+    <article class="demo-intro-point">
+      <div class="demo-intro-point-head"><span class="demo-intro-point-index" aria-hidden="true">2</span><span class="demo-intro-point-tag">PK匹配</span></div>
+      <p class="demo-intro-point-body">每日 0 点按前一日日榜，在同区间内随机匹配家族对手，连续 2 天对手去重。同区间家族数为单数时，末位家族轮空、无对手，App 展示「今日无对手，PK 达最低获胜值即可拿走全部奖金」；当日新成立家族不参与匹配，次日再按前日日榜入池。</p>
+      
+    </article>
+    
+    <article class="demo-intro-point">
+      <div class="demo-intro-point-head"><span class="demo-intro-point-index" aria-hidden="true">3</span><span class="demo-intro-point-tag">对战期</span></div>
+      <p class="demo-intro-point-body">沙特时间每天 20:00-24:00 开启家族 PK。家族成员每收到同家族成员 1 钻石礼物（不限收礼房间）增加 1 点 PK 值。有对手的场次按家族总 PK 高低定胜负；轮空家族不与对手比拼，仅累计自身 PK，晚间结束后进入轮空结算逻辑。</p>
+      
+    </article>
+    
+    <article class="demo-intro-point">
+      <div class="demo-intro-point-head"><span class="demo-intro-point-index" aria-hidden="true">4</span><span class="demo-intro-point-tag">结算</span></div>
+      <p class="demo-intro-point-body">活动结束后按胜负与达标情况发钻。有对手且胜方家族总 PK 达最低获胜值：成员按「(个人 PK/家族总 PK)×家族总奖励」分配，小数向下取整。家族不达标（胜方未达最低获胜值，或双方均未达标）按平局，整族不发奖。轮空家族 PK 达最低获胜值可独赢拿走奖池，未达标则不发。个人 PK 未达最低领奖值，即使家族获胜也不参与瓜分、不发钻。</p>
+      
+    </article>
+    </div>
+    </section>
+    
+    <section class="demo-intro-section demo-intro-section-pain">
+      <header class="demo-intro-section-head">
+        <h4>测试难点</h4>
+        <p class="demo-intro-section-lead">流程化之前，手工测法在四件事上最吃力。</p>
+      </header>
+      <div class="demo-intro-points">
+    <article class="demo-intro-point">
+      <div class="demo-intro-point-head"><span class="demo-intro-point-index" aria-hidden="true">1</span><span class="demo-intro-point-tag">造数规模</span></div>
+      <p class="demo-intro-point-body">76 家族、400+ 成员需逐族逐人操作；收礼榜须先造 rankDate 再算 6 区间×5 档位，PK 与配对难整批复现。改 pkDate 或 minDailyAvg/系数常需整轮重来，一轮数天。</p>
+      
+    </article>
+    
+    <article class="demo-intro-point">
+      <div class="demo-intro-point-head"><span class="demo-intro-point-index" aria-hidden="true">2</span><span class="demo-intro-point-tag">档位手算</span></div>
+      <p class="demo-intro-point-body">区间日均、minDailyAvg 兜底、5 档系数与返利叠加，同区间多族共用均值；307 行档位明细靠 Excel 手算极易漏项或理解偏差，撑不住全量核对。</p>
+      
+    </article>
+    
+    <article class="demo-intro-point">
+      <div class="demo-intro-point-head"><span class="demo-intro-point-index" aria-hidden="true">3</span><span class="demo-intro-point-tag">匹配难验</span></div>
+      <p class="demo-intro-point-body">同区间随机配对、连续 2 天去重、单数落单轮空、新家族跳过等规则交织，手工只能抽查少量对战；MOA pkList 与 App 列表须逐场核对区间字段，漏验则后续结算全错。</p>
+      
+    </article>
+    
+    <article class="demo-intro-point">
+      <div class="demo-intro-point-head"><span class="demo-intro-point-index" aria-hidden="true">4</span><span class="demo-intro-point-tag">回归成本高</span></div>
+      <p class="demo-intro-point-body">规则或参数微调后，收礼造数→档位测算→重匹配→PK 纠偏→发钻验收几乎全量重来，难以快速多轮验证与定位问题。</p>
+      
+    </article>
+    </div>
+    </section>
+    </div>
+    </div>
+    </div><div class="sub-tab-panel" data-sub-tab="step-1">
+    <article class="demo-wf-step">
+      <header class="demo-wf-step-head">
+        <span class="demo-wf-step-badge">第 1 步</span>
+        <div class="demo-wf-step-main">
+          <h4 class="demo-wf-step-title">MSE 配置同步入表</h4>
+          <span class="demo-wf-step-meta">（工作流：MSE 参数获取）</span>
+        </div>
+      </header>
+      <div class="demo-wf-parts">
+        <section class="demo-wf-part">
+          <h5>工作流录制</h5>
+          <blockquote class="wf-record-script">从 MSE 服务配置获取家族 PK 最新的配置，把详细配置整理成表格到钉钉文档，支持重新获取更新参数。</blockquote>
+        </section>
+        <section class="demo-wf-part">
+          <h5>工具支持</h5>
+          <p class="demo-tool-support-text">提供家族 PK 配置地址：voga-common / familyPkConfig</p>
+        </section>
+        <section class="demo-wf-part demo-wf-part-wide">
+          <h5>平台实现</h5>
+          <div class="demo-wf-part-wide-row">
+            <div class="demo-wf-part-wide-main"><ul class="demo-tool-list"><li><strong>MSE 配置读取</strong>：拉取 voga-common / familyPkConfig，解析门槛、档位系数与返利比例</li><li><strong>钉钉 Sheet 写入</strong>：按 merge 更新 Sheet「参数表」，并备份原始 JSON</li></ul></div>
+            
+          </div>
+        </section>
+        <section class="demo-wf-part demo-wf-part-preview">
+          <h5>表格预览</h5>
+          <div class="demo-wf-media demo-wf-media-only">
+    <div class="media-box">
+      <img src="media/step01-mse-sync.svg" alt="Sheet「参数表」全量 61 行" loading="lazy" />
+      <p class="media-caption">Sheet「参数表」全量 61 行</p>
+    </div>
+    </div>
+        </section>
+      </div>
+    </article>
+    </div><div class="sub-tab-panel" data-sub-tab="step-2">
+    <article class="demo-wf-step">
+      <header class="demo-wf-step-head">
+        <span class="demo-wf-step-badge">第 2 步</span>
+        <div class="demo-wf-step-main">
+          <h4 class="demo-wf-step-title">家族成员清单入表</h4>
+          <span class="demo-wf-step-meta">（工作流：建立数据源）</span>
+        </div>
+      </header>
+      <div class="demo-wf-parts">
+        <section class="demo-wf-part">
+          <h5>工作流录制</h5>
+          <blockquote class="wf-record-script">从开发后台获取全部家族 ID 与家族名称，写入同一钉钉表格；拉取各家族成员的 userId 与手机号，族长单独标记；清除族长非中东区的家族记录。</blockquote>
+        </section>
+        <section class="demo-wf-part">
+          <h5>工具支持</h5>
+          <p class="wf-record-summary">—</p>
+        </section>
+        <section class="demo-wf-part demo-wf-part-wide">
+          <h5>平台实现</h5>
+          <div class="demo-wf-part-wide-row">
+            <div class="demo-wf-part-wide-main"><ul class="demo-tool-list"><li><strong>开发者后台</strong>：分页拉家族 ID/名称，查族长大区与成员手机号</li><li><strong>MOA 成员列表</strong>：查询各家族成员 userId 清单</li><li><strong>钉钉 Sheet 写入</strong>：写入 Sheet「家族列表」，标记是否族长</li></ul></div>
+            
+          </div>
+        </section>
+        <section class="demo-wf-part demo-wf-part-preview">
+          <h5>表格预览</h5>
+          <div class="demo-wf-media demo-wf-media-only">
+    <div class="media-box">
+      <img src="media/step02-family-list.svg" alt="Sheet「家族列表」全量 437 行" loading="lazy" />
+      <p class="media-caption">Sheet「家族列表」全量 437 行</p>
+    </div>
+    </div>
+        </section>
+      </div>
+    </article>
+    </div><div class="sub-tab-panel" data-sub-tab="step-3">
+    <article class="demo-wf-step">
+      <header class="demo-wf-step-head">
+        <span class="demo-wf-step-badge">第 3 步</span>
+        <div class="demo-wf-step-main">
+          <h4 class="demo-wf-step-title">收礼榜档位测算入表</h4>
+          <span class="demo-wf-step-meta">（工作流：数据构造）</span>
+        </div>
+      </header>
+      <div class="demo-wf-parts">
+        <section class="demo-wf-part">
+          <h5>工作流录制</h5>
+          <blockquote class="wf-record-script">设置指定日期前一天的家族收礼榜：按家族成员数随机写入收礼值（成员 &gt; 10 人：20 万～100 万；成员 ≤ 10 人：0～20 万）；结合收礼榜与参数表，计算下一天各家族各档位的 PK 值与钻石奖励数量，结果写入钉钉表格。</blockquote>
+        </section>
+        <section class="demo-wf-part">
+          <h5>工具支持</h5>
+          <ul class="demo-tool-support-list"><li>修改家族贡献值 MOA</li><li>查询家族贡献榜 MOA</li></ul>
+        </section>
+        <section class="demo-wf-part demo-wf-part-wide">
+          <h5>平台实现</h5>
+          <div class="demo-wf-part-wide-row">
+            <div class="demo-wf-part-wide-main"><ul class="demo-tool-list"><li><strong>钉钉 Sheet 读取</strong>：读 Sheet「家族列表」统计各家族成员数</li><li><strong>MOA 收礼榜造数</strong>：按人数分段随机写入 rankDate 收礼日榜，并回读名次</li><li><strong>档位规则测算</strong>：结合 Sheet「参数表」计算区间日均、达标 PK 与档位钻石</li><li><strong>钉钉 Sheet 写入</strong>：写入 Sheet「家族PK档位」全量明细</li></ul></div>
+            
+          </div>
+        </section>
+        <section class="demo-wf-part demo-wf-part-preview">
+          <h5>表格预览</h5>
+          <div class="demo-wf-media demo-wf-media-only">
+    <div class="media-box">
+      <img src="media/step03-rank-tier.svg" alt="Sheet「家族PK档位」全量 307 行" loading="lazy" />
+      <p class="media-caption">Sheet「家族PK档位」全量 307 行</p>
+    </div>
+    </div>
+        </section>
+      </div>
+    </article>
+    </div><div class="sub-tab-panel" data-sub-tab="step-4">
+    <article class="demo-wf-step">
+      <header class="demo-wf-step-head">
+        <span class="demo-wf-step-badge">第 4 步</span>
+        <div class="demo-wf-step-main">
+          <h4 class="demo-wf-step-title">对战匹配验收入表</h4>
+          <span class="demo-wf-step-meta">（工作流：客户端请求结果验证）</span>
+        </div>
+      </header>
+      <div class="demo-wf-parts">
+        <section class="demo-wf-part">
+          <h5>工作流录制</h5>
+          <blockquote class="wf-record-script">清除并重新匹配指定日期的家族 PK；请求并抓包家族 PK 列表同日期 Tab 的数据，获取列表中所有家族的匹配信息；按收礼榜对照参数表规则验证匹配是否正确，结果写入钉钉表格。</blockquote>
+        </section>
+        <section class="demo-wf-part">
+          <h5>工具支持</h5>
+          <ul class="demo-tool-support-list"><li>录制家族 PK 列表请求方式</li><li>匹配家族 PK 的 MOA</li></ul>
+        </section>
+        <section class="demo-wf-part demo-wf-part-wide has-thumb">
+          <h5>平台实现</h5>
+          <div class="demo-wf-part-wide-row">
+            <div class="demo-wf-part-wide-main"><ul class="demo-tool-list"><li><strong>MOA 对战匹配</strong>：清除 pkDate 旧匹配并重新执行匹配任务</li><li><strong>MOA 对战列表查询</strong>：拉取 getFamilyPkPage 对战列表，与客户端同源</li><li><strong>规则自动比对</strong>：按收礼榜区间核对双方是否同档、每族是否只出现一次</li><li><strong>钉钉 Sheet 写入</strong>：写入 Sheet「匹配验收」及通过/不通过结论</li></ul></div>
+            
+    <button type="button" class="demo-wf-step-thumb demo-zoom-trigger"
+      data-zoom-src="media/step04-battle-list.png" data-zoom-caption="App Battle List · 客户端对战列表验收"
+      aria-label="放大预览：App Battle List · 客户端对战列表验收">
+      <img src="media/step04-battle-list.png" alt="App Battle List · 客户端对战列表验收" loading="lazy" />
+    </button>
+    
+          </div>
+        </section>
+        <section class="demo-wf-part demo-wf-part-preview">
+          <h5>表格预览</h5>
+          <div class="demo-wf-media demo-wf-media-only">
+    <div class="media-box">
+      <img src="media/step04-match-verify.svg" alt="Sheet「匹配验收」全量 42 行" loading="lazy" />
+      <p class="media-caption">Sheet「匹配验收」全量 42 行</p>
+    </div>
+    </div>
+        </section>
+      </div>
+    </article>
+    </div><div class="sub-tab-panel" data-sub-tab="step-5">
+    <article class="demo-wf-step">
+      <header class="demo-wf-step-head">
+        <span class="demo-wf-step-badge">第 5 步</span>
+        <div class="demo-wf-step-main">
+          <h4 class="demo-wf-step-title">成员 PK 应发测算入表</h4>
+          <span class="demo-wf-step-meta">（工作流：数据构造）</span>
+        </div>
+      </header>
+      <div class="demo-wf-parts">
+        <section class="demo-wf-part">
+          <h5>工作流录制</h5>
+          <blockquote class="wf-record-script">先清除指定日期（与匹配日期相同）的全部 PK 值；再对家族列表中所有用户随机增加 0～5 万 PK 值。按匹配验收列表判断各场胜负，并构造边界样本：选一胜方用负数 PK 扣减实现平局；选一胜方将某成员 PK 降至参数表领奖最低值以下；再选一配对使双方家族总 PK 均低于参数表获胜最低 PK。最后按用户 PK 与匹配胜负计算各家族各成员应得钻石，写入钉钉表格。</blockquote>
+        </section>
+        <section class="demo-wf-part">
+          <h5>工具支持</h5>
+          <ul class="demo-tool-support-list"><li>增加/减少用户家族 PK 值 MOA</li><li>录制家族 PK 列表用户贡献榜请求方式</li></ul>
+        </section>
+        <section class="demo-wf-part demo-wf-part-wide">
+          <h5>平台实现</h5>
+          <div class="demo-wf-part-wide-row">
+            <div class="demo-wf-part-wide-main"><ul class="demo-tool-list"><li><strong>MOA 成员 PK 造数</strong>：清除 pkDate 全员 PK，再随机 incr 各成员 PK 值</li><li><strong>边界样本纠偏</strong>：从 Sheet「匹配验收」挑平局、双方未达 minWinPk 等场景定向改 PK</li><li><strong>应发奖励测算</strong>：读参数表与对战结果，按奖池规则算各成员应得钻石</li><li><strong>钉钉 Sheet 写入</strong>：写入 Sheet「用户发钻测试」PK 值与应发钻</li></ul></div>
+            
+          </div>
+        </section>
+        <section class="demo-wf-part demo-wf-part-preview">
+          <h5>表格预览</h5>
+          <div class="demo-wf-media demo-wf-media-only">
+    <div class="media-box">
+      <img src="media/step05-member-pk.svg" alt="Sheet「用户发钻测试」全量 439 行" loading="lazy" />
+      <p class="media-caption">Sheet「用户发钻测试」全量 439 行</p>
+    </div>
+    </div>
+        </section>
+      </div>
+    </article>
+    </div><div class="sub-tab-panel" data-sub-tab="step-6">
+    <article class="demo-wf-step">
+      <header class="demo-wf-step-head">
+        <span class="demo-wf-step-badge">第 6 步</span>
+        <div class="demo-wf-step-main">
+          <h4 class="demo-wf-step-title">发钻实发对比入表</h4>
+          <span class="demo-wf-step-meta">（工作流：奖励下发验收）</span>
+        </div>
+      </header>
+      <div class="demo-wf-parts">
+        <section class="demo-wf-part">
+          <h5>工作流录制</h5>
+          <blockquote class="wf-record-script">先清除指定日期家族 PK 奖励并重新结算；对比每位用户发奖前后钻石数，验证下发是否正确，结果写入钉钉表格。再请求各家族成员贡献榜列表并抓包用户 PK 值与钻石数，核对是否与实发一致，将结论回写到「用户发钻测试」表格。</blockquote>
+        </section>
+        <section class="demo-wf-part">
+          <h5>工具支持</h5>
+          <p class="demo-tool-support-text">结算家族 PK 的 MOA</p>
+        </section>
+        <section class="demo-wf-part demo-wf-part-wide has-thumb">
+          <h5>平台实现</h5>
+          <div class="demo-wf-part-wide-row">
+            <div class="demo-wf-part-wide-main"><ul class="demo-tool-list"><li><strong>MOA 结算发奖</strong>：resetSettle 清记录后，用次日任务下发 pkDate 奖励</li><li><strong>到账差异比对</strong>：发奖前后批量查钻，算实发增量并与应发钻对比</li><li><strong>MOA 贡献榜回验</strong>：逐家族拉成员榜，回写榜单 PK/钻/验收到 Sheet「用户发钻测试」</li><li><strong>钉钉 Sheet 写入</strong>：写入 Sheet「发钻实发验收」逐人验收结论</li></ul></div>
+            
+    <button type="button" class="demo-wf-step-thumb demo-zoom-trigger"
+      data-zoom-src="media/step06-dispatch-rank.png" data-zoom-caption="App Battle List · 成员贡献榜与发钻验收"
+      aria-label="放大预览：App Battle List · 成员贡献榜与发钻验收">
+      <img src="media/step06-dispatch-rank.png" alt="App Battle List · 成员贡献榜与发钻验收" loading="lazy" />
+    </button>
+    
+          </div>
+        </section>
+        <section class="demo-wf-part demo-wf-part-preview">
+          <h5>表格预览</h5>
+          <div class="demo-wf-media demo-wf-media-only">
+    <div class="media-box">
+      <img src="media/step06-dispatch-verify.svg" alt="Sheet「发钻实发验收」全量 439 行" loading="lazy" />
+      <p class="media-caption">Sheet「发钻实发验收」全量 439 行</p>
+    </div>
+    </div>
+        </section>
+      </div>
+    </article>
+    </div><div class="sub-tab-panel" data-sub-tab="step-7">
+    <article class="demo-wf-step">
+      <header class="demo-wf-step-head">
+        <span class="demo-wf-step-badge">第 7 步</span>
+        <div class="demo-wf-step-main">
+          <h4 class="demo-wf-step-title">测试结果汇总入表</h4>
+          <span class="demo-wf-step-meta">（工作流：奖励下发验收）</span>
+        </div>
+      </header>
+      <div class="demo-wf-parts">
+        <section class="demo-wf-part">
+          <h5>工作流录制</h5>
+          <blockquote class="wf-record-script">输出全部测试结果的测试报告。</blockquote>
+        </section>
+        <section class="demo-wf-part">
+          <h5>工具支持</h5>
+          <p class="wf-record-summary">—</p>
+        </section>
+        <section class="demo-wf-part demo-wf-part-wide">
+          <h5>平台实现</h5>
+          <div class="demo-wf-part-wide-row">
+            <div class="demo-wf-part-wide-main"><ul class="demo-tool-list"><li><strong>钉钉 Sheet 读取</strong>：读取参数表至发钻实发验收各步摘要与验收列</li><li><strong>验收结论结构化</strong>：统计每步样本数、通过数、失败数与总评</li><li><strong>钉钉 Sheet 写入</strong>：写入 Sheet「测试结果」及发钻不一致明细</li><li><strong>汇报页生成</strong>：同步刷新 family_pk_report 演示页供向上汇报</li></ul></div>
+            
+          </div>
+        </section>
+        <section class="demo-wf-part demo-wf-part-preview">
+          <h5>表格预览</h5>
+          <div class="demo-wf-media demo-wf-media-only">
+    <div class="media-box">
+      <img src="media/step07-test-result.svg" alt="Sheet「测试结果」全量 19 行" loading="lazy" />
+      <p class="media-caption">Sheet「测试结果」全量 19 行</p>
+    </div>
+    </div>
+        </section>
+      </div>
+    </article>
+    </div>
+    </div>
+    
+    </section>
+    </div><div class="tab-panel" data-tab="demo-lottery" role="tabpanel">
+    <section class="section section-flush">
+      
+    <div class="sub-tabs" data-sub-tabs>
+      <div class="sub-tab-bar">
+        <nav class="nav sub-tab-nav"><a href="#lottery-intro" class="sub-tab-link active" data-sub-tab="intro">活动介绍</a><a href="#lottery-step-1" class="sub-tab-link" data-sub-tab="step-1">MSE 配置同步</a><a href="#lottery-step-2" class="sub-tab-link" data-sub-tab="step-2">测试账号与机会准备</a><a href="#lottery-step-3" class="sub-tab-link" data-sub-tab="step-3">批量砸蛋造数</a><a href="#lottery-step-4" class="sub-tab-link" data-sub-tab="step-4">奖池概率与保底验收</a><a href="#lottery-step-5" class="sub-tab-link" data-sub-tab="step-5">奖品下发验收</a><a href="#lottery-step-6" class="sub-tab-link" data-sub-tab="step-6">测试结果汇总</a></nav>
+      </div>
+      <div class="sub-tab-panel active" data-sub-tab="intro">
+    <div class="demo-block lottery">
+      <div class="demo-title-row">
+        <h3 class="demo-title">抽奖类活动演示 · 砸金蛋</h3>
+        <button type="button" class="demo-run-btn" data-prompt="手机号13311111141-13311111143的账号进行砸金蛋测试，每次给账号随机增加1到15次砸蛋次数，进行10组">演示</button>
+      </div>
+      
+      <div class="demo-detail-grid">
+    <section class="demo-intro-section demo-intro-section-rules">
+      <header class="demo-intro-section-head">
+        <h4>活动规则</h4>
+        <p class="demo-intro-section-lead">3 周年砸金蛋：用户在房间内自送礼物获次，消耗次数砸房间金蛋抽奖，金蛋可升级，并叠加用户/房间/平台神秘保底。</p>
+      </header>
+      <div class="demo-intro-points">
+    <article class="demo-intro-point">
+      <div class="demo-intro-point-head"><span class="demo-intro-point-index" aria-hidden="true">1</span><span class="demo-intro-point-tag">获次</span></div>
+      <p class="demo-intro-point-body">活动期间在房间内自己送指定礼物累计获砸蛋次数：每满一定钻石（通常 500 钻）兑换 1 次，与砸蛋本身消耗的钻无关；另有每日免费次数。</p>
+      
+    </article>
+    
+    <article class="demo-intro-point">
+      <div class="demo-intro-point-head"><span class="demo-intro-point-index" aria-hidden="true">2</span><span class="demo-intro-point-tag">砸蛋</span></div>
+      <p class="demo-intro-point-body">在自己房间消耗次数砸金蛋：剩余次数大于单次上限时一次砸满（常见 10 个），否则一次砸完剩余。房间金蛋分三档，累计砸蛋达升级门槛则升档；高档金蛋长时间无人砸会按时掉级。</p>
+      
+    </article>
+    
+    <article class="demo-intro-point">
+      <div class="demo-intro-point-head"><span class="demo-intro-point-index" aria-hidden="true">3</span><span class="demo-intro-point-tag">保底</span></div>
+      <p class="demo-intro-point-body">除各等级普通奖池外，用户、房间、平台三个维度各自累计砸蛋次数；达到各自保底间隔时触发神秘奖励。同一次砸多颗蛋时，多维度保底按用户 &gt; 房间 &gt; 平台优先级结算，未消耗的可顺延。</p>
+      
+    </article>
+    
+    <article class="demo-intro-point">
+      <div class="demo-intro-point-head"><span class="demo-intro-point-index" aria-hidden="true">4</span><span class="demo-intro-point-tag">奖品</span></div>
+      <p class="demo-intro-point-body">单次砸蛋从对应等级奖池抽取，可开出钻石、会员经验、头像框、座驾、房主背景等；三档金蛋与免费次数各绑不同奖池。部分装扮有效天数由奖池或装扮配置决定。</p>
+      
+    </article>
+    </div>
+    </section>
+    
+    <section class="demo-intro-section demo-intro-section-pain">
+      <header class="demo-intro-section-head">
+        <h4>测试难点</h4>
+        <p class="demo-intro-section-lead">抽奖类活动的手工测试瓶颈集中在概率、保底与到账三处。</p>
+      </header>
+      <div class="demo-intro-points">
+    <article class="demo-intro-point">
+      <div class="demo-intro-point-head"><span class="demo-intro-point-index" aria-hidden="true">1</span><span class="demo-intro-point-tag">概率难验</span></div>
+      <p class="demo-intro-point-body">奖池权重与多奖池组合下，小样本无法代表分布；需批量砸蛋落表后再统计权重偏差。</p>
+      
+    </article>
+    
+    <article class="demo-intro-point">
+      <div class="demo-intro-point-head"><span class="demo-intro-point-index" aria-hidden="true">2</span><span class="demo-intro-point-tag">保底计数</span></div>
+      <p class="demo-intro-point-body">用户/房间/平台三套 mod 并行，神秘奖触发点易算错或漏验；须与 MOA 计数和表格累加列交叉核对。</p>
+      
+    </article>
+    
+    <article class="demo-intro-point">
+      <div class="demo-intro-point-head"><span class="demo-intro-point-index" aria-hidden="true">3</span><span class="demo-intro-point-tag">多账号批量</span></div>
+      <p class="demo-intro-point-body">获次、补钻、进房、砸蛋链路长，手工逐号操作效率低且难复现同一前置状态。</p>
+      
+    </article>
+    
+    <article class="demo-intro-point">
+      <div class="demo-intro-point-head"><span class="demo-intro-point-index" aria-hidden="true">4</span><span class="demo-intro-point-tag">到账核对</span></div>
+      <p class="demo-intro-point-body">同一批 smash 可能同时发钻、VIP、装扮，应发与实发需分类型对照，纯读屏或抽查不可靠。</p>
+      
+    </article>
+    </div>
+    </section>
+    </div>
+    </div>
+    </div><div class="sub-tab-panel" data-sub-tab="step-1">
+    <article class="demo-wf-step">
+      <header class="demo-wf-step-head">
+        <span class="demo-wf-step-badge">第 1 步</span>
+        <div class="demo-wf-step-main">
+          <h4 class="demo-wf-step-title">MSE 配置同步入表</h4>
+          <span class="demo-wf-step-meta">（工作流：MSE 参数获取）</span>
+        </div>
+      </header>
+      <div class="demo-wf-parts">
+        <section class="demo-wf-part">
+          <h5>工作流录制</h5>
+          <blockquote class="wf-record-script">从 MSE 服务配置获取金蛋活动最新的配置，把详细配置整理成表格到钉钉文档，支持重新获取更新参数。<br>从开发后台获取每个奖池的数据，整理到钉钉文档，支持重新获取参数。</blockquote>
+        </section>
+        <section class="demo-wf-part">
+          <h5>工具支持</h5>
+          <p class="demo-tool-support-text">提供金蛋活动配置地址：Application / activityConfig.Year3Anniversary</p>
+        </section>
+        <section class="demo-wf-part demo-wf-part-wide">
+          <h5>平台实现</h5>
+          <div class="demo-wf-part-wide-row">
+            <div class="demo-wf-part-wide-main"><ul class="demo-tool-list"><li><strong>MSE 配置读取</strong>：拉取 Application / activityConfig.Year3Anniversary，解析奖池 lotteryId、保底 mod、蛋升级门槛</li><li><strong>钉钉 Sheet 写入</strong>：写入 Sheet「金蛋活动配置」，含基础参数、奖池权重与装扮映射</li></ul></div>
+            
+          </div>
+        </section>
+        <section class="demo-wf-part demo-wf-part-preview">
+          <h5>表格预览</h5>
+          <div class="demo-wf-media demo-wf-media-only">
+    <div class="media-box">
+      <img src="media/lottery-step01-mse-config.svg" alt="Sheet「金蛋活动配置」全量参数" loading="lazy" />
+      <p class="media-caption">Sheet「金蛋活动配置」全量参数</p>
+    </div>
+    </div>
+        </section>
+      </div>
+    </article>
+    </div><div class="sub-tab-panel" data-sub-tab="step-2">
+    <article class="demo-wf-step">
+      <header class="demo-wf-step-head">
+        <span class="demo-wf-step-badge">第 2 步</span>
+        <div class="demo-wf-step-main">
+          <h4 class="demo-wf-step-title">测试账号与机会准备</h4>
+          <span class="demo-wf-step-meta">（工作流：建立数据源）</span>
+        </div>
+      </header>
+      <div class="demo-wf-parts">
+        <section class="demo-wf-part">
+          <h5>工作流录制</h5>
+          <blockquote class="wf-record-script">根据给定的账号及房间（未给定房间默认自己的房间），每次通过自送指定礼物方式获得指定砸蛋次数，钻石不足时自动补钻。</blockquote>
+        </section>
+        <section class="demo-wf-part">
+          <h5>工具支持</h5>
+          <p class="wf-record-summary">—</p>
+        </section>
+        <section class="demo-wf-part demo-wf-part-wide">
+          <h5>平台实现</h5>
+          <div class="demo-wf-part-wide-row">
+            <div class="demo-wf-part-wide-main"><ul class="demo-tool-list"><li><strong>Admin / CMS</strong>：拉主播账号或按手机号解析 userId、房间 ID</li><li><strong>测试环境送礼</strong>：自送 giftIds 礼物获次，随机 1~15 次/账号</li><li><strong>MOA getEggHome</strong>：回读剩余砸蛋次数，确认账号就绪</li></ul></div>
+            
+          </div>
+        </section>
+        <section class="demo-wf-part demo-wf-part-preview">
+          <h5>表格预览</h5>
+          <div class="demo-wf-media demo-wf-media-only">
+    <div class="media-box">
+      <img src="media/lottery-step02-chances.svg" alt="多账号剩余次数与补钻状态" loading="lazy" />
+      <p class="media-caption">多账号剩余次数与补钻状态</p>
+    </div>
+    </div>
+        </section>
+      </div>
+    </article>
+    </div><div class="sub-tab-panel" data-sub-tab="step-3">
+    <article class="demo-wf-step">
+      <header class="demo-wf-step-head">
+        <span class="demo-wf-step-badge">第 3 步</span>
+        <div class="demo-wf-step-main">
+          <h4 class="demo-wf-step-title">批量砸蛋造数入表</h4>
+          <span class="demo-wf-step-meta">（工作流：数据构造）</span>
+        </div>
+      </header>
+      <div class="demo-wf-parts">
+        <section class="demo-wf-part">
+          <h5>工作流录制</h5>
+          <blockquote class="wf-record-script">砸蛋前记录账号房间信息，获取用户、房间、平台三个维度当前砸蛋次数，砸蛋时返回实砸次数，并重新获取三个维度砸蛋次数，判断增加量正确。</blockquote>
+        </section>
+        <section class="demo-wf-part">
+          <h5>工具支持</h5>
+          <ul class="demo-tool-support-list"><li>砸蛋操作MOA，需要返回砸蛋数量、获得奖励、金蛋等级信息</li><li>用户、房间、平台砸蛋次数查询MOA</li></ul>
+        </section>
+        <section class="demo-wf-part demo-wf-part-wide">
+          <h5>平台实现</h5>
+          <div class="demo-wf-part-wide-row">
+            <div class="demo-wf-part-wide-main"><ul class="demo-tool-list"><li><strong>MOA smashEgg</strong>：默认自己的房间；本次砸蛋次数以返回值 / 剩余差值为准</li><li><strong>MOA testGetMysteryCount</strong>：读取用户/房间/平台砸蛋计数，写入表格</li><li><strong>钉钉 Sheet 追加</strong>：逐次 append 至 Sheet「砸金蛋测试记录」</li></ul></div>
+            
+          </div>
+        </section>
+        <section class="demo-wf-part demo-wf-part-preview">
+          <h5>表格预览</h5>
+          <div class="demo-wf-media demo-wf-media-only">
+    <div class="media-box">
+      <img src="media/lottery-step03-batch-smash.svg" alt="Sheet「砸金蛋测试记录」批量造数" loading="lazy" />
+      <p class="media-caption">Sheet「砸金蛋测试记录」批量造数</p>
+    </div>
+    </div>
+        </section>
+      </div>
+    </article>
+    </div><div class="sub-tab-panel" data-sub-tab="step-4">
+    <article class="demo-wf-step">
+      <header class="demo-wf-step-head">
+        <span class="demo-wf-step-badge">第 4 步</span>
+        <div class="demo-wf-step-main">
+          <h4 class="demo-wf-step-title">奖池概率与保底验收</h4>
+          <span class="demo-wf-step-meta">（工作流：奖励下发验收）</span>
+        </div>
+      </header>
+      <div class="demo-wf-parts">
+        <section class="demo-wf-part">
+          <h5>工作流录制</h5>
+          <blockquote class="wf-record-script">根据服务配置和金蛋等级判断保底触发时机和等级对应奖池，验证保底时机和金蛋奖池正确。</blockquote>
+        </section>
+        <section class="demo-wf-part">
+          <h5>工具支持</h5>
+          <p class="wf-record-summary">—</p>
+        </section>
+        <section class="demo-wf-part demo-wf-part-wide">
+          <h5>平台实现</h5>
+          <div class="demo-wf-part-wide-row">
+            <div class="demo-wf-part-wide-main"><ul class="demo-tool-list"><li><strong>配置规则读取</strong>：读 Sheet「金蛋活动配置」奖池权重与保底 mod</li><li><strong>MOA testGetMysteryCount</strong>：核对神秘保底触发是否与 mod 对齐</li><li><strong>验收引擎</strong>：evaluate_acceptance_verdict 写入表格验收列</li></ul></div>
+            
+          </div>
+        </section>
+        <section class="demo-wf-part demo-wf-part-preview">
+          <h5>表格预览</h5>
+          <div class="demo-wf-media demo-wf-media-only">
+    <div class="media-box">
+      <img src="media/lottery-step04-pool-verify.svg" alt="权重分布 · 神秘保底 mod 验收" loading="lazy" />
+      <p class="media-caption">权重分布 · 神秘保底 mod 验收</p>
+    </div>
+    </div>
+        </section>
+      </div>
+    </article>
+    </div><div class="sub-tab-panel" data-sub-tab="step-5">
+    <article class="demo-wf-step">
+      <header class="demo-wf-step-head">
+        <span class="demo-wf-step-badge">第 5 步</span>
+        <div class="demo-wf-step-main">
+          <h4 class="demo-wf-step-title">奖品下发验收入表</h4>
+          <span class="demo-wf-step-meta">（工作流：奖励下发验收）</span>
+        </div>
+      </header>
+      <div class="demo-wf-parts">
+        <section class="demo-wf-part">
+          <h5>工作流录制</h5>
+          <blockquote class="wf-record-script">砸蛋前获取当前装扮、背包、钻石、VIP经验值、兑换券数量，砸蛋后验证奖励下发正确。</blockquote>
+        </section>
+        <section class="demo-wf-part">
+          <h5>工具支持</h5>
+          <p class="demo-tool-support-text">录制兑换券数量查询方式</p>
+        </section>
+        <section class="demo-wf-part demo-wf-part-wide">
+          <h5>平台实现</h5>
+          <div class="demo-wf-part-wide-row">
+            <div class="demo-wf-part-wide-main"><ul class="demo-tool-list"><li><strong>MOA 查钻 / 查 VIP</strong>：发奖前后批量查余额与经验</li><li><strong>应发测算</strong>：从 smash 返回解析 expected_diamond_delta / VIP / 装扮</li><li><strong>钉钉 Sheet 回写</strong>：更新到账验收与 verdict 列</li></ul></div>
+            
+          </div>
+        </section>
+        <section class="demo-wf-part demo-wf-part-preview">
+          <h5>表格预览</h5>
+          <div class="demo-wf-media demo-wf-media-only">
+    <div class="media-box">
+      <img src="media/lottery-step05-reward-verify.svg" alt="应得钻 vs 实发增量逐条核对" loading="lazy" />
+      <p class="media-caption">应得钻 vs 实发增量逐条核对</p>
+    </div>
+    </div>
+        </section>
+      </div>
+    </article>
+    </div><div class="sub-tab-panel" data-sub-tab="step-6">
+    <article class="demo-wf-step">
+      <header class="demo-wf-step-head">
+        <span class="demo-wf-step-badge">第 6 步</span>
+        <div class="demo-wf-step-main">
+          <h4 class="demo-wf-step-title">测试结果汇总入表</h4>
+          <span class="demo-wf-step-meta">（工作流：奖励下发验收）</span>
+        </div>
+      </header>
+      <div class="demo-wf-parts">
+        <section class="demo-wf-part">
+          <h5>工作流录制</h5>
+          <blockquote class="wf-record-script">把砸蛋结果逐次写入钉钉文档，全部完成后输出全部测试结果的测试报告。</blockquote>
+        </section>
+        <section class="demo-wf-part">
+          <h5>工具支持</h5>
+          <p class="wf-record-summary">—</p>
+        </section>
+        <section class="demo-wf-part demo-wf-part-wide">
+          <h5>平台实现</h5>
+          <div class="demo-wf-part-wide-row">
+            <div class="demo-wf-part-wide-main"><ul class="demo-tool-list"><li><strong>钉钉 Sheet 读取</strong>：读取金蛋活动配置与砸金蛋测试记录验收列</li><li><strong>验收结论结构化</strong>：统计每步样本数、通过数、失败数与总评</li><li><strong>汇报页生成</strong>：同步刷新 family_pk_report 抽奖演示 Tab</li></ul></div>
+            
+          </div>
+        </section>
+        <section class="demo-wf-part demo-wf-part-preview">
+          <h5>表格预览</h5>
+          <div class="demo-wf-media demo-wf-media-only">
+    <div class="media-box">
+      <img src="media/lottery-step06-test-result.svg" alt="Sheet「测试结果」汇总" loading="lazy" />
+      <p class="media-caption">Sheet「测试结果」汇总</p>
+    </div>
+    </div>
+        </section>
+      </div>
+    </article>
+    </div>
+    </div>
+    
+    </section>
+    </div></div>
+
+    <p class="footer">Generated · family_pk_report · 2026-07-30 22:13</p>
+  </div>
+  
+    <div id="demo-image-lightbox" class="demo-lightbox" hidden aria-hidden="true"
+      role="dialog" aria-modal="true" aria-label="图片预览">
+      <div class="demo-lightbox-backdrop" data-lightbox-close></div>
+      <figure class="demo-lightbox-panel">
+        <img src="" alt="" />
+        <figcaption class="demo-lightbox-caption"></figcaption>
+      </figure>
+      <button type="button" class="demo-lightbox-close" data-lightbox-close aria-label="关闭预览">&times;</button>
+    </div>
+    
+  
+    <script>
+    (function () {
+      var WEB_AGENT_LOCAL_URL = "http://127.0.0.1:18766";
+      var WEB_AGENT_REMOTE_URL = "http://172.18.125.90:18766";
+      var PROMPT_STORAGE_KEY = "web_agent_pending_prompt";
+
+      function resolveWebAgentBase() {
+        var host = window.location.hostname || "";
+        var isLocal = host === "127.0.0.1" || host === "localhost" || host === "";
+        if (isLocal && WEB_AGENT_LOCAL_URL) return WEB_AGENT_LOCAL_URL;
+        if (WEB_AGENT_REMOTE_URL) return WEB_AGENT_REMOTE_URL;
+        if (WEB_AGENT_LOCAL_URL) return WEB_AGENT_LOCAL_URL;
+        return window.location.origin;
+      }
+
+      function resolveWebAgentBaseForDemo() {
+        if (WEB_AGENT_REMOTE_URL) return WEB_AGENT_REMOTE_URL;
+        return resolveWebAgentBase();
+      }
+
+      function showDemoToast(message) {
+        var el = document.getElementById("demo-toast");
+        if (!el) {
+          el = document.createElement("div");
+          el.id = "demo-toast";
+          el.className = "demo-toast";
+          el.setAttribute("role", "status");
+          document.body.appendChild(el);
+        }
+        el.textContent = message;
+        el.classList.add("show");
+        clearTimeout(showDemoToast._timer);
+        showDemoToast._timer = setTimeout(function () {
+          el.classList.remove("show");
+        }, 2600);
+      }
+
+      function fillWebAgentInput(text) {
+        if (!text) return;
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: "web-agent-fill-prompt", text: text }, "*");
+          showDemoToast("已填入内网工具平台输入框");
+          return;
+        }
+        var agentBase = resolveWebAgentBaseForDemo().replace(/\/$/, "");
+        var chatUrl = agentBase + "/?prompt=" + encodeURIComponent(text);
+        var payload = JSON.stringify({ text: text, ts: Date.now() });
+        try {
+          localStorage.setItem(PROMPT_STORAGE_KEY, payload);
+        } catch (err) {}
+        var win = window.open(chatUrl, "web_agent_chat");
+        if (win) {
+          try { win.focus(); } catch (err) {}
+          showDemoToast("已打开内网工具平台并填入提示语");
+          return;
+        }
+        showDemoToast("请允许弹窗，或手动打开内网工具平台查看已填入的提示语");
+      }
+
+      var lightbox = document.getElementById("demo-image-lightbox");
+      var lightboxImg = lightbox ? lightbox.querySelector(".demo-lightbox-panel img") : null;
+      var lightboxCaption = lightbox ? lightbox.querySelector(".demo-lightbox-caption") : null;
+
+      function openImageLightbox(src, caption, alt) {
+        if (!lightbox || !lightboxImg || !src) return;
+        lightboxImg.src = src;
+        lightboxImg.alt = alt || caption || "预览图";
+        if (lightboxCaption) {
+          lightboxCaption.textContent = caption || "";
+          lightboxCaption.hidden = !caption;
+        }
+        lightbox.hidden = false;
+        lightbox.classList.add("open");
+        lightbox.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeImageLightbox() {
+        if (!lightbox || !lightboxImg) return;
+        lightbox.classList.remove("open");
+        lightbox.hidden = true;
+        lightbox.setAttribute("aria-hidden", "true");
+        document.body.style.overflow = "";
+        lightboxImg.removeAttribute("src");
+      }
+
+      document.addEventListener("click", function (e) {
+        var zoomBtn = e.target.closest(".demo-zoom-trigger");
+        if (zoomBtn) {
+          e.preventDefault();
+          var img = zoomBtn.querySelector("img");
+          openImageLightbox(
+            zoomBtn.getAttribute("data-zoom-src") || "",
+            zoomBtn.getAttribute("data-zoom-caption") || "",
+            img ? img.getAttribute("alt") || "" : ""
+          );
+          return;
+        }
+        if (e.target.closest("[data-lightbox-close]")) {
+          closeImageLightbox();
+          return;
+        }
+        var btn = e.target.closest(".demo-run-btn");
+        if (!btn) return;
+        var prompt = btn.getAttribute("data-prompt") || "";
+        if (!prompt) return;
+        fillWebAgentInput(prompt);
+      });
+
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && lightbox && lightbox.classList.contains("open")) {
+          closeImageLightbox();
+        }
+      });
+
+      function updateStickyOffsets() {
+        var tabBar = document.querySelector(".tab-bar");
+        var tabBarH = tabBar ? tabBar.offsetHeight : 0;
+        document.documentElement.style.setProperty("--sticky-sub-top", tabBarH + "px");
+      }
+      updateStickyOffsets();
+      window.addEventListener("resize", updateStickyOffsets);
+
+      var links = document.querySelectorAll(".tab-link");
+      var panels = document.querySelectorAll(".tab-panel");
+      var known = new Set(Array.from(panels).map(function (p) { return p.getAttribute("data-tab"); }));
+      function activate(tabId) {
+        if (tabId === "platform") tabId = "workflows";
+        if (tabId === "demos") tabId = "demo-ranking";
+        if (!known.has(tabId)) tabId = "background";
+        panels.forEach(function (p) {
+          p.classList.toggle("active", p.getAttribute("data-tab") === tabId);
+        });
+        links.forEach(function (a) {
+          a.classList.toggle("active", a.getAttribute("data-tab") === tabId);
+        });
+        updateStickyOffsets();
+      }
+      links.forEach(function (a) {
+        a.addEventListener("click", function (e) {
+          e.preventDefault();
+          var tabId = a.getAttribute("data-tab");
+          activate(tabId);
+          history.replaceState(null, "", "#" + tabId);
+        });
+      });
+      window.addEventListener("hashchange", function () {
+        activate((location.hash || "#background").slice(1));
+      });
+      activate((location.hash || "#background").slice(1));
+      document.querySelectorAll("[data-sub-tabs]").forEach(function (root) {
+        var subLinks = root.querySelectorAll(".sub-tab-link");
+        var subPanels = root.querySelectorAll(".sub-tab-panel");
+        function activateSub(subId) {
+          if (!subId) subId = "intro";
+          subPanels.forEach(function (p) {
+            p.classList.toggle("active", p.getAttribute("data-sub-tab") === subId);
+          });
+          subLinks.forEach(function (a) {
+            a.classList.toggle("active", a.getAttribute("data-sub-tab") === subId);
+          });
+          updateStickyOffsets();
+        }
+        subLinks.forEach(function (a) {
+          a.addEventListener("click", function (e) {
+            e.preventDefault();
+            activateSub(a.getAttribute("data-sub-tab"));
+          });
+        });
+        activateSub("intro");
+      });
+    })();
+    </script>
+    
+</body>
+</html>
