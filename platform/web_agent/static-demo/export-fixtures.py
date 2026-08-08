@@ -44,6 +44,14 @@ def _patch_web_docs_urls(data: dict[str, Any]) -> dict[str, Any]:
             return "../keynote/"
         if url.startswith("/keynote/"):
             return f"../keynote/{url[len('/keynote/'):]}"
+        if url == "/platform-guide":
+            return "../platform-guide/"
+        if url.startswith("/platform-guide/"):
+            return f"../platform-guide/{url[len('/platform-guide/'):]}"
+        if url == "/family-pk-showcase":
+            return "../family-pk-showcase/"
+        if url.startswith("/family-pk-showcase/"):
+            return f"../family-pk-showcase/{url[len('/family-pk-showcase/'):]}"
         return url
 
     for category in out.get("categories") or []:

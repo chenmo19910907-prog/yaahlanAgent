@@ -17,6 +17,38 @@ python3 "$STATIC/export-fixtures.py"
 
 echo "==> 复制 Keynote"
 cp "$SRC/keynote/preview.html" "$DOCS/keynote/index.html"
+mkdir -p "$DOCS/keynote/pk-atm-guide"
+cp "$SRC/keynote/pk_atm_guide.html" "$DOCS/keynote/pk-atm-guide/index.html"
+cp "$SRC/keynote/pk_atm_guide.md" "$DOCS/keynote/pk-atm-guide/pk_atm_guide.md"
+
+echo "==> 复制 Platform Guide / Family PK Showcase"
+mkdir -p "$DOCS/platform-guide"
+cp "$ROOT/platform/exports/cursor-platform-guide/index.html" "$DOCS/platform-guide/index.html"
+cp -R "$ROOT/platform/family_pk_report/exports/." "$DOCS/family-pk-showcase/"
+
+echo "==> 修正静态页资源路径"
+python3 - <<'PY' "$DOCS"
+import sys
+from pathlib import Path
+
+docs = Path(sys.argv[1])
+
+platform_guide = docs / "platform-guide" / "index.html"
+if platform_guide.is_file():
+    html = platform_guide.read_text(encoding="utf-8")
+    html = html.replace('href="/assets/fonts/', 'href="../web-agent/assets/fonts/')
+    html = html.replace('src="/platform-guide/images/', 'src="images/')
+    html = html.replace('href="/keynote"', 'href="../keynote/"')
+    html = html.replace('href="/keynote/"', 'href="../keynote/"')
+    platform_guide.write_text(html, encoding="utf-8")
+
+pk_guide = docs / "keynote" / "pk-atm-guide" / "index.html"
+if pk_guide.is_file():
+    html = pk_guide.read_text(encoding="utf-8")
+    html = html.replace('href="/keynote"', 'href="../"')
+    html = html.replace('href="/keynote/"', 'href="../"')
+    pk_guide.write_text(html, encoding="utf-8")
+PY
 
 echo "==> 复制 Web Agent 静态资源"
 cp "$SRC/chat.html" "$OUT_WEB/index.html"
@@ -132,6 +164,9 @@ cat > "$DOCS/index.html" <<'HTML'
     <div class="links">
       <a href="web-agent/"><strong>Web Agent 对话</strong><span>完整界面 + 假数据演示（可发消息、切换会话）</span></a>
       <a href="keynote/"><strong>Keynote 产品演示</strong><span>全屏产品演示与功能亮点</span></a>
+      <a href="platform-guide/"><strong>用 Cursor 搭建智能工具平台</strong><span>从 MOA 到 Admin、Tunnel、钉钉文档、ADB 自动化</span></a>
+      <a href="keynote/pk-atm-guide/"><strong>PK 提款机：从零到 MOA 与自动化</strong><span>真实协作案例与验收工作流</span></a>
+      <a href="family-pk-showcase/"><strong>家族 PK 测试 Showcase</strong><span>复杂活动数据造表与验收演示</span></a>
     </div>
   </main>
 </body>
@@ -145,3 +180,6 @@ echo "GitHub Pages 演示包已生成: $DOCS"
 echo "  首页:      /"
 echo "  Keynote:   /keynote/"
 echo "  Web Agent: /web-agent/"
+echo "  Platform Guide: /platform-guide/"
+echo "  PK ATM Guide:   /keynote/pk-atm-guide/"
+echo "  Family PK:      /family-pk-showcase/"
