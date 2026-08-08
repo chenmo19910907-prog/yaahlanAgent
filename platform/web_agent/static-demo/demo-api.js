@@ -474,5 +474,12 @@
 
   fixturesReady = Promise.resolve().then(() => {
     ensureState();
+    try {
+      Object.keys(global.localStorage || {}).forEach((key) => {
+        if (key.startsWith('web_agent')) global.localStorage.removeItem(key);
+      });
+    } catch {
+      /* ignore */
+    }
   });
 })(window);

@@ -72,8 +72,30 @@ html = re.sub(
     html,
 )
 
+demo_restore = """
+      if (window.__WEB_AGENT_DEMO__) {
+        const demoIds = ['demo0001stagegift', 'demo0002prdcases', 'demo0003moalookup'];
+        for (const sid of demoIds) {
+          try {
+            await api(`/api/sessions/${sid}/messages`);
+            if (await activateSession(sid, { force: true })) return;
+          } catch { /* try next demo session */ }
+        }
+      }
+"""
+if "demo0001stagegift" not in html:
+    html = html.replace(
+        "async function restoreOrCreateInitialSession() {",
+        "async function restoreOrCreateInitialSession() {" + demo_restore,
+        1,
+    )
+
+html = html.replace("window.location.href = '/login.html'", "return")
+
 path.write_text(html, encoding="utf-8")
 PY
+
+cp "$OUT_WEB/index.html" "$OUT_WEB/chat.html"
 
 cat > "$DOCS/index.html" <<'HTML'
 <!DOCTYPE html>
