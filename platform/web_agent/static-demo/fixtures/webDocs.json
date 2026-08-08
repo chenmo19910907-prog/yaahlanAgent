@@ -18,7 +18,7 @@
         {
           "title": "用 Cursor 搭建智能工具平台",
           "desc": "从 MOA 到 Admin、Tunnel、钉钉文档、ADB 自动化的完整搭建历程",
-          "url": "/platform-guide"
+          "url": "../platform-guide/"
         },
         {
           "title": "PK 提款机：从零到 MOA 与自动化",
@@ -33,7 +33,7 @@
         {
           "title": "家族 PK 测试 Showcase",
           "desc": "复杂活动数据造表与验收演示",
-          "url": "/family-pk-showcase"
+          "url": "../family-pk-showcase/"
         }
       ]
     }
