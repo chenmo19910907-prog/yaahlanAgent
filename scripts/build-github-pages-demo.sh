@@ -7,6 +7,7 @@ DOCS="$ROOT/docs"
 SRC="$ROOT/platform/web_agent"
 STATIC="$SRC/static-demo"
 OUT_WEB="$DOCS/web-agent"
+BUILD_VERSION="$(date -u +%Y%m%d%H%M%S)"
 
 rm -rf "$DOCS"
 mkdir -p "$DOCS/keynote" "$OUT_WEB" "$OUT_WEB/config" "$OUT_WEB/assets" "$OUT_WEB/fixtures"
@@ -33,21 +34,33 @@ cp "$SRC/config.json" "$OUT_WEB/config.json"
 cp "$SRC/config/bookmarks.json" "$OUT_WEB/config/bookmarks.json"
 cp "$SRC/config/web_docs.json" "$OUT_WEB/config/web_docs.json"
 
-echo "==> 注入演示 API 与 keynote 路径"
-python3 - <<'PY' "$OUT_WEB/index.html"
+echo "==> 注入演示 API 与 keynote 路径 (build=$BUILD_VERSION)"
+python3 - <<'PY' "$OUT_WEB/index.html" "$BUILD_VERSION"
 import re
 import sys
 from pathlib import Path
 
 path = Path(sys.argv[1])
+build_version = sys.argv[2]
 html = path.read_text(encoding="utf-8")
 
-inject = '  <script src="demo-fixtures.js"></script>\n  <script src="demo-api.js"></script>\n'
+inject = (
+    f'  <script src="demo-fixtures.js?v={build_version}"></script>\n'
+    f'  <script src="demo-api.js?v={build_version}"></script>\n'
+)
 if "demo-api.js" not in html:
     html = html.replace(
         '<meta charset="utf-8" />\n',
         '<meta charset="utf-8" />\n' + inject,
         1,
+    )
+else:
+    html = re.sub(
+        r'<script src="demo-fixtures\.js[^"]*"></script>\n'
+        r'\s*<script src="demo-api\.js[^"]*"></script>\n',
+        inject,
+        html,
+        count=1,
     )
 
 html = html.replace('src="/keynote?embed=', 'src="../keynote/?embed=')
