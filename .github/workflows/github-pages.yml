@@ -4,7 +4,7 @@ on:
   push:
     branches: [yaahlan, main, master]
     paths:
-      - 'platform/web_agent/keynote/**'
+      - 'platform/web_agent/**'
       - 'scripts/build-github-pages-demo.sh'
       - '.github/workflows/github-pages.yml'
   workflow_dispatch:

@@ -1,0 +1,424 @@
+{
+  "title": "Yaahlan 智能工具 Agent",
+  "subtitle": "钉钉 Agent · MOA/Admin 查数 · Tunnel 抓包 · Stage 送礼 · 用例生成",
+  "projectId": "yaahlan",
+  "mcp_count": 6,
+  "skills_count": 12,
+  "modules_count": 27,
+  "capabilities_count": 271,
+  "defaultAgentModel": "composer-2.5",
+  "agentModels": [
+    {
+      "id": "composer-2.5",
+      "label": "Composer 2.5（默认）",
+      "description": "默认推荐，能力完整"
+    },
+    {
+      "id": "composer-2",
+      "label": "Composer 2",
+      "description": ""
+    },
+    {
+      "id": "default",
+      "label": "Default",
+      "description": "Cursor 默认模型"
+    },
+    {
+      "id": "claude-opus-5",
+      "label": "Claude Opus 5",
+      "description": ""
+    },
+    {
+      "id": "claude-opus-4-8",
+      "label": "Claude Opus 4.8",
+      "description": ""
+    },
+    {
+      "id": "claude-opus-4-7",
+      "label": "Claude Opus 4.7",
+      "description": ""
+    },
+    {
+      "id": "claude-opus-4-6",
+      "label": "Claude Opus 4.6",
+      "description": ""
+    },
+    {
+      "id": "claude-opus-4-5",
+      "label": "Claude Opus 4.5",
+      "description": ""
+    },
+    {
+      "id": "claude-sonnet-5",
+      "label": "Claude Sonnet 5",
+      "description": ""
+    },
+    {
+      "id": "claude-sonnet-4-6",
+      "label": "Claude Sonnet 4.6",
+      "description": ""
+    },
+    {
+      "id": "claude-sonnet-4-5",
+      "label": "Claude Sonnet 4.5",
+      "description": ""
+    },
+    {
+      "id": "claude-sonnet-4",
+      "label": "Claude Sonnet 4",
+      "description": ""
+    },
+    {
+      "id": "claude-fable-5",
+      "label": "Claude Fable 5",
+      "description": ""
+    },
+    {
+      "id": "claude-haiku-4-5",
+      "label": "Claude Haiku 4.5",
+      "description": ""
+    },
+    {
+      "id": "gpt-5.6-sol",
+      "label": "GPT-5.6 Sol",
+      "description": ""
+    },
+    {
+      "id": "gpt-5.6-terra",
+      "label": "GPT-5.6 Terra",
+      "description": ""
+    },
+    {
+      "id": "gpt-5.6-luna",
+      "label": "GPT-5.6 Luna",
+      "description": ""
+    },
+    {
+      "id": "gpt-5.5",
+      "label": "GPT-5.5",
+      "description": ""
+    },
+    {
+      "id": "gpt-5.4",
+      "label": "GPT-5.4",
+      "description": ""
+    },
+    {
+      "id": "gpt-5.4-mini",
+      "label": "GPT-5.4 Mini",
+      "description": ""
+    },
+    {
+      "id": "gpt-5.4-nano",
+      "label": "GPT-5.4 Nano",
+      "description": ""
+    },
+    {
+      "id": "gpt-5.3-codex",
+      "label": "GPT-5.3 Codex",
+      "description": ""
+    },
+    {
+      "id": "gpt-5.2",
+      "label": "GPT-5.2",
+      "description": ""
+    },
+    {
+      "id": "gpt-5.1",
+      "label": "GPT-5.1",
+      "description": ""
+    },
+    {
+      "id": "gpt-5-mini",
+      "label": "GPT-5 Mini",
+      "description": ""
+    },
+    {
+      "id": "gemini-3.1-pro",
+      "label": "Gemini 3.1 Pro",
+      "description": ""
+    },
+    {
+      "id": "gemini-3.6-flash",
+      "label": "Gemini 3.6 Flash",
+      "description": ""
+    },
+    {
+      "id": "gemini-3.5-flash",
+      "label": "Gemini 3.5 Flash",
+      "description": ""
+    },
+    {
+      "id": "gemini-3-flash",
+      "label": "Gemini 3 Flash",
+      "description": ""
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "label": "Gemini 2.5 Flash",
+      "description": ""
+    },
+    {
+      "id": "grok-4.5",
+      "label": "Grok 4.5",
+      "description": ""
+    },
+    {
+      "id": "kimi-k3",
+      "label": "Kimi K3",
+      "description": ""
+    },
+    {
+      "id": "kimi-k2.7-code",
+      "label": "Kimi K2.7 Code",
+      "description": ""
+    },
+    {
+      "id": "glm-5.2",
+      "label": "GLM 5.2",
+      "description": ""
+    }
+  ],
+  "externalAgents": [
+    {
+      "id": "yaahlan_service",
+      "label": "服务端 Agent",
+      "description": "",
+      "url": "https://ai-yaahlan.wemomo.com",
+      "defaultEnabled": true
+    },
+    {
+      "id": "mdp_middleware",
+      "label": "MDP Agent",
+      "description": "",
+      "url": "http://172.18.50.12:8080",
+      "defaultEnabled": false
+    }
+  ],
+  "quickPrompts": [
+    "查一下 Gift 模块 Stage 送礼怎么用",
+    "工具平台有哪些 MOA 能力？",
+    "解析 PRD 并生成测试用例",
+    "Tunnel 查 100465989 最近 /gift/send 请求并展示 ec/em",
+    "给 test 环境 userId 100153721 下发 1 天 VIP5",
+    "查一下家族 PK 相关 MOA 模板有哪些",
+    "读取 MSE familyPkConfig 当前配置",
+    "Admin 查用户 100465989 详情",
+    "MOA 查手机号 13311111111（+86）对应的 userId",
+    "生成家族 PK 门槛调整的测试用例",
+    "解除测试环境某手机号的风控",
+    "查设备当前登录的是哪个账号",
+    "Stage 房间送礼：100465989 给 100153721 送 Neon Heart（2005004592）",
+    "工具平台 Gift 和 MOA 背包送礼有什么区别",
+    "帮我总结 Stage 送礼实现并导出说明",
+    "100465989 最近 1 小时送礼抓包，核对 request/response"
+  ],
+  "quickPromptCount": 4,
+  "emptyIntro": {
+    "tagline": "",
+    "rotateMs": 4200,
+    "views": [
+      {
+        "label": "MOA 查数",
+        "detail": "手机号反查 userId · 发钻改等级 · 模板一键执行"
+      },
+      {
+        "label": "Tunnel 抓包",
+        "detail": "按 userId 查 HTTP 请求 · 核对 ec/em · Mock 验收"
+      },
+      {
+        "label": "用例生成",
+        "detail": "读钉钉 PRD · 测试点扩写 · 同步 Excel"
+      },
+      {
+        "label": "Stage 送礼",
+        "detail": "房间/私聊/群组送礼 · 接口验收一条龙"
+      }
+    ]
+  },
+  "featureDemos": [
+    {
+      "title": "新建对话",
+      "demo": "new-chat",
+      "description": "空状态轮播与快捷提示"
+    },
+    {
+      "title": "流式输出",
+      "demo": "stream-output",
+      "description": "思考过程与 Markdown 流式渲染"
+    },
+    {
+      "title": "能力目录",
+      "demo": "catalog-onboard",
+      "description": "MOA / Tunnel / 用例生成能力一览"
+    }
+  ],
+  "featureDemoRotateMs": 10000,
+  "bookmarks": {
+    "categories": [
+      {
+        "id": "team-ms5kemez",
+        "label": "内网平台",
+        "items": [
+          {
+            "id": "bookmark-ms5kemhb",
+            "label": "管理后台",
+            "url": "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/home",
+            "icon": "link",
+            "description": "开发者后台"
+          },
+          {
+            "id": "bookmark-ms5kikr1",
+            "label": "创新中台",
+            "url": "https://mdp-nova-alpha.wemomo.com/fep/momo/mdp-spacey/innovation-platform/index.html#/",
+            "icon": "link",
+            "description": "中台后台"
+          },
+          {
+            "id": "mse",
+            "label": "MSE 配置",
+            "url": "https://mse.wemomo.com",
+            "icon": "tool",
+            "description": "服务配置 / MOA"
+          }
+        ]
+      },
+      {
+        "id": "team-ms5kjnmi",
+        "label": "外网平台",
+        "items": [
+          {
+            "id": "bookmark-ms5kk3ld",
+            "label": "MSE 配置",
+            "url": "https://mse.wemomo.com/#/config/app?corp=overseas&env=overseas&serviceType=moa&appKey=momo.bpm.biz.gameplatform.overseas-voga-mts-room&shareId=c5bc301c6a684beb8236c99475a547b7&type=share",
+            "icon": "link",
+            "description": "MOA"
+          },
+          {
+            "id": "bookmark-ms5k7ypo",
+            "label": "管理后台",
+            "url": "https://www.yaahlan.fun/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/manage",
+            "icon": "link",
+            "description": "开发者后台"
+          }
+        ]
+      },
+      {
+        "id": "team-ms5kl1xl",
+        "label": "内部工具",
+        "items": [
+          {
+            "id": "bookmark-ms5kl1xl",
+            "label": "Figma",
+            "url": "https://www.figma.com/design/dX2pELrDX0Fykai5tDvOsx/Yaahlan客户端2.0?node-id=98409-321698&p=f&t=tB4XDjSPfzCVGgM6-0",
+            "icon": "link",
+            "description": "设计图平台"
+          },
+          {
+            "id": "bookmark-ms5klerk",
+            "label": "Bug平台",
+            "url": "https://teambition.wemomo.com/project/603c619f128c30001daff853/bug",
+            "icon": "link",
+            "description": "提交查看bug"
+          },
+          {
+            "id": "bookmark-ms5kmjmi",
+            "label": "代码质量平台",
+            "url": "https://cosmos-compass-web.immomo.com/cpm/codeCoverage/testReport?appid=&_bid=0",
+            "icon": "link",
+            "description": "覆盖率测试"
+          },
+          {
+            "id": "tunnel_mock",
+            "label": "Tunnel",
+            "url": "https://tunnel.wemomo.com",
+            "icon": "tunnel",
+            "description": "抓包 Mock"
+          },
+          {
+            "id": "bookmark-ms5rk5sd",
+            "label": "HoloWAN",
+            "url": "http://172.18.253.249:8080",
+            "icon": "link",
+            "description": "弱网测试"
+          }
+        ]
+      },
+      {
+        "id": "team-ms5kvo5l",
+        "label": "钉钉文档",
+        "items": [
+          {
+            "id": "bookmark-ms5kvo5l",
+            "label": "QA业务看板",
+            "url": "https://alidocs.dingtalk.com/i/nodes/R1zknDm0WR3AZLeLhNBlwX42VBQEx5rG?corpId=",
+            "icon": "link"
+          },
+          {
+            "id": "bookmark-ms5ktxu2",
+            "label": "测试用例",
+            "url": "https://alidocs.dingtalk.com/i/nodes/jb9Y4gmKWr7wodldCZEEZ3n1VGXn6lpz",
+            "icon": "link"
+          },
+          {
+            "id": "bookmark-ms5kugsw",
+            "label": "产品需求文档",
+            "url": "https://alidocs.dingtalk.com/i/nodes/14lgGw3P8vveoPlPC2PdN56v85daZ90D",
+            "icon": "link"
+          },
+          {
+            "id": "bookmark-ms5kyot9",
+            "label": "需求排期表",
+            "url": "https://alidocs.dingtalk.com/i/nodes/MNDoBb60VLrMNyOyCmdjOyrr8lemrZQ3?iframeQuery=entrance%3Ddata%26sheetId%3DAfRittZ%26viewId%3DcaaUsJp",
+            "icon": "link"
+          },
+          {
+            "id": "bookmark-ms5kzgd3",
+            "label": "Yaahlan翻译",
+            "url": "https://alidocs.dingtalk.com/i/nodes/ZgpG2NdyVXrA0gOgCx07o2kO8MwvDqPk?iframeQuery=utm_source%3Dportal%26utm_medium%3Dportal_recent&rnd=0.7370414797648992",
+            "icon": "link"
+          }
+        ]
+      },
+      {
+        "id": "team-ms5kn58b",
+        "label": "外部工具",
+        "items": [
+          {
+            "id": "bookmark-ms5kn58b",
+            "label": "时间戳转换",
+            "url": "https://www.jyshare.com/front-end/852/?utm_source=heifan",
+            "icon": "link"
+          },
+          {
+            "id": "bookmark-ms5knhvc",
+            "label": "SVGA",
+            "url": "https://svga.dev",
+            "icon": "link"
+          }
+        ]
+      }
+    ]
+  },
+  "maxImagesPerMessage": 4,
+  "maxAttachmentsPerMessage": 4,
+  "maxImageBytes": 5242880,
+  "maxFileBytes": 10485760,
+  "allowedFileExtensions": [
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".webp",
+    ".pdf",
+    ".txt",
+    ".md"
+  ],
+  "authRequired": false,
+  "authPublicOnly": false,
+  "otpAuthEnabled": false,
+  "loginPhrase": "",
+  "dingtalkOAuth": {
+    "enabled": false
+  }
+}

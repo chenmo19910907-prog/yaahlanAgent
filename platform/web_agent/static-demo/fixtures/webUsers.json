@@ -1,0 +1,14 @@
+{
+  "users": [
+    {
+      "staffId": "demo-user",
+      "displayName": "陈墨（演示）"
+    },
+    {
+      "staffId": "demo-peer",
+      "displayName": "测试同学"
+    }
+  ],
+  "groups": [],
+  "total": 2
+}

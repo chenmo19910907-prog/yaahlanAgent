@@ -1,33 +1,66 @@
 #!/usr/bin/env bash
-# 构建 GitHub Pages 静态演示（Keynote + Web Agent 界面演示）
+# 构建 GitHub Pages 静态演示（Keynote + Web Agent 完整界面，假数据无服务端）
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DOCS="$ROOT/docs"
 SRC="$ROOT/platform/web_agent"
+STATIC="$SRC/static-demo"
+OUT_WEB="$DOCS/web-agent"
 
 rm -rf "$DOCS"
-mkdir -p "$DOCS/keynote" "$DOCS/web-agent"
+mkdir -p "$DOCS/keynote" "$OUT_WEB" "$OUT_WEB/config" "$OUT_WEB/assets" "$OUT_WEB/fixtures"
 
+echo "==> 导出演示 fixtures"
+python3 "$STATIC/export-fixtures.py"
+
+echo "==> 复制 Keynote"
 cp "$SRC/keynote/preview.html" "$DOCS/keynote/index.html"
 
-cat > "$DOCS/web-agent/index.html" <<'HTML'
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Yaahlan Web Agent · 对话演示</title>
-  <style>
-    html, body { margin: 0; height: 100%; background: #0b0e14; }
-    iframe { border: 0; width: 100%; height: 100%; display: block; }
-  </style>
-</head>
-<body>
-  <iframe src="../keynote/?embed=new-chat" title="Web Agent 对话演示"></iframe>
-</body>
-</html>
-HTML
+echo "==> 复制 Web Agent 静态资源"
+cp "$SRC/chat.html" "$OUT_WEB/index.html"
+cp "$STATIC/demo-fixtures.js" "$OUT_WEB/demo-fixtures.js"
+cp "$STATIC/demo-api.js" "$OUT_WEB/demo-api.js"
+cp "$STATIC/fixtures/"*.json "$OUT_WEB/fixtures/"
+
+for js in theme.js logo.js dingtalk_oauth.js analytics.js bookmarks_panel.js \
+  message_board_panel.js about_panel.js catalog_panel.js moa_record_panel.js waiting_fx.js; do
+  cp "$SRC/$js" "$OUT_WEB/$js"
+done
+
+cp -R "$SRC/assets/." "$OUT_WEB/assets/"
+cp "$SRC/config.json" "$OUT_WEB/config.json"
+cp "$SRC/config/bookmarks.json" "$OUT_WEB/config/bookmarks.json"
+cp "$SRC/config/web_docs.json" "$OUT_WEB/config/web_docs.json"
+
+echo "==> 注入演示 API 与 keynote 路径"
+python3 - <<'PY' "$OUT_WEB/index.html"
+import re
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+html = path.read_text(encoding="utf-8")
+
+inject = '  <script src="demo-fixtures.js"></script>\n  <script src="demo-api.js"></script>\n'
+if "demo-api.js" not in html:
+    html = html.replace(
+        '<meta charset="utf-8" />\n',
+        '<meta charset="utf-8" />\n' + inject,
+        1,
+    )
+
+html = html.replace('src="/keynote?embed=', 'src="../keynote/?embed=')
+html = html.replace('`/keynote?embed=', '`../keynote/?embed=')
+
+html = re.sub(
+    r"请运行：python3 platform/web_agent/open_web_agent\.py",
+    "当前为 GitHub Pages 静态演示（假数据）",
+    html,
+)
+
+path.write_text(html, encoding="utf-8")
+PY
 
 cat > "$DOCS/index.html" <<'HTML'
 <!DOCTYPE html>
@@ -60,9 +93,9 @@ cat > "$DOCS/index.html" <<'HTML'
 <body>
   <main>
     <h1>Yaahlan 智能工具 Agent</h1>
-    <p>对外演示入口（GitHub Pages 静态托管）。完整 MOA / Tunnel / 用例生成能力需内网 Web Agent 服务。</p>
+    <p>对外演示入口（GitHub Pages 静态托管）。Web Agent 使用假数据模拟对话，不依赖服务端；完整 MOA / Tunnel / 用例生成需内网服务。</p>
     <div class="links">
-      <a href="web-agent/"><strong>Web Agent 对话入口</strong><span>交互式界面演示（新建对话场景）</span></a>
+      <a href="web-agent/"><strong>Web Agent 对话</strong><span>完整界面 + 假数据演示（可发消息、切换会话）</span></a>
       <a href="keynote/"><strong>Keynote 产品演示</strong><span>全屏产品演示与功能亮点</span></a>
     </div>
   </main>
@@ -72,6 +105,8 @@ HTML
 
 touch "$DOCS/.nojekyll"
 
+echo ""
 echo "GitHub Pages 演示包已生成: $DOCS"
-echo "  Keynote:  /keynote/"
+echo "  首页:      /"
+echo "  Keynote:   /keynote/"
 echo "  Web Agent: /web-agent/"
