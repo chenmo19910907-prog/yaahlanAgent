@@ -24,7 +24,12 @@ cp "$SRC/keynote/pk_atm_guide.md" "$DOCS/keynote/pk-atm-guide/pk_atm_guide.md"
 echo "==> 复制 Platform Guide / Family PK Showcase"
 mkdir -p "$DOCS/platform-guide"
 cp "$ROOT/platform/exports/cursor-platform-guide/index.html" "$DOCS/platform-guide/index.html"
-cp -R "$ROOT/platform/family_pk_report/exports/." "$DOCS/family-pk-showcase/"
+mkdir -p "$DOCS/family-pk-showcase"
+if [[ -d "$ROOT/platform/family_pk_report/exports" ]] && [[ -n "$(ls -A "$ROOT/platform/family_pk_report/exports" 2>/dev/null)" ]]; then
+  cp -R "$ROOT/platform/family_pk_report/exports/." "$DOCS/family-pk-showcase/"
+else
+  echo "    (跳过 family-pk-showcase：本地 exports 不存在，CI 环境可忽略)"
+fi
 
 echo "==> 修正静态页资源路径"
 python3 - <<'PY' "$DOCS"
