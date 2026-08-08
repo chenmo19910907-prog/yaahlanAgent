@@ -4720,7 +4720,7 @@
     }
     if (scene.type === 'feature') {
       if (scene.textOnly && scene.capabilities && scene.capabilities.length) {
-        return 2 + scene.capabilities.length;
+        return 3;
       }
       return 3;
     }
@@ -9205,8 +9205,8 @@
       items.push({ el: content.querySelector('.feat-title'), step: 0 });
     }
     items.push({ el: content.querySelector('.feat-desc'), step: 1 });
-    content.querySelectorAll('.feat-cap-item').forEach(function (el, i) {
-      items.push({ el: el, step: 2 + i });
+    content.querySelectorAll('.feat-cap-item').forEach(function (el) {
+      items.push({ el: el, step: 2 });
     });
 
     var animateStep = -1;
