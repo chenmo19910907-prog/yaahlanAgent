@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-08-08 21:01:08 北京时间",
-  "total_items": 271,
+  "generated_at": "2026-08-11 17:00:13 北京时间",
+  "total_items": 274,
   "module_count": 27,
   "modules": [
     {
       "id": "用户",
       "label": "用户",
-      "item_count": 24,
+      "item_count": 25,
       "categories": [
         {
           "name": "用户关系（voga-mts-user-relation-stage）",
@@ -16,6 +16,19 @@
               "prompts": [
                 "用户 <uid> 关注 <remoteUid>",
                 "让用户 <uid> 和 <remoteUid> 成为好友"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            },
+            {
+              "name": "用户-手机号段全互关",
+              "prompts": [
+                "13311111111到13311111130全部互相关注",
+                "13311111111到13311111130这20个账号全部互相关注",
+                "手机号段全互关 phone-start=<start> phone-end=<end>",
+                "多个测试号两两成为好友",
+                "一批账号全部互关"
               ],
               "source": "MOA",
               "source_id": "moa",
@@ -491,7 +504,7 @@
     {
       "id": "房间",
       "label": "房间",
-      "item_count": 42,
+      "item_count": 44,
       "categories": [
         {
           "name": "全服榜单（room/external/room-admin-handle）",
@@ -774,6 +787,22 @@
           ]
         },
         {
+          "name": "房间测试（room/internal/room-pk）",
+          "items": [
+            {
+              "name": "跨房PK-周榜结算",
+              "prompts": [
+                "跨房PK当前周周榜结算",
+                "跨房PK上一周周榜结算",
+                "跨房PK本周/上周周榜结算"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            }
+          ]
+        },
+        {
           "name": "房间测试（room/internal/room-test-stage）",
           "items": [
             {
@@ -781,6 +810,20 @@
               "prompts": [
                 "设置房间 <roomId> 等级为 <level> 级",
                 "把房间 <roomId> 设为 <level> 级"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            }
+          ]
+        },
+        {
+          "name": "房间测试（room）",
+          "items": [
+            {
+              "name": "PK提款机-0点公屏活动卡片",
+              "prompts": [
+                "执行 PK提款机-0点公屏活动卡片"
               ],
               "source": "MOA",
               "source_id": "moa",

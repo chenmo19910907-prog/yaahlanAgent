@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20260808130108"></script>
-  <script src="demo-api.js?v=20260808130108"></script>
+  <script src="demo-fixtures.js?v=20260811090013"></script>
+  <script src="demo-api.js?v=20260811090013"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -1696,7 +1696,13 @@
       margin-bottom: 32px;
       min-width: 0;
       animation: message-rise 360ms var(--ease-spring) both;
+      scroll-margin-top: 72px;
       scroll-margin-bottom: 20px;
+    }
+    .msg.search-highlight .msg-body {
+      box-shadow: 0 0 0 2px var(--accent), var(--shadow-msg);
+      background: var(--accent-soft);
+      transition: background 1.8s var(--ease-standard), box-shadow 1.8s var(--ease-standard);
     }
     .msg.user { align-self: flex-end; max-width: min(62.4%, var(--content-width)); min-width: 0; }
     .msg.assistant {
@@ -2656,6 +2662,32 @@
       font-size: 0.86rem;
       font-weight: 600;
       color: var(--text);
+    }
+    .external-agent-open {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: border-color 180ms, color 180ms, background 180ms;
+    }
+    .external-agent-open:hover {
+      border-color: var(--accent);
+      color: var(--text);
+      background: var(--accent-soft);
+    }
+    .external-agent-open svg {
+      width: 12px;
+      height: 12px;
+      stroke: currentColor;
+      fill: none;
     }
     .settings-hint {
       margin-top: 6px;
@@ -4163,7 +4195,9 @@
         showEmptyState();
         return false;
       }
-      if (!opts.force && sessionId === currentSessionId) return true;
+      const scrollToTimestamp = (opts.scrollToTimestamp || '').trim();
+      if (!opts.force && sessionId === currentSessionId && !scrollToTimestamp) return true;
+      pendingScrollToTimestamp = scrollToTimestamp;
       currentSessionId = sessionId;
       persistSessionId(sessionId);
       syncSessionReadOnly(sessionId);
@@ -4236,6 +4270,7 @@
     }
     let sessionSearchQuery = '';
     let sessionSearchTimer = 0;
+    let pendingScrollToTimestamp = '';
     function trackEvent(event, props = {}) {
       if (window.WebAgentAnalytics) window.WebAgentAnalytics.track(event, props);
     }
@@ -5705,16 +5740,22 @@
         container.innerHTML = '<p class="settings-hint">暂无可配置的外部 Agent。</p>';
         return;
       }
+      const openIcon = '<svg viewBox="0 0 24 24" stroke-width="2" aria-hidden="true"><path d="M14 3h7v7"/><path d="M10 14 21 3"/><path d="M21 14v7h-7"/><path d="M3 10V3h7"/></svg>';
       container.innerHTML = agents.map((item) => {
         const id = String(item.id || '').trim();
         const label = escapeHtml(String(item.label || id));
+        const url = String(item.url || '').trim();
         const checked = enabled.has(id) ? ' checked' : '';
+        const openLink = url
+          ? `<a class="external-agent-open" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" title="在新标签页打开 ${label}">打开${openIcon}</a>`
+          : '';
         return `
           <div class="external-agent-item${checked ? ' is-checked' : ''}">
             <label class="external-agent-check" for="external-agent-${escapeHtml(id)}">
               <input type="checkbox" id="external-agent-${escapeHtml(id)}" data-agent-id="${escapeHtml(id)}"${checked} />
               <span class="external-agent-name">${label}</span>
             </label>
+            ${openLink}
           </div>`;
       }).join('');
       container.querySelectorAll('input[type="checkbox"]').forEach((input) => {
@@ -6505,7 +6546,7 @@
           sessionLongPressTriggered = false;
           return;
         }
-        selectSession(session.id);
+        selectSession(session.id, sessionSearchScrollOpts(session));
       });
       el.addEventListener('contextmenu', (event) => {
         if (isGuestMode()) return;
@@ -7586,9 +7627,49 @@
     }
 
     async function selectSession(id, opts = {}) {
-      if (!opts.force && id === currentSessionId) return;
+      const scrollTo = (opts.scrollToTimestamp || '').trim();
+      if (!opts.force && id === currentSessionId && !scrollTo) return;
       clearPendingAttachments();
       await activateSession(id, opts);
+    }
+
+    function sessionSearchScrollOpts(session) {
+      const q = sessionSearchQuery.trim();
+      const ts = (session?.search_message_timestamp || '').trim();
+      if (!q || !ts) return {};
+      return { scrollToTimestamp: ts, force: true };
+    }
+
+    function scrollToMessageTimestamp(timestamp) {
+      const ts = String(timestamp || '').trim();
+      if (!ts) return false;
+      const container = getMessagesEl();
+      if (!container) return false;
+      let target = null;
+      container.querySelectorAll('.msg[data-timestamp]').forEach((node) => {
+        if (!target && node.dataset.timestamp === ts) target = node;
+      });
+      if (!target) return false;
+      target.scrollIntoView({
+        block: 'center',
+        behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+      });
+      target.classList.remove('search-highlight');
+      void target.offsetWidth;
+      target.classList.add('search-highlight');
+      window.setTimeout(() => target.classList.remove('search-highlight'), 2600);
+      updateScrollToBottomBtn();
+      return true;
+    }
+
+    function scheduleScrollToMessageTimestamp(timestamp) {
+      const ts = String(timestamp || '').trim();
+      if (!ts) return;
+      const attempt = (left) => {
+        if (scrollToMessageTimestamp(ts) || left <= 0) return;
+        window.setTimeout(() => attempt(left - 1), 80);
+      };
+      requestAnimationFrame(() => requestAnimationFrame(() => attempt(8)));
     }
 
     function agentLogoHtml() {
@@ -7891,7 +7972,11 @@
           container.appendChild(typingEl);
         }
       }
-      if (restoreFromBottom != null) {
+      if (pendingScrollToTimestamp) {
+        const scrollTs = pendingScrollToTimestamp;
+        pendingScrollToTimestamp = '';
+        scheduleScrollToMessageTimestamp(scrollTs);
+      } else if (restoreFromBottom != null) {
         restoreMessagesScrollFromBottom(restoreFromBottom);
       } else {
         scrollMessagesToBottom({ force: !isCurrentSessionStreaming() });
@@ -7938,6 +8023,8 @@
       if (container.querySelector('.empty-state')) dismissEmptyState(container);
       const el = document.createElement('div');
       el.className = `msg ${role}`;
+      const msgTs = timestamp || new Date().toISOString();
+      if (msgTs) el.dataset.timestamp = msgTs;
       const label = role === 'user'
         ? ((authorLabel || '').trim() || authUserDisplayName(currentAuthUser))
         : 'Agent';
@@ -7949,7 +8036,7 @@
         ? `${attachmentHtml}${renderMarkdown(text)}`
         : `${attachmentHtml}${text ? escapeHtml(text).replace(/\n/g, '<br>') : ''}`;
       el.innerHTML = `
-        ${buildMsgLabelHtml(label, timestamp || new Date().toISOString())}
+        ${buildMsgLabelHtml(label, msgTs)}
         <div class="msg-body">${bodyHtml || attachmentHtml}</div>`;
       if (role === 'assistant') {
         setMessageMarkdown(el.querySelector('.msg-body'), text);
