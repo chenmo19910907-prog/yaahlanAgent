@@ -1707,6 +1707,8 @@
       align-self: flex-start;
       width: min(100%, calc(var(--content-width) * 1.2));
       max-width: min(100%, calc(var(--content-width) * 1.2));
+      position: relative;
+      overflow: visible;
     }
     .msg-label-row {
       display: flex; align-items: baseline; gap: 8px;
@@ -1748,19 +1750,22 @@
       background: var(--assistant-bg); border: 1px solid var(--border);
     }
     .msg.assistant .msg-body-wrap {
-      display: flex;
-      align-items: flex-end;
-      gap: 6px;
+      position: relative;
+      display: block;
       min-width: 0;
+      overflow: visible;
     }
     .msg.assistant .msg-body-wrap > .msg-body {
-      flex: 1;
       min-width: 0;
+      max-width: 100%;
     }
     .msg.assistant .msg-actions {
+      position: absolute;
+      left: calc(100% + 6px);
+      bottom: 0;
       display: flex;
       flex-shrink: 0;
-      align-self: flex-end;
+      pointer-events: auto;
     }
     .msg.assistant.streaming .msg-actions { display: none; }
     .msg-share-btn {
