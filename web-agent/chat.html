@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20260811090013"></script>
-  <script src="demo-api.js?v=20260811090013"></script>
+  <script src="demo-fixtures.js?v=20260811102616"></script>
+  <script src="demo-api.js?v=20260811102616"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -6578,6 +6578,20 @@
     let forwardPendingText = '';
     let forwardPendingRole = '';
     let forwardPendingQuestion = '';
+    let forwardModalEpoch = 0;
+    let forwardModalTransition = Promise.resolve();
+
+    function resetForwardModalSelection() {
+      forwardDraftIds = new Set();
+      const searchInput = document.getElementById('forward-search');
+      if (searchInput) searchInput.value = '';
+    }
+
+    function enqueueForwardModalTransition(task) {
+      const next = forwardModalTransition.then(task, task);
+      forwardModalTransition = next.catch(() => {});
+      return next;
+    }
 
     function forwardSearchText() {
       const input = document.getElementById('forward-search');
@@ -6699,15 +6713,19 @@
       const modal = document.getElementById('forward-modal');
       if (!modal) return;
       if (!open) {
+        const epoch = ++forwardModalEpoch;
+        resetForwardModalSelection();
         if (modal.classList.contains('open')) {
           await animateOverlayClose(modal);
+          if (epoch !== forwardModalEpoch) return;
           modal.classList.remove('open');
         }
+        if (epoch !== forwardModalEpoch) return;
         modal.setAttribute('aria-hidden', 'true');
         forwardPendingText = '';
         forwardPendingRole = '';
         forwardPendingQuestion = '';
-        forwardDraftIds = new Set();
+        renderForwardList();
         return;
       }
       modal.classList.add('open');
@@ -6716,25 +6734,26 @@
     }
 
     async function openForwardModal(text, role, questionText = '') {
-      forwardPendingText = (text || '').trim();
-      forwardPendingRole = (role || '').trim();
-      forwardPendingQuestion = (questionText || '').trim();
-      forwardDraftIds = new Set();
-      const searchInput = document.getElementById('forward-search');
-      if (searchInput) searchInput.value = '';
-      const hasCachedTargets = shareableWebUsers.length > 0 || shareableWebGroups.length > 0;
-      if (hasCachedTargets) renderForwardList();
-      else showForwardListLoading();
-      void setForwardModalOpen(true);
-      await loadShareableWebUsers();
-      renderForwardList();
+      return enqueueForwardModalTransition(async () => {
+        await setForwardModalOpen(false);
+        forwardPendingText = (text || '').trim();
+        forwardPendingRole = (role || '').trim();
+        forwardPendingQuestion = (questionText || '').trim();
+        resetForwardModalSelection();
+        const hasCachedTargets = shareableWebUsers.length > 0 || shareableWebGroups.length > 0;
+        if (hasCachedTargets) renderForwardList();
+        else showForwardListLoading();
+        await setForwardModalOpen(true);
+        await loadShareableWebUsers();
+        renderForwardList();
+      });
     }
 
     async function submitMessageForward() {
       if (forwardSaving) return;
       if (!forwardPendingText) {
         alert('暂无内容可分享');
-        await setForwardModalOpen(false);
+        await enqueueForwardModalTransition(() => setForwardModalOpen(false));
         return;
       }
       if (!forwardDraftIds.size) {
@@ -6775,7 +6794,7 @@
         } else {
           showWebToast(`已分享至 ${sentCount} 个目标`);
         }
-        await setForwardModalOpen(false);
+        await enqueueForwardModalTransition(() => setForwardModalOpen(false));
       } catch (_) {
         alert('分享失败，请稍后重试');
       } finally {
@@ -8965,7 +8984,7 @@
       if (event.target.id === 'collaborators-modal') setCollaboratorsModalOpen(false);
     });
     document.getElementById('btn-forward-cancel')?.addEventListener('click', () => {
-      setForwardModalOpen(false);
+      void enqueueForwardModalTransition(() => setForwardModalOpen(false));
     });
     document.getElementById('btn-forward-confirm')?.addEventListener('click', () => {
       submitMessageForward();
@@ -8974,7 +8993,9 @@
       renderForwardList();
     });
     document.getElementById('forward-modal')?.addEventListener('click', (event) => {
-      if (event.target.id === 'forward-modal') setForwardModalOpen(false);
+      if (event.target.id === 'forward-modal') {
+        void enqueueForwardModalTransition(() => setForwardModalOpen(false));
+      }
     });
     document.getElementById('message-board-modal')?.addEventListener('click', (event) => {
       if (event.target.id === 'message-board-modal') setMessageBoardOpen(false);
@@ -9010,6 +9031,10 @@
       if (bookmarksPanel?.open) setBookmarksOpen(false);
       if (messageBoardPanel?.open) setMessageBoardOpen(false);
       if (moaRecordPanel?.open) setMoaRecordOpen(false);
+      const forwardModal = document.getElementById('forward-modal');
+      if (forwardModal?.classList.contains('open')) {
+        void enqueueForwardModalTransition(() => setForwardModalOpen(false));
+      }
     });
 
     let sessionPollTimer = null;
