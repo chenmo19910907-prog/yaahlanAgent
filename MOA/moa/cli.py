@@ -27,6 +27,7 @@ from .family import (
     parse_user_joined_family_summary,
 )
 from .env import load_local_env, load_online_env
+from .family_join_guard import assert_agent_family_join_not_backdoor
 from .online_config import online_defaults, online_query_login_status
 from .flows import (
     build_family_level_upgrade_payload,
@@ -1110,6 +1111,7 @@ def main() -> int:
             print("最终 payload（不含 cookie）:", file=sys.stderr)
             print(json.dumps(payload, ensure_ascii=False, indent=2), file=sys.stderr)
 
+        assert_agent_family_join_not_backdoor(payload)
         resp = client.post(payload)
     except (ValueError, RuntimeError, OSError) as e:
         print(f"执行失败: {e}", file=sys.stderr)

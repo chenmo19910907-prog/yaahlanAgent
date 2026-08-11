@@ -5,6 +5,7 @@ from __future__ import annotations
 import concurrent.futures
 import json
 import logging
+import os
 import sys
 import threading
 import time
@@ -35,6 +36,7 @@ from gateway_prompt import batch_progress_instruction, build_gateway_prompt
 from code_modify_permission import is_moa_registry_open_to_all
 from mcp_config import build_stdio_mcp_servers, inject_scripts_path
 from batch_progress import waive_agent_timeout_deadline
+from external_agent_progress import USER_KEY_ENV
 from task_session import TaskInterrupted, TaskSession, safe_cancel_run
 
 REPO_ROOT = GATEWAY_DIR.parent.parent
@@ -388,6 +390,67 @@ def run_agent_prompt(
 
     link_list = [str(link).strip() for link in (links or []) if str(link).strip()]
     mcp_servers = build_stdio_mcp_servers() if enable_mcp else None
+    prev_batch_key = os.environ.get(USER_KEY_ENV)
+    if user_key:
+        os.environ[USER_KEY_ENV] = user_key
+    try:
+        return _run_agent_prompt_impl(
+            text=text,
+            paths=paths,
+            link_list=link_list,
+            api_key=api_key,
+            workdir=workdir,
+            timeout_s=timeout_s,
+            model=model,
+            use_gateway_rules=use_gateway_rules,
+            enable_mcp=enable_mcp,
+            session=session,
+            user_key=user_key,
+            sender_name=sender_name,
+            allow_code_modify=allow_code_modify,
+            allow_moa_registry=allow_moa_registry,
+            stream=stream,
+            on_render=on_render,
+            show_thinking=show_thinking,
+            card_compact=card_compact,
+            web_stream=web_stream,
+            render_min_interval_s=render_min_interval_s,
+            include_process_in_final=include_process_in_final,
+            mcp_servers=mcp_servers,
+        )
+    finally:
+        if user_key:
+            if prev_batch_key is None:
+                os.environ.pop(USER_KEY_ENV, None)
+            else:
+                os.environ[USER_KEY_ENV] = prev_batch_key
+
+
+def _run_agent_prompt_impl(
+    *,
+    text: str,
+    paths: list[Path],
+    link_list: list[str],
+    api_key: str,
+    workdir: str,
+    timeout_s: int,
+    model: str,
+    use_gateway_rules: bool,
+    enable_mcp: bool,
+    session: TaskSession | None,
+    user_key: str | None,
+    sender_name: str | None,
+    allow_code_modify: bool,
+    allow_moa_registry: bool,
+    stream: bool,
+    on_render: Callable[[str], None] | None,
+    show_thinking: bool,
+    card_compact: bool,
+    web_stream: bool,
+    render_min_interval_s: float,
+    include_process_in_final: bool,
+    mcp_servers: dict[str, Any] | None,
+) -> str:
     local_opts = LocalAgentOptions(
         cwd=workdir,
         setting_sources=["all"],

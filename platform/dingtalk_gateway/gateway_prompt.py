@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from family_join_defaults import gateway_family_join_rule_line
+from family_join_defaults import family_join_prompt_hint, gateway_family_join_rule_line
 from gift_defaults import gateway_gift_rule_line
 from moa_registry_guard import looks_like_moa_registry_intent, moa_registry_instruction
 
@@ -226,6 +226,9 @@ def build_gateway_prompt(
         extras.append(batch_note)
     if looks_like_moa_registry_intent(user):
         extras.append(moa_registry_instruction())
+    family_join_hint = family_join_prompt_hint(user)
+    if family_join_hint:
+        extras.append(family_join_hint)
 
     body = user
     if extras:

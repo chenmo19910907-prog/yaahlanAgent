@@ -230,7 +230,12 @@ def test_gift_default_route() -> None:
 
 
 def test_family_join_admin_only() -> None:
-    from family_join_defaults import gateway_family_join_rule_line, looks_like_family_join_request
+    from family_join_defaults import (
+        family_join_prompt_hint,
+        gateway_family_join_rule_line,
+        looks_like_family_join_request,
+        payload_uses_family_join_backdoor,
+    )
 
     assert looks_like_family_join_request("把 100465989 加入家族 101435")
     assert looks_like_family_join_request("批量入族")
@@ -239,6 +244,18 @@ def test_family_join_admin_only() -> None:
     assert "add-family-member" in rule
     assert "joinFamily" in rule
     assert "ADMIN_SSO_TOKEN" in rule
+    hint = family_join_prompt_hint("把 100465989 加入家族 101435")
+    assert hint is not None
+    assert "禁止" in hint
+    assert payload_uses_family_join_backdoor(
+        {
+            "url": "/service/voga-mts-user-backdoor",
+            "params": [{"txt": 'return context.getBean("familyService").joinFamily("1", "2");'}],
+        }
+    )
+    assert not payload_uses_family_join_backdoor(
+        {"url": "/service/voga-mts-user-backdoor", "params": [{"txt": "getCharmInfoNoAvatar"}]}
+    )
 
 
 def test_adb_execution_guard() -> None:

@@ -11,7 +11,10 @@ if str(GATEWAY_DIR) not in sys.path:
 
 from external_agent_config import external_agents_by_id  # noqa: E402
 from gateway_prompt import batch_parallel_rule_snippet, batch_progress_instruction  # noqa: E402
-from family_join_defaults import gateway_family_join_rule_line  # noqa: E402
+from family_join_defaults import (  # noqa: E402
+    family_join_prompt_hint,
+    gateway_family_join_rule_line,
+)
 from gift_defaults import gateway_gift_rule_line  # noqa: E402
 from moa_registry_guard import (  # noqa: E402
     looks_like_moa_registry_intent,
@@ -270,6 +273,9 @@ def build_web_prompt(
     pk_hint = pk_atm_prompt_hint(body, session_id=session_id)
     if pk_hint:
         extras.append(pk_hint)
+    family_join_hint = family_join_prompt_hint(body)
+    if family_join_hint:
+        extras.append(family_join_hint)
     if enabled_external_agents is not None:
         catalog = external_agents_by_id()
         if enabled_external_agents:
