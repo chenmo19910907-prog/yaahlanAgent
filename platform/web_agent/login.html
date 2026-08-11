@@ -239,6 +239,29 @@
     .copy-btn:hover { background: var(--copy-hover-bg); }
     .copy-btn:active { transform: scale(0.98); }
     .copy-btn.copied { color: var(--success); background: var(--copied-bg); }
+    .join-group-qr {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin: 4px 0 22px;
+      padding: 14px 12px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--phrase-bg);
+    }
+    .join-group-qr img {
+      display: block;
+      width: min(220px, 72%);
+      height: auto;
+      border-radius: 10px;
+    }
+    .join-group-hint {
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.5;
+      text-align: center;
+    }
     .login-row {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
@@ -492,18 +515,20 @@
         <div class="login-brand-icon" id="login-brand-icon" aria-hidden="true"></div>
         <h1>Yaahlan 智能工具 Agent</h1>
       </div>
-      <p class="subtitle" id="subtitle">网页版可通过钉钉机器人验证码登录；在钉钉内打开时将优先尝试自动登录。</p>
     </div>
 
     <div class="oauth-status" id="oauthStatus">正在通过钉钉验证身份…</div>
 
-    <div class="divider hidden" id="otpDivider">或使用验证码登录</div>
-
     <div class="otp-section" id="otpSection">
-      <p class="step">1. 复制下方文案，发送给【智能工具人yaahlan】或【群内@智能工具人yaahlan】，加群请联系【陈墨】</p>
+      <p class="step">1. 复制下方文案，发送给【智能工具人yaahlan】或【群内@智能工具人yaahlan】</p>
       <div class="phrase-row">
         <div class="phrase-box" id="loginPhrase">请求访问Yaahlan 智能工具 Agent</div>
         <button type="button" class="copy-btn" id="copyBtn">复制</button>
+      </div>
+
+      <div class="join-group-qr">
+        <img src="/assets/dingtalk-group-qr.png" width="220" height="220" alt="智能工具平台 Yaahlan 钉钉群二维码" loading="lazy" decoding="async" />
+        <p class="join-group-hint">提示：扫描二维码加群</p>
       </div>
 
       <p class="step">2. 在钉钉私聊中查收 8 位验证码，输入后登录</p>
@@ -591,8 +616,6 @@
     const errorBox = document.getElementById('errorBox');
     const oauthStatus = document.getElementById('oauthStatus');
     const otpSection = document.getElementById('otpSection');
-    const otpDivider = document.getElementById('otpDivider');
-    const subtitleEl = document.getElementById('subtitle');
     let oauthConfig = { enabled: false, clientId: '', corpId: '' };
 
     function initThemeSettings() {
@@ -601,14 +624,11 @@
 
     function showOtpFallback() {
       otpSection.classList.remove('hidden');
-      otpDivider.classList.remove('hidden');
       oauthStatus.classList.remove('show');
-      subtitleEl.textContent = '网页版可通过钉钉机器人验证码登录；在钉钉内打开时将优先尝试自动登录。';
     }
 
     function hideOtpForOAuth() {
       otpSection.classList.add('hidden');
-      otpDivider.classList.add('hidden');
     }
 
     function oauthClientReady() {
@@ -669,7 +689,6 @@
         }
         oauthConfig = data.dingtalkOAuth || oauthConfig;
         if (oauthConfig.enabled && oauthClientReady() && DingtalkOAuth.isLikelyDingTalkClient()) {
-          subtitleEl.textContent = '检测到钉钉客户端，正在尝试免登…';
           const ok = await tryDingTalkOAuth();
           if (ok) return;
         }

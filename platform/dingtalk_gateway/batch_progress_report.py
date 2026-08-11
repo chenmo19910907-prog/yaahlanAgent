@@ -9,11 +9,16 @@ from pathlib import Path
 
 from batch_progress import build_batch_progress_message, report_batch_progress
 from batch_result import save_batch_attachment, save_batch_result
+from external_agent_progress import resolve_user_key
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="上报钉钉网关批量操作进度")
-    parser.add_argument("--user-key", required=True, help="网关 user_key（提示词中给出）")
+    parser.add_argument(
+        "--user-key",
+        default=None,
+        help="网关 user_key（Web Agent worker 可省略，读 WEB_AGENT_BATCH_KEY）",
+    )
     parser.add_argument(
         "--current",
         type=int,
@@ -52,6 +57,13 @@ def main() -> int:
         help="任务结束时发送到群的本地附件（建议 .zip）",
     )
     args = parser.parse_args()
+    user_key = resolve_user_key(args.user_key)
+    if not user_key:
+        print(
+            "[FAIL] user_key 不能为空：请传 --user-key 或设置 WEB_AGENT_BATCH_KEY",
+            file=sys.stderr,
+        )
+        return 1
 
     result_body = (args.result_text or "").strip()
     if args.result_file:
@@ -62,18 +74,18 @@ def main() -> int:
         result_body = path.read_text(encoding="utf-8").strip()
 
     if result_body:
-        save_batch_result(args.user_key, result_body)
+        save_batch_result(user_key, result_body)
 
     if args.attachment_file:
         attachment = Path(args.attachment_file)
         if not attachment.is_file():
             print(f"[FAIL] 附件不存在: {attachment}", file=sys.stderr)
             return 1
-        save_batch_attachment(args.user_key, attachment)
+        save_batch_attachment(user_key, attachment)
 
     try:
         state = report_batch_progress(
-            args.user_key,
+            user_key,
             current=args.current,
             total=args.total,
             label=args.label,

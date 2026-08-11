@@ -33,7 +33,7 @@ from web_otp_auth import (
 
 _SESSION_MESSAGES_RE = re.compile(r"^/api/sessions/[a-z0-9]+/messages$")
 LOCALHOST_ADMIN_STAFF_ID = "admin"
-LOCALHOST_ADMIN_DISPLAY_NAME = "admin"
+LOCALHOST_ADMIN_DISPLAY_NAME = "管理员"
 
 
 def _env_bool(name: str, default: bool = False) -> bool:

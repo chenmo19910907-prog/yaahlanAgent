@@ -1,0 +1,5 @@
+http://172.18.125.90:18766/keynote/promo
+http://127.0.0.1:18766/keynote/promo
+
+# 跳过原 Keynote 第 2、3、5、40 页（能用的工具 / 如何做好一款 Agent / 好设计 / 三周用量）
+# 完整版：/keynote

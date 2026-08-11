@@ -164,9 +164,15 @@ def build_streaming_progress_status_line(
     *,
     estimate_s: float | None = None,
 ) -> str:
-    """流式卡片「已用时」通道：仅展示已执行时长。"""
+    """流式卡片「已用时」通道：展示已执行时长，可选附带预计剩余。"""
     elapsed_str = format_duration(elapsed_s)
-    return f"执行中，已用时 {elapsed_str}…"
+    body = f"执行中，已用时 {elapsed_str}"
+    if estimate_s is not None and estimate_s > 0:
+        remaining = max(0.0, estimate_s - elapsed_s)
+        eta_part = format_eta_remaining(remaining, min_show_s=15.0)
+        if eta_part:
+            body += eta_part
+    return f"{body}…"
 
 
 def build_streaming_card_header(summary: str, *, prompt: str | None = None) -> str:

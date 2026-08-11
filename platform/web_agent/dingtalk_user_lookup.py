@@ -182,6 +182,64 @@ def lookup_staff_public_name(
     return _public_display_name(resolved or fallback_label, staff_id)
 
 
+def _localhost_admin_display_name(staff_id: str) -> str:
+    """本机管理员账号的可读展示名（避免 admin/admin 落成「未知用户」）。"""
+    try:
+        from web_auth import localhost_admin_config
+
+        local_id, local_name = localhost_admin_config()
+    except Exception:  # noqa: BLE001
+        return ""
+    uid = (staff_id or "").strip()
+    if uid != (local_id or "").strip():
+        return ""
+    label = (local_name or "").strip()
+    pub = _public_display_name(label, uid)
+    if pub != "未知用户":
+        return pub
+    if label and label != uid:
+        return chinese_display_name(label) or label
+    return "管理员"
+
+
+def lookup_auth_user_display_name(
+    staff_id: str,
+    session_display_name: str = "",
+    *,
+    sessions: list[SessionMeta] | None = None,
+) -> str:
+    """当前登录用户展示名：优先中文名；本地管理员与 API 兜底不显示「未知用户」。"""
+    uid = (staff_id or "").strip()
+    session_label = (session_display_name or "").strip()
+    if session_label in _COLLABORATOR_EXCLUDED_DISPLAY_NAMES or session_label == uid:
+        session_label = ""
+    fallback = session_label or uid
+    name = lookup_staff_public_name(uid, fallback, sessions=sessions)
+    if name != "未知用户":
+        return name
+
+    known = collect_all_staff_labels(sessions or [])
+    api_name = resolve_dingtalk_name(uid, known=known, try_api=True)
+    if api_name:
+        pub = _public_display_name(api_name, uid)
+        if pub != "未知用户":
+            return pub
+
+    if session_label and session_label != uid:
+        pub = _public_display_name(session_label, uid)
+        if pub != "未知用户":
+            return pub
+        plain = chinese_display_name(session_label)
+        if plain and plain != uid:
+            return plain
+
+    local_name = _localhost_admin_display_name(uid)
+    if local_name:
+        return local_name
+
+    return name
+
+
 def collect_known_labels(sessions: list[SessionMeta]) -> dict[str, str]:
     """从已有会话里汇总 staffId → 钉钉昵称。"""
     known: dict[str, str] = {}

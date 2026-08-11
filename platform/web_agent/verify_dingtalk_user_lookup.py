@@ -182,6 +182,34 @@ class DingtalkUserLookupTest(unittest.TestCase):
             "丁亮",
         )
 
+    def test_lookup_auth_user_display_name_localhost_admin(self) -> None:
+        self.assertEqual(
+            lookup.lookup_auth_user_display_name("admin", "admin"),
+            "管理员",
+        )
+        self.assertEqual(
+            lookup.lookup_auth_user_display_name("admin", "未知用户"),
+            "管理员",
+        )
+
+    def test_lookup_auth_user_display_name_uses_session_label(self) -> None:
+        self.assertEqual(
+            lookup.lookup_auth_user_display_name("0834514151639181", "丁亮 Liang"),
+            "丁亮",
+        )
+
+    @patch.object(lookup, "resolve_dingtalk_name", return_value="")
+    @patch.object(lookup, "collect_all_staff_labels", return_value={})
+    def test_lookup_auth_user_display_name_falls_back_to_unknown(
+        self,
+        _collect_mock,
+        _resolve_mock,
+    ) -> None:
+        self.assertEqual(
+            lookup.lookup_auth_user_display_name("99999999999999999", ""),
+            "未知用户",
+        )
+
     def test_list_selectable_staff_users_filters_query(self) -> None:
         sessions = [
             SessionMeta(

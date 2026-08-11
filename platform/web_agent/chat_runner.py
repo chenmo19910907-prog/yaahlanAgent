@@ -29,6 +29,10 @@ from user_agent_pool import get_user_agent_pool  # noqa: E402
 
 from web_admin_permission import is_web_admin  # noqa: E402
 from web_prompt import build_web_prompt, normalize_reply_mode  # noqa: E402
+from web_session_context import (  # noqa: E402
+    build_rotation_system_note,
+    should_rotate_cursor_agent,
+)
 from web_session_store import get_session_store  # noqa: E402
 
 logger = logging.getLogger("web-agent")
@@ -78,9 +82,22 @@ def run_web_chat(
     if looks_like_code_modify_request(message) and not code_allowed:
         return code_modify_denial_message()
 
+    agent_message = message
+    if should_rotate_cursor_agent(session_id):
+        get_user_agent_pool().invalidate(user_key)
+        rotation_note = build_rotation_system_note(session_id)
+        if rotation_note:
+            agent_message = f"{message.rstrip()}\n\n{rotation_note}"
+        logger.info(
+            "Web 会话 %s 过长，已轮换 Cursor Agent user_key=%s",
+            session_id[:8],
+            user_key,
+        )
+
     prompt = build_web_prompt(
-        message,
+        agent_message,
         is_new_session=is_new,
+        session_id=session_id,
         batch_progress_key=user_key,
         image_count=len(image_list),
         file_paths=file_list,

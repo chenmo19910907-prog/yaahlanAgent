@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -23,6 +24,7 @@ from task_chain_estimate import (
 logger = logging.getLogger("dingtalk-gateway")
 
 PROGRESS_DIR = GATEWAY_DIR / "data" / "batch_progress"
+_PROGRESS_WRITE_LOCK = threading.Lock()
 
 # 群内批量进度推送最小间隔（秒）；约 30 秒～1 分钟一条
 PUSH_MIN_INTERVAL_S = 30.0
@@ -97,28 +99,29 @@ def report_batch_progress(
         return None
     current_n = max(0, min(int(current), total_n))
     now = time.time()
-    started_at = now
-    existing = read_batch_progress(key)
-    if existing is not None:
-        if current_n == 0 or existing.total != total_n:
-            started_at = now
-        elif existing.started_at > 0:
-            started_at = existing.started_at
-    state = BatchProgressState(
-        user_key=key,
-        total=total_n,
-        current=current_n,
-        label=(label or "").strip(),
-        detail=(detail or "").strip(),
-        updated_at=now,
-        started_at=started_at,
-    )
-    PROGRESS_DIR.mkdir(parents=True, exist_ok=True)
-    path = _progress_path(key)
-    path.write_text(
-        json.dumps(state.as_dict(), ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    with _PROGRESS_WRITE_LOCK:
+        started_at = now
+        existing = read_batch_progress(key)
+        if existing is not None:
+            if current_n == 0 or existing.total != total_n:
+                started_at = now
+            elif existing.started_at > 0:
+                started_at = existing.started_at
+        state = BatchProgressState(
+            user_key=key,
+            total=total_n,
+            current=current_n,
+            label=(label or "").strip(),
+            detail=(detail or "").strip(),
+            updated_at=now,
+            started_at=started_at,
+        )
+        PROGRESS_DIR.mkdir(parents=True, exist_ok=True)
+        path = _progress_path(key)
+        path.write_text(
+            json.dumps(state.as_dict(), ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
     logger.info(
         "批量进度 user=%s %s/%s label=%s",
         key,

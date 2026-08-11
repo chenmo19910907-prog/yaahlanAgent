@@ -179,36 +179,71 @@ def _session_people_blob(
     return " ".join(part.strip() for part in parts if part and part.strip())
 
 
+@dataclass(frozen=True)
+class SessionSearchHit:
+    snippet: str
+    message_timestamp: str = ""
+
+
+def _message_search_blob(msg: ChatMessage) -> str:
+    content = (msg.content or "").strip().replace("\n", " ")
+    author = (msg.author_label or msg.author_id or "").strip()
+    parts = [content]
+    if author:
+        parts.append(author)
+    return " ".join(part for part in parts if part)
+
+
+def _scroll_message_timestamp(messages: list[ChatMessage], query: str) -> str:
+    q = _normalize_search_query(query)
+    if not q:
+        return ""
+    for msg in reversed(messages):
+        blob = _message_search_blob(msg)
+        if blob and q in blob.casefold():
+            return (msg.timestamp or "").strip()
+    for msg in messages:
+        if msg.role == "user" and (msg.content or "").strip():
+            return (msg.timestamp or "").strip()
+    if messages:
+        return (messages[0].timestamp or "").strip()
+    return ""
+
+
 def session_matches_search(
     meta: SessionMeta,
     messages: list[ChatMessage],
     query: str,
     *,
     known_labels: dict[str, str] | None = None,
-) -> str:
-    """命中则返回展示用摘要，否则返回空字符串。"""
+) -> SessionSearchHit | None:
+    """命中则返回展示摘要与应滚动定位的消息时间戳，否则返回 None。"""
     q = _normalize_search_query(query)
     if not q:
-        return ""
+        return None
     for field in (meta.title, meta.custom_title, meta.latest_preview):
         text = (field or "").strip()
         if text and q in text.casefold():
-            return _snippet_around(text, q)
+            return SessionSearchHit(
+                snippet=_snippet_around(text, q),
+                message_timestamp=_scroll_message_timestamp(messages, q),
+            )
     people = _session_people_blob(meta, known_labels)
     if people and q in people.casefold():
-        return _snippet_around(people, q)
+        return SessionSearchHit(
+            snippet=_snippet_around(people, q),
+            message_timestamp=_scroll_message_timestamp(messages, q),
+        )
     for msg in reversed(messages):
-        content = (msg.content or "").strip().replace("\n", " ")
-        author = (msg.author_label or msg.author_id or "").strip()
-        blob_parts = [content]
-        if author:
-            blob_parts.append(author)
-        blob = " ".join(part for part in blob_parts if part)
+        blob = _message_search_blob(msg)
         if not blob or q not in blob.casefold():
             continue
         role_tag = "问" if msg.role == "user" else "答"
-        return f"{role_tag} · {_snippet_around(blob, q)}"
-    return ""
+        return SessionSearchHit(
+            snippet=f"{role_tag} · {_snippet_around(blob, q)}",
+            message_timestamp=(msg.timestamp or "").strip(),
+        )
+    return None
 
 
 def filter_sessions_by_search(
@@ -217,20 +252,20 @@ def filter_sessions_by_search(
     *,
     load_messages: Callable[[str], list[ChatMessage]],
     known_labels: dict[str, str] | None = None,
-) -> list[tuple[SessionMeta, str]]:
+) -> list[tuple[SessionMeta, SessionSearchHit]]:
     q = _normalize_search_query(query)
     if not q:
-        return [(meta, "") for meta in sessions]
-    matched: list[tuple[SessionMeta, str]] = []
+        return [(meta, SessionSearchHit("")) for meta in sessions]
+    matched: list[tuple[SessionMeta, SessionSearchHit]] = []
     for meta in sessions:
-        snippet = session_matches_search(
+        hit = session_matches_search(
             meta,
             load_messages(meta.id),
             q,
             known_labels=known_labels,
         )
-        if snippet:
-            matched.append((meta, snippet))
+        if hit:
+            matched.append((meta, hit))
     return matched
 
 
@@ -417,19 +452,12 @@ class SessionMeta:
         return viewer in self.web_collaborator_id_set()
 
     def web_owner_display(self, *, known_labels: dict[str, str] | None = None) -> str:
-        from dingtalk_user_lookup import resolve_staff_display_name
+        from dingtalk_user_lookup import lookup_auth_user_display_name
 
         uid = (self.web_owner_id or "").strip()
-        label = resolve_staff_display_name(
-            uid,
-            known_labels=known_labels,
-            fallback_label=(self.web_owner_label or "").strip(),
-        )
-        if label:
-            return label
-        if uid:
-            return f"用户 {uid}"
-        return ""
+        if not uid:
+            return ""
+        return lookup_auth_user_display_name(uid, self.web_owner_label or "")
 
     def owner_display(self, *, known_labels: dict[str, str] | None = None) -> str:
         from dingtalk_user_lookup import resolve_staff_display_name
@@ -767,7 +795,11 @@ class WebSessionStore:
             items = [s for s in items if s.message_count > 0]
             if enrich_names and items:
                 try:
-                    from dingtalk_user_lookup import collect_all_staff_labels, enrich_session_owner_labels
+                    from dingtalk_user_lookup import (
+                        collect_all_staff_labels,
+                        enrich_session_owner_labels,
+                        lookup_auth_user_display_name,
+                    )
 
                     if enrich_session_owner_labels(items):
                         dirty = True
@@ -778,9 +810,19 @@ class WebSessionStore:
                         uid = (meta.web_owner_id or "").strip()
                         if not uid:
                             continue
-                        expected = (known.get(uid) or "").strip()
-                        if expected and meta.web_owner_label != expected:
+                        stored = (meta.web_owner_label or "").strip()
+                        expected = lookup_auth_user_display_name(uid, stored)
+                        if (
+                            expected
+                            and expected != "未知用户"
+                            and stored != expected
+                        ):
                             meta.web_owner_label = expected
+                            dirty = True
+                            continue
+                        fallback = (known.get(uid) or "").strip()
+                        if fallback and stored != fallback:
+                            meta.web_owner_label = fallback
                             dirty = True
                 except Exception as exc:  # noqa: BLE001
                     logger.warning("补全钉钉用户姓名失败: %s", exc)

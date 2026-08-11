@@ -600,6 +600,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         help="PK榜-周结算发奖：周偏移（0=本周，-1=上周；calculateAndDistributeWeekPrize）",
     )
+    parser.add_argument(
+        "--across-pk-week-rank-settle-offset",
+        type=int,
+        help="跨房PK-周榜结算：周偏移（0=本周，-1=上周；settleAcrossPkWeekRank）",
+    )
 
     parser.add_argument(
         "--room-day-rank-area",

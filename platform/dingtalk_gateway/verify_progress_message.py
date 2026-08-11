@@ -95,8 +95,7 @@ def test_streaming_progress_status_line() -> None:
     from progress_message import build_streaming_progress_status_line
 
     line = build_streaming_progress_status_line(90.0, estimate_s=180.0)
-    assert line == "执行中，已用时 1分30秒…"
-    assert "预计还需" not in line
+    assert line == "执行中，已用时 1分30秒，预计还需约 1分30秒…"
     assert "中断操作" not in line
 
 

@@ -229,6 +229,18 @@ def test_gift_default_route() -> None:
     assert is_backpack_gift_request("MOA背包下发 Ocean Gem")
 
 
+def test_family_join_admin_only() -> None:
+    from family_join_defaults import gateway_family_join_rule_line, looks_like_family_join_request
+
+    assert looks_like_family_join_request("把 100465989 加入家族 101435")
+    assert looks_like_family_join_request("批量入族")
+    assert not looks_like_family_join_request("查询家族 101435 详情")
+    rule = gateway_family_join_rule_line()
+    assert "add-family-member" in rule
+    assert "joinFamily" in rule
+    assert "ADMIN_SSO_TOKEN" in rule
+
+
 def test_adb_execution_guard() -> None:
     from adb_execution_guard import looks_like_adb_execution_request
 

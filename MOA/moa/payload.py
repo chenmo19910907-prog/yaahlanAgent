@@ -754,6 +754,20 @@ def _op_pk_rank_settle(args: argparse.Namespace, payload: dict[str, Any]) -> Non
     print(f"PK榜周结算发奖：weekOffset={offset}（{label}）", file=sys.stderr)
 
 
+def _op_across_pk_week_rank_settle(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    offset = args.across_pk_week_rank_settle_offset  # 0=本周，-1=上周
+    payload["url"] = "/service/room/internal/room-pk"
+    payload["method"] = "settleAcrossPkWeekRank"
+    params = payload.get("params")
+    if not isinstance(params, list) or not params or not isinstance(params[0], dict):
+        raise ValueError("payload.params 必须是非空数组，才能覆盖 params[0].value/txt")
+    params[0]["value"] = str(offset)
+    params[0]["txt"] = str(offset)
+    params[0]["type"] = "int"
+    label = "本周" if offset == 0 else (f"上周" if offset == -1 else f"偏移{offset}周")
+    print(f"跨房PK周榜结算：weekOffset={offset}（{label}）", file=sys.stderr)
+
+
 def _op_pk_rank_query(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     # 复用 family fund week key 逻辑，去掉连字符得到 YYYYMMDDweek 格式
     raw_key = resolve_family_fund_week_key(args.pk_rank_query_week)  # -> "YYYYMMDD-week"
@@ -1423,6 +1437,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.recharge_rebate_flow_user_id is not None, _op_recharge_rebate_incr_flow),
     (lambda a: a.recharge_rebate_user_id is not None, _op_recharge_rebate_simulate),
     (lambda a: a.pk_rank_settle_week_offset is not None, _op_pk_rank_settle),
+    (lambda a: a.across_pk_week_rank_settle_offset is not None, _op_across_pk_week_rank_settle),
     (lambda a: a.pk_rank_query_week is not None, _op_pk_rank_query),
     (lambda a: a.pk_rank_user_id is not None, _op_pk_rank_add),
     (lambda a: a.room_bot_room_id is not None, _op_room_add_bots),

@@ -1205,6 +1205,20 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-关注好友.json \\\n  --follow-uid <uid> \\\n  --follow-remote-uid <remoteUid>\n"
     },
     {
+      "id": "batch_phone_clique_mutual_follow",
+      "name": "用户-手机号段全互关",
+      "category": "用户关系（voga-mts-user-relation-stage）",
+      "description": "指定手机号段（--phone-start/--phone-end）或 userId 列表，列表内账号两两双向互关（addUserRelation）。内置 Web Agent 批量进度 N/M 上报（按互关对数）；≥3 对时在对话区实时展示进度",
+      "prompts": [
+        "13311111111到13311111130全部互相关注",
+        "13311111111到13311111130这20个账号全部互相关注",
+        "手机号段全互关 phone-start=<start> phone-end=<end>",
+        "多个测试号两两成为好友",
+        "一批账号全部互关"
+      ],
+      "command": "python3 MOA/scripts/batch_phone_clique_mutual_follow.py \\\n  --phone-start <start> \\\n  --phone-end <end>\n"
+    },
+    {
       "id": "family_delete",
       "name": "家族-解散家族",
       "category": "家族（external/user/family-api）",
@@ -1462,6 +1476,28 @@
         "执行 房间-等级页衰减弹窗-Mock说明"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-等级页衰减弹窗-Mock说明.json\n"
+    },
+    {
+      "id": "pk提款机_0点公屏活动卡片",
+      "name": "PK提款机-0点公屏活动卡片",
+      "category": "房间测试（room）",
+      "description": "notifyPkActivityStartTest（/service/room/internal/room-pk）",
+      "prompts": [
+        "执行 PK提款机-0点公屏活动卡片"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/PK提款机-0点公屏活动卡片.json\n"
+    },
+    {
+      "id": "across_pk_week_rank_settle",
+      "name": "跨房PK-周榜结算",
+      "category": "房间测试（room/internal/room-pk）",
+      "description": "跨房 PK 周榜结算（settleAcrossPkWeekRank；/service/room/internal/room-pk）。--across-pk-week-rank-settle-offset：0=结算当前周，-1=结算上一周。",
+      "prompts": [
+        "跨房PK当前周周榜结算",
+        "跨房PK上一周周榜结算",
+        "跨房PK本周/上周周榜结算"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/跨房PK-周榜结算.json \\\n  --across-pk-week-rank-settle-offset <0|-1>\n"
     }
   ]
 }

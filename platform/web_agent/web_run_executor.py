@@ -19,6 +19,13 @@ from external_agent_progress import USER_KEY_ENV, clear_external_agent_progress
 from task_session import TaskInterrupted, TaskSession
 
 from chat_runner import run_web_chat
+from run_progress_reply import (
+    INTERRUPT_HEADLINE,
+    RETRY_HINT,
+    build_run_stop_reply,
+    is_agent_timeout_message,
+    timeout_headline_from_message,
+)
 from web_file_store import consume_pending_outputs
 from web_prompt import finalize_web_reply_text
 from web_run_store import (
@@ -46,8 +53,7 @@ def _subprocess_env() -> dict[str, str]:
     return merge_project_env()
 
 
-INTERRUPT_REPLY = "⚠️ 任务已中断。"
-RETRY_HINT = "💡 原消息已回填到输入框，请检查后重试。"
+INTERRUPT_REPLY = INTERRUPT_HEADLINE
 
 _RUN_THREADS: dict[str, threading.Thread] = {}
 _RUN_PROCS: dict[str, subprocess.Popen[bytes]] = {}
@@ -338,8 +344,13 @@ def execute_web_run(run_id: str) -> int:
 
             kill_run_child_processes(user_key)
         elapsed = time.monotonic() - started_at
-        final_text = finalize_web_reply_text(
+        body = build_run_stop_reply(
             INTERRUPT_REPLY,
+            user_key=user_key,
+            stream_markdown=last_markdown,
+        )
+        final_text = finalize_web_reply_text(
+            body,
             elapsed,
             task_kind=task_kind,
             prompt=meta.message,
@@ -354,8 +365,16 @@ def execute_web_run(run_id: str) -> int:
         elapsed = time.monotonic() - started_at
         err_msg = str(exc)
         logger.exception("Web chat run failed run=%s session=%s", run_id, session_id)
+        if is_agent_timeout_message(err_msg):
+            body = build_run_stop_reply(
+                timeout_headline_from_message(err_msg),
+                user_key=user_key,
+                stream_markdown=last_markdown,
+            )
+        else:
+            body = f"⚠️ {err_msg}\n\n{RETRY_HINT}"
         final_text = finalize_web_reply_text(
-            f"⚠️ {err_msg}\n\n{RETRY_HINT}",
+            body,
             elapsed,
             task_kind=task_kind,
             prompt=meta.message,

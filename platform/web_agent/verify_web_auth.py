@@ -148,7 +148,7 @@ class WebAuthTest(unittest.TestCase):
             user = current_web_user(handler)
             assert user is not None
             self.assertEqual(user.staff_id, "admin")
-            self.assertEqual(user.display_name, "admin")
+            self.assertEqual(user.display_name, "管理员")
 
     def test_lan_ip_still_requires_login_for_write(self) -> None:
         env = {"WEB_AGENT_OTP_AUTH": "1"}

@@ -35,6 +35,7 @@ class WebOtpAuthTest(unittest.TestCase):
         self.assertTrue(is_public_auth_path("/login.html"))
         self.assertTrue(is_public_auth_path("/theme.js"))
         self.assertTrue(is_public_auth_path("/dingtalk_oauth.js"))
+        self.assertTrue(is_public_auth_path("/assets/dingtalk-group-qr.png"))
         self.assertTrue(is_public_auth_path("/api/auth/status"))
         self.assertFalse(is_public_auth_path("/chat.html"))
 
@@ -89,7 +90,7 @@ class WebOtpAuthTest(unittest.TestCase):
             self.assertIsNone(err)
             assert token and user
             self.assertEqual(user.staff_id, "admin")
-            self.assertEqual(user.display_name, "admin")
+            self.assertEqual(user.display_name, "管理员")
 
     def test_master_otp_disabled(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

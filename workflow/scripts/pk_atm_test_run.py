@@ -34,6 +34,17 @@ class _WrongPkMatchError(Exception):
         self.matched_room_id = matched_room_id
         self.expect_room_id = expect_room_id
 
+
+class _PkMatchExhaustedError(RuntimeError):
+    """跨房 PK 随机匹配重试耗尽。"""
+
+    def __init__(self, message: str, *, step: dict[str, Any]) -> None:
+        super().__init__(message)
+        self.step = step
+
+
+MAX_CROSS_ROOM_MATCH_RETRIES = 3
+
 REPO = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG_PATH = REPO / "workflow/config/pk_atm_default_config.json"
 PK_API = "/service/room/external/room-pk-api"
@@ -82,6 +93,8 @@ DEFAULT_SENDERS = [
 
 # 造数固定双房（Admin/Tunnel 不可用时兜底，避免两号解析到同一 roomId）
 _KNOWN_PHONE_ROOMS: dict[str, tuple[str, str]] = {
+    "13311111111": ("100465989", "38826842"),
+    "13311111115": ("100305533", "83652563"),
     "13311111112": ("100486375", "31668628"),
     "13311111113": ("100079102", "50861924"),
     "13311111114": ("100006869", "80949067"),
@@ -382,6 +395,146 @@ def _resolve_party(phone: str) -> RoomParty:
     if not room_id:
         raise RuntimeError(f"userId {user_id}（{phone}）无 roomId（Admin/Tunnel 均未取到）")
     return RoomParty(phone=phone, user_id=user_id, room_id=room_id)
+
+
+def _query_admin_user(user_id: str) -> dict[str, Any]:
+    return _run_json(
+        [sys.executable, "Admin/admin_execute.py", "--query-user-id", user_id],
+        timeout=60,
+    )
+
+
+def _tunnel_items(user_id: str, *, keyword: str, since_seconds: int) -> list[dict[str, Any]]:
+    tun = _run_json(
+        [
+            sys.executable,
+            "Tunnel/tunnel_execute.py",
+            "--momoid",
+            user_id,
+            "--keyword",
+            keyword,
+            "--since",
+            str(max(30, since_seconds)),
+            "--output",
+            "json",
+        ],
+        timeout=90,
+    )
+    lst = (tun.get("meta") or {}).get("list") or {}
+    if not isinstance(lst, dict):
+        return []
+    return sorted(lst.values(), key=lambda x: x.get("time", ""), reverse=True)
+
+
+def _room_id_from_tunnel_item(item: dict[str, Any]) -> str:
+    req = item.get("request") if isinstance(item.get("request"), dict) else {}
+    return str(req.get("roomId") or "").strip()
+
+
+def _tunnel_current_room_id(user_id: str, *, since_seconds: int = 300) -> tuple[str | None, dict[str, Any]]:
+    """从最近 heartbeat / enterRoom 抓包推断当前所在房间。"""
+    for keyword in ("heartbeat", "enterRoom", "room/enter"):
+        try:
+            items = _tunnel_items(user_id, keyword=keyword, since_seconds=since_seconds)
+        except (RuntimeError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
+            return None, {"keyword": keyword, "error": str(exc)}
+        for item in items:
+            room_id = _room_id_from_tunnel_item(item)
+            if room_id:
+                return room_id, {
+                    "keyword": keyword,
+                    "time": item.get("time"),
+                    "url": item.get("url"),
+                    "requestId": item.get("_id"),
+                }
+    return None, {"reason": f"近 {since_seconds}s 无 heartbeat/enterRoom 带 roomId"}
+
+
+def _admin_profile(user_id: str) -> dict[str, Any]:
+    try:
+        raw = _query_admin_user(user_id)
+    except (RuntimeError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
+        return {"error": str(exc)}
+    if not isinstance(raw, dict):
+        return {"error": "invalid_admin_response"}
+    data = raw.get("data") if isinstance(raw.get("data"), dict) else raw
+    profile = data.get("userProfile") if isinstance(data.get("userProfile"), dict) else {}
+    owned = data.get("ownedRoomInfo") if isinstance(data.get("ownedRoomInfo"), dict) else {}
+    online_status = profile.get("onlineStatus")
+    if online_status is None and isinstance(data, dict):
+        online_status = data.get("onlineStatus")
+    return {
+        "ec": raw.get("ec"),
+        "onlineStatus": online_status,
+        "ownedRoomId": owned.get("roomId") or data.get("roomId"),
+    }
+
+
+def _check_party_logged_in_own_room(party: RoomParty, *, since_seconds: int = 300) -> dict[str, Any]:
+    admin = _admin_profile(party.user_id)
+    online_status = admin.get("onlineStatus")
+    admin_online = online_status in (1, "1") if online_status is not None else None
+
+    current_room_id, tunnel_meta = _tunnel_current_room_id(party.user_id, since_seconds=since_seconds)
+    in_own_room = current_room_id == party.room_id
+    has_client_session = bool(current_room_id)
+
+    issues: list[str] = []
+    if not has_client_session:
+        if admin_online is True:
+            issues.append(
+                f"Admin 显示在线但近 {since_seconds}s 无房内心跳，请打开 App 并进入自己的房间"
+            )
+        else:
+            issues.append(f"未登录或 App 未在房间内（近 {since_seconds}s 无 heartbeat/enterRoom）")
+    elif not in_own_room:
+        issues.append(f"不在自己的房间(当前={current_room_id}, 期望={party.room_id})")
+
+    logged_in = admin_online is True or has_client_session
+    ok = has_client_session and in_own_room
+
+    return {
+        "phone": party.phone,
+        "userId": party.user_id,
+        "ownRoomId": party.room_id,
+        "onlineStatus": online_status,
+        "adminOnline": admin_online,
+        "loggedIn": logged_in,
+        "currentRoomId": current_room_id,
+        "inOwnRoom": in_own_room,
+        "tunnel": tunnel_meta,
+        "admin": {k: admin.get(k) for k in ("ec", "onlineStatus", "ownedRoomId", "error") if k in admin},
+        "ok": ok,
+        "issues": issues,
+    }
+
+
+def _ensure_parties_ready_for_match(
+    party_a: RoomParty,
+    party_b: RoomParty,
+    *,
+    since_seconds: int = 300,
+) -> list[dict[str, Any]]:
+    """跨房 PK 随机匹配前：双方须 App 已登录且在自己的房间内（Admin 在线 + Tunnel heartbeat）。"""
+    checks = [
+        _check_party_logged_in_own_room(party_a, since_seconds=since_seconds),
+        _check_party_logged_in_own_room(party_b, since_seconds=since_seconds),
+    ]
+    bad = [c for c in checks if not c.get("ok")]
+    if bad:
+        detail = "; ".join(
+            f"{c['phone']}({c['userId']}): {', '.join(c.get('issues') or ['未知'])}"
+            for c in bad
+        )
+        raise RuntimeError(
+            "跨房 PK 匹配前须双方账号已登录且在自己的房间内: "
+            f"{detail}。"
+            "请先真机登录并进自己的房间，例如："
+            f"`python3 adb/adb_execute.py macro 手机号登录 --text {party_a.phone}` + "
+            f"`python3 adb/adb_execute.py macro 搜索进房 --text {party_a.room_id}`"
+            f"（B 方同理）。"
+        )
+    return checks
 
 
 def _pk_info(party: RoomParty, *, pk_id: str | None = None) -> dict[str, Any]:
@@ -1243,20 +1396,39 @@ def _close_wrong_pk(party: RoomParty, pk_data: dict[str, Any]) -> dict[str, Any]
     return {"phone": party.phone, "pkId": pk_id, "acrossRoomId": across, "ec": biz.get("ec"), "em": biz.get("em")}
 
 
+def _normalize_match_retries(match_retries: int) -> int:
+    """跨房 PK 随机匹配最多重试 MAX_CROSS_ROOM_MATCH_RETRIES 轮，避免长时间死循环。"""
+    return min(max(1, int(match_retries)), MAX_CROSS_ROOM_MATCH_RETRIES)
+
+
 def _begin_random_match_cross_room_pk(
     party_a: RoomParty,
     party_b: RoomParty,
     *,
     timeout_sec: int = 120,
     pk_minute: str = "5",
-    match_retries: int = 5,
+    match_retries: int = MAX_CROSS_ROOM_MATCH_RETRIES,
+    skip_party_room_check: bool = False,
+    party_room_check_since: int = 300,
 ) -> tuple[str, dict[str, Any]]:
-    """两房并行发起随机匹配（acrossPkType=1），多轮重试直到与目标房间配对。"""
-    step: dict[str, Any] = {"mode": "random", "acrossPkType": "1", "attempts": []}
+    """两房并行发起随机匹配（acrossPkType=1），失败最多重试 MAX_CROSS_ROOM_MATCH_RETRIES 轮。"""
+    effective_retries = _normalize_match_retries(match_retries)
+    step: dict[str, Any] = {
+        "mode": "random",
+        "acrossPkType": "1",
+        "attempts": [],
+        "maxRetries": effective_retries,
+    }
+    if not skip_party_room_check:
+        step["partyRoomCheck"] = _ensure_parties_ready_for_match(
+            party_a,
+            party_b,
+            since_seconds=party_room_check_since,
+        )
     step["prepare"] = _prepare_random_match(party_a, party_b)
 
     last_error = ""
-    for attempt in range(max(1, match_retries)):
+    for attempt in range(effective_retries):
         attempt_log: dict[str, Any] = {"attempt": attempt + 1}
         if attempt > 0:
             attempt_log["prepare"] = _prepare_random_match(party_a, party_b)
@@ -1326,8 +1498,13 @@ def _begin_random_match_cross_room_pk(
         }
         return pk_id, step
 
-    step["error"] = last_error or "随机匹配全部重试用尽"
-    raise RuntimeError(step["error"])
+    _prepare_random_match(party_a, party_b)
+    step["error"] = last_error or f"随机匹配 {effective_retries} 轮均失败"
+    step["failed"] = True
+    raise _PkMatchExhaustedError(
+        f"跨房 PK 随机匹配失败：已重试 {effective_retries} 轮，任务终止（{step['error']}）",
+        step=step,
+    )
 
 
 def _wait_pk_matched(
@@ -1386,11 +1563,252 @@ def _combined_pk(pk_data: dict[str, Any]) -> int:
     return int(pk_data.get("roomRankValue") or 0) + int(pk_data.get("acrossRoomRankValue") or 0)
 
 
+def _random_gift_diamonds(gift_min: int, gift_max: int) -> int:
+    """随机钻石，低/中/高三档采样，避免全员 PK 相近。"""
+    lo, hi = min(gift_min, gift_max), max(gift_min, gift_max)
+    if lo >= hi:
+        return lo
+    span = hi - lo
+    tier = random.choice(("low", "mid", "high"))
+    if tier == "low":
+        return random.randint(lo, lo + max(1, span // 3))
+    if tier == "mid":
+        return random.randint(lo + span // 3, lo + 2 * span // 3)
+    return random.randint(lo + 2 * span // 3, hi)
+
+
+def _plan_total_pk(plan: list[dict[str, Any]]) -> int:
+    return sum(int(p.get("pkValue") or int(p.get("diamonds") or 0) * 10) for p in plan)
+
+
+def _plan_room_pk(plan: list[dict[str, Any]]) -> dict[str, int]:
+    out: dict[str, int] = {}
+    for item in plan:
+        room_id = str(item["roomId"])
+        pk_val = int(item.get("pkValue") or int(item.get("diamonds") or 0) * 10)
+        out[room_id] = out.get(room_id, 0) + pk_val
+    return out
+
+
+def _distribute_pk_deficit_to_plan(
+    plan: list[dict[str, Any]],
+    deficit_pk: int,
+    *,
+    gift_min: int,
+    gift_max: int,
+) -> None:
+    """把缺口 PK 随机分摊到计划条目；为满足总目标可超出单笔 gift_max。"""
+    if deficit_pk <= 0 or not plan:
+        return
+    lo_pk = max(10, gift_min * 10)
+    hi_pk = max(lo_pk, gift_max * 10)
+    indices = list(range(len(plan)))
+    guard = 0
+    while deficit_pk > 0 and guard < len(plan) * 200:
+        guard += 1
+        idx = random.choice(indices)
+        chunk_pk = min(
+            deficit_pk,
+            random.randint(lo_pk, max(hi_pk, lo_pk + deficit_pk // max(1, len(plan)))),
+        )
+        add_diamonds = max(1, math.ceil(chunk_pk / 10))
+        plan[idx]["diamonds"] = int(plan[idx].get("diamonds") or 0) + add_diamonds
+        plan[idx]["pkValue"] = int(plan[idx]["diamonds"]) * 10
+        deficit_pk -= add_diamonds * 10
+
+
+def _build_threshold_gift_plan(
+    *,
+    party_a: RoomParty,
+    party_b: RoomParty,
+    senders: list[str],
+    high_pk: int,
+    low_pk: int,
+    high_count: int,
+    low_count: int,
+) -> list[dict[str, Any]]:
+    """固定 PK 档位送礼计划：高/低档随机分派到 A/B 两房。"""
+    need = high_count + low_count
+    pool = senders[:need]
+    if len(pool) < need:
+        raise ValueError(f"送礼账号不足：需要 {need}，仅 {len(pool)}")
+    random.shuffle(pool)
+    room_ids = [party_a.room_id, party_b.room_id]
+    plan: list[dict[str, Any]] = []
+    for i, uid in enumerate(pool[:high_count]):
+        diamonds = max(1, high_pk // 10)
+        plan.append(
+            {
+                "sender": uid,
+                "roomId": room_ids[i % 2],
+                "pkValue": high_pk,
+                "diamonds": diamonds,
+            }
+        )
+    for j, uid in enumerate(pool[high_count:need]):
+        diamonds = max(1, low_pk // 10)
+        plan.append(
+            {
+                "sender": uid,
+                "roomId": room_ids[(high_count + j) % 2],
+                "pkValue": low_pk,
+                "diamonds": diamonds,
+            }
+        )
+    return plan
+
+
+def _build_target_pk_gift_plan(
+    *,
+    party_a: RoomParty,
+    party_b: RoomParty,
+    senders: list[str],
+    target_pk: int,
+    gift_count: int,
+    gift_min: int,
+    gift_max: int,
+    high_pk: int = 0,
+    low_pk: int = 0,
+    high_count: int = 0,
+    low_count: int = 0,
+) -> list[dict[str, Any]]:
+    """给定总 PK 与个人档位要求，先算清各用户各房送多少，再执行送礼。"""
+    room_ids = [party_a.room_id, party_b.room_id]
+    if high_pk > 0 and low_pk > 0:
+        plan = _build_threshold_gift_plan(
+            party_a=party_a,
+            party_b=party_b,
+            senders=senders,
+            high_pk=high_pk,
+            low_pk=low_pk,
+            high_count=high_count,
+            low_count=low_count,
+        )
+    else:
+        pool = senders[: max(gift_count, 1)]
+        if len(pool) < 1:
+            raise ValueError("无可用送礼账号")
+        sender_room = _assign_sender_rooms(pool, room_ids)
+        plan = []
+        for sender in pool[:gift_count]:
+            diamonds = _random_gift_diamonds(gift_min, gift_max)
+            plan.append(
+                {
+                    "sender": sender,
+                    "roomId": sender_room[sender],
+                    "pkValue": diamonds * 10,
+                    "diamonds": diamonds,
+                }
+            )
+
+    deficit = target_pk - _plan_total_pk(plan)
+    if deficit > 0:
+        _distribute_pk_deficit_to_plan(
+            plan,
+            deficit,
+            gift_min=gift_min,
+            gift_max=gift_max,
+        )
+
+    rooms_used = {str(p["roomId"]) for p in plan}
+    if len(room_ids) >= 2 and len(rooms_used & set(room_ids)) < 2:
+        # 兜底：至少一条礼物改到另一房
+        alt = next(rid for rid in room_ids if rid not in rooms_used)
+        plan[0]["roomId"] = alt
+
+    planned_total = _plan_total_pk(plan)
+    if planned_total < target_pk:
+        raise ValueError(
+            f"送礼计划总 PK {planned_total:,} 未达目标 {target_pk:,}（账号 {len(plan)} 不足）"
+        )
+    return plan
+
+
+def _gift_plan_summary(plan: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "entries": len(plan),
+        "plannedTotalPk": _plan_total_pk(plan),
+        "roomPk": _plan_room_pk(plan),
+        "pkRange": {
+            "min": min(int(p.get("pkValue") or 0) for p in plan) if plan else 0,
+            "max": max(int(p.get("pkValue") or 0) for p in plan) if plan else 0,
+        },
+    }
+
+
+def _send_gift_plan(
+    *,
+    plan: list[dict[str, Any]],
+    room_owners: dict[str, str],
+) -> list[dict[str, Any]]:
+    """按计划逐笔送礼（计划须事先算好，执行阶段不再改 PK）。"""
+    gifts: list[dict[str, Any]] = []
+    for item in plan:
+        sender = str(item["sender"])
+        room_id = str(item["roomId"])
+        receiver = room_owners[room_id]
+        diamonds = int(item.get("diamonds") or max(1, int(item.get("pkValue") or 0) // 10))
+        try:
+            res = _gift_send(sender, room_id, receiver, diamonds)
+            gifts.append(
+                {
+                    "sender": sender,
+                    "roomId": room_id,
+                    "receiver": receiver,
+                    "receiverOnMic": True,
+                    "diamonds": diamonds,
+                    "targetPkValue": int(item.get("pkValue") or diamonds * 10),
+                    "ok": res.get("ok"),
+                    "ec": (res.get("response") or {}).get("ec"),
+                }
+            )
+        except (RuntimeError, json.JSONDecodeError, subprocess.TimeoutExpired) as exc:
+            gifts.append(
+                {
+                    "sender": sender,
+                    "roomId": room_id,
+                    "receiver": receiver,
+                    "receiverOnMic": True,
+                    "diamonds": diamonds,
+                    "targetPkValue": int(item.get("pkValue") or diamonds * 10),
+                    "ok": False,
+                    "error": str(exc),
+                }
+            )
+        time.sleep(0.15)
+    return gifts
+
+
 def _assign_sender_rooms(senders: list[str], room_ids: list[str]) -> dict[str, str]:
-    """每个送礼账号固定绑定一个房间，避免同账号两房送礼。"""
-    ids = list(room_ids)
-    random.shuffle(ids)
-    return {sender: ids[i % len(ids)] for i, sender in enumerate(senders)}
+    """均分两房绑定送礼账号，确保两房都有人送，且同账号不跨房。"""
+    if len(room_ids) < 2:
+        rid = room_ids[0] if room_ids else ""
+        return {sender: rid for sender in senders}
+    ids = list(room_ids[:2])
+    ordered = list(senders)
+    random.shuffle(ordered)
+    half = max(1, len(ordered) // 2)
+    out: dict[str, str] = {}
+    for i, sender in enumerate(ordered):
+        out[sender] = ids[0] if i < half else ids[1]
+    return out
+
+
+def _pick_lagging_room(
+    pk_data: dict[str, Any],
+    party_a: RoomParty,
+    party_b: RoomParty,
+) -> str:
+    """追加送礼时优先打 PK 较低的房间，保持双房都有贡献。"""
+    room_a_pk = int(pk_data.get("roomRankValue") or 0)
+    room_b_pk = int(pk_data.get("acrossRoomRankValue") or 0)
+    if room_a_pk <= room_b_pk:
+        return party_a.room_id
+    return party_b.room_id
+
+
+def _gifts_room_ids(gifts: list[dict[str, Any]]) -> set[str]:
+    return {str(g["roomId"]) for g in gifts if g.get("ok") and g.get("roomId")}
 
 
 def _room_owners_map(party_a: RoomParty, party_b: RoomParty) -> dict[str, str]:
@@ -1412,7 +1830,7 @@ def _send_random_gifts(
     for sender in senders[:count]:
         room_id = (sender_room or {}).get(sender) or random.choice(room_ids)
         receiver = room_owners[room_id]
-        diamonds = random.randint(gift_min, gift_max)
+        diamonds = _random_gift_diamonds(gift_min, gift_max)
         try:
             res = _gift_send(sender, room_id, receiver, diamonds)
             gifts.append(
@@ -1469,22 +1887,58 @@ def _top_up_gifts_until_target(
         deficit_pk = target_pk - combined
         deficit_diamonds = max(1, math.ceil(deficit_pk / 10))
         batch_size = min(gift_count, max(5, math.ceil(deficit_diamonds / gift_min)))
-        round_min = max(gift_min, min(gift_max, math.ceil(deficit_diamonds / batch_size)))
-        random.shuffle(senders)
+        avg_diamonds = max(gift_min, math.ceil(deficit_diamonds / batch_size))
+        round_max = max(gift_max, avg_diamonds)
+        round_min = max(gift_min, min(round_max, max(1, avg_diamonds // 2)))
+        lag_room = _pick_lagging_room(pk_data, party_a, party_b)
+        lag_senders = [
+            s for s in senders if (sender_room or {}).get(s, lag_room) == lag_room
+        ]
+        other_senders = [s for s in senders if s not in lag_senders]
+        random.shuffle(lag_senders)
+        random.shuffle(other_senders)
+        top_up_pool = lag_senders + other_senders
+        top_up_room: dict[str, str] = {}
+        for sender in top_up_pool[:batch_size]:
+            top_up_room[sender] = (sender_room or {}).get(sender) or lag_room
         extra.extend(
             _send_random_gifts(
                 senders=senders,
                 room_owners=room_owners,
                 room_ids=room_ids,
                 gift_min=round_min,
-                gift_max=gift_max,
+                gift_max=round_max,
                 count=batch_size,
-                sender_room=sender_room,
+                sender_room=top_up_room,
             )
         )
         if batch_wait_sec > 0:
             time.sleep(batch_wait_sec)
     return extra
+
+
+def _wait_pk_natural_end(
+    party: RoomParty,
+    pk_id: str,
+    *,
+    timeout_sec: int = 420,
+    poll_sec: float = 5.0,
+    min_stage: int = 3,
+) -> dict[str, Any]:
+    """轮询直到 PK 时长走完进入惩罚阶段（stage>=3）或超时；不必等惩罚阶段结束（stage=4）。"""
+    deadline = time.time() + timeout_sec
+    last: dict[str, Any] = {}
+    while time.time() < deadline:
+        last = _pk_info(party, pk_id=pk_id)
+        stage = int(last.get("stage") or 0)
+        if stage >= min_stage:
+            return last
+        if stage <= 0 and not last.get("acrossRoomPkId"):
+            return last
+        time.sleep(poll_sec)
+    raise TimeoutError(
+        f"等待 PK 进入惩罚阶段超时（{timeout_sec}s）pkId={pk_id} stage={last.get('stage')} expect>={min_stage}"
+    )
 
 
 def _close_pk(party_a: RoomParty, party_b: RoomParty, pk_id: str) -> dict[str, Any]:
@@ -1508,7 +1962,7 @@ def _sender_pk_map(
     party_a: RoomParty,
     party_b: RoomParty,
 ) -> dict[str, dict[str, Any]]:
-    """每个送礼人在各房间的 PK 贡献（优先 App 贡献榜 contributionAcrossRanks）。"""
+    """每个送礼人在各房间的 PK 贡献（优先 App 贡献榜；榜外用户用钻石×10累加回填）。"""
     pk_id = str(
         pk_data.get("acrossRoomPkId")
         or pk_data.get("acrossRoomPKId")
@@ -1556,28 +2010,24 @@ def _sender_pk_map(
             "source": info.get("source") or "contributionAcrossRanks",
         }
 
-    room_a_pk = int(pk_data.get("roomRankValue") or 0)
-    room_b_pk = int(pk_data.get("acrossRoomRankValue") or 0)
-    if (not a_ranks and room_a_pk <= 0) or (not b_ranks and room_b_pk <= 0):
-        mic_by_room = _mic_sets_by_room(pk_data)
-        calc: dict[str, dict[str, int]] = {}
-        for g in gifts:
-            gift_pk = _gift_pk_contribution(g, mic_by_room)
-            if gift_pk <= 0:
+    # 贡献榜通常只返回 Top10；对榜外或未上榜的送礼人，用本局送礼钻石×10回填。
+    mic_by_room = _mic_sets_by_room(pk_data)
+    calc: dict[str, dict[str, int]] = {}
+    for g in gifts:
+        gift_pk = _gift_pk_contribution(g, mic_by_room)
+        if gift_pk <= 0:
+            continue
+        sender = str(g["sender"])
+        room_id = str(g["roomId"])
+        calc.setdefault(sender, {})
+        calc[sender][room_id] = calc[sender].get(room_id, 0) + gift_pk
+    for sender, room_map in calc.items():
+        per_room = out.setdefault(sender, {})
+        for room_id, calc_pk in room_map.items():
+            api_pk = int((per_room.get(room_id) or {}).get("pkValue") or 0)
+            if api_pk > 0:
                 continue
-            sender = str(g["sender"])
-            room_id = str(g["roomId"])
-            calc.setdefault(sender, {})
-            calc[sender][room_id] = calc[sender].get(room_id, 0) + gift_pk
-        for sender, room_map in calc.items():
-            per_room = out.setdefault(sender, {})
-            for room_id, calc_pk in room_map.items():
-                if room_id in per_room:
-                    continue
-                if room_id == party_a.room_id and not a_ranks and room_a_pk <= 0:
-                    per_room[room_id] = {"pkValue": calc_pk, "source": "钻石×10累加"}
-                elif room_id == party_b.room_id and not b_ranks and room_b_pk <= 0:
-                    per_room[room_id] = {"pkValue": calc_pk, "source": "钻石×10累加"}
+            per_room[room_id] = {"pkValue": calc_pk, "source": "钻石×10累加"}
     return out
 
 
@@ -2069,7 +2519,14 @@ def run(args: argparse.Namespace) -> int:
                 timeout_sec=args.match_timeout,
                 pk_minute=str(args.pk_minute),
                 match_retries=args.match_retries,
+                skip_party_room_check=bool(getattr(args, "skip_party_room_check", False)),
+                party_room_check_since=int(getattr(args, "party_room_check_since", 300) or 300),
             )
+        except _PkMatchExhaustedError as exc:
+            report["error"] = str(exc)
+            report["steps"].append({"match": exc.step})
+            print(json.dumps(report, ensure_ascii=False, indent=2))
+            return 1
         except (RuntimeError, TimeoutError) as exc:
             report["error"] = str(exc)
             print(json.dumps(report, ensure_ascii=False, indent=2))
@@ -2094,31 +2551,32 @@ def run(args: argparse.Namespace) -> int:
     random.shuffle(senders)
     pool = senders[: max(args.gift_count, len(senders))]
 
-    sender_room = _assign_sender_rooms(pool, room_ids)
-    gifts = _send_random_gifts(
-        senders=pool,
-        room_owners=room_owners,
-        room_ids=room_ids,
-        gift_min=args.gift_min_diamonds,
-        gift_max=args.gift_max_diamonds,
-        count=args.gift_count,
-        sender_room=sender_room,
-    )
     if args.target_combined_pk and args.target_combined_pk > 0:
-        gifts.extend(
-            _top_up_gifts_until_target(
-                party_a=party_a,
-                party_b=party_b,
-                pk_id=pk_id,
-                senders=pool,
-                gift_min=args.gift_min_diamonds,
-                gift_max=args.gift_max_diamonds,
-                gift_count=args.gift_count,
-                target_pk=args.target_combined_pk,
-                sender_room=sender_room,
-            )
+        gift_plan = _build_target_pk_gift_plan(
+            party_a=party_a,
+            party_b=party_b,
+            senders=pool,
+            target_pk=args.target_combined_pk,
+            gift_count=args.gift_count,
+            gift_min=args.gift_min_diamonds,
+            gift_max=args.gift_max_diamonds,
         )
-    report["steps"].append({"gifts": gifts})
+        sender_room = {str(p["sender"]): str(p["roomId"]) for p in gift_plan}
+        plan_summary = _gift_plan_summary(gift_plan)
+        gifts = _send_gift_plan(plan=gift_plan, room_owners=room_owners)
+        report["steps"].append({"giftPlan": plan_summary, "gifts": gifts})
+    else:
+        sender_room = _assign_sender_rooms(pool, room_ids)
+        gifts = _send_random_gifts(
+            senders=pool,
+            room_owners=room_owners,
+            room_ids=room_ids,
+            gift_min=args.gift_min_diamonds,
+            gift_max=args.gift_max_diamonds,
+            count=args.gift_count,
+            sender_room=sender_room,
+        )
+        report["steps"].append({"gifts": gifts})
 
     if args.post_gift_wait > 0:
         time.sleep(args.post_gift_wait)
@@ -2242,8 +2700,8 @@ def _optional_int(value: str | None) -> int | None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="PK 提款机测试：配置→造数→预期→结束→钻石验收")
-    parser.add_argument("--phone-a", default="13311111113", help="A 方房主手机号")
-    parser.add_argument("--phone-b", default="13311111114", help="B 方房主手机号")
+    parser.add_argument("--phone-a", default="13311111111", help="A 方房主手机号")
+    parser.add_argument("--phone-b", default="13311111115", help="B 方房主手机号")
     parser.add_argument("--gift-count", type=int, default=20, help="送礼账号数")
     parser.add_argument("--gift-min-diamonds", type=int, default=1, help="单笔最小钻石")
     parser.add_argument("--gift-max-diamonds", type=int, default=1000, help="单笔最大钻石")
@@ -2251,8 +2709,24 @@ def main() -> int:
     parser.add_argument("--post-gift-wait", type=int, default=20, help="全部送礼后、结束 PK 前等待秒数")
     parser.add_argument("--post-close-wait", type=int, default=8, help="结束 PK 后等待发钻秒数")
     parser.add_argument("--match-timeout", type=int, default=90, help="每轮随机匹配等待秒数")
-    parser.add_argument("--match-retries", type=int, default=5, help="随机匹配失败/配错房间时的重试轮数")
-    parser.add_argument("--pk-minute", type=int, default=5, choices=(5, 10, 30), help="随机匹配 PK 时长（分钟）")
+    parser.add_argument(
+        "--match-retries",
+        type=int,
+        default=MAX_CROSS_ROOM_MATCH_RETRIES,
+        help=f"随机匹配失败/配错房间时的重试轮数（上限 {MAX_CROSS_ROOM_MATCH_RETRIES}，用尽则任务失败）",
+    )
+    parser.add_argument(
+        "--skip-party-room-check",
+        action="store_true",
+        help="跳过匹配前「已登录且在自己的房间内」校验（仅 MOA 调试）",
+    )
+    parser.add_argument(
+        "--party-room-check-since",
+        type=int,
+        default=300,
+        help="匹配前 Tunnel heartbeat/进房 回溯秒数（默认 300）",
+    )
+    parser.add_argument("--pk-minute", type=int, default=5, choices=(2, 5, 10, 30), help="随机匹配 PK 时长（分钟）")
     parser.add_argument("--senders", default="", help="逗号分隔送礼 userId，默认 20 个测试号")
     parser.add_argument("--out-dir", default=".tmp", help="报告输出目录")
     parser.add_argument("--config-file", default="", help="服务配置 JSON（默认 workflow/config/pk_atm_default_config.json）")

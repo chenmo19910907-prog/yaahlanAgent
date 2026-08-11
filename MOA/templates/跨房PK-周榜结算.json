@@ -1,0 +1,41 @@
+{
+  "type": "moa",
+  "key": "momo.bpm.biz.gameplatform.overseas-voga-mts-vas",
+  "url": "/service/room/internal/room-pk",
+  "method": "settleAcrossPkWeekRank",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "0",
+      "json": "",
+      "type": "int",
+      "value": "0"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "across_pk_week_rank_settle",
+    "name": "跨房PK-周榜结算",
+    "category": "房间测试（room/internal/room-pk）",
+    "description": "跨房 PK 周榜结算（settleAcrossPkWeekRank；/service/room/internal/room-pk）。--across-pk-week-rank-settle-offset：0=结算当前周，-1=结算上一周。",
+    "prompts": [
+      "跨房PK当前周周榜结算",
+      "跨房PK上一周周榜结算",
+      "跨房PK本周/上周周榜结算"
+    ],
+    "cli": "--across-pk-week-rank-settle-offset 0"
+  }
+}

@@ -57,6 +57,10 @@ def classify_task_kind(
         return "agent:moa_registry"
     if re.search(r"送礼|gift", text, re.I):
         return "agent:gift"
+    if re.search(r"PK提款机|pk[\s-]?atm|跨房\s*PK|pk-atm-test|来一场.{0,8}PK", text, re.I):
+        return "agent:pk_atm"
+    if re.search(r"workflow\s+run|工作流", text, re.I):
+        return "agent:workflow"
     if re.search(r"抓包|tunnel", text, re.I):
         return "agent:tunnel"
     if re.search(r"查询|查\s*user|用户\s*\d{5,}|\d{6,}", text, re.I):

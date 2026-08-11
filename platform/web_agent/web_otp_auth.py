@@ -86,7 +86,7 @@ def is_public_auth_path(path: str) -> bool:
         return True
     if p.startswith("/keynote/") or p.startswith("/platform-guide/"):
         return True
-    if p.startswith("/assets/fonts/"):
+    if p.startswith("/assets/"):
         return True
     if p in LOGIN_PUBLIC_STATIC_PATHS:
         return True

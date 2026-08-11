@@ -323,14 +323,16 @@ class WebSessionSearchTest(unittest.TestCase):
                 load_messages=store.get_messages,
             )
             self.assertEqual(len(by_title), 1)
-            self.assertIn("充值", by_title[0][1])
+            self.assertIn("充值", by_title[0][1].snippet)
+            self.assertEqual(by_title[0][1].message_timestamp, "2026-08-03T08:00:00+00:00")
             by_answer = filter_sessions_by_search(
                 items,
                 "provideDiamond",
                 load_messages=store.get_messages,
             )
             self.assertEqual(len(by_answer), 1)
-            self.assertTrue(by_answer[0][1].startswith("答 ·"))
+            self.assertTrue(by_answer[0][1].snippet.startswith("答 ·"))
+            self.assertEqual(by_answer[0][1].message_timestamp, "2026-08-03T09:00:00+00:00")
             by_owner = filter_sessions_by_search(
                 items,
                 "alice",
@@ -697,6 +699,51 @@ class WebSessionOwnerDisplayTest(unittest.TestCase):
             payload = meta.to_dict(known_labels={"uid_kaibo": "王凯波"})
             self.assertEqual(payload["dingtalk_owner"], "王凯波")
             self.assertEqual(payload["dingtalk_label"], "王凯波")
+
+    def test_web_owner_display_upgrades_unknown_admin_label(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            sid = "adminunknown0001"
+            index.write_text(
+                json.dumps(
+                    {
+                        sid: {
+                            "title": "管理员会话",
+                            "created_at": "2026-08-10T08:00:00+00:00",
+                            "updated_at": "2026-08-10T09:00:00+00:00",
+                            "message_count": 1,
+                            "source": "web",
+                            "web_owner_id": "admin",
+                            "web_owner_label": "未知用户",
+                        }
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            (messages_dir / f"{sid}.json").write_text(
+                json.dumps(
+                    [
+                        {
+                            "role": "user",
+                            "content": "测试",
+                            "timestamp": "2026-08-10T08:00:00+00:00",
+                        },
+                    ],
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            items = store.list_sessions()
+            admin_meta = next(item for item in items if item.id == sid)
+            self.assertEqual(admin_meta.web_owner_label, "管理员")
+            payload = admin_meta.to_dict()
+            self.assertEqual(payload["web_owner"], "管理员")
+            self.assertEqual(payload["web_owner_label"], "管理员")
 
 
 if __name__ == "__main__":

@@ -95,6 +95,62 @@ def mutual_follow_pair(
     )
 
 
+@dataclass
+class CliqueMutualFollowResult:
+    user_ids: list[str]
+    pair_total: int
+    success: int
+    failed: int
+    results: list[MutualFollowResult] = field(default_factory=list)
+
+
+def clique_mutual_follow(
+    user_ids: list[str],
+    *,
+    sleep_seconds: float = 1.2,
+    retry_sleep_seconds: float = 2.0,
+    log: Callable[[str], None] | None = None,
+    on_pair_done: Callable[[int, int, MutualFollowResult], None] | None = None,
+) -> CliqueMutualFollowResult:
+    """列表内账号两两互关（C(n,2) 对；每对双向 addUserRelation）。"""
+    ordered = [str(uid).strip() for uid in user_ids if str(uid).strip()]
+    seen: set[str] = set()
+    unique: list[str] = []
+    for uid in ordered:
+        if uid not in seen:
+            seen.add(uid)
+            unique.append(uid)
+    if len(unique) < 2:
+        raise ValueError("至少需要 2 个不同 userId")
+
+    results: list[MutualFollowResult] = []
+    success = 0
+    pairs: list[tuple[str, str]] = [
+        (unique[i], unique[j]) for i in range(len(unique)) for j in range(i + 1, len(unique))
+    ]
+    total = len(pairs)
+    for index, (uid_a, uid_b) in enumerate(pairs, start=1):
+        item = mutual_follow_pair(
+            uid_a,
+            uid_b,
+            sleep_seconds=sleep_seconds,
+            retry_sleep_seconds=retry_sleep_seconds,
+            log=log,
+        )
+        results.append(item)
+        if item.ok:
+            success += 1
+        if on_pair_done is not None:
+            on_pair_done(index, total, item)
+    return CliqueMutualFollowResult(
+        user_ids=unique,
+        pair_total=total,
+        success=success,
+        failed=total - success,
+        results=results,
+    )
+
+
 def batch_mutual_follow(
     target_user_id: str,
     friend_user_ids: list[str],

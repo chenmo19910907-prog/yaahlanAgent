@@ -228,6 +228,27 @@ def analyze_task_chain(
             steps=(("Tunnel 查请求列表", STEP_TUNNEL_QUERY_S),),
             source="agent:tunnel",
         )
+    if kind == "agent:pk_atm" or re.search(
+        r"PK提款机|pk[\s-]?atm|跨房\s*PK|pk-atm-test|来一场.{0,8}PK",
+        text,
+        re.I,
+    ):
+        return TaskChainEstimate(
+            steps=(
+                ("读 MSE/PK 配置", 15.0),
+                ("随机匹配跨房 PK", 90.0),
+                ("Stage 送礼造数", 120.0),
+                ("赛况/返钻验收", 60.0),
+            ),
+            overhead_s=45.0,
+            source="agent:pk_atm",
+        )
+    if kind == "agent:workflow" or re.search(r"workflow\s+run", text, re.I):
+        return TaskChainEstimate(
+            steps=(("解析工作流参数", 8.0), ("workflow_execute 执行", 90.0)),
+            overhead_s=25.0,
+            source="agent:workflow",
+        )
     if re.search(r"registry|catalog|分类|generate_index", text, re.I):
         return TaskChainEstimate(
             steps=(

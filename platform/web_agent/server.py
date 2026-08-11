@@ -98,6 +98,7 @@ from progress_message import (  # noqa: E402
     build_task_ack_message,
     resolve_task_estimate_seconds,
 )
+from web_session_context import should_rotate_cursor_agent  # noqa: E402
 from task_session import TaskSession  # noqa: E402
 from dingtalk_web_sync import sync_all_from_conversation_store  # noqa: E402
 from web_file_store import (  # noqa: E402
@@ -125,6 +126,12 @@ from web_run_store import (  # noqa: E402
     get_run_store,
 )
 from web_prompt import normalize_reply_mode, finalize_web_reply_text  # noqa: E402
+from run_progress_reply import (  # noqa: E402
+    INTERRUPT_HEADLINE,
+    RETRY_HINT,
+    SERVICE_RESTART_HEADLINE,
+    build_run_stop_reply,
+)
 from web_admin_permission import is_web_admin, web_admin_denial_message  # noqa: E402
 from web_admin_apply import application_status_for_staff, submit_application  # noqa: E402
 from web_auth import authorize_request, auth_enabled, logout_current_session, _effective_client_ip  # noqa: E402
@@ -156,7 +163,10 @@ from message_board_store import (  # noqa: E402
     normalize_create_payload as _normalize_message_board_payload,
     normalize_guest_id as _normalize_message_board_guest_id,
 )
-from dingtalk_user_lookup import lookup_staff_public_name  # noqa: E402
+from dingtalk_user_lookup import (  # noqa: E402
+    lookup_auth_user_display_name,
+    lookup_staff_public_name,
+)
 
 logger = logging.getLogger("web-agent")
 
@@ -631,11 +641,9 @@ class ActiveRun:
 
                 prev = self.last_process if isinstance(self.last_process, dict) else None
                 self.last_process = _merge_process_payload(prev, proc)
-                phase = str(proc.get("phase") or "").strip()
-                if _process_has_stream_content(proc):
-                    self.last_phase_line = ""
-                elif phase:
-                    self.last_phase_line = phase
+                from web_run_store import resolve_process_phase_line
+
+                self.last_phase_line = resolve_process_phase_line(self.last_process)
         self.events.put(event)
 
     def snapshot_events(self) -> list[dict[str, Any]]:
@@ -734,8 +742,7 @@ class RunManager:
 
 RUN_MANAGER = RunManager()
 
-INTERRUPT_REPLY = "⚠️ 任务已中断。"
-RETRY_HINT = "💡 原消息已回填到输入框，请检查后重试。"
+INTERRUPT_REPLY = INTERRUPT_HEADLINE
 
 
 def _notify_run_interrupted(run: ActiveRun, text: str) -> bool:
@@ -769,11 +776,18 @@ def _interrupt_active_run(run: ActiveRun) -> bool:
     store.request_cancel(run.run_id)
     store.mark_status(run.run_id, RUN_STATUS_INTERRUPTED)
 
-    _notify_run_interrupted(run, INTERRUPT_REPLY)
+    user_key = get_session_store().user_key(run.session_id)
+    interrupt_body = build_run_stop_reply(
+        INTERRUPT_REPLY,
+        user_key=user_key,
+        stream_markdown=run.last_markdown,
+        batch_line=run.last_batch_line,
+        external_line=run.last_external_line,
+    )
+    _notify_run_interrupted(run, interrupt_body)
     if run.final_text:
         get_session_store().append_message(run.session_id, "assistant", run.final_text)
 
-    user_key = get_session_store().user_key(run.session_id)
     if user_key:
         kill_run_child_processes(user_key)
     meta = store.get_run(run.run_id)
@@ -782,8 +796,9 @@ def _interrupt_active_run(run: ActiveRun) -> bool:
         if not is_shared_worker_daemon_pid(worker_pid):
             _terminate_worker_process(worker_pid)
 
-    run.task_session.arm_cancel()
-    run.task_session.request_cancel()
+    # 勿对 HTTP 进程内 ActiveRun.task_session 调用 request_cancel()：
+    # worker 在独立子进程/线程内使用 FileBackedTaskSession + 落盘 cancel 标记；
+    # request_cancel 会 _terminate_child_processes() 杀掉本进程全部子 worker，误伤其它会话。
     try:
         if user_key:
             get_user_agent_pool().invalidate(user_key)
@@ -833,6 +848,7 @@ def _attach_run_tailers(run: ActiveRun, meta: RunMeta) -> None:
         message=meta.message,
         started_at=run.started_at,
         progress_stop=progress_stop,
+        session_id=meta.session_id,
     )
 
 
@@ -908,8 +924,17 @@ def _finalize_cancelled_run(meta: RunMeta) -> None:
     if _assistant_reply_since_last_user(meta.session_id):
         store.mark_status(meta.run_id, RUN_STATUS_INTERRUPTED)
         return
-    body = finalize_web_reply_text(
+    user_key = get_session_store().user_key(meta.session_id)
+    snap = store.get_snapshot(meta.run_id)
+    body = build_run_stop_reply(
         INTERRUPT_REPLY,
+        user_key=user_key,
+        stream_markdown=snap.last_markdown,
+        batch_line=snap.last_batch_line,
+        external_line=snap.last_external_line,
+    )
+    body = finalize_web_reply_text(
+        body,
         0.0,
         task_kind=classify_task_kind(meta.message),
         prompt=meta.message,
@@ -918,7 +943,6 @@ def _finalize_cancelled_run(meta: RunMeta) -> None:
     get_session_store().append_message(meta.session_id, "assistant", body)
     store.append_event(meta.run_id, {"type": "done", "text": body})
     store.mark_status(meta.run_id, RUN_STATUS_INTERRUPTED)
-    snap = store.get_snapshot(meta.run_id)
     if not snap.final_text:
         store.update_snapshot(meta.run_id, {"type": "done", "text": body})
 
@@ -933,8 +957,16 @@ def _finalize_orphan_run(meta: RunMeta) -> None:
     if _assistant_reply_since_last_user(meta.session_id):
         store.mark_status(meta.run_id, RUN_STATUS_DONE)
         return
+    user_key = get_session_store().user_key(meta.session_id)
+    err_body = build_run_stop_reply(
+        SERVICE_RESTART_HEADLINE,
+        user_key=user_key,
+        stream_markdown=snap.last_markdown,
+        batch_line=snap.last_batch_line,
+        external_line=snap.last_external_line,
+    )
     err_text = finalize_web_reply_text(
-        f"⚠️ 任务因服务重启中断\n\n{RETRY_HINT}",
+        err_body,
         0.0,
         task_kind=classify_task_kind(meta.message),
         prompt=meta.message,
@@ -982,11 +1014,9 @@ def _start_run_event_tailer(run: ActiveRun, *, progress_stop: threading.Event) -
 
                         prev = run.last_process if isinstance(run.last_process, dict) else None
                         run.last_process = _merge_process_payload(prev, proc)
-                        phase = str(proc.get("phase") or "").strip()
-                        if _process_has_stream_content(proc):
-                            run.last_phase_line = ""
-                        elif phase:
-                            run.last_phase_line = phase
+                        from web_run_store import resolve_process_phase_line
+
+                        run.last_phase_line = resolve_process_phase_line(run.last_process)
                 elif etype == "done":
                     if run.done.is_set():
                         continue
@@ -1173,12 +1203,16 @@ def _start_run_progress_watcher(
     message: str,
     started_at: float,
     progress_stop: threading.Event,
+    session_id: str = "",
 ) -> None:
     """每秒推送已用时与批量进度（与钉钉流式卡片三通道一致）。"""
     task_kind = classify_task_kind(message)
     estimate_s = resolve_task_estimate_seconds(task_kind, prompt=message)
+    if session_id and should_rotate_cursor_agent(session_id) and estimate_s is not None:
+        estimate_s = max(estimate_s, 240.0)
     ack_line = build_task_ack_message(_task_summary(message), prompt=message)
     run.emit_event({"type": "ack", "line": ack_line})
+    store = get_run_store()
 
     def loop() -> None:
         while not progress_stop.wait(PROGRESS_TICK_S):
@@ -1216,9 +1250,9 @@ def _session_owner_context(user: Any) -> tuple[str, str, float]:
     if user is None:
         return "", "", 0.0
     uid = str(getattr(user, "staff_id", "") or "").strip()
-    label = lookup_staff_public_name(
+    label = lookup_auth_user_display_name(
         uid,
-        str(getattr(user, "display_name", "") or uid or "").strip(),
+        str(getattr(user, "display_name", "") or "").strip(),
     )
     try:
         auth_created = float(getattr(user, "auth_created_at", 0) or 0)
@@ -1373,6 +1407,7 @@ def _start_chat_run(
         message=message,
         started_at=started_at,
         progress_stop=progress_stop,
+        session_id=session_id,
     )
     _start_run_worker(run.run_id)
     _start_run_event_tailer(run, progress_stop=progress_stop)
@@ -1514,6 +1549,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         if path in ("/theme.js", "/dingtalk_oauth.js", "/analytics.js"):
             return super().do_GET()
 
+        if path.startswith("/assets/"):
+            return super().do_GET()
+
         if path == "/api/auth/status":
             user = current_web_user(self)
             payload: dict[str, Any] = {
@@ -1526,8 +1564,8 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 admin = is_web_admin(staff_id=user.staff_id)
                 user_payload: dict[str, Any] = {
                     "staffId": user.staff_id,
-                    "displayName": lookup_staff_public_name(
-                        user.staff_id, user.display_name or user.staff_id
+                    "displayName": lookup_auth_user_display_name(
+                        user.staff_id, user.display_name
                     ),
                     "isAdmin": admin,
                 }
@@ -1560,6 +1598,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             return super().do_GET()
 
         if path == KEYNOTE_URL_PREFIX or path == f"{KEYNOTE_URL_PREFIX}/":
+            return self._serve_keynote_preview()
+
+        if path in (f"{KEYNOTE_URL_PREFIX}/promo", f"{KEYNOTE_URL_PREFIX}/promo/"):
             return self._serve_keynote_preview()
 
         if path == "/api/analytics/stats":
@@ -1704,15 +1745,22 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     known_labels=known,
                 )
             else:
-                pairs = [(meta, "") for meta in items]
+                pairs = [(meta, None) for meta in items]
             active_session_ids = _active_run_session_ids()
             sessions = sort_sessions_for_display([
                 {
                     **meta.to_dict(known_labels=known, viewer_staff_id=viewer_staff_id),
                     "running": meta.id in active_session_ids,
-                    **({"search_snippet": snippet} if snippet else {}),
+                    **(
+                        {
+                            "search_snippet": hit.snippet,
+                            "search_message_timestamp": hit.message_timestamp,
+                        }
+                        if hit and hit.snippet
+                        else {}
+                    ),
                 }
-                for meta, snippet in pairs
+                for meta, hit in pairs
             ])
             return _json_response(self, {"sessions": sessions, "query": search_q, "scope": scope})
 
@@ -1850,8 +1898,8 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 "ok": True,
                 "user": {
                     "staffId": user.staff_id,
-                    "displayName": lookup_staff_public_name(
-                        user.staff_id, user.display_name or user.staff_id
+                    "displayName": lookup_auth_user_display_name(
+                        user.staff_id, user.display_name
                     ),
                 },
             }
@@ -1895,8 +1943,8 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 "ok": True,
                 "user": {
                     "staffId": user.staff_id,
-                    "displayName": lookup_staff_public_name(
-                        user.staff_id, user.display_name or user.staff_id
+                    "displayName": lookup_auth_user_display_name(
+                        user.staff_id, user.display_name
                     ),
                 },
             }
@@ -1922,8 +1970,8 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 return _json_response(self, {"error": "你已是管理员"}, 400)
             application, err = submit_application(
                 staff_id=user.staff_id,
-                display_name=lookup_staff_public_name(
-                    user.staff_id, user.display_name or user.staff_id
+                display_name=lookup_auth_user_display_name(
+                    user.staff_id, user.display_name
                 ),
             )
             if application is None:
@@ -2158,9 +2206,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     {"error": "包含不可选的接收人或群聊，请刷新列表后重试"},
                     400,
                 )
-            sender_name = lookup_staff_public_name(
+            sender_name = lookup_auth_user_display_name(
                 viewer.staff_id,
-                viewer.display_name or viewer.staff_id,
+                viewer.display_name,
             )
             try:
                 from web_message_forward import forward_message_to_dingtalk

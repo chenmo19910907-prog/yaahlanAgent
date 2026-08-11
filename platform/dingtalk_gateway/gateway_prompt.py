@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+from family_join_defaults import gateway_family_join_rule_line
 from gift_defaults import gateway_gift_rule_line
 from moa_registry_guard import looks_like_moa_registry_intent, moa_registry_instruction
 
@@ -17,7 +18,25 @@ from project.loader import gateway_agent_name, temporary_testcase_dir, web_login
 
 EXPORT_CONFIG = GATEWAY_DIR / "config" / "export_folder.json"
 
+BATCH_MAX_WORKERS = 5
+
 _GIFT_DEFAULT_RULE = gateway_gift_rule_line()
+_FAMILY_JOIN_RULE = gateway_family_join_rule_line()
+
+
+def batch_parallel_rule_snippet(*, compact: bool = False) -> str:
+    """批量 I/O 任务默认 ThreadPoolExecutor 并行（最多 BATCH_MAX_WORKERS 线程）。"""
+    if compact:
+        return (
+            f"默认 ThreadPoolExecutor 并行（max_workers≤{BATCH_MAX_WORKERS}），"
+            f"主线程上报进度；禁止 ADB 并行"
+        )
+    return (
+        f"**批量并行（默认）**：须写 Python 脚本，"
+        f"用 `ThreadPoolExecutor(max_workers=min({BATCH_MAX_WORKERS}, M))` 并行（最多 {BATCH_MAX_WORKERS} 线程）；"
+        f"每项完成后于主线程调用 batch_progress_report；禁止 ADB/真机 UI 并行；"
+        f"跨房 PK 配对、同账号串行、强依赖步骤时串行或降并发。"
+    )
 
 _DINGTALK_FILE_ZIP_BODY = (
     "**钉钉发文件先 zip**：经机器人向群内/单聊**发送本地文件附件**（`send_group_file`）时，"
@@ -78,6 +97,7 @@ def _gateway_rules() -> str:
 10. **测试用例**：生成测试用例时必须写入 `{tmp_dir}`（Markdown 表格或 CSV，含编号/功能模块/测试步骤/预期结果）；网关会自动同步到钉钉文档并在群里**只回在线表格链接**，无需用户再手动导出。
 11. **代码修改权限**：仅 `config/code_modify_allowlist.json`（及本地 `code_modify_allowlist.local.json`）登记的账号可通过机器人修改网关/Cursor 代码逻辑；**MOA 能力入库**（`MOA/templates/` + `sync_registry.py`）**全员可用**，不受只读限制。修改 `platform/dingtalk_gateway/` 并提交 GitLab 后网关会**自动静默重启**；修改 `platform/web_agent/` 后 Web Agent 会**自动重启（带源码监视）**；**不要**手动执行 `gateway_ctl.sh restart`。
 12. {_GIFT_DEFAULT_RULE}
+    {_FAMILY_JOIN_RULE}
 13. **MOA 探活/检查**：**禁止**因消息中出现「MOA」字样就触发探活。仅当用户**整条消息**为明确探活口令（如「MOA检查」「检查MOA」「MOA探活」，须完全匹配）时才执行 MOA Cookie 探活；**MOA 入库/登记模板**（含附图说明接口）时**只做** templates + registry + `sync_registry.py`，**禁止** MOA检查/探活/doctor/test_all；更新其它凭证、业务查询时亦不做探活。通过 `MOA/moa_execute.py` 执行业务接口属于正常任务，**不等于**探活。
 14. **禁止环境检查**：钉钉群**不支持**「环境检查」「检查环境」「doctor」「scripts/doctor.py」「credential_probe」；用户发送上述口令时**不要执行**，仅回复「钉钉群已取消环境检查，请用 MOA检查 或本机 gateway_ctl.sh health」。
 15. **禁止 ADB / 真机 UI**：钉钉消息**不得**经 ADB 或真机自动化执行。禁止调用 `adb/`、`adb_execute.py`、`macro`、`flow run`、`observe`/`capture`/`locate`/`tap`、`autotest`、adb-screen MCP 等。查数用 MOA/Admin；抓包用 Tunnel **只读**查询。用户要求真机点按、礼物面板 UI、截图验收时，说明「钉钉机器人不支持真机操作，请在 Cursor 本机执行」。
@@ -86,6 +106,7 @@ def _gateway_rules() -> str:
    `python3 platform/dingtalk_gateway/batch_progress_report.py --user-key <见下方 batch_key> --current N --total M --label "操作类型" [--detail "当前项标识"]`
    **N/M 语义**：`M` = 批量项总数（如 10 个手机号则 M=10）；`N` = 已完整处理完的批量项数（如已处理 3 个手机号则 N=3）。**禁止**把单个批量项内部的子步骤（查 userId、调 MOA、二次确认等）当作进度上报；一项内多步全部做完后，再 `--current +1` 一次。
    批量开始前先 `--current 0 --total M` 初始化；**最后一项** `--current M --total M` 时须附带完整结果：`--result-text "Markdown表格或结论"` 或 `--result-file /path/to/result.md`（网关**仅**以此 Markdown 作为群内最终结果，保留表格格式）。Agent 最终回复**只能一行**（如「已完成。」），**禁止**在 Agent 回复里再贴 Markdown 表格/汇总，完整数据**只**写在 `--result-text`。不要在最终回复里重复贴逐项进度。
+   {batch_parallel_rule_snippet()}
 18. **MSE 服务配置改参导出**：用户要求**修改/调整某个服务配置**（如 MSE `familyPkConfig` 门槛、奖金、时段等）时，**默认流程**：
    - 用 `MSE/mse_execute.py` 读取当前 `configValue` JSON；
    - 按用户要求**替换对应 JSON 参数**（勿手改 MSE 控制台，本流程只产出待发布配置）；
@@ -121,11 +142,12 @@ def _readonly_gateway_rules() -> str:
 8. **测试用例**：若用户要求生成用例，可写入 `{tmp_dir}` 并同步钉钉（这不属于改代码逻辑）。
 9. **MOA 入库（全员）**：只读用户可在 `MOA/templates/` 登记模板并执行 `python3 MOA/scripts/sync_registry.py`；**禁止**改 gateway/.cursor 与其它模块源码。
 10. {_GIFT_DEFAULT_RULE}
+    {_FAMILY_JOIN_RULE}
 11. **MOA 探活/检查**：**禁止**因消息含「MOA」就探活；仅整条口令完全匹配「MOA检查」「检查MOA」等时才探活。**MOA 入库/登记**时禁止探活，只做 sync_registry；`MOA/moa_execute.py` 业务调用不等于探活。
 12. **禁止环境检查**：钉钉群不支持「环境检查」「doctor」等；不要执行 `scripts/doctor.py` 或 credential_probe，仅说明已取消并引导 MOA检查 或本机 health。
 13. **禁止 ADB / 真机 UI**：不得调用 `adb/`、macro、flow、observe/capture/locate/tap、autotest、adb-screen MCP。抓包用 Tunnel 只读。真机 UI 需求请引导至 Cursor 本机。
 14. **代码改动请求**：若用户要求改网关/Agent/Cursor 逻辑，说明「需管理员授权」，不要擅自改仓库。
-15. **批量操作进度**：≥3 项批量时，**每完成一个批量项**（非项内子步骤）执行 `python3 platform/dingtalk_gateway/batch_progress_report.py --user-key <batch_key> --current N --total M --label "操作类型"`（N=已完成项数，M=总项数；batch_key 见下方）；最后一项须 `--result-text` 或 `--result-file` 附带完整 Markdown；Agent 最终回复仅一行，禁止重复贴表格。
+15. **批量操作进度**：≥3 项批量时，**每完成一个批量项**（非项内子步骤）执行 `python3 platform/dingtalk_gateway/batch_progress_report.py --user-key <batch_key> --current N --total M --label "操作类型"`（N=已完成项数，M=总项数；batch_key 见下方）；最后一项须 `--result-text` 或 `--result-file` 附带完整 Markdown；Agent 最终回复仅一行，禁止重复贴表格。{batch_parallel_rule_snippet(compact=True)}。
 16. **MSE 服务配置改参导出**：用户要求修改服务配置时，读取 MSE 当前 JSON → 替换用户指定参数 → `python3 platform/dingtalk_gateway/mse_config_export.py --config-key <key> --set key=value ...` 导出钉钉；群里只回链接；表格仅改后 JSON（上）+ 改前 JSON（下），自动换行；**禁止**声称已写入 MSE。
 17. {_DINGTALK_FILE_ZIP_BODY}
 
@@ -153,11 +175,12 @@ def _readonly_with_moa_registry_rules() -> str:
 7. **回复风格**：自然语言，先结论后细节；禁止贴原始 JSON 或字段名罗列；**时间展示**用北京时间，禁止 UTC。
 8. **测试用例**：若用户要求生成用例，可写入 `{tmp_dir}` 并同步钉钉（这不属于改代码逻辑）。
 9. {_GIFT_DEFAULT_RULE}
+   {_FAMILY_JOIN_RULE}
 10. **MOA 探活/检查**：**禁止**因消息含「MOA」就探活；仅整条口令完全匹配「MOA检查」「检查MOA」等时才探活。**MOA 入库/登记**时禁止探活，只做 sync_registry；`MOA/moa_execute.py` 业务调用不等于探活。
 11. **禁止环境检查**：钉钉群不支持「环境检查」「doctor」等；不要执行 `scripts/doctor.py` 或 credential_probe，仅说明已取消并引导 MOA检查 或本机 health。
 12. **禁止 ADB / 真机 UI**：不得调用 `adb/`、macro、flow、observe/capture/locate/tap、autotest、adb-screen MCP。抓包用 Tunnel 只读。真机 UI 需求请引导至 Cursor 本机。
 13. **网关代码改动请求**：若用户要求改网关/Agent/Cursor 逻辑，说明「需管理员授权」，不要擅自改仓库。
-14. **批量操作进度**：≥3 项批量时，**每完成一个批量项**（非项内子步骤）执行 `python3 platform/dingtalk_gateway/batch_progress_report.py --user-key <batch_key> --current N --total M --label "操作类型"`（N=已完成项数，M=总项数；batch_key 见下方）；最后一项须 `--result-text` 或 `--result-file` 附带完整 Markdown；Agent 最终回复仅一行，禁止重复贴表格。
+14. **批量操作进度**：≥3 项批量时，**每完成一个批量项**（非项内子步骤）执行 `python3 platform/dingtalk_gateway/batch_progress_report.py --user-key <batch_key> --current N --total M --label "操作类型"`（N=已完成项数，M=总项数；batch_key 见下方）；最后一项须 `--result-text` 或 `--result-file` 附带完整 Markdown；Agent 最终回复仅一行，禁止重复贴表格。{batch_parallel_rule_snippet(compact=True)}。
 15. **MSE 服务配置改参导出**：用户要求修改服务配置时，读取 MSE 当前 JSON → 替换用户指定参数 → `python3 platform/dingtalk_gateway/mse_config_export.py --config-key <key> --set key=value ...` 导出钉钉；群里只回链接；表格仅改后 JSON（上）+ 改前 JSON（下），自动换行；**禁止**声称已写入 MSE。
 16. {_DINGTALK_FILE_ZIP_BODY}
 
@@ -177,6 +200,7 @@ def batch_progress_instruction(batch_progress_key: str, *, compact: bool = True)
         f"batch_key={key}\n"
         "批量（≥3项）时：M=批量项总数，N=已完成的批量项数（不是项内 MOA/查询子步骤）。"
         "每完整处理完一个批量项上报一次，命令见上方系统规则「批量操作进度」。"
+        f"{batch_parallel_rule_snippet(compact=True)}。"
     )
 
 

@@ -72,6 +72,10 @@ def load_json_config(path: Path | None = None) -> dict[str, Any]:
     return json.loads(cfg_path.read_text(encoding="utf-8"))
 
 
+# 兼容旧脚本 `from dingtalk_kb_source import DEFAULT_CONFIG`
+DEFAULT_CONFIG = _default_kb_config_path()
+
+
 def load_folders_config() -> dict[str, Any]:
     path = _folders_config_path()
     if not path.is_file():

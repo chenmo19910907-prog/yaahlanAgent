@@ -36,7 +36,7 @@ SHEET2_HEADER = [
     "总PK值",
     "胜负",
     "是否首胜",
-    "下发总钻石数",
+    "总奖池",
     "应得钻石",
     "实发钻石",
     "弹窗总钻石数",
@@ -114,6 +114,64 @@ def _party_from_dict(data: dict[str, Any]) -> pk.RoomParty:
         user_id=str(data.get("user_id") or ""),
         room_id=str(data.get("room_id") or ""),
     )
+
+
+def _party_entry_from_room(room_id: str, info: dict[str, Any]) -> dict[str, str]:
+    return {
+        "phone": str(info.get("phone") or ""),
+        "user_id": str(info.get("userId") or info.get("user_id") or ""),
+        "room_id": str(room_id),
+    }
+
+
+def _normalize_report_for_sheet(report: dict[str, Any]) -> None:
+    """补齐 pk_atm_test_run 报告缺少的 parties / roomAPk / combinedPk 等 Sheet2 字段。"""
+    rooms = report.get("rooms") or {}
+    if not isinstance(rooms, dict):
+        rooms = {}
+
+    if not report.get("parties") and len(rooms) >= 2:
+        loser_rid = str(
+            (report.get("loser") or {}).get("roomId")
+            or (report.get("result") or {}).get("loserRoomId")
+            or ""
+        )
+        winner_rid = str(
+            (report.get("winner") or {}).get("roomId")
+            or (report.get("result") or {}).get("winnerRoomId")
+            or ""
+        )
+        room_ids = sorted(str(rid) for rid in rooms)
+        a_rid = loser_rid if loser_rid in rooms else room_ids[0]
+        b_rid = winner_rid if winner_rid in rooms and winner_rid != a_rid else next(
+            (rid for rid in room_ids if rid != a_rid),
+            room_ids[-1],
+        )
+        report["parties"] = {
+            "a": _party_entry_from_room(a_rid, rooms.get(a_rid) or {}),
+            "b": _party_entry_from_room(b_rid, rooms.get(b_rid) or {}),
+        }
+
+    parties = report.get("parties") or {}
+    pa = parties.get("a") or {}
+    pb = parties.get("b") or {}
+    pa_rid = str(pa.get("room_id") or "")
+    pb_rid = str(pb.get("room_id") or "")
+
+    if not report.get("roomAPk") and pa_rid in rooms:
+        report["roomAPk"] = int((rooms[pa_rid] or {}).get("totalPkValue") or 0)
+    if not report.get("roomBPk") and pb_rid in rooms:
+        report["roomBPk"] = int((rooms[pb_rid] or {}).get("totalPkValue") or 0)
+
+    if not report.get("combinedPk"):
+        combined = (
+            (report.get("pkAtm") or {}).get("combinedPk")
+            or ((report.get("expectedRewards") or {}).get("atm") or {}).get("combinedPk")
+        )
+        if combined:
+            report["combinedPk"] = int(combined)
+        else:
+            report["combinedPk"] = int(report.get("roomAPk") or 0) + int(report.get("roomBPk") or 0)
 
 
 def _reconcile_sender_pk(report: dict[str, Any]) -> None:
@@ -313,6 +371,85 @@ def _cross_room_senders(gifts: list[dict[str, Any]]) -> set[str]:
     return {uid for uid, rooms in by_sender.items() if len(rooms) > 1}
 
 
+def _gift_plan_from_report(path: Path) -> list[dict[str, Any]]:
+    """从上一份 Sheet2 报告读取各用户各房送礼 PK，复跑时按 pkValue÷10 送钻。"""
+    data = json.loads(path.read_text(encoding="utf-8"))
+    plan: list[dict[str, Any]] = []
+    for uid, rooms in (data.get("senderPkByRoom") or {}).items():
+        if not isinstance(rooms, dict):
+            continue
+        for room_id, info in rooms.items():
+            if not isinstance(info, dict):
+                continue
+            pk_val = int(info.get("pkValue") or 0)
+            if pk_val <= 0:
+                continue
+            plan.append(
+                {
+                    "sender": str(uid),
+                    "roomId": str(room_id),
+                    "pkValue": pk_val,
+                    "diamonds": max(1, pk_val // 10),
+                }
+            )
+    if not plan:
+        raise ValueError(f"报告无 senderPkByRoom 送礼计划: {path}")
+    return plan
+
+
+def _load_sender_pool(*, exclude: set[str], count: int) -> list[str]:
+    path = REPO / "testcase-kb/admin_user_pool_profiles.json"
+    if not path.is_file():
+        return [s for s in pk.DEFAULT_SENDERS if s not in exclude][:count]
+    data = json.loads(path.read_text(encoding="utf-8"))
+    records = data.get("records") if isinstance(data, dict) else data
+    out: list[str] = []
+    if not isinstance(records, list):
+        return [s for s in pk.DEFAULT_SENDERS if s not in exclude][:count]
+    for item in records:
+        if not isinstance(item, dict):
+            continue
+        uid = str(item.get("userId") or "").strip()
+        phone = str(item.get("phone") or "").replace("+86 ", "").strip()
+        if not uid or uid in exclude or not phone.startswith("13311111"):
+            continue
+        out.append(uid)
+    if len(out) < count:
+        for uid in pk.DEFAULT_SENDERS:
+            if uid not in exclude and uid not in out:
+                out.append(uid)
+    return out[:count]
+
+
+def _build_threshold_gift_plan(
+    *,
+    party_a: pk.RoomParty,
+    party_b: pk.RoomParty,
+    senders: list[str],
+    high_pk: int,
+    low_pk: int,
+    high_count: int,
+    low_count: int,
+) -> list[dict[str, Any]]:
+    return pk._build_threshold_gift_plan(
+        party_a=party_a,
+        party_b=party_b,
+        senders=senders,
+        high_pk=high_pk,
+        low_pk=low_pk,
+        high_count=high_count,
+        low_count=low_count,
+    )
+
+
+def _send_planned_gifts(
+    *,
+    plan: list[dict[str, Any]],
+    room_owners: dict[str, str],
+) -> list[dict[str, Any]]:
+    return pk._send_gift_plan(plan=plan, room_owners=room_owners)
+
+
 def _snapshot_users_page_sticky(user_ids: list[str]) -> dict[str, dict[str, Any]]:
     users: dict[str, dict[str, Any]] = {}
     for uid in user_ids:
@@ -332,6 +469,29 @@ def _winner_personal_pk(uid: str, winner_room_id: str, sender_pk: dict[str, dict
 
 def _is_reward_eligible(*, personal_pk: int, personal_threshold: int, is_winner: bool) -> bool:
     return is_winner and personal_pk >= personal_threshold
+
+
+def _delta_int(delta: int | None, *, missing: int = -1) -> int:
+    """0 与 None 区分：实发 0 钻时不应被 `or -1` 误判为缺失。"""
+    return int(delta) if delta is not None else missing
+
+
+def _session_eligible(report: dict[str, Any]) -> bool:
+    pk_atm = report.get("pkAtm") or {}
+    if "eligible" in pk_atm:
+        return bool(pk_atm["eligible"])
+    combined = int(
+        report.get("combinedPk")
+        or pk_atm.get("combinedPk")
+        or ((report.get("expectedRewards") or {}).get("atm") or {}).get("combinedPk")
+        or 0
+    )
+    min_pk = int(
+        pk_atm.get("minPkForReward")
+        or (report.get("serviceConfig") or {}).get("minCombinedPk")
+        or 20000
+    )
+    return combined >= min_pk
 
 
 def _verify_winner_popups(
@@ -378,7 +538,8 @@ def _verify_winner_popups(
             my_reward = int(my_info.get("myRewardDiamond") or 0)
             first_win_extra = int(my_info.get("firstWinExtraDiamond") or 0)
             pk_ok = my_pk == exp_pk
-            reward_ok = delta is not None and my_reward == int(delta)
+            exp_reward = int(diamond_items.get(uid, {}).get("expectedDiamonds") or 0)
+            reward_ok = my_reward == exp_reward
             user_ok = pk_ok and reward_ok
             users[uid] = {
                 "eligible": True,
@@ -448,7 +609,9 @@ def _verify_users_page_sticky(
                 if not eligible:
                     sticky_ok = delta == 0
                 else:
-                    exp_delta = diamond_items.get(uid, {}).get("diamondDelta")
+                    exp_delta = diamond_items.get(uid, {}).get("expectedDiamonds")
+                    if exp_delta is None:
+                        exp_delta = diamond_items.get(uid, {}).get("diamondDelta")
                     if exp_delta is not None:
                         sticky_ok = delta == int(exp_delta)
                     else:
@@ -567,6 +730,36 @@ def _resolve_reward_pool(report: dict[str, Any]) -> int:
     return int((report.get("expectedRewards") or {}).get("poolDiamonds") or 0)
 
 
+def _sync_diamond_verification_from_snapshots(
+    report: dict[str, Any],
+    diamond_before: dict[str, int],
+    diamond_after: dict[str, int],
+) -> None:
+    """返钻异步到账：用较晚的钱包快照回写 diamondVerification。"""
+    items = (report.get("diamondVerification") or {}).get("items") or []
+    for item in items:
+        uid = str(item.get("userId") or "")
+        before = diamond_before.get(uid)
+        after = diamond_after.get(uid)
+        if before is None or after is None:
+            continue
+        item["diamondBefore"] = before
+        item["diamondAfter"] = after
+        delta = after - before
+        item["diamondDelta"] = delta
+        exp = int(item.get("expectedDiamonds") or 0)
+        if item.get("eligible") is False:
+            item["match"] = delta == 0
+        else:
+            item["match"] = delta == exp
+    if items:
+        report.setdefault("diamondVerification", {})["allMatch"] = all(
+            i.get("match") is True
+            for i in items
+            if i.get("eligible") is not False or int(i.get("diamondDelta") or 0) != 0
+        )
+
+
 def _finalize_expected_after_popup(report: dict[str, Any]) -> None:
     """弹窗拿到 roomTotalDiamond / 首胜后，重算应得钻石并回写验收项。"""
     expected = report.get("expectedRewards") or {}
@@ -647,6 +840,96 @@ def _finalize_expected_after_popup(report: dict[str, Any]) -> None:
             for i in items
             if i.get("eligible") is not False or int(i.get("diamondDelta") or 0) != 0
         )
+
+
+def _reconcile_report_verification(report: dict[str, Any]) -> None:
+    """写表前用已有 page/popup 数据重算验收结论（修正过早钱包快照）。"""
+    cfg = report.get("serviceConfig") or {}
+    personal_threshold = int(cfg.get("personalPkThreshold") or DEFAULT_PERSONAL_PK_THRESHOLD)
+    winner = report.get("winner") or {}
+    winner_room = str(winner.get("roomId") or report.get("expectedRewards", {}).get("winnerRoomId") or "")
+    sender_pk = report.get("senderPkByRoom") or {}
+    winner_uids = {
+        uid
+        for uid, rooms in sender_pk.items()
+        if winner_room in rooms and int((rooms.get(winner_room) or {}).get("pkValue") or 0) > 0
+    }
+    verify_users = sorted(sender_pk.keys())
+    page_before = report.get("pageBefore") or {}
+    page_after = report.get("pageAfter") or {}
+    if page_before and page_after:
+        diamond_items = {
+            str(i.get("userId")): i
+            for i in (report.get("diamondVerification") or {}).get("items") or []
+        }
+        report["pageVerify"] = _verify_users_page_sticky(
+            user_ids=verify_users,
+            page_before=page_before,
+            page_after=page_after,
+            diamond_items=diamond_items,
+            winner_room=winner_room,
+            winner_uids=winner_uids,
+            sender_pk=sender_pk,
+            personal_threshold=personal_threshold,
+        )
+        page_users = (report.get("pageVerify") or {}).get("users") or {}
+        for item in (report.get("diamondVerification") or {}).get("items") or []:
+            uid = str(item.get("userId") or "")
+            pg = page_users.get(uid) or {}
+            pd = pg.get("delta")
+            if pd is None:
+                continue
+            if uid in winner_uids and int(item.get("diamondDelta") or 0) == 0 and int(pd) > 0:
+                item["diamondDelta"] = int(pd)
+                exp = int(item.get("expectedDiamonds") or 0)
+                item["match"] = int(pd) == exp
+        items = (report.get("diamondVerification") or {}).get("items") or []
+        if items:
+            report.setdefault("diamondVerification", {})["allMatch"] = all(
+                i.get("match") is True
+                for i in items
+                if i.get("eligible") is not False or int(i.get("diamondDelta") or 0) != 0
+            )
+    popup = report.get("popupVerify") or {}
+    popup_users = popup.get("users") or {}
+    popup_ok = True
+    for uid, pu in popup_users.items():
+        if not pu.get("eligible"):
+            continue
+        exp = int(
+            ((report.get("expectedRewards") or {}).get("users") or {}).get(uid, {}).get("expectedDiamonds")
+            or 0
+        )
+        my_reward = int(pu.get("myRewardDiamond") or 0)
+        reward_ok = my_reward == exp
+        pk_ok = pu.get("pkOk") is not False
+        pu["rewardOk"] = reward_ok
+        pu["ok"] = pk_ok and reward_ok
+        if not pu["ok"]:
+            popup_ok = False
+    if popup:
+        popup["ok"] = popup_ok
+    verify_ok = report.get("diamondVerification", {}).get("allMatch") is True
+    page_ok = (report.get("pageVerify") or {}).get("ok") is True
+    rank_ok = (report.get("withdrawRankVerify") or {}).get("ok") is True
+    cross_ok = len(report.get("crossRoomSenders") or []) == 0
+    target_ok = report.get("targetCombinedPkOk")
+    if target_ok is None:
+        target_ok = True
+    report["ok"] = bool(verify_ok and rank_ok and popup_ok and page_ok and cross_ok and target_ok)
+    if not report["ok"]:
+        errs = []
+        if not verify_ok:
+            errs.append("钻石到账不一致")
+        if not rank_ok:
+            errs.append("提款排名增量失败")
+        if not popup_ok:
+            errs.append("返钻弹窗失败")
+        if not page_ok:
+            errs.append("活动页吸底失败")
+        report["error"] = "；".join(errs) if errs else (report.get("error") or "场次未通过")
+    else:
+        report["error"] = ""
 
 
 def _row_failure_notes(
@@ -761,13 +1044,33 @@ def _build_sheet_rows(report: dict[str, Any], *, phone_map: dict[str, str] | Non
         winner_room=winner_room,
         cross_room=cross_room,
     )
+    rooms = report.get("rooms") or {}
+    pa_rid = str(pa.get("room_id") or "")
+    pb_rid = str(pb.get("room_id") or "")
     room_a_pk = int(report.get("roomAPk") or 0)
     room_b_pk = int(report.get("roomBPk") or 0)
-    room_pk = {
-        str(pa.get("room_id") or ""): room_a_pk,
-        str(pb.get("room_id") or ""): room_b_pk,
-    }
-    combined_pk = int(report.get("combinedPk") or (room_a_pk + room_b_pk))
+    if room_a_pk <= 0 and pa_rid in rooms:
+        room_a_pk = int((rooms[pa_rid] or {}).get("totalPkValue") or 0)
+    if room_b_pk <= 0 and pb_rid in rooms:
+        room_b_pk = int((rooms[pb_rid] or {}).get("totalPkValue") or 0)
+    room_pk = {pa_rid: room_a_pk, pb_rid: room_b_pk}
+    combined_pk = int(
+        report.get("combinedPk")
+        or (report.get("pkAtm") or {}).get("combinedPk")
+        or (room_a_pk + room_b_pk)
+    )
+    if not room_host.get(pa_rid, ("", ""))[0] and pa_rid in rooms:
+        info = rooms[pa_rid] or {}
+        room_host[pa_rid] = (
+            str(info.get("userId") or info.get("user_id") or pa.get("user_id") or ""),
+            str(info.get("phone") or pa.get("phone") or ""),
+        )
+    if not room_host.get(pb_rid, ("", ""))[0] and pb_rid in rooms:
+        info = rooms[pb_rid] or {}
+        room_host[pb_rid] = (
+            str(info.get("userId") or info.get("user_id") or pb.get("user_id") or ""),
+            str(info.get("phone") or pb.get("phone") or ""),
+        )
     win_room_pk = int(room_pk.get(winner_room) or 0)
     contributors.sort(
         key=lambda c: (
@@ -802,7 +1105,9 @@ def _build_sheet_rows(report: dict[str, Any], *, phone_map: dict[str, str] | Non
             first_win_extra=first_extra,
         )
 
-        actual_delta = dv.get("diamondDelta")
+        actual_delta = pg.get("delta")
+        if actual_delta is None:
+            actual_delta = dv.get("diamondDelta")
         user_page_delta = pg.get("delta")
         popup_user_diamond = pu.get("myRewardDiamond") if is_winner else None
 
@@ -834,13 +1139,26 @@ def _build_sheet_rows(report: dict[str, Any], *, phone_map: dict[str, str] | Non
                 and (user_page_delta is None or int(user_page_delta) == 0)
                 and not notes
             )
+        elif is_winner and not _session_eligible(report):
+            row_ok = (
+                expected_diamonds == 0
+                and actual_delta in (None, 0)
+                and popup_user_diamond in (None, 0)
+                and (user_page_delta is None or int(user_page_delta) == 0)
+                and not notes
+            )
+            if row_ok and not notes:
+                notes = "未达场次门槛，预期无返钻"
         elif is_winner:
+            actual_int = _delta_int(actual_delta, missing=-999999)
+            page_int = _delta_int(user_page_delta, missing=-999999)
+            popup_int = _delta_int(popup_user_diamond, missing=-999999) if is_winner else 0
             row_ok = (
                 not notes
-                and expected_diamonds == int(actual_delta or -1)
-                and pu.get("ok") is not False
-                and pg.get("ok") is not False
-                and (user_page_delta is None or int(user_page_delta) == expected_diamonds)
+                and expected_diamonds == actual_int
+                and (page_int in (-999999, expected_diamonds))
+                and (popup_int in (-999999, expected_diamonds))
+                and pu.get("pkOk") is not False
             )
         else:
             row_ok = (
@@ -972,20 +1290,25 @@ def run_flow(args: argparse.Namespace) -> dict[str, Any]:
 
     existing = pk._pk_info(party_a)
     pk_id = existing.get("acrossRoomPkId")
+    # 提款机仅随机匹配计入；复跑固定送礼计划时强制新开随机匹配，不复用残留 PK
+    force_random = bool(str(getattr(args, "gift_plan_from_report", "") or "").strip())
     reuse = (
-        pk_id
+        not force_random
+        and pk_id
         and str((existing.get("acrossRoomInfo") or {}).get("roomId")) == party_b.room_id
         and int(existing.get("stage") or 0) >= 1
     )
     if reuse:
         report["steps"].append({"match": {"mode": "reuse_existing", "pkId": pk_id}})
     else:
+        if force_random:
+            pk._prepare_random_match(party_a, party_b)
         pk_id, match_step = pk._begin_random_match_cross_room_pk(
             party_a,
             party_b,
             timeout_sec=args.match_timeout,
             pk_minute=str(args.pk_minute),
-            match_retries=getattr(args, "match_retries", 5),
+            match_retries=getattr(args, "match_retries", pk.MAX_CROSS_ROOM_MATCH_RETRIES),
         )
         report["steps"].append({"match": match_step})
     report["pkId"] = pk_id
@@ -1001,43 +1324,116 @@ def run_flow(args: argparse.Namespace) -> dict[str, Any]:
     room_owners = pk._room_owners_map(party_a, party_b)
     room_ids = list(room_owners.keys())
 
-    senders = [s.strip() for s in (args.senders or "").split(",") if s.strip()] or pk.DEFAULT_SENDERS
-    senders = [s for s in senders if s not in (party_a.user_id, party_b.user_id)]
-    random.shuffle(senders)
-    pool = senders[: max(args.gift_count, len(senders))]
-
-    sender_room = pk._assign_sender_rooms(pool, room_ids)
-    gifts = pk._send_random_gifts(
-        senders=pool,
-        room_owners=room_owners,
-        room_ids=room_ids,
-        gift_min=args.gift_min_diamonds,
-        gift_max=args.gift_max_diamonds,
-        count=args.gift_count,
-        sender_room=sender_room,
-    )
-    if args.target_combined_pk and args.target_combined_pk > 0:
-        gifts.extend(
-            pk._top_up_gifts_until_target(
+    gift_plan_path = str(getattr(args, "gift_plan_from_report", "") or "").strip()
+    gift_plan_report: dict[str, Any] | None = None
+    gift_room_a_only = bool(getattr(args, "gift_room_a_only", False))
+    threshold_high = int(getattr(args, "gift_pk_high", 0) or 0)
+    threshold_low = int(getattr(args, "gift_pk_low", 0) or 0)
+    if gift_plan_path:
+        gift_plan_report = json.loads(Path(gift_plan_path).read_text(encoding="utf-8"))
+        plan = _gift_plan_from_report(Path(gift_plan_path))
+        sender_room = {str(p["sender"]): str(p["roomId"]) for p in plan}
+        gifts = _send_planned_gifts(plan=plan, room_owners=room_owners)
+        report["giftPlanFromReport"] = gift_plan_path
+    elif threshold_high > 0 and threshold_low > 0:
+        exclude = {party_a.user_id, party_b.user_id}
+        senders = [s.strip() for s in (args.senders or "").split(",") if s.strip()]
+        if not senders:
+            senders = _load_sender_pool(
+                exclude=exclude,
+                count=max(args.gift_count, args.gift_high_count + args.gift_low_count),
+            )
+        senders = [s for s in senders if s not in exclude]
+        high_count = int(getattr(args, "gift_high_count", 55) or 55)
+        low_count = int(getattr(args, "gift_low_count", 5) or 5)
+        if args.target_combined_pk and args.target_combined_pk > 0:
+            plan = pk._build_target_pk_gift_plan(
                 party_a=party_a,
                 party_b=party_b,
-                pk_id=pk_id,
-                senders=pool,
-                gift_min=args.gift_min_diamonds,
-                gift_max=args.gift_max_diamonds,
-                gift_count=args.gift_count,
+                senders=senders,
                 target_pk=args.target_combined_pk,
-                sender_room=sender_room,
+                gift_count=args.gift_count,
+                gift_min=max(1, threshold_low // 10),
+                gift_max=max(1, threshold_high // 10),
+                high_pk=threshold_high,
+                low_pk=threshold_low,
+                high_count=high_count,
+                low_count=low_count,
             )
+        else:
+            plan = _build_threshold_gift_plan(
+                party_a=party_a,
+                party_b=party_b,
+                senders=senders,
+                high_pk=threshold_high,
+                low_pk=threshold_low,
+                high_count=high_count,
+                low_count=low_count,
+            )
+        sender_room = {str(p["sender"]): str(p["roomId"]) for p in plan}
+        plan_summary = pk._gift_plan_summary(plan)
+        gifts = _send_planned_gifts(plan=plan, room_owners=room_owners)
+        pool = [str(p["sender"]) for p in plan]
+        report["giftThresholdPlan"] = {
+            "highPk": threshold_high,
+            "lowPk": threshold_low,
+            "highCount": high_count,
+            "lowCount": low_count,
+            "roomAOnly": False,
+            "planned": plan_summary,
+        }
+    elif args.target_combined_pk and args.target_combined_pk > 0:
+        senders = [s.strip() for s in (args.senders or "").split(",") if s.strip()] or pk.DEFAULT_SENDERS
+        senders = [s for s in senders if s not in (party_a.user_id, party_b.user_id)]
+        random.shuffle(senders)
+        pool = senders[: max(args.gift_count, len(senders))]
+        plan = pk._build_target_pk_gift_plan(
+            party_a=party_a,
+            party_b=party_b,
+            senders=pool,
+            target_pk=args.target_combined_pk,
+            gift_count=args.gift_count,
+            gift_min=args.gift_min_diamonds,
+            gift_max=args.gift_max_diamonds,
+        )
+        sender_room = {str(p["sender"]): str(p["roomId"]) for p in plan}
+        plan_summary = pk._gift_plan_summary(plan)
+        gifts = _send_planned_gifts(plan=plan, room_owners=room_owners)
+        report["giftPlan"] = plan_summary
+    else:
+        senders = [s.strip() for s in (args.senders or "").split(",") if s.strip()] or pk.DEFAULT_SENDERS
+        senders = [s for s in senders if s not in (party_a.user_id, party_b.user_id)]
+        random.shuffle(senders)
+        pool = senders[: max(args.gift_count, len(senders))]
+
+        if gift_room_a_only:
+            sender_room = {uid: party_a.room_id for uid in pool}
+            gift_room_ids = [party_a.room_id]
+        else:
+            sender_room = pk._assign_sender_rooms(pool, room_ids)
+            gift_room_ids = room_ids
+        gifts = pk._send_random_gifts(
+            senders=pool,
+            room_owners=room_owners,
+            room_ids=gift_room_ids,
+            gift_min=args.gift_min_diamonds,
+            gift_max=args.gift_max_diamonds,
+            count=args.gift_count,
+            sender_room=sender_room,
         )
     report["gifts"] = gifts
     report["senderRoomAssignment"] = sender_room
     cross_room = _cross_room_senders(gifts)
     report["crossRoomSenders"] = sorted(cross_room)
+    gift_rooms = pk._gifts_room_ids(gifts)
+    dual_room_ok = party_a.room_id in gift_rooms and party_b.room_id in gift_rooms
+    report["dualRoomGiftOk"] = dual_room_ok
+    report["giftRoomIds"] = sorted(gift_rooms)
 
     if args.post_gift_wait > 0:
         time.sleep(args.post_gift_wait)
 
+    wait_natural_end = bool(getattr(args, "wait_natural_end", False))
     pk_pre_close = pk._pk_info(party_a, pk_id=pk_id)
     sender_pk = pk._sender_pk_map(gifts, pk_pre_close, party_a, party_b)
     report["roomRankList"] = pk_pre_close.get("roomRankList")
@@ -1051,10 +1447,50 @@ def run_flow(args: argparse.Namespace) -> dict[str, Any]:
 
     withdraw_rank_before = pk._snapshot_withdraw_rank_context(party_a, verify_users)
 
-    closer = random.choice([party_a, party_b])
-    other = party_b if closer is party_a else party_a
-    report["closerPhone"] = closer.phone
-    report["closer"] = closer.__dict__
+    closer: pk.RoomParty | None
+    other: pk.RoomParty
+    close_res: dict[str, Any] = {"business": {"ec": 200, "skipped": True}}
+    if wait_natural_end:
+        closer = None
+        natural_timeout = int(getattr(args, "pk_minute", 5) or 5) * 60 + 60
+        report["steps"].append(
+            {"waitNaturalEnd": {"timeoutSec": natural_timeout, "acceptStageGte": 3}}
+        )
+        pk_pre_close = pk._wait_pk_natural_end(
+            party_a,
+            pk_id,
+            timeout_sec=natural_timeout,
+        )
+        report["roomAPk"] = int(pk_pre_close.get("roomRankValue") or 0)
+        report["roomBPk"] = int(pk_pre_close.get("acrossRoomRankValue") or 0)
+        report["combinedPk"] = pk._combined_pk(pk_pre_close)
+        sender_pk = pk._sender_pk_map(gifts, pk_pre_close, party_a, party_b)
+        winner_party, loser_party, _, outcome_rule = pk._resolve_outcome(
+            report["roomAPk"],
+            report["roomBPk"],
+            party_a,
+            party_b,
+            closer=None,
+        )
+        other = winner_party or party_a
+        report["outcomeRule"] = outcome_rule
+        report["closerPhone"] = ""
+        report["closer"] = None
+    else:
+        closer_phone = str(getattr(args, "closer_phone", "") or "").strip()
+        if not closer_phone and gift_plan_report:
+            closer_phone = str(gift_plan_report.get("closerPhone") or "").strip()
+        if closer_phone == party_a.phone:
+            closer, other = party_a, party_b
+        elif closer_phone == party_b.phone:
+            closer, other = party_b, party_a
+        else:
+            closer = random.choice([party_a, party_b])
+            other = party_b if closer is party_a else party_a
+        report["closerPhone"] = closer.phone
+        report["closer"] = closer.__dict__
+        winner_party = other
+        report["outcomeRule"] = "主动结束PK记败"
 
     expected = pk._calc_expected_rewards(
         cfg=cfg,
@@ -1067,7 +1503,8 @@ def run_flow(args: argparse.Namespace) -> dict[str, Any]:
     )
     report["expectedRewards"] = expected
 
-    close_res = _close_from(closer, other, pk_id)
+    if not wait_natural_end:
+        close_res = _close_from(closer, other, pk_id)
 
     if args.post_close_wait > 0:
         time.sleep(args.post_close_wait)
@@ -1102,18 +1539,32 @@ def run_flow(args: argparse.Namespace) -> dict[str, Any]:
     )
     report.update(final)
 
-    winner_party = other
-    report["winner"] = {
-        "phone": winner_party.phone,
-        "userId": winner_party.user_id,
-        "roomId": winner_party.room_id,
-    }
-    report["loser"] = {
-        "phone": closer.phone,
-        "userId": closer.user_id,
-        "roomId": closer.room_id,
-    }
-    report["outcomeRule"] = "主动结束PK记败"
+    if wait_natural_end:
+        winner_party = party_a if report["roomAPk"] >= report["roomBPk"] else party_b
+        loser_party = party_b if winner_party is party_a else party_a
+        report["winner"] = {
+            "phone": winner_party.phone,
+            "userId": winner_party.user_id,
+            "roomId": winner_party.room_id,
+        }
+        report["loser"] = {
+            "phone": loser_party.phone,
+            "userId": loser_party.user_id,
+            "roomId": loser_party.room_id,
+        }
+    else:
+        winner_party = other
+        report["winner"] = {
+            "phone": winner_party.phone,
+            "userId": winner_party.user_id,
+            "roomId": winner_party.room_id,
+        }
+        report["loser"] = {
+            "phone": closer.phone,
+            "userId": closer.user_id,
+            "roomId": closer.room_id,
+        }
+        report["outcomeRule"] = "主动结束PK记败"
 
     winner_room = winner_party.room_id
     winner_uids = [
@@ -1137,6 +1588,14 @@ def run_flow(args: argparse.Namespace) -> dict[str, Any]:
         str(i.get("userId")): i
         for i in (report.get("diamondVerification") or {}).get("items") or []
     }
+    # 弹窗查询耗时期间返钻可能才到账，再采一次钱包
+    time.sleep(2)
+    diamond_after_late = pk._snapshot_diamonds(verify_users)
+    _sync_diamond_verification_from_snapshots(report, diamond_before, diamond_after_late)
+    diamond_items = {
+        str(i.get("userId")): i
+        for i in (report.get("diamondVerification") or {}).get("items") or []
+    }
     page_after = _snapshot_users_page_sticky(verify_users)
     report["pageAfter"] = page_after
     report["pageVerify"] = _verify_users_page_sticky(
@@ -1150,22 +1609,25 @@ def run_flow(args: argparse.Namespace) -> dict[str, Any]:
         personal_threshold=int(cfg.personal_pk_threshold or DEFAULT_PERSONAL_PK_THRESHOLD),
     )
 
-    close_ok = bool((close_res.get("business") or {}).get("ec") in (200, "200"))
+    close_ok = bool((close_res.get("business") or {}).get("ec") in (200, "200")) or wait_natural_end
     verify_ok = report.get("diamondVerification", {}).get("allMatch") is True
     rank_ok = withdraw_rank_verify.get("ok") is True
     popup_ok = (report.get("popupVerify") or {}).get("ok") is True
     page_ok = (report.get("pageVerify") or {}).get("ok") is True
     cross_ok = len(cross_room) == 0
+    dual_ok = report.get("dualRoomGiftOk") is not False
     target_ok = True
     if args.target_combined_pk and args.target_combined_pk > 0:
         target_ok = report["combinedPk"] >= args.target_combined_pk
         report["targetCombinedPk"] = args.target_combined_pk
         report["targetCombinedPkOk"] = target_ok
     report["ok"] = (
-        close_ok and verify_ok and rank_ok and popup_ok and page_ok and target_ok and cross_ok
+        close_ok and verify_ok and rank_ok and popup_ok and page_ok and target_ok and cross_ok and dual_ok
     )
     if cross_room:
         report["error"] = f"双房送礼账号: {','.join(sorted(cross_room))}"
+    elif not dual_ok:
+        report["error"] = f"未双房送礼（仅 {sorted(gift_rooms)}）"
     elif not target_ok:
         report["error"] = f"双方总 PK {report['combinedPk']:,} 未达目标 {args.target_combined_pk:,}"
     elif not report["ok"]:
@@ -1191,10 +1653,20 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="PK提款机全流程 + 钉钉Sheet2")
     parser.add_argument("--phone-a", default="13311111111")
     parser.add_argument("--phone-b", default="13311111115")
-    parser.add_argument("--pk-minute", type=int, default=10, choices=(5, 10, 30))
+    parser.add_argument("--pk-minute", type=int, default=10, choices=(2, 5, 10, 30))
     parser.add_argument("--gift-count", type=int, default=50)
     parser.add_argument("--gift-min-diamonds", type=int, default=400)
     parser.add_argument("--gift-max-diamonds", type=int, default=600)
+    parser.add_argument("--gift-room-a-only", action="store_true", help="全部送礼账号只打 A 房")
+    parser.add_argument("--gift-pk-high", type=int, default=0, help="档位高 PK（如 10000）")
+    parser.add_argument("--gift-pk-low", type=int, default=0, help="档位低 PK（如 9999）")
+    parser.add_argument("--gift-high-count", type=int, default=55, help="高 PK 送礼人数")
+    parser.add_argument("--gift-low-count", type=int, default=5, help="低 PK 送礼人数")
+    parser.add_argument(
+        "--wait-natural-end",
+        action="store_true",
+        help="送礼后不主动 closeAcrossRoomPk，等待 PK 时长走完进入惩罚阶段（stage>=3）即验收",
+    )
     parser.add_argument("--target-combined-pk", type=int, default=100000, help="双方总 PK 验收目标（默认10万）")
     parser.add_argument("--min-combined-pk", type=int, default=20000, help="MSE minTotalPkValue")
     parser.add_argument("--personal-pk-threshold", type=int, default=DEFAULT_PERSONAL_PK_THRESHOLD, help="MSE minMemberRewardPk（默认 10000，以服务端为准）")
@@ -1219,6 +1691,16 @@ def main() -> int:
     parser.add_argument("--skip-config-fetch", action="store_true")
     parser.add_argument("--from-report", help="仅从已有 JSON 报告重写 Sheet2")
     parser.add_argument("--rewrite-only", action="store_true", help="同 --from-report，只写表不跑流程")
+    parser.add_argument(
+        "--gift-plan-from-report",
+        default="",
+        help="复用上份报告的 senderPkByRoom（相同账号与送礼 PK），按 pk÷10 送钻，不再随机/top-up",
+    )
+    parser.add_argument(
+        "--closer-phone",
+        default="",
+        help="指定主动结束 PK 的手机号（记败）；省略且 --gift-plan-from-report 时继承上份报告",
+    )
     args = parser.parse_args()
 
     if args.from_report or args.rewrite_only:
@@ -1228,7 +1710,9 @@ def main() -> int:
                 raise SystemExit("未找到 .tmp/pk_atm_sheet2_*.json")
             args.from_report = str(latest[-1])
         report = json.loads(Path(args.from_report).read_text(encoding="utf-8"))
+        _normalize_report_for_sheet(report)
         _reconcile_report_by_closer(report)
+        _reconcile_report_verification(report)
 
         async def _rewrite() -> tuple[str, int]:
             rows = _build_sheet_rows(report)
@@ -1280,6 +1764,14 @@ def main() -> int:
         require_pk_situation_list=False,
         skip_withdraw_rank_verify=False,
         require_withdraw_rank_api=False,
+        gift_plan_from_report=args.gift_plan_from_report,
+        closer_phone=args.closer_phone,
+        gift_room_a_only=args.gift_room_a_only,
+        gift_pk_high=args.gift_pk_high,
+        gift_pk_low=args.gift_pk_low,
+        gift_high_count=args.gift_high_count,
+        gift_low_count=args.gift_low_count,
+        wait_natural_end=args.wait_natural_end,
     )
 
     report = run_flow(ns)
