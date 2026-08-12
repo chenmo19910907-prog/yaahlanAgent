@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20260812023841"></script>
-  <script src="demo-api.js?v=20260812023841"></script>
+  <script src="demo-fixtures.js?v=20260812024632"></script>
+  <script src="demo-api.js?v=20260812024632"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -2466,7 +2466,14 @@
     body:not(.sidebar-collapsed) .input-hint-row {
       margin-right: 0;
     }
-    .input-hint { font-size: 0.72rem; flex: 1; min-width: 0; }
+    .input-hint {
+      font-size: 0.72rem;
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     .settings-modal {
       display: flex; position: fixed; inset: 0; background: var(--modal-overlay, rgba(0,0,0,0.6));
       align-items: center; justify-content: center; z-index: 100;
