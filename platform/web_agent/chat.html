@@ -2464,7 +2464,14 @@
     body:not(.sidebar-collapsed) .input-hint-row {
       margin-right: 0;
     }
-    .input-hint { font-size: 0.72rem; flex: 1; min-width: 0; }
+    .input-hint {
+      font-size: 0.72rem;
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     .settings-modal {
       display: flex; position: fixed; inset: 0; background: var(--modal-overlay, rgba(0,0,0,0.6));
       align-items: center; justify-content: center; z-index: 100;
