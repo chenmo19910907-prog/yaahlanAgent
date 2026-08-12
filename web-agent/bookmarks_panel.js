@@ -211,6 +211,7 @@
     this.categoryLabelInputEl = options.categoryLabelInputEl || null;
     this.bubbleEl = options.bubbleEl || null;
     this.fetchBookmarks = options.fetchBookmarks || null;
+    this.requestClose = options.requestClose || null;
     this.defaultData = { categories: [] };
     this.open = false;
     this.addOpen = false;
@@ -514,6 +515,7 @@
             });
           }
           window.open(url, '_blank', 'noopener,noreferrer');
+          this.closeAfterNavigate();
         }
       });
       tile.addEventListener('keydown', (event) => {
@@ -529,6 +531,7 @@
             });
           }
           window.open(url, '_blank', 'noopener,noreferrer');
+          this.closeAfterNavigate();
         }
       });
     });
@@ -889,6 +892,14 @@
       }
     } catch (err) {
       window.console.warn('[bookmarks] 迁移本地收藏失败，可点「从本机恢复」重试:', err);
+    }
+  };
+
+  BookmarksPanel.prototype.closeAfterNavigate = function closeAfterNavigate() {
+    if (typeof this.requestClose === 'function') {
+      this.requestClose();
+    } else {
+      this.setOpen(false);
     }
   };
 

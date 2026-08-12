@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20260812024632"></script>
-  <script src="demo-api.js?v=20260812024632"></script>
+  <script src="demo-fixtures.js?v=20260812081912"></script>
+  <script src="demo-api.js?v=20260812081912"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -8829,6 +8829,7 @@
           const latest = await api('/api/meta');
           return latest.bookmarks || { categories: [] };
         },
+        requestClose: () => { setBookmarksOpen(false); },
       });
       bookmarksPanel.setAdmin(!!currentAuthUser?.isAdmin);
       bookmarksPanel.bind();

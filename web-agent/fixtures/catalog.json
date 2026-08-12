@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-12 10:46:33 北京时间",
-  "total_items": 274,
+  "generated_at": "2026-08-12 16:19:12 北京时间",
+  "total_items": 275,
   "module_count": 27,
   "modules": [
     {
@@ -2495,7 +2495,7 @@
     {
       "id": "风控",
       "label": "风控",
-      "item_count": 6,
+      "item_count": 7,
       "categories": [
         {
           "name": "充值风控（user_id 黑名单）",
@@ -2531,6 +2531,22 @@
                 "解除手机号 <phone> 风控",
                 "给手机号 <phone> 加白",
                 "解除 <phone1>,<phone2> 手机风控"
+              ],
+              "source": "风险控制",
+              "source_id": "risk",
+              "env": "test"
+            }
+          ]
+        },
+        {
+          "name": "短信风控（phone 白名单）",
+          "items": [
+            {
+              "name": "短信风控-加白",
+              "prompts": [
+                "短信风控加白 <phone>",
+                "给手机号 <phone> 加短信白名单",
+                "解除 <phone> 短信风控"
               ],
               "source": "风险控制",
               "source_id": "risk",
