@@ -8817,6 +8817,7 @@
           const latest = await api('/api/meta');
           return latest.bookmarks || { categories: [] };
         },
+        requestClose: () => { setBookmarksOpen(false); },
       });
       bookmarksPanel.setAdmin(!!currentAuthUser?.isAdmin);
       bookmarksPanel.bind();

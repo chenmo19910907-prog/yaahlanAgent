@@ -62,6 +62,18 @@
       "command": "python3 Risk/risk_execute.py \\\n  --release-phone \\\n  --phone <phone> \\\n  --reason 测试"
     },
     {
+      "id": "release_sms_risk",
+      "name": "短信风控-加白",
+      "category": "短信风控（phone 白名单）",
+      "description": "将手机号加入短信风控白名单（menu_event=8af999b5…，dimension=phone）；单次最多 5 个，超出自动分批",
+      "prompts": [
+        "短信风控加白 <phone>",
+        "给手机号 <phone> 加短信白名单",
+        "解除 <phone> 短信风控"
+      ],
+      "command": "python3 Risk/risk_execute.py \\\n  --release-sms-risk \\\n  --phone <phone> \\\n  --reason 测试yaahlan-测试加白"
+    },
+    {
       "id": "release_online_login_device",
       "name": "线上-解除最近登录手机/设备风控并落库",
       "category": "线上环境（手机号 → 最近登录设备）",
@@ -88,7 +100,7 @@
       "id": "release_recharge_risk",
       "name": "充值风控-解除",
       "category": "充值风控（user_id 黑名单）",
-      "description": "将 user_id 从充值风控黑名单移除（action=delete）；单次最多 5 个，超出自动分批",
+      "description": "解除 user_id 充值风控：先从黑名单 delete，再加白名单 white/add；单次最多 5 个，超出自动分批",
       "prompts": [
         "解除用户 <userId> 充值风控",
         "移除 <userId> 充值黑名单"

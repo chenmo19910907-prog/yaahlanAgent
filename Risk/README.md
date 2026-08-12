@@ -154,7 +154,34 @@ python3 Risk/risk_execute.py \
   --payload-file Risk/phone_risk_release_payload.example.json
 ```
 
-## 3.1) 线上环境：解除最近登录手机 + 设备风控并落库
+## 3.1) 短信风控加白（phone 白名单）
+
+**业务说明：** 将手机号加入短信风控白名单（与设备风控共用 `menu_event`，`dimension=phone`）。
+
+| 字段 | 值 |
+|------|-----|
+| `menu_event` | `8af999b5-73e7-4dab-9950-9b28bc4b6962` |
+| `menu_type` | `white` |
+| `dimension` | `phone` |
+| `action` | `add` |
+
+### 推荐：快捷命令
+
+```bash
+python3 Risk/risk_execute.py \
+  --release-sms-risk \
+  --phone "18311439895" \
+  --reason 测试yaahlan-测试加白
+```
+
+### 完整 payload 文件
+
+```bash
+python3 Risk/risk_execute.py \
+  --payload-file Risk/sms_risk_release_payload.example.json
+```
+
+## 3.2) 线上环境：解除最近登录手机 + 设备风控并落库
 
 **业务说明：** 按线上 `--phone` 或 `--user-id` 查 Admin `loginDevice`，解除设备风控（有手机号时一并解除）；若 `testcase-kb/test_devices.json` 无记录或 mmuid/mmuidv3 不全，**自动补录**。
 
@@ -185,7 +212,7 @@ python3 Risk/risk_execute.py \
 
 | 字段 | 值 |
 |------|-----|
-| `menu_event` | `2cbed5b4-7cbb-4da5-bb47-048108dcdf75` |
+| `menu_event` | `ca059c9f-71e6-43cc-af83-bad992116a53` |
 | `menu_type` | `black` |
 | `dimension` | `user_id` |
 
@@ -207,12 +234,19 @@ python3 Risk/risk_execute.py \
 
 ### 解除充值风控
 
+**两步操作**（`--release-recharge-risk` 会自动执行）：
+
+1. `menu_type=black` + `action=delete` — 从黑名单移除
+2. `menu_type=white` + `action=add` — 加入白名单
+
 ```bash
 python3 Risk/risk_execute.py \
   --release-recharge-risk \
-  --user-id "100465989" \
-  --reason 测试
+  --user-id "107908728" \
+  --reason 测试yaahlan-解除充值风控
 ```
+
+白名单加白单步 payload：
 
 ```bash
 python3 Risk/risk_execute.py \
@@ -295,7 +329,9 @@ python3 Risk/risk_execute.py \
 - `device_risk_release`：解除设备风控（iOS / mmuid / white / add）
 - `device_risk_release_mmuidv3`：解除 Android 设备风控（dimension=mmuid，element 填 mmuidv3 值）
 - `phone_risk_release`：解除手机号风控（phone / white / add）
-- `recharge_risk_control`：充值风控（user_id / black / add 或 delete）
+- `sms_risk_release`：短信风控加白（phone / white / add；menu_event 同 device_risk_release）
+- `recharge_risk_control`：充值风控黑名单（user_id / black / add 或 delete）
+- `recharge_risk_release`：充值风控白名单（user_id / white / add）
 - `activity_risk_control`：活动风控（user_id / black / add 或 delete）
 
 ## 8) 调试

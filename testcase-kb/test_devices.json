@@ -1,8 +1,8 @@
 {
   "kbPath": "testcase-kb/test_devices.json",
   "importSource": "/Users/user/Desktop/团队测试机统计表.xlsx",
-  "syncedAt": "2026-08-07 07:28:00 UTC",
-  "count": 154,
+  "syncedAt": "2026-08-12 06:29:53 UTC",
+  "count": 156,
   "devices": [
     {
       "项目": "yaahlan",
@@ -2008,7 +2008,33 @@
       "归属人": "",
       "持有人": "",
       "备注": "自动落库 2026-08-07；phone=966|17700001111；userId=107713666；ip=84.75.158.1"
+    },
+    {
+      "项目": "yaahlan",
+      "资产编号": "待补编号",
+      "设备品牌": "Apple",
+      "设备名称": "iPhone",
+      "mmuid": "4021d25327107fa5362a63a2c20e038a266a6d931748519355f5",
+      "mmuidv3": "",
+      "设备系统": "iOS",
+      "系统版本": "26.5.2",
+      "归属人": "",
+      "持有人": "",
+      "备注": "自动落库 2026-08-12；userId=111239642；ip=84.75.158.1"
+    },
+    {
+      "项目": "yaahlan",
+      "资产编号": "待补编号",
+      "设备品牌": "Apple",
+      "设备名称": "iPhone",
+      "mmuid": "ce5944689403c90aecd95984251c42860e6bd937173509421752",
+      "mmuidv3": "",
+      "设备系统": "iOS",
+      "系统版本": "26.5.2",
+      "归属人": "",
+      "持有人": "",
+      "备注": "自动落库 2026-08-12；phone=966|18311439895；userId=106176243；ip=84.75.158.1"
     }
   ],
-  "lastIncrementalUpdate": "upsert loginDevice phone=966|17700001111 userId=107713666"
+  "lastIncrementalUpdate": "upsert loginDevice phone=966|18311439895 userId=106176243"
 }

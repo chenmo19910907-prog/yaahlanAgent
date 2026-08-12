@@ -81,6 +81,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="解除手机号风控（--menu-key phone_risk_release，dimension=phone）",
     )
     scenario.add_argument(
+        "--release-sms-risk",
+        action="store_true",
+        help="短信风控加白（--menu-key sms_risk_release，dimension=phone）",
+    )
+    scenario.add_argument(
         "--add-recharge-risk",
         action="store_true",
         help="添加充值风控（black/user_id，action=add）",
@@ -323,6 +328,14 @@ def _apply_scenario_defaults(args: argparse.Namespace) -> None:
         if not args.menu_type:
             args.menu_type = "white"
         return
+    if args.release_sms_risk:
+        if not args.menu_key:
+            args.menu_key = "sms_risk_release"
+        if not args.dimension:
+            args.dimension = "phone"
+        if not args.menu_type:
+            args.menu_type = "white"
+        return
     if args.add_recharge_risk:
         args.menu_key = args.menu_key or "recharge_risk_control"
         args.menu_type = args.menu_type or "black"
@@ -390,6 +403,34 @@ def _build_request_bodies(args: argparse.Namespace) -> list[dict[str, Any]]:
     else:
         elements = _parse_elements(args.elements, args.element_file, args.mmuid, args.phone, args.user_id)
         chunks = _split_elements(elements, strict_limit=args.strict_limit, limit=limit, label=label)
+        if args.release_recharge_risk:
+            bodies: list[dict[str, Any]] = []
+            for chunk in chunks:
+                bodies.append(
+                    resolve_menu_operate_body(
+                        menu_event=args.menu_event,
+                        menu_key="recharge_risk_control",
+                        menu_type="black",
+                        dimension="user_id",
+                        elements=chunk,
+                        action="delete",
+                        reason=args.reason,
+                        token=args.token,
+                    )
+                )
+                bodies.append(
+                    resolve_menu_operate_body(
+                        menu_event=args.menu_event,
+                        menu_key="recharge_risk_release",
+                        menu_type="white",
+                        dimension="user_id",
+                        elements=chunk,
+                        action="add",
+                        reason=args.reason,
+                        token=args.token,
+                    )
+                )
+            return bodies
         return [
             resolve_menu_operate_body(
                 menu_event=args.menu_event,

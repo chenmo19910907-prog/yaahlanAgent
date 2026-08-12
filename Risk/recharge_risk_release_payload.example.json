@@ -1,9 +1,9 @@
 {
-  "menu_event": "2cbed5b4-7cbb-4da5-bb47-048108dcdf75",
-  "menu_type": "black",
+  "menu_event": "ca059c9f-71e6-43cc-af83-bad992116a53",
+  "menu_type": "white",
   "dimension": "user_id",
-  "elements": ["100465989"],
-  "action": "delete",
-  "reason": "测试",
+  "elements": ["107908728"],
+  "action": "add",
+  "reason": "测试yaahlan-解除充值风控",
   "token": "sec_risk_IHAH"
 }

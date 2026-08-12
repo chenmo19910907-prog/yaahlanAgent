@@ -35,14 +35,32 @@
       "max_elements_per_request": 5,
       "description": "将手机号加入白名单以解除手机号风控；单次最多 5 个手机号"
     },
+    "sms_risk_release": {
+      "name": "短信风控加白",
+      "menu_event": "8af999b5-73e7-4dab-9950-9b28bc4b6962",
+      "menu_type": "white",
+      "dimension": "phone",
+      "action": "add",
+      "max_elements_per_request": 5,
+      "description": "将手机号加入短信风控白名单；dimension=phone；单次最多 5 个手机号"
+    },
     "recharge_risk_control": {
       "name": "充值风控",
-      "menu_event": "2cbed5b4-7cbb-4da5-bb47-048108dcdf75",
+      "menu_event": "ca059c9f-71e6-43cc-af83-bad992116a53",
       "menu_type": "black",
       "dimension": "user_id",
       "action": "add",
       "max_elements_per_request": 5,
       "description": "用户 user_id 充值风控黑名单：action=add 添加风控，action=delete 解除风控"
+    },
+    "recharge_risk_release": {
+      "name": "充值风控加白",
+      "menu_event": "ca059c9f-71e6-43cc-af83-bad992116a53",
+      "menu_type": "white",
+      "dimension": "user_id",
+      "action": "add",
+      "max_elements_per_request": 5,
+      "description": "将 user_id 加入充值风控白名单；解除时与 recharge_risk_control delete 配合使用"
     },
     "activity_risk_control": {
       "name": "活动风控",
