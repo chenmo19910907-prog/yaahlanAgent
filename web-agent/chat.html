@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20260813025322"></script>
-  <script src="demo-api.js?v=20260813025322"></script>
+  <script src="demo-fixtures.js?v=20260813043319"></script>
+  <script src="demo-api.js?v=20260813043319"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -2523,6 +2523,165 @@
       border-color: var(--accent); background: var(--accent-soft); color: var(--accent);
       font-weight: 600;
     }
+    .usage-range-toggle {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .usage-range-option {
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-soft);
+      color: var(--text-soft);
+      cursor: pointer;
+      font-size: 0.78rem;
+      transition: border-color 180ms, background 180ms, color 180ms;
+    }
+    .usage-range-option:hover { border-color: var(--accent); color: var(--text); }
+    .usage-range-option.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .usage-stats-card {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .usage-stat {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg-soft);
+      padding: 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .usage-stat-value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+    .usage-stat-label {
+      font-size: 0.76rem;
+      color: var(--muted);
+    }
+    .usage-stats-hint {
+      margin-top: 8px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      line-height: 1.45;
+      min-height: 1.1em;
+    }
+    .usage-stats-hint a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .usage-stats-hint a:hover { text-decoration: underline; }
+    .usage-setup {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--surface) 88%, transparent);
+    }
+    .usage-setup[hidden] { display: none !important; }
+    .usage-stats-panel[hidden] { display: none !important; }
+    .usage-setup-title {
+      margin: 0 0 8px;
+      font-size: 0.86rem;
+      font-weight: 650;
+      color: var(--text);
+    }
+    .usage-setup-desc {
+      margin: 0 0 10px;
+      font-size: 0.74rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .usage-setup-field {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .usage-setup-field label {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .usage-setup-field input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.78rem;
+      background: var(--surface);
+      color: var(--text);
+    }
+    .usage-setup-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .usage-setup-btn {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.76rem;
+      padding: 7px 12px;
+      cursor: pointer;
+    }
+    .usage-setup-btn.primary {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .usage-setup-btn:hover { border-color: var(--accent); }
+    .usage-setup-status {
+      margin-top: 8px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      min-height: 1em;
+    }
+    .usage-modal {
+      display: flex; position: fixed; inset: 0; z-index: 120;
+      background: var(--modal-overlay, rgba(0,0,0,0.6));
+      align-items: center; justify-content: center; padding: 24px;
+      visibility: hidden; opacity: 0; pointer-events: none;
+      transition: opacity 220ms var(--ease-standard), visibility 0s linear 220ms;
+    }
+    .usage-modal.open {
+      visibility: visible; opacity: 1; pointer-events: auto;
+      transition: opacity 280ms var(--ease-spring), visibility 0s linear 0s;
+    }
+    .usage-modal.open .usage-bubble { animation: modal-pop-in 240ms var(--ease-spring) both; }
+    .usage-modal.overlay-closing {
+      visibility: visible; opacity: 0; pointer-events: none;
+      transition: opacity 200ms var(--ease-standard), visibility 0s linear 200ms;
+    }
+    .usage-modal.overlay-closing .usage-bubble { animation: modal-pop-out 200ms var(--ease-standard) both; }
+    .usage-bubble {
+      position: relative;
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 20px; width: min(420px, 94vw);
+      display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 0 28px 64px rgba(0,0,0,0.28);
+      padding: 22px 24px;
+    }
+    .usage-head {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      margin-bottom: 16px;
+    }
+    .usage-head h3 { font-size: 1.05rem; font-weight: 650; margin: 0; }
+    .usage-body { min-width: 0; }
     .model-picker {
       position: relative;
     }
@@ -3318,6 +3477,7 @@
       header { flex-wrap: wrap; }
       .message-board-bubble { width: 100%; max-height: 92vh; border-radius: 16px; }
       .about-bubble { width: 100%; max-height: 92vh; border-radius: 16px; }
+      .usage-bubble { width: 100%; border-radius: 16px; }
     }
     .catalog-panel {
       position: relative;
@@ -3999,6 +4159,10 @@
               <span>关于</span>
               <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10v6"/><path d="M12 7h.01"/></svg>
             </button>
+            <button type="button" class="settings-link" id="btn-settings-usage" title="我的用量" aria-label="用量" hidden>
+              <span>用量</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+            </button>
             <button type="button" class="settings-feedback-btn" id="btn-message-board" title="反馈" aria-label="反馈">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -4056,6 +4220,60 @@
       </div>
       <div class="moa-record-actions">
         <button type="button" class="moa-record-submit" id="btn-moa-record-submit" hidden>生成 MOA</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="usage-modal" id="usage-modal" aria-hidden="true">
+    <div class="usage-bubble" id="usage-bubble" role="dialog" aria-labelledby="usage-title">
+      <div class="usage-head">
+        <h3 id="usage-title">我的用量</h3>
+        <button type="button" class="btn-close" id="btn-usage-close" title="关闭" aria-label="关闭">×</button>
+      </div>
+      <div class="usage-body">
+        <div class="usage-stats-panel" id="usage-stats-panel">
+          <div class="usage-range-toggle" role="group" aria-label="统计时间范围">
+            <button type="button" class="usage-range-option" data-range="day">本日</button>
+            <button type="button" class="usage-range-option" data-range="week">本周</button>
+            <button type="button" class="usage-range-option active" data-range="month">本月</button>
+            <button type="button" class="usage-range-option" data-range="7d">7天内</button>
+            <button type="button" class="usage-range-option" data-range="30d">30天内</button>
+          </div>
+          <div class="usage-stats-card">
+            <div class="usage-stat">
+              <span class="usage-stat-value" id="usage-requests">—</span>
+              <span class="usage-stat-label">请求数</span>
+            </div>
+            <div class="usage-stat">
+              <span class="usage-stat-value" id="usage-tokens">—</span>
+              <span class="usage-stat-label">Token</span>
+            </div>
+          </div>
+          <div class="usage-stats-hint" id="usage-stats-hint"></div>
+        </div>
+        <div class="usage-setup" id="usage-setup" hidden>
+          <p class="usage-setup-title">绑定 Cursor 账号</p>
+          <p class="usage-setup-desc">
+            用量数据来自
+            <a href="https://cursor.com/dashboard/usage" target="_blank" rel="noopener noreferrer">cursor.com/dashboard/usage</a>。
+            打开该页面并登录后，在浏览器 DevTools → Network 任意请求中复制
+            <code>Cookie</code> 整段，或仅复制 <code>WorkosCursorSessionToken</code> 的值粘贴到下方；
+            若服务端已配置 <code>CURSOR_API_KEY</code>，也可仅填写 Cursor 登录邮箱。
+          </p>
+          <div class="usage-setup-field">
+            <label for="usage-session-token">WorkosCursorSessionToken 或 Cookie</label>
+            <input type="password" id="usage-session-token" autocomplete="off" placeholder="user_… 或 Cookie 整段" />
+          </div>
+          <div class="usage-setup-field">
+            <label for="usage-cursor-email">Cursor 登录邮箱（可选，需 Admin API）</label>
+            <input type="email" id="usage-cursor-email" autocomplete="email" placeholder="you@company.com" />
+          </div>
+          <div class="usage-setup-actions">
+            <button type="button" class="usage-setup-btn primary" id="btn-usage-save">保存并查询</button>
+            <button type="button" class="usage-setup-btn" id="btn-usage-clear">清除绑定</button>
+          </div>
+          <div class="usage-setup-status" id="usage-setup-status"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -4152,6 +4370,7 @@
     const LEGACY_SESSION_STORAGE_KEY = 'web_agent_session';
     /** @type {{ staffId?: string, displayName?: string, isAdmin?: boolean } | null} */
     let currentAuthUser = null;
+    let usageRangeKey = 'month';
     let otpAuthEnabled = true;
     /** @type {Map<string, { eventSource: EventSource, runId: string, cancelling?: boolean, failed?: boolean, status: { ack: string, phase: string, batch: string, external: string, elapsed: string }, shellEl: HTMLElement | null, sentDraft?: { text: string, images: typeof pendingImages } }>} */
     const activeRuns = new Map();
@@ -7300,7 +7519,7 @@
     async function animateOverlayClose(modalEl) {
       if (!modalEl?.classList.contains('open') || prefersReducedMotion()) return;
       modalEl.classList.add('overlay-closing');
-      await waitMotion(modalEl.querySelector('.settings-box, .bookmarks-bubble, .message-board-bubble, .about-bubble, .collaborators-box') || modalEl, 220);
+      await waitMotion(modalEl.querySelector('.settings-box, .bookmarks-bubble, .message-board-bubble, .about-bubble, .usage-bubble, .collaborators-box') || modalEl, 220);
       modalEl.classList.remove('overlay-closing');
     }
 
@@ -8634,6 +8853,24 @@
       closeModelPicker();
     }
 
+    async function openUsageModal() {
+      if (!(currentAuthUser?.staffId || '').trim()) return;
+      trackEvent('panel_open', { panel: 'usage' });
+      const modal = document.getElementById('usage-modal');
+      if (!modal) return;
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      void loadUsageStats();
+    }
+
+    async function closeUsageModal() {
+      const modal = document.getElementById('usage-modal');
+      if (!modal?.classList.contains('open')) return;
+      await animateOverlayClose(modal);
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+
     async function closeSettingsModal() {
       const modal = document.getElementById('settings-modal');
       if (!modal?.classList.contains('open')) return;
@@ -8667,9 +8904,21 @@
         await closeSettingsModal();
         setAboutOpen(true);
       });
+      document.getElementById('btn-settings-usage')?.addEventListener('click', async () => {
+        await closeSettingsModal();
+        openUsageModal();
+      });
+      document.getElementById('btn-usage-close')?.addEventListener('click', closeUsageModal);
+      document.getElementById('usage-modal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'usage-modal') closeUsageModal();
+      });
+      document.getElementById('usage-bubble')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
       document.getElementById('settings-modal').addEventListener('click', (e) => {
         if (e.target.id === 'settings-modal') closeSettingsModal();
       });
+      initUsageStatsSettings();
     }
 
     async function setCatalogOpen(open, opts = {}) {
@@ -9178,6 +9427,156 @@
       }
     }
 
+    function formatUsageNumber(value) {
+      return Number(value || 0).toLocaleString('zh-CN');
+    }
+
+    function formatUsageErrorMessage(message) {
+      const text = String(message || '').trim();
+      if (!text) return '用量加载失败';
+      if (/https?:\/\//i.test(text)) {
+        return text.replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ').trim()
+          || 'Cursor 会话已过期，请重新绑定账号';
+      }
+      return text;
+    }
+
+    function setUsagePanelMode(mode) {
+      const statsPanel = document.getElementById('usage-stats-panel');
+      const setupPanel = document.getElementById('usage-setup');
+      const showSetup = mode === 'setup';
+      if (statsPanel) statsPanel.hidden = showSetup;
+      if (setupPanel) setupPanel.hidden = !showSetup;
+    }
+
+    async function loadUsageCredentialStatus() {
+      const res = await fetch('/api/usage/cursor-session');
+      if (!res.ok) return { configured: false };
+      return res.json();
+    }
+
+    async function saveUsageCredentials() {
+      const statusEl = document.getElementById('usage-setup-status');
+      const tokenInput = document.getElementById('usage-session-token');
+      const emailInput = document.getElementById('usage-cursor-email');
+      const sessionToken = (tokenInput?.value || '').trim();
+      const cursorEmail = (emailInput?.value || '').trim();
+      if (!sessionToken && !cursorEmail) {
+        if (statusEl) statusEl.textContent = '请至少填写 Session Token 或 Cursor 邮箱';
+        return false;
+      }
+      if (statusEl) statusEl.textContent = '保存中…';
+      try {
+        const payload = {};
+        if (sessionToken) payload.sessionToken = sessionToken;
+        if (cursorEmail) payload.cursorEmail = cursorEmail;
+        const res = await fetch('/api/usage/cursor-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || '保存失败');
+        if (tokenInput) tokenInput.value = '';
+        if (statusEl) statusEl.textContent = '已保存，正在查询…';
+        setUsagePanelMode('stats');
+        await loadUsageStats();
+        return true;
+      } catch (err) {
+        if (statusEl) statusEl.textContent = err?.message || '保存失败';
+        return false;
+      }
+    }
+
+    async function clearUsageCredentials() {
+      const statusEl = document.getElementById('usage-setup-status');
+      if (statusEl) statusEl.textContent = '清除中…';
+      try {
+        const res = await fetch('/api/usage/cursor-session', { method: 'DELETE' });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || '清除失败');
+        const tokenInput = document.getElementById('usage-session-token');
+        const emailInput = document.getElementById('usage-cursor-email');
+        if (tokenInput) tokenInput.value = '';
+        if (emailInput) emailInput.value = '';
+        if (statusEl) statusEl.textContent = '已清除绑定';
+        setUsagePanelMode('setup');
+      } catch (err) {
+        if (statusEl) statusEl.textContent = err?.message || '清除失败';
+      }
+    }
+
+    async function loadUsageStats() {
+      const usageBtn = document.getElementById('btn-settings-usage');
+      const loggedIn = !!(currentAuthUser?.staffId || '').trim();
+      if (usageBtn) usageBtn.hidden = !loggedIn;
+      if (!loggedIn) return;
+      const requestsEl = document.getElementById('usage-requests');
+      const tokensEl = document.getElementById('usage-tokens');
+      const hintEl = document.getElementById('usage-stats-hint');
+      if (requestsEl) requestsEl.textContent = '…';
+      if (tokensEl) tokensEl.textContent = '…';
+      if (hintEl) hintEl.textContent = '';
+      try {
+        const res = await fetch(`/api/usage/me?range=${encodeURIComponent(usageRangeKey)}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '加载失败');
+        if (data.needsSetup || data.needsReauth) {
+          setUsagePanelMode('setup');
+          const setupStatus = document.getElementById('usage-setup-status');
+          if (setupStatus) {
+            setupStatus.textContent = data.needsReauth
+              ? (formatUsageErrorMessage(data.error) || 'Cursor 会话已过期，请重新绑定')
+              : (data.setupHint || '请先绑定 Cursor 账号');
+          }
+          return;
+        }
+        setUsagePanelMode('stats');
+        if (requestsEl) requestsEl.textContent = formatUsageNumber(data.requests);
+        if (tokensEl) tokensEl.textContent = formatUsageNumber(data.tokens);
+        if (hintEl) {
+          const dashboardLink = data.dashboardUrl
+            ? `<a href="${escapeHtml(data.dashboardUrl)}" target="_blank" rel="noopener noreferrer">Cursor Dashboard</a>`
+            : '<a href="https://cursor.com/dashboard/usage" target="_blank" rel="noopener noreferrer">Cursor Dashboard</a>';
+          if (data.error) {
+            hintEl.textContent = formatUsageErrorMessage(data.error);
+          } else if (data.tokensSource === 'cursor' && Number(data.tokens || 0) > 0) {
+            hintEl.innerHTML = `${escapeHtml(data.rangeLabel || '')}累计 · 数据来源 ${dashboardLink}`;
+          } else if (Number(data.requests || 0) > 0) {
+            hintEl.innerHTML = `${escapeHtml(data.rangeLabel || '')}共 ${formatUsageNumber(data.requests)} 次请求 · 数据来源 ${dashboardLink}`;
+          } else {
+            hintEl.innerHTML = `${escapeHtml(data.rangeLabel || '当前范围')}暂无用量 · 可在 ${dashboardLink} 核对`;
+          }
+        }
+        document.querySelectorAll('.usage-range-option').forEach((btn) => {
+          btn.classList.toggle('active', (btn.dataset.range || '') === (data.range || usageRangeKey));
+        });
+      } catch (err) {
+        setUsagePanelMode('stats');
+        if (requestsEl) requestsEl.textContent = '—';
+        if (tokensEl) tokensEl.textContent = '—';
+        if (hintEl) hintEl.textContent = formatUsageErrorMessage(err?.message) || '用量加载失败';
+      }
+    }
+
+    function initUsageStatsSettings() {
+      document.querySelectorAll('.usage-range-option').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          usageRangeKey = (btn.dataset.range || 'month').trim() || 'month';
+          document.querySelectorAll('.usage-range-option').forEach((item) => {
+            item.classList.toggle('active', item === btn);
+          });
+          void loadUsageStats();
+        });
+      });
+      document.getElementById('btn-usage-save')?.addEventListener('click', () => {
+        void saveUsageCredentials();
+      });
+      document.getElementById('btn-usage-clear')?.addEventListener('click', () => {
+        void clearUsageCredentials();
+      });
+    }
+
     function initAuthUI(authData) {
       otpAuthEnabled = authData?.otpAuthEnabled !== false;
       currentAuthUser = authData?.loggedIn && authData?.user ? authData.user : null;
@@ -9220,6 +9619,7 @@
       updateDingtalkOwnerBar();
       refreshSidebarWidthBounds();
       if (currentAuthUser) void loadShareableWebUsers();
+      void loadUsageStats();
     }
 
     async function logoutCurrentUser() {
