@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20260812081912"></script>
-  <script src="demo-api.js?v=20260812081912"></script>
+  <script src="demo-fixtures.js?v=20260813025322"></script>
+  <script src="demo-api.js?v=20260813025322"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -4287,7 +4287,7 @@
       if (window.WebAgentAnalytics) window.WebAgentAnalytics.track(event, props);
     }
     const SESSION_SCOPE_STORAGE_KEY = 'web_agent_session_scope';
-    let sessionScopeFilter = loadSessionScopeFilter();
+    let sessionScopeFilter = 'all';
     let currentSessionReadOnly = false;
     /** @type {Array<{ id: string, name: string, mime: string, previewUrl: string, data_base64: string }>} */
     /** @type {Array<{ id: string, name: string, mime: string, kind: 'image'|'file', previewUrl?: string, data_base64: string }>} */
@@ -6076,14 +6076,28 @@
       return '<button type="button" class="session-custom-title-edit" title="修改标题" aria-label="修改标题"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/></svg></button>';
     }
 
-    function loadSessionScopeFilter() {
-      const value = (localStorage.getItem(SESSION_SCOPE_STORAGE_KEY) || 'all').trim().toLowerCase();
-      return value === 'mine' ? 'mine' : 'all';
+    function loadStoredSessionScopeFilter() {
+      const raw = localStorage.getItem(SESSION_SCOPE_STORAGE_KEY);
+      if (!raw) return null;
+      const value = raw.trim().toLowerCase();
+      return value === 'all' ? 'all' : 'mine';
+    }
+
+    function defaultSessionScopeForAuth() {
+      if (!currentAuthUser) return 'all';
+      return loadStoredSessionScopeFilter() ?? 'mine';
+    }
+
+    function applySessionScopeForAuth() {
+      sessionScopeFilter = defaultSessionScopeForAuth();
+      syncSessionScopeButtonUi();
     }
 
     function saveSessionScopeFilter(scope) {
       sessionScopeFilter = scope === 'mine' ? 'mine' : 'all';
-      localStorage.setItem(SESSION_SCOPE_STORAGE_KEY, sessionScopeFilter);
+      if (currentAuthUser) {
+        localStorage.setItem(SESSION_SCOPE_STORAGE_KEY, sessionScopeFilter);
+      }
       syncSessionScopeButtonUi();
     }
 
@@ -9202,7 +9216,7 @@
       if (bookmarksPanel) bookmarksPanel.setAdmin(!!currentAuthUser?.isAdmin);
       if (messageBoardPanel) messageBoardPanel.setAdmin(!!currentAuthUser?.isAdmin);
       syncAdminApplyMenuItem();
-      syncSessionScopeButtonUi();
+      applySessionScopeForAuth();
       updateDingtalkOwnerBar();
       refreshSidebarWidthBounds();
       if (currentAuthUser) void loadShareableWebUsers();
