@@ -37,6 +37,8 @@ from web_run_store import (
 )
 from web_session_store import get_session_store
 
+from analytics_store import estimate_tokens_from_text, get_analytics_store
+
 logger = logging.getLogger("web-agent")
 
 WEB_AGENT_DIR = Path(__file__).resolve().parent
@@ -252,6 +254,26 @@ def _maybe_push_result_to_dingtalk(meta: Any, text: str, *, success: bool) -> di
         return {"ok": False, "error": str(exc)}
 
 
+def _record_chat_complete(meta: Any, *, session_id: str, run_id: str, reply_text: str) -> None:
+    prompt = str(meta.message or meta.display_message or "")
+    reply = str(reply_text or "")
+    total_tokens = 800 + estimate_tokens_from_text(prompt) + estimate_tokens_from_text(reply)
+    get_analytics_store().record_event(
+        event="chat_complete",
+        page="/chat.html",
+        staff_id=str(meta.author_id or ""),
+        display_name=str(meta.author_label or ""),
+        source="server",
+        props={
+            "session_id": session_id,
+            "run_id": run_id,
+            "model": str(meta.model or ""),
+            "total_tokens": total_tokens,
+            "estimated": True,
+        },
+    )
+
+
 def execute_web_run(run_id: str) -> int:
     """执行单次 Web chat run（可在子进程或 HTTP 服务线程内调用）。"""
     store = get_run_store()
@@ -336,6 +358,7 @@ def execute_web_run(run_id: str) -> int:
             done_event["dingtalk_push"] = dingtalk_push
         _emit(store, run_id, done_event)
         store.mark_status(run_id, RUN_STATUS_DONE)
+        _record_chat_complete(meta, session_id=session_id, run_id=run_id, reply_text=final_text)
         status = "ok"
         return 0
     except TaskInterrupted:

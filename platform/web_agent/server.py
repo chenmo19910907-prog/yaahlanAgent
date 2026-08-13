@@ -116,6 +116,13 @@ from web_file_store import (  # noqa: E402
     save_chat_attachments,
 )
 from analytics_store import get_analytics_store  # noqa: E402
+from cursor_usage import (  # noqa: E402
+    CursorAuthError,
+    parse_cursor_session_input,
+    summarize_user_usage as summarize_cursor_user_usage,
+    verify_session_token,
+)
+from cursor_usage_store import get_cursor_usage_store  # noqa: E402
 from web_session_store import filter_sessions_by_search, filter_sessions_by_scope, get_session_store, sort_sessions_for_display  # noqa: E402
 from web_run_store import (  # noqa: E402
     RUN_STATUS_DONE,
@@ -1621,6 +1628,29 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 get_analytics_store().summarize(days=days, limit=limit),
             )
 
+        if path == "/api/usage/me":
+            viewer = current_web_user(self)
+            if viewer is None:
+                return _json_response(self, {"error": "请先登录"}, 401)
+            qs = parse_qs(parsed.query)
+            range_key = str((qs.get("range") or ["month"])[0]).strip() or "month"
+            return _json_response(
+                self,
+                summarize_cursor_user_usage(
+                    viewer.staff_id,
+                    range_key=range_key,
+                ),
+            )
+
+        if path == "/api/usage/cursor-session":
+            viewer = current_web_user(self)
+            if viewer is None:
+                return _json_response(self, {"error": "请先登录"}, 401)
+            return _json_response(
+                self,
+                get_cursor_usage_store().status_for_staff(viewer.staff_id),
+            )
+
         if path == f"{KEYNOTE_URL_PREFIX}/speech_scripts":
             return self._serve_keynote_file("speech_scripts.html")
 
@@ -2125,6 +2155,42 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             )
             return _json_response(self, {"run_id": run.run_id, "session_id": session_id})
 
+        if path == "/api/usage/cursor-session":
+            viewer = current_web_user(self)
+            if viewer is None:
+                return _json_response(self, {"error": "请先登录"}, 401)
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            session_token = body.get("sessionToken")
+            cursor_email = body.get("cursorEmail")
+            if session_token is None and cursor_email is None:
+                return _json_response(self, {"error": "请提供 sessionToken 或 cursorEmail"}, 400)
+            try:
+                parsed = parse_cursor_session_input(str(session_token or ""))
+                normalized_token = parsed["sessionToken"] if session_token is not None else None
+                parsed_team_id = parsed["teamId"] if session_token is not None else None
+                parsed_workos_id = parsed["workosId"] if session_token is not None else None
+                if normalized_token:
+                    verify_session_token(
+                        normalized_token,
+                        team_id=parsed_team_id or "",
+                        workos_id=parsed_workos_id or "",
+                    )
+                status = get_cursor_usage_store().upsert(
+                    viewer.staff_id,
+                    session_token=normalized_token if session_token is not None else None,
+                    cursor_email=str(cursor_email or "") if cursor_email is not None else None,
+                    team_id=parsed_team_id if session_token is not None else None,
+                    workos_id=parsed_workos_id if session_token is not None else None,
+                )
+            except CursorAuthError as exc:
+                return _json_response(self, {"error": str(exc)}, 400)
+            except ValueError as exc:
+                return _json_response(self, {"error": str(exc)}, 400)
+            return _json_response(self, {"ok": True, **status})
+
         if path == "/api/bookmarks":
             try:
                 body = _read_json_body(self)
@@ -2392,6 +2458,13 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         m_board = re.match(r"^/api/message-board/([a-f0-9]{32})$", path)
         if m_board:
             return _handle_message_board_delete(self, m_board.group(1))
+
+        if path == "/api/usage/cursor-session":
+            viewer = current_web_user(self)
+            if viewer is None:
+                return _json_response(self, {"error": "请先登录"}, 401)
+            status = get_cursor_usage_store().clear(viewer.staff_id)
+            return _json_response(self, {"ok": True, **status})
 
         m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})$", path)
         if not m:
