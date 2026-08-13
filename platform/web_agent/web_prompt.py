@@ -108,6 +108,12 @@ _WEB_RULES_BASE = f"""\
    （Web Agent worker 已注入 `WEB_AGENT_BATCH_KEY`，**可省略 `--user-key`**；钉钉网关仍传 `--user-key <batch_key>`）
    **N/M 语义**：`M` = 批量项总数；`N` = 已完整处理完的批量项数（不是项内子步骤）。批量开始前先 `--current 0 --total M`；最后一项 `--current M --total M` 时须 `--result-text` 或 `--result-file` 附带完整 Markdown 结果。
    **手机号段两两互关**：优先 `python3 MOA/scripts/batch_phone_clique_mutual_follow.py --phone-start <起> --phone-end <止>`（内置进度上报），勿手写循环。
+   **已有批量脚本（≥3 项优先复用，内置并行+进度）**：
+   `MOA/scripts/batch_phone_clique_mutual_follow.py`、
+   `Admin/scripts/batch_custom_gift_users_vip5.py`、
+   `Admin/scripts/batch_custom_gift_users_clear_vip.py`、
+   `Admin/scripts/batch_mutual_friends_from_user_list.py`；
+   无现成脚本时再写 ThreadPoolExecutor 并行脚本。
    {batch_parallel_rule_snippet()}
 10. **钉钉发文件先 zip**：若需经钉钉机器人发送本地文件附件，**必须先打成 `.zip`** 再发；导出到钉钉文档/在线表格只回链接，不走 zip。
 11. **代码修改权限**：仅管理员（`config/code_modify_allowlist.json` 及本地 `.local.json` 登记账号）可修改 `platform/web_agent/`、`platform/dingtalk_gateway/`、`.cursor/` 等代码逻辑；**MOA 能力入库**（`MOA/templates/` + `sync_registry.py` + `MOA/config/registry.json`）与**工具台 MOA 录制**入库**全员可用**，不受只读限制。

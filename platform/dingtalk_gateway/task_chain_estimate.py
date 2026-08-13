@@ -28,6 +28,9 @@ BATCH_LABEL_CHAINS: dict[str, list[tuple[str, float]]] = {
     "发钻石": [("查手机号→userId", STEP_MOA_QUERY_S), ("MOA发放钻石", STEP_MOA_MUTATE_S)],
     "加钻石": [("查手机号→userId", STEP_MOA_QUERY_S), ("MOA发放钻石", STEP_MOA_MUTATE_S)],
     "加1钻石": [("查手机号→userId", STEP_MOA_QUERY_S), ("MOA发放钻石", STEP_MOA_MUTATE_S)],
+    "改等级": [("查 userId", STEP_MOA_QUERY_S), ("MOA 改 VIP 等级", STEP_MOA_MUTATE_S)],
+    "VIP": [("查 userId", STEP_MOA_QUERY_S), ("MOA VIP 操作", STEP_MOA_MUTATE_S)],
+    "手机号段互关": [("batch_phone_clique 单项", STEP_MOA_MUTATE_S + 2.0)],
     "查注册": [("Admin/MOA查用户详情", STEP_ADMIN_QUERY_S)],
     "查公会": [("MOA/Admin查公会", STEP_MOA_QUERY_S)],
     "查用户": [("Admin/MOA查用户", STEP_ADMIN_QUERY_S)],
@@ -45,6 +48,8 @@ BATCH_LABEL_CHAINS: dict[str, list[tuple[str, float]]] = {
 
 LABEL_ALIASES: list[tuple[str, str]] = [
     (r"发钻|发放钻石|加钻", "发钻石"),
+    (r"改等级|vip\s*\d|VIP", "VIP"),
+    (r"互关|手机号段", "手机号段互关"),
     (r"查注册|注册时间", "查注册"),
     (r"分类|catalog|registry", "能力分类"),
     (r"实名认证", "实名认证拆分"),
@@ -263,6 +268,29 @@ def analyze_task_chain(
             steps=(("MOA Cookie 探活", 3.0),),
             overhead_s=0.0,
             source="fast:moa_check",
+        )
+    if kind == "agent:moa_mutate" or re.search(
+        r"发钻|加钻|改等级|vip|背包|发.{0,6}钻石|钻石",
+        text,
+        re.I,
+    ):
+        return TaskChainEstimate(
+            steps=(
+                ("查 userId/设备", STEP_MOA_QUERY_S),
+                ("MOA 变更操作", STEP_MOA_MUTATE_S),
+            ),
+            batch_count=batch_count,
+            overhead_s=STEP_AGENT_REASON_S * 0.6,
+            source="agent:moa_mutate",
+        )
+    if kind == "agent:moa_query" or (
+        re.search(r"MOA|mse", text, re.I)
+        and re.search(r"查询|查\s*user|手机号|userId|\d{6,}", text, re.I)
+    ):
+        return TaskChainEstimate(
+            steps=(("MOA/Admin 查询", STEP_MOA_QUERY_S),),
+            overhead_s=STEP_AGENT_REASON_S * 0.5,
+            source="agent:moa_query",
         )
     if kind == "agent:code_modify" or re.search(r"修改|代码|网关", text):
         return TaskChainEstimate(

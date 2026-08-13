@@ -34,17 +34,27 @@ from web_session_context import (  # noqa: E402
     should_rotate_cursor_agent,
 )
 from web_session_store import get_session_store  # noqa: E402
+from web_run_phases import (  # noqa: E402
+    PHASE_BRIDGE_INIT,
+    PHASE_PROMPT_BUILD,
+)
 
 logger = logging.getLogger("web-agent")
 
 _BRIDGE_INIT = False
 
 
-def ensure_bridge() -> None:
+def ensure_bridge(*, on_phase: Callable[[str], None] | None = None) -> None:
     global _BRIDGE_INIT
+
+    def _phase(line: str) -> None:
+        if on_phase and line:
+            on_phase(line)
+
     if _BRIDGE_INIT or bridge_initialized():
         _BRIDGE_INIT = True
         return
+    _phase(PHASE_BRIDGE_INIT)
     init_sdk_bridge(repo_cwd())
     pool = get_user_agent_pool()
     pool.start_idle_sweeper()
@@ -65,9 +75,15 @@ def run_web_chat(
     model: str | None = None,
     enabled_external_agents: list[str] | None = None,
     reply_mode: str | None = None,
+    on_phase: Callable[[str], None] | None = None,
 ) -> str:
     """在指定 Web 会话中运行 Agent，返回最终 assistant 文本。"""
-    ensure_bridge()
+
+    def _phase(line: str) -> None:
+        if on_phase and line:
+            on_phase(line)
+
+    ensure_bridge(on_phase=on_phase)
     if session_ctrl:
         session_ctrl.check_cancelled()
     store = get_session_store()
@@ -94,6 +110,7 @@ def run_web_chat(
             user_key,
         )
 
+    _phase(PHASE_PROMPT_BUILD)
     prompt = build_web_prompt(
         agent_message,
         is_new_session=is_new,
@@ -123,6 +140,7 @@ def run_web_chat(
         web_stream=True,
         include_process_in_final=normalize_reply_mode(reply_mode) == "detailed",
         model=model or DEFAULT_MODEL,
+        on_phase=on_phase,
     )
     return guard_readonly_agent_reply(
         raw,

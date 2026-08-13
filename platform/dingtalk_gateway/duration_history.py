@@ -63,6 +63,14 @@ def classify_task_kind(
         return "agent:workflow"
     if re.search(r"抓包|tunnel", text, re.I):
         return "agent:tunnel"
+    if re.search(r"发钻|加钻|改等级|vip|背包|incr_|modify_rank|发.{0,6}钻石|钻石", text, re.I):
+        return "agent:moa_mutate"
+    if re.search(r"MOA|mse\.wemomo|模板", text, re.I) and re.search(
+        r"查询|查\s*user|手机号|userId|\d{6,}",
+        text,
+        re.I,
+    ):
+        return "agent:moa_query"
     if re.search(r"查询|查\s*user|用户\s*\d{5,}|\d{6,}", text, re.I):
         return "agent:query"
     if re.search(r"修改|代码|网关", text):

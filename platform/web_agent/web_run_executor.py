@@ -36,6 +36,7 @@ from web_run_store import (
     get_run_store,
 )
 from web_session_store import get_session_store
+from web_run_phases import PHASE_WORKER_READY
 
 from analytics_store import estimate_tokens_from_text, get_analytics_store
 
@@ -67,7 +68,13 @@ _DAEMON_LOCK = threading.Lock()
 _PYTHON_EXECUTABLE: str | None = None
 _ACTIVE_SESSION: TaskSession | None = None
 _WORKER_SIGNALS_INSTALLED = False
-_BOOTSTRAP_PHASE = "正在连接 Agent…"
+
+
+def _emit_phase(store: Any, run_id: str, phase_line: str) -> None:
+    line = (phase_line or "").strip()
+    if not line:
+        return
+    _emit(store, run_id, {"type": "status", "phase_line": line})
 
 
 def _terminate_worker_process(worker_pid: int) -> None:
@@ -285,11 +292,19 @@ def execute_web_run(run_id: str) -> int:
         logger.info("run %s 状态=%s，跳过", run_id, meta.status)
         return 0
 
+    _emit_phase(store, run_id, PHASE_WORKER_READY)
+
     session_store = get_session_store()
     session_id = meta.session_id
     user_key = session_store.user_key(session_id)
     if user_key:
         os.environ[USER_KEY_ENV] = user_key
+        try:
+            from task_chain_estimate import save_batch_task_context  # noqa: WPS433
+
+            save_batch_task_context(user_key, meta.message or meta.display_message)
+        except (ImportError, OSError, ValueError):
+            pass
     task_kind = classify_task_kind(meta.message)
     session_ctrl = FileBackedTaskSession(run_id)
     _install_worker_signal_handlers(session_ctrl)
@@ -298,14 +313,9 @@ def execute_web_run(run_id: str) -> int:
         conversation_id=user_key,
         budget_s=float(DEFAULT_TIMEOUT_S),
     )
-    _emit(
-        store,
-        run_id,
-        {
-            "type": "status",
-            "phase_line": _BOOTSTRAP_PHASE,
-        },
-    )
+
+    def on_phase(phase_line: str) -> None:
+        _emit_phase(store, run_id, phase_line)
 
     started_at = time.monotonic()
     last_markdown = ""
@@ -341,6 +351,7 @@ def execute_web_run(run_id: str) -> int:
             model=meta.model or None,
             enabled_external_agents=meta.enabled_external_agents or None,
             reply_mode=meta.reply_mode or None,
+            on_phase=on_phase,
         )
         elapsed = time.monotonic() - started_at
         body = final or last_markdown
@@ -545,6 +556,8 @@ def start_run_in_background(run_id: str) -> int:
 
 def init_agent_runtime() -> None:
     """HTTP 服务启动时预热 Bridge、Agent 池；可选启动 worker daemon。"""
+    import threading
+
     from chat_runner import ensure_bridge
 
     ensure_bridge()
@@ -553,3 +566,13 @@ def init_agent_runtime() -> None:
         logger.info("Web Agent 运行时已预热（Bridge + Agent 池 + worker daemon）")
     else:
         logger.info("Web Agent 运行时已预热（Bridge + Agent 池 + 并行 one-shot worker）")
+
+    def _warm_credentials() -> None:
+        try:
+            from credential_health import warm_credential_probes  # noqa: WPS433
+
+            warm_credential_probes()
+        except (ImportError, OSError, ValueError) as exc:
+            logger.debug("凭证探活预热跳过: %s", exc)
+
+    threading.Thread(target=_warm_credentials, daemon=True, name="credential-warm").start()

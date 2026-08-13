@@ -5246,6 +5246,13 @@
       if (!t) return false;
       if (/^⏳\s*Agent\s*(启动|执行)中/.test(t)) return true;
       if (/^正在连接\s*Agent/.test(t)) return true;
+      if (/^Worker\s*已就绪/.test(t)) return true;
+      if (/^正在初始化\s*Bridge/.test(t)) return true;
+      if (/^正在组装提示词/.test(t)) return true;
+      if (/^正在准备\s*Agent/.test(t)) return true;
+      if (/^正在创建\s*Agent/.test(t)) return true;
+      if (/^正在恢复\s*Agent/.test(t)) return true;
+      if (/^等待模型响应/.test(t)) return true;
       if (/^Agent\s*已启动/.test(t)) return true;
       if (/^Agent\s*执行中[…\.]?$/.test(t)) return true;
       return false;

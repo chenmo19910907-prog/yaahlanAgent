@@ -370,6 +370,7 @@ def run_agent_prompt(
     allow_moa_registry: bool = False,
     stream: bool = False,
     on_render: Callable[[str], None] | None = None,
+    on_phase: Callable[[str], None] | None = None,
     show_thinking: bool = True,
     card_compact: bool = False,
     web_stream: bool = False,
@@ -411,6 +412,7 @@ def run_agent_prompt(
             allow_moa_registry=allow_moa_registry,
             stream=stream,
             on_render=on_render,
+            on_phase=on_phase,
             show_thinking=show_thinking,
             card_compact=card_compact,
             web_stream=web_stream,
@@ -444,6 +446,7 @@ def _run_agent_prompt_impl(
     allow_moa_registry: bool,
     stream: bool,
     on_render: Callable[[str], None] | None,
+    on_phase: Callable[[str], None] | None,
     show_thinking: bool,
     card_compact: bool,
     web_stream: bool,
@@ -471,12 +474,17 @@ def _run_agent_prompt_impl(
     active_run = None
     max_attempts = AGENT_RUN_MAX_RETRIES + 1
 
+    def _phase(line: str) -> None:
+        if on_phase and line:
+            on_phase(line)
+
     for attempt in range(max_attempts):
         agent = None
         keep_agent_open = False
         active_run = None
         try:
             if use_pool and pool is not None:
+                _phase("正在准备 Agent…")
                 agent, is_new_session = _run_cancellable(
                     pool.acquire,
                     user_key,
@@ -487,10 +495,12 @@ def _run_agent_prompt_impl(
                     sender_name=sender_name or "",
                     mcp_servers=mcp_servers,
                 )
+                _phase("正在创建 Agent 窗口…" if is_new_session else "正在恢复 Agent 会话…")
                 keep_agent_open = True
                 if session:
                     session.register_agent(agent)
             else:
+                _phase("正在准备 Agent…")
                 agent = _run_cancellable(
                     Agent.create,
                     AgentOptions(
@@ -501,6 +511,7 @@ def _run_agent_prompt_impl(
                     ),
                     session=session,
                 )
+                _phase("正在创建 Agent 窗口…")
                 is_new_session = True
                 keep_agent_open = False
                 if session:
@@ -530,6 +541,7 @@ def _run_agent_prompt_impl(
             if session:
                 session.check_cancelled()
 
+            _phase("等待模型响应…")
             run = agent.send(message)
             active_run = run
             if session:
@@ -635,6 +647,7 @@ def run_agent_prompt_streaming(
     show_thinking: bool = True,
     include_process_in_final: bool = False,
     web_stream: bool = False,
+    on_phase: Callable[[str], None] | None = None,
 ) -> str:
     """流式运行 Agent：thinking/text/tool 事件经 on_render 推送，返回最终文本。"""
     from agent_stream_card import DEFAULT_MIN_INTERVAL_S, WEB_STREAM_RENDER_INTERVAL_S
@@ -655,6 +668,7 @@ def run_agent_prompt_streaming(
         allow_moa_registry=allow_moa_registry,
         stream=True,
         on_render=on_render,
+        on_phase=on_phase,
         show_thinking=show_thinking,
         card_compact=not web_stream,
         web_stream=web_stream,
