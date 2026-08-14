@@ -568,7 +568,10 @@ def _load_feature_demos(cfg: dict[str, Any]) -> list[dict[str, str]]:
         return []
     if not isinstance(scenes, list):
         return []
-    by_demo: dict[str, dict[str, str]] = {}
+    # 空态轮播使用 scenes.json 中全部可展示 feature demo（随机切换）；
+    # featureDemoPreviewIds 仅用于 Keynote 内 mock 小窗轮播，不限制此处。
+    out: list[dict[str, str]] = []
+    seen: set[str] = set()
     for scene in scenes:
         if not isinstance(scene, dict):
             continue
@@ -577,25 +580,19 @@ def _load_feature_demos(cfg: dict[str, Any]) -> list[dict[str, str]]:
         if scene.get("emptyCarousel") is False:
             continue
         demo_id = str(scene.get("demo") or "")
-        by_demo[demo_id] = {
-            "label": str(scene.get("label") or ""),
-            "title": str(scene.get("title") or ""),
-            "desc": str(scene.get("desc") or ""),
-            "demo": demo_id,
-            "layout": str(scene.get("layout") or ""),
-        }
-    preview_ids = cfg.get("featureDemoPreviewIds")
-    if isinstance(preview_ids, list) and preview_ids:
-        picked: list[dict[str, str]] = []
-        for demo_id in preview_ids:
-            if not demo_id:
-                continue
-            item = by_demo.get(str(demo_id))
-            if item:
-                picked.append(item)
-        if picked:
-            return picked
-    return list(by_demo.values())
+        if demo_id in seen:
+            continue
+        seen.add(demo_id)
+        out.append(
+            {
+                "label": str(scene.get("label") or ""),
+                "title": str(scene.get("title") or ""),
+                "desc": str(scene.get("desc") or ""),
+                "demo": demo_id,
+                "layout": str(scene.get("layout") or ""),
+            }
+        )
+    return out
 
 
 def _platform_meta() -> dict[str, int | str]:

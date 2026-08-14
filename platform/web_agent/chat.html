@@ -1622,8 +1622,35 @@
     .empty-feature-tag {
       color: var(--accent); font-weight: 600; margin-right: 0.35em;
     }
+    .empty-feature-viewport-wrap {
+      width: 100%; display: flex; align-items: center; gap: 10px;
+    }
+    .empty-feature-nav {
+      flex-shrink: 0;
+      width: 34px; height: 34px; border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-solid);
+      color: var(--text-muted);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition:
+        background 180ms var(--ease-standard),
+        border-color 180ms var(--ease-standard),
+        color 180ms var(--ease-standard),
+        transform 180ms var(--ease-spring);
+    }
+    .empty-feature-nav:hover {
+      background: var(--scroll-bottom-bg-hover, var(--bg-hover));
+      border-color: var(--border-strong);
+      color: var(--accent);
+    }
+    .empty-feature-nav:active { transform: scale(0.94); }
+    .empty-feature-nav svg {
+      width: 18px; height: 18px; stroke: currentColor;
+    }
     .empty-feature-viewport {
-      width: 100%; border-radius: 12px; overflow: hidden;
+      flex: 1; min-width: 0; border-radius: 12px; overflow: hidden;
       border: 1px solid var(--border);
       box-shadow: 0 0 0 1px rgba(91, 140, 255, 0.06);
       background: var(--bg-solid);
@@ -4796,7 +4823,10 @@
       const fp = sessionMessagesFingerprint(msgs, meta || sessionMessagesMeta(sid));
       if (fp !== messagesDomFingerprint) return false;
       const container = getMessagesEl();
-      if (!container || container.querySelector('.empty-state')) return false;
+      if (!container) return false;
+      const isEmpty = !Array.isArray(msgs) || !msgs.length;
+      if (isEmpty) return !!container.querySelector('.empty-state');
+      if (container.querySelector('.empty-state')) return false;
       return messagesDomStreamingOk(sid);
     }
 
@@ -8599,14 +8629,30 @@
       return `<span class="empty-feature-tag">${escapeHtml(prefix)}${sep}</span>${t}`;
     }
 
+    const EMPTY_FEATURE_NAV_SVG = {
+      prev: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>',
+      next: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>',
+    };
+
     function buildFeatureDemoCarouselHtml(demos, rotateMs, startIdx) {
       if (!demos.length) return '';
       const idx = Number.isFinite(startIdx) ? startIdx : 0;
       const d0 = demos[((idx % demos.length) + demos.length) % demos.length];
+      const showNav = demos.length > 1;
+      const navPrev = showNav
+        ? `<button type="button" class="empty-feature-nav empty-feature-nav-prev" aria-label="上一个演示" title="上一个">${EMPTY_FEATURE_NAV_SVG.prev}</button>`
+        : '';
+      const navNext = showNav
+        ? `<button type="button" class="empty-feature-nav empty-feature-nav-next" aria-label="下一个演示" title="下一个">${EMPTY_FEATURE_NAV_SVG.next}</button>`
+        : '';
       return `
         <div class="empty-feature-carousel" data-rotate-ms="${Number(rotateMs) || 10000}" data-start-idx="${idx}">
-          <div class="empty-feature-viewport">
-            <iframe class="empty-feature-frame" title="${escapeHtml(d0.title || '功能演示')}" src="/keynote?embed=${encodeURIComponent(d0.demo || '')}" loading="lazy" tabindex="-1"></iframe>
+          <div class="empty-feature-viewport-wrap${showNav ? ' has-nav' : ''}">
+            ${navPrev}
+            <div class="empty-feature-viewport">
+              <iframe class="empty-feature-frame" title="${escapeHtml(d0.title || '功能演示')}" src="/keynote?embed=${encodeURIComponent(d0.demo || '')}" loading="lazy" tabindex="-1"></iframe>
+            </div>
+            ${navNext}
           </div>
           <div class="empty-feature-caption">
             <div class="empty-feature-title">${buildFeatureDemoTitleHtml(d0.label, d0.title)}</div>
@@ -8626,6 +8672,10 @@
     function isChatInputActive() {
       const input = document.getElementById('input');
       return !!(input && (document.activeElement === input || inputComposing));
+    }
+
+    function shouldPauseFeatureDemoCarousel() {
+      return !!inputComposing;
     }
 
     function chatInputFocusSnapshot() {
@@ -8771,17 +8821,17 @@
       }
 
       function setActive(idx, fade) {
-        if (isChatInputActive()) return;
+        if (shouldPauseFeatureDemoCarousel()) return;
         activeIdx = ((idx % demos.length) + demos.length) % demos.length;
         const d = demos[activeIdx];
         const focusSnapshot = chatInputFocusSnapshot();
         const apply = () => {
-          if (isChatInputActive()) return;
+          if (shouldPauseFeatureDemoCarousel()) return;
           captionTitle.innerHTML = buildFeatureDemoTitleHtml(d.label, d.title);
           frame.title = d.title || '功能演示';
           frame.src = `/keynote?embed=${encodeURIComponent(d.demo || '')}`;
           restoreChatInputFocus(focusSnapshot);
-          if (focusSnapshot && !isChatInputActive()) {
+          if (focusSnapshot) {
             frame.addEventListener('load', () => restoreChatInputFocus(focusSnapshot), { once: true });
           }
         };
@@ -8797,31 +8847,70 @@
         }, 200);
       }
 
-      root.addEventListener('mouseenter', () => { paused = true; });
-      root.addEventListener('mouseleave', () => { paused = false; });
-
-      setActive(activeIdx, false);
-
-      if (demos.length > 1 && !prefersReducedMotion()) {
+      function startAutoRotate() {
+        if (demos.length <= 1 || prefersReducedMotion()) return;
         featureDemoTimer = window.setInterval(() => {
-          if (paused || isChatInputActive()) return;
+          if (paused || shouldPauseFeatureDemoCarousel()) return;
           setActive(pickRandomDemoIdx(activeIdx), true);
         }, ms);
       }
+
+      function resetAutoRotate() {
+        if (featureDemoTimer) {
+          clearInterval(featureDemoTimer);
+          featureDemoTimer = null;
+        }
+        startAutoRotate();
+      }
+
+      root.addEventListener('mouseenter', () => { paused = true; });
+      root.addEventListener('mouseleave', () => { paused = false; });
+
+      root.querySelector('.empty-feature-nav-prev')?.addEventListener('click', (event) => {
+        event.preventDefault();
+        setActive(activeIdx - 1, true);
+        resetAutoRotate();
+      });
+      root.querySelector('.empty-feature-nav-next')?.addEventListener('click', (event) => {
+        event.preventDefault();
+        setActive(activeIdx + 1, true);
+        resetAutoRotate();
+      });
+
+      setActive(activeIdx, false);
+      startAutoRotate();
     }
 
     function showEmptyState(opts = {}) {
-      stopFeatureDemoCarousel();
+      const container = document.getElementById('messages');
+      if (!container) return;
       const demos = Array.isArray(meta.featureDemos) ? meta.featureDemos : [];
       const rotateMs = meta.featureDemoRotateMs || 10000;
+      const existingEmpty = container.querySelector('.empty-state');
+      const animate = !!opts.animate && !prefersReducedMotion();
+      if (existingEmpty && !animate) {
+        const featureEl = existingEmpty.querySelector('.empty-feature-carousel');
+        if (featureEl && demos.length && !featureDemoTimer) {
+          const startIdx = Number(featureEl.dataset.startIdx);
+          mountFeatureDemoCarousel(
+            featureEl,
+            demos,
+            rotateMs,
+            Number.isFinite(startIdx) ? startIdx : 0,
+          );
+        }
+        updateScrollToBottomBtn();
+        syncLoadOlderAutoLoad(container);
+        markMessagesDomRendered(currentSessionId || '', [], sessionMessagesMeta(currentSessionId));
+        return;
+      }
+      stopFeatureDemoCarousel();
       const startIdx = demos.length ? Math.floor(Math.random() * demos.length) : 0;
       const featureHtml = buildFeatureDemoCarouselHtml(
         demos,
         rotateMs,
         startIdx,
       );
-      const container = document.getElementById('messages');
-      const animate = !!opts.animate && !prefersReducedMotion();
       container.classList.remove('messages-exit');
       container.innerHTML = `
         <div class="empty-state${animate ? ' empty-state-enter' : ''}">
@@ -8840,7 +8929,7 @@
       }
       updateScrollToBottomBtn();
       syncLoadOlderAutoLoad(container);
-      clearMessagesDomRendered();
+      markMessagesDomRendered(currentSessionId || '', [], sessionMessagesMeta(currentSessionId));
     }
 
     function ensureLoadOlderButton(container) {
@@ -8992,7 +9081,14 @@
 
     function renderLoadedMessages(sessionId, msgs, restoreFromBottom) {
       const container = getMessagesEl();
-      if (!msgs.length) { showEmptyState(); return; }
+      if (!msgs.length) {
+        if (canSkipMessagesRender(sessionId, msgs, sessionMessagesMeta(sessionId))) {
+          syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
+          return;
+        }
+        showEmptyState();
+        return;
+      }
       container.innerHTML = '';
       ensureLoadOlderButton(container);
       const frag = document.createDocumentFragment();
