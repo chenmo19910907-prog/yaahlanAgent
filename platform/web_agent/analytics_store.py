@@ -80,9 +80,20 @@ def resolve_usage_range(range_key: str) -> tuple[datetime, datetime, str, str]:
     elif key == "month":
         start_bj = now_bj.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     elif key == "7d":
-        start_bj = now_bj - timedelta(days=7)
+        # 含今天共 7 个自然日（非 8 个）
+        start_bj = (now_bj - timedelta(days=6)).replace(
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
     else:  # 30d
-        start_bj = now_bj - timedelta(days=30)
+        start_bj = (now_bj - timedelta(days=29)).replace(
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
 
     start = start_bj.astimezone(timezone.utc)
     return start, end, USAGE_RANGE_LABELS[key], key

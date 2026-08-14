@@ -32,9 +32,9 @@ def _spawn_one_shot_from_daemon(run_id: str) -> None:
     if str(PLATFORM_DIR) not in sys.path:
         sys.path.insert(0, str(PLATFORM_DIR))
     try:
-        from project.runtime_env import merge_project_env  # noqa: WPS433
+        from project.runtime_env import merge_worker_env  # noqa: WPS433
 
-        env = merge_project_env()
+        env = merge_worker_env()
     except (ImportError, OSError, ValueError):
         pass
     subprocess.Popen(
@@ -64,6 +64,14 @@ def _run_daemon() -> int:
     return 0
 
 
+def _warm_imports() -> int:
+    """预加载 worker 执行链常用模块，供 HTTP 启动时预热子进程。"""
+    from chat_runner import ensure_bridge  # noqa: WPS433
+
+    ensure_bridge()
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Web Agent run worker")
     parser.add_argument("--run-id", default="", help="单次执行（与 --daemon 互斥）")
@@ -72,12 +80,19 @@ def main() -> int:
         action="store_true",
         help="常驻模式：从 stdin 读取 run_id 并并行派发 one-shot worker",
     )
+    parser.add_argument(
+        "--warm",
+        action="store_true",
+        help="仅预 import 依赖后退出（HTTP 启动预热）",
+    )
     args = parser.parse_args()
+    if args.warm:
+        return _warm_imports()
     if args.daemon:
         return _run_daemon()
     run_id = (args.run_id or "").strip()
     if not run_id:
-        parser.error("须指定 --run-id 或 --daemon")
+        parser.error("须指定 --run-id、--daemon 或 --warm")
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     return execute_web_run(run_id)
 

@@ -10,11 +10,12 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
+from collections import defaultdict
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from urllib.parse import unquote
 
-from analytics_store import resolve_usage_range
+from analytics_store import BJ, resolve_usage_range
 from cursor_usage_store import get_cursor_usage_store
 
 try:
@@ -92,6 +93,59 @@ def _event_tokens(event: dict[str, Any]) -> int:
         if isinstance(raw, (int, float)) and raw > 0:
             total += int(raw)
     return total
+
+
+def _event_timestamp_ms(event: dict[str, Any]) -> int | None:
+    raw = event.get("timestamp")
+    if isinstance(raw, (int, float)):
+        return int(raw)
+    if isinstance(raw, str):
+        text = raw.strip()
+        if text.isdigit():
+            return int(text)
+    return None
+
+
+def _day_key_from_ms(ms: int) -> str:
+    return datetime.fromtimestamp(ms / 1000, tz=BJ).strftime("%Y-%m-%d")
+
+
+def _accumulate_event_daily(
+    daily: dict[str, dict[str, int]],
+    event: dict[str, Any],
+) -> None:
+    ms = _event_timestamp_ms(event)
+    if ms is None:
+        return
+    day = _day_key_from_ms(ms)
+    bucket = daily.setdefault(day, {"requests": 0, "tokens": 0})
+    bucket["requests"] += 1
+    bucket["tokens"] += _event_tokens(event)
+
+
+def build_daily_series(
+    start: datetime,
+    end: datetime,
+    daily_map: dict[str, dict[str, int]],
+) -> list[dict[str, Any]]:
+    """按北京时间补齐周期内每一天（无数据则为 0）。"""
+    start_bj = start.astimezone(BJ).replace(hour=0, minute=0, second=0, microsecond=0)
+    end_bj = end.astimezone(BJ).replace(hour=0, minute=0, second=0, microsecond=0)
+    rows: list[dict[str, Any]] = []
+    cur = start_bj
+    while cur <= end_bj:
+        key = cur.strftime("%Y-%m-%d")
+        stats = daily_map.get(key, {"requests": 0, "tokens": 0})
+        rows.append(
+            {
+                "date": key,
+                "label": cur.strftime("%m-%d"),
+                "requests": int(stats.get("requests") or 0),
+                "tokens": int(stats.get("tokens") or 0),
+            }
+        )
+        cur += timedelta(days=1)
+    return rows
 
 
 def _extract_events(payload: dict[str, Any]) -> list[dict[str, Any]]:
@@ -349,6 +403,7 @@ def _fetch_dashboard_usage(
     tokens = 0
     page = 1
     total_count = 0
+    daily: dict[str, dict[str, int]] = defaultdict(lambda: {"requests": 0, "tokens": 0})
 
     while page <= MAX_PAGES:
         body: dict[str, Any] = {
@@ -375,6 +430,7 @@ def _fetch_dashboard_usage(
             break
         for event in events:
             tokens += _event_tokens(event)
+            _accumulate_event_daily(daily, event)
         if len(events) < PAGE_SIZE:
             break
         if total_count and page * PAGE_SIZE >= total_count:
@@ -384,7 +440,7 @@ def _fetch_dashboard_usage(
     if requests == 0 and page == 1:
         requests = len(_extract_events(payload)) if "payload" in locals() else 0
 
-    return {"requests": requests, "tokens": tokens}
+    return {"requests": requests, "tokens": tokens, "daily": dict(daily)}
 
 
 def _fetch_admin_usage(
@@ -407,6 +463,7 @@ def _fetch_admin_usage(
     tokens = 0
     page = 1
     total_count = 0
+    daily: dict[str, dict[str, int]] = defaultdict(lambda: {"requests": 0, "tokens": 0})
 
     while page <= MAX_PAGES:
         payload = _http_json(
@@ -431,6 +488,7 @@ def _fetch_admin_usage(
             break
         for event in events:
             tokens += _event_tokens(event)
+            _accumulate_event_daily(daily, event)
         pagination = payload.get("pagination")
         has_next = isinstance(pagination, dict) and bool(pagination.get("hasNextPage"))
         if not has_next and len(events) < PAGE_SIZE:
@@ -439,7 +497,7 @@ def _fetch_admin_usage(
             break
         page += 1
 
-    return {"requests": requests, "tokens": tokens}
+    return {"requests": requests, "tokens": tokens, "daily": dict(daily)}
 
 
 def _resolve_credentials(staff_id: str) -> tuple[str, str, str, str]:
@@ -490,7 +548,12 @@ def dashboard_usage_url(start: datetime, end: datetime) -> str:
     )
 
 
-def summarize_user_usage(staff_id: str, *, range_key: str = "month") -> dict[str, Any]:
+def summarize_user_usage(
+    staff_id: str,
+    *,
+    range_key: str = "month",
+    refresh: bool = False,
+) -> dict[str, Any]:
     load_env_local()
     sid = (staff_id or "").strip()
     start, end, label, key = resolve_usage_range(range_key)
@@ -510,9 +573,10 @@ def summarize_user_usage(staff_id: str, *, range_key: str = "month") -> dict[str
         base["error"] = "未登录"
         return base
 
-    cached = _read_cache(sid, key)
-    if cached is not None:
-        return cached
+    if not refresh:
+        cached = _read_cache(sid, key)
+        if cached is not None:
+            return cached
 
     session_token, cursor_email, team_id, workos_id = _resolve_credentials(sid)
     start_ms = _to_ms(start)
@@ -610,6 +674,9 @@ def summarize_user_usage(staff_id: str, *, range_key: str = "month") -> dict[str
         )
         return base
 
+    daily_map = stats.get("daily")
+    if not isinstance(daily_map, dict):
+        daily_map = {}
     result = {
         **base,
         "requests": int(stats.get("requests") or 0),
@@ -618,6 +685,7 @@ def summarize_user_usage(staff_id: str, *, range_key: str = "month") -> dict[str
         "source": source,
         "configured": True,
         "needsSetup": False,
+        "daily": build_daily_series(start, end, daily_map),
     }
     _write_cache(sid, key, result)
     return result

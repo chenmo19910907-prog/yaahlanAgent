@@ -12,15 +12,7 @@ from pathlib import Path
 
 from env_loader import GATEWAY_DIR
 from export_delivery import is_view_all_follow_up
-from route_patterns import (
-    EXPORT_FILE_RE,
-    MOA_CHECK_RE,
-    REPORT_NL_RE,
-    REPORT_URL_RE,
-    REPORT_VERSION_RE,
-    VIP_UPGRADE_RE,
-    is_likely_fast_route,
-)
+from route_patterns import WEB_AGENT_RESTART_RE, is_likely_fast_route
 
 logger = logging.getLogger("dingtalk-gateway")
 
@@ -43,14 +35,8 @@ def classify_task_kind(
         return DEFAULT_AGENT_KIND
     if is_view_all_follow_up(text):
         return "fast:view_all"
-    if MOA_CHECK_RE.match(text):
-        return "fast:moa_check"
-    if EXPORT_FILE_RE.match(text):
-        return "fast:export_file"
-    if VIP_UPGRADE_RE.match(text):
-        return "fast:vip_upgrade"
-    if REPORT_VERSION_RE.match(text) or REPORT_NL_RE.match(text) or REPORT_URL_RE.match(text):
-        return "fast:report"
+    if WEB_AGENT_RESTART_RE.match(text):
+        return "fast:web_agent_restart"
     if re.search(r"测试用例|生成用例|写用例", text):
         return "agent:testcase"
     if re.search(r"入库|sync_registry|登记.{0,12}(MOA|模板)|MOA.{0,20}入库", text, re.I):

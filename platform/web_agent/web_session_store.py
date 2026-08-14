@@ -18,6 +18,97 @@ from pathlib import Path
 from typing import Any
 
 
+_TAIL_SIDECAR_MAX = 120
+_TAIL_SIDECAR_SMALL_FILE_BYTES = 65_536
+_COMPACT_JSON = (",", ":")
+
+
+def compute_sessions_list_etag(
+    sessions: list[dict[str, Any]],
+    *,
+    query: str = "",
+    scope: str = "all",
+    lite: bool = False,
+) -> str:
+    """会话列表指纹，供 /api/sessions 返回 ETag。"""
+    parts = [query.strip(), scope.strip(), "1" if lite else "0"]
+    for item in sessions:
+        parts.append(
+            "|".join(
+                [
+                    str(item.get("id") or ""),
+                    str(item.get("updated_at") or ""),
+                    str(item.get("message_count") or 0),
+                    str(item.get("messages_mtime") or 0),
+                    "1" if item.get("running") else "0",
+                    "1" if item.get("pinned") else "0",
+                    str(item.get("title") or ""),
+                    str(item.get("latest_preview") or ""),
+                ]
+            )
+        )
+    digest = hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()[:16]
+    return f'W/"{digest}"'
+
+
+def estimate_messages_page_meta(
+    message_count: int,
+    *,
+    tail: int | None = None,
+    before: str = "",
+    limit: int | None = None,
+) -> dict[str, Any] | None:
+    """由 index message_count 估算分页 meta，供 meta-only ETag 304（before 分页需读盘）。"""
+    if (before or "").strip():
+        return None
+    total = max(0, int(message_count or 0))
+    tail_n = int(tail or 0)
+    if tail_n > 0:
+        return {
+            "total": total,
+            "has_older": total > tail_n,
+            "offset": max(0, total - tail_n),
+        }
+    cap = int(limit or 0)
+    if cap > 0:
+        return {
+            "total": total,
+            "has_older": total > cap,
+            "offset": 0,
+        }
+    return {"total": total, "has_older": False, "offset": 0}
+
+
+def compute_messages_page_etag(
+    session_id: str,
+    *,
+    messages_mtime: float = 0.0,
+    message_count: int = 0,
+    tail: int | None = None,
+    before: str = "",
+    limit: int | None = None,
+    total: int = 0,
+    has_older: bool = False,
+    offset: int = 0,
+    messages: list[dict[str, Any]] | None = None,
+) -> str:
+    """消息分页指纹，供 GET /messages 返回 ETag（仅 meta，不读消息正文）。"""
+    del messages  # 兼容旧调用；指纹由 index mtime/count + 分页参数决定
+    parts = [
+        str(session_id or ""),
+        f"{messages_mtime:.6f}",
+        str(int(message_count or 0)),
+        str(tail or ""),
+        str(before or ""),
+        str(limit or ""),
+        str(total),
+        "1" if has_older else "0",
+        str(offset),
+    ]
+    digest = hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()[:16]
+    return f'W/"{digest}"'
+
+
 def sort_sessions_for_display(sessions: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """置顶优先；未置顶中思考中优先于其余，组内按 updated_at 降序。"""
     pinned = [s for s in sessions if s.get("pinned")]
@@ -210,30 +301,34 @@ def _scroll_message_timestamp(messages: list[ChatMessage], query: str) -> str:
     return ""
 
 
-def session_matches_search(
+def session_matches_metadata(
     meta: SessionMeta,
-    messages: list[ChatMessage],
     query: str,
     *,
     known_labels: dict[str, str] | None = None,
 ) -> SessionSearchHit | None:
-    """命中则返回展示摘要与应滚动定位的消息时间戳，否则返回 None。"""
+    """仅匹配标题 / 预览 / 归属人，不读消息文件。"""
     q = _normalize_search_query(query)
     if not q:
         return None
     for field in (meta.title, meta.custom_title, meta.latest_preview):
         text = (field or "").strip()
         if text and q in text.casefold():
-            return SessionSearchHit(
-                snippet=_snippet_around(text, q),
-                message_timestamp=_scroll_message_timestamp(messages, q),
-            )
+            return SessionSearchHit(snippet=_snippet_around(text, q))
     people = _session_people_blob(meta, known_labels)
     if people and q in people.casefold():
-        return SessionSearchHit(
-            snippet=_snippet_around(people, q),
-            message_timestamp=_scroll_message_timestamp(messages, q),
-        )
+        return SessionSearchHit(snippet=_snippet_around(people, q))
+    return None
+
+
+def session_matches_message_content(
+    messages: list[ChatMessage],
+    query: str,
+) -> SessionSearchHit | None:
+    """在消息正文中搜索；命中则返回摘要与定位时间戳。"""
+    q = _normalize_search_query(query)
+    if not q:
+        return None
     for msg in reversed(messages):
         blob = _message_search_blob(msg)
         if not blob or q not in blob.casefold():
@@ -244,6 +339,24 @@ def session_matches_search(
             message_timestamp=(msg.timestamp or "").strip(),
         )
     return None
+
+
+def session_matches_search(
+    meta: SessionMeta,
+    messages: list[ChatMessage],
+    query: str,
+    *,
+    known_labels: dict[str, str] | None = None,
+) -> SessionSearchHit | None:
+    """命中则返回展示摘要与应滚动定位的消息时间戳，否则返回 None。"""
+    meta_hit = session_matches_metadata(meta, query, known_labels=known_labels)
+    if meta_hit:
+        meta_hit = SessionSearchHit(
+            snippet=meta_hit.snippet,
+            message_timestamp=_scroll_message_timestamp(messages, query),
+        )
+        return meta_hit
+    return session_matches_message_content(messages, query)
 
 
 def filter_sessions_by_search(
@@ -258,12 +371,11 @@ def filter_sessions_by_search(
         return [(meta, SessionSearchHit("")) for meta in sessions]
     matched: list[tuple[SessionMeta, SessionSearchHit]] = []
     for meta in sessions:
-        hit = session_matches_search(
-            meta,
-            load_messages(meta.id),
-            q,
-            known_labels=known_labels,
-        )
+        hit = session_matches_metadata(meta, q, known_labels=known_labels)
+        if hit:
+            matched.append((meta, hit))
+            continue
+        hit = session_matches_message_content(load_messages(meta.id), q)
         if hit:
             matched.append((meta, hit))
     return matched
@@ -375,6 +487,10 @@ def _apply_message_derived_meta(
         meta.message_count = count
         changed = True
     meta.latest_preview = _preview_from_messages(messages)
+    has_assistant = any(msg.role == "assistant" for msg in messages)
+    if meta.has_assistant != has_assistant:
+        meta.has_assistant = has_assistant
+        changed = True
     return changed
 
 
@@ -426,6 +542,8 @@ class SessionMeta:
     pinned_at: str = ""
     custom_title: str = ""
     latest_preview: str = field(default="", repr=False)
+    messages_mtime: float = 0.0
+    has_assistant: bool = False
 
     def display_title(self) -> str:
         custom = (self.custom_title or "").strip()
@@ -558,6 +676,8 @@ class SessionMeta:
         custom = (self.custom_title or "").strip()
         if custom:
             payload["custom_title"] = custom
+        if self.messages_mtime > 0:
+            payload["messages_mtime"] = self.messages_mtime
         payload["pinned"] = self.is_pinned
         if self.is_pinned:
             payload["pinned_at"] = self.pinned_at
@@ -578,6 +698,7 @@ class WebSessionStore:
         self._sessions: dict[str, SessionMeta] = {}
         self._custom_title_touched: set[str] = set()
         self._pinned_touched: set[str] = set()
+        self._messages_cache: dict[str, tuple[float, list[ChatMessage]]] = {}
         self._reload_index_if_stale(force=True)
 
     @contextmanager
@@ -588,7 +709,7 @@ class WebSessionStore:
             fd = os.open(str(self._index_lock_path), os.O_CREAT | os.O_RDWR)
             try:
                 fcntl.flock(fd, fcntl.LOCK_EX)
-                self._reload_index_if_stale(force=True)
+                self._reload_index_if_stale()
                 yield
             finally:
                 fcntl.flock(fd, fcntl.LOCK_UN)
@@ -611,6 +732,10 @@ class WebSessionStore:
         """多进程（Web 服务 / 钉钉网关）共享落盘时，读前刷新索引。"""
         with self._lock:
             self._reload_index_if_stale(force=True)
+
+    def index_disk_mtime(self) -> float:
+        """sessions.json 磁盘 mtime，供 lite 列表缓存失效判断。"""
+        return self._index_mtime_on_disk()
 
     def _load_index(self) -> dict[str, SessionMeta]:
         if not self._index_path.is_file():
@@ -646,6 +771,9 @@ class WebSessionStore:
                 ] if isinstance(raw_collabs, list) else [],
                 pinned_at=str(item.get("pinned_at") or "").strip(),
                 custom_title=str(item.get("custom_title") or "").strip(),
+                latest_preview=str(item.get("latest_preview") or "").strip(),
+                messages_mtime=float(item.get("messages_mtime") or 0),
+                has_assistant=bool(item.get("has_assistant")),
             )
         return sessions
 
@@ -699,6 +827,9 @@ class WebSessionStore:
                 ),
                 **({"pinned_at": meta.pinned_at} if meta.is_pinned else {}),
                 **({"custom_title": meta.custom_title} if (meta.custom_title or "").strip() else {}),
+                **({"latest_preview": meta.latest_preview} if (meta.latest_preview or "").strip() else {}),
+                **({"messages_mtime": meta.messages_mtime} if meta.messages_mtime > 0 else {}),
+                **({"has_assistant": True} if meta.has_assistant else {}),
             }
             for sid, meta in self._sessions.items()
         }
@@ -711,7 +842,103 @@ class WebSessionStore:
     def _messages_path(self, session_id: str) -> Path:
         return self._messages_dir / f"{session_id}.json"
 
-    def _load_messages(self, session_id: str) -> list[ChatMessage]:
+    def _tail_sidecar_path(self, session_id: str) -> Path:
+        return self._messages_path(session_id).with_suffix(".json.tail")
+
+    def _messages_file_mtime(self, session_id: str) -> float:
+        try:
+            return self._messages_path(session_id).stat().st_mtime
+        except OSError:
+            return 0.0
+
+    def _invalidate_messages_cache(self, session_id: str) -> None:
+        self._messages_cache.pop(session_id, None)
+
+    def _parse_message_item(self, item: object) -> ChatMessage | None:
+        if not isinstance(item, dict):
+            return None
+        role = str(item.get("role") or "").strip()
+        content = str(item.get("content") or "")
+        raw_images = item.get("images")
+        images: list[str] = []
+        if isinstance(raw_images, list):
+            images = [str(path).strip() for path in raw_images if str(path).strip()]
+        raw_files = item.get("files")
+        files: list[dict[str, object]] = []
+        if isinstance(raw_files, list):
+            for entry in raw_files:
+                if isinstance(entry, dict) and str(entry.get("url") or "").strip():
+                    files.append(entry)
+        if role not in ("user", "assistant") or (not content.strip() and not images and not files):
+            return None
+        author_id = str(item.get("author_id") or item.get("authorId") or "").strip()
+        author_label = str(item.get("author_label") or item.get("authorLabel") or "").strip()
+        return ChatMessage(
+            role=role,
+            content=content,
+            timestamp=str(item.get("timestamp") or _now_iso()),
+            images=images,
+            files=files,
+            author_id=author_id,
+            author_label=author_label,
+        )
+
+    def _write_tail_sidecar(self, session_id: str, messages: list[ChatMessage]) -> None:
+        path = self._tail_sidecar_path(session_id)
+        if not messages:
+            path.unlink(missing_ok=True)
+            return
+        tail_msgs = messages[-_TAIL_SIDECAR_MAX:]
+        payload = [
+            {
+                "role": m.role,
+                "content": m.content,
+                "timestamp": m.timestamp,
+                **({"images": m.images} if m.images else {}),
+                **({"files": m.files} if m.files else {}),
+                **({"author_id": m.author_id} if m.author_id else {}),
+                **({"author_label": m.author_label} if m.author_label else {}),
+            }
+            for m in tail_msgs
+        ]
+        path.write_text(json.dumps(payload, ensure_ascii=False, separators=_COMPACT_JSON), encoding="utf-8")
+        try:
+            file_mtime = self._messages_path(session_id).stat().st_mtime
+            os.utime(path, (file_mtime, file_mtime))
+        except OSError:
+            pass
+
+    def _read_tail_from_sidecar(
+        self,
+        session_id: str,
+        *,
+        tail_n: int,
+        file_mtime: float,
+    ) -> list[ChatMessage] | None:
+        if tail_n <= 0 or tail_n > _TAIL_SIDECAR_MAX:
+            return None
+        path = self._tail_sidecar_path(session_id)
+        if not path.is_file():
+            return None
+        try:
+            sidecar_mtime = path.stat().st_mtime
+            if abs(sidecar_mtime - file_mtime) > 1e-6:
+                return None
+            raw = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return None
+        if not isinstance(raw, list):
+            return None
+        messages: list[ChatMessage] = []
+        for item in raw:
+            msg = self._parse_message_item(item)
+            if msg is not None:
+                messages.append(msg)
+        if not messages:
+            return None
+        return messages[-tail_n:]
+
+    def _read_messages_from_disk(self, session_id: str) -> list[ChatMessage]:
         path = self._messages_path(session_id)
         if not path.is_file():
             return []
@@ -723,36 +950,53 @@ class WebSessionStore:
             return []
         messages: list[ChatMessage] = []
         for item in raw:
-            if not isinstance(item, dict):
-                continue
-            role = str(item.get("role") or "").strip()
-            content = str(item.get("content") or "")
-            raw_images = item.get("images")
-            images: list[str] = []
-            if isinstance(raw_images, list):
-                images = [str(path).strip() for path in raw_images if str(path).strip()]
-            raw_files = item.get("files")
-            files: list[dict[str, object]] = []
-            if isinstance(raw_files, list):
-                for entry in raw_files:
-                    if isinstance(entry, dict) and str(entry.get("url") or "").strip():
-                        files.append(entry)
-            if role not in ("user", "assistant") or (not content.strip() and not images and not files):
-                continue
-            author_id = str(item.get("author_id") or item.get("authorId") or "").strip()
-            author_label = str(item.get("author_label") or item.get("authorLabel") or "").strip()
-            messages.append(
-                ChatMessage(
-                    role=role,
-                    content=content,
-                    timestamp=str(item.get("timestamp") or _now_iso()),
-                    images=images,
-                    files=files,
-                    author_id=author_id,
-                    author_label=author_label,
-                )
-            )
+            msg = self._parse_message_item(item)
+            if msg is not None:
+                messages.append(msg)
         return messages
+
+    def _load_messages(self, session_id: str) -> list[ChatMessage]:
+        mtime = self._messages_file_mtime(session_id)
+        cached = self._messages_cache.get(session_id)
+        if cached is not None and cached[0] == mtime:
+            return cached[1]
+        messages = self._read_messages_from_disk(session_id)
+        if mtime > 0:
+            self._messages_cache[session_id] = (mtime, messages)
+        else:
+            self._messages_cache.pop(session_id, None)
+        return messages
+
+    def _needs_message_meta_sync(self, meta: SessionMeta) -> bool:
+        file_mtime = self._messages_file_mtime(meta.id)
+        if file_mtime <= 0:
+            return meta.message_count > 0
+        if meta.messages_mtime <= 0:
+            return True
+        if file_mtime > meta.messages_mtime + 1e-6:
+            return True
+        return meta.message_count <= 0
+
+    def _sync_message_derived_meta(
+        self,
+        meta: SessionMeta,
+        *,
+        custom_title_touched: set[str] | None = None,
+    ) -> bool:
+        if not self._needs_message_meta_sync(meta):
+            return False
+        messages = self._load_messages(meta.id)
+        if not messages:
+            meta.messages_mtime = self._messages_file_mtime(meta.id)
+            return False
+        changed = _apply_message_derived_meta(
+            meta, messages, custom_title_touched=custom_title_touched
+        )
+        meta.messages_mtime = self._messages_file_mtime(meta.id)
+        return changed
+
+    def _touch_messages_mtime(self, meta: SessionMeta) -> None:
+        meta.messages_mtime = self._messages_file_mtime(meta.id)
 
     def _save_messages(self, session_id: str, messages: list[ChatMessage]) -> None:
         self._messages_dir.mkdir(parents=True, exist_ok=True)
@@ -769,11 +1013,42 @@ class WebSessionStore:
             for m in messages
         ]
         self._messages_path(session_id).write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2),
+            json.dumps(payload, ensure_ascii=False, separators=_COMPACT_JSON),
             encoding="utf-8",
         )
+        mtime = self._messages_file_mtime(session_id)
+        self._messages_cache[session_id] = (mtime, messages)
+        self._write_tail_sidecar(session_id, messages)
 
-    def list_sessions(self, *, enrich_names: bool = True) -> list[SessionMeta]:
+    def messages_file_size(self, session_id: str) -> int:
+        try:
+            return self._messages_path(session_id).stat().st_size
+        except OSError:
+            return 0
+
+    def _sort_session_items(self, items: list[SessionMeta]) -> list[SessionMeta]:
+        pinned = [s for s in items if s.is_pinned]
+        unpinned = [s for s in items if not s.is_pinned]
+        pinned.sort(key=lambda s: s.pinned_at)
+        unpinned.sort(key=lambda s: s.updated_at, reverse=True)
+        return pinned + unpinned
+
+    def _list_sessions_readonly(self) -> list[SessionMeta]:
+        """lite 轮询专用：共享锁读索引，不做 derived meta 同步或 index 写回。"""
+        with self._lock:
+            self._reload_index_if_stale()
+            items = [s for s in self._sessions.values() if s.message_count > 0]
+        return self._sort_session_items(items)
+
+    def list_sessions(
+        self,
+        *,
+        enrich_names: bool = True,
+        sync_derived_meta: bool = True,
+        readonly: bool = False,
+    ) -> list[SessionMeta]:
+        if readonly:
+            return self._list_sessions_readonly()
         with self._exclusive_index():
             self._reload_index_if_stale()
             dirty = False
@@ -786,12 +1061,12 @@ class WebSessionStore:
                     dirty = True
             items = list(self._sessions.values())
             reverted_custom_titles: set[str] = set()
-            for meta in items:
-                messages = self._load_messages(meta.id)
-                if messages and _apply_message_derived_meta(
-                    meta, messages, custom_title_touched=reverted_custom_titles
-                ):
-                    dirty = True
+            if sync_derived_meta:
+                for meta in items:
+                    if self._sync_message_derived_meta(
+                        meta, custom_title_touched=reverted_custom_titles
+                    ):
+                        dirty = True
             items = [s for s in items if s.message_count > 0]
             if enrich_names and items:
                 try:
@@ -833,11 +1108,7 @@ class WebSessionStore:
                 finally:
                     for sid in reverted_custom_titles:
                         self._custom_title_touched.discard(sid)
-        pinned = [s for s in items if s.is_pinned]
-        unpinned = [s for s in items if not s.is_pinned]
-        pinned.sort(key=lambda s: s.pinned_at)
-        unpinned.sort(key=lambda s: s.updated_at, reverse=True)
-        return pinned + unpinned
+        return self._sort_session_items(items)
 
     def create_session(
         self,
@@ -878,12 +1149,96 @@ class WebSessionStore:
             path.unlink(missing_ok=True)
         return True
 
-    def get_messages(self, session_id: str) -> list[ChatMessage]:
+    def get_messages(
+        self,
+        session_id: str,
+        *,
+        tail: int | None = None,
+        before: str | None = None,
+        limit: int | None = None,
+    ) -> tuple[list[ChatMessage], dict[str, Any]]:
         with self._lock:
             self._reload_index_if_stale()
-            if session_id not in self._sessions:
-                return []
-        return self._load_messages(session_id)
+            session_meta = self._sessions.get(session_id)
+            if session_meta is None:
+                return [], {"total": 0, "has_older": False, "offset": 0}
+
+        before_ts = (before or "").strip()
+        tail_n = int(tail or 0)
+        file_mtime = self._messages_file_mtime(session_id)
+        indexed_total = int(session_meta.message_count or 0)
+
+        if before_ts:
+            messages = self._load_messages(session_id)
+            total = len(messages)
+            older = [msg for msg in messages if (msg.timestamp or "") < before_ts]
+            cap = max(1, int(limit or 80))
+            slice_msgs = older[-cap:]
+            meta: dict[str, Any] = {
+                "total": total,
+                "has_older": len(older) > len(slice_msgs),
+                "offset": total - len(messages) + len(older) - len(slice_msgs),
+            }
+            return slice_msgs, meta
+
+        if tail_n > 0:
+            cached = self._messages_cache.get(session_id)
+            if cached is not None and cached[0] == file_mtime and len(cached[1]) >= tail_n:
+                slice_msgs = cached[1][-tail_n:]
+                total = len(cached[1])
+                return slice_msgs, {
+                    "total": total,
+                    "has_older": total > tail_n,
+                    "offset": total - len(slice_msgs),
+                }
+
+            try:
+                file_size = self._messages_path(session_id).stat().st_size
+            except OSError:
+                file_size = 0
+
+            if file_size > 0 and file_size <= _TAIL_SIDECAR_SMALL_FILE_BYTES:
+                messages = self._load_messages(session_id)
+            else:
+                sidecar_msgs = self._read_tail_from_sidecar(
+                    session_id,
+                    tail_n=tail_n,
+                    file_mtime=file_mtime,
+                )
+                if sidecar_msgs is not None:
+                    total = indexed_total or len(sidecar_msgs)
+                    slice_msgs = sidecar_msgs[-tail_n:]
+                    return slice_msgs, {
+                        "total": total,
+                        "has_older": total > len(slice_msgs),
+                        "offset": max(0, total - len(slice_msgs)),
+                    }
+                messages = self._load_messages(session_id)
+
+            total = len(messages)
+            slice_msgs = messages[-tail_n:]
+            return slice_msgs, {
+                "total": total,
+                "has_older": total > tail_n,
+                "offset": total - len(slice_msgs),
+            }
+
+        messages = self._load_messages(session_id)
+        total = len(messages)
+        meta = {"total": total, "has_older": False, "offset": 0}
+
+        cap = int(limit or 0)
+        if cap > 0:
+            slice_msgs = messages[:cap]
+            meta["has_older"] = total > cap
+            meta["offset"] = 0
+            return slice_msgs, meta
+
+        return messages, meta
+
+    def get_all_messages(self, session_id: str) -> list[ChatMessage]:
+        messages, _ = self.get_messages(session_id)
+        return messages
 
     def get_or_create_dingtalk_session(
         self,
@@ -984,6 +1339,7 @@ class WebSessionStore:
                         _apply_message_derived_meta(
                             meta, messages, custom_title_touched=reverted_custom_titles
                         )
+                        self._touch_messages_mtime(meta)
                         self._custom_title_touched.update(reverted_custom_titles)
                         try:
                             self._save_index()
@@ -1005,6 +1361,7 @@ class WebSessionStore:
             _apply_message_derived_meta(
                 meta, messages, custom_title_touched=reverted_custom_titles
             )
+            self._touch_messages_mtime(meta)
             self._custom_title_touched.update(reverted_custom_titles)
             try:
                 self._save_index()
@@ -1073,6 +1430,7 @@ class WebSessionStore:
                 _apply_message_derived_meta(
                     meta, messages, custom_title_touched=reverted_custom_titles
                 )
+                self._touch_messages_mtime(meta)
             self._custom_title_touched.update(reverted_custom_titles)
             self._custom_title_touched.add(session_id)
             try:
@@ -1169,6 +1527,7 @@ class WebSessionStore:
             _apply_message_derived_meta(
                 meta, messages, custom_title_touched=reverted_custom_titles
             )
+            self._touch_messages_mtime(meta)
             self._custom_title_touched.update(reverted_custom_titles)
             try:
                 self._save_index()

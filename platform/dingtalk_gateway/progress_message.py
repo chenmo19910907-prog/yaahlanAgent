@@ -99,11 +99,20 @@ def format_eta_remaining(seconds: float | None, *, min_show_s: float = 0) -> str
     return f"，预计还需约 {format_duration(seconds)}"
 
 
-def build_task_ack_message(summary: str, *, prompt: str | None = None) -> str:
+def build_task_ack_message(
+    summary: str,
+    *,
+    prompt: str | None = None,
+    estimate_s: float | None = None,
+) -> str:
     """「已收到，执行中」确认语，含同类任务预估耗时。"""
     label = (summary or "").strip() or "任务"
     task_kind = classify_task_kind(prompt or "")
-    estimate = resolve_task_estimate_seconds(task_kind, prompt=prompt)
+    estimate = (
+        estimate_s
+        if estimate_s is not None
+        else resolve_task_estimate_seconds(task_kind, prompt=prompt)
+    )
     eta_part = format_eta_total(estimate)
     body = f"已收到（{label}），执行中"
     if eta_part:

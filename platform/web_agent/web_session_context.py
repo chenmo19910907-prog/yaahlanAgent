@@ -30,11 +30,13 @@ def session_message_stats(session_id: str) -> tuple[int, int]:
     sid = (session_id or "").strip()
     if not sid:
         return 0, 0
-    messages = get_session_store().get_messages(sid)
-    total_bytes = 0
-    for msg in messages:
-        total_bytes += len((msg.content or "").encode("utf-8"))
-    return len(messages), total_bytes
+    store = get_session_store()
+    meta = store.get_session(sid)
+    if meta is None:
+        return 0, 0
+    count = int(meta.message_count or 0)
+    total_bytes = store.messages_file_size(sid)
+    return count, total_bytes
 
 
 def should_rotate_cursor_agent(session_id: str) -> bool:
@@ -55,7 +57,7 @@ def _trim_line(text: str, limit: int = 160) -> str:
 
 def build_rotation_context_snippet(session_id: str) -> str:
     """抽取最近若干轮 user/assistant 摘要，供轮换 Agent 后带入 prompt。"""
-    messages = get_session_store().get_messages((session_id or "").strip())
+    messages, _ = get_session_store().get_messages((session_id or "").strip(), tail=CONTEXT_SNIPPET_MESSAGES)
     if not messages:
         return ""
     tail = messages[-CONTEXT_SNIPPET_MESSAGES:]
@@ -99,7 +101,7 @@ def session_looks_like_pk_atm(session_id: str) -> bool:
     sid = (session_id or "").strip()
     if not sid:
         return False
-    messages = get_session_store().get_messages(sid)
+    messages, _ = get_session_store().get_messages(sid, tail=24)
     for msg in messages[-24:]:
         if looks_like_pk_atm_task(msg.content):
             return True

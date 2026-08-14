@@ -21,6 +21,7 @@ from moa_registry_guard import (  # noqa: E402
     moa_registry_instruction,
 )
 from progress_message import append_duration_footer  # noqa: E402
+from duration_history import classify_task_kind  # noqa: E402
 
 if str(GATEWAY_DIR.parent) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR.parent))
@@ -89,7 +90,7 @@ def finalize_web_reply_text(
     return append_duration_footer(text, elapsed_s, task_kind=task_kind, prompt=prompt)
 
 
-_WEB_RULES_BASE = f"""\
+_WEB_RULES_CORE = f"""\
 你是 {web_agent_name()}，在浏览器无人值守场景下运行。
 
 必须遵守：
@@ -99,10 +100,14 @@ _WEB_RULES_BASE = f"""\
    **时间展示**：面向用户的时间一律用**北京时间**（`YYYY-MM-DD HH:MM:SS`），禁止写 UTC。
 4. **导出文档**：仅当用户明确要求「导出到钉钉文档」时，才写入钉钉并回链接；**例外：PK 提款机验收每轮须自动写入钉钉 Sheet 并回链接**。导出成功时只回在线表格/文件链接。
 5. **测试用例**：生成测试用例时写入 `{_temporary_testcase_hint()}`（Markdown 表格或 CSV）。
-6. {_GIFT_RULE}
-   {_FAMILY_JOIN_RULE}
-7. **MOA 探活**：仅当用户整条消息为「MOA检查」「检查MOA」「MOA探活」等明确口令时才探活；MOA 业务查询不等于探活。
-8. **失败处理**：用自然语言说明问题与下一步，不要编造结果。
+6. **MOA 探活**：仅当用户整条消息为「MOA检查」「检查MOA」「MOA探活」等明确口令时才探活；MOA 业务查询不等于探活。
+7. **失败处理**：用自然语言说明问题与下一步，不要编造结果。"""
+
+_WEB_RULES_GIFT_FAMILY = f"""\
+8. {_GIFT_RULE}
+   {_FAMILY_JOIN_RULE}"""
+
+_WEB_RULES_BATCH = f"""\
 9. **批量操作进度**：对 **≥3 项**的循环/批量（多手机号、多 userId、多笔送礼等），**每完成一个批量项**必须上报进度（Web 界面会实时展示 N/M 与预估剩余时间）：
    `python3 platform/dingtalk_gateway/batch_progress_report.py --current N --total M --label "操作类型" [--detail "当前项标识"]`
    （Web Agent worker 已注入 `WEB_AGENT_BATCH_KEY`，**可省略 `--user-key`**；钉钉网关仍传 `--user-key <batch_key>`）
@@ -114,15 +119,56 @@ _WEB_RULES_BASE = f"""\
    `Admin/scripts/batch_custom_gift_users_clear_vip.py`、
    `Admin/scripts/batch_mutual_friends_from_user_list.py`；
    无现成脚本时再写 ThreadPoolExecutor 并行脚本。
-   {batch_parallel_rule_snippet()}
+   {batch_parallel_rule_snippet()}"""
+
+_WEB_RULES_FILES = """\
 10. **钉钉发文件先 zip**：若需经钉钉机器人发送本地文件附件，**必须先打成 `.zip`** 再发；导出到钉钉文档/在线表格只回链接，不走 zip。
-11. **代码修改权限**：仅管理员（`config/code_modify_allowlist.json` 及本地 `.local.json` 登记账号）可修改 `platform/web_agent/`、`platform/dingtalk_gateway/`、`.cursor/` 等代码逻辑；**MOA 能力入库**（`MOA/templates/` + `sync_registry.py` + `MOA/config/registry.json`）与**工具台 MOA 录制**入库**全员可用**，不受只读限制。
-12. **Web 文件收发**：
+11. **Web 文件收发**：
    - 用户可能上传图片或普通文件（csv/xlsx/pdf/zip/txt/md/json 等），路径会在下方列出，请用 Read/Shell 等工具读取处理。
    - 需要向用户回传可下载文件时，执行：
      `python3 platform/web_agent/web_share_file.py --user-key <batch_key> --path <本地文件路径> [--name 展示文件名]`
-   - 可多次调用；本轮回复结束前登记的文件会随 assistant 消息在 Web 界面展示下载链接。
-"""
+   - 可多次调用；本轮回复结束前登记的文件会随 assistant 消息在 Web 界面展示下载链接。"""
+
+_WEB_RULES_CODE = """\
+12. **代码修改权限**：仅管理员（`config/code_modify_allowlist.json` 及本地 `.local.json` 登记账号）可修改 `platform/web_agent/`、`platform/dingtalk_gateway/`、`.cursor/` 等代码逻辑；**MOA 能力入库**（`MOA/templates/` + `sync_registry.py` + `MOA/config/registry.json`）与**工具台 MOA 录制**入库**全员可用**，不受只读限制。"""
+
+# 兼容旧引用
+_WEB_RULES_BASE = "\n".join(
+    [_WEB_RULES_CORE, _WEB_RULES_GIFT_FAMILY, _WEB_RULES_BATCH, _WEB_RULES_FILES, _WEB_RULES_CODE]
+)
+
+
+def _web_prompt_rule_profile(user_text: str) -> str:
+    """按任务类型选择规则粒度：compact / standard / full。"""
+    kind = classify_task_kind(user_text)
+    if kind in {"agent:code_modify", "agent:moa_registry", "agent:testcase"}:
+        return "full"
+    if kind in {"agent:query", "agent:moa_query", "agent:tunnel"}:
+        return "compact"
+    if kind.startswith("fast:"):
+        return "compact"
+    if kind in {"agent:gift", "agent:pk_atm", "agent:workflow", "agent:moa_mutate"}:
+        return "standard"
+    return "standard"
+
+
+def _compose_web_rules_body(
+    profile: str,
+    *,
+    include_gift_family: bool = False,
+    include_files: bool = False,
+) -> str:
+    blocks = [_WEB_RULES_CORE]
+    if profile == "full" or include_gift_family or profile == "standard":
+        if profile != "compact" or include_gift_family:
+            blocks.append(_WEB_RULES_GIFT_FAMILY)
+    if profile in {"full", "standard"}:
+        blocks.append(_WEB_RULES_BATCH)
+    if profile == "full" or include_files:
+        blocks.append(_WEB_RULES_FILES)
+    if profile == "full":
+        blocks.append(_WEB_RULES_CODE)
+    return "\n".join(blocks)
 
 
 def _external_agent_rules(enabled_ids: list[str]) -> str:
@@ -229,9 +275,22 @@ def _build_web_rules(
     *,
     allow_code_modify: bool = True,
     allow_moa_registry: bool = False,
+    user_text: str = "",
+    image_count: int = 0,
+    file_paths: list[str | Path] | None = None,
 ) -> str:
     enabled_ids = list(enabled_external_agents or [])
     external_rules = _external_agent_rules(enabled_ids)
+    profile = _web_prompt_rule_profile(user_text)
+    include_gift = classify_task_kind(user_text) in {"agent:gift", "agent:moa_mutate", "agent:pk_atm"}
+    include_files = image_count > 0 or bool(file_paths)
+    if not allow_code_modify and profile == "full":
+        profile = "standard"
+    rules_body = _compose_web_rules_body(
+        profile,
+        include_gift_family=include_gift,
+        include_files=include_files,
+    )
     capability_tail = (
         "可用能力：各模块 execute 脚本（含 Gift Stage 送礼、MSE 配置读取）、"
         "钉钉 MCP、Tunnel 只读抓包、ADB 真机自动化（本机已连接设备时）。"
@@ -244,7 +303,7 @@ def _build_web_rules(
         ]
         if labels:
             capability_tail += f" 已启用外部 Agent：{', '.join(labels)}。"
-    rules = f"{_WEB_RULES_BASE}\n{external_rules}\n\n{capability_tail}"
+    rules = f"{rules_body}\n{external_rules}\n\n{capability_tail}"
     if allow_code_modify:
         return rules
     readonly = _readonly_permission_note(allow_moa_registry=allow_moa_registry)
@@ -358,6 +417,9 @@ def build_web_prompt(
             enabled_external_agents,
             allow_code_modify=allow_code_modify,
             allow_moa_registry=allow_moa_registry,
+            user_text=body,
+            image_count=image_count,
+            file_paths=file_list,
         )
         return f"{rules}\n\n---\n\n用户消息：\n{body}"
     return f"用户消息（延续当前 Web Agent 对话）：\n{body}"

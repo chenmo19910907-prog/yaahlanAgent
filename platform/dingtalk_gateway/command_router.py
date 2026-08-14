@@ -1,43 +1,15 @@
-"""钉钉网关快捷指令：能脚本化的操作不走 LLM。"""
+"""钉钉网关快捷指令：仅保留 Web Agent 重启（其余走 Cursor Agent）。"""
 
 from __future__ import annotations
 
-import json
-import re
-import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from moa_health import probe_moa_cookie
-from moa_registry_guard import should_route_moa_check
-from route_patterns import (
-    EXPORT_FILE_RE,
-    REPORT_NL_RE,
-    REPORT_URL_RE,
-    REPORT_VERSION_RE,
-    VIP_UPGRADE_RE,
-    normalize_report_prompt,
-)
-from task_session import TaskSession, run_subprocess_cancellable
+from route_patterns import WEB_AGENT_RESTART_RE
+from web_agent_restart import force_restart_web_agent, format_force_restart_reply
+from task_session import TaskSession
 
 GATEWAY_DIR = Path(__file__).resolve().parent
-
-from repo_paths import (
-    admin_execute_path,
-    admin_module_dir,
-    batch_progress_script,
-    get_repo_root,
-    gift_execute_path,
-    gift_module_dir,
-    moa_execute_path,
-    moa_module_dir,
-    moa_template,
-    mse_execute_path,
-    mse_module_dir,
-    stage_gateway_url,
-    tmp_dir,
-)
-REPO_ROOT = GATEWAY_DIR.parent.parent
 
 
 @dataclass
@@ -49,114 +21,17 @@ class RoutedResult:
 
 
 def try_route(user_text: str, session: TaskSession | None = None) -> RoutedResult:
+    del session  # 重启路由不占用 TaskSession
     text = (user_text or "").strip()
     if not text:
         return RoutedResult(handled=False)
 
-    normalized = normalize_report_prompt(text)
-    if normalized:
-        text = normalized
-
-    if should_route_moa_check(text):
-        ok, detail = probe_moa_cookie()
-        if ok:
-            return RoutedResult(handled=True, output=f"✅ {detail}", task_kind="moa_check")
-        return RoutedResult(handled=True, output=f"❌ {detail}", task_kind="moa_check")
-
-    m = EXPORT_FILE_RE.match(text)
-    if m:
-        rel = m.group(1).strip()
-        path = Path(rel)
-        if not path.is_absolute():
-            path = (REPO_ROOT / rel).resolve()
-        if not path.is_file():
-            return RoutedResult(handled=True, output=f"文件不存在：{path}")
-        code, stdout, stderr = run_subprocess_cancellable(
-            [
-                str(GATEWAY_DIR / ".venv/bin/python3"),
-                str(GATEWAY_DIR / "export_file.py"),
-                str(path),
-            ],
-            cwd=str(GATEWAY_DIR),
-            session=session,
-            timeout_s=300,
-        )
-        out = (stdout or stderr or "").strip()
+    if WEB_AGENT_RESTART_RE.match(text):
+        outcome = force_restart_web_agent()
         return RoutedResult(
             handled=True,
-            output=out or f"导出结束 exit={code}",
-            task_kind="export_file",
+            output=format_force_restart_reply(outcome),
+            task_kind="web_agent_restart",
         )
-
-    m = VIP_UPGRADE_RE.match(text)
-    if m:
-        user_id, level = m.group(1), m.group(2)
-        code, stdout, stderr = run_subprocess_cancellable(
-            [
-                sys.executable,
-                str(moa_execute_path()),
-                "--payload-file",
-                str(moa_template("VIP-增加经验值.json")),
-                "--vip-user-id",
-                user_id,
-                "--vip-level",
-                level,
-            ],
-            cwd=str(REPO_ROOT),
-            session=session,
-            timeout_s=120,
-        )
-        out = (stdout or stderr or "").strip()
-        return RoutedResult(
-            handled=True,
-            output=out or f"exit={code}",
-            task_kind="vip_upgrade",
-        )
-
-    report_version = REPORT_VERSION_RE.match(text) or REPORT_NL_RE.match(text)
-    report_url = REPORT_URL_RE.match(text)
-    if report_version or report_url:
-        cmd = [
-            str(GATEWAY_DIR / ".venv/bin/python3"),
-            str(GATEWAY_DIR / "report_generate.py"),
-            "--json",
-        ]
-        if report_version:
-            cmd.extend(["--version", report_version.group(1)])
-        else:
-            cmd.extend(["--url", report_url.group(1)])  # type: ignore[union-attr]
-        code, stdout, stderr = run_subprocess_cancellable(
-            cmd,
-            cwd=str(GATEWAY_DIR),
-            session=session,
-            timeout_s=600,
-        )
-        raw = (stdout or stderr or "").strip()
-        if code != 0 or not raw:
-            return RoutedResult(
-                handled=True,
-                output=raw or f"测试报告生成失败 exit={code}",
-            )
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
-            return RoutedResult(handled=True, output=raw)
-        if not data.get("ok"):
-            return RoutedResult(
-                handled=True,
-                output=f"[FAIL] {data.get('error') or '测试报告生成失败'}",
-            )
-        version = str(data.get("version") or "")
-        zip_name = str(data.get("zip_name") or "测试报告.zip")
-        summary = str(data.get("summary") or "").strip()
-        lines = [
-            f"[OK] {version} 版本测试报告已生成。",
-            f"附件：{zip_name}（含内网/外网 HTML，请下载解压后用浏览器打开）",
-        ]
-        if summary:
-            lines.extend(["", summary])
-        zip_path = Path(str(data.get("zip") or ""))
-        files = [zip_path] if zip_path.is_file() else []
-        return RoutedResult(handled=True, output="\n".join(lines), files=files, task_kind="report")
 
     return RoutedResult(handled=False)

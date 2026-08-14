@@ -47,13 +47,16 @@ PLATFORM_DIR = WEB_AGENT_DIR.parent
 REPO_ROOT = PLATFORM_DIR.parent
 GATEWAY_DIR = PLATFORM_DIR / "dingtalk_gateway"
 
+if str(GATEWAY_DIR) not in sys.path:
+    sys.path.insert(0, str(GATEWAY_DIR))
+
 
 def _subprocess_env() -> dict[str, str]:
     if str(PLATFORM_DIR) not in sys.path:
         sys.path.insert(0, str(PLATFORM_DIR))
-    from project.runtime_env import merge_project_env
+    from project.runtime_env import merge_worker_env
 
-    return merge_project_env()
+    return merge_worker_env()
 
 
 INTERRUPT_REPLY = INTERRUPT_HEADLINE
@@ -339,6 +342,40 @@ def execute_web_run(run_id: str) -> int:
         )
 
     try:
+        from command_router import try_route  # noqa: WPS433
+
+        routed = try_route(meta.message or meta.display_message, session=session_ctrl)
+        if routed.handled:
+            if routed.task_kind:
+                task_kind = classify_task_kind(
+                    meta.message,
+                    route_kind=routed.task_kind,
+                )
+            elapsed = time.monotonic() - started_at
+            body = routed.output or "任务已完成。"
+            final_text = finalize_web_reply_text(
+                body,
+                elapsed,
+                task_kind=task_kind,
+                prompt=meta.message,
+                reply_mode=meta.reply_mode,
+            )
+            _append_assistant(final_text)
+            dingtalk_push = _maybe_push_result_to_dingtalk(meta, final_text, success=True)
+            done_event: dict[str, Any] = {"type": "done", "text": final_text}
+            if dingtalk_push is not None:
+                done_event["dingtalk_push"] = dingtalk_push
+            _emit(store, run_id, done_event)
+            store.mark_status(run_id, RUN_STATUS_DONE)
+            _record_chat_complete(
+                meta,
+                session_id=session_id,
+                run_id=run_id,
+                reply_text=final_text,
+            )
+            get_duration_store().record(task_kind, elapsed, status="ok")
+            return 0
+
         final = run_web_chat(
             session_id,
             meta.message,
@@ -554,6 +591,31 @@ def start_run_in_background(run_id: str) -> int:
     return start_run_in_subprocess(run_id)
 
 
+def warm_worker_subprocess() -> None:
+    """预 import worker 依赖，降低首任务子进程冷启动。"""
+    env = _subprocess_env()
+    try:
+        proc = subprocess.run(
+            [
+                _resolve_python_executable(),
+                str(WEB_AGENT_DIR / "run_worker.py"),
+                "--warm",
+            ],
+            cwd=str(REPO_ROOT),
+            env=env,
+            capture_output=True,
+            timeout=180,
+            check=False,
+        )
+        if proc.returncode == 0:
+            logger.info("worker 子进程依赖预热完成")
+        else:
+            stderr = (proc.stderr or b"").decode("utf-8", errors="replace").strip()
+            logger.warning("worker 子进程预热 exit=%s: %s", proc.returncode, stderr[:240])
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        logger.warning("worker 子进程预热失败: %s", exc)
+
+
 def init_agent_runtime() -> None:
     """HTTP 服务启动时预热 Bridge、Agent 池；可选启动 worker daemon。"""
     import threading
@@ -567,12 +629,13 @@ def init_agent_runtime() -> None:
     else:
         logger.info("Web Agent 运行时已预热（Bridge + Agent 池 + 并行 one-shot worker）")
 
-    def _warm_credentials() -> None:
+    def _warm_background() -> None:
         try:
             from credential_health import warm_credential_probes  # noqa: WPS433
 
             warm_credential_probes()
         except (ImportError, OSError, ValueError) as exc:
             logger.debug("凭证探活预热跳过: %s", exc)
+        warm_worker_subprocess()
 
-    threading.Thread(target=_warm_credentials, daemon=True, name="credential-warm").start()
+    threading.Thread(target=_warm_background, daemon=True, name="worker-warm").start()

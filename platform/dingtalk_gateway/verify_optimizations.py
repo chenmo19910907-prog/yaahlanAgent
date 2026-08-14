@@ -40,10 +40,13 @@ def test_env_check_not_fast_route() -> None:
     assert not try_route("帮我检查环境配置问题").handled
 
 
-def test_moa_check_fuzzy() -> None:
+def test_moa_check_not_fast_route() -> None:
+    from route_patterns import is_likely_fast_route, normalize_fuzzy_fast_command
+
     for text in ("MOA检查", "检查MOA", "检查MOA环境", "MOA探活", "moa check"):
-        result = try_route(text)
-        assert result.handled, f"应路由: {text!r}"
+        assert not try_route(text).handled, f"不应走快捷路由: {text!r}"
+        assert normalize_fuzzy_fast_command(text) is None, text
+        assert not is_likely_fast_route(text), text
     assert not try_route("不要看到MOA就进行检查").handled
     assert not try_route("帮我 MOA 探活").handled
     assert not try_route("提问 MOA 检查").handled
@@ -57,6 +60,33 @@ def test_moa_check_fuzzy() -> None:
 
         assert normalize_fuzzy_fast_command(text) is None, text
         assert not is_likely_fast_route(text), text
+
+
+def test_web_agent_restart_fast_route() -> None:
+    from route_patterns import is_likely_fast_route
+    from unittest.mock import patch
+
+    from web_agent_restart import WebAgentRestartOutcome
+
+    for text in (
+        "重启web agent",
+        "重启 web agent",
+        "重启Web Agent",
+        "重启网页版 Agent",
+        "restart web agent",
+    ):
+        assert is_likely_fast_route(text), text
+    assert not try_route("帮我重启web agent").handled
+    assert not try_route("请重启 Web Agent 服务").handled
+
+    with patch(
+        "command_router.force_restart_web_agent",
+        return_value=WebAgentRestartOutcome(True, "监视进程 PID 1，端口 18766 健康检查通过。"),
+    ):
+        result = try_route("重启web agent")
+    assert result.handled
+    assert result.task_kind == "web_agent_restart"
+    assert "Web Agent 已重启完成" in result.output
 
 
 def test_help_not_fast_route() -> None:
@@ -191,7 +221,7 @@ def test_truncate_guide() -> None:
     assert "导出到钉钉文档" in out
 
 
-def test_report_nl_route() -> None:
+def test_report_nl_not_fast_route() -> None:
     from route_patterns import (
         is_likely_fast_route,
         normalize_fuzzy_fast_command,
@@ -199,7 +229,8 @@ def test_report_nl_route() -> None:
     )
 
     assert normalize_report_prompt("帮我生成2.5.4版本测试报告") == "2.5.4版本生成测试报告"
-    assert is_likely_fast_route("帮我生成2.5.4版本测试报告")
+    assert not is_likely_fast_route("帮我生成2.5.4版本测试报告")
+    assert not try_route("2.5.4版本生成测试报告").handled
     assert normalize_fuzzy_fast_command("帮我 MOA 探活") is None
     assert not is_likely_fast_route("不要看到MOA就进行检查")
     assert normalize_fuzzy_fast_command("平台说明书在哪") is None
@@ -339,7 +370,7 @@ def test_duration_history() -> None:
 
     from duration_history import DurationHistoryStore, classify_task_kind
 
-    assert classify_task_kind("MOA检查") == "fast:moa_check"
+    assert classify_task_kind("MOA检查") == "agent:general"
     assert classify_task_kind("查询用户 100465989") == "agent:query"
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "duration_history.json"
@@ -361,7 +392,7 @@ def test_duration_history() -> None:
 def test_fast_route_skip_text_ack() -> None:
     from route_patterns import is_likely_fast_route, should_send_text_task_ack
 
-    for text in ("查看全部数据", "MOA检查"):
+    for text in ("重启web agent",):
         assert is_likely_fast_route(text), text
         assert not should_send_text_task_ack(text), text
     assert should_send_text_task_ack("查询用户 100465989")
@@ -425,8 +456,10 @@ def main() -> int:
     print("[OK] test_env_check_blocked")
     test_env_check_not_fast_route()
     print("[OK] test_env_check_not_fast_route")
-    test_moa_check_fuzzy()
-    print("[OK] test_moa_check_fuzzy")
+    test_moa_check_not_fast_route()
+    print("[OK] test_moa_check_not_fast_route")
+    test_web_agent_restart_fast_route()
+    print("[OK] test_web_agent_restart_fast_route")
     test_help_not_fast_route()
     print("[OK] test_help_not_fast_route")
     test_catalog_not_fast_route()
@@ -447,8 +480,8 @@ def main() -> int:
     print("[OK] test_format_exception_friendly")
     test_truncate_guide()
     print("[OK] test_truncate_guide")
-    test_report_nl_route()
-    print("[OK] test_report_nl_route")
+    test_report_nl_not_fast_route()
+    print("[OK] test_report_nl_not_fast_route")
     test_code_modify_guard()
     print("[OK] test_code_modify_guard")
     test_gift_default_route()

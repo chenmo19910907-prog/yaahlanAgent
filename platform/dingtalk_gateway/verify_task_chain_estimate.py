@@ -42,9 +42,9 @@ def test_batch_sec_per_item_with_context() -> None:
             assert 10 <= spi <= 14
 
 
-def test_moa_check_fast() -> None:
-    chain = analyze_task_chain("MOA检查", task_kind="fast:moa_check")
-    assert chain.total_seconds <= 5
+def test_web_agent_restart_fast() -> None:
+    chain = analyze_task_chain("重启web agent", task_kind="fast:web_agent_restart")
+    assert chain.total_seconds <= 10
 
 
 def main() -> int:
@@ -54,8 +54,8 @@ def main() -> int:
     print("[OK] test_registry_chain")
     test_batch_sec_per_item_with_context()
     print("[OK] test_batch_sec_per_item_with_context")
-    test_moa_check_fast()
-    print("[OK] test_moa_check_fast")
+    test_web_agent_restart_fast()
+    print("[OK] test_web_agent_restart_fast")
     print("[PASS] task_chain_estimate")
     return 0
 

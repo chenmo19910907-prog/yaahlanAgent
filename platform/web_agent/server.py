@@ -123,13 +123,14 @@ from cursor_usage import (  # noqa: E402
     verify_session_token,
 )
 from cursor_usage_store import get_cursor_usage_store  # noqa: E402
-from web_session_store import filter_sessions_by_search, filter_sessions_by_scope, get_session_store, sort_sessions_for_display  # noqa: E402
+from web_session_store import filter_sessions_by_search, filter_sessions_by_scope, get_session_store, sort_sessions_for_display, compute_sessions_list_etag, compute_messages_page_etag, estimate_messages_page_meta  # noqa: E402
 from web_run_store import (  # noqa: E402
     RUN_STATUS_DONE,
     RUN_STATUS_ERROR,
     RUN_STATUS_INTERRUPTED,
     RUN_STATUS_RUNNING,
     RunMeta,
+    compute_active_run_etag,
     get_run_store,
 )
 from web_prompt import normalize_reply_mode, finalize_web_reply_text  # noqa: E402
@@ -189,9 +190,25 @@ KEYNOTE_DIR = WEB_AGENT_DIR / "keynote"
 KEYNOTE_PREVIEW_HTML = KEYNOTE_DIR / "preview.html"
 SSE_POLL_S = 0.25
 RUN_TTL_S = 3600
+RUN_RECOVERY_GRACE_S = 120.0
 PROGRESS_TICK_S = 1.0
 SESSION_ID_PATTERN = r"[a-z0-9]+"
 ANALYTICS_SCRIPT_TAG = '<script src="/analytics.js"></script>'
+
+_CONVERSATIONS_SYNC_INTERVAL_S = 30.0
+_last_conversations_sync_at = 0.0
+
+
+def _maybe_sync_conversations(parsed_url) -> None:
+    """钉钉 conversations 增量同步：轮询时节流，避免每次 list_sessions 都读盘。"""
+    global _last_conversations_sync_at
+    qs = parse_qs(parsed_url.query)
+    force = (qs.get("sync") or ["0"])[0].strip().lower() in ("1", "true", "yes")
+    now = time.monotonic()
+    if not force and now - _last_conversations_sync_at < _CONVERSATIONS_SYNC_INTERVAL_S:
+        return
+    sync_all_from_conversation_store()
+    _last_conversations_sync_at = now
 
 
 def _inject_analytics_script(html: str) -> str:
@@ -449,6 +466,50 @@ def _load_catalog_data() -> dict[str, Any]:
     return load_data()
 
 
+_CATALOG_CACHE: dict[str, Any] | None = None
+_CATALOG_CACHE_FINGERPRINT = ""
+
+
+def _catalog_sources_fingerprint() -> str:
+    from project.catalog_paths import module_registry_path  # noqa: WPS433
+    from project.loader import load_sources, sources_path  # noqa: WPS433
+
+    parts: list[str] = []
+    src = sources_path()
+    if src.is_file():
+        parts.append(f"{src}:{src.stat().st_mtime_ns}")
+    try:
+        sources = load_sources()
+    except (OSError, ValueError):
+        return ""
+    modules_cfg = sources.get("modules")
+    if not isinstance(modules_cfg, list):
+        return "\n".join(parts)
+    for mod in modules_cfg:
+        if not isinstance(mod, dict):
+            continue
+        mod_id = str(mod.get("id", "")).strip()
+        registry_rel = str(mod.get("registry", "")).strip()
+        if not mod_id or not registry_rel:
+            continue
+        registry_path = module_registry_path(mod_id, registry_rel)
+        if registry_path.is_file():
+            parts.append(f"{registry_path}:{registry_path.stat().st_mtime_ns}")
+    return "\n".join(parts)
+
+
+def _load_catalog_data_cached() -> dict[str, Any]:
+    global _CATALOG_CACHE, _CATALOG_CACHE_FINGERPRINT
+    fingerprint = _catalog_sources_fingerprint()
+    if _CATALOG_CACHE is not None and fingerprint and fingerprint == _CATALOG_CACHE_FINGERPRINT:
+        return _CATALOG_CACHE
+    data = _load_catalog_data()
+    if fingerprint:
+        _CATALOG_CACHE = data
+        _CATALOG_CACHE_FINGERPRINT = fingerprint
+    return data
+
+
 def _external_agents_meta(cfg: dict[str, Any] | None = None) -> list[dict[str, str | bool]]:
     return [
         {
@@ -658,11 +719,14 @@ class ActiveRun:
         events: list[dict[str, Any]] = []
         if self.last_ack_line:
             events.append({"type": "ack", "line": self.last_ack_line})
-        if self.last_elapsed_line or self.last_batch_line or self.last_external_line or self.last_phase_line:
+        elapsed_line = self.last_elapsed_line
+        if not self.done.is_set() and self.started_at > 0:
+            elapsed_line = _build_live_elapsed_line(self)
+        if elapsed_line or self.last_batch_line or self.last_external_line or self.last_phase_line:
             events.append(
                 {
                     "type": "status",
-                    "elapsed_line": self.last_elapsed_line,
+                    "elapsed_line": elapsed_line,
                     "batch_line": self.last_batch_line,
                     "external_line": self.last_external_line,
                     "phase_line": self.last_phase_line,
@@ -687,12 +751,15 @@ class ActiveRun:
         return events
 
     def to_active_run_dict(self) -> dict[str, Any]:
+        elapsed_line = self.last_elapsed_line
+        if not self.done.is_set() and self.started_at > 0:
+            elapsed_line = _build_live_elapsed_line(self)
         return {
             "active": not self.done.is_set(),
             "run_id": self.run_id,
             "session_id": self.session_id,
             "ack_line": self.last_ack_line,
-            "elapsed_line": self.last_elapsed_line,
+            "elapsed_line": elapsed_line,
             "batch_line": self.last_batch_line,
             "external_line": self.last_external_line,
             "phase_line": self.last_phase_line,
@@ -705,11 +772,18 @@ class RunManager:
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._runs: dict[str, ActiveRun] = {}
+        self._session_active: dict[str, str] = {}
 
     def register(self, run: ActiveRun) -> ActiveRun:
         with self._lock:
             self._runs[run.run_id] = run
+            if not run.done.is_set():
+                sid = (run.session_id or "").strip()
+                if sid:
+                    self._session_active[sid] = run.run_id
             self._purge_old()
+        if not run.done.is_set():
+            _invalidate_active_run_ids_cache()
         return run
 
     def create(self, session_id: str, *, run_id: str | None = None) -> ActiveRun:
@@ -726,10 +800,26 @@ class RunManager:
         if not sid:
             return None
         with self._lock:
+            rid = self._session_active.get(sid)
+            if rid:
+                run = self._runs.get(rid)
+                if run is not None and not run.done.is_set():
+                    return run
+                self._session_active.pop(sid, None)
             for run in self._runs.values():
                 if run.session_id == sid and not run.done.is_set():
+                    self._session_active[sid] = run.run_id
                     return run
         return None
+
+    def release_session(self, run: ActiveRun) -> None:
+        sid = (run.session_id or "").strip()
+        if not sid:
+            return
+        with self._lock:
+            if self._session_active.get(sid) == run.run_id:
+                self._session_active.pop(sid, None)
+        _invalidate_active_run_ids_cache()
 
     def active_session_ids(self) -> set[str]:
         with self._lock:
@@ -770,6 +860,7 @@ def _notify_run_interrupted(run: ActiveRun, text: str) -> bool:
         run.final_text = body
     run.emit_event({"type": "done", "text": body})
     run.done.set()
+    RUN_MANAGER.release_session(run)
     return True
 
 
@@ -814,6 +905,24 @@ def _interrupt_active_run(run: ActiveRun) -> bool:
     return True
 
 
+def _monotonic_started_at_from_meta(meta: RunMeta) -> float:
+    """将落盘 wall-clock 起点映射为 monotonic 基准，避免恢复后计时从 0 重计。"""
+    started = float(meta.started_at or 0.0)
+    if started <= 0:
+        return time.monotonic()
+    elapsed = max(0.0, time.time() - started)
+    return time.monotonic() - elapsed
+
+
+def _build_live_elapsed_line(run: ActiveRun) -> str:
+    elapsed = max(0.0, time.monotonic() - run.started_at)
+    estimate_s = resolve_task_estimate_seconds(run.task_kind) if run.task_kind else None
+    session_id = (run.session_id or "").strip()
+    if session_id and should_rotate_cursor_agent(session_id) and estimate_s is not None:
+        estimate_s = max(estimate_s, 240.0)
+    return build_streaming_progress_status_line(elapsed, estimate_s=estimate_s)
+
+
 def _apply_snapshot_to_run(run: ActiveRun, snap) -> None:
     run.last_ack_line = snap.last_ack_line
     run.last_elapsed_line = snap.last_elapsed_line
@@ -836,10 +945,11 @@ def _active_run_from_store_meta(meta: RunMeta) -> ActiveRun:
     run = RUN_MANAGER.create(meta.session_id, run_id=meta.run_id)
     run.task_kind = classify_task_kind(meta.message)
     run.reply_mode = normalize_reply_mode(meta.reply_mode)
-    run.started_at = time.monotonic()
+    run.started_at = _monotonic_started_at_from_meta(meta)
     _apply_snapshot_to_run(run, snap)
     if meta.status != RUN_STATUS_RUNNING:
         run.done.set()
+        RUN_MANAGER.release_session(run)
     return run
 
 
@@ -859,14 +969,40 @@ def _attach_run_tailers(run: ActiveRun, meta: RunMeta) -> None:
     )
 
 
+def _within_run_recovery_grace(meta: RunMeta) -> bool:
+    return (time.time() - float(meta.started_at)) < RUN_RECOVERY_GRACE_S
+
+
+def _try_respawn_recent_run(meta: RunMeta) -> ActiveRun | None:
+    """服务重启后 worker 已退出时，对近期任务尝试重新派发 worker。"""
+    if meta.status != RUN_STATUS_RUNNING or not _within_run_recovery_grace(meta):
+        return None
+    _start_run_worker(meta.run_id)
+    store = get_run_store()
+    if not store.is_worker_alive(meta.run_id):
+        return None
+    run = _active_run_from_store_meta(meta)
+    _attach_run_tailers(run, meta)
+    refreshed = store.get_run(meta.run_id)
+    logger.info(
+        "重启后恢复任务 run=%s session=%s worker_pid=%s",
+        meta.run_id,
+        meta.session_id,
+        int(refreshed.worker_pid) if refreshed else 0,
+    )
+    return run
+
+
 def _recover_running_meta(meta: RunMeta, *, allow_fresh_spawn: bool = False) -> ActiveRun:
-    """恢复 RUNNING 任务：仅挂 SSE，禁止对已有活动的 run 重复执行 Agent。"""
+    """恢复 RUNNING 任务：挂 SSE；近期任务可在 worker 丢失后重新派发。"""
     store = get_run_store()
     if meta.status != RUN_STATUS_RUNNING:
         return _active_run_from_store_meta(meta)
 
     existing = RUN_MANAGER.get(meta.run_id)
     if existing is not None:
+        if store.is_worker_alive(meta.run_id) and not existing.tailers_attached:
+            _attach_run_tailers(existing, meta)
         return existing
 
     if store.is_worker_alive(meta.run_id):
@@ -874,19 +1010,18 @@ def _recover_running_meta(meta: RunMeta, *, allow_fresh_spawn: bool = False) -> 
         _attach_run_tailers(run, meta)
         return run
 
-    if meta.worker_pid > 0:
+    if allow_fresh_spawn or _within_run_recovery_grace(meta):
+        respawned = _try_respawn_recent_run(meta)
+        if respawned is not None:
+            return respawned
+        if store.is_worker_alive(meta.run_id):
+            run = _active_run_from_store_meta(meta)
+            _attach_run_tailers(run, meta)
+            return run
+
+    if meta.worker_pid > 0 or store.has_run_activity(meta.run_id):
         _finalize_orphan_run(meta)
         return _active_run_from_store_meta(meta)
-
-    if store.has_run_activity(meta.run_id):
-        _finalize_orphan_run(meta)
-        return _active_run_from_store_meta(meta)
-
-    if allow_fresh_spawn and (time.time() - meta.started_at) < 120:
-        _start_run_worker(meta.run_id)
-        run = _active_run_from_store_meta(meta)
-        _attach_run_tailers(run, meta)
-        return run
 
     if allow_fresh_spawn:
         _finalize_orphan_run(meta)
@@ -901,7 +1036,7 @@ def _get_or_recover_run(run_id: str) -> ActiveRun | None:
     meta = store.get_run(run_id)
     if meta is None:
         return None
-    return _recover_running_meta(meta, allow_fresh_spawn=False)
+    return _recover_running_meta(meta, allow_fresh_spawn=True)
 
 
 def _run_cancelled_or_interrupted(meta: RunMeta) -> bool:
@@ -912,7 +1047,7 @@ def _run_cancelled_or_interrupted(meta: RunMeta) -> bool:
 
 def _assistant_reply_since_last_user(session_id: str) -> bool:
     session_store = get_session_store()
-    messages = session_store.get_messages(session_id)
+    messages, _ = session_store.get_messages(session_id, tail=24)
     for msg in reversed(messages):
         if msg.role == "assistant":
             return True
@@ -956,11 +1091,19 @@ def _finalize_cancelled_run(meta: RunMeta) -> None:
 
 def _finalize_orphan_run(meta: RunMeta) -> None:
     """worker 已退出但 meta 仍为 running 时落盘结束态，便于前端拉消息。"""
+    store = get_run_store()
+    fresh = store.get_run(meta.run_id)
+    if fresh is None or fresh.status != RUN_STATUS_RUNNING:
+        return
+    if store.is_worker_alive(meta.run_id):
+        return
     if _run_cancelled_or_interrupted(meta):
         _finalize_cancelled_run(meta)
         return
-    store = get_run_store()
     snap = store.get_snapshot(meta.run_id)
+    if snap.final_text and not str(snap.final_text).lstrip().startswith("⚠️"):
+        store.mark_status(meta.run_id, RUN_STATUS_DONE)
+        return
     if _assistant_reply_since_last_user(meta.session_id):
         store.mark_status(meta.run_id, RUN_STATUS_DONE)
         return
@@ -996,8 +1139,13 @@ def _start_run_event_tailer(run: ActiveRun, *, progress_stop: threading.Event) -
     store = get_run_store()
 
     def tailer() -> None:
+        idle_polls = 0
         while not progress_stop.is_set():
             events, _ = store.read_new_events(run.run_id)
+            if events:
+                idle_polls = 0
+            else:
+                idle_polls += 1
             for event in events:
                 etype = event.get("type")
                 if etype == "ack":
@@ -1030,6 +1178,7 @@ def _start_run_event_tailer(run: ActiveRun, *, progress_stop: threading.Event) -
                     run.final_text = str(event.get("text") or "")
                     run.emit_event(event)
                     run.done.set()
+                    RUN_MANAGER.release_session(run)
                     run.task_session.end()
                     progress_stop.set()
                     return
@@ -1040,6 +1189,7 @@ def _start_run_event_tailer(run: ActiveRun, *, progress_stop: threading.Event) -
                     run.final_text = str(event.get("text") or "")
                     run.emit_event(event)
                     run.done.set()
+                    RUN_MANAGER.release_session(run)
                     run.task_session.end()
                     progress_stop.set()
                     return
@@ -1060,12 +1210,22 @@ def _start_run_event_tailer(run: ActiveRun, *, progress_stop: threading.Event) -
                     else:
                         run.emit_event({"type": "done", "text": run.final_text})
                     run.done.set()
+                    RUN_MANAGER.release_session(run)
                 progress_stop.set()
                 return
             if (
                 meta is not None
                 and not store.is_worker_alive(run.run_id)
             ):
+                respawned = (
+                    _try_respawn_recent_run(meta)
+                    if _within_run_recovery_grace(meta)
+                    else None
+                )
+                if respawned is not None and store.is_worker_alive(run.run_id):
+                    continue
+                if store.is_worker_alive(run.run_id):
+                    continue
                 _finalize_orphan_run(meta)
                 snap = store.get_snapshot(run.run_id)
                 _apply_snapshot_to_run(run, snap)
@@ -1076,9 +1236,11 @@ def _start_run_event_tailer(run: ActiveRun, *, progress_stop: threading.Event) -
                 else:
                     run.emit_event({"type": "done", "text": run.final_text})
                 run.done.set()
+                RUN_MANAGER.release_session(run)
                 progress_stop.set()
                 return
-            time.sleep(SSE_POLL_S)
+            poll_s = SSE_POLL_S if events else min(1.0, SSE_POLL_S * (1 + idle_polls // 4))
+            time.sleep(poll_s)
 
     threading.Thread(
         target=tailer,
@@ -1095,6 +1257,8 @@ def sweep_stale_running_runs() -> int:
         if meta.status != RUN_STATUS_RUNNING:
             continue
         if store.is_worker_alive(meta.run_id):
+            continue
+        if _within_run_recovery_grace(meta):
             continue
         _finalize_orphan_run(meta)
         finalized += 1
@@ -1126,7 +1290,6 @@ def _start_stale_run_sweeper(*, interval_s: float = 30.0) -> None:
 def recover_active_runs_on_startup() -> None:
     store = get_run_store()
     store.cleanup_old_runs()
-    sweep_stale_running_runs()
     for meta in store.list_active_runs():
         if RUN_MANAGER.find_active_by_session(meta.session_id) is not None:
             continue
@@ -1147,19 +1310,78 @@ def recover_active_runs_on_startup() -> None:
                 meta.run_id,
                 meta.session_id,
             )
+    sweep_stale_running_runs()
 
 
 def _active_run_session_ids() -> set[str]:
     """一次扫描活跃 run，供会话列表批量标记 running（避免 O(会话数×run 数)）。"""
+    global _ACTIVE_RUN_IDS_CACHE
+    now = time.monotonic()
+    cached = _ACTIVE_RUN_IDS_CACHE
+    if cached is not None and now - cached[0] < _ACTIVE_RUN_IDS_CACHE_TTL:
+        return set(cached[1])
+
     ids = RUN_MANAGER.active_session_ids()
     store = get_run_store()
     for meta in store.list_active_runs():
         sid = (meta.session_id or "").strip()
         if not sid or sid in ids:
             continue
-        if store.is_worker_alive(meta.run_id):
+        pid = int(meta.worker_pid or 0)
+        if pid > 0 and store.is_pid_alive(pid):
             ids.add(sid)
-    return ids
+        elif store.is_worker_alive(meta.run_id):
+            ids.add(sid)
+    _ACTIVE_RUN_IDS_CACHE = (now, frozenset(ids))
+    return set(ids)
+
+
+_ACTIVE_RUN_IDS_CACHE: tuple[float, frozenset[str]] | None = None
+_ACTIVE_RUN_IDS_CACHE_TTL = 2.5
+
+
+def _invalidate_active_run_ids_cache() -> None:
+    global _ACTIVE_RUN_IDS_CACHE
+    _ACTIVE_RUN_IDS_CACHE = None
+
+
+_LITE_SESSIONS_CACHE: dict[str, tuple[float, frozenset[str], str, dict[str, Any]]] = {}
+
+
+def _build_lite_sessions_response(
+    viewer_staff_id: str | None,
+) -> tuple[str, dict[str, Any]]:
+    """lite 轮询专用：跳过 derived meta 同步，并按 index mtime + 活跃 run 缓存响应。"""
+    store = get_session_store()
+    index_mtime = store.index_disk_mtime()
+    active_session_ids = frozenset(_active_run_session_ids())
+    cache_key = (viewer_staff_id or "").strip()
+    cached = _LITE_SESSIONS_CACHE.get(cache_key)
+    if (
+        cached is not None
+        and cached[0] == index_mtime
+        and cached[1] == active_session_ids
+    ):
+        return cached[2], cached[3]
+
+    items = store.list_sessions(enrich_names=False, sync_derived_meta=False, readonly=True)
+    try:
+        from dingtalk_user_lookup import collect_known_labels
+
+        known = collect_known_labels(items)
+    except Exception:  # noqa: BLE001
+        known = {}
+    sessions = sort_sessions_for_display([
+        {
+            **meta.to_dict(known_labels=known, viewer_staff_id=viewer_staff_id),
+            "running": meta.id in active_session_ids,
+        }
+        for meta in items
+    ])
+    etag = compute_sessions_list_etag(sessions, scope="all", lite=True)
+    payload: dict[str, Any] = {"sessions": sessions, "query": "", "scope": "all"}
+    _LITE_SESSIONS_CACHE[cache_key] = (index_mtime, active_session_ids, etag, payload)
+    return etag, payload
 
 
 def _resolve_active_run_for_session(session_id: str) -> ActiveRun | None:
@@ -1172,19 +1394,39 @@ def _resolve_active_run_for_session(session_id: str) -> ActiveRun | None:
         return None
     if store.is_worker_alive(meta.run_id):
         return _get_or_recover_run(meta.run_id)
-    if meta.worker_pid > 0 or store.has_run_activity(meta.run_id):
-        _finalize_orphan_run(meta)
-        return None
-    return _get_or_recover_run(meta.run_id)
+    recovered = _recover_running_meta(meta, allow_fresh_spawn=True)
+    if store.is_worker_alive(meta.run_id):
+        return recovered
+    return None
 
 
-def _json_response(handler: SimpleHTTPRequestHandler, payload: object, status: int = 200) -> None:
+def _json_response(
+    handler: SimpleHTTPRequestHandler,
+    payload: object,
+    status: int = 200,
+    *,
+    etag: str | None = None,
+) -> None:
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     handler.send_response(status)
     handler.send_header("Content-Type", "application/json; charset=utf-8")
     handler.send_header("Content-Length", str(len(body)))
+    if etag:
+        handler.send_header("ETag", etag)
     handler.end_headers()
     handler.wfile.write(body)
+
+
+def _respond_not_modified(handler: SimpleHTTPRequestHandler, *, etag: str | None = None) -> None:
+    handler.send_response(HTTPStatus.NOT_MODIFIED)
+    if etag:
+        handler.send_header("ETag", etag)
+    handler.end_headers()
+
+
+def _if_none_match_satisfied(handler: SimpleHTTPRequestHandler, etag: str) -> bool:
+    client_tag = (handler.headers.get("If-None-Match") or "").strip()
+    return bool(client_tag) and client_tag == etag
 
 
 def _read_json_body(handler: SimpleHTTPRequestHandler) -> dict[str, Any]:
@@ -1217,34 +1459,43 @@ def _start_run_progress_watcher(
     estimate_s = resolve_task_estimate_seconds(task_kind, prompt=message)
     if session_id and should_rotate_cursor_agent(session_id) and estimate_s is not None:
         estimate_s = max(estimate_s, 240.0)
-    ack_line = build_task_ack_message(_task_summary(message), prompt=message)
+    ack_line = build_task_ack_message(
+        _task_summary(message),
+        prompt=message,
+        estimate_s=estimate_s,
+    )
     run.emit_event({"type": "ack", "line": ack_line})
     store = get_run_store()
 
+    def emit_progress_status() -> None:
+        elapsed = max(0.0, time.monotonic() - started_at)
+        elapsed_line = build_streaming_progress_status_line(
+            elapsed,
+            estimate_s=estimate_s,
+        )
+        batch_line = ""
+        state = read_batch_progress(user_key)
+        if state is not None:
+            batch_line = build_batch_progress_message(state)
+        external_line = build_external_agent_progress_message(
+            read_external_agent_progress(user_key)
+        )
+        run.emit_event(
+            {
+                "type": "status",
+                "elapsed_line": elapsed_line,
+                "batch_line": batch_line,
+                "external_line": external_line,
+                "phase_line": run.last_phase_line,
+            }
+        )
+
     def loop() -> None:
+        emit_progress_status()
         while not progress_stop.wait(PROGRESS_TICK_S):
             if run.done.is_set():
                 return
-            elapsed = max(0.0, time.monotonic() - started_at)
-            elapsed_line = build_streaming_progress_status_line(
-                elapsed,
-                estimate_s=estimate_s,
-            )
-            batch_line = ""
-            state = read_batch_progress(user_key)
-            if state is not None:
-                batch_line = build_batch_progress_message(state)
-            external_line = build_external_agent_progress_message(
-                read_external_agent_progress(user_key)
-            )
-            run.emit_event(
-                {
-                    "type": "status",
-                    "elapsed_line": elapsed_line,
-                    "batch_line": batch_line,
-                    "external_line": external_line,
-                }
-            )
+            emit_progress_status()
 
     threading.Thread(
         target=loop,
@@ -1418,6 +1669,7 @@ def _start_chat_run(
     )
     _start_run_worker(run.run_id)
     _start_run_event_tailer(run, progress_stop=progress_stop)
+    run.tailers_attached = True
     return run
 
 
@@ -1556,6 +1808,10 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         if path in ("/theme.js", "/dingtalk_oauth.js", "/analytics.js"):
             return super().do_GET()
 
+        # 页面依赖的静态脚本须免鉴权，否则浏览器可能收到 login.html 导致 JS 全局变量未定义
+        if path.endswith(".js") and not path.startswith("/api/"):
+            return super().do_GET()
+
         if path.startswith("/assets/"):
             return super().do_GET()
 
@@ -1633,12 +1889,15 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             if viewer is None:
                 return _json_response(self, {"error": "请先登录"}, 401)
             qs = parse_qs(parsed.query)
-            range_key = str((qs.get("range") or ["month"])[0]).strip() or "month"
+            range_key = str((qs.get("range") or ["day"])[0]).strip() or "day"
+            refresh_raw = str((qs.get("refresh") or ["0"])[0]).strip().lower()
+            refresh = refresh_raw in ("1", "true", "yes")
             return _json_response(
                 self,
                 summarize_cursor_user_usage(
                     viewer.staff_id,
                     range_key=range_key,
+                    refresh=refresh,
                 ),
             )
 
@@ -1676,7 +1935,13 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
 
         if path == "/api/catalog":
             try:
-                return _json_response(self, _load_catalog_data())
+                data = _load_catalog_data_cached()
+                etag = compute_sessions_list_etag(
+                    [{"id": "catalog", "updated_at": _catalog_sources_fingerprint()}],
+                )
+                if _if_none_match_satisfied(self, etag):
+                    return _respond_not_modified(self, etag=etag)
+                return _json_response(self, data, etag=etag)
             except (OSError, ValueError, FileNotFoundError) as exc:
                 logger.exception("Failed to load catalog data")
                 return _json_response(self, {"error": str(exc)}, 500)
@@ -1748,20 +2013,30 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             )
 
         if path == "/api/sessions":
-            sync_all_from_conversation_store()
+            _maybe_sync_conversations(parsed)
             store = get_session_store()
-            store.reload_from_disk()
+            qs = parse_qs(parsed.query)
+            lite_raw = (qs.get("lite") or ["0"])[0].strip().lower()
+            lite = lite_raw in ("1", "true", "yes")
             viewer = current_web_user(self)
             viewer_staff_id = viewer.staff_id if viewer is not None else None
-            items = store.list_sessions()
+            search_q = (qs.get("q") or [""])[0].strip()
+            scope = (qs.get("scope") or ["all"])[0].strip().lower()
+            if lite and not search_q and scope == "all":
+                etag, payload = _build_lite_sessions_response(viewer_staff_id)
+                if _if_none_match_satisfied(self, etag):
+                    return _respond_not_modified(self, etag=etag)
+                return _json_response(self, payload, etag=etag)
+            items = store.list_sessions(enrich_names=False, sync_derived_meta=not lite)
             try:
-                from dingtalk_user_lookup import collect_all_staff_labels
+                from dingtalk_user_lookup import collect_all_staff_labels, collect_known_labels
 
-                known = collect_all_staff_labels(items)
+                if lite:
+                    known = collect_known_labels(items)
+                else:
+                    known = collect_all_staff_labels(items, try_api_for_ascii=not lite)
             except Exception:  # noqa: BLE001
                 known = {}
-            search_q = (parse_qs(parsed.query).get("q") or [""])[0].strip()
-            scope = (parse_qs(parsed.query).get("scope") or ["all"])[0].strip().lower()
             items = filter_sessions_by_scope(
                 items,
                 scope,
@@ -1771,7 +2046,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 pairs = filter_sessions_by_search(
                     items,
                     search_q,
-                    load_messages=store.get_messages,
+                    load_messages=store.get_all_messages,
                     known_labels=known,
                 )
             else:
@@ -1792,7 +2067,19 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 }
                 for meta, hit in pairs
             ])
-            return _json_response(self, {"sessions": sessions, "query": search_q, "scope": scope})
+            etag = compute_sessions_list_etag(
+                sessions,
+                query=search_q,
+                scope=scope,
+                lite=lite,
+            )
+            if _if_none_match_satisfied(self, etag):
+                return _respond_not_modified(self, etag=etag)
+            return _json_response(
+                self,
+                {"sessions": sessions, "query": search_q, "scope": scope},
+                etag=etag,
+            )
 
         m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})/active-run$", path)
         if m:
@@ -1800,17 +2087,79 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             store = get_session_store()
             if store.get_session(session_id) is None:
                 return _json_response(self, {"error": "session not found"}, 404)
+
+            client_tag = (self.headers.get("If-None-Match") or "").strip()
+            run = RUN_MANAGER.find_active_by_session(session_id)
+            if run is not None:
+                payload = run.to_active_run_dict()
+                etag = compute_active_run_etag(session_id, payload)
+                if client_tag and client_tag == etag:
+                    return _respond_not_modified(self, etag=etag)
+                return _json_response(self, payload, etag=etag)
+
+            inactive_etag = compute_active_run_etag(session_id, {"active": False})
+            if client_tag and client_tag == inactive_etag:
+                run_store = get_run_store()
+                if run_store.find_active_by_session(session_id) is None:
+                    return _respond_not_modified(self, etag=inactive_etag)
+
             run = _resolve_active_run_for_session(session_id)
             if run is None:
-                return _json_response(self, {"active": False})
-            return _json_response(self, run.to_active_run_dict())
+                payload = {"active": False}
+                etag = compute_active_run_etag(session_id, payload)
+                if _if_none_match_satisfied(self, etag):
+                    return _respond_not_modified(self, etag=etag)
+                return _json_response(self, payload, etag=etag)
+            payload = run.to_active_run_dict()
+            etag = compute_active_run_etag(session_id, payload)
+            if _if_none_match_satisfied(self, etag):
+                return _respond_not_modified(self, etag=etag)
+            return _json_response(self, payload, etag=etag)
 
         m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})/messages$", path)
         if m:
             session_id = m.group(1)
             store = get_session_store()
-            if store.get_session(session_id) is None:
+            session_meta = store.get_session(session_id)
+            if session_meta is None:
                 return _json_response(self, {"error": "session not found"}, 404)
+            qs = parse_qs(parsed.query)
+            tail_raw = (qs.get("tail") or [""])[0].strip()
+            before = (qs.get("before") or [""])[0].strip()
+            limit_raw = (qs.get("limit") or [""])[0].strip()
+            tail = int(tail_raw) if tail_raw.isdigit() else None
+            limit = int(limit_raw) if limit_raw.isdigit() else None
+            messages_mtime = (
+                float(session_meta.messages_mtime)
+                if session_meta.messages_mtime > 0
+                else 0.0
+            )
+            page_meta_est = estimate_messages_page_meta(
+                session_meta.message_count,
+                tail=tail,
+                before=before or "",
+                limit=limit,
+            )
+            if page_meta_est is not None and messages_mtime > 0:
+                meta_etag = compute_messages_page_etag(
+                    session_id,
+                    messages_mtime=messages_mtime,
+                    message_count=session_meta.message_count,
+                    tail=tail,
+                    before=before or "",
+                    limit=limit,
+                    total=int(page_meta_est["total"]),
+                    has_older=bool(page_meta_est["has_older"]),
+                    offset=int(page_meta_est["offset"]),
+                )
+                if _if_none_match_satisfied(self, meta_etag):
+                    return _respond_not_modified(self, etag=meta_etag)
+            slice_msgs, page_meta = store.get_messages(
+                session_id,
+                tail=tail,
+                before=before or None,
+                limit=limit,
+            )
             messages = [
                 {
                     "role": msg.role,
@@ -1821,9 +2170,30 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     **({"author_id": msg.author_id} if msg.author_id else {}),
                     **({"author_label": msg.author_label} if msg.author_label else {}),
                 }
-                for msg in store.get_messages(session_id)
+                for msg in slice_msgs
             ]
-            return _json_response(self, {"messages": messages})
+            payload: dict[str, object] = {
+                "messages": messages,
+                "total": page_meta.get("total", len(messages)),
+                "has_older": bool(page_meta.get("has_older")),
+                "offset": int(page_meta.get("offset") or 0),
+            }
+            if messages_mtime > 0:
+                payload["messages_mtime"] = messages_mtime
+            etag = compute_messages_page_etag(
+                session_id,
+                messages_mtime=messages_mtime,
+                message_count=session_meta.message_count,
+                tail=tail,
+                before=before or "",
+                limit=limit,
+                total=int(page_meta.get("total") or len(messages)),
+                has_older=bool(page_meta.get("has_older")),
+                offset=int(page_meta.get("offset") or 0),
+            )
+            if _if_none_match_satisfied(self, etag):
+                return _respond_not_modified(self, etag=etag)
+            return _json_response(self, payload, etag=etag)
 
         m = re.match(rf"^/api/uploads/({SESSION_ID_PATTERN})/([a-zA-Z0-9._-]+)$", path)
         if m:
@@ -2120,6 +2490,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 saved_attachments = save_chat_attachments(session_id, attachment_items)
             except FileUploadError as exc:
                 run.done.set()
+                RUN_MANAGER.release_session(run)
                 return _json_response(self, {"error": str(exc)}, 400)
             try:
                 _start_chat_run(
@@ -2138,6 +2509,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             except Exception as exc:  # noqa: BLE001
                 run.task_session.end()
                 run.done.set()
+                RUN_MANAGER.release_session(run)
                 logger.exception("启动 Web chat 失败 session=%s", session_id)
                 return _json_response(self, {"error": str(exc)}, 500)
             _record_analytics(

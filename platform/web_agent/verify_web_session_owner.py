@@ -320,7 +320,7 @@ class WebSessionSearchTest(unittest.TestCase):
             by_title = filter_sessions_by_search(
                 items,
                 "充值",
-                load_messages=store.get_messages,
+                load_messages=store.get_all_messages,
             )
             self.assertEqual(len(by_title), 1)
             self.assertIn("充值", by_title[0][1].snippet)
@@ -328,7 +328,7 @@ class WebSessionSearchTest(unittest.TestCase):
             by_answer = filter_sessions_by_search(
                 items,
                 "provideDiamond",
-                load_messages=store.get_messages,
+                load_messages=store.get_all_messages,
             )
             self.assertEqual(len(by_answer), 1)
             self.assertTrue(by_answer[0][1].snippet.startswith("答 ·"))
@@ -336,14 +336,14 @@ class WebSessionSearchTest(unittest.TestCase):
             by_owner = filter_sessions_by_search(
                 items,
                 "alice",
-                load_messages=store.get_messages,
+                load_messages=store.get_all_messages,
                 known_labels={"alice": "Alice"},
             )
             self.assertEqual(len(by_owner), 1)
             empty = filter_sessions_by_search(
                 items,
                 "不存在的关键词xyz",
-                load_messages=store.get_messages,
+                load_messages=store.get_all_messages,
             )
             self.assertEqual(empty, [])
 

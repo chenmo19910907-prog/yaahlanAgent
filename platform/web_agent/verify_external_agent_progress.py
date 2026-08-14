@@ -52,9 +52,13 @@ def main() -> int:
 
     html = (WEB_AGENT_DIR / "chat.html").read_text(encoding="utf-8")
     assert "run-status-external" in html, "chat.html 缺少 external 状态样式"
-    assert "run-status-phase" in html, "chat.html 缺少 phase 状态样式"
-    assert "external_line" in html, "chat.html 未处理 external_line"
     assert "phase_line" in html, "chat.html 未处理 phase_line"
+    assert "renderThinkingSectionHtml" in html, "chat.html 缺少思考区渲染"
+    assert "applyLifecyclePhaseToStream" in html, "chat.html 缺少阶段写入思考区逻辑"
+    assert "patchRunStatusFromServer" in html, "chat.html 缺少服务端状态合并逻辑"
+    assert "run-status-lifecycle" not in html.split("function renderRunStatusEl")[1].split("function ")[0], (
+        "阶段不应再渲染到状态栏"
+    )
 
     print("verify_external_agent_progress: OK")
     return 0

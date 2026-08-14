@@ -6,8 +6,6 @@ import re
 import sys
 from pathlib import Path
 
-from export_delivery import is_view_all_follow_up
-
 _PLATFORM_DIR = Path(__file__).resolve().parents[1]
 if str(_PLATFORM_DIR) not in sys.path:
     sys.path.insert(0, str(_PLATFORM_DIR))
@@ -31,6 +29,10 @@ EXPORT_FILE_RE = re.compile(
 )
 MOA_CHECK_RE = re.compile(
     r"^(?:MOA检查|检查\s*MOA(?:环境)?|MOA探活|moa探活|moa检查|moa\s*check|MOA\s*check)\s*$",
+    re.I,
+)
+WEB_AGENT_RESTART_RE = re.compile(
+    r"^(?:重启|restart)\s*(?:web\s*agent|webagent|网页版\s*agent|网页\s*agent)\s*$",
     re.I,
 )
 VIP_UPGRADE_RE = re.compile(
@@ -66,15 +68,11 @@ _NL_TASK_RE = re.compile(
     re.I,
 )
 
-_FAST_ROUTE_RES = (
-    WEB_LOGIN_RE,
-    MOA_CHECK_RE,
-    EXPORT_FILE_RE,
-    VIP_UPGRADE_RE,
-    REPORT_VERSION_RE,
-    REPORT_NL_RE,
-    REPORT_URL_RE,
-)
+_FAST_ROUTE_RES = (WEB_AGENT_RESTART_RE,)
+
+
+def is_web_agent_restart_request(text: str) -> bool:
+    return bool(WEB_AGENT_RESTART_RE.match((text or "").strip()))
 
 
 def normalize_report_prompt(text: str) -> str | None:
@@ -87,10 +85,7 @@ def normalize_report_prompt(text: str) -> str | None:
 
 
 def normalize_fuzzy_fast_command(text: str) -> str | None:
-    """模糊快捷口令 → 标准 fast 路由口令。
-
-    MOA 探活**不做**模糊归一：仅整条消息完全匹配 MOA_CHECK_RE 时才走探活（见 command_router）。
-    """
+    """模糊快捷口令 → 标准 fast 路由口令（当前仅 Web Agent 重启，无模糊归一）。"""
     t = (text or "").strip()
     if not t or len(t) > 48:
         return None
@@ -124,20 +119,10 @@ def is_admin_apply_decision_request(text: str) -> bool:
 
 
 def is_likely_fast_route(text: str) -> bool:
-    """入队时判断是否走 fast 队列（不与 Agent 任务互斥）。"""
+    """入队时判断是否走 fast 队列（不与 Agent 任务互斥）。仅 Web Agent 重启。"""
     t = (text or "").strip()
     if not t:
         return False
-    if is_web_login_request(t):
-        return True
-    if is_admin_apply_decision_request(t):
-        return True
-    if is_view_all_follow_up(t):
-        return True
-    if normalize_report_prompt(t):
-        return True
-    if normalize_fuzzy_fast_command(t):
-        return True
     return any(pattern.match(t) for pattern in _FAST_ROUTE_RES)
 
 

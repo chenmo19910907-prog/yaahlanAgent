@@ -12,10 +12,12 @@ from unittest.mock import patch
 
 from cursor_usage import (
     CursorAuthError,
+    _accumulate_event_daily,
     _event_tokens,
     _fetch_admin_usage,
     _fetch_dashboard_usage,
     _normalize_session_token,
+    build_daily_series,
     dashboard_usage_url,
     parse_cursor_session_input,
     summarize_user_usage,
@@ -82,25 +84,64 @@ class CursorUsageTest(unittest.TestCase):
         page1 = {
             "totalUsageEventsCount": 2,
             "usageEventsDisplay": [
-                {"tokenUsage": {"inputTokens": 1, "outputTokens": 2}},
-                {"tokenUsage": {"inputTokens": 3, "outputTokens": 4}},
+                {
+                    "timestamp": "1780000000000",
+                    "tokenUsage": {"inputTokens": 1, "outputTokens": 2},
+                },
+                {
+                    "timestamp": "1780086400000",
+                    "tokenUsage": {"inputTokens": 3, "outputTokens": 4},
+                },
             ],
         }
         with patch("cursor_usage._http_json", return_value=page1):
             stats = _fetch_dashboard_usage("token", start_ms=1, end_ms=2)
         self.assertEqual(stats["requests"], 2)
         self.assertEqual(stats["tokens"], 10)
+        self.assertEqual(stats["daily"]["2026-05-29"]["requests"], 1)
+        self.assertEqual(stats["daily"]["2026-05-30"]["requests"], 1)
+
+    def test_build_daily_series_fills_range(self) -> None:
+        start = datetime(2026, 8, 11, tzinfo=timezone.utc)
+        end = datetime(2026, 8, 13, tzinfo=timezone.utc)
+        rows = build_daily_series(
+            start,
+            end,
+            {"2026-08-12": {"requests": 5, "tokens": 100}},
+        )
+        self.assertEqual(len(rows), 3)
+        self.assertEqual(rows[1]["requests"], 5)
+        self.assertEqual(rows[1]["tokens"], 100)
+        self.assertEqual(rows[0]["requests"], 0)
 
     def test_fetch_admin_usage_aggregates(self) -> None:
         page1 = {
             "totalUsageEventsCount": 1,
-            "usageEvents": [{"tokenUsage": {"inputTokens": 5, "outputTokens": 6}}],
+            "usageEvents": [
+                {
+                    "timestamp": "1780000000000",
+                    "tokenUsage": {"inputTokens": 5, "outputTokens": 6},
+                }
+            ],
             "pagination": {"hasNextPage": False},
         }
         with patch("cursor_usage._http_json", return_value=page1):
             stats = _fetch_admin_usage("key", email="dev@example.com", start_ms=1, end_ms=2)
         self.assertEqual(stats["requests"], 1)
         self.assertEqual(stats["tokens"], 11)
+        self.assertEqual(stats["daily"]["2026-05-29"]["tokens"], 11)
+
+    def test_accumulate_event_daily(self) -> None:
+        daily: dict[str, dict[str, int]] = {}
+        _accumulate_event_daily(
+            daily,
+            {
+                "timestamp": "1780000000000",
+                "tokenUsage": {"inputTokens": 2, "outputTokens": 3},
+            },
+        )
+        self.assertEqual(daily["2026-05-29"]["requests"], 1)
+        self.assertEqual(daily["2026-05-29"]["tokens"], 5)
 
     def test_normalize_session_token(self) -> None:
         self.assertEqual(
@@ -155,7 +196,7 @@ class CursorUsageTest(unittest.TestCase):
                         ):
                             with patch(
                                 "cursor_usage._fetch_admin_usage",
-                                return_value={"requests": 3, "tokens": 30},
+                                return_value={"requests": 3, "tokens": 30, "daily": {}},
                             ):
                                 summary = summarize_user_usage("alice", range_key="month")
             self.assertEqual(summary["requests"], 3)

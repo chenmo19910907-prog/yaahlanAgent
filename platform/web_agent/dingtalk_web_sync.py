@@ -100,7 +100,7 @@ def sync_dingtalk_exchange(
         title_hint=prompt,
         owner_id=owner_id,
     )
-    messages = store.get_messages(meta.id)
+    messages = store.get_all_messages(meta.id)
     if turn_already_synced(messages, prompt, reply):
         return False
     if not store.upsert_dingtalk_turn(meta.id, prompt, reply):
@@ -109,7 +109,7 @@ def sync_dingtalk_exchange(
         "钉钉对话已同步 Web 历史 session=%s key=%s msgs=%s",
         meta.id,
         key[:24],
-        len(store.get_messages(meta.id)),
+        len(store.get_all_messages(meta.id)),
     )
     return True
 

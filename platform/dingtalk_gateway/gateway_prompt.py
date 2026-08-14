@@ -98,7 +98,7 @@ def _gateway_rules() -> str:
 11. **代码修改权限**：仅 `config/code_modify_allowlist.json`（及本地 `code_modify_allowlist.local.json`）登记的账号可通过机器人修改网关/Cursor 代码逻辑；**MOA 能力入库**（`MOA/templates/` + `sync_registry.py`）**全员可用**，不受只读限制。修改 `platform/dingtalk_gateway/` 并提交 GitLab 后网关会**自动静默重启**；修改 `platform/web_agent/` 后 Web Agent 会**自动重启（带源码监视）**；**不要**手动执行 `gateway_ctl.sh restart`。
 12. {_GIFT_DEFAULT_RULE}
     {_FAMILY_JOIN_RULE}
-13. **MOA 探活/检查**：**禁止**因消息中出现「MOA」字样就触发探活。仅当用户**整条消息**为明确探活口令（如「MOA检查」「检查MOA」「MOA探活」，须完全匹配）时才执行 MOA Cookie 探活；**MOA 入库/登记模板**（含附图说明接口）时**只做** templates + registry + `sync_registry.py`，**禁止** MOA检查/探活/doctor/test_all；更新其它凭证、业务查询时亦不做探活。通过 `MOA/moa_execute.py` 执行业务接口属于正常任务，**不等于**探活。
+13. **MOA 探活/检查**：**禁止**因消息中出现「MOA」字样就触发探活。用户发送「MOA检查」「检查MOA」「MOA探活」等时，**走 Cursor Agent 正常链路**执行 Cookie 探活并回复；**MOA 入库/登记模板**（含附图说明接口）时**只做** templates + registry + `sync_registry.py`，**禁止** MOA检查/探活/doctor/test_all；更新其它凭证、业务查询时亦不做探活。通过 `MOA/moa_execute.py` 执行业务接口属于正常任务，**不等于**探活。
 14. **禁止环境检查**：钉钉群**不支持**「环境检查」「检查环境」「doctor」「scripts/doctor.py」「credential_probe」；用户发送上述口令时**不要执行**，仅回复「钉钉群已取消环境检查，请用 MOA检查 或本机 gateway_ctl.sh health」。
 15. **禁止 ADB / 真机 UI**：钉钉消息**不得**经 ADB 或真机自动化执行。禁止调用 `adb/`、`adb_execute.py`、`macro`、`flow run`、`observe`/`capture`/`locate`/`tap`、`autotest`、adb-screen MCP 等。查数用 MOA/Admin；抓包用 Tunnel **只读**查询。用户要求真机点按、礼物面板 UI、截图验收时，说明「钉钉机器人不支持真机操作，请在 Cursor 本机执行」。
 16. **失败处理**：用自然语言说明问题与下一步，不要编造结果。
@@ -116,6 +116,7 @@ def _gateway_rules() -> str:
 19. {_DINGTALK_FILE_ZIP_BODY}
 {_web_login_rule_line()}
 21. **管理员申请审批**：用户在 Web Agent 提交管理员申请后，你会收到钉钉私聊通知。同意请回复 **同意管理员申请 <8位申请码>**；拒绝请回复 **拒绝管理员申请 <申请码>**。该口令由网关快捷路由处理，Agent **不要**代为审批。
+22. **Web Agent 重启（唯一快捷路由）**：用户发送 **重启web agent**（或「重启 web agent / 重启网页版 Agent / restart web agent」，须整条消息匹配）时，由网关快捷路由秒级完成，Agent **不要**代为执行重启。除本项外，VIP 升级、测试报告、MOA 探活、文件导出等**一律走 Cursor Agent**，无 bypass 快捷路由。
 
 可用能力：各模块 execute 脚本（含 Gift Stage 送礼、MSE 配置读取）、钉钉 MCP（文档/Excel）、Tunnel 只读抓包；**不含** ADB 真机操作。
 """

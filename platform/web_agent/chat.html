@@ -82,11 +82,11 @@
       --catalog-bg: rgba(255, 255, 255, 0.78);
       --input-area-bg: linear-gradient(180deg, rgba(244,246,250,0.2), rgba(255,255,255,0.76)), linear-gradient(90deg, rgba(91,140,255,0.05), rgba(66,211,178,0.035));
       --input-wrap-bg: rgba(255, 255, 255, 0.9);
-      --input-wrap-border: rgba(91, 140, 255, 0.42);
-      --input-wrap-glow: 0 0 0 1px rgba(91, 140, 255, 0.12), 0 0 10px rgba(91, 140, 255, 0.14);
+      --input-wrap-border: rgba(91, 140, 255, 0.22);
+      --input-wrap-glow: 0 0 0 1px rgba(91, 140, 255, 0.06);
       --input-wrap-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
-      --input-wrap-focus-border: rgba(91, 140, 255, 0.72);
-      --input-wrap-focus-glow: 0 0 0 1px rgba(91, 140, 255, 0.2), 0 0 14px rgba(91, 140, 255, 0.18);
+      --input-wrap-focus-border: rgba(91, 140, 255, 0.38);
+      --input-wrap-focus-glow: 0 0 0 1px rgba(91, 140, 255, 0.1);
       --card-bg: rgba(255, 255, 255, 0.72);
       --card-bg-hover: rgba(255, 255, 255, 0.78);
       --card-border-hover: rgba(15, 23, 42, 0.12);
@@ -148,11 +148,11 @@
       --catalog-bg: rgba(15, 20, 30, 0.78);
       --input-area-bg: linear-gradient(180deg, rgba(11,14,20,0.1), rgba(11,14,20,0.76)), linear-gradient(90deg, rgba(91,140,255,0.05), rgba(66,211,178,0.035));
       --input-wrap-bg: rgba(20, 25, 35, 0.9);
-      --input-wrap-border: rgba(91, 140, 255, 0.58);
-      --input-wrap-glow: 0 0 0 1px rgba(91, 140, 255, 0.14), 0 0 12px rgba(91, 140, 255, 0.22);
+      --input-wrap-border: rgba(148, 163, 184, 0.28);
+      --input-wrap-glow: none;
       --input-wrap-shadow: 0 18px 48px rgba(0,0,0,0.24);
-      --input-wrap-focus-border: rgba(110, 156, 255, 0.88);
-      --input-wrap-focus-glow: 0 0 0 1px rgba(91, 140, 255, 0.28), 0 0 18px rgba(91, 140, 255, 0.34);
+      --input-wrap-focus-border: rgba(91, 140, 255, 0.32);
+      --input-wrap-focus-glow: 0 0 0 1px rgba(91, 140, 255, 0.1);
       --card-bg: rgba(20,24,33,0.72);
       --card-bg-hover: rgba(22,27,38,0.78);
       --card-border-hover: rgba(148,163,184,0.28);
@@ -1525,7 +1525,6 @@
       padding: 50px var(--chat-gutter) 56px;
       min-width: 0;
       scroll-padding-bottom: 24px;
-      overflow-anchor: none;
     }
     .scroll-to-bottom-btn {
       position: absolute;
@@ -1572,6 +1571,16 @@
       stroke-width: 2;
       stroke-linecap: round;
       stroke-linejoin: round;
+    }
+    .load-older-sentinel {
+      height: 1px;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      overflow: hidden;
+      pointer-events: none;
+      visibility: hidden;
     }
     .empty-state {
       display: flex; flex-direction: column; align-items: center;
@@ -1989,6 +1998,7 @@
     .run-status:empty { display: none; }
     .run-status-line { line-height: 1.45; }
     .run-status-ack { color: var(--link-color); }
+    .run-status-lifecycle { color: var(--text); font-size: 0.8125rem; opacity: 0.95; }
     .run-status-phase { color: var(--text); font-size: 0.8125rem; opacity: 0.95; }
     .run-status-batch { color: var(--muted); font-size: 0.75rem; opacity: 0.88; }
     .run-status-external { color: var(--link-color); font-size: 0.8125rem; opacity: 0.95; }
@@ -2285,12 +2295,11 @@
     .input-wrap.has-content:focus-within {
       border-color: var(--input-wrap-focus-border);
       box-shadow: var(--input-wrap-focus-glow), var(--input-wrap-shadow);
-      transform: translateY(-1px);
     }
     .input-wrap.drag-over {
       border-color: var(--input-wrap-focus-border);
       background: rgba(59,130,246,0.08);
-      box-shadow: var(--input-wrap-focus-glow), inset 0 0 0 1px rgba(59,130,246,0.18);
+      box-shadow: var(--input-wrap-focus-glow), inset 0 0 0 1px rgba(59,130,246,0.1);
     }
     .input-wrap.readonly { opacity: 0.92; }
     .pending-images {
@@ -2583,6 +2592,95 @@
       text-decoration: none;
     }
     .usage-stats-hint a:hover { text-decoration: underline; }
+    .usage-daily-chart-wrap {
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+    .usage-daily-chart-wrap[hidden] { display: none !important; }
+    .usage-daily-chart-scroll {
+      overflow: visible;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg-soft);
+      padding: 8px 14px 10px;
+    }
+    .usage-daily-chart {
+      min-height: 148px;
+    }
+    .usage-daily-chart svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      min-height: 148px;
+    }
+    .usage-daily-chart .grid-line {
+      stroke: color-mix(in srgb, var(--muted) 22%, transparent);
+      stroke-width: 1;
+    }
+    .usage-daily-chart .axis-label {
+      fill: var(--muted);
+      font-size: 10px;
+      font-variant-numeric: tabular-nums;
+    }
+    .usage-daily-chart .area-req {
+      fill: color-mix(in srgb, var(--accent) 16%, transparent);
+    }
+    .usage-daily-chart .area-tok {
+      fill: color-mix(in srgb, #34d399 14%, transparent);
+    }
+    .usage-daily-chart .line-req {
+      stroke: var(--accent);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+    .usage-daily-chart .line-tok {
+      stroke: #34d399;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+    .usage-daily-chart .dot-req {
+      fill: var(--accent);
+      stroke: var(--bg-soft);
+      stroke-width: 1.5;
+    }
+    .usage-daily-chart .dot-tok {
+      fill: #34d399;
+      stroke: var(--bg-soft);
+      stroke-width: 1.5;
+    }
+    .usage-daily-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+    .usage-daily-legend span::before {
+      content: '';
+      display: inline-block;
+      width: 16px;
+      height: 2px;
+      border-radius: 1px;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+    .usage-daily-legend .lg-req::before { background: var(--accent); }
+    .usage-daily-legend .lg-tok::before { background: #34d399; }
+    .usage-chart-empty {
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
     .usage-setup {
       margin-top: 12px;
       padding: 12px;
@@ -2669,7 +2767,7 @@
     .usage-bubble {
       position: relative;
       background: var(--bg-panel); border: 1px solid var(--border);
-      border-radius: 20px; width: min(420px, 94vw);
+      border-radius: 20px; width: min(480px, 94vw);
       display: flex; flex-direction: column; overflow: hidden;
       box-shadow: 0 28px 64px rgba(0,0,0,0.28);
       padding: 22px 24px;
@@ -4231,9 +4329,9 @@
       <div class="usage-body">
         <div class="usage-stats-panel" id="usage-stats-panel">
           <div class="usage-range-toggle" role="group" aria-label="统计时间范围">
-            <button type="button" class="usage-range-option" data-range="day">本日</button>
+            <button type="button" class="usage-range-option active" data-range="day">本日</button>
             <button type="button" class="usage-range-option" data-range="week">本周</button>
-            <button type="button" class="usage-range-option active" data-range="month">本月</button>
+            <button type="button" class="usage-range-option" data-range="month">本月</button>
             <button type="button" class="usage-range-option" data-range="7d">7天内</button>
             <button type="button" class="usage-range-option" data-range="30d">30天内</button>
           </div>
@@ -4245,6 +4343,15 @@
             <div class="usage-stat">
               <span class="usage-stat-value" id="usage-tokens">—</span>
               <span class="usage-stat-label">Token</span>
+            </div>
+          </div>
+          <div class="usage-daily-chart-wrap" id="usage-daily-chart-wrap" hidden>
+            <div class="usage-daily-chart-scroll">
+              <div class="usage-daily-chart" id="usage-daily-chart" aria-hidden="true"></div>
+            </div>
+            <div class="usage-daily-legend">
+              <span class="lg-req">请求数</span>
+              <span class="lg-tok">Token</span>
             </div>
           </div>
           <div class="usage-stats-hint" id="usage-stats-hint"></div>
@@ -4358,7 +4465,7 @@
   <script src="bookmarks_panel.js"></script>
   <script src="message_board_panel.js?v=20260730b"></script>
   <script src="about_panel.js?v=20260803b"></script>
-  <script src="catalog_panel.js"></script>
+  <script src="catalog_panel.js?v=20260813"></script>
   <script src="moa_record_panel.js?v=20260803d"></script>
   <script src="waiting_fx.js"></script>
   <script>
@@ -4368,11 +4475,21 @@
     const LEGACY_SESSION_STORAGE_KEY = 'web_agent_session';
     /** @type {{ staffId?: string, displayName?: string, isAdmin?: boolean } | null} */
     let currentAuthUser = null;
-    let usageRangeKey = 'month';
+    let usageRangeKey = 'day';
+    const USAGE_RANGE_KEYS = ['day', 'week', 'month', '7d', '30d'];
+    /** @type {Record<string, { ok: boolean, data: object, error?: string }>} */
+    const usageStatsCache = Object.create(null);
+    /** @type {Record<string, number>} */
+    const usageStatsInflightSeq = Object.create(null);
+    /** @type {AbortController | null} */
+    let usageDayAbortController = null;
     let otpAuthEnabled = true;
-    /** @type {Map<string, { eventSource: EventSource, runId: string, cancelling?: boolean, failed?: boolean, status: { ack: string, phase: string, batch: string, external: string, elapsed: string }, shellEl: HTMLElement | null, sentDraft?: { text: string, images: typeof pendingImages } }>} */
+    /** @type {Map<string, { eventSource: EventSource, runId: string, cancelling?: boolean, failed?: boolean, status: { ack: string, lifecycle: string, phase: string, batch: string, external: string, elapsed: string }, shellEl: HTMLElement | null, sentDraft?: { text: string, images: typeof pendingImages } }>} */
     const activeRuns = new Map();
     const MESSAGES_SCROLL_NEAR_BOTTOM_PX = 80;
+    const MESSAGES_LOAD_OLDER_ROOT_MARGIN = '160px 0px 0px 0px';
+    const MESSAGES_TAIL_DEFAULT = 80;
+    const MESSAGES_OLDER_PAGE = 80;
     /** 用户未手动上滑时，流式更新才跟随滚到底；执行完成后强制滚到底 */
     let messagesPinnedToBottom = true;
     let meta = {};
@@ -4426,25 +4543,30 @@
       }
       const scrollToTimestamp = (opts.scrollToTimestamp || '').trim();
       if (!opts.force && sessionId === currentSessionId && !scrollToTimestamp) return true;
+      const prevSessionId = currentSessionId;
+      if (prevSessionId && prevSessionId !== sessionId) {
+        saveCurrentSessionScrollState();
+        saveSessionInputDraft(prevSessionId);
+      }
       pendingScrollToTimestamp = scrollToTimestamp;
       currentSessionId = sessionId;
       persistSessionId(sessionId);
       syncSessionReadOnly(sessionId);
-      renderSessionList();
+      if (!markSessionListActive(sessionId)) renderSessionList();
       updateDingtalkOwnerBar();
       await loadMessages();
-      await tryReconnectActiveRun(sessionId);
-      updateInputState();
+      restoreSessionInputDraft(sessionId);
+      void tryReconnectActiveRun(sessionId);
       return true;
     }
 
     async function tryRestorePersistedSession(id) {
       const sessionId = String(id || '').trim();
       if (!sessionId) return false;
-      const cached = sessionsCache.find((s) => s.id === sessionId);
+      const cached = getSessionFromCache(sessionId);
       if (cached?.source === 'dingtalk' || isSessionReadOnly(cached)) return false;
       try {
-        await api(`/api/sessions/${sessionId}/messages`);
+        await api(`/api/sessions/${sessionId}/messages?tail=1`);
       } catch {
         return false;
       }
@@ -4469,23 +4591,301 @@
 
     let sessionsCache = [];
     let sessionsCacheAll = [];
+    let sessionsCacheById = new Map();
+    let lastSessionListKey = '';
+    let sessionsListEtag = '';
+    let loadMessagesAbort = null;
     const sessionMessagesCache = new Map();
+    const sessionMessagesMetaCache = new Map();
+    const sessionMessagesEtags = new Map();
+    const activeRunEtags = new Map();
+    const sessionScrollStateCache = new Map();
+    /** @type {Map<string, { text: string, attachments: typeof pendingAttachments }>} */
+    const sessionInputDrafts = new Map();
     const SESSION_MESSAGES_CACHE_LIMIT = 24;
+    const SESSION_SCROLL_CACHE_LIMIT = 48;
 
-    function rememberSessionMessages(sessionId, messages) {
-      const sid = String(sessionId || '').trim();
-      if (!sid) return;
-      sessionMessagesCache.set(sid, messages);
-      while (sessionMessagesCache.size > SESSION_MESSAGES_CACHE_LIMIT) {
-        const oldest = sessionMessagesCache.keys().next().value;
-        sessionMessagesCache.delete(oldest);
+    function rebuildSessionsCacheIndex() {
+      sessionsCacheById = new Map();
+      for (const s of sessionsCacheAll) {
+        if (s?.id) sessionsCacheById.set(s.id, s);
       }
     }
 
-    function sessionMessagesFingerprint(msgs) {
+    function getSessionFromCache(sessionId) {
+      const sid = String(sessionId || '').trim();
+      if (!sid) return null;
+      return sessionsCacheById.get(sid)
+        || sessionsCache.find((s) => s.id === sid)
+        || null;
+    }
+
+    function sessionMessagesMtimeFromList(sessionId) {
+      return Number(getSessionFromCache(sessionId)?.messages_mtime || 0);
+    }
+
+    function rememberSessionMessages(sessionId, messages, meta = null) {
+      const sid = String(sessionId || '').trim();
+      if (!sid) return;
+      sessionMessagesCache.set(sid, messages);
+      if (meta && typeof meta === 'object') {
+        const mtime = Number(
+          meta.messages_mtime ?? meta.mtime ?? sessionMessagesMtimeFromList(sid) ?? 0,
+        );
+        sessionMessagesMetaCache.set(sid, {
+          total: Number(meta.total || messages.length || 0),
+          hasOlder: !!meta.has_older,
+          offset: Number(meta.offset || 0),
+          mtime,
+        });
+      }
+      while (sessionMessagesCache.size > SESSION_MESSAGES_CACHE_LIMIT) {
+        const oldest = sessionMessagesCache.keys().next().value;
+        sessionMessagesCache.delete(oldest);
+        sessionMessagesMetaCache.delete(oldest);
+      }
+    }
+
+    function sessionMessagesMeta(sessionId) {
+      return sessionMessagesMetaCache.get(String(sessionId || '').trim()) || null;
+    }
+
+    function countLoadedMessageElements(container) {
+      const el = container || getMessagesEl();
+      if (!el) return 0;
+      let count = 0;
+      el.querySelectorAll('.msg').forEach((node) => {
+        if (node.classList.contains('streaming')) return;
+        if (node.dataset?.timestamp) count += 1;
+      });
+      return count;
+    }
+
+    function sessionHasOlderMessages(sessionId) {
+      const sid = String(sessionId || '').trim();
+      if (!sid) return false;
+      const meta = sessionMessagesMeta(sid);
+      const cached = sessionMessagesCache.get(sid);
+      const loaded = cached?.length || 0;
+      const sess = getSessionFromCache(sid);
+      const total = Number(meta?.total || sess?.message_count || 0);
+      if (total > 0 && loaded >= total) {
+        if (meta) sessionMessagesMetaCache.set(sid, { ...meta, hasOlder: false });
+        return false;
+      }
+      if (meta?.hasOlder) return true;
+      if (total > 0 && loaded < total) return true;
+      if (sid === currentSessionId) {
+        const domLoaded = countLoadedMessageElements();
+        if (total > 0 && domLoaded < total) return true;
+      }
+      return false;
+    }
+
+    function getOldestLoadedMessageEl(container) {
+      const el = container || getMessagesEl();
+      if (!el) return null;
+      for (const node of el.querySelectorAll('.msg')) {
+        if (node.classList.contains('streaming')) continue;
+        if (node.dataset?.timestamp) return node;
+      }
+      return null;
+    }
+
+    function appendUserMessageToSessionCache(sessionId, userMsg) {
+      const sid = String(sessionId || '').trim();
+      if (!sid || !userMsg) return;
+      const cached = sessionMessagesCache.get(sid) || [];
+      sessionMessagesCache.set(sid, [...cached, userMsg]);
+      const meta = sessionMessagesMeta(sid);
+      const sess = getSessionFromCache(sid);
+      const prevTotal = Number(meta?.total || sess?.message_count || cached.length);
+      const nextTotal = Math.max(prevTotal + 1, cached.length + 1);
+      const nextLoaded = cached.length + 1;
+      sessionMessagesMetaCache.set(sid, {
+        total: nextTotal,
+        hasOlder: !!(meta?.hasOlder || nextTotal > nextLoaded),
+        offset: Number(meta?.offset ?? Math.max(0, nextTotal - nextLoaded)),
+        mtime: Number(meta?.mtime || sessionMessagesMtimeFromList(sid) || 0),
+      });
+    }
+
+    function sessionMessagesFingerprint(msgs, meta = null) {
       if (!Array.isArray(msgs) || !msgs.length) return '0';
       const last = msgs[msgs.length - 1];
-      return `${msgs.length}:${last.timestamp || ''}:${String(last.content || '').length}`;
+      const total = meta?.total ?? sessionMessagesMeta(currentSessionId)?.total ?? msgs.length;
+      const hasOlder = meta?.has_older ?? sessionMessagesMeta(currentSessionId)?.hasOlder ?? false;
+      return `${total}:${hasOlder ? 1 : 0}:${msgs.length}:${last.timestamp || ''}:${String(last.content || '').length}`;
+    }
+
+    let messagesDomSessionId = '';
+    let messagesDomFingerprint = '';
+
+    function markMessagesDomRendered(sessionId, msgs, meta = null) {
+      const sid = String(sessionId || '').trim();
+      if (!sid) return;
+      messagesDomSessionId = sid;
+      messagesDomFingerprint = sessionMessagesFingerprint(msgs, meta || sessionMessagesMeta(sid));
+    }
+
+    function clearMessagesDomRendered() {
+      messagesDomSessionId = '';
+      messagesDomFingerprint = '';
+    }
+
+    function updateMessagesDomFingerprint(sessionId, msgs, meta = null) {
+      const sid = String(sessionId || '').trim();
+      if (!sid || sid !== messagesDomSessionId) return;
+      messagesDomFingerprint = sessionMessagesFingerprint(msgs, meta || sessionMessagesMeta(sid));
+    }
+
+    function findOrphanStreamingShell(sessionId) {
+      if (currentSessionId !== sessionId) return null;
+      const container = getMessagesEl();
+      if (!container) return null;
+      const assistants = container.querySelectorAll('.msg.assistant');
+      for (let i = assistants.length - 1; i >= 0; i -= 1) {
+        const el = assistants[i];
+        if (el.classList.contains('streaming') || !el.dataset.timestamp) {
+          return el;
+        }
+      }
+      return null;
+    }
+
+    function resolveTailMergeShell(sessionId) {
+      const run = activeRuns.get(sessionId);
+      if (run?.shellEl?.isConnected) return run.shellEl;
+      return findOrphanStreamingShell(sessionId);
+    }
+
+    function mergeAssistantIntoShell(sessionId, shellEl, assistantMsg) {
+      if (!shellEl?.isConnected || !assistantMsg) return false;
+      setAssistantMessageBody(shellEl, assistantMsg.content);
+      clearRunStatus(sessionId, shellEl);
+      ensureAssistantShareButton(shellEl);
+      if (assistantMsg.timestamp) shellEl.dataset.timestamp = assistantMsg.timestamp;
+      const run = activeRuns.get(sessionId);
+      if (run?.shellEl === shellEl) run.shellEl = null;
+      return true;
+    }
+
+    function messagesDomStreamingOk(sessionId) {
+      const run = activeRuns.get(sessionId);
+      const container = getMessagesEl();
+      if (!container) return false;
+      const cachedMsgs = sessionMessagesCache.get(sessionId) || [];
+      const orphanShell = findOrphanStreamingShell(sessionId);
+      // 落盘已有 assistant 时仍挂着 shell（含 finishRun 后孤儿 shell），须强制重绘去重
+      if (orphanShell && messagesHaveAssistantSinceLastUser(cachedMsgs)) {
+        if (run?.shellEl === orphanShell) run.shellEl = null;
+        return false;
+      }
+      if (!run) return !orphanShell;
+      if (run.shellEl && messagesHaveAssistantSinceLastUser(cachedMsgs)) {
+        run.shellEl = null;
+        return false;
+      }
+      if (run.shellEl) return container.contains(run.shellEl);
+      return !!document.getElementById('typing-indicator');
+    }
+
+    function canSkipMessagesRender(sessionId, msgs, meta = null) {
+      const sid = String(sessionId || '').trim();
+      if (!sid || sid !== messagesDomSessionId) return false;
+      const fp = sessionMessagesFingerprint(msgs, meta || sessionMessagesMeta(sid));
+      if (fp !== messagesDomFingerprint) return false;
+      const container = getMessagesEl();
+      if (!container || container.querySelector('.empty-state')) return false;
+      return messagesDomStreamingOk(sid);
+    }
+
+    function syncMessagesViewChrome(sessionId, restoreFromBottom, options = {}) {
+      const { touchScroll = true } = options;
+      const container = getMessagesEl();
+      if (!container) return;
+      if (activeRuns.has(sessionId)) {
+        const run = activeRuns.get(sessionId);
+        if (run?.shellEl && container.contains(run.shellEl)) {
+          renderRunStatusEl(run.shellEl.querySelector('.run-status'), run.status || {});
+          refreshStreamingShellFromRun(sessionId);
+        }
+      }
+      if (touchScroll) {
+        if (pendingScrollToTimestamp) {
+          const scrollTs = pendingScrollToTimestamp;
+          pendingScrollToTimestamp = '';
+          scheduleScrollToMessageTimestamp(scrollTs);
+        } else if (restoreFromBottom != null) {
+          restoreMessagesScrollFromBottom(restoreFromBottom);
+        } else if (messagesPinnedToBottom) {
+          scrollMessagesToBottom({ force: !isCurrentSessionStreaming() });
+          scheduleScrollMessagesToBottom({ force: !isCurrentSessionStreaming() });
+        }
+      } else {
+        syncMessagesPinnedState(container);
+      }
+      updateScrollToBottomBtn();
+      updateLoadOlderButton(sessionId);
+      syncLoadOlderAutoLoad(container);
+    }
+
+    function rememberSessionScrollState(sessionId, state) {
+      const sid = String(sessionId || '').trim();
+      if (!sid) return;
+      const pinnedToBottom = !!state?.pinnedToBottom;
+      sessionScrollStateCache.set(sid, {
+        pinnedToBottom,
+        fromBottom: pinnedToBottom ? null : state?.fromBottom,
+      });
+      while (sessionScrollStateCache.size > SESSION_SCROLL_CACHE_LIMIT) {
+        const oldest = sessionScrollStateCache.keys().next().value;
+        sessionScrollStateCache.delete(oldest);
+      }
+    }
+
+    function saveCurrentSessionScrollState() {
+      const sessionId = currentSessionId;
+      if (!sessionId) return;
+      const container = getMessagesEl();
+      if (!container || container.querySelector('.empty-state')) {
+        rememberSessionScrollState(sessionId, { pinnedToBottom: true, fromBottom: null });
+        return;
+      }
+      const pinnedToBottom = isMessagesNearBottom(container);
+      rememberSessionScrollState(sessionId, {
+        pinnedToBottom,
+        fromBottom: pinnedToBottom ? null : (container.scrollHeight - container.scrollTop),
+      });
+    }
+
+    function loadSessionScrollState(sessionId) {
+      const saved = sessionScrollStateCache.get(String(sessionId || '').trim());
+      if (!saved) return { pinnedToBottom: true, fromBottom: null };
+      return { pinnedToBottom: !!saved.pinnedToBottom, fromBottom: saved.fromBottom };
+    }
+
+    function captureLiveMessagesScrollState() {
+      const container = getMessagesEl();
+      if (!container || container.querySelector('.empty-state')) {
+        return { pinnedToBottom: true, fromBottom: null };
+      }
+      const pinnedToBottom = isMessagesNearBottom(container);
+      return {
+        pinnedToBottom,
+        fromBottom: pinnedToBottom ? null : (container.scrollHeight - container.scrollTop),
+      };
+    }
+
+    function resolveMessagesScrollState(sessionId) {
+      const sid = String(sessionId || '').trim();
+      const container = getMessagesEl();
+      const hasLiveDom = sid === currentSessionId
+        && container
+        && !container.querySelector('.empty-state')
+        && container.querySelector('.msg');
+      if (hasLiveDom) return captureLiveMessagesScrollState();
+      return loadSessionScrollState(sid);
     }
     let sessionSearchQuery = '';
     let sessionSearchTimer = 0;
@@ -5014,6 +5414,7 @@
           if (!id) return;
           pendingAttachments = pendingAttachments.filter(item => item.id !== id);
           renderPendingAttachments();
+          syncCurrentSessionInputDraft();
           updateInputState();
         });
       });
@@ -5060,6 +5461,7 @@
         });
       }
       renderPendingAttachments();
+      syncCurrentSessionInputDraft();
       updateInputState();
     }
 
@@ -5241,11 +5643,25 @@
       return false;
     }
 
+    function isClientBootstrapPhase(text) {
+      return /^正在连接\s*Agent/.test(String(text || '').trim());
+    }
+
+    function patchRunStatusFromServer(sessionId, patch) {
+      const next = { ...patch };
+      delete next.lifecycle;
+      delete next.phase;
+      // 服务端 status 可能只带 phase/batch；勿用空串覆盖已有 elapsed/ack。
+      if (!String(next.elapsed || '').trim()) delete next.elapsed;
+      if (!String(next.ack || '').trim()) delete next.ack;
+      updateRunStatus(sessionId, next);
+    }
+
     function isLifecyclePhaseText(text) {
       const t = String(text || '').trim();
       if (!t) return false;
       if (/^⏳\s*Agent\s*(启动|执行)中/.test(t)) return true;
-      if (/^正在连接\s*Agent/.test(t)) return true;
+      if (isClientBootstrapPhase(t)) return true;
       if (/^Worker\s*已就绪/.test(t)) return true;
       if (/^正在初始化\s*Bridge/.test(t)) return true;
       if (/^正在组装提示词/.test(t)) return true;
@@ -5270,7 +5686,6 @@
         batch: src.batch || '',
         external: src.external || '',
         elapsed: src.elapsed || '',
-        phase: isRunStatusPhase(src.phase) ? src.phase : '',
       };
     }
 
@@ -5297,8 +5712,8 @@
 
     function renderThinkingSectionHtml(thinking, phase) {
       const text = sanitizeStreamThinking(normalizeThinkingBody(thinking));
-      const lifecycle = isLifecyclePhaseText(phase) ? String(phase || '').trim() : '';
-      const body = text || lifecycle;
+      const phaseText = String(phase || '').trim();
+      const body = text || phaseText;
       if (!body) return '';
       return `<section class="stream-section stream-section-think">
         <div class="stream-section-title">思考中</div>
@@ -5393,7 +5808,7 @@
       const thinking = String(process?.thinking || '').trim();
       const tools = Array.isArray(process?.tools) ? process.tools.map((t) => String(t || '').trim()).filter(Boolean) : [];
       const sections = [];
-      const thinkHtml = renderThinkingSectionHtml(thinking);
+      const thinkHtml = renderThinkingSectionHtml(thinking, process?.phase);
       if (thinkHtml) sections.push(thinkHtml);
       const toolsHtml = renderToolsSectionHtml(tools);
       if (toolsHtml) sections.push(toolsHtml);
@@ -5450,8 +5865,17 @@
       return html;
     }
 
+    const markdownRenderCache = new Map();
+    const MARKDOWN_CACHE_LIMIT = 256;
+
     function renderMarkdown(text, options = {}) {
       const { streaming = false } = options;
+      const raw = String(text || '');
+      if (!streaming && raw) {
+        const cached = markdownRenderCache.get(raw);
+        if (cached) return cached;
+      }
+      let html;
       try {
         const parseOpts = { gfm: true, breaks: !!streaming };
         if (typeof marked?.use === 'function') {
@@ -5459,11 +5883,18 @@
         } else if (marked?.setOptions) {
           marked.setOptions(parseOpts);
         }
-        const html = withLinksOpenInNewTab(marked.parse(text || ''));
-        return `<div class="markdown-body">${html}</div>`;
+        html = `<div class="markdown-body">${withLinksOpenInNewTab(marked.parse(raw))}</div>`;
       } catch {
-        return `<div class="markdown-body">${(text || '').replace(/</g, '&lt;').replace(/\n/g, '<br>')}</div>`;
+        html = `<div class="markdown-body">${raw.replace(/</g, '&lt;').replace(/\n/g, '<br>')}</div>`;
       }
+      if (!streaming && raw) {
+        markdownRenderCache.set(raw, html);
+        while (markdownRenderCache.size > MARKDOWN_CACHE_LIMIT) {
+          const oldest = markdownRenderCache.keys().next().value;
+          markdownRenderCache.delete(oldest);
+        }
+      }
+      return html;
     }
 
     function extractPlainStreamingText(markdown) {
@@ -5530,6 +5961,14 @@
       return Array.isArray(process.tools) && process.tools.length > 0;
     }
 
+    function resolveStreamDisplayPhase(incomingPhase, prevPhase, hasThinkingOrTools) {
+      if (hasThinkingOrTools) return '';
+      const incoming = String(incomingPhase || '').trim();
+      const prev = String(prevPhase || '').trim();
+      if (incoming) return incoming;
+      return prev;
+    }
+
     function buildStreamDisplay(markdown, process, prevDisplay) {
       const prev = prevDisplay || { thinking: '', tools: [], phase: '' };
       const incoming = mergeProcessPayload(process, markdown);
@@ -5541,8 +5980,8 @@
       const tools = (Array.isArray(incoming.tools) && incoming.tools.length >= (prev.tools || []).length)
         ? incoming.tools
         : (prev.tools || []);
-      let phase = String(incoming.phase || prev.phase || '').trim();
-      if (sanitizedThinking || (Array.isArray(tools) && tools.length)) phase = '';
+      const hasThinkingOrTools = !!sanitizedThinking || (Array.isArray(tools) && tools.length > 0);
+      const phase = resolveStreamDisplayPhase(incoming.phase, prev.phase, hasThinkingOrTools);
       return { thinking: sanitizedThinking, tools, phase };
     }
 
@@ -5563,7 +6002,19 @@
       const run = activeRuns.get(sessionId);
       if (!run?.lastStream?.display) return;
       const shell = run.shellEl || ensureStreamingShell(sessionId);
-      updateStreamingMsgBody(shell, run.lastStream.display);
+      scheduleStreamingMsgBodyUpdate(shell, run.lastStream.display);
+    }
+
+    const streamingBodyRaf = new WeakMap();
+
+    function scheduleStreamingMsgBodyUpdate(shell, display) {
+      if (!shell) return;
+      const prev = streamingBodyRaf.get(shell);
+      if (prev) cancelAnimationFrame(prev);
+      streamingBodyRaf.set(shell, requestAnimationFrame(() => {
+        streamingBodyRaf.delete(shell);
+        updateStreamingMsgBody(shell, display);
+      }));
     }
 
     function stopRunStreamPoll(sessionId) {
@@ -5580,6 +6031,7 @@
       const run = activeRuns.get(sid);
       if (!run) return;
       run.streamPollTimer = setInterval(async () => {
+        if (document.hidden) return;
         const current = activeRuns.get(sid);
         if (!current?.runId || current.cancelling) {
           stopRunStreamPoll(sid);
@@ -5587,14 +6039,22 @@
         }
         if (sid !== currentSessionId) return;
         try {
-          const active = await api(`/api/sessions/${sid}/active-run`);
+          const headers = {};
+          const cachedEtag = activeRunEtags.get(sid);
+          if (cachedEtag) headers['If-None-Match'] = cachedEtag;
+          const active = await api(`/api/sessions/${sid}/active-run`, { headers });
+          if (active.__notModified) {
+            if (active.__etag) activeRunEtags.set(sid, active.__etag);
+            return;
+          }
+          if (active.__etag) activeRunEtags.set(sid, active.__etag);
           if (!active?.active || !active.run_id) {
             stopRunStreamPoll(sid);
             return;
           }
           const md = String(active.markdown || '');
           let proc = active.process;
-          if (active.phase_line && isLifecyclePhaseText(active.phase_line) && !hasStreamProcessContent(proc)) {
+          if (active.phase_line && !hasStreamProcessContent(proc)) {
             proc = { ...(proc && typeof proc === 'object' ? proc : {}), phase: active.phase_line };
           }
           const prevDisplay = current.lastStream?.display || { thinking: '', tools: [], phase: '' };
@@ -5609,32 +6069,20 @@
           const display = rememberRunStreamState(sid, md, proc);
           const shell = current.shellEl || ensureStreamingShell(sid);
           if (display) {
-            updateStreamingMsgBody(shell, display);
-            applyStreamPhaseFromDisplay(sid, display);
+            scheduleStreamingMsgBodyUpdate(shell, display);
           }
-          if (active.ack_line || active.phase_line || active.elapsed_line || active.batch_line || active.external_line) {
-            renderRunStatusEl(shell.querySelector('.run-status'), runStatusForRender({
+          if (active.ack_line || active.elapsed_line || active.batch_line || active.external_line) {
+            patchRunStatusFromServer(sid, {
               ack: active.ack_line || '',
-              phase: active.phase_line || '',
               elapsed: active.elapsed_line || '',
               batch: active.batch_line || '',
               external: active.external_line || '',
-            }));
+            });
           }
         } catch {
           /* 轮询失败忽略，SSE 仍为主通道 */
         }
       }, 800);
-    }
-
-    function applyStreamPhaseFromDisplay(sessionId, display) {
-      const phase = String(display?.phase || '').trim();
-      if (isLifecyclePhaseText(phase)) return;
-      if (phase) {
-        updateRunStatus(sessionId, { phase });
-      } else if (sanitizeStreamThinking(display?.thinking)) {
-        updateRunStatus(sessionId, { phase: '' });
-      }
     }
 
     function applyLifecyclePhaseToStream(sessionId, phase, { markdown = '', process = null } = {}) {
@@ -5645,12 +6093,10 @@
         ...(process && typeof process === 'object' ? process : (run.lastStream?.process || {})),
         phase,
       };
-      const prevDisplay = run.lastStream?.display || { thinking: '', tools: [], phase: '' };
-      const display = buildStreamDisplay(md, proc, prevDisplay);
-      rememberRunStreamState(sessionId, md, proc);
-      if (sessionId !== currentSessionId) return;
+      const display = rememberRunStreamState(sessionId, md, proc);
+      if (sessionId !== currentSessionId || !display) return;
       const shell = run.shellEl || ensureStreamingShell(sessionId);
-      updateStreamingMsgBody(shell, display);
+      scheduleStreamingMsgBodyUpdate(shell, display);
     }
 
     function updateStreamingMsgBody(shell, display) {
@@ -5686,7 +6132,11 @@
       if (thinkEl) {
         thinkEl.scrollTop = thinkEl.scrollHeight;
       }
-      scrollMessagesToBottom();
+      if (messagesPinnedToBottom) {
+        scheduleScrollMessagesToBottom();
+      } else {
+        scheduleAutoLoadOlderIfNeeded(getMessagesEl());
+      }
     }
 
     function setupMarkdownLinkNewTab() {
@@ -5705,9 +6155,10 @@
     }
 
     async function api(path, opts = {}) {
-      const { headers: optHeaders, ...restOpts } = opts;
+      const { headers: optHeaders, signal, ...restOpts } = opts;
       const resp = await fetch(API + path, {
         credentials: 'same-origin',
+        signal,
         ...restOpts,
         headers: { 'Content-Type': 'application/json', ...(optHeaders || {}) },
       });
@@ -5721,11 +6172,17 @@
         }
         throw new Error('需要登录鉴权，请刷新页面并在浏览器登录框输入账号密码');
       }
+      if (resp.status === 304) {
+        return { __notModified: true, __etag: resp.headers.get('ETag') || '' };
+      }
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
         throw new Error(err.error || `HTTP ${resp.status}`);
       }
-      return resp.json();
+      const json = await resp.json();
+      const etag = resp.headers.get('ETag');
+      if (etag) json.__etag = etag;
+      return json;
     }
 
     async function loadMeta() {
@@ -6171,8 +6628,18 @@
       const container = getMessagesEl();
       if (!container || container.dataset.scrollTrackBound) return;
       container.dataset.scrollTrackBound = '1';
+      let persistScrollRaf = 0;
       container.addEventListener('scroll', () => {
         syncMessagesPinnedState(container);
+        maybeAutoLoadOlderMessages(container);
+        if (!currentSessionId) return;
+        cancelAnimationFrame(persistScrollRaf);
+        persistScrollRaf = requestAnimationFrame(() => {
+          rememberSessionScrollState(currentSessionId, {
+            pinnedToBottom: messagesPinnedToBottom,
+            fromBottom: messagesPinnedToBottom ? null : (container.scrollHeight - container.scrollTop),
+          });
+        });
       }, { passive: true });
       container.addEventListener('wheel', (event) => {
         if (event.deltaY < 0) {
@@ -6207,9 +6674,6 @@
       if (view.ack) {
         lines.push(`<div class="run-status-line run-status-ack">${escapeHtml(view.ack)}</div>`);
       }
-      if (view.phase) {
-        lines.push(`<div class="run-status-line run-status-phase">${escapeHtml(view.phase)}</div>`);
-      }
       if (view.batch) {
         lines.push(`<div class="run-status-line run-status-batch">${escapeHtml(view.batch)}</div>`);
       }
@@ -6224,10 +6688,17 @@
 
     function ensureStreamingShell(sessionId) {
       const run = activeRuns.get(sessionId);
-      if (run?.shellEl) {
+      if (run?.shellEl?.isConnected) {
         removeAssistantShareButton(run.shellEl);
         run.shellEl.classList.add('streaming');
         return run.shellEl;
+      }
+      const orphan = findOrphanStreamingShell(sessionId);
+      if (orphan) {
+        removeAssistantShareButton(orphan);
+        orphan.classList.add('streaming');
+        if (run) run.shellEl = orphan;
+        return orphan;
       }
       const container = document.getElementById('messages');
       if (container.querySelector('.empty-state')) dismissEmptyState(container);
@@ -6257,12 +6728,13 @@
       scrollMessagesToBottom();
     }
 
-    function clearRunStatus(sessionId) {
+    function clearRunStatus(sessionId, shellEl = null) {
       const run = activeRuns.get(sessionId);
-      if (!run?.shellEl) return;
-      const statusEl = run.shellEl.querySelector('.run-status');
+      const shell = shellEl || run?.shellEl;
+      if (!shell?.isConnected) return;
+      const statusEl = shell.querySelector('.run-status');
       if (statusEl) statusEl.innerHTML = '';
-      run.shellEl.classList.remove('streaming');
+      shell.classList.remove('streaming');
     }
 
     function sessionOwnerInfo(item) {
@@ -6367,6 +6839,92 @@
       renderSessionList();
     }
 
+    function markSessionListActive(sessionId) {
+      const list = document.getElementById('session-list');
+      if (!list) return false;
+      const items = list.querySelectorAll('.session-item[data-id]');
+      if (!items.length) return false;
+      const sid = String(sessionId || '').trim();
+      items.forEach((el) => {
+        el.classList.toggle('active', el.dataset.id === sid);
+      });
+      syncSessionReadOnly(sid);
+      return true;
+    }
+
+    function sessionListPatchKey(sessions) {
+      if (!Array.isArray(sessions) || !sessions.length) return '';
+      return sessions.map((s) => [
+        s.id,
+        s.title || '',
+        s.message_count || 0,
+        s.relative_time || '',
+        (activeRuns.has(s.id) || s.running) ? 1 : 0,
+        s.pinned ? 1 : 0,
+        s.updated_at || '',
+        s.messages_mtime || 0,
+      ].join('|')).join('\n');
+    }
+
+    function buildSessionMetaHtml(s) {
+      const running = activeRuns.has(s.id) || s.running ? ' · 思考中' : '';
+      const ownerName = sessionOwnerName(s);
+      const ownerLine = ownerName
+        ? `<span class="session-owner">${escapeHtml(ownerName)}</span> · `
+        : '';
+      const rel = escapeHtml((s.relative_time || '').trim());
+      const relLine = rel ? `${rel} · ` : '';
+      return `${ownerLine}${relLine}${s.message_count || 0} 条${running}`;
+    }
+
+    function patchSessionListFromCache(sessions) {
+      if (sessionRenameTarget && sessionRenameInputEl && !sessionRenameSaving) return false;
+      const list = document.getElementById('session-list');
+      if (!list) return false;
+      const items = list.querySelectorAll('.session-item[data-id]');
+      if (!Array.isArray(sessions) || items.length !== sessions.length) return false;
+
+      const idToEl = new Map();
+      items.forEach((el) => idToEl.set(el.dataset.id, el));
+      for (let i = 0; i < sessions.length; i += 1) {
+        const s = sessions[i];
+        const el = idToEl.get(s.id);
+        if (!el || list.children[i] !== el) return false;
+      }
+
+      sessions.forEach((s) => {
+        patchSessionListItemEl(idToEl.get(s.id), s);
+      });
+      syncSessionReadOnly(currentSessionId);
+      return true;
+    }
+
+    function patchSessionListItemEl(el, s) {
+      if (!el || !s) return;
+      el.classList.toggle('active', s.id === currentSessionId);
+      el.classList.toggle('is-pinned', !!s.pinned);
+      const metaEl = el.querySelector('.session-meta');
+      if (metaEl) {
+        const nextHtml = buildSessionMetaHtml(s);
+        if (metaEl.innerHTML !== nextHtml) metaEl.innerHTML = nextHtml;
+      }
+      const titleText = el.querySelector('.session-title-text');
+      if (titleText && titleText.textContent !== (s.title || '')) {
+        titleText.textContent = s.title || '';
+      }
+    }
+
+    function patchSessionListItemMeta(sessionId) {
+      const sid = String(sessionId || '').trim();
+      if (!sid) return false;
+      const list = document.getElementById('session-list');
+      const el = list?.querySelector(`.session-item[data-id="${sid}"]`);
+      const s = sessionsCache.find((item) => item.id === sid);
+      if (!el || !s) return false;
+      patchSessionListItemEl(el, s);
+      return true;
+    }
+
     function renderSessionList() {
       if (sessionRenameTarget && sessionRenameInputEl && !sessionRenameSaving) {
         return;
@@ -6392,19 +6950,12 @@
         el.className = 'session-item' + (s.id === currentSessionId ? ' active' : '');
         if (s.pinned) el.classList.add('is-pinned');
         el.dataset.id = s.id;
-        const running = activeRuns.has(s.id) || s.running ? ' · 思考中' : '';
         const sourceBadge = s.source === 'dingtalk'
           ? '<span class="session-source">钉钉</span>'
           : '';
         const pinIcon = s.pinned
           ? `<button type="button" class="session-pin-icon session-pin-unpin" title="取消置顶" aria-label="取消置顶"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 12V4h1c.55 0 1-.45 1-1s-.45-1-1-1H8c-.55 0-1 .45-1 1s.45 1 1 1h1v8c0 1.1-.9 2-2 2H5v2h5.2c.4 1.2 1.5 2 2.8 2s2.4-.8 2.8-2H21v-2h-2c-1.1 0-2-.9-2-2z"/></svg></button>`
           : '';
-        const ownerName = sessionOwnerName(s);
-        const ownerLine = ownerName
-          ? `<span class="session-owner">${escapeHtml(ownerName)}</span> · `
-          : '';
-        const rel = escapeHtml((s.relative_time || '').trim());
-        const relLine = rel ? `${rel} · ` : '';
         const searchHit = (s.search_snippet || '').trim()
           ? `<div class="session-search-hit">${escapeHtml(s.search_snippet)}</div>`
           : '';
@@ -6415,7 +6966,7 @@
               <div class="session-title">${sourceBadge}<span class="session-title-text">${escapeHtml(s.title)}</span>${customTitleEditBtn}</div>
               <div class="session-title-input-wrap"></div>
             </div>
-            <div class="session-meta">${ownerLine}${relLine}${s.message_count || 0} 条${running}</div>
+            <div class="session-meta">${buildSessionMetaHtml(s)}</div>
             ${searchHit}
           </div>
           ${pinIcon}`;
@@ -6424,6 +6975,7 @@
       });
       list.scrollTop = scrollTop;
       syncSessionReadOnly(currentSessionId);
+      lastSessionListKey = sessionListPatchKey(filtered);
     }
 
     const SESSION_LONG_PRESS_MS = 500;
@@ -7349,6 +7901,58 @@
       updateDingtalkOwnerBar();
     }
 
+    function cloneAttachmentDraft(items) {
+      return (items || []).map(item => ({ ...item }));
+    }
+
+    function saveSessionInputDraft(sessionId) {
+      const sid = String(sessionId || '').trim();
+      if (!sid) return;
+      const input = document.getElementById('input');
+      if (!input || input.readOnly) return;
+      const text = input.value || '';
+      const attachments = cloneAttachmentDraft(pendingAttachments);
+      if (!text.trim() && !attachments.length) {
+        sessionInputDrafts.delete(sid);
+        return;
+      }
+      sessionInputDrafts.set(sid, { text, attachments });
+    }
+
+    function restoreSessionInputDraft(sessionId) {
+      const sid = String(sessionId || '').trim();
+      clearRetryPlaceholder();
+      const input = document.getElementById('input');
+      if (!input) return;
+      if (!sid || currentSessionReadOnly || input.readOnly) {
+        input.value = '';
+        autoResizeInput();
+        clearPendingAttachments();
+        updateInputState();
+        return;
+      }
+      const draft = sessionInputDrafts.get(sid);
+      input.value = draft?.text || '';
+      autoResizeInput();
+      if (draft?.attachments?.length) {
+        pendingAttachments = cloneAttachmentDraft(draft.attachments);
+        renderPendingAttachments();
+      } else {
+        clearPendingAttachments();
+      }
+      updateInputState();
+    }
+
+    function syncCurrentSessionInputDraft() {
+      if (currentSessionId && !currentSessionReadOnly) {
+        saveSessionInputDraft(currentSessionId);
+      }
+    }
+
+    function clearSessionInputDraft(sessionId) {
+      sessionInputDrafts.delete(String(sessionId || '').trim());
+    }
+
     function updateInputState() {
       const busy = isCurrentSessionStreaming();
       const hasDraft = !!document.getElementById('input').value.trim() || pendingAttachments.length > 0;
@@ -7397,7 +8001,9 @@
     function isFailureReplyText(text) {
       const body = (text || '').trim();
       return body.startsWith('⚠️ Agent 执行失败')
-        || body.startsWith('⚠️ 任务已中断');
+        || body.startsWith('⚠️ 任务已中断')
+        || body.startsWith('⚠️ 任务因服务重启中断')
+        || body.startsWith('⚠️ 任务执行超时');
     }
 
     function appendRetryHint(text) {
@@ -7444,6 +8050,10 @@
         input.placeholder = RETRY_PLACEHOLDER;
         retryHintActive = true;
       }
+      sessionInputDrafts.set(sessionId, {
+        text: draft.text || '',
+        attachments: cloneAttachmentDraft(draft.attachments),
+      });
       updateInputState();
       input.focus();
     }
@@ -7753,33 +8363,52 @@
         clearTimeout(run.cancelWatchdog);
       }
       stopRunStreamPoll(sessionId);
+      activeRunEtags.delete(sessionId);
       activeRuns.delete(sessionId);
       void (async () => {
         await waitForPendingSessionTitleSave();
+        await loadSessions({ lite: true });
         if (sessionId === currentSessionId) {
           updateInputState();
-          loadMessages();
+          await loadMessages();
         }
-        await loadSessions();
       })();
     }
 
-    async function loadSessions() {
+    async function loadSessions(opts = {}) {
       const q = sessionSearchQuery.trim();
       const params = new URLSearchParams();
       if (q) {
         params.set('q', q);
         if (sessionScopeFilter === 'mine') params.set('scope', 'mine');
+      } else if (opts.lite) {
+        params.set('lite', '1');
       }
       const url = params.toString() ? `/api/sessions?${params}` : '/api/sessions';
-      const data = await api(url);
+      const headers = {};
+      if (opts.lite && !q && sessionsListEtag) {
+        headers['If-None-Match'] = sessionsListEtag;
+      }
+      const data = await api(url, { headers });
+      if (data.__notModified) {
+        if (data.__etag) sessionsListEtag = data.__etag;
+        return;
+      }
+      if (data.__etag) sessionsListEtag = data.__etag;
       const rows = data.sessions || [];
       if (q) {
         sessionsCache = rows;
         sortSessionsCache();
       } else {
         sessionsCacheAll = rows;
+        rebuildSessionsCacheIndex();
         syncSessionsCacheFromAll();
+      }
+      const nextKey = sessionListPatchKey(sessionsCache);
+      if (opts.lite && !q && nextKey === lastSessionListKey) return;
+      if (opts.lite && !q && patchSessionListFromCache(sessionsCache)) {
+        lastSessionListKey = nextKey;
+        return;
       }
       renderSessionList();
     }
@@ -7837,7 +8466,16 @@
         setNewSessionButtonsDisabled(true);
       }
 
+      if (prevSessionId) {
+        saveCurrentSessionScrollState();
+        saveSessionInputDraft(prevSessionId);
+      }
       clearPendingAttachments();
+      const inputEl = document.getElementById('input');
+      if (inputEl && !inputEl.readOnly) {
+        inputEl.value = '';
+        autoResizeInput();
+      }
       currentSessionId = '';
       currentSessionReadOnly = false;
       clearPersistedSessionId();
@@ -7849,7 +8487,7 @@
         try {
           if (prevSessionId) {
             try {
-              const data = await api(`/api/sessions/${prevSessionId}/messages`);
+              const data = await api(`/api/sessions/${prevSessionId}/messages?tail=1`);
               if (!(data.messages || []).length) {
                 await api(`/api/sessions/${prevSessionId}`, { method: 'DELETE' });
               }
@@ -7861,7 +8499,7 @@
           updateDingtalkOwnerBar();
           updateReadOnlyState();
           renderSessionList();
-          void loadSessions();
+          void loadSessions({ lite: true });
         } finally {
           sessionBootstrapPromise = null;
         }
@@ -7888,7 +8526,6 @@
     async function selectSession(id, opts = {}) {
       const scrollTo = (opts.scrollToTimestamp || '').trim();
       if (!opts.force && id === currentSessionId && !scrollTo) return;
-      clearPendingAttachments();
       await activateSession(id, opts);
     }
 
@@ -8202,32 +8839,179 @@
         }, { once: true });
       }
       updateScrollToBottomBtn();
+      syncLoadOlderAutoLoad(container);
+      clearMessagesDomRendered();
+    }
+
+    function ensureLoadOlderButton(container) {
+      let sentinel = container.querySelector('#btn-load-older-messages');
+      if (sentinel) {
+        if (sentinel.tagName === 'BUTTON') {
+          const replacement = document.createElement('div');
+          replacement.id = 'btn-load-older-messages';
+          replacement.className = 'load-older-sentinel';
+          replacement.hidden = sentinel.hidden;
+          replacement.setAttribute('aria-hidden', 'true');
+          sentinel.replaceWith(replacement);
+          return replacement;
+        }
+        return sentinel;
+      }
+      sentinel = document.createElement('div');
+      sentinel.id = 'btn-load-older-messages';
+      sentinel.className = 'load-older-sentinel';
+      sentinel.hidden = true;
+      sentinel.setAttribute('aria-hidden', 'true');
+      container.prepend(sentinel);
+      return sentinel;
+    }
+
+    let loadOlderMessagesObserver = null;
+    let loadOlderObservedBtn = null;
+    let loadingOlderMessages = false;
+
+    function isLoadOlderTriggerVisible(container, btn) {
+      if (!container || !btn || btn.hidden) return false;
+      const rootRect = container.getBoundingClientRect();
+      const btnRect = btn.getBoundingClientRect();
+      const margin = parseInt(MESSAGES_LOAD_OLDER_ROOT_MARGIN, 10) || 160;
+      return btnRect.bottom >= rootRect.top - margin && btnRect.top <= rootRect.bottom;
+    }
+
+    function maybeAutoLoadOlderMessages(container) {
+      if (!currentSessionId || loadingOlderMessages) return;
+      if (!sessionHasOlderMessages(currentSessionId)) return;
+      const el = container || getMessagesEl();
+      const btn = el?.querySelector('#btn-load-older-messages');
+      if (!isLoadOlderTriggerVisible(el, btn)) return;
+      void loadOlderMessages();
+    }
+
+    function syncLoadOlderAutoLoad(container) {
+      const el = container || getMessagesEl();
+      if (!el) return;
+      const btn = el.querySelector('#btn-load-older-messages');
+      const shouldObserve = btn && !btn.hidden && sessionHasOlderMessages(currentSessionId);
+
+      if (!shouldObserve) {
+        if (loadOlderMessagesObserver) {
+          loadOlderMessagesObserver.disconnect();
+          loadOlderMessagesObserver = null;
+          loadOlderObservedBtn = null;
+        }
+        return;
+      }
+
+      if (loadOlderObservedBtn === btn && loadOlderMessagesObserver) {
+        scheduleAutoLoadOlderIfNeeded(el);
+        return;
+      }
+
+      if (loadOlderMessagesObserver) loadOlderMessagesObserver.disconnect();
+      loadOlderObservedBtn = btn;
+      if (typeof IntersectionObserver === 'undefined') {
+        scheduleAutoLoadOlderIfNeeded(el);
+        return;
+      }
+
+      loadOlderMessagesObserver = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) maybeAutoLoadOlderMessages(el);
+        }
+      }, {
+        root: el,
+        rootMargin: MESSAGES_LOAD_OLDER_ROOT_MARGIN,
+        threshold: 0,
+      });
+      loadOlderMessagesObserver.observe(btn);
+      scheduleAutoLoadOlderIfNeeded(el);
+    }
+
+    function updateLoadOlderButton(sessionId) {
+      const container = document.getElementById('messages');
+      if (!container) return;
+      const sentinel = ensureLoadOlderButton(container);
+      sentinel.hidden = !sessionHasOlderMessages(sessionId);
+      syncLoadOlderAutoLoad(container);
+    }
+
+    function buildMessageElement(m) {
+      const el = document.createElement('div');
+      el.className = `msg ${m.role}`;
+      const msgTs = m.timestamp || new Date().toISOString();
+      if (msgTs) el.dataset.timestamp = msgTs;
+      const label = m.role === 'user'
+        ? ((m.author_label || m.authorLabel || '').trim() || authUserDisplayName(currentAuthUser))
+        : 'Agent';
+      const imageHtml = renderMessageImages(m.images || []);
+      const fileHtml = renderMessageFiles(m.files || []);
+      const text = (m.content || '').trim();
+      const attachmentHtml = `${imageHtml}${fileHtml}`;
+      const bodyHtml = m.role === 'assistant'
+        ? `${attachmentHtml}${renderMarkdown(text)}`
+        : `${attachmentHtml}${text ? escapeHtml(text).replace(/\n/g, '<br>') : ''}`;
+      el.innerHTML = `
+        ${buildMsgLabelHtml(label, msgTs)}
+        <div class="msg-body">${bodyHtml || attachmentHtml}</div>`;
+      if (m.role === 'assistant') {
+        setMessageMarkdown(el.querySelector('.msg-body'), text);
+        ensureAssistantShareButton(el);
+      }
+      return el;
+    }
+
+    function scheduleAutoLoadOlderIfNeeded(container) {
+      requestAnimationFrame(() => {
+        maybeAutoLoadOlderMessages(container || getMessagesEl());
+      });
+    }
+
+    function prependLoadedMessages(sessionId, olderMsgs) {
+      const container = getMessagesEl();
+      if (!container || !Array.isArray(olderMsgs) || !olderMsgs.length) return;
+      const btn = ensureLoadOlderButton(container);
+      const anchor = btn ? btn.nextSibling : container.firstChild;
+      const prevHeight = container.scrollHeight;
+      const prevTop = container.scrollTop;
+      const frag = document.createDocumentFragment();
+      olderMsgs.forEach((m) => {
+        frag.appendChild(buildMessageElement(m));
+      });
+      container.insertBefore(frag, anchor);
+      container.scrollTop = prevTop + (container.scrollHeight - prevHeight);
+      bindMessagesMediaLoadScroll(container);
+      updateLoadOlderButton(sessionId);
+      updateScrollToBottomBtn();
+      if (currentSessionId === sessionId) {
+        rememberSessionScrollState(sessionId, {
+          pinnedToBottom: messagesPinnedToBottom,
+          fromBottom: messagesPinnedToBottom ? null : (container.scrollHeight - container.scrollTop),
+        });
+      }
     }
 
     function renderLoadedMessages(sessionId, msgs, restoreFromBottom) {
       const container = getMessagesEl();
       if (!msgs.length) { showEmptyState(); return; }
       container.innerHTML = '';
-      msgs.forEach(m => appendMessage(
-        m.role,
-        m.content,
-        false,
-        m.images || [],
-        m.files || [],
-        m.timestamp,
-        m.author_label || m.authorLabel || '',
-      ));
-      if (activeRuns.has(sessionId)) {
+      ensureLoadOlderButton(container);
+      const frag = document.createDocumentFragment();
+      msgs.forEach((m) => {
+        frag.appendChild(buildMessageElement(m));
+      });
+      container.appendChild(frag);
+      updateLoadOlderButton(sessionId);
+      if (shouldAppendStreamingShell(sessionId, msgs)) {
         const run = activeRuns.get(sessionId);
         if (run?.shellEl) {
           container.appendChild(run.shellEl);
           renderRunStatusEl(run.shellEl.querySelector('.run-status'), run.status || {});
           refreshStreamingShellFromRun(sessionId);
-        } else {
+        } else if (run) {
           const typingEl = document.createElement('div');
           typingEl.className = 'typing';
           typingEl.id = 'typing-indicator';
-          typingEl.textContent = run?.status?.phase || run?.status?.ack || run?.status?.elapsed || 'Agent 思考中…';
+          typingEl.textContent = run?.status?.lifecycle || run?.status?.phase || run?.status?.ack || run?.status?.elapsed || 'Agent 思考中…';
           container.appendChild(typingEl);
         }
       }
@@ -8237,30 +9021,323 @@
         scheduleScrollToMessageTimestamp(scrollTs);
       } else if (restoreFromBottom != null) {
         restoreMessagesScrollFromBottom(restoreFromBottom);
-      } else {
+      } else if (messagesPinnedToBottom) {
         scrollMessagesToBottom({ force: !isCurrentSessionStreaming() });
         scheduleScrollMessagesToBottom({ force: !isCurrentSessionStreaming() });
       }
       bindMessagesMediaLoadScroll(container);
       updateScrollToBottomBtn();
+      syncLoadOlderAutoLoad(container);
+      markMessagesDomRendered(sessionId, msgs, sessionMessagesMeta(sessionId));
     }
 
-    async function loadMessages() {
+    function messagesEqualForSync(a, b) {
+      return (a?.timestamp || '') === (b?.timestamp || '')
+        && String(a?.content || '') === String(b?.content || '');
+    }
+
+    function findTailOverlapIndex(cached, incoming) {
+      if (!Array.isArray(cached) || !cached.length || !Array.isArray(incoming) || !incoming.length) {
+        return -1;
+      }
+      const anchorTs = cached[cached.length - 1]?.timestamp;
+      if (!anchorTs) return -1;
+      for (let i = incoming.length - 1; i >= 0; i -= 1) {
+        if (incoming[i].timestamp === anchorTs) return i;
+      }
+      return -1;
+    }
+
+    function appendTailMessageElements(msgs) {
+      const container = getMessagesEl();
+      if (!container || !msgs.length) return;
+      const sessionId = currentSessionId;
+      const run = activeRuns.get(sessionId);
+      let msgsToAppend = msgs;
+      let mergeShell = null;
+      const tailAssistants = msgs.filter(
+        (m) => m.role === 'assistant' && String(m.content || '').trim(),
+      );
+      if (tailAssistants.length) {
+        mergeShell = resolveTailMergeShell(sessionId);
+        const lastAssistant = tailAssistants[tailAssistants.length - 1];
+        if (mergeShell && lastAssistant && mergeAssistantIntoShell(sessionId, mergeShell, lastAssistant)) {
+          mergeShell = null;
+          msgsToAppend = msgs.filter((m) => m !== lastAssistant);
+        }
+      }
+      if (!msgsToAppend.length) return;
+      const insertBefore = run?.shellEl
+        || mergeShell
+        || document.getElementById('typing-indicator')
+        || null;
+      const frag = document.createDocumentFragment();
+      msgsToAppend.forEach((m) => frag.appendChild(buildMessageElement(m)));
+      if (insertBefore && insertBefore.parentElement === container) {
+        container.insertBefore(frag, insertBefore);
+      } else {
+        container.appendChild(frag);
+      }
+      bindMessagesMediaLoadScroll(container);
+    }
+
+    function patchLastCachedMessageElement(m) {
+      const container = getMessagesEl();
+      if (!container) return false;
+      const candidates = [...container.querySelectorAll('.msg:not(.streaming)')];
+      const last = candidates[candidates.length - 1];
+      if (!last || last.dataset.timestamp !== m.timestamp) return false;
+      if (m.role === 'assistant') {
+        const bodyEl = last.querySelector('.msg-body');
+        const nextMd = String(m.content || '').trim();
+        if (getMessageMarkdown(bodyEl) === nextMd) return true;
+        setAssistantMessageBody(last, nextMd);
+        ensureAssistantShareButton(last);
+        return true;
+      }
+      const bodyEl = last.querySelector('.msg-body');
+      const text = String(m.content || '').trim();
+      const attachmentHtml = `${renderMessageImages(m.images || [])}${renderMessageFiles(m.files || [])}`;
+      const bodyHtml = `${attachmentHtml}${text ? escapeHtml(text).replace(/\n/g, '<br>') : ''}`;
+      if (bodyEl && bodyEl.innerHTML !== bodyHtml) {
+        bodyEl.innerHTML = bodyHtml || attachmentHtml;
+      }
+      bindMessagesMediaLoadScroll(container);
+      return true;
+    }
+
+    function trySyncTailMessages(sessionId, cached, newMsgs, newMeta, restoreFromBottom) {
+      if (!Array.isArray(cached) || !cached.length || !Array.isArray(newMsgs) || !newMsgs.length) {
+        return false;
+      }
+      const overlapIdx = findTailOverlapIndex(cached, newMsgs);
+      if (overlapIdx < 0) return false;
+
+      const anchor = cached[cached.length - 1];
+      const overlapMsg = newMsgs[overlapIdx];
+      const appendSlice = newMsgs.slice(overlapIdx + 1);
+      const updateAnchor = !messagesEqualForSync(anchor, overlapMsg);
+
+      let merged = cached.slice();
+      if (updateAnchor) merged[merged.length - 1] = overlapMsg;
+      if (appendSlice.length) merged = merged.concat(appendSlice);
+
+      if (!appendSlice.length && !updateAnchor) {
+        rememberSessionMessages(sessionId, merged, newMeta);
+        if (
+          sessionId === currentSessionId
+          && findOrphanStreamingShell(sessionId)
+          && messagesHaveAssistantSinceLastUser(merged)
+        ) {
+          return false;
+        }
+        return true;
+      }
+
+      rememberSessionMessages(sessionId, merged, newMeta);
+
+      if (sessionId !== currentSessionId) return true;
+
+      const container = getMessagesEl();
+      if (!container || container.querySelector('.empty-state')) return false;
+
+      if (updateAnchor) patchLastCachedMessageElement(overlapMsg);
+      if (appendSlice.length) appendTailMessageElements(appendSlice);
+      updateMessagesDomFingerprint(sessionId, merged, newMeta);
+
+      if (pendingScrollToTimestamp) {
+        /* 保持搜索跳转逻辑，不做滚动干预 */
+      } else if (restoreFromBottom != null) {
+        restoreMessagesScrollFromBottom(restoreFromBottom);
+      } else if (messagesPinnedToBottom) {
+        scheduleScrollMessagesToBottom();
+      }
+      updateScrollToBottomBtn();
+      updateLoadOlderButton(sessionId);
+      return true;
+    }
+
+    function tryMergeExpandedHistory(sessionId, cached, incoming, pageMeta, restoreFromBottom) {
+      if (!Array.isArray(cached) || !cached.length || !Array.isArray(incoming) || !incoming.length) {
+        return false;
+      }
+      if (cached.length <= incoming.length) return false;
+
+      const headTs = incoming[0]?.timestamp;
+      if (!headTs) return false;
+
+      let prefixLen = -1;
+      for (let i = 0; i < cached.length; i += 1) {
+        if (cached[i]?.timestamp === headTs) {
+          prefixLen = i;
+          break;
+        }
+      }
+      if (prefixLen <= 0) return false;
+
+      const prefix = cached.slice(0, prefixLen);
+      const tailSlice = cached.slice(prefixLen);
+      const overlapIdx = findTailOverlapIndex(tailSlice, incoming);
+      if (overlapIdx < 0) return false;
+
+      let mergedTail = tailSlice.slice();
+      const overlapMsg = incoming[overlapIdx];
+      const appendSlice = incoming.slice(overlapIdx + 1);
+      if (!messagesEqualForSync(mergedTail[overlapIdx], overlapMsg)) {
+        mergedTail[overlapIdx] = overlapMsg;
+      }
+      if (appendSlice.length) mergedTail = mergedTail.concat(appendSlice);
+
+      const merged = prefix.concat(mergedTail);
+      const mergedMeta = {
+        ...pageMeta,
+        has_older: true,
+        total: Math.max(Number(pageMeta.total || 0), merged.length),
+        offset: Math.min(Number(pageMeta.offset || 0), prefixLen),
+        messages_mtime: pageMeta.messages_mtime || sessionMessagesMtimeFromList(sessionId),
+      };
+      rememberSessionMessages(sessionId, merged, mergedMeta);
+      if (sessionId !== currentSessionId) return true;
+
+      if (trySyncTailMessages(sessionId, merged, incoming, mergedMeta, restoreFromBottom)) {
+        return true;
+      }
+      return false;
+    }
+
+    async function loadMessages(opts = {}) {
       if (!currentSessionId) { showEmptyState(); return; }
       const sessionId = currentSessionId;
-      const restoreFromBottom = captureMessagesScrollFromBottom();
-      const cached = sessionMessagesCache.get(sessionId);
-      const cachedFingerprint = cached ? sessionMessagesFingerprint(cached) : '';
-      if (cached?.length) {
-        renderLoadedMessages(sessionId, cached, restoreFromBottom);
+      let restoreFromBottom = null;
+      if (!pendingScrollToTimestamp) {
+        const scrollState = resolveMessagesScrollState(sessionId);
+        messagesPinnedToBottom = scrollState.pinnedToBottom;
+        restoreFromBottom = scrollState.fromBottom;
       }
-      const data = await api(`/api/sessions/${sessionId}/messages`);
-      if (sessionId !== currentSessionId) return;
+      const cached = sessionMessagesCache.get(sessionId);
+      const cachedMeta = sessionMessagesMeta(sessionId);
+      const cachedFingerprint = cached ? sessionMessagesFingerprint(cached, cachedMeta) : '';
+      const serverMtime = sessionMessagesMtimeFromList(sessionId);
+      const cachedMtime = Number(cachedMeta?.mtime || 0);
+      const skipFetch = !opts.force
+        && cached?.length
+        && serverMtime > 0
+        && cachedMtime > 0
+        && serverMtime === cachedMtime;
+      const cacheFresh = cached?.length && (
+        skipFetch
+        || serverMtime <= 0
+        || cachedMtime <= 0
+        || serverMtime === cachedMtime
+      );
+      if (cacheFresh) {
+        if (canSkipMessagesRender(sessionId, cached, cachedMeta)) {
+          syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
+        } else {
+          renderLoadedMessages(sessionId, cached, restoreFromBottom);
+        }
+      }
+      if (skipFetch) return;
+
+      loadMessagesAbort?.abort();
+      const abortCtrl = new AbortController();
+      loadMessagesAbort = abortCtrl;
+      const { signal } = abortCtrl;
+
+      let data;
+      try {
+        const msgHeaders = {};
+        const cachedEtag = sessionMessagesEtags.get(sessionId);
+        if (cachedEtag && !opts.force) {
+          msgHeaders['If-None-Match'] = cachedEtag;
+        }
+        data = await api(
+          `/api/sessions/${sessionId}/messages?tail=${MESSAGES_TAIL_DEFAULT}`,
+          { signal, headers: msgHeaders },
+        );
+      } catch (err) {
+        if (err?.name === 'AbortError') return;
+        throw err;
+      }
+      if (signal.aborted || sessionId !== currentSessionId) return;
+      if (data?.__notModified) {
+        if (data.__etag) sessionMessagesEtags.set(sessionId, data.__etag);
+        if (cached?.length) {
+          if (canSkipMessagesRender(sessionId, cached, cachedMeta)) {
+            syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
+          } else {
+            renderLoadedMessages(sessionId, cached, restoreFromBottom);
+          }
+        }
+        return;
+      }
+      if (data?.__etag) sessionMessagesEtags.set(sessionId, data.__etag);
       const msgs = data.messages || [];
-      rememberSessionMessages(sessionId, msgs);
-      const nextFingerprint = sessionMessagesFingerprint(msgs);
-      if (nextFingerprint === cachedFingerprint) return;
-      renderLoadedMessages(sessionId, msgs, cached?.length ? null : restoreFromBottom);
+      const pageMeta = {
+        total: data.total,
+        has_older: data.has_older,
+        offset: data.offset,
+        messages_mtime: data.messages_mtime || serverMtime,
+      };
+      const nextFingerprint = sessionMessagesFingerprint(msgs, pageMeta);
+      if (nextFingerprint === cachedFingerprint) {
+        rememberSessionMessages(sessionId, msgs, pageMeta);
+        if (canSkipMessagesRender(sessionId, msgs, pageMeta)) {
+          syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
+        } else {
+          renderLoadedMessages(sessionId, msgs, restoreFromBottom);
+        }
+        return;
+      }
+      if (cached?.length && trySyncTailMessages(sessionId, cached, msgs, pageMeta, restoreFromBottom)) {
+        return;
+      }
+      if (cached?.length && tryMergeExpandedHistory(sessionId, cached, msgs, pageMeta, restoreFromBottom)) {
+        return;
+      }
+      rememberSessionMessages(sessionId, msgs, pageMeta);
+      renderLoadedMessages(sessionId, msgs, restoreFromBottom);
+    }
+
+    async function loadOlderMessages() {
+      if (!currentSessionId || loadingOlderMessages) return;
+      const sessionId = currentSessionId;
+      const container = getMessagesEl();
+      const firstMsg = getOldestLoadedMessageEl(container);
+      const beforeTs = firstMsg?.dataset?.timestamp || '';
+      if (!beforeTs) return;
+      loadingOlderMessages = true;
+      try {
+        const data = await api(
+          `/api/sessions/${sessionId}/messages?before=${encodeURIComponent(beforeTs)}&limit=${MESSAGES_OLDER_PAGE}`,
+        );
+        if (sessionId !== currentSessionId) return;
+        const older = data.messages || [];
+        if (!older.length) {
+          rememberSessionMessages(sessionId, sessionMessagesCache.get(sessionId) || [], {
+            total: data.total,
+            has_older: false,
+            offset: data.offset,
+          });
+          updateLoadOlderButton(sessionId);
+          return;
+        }
+        const merged = [...older, ...(sessionMessagesCache.get(sessionId) || [])];
+        rememberSessionMessages(sessionId, merged, {
+          total: data.total,
+          has_older: data.has_older,
+          offset: Math.max(0, Number(data.offset || 0)),
+          messages_mtime: data.messages_mtime || sessionMessagesMtimeFromList(sessionId),
+        });
+        prependLoadedMessages(sessionId, older);
+        updateMessagesDomFingerprint(sessionId, merged, sessionMessagesMeta(sessionId));
+      } catch (err) {
+        console.error('loadOlderMessages', err);
+        updateLoadOlderButton(sessionId);
+      } finally {
+        loadingOlderMessages = false;
+        scheduleAutoLoadOlderIfNeeded(container);
+      }
     }
 
     function publicDisplayName(label) {
@@ -8280,27 +9357,14 @@
     function appendMessage(role, content, scroll = true, images = [], files = [], timestamp = '', authorLabel = '') {
       const container = document.getElementById('messages');
       if (container.querySelector('.empty-state')) dismissEmptyState(container);
-      const el = document.createElement('div');
-      el.className = `msg ${role}`;
-      const msgTs = timestamp || new Date().toISOString();
-      if (msgTs) el.dataset.timestamp = msgTs;
-      const label = role === 'user'
-        ? ((authorLabel || '').trim() || authUserDisplayName(currentAuthUser))
-        : 'Agent';
-      const imageHtml = renderMessageImages(images);
-      const fileHtml = renderMessageFiles(files);
-      const text = (content || '').trim();
-      const attachmentHtml = `${imageHtml}${fileHtml}`;
-      const bodyHtml = role === 'assistant'
-        ? `${attachmentHtml}${renderMarkdown(text)}`
-        : `${attachmentHtml}${text ? escapeHtml(text).replace(/\n/g, '<br>') : ''}`;
-      el.innerHTML = `
-        ${buildMsgLabelHtml(label, msgTs)}
-        <div class="msg-body">${bodyHtml || attachmentHtml}</div>`;
-      if (role === 'assistant') {
-        setMessageMarkdown(el.querySelector('.msg-body'), text);
-        ensureAssistantShareButton(el);
-      }
+      const el = buildMessageElement({
+        role,
+        content,
+        images,
+        files,
+        timestamp: timestamp || new Date().toISOString(),
+        author_label: authorLabel,
+      });
       container.appendChild(el);
       bindMessagesMediaLoadScroll(container);
       if (scroll) scheduleScrollMessagesToBottom({ force: true });
@@ -8322,23 +9386,39 @@
       return null;
     }
 
+    function messagesHaveAssistantSinceLastUser(msgs) {
+      if (!Array.isArray(msgs) || !msgs.length) return false;
+      let lastUserIdx = -1;
+      for (let i = msgs.length - 1; i >= 0; i -= 1) {
+        if (msgs[i].role === 'user') {
+          lastUserIdx = i;
+          break;
+        }
+      }
+      if (lastUserIdx < 0) return false;
+      for (let i = lastUserIdx + 1; i < msgs.length; i += 1) {
+        if (msgs[i].role === 'assistant' && String(msgs[i].content || '').trim()) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    /** 落盘消息已含 assistant 回复时，勿再挂载 streaming shell（避免双气泡）。 */
+    function shouldAppendStreamingShell(sessionId, msgs) {
+      const run = activeRuns.get(sessionId);
+      if (!run) return false;
+      if (messagesHaveAssistantSinceLastUser(msgs)) {
+        if (run.shellEl) run.shellEl = null;
+        return false;
+      }
+      return true;
+    }
+
     async function hasAssistantReplySinceLastUser(sessionId) {
       try {
-        const data = await api(`/api/sessions/${sessionId}/messages`);
-        const messages = data.messages || [];
-        let lastUserIdx = -1;
-        for (let i = messages.length - 1; i >= 0; i -= 1) {
-          if (messages[i].role === 'user') {
-            lastUserIdx = i;
-            break;
-          }
-        }
-        if (lastUserIdx < 0) return false;
-        for (let i = lastUserIdx + 1; i < messages.length; i += 1) {
-          if (messages[i].role === 'assistant' && String(messages[i].content || '').trim()) {
-            return true;
-          }
-        }
+        const data = await api(`/api/sessions/${sessionId}/messages?tail=30`);
+        return messagesHaveAssistantSinceLastUser(data.messages || []);
       } catch { /* ignore */ }
       return false;
     }
@@ -8393,7 +9473,7 @@
           runId,
         });
         updateInputState();
-        loadSessions();
+        loadSessions({ lite: true });
         startRunStreamPoll(sessionId);
 
         const isViewing = () => currentSessionId === sessionId;
@@ -8403,38 +9483,27 @@
           if (data.type === 'ack') {
             updateRunStatus(sessionId, { ack: data.line || '' });
           } else if (data.type === 'status') {
-            const patch = {
+            patchRunStatusFromServer(sessionId, {
               elapsed: data.elapsed_line || '',
               batch: data.batch_line || '',
               external: data.external_line || '',
-            };
-            updateRunStatus(sessionId, patch);
-            if ('phase_line' in data) {
-              const phase = data.phase_line || '';
-              if (isLifecyclePhaseText(phase)) {
-                if (isViewing()) {
-                  if (!assistantEl) {
-                    assistantEl = ensureStreamingShell(sessionId);
-                    activeRuns.get(sessionId).shellEl = assistantEl;
-                  }
-                  applyLifecyclePhaseToStream(sessionId, phase);
-                } else {
-                  applyLifecyclePhaseToStream(sessionId, phase);
-                }
-              } else {
-                updateRunStatus(sessionId, { phase });
+            });
+            if ('phase_line' in data && data.phase_line) {
+              if (isViewing() && !assistantEl) {
+                assistantEl = ensureStreamingShell(sessionId);
+                activeRuns.get(sessionId).shellEl = assistantEl;
               }
+              applyLifecyclePhaseToStream(sessionId, data.phase_line);
             }
           } else if (data.type === 'delta') {
+            const display = rememberRunStreamState(sessionId, data.markdown || '', data.process);
             if (!isViewing()) return;
             if (!assistantEl) {
               assistantEl = ensureStreamingShell(sessionId);
               activeRuns.get(sessionId).shellEl = assistantEl;
             }
-            const display = rememberRunStreamState(sessionId, data.markdown || '', data.process);
             if (display) {
-              updateStreamingMsgBody(assistantEl, display);
-              applyStreamPhaseFromDisplay(sessionId, display);
+              scheduleStreamingMsgBodyUpdate(assistantEl, display);
             }
           } else if (data.type === 'done') {
             const doneRun = activeRuns.get(sessionId);
@@ -8525,7 +9594,15 @@
 
       let data;
       try {
-        data = await api(`/api/sessions/${sid}/active-run`);
+        const headers = {};
+        const cachedEtag = activeRunEtags.get(sid);
+        if (cachedEtag) headers['If-None-Match'] = cachedEtag;
+        data = await api(`/api/sessions/${sid}/active-run`, { headers });
+        if (data.__notModified) {
+          if (data.__etag) activeRunEtags.set(sid, data.__etag);
+          return;
+        }
+        if (data.__etag) activeRunEtags.set(sid, data.__etag);
       } catch {
         return;
       }
@@ -8538,7 +9615,8 @@
         cancelling: false,
         status: {
           ack: data.ack_line || '',
-          phase: isRunStatusPhase(data.phase_line) ? (data.phase_line || '') : '',
+          lifecycle: '',
+          phase: '',
           batch: data.batch_line || '',
           external: data.external_line || '',
           elapsed: data.elapsed_line || '',
@@ -8548,21 +9626,25 @@
       });
       updateInputState();
       sortSessionsCache();
-      renderSessionList();
+      if (!patchSessionListFromCache(sessionsCache)) {
+        renderSessionList();
+      } else {
+        lastSessionListKey = sessionListPatchKey(sessionsCache);
+      }
 
       if (currentSessionId === sid) {
         if (data.ack_line || data.phase_line || data.elapsed_line || data.batch_line || data.external_line || data.markdown || data.process) {
           const shell = ensureStreamingShell(sid);
           activeRuns.get(sid).shellEl = shell;
           renderRunStatusEl(shell.querySelector('.run-status'), activeRuns.get(sid).status);
-          if (data.phase_line && isLifecyclePhaseText(data.phase_line)) {
+          if (data.phase_line) {
             applyLifecyclePhaseToStream(sid, data.phase_line, {
               markdown: data.markdown || '',
               process: data.process,
             });
           } else if (data.markdown || data.process) {
             const display = rememberRunStreamState(sid, data.markdown || '', data.process);
-            if (display) updateStreamingMsgBody(shell, display);
+            if (display) scheduleStreamingMsgBodyUpdate(shell, display);
           }
         } else {
           const typingEl = document.createElement('div');
@@ -8634,27 +9716,40 @@
         document.getElementById('input').value = '';
         autoResizeInput();
         clearPendingAttachments();
+        clearSessionInputDraft(sessionId);
       }
-      appendMessage('user', message, true, previewImages, previewFiles, '', authUserDisplayName(currentAuthUser));
-      sessionMessagesCache.delete(sessionId);
+      const userTimestamp = new Date().toISOString();
+      appendMessage('user', message, true, previewImages, previewFiles, userTimestamp, authUserDisplayName(currentAuthUser));
+      appendUserMessageToSessionCache(sessionId, {
+        role: 'user',
+        content: message,
+        timestamp: userTimestamp,
+        author_label: authUserDisplayName(currentAuthUser),
+      });
+      sessionMessagesEtags.delete(sessionId);
       activeRuns.set(sessionId, {
         pending: true,
         eventSource: null,
         runId: '',
         cancelling: false,
-        status: { ack: '', phase: '', batch: '', external: '', elapsed: '' },
+        status: { ack: '', lifecycle: '', phase: '', batch: '', external: '', elapsed: '' },
         shellEl: null,
         sentDraft,
       });
       if (currentSessionId === sessionId) {
         const shell = ensureStreamingShell(sessionId);
         activeRuns.get(sessionId).shellEl = shell;
-        const display = rememberRunStreamState(sessionId, '', { phase: '正在连接 Agent…' });
-        updateStreamingMsgBody(shell, display);
+        const bootstrapPhase = '正在连接 Agent…';
+        rememberRunStreamState(sessionId, '', { phase: bootstrapPhase });
+        scheduleStreamingMsgBodyUpdate(shell, { thinking: '', tools: [], phase: bootstrapPhase });
       }
       updateInputState();
       sortSessionsCache();
-      renderSessionList();
+      if (!patchSessionListFromCache(sessionsCache)) {
+        renderSessionList();
+      } else {
+        lastSessionListKey = sessionListPatchKey(sessionsCache);
+      }
 
       try {
         const { run_id } = await api('/api/chat', {
@@ -8725,6 +9820,7 @@
       input.value = text;
       autoResizeInput();
       input.focus();
+      syncCurrentSessionInputDraft();
       updateInputState();
       return true;
     }
@@ -8754,6 +9850,7 @@
         });
       }
       renderPendingAttachments();
+      syncCurrentSessionInputDraft();
       updateInputState();
       return true;
     }
@@ -8785,7 +9882,10 @@
     document.getElementById('input').addEventListener('input', () => {
       clearRetryPlaceholder();
       autoResizeInput();
-      if (!inputComposing) updateInputState();
+      if (!inputComposing) {
+        syncCurrentSessionInputDraft();
+        updateInputState();
+      }
     });
     const chatInput = document.getElementById('input');
     chatInput.addEventListener('compositionstart', () => {
@@ -8794,6 +9894,7 @@
     chatInput.addEventListener('compositionend', () => {
       inputComposing = false;
       if (inputComposeResizePending) autoResizeInput();
+      syncCurrentSessionInputDraft();
       updateInputState();
     });
     chatInput.addEventListener('keydown', (e) => {
@@ -8848,14 +9949,34 @@
       closeModelPicker();
     }
 
+    function syncUsageRangeUI() {
+      document.querySelectorAll('.usage-range-option').forEach((btn) => {
+        btn.classList.toggle('active', (btn.dataset.range || '') === usageRangeKey);
+      });
+    }
+
+    function usageRangeSkipsCache(rangeKey) {
+      return rangeKey === 'day';
+    }
+
+    function resetUsageDayLoad() {
+      delete usageStatsCache.day;
+      usageDayAbortController?.abort();
+      usageDayAbortController = null;
+    }
+
     async function openUsageModal() {
       if (!(currentAuthUser?.staffId || '').trim()) return;
       trackEvent('panel_open', { panel: 'usage' });
       const modal = document.getElementById('usage-modal');
       if (!modal) return;
+      usageRangeKey = 'day';
+      syncUsageRangeUI();
       modal.classList.add('open');
       modal.setAttribute('aria-hidden', 'false');
-      void loadUsageStats();
+      resetUsageDayLoad();
+      void loadUsageStatsForRange('day', { refresh: true });
+      void prefetchAllUsageStats({ refresh: true });
     }
 
     async function closeUsageModal() {
@@ -9161,6 +10282,7 @@
     }
 
     async function initCatalogPanel() {
+      if (typeof CatalogPanel === 'undefined') return;
       catalogPanel = new CatalogPanel({
         root: document.getElementById('catalog-panel'),
         metaEl: document.getElementById('catalog-meta'),
@@ -9316,12 +10438,16 @@
         const viewingId = currentSessionId;
         const wasDingtalk = currentSessionReadOnly;
         try {
-          await loadSessions();
+          await loadSessions({ lite: true });
           if (viewingId && currentSessionId === viewingId) {
-            const sessionActive = sessionsCache.find((s) => s.id === viewingId)?.running;
+            const sess = sessionsCache.find((s) => s.id === viewingId);
+            const sessionActive = sess?.running;
             if (sessionActive) await tryReconnectActiveRun(viewingId);
-            if (wasDingtalk) {
-              await loadMessages();
+            const serverMtime = Number(sess?.messages_mtime || 0);
+            const cachedMtime = Number(sessionMessagesMeta(viewingId)?.mtime || 0);
+            const messagesStale = serverMtime > 0 && cachedMtime > 0 && serverMtime !== cachedMtime;
+            if (wasDingtalk || messagesStale) {
+              await loadMessages({ force: messagesStale && !wasDingtalk });
             }
           }
         } catch { /* ignore poll errors */ }
@@ -9334,10 +10460,16 @@
       if (!sid) return;
       void (async () => {
         try {
-          await loadSessions();
-          const sessionActive = sessionsCache.find((s) => s.id === sid)?.running;
+          await loadSessions({ lite: true });
+          const sess = sessionsCache.find((s) => s.id === sid);
+          const sessionActive = sess?.running;
           if (sessionActive || activeRuns.has(sid)) {
             await tryReconnectActiveRun(sid);
+          }
+          const serverMtime = Number(sess?.messages_mtime || 0);
+          const cachedMtime = Number(sessionMessagesMeta(sid)?.mtime || 0);
+          if (serverMtime > 0 && cachedMtime > 0 && serverMtime !== cachedMtime) {
+            await loadMessages({ force: true });
           }
         } catch { /* ignore */ }
       })();
@@ -9426,6 +10558,126 @@
       return Number(value || 0).toLocaleString('zh-CN');
     }
 
+    function pickUsageDailyLabelIndices(n, plotW) {
+      const labelW = 32;
+      const minGapPx = 4;
+      const maxCount = Math.max(2, Math.floor((plotW + minGapPx) / (labelW + minGapPx)));
+      if (n <= maxCount) {
+        return Array.from({ length: n }, (_, i) => i);
+      }
+
+      const rawStep = (n - 1) / (maxCount - 1);
+      const niceSteps = [1, 2, 3, 5, 7, 10, 14, 21, 30];
+      const step = niceSteps.find((candidate) => candidate >= rawStep) || Math.ceil(rawStep);
+
+      const indices = [];
+      for (let i = 0; i < n; i += step) {
+        indices.push(i);
+      }
+
+      const last = n - 1;
+      const tail = indices[indices.length - 1];
+      if (tail !== last) {
+        const tailGap = last - tail;
+        const mergeThreshold = Math.max(2, Math.floor(step / 2));
+        if (tailGap < mergeThreshold) {
+          indices[indices.length - 1] = last;
+        } else if (indices.length < maxCount) {
+          indices.push(last);
+        } else {
+          indices[indices.length - 1] = last;
+        }
+      }
+      return indices;
+    }
+
+    function shouldRotateUsageDailyLabels(labelIndices, xAt) {
+      if (labelIndices.length < 2) return false;
+      for (let i = 1; i < labelIndices.length; i += 1) {
+        if (xAt(labelIndices[i]) - xAt(labelIndices[i - 1]) < 30) return true;
+      }
+      return false;
+    }
+
+    function renderUsageDailyChart(dailyRows) {
+      const wrap = document.getElementById('usage-daily-chart-wrap');
+      const chartEl = document.getElementById('usage-daily-chart');
+      if (!wrap || !chartEl) return;
+      const rows = Array.isArray(dailyRows) ? dailyRows.filter((row) => row && row.date) : [];
+      if (!rows.length) {
+        wrap.hidden = true;
+        chartEl.innerHTML = '';
+        return;
+      }
+      wrap.hidden = false;
+
+      const n = rows.length;
+      const vbW = 360;
+      const sidePad = 20;
+      const pad = { l: sidePad, r: sidePad, t: 14, b: 22 };
+      let vbH = 148;
+      const plotW = vbW - pad.l - pad.r;
+      let plotH = vbH - pad.t - pad.b;
+      const maxReq = Math.max(1, ...rows.map((row) => Number(row.requests || 0)));
+      const maxTok = Math.max(1, ...rows.map((row) => Number(row.tokens || 0)));
+
+      const xAt = (index) => pad.l + (n <= 1 ? plotW / 2 : (index / (n - 1)) * plotW);
+      const labelIndices = pickUsageDailyLabelIndices(n, plotW);
+      const rotateLabels = shouldRotateUsageDailyLabels(labelIndices, xAt);
+      if (rotateLabels) {
+        pad.b = 34;
+        vbH = 158;
+        plotH = vbH - pad.t - pad.b;
+      }
+      const yReq = (value) => pad.t + plotH - (Number(value || 0) / maxReq) * plotH;
+      const yTok = (value) => pad.t + plotH - (Number(value || 0) / maxTok) * plotH;
+
+      const buildLinePath = (yFn, key) => rows.map((row, index) => {
+        const x = xAt(index).toFixed(1);
+        const y = yFn(row[key]).toFixed(1);
+        return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
+      }).join(' ');
+
+      const buildAreaPath = (yFn, key) => {
+        const top = rows.map((row, index) => `${xAt(index).toFixed(1)},${yFn(row[key]).toFixed(1)}`);
+        const baseY = (pad.t + plotH).toFixed(1);
+        return `M ${xAt(0).toFixed(1)},${baseY} L ${top.join(' L ')} L ${xAt(n - 1).toFixed(1)},${baseY} Z`;
+      };
+
+      const parts = [];
+      parts.push(`<svg viewBox="0 0 ${vbW} ${vbH}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="每日用量折线图">`);
+      for (let grid = 0; grid <= 2; grid += 1) {
+        const gy = pad.t + (plotH * grid) / 2;
+        parts.push(`<line class="grid-line" x1="${pad.l}" y1="${gy.toFixed(1)}" x2="${vbW - pad.r}" y2="${gy.toFixed(1)}"/>`);
+      }
+      parts.push(`<line class="grid-line" x1="${pad.l}" y1="${pad.t + plotH}" x2="${vbW - pad.r}" y2="${pad.t + plotH}"/>`);
+      parts.push(`<path class="area-req" d="${buildAreaPath(yReq, 'requests')}"/>`);
+      parts.push(`<path class="area-tok" d="${buildAreaPath(yTok, 'tokens')}"/>`);
+      parts.push(`<path class="line-req" d="${buildLinePath(yReq, 'requests')}"/>`);
+      parts.push(`<path class="line-tok" d="${buildLinePath(yTok, 'tokens')}"/>`);
+
+      rows.forEach((row, index) => {
+        const title = `${row.date} · 请求 ${formatUsageNumber(row.requests)} · Token ${formatUsageNumber(row.tokens)}`;
+        const cx = xAt(index).toFixed(1);
+        parts.push(`<circle class="dot-req" cx="${cx}" cy="${yReq(row.requests).toFixed(1)}" r="2.8"><title>${escapeHtml(title)}</title></circle>`);
+        parts.push(`<circle class="dot-tok" cx="${cx}" cy="${yTok(row.tokens).toFixed(1)}" r="2.8"><title>${escapeHtml(title)}</title></circle>`);
+      });
+
+      labelIndices.forEach((index) => {
+        const row = rows[index];
+        const label = escapeHtml(String(row.label || row.date || '').slice(-5));
+        const x = xAt(index).toFixed(1);
+        const y = (pad.t + plotH + 12).toFixed(1);
+        if (rotateLabels) {
+          parts.push(`<text class="axis-label" x="${x}" y="${y}" text-anchor="middle" dominant-baseline="hanging" transform="rotate(-35 ${x} ${y})">${label}</text>`);
+        } else {
+          parts.push(`<text class="axis-label" x="${x}" y="${y}" text-anchor="middle" dominant-baseline="hanging">${label}</text>`);
+        }
+      });
+      parts.push('</svg>');
+      chartEl.innerHTML = parts.join('');
+    }
+
     function formatUsageErrorMessage(message) {
       const text = String(message || '').trim();
       if (!text) return '用量加载失败';
@@ -9475,7 +10727,8 @@
         if (tokenInput) tokenInput.value = '';
         if (statusEl) statusEl.textContent = '已保存，正在查询…';
         setUsagePanelMode('stats');
-        await loadUsageStats();
+        await loadUsageStatsForRange(usageRangeKey, { refresh: true });
+        void prefetchAllUsageStats({ refresh: true });
         return true;
       } catch (err) {
         if (statusEl) statusEl.textContent = err?.message || '保存失败';
@@ -9501,22 +10754,13 @@
       }
     }
 
-    async function loadUsageStats() {
-      const usageBtn = document.getElementById('btn-settings-usage');
-      const loggedIn = !!(currentAuthUser?.staffId || '').trim();
-      if (usageBtn) usageBtn.hidden = !loggedIn;
-      if (!loggedIn) return;
+    function applyUsageStatsResponse(data, resOk, fetchError) {
       const requestsEl = document.getElementById('usage-requests');
       const tokensEl = document.getElementById('usage-tokens');
       const hintEl = document.getElementById('usage-stats-hint');
-      if (requestsEl) requestsEl.textContent = '…';
-      if (tokensEl) tokensEl.textContent = '…';
-      if (hintEl) hintEl.textContent = '';
-      try {
-        const res = await fetch(`/api/usage/me?range=${encodeURIComponent(usageRangeKey)}`);
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || '加载失败');
-        if (data.needsSetup || data.needsReauth) {
+      if (!resOk) {
+        const message = fetchError || data?.error || '加载失败';
+        if (data?.needsSetup || data?.needsReauth) {
           setUsagePanelMode('setup');
           const setupStatus = document.getElementById('usage-setup-status');
           if (setupStatus) {
@@ -9527,41 +10771,130 @@
           return;
         }
         setUsagePanelMode('stats');
-        if (requestsEl) requestsEl.textContent = formatUsageNumber(data.requests);
-        if (tokensEl) tokensEl.textContent = formatUsageNumber(data.tokens);
-        if (hintEl) {
-          const dashboardLink = data.dashboardUrl
-            ? `<a href="${escapeHtml(data.dashboardUrl)}" target="_blank" rel="noopener noreferrer">Cursor Dashboard</a>`
-            : '<a href="https://cursor.com/dashboard/usage" target="_blank" rel="noopener noreferrer">Cursor Dashboard</a>';
-          if (data.error) {
-            hintEl.textContent = formatUsageErrorMessage(data.error);
-          } else if (data.tokensSource === 'cursor' && Number(data.tokens || 0) > 0) {
-            hintEl.innerHTML = `${escapeHtml(data.rangeLabel || '')}累计 · 数据来源 ${dashboardLink}`;
-          } else if (Number(data.requests || 0) > 0) {
-            hintEl.innerHTML = `${escapeHtml(data.rangeLabel || '')}共 ${formatUsageNumber(data.requests)} 次请求 · 数据来源 ${dashboardLink}`;
-          } else {
-            hintEl.innerHTML = `${escapeHtml(data.rangeLabel || '当前范围')}暂无用量 · 可在 ${dashboardLink} 核对`;
-          }
-        }
-        document.querySelectorAll('.usage-range-option').forEach((btn) => {
-          btn.classList.toggle('active', (btn.dataset.range || '') === (data.range || usageRangeKey));
-        });
-      } catch (err) {
-        setUsagePanelMode('stats');
         if (requestsEl) requestsEl.textContent = '—';
         if (tokensEl) tokensEl.textContent = '—';
-        if (hintEl) hintEl.textContent = formatUsageErrorMessage(err?.message) || '用量加载失败';
+        if (hintEl) hintEl.textContent = formatUsageErrorMessage(message) || '用量加载失败';
+        renderUsageDailyChart([]);
+        return;
+      }
+      if (data.needsSetup || data.needsReauth) {
+        setUsagePanelMode('setup');
+        const setupStatus = document.getElementById('usage-setup-status');
+        if (setupStatus) {
+          setupStatus.textContent = data.needsReauth
+            ? (formatUsageErrorMessage(data.error) || 'Cursor 会话已过期，请重新绑定')
+            : (data.setupHint || '请先绑定 Cursor 账号');
+        }
+        return;
+      }
+      setUsagePanelMode('stats');
+      if (requestsEl) requestsEl.textContent = formatUsageNumber(data.requests);
+      if (tokensEl) tokensEl.textContent = formatUsageNumber(data.tokens);
+      if (hintEl) {
+        const dashboardLink = data.dashboardUrl
+          ? `<a href="${escapeHtml(data.dashboardUrl)}" target="_blank" rel="noopener noreferrer">Cursor Dashboard</a>`
+          : '<a href="https://cursor.com/dashboard/usage" target="_blank" rel="noopener noreferrer">Cursor Dashboard</a>';
+        if (data.error) {
+          hintEl.textContent = formatUsageErrorMessage(data.error);
+        } else if (data.tokensSource === 'cursor' && Number(data.tokens || 0) > 0) {
+          hintEl.innerHTML = `${escapeHtml(data.rangeLabel || '')}累计 · 数据来源 ${dashboardLink}`;
+        } else if (Number(data.requests || 0) > 0) {
+          hintEl.innerHTML = `${escapeHtml(data.rangeLabel || '')}共 ${formatUsageNumber(data.requests)} 次请求 · 数据来源 ${dashboardLink}`;
+        } else {
+          hintEl.innerHTML = `${escapeHtml(data.rangeLabel || '当前范围')}暂无用量 · 可在 ${dashboardLink} 核对`;
+        }
+      }
+      syncUsageRangeUI();
+      renderUsageDailyChart(data.daily);
+    }
+
+    function applyUsageStatsFromCache(rangeKey) {
+      if (usageRangeSkipsCache(rangeKey)) return false;
+      const cached = usageStatsCache[rangeKey];
+      if (!cached) return false;
+      applyUsageStatsResponse(cached.data, cached.ok, cached.error);
+      return true;
+    }
+
+    function storeUsageStatsCache(rangeKey, entry) {
+      if (usageRangeSkipsCache(rangeKey)) return;
+      usageStatsCache[rangeKey] = entry;
+    }
+
+    async function loadUsageStatsForRange(rangeKey, options = {}) {
+      const refresh = options.refresh === true;
+      const silent = options.silent === true;
+      const isActive = rangeKey === usageRangeKey;
+      const loadSeq = (usageStatsInflightSeq[rangeKey] = (usageStatsInflightSeq[rangeKey] || 0) + 1);
+      let fetchSignal;
+      if (usageRangeSkipsCache(rangeKey) && refresh) {
+        usageDayAbortController?.abort();
+        usageDayAbortController = new AbortController();
+        fetchSignal = usageDayAbortController.signal;
+      }
+      const requestsEl = document.getElementById('usage-requests');
+      const tokensEl = document.getElementById('usage-tokens');
+      const hintEl = document.getElementById('usage-stats-hint');
+      const chartWrap = document.getElementById('usage-daily-chart-wrap');
+      if (isActive && !silent) {
+        if (requestsEl) requestsEl.textContent = '…';
+        if (tokensEl) tokensEl.textContent = '…';
+        if (hintEl) hintEl.textContent = '';
+        if (chartWrap) chartWrap.hidden = true;
+      }
+      try {
+        const refreshQs = refresh ? '&refresh=1' : '';
+        const fetchOpts = fetchSignal ? { signal: fetchSignal } : undefined;
+        const res = await fetch(
+          `/api/usage/me?range=${encodeURIComponent(rangeKey)}${refreshQs}`,
+          fetchOpts,
+        );
+        const data = await res.json();
+        if (loadSeq !== usageStatsInflightSeq[rangeKey]) return;
+        if (!res.ok) {
+          storeUsageStatsCache(rangeKey, { ok: false, data, error: data.error || '加载失败' });
+        } else {
+          storeUsageStatsCache(rangeKey, { ok: true, data });
+        }
+        if (rangeKey === usageRangeKey) {
+          applyUsageStatsResponse(data, res.ok, res.ok ? undefined : (data.error || '加载失败'));
+        }
+      } catch (err) {
+        if (err?.name === 'AbortError') return;
+        if (loadSeq !== usageStatsInflightSeq[rangeKey]) return;
+        const message = err?.message || '用量加载失败';
+        storeUsageStatsCache(rangeKey, { ok: false, data: {}, error: message });
+        if (rangeKey === usageRangeKey) {
+          applyUsageStatsResponse({}, false, message);
+        }
+      }
+    }
+
+    async function loadUsageStats(options = {}) {
+      const usageBtn = document.getElementById('btn-settings-usage');
+      const loggedIn = !!(currentAuthUser?.staffId || '').trim();
+      if (usageBtn) usageBtn.hidden = !loggedIn;
+      if (!loggedIn) return;
+      await loadUsageStatsForRange(usageRangeKey, options);
+    }
+
+    function prefetchAllUsageStats(options = {}) {
+      for (const key of USAGE_RANGE_KEYS) {
+        if (key === usageRangeKey) continue;
+        void loadUsageStatsForRange(key, { silent: true, refresh: options.refresh === true });
       }
     }
 
     function initUsageStatsSettings() {
       document.querySelectorAll('.usage-range-option').forEach((btn) => {
         btn.addEventListener('click', () => {
-          usageRangeKey = (btn.dataset.range || 'month').trim() || 'month';
-          document.querySelectorAll('.usage-range-option').forEach((item) => {
-            item.classList.toggle('active', item === btn);
-          });
-          void loadUsageStats();
+          const nextRange = (btn.dataset.range || 'day').trim() || 'day';
+          if (nextRange === usageRangeKey) return;
+          usageRangeKey = nextRange;
+          syncUsageRangeUI();
+          if (usageRangeSkipsCache(usageRangeKey)) resetUsageDayLoad();
+          const hadCache = applyUsageStatsFromCache(usageRangeKey);
+          void loadUsageStatsForRange(usageRangeKey, { refresh: true, silent: hadCache });
         });
       });
       document.getElementById('btn-usage-save')?.addEventListener('click', () => {
@@ -9614,7 +10947,8 @@
       updateDingtalkOwnerBar();
       refreshSidebarWidthBounds();
       if (currentAuthUser) void loadShareableWebUsers();
-      void loadUsageStats();
+      const usageBtn = document.getElementById('btn-settings-usage');
+      if (usageBtn) usageBtn.hidden = !(currentAuthUser?.staffId || '').trim();
     }
 
     async function logoutCurrentUser() {

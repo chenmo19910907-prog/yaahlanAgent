@@ -88,8 +88,8 @@ def run_web_chat(
         session_ctrl.check_cancelled()
     store = get_session_store()
     user_key = store.user_key(session_id)
-    prior_messages = store.get_messages(session_id)
-    is_new = not any(m.role == "assistant" for m in prior_messages)
+    meta = store.get_session(session_id)
+    is_new = meta is None or not meta.has_assistant
     image_list = list(image_paths or [])
     file_list = list(file_paths or [])
 

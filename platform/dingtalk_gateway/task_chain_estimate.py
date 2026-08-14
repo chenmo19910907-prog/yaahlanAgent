@@ -29,6 +29,11 @@ BATCH_LABEL_CHAINS: dict[str, list[tuple[str, float]]] = {
     "加钻石": [("查手机号→userId", STEP_MOA_QUERY_S), ("MOA发放钻石", STEP_MOA_MUTATE_S)],
     "加1钻石": [("查手机号→userId", STEP_MOA_QUERY_S), ("MOA发放钻石", STEP_MOA_MUTATE_S)],
     "改等级": [("查 userId", STEP_MOA_QUERY_S), ("MOA 改 VIP 等级", STEP_MOA_MUTATE_S)],
+    "房间满级": [
+        ("Admin 查 roomId", STEP_ADMIN_QUERY_S),
+        ("MOA 查经验+补差升级", STEP_MOA_QUERY_S + STEP_MOA_MUTATE_S),
+        ("MOA 验收", STEP_MOA_QUERY_S),
+    ],
     "VIP": [("查 userId", STEP_MOA_QUERY_S), ("MOA VIP 操作", STEP_MOA_MUTATE_S)],
     "手机号段互关": [("batch_phone_clique 单项", STEP_MOA_MUTATE_S + 2.0)],
     "查注册": [("Admin/MOA查用户详情", STEP_ADMIN_QUERY_S)],
@@ -49,6 +54,7 @@ BATCH_LABEL_CHAINS: dict[str, list[tuple[str, float]]] = {
 LABEL_ALIASES: list[tuple[str, str]] = [
     (r"发钻|发放钻石|加钻", "发钻石"),
     (r"改等级|vip\s*\d|VIP", "VIP"),
+    (r"满级\s*房间|房间.*满级|房间等级.*满级", "房间满级"),
     (r"互关|手机号段", "手机号段互关"),
     (r"查注册|注册时间", "查注册"),
     (r"分类|catalog|registry", "能力分类"),
@@ -263,11 +269,15 @@ def analyze_task_chain(
             ),
             source="agent:registry",
         )
-    if kind == "fast:moa_check" or re.fullmatch(r"MOA检查|检查MOA|MOA探活", text):
+    if kind == "fast:web_agent_restart" or re.fullmatch(
+        r"(?:重启|restart)\s*(?:web\s*agent|webagent|网页版\s*agent|网页\s*agent)",
+        text,
+        re.I,
+    ):
         return TaskChainEstimate(
-            steps=(("MOA Cookie 探活", 3.0),),
+            steps=(("重启 Web Agent", 6.0),),
             overhead_s=0.0,
-            source="fast:moa_check",
+            source="fast:web_agent_restart",
         )
     if kind == "agent:moa_mutate" or re.search(
         r"发钻|加钻|改等级|vip|背包|发.{0,6}钻石|钻石",

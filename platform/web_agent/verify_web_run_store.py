@@ -132,6 +132,88 @@ class WebRunStoreTests(unittest.TestCase):
     def test_discover_worker_pid_empty(self) -> None:
         self.assertEqual(self.store.discover_worker_pid("nonexistent-run-id-xyz"), 0)
 
+    def test_is_worker_alive_rediscovers_when_stale_pid_dead(self) -> None:
+        meta = self._sample_meta()
+        meta.worker_pid = 999999
+        self.store.create_run(meta)
+        with patch.object(self.store, "is_pid_alive", return_value=False):
+            with patch.object(self.store, "discover_worker_pid", return_value=54321):
+                self.assertTrue(self.store.is_worker_alive("abc123"))
+        refreshed = self.store.get_run("abc123")
+        assert refreshed is not None
+        self.assertEqual(refreshed.worker_pid, 54321)
+
+    def test_snapshot_throttles_delta_disk_writes(self) -> None:
+        self.store.create_run(self._sample_meta())
+        snap_path = self.store._snapshot_path("abc123")
+        write_calls = 0
+        original_write_text = Path.write_text
+
+        def counting_write_text(self, data, *args, **kwargs):
+            nonlocal write_calls
+            if self == snap_path:
+                write_calls += 1
+            return original_write_text(self, data, *args, **kwargs)
+
+        Path.write_text = counting_write_text  # type: ignore[method-assign]
+        try:
+            for i in range(25):
+                self.store.append_event(
+                    "abc123",
+                    {"type": "delta", "markdown": f"part-{i}"},
+                )
+        finally:
+            Path.write_text = original_write_text  # type: ignore[method-assign]
+        self.assertLess(write_calls, 10)
+        self.store.flush_snapshot("abc123")
+        snap = self.store.get_snapshot("abc123")
+        self.assertEqual(snap.last_markdown, "part-24")
+
+    def test_terminal_event_flushes_snapshot_immediately(self) -> None:
+        self.store.create_run(self._sample_meta())
+        for i in range(5):
+            self.store.append_event("abc123", {"type": "delta", "markdown": f"x{i}"})
+        self.store.append_event("abc123", {"type": "done", "text": "ok"})
+        snap = self.store._load_snapshot_from_disk("abc123")
+        self.assertEqual(snap.final_text, "ok")
+        self.assertEqual(snap.last_markdown, "x4")
+
+    def test_event_batching_reduces_disk_appends(self) -> None:
+        self.store.create_run(self._sample_meta())
+        events_path = self.store._events_path("abc123")
+        write_calls = 0
+        original_open = open
+
+        def counting_open(file, mode="r", *args, **kwargs):
+            nonlocal write_calls
+            if file == events_path and "a" in mode:
+                write_calls += 1
+            return original_open(file, mode, *args, **kwargs)
+
+        import builtins
+
+        builtins.open = counting_open  # type: ignore[assignment]
+        try:
+            for i in range(20):
+                self.store.append_event("abc123", {"type": "delta", "markdown": f"p{i}"})
+        finally:
+            builtins.open = original_open  # type: ignore[assignment]
+        self.assertLess(write_calls, 10)
+        self.store.flush_events("abc123")
+        text = events_path.read_text(encoding="utf-8")
+        self.assertEqual(len([ln for ln in text.splitlines() if ln.strip()]), 20)
+        new_events, _ = self.store.read_new_events("abc123")
+        self.assertEqual(len(new_events), 20)
+
+    def test_find_active_by_session_uses_index(self) -> None:
+        meta = self._sample_meta()
+        self.store.create_run(meta)
+        found = self.store.find_active_by_session(meta.session_id)
+        self.assertIsNotNone(found)
+        self.assertEqual(found.run_id, meta.run_id)  # type: ignore[union-attr]
+        self.store.mark_status("abc123", RUN_STATUS_DONE)
+        self.assertIsNone(self.store.find_active_by_session(meta.session_id))
+
     def test_is_pid_alive_rejects_zombie_stat(self) -> None:
         with patch("web_run_store.subprocess.run") as mock_run:
             mock_run.return_value = subprocess.CompletedProcess(
@@ -142,6 +224,32 @@ class WebRunStoreTests(unittest.TestCase):
             )
             with patch("web_run_store.os.kill", return_value=None):
                 self.assertFalse(WebRunStore.is_pid_alive(99999))
+
+    def test_set_worker_pid_clears_alive_cache(self) -> None:
+        import time
+
+        meta = self._sample_meta()
+        self.store.create_run(meta)
+        self.store._worker_alive_cache["abc123"] = (time.monotonic(), False)
+        with patch.object(self.store, "is_pid_alive", return_value=True):
+            self.assertFalse(self.store.is_worker_alive("abc123"))
+            self.store.set_worker_pid("abc123", 4242)
+            self.assertTrue(self.store.is_worker_alive("abc123"))
+
+    def test_read_new_events_includes_worker_disk_tail_with_empty_memory_stream(self) -> None:
+        meta = self._sample_meta()
+        self.store.create_run(meta)
+        events_path = self.store._events_path("abc123")
+        events_path.write_text(
+            '{"type":"status","phase_line":"Agent 已启动…"}\n',
+            encoding="utf-8",
+        )
+        self.store._tail_path("abc123").write_text("0", encoding="utf-8")
+        first, _ = self.store.read_new_events("abc123")
+        second, _ = self.store.read_new_events("abc123")
+        self.assertEqual(len(first), 1)
+        self.assertEqual(first[0].get("phase_line"), "Agent 已启动…")
+        self.assertEqual(len(second), 0)
 
 
 if __name__ == "__main__":

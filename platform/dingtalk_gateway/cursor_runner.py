@@ -143,6 +143,7 @@ def _consume_run_stream(
     session: TaskSession | None,
     user_key: str | None = None,
     on_render: Callable[[str], None] | None,
+    on_phase: Callable[[str], None] | None = None,
     show_thinking: bool = True,
     card_compact: bool = False,
     web_stream: bool = False,
@@ -154,6 +155,15 @@ def _consume_run_stream(
     rendered = False
     seen_tool_steps: set[str] = set()
     last_render_at = 0.0
+
+    def _emit_status_phase(hint: str) -> bool:
+        text = (hint or "").strip()
+        if not text:
+            return False
+        changed = renderer.set_status_hint(text)
+        if web_stream and on_phase:
+            on_phase(text)
+        return changed
 
     def _render_markdown() -> str:
         if web_stream:
@@ -186,7 +196,7 @@ def _consume_run_stream(
         rendered = True
 
     if not card_compact:
-        renderer.set_status_hint("Agent 已启动…")
+        _emit_status_phase("Agent 已启动…")
     _maybe_render(force=True)
 
     stream_started_at = time.monotonic()
@@ -200,7 +210,7 @@ def _consume_run_stream(
                 except TaskInterrupted:
                     break
             if time.monotonic() - stream_started_at >= _STREAM_EXECUTING_AFTER_S:
-                renderer.set_status_hint("Agent 执行中…")
+                _emit_status_phase("Agent 执行中…")
             _maybe_render(force=True)
 
     heartbeat_thread = threading.Thread(
@@ -240,7 +250,7 @@ def _consume_run_stream(
                 elif msg_type == "status":
                     status = str(getattr(sdk_message, "status", "") or "")
                     if status in ("running", "in_progress", "IN_PROGRESS"):
-                        if renderer.set_status_hint("Agent 执行中…"):
+                        if _emit_status_phase("Agent 执行中…"):
                             changed = True
 
             step = event.step
@@ -554,6 +564,7 @@ def _run_agent_prompt_impl(
                     session=session,
                     user_key=user_key,
                     on_render=on_render,
+                    on_phase=on_phase,
                     show_thinking=show_thinking,
                     card_compact=card_compact,
                     web_stream=web_stream,

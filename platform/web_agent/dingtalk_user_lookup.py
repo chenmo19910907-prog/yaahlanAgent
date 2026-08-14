@@ -33,6 +33,9 @@ _lock = threading.Lock()
 _cache: dict[str, str] | None = None
 _org_roster_cache: dict[str, object] | None = None
 _org_roster_refresh_attempt_at: float = 0.0
+_STATIC_STAFF_LABELS: dict[str, str] | None = None
+_STATIC_STAFF_LABELS_AT: float = 0.0
+STATIC_STAFF_LABELS_TTL_S = 45.0
 ORG_ROSTER_RETRY_S = 900
 # 共同对话选人列表不展示的系统/占位账号
 _COLLABORATOR_EXCLUDED_DISPLAY_NAMES = frozenset({"未知用户", "测试员"})
@@ -484,6 +487,30 @@ def load_org_roster(*, refresh: bool = False) -> list[dict[str, str]]:
     return users
 
 
+def collect_static_staff_labels(*, force: bool = False) -> dict[str, str]:
+    """汇总与会话无关的人员标签（登录/留言板/姓名缓存/通讯录），带短 TTL。"""
+    global _STATIC_STAFF_LABELS, _STATIC_STAFF_LABELS_AT
+    now = time.monotonic()
+    with _lock:
+        if (
+            not force
+            and _STATIC_STAFF_LABELS is not None
+            and now - _STATIC_STAFF_LABELS_AT < STATIC_STAFF_LABELS_TTL_S
+        ):
+            return dict(_STATIC_STAFF_LABELS)
+    known: dict[str, str] = {}
+    known.update(collect_web_auth_staff_labels())
+    known.update(collect_message_board_staff_labels())
+    with _lock:
+        known.update(_load_cache())
+    for user in load_org_roster():
+        _merge_staff_label(known, user["staffId"], user["displayName"])
+    with _lock:
+        _STATIC_STAFF_LABELS = dict(known)
+        _STATIC_STAFF_LABELS_AT = now
+    return dict(known)
+
+
 def collect_all_staff_labels(
     sessions: list[SessionMeta],
     *,
@@ -491,13 +518,8 @@ def collect_all_staff_labels(
     max_api_lookups: int = 12,
 ) -> dict[str, str]:
     """汇总所有已知人员：会话、登录、留言板、姓名缓存、企业通讯录。"""
-    known = collect_known_labels(sessions)
-    known.update(collect_web_auth_staff_labels())
-    known.update(collect_message_board_staff_labels())
-    with _lock:
-        known.update(_load_cache())
-    for user in load_org_roster():
-        _merge_staff_label(known, user["staffId"], user["displayName"])
+    known = collect_static_staff_labels()
+    known.update(collect_known_labels(sessions))
     if try_api_for_ascii:
         api_calls = 0
         for uid, label in list(known.items()):
