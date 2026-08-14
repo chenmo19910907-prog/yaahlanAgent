@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-14 11:49:22 北京时间",
-  "total_items": 275,
+  "generated_at": "2026-08-14 19:22:33 北京时间",
+  "total_items": 279,
   "module_count": 27,
   "modules": [
     {
@@ -1937,8 +1937,23 @@
     {
       "id": "家族",
       "label": "家族",
-      "item_count": 44,
+      "item_count": 48,
       "categories": [
+        {
+          "name": "家族",
+          "items": [
+            {
+              "name": "家族基金-测试数据准备",
+              "prompts": [
+                "执行工作流 家族基金-测试数据准备",
+                "工作流 family-fund-test-setup <familyId> <fundTier> <contribution> <weekMonday> <memberUserId> <memberContrib> <rewardDiamonds> <clearLastWeek>"
+              ],
+              "source": "工作流",
+              "source_id": "workflow",
+              "env": "tool"
+            }
+          ]
+        },
         {
           "name": "家族PK",
           "items": [
@@ -2389,6 +2404,39 @@
               "prompts": [
                 "家族 <familyId> 基金返奖 <diamonds> 钻石",
                 "设置家族 <familyId> 返奖 <diamonds>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            },
+            {
+              "name": "家族基金-奖励下发",
+              "prompts": [
+                "家族基金本周奖励下发",
+                "家族基金上周奖励下发",
+                "dispatchFamilyFundRewardTask"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            },
+            {
+              "name": "家族基金-清除奖励下发记录",
+              "prompts": [
+                "清除家族基金本周奖励下发记录",
+                "清除家族基金上周奖励下发记录",
+                "清除 family:fund:lock 后再发奖"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            },
+            {
+              "name": "家族基金-清除档位缓存",
+              "prompts": [
+                "清除家族 <familyId> 基金档位缓存",
+                "设基金档位前清缓存",
+                "清除 family:fund:tier 缓存"
               ],
               "source": "MOA",
               "source_id": "moa",

@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20260814034922"></script>
-  <script src="demo-api.js?v=20260814034922"></script>
+  <script src="demo-fixtures.js?v=20260814112233"></script>
+  <script src="demo-api.js?v=20260814112233"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -2630,6 +2630,7 @@
     }
     .usage-daily-chart-wrap[hidden] { display: none !important; }
     .usage-daily-chart-scroll {
+      position: relative;
       overflow: visible;
       border: 1px solid var(--border);
       border-radius: 12px;
@@ -2684,6 +2685,60 @@
       stroke: var(--bg-soft);
       stroke-width: 1.5;
     }
+    .usage-daily-chart .usage-chart-hit {
+      fill: transparent;
+      stroke: none;
+      cursor: default;
+      pointer-events: all;
+    }
+    .usage-daily-chart .dot-req,
+    .usage-daily-chart .dot-tok {
+      pointer-events: none;
+    }
+    .usage-chart-tooltip {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 3;
+      pointer-events: none;
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-panel);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+      font-size: 0.68rem;
+      line-height: 1.45;
+      color: var(--text);
+      white-space: nowrap;
+      transform: translate(-50%, calc(-100% - 8px));
+      opacity: 0;
+      transition: opacity 0.12s ease;
+    }
+    .usage-chart-tooltip.visible {
+      opacity: 1;
+    }
+    .usage-chart-tooltip .tip-date {
+      color: var(--muted);
+      margin-bottom: 3px;
+      font-variant-numeric: tabular-nums;
+    }
+    .usage-chart-tooltip .tip-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+    .usage-chart-tooltip .tip-row + .tip-row {
+      margin-top: 2px;
+    }
+    .usage-chart-tooltip .tip-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .usage-chart-tooltip .tip-dot.req { background: var(--accent); }
+    .usage-chart-tooltip .tip-dot.tok { background: #34d399; }
     .usage-daily-legend {
       display: flex;
       flex-wrap: wrap;
@@ -4163,7 +4218,7 @@
                 </span>
                 <span class="reply-mode-label">标准回复</span>
               </button>
-              <label class="dingtalk-push-toggle" id="dingtalk-push-toggle" title="执行完成后将最终结果发送到您的钉钉私聊">
+              <label class="dingtalk-push-toggle" id="dingtalk-push-toggle" title="执行完成后将按当前勾选状态决定是否发送到您的钉钉私聊">
                 <input type="checkbox" id="chk-push-dingtalk" />
                 <span>结果发钉钉</span>
               </label>
@@ -4274,11 +4329,6 @@
           <div class="external-agent-list" id="external-agent-list"></div>
         </div>
         <div class="settings-section">
-          <div class="settings-label">其他</div>
-          <label class="settings-toggle-row" for="settings-push-default">
-            <input type="checkbox" id="settings-push-default" />
-            <span>默认勾选「结果发钉钉」</span>
-          </label>
           <div class="settings-footer-links">
             <button type="button" class="settings-link" id="btn-settings-about" title="关于 Yaahlan Web Agent" aria-label="关于">
               <span>关于</span>
@@ -4377,6 +4427,7 @@
           <div class="usage-daily-chart-wrap" id="usage-daily-chart-wrap" hidden>
             <div class="usage-daily-chart-scroll">
               <div class="usage-daily-chart" id="usage-daily-chart" aria-hidden="true"></div>
+              <div class="usage-chart-tooltip" id="usage-chart-tooltip" hidden role="tooltip"></div>
             </div>
             <div class="usage-daily-legend">
               <span class="lg-req">请求数</span>
@@ -4493,7 +4544,7 @@
   <script src="analytics.js"></script>
   <script src="bookmarks_panel.js"></script>
   <script src="message_board_panel.js?v=20260730b"></script>
-  <script src="about_panel.js?v=20260803b"></script>
+  <script src="about_panel.js?v=20260814a"></script>
   <script src="catalog_panel.js?v=20260813"></script>
   <script src="moa_record_panel.js?v=20260803d"></script>
   <script src="waiting_fx.js"></script>
@@ -4506,12 +4557,15 @@
     let currentAuthUser = null;
     let usageRangeKey = 'day';
     const USAGE_RANGE_KEYS = ['day', 'week', 'month', '7d', '30d'];
+    const USAGE_STATS_CACHE_STORAGE_KEY = 'web_agent_usage_stats_cache';
     /** @type {Record<string, { ok: boolean, data: object, error?: string }>} */
     const usageStatsCache = Object.create(null);
     /** @type {Record<string, number>} */
     const usageStatsInflightSeq = Object.create(null);
     /** @type {AbortController | null} */
     let usageDayAbortController = null;
+    /** @type {{ ok: boolean, data: object, error?: string } | null} */
+    let usageDayLatest = null;
     let otpAuthEnabled = true;
     /** @type {Map<string, { eventSource: EventSource, runId: string, cancelling?: boolean, failed?: boolean, status: { ack: string, lifecycle: string, phase: string, batch: string, external: string, elapsed: string }, shellEl: HTMLElement | null, sentDraft?: { text: string, images: typeof pendingImages } }>} */
     const activeRuns = new Map();
@@ -4576,11 +4630,23 @@
       if (prevSessionId && prevSessionId !== sessionId) {
         saveCurrentSessionScrollState();
         saveSessionInputDraft(prevSessionId);
+        clearMessagesDomRendered();
+        loadMessagesAbort?.abort();
+        const nextCached = sessionMessagesCache.get(sessionId);
+        if (!nextCached?.length) {
+          const container = getMessagesEl();
+          if (container) {
+            stopFeatureDemoCarousel();
+            container.innerHTML = '';
+            ensureLoadOlderButton(container);
+          }
+        }
       }
       pendingScrollToTimestamp = scrollToTimestamp;
       currentSessionId = sessionId;
       persistSessionId(sessionId);
       syncSessionReadOnly(sessionId);
+      applySessionPushResultPref(sessionId);
       if (!markSessionListActive(sessionId)) renderSessionList();
       updateDingtalkOwnerBar();
       await loadMessages();
@@ -4772,6 +4838,11 @@
       messagesDomFingerprint = '';
     }
 
+    function messagesDomMatchesSession(sessionId) {
+      const sid = String(sessionId || '').trim();
+      return !!sid && sid === messagesDomSessionId;
+    }
+
     function updateMessagesDomFingerprint(sessionId, msgs, meta = null) {
       const sid = String(sessionId || '').trim();
       if (!sid || sid !== messagesDomSessionId) return;
@@ -4785,6 +4856,7 @@
       const assistants = container.querySelectorAll('.msg.assistant');
       for (let i = assistants.length - 1; i >= 0; i -= 1) {
         const el = assistants[i];
+        if (isStreamingShellFinalized(el)) continue;
         if (el.classList.contains('streaming') || !el.dataset.timestamp) {
           return el;
         }
@@ -4792,18 +4864,62 @@
       return null;
     }
 
+    /** SSE 已 finalize 的尾部 shell（finishRun 后 activeRuns 已清，仍须合并落盘 assistant）。 */
+    function findFinalizedTailShell(sessionId) {
+      if (currentSessionId !== sessionId) return null;
+      const container = getMessagesEl();
+      if (!container) return null;
+      const assistants = container.querySelectorAll('.msg.assistant');
+      if (!assistants.length) return null;
+      const tail = assistants[assistants.length - 1];
+      return isStreamingShellFinalized(tail) ? tail : null;
+    }
+
     function resolveTailMergeShell(sessionId) {
       const run = activeRuns.get(sessionId);
       if (run?.shellEl?.isConnected) return run.shellEl;
-      return findOrphanStreamingShell(sessionId);
+      const orphan = findOrphanStreamingShell(sessionId);
+      if (orphan) return orphan;
+      return findFinalizedTailShell(sessionId);
+    }
+
+    function tailAssistantBubbleCount(sessionId) {
+      const container = getMessagesEl();
+      if (!container) return 0;
+      const nodes = [...container.querySelectorAll('.msg')];
+      let lastUserIdx = -1;
+      for (let i = nodes.length - 1; i >= 0; i -= 1) {
+        if (nodes[i].classList.contains('user')) {
+          lastUserIdx = i;
+          break;
+        }
+      }
+      if (lastUserIdx < 0) return 0;
+      let count = 0;
+      for (let i = lastUserIdx + 1; i < nodes.length; i += 1) {
+        if (nodes[i].classList.contains('assistant')) count += 1;
+      }
+      return count;
+    }
+
+    function assistantContentAlreadyInDom(content) {
+      const md = String(content || '').trim();
+      if (!md) return false;
+      const container = getMessagesEl();
+      if (!container) return false;
+      const assistants = container.querySelectorAll('.msg.assistant');
+      for (let i = assistants.length - 1; i >= 0; i -= 1) {
+        const bodyEl = assistants[i].querySelector('.msg-body');
+        if (getMessageMarkdown(bodyEl) === md) return true;
+      }
+      return false;
     }
 
     function mergeAssistantIntoShell(sessionId, shellEl, assistantMsg) {
       if (!shellEl?.isConnected || !assistantMsg) return false;
-      setAssistantMessageBody(shellEl, assistantMsg.content);
-      clearRunStatus(sessionId, shellEl);
-      ensureAssistantShareButton(shellEl);
-      if (assistantMsg.timestamp) shellEl.dataset.timestamp = assistantMsg.timestamp;
+      finalizeStreamingShell(sessionId, shellEl, assistantMsg.content, {
+        timestamp: assistantMsg.timestamp,
+      });
       const run = activeRuns.get(sessionId);
       if (run?.shellEl === shellEl) run.shellEl = null;
       return true;
@@ -4818,6 +4934,12 @@
       // 落盘已有 assistant 时仍挂着 shell（含 finishRun 后孤儿 shell），须强制重绘去重
       if (orphanShell && messagesHaveAssistantSinceLastUser(cachedMsgs)) {
         if (run?.shellEl === orphanShell) run.shellEl = null;
+        return false;
+      }
+      if (
+        messagesHaveAssistantSinceLastUser(cachedMsgs)
+        && tailAssistantBubbleCount(sessionId) > 1
+      ) {
         return false;
       }
       if (!run) return !orphanShell;
@@ -5521,7 +5643,11 @@
     const WEB_READONLY_PLACEHOLDER = '此会话归属他人，仅供查看；请点「新对话」继续自己的任务';
 
     function canAttachFiles() {
-      return !currentSessionReadOnly && !isCurrentSessionStreaming();
+      return !currentSessionReadOnly;
+    }
+
+    function canOpenAttachPicker() {
+      return canAttachFiles() && !isCurrentSessionStreaming();
     }
 
     function collectAttachmentFilesFromDataTransfer(dataTransfer) {
@@ -5549,7 +5675,7 @@
       if (!inputWrap || !textarea) return;
 
       attachBtn?.addEventListener('click', () => {
-        if (!canAttachFiles()) return;
+        if (!canOpenAttachPicker()) return;
         fileInput?.click();
       });
       fileInput?.addEventListener('change', () => {
@@ -6042,15 +6168,66 @@
 
     function refreshStreamingShellFromRun(sessionId) {
       const run = activeRuns.get(sessionId);
-      if (!run?.lastStream?.display) return;
+      if (!run?.lastStream?.display || run.streamFinalized) return;
       const shell = run.shellEl || ensureStreamingShell(sessionId);
+      if (isStreamingShellFinalized(shell)) return;
       scheduleStreamingMsgBodyUpdate(shell, run.lastStream.display);
     }
 
     const streamingBodyRaf = new WeakMap();
 
-    function scheduleStreamingMsgBodyUpdate(shell, display) {
+    function cancelStreamingMsgBodyUpdate(shell) {
       if (!shell) return;
+      const prev = streamingBodyRaf.get(shell);
+      if (prev) {
+        cancelAnimationFrame(prev);
+        streamingBodyRaf.delete(shell);
+      }
+    }
+
+    function isStreamingShellFinalized(shell) {
+      return shell?.dataset?.streamFinalized === '1';
+    }
+
+    function finalizeStreamingShell(sessionId, shellEl, markdown, opts = {}) {
+      if (!shellEl?.isConnected) return;
+      cancelStreamingMsgBodyUpdate(shellEl);
+      shellEl.dataset.streamFinalized = '1';
+      clearRunStatus(sessionId, shellEl);
+      const md = String(markdown || '').trim();
+      setAssistantMessageBody(shellEl, md || '（无回复）');
+      ensureAssistantShareButton(shellEl);
+      if (opts.timestamp) shellEl.dataset.timestamp = opts.timestamp;
+      const run = activeRuns.get(sessionId);
+      if (run) run.streamFinalized = true;
+    }
+
+    async function finalizeStreamingShellFromServer(sessionId) {
+      const run = activeRuns.get(sessionId);
+      const shell = run?.shellEl;
+      if (!shell?.isConnected || isStreamingShellFinalized(shell)) return;
+      try {
+        const data = await api(`/api/sessions/${sessionId}/messages?tail=30`);
+        const msgs = data.messages || [];
+        if (!messagesHaveAssistantSinceLastUser(msgs)) return;
+        let lastAssist = null;
+        for (let i = msgs.length - 1; i >= 0; i -= 1) {
+          if (msgs[i].role === 'assistant' && String(msgs[i].content || '').trim()) {
+            lastAssist = msgs[i];
+            break;
+          }
+        }
+        if (lastAssist) {
+          finalizeStreamingShell(sessionId, shell, lastAssist.content, {
+            timestamp: lastAssist.timestamp,
+          });
+          sessionMessagesEtags.delete(sessionId);
+        }
+      } catch { /* 兜底失败时由 loadMessages 重绘 */ }
+    }
+
+    function scheduleStreamingMsgBodyUpdate(shell, display) {
+      if (!shell || isStreamingShellFinalized(shell)) return;
       const prev = streamingBodyRaf.get(shell);
       if (prev) cancelAnimationFrame(prev);
       streamingBodyRaf.set(shell, requestAnimationFrame(() => {
@@ -6079,12 +6256,14 @@
           stopRunStreamPoll(sid);
           return;
         }
+        if (current.streamFinalized) return;
         if (sid !== currentSessionId) return;
         try {
           const headers = {};
           const cachedEtag = activeRunEtags.get(sid);
           if (cachedEtag) headers['If-None-Match'] = cachedEtag;
           const active = await api(`/api/sessions/${sid}/active-run`, { headers });
+          if (activeRuns.get(sid)?.streamFinalized) return;
           if (active.__notModified) {
             if (active.__etag) activeRunEtags.set(sid, active.__etag);
             return;
@@ -6092,6 +6271,19 @@
           if (active.__etag) activeRunEtags.set(sid, active.__etag);
           if (!active?.active || !active.run_id) {
             stopRunStreamPoll(sid);
+            if (current.streamFinalized) {
+              if (activeRuns.has(sid)) finishRun(sid);
+              else refreshSessionListAfterRunEnd(sid);
+              return;
+            }
+            if (sid === currentSessionId && current.shellEl?.isConnected) {
+              await finalizeStreamingShellFromServer(sid);
+            }
+            if (activeRuns.has(sid)) {
+              finishRun(sid);
+            } else {
+              refreshSessionListAfterRunEnd(sid);
+            }
             return;
           }
           const md = String(active.markdown || '');
@@ -6129,7 +6321,7 @@
 
     function applyLifecyclePhaseToStream(sessionId, phase, { markdown = '', process = null } = {}) {
       const run = activeRuns.get(sessionId);
-      if (!run) return;
+      if (!run || run.streamFinalized) return;
       const md = String(markdown || run.lastStream?.markdown || '');
       const proc = {
         ...(process && typeof process === 'object' ? process : (run.lastStream?.process || {})),
@@ -6142,7 +6334,7 @@
     }
 
     function updateStreamingMsgBody(shell, display) {
-      if (!shell) return;
+      if (!shell || isStreamingShellFinalized(shell)) return;
       const bodyEl = shell.querySelector('.msg-body');
       if (!bodyEl) return;
       const payload = (display && typeof display === 'object')
@@ -6237,8 +6429,9 @@
 
     const MODEL_KEY = 'web_agent_model';
     const EXTERNAL_AGENTS_KEY = 'web_agent_enabled_external_agents';
-    const PUSH_RESULT_DEFAULT_KEY = 'web_agent_push_result_default';
     const REPLY_MODE_STORAGE_KEY = 'web_agent_reply_mode';
+    /** @type {Map<string, boolean>} 各会话「结果发钉钉」勾选，默认不勾选 */
+    const sessionPushResultPrefs = new Map();
     const REPLY_MODES = ['concise', 'standard', 'detailed'];
     const REPLY_MODE_LABELS = {
       concise: '精简回复',
@@ -6256,12 +6449,10 @@
       return !!(currentAuthUser?.staffId || '').trim();
     }
 
-    function loadPushResultDefaultChecked() {
-      return localStorage.getItem(PUSH_RESULT_DEFAULT_KEY) === '1';
-    }
-
-    function savePushResultDefaultChecked(checked) {
-      localStorage.setItem(PUSH_RESULT_DEFAULT_KEY, checked ? '1' : '0');
+    function getSessionPushResultPref(sessionId) {
+      const sid = String(sessionId || '').trim();
+      if (!sid) return false;
+      return sessionPushResultPrefs.get(sid) === true;
     }
 
     function isPushResultChecked() {
@@ -6269,10 +6460,40 @@
       return !!el?.checked;
     }
 
-    function setPushResultChecked(checked) {
+    function setPushResultChecked(checked, { updateSession = true } = {}) {
       const el = document.getElementById('chk-push-dingtalk');
       if (!el) return;
       el.checked = !!checked;
+      if (updateSession && currentSessionId) {
+        sessionPushResultPrefs.set(currentSessionId, !!checked);
+      }
+      syncPushResultToggleUi();
+    }
+
+    function applySessionPushResultPref(sessionId) {
+      setPushResultChecked(getSessionPushResultPref(sessionId), { updateSession: false });
+    }
+
+    async function syncActiveRunPushPref(checked) {
+      const run = activeRuns.get(currentSessionId);
+      const runId = String(run?.runId || '').trim();
+      if (!runId) return;
+      try {
+        await api(`/api/runs/${encodeURIComponent(runId)}/push-dingtalk`, {
+          method: 'PUT',
+          body: JSON.stringify({ push_result_to_dingtalk: !!checked }),
+        });
+      } catch (err) {
+        console.warn('syncActiveRunPushPref', err);
+      }
+    }
+
+    function onPushResultCheckboxChange() {
+      const checked = isPushResultChecked();
+      if (currentSessionId) {
+        sessionPushResultPrefs.set(currentSessionId, checked);
+      }
+      void syncActiveRunPushPref(checked);
       syncPushResultToggleUi();
     }
 
@@ -6286,14 +6507,16 @@
       const hidden = readonly || isGuestMode();
       wrap.hidden = hidden;
       wrap.classList.toggle('is-checked', !!checkbox.checked);
-      wrap.classList.toggle('is-disabled', !allowed || busy || readonly);
-      checkbox.disabled = !allowed || busy || readonly;
+      wrap.classList.toggle('is-disabled', !allowed || readonly);
+      checkbox.disabled = !allowed || readonly;
       if (!allowed) {
         wrap.title = '请先使用钉钉账号登录后再推送结果';
       } else if (busy) {
-        wrap.title = '执行中不可修改推送选项';
+        wrap.title = checkbox.checked
+          ? '执行完成后将按当前勾选状态推送到钉钉私聊，可随时取消'
+          : '执行完成后不会推送；可随时勾选以在结束时发送';
       } else {
-        wrap.title = '执行完成后将最终结果发送到您的钉钉私聊';
+        wrap.title = '执行完成后将按当前勾选状态决定是否发送到您的钉钉私聊';
       }
     }
 
@@ -6396,16 +6619,7 @@
     }
 
     function initPushResultControls() {
-      setPushResultChecked(loadPushResultDefaultChecked());
-      document.getElementById('chk-push-dingtalk')?.addEventListener('change', syncPushResultToggleUi);
-      const settingsDefault = document.getElementById('settings-push-default');
-      if (settingsDefault) {
-        settingsDefault.checked = loadPushResultDefaultChecked();
-        settingsDefault.addEventListener('change', () => {
-          savePushResultDefaultChecked(!!settingsDefault.checked);
-          setPushResultChecked(!!settingsDefault.checked);
-        });
-      }
+      document.getElementById('chk-push-dingtalk')?.addEventListener('change', onPushResultCheckboxChange);
       syncPushResultToggleUi();
     }
 
@@ -6894,27 +7108,95 @@
       return true;
     }
 
+    function formatSessionRelativeTime(iso) {
+      const raw = String(iso || '').trim();
+      if (!raw) return '';
+      try {
+        const dt = new Date(raw);
+        if (Number.isNaN(dt.getTime())) return '';
+        const minutes = Math.floor((Date.now() - dt.getTime()) / 60000);
+        if (minutes < 1) return '刚刚';
+        if (minutes < 60) return `${minutes} 分钟前`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours} 小时前`;
+        const days = Math.floor(hours / 24);
+        if (days < 30) return `${days} 天前`;
+        return dt.toISOString().slice(0, 10);
+      } catch {
+        return '';
+      }
+    }
+
+    function enrichSessionsCacheRelativeTimes(sessions) {
+      if (!Array.isArray(sessions)) return;
+      sessions.forEach((s) => {
+        if (!s?.updated_at) return;
+        s.relative_time = formatSessionRelativeTime(s.updated_at);
+      });
+    }
+
+    function patchSessionCacheEntry(sessionId, patch) {
+      const sid = String(sessionId || '').trim();
+      if (!sid || !patch || typeof patch !== 'object') return false;
+      let changed = false;
+      const apply = (arr) => {
+        if (!Array.isArray(arr)) return;
+        const idx = arr.findIndex((item) => item.id === sid);
+        if (idx < 0) return;
+        arr[idx] = { ...arr[idx], ...patch };
+        changed = true;
+      };
+      apply(sessionsCache);
+      apply(sessionsCacheAll);
+      return changed;
+    }
+
+    function refreshSessionListAfterRunEnd(sessionId) {
+      const sid = String(sessionId || '').trim();
+      if (!sid) return;
+      const nowIso = new Date().toISOString();
+      patchSessionCacheEntry(sid, {
+        running: false,
+        updated_at: nowIso,
+        relative_time: formatSessionRelativeTime(nowIso),
+      });
+      sortSessionsCache();
+      syncSessionListFromCache();
+    }
+
+    function syncSessionListFromCache() {
+      enrichSessionsCacheRelativeTimes(sessionsCache);
+      if (!patchSessionListFromCache(sessionsCache)) {
+        renderSessionList();
+      }
+      lastSessionListKey = sessionListPatchKey(sessionsCache);
+    }
+
     function sessionListPatchKey(sessions) {
       if (!Array.isArray(sessions) || !sessions.length) return '';
       return sessions.map((s) => [
         s.id,
         s.title || '',
         s.message_count || 0,
-        s.relative_time || '',
-        (activeRuns.has(s.id) || s.running) ? 1 : 0,
+        sessionRelativeTimeLabel(s),
+        sessionIsRunning(s) ? 1 : 0,
         s.pinned ? 1 : 0,
         s.updated_at || '',
         s.messages_mtime || 0,
       ].join('|')).join('\n');
     }
 
+    function sessionRelativeTimeLabel(s) {
+      return formatSessionRelativeTime(s?.updated_at) || String(s?.relative_time || '').trim();
+    }
+
     function buildSessionMetaHtml(s) {
-      const running = activeRuns.has(s.id) || s.running ? ' · 思考中' : '';
+      const running = sessionIsRunning(s) ? ' · 思考中' : '';
       const ownerName = sessionOwnerName(s);
       const ownerLine = ownerName
         ? `<span class="session-owner">${escapeHtml(ownerName)}</span> · `
         : '';
-      const rel = escapeHtml((s.relative_time || '').trim());
+      const rel = escapeHtml(sessionRelativeTimeLabel(s));
       const relLine = rel ? `${rel} · ` : '';
       return `${ownerLine}${relLine}${s.message_count || 0} 条${running}`;
     }
@@ -7543,12 +7825,14 @@
       });
     }
 
+
     async function setForwardModalOpen(open) {
       const modal = document.getElementById('forward-modal');
       if (!modal) return;
       if (!open) {
         const epoch = ++forwardModalEpoch;
         resetForwardModalSelection();
+        renderForwardList();
         if (modal.classList.contains('open')) {
           await animateOverlayClose(modal);
           if (epoch !== forwardModalEpoch) return;
@@ -7559,9 +7843,10 @@
         forwardPendingText = '';
         forwardPendingRole = '';
         forwardPendingQuestion = '';
-        renderForwardList();
         return;
       }
+      resetForwardModalSelection();
+      renderForwardList();
       modal.classList.add('open');
       modal.setAttribute('aria-hidden', 'false');
       document.getElementById('forward-search')?.focus();
@@ -7569,18 +7854,35 @@
 
     async function openForwardModal(text, role, questionText = '') {
       return enqueueForwardModalTransition(async () => {
-        await setForwardModalOpen(false);
+        resetForwardModalSelection();
+        const modal = document.getElementById('forward-modal');
+        if (modal?.classList.contains('open')) {
+          await setForwardModalOpen(false);
+        }
         forwardPendingText = (text || '').trim();
         forwardPendingRole = (role || '').trim();
         forwardPendingQuestion = (questionText || '').trim();
         resetForwardModalSelection();
-        const hasCachedTargets = shareableWebUsers.length > 0 || shareableWebGroups.length > 0;
-        if (hasCachedTargets) renderForwardList();
-        else showForwardListLoading();
+        showForwardListLoading();
         await setForwardModalOpen(true);
-        await loadShareableWebUsers();
+        await loadShareableWebUsers({ force: true });
+        resetForwardModalSelection();
         renderForwardList();
       });
+    }
+
+    function removeForwardDraftGroups(groupIds) {
+      const ids = new Set((groupIds || []).map(item => String(item || '').trim()).filter(Boolean));
+      if (!ids.size) return false;
+      let changed = false;
+      ids.forEach((groupId) => {
+        const draftKey = forwardDraftKey('group', groupId);
+        if (forwardDraftIds.delete(draftKey)) changed = true;
+      });
+      shareableWebGroups = shareableWebGroups.filter(
+        group => !ids.has((group.conversationId || '').trim()),
+      );
+      return changed;
     }
 
     async function submitMessageForward() {
@@ -7618,8 +7920,19 @@
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
+          const prunedGroupIds = Array.isArray(data.pruned_group_ids) ? data.pruned_group_ids : [];
+          if (prunedGroupIds.length) {
+            removeForwardDraftGroups(prunedGroupIds);
+          }
+          await loadShareableWebUsers({ force: true });
+          renderForwardList();
           alert(data.error || '分享失败');
           return;
+        }
+        const prunedGroupIds = Array.isArray(data.pruned_group_ids) ? data.pruned_group_ids : [];
+        if (prunedGroupIds.length) {
+          removeForwardDraftGroups(prunedGroupIds);
+          renderForwardList();
         }
         const sentCount = Number(data.sent_count) || 0;
         const failedCount = Number(data.failed_count) || 0;
@@ -8006,7 +8319,12 @@
       stopBtn.hidden = !busy || currentSessionReadOnly;
       sendBtn.disabled = currentSessionReadOnly || busy || !hasDraft;
       const attachBtn = document.getElementById('btn-attach');
-      if (attachBtn) attachBtn.disabled = currentSessionReadOnly || busy;
+      if (attachBtn) {
+        attachBtn.disabled = currentSessionReadOnly || busy;
+        attachBtn.title = currentSessionReadOnly
+          ? '只读会话不可添加附件'
+          : (busy ? '思考中暂不可添加附件' : '添加附件');
+      }
       const cancelling = !!run?.cancelling;
       stopBtn.disabled = currentSessionReadOnly || !busy || cancelling;
       stopBtn.classList.toggle('is-cancelling', cancelling);
@@ -8048,9 +8366,34 @@
         || body.startsWith('⚠️ 任务执行超时');
     }
 
+    function hasCurrentInputDraft() {
+      const input = document.getElementById('input');
+      if (!input || input.readOnly) return false;
+      return !!(input.value || '').trim() || pendingAttachments.length > 0;
+    }
+
+    function hasUserInputDuringRun(sessionId) {
+      if (!hasCurrentInputDraft()) return false;
+      const draft = activeRuns.get(sessionId)?.sentDraft;
+      if (!draft) return true;
+      const input = document.getElementById('input');
+      const currentText = (input?.value || '').trim();
+      const draftText = (draft.text || '').trim();
+      if (currentText !== draftText) return true;
+      return pendingAttachments.length !== (draft.attachments?.length || 0);
+    }
+
+    function stripRetryHintMarkdown(text) {
+      const body = (text || '').trim();
+      if (!body || !body.includes('原消息已回填')) return body || text || '';
+      return body.replace(RETRY_HINT_MARKDOWN, '').trim();
+    }
+
     function appendRetryHint(text) {
       const body = (text || '').trim();
-      if (!body || body.includes('原消息已回填')) return body || text;
+      if (!body || body.includes('原消息已回填') || hasUserInputDuringRun(currentSessionId)) {
+        return body || text;
+      }
       return `${body}${RETRY_HINT_MARKDOWN}`;
     }
 
@@ -8070,11 +8413,21 @@
     }
 
     function restoreSentDraft(sessionId, { showRetryHint = true } = {}) {
-      if (currentSessionId !== sessionId || currentSessionReadOnly) return;
+      if (currentSessionId !== sessionId || currentSessionReadOnly) return false;
       const draft = activeRuns.get(sessionId)?.sentDraft;
-      if (!draft) return;
+      if (!draft) return false;
       const input = document.getElementById('input');
-      if (!input || input.readOnly) return;
+      if (!input || input.readOnly) return false;
+      const draftText = (draft.text || '').trim();
+      const currentText = (input.value || '').trim();
+      const draftAttachmentCount = draft.attachments?.length || 0;
+      const currentAttachmentCount = pendingAttachments.length;
+      if (hasCurrentInputDraft()) {
+        if (currentText === draftText && currentAttachmentCount === draftAttachmentCount) {
+          return true;
+        }
+        return false;
+      }
       input.value = draft.text || '';
       autoResizeInput();
       if (draft.attachments?.length) {
@@ -8098,6 +8451,7 @@
       });
       updateInputState();
       input.focus();
+      return true;
     }
 
     async function cancelCurrentRun() {
@@ -8407,12 +8761,15 @@
       stopRunStreamPoll(sessionId);
       activeRunEtags.delete(sessionId);
       activeRuns.delete(sessionId);
+      refreshSessionListAfterRunEnd(sessionId);
+      if (sessionId === currentSessionId) {
+        updateInputState();
+      }
       void (async () => {
         await waitForPendingSessionTitleSave();
-        await loadSessions({ lite: true });
+        await loadSessions({ lite: true, force: true });
         if (sessionId === currentSessionId) {
-          updateInputState();
-          await loadMessages();
+          await loadMessages({ force: true });
         }
       })();
     }
@@ -8428,12 +8785,13 @@
       }
       const url = params.toString() ? `/api/sessions?${params}` : '/api/sessions';
       const headers = {};
-      if (opts.lite && !q && sessionsListEtag) {
+      if (opts.lite && !q && sessionsListEtag && !opts.force) {
         headers['If-None-Match'] = sessionsListEtag;
       }
       const data = await api(url, { headers });
       if (data.__notModified) {
         if (data.__etag) sessionsListEtag = data.__etag;
+        syncSessionListFromCache();
         return;
       }
       if (data.__etag) sessionsListEtag = data.__etag;
@@ -8446,13 +8804,18 @@
         rebuildSessionsCacheIndex();
         syncSessionsCacheFromAll();
       }
+      enrichSessionsCacheRelativeTimes(sessionsCache);
       const nextKey = sessionListPatchKey(sessionsCache);
-      if (opts.lite && !q && nextKey === lastSessionListKey) return;
+      if (opts.lite && !q && !opts.force && nextKey === lastSessionListKey) {
+        syncSessionListFromCache();
+        return;
+      }
       if (opts.lite && !q && patchSessionListFromCache(sessionsCache)) {
         lastSessionListKey = nextKey;
         return;
       }
       renderSessionList();
+      lastSessionListKey = nextKey;
     }
 
     function scheduleSessionSearchReload() {
@@ -8537,7 +8900,9 @@
           }
           const s = await api('/api/sessions', { method: 'POST', body: JSON.stringify({ title: '新对话' }) });
           currentSessionId = s.id;
+          sessionPushResultPrefs.set(currentSessionId, false);
           persistSessionId(currentSessionId);
+          applySessionPushResultPref(currentSessionId);
           updateDingtalkOwnerBar();
           updateReadOnlyState();
           renderSessionList();
@@ -9172,6 +9537,8 @@
         if (mergeShell && lastAssistant && mergeAssistantIntoShell(sessionId, mergeShell, lastAssistant)) {
           mergeShell = null;
           msgsToAppend = msgs.filter((m) => m !== lastAssistant);
+        } else if (lastAssistant && assistantContentAlreadyInDom(lastAssistant.content)) {
+          msgsToAppend = msgs.filter((m) => m !== lastAssistant);
         }
       }
       if (!msgsToAppend.length) return;
@@ -9234,9 +9601,15 @@
         rememberSessionMessages(sessionId, merged, newMeta);
         if (
           sessionId === currentSessionId
-          && findOrphanStreamingShell(sessionId)
           && messagesHaveAssistantSinceLastUser(merged)
+          && (
+            findOrphanStreamingShell(sessionId)
+            || tailAssistantBubbleCount(sessionId) > 1
+          )
         ) {
+          return false;
+        }
+        if (sessionId === currentSessionId && !messagesDomMatchesSession(sessionId)) {
           return false;
         }
         return true;
@@ -9248,6 +9621,7 @@
 
       const container = getMessagesEl();
       if (!container || container.querySelector('.empty-state')) return false;
+      if (!messagesDomMatchesSession(sessionId)) return false;
 
       if (updateAnchor) patchLastCachedMessageElement(overlapMsg);
       if (appendSlice.length) appendTailMessageElements(appendSlice);
@@ -9338,11 +9712,15 @@
         || cachedMtime <= 0
         || serverMtime === cachedMtime
       );
-      if (cacheFresh) {
-        if (canSkipMessagesRender(sessionId, cached, cachedMeta)) {
-          syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
-        } else {
+      if (cached?.length) {
+        if (!messagesDomMatchesSession(sessionId)) {
           renderLoadedMessages(sessionId, cached, restoreFromBottom);
+        } else if (cacheFresh) {
+          if (canSkipMessagesRender(sessionId, cached, cachedMeta)) {
+            syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
+          } else {
+            renderLoadedMessages(sessionId, cached, restoreFromBottom);
+          }
         }
       }
       if (skipFetch) return;
@@ -9580,8 +9958,12 @@
           eventSource: es,
           runId,
         });
+        if (sessionId === currentSessionId) {
+          void syncActiveRunPushPref(isPushResultChecked());
+        }
         updateInputState();
         loadSessions({ lite: true });
+        syncSessionListFromCache();
         startRunStreamPoll(sessionId);
 
         const isViewing = () => currentSessionId === sessionId;
@@ -9614,31 +9996,32 @@
               scheduleStreamingMsgBodyUpdate(assistantEl, display);
             }
           } else if (data.type === 'done') {
+            stopRunStreamPoll(sessionId);
             const doneRun = activeRuns.get(sessionId);
             if (doneRun?.cancelWatchdog) {
               clearTimeout(doneRun.cancelWatchdog);
             }
+            let restoredSentDraft = false;
             if (shouldRestoreSentDraft(doneRun, data.text)) {
-              restoreSentDraft(sessionId);
+              restoredSentDraft = restoreSentDraft(sessionId);
             }
             if (isViewing()) {
               if (!assistantEl) {
                 assistantEl = ensureStreamingShell(sessionId);
                 activeRuns.get(sessionId).shellEl = assistantEl;
               }
-              clearRunStatus(sessionId);
-              if (data.text) {
-                setAssistantMessageBody(assistantEl, data.text);
-              } else if (!assistantEl.querySelector('.msg-body').innerHTML.trim()) {
-                setAssistantMessageBody(assistantEl, '（无回复）');
+              let displayText = data.text;
+              if (displayText && shouldRestoreSentDraft(doneRun, data.text) && !restoredSentDraft && hasUserInputDuringRun(sessionId)) {
+                displayText = stripRetryHintMarkdown(displayText);
               }
-              ensureAssistantShareButton(assistantEl);
+              finalizeStreamingShell(sessionId, assistantEl, displayText);
               scrollMessagesToBottom({ force: true });
             }
             handleDingtalkPushResult(data.dingtalk_push);
             es.close();
             resolve();
           } else if (data.type === 'error') {
+            stopRunStreamPoll(sessionId);
             const errorRun = activeRuns.get(sessionId);
             if (errorRun) errorRun.failed = true;
             if (isViewing()) {
@@ -9646,10 +10029,8 @@
                 assistantEl = ensureStreamingShell(sessionId);
                 activeRuns.get(sessionId).shellEl = assistantEl;
               }
-              clearRunStatus(sessionId);
               const text = appendRetryHint(data.text || `⚠️ ${data.message || 'Agent 执行失败'}`);
-              setAssistantMessageBody(assistantEl, text);
-              ensureAssistantShareButton(assistantEl);
+              finalizeStreamingShell(sessionId, assistantEl, text);
               scrollMessagesToBottom({ force: true });
             }
             es.close();
@@ -9732,13 +10113,10 @@
         shellEl: null,
         sentDraft: null,
       });
+      patchSessionCacheEntry(sid, { running: true });
       updateInputState();
       sortSessionsCache();
-      if (!patchSessionListFromCache(sessionsCache)) {
-        renderSessionList();
-      } else {
-        lastSessionListKey = sessionListPatchKey(sessionsCache);
-      }
+      syncSessionListFromCache();
 
       if (currentSessionId === sid) {
         if (data.ack_line || data.phase_line || data.elapsed_line || data.batch_line || data.external_line || data.markdown || data.process) {
@@ -9840,10 +10218,11 @@
         eventSource: null,
         runId: '',
         cancelling: false,
-        status: { ack: '', lifecycle: '', phase: '', batch: '', external: '', elapsed: '' },
+        status: { ack: '', lifecycle: '', phase: '', batch: '', elapsed: '' },
         shellEl: null,
         sentDraft,
       });
+      patchSessionCacheEntry(sessionId, { running: true });
       if (currentSessionId === sessionId) {
         const shell = ensureStreamingShell(sessionId);
         activeRuns.get(sessionId).shellEl = shell;
@@ -9853,11 +10232,7 @@
       }
       updateInputState();
       sortSessionsCache();
-      if (!patchSessionListFromCache(sessionsCache)) {
-        renderSessionList();
-      } else {
-        lastSessionListKey = sessionListPatchKey(sessionsCache);
-      }
+      syncSessionListFromCache();
 
       try {
         const { run_id } = await api('/api/chat', {
@@ -9878,6 +10253,10 @@
         const existing = activeRuns.get(sessionId);
         if (!existing || existing.cancelling) {
           return;
+        }
+        existing.runId = run_id;
+        if (sessionId === currentSessionId) {
+          void syncActiveRunPushPref(isPushResultChecked());
         }
 
         await attachRunStream(sessionId, run_id);
@@ -10052,8 +10431,6 @@
       }
       renderModelOptions();
       renderExternalAgentOptions();
-      const settingsDefault = document.getElementById('settings-push-default');
-      if (settingsDefault) settingsDefault.checked = loadPushResultDefaultChecked();
       closeModelPicker();
     }
 
@@ -10067,6 +10444,106 @@
       return rangeKey === 'day';
     }
 
+    function getUsageCacheDateKey() {
+      return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Shanghai',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date());
+    }
+
+    function mergeTodayIntoUsageData(rangeData, dayData) {
+      if (!rangeData || !dayData) return rangeData;
+      const todayKey = getUsageCacheDateKey();
+      const dayRows = Array.isArray(dayData.daily) ? dayData.daily : [];
+      const todayRow = dayRows.find((row) => row && row.date === todayKey);
+      if (!todayRow) return rangeData;
+
+      const rangeRows = Array.isArray(rangeData.daily) ? rangeData.daily : [];
+      if (!rangeRows.length) return rangeData;
+
+      let hasToday = false;
+      const daily = rangeRows.map((row) => {
+        if (!row || row.date !== todayKey) return row;
+        hasToday = true;
+        return {
+          ...row,
+          requests: Number(todayRow.requests || 0),
+          tokens: Number(todayRow.tokens || 0),
+        };
+      });
+      if (!hasToday) return rangeData;
+
+      let requests = 0;
+      let tokens = 0;
+      for (const row of daily) {
+        requests += Number(row?.requests || 0);
+        tokens += Number(row?.tokens || 0);
+      }
+      return { ...rangeData, daily, requests, tokens };
+    }
+
+    function resolveUsageStatsDisplayData(rangeKey, cachedEntry) {
+      if (!cachedEntry) return null;
+      if (usageRangeSkipsCache(rangeKey)) return cachedEntry.data;
+      if (!usageDayLatest?.ok || !usageDayLatest.data) return cachedEntry.data;
+      return mergeTodayIntoUsageData(cachedEntry.data, usageDayLatest.data);
+    }
+
+    function storeUsageDayLatest(entry) {
+      usageDayLatest = entry;
+      if (!entry?.ok || usageRangeSkipsCache(usageRangeKey) || !isUsageCacheValid(usageRangeKey)) return;
+      applyUsageStatsFromCache(usageRangeKey);
+    }
+
+    function loadUsageStatsCacheFromStorage() {
+      try {
+        const raw = localStorage.getItem(USAGE_STATS_CACHE_STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed?.dateKey !== getUsageCacheDateKey()) {
+          localStorage.removeItem(USAGE_STATS_CACHE_STORAGE_KEY);
+          return;
+        }
+        const ranges = parsed?.ranges;
+        if (!ranges || typeof ranges !== 'object') return;
+        for (const key of USAGE_RANGE_KEYS) {
+          if (usageRangeSkipsCache(key)) continue;
+          if (ranges[key]) usageStatsCache[key] = ranges[key];
+        }
+      } catch (_) { /* ignore corrupt cache */ }
+    }
+
+    function persistUsageStatsCache() {
+      try {
+        const ranges = Object.create(null);
+        for (const key of USAGE_RANGE_KEYS) {
+          if (usageRangeSkipsCache(key) || !usageStatsCache[key]) continue;
+          ranges[key] = usageStatsCache[key];
+        }
+        localStorage.setItem(USAGE_STATS_CACHE_STORAGE_KEY, JSON.stringify({
+          dateKey: getUsageCacheDateKey(),
+          ranges,
+        }));
+      } catch (_) { /* quota / private mode */ }
+    }
+
+    function clearUsageStatsDailyCache() {
+      for (const key of USAGE_RANGE_KEYS) {
+        if (!usageRangeSkipsCache(key)) delete usageStatsCache[key];
+      }
+      usageDayLatest = null;
+      try {
+        localStorage.removeItem(USAGE_STATS_CACHE_STORAGE_KEY);
+      } catch (_) { /* ignore */ }
+    }
+
+    function isUsageCacheValid(rangeKey) {
+      if (usageRangeSkipsCache(rangeKey)) return false;
+      return !!usageStatsCache[rangeKey];
+    }
+
     function resetUsageDayLoad() {
       delete usageStatsCache.day;
       usageDayAbortController?.abort();
@@ -10078,18 +10555,20 @@
       trackEvent('panel_open', { panel: 'usage' });
       const modal = document.getElementById('usage-modal');
       if (!modal) return;
+      loadUsageStatsCacheFromStorage();
       usageRangeKey = 'day';
       syncUsageRangeUI();
       modal.classList.add('open');
       modal.setAttribute('aria-hidden', 'false');
       resetUsageDayLoad();
       void loadUsageStatsForRange('day', { refresh: true });
-      void prefetchAllUsageStats({ refresh: true });
+      void prefetchAllUsageStats();
     }
 
     async function closeUsageModal() {
       const modal = document.getElementById('usage-modal');
       if (!modal?.classList.contains('open')) return;
+      hideUsageChartTooltip();
       await animateOverlayClose(modal);
       modal.classList.remove('open');
       modal.setAttribute('aria-hidden', 'true');
@@ -10539,6 +11018,7 @@
     });
 
     let sessionPollTimer = null;
+    let sessionListMetaTimer = null;
     function startSessionPolling() {
       if (sessionPollTimer) return;
       sessionPollTimer = setInterval(async () => {
@@ -10560,6 +11040,11 @@
           }
         } catch { /* ignore poll errors */ }
       }, 15000);
+      if (sessionListMetaTimer) return;
+      sessionListMetaTimer = setInterval(() => {
+        if (document.hidden || sessionSearchQuery.trim()) return;
+        syncSessionListFromCache();
+      }, 30000);
     }
 
     document.addEventListener('visibilitychange', () => {
@@ -10707,6 +11192,57 @@
       return false;
     }
 
+    function hideUsageChartTooltip() {
+      const tip = document.getElementById('usage-chart-tooltip');
+      if (!tip) return;
+      tip.hidden = true;
+      tip.classList.remove('visible');
+    }
+
+    function showUsageChartTooltip(clientX, clientY, row) {
+      const scrollEl = document.querySelector('.usage-daily-chart-scroll');
+      const tip = document.getElementById('usage-chart-tooltip');
+      if (!scrollEl || !tip || !row) return;
+      const rect = scrollEl.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      const dateLabel = escapeHtml(String(row.label || row.date || ''));
+      tip.innerHTML = [
+        `<div class="tip-date">${dateLabel}</div>`,
+        `<div class="tip-row"><span class="tip-dot req"></span>请求 ${formatUsageNumber(row.requests)}</div>`,
+        `<div class="tip-row"><span class="tip-dot tok"></span>Token ${formatUsageNumber(row.tokens)}</div>`,
+      ].join('');
+      tip.hidden = false;
+      tip.style.left = `${x}px`;
+      tip.style.top = `${y}px`;
+      tip.classList.add('visible');
+    }
+
+    function bindUsageChartTooltip(chartEl, rows) {
+      hideUsageChartTooltip();
+      const scrollEl = chartEl?.closest('.usage-daily-chart-scroll');
+      if (!chartEl || !scrollEl) return;
+      if (chartEl._usageTooltipMove) {
+        chartEl.removeEventListener('mousemove', chartEl._usageTooltipMove);
+        chartEl.removeEventListener('mouseleave', chartEl._usageTooltipLeave);
+      }
+      const onMove = (ev) => {
+        const hit = ev.target.closest('.usage-chart-hit');
+        if (!hit) {
+          hideUsageChartTooltip();
+          return;
+        }
+        const index = Number(hit.dataset.index);
+        const row = rows[index];
+        if (row) showUsageChartTooltip(ev.clientX, ev.clientY, row);
+      };
+      const onLeave = () => hideUsageChartTooltip();
+      chartEl.addEventListener('mousemove', onMove);
+      chartEl.addEventListener('mouseleave', onLeave);
+      chartEl._usageTooltipMove = onMove;
+      chartEl._usageTooltipLeave = onLeave;
+    }
+
     function renderUsageDailyChart(dailyRows) {
       const wrap = document.getElementById('usage-daily-chart-wrap');
       const chartEl = document.getElementById('usage-daily-chart');
@@ -10715,6 +11251,7 @@
       if (!rows.length) {
         wrap.hidden = true;
         chartEl.innerHTML = '';
+        hideUsageChartTooltip();
         return;
       }
       wrap.hidden = false;
@@ -10765,10 +11302,15 @@
       parts.push(`<path class="line-tok" d="${buildLinePath(yTok, 'tokens')}"/>`);
 
       rows.forEach((row, index) => {
-        const title = `${row.date} · 请求 ${formatUsageNumber(row.requests)} · Token ${formatUsageNumber(row.tokens)}`;
         const cx = xAt(index).toFixed(1);
-        parts.push(`<circle class="dot-req" cx="${cx}" cy="${yReq(row.requests).toFixed(1)}" r="2.8"><title>${escapeHtml(title)}</title></circle>`);
-        parts.push(`<circle class="dot-tok" cx="${cx}" cy="${yTok(row.tokens).toFixed(1)}" r="2.8"><title>${escapeHtml(title)}</title></circle>`);
+        const cyReq = yReq(row.requests).toFixed(1);
+        const cyTok = yTok(row.tokens).toFixed(1);
+        const midY = ((Number(cyReq) + Number(cyTok)) / 2).toFixed(1);
+        parts.push('<g class="usage-chart-point">');
+        parts.push(`<circle class="usage-chart-hit" cx="${cx}" cy="${midY}" r="12" data-index="${index}"/>`);
+        parts.push(`<circle class="dot-req" cx="${cx}" cy="${cyReq}" r="2.8"/>`);
+        parts.push(`<circle class="dot-tok" cx="${cx}" cy="${cyTok}" r="2.8"/>`);
+        parts.push('</g>');
       });
 
       labelIndices.forEach((index) => {
@@ -10784,6 +11326,7 @@
       });
       parts.push('</svg>');
       chartEl.innerHTML = parts.join('');
+      bindUsageChartTooltip(chartEl, rows);
     }
 
     function formatUsageErrorMessage(message) {
@@ -10835,8 +11378,9 @@
         if (tokenInput) tokenInput.value = '';
         if (statusEl) statusEl.textContent = '已保存，正在查询…';
         setUsagePanelMode('stats');
+        clearUsageStatsDailyCache();
         await loadUsageStatsForRange(usageRangeKey, { refresh: true });
-        void prefetchAllUsageStats({ refresh: true });
+        void prefetchAllUsageStats();
         return true;
       } catch (err) {
         if (statusEl) statusEl.textContent = err?.message || '保存失败';
@@ -10920,22 +11464,30 @@
       if (usageRangeSkipsCache(rangeKey)) return false;
       const cached = usageStatsCache[rangeKey];
       if (!cached) return false;
-      applyUsageStatsResponse(cached.data, cached.ok, cached.error);
+      const data = resolveUsageStatsDisplayData(rangeKey, cached);
+      applyUsageStatsResponse(data, cached.ok, cached.error);
       return true;
     }
 
     function storeUsageStatsCache(rangeKey, entry) {
       if (usageRangeSkipsCache(rangeKey)) return;
       usageStatsCache[rangeKey] = entry;
+      persistUsageStatsCache();
     }
 
     async function loadUsageStatsForRange(rangeKey, options = {}) {
-      const refresh = options.refresh === true;
+      const forceRefresh = options.refresh === true;
       const silent = options.silent === true;
       const isActive = rangeKey === usageRangeKey;
+
+      if (!usageRangeSkipsCache(rangeKey) && !forceRefresh && isUsageCacheValid(rangeKey)) {
+        if (isActive) applyUsageStatsFromCache(rangeKey);
+        return;
+      }
+
       const loadSeq = (usageStatsInflightSeq[rangeKey] = (usageStatsInflightSeq[rangeKey] || 0) + 1);
       let fetchSignal;
-      if (usageRangeSkipsCache(rangeKey) && refresh) {
+      if (usageRangeSkipsCache(rangeKey)) {
         usageDayAbortController?.abort();
         usageDayAbortController = new AbortController();
         fetchSignal = usageDayAbortController.signal;
@@ -10951,7 +11503,7 @@
         if (chartWrap) chartWrap.hidden = true;
       }
       try {
-        const refreshQs = refresh ? '&refresh=1' : '';
+        const refreshQs = usageRangeSkipsCache(rangeKey) ? '&refresh=1' : '';
         const fetchOpts = fetchSignal ? { signal: fetchSignal } : undefined;
         const res = await fetch(
           `/api/usage/me?range=${encodeURIComponent(rangeKey)}${refreshQs}`,
@@ -10960,12 +11512,22 @@
         const data = await res.json();
         if (loadSeq !== usageStatsInflightSeq[rangeKey]) return;
         if (!res.ok) {
-          storeUsageStatsCache(rangeKey, { ok: false, data, error: data.error || '加载失败' });
+          if (usageRangeSkipsCache(rangeKey)) {
+            storeUsageDayLatest({ ok: false, data, error: data.error || '加载失败' });
+          } else {
+            storeUsageStatsCache(rangeKey, { ok: false, data, error: data.error || '加载失败' });
+          }
+        } else if (usageRangeSkipsCache(rangeKey)) {
+          storeUsageDayLatest({ ok: true, data });
         } else {
           storeUsageStatsCache(rangeKey, { ok: true, data });
         }
         if (rangeKey === usageRangeKey) {
-          applyUsageStatsResponse(data, res.ok, res.ok ? undefined : (data.error || '加载失败'));
+          let displayData = data;
+          if (!usageRangeSkipsCache(rangeKey) && usageDayLatest?.ok && usageDayLatest.data) {
+            displayData = mergeTodayIntoUsageData(data, usageDayLatest.data);
+          }
+          applyUsageStatsResponse(displayData, res.ok, res.ok ? undefined : (data.error || '加载失败'));
         }
       } catch (err) {
         if (err?.name === 'AbortError') return;
@@ -10986,23 +11548,30 @@
       await loadUsageStatsForRange(usageRangeKey, options);
     }
 
-    function prefetchAllUsageStats(options = {}) {
+    function prefetchAllUsageStats() {
+      loadUsageStatsCacheFromStorage();
       for (const key of USAGE_RANGE_KEYS) {
-        if (key === usageRangeKey) continue;
-        void loadUsageStatsForRange(key, { silent: true, refresh: options.refresh === true });
+        if (key === usageRangeKey || usageRangeSkipsCache(key)) continue;
+        if (isUsageCacheValid(key)) continue;
+        void loadUsageStatsForRange(key, { silent: true });
       }
     }
 
     function initUsageStatsSettings() {
+      loadUsageStatsCacheFromStorage();
       document.querySelectorAll('.usage-range-option').forEach((btn) => {
         btn.addEventListener('click', () => {
           const nextRange = (btn.dataset.range || 'day').trim() || 'day';
           if (nextRange === usageRangeKey) return;
           usageRangeKey = nextRange;
           syncUsageRangeUI();
-          if (usageRangeSkipsCache(usageRangeKey)) resetUsageDayLoad();
+          if (usageRangeSkipsCache(usageRangeKey)) {
+            resetUsageDayLoad();
+            void loadUsageStatsForRange(usageRangeKey, { refresh: true });
+            return;
+          }
           const hadCache = applyUsageStatsFromCache(usageRangeKey);
-          void loadUsageStatsForRange(usageRangeKey, { refresh: true, silent: hadCache });
+          if (!hadCache) void loadUsageStatsForRange(usageRangeKey);
         });
       });
       document.getElementById('btn-usage-save')?.addEventListener('click', () => {
