@@ -1,0 +1,41 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-user-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "context.getBean(\"userClusterDao\").del(\"3\", \"family:fund:lock:20260504-week\")",
+      "json": "",
+      "type": "string",
+      "value": "context.getBean(\"userClusterDao\").del(\"3\", \"family:fund:lock:20260504-week\")"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "family_fund_reward_dispatch_clear",
+    "name": "家族基金-清除奖励下发记录",
+    "category": "家族（internal/user/family-moa）",
+    "description": "下发前清除 Redis 锁 family:fund:lock:{weekKey}（userClusterDao.del）。与「清除基金贡献值」不同；重复发奖验收须先执行本步再「家族基金-奖励下发」。--family-fund-week-offset：0=本周，-1=上周。",
+    "prompts": [
+      "清除家族基金本周奖励下发记录",
+      "清除家族基金上周奖励下发记录",
+      "清除 family:fund:lock 后再发奖"
+    ],
+    "cli": "--family-fund-reward-dispatch-clear --family-fund-week-offset 0"
+  }
+}

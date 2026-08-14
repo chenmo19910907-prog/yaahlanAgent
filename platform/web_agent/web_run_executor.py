@@ -361,7 +361,8 @@ def execute_web_run(run_id: str) -> int:
                 reply_mode=meta.reply_mode,
             )
             _append_assistant(final_text)
-            dingtalk_push = _maybe_push_result_to_dingtalk(meta, final_text, success=True)
+            fresh_meta = store.get_run(run_id) or meta
+            dingtalk_push = _maybe_push_result_to_dingtalk(fresh_meta, final_text, success=True)
             done_event: dict[str, Any] = {"type": "done", "text": final_text}
             if dingtalk_push is not None:
                 done_event["dingtalk_push"] = dingtalk_push
@@ -400,7 +401,8 @@ def execute_web_run(run_id: str) -> int:
             reply_mode=meta.reply_mode,
         )
         _append_assistant(final_text)
-        dingtalk_push = _maybe_push_result_to_dingtalk(meta, final_text, success=True)
+        fresh_meta = store.get_run(run_id) or meta
+        dingtalk_push = _maybe_push_result_to_dingtalk(fresh_meta, final_text, success=True)
         done_event: dict[str, Any] = {"type": "done", "text": final_text}
         if dingtalk_push is not None:
             done_event["dingtalk_push"] = dingtalk_push

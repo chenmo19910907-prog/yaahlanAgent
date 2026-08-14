@@ -1,0 +1,41 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-user-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "context.getBean(\"userClusterDao\").del(\"3\", \"family:fund:tier:20260504-week:101435\")",
+      "json": "",
+      "type": "string",
+      "value": "context.getBean(\"userClusterDao\").del(\"3\", \"family:fund:tier:20260504-week:101435\")"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "family_fund_tier_cache_clear",
+    "name": "家族基金-清除档位缓存",
+    "category": "家族（internal/user/family-moa）",
+    "description": "清除 Redis 档位缓存 family:fund:tier:{weekKey}:{familyId}（userClusterDao.del）。须在「家族-设置基金档位」之前执行；设档后勿清。--family-fund-week-offset：0=本周，-1=上周。",
+    "prompts": [
+      "清除家族 <familyId> 基金档位缓存",
+      "设基金档位前清缓存",
+      "清除 family:fund:tier 缓存"
+    ],
+    "cli": "--family-fund-tier-cache-clear --family-id <familyId> --family-fund-week-offset 0"
+  }
+}

@@ -19,6 +19,7 @@ import requests
 from dingtalk_stream.utils import DINGTALK_OPENAPI_ENDPOINT
 
 from env_loader import GATEWAY_DIR, load_env_local, require_env
+from group_chat_title import is_custom_group_title
 
 _PLATFORM_DIR = GATEWAY_DIR.parent
 if str(_PLATFORM_DIR) not in sys.path:
@@ -92,39 +93,71 @@ def resolve_notify_conversation_id() -> str | None:
     return conv_id or None
 
 
+GROUP_CHATS_PATH = GATEWAY_DIR / "data" / "group_chats.json"
+
+
+def _load_group_chat_index() -> dict[str, dict[str, object]]:
+    index: dict[str, dict[str, object]] = {}
+    if not GROUP_CHATS_PATH.is_file():
+        return index
+    try:
+        raw = json.loads(GROUP_CHATS_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return index
+    if not isinstance(raw, dict):
+        return index
+    for key, item in raw.items():
+        conv_id = str(key or "").strip()
+        if conv_id and isinstance(item, dict):
+            index[conv_id] = dict(item)
+    return index
+
+
+def _save_group_chat_index(index: dict[str, dict[str, object]]) -> None:
+    GROUP_CHATS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    GROUP_CHATS_PATH.write_text(
+        json.dumps(index, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
+def remove_group_chat_record(conversation_id: str) -> bool:
+    """从群聊索引移除无效或已解散的群（如 invalid.openConversationId）。"""
+    conv_id = (conversation_id or "").strip()
+    if not conv_id:
+        return False
+    index = _load_group_chat_index()
+    if conv_id not in index:
+        return False
+    del index[conv_id]
+    _save_group_chat_index(index)
+    logger.info("已移除无效群聊索引 openConversationId=%s…", conv_id[:16])
+    return True
+
+
 def touch_group_chat_record(incoming: ChatbotMessage) -> None:
-    """收到群消息时记录群标题索引。"""
+    """收到群消息时记录群标题索引（仅持久化用户自定义群名）。"""
     if incoming.conversation_type != "2":
         return
     conv_id = (incoming.conversation_id or "").strip()
     if not conv_id:
         return
     title = (incoming.conversation_title or "").strip()
-    if not title:
+    index = _load_group_chat_index()
+    existing = dict(index.get(conv_id) or {})
+    existing_title = str(existing.get("conversationTitle") or "").strip()
+    now = datetime.now(timezone.utc).isoformat()
+    if is_custom_group_title(title):
+        existing["conversationTitle"] = title
+        existing["hasCustomTitle"] = True
+        existing["updatedAt"] = now
+        index[conv_id] = existing
+    elif is_custom_group_title(existing_title):
+        existing["updatedAt"] = now
+        index[conv_id] = existing
+    else:
         return
-    record = {
-        "conversationTitle": title,
-        "updatedAt": datetime.now(timezone.utc).isoformat(),
-    }
-    group_path = GATEWAY_DIR / "data" / "group_chats.json"
-    group_path.parent.mkdir(parents=True, exist_ok=True)
-    index: dict[str, dict[str, object]] = {}
-    if group_path.is_file():
-        try:
-            raw = json.loads(group_path.read_text(encoding="utf-8"))
-            if isinstance(raw, dict):
-                index = {
-                    str(key): dict(item)
-                    for key, item in raw.items()
-                    if str(key).strip() and isinstance(item, dict)
-                }
-        except (OSError, json.JSONDecodeError):
-            index = {}
-    index[conv_id] = record
-    group_path.write_text(
-        json.dumps(index, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    _save_group_chat_index(index)
 
 
 def touch_notify_group(incoming: ChatbotMessage) -> None:

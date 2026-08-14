@@ -276,9 +276,15 @@ class DingtalkUserLookupTest(unittest.TestCase):
 
     def test_is_named_group_title(self) -> None:
         self.assertTrue(lookup.is_named_group_title("测试群"))
+        self.assertTrue(lookup.is_named_group_title("智能工具平台Yaahlan"))
         self.assertFalse(lookup.is_named_group_title(""))
         self.assertFalse(lookup.is_named_group_title("钉钉群"))
         self.assertFalse(lookup.is_named_group_title("钉钉群 · cidABC"))
+        self.assertFalse(lookup.is_named_group_title("群聊"))
+        self.assertFalse(lookup.is_named_group_title("张三,李四,王五"))
+        self.assertFalse(lookup.is_named_group_title("张三、李四"))
+        self.assertFalse(lookup.is_named_group_title("张三,李四等"))
+        self.assertFalse(lookup.is_named_group_title("Alice, Bob, Charlie"))
 
     def test_parse_dingtalk_open_conversation_id(self) -> None:
         self.assertEqual(

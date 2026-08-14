@@ -45,5 +45,16 @@
   "cluster": "stage",
   "server": "config",
   "momoId": "df4c6f364f9fcae3",
-  "momoName": "e88aa376b29864ad"
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "family_member_fund_contrib_add",
+    "name": "家族-成员增加基金贡献值",
+    "category": "家族（internal/user/family-moa）",
+    "description": "给家族成员增加基金贡献值（/service/internal/user/family-moa batchIncrFundContribution；参数 familyId、weekKey、{userId:贡献值×2} JSON）",
+    "prompts": [
+      "成员 <userId> 在家族 <familyId> 增加 <contrib> 基金贡献值",
+      "给家族成员 <userId> 加 <contrib> 基金"
+    ],
+    "cli": "--family-id <familyId> --family-member-fund-user-id <userId> --family-member-fund-contrib <contrib> --family-fund-week <weekMonday>"
+  }
 }

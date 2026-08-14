@@ -13,15 +13,20 @@ from unittest.mock import patch
 from cursor_usage import (
     CursorAuthError,
     _accumulate_event_daily,
+    _cache_expires_at_epoch,
     _event_tokens,
     _fetch_admin_usage,
     _fetch_dashboard_usage,
     _normalize_session_token,
+    _read_cache,
+    _should_cache_range,
+    _write_cache,
     build_daily_series,
     dashboard_usage_url,
     parse_cursor_session_input,
     summarize_user_usage,
 )
+from analytics_store import BJ
 from cursor_usage_store import CursorUsageCredentialStore
 
 
@@ -69,6 +74,40 @@ class CursorUsageTest(unittest.TestCase):
         url = dashboard_usage_url(start, end)
         self.assertIn("startDate=2026-07-15", url)
         self.assertIn("endDate=2026-08-13", url)
+
+    def test_should_cache_range(self) -> None:
+        self.assertFalse(_should_cache_range("day"))
+        self.assertTrue(_should_cache_range("week"))
+        self.assertTrue(_should_cache_range("month"))
+
+    def test_daily_cache_survives_refresh_flag(self) -> None:
+        payload = {"range": "month", "requests": 9, "tokens": 90}
+        _write_cache("alice", "month", payload)
+        cached = _read_cache("alice", "month")
+        self.assertEqual(cached, payload)
+        with patch("cursor_usage._fetch_dashboard_usage") as fetch_mock:
+            with patch("cursor_usage._resolve_credentials", return_value=("token", "", "", "")):
+                result = summarize_user_usage("alice", range_key="month", refresh=True)
+        fetch_mock.assert_not_called()
+        self.assertEqual(result["requests"], 9)
+
+    def test_daily_cache_expires_after_midnight_bj(self) -> None:
+        from cursor_usage import _cache, _cache_lock
+
+        payload = {"range": "week", "requests": 1, "tokens": 2}
+        midnight_bj = datetime(2026, 8, 15, 0, 0, 0, tzinfo=BJ)
+        with _cache_lock:
+            _cache["alice:week"] = (midnight_bj.timestamp(), payload)
+        with patch("cursor_usage.time.time", return_value=midnight_bj.timestamp()):
+            self.assertIsNone(_read_cache("alice", "week"))
+
+    def test_cache_expires_at_next_bj_midnight(self) -> None:
+        noon_bj = datetime(2026, 8, 14, 12, 0, 0, tzinfo=BJ)
+        with patch("cursor_usage.datetime") as dt_mock:
+            dt_mock.now.return_value = noon_bj
+            expires = _cache_expires_at_epoch()
+        expected = datetime(2026, 8, 15, 0, 0, 0, tzinfo=BJ).timestamp()
+        self.assertEqual(expires, expected)
 
     def test_summarize_needs_setup_without_credentials(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

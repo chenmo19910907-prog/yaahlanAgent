@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import sys
 import threading
 import time
 import urllib.error
@@ -20,6 +21,11 @@ logger = logging.getLogger("web-agent")
 
 WEB_AGENT_DIR = Path(__file__).resolve().parent
 GATEWAY_DIR = WEB_AGENT_DIR.parent / "dingtalk_gateway"
+if str(GATEWAY_DIR) not in sys.path:
+    sys.path.insert(0, str(GATEWAY_DIR))
+
+from group_chat_title import is_custom_group_title  # noqa: E402
+
 NOTIFY_GROUP_PATH = GATEWAY_DIR / "data" / "notify_group.json"
 GROUP_CHATS_PATH = GATEWAY_DIR / "data" / "group_chats.json"
 CONVERSATIONS_INDEX_PATH = GATEWAY_DIR / "data" / "conversations.json"
@@ -39,7 +45,6 @@ STATIC_STAFF_LABELS_TTL_S = 45.0
 ORG_ROSTER_RETRY_S = 900
 # 共同对话选人列表不展示的系统/占位账号
 _COLLABORATOR_EXCLUDED_DISPLAY_NAMES = frozenset({"未知用户", "测试员"})
-_UNNAMED_GROUP_TITLE_RE = re.compile(r"^钉钉群(?:\s*·.*)?$")
 
 
 def _load_cache() -> dict[str, str]:
@@ -646,11 +651,8 @@ def parse_dingtalk_open_conversation_id(dingtalk_key: str) -> str:
 
 
 def is_named_group_title(title: str) -> bool:
-    """群聊是否有真实名称（排除占位「钉钉群」及自动 fallback）。"""
-    name = (title or "").strip()
-    if not name:
-        return False
-    return _UNNAMED_GROUP_TITLE_RE.match(name) is None
+    """群聊是否有真实名称（排除占位「钉钉群」及成员名拼接默认名）。"""
+    return is_custom_group_title(title)
 
 
 def _load_group_chat_index() -> dict[str, dict[str, object]]:
@@ -738,8 +740,14 @@ def _group_chat_entry(
     if not conv_id:
         return None
     chat_index = index if index is not None else _load_group_chat_index()
-    title = (title_hint or str((chat_index.get(conv_id) or {}).get("conversationTitle") or "")).strip()
-    if not is_named_group_title(title):
+    record = dict(chat_index.get(conv_id) or {})
+    title = (title_hint or str(record.get("conversationTitle") or "")).strip()
+    has_custom = record.get("hasCustomTitle")
+    if has_custom is False:
+        return None
+    if has_custom is not True and not is_named_group_title(title):
+        return None
+    if not title:
         return None
     return {
         "conversationId": conv_id,

@@ -31,7 +31,6 @@ CURSOR_ADMIN_EVENTS_URL = "https://api.cursor.com/teams/filtered-usage-events"
 CURSOR_ORIGIN = "https://cursor.com"
 PAGE_SIZE = 100
 MAX_PAGES = 200
-_CACHE_TTL_S = 300.0
 
 _cache_lock = threading.Lock()
 _cache: dict[str, tuple[float, dict[str, Any]]] = {}
@@ -59,14 +58,33 @@ def _cache_key(staff_id: str, range_key: str) -> str:
     return f"{staff_id}:{range_key}"
 
 
+def _should_cache_range(range_key: str) -> bool:
+    """本日数据每次实时拉取；其余范围按北京时间自然日缓存。"""
+    return (range_key or "").strip().lower() != "day"
+
+
+def _cache_expires_at_epoch() -> float:
+    """次日北京时间 0 点（UTC epoch 秒）。"""
+    now_bj = datetime.now(BJ)
+    next_midnight_bj = (now_bj + timedelta(days=1)).replace(
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0,
+    )
+    return next_midnight_bj.timestamp()
+
+
 def _read_cache(staff_id: str, range_key: str) -> dict[str, Any] | None:
+    if not _should_cache_range(range_key):
+        return None
     key = _cache_key(staff_id, range_key)
     with _cache_lock:
         row = _cache.get(key)
     if row is None:
         return None
     expires_at, payload = row
-    if time.monotonic() >= expires_at:
+    if time.time() >= expires_at:
         with _cache_lock:
             _cache.pop(key, None)
         return None
@@ -74,9 +92,11 @@ def _read_cache(staff_id: str, range_key: str) -> dict[str, Any] | None:
 
 
 def _write_cache(staff_id: str, range_key: str, payload: dict[str, Any]) -> None:
+    if not _should_cache_range(range_key):
+        return
     key = _cache_key(staff_id, range_key)
     with _cache_lock:
-        _cache[key] = (time.monotonic() + _CACHE_TTL_S, payload)
+        _cache[key] = (_cache_expires_at_epoch(), payload)
 
 
 def _to_ms(value: datetime) -> int:
@@ -573,7 +593,7 @@ def summarize_user_usage(
         base["error"] = "未登录"
         return base
 
-    if not refresh:
+    if _should_cache_range(key):
         cached = _read_cache(sid, key)
         if cached is not None:
             return cached

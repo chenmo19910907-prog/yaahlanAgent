@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""导出账号池用户手机号/昵称/公会/家族到钉钉表格。"""
+"""导出账号池用户手机号/昵称/公会/家族/所在大区到钉钉表格。"""
 
 from __future__ import annotations
 
@@ -41,6 +41,8 @@ EXCEL_VENV_PYTHON = (
 )
 GATEWAY_DIR = REPO_ROOT / "platform" / "dingtalk_gateway"
 CHECKPOINT_PATH = REPO_ROOT / ".tmp" / "export_user_pool_profiles_checkpoint.json"
+ENRICH_AREA_CHECKPOINT_PATH = REPO_ROOT / ".tmp" / "enrich_user_pool_area_checkpoint.json"
+SHEET_HEADER = ["userId", "手机号", "昵称", "所属公会", "所属家族", "池类型", "所在大区"]
 
 
 def _utc_now() -> str:
@@ -227,6 +229,93 @@ def _clear_checkpoint() -> None:
         CHECKPOINT_PATH.unlink()
 
 
+def _load_enrich_area_checkpoint() -> dict[str, Any] | None:
+    if not ENRICH_AREA_CHECKPOINT_PATH.is_file():
+        return None
+    try:
+        payload = json.loads(ENRICH_AREA_CHECKPOINT_PATH.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(payload, dict):
+        return None
+    records = payload.get("records")
+    processed_count = payload.get("processedCount")
+    if not isinstance(records, list) or not isinstance(processed_count, int):
+        return None
+    return payload
+
+
+def _save_enrich_area_checkpoint(*, records: list[dict[str, Any]], processed_count: int, total: int) -> None:
+    ENRICH_AREA_CHECKPOINT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    ENRICH_AREA_CHECKPOINT_PATH.write_text(
+        json.dumps(
+            {
+                "processedCount": processed_count,
+                "total": total,
+                "records": records,
+                "savedAt": _utc_now(),
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def _clear_enrich_area_checkpoint() -> None:
+    if ENRICH_AREA_CHECKPOINT_PATH.is_file():
+        ENRICH_AREA_CHECKPOINT_PATH.unlink()
+
+
+def _record_to_sheet_row(row: dict[str, Any]) -> list[str]:
+    return [
+        row["userId"],
+        row.get("phone") or "",
+        row.get("nickname") or "",
+        row.get("guild") or "",
+        row.get("family") or "",
+        row.get("pool") or "",
+        row.get("area") or "",
+    ]
+
+
+def _write_csv_and_kb(
+    *,
+    rows: list[dict[str, Any]],
+    local_path: Path,
+    synced_at: str,
+) -> tuple[Path, int, int]:
+    rows.sort(key=_phone_sort_key)
+    total = len(rows)
+    with_phone = sum(1 for row in rows if row.get("phone"))
+    without_phone = total - with_phone
+    sheet_rows = [SHEET_HEADER] + [_record_to_sheet_row(row) for row in rows]
+    csv_path = (
+        REPO_ROOT
+        / ".tmp"
+        / f"admin_user_pool_profiles_{datetime.now().strftime('%Y%m%d-%H%M%S')}.csv"
+    )
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    with csv_path.open("w", encoding="utf-8-sig", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerows(sheet_rows)
+    local_payload = {
+        "kbPath": str(local_path.relative_to(REPO_ROOT)),
+        "description": "账号池用户资料快照（手机号/昵称/公会/家族/所在大区）",
+        "syncedAt": synced_at,
+        "count": total,
+        "withPhone": with_phone,
+        "withoutPhone": without_phone,
+        "records": rows,
+    }
+    local_path.write_text(
+        json.dumps(local_payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return csv_path, with_phone, without_phone
+
+
 def _export_csv_to_dingtalk(csv_path: Path, *, workbook_name: str) -> str:
     if not EXCEL_VENV_PYTHON.is_file():
         raise RuntimeError(f"钉钉导出 venv 不存在: {EXCEL_VENV_PYTHON}")
@@ -291,11 +380,6 @@ def main() -> int:
     parser.add_argument("--no-progress", action="store_true")
     parser.add_argument("--dry-run", action="store_true", help="只查询不导出钉钉")
     parser.add_argument(
-        "--resume",
-        action="store_true",
-        help="从 .tmp/export_user_pool_profiles_checkpoint.json 断点续跑",
-    )
-    parser.add_argument(
         "--fresh",
         action="store_true",
         help="忽略断点，从头查询",
@@ -305,11 +389,100 @@ def main() -> int:
         action="store_true",
         help="从 testcase-kb/admin_user_pool_profiles.json 重排手机号格式并重新导出",
     )
+    parser.add_argument(
+        "--enrich-area",
+        action="store_true",
+        help="从本地账号库读取已有资料，仅补查 queryUserDetail.area 并写回库与钉钉",
+    )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="断点续跑（全量查询或 --enrich-area）",
+    )
     args = parser.parse_args()
 
     load_local_env(str(admin_module_dir()))
 
     local_path = _KB_ROOT / "admin_user_pool_profiles.json"
+
+    if args.enrich_area:
+        if not local_path.is_file():
+            print(f"本地快照不存在: {local_path}", file=sys.stderr)
+            return 1
+        payload = json.loads(local_path.read_text(encoding="utf-8"))
+        records = list(payload.get("records") or [])
+        if not records:
+            print("本地快照无 records", file=sys.stderr)
+            return 1
+        total = len(records)
+        report = not args.no_progress
+        checkpoint = None if args.fresh else _load_enrich_area_checkpoint()
+        start_index = 0
+        if checkpoint and checkpoint.get("total") == total:
+            records = list(checkpoint.get("records") or [])
+            start_index = int(checkpoint.get("processedCount") or 0)
+        elif args.resume and not checkpoint:
+            print("未找到 enrich-area 断点，将从头补查", file=sys.stderr)
+
+        if report and total >= 3:
+            detail_text = (
+                f"断点续跑，已完成 {start_index}/{total}"
+                if start_index > 0
+                else f"开始补查 {total} 个账号所在大区"
+            )
+            _report_progress(
+                user_key=args.user_key,
+                current=start_index,
+                total=total,
+                detail=detail_text,
+            )
+
+        for index, record in enumerate(records, start=1):
+            if index <= start_index:
+                continue
+            uid = str(record.get("userId") or "").strip()
+            if not uid:
+                continue
+            detail = _query_user_detail(uid)
+            record["area"] = str(detail.get("area") or "").strip()
+            _save_enrich_area_checkpoint(records=records, processed_count=index, total=total)
+            if report and total >= 3:
+                _report_progress(
+                    user_key=args.user_key,
+                    current=index,
+                    total=total,
+                    detail=f"{uid} · {record.get('area') or '未知大区'}",
+                )
+
+        synced_at = _utc_now()
+        csv_path, with_phone, without_phone = _write_csv_and_kb(
+            rows=records,
+            local_path=local_path,
+            synced_at=synced_at,
+        )
+        sheet_url = ""
+        if not args.dry_run:
+            workbook_name = f"账号池用户信息-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+            sheet_url = _export_csv_to_dingtalk(csv_path, workbook_name=workbook_name)
+        _clear_enrich_area_checkpoint()
+        result_md = build_result_markdown(
+            total=total,
+            with_phone=with_phone,
+            without_phone=without_phone,
+            sheet_url=sheet_url or "(dry-run)",
+            synced_at=synced_at,
+        )
+        if report and total >= 3:
+            _report_progress(
+                user_key=args.user_key,
+                current=total,
+                total=total,
+                detail="导出完成",
+                result_text=result_md,
+            )
+        print(json.dumps({"count": total, "sheetUrl": sheet_url}, ensure_ascii=False))
+        return 0
+
     if args.from_kb:
         if not local_path.is_file():
             print(f"本地快照不存在: {local_path}", file=sys.stderr)
@@ -332,48 +505,16 @@ def main() -> int:
                     "guild": str(record.get("guild") or "").strip(),
                     "family": str(record.get("family") or "").strip(),
                     "pool": str(record.get("pool") or "").strip(),
+                    "area": str(record.get("area") or "").strip(),
                 }
             )
-        rows.sort(key=_phone_sort_key)
-        total = len(rows)
-        with_phone = sum(1 for row in rows if row.get("phone"))
-        without_phone = total - with_phone
         synced_at = _utc_now()
-        header = ["userId", "手机号", "昵称", "所属公会", "所属家族", "池类型"]
-        sheet_rows = [header]
-        for row in rows:
-            sheet_rows.append(
-                [
-                    row["userId"],
-                    row["phone"],
-                    row["nickname"],
-                    row["guild"],
-                    row["family"],
-                    row["pool"],
-                ]
-            )
-        csv_path = (
-            REPO_ROOT
-            / ".tmp"
-            / f"admin_user_pool_profiles_{datetime.now().strftime('%Y%m%d-%H%M%S')}.csv"
+        csv_path, with_phone, without_phone = _write_csv_and_kb(
+            rows=rows,
+            local_path=local_path,
+            synced_at=synced_at,
         )
-        csv_path.parent.mkdir(parents=True, exist_ok=True)
-        with csv_path.open("w", encoding="utf-8-sig", newline="") as handle:
-            writer = csv.writer(handle)
-            writer.writerows(sheet_rows)
-        local_payload = {
-            "kbPath": str(local_path.relative_to(REPO_ROOT)),
-            "description": "账号池用户资料快照（手机号/昵称/公会/家族）",
-            "syncedAt": synced_at,
-            "count": total,
-            "withPhone": with_phone,
-            "withoutPhone": without_phone,
-            "records": rows,
-        }
-        local_path.write_text(
-            json.dumps(local_payload, ensure_ascii=False, indent=2) + "\n",
-            encoding="utf-8",
-        )
+        total = len(rows)
         workbook_name = f"账号池用户信息-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
         sheet_url = _export_csv_to_dingtalk(csv_path, workbook_name=workbook_name)
         print(json.dumps({"count": total, "sheetUrl": sheet_url}, ensure_ascii=False))
@@ -432,6 +573,7 @@ def main() -> int:
                 "guild": guild_name,
                 "family": family_name,
                 "pool": pool_map.get(uid, ""),
+                "area": str(detail.get("area") or "").strip(),
             }
         )
         _save_checkpoint(rows=rows, processed_count=index, total=total)
@@ -443,44 +585,11 @@ def main() -> int:
                 detail=f"{uid} · {phone_display or '无手机号'}",
             )
 
-    rows.sort(key=_phone_sort_key)
-    with_phone = sum(1 for row in rows if row.get("phone"))
-    without_phone = total - with_phone
     synced_at = _utc_now()
-
-    header = ["userId", "手机号", "昵称", "所属公会", "所属家族", "池类型"]
-    sheet_rows = [header]
-    for row in rows:
-        sheet_rows.append(
-            [
-                row["userId"],
-                row["phone"],
-                row["nickname"],
-                row["guild"],
-                row["family"],
-                row["pool"],
-            ]
-        )
-
-    csv_path = REPO_ROOT / ".tmp" / f"admin_user_pool_profiles_{datetime.now().strftime('%Y%m%d-%H%M%S')}.csv"
-    csv_path.parent.mkdir(parents=True, exist_ok=True)
-    with csv_path.open("w", encoding="utf-8-sig", newline="") as handle:
-        writer = csv.writer(handle)
-        writer.writerows(sheet_rows)
-
-    local_path = _KB_ROOT / "admin_user_pool_profiles.json"
-    local_payload = {
-        "kbPath": str(local_path.relative_to(REPO_ROOT)),
-        "description": "账号池用户资料快照（手机号/昵称/公会/家族）",
-        "syncedAt": synced_at,
-        "count": total,
-        "withPhone": with_phone,
-        "withoutPhone": without_phone,
-        "records": rows,
-    }
-    local_path.write_text(
-        json.dumps(local_payload, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
+    csv_path, with_phone, without_phone = _write_csv_and_kb(
+        rows=rows,
+        local_path=local_path,
+        synced_at=synced_at,
     )
 
     sheet_url = ""

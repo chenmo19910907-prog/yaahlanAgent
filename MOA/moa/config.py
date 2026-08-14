@@ -343,6 +343,27 @@ def build_family_fund_clear_expr(family_id: str, week_offset: int) -> str:
     return f'context.getBean("familyFundService").delFamilyFundRankTest("{family_id}",{week_offset})'
 
 
+def build_family_fund_dispatch_lock_clear_expr(week_key: str) -> str:
+    """清除家族基金奖励下发 Redis 锁（family:fund:lock:{weekKey}）。"""
+    week_key = str(week_key).strip()
+    if not week_key.endswith("-week"):
+        raise ValueError(f"week_key 格式无效: {week_key}，应为 YYYYMMDD-week")
+    redis_key = f"family:fund:lock:{week_key}"
+    return f'context.getBean("userClusterDao").del("3", "{redis_key}")'
+
+
+def build_family_fund_tier_cache_clear_expr(family_id: str, week_key: str) -> str:
+    """清除家族基金档位 Redis 缓存（family:fund:tier:{weekKey}:{familyId}）。"""
+    family_id = str(family_id).strip()
+    if not family_id:
+        raise ValueError("family_id 不能为空")
+    week_key = str(week_key).strip()
+    if not week_key.endswith("-week"):
+        raise ValueError(f"week_key 格式无效: {week_key}，应为 YYYYMMDD-week")
+    redis_key = f"family:fund:tier:{week_key}:{family_id}"
+    return f'context.getBean("userClusterDao").del("3", "{redis_key}")'
+
+
 def build_family_fund_tier_set_expr(family_ids: list[str], tier: str, flag: int = 0) -> str:
     ids = [str(item).strip() for item in family_ids if str(item).strip()]
     if not ids:

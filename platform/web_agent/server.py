@@ -2658,11 +2658,18 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 )
             except ValueError as exc:
                 return _json_response(self, {"error": str(exc)}, 400)
-            except RuntimeError as exc:
-                return _json_response(self, {"error": str(exc)}, 502)
             except Exception as exc:  # noqa: BLE001
                 logger.exception("消息分享钉钉异常")
                 return _json_response(self, {"error": f"分享失败：{exc}"}, 500)
+            if not result.get("ok", True):
+                return _json_response(
+                    self,
+                    {
+                        "error": str(result.get("error") or "分享失败"),
+                        **result,
+                    },
+                    502,
+                )
             _record_analytics(
                 self,
                 event="message_forward",
@@ -2743,6 +2750,46 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             return _json_response(
                 self,
                 meta.to_dict(known_labels=known, viewer_staff_id=viewer.staff_id),
+            )
+
+        m_run_push = re.match(rf"^/api/runs/({SESSION_ID_PATTERN})/push-dingtalk$", path)
+        if m_run_push:
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            run_id = m_run_push.group(1)
+            push_result_to_dingtalk = bool(body.get("push_result_to_dingtalk"))
+            viewer = current_web_user(self)
+            if viewer is None or not (viewer.staff_id or "").strip():
+                return _json_response(self, {"error": "unauthorized"}, 401)
+            run_store = get_run_store()
+            run_meta = run_store.get_run(run_id)
+            if run_meta is None:
+                return _json_response(self, {"error": "run not found"}, 404)
+            session_store = get_session_store()
+            if session_store.get_session(run_meta.session_id) is None:
+                return _json_response(self, {"error": "session not found"}, 404)
+            if session_store.is_read_only_for_viewer(
+                run_meta.session_id,
+                viewer.staff_id,
+            ):
+                return _json_response(self, {"error": "forbidden"}, 403)
+            push_dingtalk_staff_id = ""
+            if push_result_to_dingtalk:
+                push_dingtalk_staff_id = viewer.staff_id.strip()
+            run_store.update_meta(
+                run_id,
+                push_result_to_dingtalk=push_result_to_dingtalk,
+                push_dingtalk_staff_id=push_dingtalk_staff_id,
+            )
+            return _json_response(
+                self,
+                {
+                    "ok": True,
+                    "run_id": run_id,
+                    "push_result_to_dingtalk": push_result_to_dingtalk,
+                },
             )
 
         m_pin = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})/pin$", path)

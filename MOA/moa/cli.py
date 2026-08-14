@@ -379,6 +379,26 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         help="成员家族基金贡献值：增加量（API 自动 ×2 传参）",
     )
+    parser.add_argument(
+        "--family-fund-reward-dispatch-offset",
+        type=int,
+        help="家族基金-奖励下发：周偏移（0=本周，-1=上周；dispatchFamilyFundRewardTask）",
+    )
+    parser.add_argument(
+        "--family-fund-reward-dispatch-extra",
+        default="",
+        help="家族基金-奖励下发：参数2 string（默认空）",
+    )
+    parser.add_argument(
+        "--family-fund-reward-dispatch-clear",
+        action="store_true",
+        help="清除家族基金奖励下发记录（userClusterDao del family:fund:lock:{weekKey}；下发前须先清）",
+    )
+    parser.add_argument(
+        "--family-fund-tier-cache-clear",
+        action="store_true",
+        help="清除家族基金档位缓存（userClusterDao del family:fund:tier:{weekKey}:{familyId}；须在设档前执行，设档后勿清）",
+    )
 
     parser.add_argument("--id-auth-user-id", help="查询实名认证记录")
     parser.add_argument(

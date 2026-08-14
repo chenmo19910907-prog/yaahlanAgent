@@ -125,11 +125,14 @@
     this.listEl?.addEventListener('click', (event) => {
       event.stopPropagation();
       const link = event.target.closest('.about-doc-link');
-      if (!link || !global.WebAgentAnalytics) return;
-      global.WebAgentAnalytics.track('about_doc_click', {
-        title: link.getAttribute('data-analytics-doc') || link.textContent || '',
-        url: link.getAttribute('data-analytics-url') || link.getAttribute('href') || '',
-      });
+      if (!link) return;
+      if (global.WebAgentAnalytics) {
+        global.WebAgentAnalytics.track('about_doc_click', {
+          title: link.getAttribute('data-analytics-doc') || link.textContent || '',
+          url: link.getAttribute('data-analytics-url') || link.getAttribute('href') || '',
+        });
+      }
+      void this.setOpen(false);
     });
     this.bubbleEl?.addEventListener('click', (event) => event.stopPropagation());
   };

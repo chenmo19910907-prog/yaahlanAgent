@@ -81,3 +81,20 @@ def resolve_family_fund_week_key(week: str | None = None) -> str:
 
     monday = anchor - timedelta(days=anchor.weekday())
     return f"{monday.strftime('%Y%m%d')}-week"
+
+
+def resolve_family_fund_week_key_with_offset(
+    week: str | None = None,
+    *,
+    week_offset: int = 0,
+) -> str:
+    """解析家族基金周期键，支持周偏移（0=本周，-1=上周）。"""
+    if week_offset > 0:
+        raise ValueError("week_offset 不能为正数（0=本周，-1=上周）")
+    week_key = resolve_family_fund_week_key(week)
+    if week_offset == 0:
+        return week_key
+    monday_text = week_key.replace("-week", "")
+    monday = datetime.strptime(monday_text, "%Y%m%d").date()
+    shifted = monday + timedelta(days=7 * week_offset)
+    return f"{shifted.strftime('%Y%m%d')}-week"

@@ -25,6 +25,24 @@ logger = logging.getLogger("web-agent")
 _SHARE_TITLE = "消息分享"
 
 
+def _is_invalid_group_conversation_error(exc: BaseException) -> bool:
+    msg = str(exc)
+    return "invalid.openConversationId" in msg
+
+
+def _prune_invalid_group_chat(conversation_id: str) -> bool:
+    conv_id = (conversation_id or "").strip()
+    if not conv_id:
+        return False
+    try:
+        from gateway_status_notify import remove_group_chat_record  # noqa: WPS433
+
+        return remove_group_chat_record(conv_id)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("清理无效群聊索引失败 conv=%s: %s", conv_id[:16], exc)
+        return False
+
+
 def build_forward_body(
     text: str,
     *,
@@ -97,6 +115,7 @@ def forward_message_to_dingtalk(
 
     sent: list[str] = []
     failed: list[dict[str, str]] = []
+    pruned_group_ids: list[str] = []
     for staff_id in staff_recipients:
         try:
             send_robot_private_markdown(staff_id, title, body)
@@ -123,15 +142,25 @@ def forward_message_to_dingtalk(
             )
         except Exception as exc:  # noqa: BLE001
             logger.warning("消息分享群聊失败 conv=%s: %s", conv_id[:16], exc)
+            if _is_invalid_group_conversation_error(exc) and _prune_invalid_group_chat(conv_id):
+                pruned_group_ids.append(conv_id)
             failed.append({"kind": "group", "id": conv_id, "error": str(exc)})
 
     if not sent:
         first_err = failed[0]["error"] if failed else "发送失败"
-        raise RuntimeError(first_err)
+        return {
+            "ok": False,
+            "sent_count": 0,
+            "failed_count": len(failed),
+            "failed": failed,
+            "pruned_group_ids": pruned_group_ids,
+            "error": first_err,
+        }
 
     return {
         "ok": True,
         "sent_count": len(sent),
         "failed_count": len(failed),
         "failed": failed,
+        "pruned_group_ids": pruned_group_ids,
     }

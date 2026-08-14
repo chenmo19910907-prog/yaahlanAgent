@@ -211,6 +211,13 @@
     "demo": "bookmarks-jump"
   },
   {
+    "type": "feature",
+    "label": "功能 · 17",
+    "title": "用量统计，一目了然",
+    "desc": "设置里打开「我的用量」，日/周/月或近 7、30 天切换查请求与 Token；绑定 Cursor 后同步官方 Dashboard，消耗趋势一屏呈现。",
+    "demo": "usage-stats"
+  },
+  {
     "type": "center",
     "label": "智能",
     "titleLines": ["是工具平台", "更是智能工厂"],

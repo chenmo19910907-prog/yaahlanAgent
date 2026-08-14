@@ -72,7 +72,7 @@ def _apply_set_args(config: dict[str, Any], set_args: list[str]) -> tuple[dict[s
     return updated, changes
 
 
-def _fetch_mse_config(*, namespace: str, config_key: str) -> dict[str, Any]:
+def _fetch_mse_config(*, namespace: str, config_key: str, app_key: str | None = None) -> dict[str, Any]:
     cmd = [
         "python3",
         str(mse_execute_path()),
@@ -83,6 +83,8 @@ def _fetch_mse_config(*, namespace: str, config_key: str) -> dict[str, Any]:
         "--output",
         "json",
     ]
+    if app_key:
+        cmd.extend(["--app-key", app_key])
     proc = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO_ROOT)
     if proc.returncode != 0:
         raise RuntimeError((proc.stderr or proc.stdout or "MSE 读取失败").strip())

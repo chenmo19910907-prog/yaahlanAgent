@@ -1,0 +1,41 @@
+{
+  "type": "moa",
+  "key": "momo.bpm.biz.gameplatform.overseas-voga-mts-vas",
+  "url": "/service/internal/user/family-moa",
+  "method": "dispatchFamilyFundRewardTask",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "0",
+      "json": "",
+      "type": "int",
+      "value": "0"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "family_fund_reward_dispatch",
+    "name": "家族基金-奖励下发",
+    "category": "家族（internal/user/family-moa）",
+    "description": "家族基金周结算奖励下发（dispatchFamilyFundRewardTask；/service/internal/user/family-moa）。仅 1 个 int 参数：--family-fund-reward-dispatch-offset，0=本周，-1=上周。",
+    "prompts": [
+      "家族基金本周奖励下发",
+      "家族基金上周奖励下发",
+      "dispatchFamilyFundRewardTask"
+    ],
+    "cli": "--family-fund-reward-dispatch-offset 0"
+  }
+}

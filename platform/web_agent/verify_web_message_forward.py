@@ -104,8 +104,40 @@ class WebMessageForwardTests(unittest.TestCase):
             )
         self.assertTrue(result["ok"])
         self.assertEqual(result["sent_count"], 1)
+        self.assertEqual(result["pruned_group_ids"], [])
         self.assertEqual(fake_dingtalk.send_robot_group_markdown.call_count, 1)
         self.assertEqual(fake_dingtalk.send_robot_private_markdown.call_count, 0)
+
+    def test_forward_prunes_invalid_group(self) -> None:
+        fake_dingtalk = MagicMock()
+        fake_dingtalk.send_robot_private_markdown = MagicMock()
+        fake_dingtalk.send_robot_group_markdown = MagicMock(
+            side_effect=RuntimeError(
+                '群聊发送失败：HTTP 400: {"code":"invalid.openConversationId","message":"无效的openConversationId"}'
+            ),
+        )
+        fake_markdown = MagicMock()
+        fake_markdown.enhance_markdown_list_indent = lambda text: text
+        fake_gateway = MagicMock()
+        fake_gateway.remove_group_chat_record = MagicMock(return_value=True)
+        with patch.dict(
+            sys.modules,
+            {
+                "dingtalk_private_message": fake_dingtalk,
+                "markdown_display": fake_markdown,
+                "gateway_status_notify": fake_gateway,
+            },
+        ):
+            result = forward_message_to_dingtalk(
+                [],
+                "测试内容",
+                recipient_group_ids=["cidTestGroup=="],
+                sender_name="王五",
+                message_role="assistant",
+            )
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["pruned_group_ids"], ["cidTestGroup=="])
+        fake_gateway.remove_group_chat_record.assert_called_once_with("cidTestGroup==")
 
     def test_forward_requires_text(self) -> None:
         with self.assertRaises(ValueError):

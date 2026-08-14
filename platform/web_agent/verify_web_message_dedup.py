@@ -16,14 +16,21 @@ def main() -> int:
         "function messagesHaveAssistantSinceLastUser(msgs)",
         "function shouldAppendStreamingShell(sessionId, msgs)",
         "function findOrphanStreamingShell(sessionId)",
+        "function findFinalizedTailShell(sessionId)",
         "function resolveTailMergeShell(sessionId)",
+        "function tailAssistantBubbleCount(sessionId)",
+        "function assistantContentAlreadyInDom(content)",
         "function mergeAssistantIntoShell(sessionId, shellEl, assistantMsg)",
         "const tailAssistants = msgs.filter(",
         "shouldAppendStreamingShell(sessionId, msgs)",
         "messagesHaveAssistantSinceLastUser(msgs)",
         "messagesHaveAssistantSinceLastUser(cachedMsgs)",
         "resolveTailMergeShell(sessionId)",
+        "assistantContentAlreadyInDom(lastAssistant.content)",
         "run.shellEl = null",
+        "function messagesDomMatchesSession(sessionId)",
+        "messagesDomMatchesSession(sessionId)",
+        "clearMessagesDomRendered()",
     ]
     missing = [token for token in required if token not in html]
     if missing:

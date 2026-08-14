@@ -25,5 +25,16 @@
   "cluster": "stage",
   "server": "config",
   "momoId": "df4c6f364f9fcae3",
-  "momoName": "e88aa376b29864ad"
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "family_fund_tier_set",
+    "name": "家族-设置基金档位",
+    "category": "家族（internal/user/family-moa）",
+    "description": "设置家族基金档位（backdoor FamilyFundService.batchSetFamilyFundTierForTest；result=更新家族数）。须先清档位缓存再设档；设档后勿清缓存。",
+    "prompts": [
+      "设置家族 <familyId> 基金档位为 <tier>",
+      "家族 <familyId> 基金档位 <tier>"
+    ],
+    "cli": "--family-id <familyId> --family-fund-tier <tier>"
+  }
 }

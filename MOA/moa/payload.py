@@ -13,6 +13,8 @@ from .config import (
     build_family_fund_contrib_expr,
     build_family_fund_tier_set_expr,
     build_family_fund_clear_expr,
+    build_family_fund_dispatch_lock_clear_expr,
+    build_family_fund_tier_cache_clear_expr,
     build_room_exp_expr,
     build_room_member_join_expr,
     describe_level_upgrade_plan,
@@ -76,7 +78,7 @@ from .params import (
     set_feed_comment_params,
     set_p2p_message_params,
 )
-from .time_utils import resolve_expire_ms, resolve_family_fund_week_key
+from .time_utils import resolve_expire_ms, resolve_family_fund_week_key, resolve_family_fund_week_key_with_offset
 from .user_area import describe_user_area, normalize_user_area
 from .user_login import normalize_mobile_login, resolve_phone_area_code
 from .wealth_charm import build_wealth_charm_query_expr
@@ -768,6 +770,50 @@ def _op_across_pk_week_rank_settle(args: argparse.Namespace, payload: dict[str, 
     print(f"跨房PK周榜结算：weekOffset={offset}（{label}）", file=sys.stderr)
 
 
+def _op_family_fund_reward_dispatch_clear(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    week_offset = 0 if args.family_fund_week_offset is None else args.family_fund_week_offset
+    week_key = resolve_family_fund_week_key_with_offset(args.family_fund_week, week_offset=week_offset)
+    payload["url"] = "/service/voga-mts-user-backdoor"
+    payload["method"] = "execute"
+    expr = build_family_fund_dispatch_lock_clear_expr(week_key)
+    week_label = "本周" if week_offset == 0 else ("上周" if week_offset == -1 else f"偏移 {week_offset} 周")
+    print(f"清除家族基金奖励下发记录: {week_label}（week_key={week_key}）", file=sys.stderr)
+    set_backdoor_execute_expr(payload, expr)
+
+
+def _op_family_fund_tier_cache_clear(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if not args.family_id:
+        raise ValueError("清除家族基金档位缓存时，必须提供 --family-id")
+    week_offset = 0 if args.family_fund_week_offset is None else args.family_fund_week_offset
+    week_key = resolve_family_fund_week_key_with_offset(args.family_fund_week, week_offset=week_offset)
+    payload["url"] = "/service/voga-mts-user-backdoor"
+    payload["method"] = "execute"
+    expr = build_family_fund_tier_cache_clear_expr(args.family_id, week_key)
+    week_label = "本周" if week_offset == 0 else ("上周" if week_offset == -1 else f"偏移 {week_offset} 周")
+    print(
+        f"清除家族基金档位缓存: 家族 {args.family_id}，{week_label}（week_key={week_key}）",
+        file=sys.stderr,
+    )
+    set_backdoor_execute_expr(payload, expr)
+
+
+def _op_family_fund_reward_dispatch(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    offset = args.family_fund_reward_dispatch_offset  # 0=本周，-1=上周
+    payload["key"] = "momo.bpm.biz.gameplatform.overseas-voga-mts-vas"
+    payload["url"] = "/service/internal/user/family-moa"
+    payload["method"] = "dispatchFamilyFundRewardTask"
+    params = payload.get("params")
+    if not isinstance(params, list) or not params or not isinstance(params[0], dict):
+        raise ValueError("payload.params 必须是非空数组，才能覆盖 params[0].value/txt")
+    params[0]["value"] = str(offset)
+    params[0]["txt"] = str(offset)
+    params[0]["type"] = "int"
+    if len(params) > 1:
+        payload["params"] = params[:1]
+    label = "本周" if offset == 0 else (f"上周" if offset == -1 else f"偏移{offset}周")
+    print(f"家族基金奖励下发：weekOffset={offset}（{label}）", file=sys.stderr)
+
+
 def _op_pk_rank_query(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     # 复用 family fund week key 逻辑，去掉连字符得到 YYYYMMDDweek 格式
     raw_key = resolve_family_fund_week_key(args.pk_rank_query_week)  # -> "YYYYMMDD-week"
@@ -902,6 +948,14 @@ def _family_fund_clear_mode(args: argparse.Namespace) -> bool:
     return args.family_fund_clear
 
 
+def _family_fund_reward_dispatch_clear_mode(args: argparse.Namespace) -> bool:
+    return args.family_fund_reward_dispatch_clear
+
+
+def _family_fund_tier_cache_clear_mode(args: argparse.Namespace) -> bool:
+    return args.family_fund_tier_cache_clear
+
+
 def _family_member_fund_contrib_mode(args: argparse.Namespace) -> bool:
     return args.family_member_fund_user_id is not None and args.family_member_fund_contrib is not None
 
@@ -929,6 +983,8 @@ def _family_add_mode(args: argparse.Namespace) -> bool:
         and not _family_fund_tier_mode(args)
         and not _family_fund_contrib_mode(args)
         and not _family_fund_clear_mode(args)
+        and not _family_fund_tier_cache_clear_mode(args)
+        and not _family_fund_reward_dispatch_clear_mode(args)
         and not _family_member_fund_contrib_mode(args)
         and not _family_query_members_mode(args)
         and not _family_query_create_time_mode(args)
@@ -1438,6 +1494,9 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.recharge_rebate_user_id is not None, _op_recharge_rebate_simulate),
     (lambda a: a.pk_rank_settle_week_offset is not None, _op_pk_rank_settle),
     (lambda a: a.across_pk_week_rank_settle_offset is not None, _op_across_pk_week_rank_settle),
+    (lambda a: a.family_fund_reward_dispatch_offset is not None, _op_family_fund_reward_dispatch),
+    (lambda a: _family_fund_reward_dispatch_clear_mode(a), _op_family_fund_reward_dispatch_clear),
+    (lambda a: _family_fund_tier_cache_clear_mode(a), _op_family_fund_tier_cache_clear),
     (lambda a: a.pk_rank_query_week is not None, _op_pk_rank_query),
     (lambda a: a.pk_rank_user_id is not None, _op_pk_rank_add),
     (lambda a: a.room_bot_room_id is not None, _op_room_add_bots),

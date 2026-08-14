@@ -147,22 +147,9 @@ def query_family_members(family_id: str) -> list[str]:
 
 
 def query_user_phone(user_id: str, cache: dict[str, str]) -> str:
-    if user_id in cache:
-        return cache[user_id]
-    body = _run_json(
-        [
-            sys.executable,
-            str(admin_execute_path()),
-            "--query-user-id",
-            user_id,
-        ]
-    )
-    user = body.get("user") if isinstance(body.get("user"), dict) else body
-    phone = ""
-    if isinstance(user, dict):
-        phone = str(user.get("phone") or "").strip()
-    cache[user_id] = phone
-    return phone
+    from user_phone_lookup import query_user_phone as _lookup  # noqa: PLC0415
+
+    return _lookup(user_id, cache)
 
 
 def build_rows(*, families: list[dict[str, str]]) -> list[list[str]]:

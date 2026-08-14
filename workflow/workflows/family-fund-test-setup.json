@@ -1,0 +1,77 @@
+{
+  "id": "family-fund-test-setup",
+  "name": "家族基金-测试数据准备",
+  "category": "家族",
+  "description": "v2.4.9 家族基金造数：清本周贡献 → 设档位(A/B/C) → 加家族/成员贡献 → 查询验收；rewardDiamonds>0 时一键返奖档位。",
+  "version": 1,
+  "params": {
+    "familyId": {
+      "label": "家族ID",
+      "type": "string",
+      "required": true,
+      "prompt": "目标家族 ID"
+    },
+    "fundTier": {
+      "label": "基金档位",
+      "type": "string",
+      "required": false,
+      "default": "C",
+      "prompt": "A / B / C"
+    },
+    "contribution": {
+      "label": "家族贡献值",
+      "type": "integer",
+      "required": false,
+      "default": "0",
+      "prompt": "incrFundFamilyTotal 增量；0=仅设档位"
+    },
+    "weekMonday": {
+      "label": "周期周一",
+      "type": "string",
+      "required": false,
+      "default": "",
+      "prompt": "YYYYMMDD；空=本周"
+    },
+    "memberUserId": {
+      "label": "成员userId",
+      "type": "string",
+      "required": false,
+      "default": "",
+      "prompt": "可选：给成员加贡献"
+    },
+    "memberContrib": {
+      "label": "成员贡献值",
+      "type": "integer",
+      "required": false,
+      "default": "0"
+    },
+    "rewardDiamonds": {
+      "label": "返奖钻石",
+      "type": "integer",
+      "required": false,
+      "default": "0",
+      "prompt": ">0 时一键清贡献+设档位+设贡献"
+    },
+    "clearLastWeek": {
+      "label": "清上周贡献",
+      "type": "string",
+      "required": false,
+      "default": "0",
+      "prompt": "1=额外清除上周"
+    }
+  },
+  "steps": [
+    {
+      "id": "prepare_family_fund",
+      "name": "家族基金造数并查询验收",
+      "run": {
+        "type": "shell",
+        "command": "python3 MOA/scripts/family_fund_test_setup.py --family-id '{{familyId}}' --fund-tier '{{fundTier}}' --contribution {{contribution}} --week '{{weekMonday}}' --member-user-id '{{memberUserId}}' --member-contrib {{memberContrib}} --reward-diamonds {{rewardDiamonds}} --clear-last-week '{{clearLastWeek}}'",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

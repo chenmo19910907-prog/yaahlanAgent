@@ -700,6 +700,17 @@
         "工作流 pk-atm-test <phoneA> <phoneB> … <matchTimeout> <pkMinute> …"
       ],
       "command": "python3 workflow/workflow_execute.py run pk-atm-test --phone-a <phoneA> --phone-b <phoneB> --gift-count <giftCount> --gift-min-diamonds <giftMinDiamonds> --gift-max-diamonds <giftMaxDiamonds> --pre-gift-wait <preGiftWait> --post-gift-wait <postGiftWait> --post-close-wait <postCloseWait> --match-timeout <matchTimeout> --pk-minute <pkMinute> --out-dir <outDir> --personal-pk-threshold <personalPkThreshold> --min-combined-pk <minCombinedPk> --target-combined-pk <targetCombinedPk>"
+    },
+    {
+      "id": "family_fund_test_setup",
+      "name": "家族基金-测试数据准备",
+      "category": "家族",
+      "description": "v2.4.9 家族基金造数：清本周贡献 → 设档位(A/B/C) → 加家族/成员贡献 → 查询验收；rewardDiamonds>0 时一键返奖档位。",
+      "prompts": [
+        "执行工作流 家族基金-测试数据准备",
+        "工作流 family-fund-test-setup <familyId> <fundTier> <contribution> <weekMonday> <memberUserId> <memberContrib> <rewardDiamonds> <clearLastWeek>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run family-fund-test-setup --family-id <familyId> --fund-tier <fundTier> --contribution <contribution> --week-monday <weekMonday> --member-user-id <memberUserId> --member-contrib <memberContrib> --reward-diamonds <rewardDiamonds> --clear-last-week <clearLastWeek>"
     }
   ]
 }
