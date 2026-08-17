@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -17,6 +18,17 @@ from code_modify_permission import (  # noqa: E402
     allow_moa_registry_in_readonly,
     code_modify_denial_message,
     looks_like_code_modify_request,
+)
+from source_file_guard import guard_readonly_source_file_reply  # noqa: E402
+from source_file_permission import (  # noqa: E402
+    STAFF_ID_ENV,
+    looks_like_source_file_request,
+    source_file_denial_message,
+)
+from adb_execution_guard import (  # noqa: E402
+    adb_execution_denial_message_for_web,
+    is_adb_execution_allowed,
+    looks_like_adb_execution_request,
 )
 from cursor_runner import (  # noqa: E402
     DEFAULT_MODEL,
@@ -94,9 +106,15 @@ def run_web_chat(
     file_list = list(file_paths or [])
 
     code_allowed = is_web_admin(staff_id=staff_id)
+    source_allowed = code_allowed
+    adb_allowed = is_adb_execution_allowed(staff_id=staff_id)
     allow_moa_registry = allow_moa_registry_in_readonly(code_modify_allowed=code_allowed)
     if looks_like_code_modify_request(message) and not code_allowed:
         return code_modify_denial_message()
+    if looks_like_source_file_request(message) and not source_allowed:
+        return source_file_denial_message()
+    if looks_like_adb_execution_request(message) and not adb_allowed:
+        return adb_execution_denial_message_for_web()
 
     agent_message = message
     if should_rotate_cursor_agent(session_id):
@@ -123,27 +141,42 @@ def run_web_chat(
         reply_mode=reply_mode,
         allow_code_modify=code_allowed,
         allow_moa_registry=allow_moa_registry,
+        allow_adb_execution=adb_allowed,
     )
 
-    raw = run_agent_prompt_streaming(
-        prompt,
-        image_paths=image_list,
-        on_render=on_render,
-        user_key=user_key,
-        sender_name=f"Web-{session_id[:8]}",
-        use_gateway_rules=False,
-        allow_code_modify=code_allowed,
-        allow_moa_registry=allow_moa_registry,
-        session=session_ctrl,
-        timeout_s=timeout_s,
-        show_thinking=True,
-        web_stream=True,
-        include_process_in_final=normalize_reply_mode(reply_mode) == "detailed",
-        model=model or DEFAULT_MODEL,
-        on_phase=on_phase,
-    )
-    return guard_readonly_agent_reply(
+    prev_staff_id = os.environ.get(STAFF_ID_ENV)
+    if staff_id:
+        os.environ[STAFF_ID_ENV] = staff_id
+    try:
+        raw = run_agent_prompt_streaming(
+            prompt,
+            image_paths=image_list,
+            on_render=on_render,
+            user_key=user_key,
+            sender_name=f"Web-{session_id[:8]}",
+            use_gateway_rules=False,
+            allow_code_modify=code_allowed,
+            allow_moa_registry=allow_moa_registry,
+            session=session_ctrl,
+            timeout_s=timeout_s,
+            show_thinking=True,
+            web_stream=True,
+            include_process_in_final=normalize_reply_mode(reply_mode) == "detailed",
+            model=model or DEFAULT_MODEL,
+            on_phase=on_phase,
+        )
+    finally:
+        if staff_id:
+            if prev_staff_id is None:
+                os.environ.pop(STAFF_ID_ENV, None)
+            else:
+                os.environ[STAFF_ID_ENV] = prev_staff_id
+    guarded = guard_readonly_agent_reply(
         raw,
         allow_code_modify=code_allowed,
         allow_moa_registry=allow_moa_registry,
+    )
+    return guard_readonly_source_file_reply(
+        guarded,
+        allow_source_file=source_allowed,
     )

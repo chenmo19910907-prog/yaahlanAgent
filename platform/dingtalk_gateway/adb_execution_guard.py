@@ -43,14 +43,45 @@ _DENY_MESSAGE = """\
 
 需要在真机上点按、截图验收时，请在 **Cursor 本机对话** 中操作。"""
 
+_WEB_DENY_MESSAGE = """\
+你没有真机 ADB / UI 自动化权限（macro、observe、capture、flow 等）。
+
+请改用脚本能力，例如：
+• **送礼（默认）** → `Gift/gift_execute.py` Stage HTTP
+• **查数 / MOA / Admin** → 各模块 `*_execute.py`
+• **抓包验收** → `Tunnel/tunnel_execute.py`（只读查包）
+
+如需真机点按、截图验收，请联系管理员开通，或在 **Cursor 本机对话** 中操作。"""
+
+ADB_POLICY_EXCLUDE_RE = re.compile(
+    r"(应该|需要|希望|要求|限制|开通|授权|禁用|禁止).{0,24}(管理员|权限|web|Web|钉钉)|"
+    r"(管理员|权限|web|Web|钉钉).{0,24}(应该|需要|希望|要求|限制|开通|授权|禁用|禁止)|"
+    r"只有管理员.{0,12}权限|"
+    r"web端也禁用|钉钉端禁止",
+    re.I,
+)
+
 
 def looks_like_adb_execution_request(text: str) -> bool:
     """用户消息是否明确要求走 ADB / 真机 UI 执行。"""
     t = (text or "").strip()
     if not t:
         return False
+    if ADB_POLICY_EXCLUDE_RE.search(t):
+        return False
     return any(pattern.search(t) for pattern in _PATTERNS)
 
 
 def adb_execution_denial_message() -> str:
     return _DENY_MESSAGE.strip()
+
+
+def adb_execution_denial_message_for_web() -> str:
+    return _WEB_DENY_MESSAGE.strip()
+
+
+def is_adb_execution_allowed(*, staff_id: str | None = None) -> bool:
+    """Web Agent：与代码修改白名单共用，仅管理员可执行 ADB / 真机 UI。"""
+    from source_file_permission import is_source_file_allowed
+
+    return is_source_file_allowed(staff_id=staff_id)

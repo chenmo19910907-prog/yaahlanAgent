@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Web Agent 代码修改权限：管理员可改代码，MOA 入库全员可用。"""
+"""Web Agent 代码修改权限：管理员可改代码，MOA 入库全员可用；源文件仅管理员可导出。"""
 
 from __future__ import annotations
 
@@ -15,6 +15,11 @@ for path in (GATEWAY_DIR, WEB_AGENT_DIR):
         sys.path.insert(0, str(path))
 
 from code_modify_permission import looks_like_code_modify_request  # noqa: E402
+from source_file_permission import looks_like_source_file_request  # noqa: E402
+from adb_execution_guard import (  # noqa: E402
+    is_adb_execution_allowed,
+    looks_like_adb_execution_request,
+)
 from web_prompt import build_web_prompt  # noqa: E402
 
 
@@ -39,12 +44,42 @@ class WebCodeModifyPermissionTest(unittest.TestCase):
 
     def test_admin_prompt_no_readonly_banner(self) -> None:
         text = build_web_prompt(
-            "查询用户详情",
+            "生成测试用例",
             is_new_session=True,
             allow_code_modify=True,
         )
         self.assertNotIn("【只读模式】", text)
         self.assertIn("代码修改权限", text)
+        self.assertIn("源文件导出", text)
+
+    def test_source_file_request_detected(self) -> None:
+        prompt = "用例设计的skill 发我一下，用压缩包的形式发我"
+        self.assertTrue(looks_like_source_file_request(prompt))
+        self.assertFalse(looks_like_code_modify_request(prompt))
+
+    def test_readonly_prompt_excludes_adb(self) -> None:
+        text = build_web_prompt(
+            "查询用户详情",
+            is_new_session=True,
+            allow_code_modify=False,
+            allow_adb_execution=False,
+        )
+        self.assertIn("不含", text)
+        self.assertIn("ADB", text)
+        self.assertNotIn("本机已连接设备", text)
+
+    def test_admin_prompt_includes_adb(self) -> None:
+        text = build_web_prompt(
+            "查询用户详情",
+            is_new_session=True,
+            allow_code_modify=True,
+            allow_adb_execution=True,
+        )
+        self.assertIn("本机已连接设备", text)
+
+    def test_adb_policy_discussion_not_blocked(self) -> None:
+        self.assertFalse(looks_like_adb_execution_request("web端也禁用"))
+        self.assertTrue(looks_like_adb_execution_request("真机打开礼物面板送礼"))
 
 
 def main() -> int:

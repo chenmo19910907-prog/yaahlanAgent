@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import threading
 import time
 from typing import Any
@@ -38,13 +39,16 @@ from command_hints import suggest_command_hint
 from command_router import try_route
 from code_modify_guard import guard_readonly_agent_reply
 from code_modify_permission import (
+    allow_moa_registry_in_readonly,
     code_modify_denial_message,
     is_code_modify_allowed,
     looks_like_code_modify_request,
 )
-from code_modify_permission import (
-    allow_moa_registry_in_readonly,
-    is_code_modify_allowed,
+from source_file_guard import guard_readonly_source_file_reply
+from source_file_permission import (
+    DINGTALK_STAFF_ID_ENV,
+    looks_like_source_file_request,
+    source_file_denial_message,
 )
 from cursor_runner import (
     DEFAULT_TIMEOUT_S,
@@ -635,6 +639,7 @@ def process_inbound_task(
                 code_modify_allowed=code_allowed,
             )
             code_modify_session = code_allowed
+            source_allowed = code_allowed
             if looks_like_code_modify_request(prompt) and not code_allowed:
                 logger.warning(
                     "代码修改权限拒绝 conv=%s staff=%s sender=%s prompt=%s",
@@ -658,6 +663,29 @@ def process_inbound_task(
                 store.save(incoming.conversation_id, prompt, **store_kwargs)
                 return "denied"
 
+            if looks_like_source_file_request(prompt) and not source_allowed:
+                logger.warning(
+                    "源文件权限拒绝 conv=%s staff=%s sender=%s prompt=%s",
+                    user_key,
+                    incoming.sender_staff_id,
+                    incoming.sender_id,
+                    redact_for_log(prompt),
+                )
+                _reply_final(
+                    handler,
+                    incoming,
+                    inbound,
+                    source_file_denial_message(),
+                    started=started,
+                    task_kind=task_kind,
+                    user_key=user_key,
+                    user_prompt=prompt,
+                    sender_name=sender_name,
+                    sender_staff_id=sender_staff_id,
+                )
+                store.save(incoming.conversation_id, prompt, **store_kwargs)
+                return "source_denied"
+
             if looks_like_adb_execution_request(prompt):
                 logger.info(
                     "ADB 执行拒绝 conv=%s prompt=%s",
@@ -680,34 +708,48 @@ def process_inbound_task(
                 return "adb_denied"
 
             session.set_phase("agent")
-            if use_streaming and stream_card is not None:
-                raw_result = run_agent_prompt_streaming(
-                    prompt,
-                    on_render=stream_card.push,
-                    image_paths=image_paths,
-                    links=inbound.links,
-                    session=session,
-                    user_key=user_key,
-                    sender_name=sender_name,
-                    allow_code_modify=code_allowed,
-                    allow_moa_registry=allow_moa_registry,
-                )
-            else:
-                raw_result = run_agent_prompt(
-                    prompt,
-                    image_paths=image_paths,
-                    links=inbound.links,
-                    session=session,
-                    user_key=user_key,
-                    sender_name=sender_name,
-                    allow_code_modify=code_allowed,
-                    allow_moa_registry=allow_moa_registry,
-                )
+            prev_staff_id = os.environ.get(DINGTALK_STAFF_ID_ENV)
+            if sender_staff_id:
+                os.environ[DINGTALK_STAFF_ID_ENV] = sender_staff_id
+            try:
+                if use_streaming and stream_card is not None:
+                    raw_result = run_agent_prompt_streaming(
+                        prompt,
+                        on_render=stream_card.push,
+                        image_paths=image_paths,
+                        links=inbound.links,
+                        session=session,
+                        user_key=user_key,
+                        sender_name=sender_name,
+                        allow_code_modify=code_allowed,
+                        allow_moa_registry=allow_moa_registry,
+                    )
+                else:
+                    raw_result = run_agent_prompt(
+                        prompt,
+                        image_paths=image_paths,
+                        links=inbound.links,
+                        session=session,
+                        user_key=user_key,
+                        sender_name=sender_name,
+                        allow_code_modify=code_allowed,
+                        allow_moa_registry=allow_moa_registry,
+                    )
+            finally:
+                if sender_staff_id:
+                    if prev_staff_id is None:
+                        os.environ.pop(DINGTALK_STAFF_ID_ENV, None)
+                    else:
+                        os.environ[DINGTALK_STAFF_ID_ENV] = prev_staff_id
             session.check_cancelled()
             raw_result = guard_readonly_agent_reply(
                 raw_result,
                 allow_code_modify=code_allowed,
                 allow_moa_registry=allow_moa_registry,
+            )
+            raw_result = guard_readonly_source_file_reply(
+                raw_result,
+                allow_source_file=source_allowed,
             )
             raw_result = guard_env_check_agent_reply(raw_result, prompt=prompt)
             session.check_cancelled()

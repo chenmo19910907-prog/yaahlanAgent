@@ -9,9 +9,13 @@ import sys
 from pathlib import Path
 
 WEB_AGENT_DIR = Path(__file__).resolve().parent
+GATEWAY_DIR = WEB_AGENT_DIR.parent / "dingtalk_gateway"
+if str(GATEWAY_DIR) not in sys.path:
+    sys.path.insert(0, str(GATEWAY_DIR))
 if str(WEB_AGENT_DIR) not in sys.path:
     sys.path.insert(0, str(WEB_AGENT_DIR))
 
+from source_file_permission import assert_source_file_share_allowed, resolve_staff_id_from_env  # noqa: E402
 from web_file_store import FileUploadError, parse_web_user_key, register_output_file  # noqa: E402
 
 
@@ -28,11 +32,19 @@ def main() -> int:
         return 2
 
     try:
+        assert_source_file_share_allowed(
+            args.path,
+            staff_id=resolve_staff_id_from_env() or None,
+        )
         attachment = register_output_file(
             session_id,
             args.path,
             display_name=args.name or None,
+            staff_id=resolve_staff_id_from_env() or None,
         )
+    except PermissionError as exc:
+        print(f"错误：{exc}", file=sys.stderr)
+        return 1
     except FileUploadError as exc:
         print(f"错误：{exc}", file=sys.stderr)
         return 1

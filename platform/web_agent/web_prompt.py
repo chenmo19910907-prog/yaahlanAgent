@@ -101,14 +101,15 @@ _WEB_RULES_CORE = f"""\
 4. **导出文档**：仅当用户明确要求「导出到钉钉文档」时，才写入钉钉并回链接；**例外：PK 提款机验收每轮须自动写入钉钉 Sheet 并回链接**。导出成功时只回在线表格/文件链接。
 5. **测试用例**：生成测试用例时写入 `{_temporary_testcase_hint()}`（Markdown 表格或 CSV）。
 6. **MOA 探活**：仅当用户整条消息为「MOA检查」「检查MOA」「MOA探活」等明确口令时才探活；MOA 业务查询不等于探活。
-7. **失败处理**：用自然语言说明问题与下一步，不要编造结果。"""
+7. **失败处理**：用自然语言说明问题与下一步，不要编造结果。
+8. **真机 ADB（仅管理员）**：非管理员**禁止**经 ADB / 真机 UI 执行。禁止调用 `adb/`、`adb_execute.py`、`macro`、`flow run`、`observe`/`capture`/`locate`/`tap`、`autotest`、adb-screen MCP 等。查数用 MOA/Admin；抓包用 Tunnel **只读**查询。用户要求真机点按、礼物面板 UI、截图验收时，说明需管理员授权或在 **Cursor 本机对话** 中操作。"""
 
 _WEB_RULES_GIFT_FAMILY = f"""\
-8. {_GIFT_RULE}
+9. {_GIFT_RULE}
    {_FAMILY_JOIN_RULE}"""
 
 _WEB_RULES_BATCH = f"""\
-9. **批量操作进度**：对 **≥3 项**的循环/批量（多手机号、多 userId、多笔送礼等），**每完成一个批量项**必须上报进度（Web 界面会实时展示 N/M 与预估剩余时间）：
+10. **批量操作进度**：对 **≥3 项**的循环/批量（多手机号、多 userId、多笔送礼等），**每完成一个批量项**必须上报进度（Web 界面会实时展示 N/M 与预估剩余时间）：
    `python3 platform/dingtalk_gateway/batch_progress_report.py --current N --total M --label "操作类型" [--detail "当前项标识"]`
    （Web Agent worker 已注入 `WEB_AGENT_BATCH_KEY`，**可省略 `--user-key`**；钉钉网关仍传 `--user-key <batch_key>`）
    **N/M 语义**：`M` = 批量项总数；`N` = 已完整处理完的批量项数（不是项内子步骤）。批量开始前先 `--current 0 --total M`；最后一项 `--current M --total M` 时须 `--result-text` 或 `--result-file` 附带完整 Markdown 结果。
@@ -122,15 +123,16 @@ _WEB_RULES_BATCH = f"""\
    {batch_parallel_rule_snippet()}"""
 
 _WEB_RULES_FILES = """\
-10. **钉钉发文件先 zip**：若需经钉钉机器人发送本地文件附件，**必须先打成 `.zip`** 再发；导出到钉钉文档/在线表格只回链接，不走 zip。
-11. **Web 文件收发**：
+11. **钉钉发文件先 zip**：若需经钉钉机器人发送本地文件附件，**必须先打成 `.zip`** 再发；导出到钉钉文档/在线表格只回链接，不走 zip。
+12. **Web 文件收发**：
    - 用户可能上传图片或普通文件（csv/xlsx/pdf/zip/txt/md/json 等），路径会在下方列出，请用 Read/Shell 等工具读取处理。
    - 需要向用户回传可下载文件时，执行：
      `python3 platform/web_agent/web_share_file.py --user-key <batch_key> --path <本地文件路径> [--name 展示文件名]`
    - 可多次调用；本轮回复结束前登记的文件会随 assistant 消息在 Web 界面展示下载链接。"""
 
 _WEB_RULES_CODE = """\
-12. **代码修改权限**：仅管理员（`config/code_modify_allowlist.json` 及本地 `.local.json` 登记账号）可修改 `platform/web_agent/`、`platform/dingtalk_gateway/`、`.cursor/` 等代码逻辑；**MOA 能力入库**（`MOA/templates/` + `sync_registry.py` + `MOA/config/registry.json`）与**工具台 MOA 录制**入库**全员可用**，不受只读限制。"""
+13. **代码修改权限**：仅管理员（`config/code_modify_allowlist.json` 及本地 `.local.json` 登记账号）可修改 `platform/web_agent/`、`platform/dingtalk_gateway/`、`.cursor/` 等代码逻辑；**MOA 能力入库**（`MOA/templates/` + `sync_registry.py` + `MOA/config/registry.json`）与**工具台 MOA 录制**入库**全员可用**，不受只读限制。
+14. **源文件导出**：仅管理员可打包/下载/回传平台源文件（`.cursor/skills`、`.cursor/rules`、`platform/` 源码、能力全量包、`platform/exports/` 下 zip 等）；非管理员仅可使用能力，**禁止** zip、`web_share_file`、钉钉附件或回复本地路径交付上述内容。"""
 
 # 兼容旧引用
 _WEB_RULES_BASE = "\n".join(
@@ -184,7 +186,7 @@ def _external_agent_rules(enabled_ids: list[str]) -> str:
             sorted({str(item.get("queryScript") or "").strip() for item in all_agents if str(item.get("queryScript") or "").strip()})
         )
         lines = [
-            f"13. **外部 Agent**：用户**未勾选**任何外部 Agent（可选：{agent_labels}）。",
+            f"15. **外部 Agent**：用户**未勾选**任何外部 Agent（可选：{agent_labels}）。",
             "**硬性禁止**：",
             f"- 不得执行 {forbidden_scripts or '任何外部 Agent 查询脚本'}；",
             f"- 不得请求 {forbidden_urls or '外部 Agent API'}；",
@@ -196,7 +198,7 @@ def _external_agent_rules(enabled_ids: list[str]) -> str:
         return "\n".join(lines)
 
     lines = [
-        "13. **外部 Agent（用户已在设置中勾选启用）**：",
+        "15. **外部 Agent（用户已在设置中勾选启用）**：",
         "**仅当用户在设置中勾选对应项后**，才可调用其查询脚本获取接口实现等信息。",
         "用户问 HTTP 路径、MOA ServiceUrl/method、后端实现、调用链、请求/响应字段含义等开发/代码类问题时，",
         "本地 registry / mappings 无登记时，**须调用下方已勾选的外部 Agent 脚本查询**，再据此落地 MOA/验收。",
@@ -255,19 +257,24 @@ def _external_agent_rules(enabled_ids: list[str]) -> str:
     return "\n".join(lines)
 
 
-def _readonly_permission_note(*, allow_moa_registry: bool) -> str:
+def _readonly_permission_note(*, allow_moa_registry: bool, allow_adb_execution: bool = False) -> str:
     if allow_moa_registry:
-        return (
+        base = (
             "【只读 · 可 MOA 入库】当前用户无代码修改权限，但可登记 MOA 能力："
             "仅允许改动 MOA/templates/、运行 sync_registry.py（自动刷新文档与 catalog）、"
             "更新 MOA/config/registry.json；工具台 MOA 录制入库同样允许；"
             "禁止改 platform/web_agent/、platform/dingtalk_gateway/、.cursor/ 等。"
         )
-    return (
-        "【只读模式】当前用户无代码修改权限：禁止改动仓库源代码与 Agent/网关逻辑；"
-        f"仅允许查询脚本、导出与 {_temporary_testcase_hint()} 用例写入。"
-        "若用户要求改代码，说明需管理员授权。"
-    )
+    else:
+        base = (
+            "【只读模式】当前用户无代码修改权限：禁止改动仓库源代码与 Agent/网关逻辑；"
+            f"仅允许查询脚本、导出与 {_temporary_testcase_hint()} 用例写入。"
+            "禁止打包/下载/回传平台源文件（Skills/Rules/能力源码包等）；若用户索取，说明需管理员授权。"
+            "若用户要求改代码，说明需管理员授权。"
+        )
+    if not allow_adb_execution:
+        base += "禁止 ADB / 真机 UI 自动化（macro、observe、capture、flow 等）；若用户要求真机操作，说明需管理员授权。"
+    return base
 
 
 def _build_web_rules(
@@ -275,6 +282,7 @@ def _build_web_rules(
     *,
     allow_code_modify: bool = True,
     allow_moa_registry: bool = False,
+    allow_adb_execution: bool = True,
     user_text: str = "",
     image_count: int = 0,
     file_paths: list[str | Path] | None = None,
@@ -293,8 +301,12 @@ def _build_web_rules(
     )
     capability_tail = (
         "可用能力：各模块 execute 脚本（含 Gift Stage 送礼、MSE 配置读取）、"
-        "钉钉 MCP、Tunnel 只读抓包、ADB 真机自动化（本机已连接设备时）。"
+        "钉钉 MCP、Tunnel 只读抓包"
     )
+    if allow_adb_execution:
+        capability_tail += "、ADB 真机自动化（本机已连接设备时，仅管理员）。"
+    else:
+        capability_tail += "；**不含** ADB 真机操作。"
     if enabled_ids:
         labels = [
             str(external_agents_by_id().get(agent_id, {}).get("label") or agent_id)
@@ -306,7 +318,10 @@ def _build_web_rules(
     rules = f"{rules_body}\n{external_rules}\n\n{capability_tail}"
     if allow_code_modify:
         return rules
-    readonly = _readonly_permission_note(allow_moa_registry=allow_moa_registry)
+    readonly = _readonly_permission_note(
+        allow_moa_registry=allow_moa_registry,
+        allow_adb_execution=allow_adb_execution,
+    )
     return f"{readonly}\n\n{rules}"
 
 
@@ -324,11 +339,17 @@ def build_web_prompt(
     reply_mode: str | None = None,
     allow_code_modify: bool = True,
     allow_moa_registry: bool = False,
+    allow_adb_execution: bool = True,
 ) -> str:
     body = (user_text or "").strip()
     extras: list[str] = []
     if not allow_code_modify:
-        extras.append(_readonly_permission_note(allow_moa_registry=allow_moa_registry))
+        extras.append(
+            _readonly_permission_note(
+                allow_moa_registry=allow_moa_registry,
+                allow_adb_execution=allow_adb_execution,
+            )
+        )
     reply_note = _reply_mode_instruction(reply_mode)
     if reply_note:
         extras.append(reply_note)
@@ -417,6 +438,7 @@ def build_web_prompt(
             enabled_external_agents,
             allow_code_modify=allow_code_modify,
             allow_moa_registry=allow_moa_registry,
+            allow_adb_execution=allow_adb_execution,
             user_text=body,
             image_count=image_count,
             file_paths=file_list,

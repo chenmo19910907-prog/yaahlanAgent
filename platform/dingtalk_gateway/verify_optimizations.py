@@ -298,6 +298,7 @@ def test_adb_execution_guard() -> None:
     assert not looks_like_adb_execution_request("Stage 用户 8250 私聊给 100465989 送礼物 2005056028")
     assert not looks_like_adb_execution_request("tunnel 查 100465989 gift/send")
     assert not looks_like_adb_execution_request("查询用户 100465989 详情")
+    assert not looks_like_adb_execution_request("web端也禁用")
 
 
 def test_gateway_status_notify() -> None:

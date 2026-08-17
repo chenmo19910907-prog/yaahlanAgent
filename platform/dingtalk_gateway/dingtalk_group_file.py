@@ -197,6 +197,10 @@ def send_group_file(
     if not path.is_file():
         raise FileNotFoundError(path)
 
+    from source_file_permission import assert_source_file_share_allowed, resolve_staff_id_from_env
+
+    assert_source_file_share_allowed(path, staff_id=resolve_staff_id_from_env() or None)
+
     send_path, filename, tmp_dir = _prepare_attachment(path, display_name=display_name)
     try:
         content = send_path.read_bytes()

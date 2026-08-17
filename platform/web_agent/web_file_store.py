@@ -9,6 +9,7 @@ import logging
 import mimetypes
 import re
 import shutil
+import sys
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -318,6 +319,7 @@ def register_output_file(
     source_path: str | Path,
     *,
     display_name: str | None = None,
+    staff_id: str | None = None,
 ) -> StoredAttachment:
     """Agent 回传文件：复制到会话 outputs 并登记 manifest。"""
     sid = (session_id or "").strip()
@@ -326,6 +328,16 @@ def register_output_file(
     src = Path(source_path).expanduser().resolve()
     if not src.is_file():
         raise FileUploadError(f"文件不存在: {src}")
+
+    gateway_dir = WEB_AGENT_DIR.parent / "dingtalk_gateway"
+    if str(gateway_dir) not in sys.path:
+        sys.path.insert(0, str(gateway_dir))
+    from source_file_permission import assert_source_file_share_allowed  # noqa: WPS433
+
+    try:
+        assert_source_file_share_allowed(src, staff_id=staff_id)
+    except PermissionError as exc:
+        raise FileUploadError(str(exc)) from exc
 
     original_name = _sanitize_original_name(display_name or src.name)
     ext = _extension_from_name(original_name)
