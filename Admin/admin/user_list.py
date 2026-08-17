@@ -145,6 +145,12 @@ def parse_exclude_user_ids(raw: str | None) -> set[str]:
     return {token.strip() for token in re.split(r"[\s,\n]+", str(raw).strip()) if token.strip()}
 
 
+def has_user_info(record: dict[str, Any]) -> bool:
+    """判断用户列表记录是否包含有效用户信息（有昵称即视为有资料）。"""
+    nickname = str(record.get("nickname") or "").strip()
+    return bool(nickname)
+
+
 def pick_friend_candidates_from_user_list(
     *,
     target_user_id: str,
@@ -165,6 +171,7 @@ def pick_friend_candidates_from_user_list(
     gender: str | None = None,
     country_code: str | None = None,
     register_type: str | None = None,
+    require_user_info: bool = True,
 ) -> list[str]:
     if count <= 0:
         raise ValueError("count 必须为正整数")
@@ -209,6 +216,8 @@ def pick_friend_candidates_from_user_list(
                 continue
             uid_str = str(uid).strip()
             if not uid_str or uid_str in blocked or uid_str in seen:
+                continue
+            if require_user_info and not has_user_info(row):
                 continue
             seen.add(uid_str)
             selected.append(uid_str)

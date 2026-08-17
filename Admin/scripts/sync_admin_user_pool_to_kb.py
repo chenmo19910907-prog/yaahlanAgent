@@ -335,6 +335,12 @@ def _report_progress(
     subprocess.run(cmd, cwd=str(REPO_ROOT), check=False)
 
 
+def _has_user_info(row: dict[str, Any]) -> bool:
+    """判断记录是否包含有效用户信息（有昵称即视为有资料）。"""
+    nickname = str(row.get("nickname") or "").strip()
+    return bool(nickname)
+
+
 def fetch_from_mdp_user_list(
     *,
     target_count: int,
@@ -342,17 +348,21 @@ def fetch_from_mdp_user_list(
     seen: set[str],
     checker: ActivityChecker | None = None,
     blocked: set[str] | None = None,
+    require_user_info: bool = True,
+    max_pages: int = 100,
 ) -> tuple[list[str], dict[str, Any]]:
     selected: list[str] = []
+    skipped_no_info = 0
     meta: dict[str, Any] = {
         "name": "userAdmin/queryUserProfileList",
         "pageSize": page_size,
         "pagesFetched": 0,
         "totalCount": None,
         "addedCount": 0,
+        "skippedNoInfo": 0,
     }
     page_no = 1
-    while len(selected) < target_count:
+    while len(selected) < target_count and page_no <= max_pages:
         body = build_query_user_profile_list_body(app_id=2005, page_no=page_no, page_size=page_size)
         summary = fetch_user_profile_list(body)
         meta["pagesFetched"] = page_no
@@ -365,8 +375,12 @@ def fetch_from_mdp_user_list(
         for row in records:
             if isinstance(row, dict):
                 uid = str(row.get("userId") or "").strip()
-                if uid:
-                    batch.append(uid)
+                if not uid:
+                    continue
+                if require_user_info and not _has_user_info(row):
+                    skipped_no_info += 1
+                    continue
+                batch.append(uid)
         added = _append_unique(
             selected,
             seen,
@@ -376,6 +390,7 @@ def fetch_from_mdp_user_list(
             blocked=blocked,
         )
         meta["addedCount"] = int(meta["addedCount"]) + added
+        meta["skippedNoInfo"] = skipped_no_info
         if len(selected) >= target_count:
             break
         if len(records) < page_size:
@@ -1240,7 +1255,7 @@ def main() -> int:
         print("count 必须为正整数", file=sys.stderr)
         return 2
 
-    load_local_env(str(ADMIN_DIR))
+    load_local_env(str(REPO_ROOT / "Admin"))
 
     if args.filter_keep_area:
         return _run_filter_keep_area(args)
