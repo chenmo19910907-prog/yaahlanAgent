@@ -83,8 +83,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--user-list-gender", help="用户列表 gender")
     parser.add_argument("--user-list-country-code", help="用户列表 countryCode")
     parser.add_argument("--user-list-register-type", help="用户列表 registerType")
-    parser.add_argument("--sleep-seconds", type=float, default=1.2, help="每次 addUserRelation 间隔秒数（默认 1.2）")
+    parser.add_argument("--sleep-seconds", type=float, default=1.2, help="同一线程内每次 addUserRelation 间隔秒数（默认 1.2）")
     parser.add_argument("--retry-sleep-seconds", type=float, default=2.0, help="触发限流后的重试等待秒数（默认 2.0）")
+    parser.add_argument("--workers", type=int, default=1, help="并行线程数（默认 1，推荐 3~5 加速大批量互关）")
     parser.add_argument("--dry-run", action="store_true", help="只输出将互关的 userId，不调用 MOA")
     return parser
 
@@ -150,11 +151,16 @@ def main() -> int:
     if args.dry_run:
         return 0
 
+    workers = max(1, args.workers)
+    if workers > 1:
+        print(f"并行模式: {workers} 路同时互关", file=sys.stderr)
+
     batch = batch_mutual_follow(
         target_user_id,
         friends,
         sleep_seconds=args.sleep_seconds,
         retry_sleep_seconds=args.retry_sleep_seconds,
+        workers=workers,
         log=lambda msg: print(msg, file=sys.stderr),
     )
     summary = {

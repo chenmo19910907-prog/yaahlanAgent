@@ -157,26 +157,78 @@ def batch_mutual_follow(
     *,
     sleep_seconds: float = 1.2,
     retry_sleep_seconds: float = 2.0,
+    workers: int = 1,
     log: Callable[[str], None] | None = None,
 ) -> BatchMutualFollowResult:
-    results: list[MutualFollowResult] = []
-    success = 0
-    for friend_id in friend_user_ids:
+    target_user_id = str(target_user_id).strip()
+    requested = len(friend_user_ids)
+
+    if workers <= 1:
+        results: list[MutualFollowResult] = []
+        success = 0
+        for friend_id in friend_user_ids:
+            item = mutual_follow_pair(
+                target_user_id,
+                friend_id,
+                sleep_seconds=sleep_seconds,
+                retry_sleep_seconds=retry_sleep_seconds,
+                log=log,
+            )
+            results.append(item)
+            if item.ok:
+                success += 1
+        return BatchMutualFollowResult(
+            target_user_id=target_user_id,
+            requested=requested,
+            success=success,
+            failed=requested - success,
+            results=results,
+        )
+
+    from .parallel_runner import BatchTask, TaskResult, run_parallel_batch
+
+    tasks = [
+        BatchTask(id=str(uid).strip(), payload=str(uid).strip())
+        for uid in friend_user_ids
+    ]
+
+    def _worker(task: BatchTask) -> TaskResult:
         item = mutual_follow_pair(
             target_user_id,
-            friend_id,
+            task.payload,
             sleep_seconds=sleep_seconds,
             retry_sleep_seconds=retry_sleep_seconds,
-            log=log,
         )
-        results.append(item)
-        if item.ok:
-            success += 1
-    requested = len(friend_user_ids)
+        detail = {"forward_em": item.forward_em, "reverse_em": item.reverse_em}
+        return TaskResult(task_id=task.id, ok=item.ok, detail=detail)
+
+    def _on_progress(current: int, total: int, result: TaskResult) -> None:
+        if log is not None:
+            status = "✓" if result.ok else "✗"
+            log(f"[{current}/{total}] 互关 {target_user_id} <-> {result.task_id} {status}")
+
+    summary = run_parallel_batch(
+        tasks=tasks,
+        worker_fn=_worker,
+        workers=workers,
+        sleep_between=sleep_seconds,
+        progress_fn=_on_progress,
+    )
+
+    results_typed = [
+        MutualFollowResult(
+            target_user_id=target_user_id,
+            friend_user_id=r.task_id,
+            ok=r.ok,
+            forward_em=(r.detail or {}).get("forward_em") if isinstance(r.detail, dict) else None,
+            reverse_em=(r.detail or {}).get("reverse_em") if isinstance(r.detail, dict) else None,
+        )
+        for r in summary.results
+    ]
     return BatchMutualFollowResult(
-        target_user_id=str(target_user_id).strip(),
+        target_user_id=target_user_id,
         requested=requested,
-        success=success,
-        failed=requested - success,
-        results=results,
+        success=summary.success,
+        failed=summary.failed,
+        results=results_typed,
     )
