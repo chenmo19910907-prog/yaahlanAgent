@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-08-18 12:37:27 北京时间",
-  "total_items": 279,
+  "generated_at": "2026-08-18 19:24:37 北京时间",
+  "total_items": 282,
   "module_count": 27,
   "modules": [
     {
       "id": "用户",
       "label": "用户",
-      "item_count": 25,
+      "item_count": 26,
       "categories": [
         {
           "name": "用户关系（voga-mts-user-relation-stage）",
@@ -29,6 +29,19 @@
                 "手机号段全互关 phone-start=<start> phone-end=<end>",
                 "多个测试号两两成为好友",
                 "一批账号全部互关"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            },
+            {
+              "name": "用户-批量互关好友（用户列表）",
+              "prompts": [
+                "给 <userId> 增加 <count> 个好友",
+                "从用户列表拉取 <count> 个用户和 <userId> 互关",
+                "批量增加好友 <userId> count=<count>",
+                "给 <userId> 加 1000 个好友并发消息",
+                "从创新中台拉人和 <userId> 互关好友"
               ],
               "source": "MOA",
               "source_id": "moa",
@@ -504,7 +517,7 @@
     {
       "id": "房间",
       "label": "房间",
-      "item_count": 44,
+      "item_count": 46,
       "categories": [
         {
           "name": "全服榜单（room/external/room-admin-handle）",
@@ -987,6 +1000,33 @@
               ],
               "source": "MOA-generative",
               "source_id": "moa-generative",
+              "env": "test"
+            }
+          ]
+        },
+        {
+          "name": "房间（room/external/room-share-stage）",
+          "items": [
+            {
+              "name": "房间-发红包",
+              "prompts": [
+                "房间 <roomId> 发红包 userId <userId> <diamondAmount>钻 <count>个",
+                "sendRedPacket <roomId> <userId>",
+                "房间红包 MOA 发送"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            },
+            {
+              "name": "房间-抢红包",
+              "prompts": [
+                "房间 <roomId> 抢红包 userId <userId> packetId <packetId>",
+                "claimRedPacket <roomId> <userId> <packetId>",
+                "房间红包 MOA 领取"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
               "env": "test"
             }
           ]
