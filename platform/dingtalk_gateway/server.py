@@ -127,6 +127,10 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
             incoming, inbound, user_key, stream_card=stream_card
         )
 
+        # 流式 Agent 任务由 task_processor 投放/更新卡片；预投放失败时勿再发文本「执行中」，避免重复一条且无法收尾。
+        if streaming:
+            return
+
         if not should_send_text_task_ack(prompt_text):
             if ahead > 0:
                 self._reply(

@@ -1,0 +1,54 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 30000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/room/external/room-share-stage",
+  "method": "claimRedPacket",
+  "header": "{\"userId\":\"100079102\",\"roomId\":\"48085081\",\"packetId\":\"<packetId>\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"ios\",\"osType\":\"ios\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100079102\",\"roomId\":\"48085081\",\"packetId\":\"<packetId>\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"ios\",\"osType\":\"ios\"}",
+      "type": "json",
+      "value": {
+        "userId": "100079102",
+        "roomId": "48085081",
+        "packetId": "<packetId>",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "ios",
+        "osType": "ios"
+      }
+    }
+  ],
+  "_meta": {
+    "httpPath": "/yaahlan/room/redPacket/claimRedPacket",
+    "packetIdSource": "/yaahlan/room/redPacket/getRoomLittleRedPacketList → data.redPacket.packetId",
+    "note": "packetId 必填；领取账号须在房间内且非神秘人。发包后若 delaySecond>0 须等倒计时结束再抢。"
+  },
+  "_registry": {
+    "id": "room_red_packet_claim",
+    "name": "房间-抢红包",
+    "category": "房间（room/external/room-share-stage）",
+    "description": "HTTP /yaahlan/room/redPacket/claimRedPacket → MOA /service/room/external/room-share-stage + claimRedPacket。body 需 userId、roomId、packetId（来自 getRoomLittleRedPacketList）。执行前改模板 userId/roomId/packetId。",
+    "prompts": [
+      "房间 <roomId> 抢红包 userId <userId> packetId <packetId>",
+      "claimRedPacket <roomId> <userId> <packetId>",
+      "房间红包 MOA 领取"
+    ]
+  }
+}

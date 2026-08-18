@@ -53,7 +53,7 @@ def normalize_reply_mode(mode: str | None) -> str:
     return value if value in VALID_REPLY_MODES else "standard"
 
 
-def _reply_mode_instruction(mode: str | None) -> str | None:
+def reply_mode_instruction(mode: str | None) -> str | None:
     """标准模式不注入额外指令，保持现有回复风格与内容粒度。"""
     normalized = normalize_reply_mode(mode)
     if normalized == "concise":
@@ -350,7 +350,7 @@ def build_web_prompt(
                 allow_adb_execution=allow_adb_execution,
             )
         )
-    reply_note = _reply_mode_instruction(reply_mode)
+    reply_note = reply_mode_instruction(reply_mode)
     if reply_note:
         extras.append(reply_note)
     batch_note = batch_progress_instruction(batch_progress_key, compact=True)

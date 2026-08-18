@@ -1,0 +1,61 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 30000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/room/external/room-share-stage",
+  "method": "sendRedPacket",
+  "header": "{\"userId\":\"100121433\",\"roomId\":\"48085081\",\"diamondAmount\":100,\"count\":5,\"targetType\":1,\"conditionType\":1,\"delaySecond\":0,\"memberLevel\":0,\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"ios\",\"osType\":\"ios\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100121433\",\"roomId\":\"48085081\",\"diamondAmount\":100,\"count\":5,\"targetType\":1,\"conditionType\":1,\"delaySecond\":0,\"memberLevel\":0,\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"ios\",\"osType\":\"ios\"}",
+      "type": "json",
+      "value": {
+        "userId": "100121433",
+        "roomId": "48085081",
+        "diamondAmount": 100,
+        "count": 5,
+        "targetType": 1,
+        "conditionType": 1,
+        "delaySecond": 0,
+        "memberLevel": 0,
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "ios",
+        "osType": "ios"
+      }
+    }
+  ],
+  "_meta": {
+    "httpPath": "/yaahlan/room/redPacket/sendRedPacket",
+    "targetType": "1=房间内用户 2=房间成员 3=家族成员",
+    "conditionType": "1=无门槛 2=关注房间 3=送出礼物",
+    "delaySecond": "0=立即 60=1分钟 300=5分钟",
+    "note": "sendRedPacket 返回 data=true 不含 packetId；抢红包前须 getRoomLittleRedPacketList 取 packetId。发送账号须在房间内且非神秘人，diamondAmount+count 须在盘古 RoomRedPacketConfig 允许组合内。"
+  },
+  "_registry": {
+    "id": "room_red_packet_send",
+    "name": "房间-发红包",
+    "category": "房间（room/external/room-share-stage）",
+    "description": "HTTP /yaahlan/room/redPacket/sendRedPacket → MOA /service/room/external/room-share-stage + sendRedPacket。body 需 userId、roomId、diamondAmount、count、targetType、conditionType、delaySecond、memberLevel。异步扣钻建包，返回不含 packetId。执行前改模板 userId/roomId/金额个数组合。",
+    "prompts": [
+      "房间 <roomId> 发红包 userId <userId> <diamondAmount>钻 <count>个",
+      "sendRedPacket <roomId> <userId>",
+      "房间红包 MOA 发送"
+    ]
+  }
+}

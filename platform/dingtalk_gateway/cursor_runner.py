@@ -32,7 +32,7 @@ from bridge_manager import (
 from user_agent_pool import get_user_agent_pool
 
 from env_loader import GATEWAY_DIR, load_env_local, require_env
-from gateway_prompt import batch_progress_instruction, build_gateway_prompt
+from gateway_prompt import batch_progress_instruction, build_gateway_prompt, _gateway_reply_mode_instruction
 from code_modify_permission import is_moa_registry_open_to_all
 from mcp_config import build_stdio_mcp_servers, inject_scripts_path
 from batch_progress import waive_agent_timeout_deadline
@@ -43,7 +43,13 @@ REPO_ROOT = GATEWAY_DIR.parent.parent
 EXECUTOR_CONFIG = GATEWAY_DIR / "config" / "executor.local.json"
 DEFAULT_MODEL = "composer-2.5"
 DEFAULT_TIMEOUT_S = 600
+ADMIN_TIMEOUT_S = 1800
 DINGTALK_MAX_REPLY_CHARS = 3800
+
+
+def resolve_agent_timeout_s(*, is_admin: bool = False) -> int:
+    """普通用户默认 10 分钟；Web 管理员提问允许 30 分钟。"""
+    return ADMIN_TIMEOUT_S if is_admin else DEFAULT_TIMEOUT_S
 _STREAM_HEARTBEAT_S = 1.5
 _STREAM_EXECUTING_AFTER_S = 3.0
 logger = logging.getLogger("dingtalk-gateway")
@@ -85,6 +91,7 @@ def _build_prompt_text(
     allow_code_modify: bool = True,
     allow_moa_registry: bool = False,
     batch_progress_key: str = "",
+    reply_mode: str | None = None,
 ) -> str:
     link_list = [str(link).strip() for link in links if str(link).strip()]
     if use_gateway_rules and is_new_session:
@@ -95,6 +102,7 @@ def _build_prompt_text(
             allow_code_modify=allow_code_modify,
             allow_moa_registry=allow_moa_registry,
             batch_progress_key=batch_progress_key,
+            reply_mode=reply_mode,
         )
     if use_gateway_rules:
         extras: list[str] = []
@@ -113,6 +121,9 @@ def _build_prompt_text(
         batch_note = batch_progress_instruction(batch_progress_key, compact=True)
         if batch_note:
             extras.append(batch_note)
+        reply_note = _gateway_reply_mode_instruction(reply_mode)
+        if reply_note:
+            extras.append(reply_note)
         if image_count > 0:
             extras.append(
                 f"用户附带了 {image_count} 张图片（已随消息传入），请结合附图理解需求并作答。"
@@ -386,6 +397,7 @@ def run_agent_prompt(
     web_stream: bool = False,
     render_min_interval_s: float = 2.0,
     include_process_in_final: bool = False,
+    reply_mode: str | None = None,
 ) -> str:
     """运行本地 Agent，返回 assistant 最终文本。支持附图（最多 5 张）与链接上下文。"""
     text = prompt.strip()
@@ -429,6 +441,7 @@ def run_agent_prompt(
             render_min_interval_s=render_min_interval_s,
             include_process_in_final=include_process_in_final,
             mcp_servers=mcp_servers,
+            reply_mode=reply_mode,
         )
     finally:
         if user_key:
@@ -463,6 +476,7 @@ def _run_agent_prompt_impl(
     render_min_interval_s: float,
     include_process_in_final: bool,
     mcp_servers: dict[str, Any] | None,
+    reply_mode: str | None,
 ) -> str:
     local_opts = LocalAgentOptions(
         cwd=workdir,
@@ -536,6 +550,7 @@ def _run_agent_prompt_impl(
                 allow_code_modify=allow_code_modify,
                 allow_moa_registry=allow_moa_registry,
                 batch_progress_key=user_key or "",
+                reply_mode=reply_mode,
             )
 
             if paths:
@@ -659,6 +674,7 @@ def run_agent_prompt_streaming(
     include_process_in_final: bool = False,
     web_stream: bool = False,
     on_phase: Callable[[str], None] | None = None,
+    reply_mode: str | None = None,
 ) -> str:
     """流式运行 Agent：thinking/text/tool 事件经 on_render 推送，返回最终文本。"""
     from agent_stream_card import DEFAULT_MIN_INTERVAL_S, WEB_STREAM_RENDER_INTERVAL_S
@@ -687,6 +703,7 @@ def run_agent_prompt_streaming(
             WEB_STREAM_RENDER_INTERVAL_S if web_stream else DEFAULT_MIN_INTERVAL_S
         ),
         include_process_in_final=include_process_in_final,
+        reply_mode=reply_mode,
     )
 
 

@@ -77,7 +77,7 @@ from project.runtime_env import ensure_project_env  # noqa: E402
 
 ensure_project_env()
 
-from cursor_runner import DEFAULT_MODEL, DEFAULT_TIMEOUT_S  # noqa: E402
+from cursor_runner import DEFAULT_MODEL, resolve_agent_timeout_s  # noqa: E402
 from external_agent_config import (  # noqa: E402
     external_agents_from_config,
     resolve_enabled_external_agent_ids,
@@ -1645,10 +1645,13 @@ def _start_chat_run(
             reply_mode=normalized_reply_mode,
         )
     )
+    run_timeout_s = resolve_agent_timeout_s(
+        is_admin=is_web_admin(staff_id=author_id or None),
+    )
     run.task_session.begin(
         message or display_message,
         conversation_id=user_key,
-        budget_s=float(DEFAULT_TIMEOUT_S),
+        budget_s=float(run_timeout_s),
     )
     clear_batch_progress(user_key)
     clear_batch_result(user_key)

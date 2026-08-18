@@ -14,7 +14,8 @@ from typing import Any
 
 from batch_progress import clear_batch_progress
 from batch_result import clear_batch_result
-from cursor_runner import DEFAULT_TIMEOUT_S
+from cursor_runner import resolve_agent_timeout_s
+from web_admin_permission import is_web_admin
 from duration_history import classify_task_kind, get_duration_store
 from external_agent_progress import USER_KEY_ENV, clear_external_agent_progress
 from task_session import TaskInterrupted, TaskSession
@@ -310,12 +311,15 @@ def execute_web_run(run_id: str) -> int:
         except (ImportError, OSError, ValueError):
             pass
     task_kind = classify_task_kind(meta.message)
+    run_timeout_s = resolve_agent_timeout_s(
+        is_admin=is_web_admin(staff_id=meta.author_id or None),
+    )
     session_ctrl = FileBackedTaskSession(run_id)
     _install_worker_signal_handlers(session_ctrl)
     session_ctrl.begin(
         meta.message or meta.display_message,
         conversation_id=user_key,
-        budget_s=float(DEFAULT_TIMEOUT_S),
+        budget_s=float(run_timeout_s),
     )
 
     def on_phase(phase_line: str) -> None:
@@ -387,6 +391,7 @@ def execute_web_run(run_id: str) -> int:
             attachment_names=meta.attachment_names,
             on_render=on_render,
             session_ctrl=session_ctrl,
+            timeout_s=run_timeout_s,
             model=meta.model or None,
             enabled_external_agents=meta.enabled_external_agents or None,
             reply_mode=meta.reply_mode or None,

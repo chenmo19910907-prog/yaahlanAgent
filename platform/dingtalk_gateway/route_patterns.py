@@ -35,6 +35,14 @@ WEB_AGENT_RESTART_RE = re.compile(
     r"^(?:重启|restart)\s*(?:web\s*agent|webagent|网页版\s*agent|网页\s*agent)\s*$",
     re.I,
 )
+REPLY_MODE_SET_RE = re.compile(
+    r"^(?:切换(?:为)?)?(精简回复|标准回复|详细回复)\s*$",
+    re.I,
+)
+REPLY_MODE_QUERY_RE = re.compile(
+    r"^(?:当前)?回复(?:详略|模式)\s*$",
+    re.I,
+)
 VIP_UPGRADE_RE = re.compile(
     r"^(?:用户\s*)?(\d{5,})\s*(?:升级|升到|升级到)\s*VIP?\s*(\d+)\s*$",
     re.I,
@@ -68,11 +76,29 @@ _NL_TASK_RE = re.compile(
     re.I,
 )
 
-_FAST_ROUTE_RES = (WEB_AGENT_RESTART_RE,)
+_FAST_ROUTE_RES = (WEB_AGENT_RESTART_RE, REPLY_MODE_SET_RE, REPLY_MODE_QUERY_RE)
+
+_REPLY_MODE_TOKEN = {
+    "精简回复": "concise",
+    "标准回复": "standard",
+    "详细回复": "detailed",
+}
 
 
 def is_web_agent_restart_request(text: str) -> bool:
     return bool(WEB_AGENT_RESTART_RE.match((text or "").strip()))
+
+
+def parse_reply_mode_request(text: str) -> str | None:
+    """命中回复详略口令 → concise/standard/detailed；查询 → query；否则 None。"""
+    t = (text or "").strip()
+    if REPLY_MODE_QUERY_RE.match(t):
+        return "query"
+    m = REPLY_MODE_SET_RE.match(t)
+    if not m:
+        return None
+    token = m.group(1).strip()
+    return _REPLY_MODE_TOKEN.get(token)
 
 
 def normalize_report_prompt(text: str) -> str | None:
@@ -119,7 +145,7 @@ def is_admin_apply_decision_request(text: str) -> bool:
 
 
 def is_likely_fast_route(text: str) -> bool:
-    """入队时判断是否走 fast 队列（不与 Agent 任务互斥）。仅 Web Agent 重启。"""
+    """入队时判断是否走 fast 队列（不与 Agent 任务互斥）。含 Web Agent 重启与回复详略切换。"""
     t = (text or "").strip()
     if not t:
         return False

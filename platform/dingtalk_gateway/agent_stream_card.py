@@ -30,6 +30,8 @@ DEFAULT_MIN_INTERVAL_S = _stream_render_interval_s()
 WEB_STREAM_RENDER_INTERVAL_S = 0.35
 # 内存态每秒更新；卡片 API 按 DEFAULT_MIN_INTERVAL_S 合并刷新，减轻抖动
 PROGRESS_TICK_S = 1.0
+CARD_CREATE_MAX_RETRIES = 3
+CARD_PUT_MAX_RETRIES = 3
 # AI 流式卡片在部分单聊场景 streaming API 不刷新；默认用 Markdown 卡片 update
 # AI 卡片：msgTitle=白线上方（提问）；staticMsgContent=白线下方固定区；msgContent=流式正文
 # 不含 msgSlider / msgButtons：标准 AI 模板完成态会展示赞踩与反馈标签，order 无法可靠关闭
@@ -138,6 +140,8 @@ class AgentStreamCard:
         self._status_line = ""
         self._batch_progress_line = ""
         self._estimate_seconds: float | None = None
+        self._last_put_succeeded = True
+        self._card_sync_degraded = False
 
         if self._mode == "ai":
             card = dingtalk_stream.AIMarkdownCardInstance(dingtalk_client, incoming)
@@ -148,10 +152,84 @@ class AgentStreamCard:
         else:
             self._md_card = dingtalk_stream.MarkdownCardInstance(dingtalk_client, incoming)
             self._ai_card = None
+        self._install_card_put_hook()
 
     @property
     def is_active(self) -> bool:
         return self._started
+
+    @property
+    def card_sync_degraded(self) -> bool:
+        return self._card_sync_degraded
+
+    def _install_card_put_hook(self) -> None:
+        """包装 put_card_data：记录成功/失败（SDK 失败仅打日志不抛异常）。"""
+        replier = self._md_card or self._ai_card
+        if replier is None:
+            return
+        if getattr(replier, "_gateway_put_hooked", False):
+            return
+        original_put = replier.put_card_data
+
+        def hooked_put(card_instance_id: str, card_data: dict, **kwargs: Any) -> None:
+            for attempt in range(CARD_PUT_MAX_RETRIES):
+                if self._put_card_data_once(original_put, card_instance_id, card_data, **kwargs):
+                    self._last_put_succeeded = True
+                    return
+                if attempt + 1 < CARD_PUT_MAX_RETRIES:
+                    time.sleep(0.2 * (attempt + 1))
+            self._last_put_succeeded = False
+            self._card_sync_degraded = True
+            logger.warning(
+                "卡片更新连续失败 id=%s…，后续依赖文本结果消息",
+                (card_instance_id or "")[:12],
+            )
+
+        replier.put_card_data = hooked_put  # type: ignore[method-assign]
+        replier._gateway_put_hooked = True  # type: ignore[attr-defined]
+
+    @staticmethod
+    def _put_card_data_once(
+        original_put: Any,
+        card_instance_id: str,
+        card_data: dict,
+        **kwargs: Any,
+    ) -> bool:
+        import requests
+
+        original_requests_put = requests.put
+        success = False
+
+        def tracking_put(*args: Any, **put_kwargs: Any) -> Any:
+            nonlocal success
+            response = original_requests_put(*args, **put_kwargs)
+            try:
+                response.raise_for_status()
+                success = True
+            except Exception:  # noqa: BLE001
+                success = False
+            return response
+
+        requests.put = tracking_put
+        try:
+            original_put(card_instance_id, card_data, **kwargs)
+        finally:
+            requests.put = original_requests_put
+        return success
+
+    def _create_markdown_card(self, body_md: str) -> None:
+        assert self._md_card is not None
+        last_error = "card_instance_id 为空"
+        for attempt in range(CARD_CREATE_MAX_RETRIES):
+            if self._card_title:
+                self._md_card.set_title_and_logo(self._card_title, "")
+            self._md_card.reply(body_md)
+            self._card_instance_id = self._md_card.card_instance_id or ""
+            if self._card_instance_id:
+                return
+            if attempt + 1 < CARD_CREATE_MAX_RETRIES:
+                time.sleep(0.25 * (attempt + 1))
+        raise RuntimeError(f"流式卡片创建失败（{last_error}）")
 
     def _ensure_stream_state(self) -> None:
         """兼容旧实例 / 部分初始化，避免缺字段导致 AttributeError。"""
@@ -162,6 +240,8 @@ class AgentStreamCard:
             ("_batch_progress_line", ""),
             ("_card_title", ""),
             ("_estimate_seconds", None),
+            ("_last_put_succeeded", True),
+            ("_card_sync_degraded", False),
         ):
             if not hasattr(self, name):
                 setattr(self, name, default)
@@ -282,10 +362,7 @@ class AgentStreamCard:
             self._status_line = text
         body_md = self._compose_body()
         if self._md_card is not None:
-            if self._card_title:
-                self._md_card.set_title_and_logo(self._card_title, "")
-            self._md_card.reply(body_md)
-            self._card_instance_id = self._md_card.card_instance_id or ""
+            self._create_markdown_card(body_md)
         else:
             assert self._ai_card is not None
             self._ai_card_bootstrap(body_md)
@@ -427,10 +504,10 @@ class AgentStreamCard:
         except Exception as exc:  # noqa: BLE001
             logger.warning("卡片 push 失败 mode=%s: %s", self._mode, exc)
 
-    def finish(self, markdown: str, *, keep_agent_body: bool = False) -> None:
+    def finish(self, markdown: str, *, keep_agent_body: bool = False) -> bool:
         self._ensure_stream_state()
         if not self._started:
-            return
+            return False
         self._stop_progress_tick()
         self._header = ""
         self._batch_progress_line = ""
@@ -447,11 +524,13 @@ class AgentStreamCard:
                 self._timer = None
             self._pending = None
         final_body_md = self._compose_body()
+        sync_ok = False
         try:
             if self._md_card is not None:
                 if self._card_title:
                     self._md_card.set_title_and_logo(self._card_title, "")
                 self._md_card.update(final_body_md)
+                sync_ok = self._last_put_succeeded
             else:
                 assert self._ai_card is not None
                 self._apply_ai_card_title()
@@ -466,21 +545,33 @@ class AgentStreamCard:
                     self._ai_card.markdown = final_body_md
                     self._ai_card.ai_streaming(final_body_md, append=False)
                     self._ai_card.ai_finish(markdown=final_body_md)
-            logger.info(
-                "卡片 finish 成功 mode=%s pushes=%d len=%d",
-                self._mode,
-                self._push_count,
-                len(final_body_md),
-            )
+                sync_ok = self._last_put_succeeded
+            if sync_ok:
+                logger.info(
+                    "卡片 finish 成功 mode=%s pushes=%d len=%d",
+                    self._mode,
+                    self._push_count,
+                    len(final_body_md),
+                )
+            else:
+                logger.warning(
+                    "卡片 finish 未同步到钉钉 mode=%s pushes=%d len=%d degraded=%s",
+                    self._mode,
+                    self._push_count,
+                    len(final_body_md),
+                    self._card_sync_degraded,
+                )
         except Exception as exc:  # noqa: BLE001
             logger.exception("卡片 finish 失败 mode=%s: %s", self._mode, exc)
+            sync_ok = False
         finally:
             self._started = False
+        return sync_ok
 
-    def finish_status(self, status_line: str) -> None:
+    def finish_status(self, status_line: str) -> bool:
         """卡片收尾为终态提示（提问留标题区，正文仅完成提示；结果另发新消息）。"""
-        self.finish(status_line, keep_agent_body=True)
+        return self.finish(status_line, keep_agent_body=True)
 
-    def fail(self, markdown: str) -> None:
+    def fail(self, markdown: str) -> bool:
         body = markdown if markdown.startswith("❌") else f"❌ {markdown}"
-        self.finish(body)
+        return self.finish(body)

@@ -192,6 +192,15 @@ def _readonly_with_moa_registry_rules() -> str:
     return _READONLY_WITH_MOA_REGISTRY_RULES
 
 
+def _gateway_reply_mode_instruction(mode: str | None) -> str | None:
+    web_agent_dir = PLATFORM_DIR / "web_agent"
+    if str(web_agent_dir) not in sys.path:
+        sys.path.insert(0, str(web_agent_dir))
+    from web_prompt import reply_mode_instruction  # noqa: WPS433
+
+    return reply_mode_instruction(mode)
+
+
 def batch_progress_instruction(batch_progress_key: str, *, compact: bool = True) -> str:
     """注入 batch_key；默认 compact 仅一行，完整命令见系统规则「批量操作进度」。"""
     key = (batch_progress_key or "").strip()
@@ -215,6 +224,7 @@ def build_gateway_prompt(
     allow_code_modify: bool = True,
     allow_moa_registry: bool = False,
     batch_progress_key: str = "",
+    reply_mode: str | None = None,
 ) -> str:
     user = (user_text or "").strip()
     extras: list[str] = []
@@ -232,6 +242,10 @@ def build_gateway_prompt(
     family_join_hint = family_join_prompt_hint(user)
     if family_join_hint:
         extras.append(family_join_hint)
+
+    reply_note = _gateway_reply_mode_instruction(reply_mode)
+    if reply_note:
+        extras.append(reply_note)
 
     body = user
     if extras:

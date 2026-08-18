@@ -1548,6 +1548,30 @@
         "从创新中台拉人和 <userId> 互关好友"
       ],
       "command": "python3 Admin/scripts/batch_mutual_friends_from_user_list.py \\\n  --target-user-id <userId> \\\n  --count <count> \\\n  --workers 5 \\\n  --sleep-seconds 0.5\n"
+    },
+    {
+      "id": "room_red_packet_send",
+      "name": "房间-发红包",
+      "category": "房间（room/external/room-share-stage）",
+      "description": "HTTP /yaahlan/room/redPacket/sendRedPacket → MOA /service/room/external/room-share-stage + sendRedPacket。body 需 userId、roomId、diamondAmount、count、targetType、conditionType、delaySecond、memberLevel。异步扣钻建包，返回不含 packetId。执行前改模板 userId/roomId/金额个数组合。",
+      "prompts": [
+        "房间 <roomId> 发红包 userId <userId> <diamondAmount>钻 <count>个",
+        "sendRedPacket <roomId> <userId>",
+        "房间红包 MOA 发送"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-发红包.json\n"
+    },
+    {
+      "id": "room_red_packet_claim",
+      "name": "房间-抢红包",
+      "category": "房间（room/external/room-share-stage）",
+      "description": "HTTP /yaahlan/room/redPacket/claimRedPacket → MOA /service/room/external/room-share-stage + claimRedPacket。body 需 userId、roomId、packetId（来自 getRoomLittleRedPacketList）。执行前改模板 userId/roomId/packetId。",
+      "prompts": [
+        "房间 <roomId> 抢红包 userId <userId> packetId <packetId>",
+        "claimRedPacket <roomId> <userId> <packetId>",
+        "房间红包 MOA 领取"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-抢红包.json\n"
     }
   ]
 }

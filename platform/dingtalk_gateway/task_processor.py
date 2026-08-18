@@ -4,11 +4,19 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
 import threading
 import time
+from pathlib import Path
 from typing import Any
 
 import dingtalk_stream
+
+_PLATFORM_DIR = Path(__file__).resolve().parents[1]
+_WEB_AGENT_DIR = _PLATFORM_DIR / "web_agent"
+if str(_WEB_AGENT_DIR) not in sys.path:
+    sys.path.insert(0, str(_WEB_AGENT_DIR))
+from web_prompt import normalize_reply_mode, should_append_duration_footer  # noqa: E402
 
 from adb_execution_guard import adb_execution_denial_message, looks_like_adb_execution_request
 from env_check_guard import (
@@ -93,6 +101,8 @@ from user_agent_pool import get_user_agent_pool
 from web_agent_sync import sync_exchange_to_web_agent
 from web_login_route import handle_web_login_request
 from admin_apply_route import handle_admin_apply_decision_message
+from reply_mode_route import handle_reply_mode_message
+from reply_mode_store import get_reply_mode_store
 
 logger = logging.getLogger("dingtalk-gateway")
 
@@ -113,14 +123,17 @@ def _reply_final(
     user_prompt: str = "",
     sender_name: str = "",
     sender_staff_id: str = "",
+    reply_mode: str | None = None,
 ) -> None:
     elapsed = time.monotonic() - started
-    body = append_duration_footer(
-        message,
-        elapsed,
-        task_kind=task_kind,
-        prompt=user_prompt or None,
-    )
+    body = message
+    if should_append_duration_footer(reply_mode):
+        body = append_duration_footer(
+            message,
+            elapsed,
+            task_kind=task_kind,
+            prompt=user_prompt or None,
+        )
     handler._reply(body, incoming, inbound, quote=quote)
     if user_key and user_prompt:
         sync_exchange_to_web_agent(
@@ -377,6 +390,7 @@ def process_inbound_task(
 
     sender_name = incoming.sender_nick or incoming.sender_staff_id or incoming.sender_id or ""
     sender_staff_id = incoming.sender_staff_id or incoming.sender_id or ""
+    user_reply_mode = get_reply_mode_store().get()
     task_kind = classify_task_kind(prompt)
     task_estimate_s = resolve_task_estimate_seconds(task_kind, prompt=prompt)
     started = time.monotonic()
@@ -564,6 +578,25 @@ def process_inbound_task(
             )
             return "ok"
 
+        reply_mode_reply = handle_reply_mode_message(prompt)
+        if reply_mode_reply is not None:
+            task_kind = classify_task_kind(prompt, route_kind="reply_mode")
+            _reply_final(
+                handler,
+                incoming,
+                inbound,
+                reply_mode_reply,
+                started=started,
+                task_kind=task_kind,
+                user_key=user_key,
+                user_prompt=prompt,
+                sender_name=sender_name,
+                sender_staff_id=sender_staff_id,
+                reply_mode="concise",
+            )
+            store.save(incoming.conversation_id, prompt, **store_kwargs)
+            return "ok"
+
         image_paths = []
         if inbound.image_download_codes:
             session.set_phase("prepare")
@@ -723,6 +756,8 @@ def process_inbound_task(
                         sender_name=sender_name,
                         allow_code_modify=code_allowed,
                         allow_moa_registry=allow_moa_registry,
+                        include_process_in_final=normalize_reply_mode(user_reply_mode) == "detailed",
+                        reply_mode=user_reply_mode,
                     )
                 else:
                     raw_result = run_agent_prompt(
@@ -734,6 +769,8 @@ def process_inbound_task(
                         sender_name=sender_name,
                         allow_code_modify=code_allowed,
                         allow_moa_registry=allow_moa_registry,
+                        include_process_in_final=normalize_reply_mode(user_reply_mode) == "detailed",
+                        reply_mode=user_reply_mode,
                     )
             finally:
                 if sender_staff_id:
@@ -795,7 +832,12 @@ def process_inbound_task(
             reply_text = truncate_for_dingtalk(reply_message)
             if stream_card is not None:
                 # 流式卡片仅收尾为完成态；最终结果另发新消息（@提问人 + 提问引用 + Markdown）
-                stream_card.finish_status("✅ 执行完成，结果见下方消息 ↓")
+                card_synced = stream_card.finish_status("✅ 执行完成，结果见下方消息 ↓")
+                if not card_synced:
+                    logger.warning(
+                        "流式卡片未完成态同步 conv=%s，以下方结果消息为准",
+                        user_key,
+                    )
             _reply_final(
                 handler,
                 incoming,
@@ -807,6 +849,7 @@ def process_inbound_task(
                 user_prompt=prompt,
                 sender_name=sender_name,
                 sender_staff_id=sender_staff_id,
+                reply_mode=user_reply_mode,
             )
             _send_batch_attachment_if_any(handler, incoming, inbound, user_key)
             if delivery.exported:
@@ -848,12 +891,14 @@ def process_inbound_task(
         status = "error"
         logger.exception("任务失败 conv=%s", user_key)
         error_body = format_exception(exc)
-        error_with_footer = append_duration_footer(
-            error_body,
-            time.monotonic() - started,
-            task_kind=task_kind,
-            prompt=prompt,
-        )
+        error_with_footer = error_body
+        if should_append_duration_footer(user_reply_mode):
+            error_with_footer = append_duration_footer(
+                error_body,
+                time.monotonic() - started,
+                task_kind=task_kind,
+                prompt=prompt,
+            )
         if stream_card is not None:
             stream_card.fail(error_with_footer)
         else:
@@ -868,6 +913,7 @@ def process_inbound_task(
                 user_prompt=prompt,
                 sender_name=sender_name,
                 sender_staff_id=sender_staff_id,
+                reply_mode=user_reply_mode,
             )
         if user_key and prompt and stream_card is not None:
             sync_exchange_to_web_agent(
