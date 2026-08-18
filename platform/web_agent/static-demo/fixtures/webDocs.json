@@ -21,8 +21,8 @@
           "url": "../platform-guide/"
         },
         {
-          "title": "PK 提款机：从零到 MOA 与自动化",
-          "desc": "真实协作案例：读 PRD → 抓包落 MOA → 对话迭代 C1～C8 → 赛况/返钻/提款排名验收 → 工作流 pk-atm-test",
+          "title": "PK 提款机：测试搭建与一键验收",
+          "desc": "搭建流程：录 MOA → 对话 C1～C9 试跑 → 落 Sheet2 脚本 → 一键重测写钉钉表",
           "url": "../keynote/pk-atm-guide"
         }
       ]

@@ -64,6 +64,18 @@ class RunProgressReplyTests(unittest.TestCase):
         self.assertIn("⚠️ 任务已中断。", body)
         self.assertNotIn("## 当前进度", body)
 
+    def test_stale_batch_result_not_shown_without_current_run_activity(self) -> None:
+        user_key = "web:test-stale-result"
+        with tempfile.TemporaryDirectory() as tmp:
+            progress_dir = Path(tmp) / "batch_progress"
+            with patch("batch_progress.PROGRESS_DIR", progress_dir), patch(
+                "batch_result.RESULT_DIR", progress_dir
+            ):
+                save_batch_result(user_key, "第5-7步完成 | 表：2026-08-06家族PK数据测试")
+                body = build_run_stop_reply("⚠️ 任务已中断。", user_key=user_key)
+                self.assertNotIn("## 当前进度", body)
+                self.assertNotIn("家族PK", body)
+
 
 def main() -> None:
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(RunProgressReplyTests)

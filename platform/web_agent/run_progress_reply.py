@@ -131,7 +131,8 @@ def build_run_stop_reply(
 
     key = (user_key or "").strip()
     batch_result = ""
-    if key:
+    # 仅在本轮 run 已有批量/流式进度时附带 batch_result，避免上一场任务的落盘结果误展示。
+    if key and (status_lines or stream_body):
         batch_result = _truncate_block(
             read_batch_result(key) or "",
             limit=BATCH_RESULT_MAX_CHARS,

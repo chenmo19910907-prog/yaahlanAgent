@@ -87,6 +87,7 @@ from batch_progress import (  # noqa: E402
     clear_batch_progress,
     read_batch_progress,
 )
+from batch_result import clear_batch_result  # noqa: E402
 from external_agent_progress import (  # noqa: E402
     build_external_agent_progress_message,
     clear_external_agent_progress,
@@ -911,13 +912,14 @@ def _monotonic_started_at_from_meta(meta: RunMeta) -> float:
     return time.monotonic() - elapsed
 
 
+def _build_web_elapsed_status_line(elapsed_s: float) -> str:
+    """Web 已用时行仅展示 elapsed；总预估固定在 ack 行，避免 SSE/轮询估算不一致导致「预计还需」闪烁。"""
+    return build_streaming_progress_status_line(elapsed_s, estimate_s=None)
+
+
 def _build_live_elapsed_line(run: ActiveRun) -> str:
     elapsed = max(0.0, time.monotonic() - run.started_at)
-    estimate_s = resolve_task_estimate_seconds(run.task_kind) if run.task_kind else None
-    session_id = (run.session_id or "").strip()
-    if session_id and should_rotate_cursor_agent(session_id) and estimate_s is not None:
-        estimate_s = max(estimate_s, 240.0)
-    return build_streaming_progress_status_line(elapsed, estimate_s=estimate_s)
+    return _build_web_elapsed_status_line(elapsed)
 
 
 def _apply_snapshot_to_run(run: ActiveRun, snap) -> None:
@@ -1466,17 +1468,16 @@ def _start_run_progress_watcher(
 
     def emit_progress_status() -> None:
         elapsed = max(0.0, time.monotonic() - started_at)
-        elapsed_line = build_streaming_progress_status_line(
-            elapsed,
-            estimate_s=estimate_s,
-        )
-        batch_line = ""
+        elapsed_line = _build_web_elapsed_status_line(elapsed)
+        # 进度文件在两次 report 之间可能短暂不可读；保留上次文案，避免 Web 批量行闪烁。
+        batch_line = run.last_batch_line
         state = read_batch_progress(user_key)
         if state is not None:
             batch_line = build_batch_progress_message(state)
-        external_line = build_external_agent_progress_message(
-            read_external_agent_progress(user_key)
-        )
+        external_state = read_external_agent_progress(user_key)
+        external_line = run.last_external_line
+        if external_state is not None:
+            external_line = build_external_agent_progress_message(external_state)
         run.emit_event(
             {
                 "type": "status",
@@ -1650,6 +1651,7 @@ def _start_chat_run(
         budget_s=float(DEFAULT_TIMEOUT_S),
     )
     clear_batch_progress(user_key)
+    clear_batch_result(user_key)
     clear_external_agent_progress(user_key)
     started_at = time.monotonic()
     run.started_at = started_at

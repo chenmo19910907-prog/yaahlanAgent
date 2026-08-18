@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from batch_progress import clear_batch_progress
+from batch_result import clear_batch_result
 from cursor_runner import DEFAULT_TIMEOUT_S
 from duration_history import classify_task_kind, get_duration_store
 from external_agent_progress import USER_KEY_ENV, clear_external_agent_progress
@@ -466,6 +467,7 @@ def execute_web_run(run_id: str) -> int:
         if _ACTIVE_SESSION is session_ctrl:
             _ACTIVE_SESSION = None
         clear_batch_progress(user_key)
+        clear_batch_result(user_key)
         clear_external_agent_progress(user_key)
         os.environ.pop(USER_KEY_ENV, None)
         session_ctrl.end()
