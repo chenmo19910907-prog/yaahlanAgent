@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20260817064655"></script>
-  <script src="demo-api.js?v=20260817064655"></script>
+  <script src="demo-fixtures.js?v=20260818043727"></script>
+  <script src="demo-api.js?v=20260818043727"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -1589,6 +1589,15 @@
       justify-content: center; height: 100%; text-align: center; gap: 16px;
       color: var(--muted);
     }
+    /* 轮播箭头与侧栏收起钮（fixed 50vh）同一水平线 */
+    .empty-state:has(.empty-feature-carousel) {
+      justify-content: flex-start;
+      --empty-feature-vh-half: calc(max(min(41.4vh, 396px), 270px) / 2);
+      --empty-y-align: calc(
+        50vh - 88px - 50px - 64px - 16px - 1.3rem - 16px - 2.6em - 16px - 4px - var(--empty-feature-vh-half) + 39px
+      );
+      transform: translateY(var(--empty-y-align));
+    }
     .empty-logo {
       width: 64px; height: 64px; border-radius: 16px;
       background: transparent;
@@ -1655,7 +1664,7 @@
       flex: 1; min-width: 0; border-radius: 12px; overflow: hidden;
       border: 1px solid var(--border);
       box-shadow: 0 0 0 1px rgba(91, 140, 255, 0.06);
-      background: var(--bg-solid);
+      background: #151923;
       height: min(41.4vh, 396px); min-height: 270px;
     }
     .empty-feature-frame {
@@ -1690,8 +1699,8 @@
       to { opacity: 0; transform: translateY(-14px) scale(0.985); filter: blur(3px); }
     }
     @keyframes empty-state-rise {
-      from { opacity: 0; transform: translateY(28px) scale(0.97); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+      from { opacity: 0; transform: translateY(calc(var(--empty-y-align, 0px) + 28px)) scale(0.97); }
+      to { opacity: 1; transform: translateY(var(--empty-y-align, 0px)) scale(1); }
     }
     @keyframes empty-logo-pop {
       from { opacity: 0; transform: scale(0.55) rotate(-10deg); }
@@ -1735,10 +1744,44 @@
       scroll-margin-top: 72px;
       scroll-margin-bottom: 20px;
     }
-    .msg.search-highlight .msg-body {
-      box-shadow: 0 0 0 2px var(--accent), var(--shadow-msg);
+    .msg.assistant.search-highlight .msg-body,
+    .msg.user.search-highlight .msg-body {
       background: var(--accent-soft);
-      transition: background 1.8s var(--ease-standard), box-shadow 1.8s var(--ease-standard);
+      border-color: rgba(91, 140, 255, 0.42);
+      box-shadow: 0 0 0 2px var(--accent), 0 0 16px rgba(91, 140, 255, 0.24), var(--shadow-msg);
+      transition: none !important;
+      animation: search-highlight-pulse 680ms var(--ease-spring) 3;
+    }
+    [data-theme="light"] .msg.assistant.search-highlight .msg-body,
+    [data-theme="light"] .msg.user.search-highlight .msg-body {
+      background: rgba(91, 140, 255, 0.24);
+      border-color: rgba(91, 140, 255, 0.5);
+      box-shadow: 0 0 0 2px var(--accent), 0 0 22px rgba(91, 140, 255, 0.34), var(--shadow-msg);
+      animation-name: search-highlight-pulse-light;
+    }
+    @keyframes search-highlight-pulse {
+      0%, 100% {
+        box-shadow: 0 0 0 2px var(--accent), 0 0 16px rgba(91, 140, 255, 0.24), var(--shadow-msg);
+        background: var(--accent-soft);
+        border-color: rgba(91, 140, 255, 0.42);
+      }
+      45% {
+        box-shadow: 0 0 0 4px rgba(91, 140, 255, 0.58), 0 0 36px rgba(91, 140, 255, 0.42), var(--shadow-msg);
+        background: rgba(91, 140, 255, 0.38);
+        border-color: rgba(91, 140, 255, 0.62);
+      }
+    }
+    @keyframes search-highlight-pulse-light {
+      0%, 100% {
+        box-shadow: 0 0 0 2px var(--accent), 0 0 22px rgba(91, 140, 255, 0.34), var(--shadow-msg);
+        background: rgba(91, 140, 255, 0.24);
+        border-color: rgba(91, 140, 255, 0.5);
+      }
+      45% {
+        box-shadow: 0 0 0 4px rgba(91, 140, 255, 0.62), 0 0 40px rgba(91, 140, 255, 0.46), var(--shadow-msg);
+        background: rgba(91, 140, 255, 0.42);
+        border-color: rgba(91, 140, 255, 0.72);
+      }
     }
     .msg.user { align-self: flex-end; max-width: min(62.4%, var(--content-width)); min-width: 0; }
     .msg.assistant {
@@ -4017,6 +4060,11 @@
       .header-actions { width: 100%; justify-content: flex-start; margin-left: 0; }
       .header-actions button { flex: 1 1 auto; justify-content: center; }
       .messages { padding: 34px 18px 28px; }
+      .empty-state:has(.empty-feature-carousel) {
+        --empty-y-align: 0px;
+        transform: none;
+        justify-content: center;
+      }
       .msg.user { max-width: 73.6%; }
       .msg-body { padding: 16px 18px; }
       .input-area { padding: 16px 18px 20px; }
@@ -4121,7 +4169,7 @@
           <span class="user-menu-avatar" id="user-menu-avatar" aria-hidden="true">U</span>
           <span class="user-menu-identity">
             <span class="user-menu-name" id="user-menu-name">用户</span>
-            <span class="user-menu-admin-badge" id="user-menu-admin-badge" hidden>管理员</span>
+            <span class="user-menu-admin-badge" id="user-menu-admin-badge" hidden title="管理员">管理</span>
           </span>
           <svg class="user-menu-chevron" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
             <path d="M6 9l6 6 6-6"/>
@@ -4329,6 +4377,7 @@
           <div class="external-agent-list" id="external-agent-list"></div>
         </div>
         <div class="settings-section">
+          <div class="settings-label">其他</div>
           <div class="settings-footer-links">
             <button type="button" class="settings-link" id="btn-settings-about" title="关于 Yaahlan Web Agent" aria-label="关于">
               <span>关于</span>
@@ -4649,7 +4698,7 @@
       applySessionPushResultPref(sessionId);
       if (!markSessionListActive(sessionId)) renderSessionList();
       updateDingtalkOwnerBar();
-      await loadMessages();
+      await loadMessages({ force: !!scrollToTimestamp });
       restoreSessionInputDraft(sessionId);
       void tryReconnectActiveRun(sessionId);
       return true;
@@ -4977,9 +5026,7 @@
       }
       if (touchScroll) {
         if (pendingScrollToTimestamp) {
-          const scrollTs = pendingScrollToTimestamp;
-          pendingScrollToTimestamp = '';
-          scheduleScrollToMessageTimestamp(scrollTs);
+          /* 搜索跳转由 loadMessages finally 统一分页定位 */
         } else if (restoreFromBottom != null) {
           restoreMessagesScrollFromBottom(restoreFromBottom);
         } else if (messagesPinnedToBottom) {
@@ -5819,9 +5866,11 @@
       const next = { ...patch };
       delete next.lifecycle;
       delete next.phase;
-      // 服务端 status 可能只带 phase/batch；勿用空串覆盖已有 elapsed/ack。
+      // 服务端 status 可能只带 phase/batch；勿用空串覆盖已有 elapsed/ack/batch/external。
       if (!String(next.elapsed || '').trim()) delete next.elapsed;
       if (!String(next.ack || '').trim()) delete next.ack;
+      if (!String(next.batch || '').trim()) delete next.batch;
+      if (!String(next.external || '').trim()) delete next.external;
       updateRunStatus(sessionId, next);
     }
 
@@ -6293,17 +6342,17 @@
           }
           const prevDisplay = current.lastStream?.display || { thinking: '', tools: [], phase: '' };
           const nextDisplay = buildStreamDisplay(md, proc, prevDisplay);
-          if (
+          const displayChanged = !(
             nextDisplay.thinking === prevDisplay.thinking
             && JSON.stringify(nextDisplay.tools) === JSON.stringify(prevDisplay.tools || [])
             && nextDisplay.phase === prevDisplay.phase
-          ) {
-            return;
-          }
-          const display = rememberRunStreamState(sid, md, proc);
-          const shell = current.shellEl || ensureStreamingShell(sid);
-          if (display) {
-            scheduleStreamingMsgBodyUpdate(shell, display);
+          );
+          if (displayChanged) {
+            const display = rememberRunStreamState(sid, md, proc);
+            const shell = current.shellEl || ensureStreamingShell(sid);
+            if (display) {
+              scheduleStreamingMsgBodyUpdate(shell, display);
+            }
           }
           if (active.ack_line || active.elapsed_line || active.batch_line || active.external_line) {
             patchRunStatusFromServer(sid, {
@@ -6340,18 +6389,8 @@
       const payload = (display && typeof display === 'object')
         ? display
         : { thinking: '', tools: [], phase: '' };
-      let batchHint = '';
-      for (const r of activeRuns.values()) {
-        if (r.shellEl === shell) {
-          batchHint = String(r.status?.batch || '').trim();
-          break;
-        }
-      }
       const sections = [];
-      let thinkHtml = renderThinkingSectionHtml(payload.thinking, payload.phase);
-      if (!sanitizeStreamThinking(payload.thinking) && batchHint && isLifecyclePhaseText(payload.phase)) {
-        thinkHtml = renderThinkingSectionHtml(batchHint, payload.phase);
-      }
+      const thinkHtml = renderThinkingSectionHtml(payload.thinking, payload.phase);
       if (thinkHtml) sections.push(thinkHtml);
       const toolsHtml = renderToolsSectionHtml(payload.tools);
       if (toolsHtml) sections.push(toolsHtml);
@@ -8943,6 +8982,112 @@
       return { scrollToTimestamp: ts, force: true };
     }
 
+    function messageTimestampInDom(timestamp) {
+      const ts = String(timestamp || '').trim();
+      if (!ts) return false;
+      const container = getMessagesEl();
+      if (!container) return false;
+      return !!container.querySelector(`.msg[data-timestamp="${CSS.escape(ts)}"]`);
+    }
+
+    function messageTimestampInCache(sessionId, timestamp) {
+      const ts = String(timestamp || '').trim();
+      const sid = String(sessionId || '').trim();
+      if (!ts || !sid) return false;
+      const cached = sessionMessagesCache.get(sid) || [];
+      return cached.some((m) => (m.timestamp || '') === ts);
+    }
+
+    async function loadOlderMessagesForSession(sessionId) {
+      const sid = String(sessionId || '').trim();
+      if (!sid || loadingOlderMessages) return false;
+      const container = getMessagesEl();
+      const firstMsg = getOldestLoadedMessageEl(container);
+      const beforeTs = firstMsg?.dataset?.timestamp || '';
+      if (!beforeTs) return false;
+      loadingOlderMessages = true;
+      try {
+        const data = await api(
+          `/api/sessions/${sid}/messages?before=${encodeURIComponent(beforeTs)}&limit=${MESSAGES_OLDER_PAGE}`,
+        );
+        if (sid !== currentSessionId) return false;
+        const older = data.messages || [];
+        if (!older.length) {
+          rememberSessionMessages(sid, sessionMessagesCache.get(sid) || [], {
+            total: data.total,
+            has_older: false,
+            offset: data.offset,
+            messages_mtime: data.messages_mtime || sessionMessagesMtimeFromList(sid),
+          });
+          updateLoadOlderButton(sid);
+          return false;
+        }
+        const merged = [...older, ...(sessionMessagesCache.get(sid) || [])];
+        rememberSessionMessages(sid, merged, {
+          total: data.total,
+          has_older: data.has_older,
+          offset: Math.max(0, Number(data.offset || 0)),
+          messages_mtime: data.messages_mtime || sessionMessagesMtimeFromList(sid),
+        });
+        prependLoadedMessages(sid, older);
+        updateMessagesDomFingerprint(sid, merged, sessionMessagesMeta(sid));
+        return true;
+      } catch (err) {
+        console.error('loadOlderMessagesForSession', err);
+        updateLoadOlderButton(sid);
+        return false;
+      } finally {
+        loadingOlderMessages = false;
+        if (sid === currentSessionId) {
+          scheduleAutoLoadOlderIfNeeded(container);
+        }
+      }
+    }
+
+    async function ensureMessageLoadedForScroll(sessionId, targetTs) {
+      const sid = String(sessionId || '').trim();
+      const ts = String(targetTs || '').trim();
+      if (!sid || !ts) return false;
+      if (messageTimestampInCache(sid, ts) || messageTimestampInDom(ts)) return true;
+      let guard = 0;
+      while (guard++ < 120 && sid === currentSessionId && sessionHasOlderMessages(sid)) {
+        const cached = sessionMessagesCache.get(sid) || [];
+        const oldest = (cached[0]?.timestamp || '').trim();
+        if (oldest && oldest <= ts) break;
+        const loaded = await loadOlderMessagesForSession(sid);
+        if (sid !== currentSessionId) return false;
+        if (messageTimestampInCache(sid, ts) || messageTimestampInDom(ts)) return true;
+        if (!loaded) break;
+      }
+      return messageTimestampInCache(sid, ts) || messageTimestampInDom(ts);
+    }
+
+    function applySearchHighlight(target) {
+      if (!target?.isConnected) return;
+      target.classList.remove('search-highlight');
+      void target.offsetWidth;
+      target.classList.add('search-highlight');
+      window.setTimeout(() => target.classList.remove('search-highlight'), 2800);
+    }
+
+    function afterMessagesScrollSettled(container, callback, maxMs = 900) {
+      if (!container || typeof callback !== 'function') return;
+      if (prefersReducedMotion()) {
+        callback();
+        return;
+      }
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        callback();
+      };
+      if ('onscrollend' in window) {
+        container.addEventListener('scrollend', finish, { once: true });
+      }
+      window.setTimeout(finish, maxMs);
+    }
+
     function scrollToMessageTimestamp(timestamp) {
       const ts = String(timestamp || '').trim();
       if (!ts) return false;
@@ -8953,26 +9098,32 @@
         if (!target && node.dataset.timestamp === ts) target = node;
       });
       if (!target) return false;
+      messagesPinnedToBottom = false;
       target.scrollIntoView({
         block: 'center',
         behavior: prefersReducedMotion() ? 'auto' : 'smooth',
       });
-      target.classList.remove('search-highlight');
-      void target.offsetWidth;
-      target.classList.add('search-highlight');
-      window.setTimeout(() => target.classList.remove('search-highlight'), 2600);
+      afterMessagesScrollSettled(container, () => applySearchHighlight(target));
       updateScrollToBottomBtn();
       return true;
     }
 
-    function scheduleScrollToMessageTimestamp(timestamp) {
-      const ts = String(timestamp || '').trim();
-      if (!ts) return;
-      const attempt = (left) => {
-        if (scrollToMessageTimestamp(ts) || left <= 0) return;
-        window.setTimeout(() => attempt(left - 1), 80);
-      };
-      requestAnimationFrame(() => requestAnimationFrame(() => attempt(8)));
+    async function fulfillPendingScrollToTimestamp() {
+      const ts = String(pendingScrollToTimestamp || '').trim();
+      if (!ts || !currentSessionId) return;
+      const sessionId = currentSessionId;
+      pendingScrollToTimestamp = '';
+      await ensureMessageLoadedForScroll(sessionId, ts);
+      if (sessionId !== currentSessionId) return;
+      if (messageTimestampInCache(sessionId, ts) && !messageTimestampInDom(ts)) {
+        const cached = sessionMessagesCache.get(sessionId) || [];
+        if (cached.length) renderLoadedMessages(sessionId, cached, null);
+      }
+      requestAnimationFrame(() => {
+        if (sessionId !== currentSessionId) return;
+        if (scrollToMessageTimestamp(ts)) return;
+        window.setTimeout(() => scrollToMessageTimestamp(ts), 120);
+      });
     }
 
     function agentLogoHtml() {
@@ -9023,11 +9174,11 @@
         ? `<button type="button" class="empty-feature-nav empty-feature-nav-next" aria-label="下一个演示" title="下一个">${EMPTY_FEATURE_NAV_SVG.next}</button>`
         : '';
       return `
-        <div class="empty-feature-carousel" data-rotate-ms="${Number(rotateMs) || 10000}" data-start-idx="${idx}">
+        <div class="empty-feature-carousel" data-rotate-ms="${Number(rotateMs) || 10000}" data-start-idx="${idx}" data-active-demo="${escapeHtml(d0.demo || '')}">
           <div class="empty-feature-viewport-wrap${showNav ? ' has-nav' : ''}">
             ${navPrev}
             <div class="empty-feature-viewport">
-              <iframe class="empty-feature-frame" title="${escapeHtml(d0.title || '功能演示')}" src="../keynote/?embed=${encodeURIComponent(d0.demo || '')}" loading="lazy" tabindex="-1"></iframe>
+              <iframe class="empty-feature-frame" data-active-demo="${escapeHtml(d0.demo || '')}" title="${escapeHtml(d0.title || '功能演示')}" src="../keynote/?embed=${encodeURIComponent(d0.demo || '')}" loading="lazy" tabindex="-1"></iframe>
             </div>
             ${navNext}
           </div>
@@ -9082,11 +9233,44 @@
       }
     }
 
-    function emptyFeatureEmbedSolidBg() {
-      const viewport = document.querySelector('.empty-feature-viewport');
-      const source = viewport || document.documentElement;
-      const bg = getComputedStyle(source).getPropertyValue('--bg-solid').trim();
-      return bg || '#151923';
+    const EMPTY_FEATURE_EMBED_DARK_BG = '#151923';
+    const EMPTY_FEATURE_THEME_DEMO = 'theme';
+
+    function isEmptyFeatureThemeDemo(demoKey) {
+      return String(demoKey || '').trim() === EMPTY_FEATURE_THEME_DEMO;
+    }
+
+    function emptyFeatureEmbedSolidBg(demoKey) {
+      if (!isEmptyFeatureThemeDemo(demoKey)) return EMPTY_FEATURE_EMBED_DARK_BG;
+      const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg-solid').trim();
+      return bg || EMPTY_FEATURE_EMBED_DARK_BG;
+    }
+
+    function syncEmptyFeatureViewportBg(root, demoKey) {
+      const viewport = root?.querySelector('.empty-feature-viewport');
+      if (!viewport) return;
+      viewport.style.background = emptyFeatureEmbedSolidBg(demoKey);
+    }
+
+    function refreshEmptyFeatureEmbedSolidBg() {
+      document.querySelectorAll('.empty-feature-carousel').forEach((carousel) => {
+        const demoKey = carousel.dataset.activeDemo || '';
+        syncEmptyFeatureViewportBg(carousel, demoKey);
+        carousel.querySelectorAll('.empty-feature-frame').forEach((frame) => {
+          applyEmptyFeatureEmbedSolidBg(frame, demoKey);
+        });
+      });
+    }
+
+    let emptyFeatureThemeObserverBound = false;
+    function bindEmptyFeatureThemeObserver() {
+      if (emptyFeatureThemeObserverBound) return;
+      emptyFeatureThemeObserverBound = true;
+      const root = document.documentElement;
+      new MutationObserver(() => refreshEmptyFeatureEmbedSolidBg()).observe(root, {
+        attributes: true,
+        attributeFilter: ['data-theme'],
+      });
     }
 
     const EMPTY_FEATURE_EMBED_SOLID_SELECTORS = [
@@ -9135,7 +9319,9 @@
       'body.kn-embed .mock-ab-app',
     ].join(',\n');
 
-    function buildEmptyFeatureEmbedSolidCss(bg) {
+    function buildEmptyFeatureEmbedSolidCss(bg, isThemeDemo) {
+      const mockAppDarkBg = isThemeDemo ? EMPTY_FEATURE_EMBED_DARK_BG : bg;
+      const mockAppLightBg = isThemeDemo ? '#eef2f8' : bg;
       return `
         html.kn-embed, body.kn-embed {
           --kn-embed-bg: ${bg} !important;
@@ -9147,23 +9333,24 @@
         ${EMPTY_FEATURE_EMBED_SOLID_SELECTORS} {
           background: ${bg} !important;
         }
-        body.kn-embed .mock-app[data-theme="dark"] { --ma-bg: ${bg} !important; }
-        body.kn-embed .mock-app[data-theme="light"] { --ma-bg: #eef2f8 !important; }
+        body.kn-embed .mock-app[data-theme="dark"] { --ma-bg: ${mockAppDarkBg} !important; }
+        body.kn-embed .mock-app[data-theme="light"] { --ma-bg: ${mockAppLightBg} !important; }
       `;
     }
 
-    function applyEmptyFeatureEmbedSolidBg(frame) {
+    function applyEmptyFeatureEmbedSolidBg(frame, demoKey) {
       try {
         const doc = frame?.contentDocument;
         if (!doc?.body?.classList.contains('kn-embed')) return;
-        const bg = emptyFeatureEmbedSolidBg();
+        const key = demoKey ?? frame?.dataset?.activeDemo ?? '';
+        const bg = emptyFeatureEmbedSolidBg(key);
         let style = doc.getElementById('chat-empty-embed-solid');
         if (!style) {
           style = doc.createElement('style');
           style.id = 'chat-empty-embed-solid';
           doc.head.appendChild(style);
         }
-        style.textContent = buildEmptyFeatureEmbedSolidCss(bg);
+        style.textContent = buildEmptyFeatureEmbedSolidCss(bg, isEmptyFeatureThemeDemo(key));
       } catch (_) {
         /* iframe 未就绪时忽略 */
       }
@@ -9171,12 +9358,13 @@
 
     function mountFeatureDemoCarousel(root, demos, rotateMs, startIdx) {
       stopFeatureDemoCarousel();
+      bindEmptyFeatureThemeObserver();
       if (!root || !demos.length) return;
       const captionTitle = root.querySelector('.empty-feature-title');
       const frame = root.querySelector('.empty-feature-frame');
       if (!frame || !captionTitle) return;
 
-      frame.addEventListener('load', () => applyEmptyFeatureEmbedSolidBg(frame));
+      frame.addEventListener('load', () => applyEmptyFeatureEmbedSolidBg(frame, frame.dataset.activeDemo));
 
       const initialIdx = Number.isFinite(startIdx)
         ? startIdx
@@ -9206,7 +9394,11 @@
           if (shouldPauseFeatureDemoCarousel()) return;
           captionTitle.innerHTML = buildFeatureDemoTitleHtml(d.label, d.title);
           frame.title = d.title || '功能演示';
+          root.dataset.activeDemo = d.demo || '';
+          frame.dataset.activeDemo = d.demo || '';
+          syncEmptyFeatureViewportBg(root, d.demo);
           frame.src = `../keynote/?embed=${encodeURIComponent(d.demo || '')}`;
+          frame.addEventListener('load', () => applyEmptyFeatureEmbedSolidBg(frame, d.demo), { once: true });
           restoreChatInputFocus(focusSnapshot);
           if (focusSnapshot) {
             frame.addEventListener('load', () => restoreChatInputFocus(focusSnapshot), { once: true });
@@ -9489,9 +9681,7 @@
         }
       }
       if (pendingScrollToTimestamp) {
-        const scrollTs = pendingScrollToTimestamp;
-        pendingScrollToTimestamp = '';
-        scheduleScrollToMessageTimestamp(scrollTs);
+        /* 搜索跳转由 loadMessages finally 统一分页定位 */
       } else if (restoreFromBottom != null) {
         restoreMessagesScrollFromBottom(restoreFromBottom);
       } else if (messagesPinnedToBottom) {
@@ -9695,135 +9885,108 @@
         const scrollState = resolveMessagesScrollState(sessionId);
         messagesPinnedToBottom = scrollState.pinnedToBottom;
         restoreFromBottom = scrollState.fromBottom;
+      } else {
+        messagesPinnedToBottom = false;
       }
-      const cached = sessionMessagesCache.get(sessionId);
-      const cachedMeta = sessionMessagesMeta(sessionId);
-      const cachedFingerprint = cached ? sessionMessagesFingerprint(cached, cachedMeta) : '';
-      const serverMtime = sessionMessagesMtimeFromList(sessionId);
-      const cachedMtime = Number(cachedMeta?.mtime || 0);
-      const skipFetch = !opts.force
-        && cached?.length
-        && serverMtime > 0
-        && cachedMtime > 0
-        && serverMtime === cachedMtime;
-      const cacheFresh = cached?.length && (
-        skipFetch
-        || serverMtime <= 0
-        || cachedMtime <= 0
-        || serverMtime === cachedMtime
-      );
-      if (cached?.length) {
-        if (!messagesDomMatchesSession(sessionId)) {
-          renderLoadedMessages(sessionId, cached, restoreFromBottom);
-        } else if (cacheFresh) {
-          if (canSkipMessagesRender(sessionId, cached, cachedMeta)) {
-            syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
-          } else {
-            renderLoadedMessages(sessionId, cached, restoreFromBottom);
-          }
-        }
-      }
-      if (skipFetch) return;
-
-      loadMessagesAbort?.abort();
-      const abortCtrl = new AbortController();
-      loadMessagesAbort = abortCtrl;
-      const { signal } = abortCtrl;
-
-      let data;
       try {
-        const msgHeaders = {};
-        const cachedEtag = sessionMessagesEtags.get(sessionId);
-        if (cachedEtag && !opts.force) {
-          msgHeaders['If-None-Match'] = cachedEtag;
-        }
-        data = await api(
-          `/api/sessions/${sessionId}/messages?tail=${MESSAGES_TAIL_DEFAULT}`,
-          { signal, headers: msgHeaders },
+        const cached = sessionMessagesCache.get(sessionId);
+        const cachedMeta = sessionMessagesMeta(sessionId);
+        const cachedFingerprint = cached ? sessionMessagesFingerprint(cached, cachedMeta) : '';
+        const serverMtime = sessionMessagesMtimeFromList(sessionId);
+        const cachedMtime = Number(cachedMeta?.mtime || 0);
+        const skipFetch = !opts.force
+          && !pendingScrollToTimestamp
+          && cached?.length
+          && serverMtime > 0
+          && cachedMtime > 0
+          && serverMtime === cachedMtime;
+        const cacheFresh = cached?.length && (
+          skipFetch
+          || serverMtime <= 0
+          || cachedMtime <= 0
+          || serverMtime === cachedMtime
         );
-      } catch (err) {
-        if (err?.name === 'AbortError') return;
-        throw err;
-      }
-      if (signal.aborted || sessionId !== currentSessionId) return;
-      if (data?.__notModified) {
-        if (data.__etag) sessionMessagesEtags.set(sessionId, data.__etag);
         if (cached?.length) {
-          if (canSkipMessagesRender(sessionId, cached, cachedMeta)) {
-            syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
-          } else {
+          if (!messagesDomMatchesSession(sessionId)) {
             renderLoadedMessages(sessionId, cached, restoreFromBottom);
+          } else if (cacheFresh) {
+            if (canSkipMessagesRender(sessionId, cached, cachedMeta)) {
+              syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
+            } else {
+              renderLoadedMessages(sessionId, cached, restoreFromBottom);
+            }
           }
         }
-        return;
-      }
-      if (data?.__etag) sessionMessagesEtags.set(sessionId, data.__etag);
-      const msgs = data.messages || [];
-      const pageMeta = {
-        total: data.total,
-        has_older: data.has_older,
-        offset: data.offset,
-        messages_mtime: data.messages_mtime || serverMtime,
-      };
-      const nextFingerprint = sessionMessagesFingerprint(msgs, pageMeta);
-      if (nextFingerprint === cachedFingerprint) {
-        rememberSessionMessages(sessionId, msgs, pageMeta);
-        if (canSkipMessagesRender(sessionId, msgs, pageMeta)) {
-          syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
-        } else {
-          renderLoadedMessages(sessionId, msgs, restoreFromBottom);
+        if (skipFetch) return;
+
+        loadMessagesAbort?.abort();
+        const abortCtrl = new AbortController();
+        loadMessagesAbort = abortCtrl;
+        const { signal } = abortCtrl;
+
+        let data;
+        try {
+          const msgHeaders = {};
+          const cachedEtag = sessionMessagesEtags.get(sessionId);
+          if (cachedEtag && !opts.force) {
+            msgHeaders['If-None-Match'] = cachedEtag;
+          }
+          data = await api(
+            `/api/sessions/${sessionId}/messages?tail=${MESSAGES_TAIL_DEFAULT}`,
+            { signal, headers: msgHeaders },
+          );
+        } catch (err) {
+          if (err?.name === 'AbortError') return;
+          throw err;
         }
-        return;
+        if (signal.aborted || sessionId !== currentSessionId) return;
+        if (data?.__notModified) {
+          if (data.__etag) sessionMessagesEtags.set(sessionId, data.__etag);
+          if (cached?.length) {
+            if (canSkipMessagesRender(sessionId, cached, cachedMeta)) {
+              syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
+            } else {
+              renderLoadedMessages(sessionId, cached, restoreFromBottom);
+            }
+          }
+          return;
+        }
+        if (data?.__etag) sessionMessagesEtags.set(sessionId, data.__etag);
+        const msgs = data.messages || [];
+        const pageMeta = {
+          total: data.total,
+          has_older: data.has_older,
+          offset: data.offset,
+          messages_mtime: data.messages_mtime || serverMtime,
+        };
+        const nextFingerprint = sessionMessagesFingerprint(msgs, pageMeta);
+        if (nextFingerprint === cachedFingerprint) {
+          rememberSessionMessages(sessionId, msgs, pageMeta);
+          if (canSkipMessagesRender(sessionId, msgs, pageMeta)) {
+            syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
+          } else {
+            renderLoadedMessages(sessionId, msgs, restoreFromBottom);
+          }
+          return;
+        }
+        if (cached?.length && trySyncTailMessages(sessionId, cached, msgs, pageMeta, restoreFromBottom)) {
+          return;
+        }
+        if (cached?.length && tryMergeExpandedHistory(sessionId, cached, msgs, pageMeta, restoreFromBottom)) {
+          return;
+        }
+        rememberSessionMessages(sessionId, msgs, pageMeta);
+        renderLoadedMessages(sessionId, msgs, restoreFromBottom);
+      } finally {
+        if (pendingScrollToTimestamp && sessionId === currentSessionId) {
+          void fulfillPendingScrollToTimestamp();
+        }
       }
-      if (cached?.length && trySyncTailMessages(sessionId, cached, msgs, pageMeta, restoreFromBottom)) {
-        return;
-      }
-      if (cached?.length && tryMergeExpandedHistory(sessionId, cached, msgs, pageMeta, restoreFromBottom)) {
-        return;
-      }
-      rememberSessionMessages(sessionId, msgs, pageMeta);
-      renderLoadedMessages(sessionId, msgs, restoreFromBottom);
     }
 
     async function loadOlderMessages() {
       if (!currentSessionId || loadingOlderMessages) return;
-      const sessionId = currentSessionId;
-      const container = getMessagesEl();
-      const firstMsg = getOldestLoadedMessageEl(container);
-      const beforeTs = firstMsg?.dataset?.timestamp || '';
-      if (!beforeTs) return;
-      loadingOlderMessages = true;
-      try {
-        const data = await api(
-          `/api/sessions/${sessionId}/messages?before=${encodeURIComponent(beforeTs)}&limit=${MESSAGES_OLDER_PAGE}`,
-        );
-        if (sessionId !== currentSessionId) return;
-        const older = data.messages || [];
-        if (!older.length) {
-          rememberSessionMessages(sessionId, sessionMessagesCache.get(sessionId) || [], {
-            total: data.total,
-            has_older: false,
-            offset: data.offset,
-          });
-          updateLoadOlderButton(sessionId);
-          return;
-        }
-        const merged = [...older, ...(sessionMessagesCache.get(sessionId) || [])];
-        rememberSessionMessages(sessionId, merged, {
-          total: data.total,
-          has_older: data.has_older,
-          offset: Math.max(0, Number(data.offset || 0)),
-          messages_mtime: data.messages_mtime || sessionMessagesMtimeFromList(sessionId),
-        });
-        prependLoadedMessages(sessionId, older);
-        updateMessagesDomFingerprint(sessionId, merged, sessionMessagesMeta(sessionId));
-      } catch (err) {
-        console.error('loadOlderMessages', err);
-        updateLoadOlderButton(sessionId);
-      } finally {
-        loadingOlderMessages = false;
-        scheduleAutoLoadOlderIfNeeded(container);
-      }
+      await loadOlderMessagesForSession(currentSessionId);
     }
 
     function publicDisplayName(label) {
