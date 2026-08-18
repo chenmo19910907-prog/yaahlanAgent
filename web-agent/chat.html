@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20260818112437"></script>
-  <script src="demo-api.js?v=20260818112437"></script>
+  <script src="demo-fixtures.js?v=20260818125931"></script>
+  <script src="demo-api.js?v=20260818125931"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -9593,14 +9593,23 @@
       syncLoadOlderAutoLoad(container);
     }
 
+    function messageUserLabel(m) {
+      const stored = publicDisplayName((m.author_label || m.authorLabel || '').trim());
+      if (stored) return stored;
+      if (currentSessionReadOnly) {
+        const item = sessionsCache.find(s => s.id === currentSessionId);
+        const owner = sessionOwnerName(item);
+        if (owner) return owner;
+      }
+      return authUserDisplayName(currentAuthUser);
+    }
+
     function buildMessageElement(m) {
       const el = document.createElement('div');
       el.className = `msg ${m.role}`;
       const msgTs = m.timestamp || new Date().toISOString();
       if (msgTs) el.dataset.timestamp = msgTs;
-      const label = m.role === 'user'
-        ? ((m.author_label || m.authorLabel || '').trim() || authUserDisplayName(currentAuthUser))
-        : 'Agent';
+      const label = m.role === 'user' ? messageUserLabel(m) : 'Agent';
       const imageHtml = renderMessageImages(m.images || []);
       const fileHtml = renderMessageFiles(m.files || []);
       const text = (m.content || '').trim();
