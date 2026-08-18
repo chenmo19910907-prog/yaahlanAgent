@@ -1534,6 +1534,20 @@
         "跨房PK本周/上周周榜结算"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/跨房PK-周榜结算.json \\\n  --across-pk-week-rank-settle-offset <0|-1>\n"
+    },
+    {
+      "id": "batch_mutual_friends_from_user_list",
+      "name": "用户-批量互关好友（用户列表）",
+      "category": "用户关系（voga-mts-user-relation-stage）",
+      "description": "从创新中台用户列表拉取 userId，与目标用户双向互关成为好友。支持指定数量、排除已有好友、并行多线程、互关后发随机消息、自动去重日志。大批量（1000+）自动采用「A→B 并行 + B→A 串行」策略避免频控",
+      "prompts": [
+        "给 <userId> 增加 <count> 个好友",
+        "从用户列表拉取 <count> 个用户和 <userId> 互关",
+        "批量增加好友 <userId> count=<count>",
+        "给 <userId> 加 1000 个好友并发消息",
+        "从创新中台拉人和 <userId> 互关好友"
+      ],
+      "command": "python3 Admin/scripts/batch_mutual_friends_from_user_list.py \\\n  --target-user-id <userId> \\\n  --count <count> \\\n  --workers 5 \\\n  --sleep-seconds 0.5\n"
     }
   ]
 }
