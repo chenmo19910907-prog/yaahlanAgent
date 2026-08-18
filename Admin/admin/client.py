@@ -126,28 +126,57 @@ def http_post_json(
     }
 
     req = urllib.request.Request(url=url, data=body, method="POST", headers=req_headers)
-    return _read_json_response(req, timeout_s=timeout_s)
+    return _read_json_response(req, timeout_s=timeout_s, auth=auth)
 
 
 def http_get_json(
     url: str,
     *,
     timeout_s: float = 10.0,
+    auth: str = "yaahlan",
 ) -> dict[str, Any]:
+    if auth == "yaahlan":
+        extra_headers = build_auth_headers()
+    elif auth == "yaahlan_online":
+        extra_headers = build_online_auth_headers()
+    else:
+        extra_headers = build_auth_headers()
     req_headers: dict[str, str] = {
         "Accept": "application/json, text/plain, */*",
-        **build_auth_headers(),
+        **extra_headers,
     }
     req = urllib.request.Request(url=url, method="GET", headers=req_headers)
-    return _read_json_response(req, timeout_s=timeout_s)
+    return _read_json_response(req, timeout_s=timeout_s, auth=auth)
 
 
-def _read_json_response(req: urllib.request.Request, *, timeout_s: float) -> dict[str, Any]:
+def _is_auth_error(code: int, body: str) -> bool:
+    """判断是否为认证/授权失败（需要刷新 token）。"""
+    if code in (401, 403):
+        return True
+    if code == 302 and "aegis" in body.lower():
+        return True
+    if "login" in body.lower() and "sso" in body.lower():
+        return True
+    return False
+
+
+def _read_json_response(
+    req: urllib.request.Request,
+    *,
+    timeout_s: float,
+    auth: str = "",
+    _retried: bool = False,
+) -> dict[str, Any]:
     try:
         with urllib.request.urlopen(req, timeout=timeout_s) as resp:
             raw = resp.read().decode("utf-8", errors="replace")
     except urllib.error.HTTPError as e:
         raw = e.read().decode("utf-8", errors="replace") if e.fp else str(e)
+        if not _retried and _is_auth_error(e.code, raw) and auth in ("yaahlan", "yaahlan_online"):
+            refreshed = _try_auto_refresh(auth)
+            if refreshed:
+                new_req = _rebuild_request_with_new_auth(req, auth)
+                return _read_json_response(new_req, timeout_s=timeout_s, auth=auth, _retried=True)
         raise RuntimeError(f"HTTP {e.code}: {raw}") from e
     except urllib.error.URLError as e:
         raise RuntimeError(f"网络错误: {e}") from e
@@ -155,10 +184,67 @@ def _read_json_response(req: urllib.request.Request, *, timeout_s: float) -> dic
     try:
         obj = json.loads(raw)
     except json.JSONDecodeError as e:
+        if not _retried and "login" in raw.lower() and auth in ("yaahlan", "yaahlan_online"):
+            refreshed = _try_auto_refresh(auth)
+            if refreshed:
+                new_req = _rebuild_request_with_new_auth(req, auth)
+                return _read_json_response(new_req, timeout_s=timeout_s, auth=auth, _retried=True)
         raise RuntimeError(f"返回不是合法 JSON: {raw[:1000]}") from e
     if not isinstance(obj, dict):
         raise RuntimeError("返回 JSON 不是 object")
+
+    # 检查业务层 ec=401（HTTP 200 但 token 无效）
+    if not _retried and auth in ("yaahlan", "yaahlan_online"):
+        ec = obj.get("ec")
+        if ec in (401, "401"):
+            refreshed = _try_auto_refresh(auth)
+            if refreshed:
+                new_req = _rebuild_request_with_new_auth(req, auth)
+                return _read_json_response(new_req, timeout_s=timeout_s, auth=auth, _retried=True)
+
     return obj
+
+
+def _try_auto_refresh(auth: str) -> bool:
+    """尝试自动刷新 token，成功返回 True。"""
+    import sys as _sys
+    try:
+        from .aegis_sso import auto_refresh_yaahlan, refresh_yaahlan_env
+        _sys.stderr.write("[Auto-Refresh] Token 过期，正在自动重新登录...\n")
+        if auth == "yaahlan":
+            result = auto_refresh_yaahlan()
+        elif auth == "yaahlan_online":
+            result = refresh_yaahlan_env("yaahlan_online")
+        else:
+            return False
+        if result.success:
+            _sys.stderr.write(f"[Auto-Refresh] 刷新成功: user={result.username}\n")
+            return True
+        _sys.stderr.write(f"[Auto-Refresh] 刷新失败: {result.error}\n")
+        return False
+    except Exception as e:
+        _sys.stderr.write(f"[Auto-Refresh] 异常: {e}\n")
+        return False
+
+
+def _rebuild_request_with_new_auth(req: urllib.request.Request, auth: str) -> urllib.request.Request:
+    """用刷新后的 token 重建请求。"""
+    if auth == "yaahlan":
+        new_headers = build_auth_headers()
+    elif auth == "yaahlan_online":
+        new_headers = build_online_auth_headers()
+    else:
+        new_headers = {}
+
+    headers = dict(req.headers)
+    headers.update(new_headers)
+    new_req = urllib.request.Request(
+        url=req.full_url,
+        data=req.data,
+        method=req.get_method(),
+        headers=headers,
+    )
+    return new_req
 
 
 def admin_success(ec: Any) -> bool:
