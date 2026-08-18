@@ -124,7 +124,7 @@ from cursor_usage import (  # noqa: E402
     verify_session_token,
 )
 from cursor_usage_store import get_cursor_usage_store  # noqa: E402
-from web_session_store import filter_sessions_by_search, filter_sessions_by_scope, get_session_store, sort_sessions_for_display, compute_sessions_list_etag, compute_messages_page_etag, estimate_messages_page_meta  # noqa: E402
+from web_session_store import filter_sessions_by_search, filter_sessions_by_scope, get_session_store, sort_sessions_for_display, compute_sessions_list_etag, compute_messages_page_etag, estimate_messages_page_meta, resolve_user_message_author  # noqa: E402
 from web_run_store import (  # noqa: E402
     RUN_STATUS_DONE,
     RUN_STATUS_ERROR,
@@ -2162,18 +2162,38 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 before=before or None,
                 limit=limit,
             )
-            messages = [
-                {
+            all_sessions = store.list_sessions(
+                enrich_names=False,
+                sync_derived_meta=False,
+                readonly=True,
+            )
+            messages = []
+            for msg in slice_msgs:
+                item: dict[str, object] = {
                     "role": msg.role,
                     "content": msg.content,
                     "timestamp": msg.timestamp,
-                    **({"images": msg.images} if msg.images else {}),
-                    **({"files": msg.files} if msg.files else {}),
-                    **({"author_id": msg.author_id} if msg.author_id else {}),
-                    **({"author_label": msg.author_label} if msg.author_label else {}),
                 }
-                for msg in slice_msgs
-            ]
+                if msg.images:
+                    item["images"] = msg.images
+                if msg.files:
+                    item["files"] = msg.files
+                if msg.role == "user":
+                    author_id, author_label = resolve_user_message_author(
+                        msg,
+                        session_meta,
+                        sessions=all_sessions,
+                    )
+                    if author_id:
+                        item["author_id"] = author_id
+                    if author_label:
+                        item["author_label"] = author_label
+                else:
+                    if msg.author_id:
+                        item["author_id"] = msg.author_id
+                    if msg.author_label:
+                        item["author_label"] = msg.author_label
+                messages.append(item)
             payload: dict[str, object] = {
                 "messages": messages,
                 "total": page_meta.get("total", len(messages)),

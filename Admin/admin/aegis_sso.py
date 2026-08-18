@@ -370,12 +370,11 @@ def main() -> int:
 
     # 加载环境
     env_dir = Path(__file__).resolve().parents[1]
-    sys.path.insert(0, str(env_dir))
-    try:
-        from env import load_local_env
-        load_local_env(str(env_dir))
-    except ImportError:
-        pass
+    if str(env_dir) not in sys.path:
+        sys.path.insert(0, str(env_dir))
+    from admin.env import load_local_env
+
+    load_local_env(str(env_dir))
 
     platforms = list(APP_KEYS.keys()) if args.platform == "all" else [args.platform]
     all_ok = True

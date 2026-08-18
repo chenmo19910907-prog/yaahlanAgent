@@ -1076,7 +1076,12 @@ def main() -> int:
         return 2
 
     _apply_optional_headers(args)
-    client = MoaClient(args.entry_url, args.cookie, args.timeout_ms)
+    client = MoaClient(
+        args.entry_url,
+        args.cookie,
+        args.timeout_ms,
+        auto_refresh=not getattr(args, "online_env", False),
+    )
 
     try:
         if args.package_gift_batch_base_ids:

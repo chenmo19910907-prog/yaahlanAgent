@@ -7,6 +7,7 @@ import json
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 WEB_AGENT_DIR = Path(__file__).resolve().parent
@@ -744,6 +745,68 @@ class WebSessionOwnerDisplayTest(unittest.TestCase):
             payload = admin_meta.to_dict()
             self.assertEqual(payload["web_owner"], "管理员")
             self.assertEqual(payload["web_owner_label"], "管理员")
+
+
+class ResolveUserMessageAuthorTest(unittest.TestCase):
+    def test_dingtalk_message_without_author_uses_session_owner(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            sid = "dingtalkmsgauthor01"
+            index.write_text(
+                json.dumps(
+                    {
+                        sid: {
+                            "title": "钉钉 · Kaibo",
+                            "created_at": "2026-08-03T08:00:00+00:00",
+                            "updated_at": "2026-08-03T09:00:00+00:00",
+                            "message_count": 1,
+                            "source": "dingtalk",
+                            "dingtalk_key": "dm:uid_kaibo",
+                            "dingtalk_label": "Kaibo",
+                            "dingtalk_owner_id": "uid_kaibo",
+                        }
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            (messages_dir / f"{sid}.json").write_text(
+                json.dumps(
+                    [
+                        {
+                            "role": "user",
+                            "content": "4707 给我解除充值封控",
+                            "timestamp": "2026-08-17T07:05:00+00:00",
+                        },
+                        {
+                            "role": "assistant",
+                            "content": "已解除",
+                            "timestamp": "2026-08-17T07:06:00+00:00",
+                        },
+                    ],
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            from web_session_store import ChatMessage, resolve_user_message_author
+
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            meta = store.get_session(sid)
+            assert meta is not None
+            msgs = store.get_all_messages(sid)
+            with unittest.mock.patch(
+                "dingtalk_user_lookup.lookup_auth_user_display_name",
+                return_value="王凯波",
+            ):
+                author_id, author_label = resolve_user_message_author(
+                    msgs[0],
+                    meta,
+                )
+            self.assertEqual(author_id, "uid_kaibo")
+            self.assertEqual(author_label, "王凯波")
 
 
 if __name__ == "__main__":

@@ -94,16 +94,32 @@ def sync_dingtalk_exchange(
     store.reload_from_disk()
     label = (sender_name or "").strip()
     owner_id = (sender_staff_id or "").strip() or parse_dingtalk_user_id(key)
+    try:
+        from dingtalk_user_lookup import lookup_auth_user_display_name
+
+        author_label = lookup_auth_user_display_name(
+            owner_id,
+            label,
+            sessions=store.list_sessions(enrich_names=False, sync_derived_meta=False),
+        )
+    except Exception:  # noqa: BLE001
+        author_label = label
     meta = store.get_or_create_dingtalk_session(
         dingtalk_key=key,
-        label=label,
+        label=author_label or label,
         title_hint=prompt,
         owner_id=owner_id,
     )
     messages = store.get_all_messages(meta.id)
     if turn_already_synced(messages, prompt, reply):
         return False
-    if not store.upsert_dingtalk_turn(meta.id, prompt, reply):
+    if not store.upsert_dingtalk_turn(
+        meta.id,
+        prompt,
+        reply,
+        author_id=owner_id,
+        author_label=author_label or label,
+    ):
         return False
     logger.info(
         "钉钉对话已同步 Web 历史 session=%s key=%s msgs=%s",

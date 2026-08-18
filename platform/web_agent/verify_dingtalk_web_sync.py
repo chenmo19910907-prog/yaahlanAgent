@@ -60,6 +60,34 @@ class DingtalkWebSyncTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertEqual(len(store.list_sessions()), 0)
 
+    def test_sync_dingtalk_exchange_stores_message_author(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            store = WebSessionStore(
+                index_path=Path(tmp) / "sessions.json",
+                messages_dir=Path(tmp) / "messages",
+            )
+            with unittest.mock.patch(
+                "dingtalk_web_sync.get_session_store", return_value=store
+            ), unittest.mock.patch(
+                "dingtalk_user_lookup.lookup_auth_user_display_name",
+                side_effect=lambda uid, label, **_: label or "真实姓名",
+            ):
+                ok = sync_dingtalk_exchange(
+                    "dm:staff001",
+                    "查用户 100465989",
+                    "用户详情如下…",
+                    sender_name="Nick",
+                    sender_staff_id="staff001",
+                )
+            self.assertTrue(ok)
+            sessions = store.list_sessions(enrich_names=False, sync_derived_meta=False)
+            self.assertEqual(len(sessions), 1)
+            msgs = store.get_all_messages(sessions[0].id)
+            self.assertEqual(len(msgs), 2)
+            self.assertEqual(msgs[0].role, "user")
+            self.assertEqual(msgs[0].author_id, "staff001")
+            self.assertEqual(msgs[0].author_label, "Nick")
+
 
 if __name__ == "__main__":
     raise SystemExit(unittest.main())

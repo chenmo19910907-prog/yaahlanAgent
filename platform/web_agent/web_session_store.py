@@ -684,6 +684,37 @@ class SessionMeta:
         return payload
 
 
+def resolve_user_message_author(
+    msg: ChatMessage,
+    meta: SessionMeta,
+    *,
+    sessions: list[SessionMeta] | None = None,
+) -> tuple[str, str]:
+    """解析 user 消息对外展示的作者 id / 姓名（含钉钉同步会话补全）。"""
+    if msg.role != "user":
+        return "", ""
+    from dingtalk_user_lookup import lookup_auth_user_display_name
+
+    author_id = (msg.author_id or "").strip()
+    author_label = (msg.author_label or "").strip()
+    fallback = author_label
+    if meta.source == "dingtalk":
+        if not author_id:
+            author_id = (meta.dingtalk_owner_id or "").strip() or parse_dingtalk_user_id(
+                meta.dingtalk_key
+            )
+        if not fallback:
+            fallback = (meta.dingtalk_label or "").strip()
+    if not author_id and not fallback:
+        return "", ""
+    resolved = lookup_auth_user_display_name(
+        author_id,
+        fallback,
+        sessions=sessions,
+    )
+    return author_id, resolved
+
+
 class WebSessionStore:
     def __init__(
         self,
@@ -1314,13 +1345,21 @@ class WebSessionStore:
         return self.append_message(session_id, role, text)
 
     def upsert_dingtalk_turn(
-        self, session_id: str, user_prompt: str, assistant_reply: str
+        self,
+        session_id: str,
+        user_prompt: str,
+        assistant_reply: str,
+        *,
+        author_id: str = "",
+        author_label: str = "",
     ) -> bool:
         """写入或更新一轮钉钉对话；同 prompt 重试时覆盖上一条 assistant。"""
         prompt = (user_prompt or "").strip()
         reply = (assistant_reply or "").strip()
         if not prompt or not reply:
             return False
+        uid = (author_id or "").strip()
+        label = (author_label or "").strip()
         with self._exclusive_index():
             meta = self._sessions.get(session_id)
             if meta is None:
@@ -1334,6 +1373,10 @@ class WebSessionStore:
             if messages and messages[-1].role == "assistant":
                 for msg in reversed(messages[:-1]):
                     if msg.role == "user" and msg.content == prompt:
+                        if uid and not (msg.author_id or "").strip():
+                            msg.author_id = uid
+                        if label and not (msg.author_label or "").strip():
+                            msg.author_label = label
                         messages[-1] = ChatMessage(role="assistant", content=reply)
                         self._save_messages(session_id, messages)
                         _apply_message_derived_meta(
@@ -1355,7 +1398,14 @@ class WebSessionStore:
                 and messages[-1].role == "user"
                 and messages[-1].content == prompt
             ):
-                messages.append(ChatMessage(role="user", content=prompt))
+                messages.append(
+                    ChatMessage(
+                        role="user",
+                        content=prompt,
+                        author_id=uid,
+                        author_label=label,
+                    )
+                )
             messages.append(ChatMessage(role="assistant", content=reply))
             self._save_messages(session_id, messages)
             _apply_message_derived_meta(
