@@ -158,6 +158,7 @@ from web_dingtalk_oauth import (  # noqa: E402
     login_with_auth_code,
 )
 from web_favicon_proxy import fetch_favicon  # noqa: E402
+from service_agent_webhook import SIGNATURE_HEADER, handle_webhook_body  # noqa: E402
 from web_bookmark_metadata import resolve_bookmark_metadata  # noqa: E402
 from bookmarks_store import (  # noqa: E402
     load_bookmarks as _load_bookmarks,
@@ -1428,6 +1429,18 @@ def _if_none_match_satisfied(handler: SimpleHTTPRequestHandler, etag: str) -> bo
     return bool(client_tag) and client_tag == etag
 
 
+def _read_raw_body(handler: SimpleHTTPRequestHandler) -> bytes:
+    length = int(handler.headers.get("Content-Length", "0") or "0")
+    return handler.rfile.read(length) if length > 0 else b""
+
+
+def _handle_service_agent_webhook_post(handler: SimpleHTTPRequestHandler) -> None:
+    body_bytes = _read_raw_body(handler)
+    signature = handler.headers.get(SIGNATURE_HEADER) or ""
+    status, payload = handle_webhook_body(body_bytes, signature)
+    return _json_response(handler, payload, status)
+
+
 def _read_json_body(handler: SimpleHTTPRequestHandler) -> dict[str, Any]:
     length = int(handler.headers.get("Content-Length", "0") or "0")
     raw = handler.rfile.read(length) if length > 0 else b""
@@ -2409,6 +2422,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
 
         if path == "/api/analytics/event":
             return _handle_analytics_event_post(self)
+
+        if path == "/api/service-agent/webhook":
+            return _handle_service_agent_webhook_post(self)
 
         if not authorize_request(self, method="POST"):
             return

@@ -160,6 +160,18 @@ def _is_auth_error(code: int, body: str) -> bool:
     return False
 
 
+def _is_mdp_business_auth_error(obj: dict[str, Any]) -> bool:
+    """MDP Nova 业务层鉴权失败（HTTP 200 但 ec 表示未登录）。"""
+    ec = obj.get("ec")
+    if ec in (401, "401", 20000, "20000"):
+        return True
+    em = str(obj.get("em", ""))
+    return "登录" in em
+
+
+_AUTH_REFRESH_MODES = frozenset({"yaahlan", "yaahlan_online", "mdp_nova"})
+
+
 def _read_json_response(
     req: urllib.request.Request,
     *,
@@ -172,7 +184,7 @@ def _read_json_response(
             raw = resp.read().decode("utf-8", errors="replace")
     except urllib.error.HTTPError as e:
         raw = e.read().decode("utf-8", errors="replace") if e.fp else str(e)
-        if not _retried and _is_auth_error(e.code, raw) and auth in ("yaahlan", "yaahlan_online"):
+        if not _retried and _is_auth_error(e.code, raw) and auth in _AUTH_REFRESH_MODES:
             refreshed = _try_auto_refresh(auth)
             if refreshed:
                 new_req = _rebuild_request_with_new_auth(req, auth)
@@ -184,7 +196,7 @@ def _read_json_response(
     try:
         obj = json.loads(raw)
     except json.JSONDecodeError as e:
-        if not _retried and "login" in raw.lower() and auth in ("yaahlan", "yaahlan_online"):
+        if not _retried and "login" in raw.lower() and auth in _AUTH_REFRESH_MODES:
             refreshed = _try_auto_refresh(auth)
             if refreshed:
                 new_req = _rebuild_request_with_new_auth(req, auth)
@@ -193,10 +205,10 @@ def _read_json_response(
     if not isinstance(obj, dict):
         raise RuntimeError("返回 JSON 不是 object")
 
-    # 检查业务层 ec=401（HTTP 200 但 token 无效）
-    if not _retried and auth in ("yaahlan", "yaahlan_online"):
+    # 检查业务层 ec=401 / ec=20000（HTTP 200 但 token 无效）
+    if not _retried and auth in _AUTH_REFRESH_MODES:
         ec = obj.get("ec")
-        if ec in (401, "401"):
+        if ec in (401, "401") or (auth == "mdp_nova" and _is_mdp_business_auth_error(obj)):
             refreshed = _try_auto_refresh(auth)
             if refreshed:
                 new_req = _rebuild_request_with_new_auth(req, auth)
@@ -209,16 +221,18 @@ def _try_auto_refresh(auth: str) -> bool:
     """尝试自动刷新 token，成功返回 True。"""
     import sys as _sys
     try:
-        from .aegis_sso import auto_refresh_yaahlan, refresh_yaahlan_env
+        from .aegis_sso import auto_refresh_mdp_nova, auto_refresh_yaahlan, refresh_yaahlan_env
         _sys.stderr.write("[Auto-Refresh] Token 过期，正在自动重新登录...\n")
         if auth == "yaahlan":
             result = auto_refresh_yaahlan()
         elif auth == "yaahlan_online":
             result = refresh_yaahlan_env("yaahlan_online")
+        elif auth == "mdp_nova":
+            result = auto_refresh_mdp_nova()
         else:
             return False
         if result.success:
-            _sys.stderr.write(f"[Auto-Refresh] 刷新成功: user={result.username}\n")
+            _sys.stderr.write(f"[Auto-Refresh] 刷新成功: user={result.username or result.momo_id or 'unknown'}\n")
             return True
         _sys.stderr.write(f"[Auto-Refresh] 刷新失败: {result.error}\n")
         return False
@@ -233,6 +247,8 @@ def _rebuild_request_with_new_auth(req: urllib.request.Request, auth: str) -> ur
         new_headers = build_auth_headers()
     elif auth == "yaahlan_online":
         new_headers = build_online_auth_headers()
+    elif auth == "mdp_nova":
+        new_headers = build_mdp_nova_headers()
     else:
         new_headers = {}
 

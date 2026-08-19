@@ -227,7 +227,8 @@ def _external_agent_rules(enabled_ids: list[str]) -> str:
             query_line += "（Web Agent 会自动注入 batch_key 并展示查询进度"
             if token_env:
                 query_line += (
-                    f"；Token 读 `platform/dingtalk_gateway/.env.local` 的 `{token_env}`"
+                    f"；Open API Token（`yaahlan_ai_...`）读 "
+                    f"`platform/dingtalk_gateway/.env.local` 的 `{token_env}`"
                 )
             if str(item.get("id") or "") == "yaahlan_service":
                 query_line += (
