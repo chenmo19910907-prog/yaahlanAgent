@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-19 14:40:03 北京时间",
-  "total_items": 282,
+  "generated_at": "2026-08-19 20:28:08 北京时间",
+  "total_items": 283,
   "module_count": 27,
   "modules": [
     {
@@ -1736,7 +1736,7 @@
     {
       "id": "动态",
       "label": "动态",
-      "item_count": 5,
+      "item_count": 6,
       "categories": [
         {
           "name": "动态（/v2/gift/send · Stage HTTP）",
@@ -1803,6 +1803,22 @@
               ],
               "source": "MOA-generative",
               "source_id": "moa-generative",
+              "env": "test"
+            }
+          ]
+        },
+        {
+          "name": "动态（feed-stage）",
+          "items": [
+            {
+              "name": "动态-发布",
+              "prompts": [
+                "用户 <userId> 发动态 <text>",
+                "发布动态 MOA publishFeed",
+                "发动态 <text>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
               "env": "test"
             }
           ]
