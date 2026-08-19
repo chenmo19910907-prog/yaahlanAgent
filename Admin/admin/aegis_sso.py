@@ -362,6 +362,23 @@ def refresh_yaahlan_env(platform: str = "yaahlan_staging") -> SSOLoginResult:
     return result
 
 
+def _apply_moa_cookies_to_env(cookies: dict[str, str], *, online: bool = False) -> str:
+    """将 MOA/MSE SSO cookies 写入进程环境变量，返回 cookie 字符串。"""
+    cookie_str = "; ".join(f"{k}={v}" for k, v in cookies.items())
+    os.environ["MOA_COOKIE"] = cookie_str
+    os.environ["MSE_COOKIE"] = cookie_str
+    if online:
+        os.environ["MOA_ONLINE_COOKIE"] = cookie_str
+        tunnel_session = cookies.get("tunnel_login_session", "").strip()
+        if tunnel_session:
+            tunnel_cookie = f"tunnel_login_session={tunnel_session}"
+        else:
+            tunnel_cookie = cookie_str
+        os.environ["TUNNEL_ONLINE_COOKIE"] = tunnel_cookie
+        os.environ["TUNNEL_COOKIE"] = tunnel_cookie
+    return cookie_str
+
+
 def refresh_moa_env() -> SSOLoginResult:
     """刷新 MOA/MSE 的 session cookie 并写入环境变量。"""
     result = sso_login("moa_mse")
@@ -369,8 +386,19 @@ def refresh_moa_env() -> SSOLoginResult:
         return result
 
     if result.cookies:
-        cookie_str = "; ".join(f"{k}={v}" for k, v in result.cookies.items())
-        os.environ["MOA_COOKIE"] = cookie_str
+        _apply_moa_cookies_to_env(result.cookies)
+
+    return result
+
+
+def refresh_moa_env_online() -> SSOLoginResult:
+    """刷新线上 MOA/Tunnel/MSE Cookie 并写入 MOA_ONLINE_* / TUNNEL_ONLINE_* 环境变量。"""
+    result = sso_login("moa_mse")
+    if not result.success:
+        return result
+
+    if result.cookies:
+        _apply_moa_cookies_to_env(result.cookies, online=True)
 
     return result
 
@@ -426,22 +454,33 @@ def auto_refresh_yaahlan(env_file: str | Path | None = None) -> SSOLoginResult:
     return result
 
 
-def auto_refresh_moa(env_file: str | Path | None = None) -> SSOLoginResult:
+def auto_refresh_moa(env_file: str | Path | None = None, *, online: bool = False) -> SSOLoginResult:
     """
     一键刷新 MOA/MSE Cookie 并持久化到 .env.local。
+
+    online=True 时写入 online/.env.local 的 MOA_ONLINE_COOKIE / TUNNEL_ONLINE_COOKIE。
     """
-    result = refresh_moa_env()
+    result = refresh_moa_env_online() if online else refresh_moa_env()
     if not result.success:
         return result
 
-    if result.cookies and env_file is None:
+    if not result.cookies:
+        return result
+
+    cookie_str = "; ".join(f"{k}={v}" for k, v in result.cookies.items())
+    if env_file is None:
         repo_root = Path(__file__).resolve().parents[2]
-        env_file = repo_root / "MOA" / ".env.local"
+        env_file = repo_root / "online" / ".env.local" if online else repo_root / "MOA" / ".env.local"
 
-    if result.cookies:
-        cookie_str = "; ".join(f"{k}={v}" for k, v in result.cookies.items())
-        update_env_local(env_file, {"MOA_COOKIE": cookie_str})
+    if online:
+        updates: dict[str, str] = {"MOA_ONLINE_COOKIE": cookie_str}
+        tunnel_cookie = os.environ.get("TUNNEL_ONLINE_COOKIE", "").strip()
+        if tunnel_cookie:
+            updates["TUNNEL_ONLINE_COOKIE"] = tunnel_cookie
+    else:
+        updates = {"MOA_COOKIE": cookie_str}
 
+    update_env_local(env_file, updates)
     return result
 
 

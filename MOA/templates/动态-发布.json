@@ -1,0 +1,50 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/feed/external/feed-stage",
+  "method": "publishFeed",
+  "header": "{\"appId\":2005,\"area\":\"MENA\",\"lang\":\"en\",\"os\":\"android\",\"source\":\"discover\",\"userId\":\"100066819\",\"scope\":\"\",\"texts\":\"[{\\\"text\\\":\\\"测试动态\\\",\\\"type\\\":\\\"1\\\"}]\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"appId\":2005,\"area\":\"MENA\",\"lang\":\"en\",\"os\":\"android\",\"source\":\"discover\",\"userId\":\"100066819\",\"scope\":\"\",\"texts\":\"[{\\\"text\\\":\\\"测试动态\\\",\\\"type\\\":\\\"1\\\"}]\"}",
+      "type": "json",
+      "value": {
+        "appId": 2005,
+        "area": "MENA",
+        "lang": "en",
+        "os": "android",
+        "source": "discover",
+        "userId": "100066819",
+        "scope": "",
+        "texts": "[{\"text\":\"测试动态\",\"type\":\"1\"}]"
+      }
+    }
+  ],
+  "_registry": {
+    "id": "feed_publish",
+    "name": "动态-发布",
+    "category": "动态（feed-stage）",
+    "description": "测试环境发布纯文本动态（/service/feed/external/feed-stage publishFeed）。body 需 userId、texts（JSON 字符串 [{\"text\":\"...\",\"type\":\"1\"}]）；scope 空为公开、FRIEND 为仅好友可见；转发动态填 originalFeedId。HTTP 对照 /yaahlan/feed/publishFeed。",
+    "prompts": [
+      "用户 <userId> 发动态 <text>",
+      "发布动态 MOA publishFeed",
+      "发动态 <text>"
+    ],
+    "cli": "--feed-publish-user-id <userId> --feed-publish-text <text>"
+  }
+}

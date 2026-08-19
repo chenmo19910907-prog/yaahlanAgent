@@ -220,6 +220,20 @@ class UserAgentPool:
 
         with self._lock:
             record = self._records.get(user_key)
+            if record is None:
+                legacy = ConversationStore.legacy_dm_key(user_key)
+                if legacy:
+                    legacy_record = self._records.get(legacy)
+                    if legacy_record is not None:
+                        self._records[user_key] = legacy_record
+                        self._records.pop(legacy, None)
+                        self._save()
+                        record = legacy_record
+                        logger.info(
+                            "Agent 索引已从 legacy=%s 迁移至 user_key=%s",
+                            legacy,
+                            user_key,
+                        )
             effective_model = self._effective_model(user_key, record)
             if effective_model != model:
                 logger.info(

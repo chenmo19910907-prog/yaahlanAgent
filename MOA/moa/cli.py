@@ -196,6 +196,25 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--feed-comment-area", default="MENA", help="帖子评论：area（默认 MENA）")
     parser.add_argument("--feed-comment-lang", default="en", help="帖子评论：lang（默认 en）")
     parser.add_argument("--feed-comment-os", default="android", help="帖子评论：os/osType（默认 android）")
+    parser.add_argument("--feed-publish-user-id", help="发动态：发帖 userId（publishFeed）")
+    parser.add_argument("--feed-publish-text", help="发动态：正文")
+    parser.add_argument(
+        "--feed-publish-scope",
+        default="",
+        help="发动态：可见范围（空=公开，FRIEND=仅好友）",
+    )
+    parser.add_argument(
+        "--feed-publish-original-feed-id",
+        help="发动态：转发动态原帖 feedId（originalFeedId）",
+    )
+    parser.add_argument(
+        "--feed-publish-source",
+        default="discover",
+        help="发动态：source（默认 discover）",
+    )
+    parser.add_argument("--feed-publish-area", default="MENA", help="发动态：area（默认 MENA）")
+    parser.add_argument("--feed-publish-lang", default="en", help="发动态：lang（默认 en）")
+    parser.add_argument("--feed-publish-os", default="android", help="发动态：os（默认 android）")
     parser.add_argument("--p2p-from-uid", help="私聊发消息：发送方 userId")
     parser.add_argument("--p2p-to-uid", help="私聊发消息：接收方 userId")
     parser.add_argument(
@@ -785,6 +804,7 @@ def _apply_online_moa_args(args: argparse.Namespace, base_dir: str) -> None:
         raise ValueError("线上环境 MOA 当前仅支持 --query-user-by-phone（须用户提示词含「线上环境」）")
 
     load_online_env(base_dir)
+    os.environ["ONLINE_ENV"] = "1"
     defaults = online_defaults()
 
     args.entry_url = os.environ.get("MOA_ONLINE_ENTRY_URL") or defaults.get("entryUrl") or args.entry_url
@@ -1080,7 +1100,7 @@ def main() -> int:
         args.entry_url,
         args.cookie,
         args.timeout_ms,
-        auto_refresh=not getattr(args, "online_env", False),
+        auto_refresh=True,
     )
 
     try:

@@ -37,12 +37,29 @@ class ConversationStore:
         sender_staff_id: str | None = None,
         conversation_type: str | None = None,
     ) -> str:
+        """同一钉钉会话的稳定队列键：有 conversation_id 时一律 {cid}:user:{staff}。
+
+        旧逻辑在单聊 (type=1) 时用 dm:{user}，与群聊/部分回调的 cid:user 分裂成两条队列。
+        """
+        _ = conversation_type  # 保留参数兼容旧调用方
         user = (sender_staff_id or sender_id or "").strip()
-        if conversation_type == "1" or not conversation_id:
-            return f"dm:{user or 'unknown'}"
+        cid = (conversation_id or "").strip()
+        if cid and user:
+            return f"{cid}:user:{user}"
         if user:
-            return f"{conversation_id}:user:{user}"
-        return conversation_id or "default"
+            return f"dm:{user}"
+        return cid or "default"
+
+    @staticmethod
+    def legacy_dm_key(user_key: str) -> str | None:
+        """canonical `{cid}:user:{staff}` 对应的旧单聊 dm 键，用于合并幽灵队列。"""
+        if ":user:" not in user_key:
+            return None
+        user = user_key.rsplit(":", 1)[-1].strip()
+        if not user:
+            return None
+        legacy = f"dm:{user}"
+        return legacy if legacy != user_key else None
 
     def _load(self) -> dict[str, ConversationRecord]:
         if not self._index_path.is_file():

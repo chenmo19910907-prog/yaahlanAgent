@@ -37,6 +37,15 @@ def main() -> int:
             },
             "dm:u3",
         ),
+        (
+            {
+                "conversation_id": "cid0mpIEi4rt0PrND7Dad5P9",
+                "sender_id": "u1",
+                "sender_staff_id": "32274159141215328",
+                "conversation_type": "1",
+            },
+            "cid0mpIEi4rt0PrND7Dad5P9:user:32274159141215328",
+        ),
     ]
     for kwargs, expected in cases:
         got = ConversationStore.conversation_key(

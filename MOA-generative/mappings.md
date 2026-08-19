@@ -24,6 +24,7 @@
 | 2026-07-17 | `/yaahlan/component/giftPanel/getGiftTabListV3` | `/service/yh-components/gift-panel` | `getGiftTabListV3` | MOA Redis 直连 + httpproxy；背包 Tab 读 `package.remain`；无需打开礼物面板 |
 | 2026-07-17 | `/yaahlan/component/giftPanel/propPackageList` | `/service/yh-components/gift-panel` | `propPackageList` | 背包道具列表；与 getGiftTabListV3 背包 Tab 礼物不同 |
 | 2026-07-17 | `/yaahlan/feed-comment/publishComment` | `/service/feed/external/feed-comment-stage` | `publishComment` | body：`userId`/`uid`、`feedId`、`content`、`source`（discover）；返回 `commentId`；100 账号批量评论已验证 |
+| 2026-08-19 | `/yaahlan/feed/publishFeed` | `/service/feed/external/feed-stage` | `publishFeed` | body：`userId`、`texts`（JSON 字符串 `[{"text":"...","type":"1"}]`）、`scope`（空=公开 / `FRIEND`=仅好友）、`source`；转发动态加 `originalFeedId`；Tunnel 100366772/100437483 抓包已验证 |
 | 2026-07-27 | `/yaahlan/components/wallet/diamondHistory` | `/service/yaahlan/components/wallet-api` | `diamondHistory` | 钱包钻石记录页；Tunnel `100007541` `_id=QuvEop8Bpk1mjMPP3A5W`；`data.list[]` 含 `desc`/`rechargeMethod`/`diamondDiff`/`createTime`/`balance` |
 | 2026-07-27 | `/yaahlan/userProfile/nameplatePageData` | （Tunnel 抓包；gw-api 需 SESSIONID） | — | 铭牌页；Tunnel `100486375` `_id=rBgAo58Bpk1mjMPP_JqB`；`data.unlockedNameplates[]`/`lockedNameplates[]`（`id`/`unlockTime`/`remainTime`/`wearState`）；CP 宝箱 sweet CP **1138** |
 | 2026-07-28 | `/yaahlan/trick/cpLoveChest/getCpLoveChestHomepage` | `/service/yaahlan-trick/external/cp-love-chest` | `getCpLoveChestHomepage` | params=`userId`,`cpUserId`；读 `data.currentLoveValue`（15天周期爱意值）；**不是** cp-moa loveValue |

@@ -1205,6 +1205,44 @@ def set_user_follow_params(
     ]
 
 
+def set_feed_publish_params(
+    payload: dict[str, Any],
+    user_id: str,
+    text: str,
+    *,
+    scope: str = "",
+    source: str = "discover",
+    area: str = "MENA",
+    lang: str = "en",
+    os_name: str = "android",
+    original_feed_id: str | None = None,
+) -> None:
+    uid = str(user_id).strip()
+    content = str(text).strip()
+    original_id = str(original_feed_id or "").strip()
+    if not uid:
+        raise ValueError("userId 不能为空")
+    if not content and not original_id:
+        raise ValueError("发动态须提供 --feed-publish-text 或 --feed-publish-original-feed-id")
+    body: dict[str, Any] = {
+        "appId": 2005,
+        "area": str(area or "MENA").strip() or "MENA",
+        "lang": str(lang or "en").strip() or "en",
+        "os": str(os_name or "android").strip() or "android",
+        "source": str(source or "discover").strip() or "discover",
+        "userId": uid,
+        "scope": str(scope or "").strip(),
+    }
+    if original_id:
+        body["originalFeedId"] = original_id
+    if content:
+        body["texts"] = json.dumps([{"text": content, "type": "1"}], ensure_ascii=False)
+    payload["url"] = "/service/feed/external/feed-stage"
+    payload["method"] = "publishFeed"
+    payload["params"] = [json_param(body)]
+    payload["header"] = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+
+
 def set_feed_comment_params(
     payload: dict[str, Any],
     user_id: str,

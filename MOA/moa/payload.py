@@ -76,6 +76,7 @@ from .params import (
     set_user_prop_query_params,
     set_user_follow_params,
     set_feed_comment_params,
+    set_feed_publish_params,
     set_p2p_message_params,
 )
 from .time_utils import resolve_expire_ms, resolve_family_fund_week_key, resolve_family_fund_week_key_with_offset
@@ -1211,6 +1212,17 @@ def _feed_comment_mode(args: argparse.Namespace) -> bool:
     )
 
 
+def _feed_publish_mode(args: argparse.Namespace) -> bool:
+    return any(
+        getattr(args, name, None) is not None
+        for name in (
+            "feed_publish_user_id",
+            "feed_publish_text",
+            "feed_publish_original_feed_id",
+        )
+    )
+
+
 def _p2p_message_mode(args: argparse.Namespace) -> bool:
     if getattr(args, "p2p_from_uid", None) is not None or getattr(args, "p2p_to_uid", None) is not None:
         return True
@@ -1230,6 +1242,31 @@ def _p2p_message_mode(args: argparse.Namespace) -> bool:
             "p2p_goto_text",
             "p2p_goto_click",
         )
+    )
+
+
+def _op_feed_publish(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(args.feed_publish_user_id or "").strip()
+    text = str(args.feed_publish_text or "").strip()
+    original_feed_id = str(args.feed_publish_original_feed_id or "").strip() or None
+    if not user_id:
+        raise ValueError("发动态须提供 --feed-publish-user-id")
+    if not text and not original_feed_id:
+        raise ValueError("发动态须提供 --feed-publish-text 或 --feed-publish-original-feed-id")
+    print(
+        f"发动态: userId={user_id} text={text[:40] if text else '(repost)'} scope={args.feed_publish_scope or 'public'}",
+        file=sys.stderr,
+    )
+    set_feed_publish_params(
+        payload,
+        user_id,
+        text,
+        scope=str(args.feed_publish_scope or ""),
+        source=str(args.feed_publish_source or "discover"),
+        area=str(args.feed_publish_area or "MENA"),
+        lang=str(args.feed_publish_lang or "en"),
+        os_name=str(args.feed_publish_os or "android"),
+        original_feed_id=original_feed_id,
     )
 
 
@@ -1522,6 +1559,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: _room_member_add_mode(a), _op_room_member_add),
     (lambda a: a.family_leave_user_id is not None, _op_family_leave),
     (lambda a: a.follow_uid is not None or a.follow_remote_uid is not None, _op_user_follow),
+    (lambda a: _feed_publish_mode(a), _op_feed_publish),
     (lambda a: _feed_comment_mode(a), _op_feed_comment),
     (lambda a: _p2p_message_mode(a), _op_p2p_message),
     (lambda a: _family_add_mode(a), _op_family_exp),

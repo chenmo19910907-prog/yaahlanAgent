@@ -106,6 +106,20 @@ from reply_mode_store import get_reply_mode_store
 
 logger = logging.getLogger("dingtalk-gateway")
 
+PREASSIGNED_CARD_READY_TIMEOUT_S = 20.0
+PREASSIGNED_CARD_POLL_S = 0.05
+
+
+def _wait_preassigned_stream_card(stream_card: Any, *, timeout_s: float) -> bool:
+    """等 server 侧 start 完成；禁止 worker 再 reply 第二张卡。"""
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        if stream_card.is_active:
+            return True
+        time.sleep(PREASSIGNED_CARD_POLL_S)
+    return bool(stream_card.is_active)
+
+
 # 流式卡片内批量进度轮询间隔：每秒刷新，展示最新 N/M（卡片内更新不刷屏）
 STREAMING_BATCH_POLL_INTERVAL_S = 1.0
 
@@ -397,23 +411,34 @@ def process_inbound_task(
     started_wall = time.time()
     use_streaming = lane == "agent" and is_agent_streaming_enabled()
     if preassigned_card is not None:
-        # 入队时已预投放卡片，复用同一张（禁止再 reply 新卡片）
+        # 入队时已预投放卡片，复用同一张（禁止 worker 再 start/reply 新卡）
         stream_card = preassigned_card
         use_streaming = True
         try:
-            if stream_card.is_active:
+            if not stream_card.is_active:
+                ready = _wait_preassigned_stream_card(
+                    stream_card,
+                    timeout_s=PREASSIGNED_CARD_READY_TIMEOUT_S,
+                )
+                if not ready:
+                    logger.error(
+                        "预投放卡片超时未就绪 msg=%s，回退文本",
+                        (incoming.message_id or "")[:24],
+                    )
+                    stream_card = None
+                    use_streaming = False
+            if stream_card is not None and stream_card.is_active:
                 stream_card.begin_running(
                     build_streaming_ack(inbound.summary_label(), prompt=prompt),
                     estimate_seconds=task_estimate_s,
                 )
-            else:
-                stream_card.start(
-                    "⏳ Agent 启动中…",
-                    header=build_streaming_ack(inbound.summary_label(), prompt=prompt),
-                    persistent_header=build_streaming_prompt_quote(prompt),
-                    card_title=build_streaming_card_title(prompt),
-                    estimate_seconds=task_estimate_s,
+            elif stream_card is not None and stream_card.card_sync_degraded:
+                logger.error(
+                    "预投放卡片同步降级 msg=%s，回退文本",
+                    (incoming.message_id or "")[:24],
                 )
+                stream_card = None
+                use_streaming = False
         except Exception as exc:  # noqa: BLE001
             logger.warning("流式卡片转入执行态失败，回退文本回复: %s", exc)
             stream_card = None

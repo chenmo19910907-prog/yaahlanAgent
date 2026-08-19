@@ -96,39 +96,107 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
         """
         prompt_text = inbound.prompt_text()
         summary = summary or inbound.summary_label()
+        logger.info(
+            "收到任务 user_key=%s conv=%s type=%s staff=%s text=%s",
+            user_key,
+            incoming.conversation_id or "",
+            incoming.conversation_type or "?",
+            incoming.sender_staff_id or incoming.sender_id or "?",
+            redact_for_log(prompt_text[:80]),
+        )
         streaming = self._skip_streaming_ack(prompt_text)
         stream_card = try_create_agent_stream_card(self, incoming) if streaming else None
         if stream_card is not None:
             try:
-                ahead = self._dispatcher.pending_ahead(user_key)
-                if ahead > 0:
-                    body = (
-                        f"{build_queue_message(ahead, prompt=prompt_text)}\n"
-                        "可发「中断操作」打断。"
-                    )
-                else:
-                    body = "⏳ 已受理，准备执行…"
-                stream_card.start(
-                    body,
-                    header="",
-                    persistent_header=build_streaming_prompt_quote(prompt_text),
-                    card_title=build_streaming_card_title(prompt_text),
-                    start_progress=False,
+                submit_lock = self._dispatcher._submit_lock(user_key)
+                card_quote = build_streaming_prompt_quote(prompt_text)
+                card_title = build_streaming_card_title(prompt_text)
+                card_meta = dict(
+                    conversation_id=incoming.conversation_id or "",
+                    user_key=user_key,
+                    prompt=prompt_text,
                 )
-                self._dispatcher.enqueue(
-                    incoming, inbound, user_key, stream_card=stream_card
+                stream_card.set_queue_ahead_provider(
+                    lambda uk=user_key: self._dispatcher.queue_display_ahead(uk)
+                )
+                display_ahead = 0
+                show_queue = False
+                with submit_lock:
+                    display_ahead, show_queue = (
+                        self._dispatcher.prepare_stream_submit(user_key)
+                    )
+                    if show_queue:
+                        body = (
+                            f"{build_queue_message(display_ahead, prompt=prompt_text)}\n"
+                            "可发「中断操作」打断。"
+                        )
+                        start_progress = False
+                    else:
+                        body = "⏳ Agent 启动中…"
+                        start_progress = True
+                    try:
+                        stream_card.start(
+                            body,
+                            header="",
+                            persistent_header=card_quote,
+                            card_title=card_title,
+                            start_progress=start_progress,
+                            **card_meta,
+                        )
+                    except Exception:
+                        self._dispatcher.rollback_stream_submit(user_key)
+                        raise
+                    self._dispatcher.commit_enqueued_task(
+                        incoming,
+                        inbound,
+                        user_key,
+                        stream_card=stream_card,
+                    )
+                    self._dispatcher.finish_stream_submit(user_key)
+                logger.info(
+                    "流式任务已入队 user=%s msg=%s ahead=%d show_queue=%s outstanding=%d pending=%d",
+                    redact_for_log(incoming.sender_nick or user_key),
+                    (incoming.message_id or "")[:24],
+                    display_ahead,
+                    show_queue,
+                    self._dispatcher.outstanding_count(user_key),
+                    self._dispatcher.pending_ahead(user_key),
                 )
                 return
             except Exception as exc:  # noqa: BLE001
                 logger.warning("预投放流式卡片失败，回退文本回复: %s", exc)
+                if stream_card is not None:
+                    try:
+                        if stream_card.is_active:
+                            stream_card.fail("⚠️ 卡片启动失败，请重新 @ 发送。")
+                        else:
+                            stream_card.abort_orphan_reply(
+                                "⚠️ 卡片启动失败，请重新 @ 发送。"
+                            )
+                    except Exception as fail_exc:  # noqa: BLE001
+                        logger.warning("流式卡片失败收尾也失败: %s", fail_exc)
                 stream_card = None
 
         ahead = self._dispatcher.enqueue(
             incoming, inbound, user_key, stream_card=stream_card
         )
 
-        # 流式 Agent 任务由 task_processor 投放/更新卡片；预投放失败时勿再发文本「执行中」，避免重复一条且无法收尾。
+        # 流式卡片预投放失败时必须回退文本确认，否则钉钉侧会一直「未受理」
         if streaming:
+            ahead = self._dispatcher.pending_ahead(user_key)
+            if ahead > 0:
+                self._reply(
+                    f"{build_queue_message(ahead, prompt=prompt_text)}\n"
+                    "可发「中断操作」打断。",
+                    incoming,
+                    inbound,
+                )
+            else:
+                self._reply(
+                    self._build_task_ack(summary, prompt=prompt_text),
+                    incoming,
+                    inbound,
+                )
             return
 
         if not should_send_text_task_ack(prompt_text):
@@ -215,6 +283,13 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
             )
             return AckMessage.STATUS_OK, "OK"
 
+        logger.info(
+            "Stream 回调 msg=%s user_key=%s type=%s text=%s",
+            (incoming.message_id or "")[:24],
+            user_key,
+            incoming.conversation_type or "?",
+            redact_for_log(inbound.prompt_text()[:60]),
+        )
         self._submit_task(incoming, inbound, user_key)
         return AckMessage.STATUS_OK, "OK"
 

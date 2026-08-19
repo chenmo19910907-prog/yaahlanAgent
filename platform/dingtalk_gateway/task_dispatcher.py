@@ -53,8 +53,11 @@ class TaskDispatcher:
         self._user_sessions: dict[str, TaskSession] = {}
         self._user_workers_started: set[str] = set()
         self._user_inflight: set[str] = set()
+        self._user_outstanding: dict[str, int] = {}
+        self._user_stream_submitting: set[str] = set()
         self._fast_inflight_user: str | None = None
         self._persist = get_queue_persist()
+        self._submit_locks: dict[str, threading.Lock] = {}
         self._fast_worker_started = False
 
     def bind_handler(self, handler: Any) -> None:
@@ -66,8 +69,11 @@ class TaskDispatcher:
         self._user_sessions = {}
         self._user_workers_started = set()
         self._user_inflight = set()
+        self._user_outstanding = {}
+        self._user_stream_submitting = set()
         self._fast_inflight_user = None
         self._persist = get_queue_persist()
+        self._submit_locks = {}
 
         if not self._fast_worker_started:
             self._fast_worker_started = True
@@ -99,6 +105,7 @@ class TaskDispatcher:
                 user_key=task.user_key,
                 prompt=task.inbound.prompt_text(),
             )
+            self._release_outstanding(task.user_key)
             queue.task_done()
             drained += 1
         if drained:
@@ -119,6 +126,7 @@ class TaskDispatcher:
                     user_key=task.user_key,
                     prompt=task.inbound.prompt_text(),
                 )
+                self._release_outstanding(task.user_key)
                 self._fast_queue.task_done()
                 drained += 1
             else:
@@ -141,6 +149,11 @@ class TaskDispatcher:
         fast_inflight = self._fast_inflight_user == user_key
         return agent_busy, agent_inflight, fast_busy, fast_inflight
 
+    def _finalize_cancel_state(self, user_key: str) -> None:
+        self._reconcile_legacy_lane(user_key)
+        with self._lock:
+            self._heal_ghost_outstanding_locked(user_key)
+
     def request_cancel(self, user_key: str) -> CancelOutcome:
         with self._lock:
             user_session = self._user_sessions.get(user_key)
@@ -154,6 +167,7 @@ class TaskDispatcher:
         agent_active = agent_busy or agent_inflight
         fast_active = fast_busy or fast_inflight
         if not agent_active and not fast_active:
+            self._finalize_cancel_state(user_key)
             if drained > 0:
                 return CancelOutcome(status=True, drained=drained, cancelled_running=False)
             return CancelOutcome(status=None)
@@ -190,12 +204,14 @@ class TaskDispatcher:
             running_streaming = (
                 agent_running_cancelled and is_agent_streaming_enabled()
             )
+            self._finalize_cancel_state(user_key)
             return CancelOutcome(
                 status=True,
                 drained=drained,
                 cancelled_running=True,
                 running_streaming=running_streaming,
             )
+        self._finalize_cancel_state(user_key)
         if drained > 0:
             return CancelOutcome(status=True, drained=drained, cancelled_running=False)
         return CancelOutcome(status=None)
@@ -210,9 +226,232 @@ class TaskDispatcher:
         fast_active = 1 if fast_busy or fast_inflight else 0
         return pending + agent_active + fast_active
 
+    def _heal_ghost_outstanding_locked(self, user_key: str) -> None:
+        """队列与 lane 均空闲时清除残留的 outstanding（中断/丢消息后易残留）。"""
+        outstanding = self._user_outstanding.get(user_key, 0)
+        if outstanding <= 0:
+            return
+        if self._pending_ahead_locked(user_key) > 0:
+            return
+        if user_key in self._user_stream_submitting:
+            return
+        logger.warning(
+            "清除幽灵 outstanding user=%s was=%d",
+            user_key,
+            outstanding,
+        )
+        self._user_outstanding.pop(user_key, None)
+
+    def _reconcile_legacy_lane(self, user_key: str) -> None:
+        """单聊 canonical 化后，清掉同用户 dm: 轨道的幽灵排队/outstanding。"""
+        from conversation_store import ConversationStore
+
+        legacy = ConversationStore.legacy_dm_key(user_key)
+        if not legacy:
+            return
+        with self._lock:
+            self._heal_ghost_outstanding_locked(legacy)
+        drained = self._drain_agent_queue(legacy) + self._drain_fast_queue_for_user(
+            legacy
+        )
+        if drained:
+            logger.warning(
+                "已清空 legacy 轨道排队 user=%s legacy=%s count=%d",
+                user_key,
+                legacy,
+                drained,
+            )
+
+    def _queue_ahead_before_enqueue_locked(self, user_key: str) -> int:
+        self._heal_ghost_outstanding_locked(user_key)
+        return max(
+            self._user_outstanding.get(user_key, 0),
+            self._pending_ahead_locked(user_key),
+        )
+
     def pending_ahead(self, user_key: str) -> int:
         with self._lock:
             return self._pending_ahead_locked(user_key)
+
+    def outstanding_count(self, user_key: str) -> int:
+        with self._lock:
+            return self._user_outstanding.get(user_key, 0)
+
+    def _submit_lock(self, user_key: str) -> threading.Lock:
+        with self._lock:
+            lock = self._submit_locks.get(user_key)
+            if lock is None:
+                lock = threading.Lock()
+                self._submit_locks[user_key] = lock
+            return lock
+
+    def prepare_stream_submit(self, user_key: str) -> tuple[int, bool]:
+        """submit_lock 内：仅按已 commit / 执行中任务计算排队深度（不含建卡中的预占）。"""
+        self._reconcile_legacy_lane(user_key)
+        with self._lock:
+            self._heal_ghost_outstanding_locked(user_key)
+            ahead = self._pending_ahead_locked(user_key)
+            show_queue = ahead > 0
+            self._user_stream_submitting.add(user_key)
+            return ahead, show_queue
+
+    def rollback_stream_submit(self, user_key: str) -> None:
+        with self._lock:
+            self._user_stream_submitting.discard(user_key)
+
+    def pop_last_enqueued_task(
+        self, user_key: str, *, message_id: str | None
+    ) -> bool:
+        """流式卡片 start 失败时，撤销刚 commit 的队尾任务。"""
+        persist = get_queue_persist()
+        removed = False
+        with self._lock:
+            queue = self._user_queues.get(user_key)
+            if queue is None or queue.qsize() == 0:
+                return False
+            items: list[QueuedTask] = []
+            target: QueuedTask | None = None
+            while True:
+                try:
+                    task = queue.get_nowait()
+                except Empty:
+                    break
+                if (
+                    not removed
+                    and target is None
+                    and task.incoming.message_id == message_id
+                ):
+                    target = task
+                    removed = True
+                    continue
+                items.append(task)
+            for task in items:
+                queue.put(task)
+        if target is not None:
+            persist.remove(
+                user_key=target.user_key,
+                prompt=target.inbound.prompt_text(),
+            )
+            self._release_outstanding(target.user_key)
+            logger.warning(
+                "已撤销入队（卡片 start 失败）user=%s msg=%s",
+                user_key,
+                (message_id or "")[:24],
+            )
+        return removed
+
+    def finish_stream_submit(self, user_key: str) -> None:
+        with self._lock:
+            self._user_stream_submitting.discard(user_key)
+
+    def mark_stream_submit_started(self, user_key: str) -> None:
+        with self._lock:
+            self._user_stream_submitting.add(user_key)
+
+    def mark_stream_submit_finished(self, user_key: str) -> None:
+        with self._lock:
+            self._user_stream_submitting.discard(user_key)
+
+    def user_has_pending_work(self, user_key: str) -> bool:
+        """该用户是否已有已 commit 未执行完的任务（含排队/执行中/流式卡片提交中）。"""
+        with self._lock:
+            if user_key in self._user_stream_submitting:
+                return True
+            if self._user_outstanding.get(user_key, 0) > 0:
+                return True
+            return self._pending_ahead_locked(user_key) > 0
+
+    def resolve_stream_waiting(self, user_key: str) -> tuple[int, bool]:
+        """返回 (display_ahead, should_show_queue)。False 时展示首条启动文案。"""
+        self._reconcile_legacy_lane(user_key)
+        with self._lock:
+            self._heal_ghost_outstanding_locked(user_key)
+            ahead = self._pending_ahead_locked(user_key)
+        if ahead > 0:
+            return ahead, True
+        return 0, False
+
+    def queue_display_ahead(self, user_key: str) -> int:
+        """当前时刻该用户前面还有多少任务（含执行中），供排队卡周期刷新。"""
+        self._reconcile_legacy_lane(user_key)
+        with self._lock:
+            self._heal_ghost_outstanding_locked(user_key)
+            return self._pending_ahead_locked(user_key)
+
+    def _enqueue_locked(self, task: QueuedTask, *, skip_outstanding_inc: bool = False) -> None:
+        if task.lane == "fast":
+            self._fast_queue.put(task)
+            if not skip_outstanding_inc:
+                self._user_outstanding[task.user_key] = (
+                    self._user_outstanding.get(task.user_key, 0) + 1
+                )
+            return
+        user_key = task.user_key
+        if user_key not in self._user_queues:
+            self._user_queues[user_key] = Queue()
+        self._user_queues[user_key].put(task)
+        if not skip_outstanding_inc:
+            self._user_outstanding[user_key] = self._user_outstanding.get(user_key, 0) + 1
+        if user_key not in self._user_workers_started:
+            self._user_workers_started.add(user_key)
+            threading.Thread(
+                target=self._agent_worker_loop,
+                args=(user_key,),
+                daemon=True,
+                name=f"gateway-agent-{user_key[:20]}",
+            ).start()
+
+    def _release_outstanding(self, user_key: str) -> None:
+        with self._lock:
+            count = self._user_outstanding.get(user_key, 0)
+            if count <= 1:
+                self._user_outstanding.pop(user_key, None)
+            else:
+                self._user_outstanding[user_key] = count - 1
+
+    @staticmethod
+    def _mark_stream_card_picked_up(stream_card: Any) -> None:
+        if stream_card is None:
+            return
+        mark = getattr(stream_card, "mark_worker_picked_up", None)
+        if not callable(mark):
+            return
+        try:
+            mark()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("mark_worker_picked_up 失败: %s", exc)
+
+    def commit_enqueued_task(
+        self,
+        incoming: dingtalk_stream.ChatbotMessage,
+        inbound: InboundMessage,
+        user_key: str,
+        *,
+        stream_card: Any = None,
+        outstanding_pre_reserved: bool = False,
+    ) -> None:
+        """流式卡片 start 完成后入队（调用方须已持有该 user 的 submit_lock）。"""
+        prompt = inbound.prompt_text()
+        lane = "fast" if is_likely_fast_route(prompt) else "agent"
+        task = QueuedTask(
+            incoming=incoming,
+            inbound=inbound,
+            user_key=user_key,
+            lane=lane,
+            stream_card=stream_card,
+        )
+        self._persist.add(
+            user_key=user_key,
+            prompt=prompt,
+            lane=lane,
+            conversation_id=incoming.conversation_id,
+            sender_staff_id=incoming.sender_staff_id,
+        )
+        with self._lock:
+            self._enqueue_locked(
+                task,
+                skip_outstanding_inc=outstanding_pre_reserved,
+            )
 
     def enqueue(
         self,
@@ -241,20 +480,7 @@ class TaskDispatcher:
         )
         with self._lock:
             ahead = self._pending_ahead_locked(user_key)
-            if lane == "fast":
-                self._fast_queue.put(task)
-            else:
-                if user_key not in self._user_queues:
-                    self._user_queues[user_key] = Queue()
-                self._user_queues[user_key].put(task)
-                if user_key not in self._user_workers_started:
-                    self._user_workers_started.add(user_key)
-                    threading.Thread(
-                        target=self._agent_worker_loop,
-                        args=(user_key,),
-                        daemon=True,
-                        name=f"gateway-agent-{user_key[:20]}",
-                    ).start()
+            self._enqueue_locked(task)
             return ahead
 
     def log_stale_pending_on_startup(self) -> None:
@@ -275,6 +501,7 @@ class TaskDispatcher:
                 if handler is None:
                     logger.error("handler 未绑定，丢弃 fast 任务")
                     continue
+                self._mark_stream_card_picked_up(task.stream_card)
                 process_inbound_task(
                     handler,
                     task.incoming,
@@ -288,6 +515,7 @@ class TaskDispatcher:
                 with self._lock:
                     if self._fast_inflight_user == task.user_key:
                         self._fast_inflight_user = None
+                self._release_outstanding(task.user_key)
                 self._fast_queue.task_done()
 
     def _agent_worker_loop(self, user_key: str) -> None:
@@ -302,6 +530,7 @@ class TaskDispatcher:
                 if handler is None:
                     logger.error("handler 未绑定，丢弃 agent 任务")
                     continue
+                self._mark_stream_card_picked_up(task.stream_card)
                 process_inbound_task(
                     handler,
                     task.incoming,
@@ -314,4 +543,5 @@ class TaskDispatcher:
             finally:
                 with self._lock:
                     self._user_inflight.discard(user_key)
+                self._release_outstanding(user_key)
                 queue.task_done()

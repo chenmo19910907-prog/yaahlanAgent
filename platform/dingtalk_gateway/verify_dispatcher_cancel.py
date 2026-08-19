@@ -119,6 +119,116 @@ def main() -> int:
             return 1
         print("[OK] fast queued tasks cancelled for user")
 
+        # 连发两问：第一条已 commit 在队时，第二条应显示排队且 ahead=1
+        dispatcher._user_queues[user_a] = Queue()
+        dispatcher._user_queues[user_a].put(_fake_task(user_a, "第一个问题"))
+        dispatcher._user_outstanding[user_a] = 1
+        display2, show2 = dispatcher.prepare_stream_submit(user_a)
+        if not show2 or display2 != 1:
+            print(
+                f"[FAIL] prepare before second commit => show={show2} display={display2}",
+                file=sys.stderr,
+            )
+            return 1
+        dispatcher.finish_stream_submit(user_a)
+        ahead2 = dispatcher.enqueue(
+            _fake_task(user_a, "第二个问题").incoming,
+            InboundMessage(text="第二个问题"),
+            user_a,
+        )
+        if ahead2 != 1:
+            print(f"[FAIL] second enqueue ahead => {ahead2}", file=sys.stderr)
+            return 1
+        print("[OK] sequential double submit ahead counts")
+
+        # 空闲连发：第一条仅 prepare 尚未 commit 时，第二条不应误判排队
+        dispatcher5 = TaskDispatcher(ConversationStore(index_path=Path(tmp) / "c5.json"))
+        user_e = "cidgroup:user:WB006"
+        d1, s1 = dispatcher5.prepare_stream_submit(user_e)
+        d2, s2 = dispatcher5.prepare_stream_submit(user_e)
+        dispatcher5.finish_stream_submit(user_e)
+        if s1 or s2 or d1 != 0 or d2 != 0:
+            print(
+                f"[FAIL] idle double prepare should not queue => "
+                f"s1={s1} s2={s2} d1={d1} d2={d2}",
+                file=sys.stderr,
+            )
+            return 1
+        print("[OK] idle double prepare not queued")
+
+        # 首条消息：resolve 在 mark_stream_submit_started 之前，不应误判排队
+        dispatcher3 = TaskDispatcher(ConversationStore(index_path=Path(tmp) / "c3.json"))
+        user_c = "cidgroup:user:WB003"
+        display0, show0 = dispatcher3.resolve_stream_waiting(user_c)
+        if show0 or display0 != 0:
+            print(
+                f"[FAIL] first message should not queue => show={show0} display={display0}",
+                file=sys.stderr,
+            )
+            return 1
+        dispatcher3.mark_stream_submit_started(user_c)
+        display_bad, show_bad = dispatcher3.resolve_stream_waiting(user_c)
+        dispatcher3.mark_stream_submit_finished(user_c)
+        if show_bad or display_bad != 0:
+            print(
+                "[FAIL] resolve after mark_stream_submit_started must not use submitting flag",
+                file=sys.stderr,
+            )
+            return 1
+        print("[OK] first message not queued")
+
+        # worker 已 dequeue 但 ahead 短暂为 0：lane 仍 busy 时应展示排队
+        dispatcher2 = TaskDispatcher(ConversationStore(index_path=Path(tmp) / "conversations2.json"))
+        user_b = "cidgroup:user:WB002"
+        with dispatcher2._lock:
+            dispatcher2._user_inflight.add(user_b)
+        display, show = dispatcher2.resolve_stream_waiting(user_b)
+        if not show or display != 1:
+            print(
+                f"[FAIL] race with inflight only => show={show} display={display}",
+                file=sys.stderr,
+            )
+            return 1
+        dispatcher2._user_queues[user_b] = Queue()
+        dispatcher2._user_queues[user_b].put(_fake_task(user_b, "第二个"))
+        dispatcher2._user_outstanding[user_b] = 1
+        display2, show2 = dispatcher2.resolve_stream_waiting(user_b)
+        if not show2 or display2 != 1:
+            print(
+                f"[FAIL] race with inflight+outstanding => show={show2} display={display2}",
+                file=sys.stderr,
+            )
+            return 1
+        print("[OK] resolve_stream_waiting outstanding race")
+
+        # 幽灵 outstanding 不影响 resolve（只看 pending）
+        dispatcher4 = TaskDispatcher(ConversationStore(index_path=Path(tmp) / "c4.json"))
+        user_d = "cidgroup:user:WB004"
+        with dispatcher4._lock:
+            dispatcher4._user_outstanding[user_d] = 2
+        display_g, show_g = dispatcher4.resolve_stream_waiting(user_d)
+        if show_g or display_g != 0:
+            print(
+                f"[FAIL] ghost outstanding should not queue => show={show_g} display={display_g}",
+                file=sys.stderr,
+            )
+            return 1
+        print("[OK] ghost outstanding ignored for queue depth")
+
+        # legacy dm: 轨道残留 outstanding，canonical 入队前应清掉
+        user_canon = "cidbot:user:WB005"
+        user_legacy = "dm:WB005"
+        with dispatcher4._lock:
+            dispatcher4._user_outstanding[user_legacy] = 1
+        display_l, show_l = dispatcher4.resolve_stream_waiting(user_canon)
+        if show_l or display_l != 0:
+            print(
+                f"[FAIL] legacy ghost should not block canonical => show={show_l}",
+                file=sys.stderr,
+            )
+            return 1
+        print("[OK] legacy dm lane reconciled")
+
     print("[PASS] dispatcher cancel")
     return 0
 

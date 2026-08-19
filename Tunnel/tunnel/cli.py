@@ -97,6 +97,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _apply_online_tunnel_args(args: argparse.Namespace, base_dir: str) -> None:
     load_online_env(base_dir)
+    os.environ["ONLINE_ENV"] = "1"
     defaults = online_defaults()
 
     args.base_url = os.environ.get("TUNNEL_ONLINE_BASE_URL") or defaults.get("baseUrl") or args.base_url
@@ -149,6 +150,7 @@ def main(argv: list[str] | None = None) -> int:
             g_env=args.g_env,
             mode=args.mode,
             timeout_s=args.timeout_ms / 1000.0,
+            auto_refresh=True,
         )
     except (ValueError, RuntimeError) as e:
         print(f"ERROR: {e}", file=sys.stderr)

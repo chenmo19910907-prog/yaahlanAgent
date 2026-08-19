@@ -32,6 +32,11 @@ WEB_STREAM_RENDER_INTERVAL_S = 0.35
 PROGRESS_TICK_S = 1.0
 CARD_CREATE_MAX_RETRIES = 3
 CARD_PUT_MAX_RETRIES = 3
+# 排队卡须周期 push 才能离开钉钉模板默认「已受理」
+QUEUE_CONTENT_REFRESH_S = 3.0
+QUEUE_ORPHAN_FAIL_S = 90.0
+# create 后钉钉 Markdown 卡仍可能短暂显示「已受理」，短间隔连推几次
+QUEUE_BOOTSTRAP_PUSH_DELAYS_S = (0.4, 1.2)
 # AI 流式卡片在部分单聊场景 streaming API 不刷新；默认用 Markdown 卡片 update
 # AI 卡片：msgTitle=白线上方（提问）；staticMsgContent=白线下方固定区；msgContent=流式正文
 # 不含 msgSlider / msgButtons：标准 AI 模板完成态会展示赞踩与反馈标签，order 无法可靠关闭
@@ -112,6 +117,8 @@ def try_create_agent_stream_card(
 class AgentStreamCard:
     """Markdown 卡片全量 update（默认）或 AI 流式卡片（可选）。"""
 
+    _put_patch_lock = threading.Lock()
+
     def __init__(
         self,
         dingtalk_client: Any,
@@ -142,6 +149,12 @@ class AgentStreamCard:
         self._estimate_seconds: float | None = None
         self._last_put_succeeded = True
         self._card_sync_degraded = False
+        self._queue_refresh_timer: threading.Timer | None = None
+        self._conversation_id = ""
+        self._user_key = ""
+        self._prompt = ""
+        self._queue_ahead_provider: Any = None
+        self._orphan_timer: threading.Timer | None = None
 
         if self._mode == "ai":
             card = dingtalk_stream.AIMarkdownCardInstance(dingtalk_client, incoming)
@@ -210,22 +223,65 @@ class AgentStreamCard:
                 success = False
             return response
 
-        requests.put = tracking_put
-        try:
-            original_put(card_instance_id, card_data, **kwargs)
-        finally:
-            requests.put = original_requests_put
+        with AgentStreamCard._put_patch_lock:
+            requests.put = tracking_put
+            try:
+                original_put(card_instance_id, card_data, **kwargs)
+            finally:
+                requests.put = original_requests_put
         return success
+
+    def _put_markdown_body(self, body_md: str) -> bool:
+        """Markdown 卡片 update；成功/失败以 put hook 为准（SDK 失败不抛异常）。"""
+        if self._md_card is None or not self._card_instance_id:
+            self._last_put_succeeded = False
+            return False
+        try:
+            card_data = self._md_card._get_card_data(body_md)
+            self._md_card.put_card_data(self._card_instance_id, card_data)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "Markdown 卡片 update 异常 id=%s…: %s",
+                (self._card_instance_id or "")[:12],
+                exc,
+            )
+            self._last_put_succeeded = False
+            return False
+        return bool(self._last_put_succeeded)
 
     def _create_markdown_card(self, body_md: str) -> None:
         assert self._md_card is not None
         last_error = "card_instance_id 为空"
+        replied = False
         for attempt in range(CARD_CREATE_MAX_RETRIES):
             if self._card_title:
                 self._md_card.set_title_and_logo(self._card_title, "")
-            self._md_card.reply(body_md)
+            if not replied:
+                self._md_card.reply(body_md)
+                replied = True
             self._card_instance_id = self._md_card.card_instance_id or ""
             if self._card_instance_id:
+                # reply 后立刻 update：单聊 Markdown 卡否则常停在模板默认「已受理」
+                synced = False
+                for put_attempt in range(CARD_PUT_MAX_RETRIES):
+                    if self._put_markdown_body(body_md):
+                        synced = True
+                        break
+                    if put_attempt + 1 < CARD_PUT_MAX_RETRIES:
+                        time.sleep(0.25 * (put_attempt + 1))
+                if synced:
+                    logger.info(
+                        "流式卡片 create 后首次 update 成功 id=%s… len=%d",
+                        self._card_instance_id[:12],
+                        len(body_md),
+                    )
+                else:
+                    logger.warning(
+                        "流式卡片 create 后首次 update 失败 id=%s… len=%d",
+                        self._card_instance_id[:12],
+                        len(body_md),
+                    )
+                    raise RuntimeError("流式卡片 create 后首次 update 失败")
                 return
             if attempt + 1 < CARD_CREATE_MAX_RETRIES:
                 time.sleep(0.25 * (attempt + 1))
@@ -242,6 +298,12 @@ class AgentStreamCard:
             ("_estimate_seconds", None),
             ("_last_put_succeeded", True),
             ("_card_sync_degraded", False),
+            ("_queue_refresh_timer", None),
+            ("_conversation_id", ""),
+            ("_user_key", ""),
+            ("_prompt", ""),
+            ("_queue_ahead_provider", None),
+            ("_orphan_timer", None),
         ):
             if not hasattr(self, name):
                 setattr(self, name, default)
@@ -319,15 +381,118 @@ class AgentStreamCard:
         text = (body or "").strip()
         return not text or text.startswith("⏳")
 
-    def _render(self, *, force: bool = False) -> None:
+    def _render(self, *, force: bool = False) -> bool:
         """合并三通道后节流刷新卡片（内容未变 / 未到间隔则跳过）。"""
         self._ensure_stream_state()
         if not self._started:
-            return
+            return False
         composed = self._compose_body()
-        if composed == self._last_flushed_body:
+        if composed == self._last_flushed_body and not force:
+            return False
+        return self._enqueue(composed, force=force)
+
+    def _cancel_orphan_watchdog(self) -> None:
+        if self._orphan_timer is not None:
+            self._orphan_timer.cancel()
+            self._orphan_timer = None
+
+    def set_queue_ahead_provider(self, provider: Any) -> None:
+        """注入排队深度查询（周期刷新卡片「前面约 N 个」）。"""
+        self._queue_ahead_provider = provider
+
+    def _refresh_queue_body_from_provider(self) -> None:
+        provider = getattr(self, "_queue_ahead_provider", None)
+        if not callable(provider):
             return
-        self._enqueue(composed, force=force)
+        try:
+            ahead = int(provider())
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("排队深度查询失败: %s", exc)
+            return
+        if ahead <= 0:
+            return
+        from progress_message import build_queue_message
+
+        self._agent_body = (
+            f"{build_queue_message(ahead, prompt=self._prompt or None)}\n"
+            "可发「中断操作」打断。"
+        )
+
+    def _schedule_orphan_watchdog(self) -> None:
+        """排队卡长期未被 worker 取走 → 失败收尾，避免永远停在「已受理」。"""
+        self._cancel_orphan_watchdog()
+
+        def _fire() -> None:
+            self._orphan_timer = None
+            if not self._started or self._progress_timer is not None:
+                return
+            logger.warning(
+                "排队卡超时未执行 id=%s… prompt=%s，标记失败",
+                (self._card_instance_id or "")[:12],
+                (self._prompt or "")[:40],
+            )
+            self.fail("⚠️ 任务未进入执行队列（可能网关重启丢消息），请重新 @ 发送。")
+
+        timer = threading.Timer(QUEUE_ORPHAN_FAIL_S, _fire)
+        timer.daemon = True
+        self._orphan_timer = timer
+        timer.start()
+
+    def _cancel_queue_content_refresh(self) -> None:
+        if self._queue_refresh_timer is not None:
+            self._queue_refresh_timer.cancel()
+            self._queue_refresh_timer = None
+
+    def _schedule_queue_bootstrap_burst(self) -> None:
+        """排队卡 create 后短间隔连推，避免单聊长期停在模板「已受理」。"""
+
+        def _schedule(delay: float) -> None:
+            def _fire() -> None:
+                if not self._started or self._progress_timer is not None:
+                    return
+                self._refresh_queue_body_from_provider()
+                self._render(force=True)
+
+            timer = threading.Timer(delay, _fire)
+            timer.daemon = True
+            timer.start()
+
+        for delay in QUEUE_BOOTSTRAP_PUSH_DELAYS_S:
+            _schedule(delay)
+
+    def _schedule_queue_content_refresh(self) -> None:
+        """排队等待期间周期 push（单聊 Markdown 卡 create 后只 put 一次常会一直显示「已受理」）。"""
+        self._cancel_queue_content_refresh()
+        self._cancel_orphan_watchdog()
+
+        def _fire() -> None:
+            self._queue_refresh_timer = None
+            if not self._started or self._progress_timer is not None:
+                return
+            self._refresh_queue_body_from_provider()
+            self._render(force=True)
+            self._schedule_queue_content_refresh()
+
+        timer = threading.Timer(QUEUE_CONTENT_REFRESH_S, _fire)
+        timer.daemon = True
+        self._queue_refresh_timer = timer
+        timer.start()
+
+    def mark_worker_picked_up(self) -> None:
+        """Worker 已取到任务：排队/受理态立即切到执行进度，避免连发卡在「已受理」。"""
+        self._ensure_stream_state()
+        if not self._started:
+            return
+        self._cancel_queue_content_refresh()
+        self._cancel_orphan_watchdog()
+        if self._progress_timer is not None:
+            return
+        self._agent_body = ""
+        self._started_at = time.monotonic()
+        self._last_content_at = self._started_at
+        self._status_line = self._format_progress_markdown()
+        self._schedule_progress_tick()
+        self._render(force=True)
 
     def set_batch_progress(self, line: str) -> None:
         """批量进度通道更新（仅写内存，由进度 tick / Agent push 统一渲染）。"""
@@ -349,11 +514,23 @@ class AgentStreamCard:
         card_title: str = "",
         start_progress: bool = True,
         estimate_seconds: float | None = None,
+        conversation_id: str = "",
+        user_key: str = "",
+        prompt: str = "",
     ) -> None:
         self._ensure_stream_state()
+        if self._started:
+            logger.warning(
+                "忽略重复 start（避免第二张 Markdown 卡）id=%s…",
+                (self._card_instance_id or "")[:12],
+            )
+            return
         self._header = (header or "").strip()
         self._persistent_header = (persistent_header or "").strip()
         self._card_title = (card_title or "").strip()
+        self._conversation_id = (conversation_id or "").strip()
+        self._user_key = (user_key or "").strip()
+        self._prompt = (prompt or "").strip()
         self._estimate_seconds = estimate_seconds
         text = (markdown or "").strip()
         if text and not self._is_progress_status_body(text):
@@ -368,12 +545,23 @@ class AgentStreamCard:
             self._ai_card_bootstrap(body_md)
         if not self._card_instance_id:
             raise RuntimeError("流式卡片创建失败（card_instance_id 为空）")
+        if self._card_sync_degraded:
+            raise RuntimeError("流式卡片首次同步失败（钉钉可能仍显示已受理）")
         self._started = True
         self._started_at = time.monotonic()
         self._last_content_at = self._started_at
         if start_progress:
             self._status_line = self._format_progress_markdown()
             self._schedule_progress_tick()
+            self._render(force=True)
+            # 首条也 burst：reply 后钉钉常停在「已受理」，须连推几次
+            self._schedule_queue_bootstrap_burst()
+        else:
+            # 排队卡：create 内虽已 put 一次，单聊仍常显示「已受理」，须立刻再推 + 短 burst
+            self._render(force=True)
+            self._schedule_queue_bootstrap_burst()
+            self._schedule_queue_content_refresh()
+            self._schedule_orphan_watchdog()
         self._last_flushed_body = self._compose_body()
         logger.info("流式卡片已投放 mode=%s id=%s…", self._mode, self._card_instance_id[:12])
 
@@ -388,6 +576,8 @@ class AgentStreamCard:
         self._ensure_stream_state()
         if not self._started:
             return
+        self._cancel_queue_content_refresh()
+        self._cancel_orphan_watchdog()
         self._header = (header or "").strip()
         if estimate_seconds is not None:
             self._estimate_seconds = estimate_seconds
@@ -451,46 +641,49 @@ class AgentStreamCard:
             self._last_content_at = time.monotonic()
         self._render()
 
-    def _enqueue(self, body_md: str, *, force: bool = False) -> None:
+    def _enqueue(self, body_md: str, *, force: bool = False) -> bool:
         with self._lock:
             self._pending = body_md
             now = time.monotonic()
             elapsed = now - self._last_push_at
             if force or elapsed >= self._min_interval_s:
-                self._flush_locked()
-                return
+                return self._flush_locked(force=force)
             if self._timer is not None:
-                return
+                return False
             delay = max(0.05, self._min_interval_s - elapsed)
 
             def _fire() -> None:
                 with self._lock:
                     self._timer = None
-                    self._flush_locked()
+                    self._flush_locked(force=False)
 
             timer = threading.Timer(delay, _fire)
             timer.daemon = True
             self._timer = timer
             timer.start()
+            return False
 
-    def _flush_locked(self) -> None:
+    def _flush_locked(self, *, force: bool = False) -> bool:
         self._ensure_stream_state()
         if self._timer is not None:
             self._timer.cancel()
             self._timer = None
         if self._pending is None:
-            return
+            return False
         body_md = self._compose_body()
-        if body_md == self._last_flushed_body:
+        if body_md == self._last_flushed_body and not force:
             self._pending = None
-            return
+            return False
         try:
             if self._md_card is not None:
-                self._md_card.update(body_md)
+                if not self._put_markdown_body(body_md):
+                    return False
             else:
                 assert self._ai_card is not None
                 self._ai_card.markdown = body_md
                 self._ai_card.ai_streaming(body_md, append=False)
+                if not self._last_put_succeeded:
+                    return False
             self._last_push_at = time.monotonic()
             self._last_flushed_body = body_md
             self._push_count += 1
@@ -503,12 +696,33 @@ class AgentStreamCard:
                 )
         except Exception as exc:  # noqa: BLE001
             logger.warning("卡片 push 失败 mode=%s: %s", self._mode, exc)
+            self._last_put_succeeded = False
+            return False
+        self._pending = None
+        return True
+
+    def abort_orphan_reply(self, message: str) -> None:
+        """reply 已发出但 start 未完成时，尽量把「已受理」改为失败提示（避免 orphan 队列）。"""
+        if self._started or not self._card_instance_id:
+            return
+        body = message if message.startswith("❌") else f"❌ {message}"
+        try:
+            if self._md_card is not None:
+                self._put_markdown_body(body)
+            logger.info(
+                "已尝试收尾 orphan 已受理卡 id=%s…",
+                self._card_instance_id[:12],
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("orphan 已受理卡收尾失败 id=%s…: %s", self._card_instance_id[:12], exc)
 
     def finish(self, markdown: str, *, keep_agent_body: bool = False) -> bool:
         self._ensure_stream_state()
         if not self._started:
             return False
         self._stop_progress_tick()
+        self._cancel_queue_content_refresh()
+        self._cancel_orphan_watchdog()
         self._header = ""
         self._batch_progress_line = ""
         status = (markdown or "").strip()

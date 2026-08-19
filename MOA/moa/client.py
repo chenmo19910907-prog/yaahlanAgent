@@ -31,7 +31,15 @@ def _is_auth_error(code: int, body: str) -> bool:
     return _is_auth_body(body)
 
 
+def _is_online_env() -> bool:
+    return os.environ.get("ONLINE_ENV", "").strip().lower() in ("1", "true", "yes")
+
+
 def _current_moa_cookie(fallback: str) -> str:
+    if _is_online_env():
+        refreshed = os.environ.get("MOA_ONLINE_COOKIE", "").strip()
+        if refreshed:
+            return refreshed
     refreshed = os.environ.get("MOA_COOKIE", "").strip()
     return refreshed or fallback
 
@@ -44,11 +52,14 @@ def _try_auto_refresh_moa() -> bool:
         sys.path.insert(0, str(admin_dir))
     try:
         from admin.aegis_sso import auto_refresh_moa
-        from admin.env import load_local_env
+        from admin.env import load_local_env, load_online_env
 
         load_local_env(str(admin_dir))
+        online = _is_online_env()
+        if online:
+            load_online_env(str(admin_dir))
         sys.stderr.write("[Auto-Refresh] MOA Cookie 过期，正在通过 Aegis SSO 重新登录...\n")
-        result = auto_refresh_moa()
+        result = auto_refresh_moa(online=online)
         if result.success:
             user = result.username or result.momo_id or "unknown"
             sys.stderr.write(f"[Auto-Refresh] 刷新成功: user={user}\n")
