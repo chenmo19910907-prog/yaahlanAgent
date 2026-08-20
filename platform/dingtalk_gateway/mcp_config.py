@@ -60,23 +60,26 @@ def _merge_mcp_servers() -> dict[str, dict[str, Any]]:
     return {k: v for k, v in merged.items() if isinstance(v, dict)}
 
 
-def _resolve_path(raw: str) -> str:
+def _resolve_path(raw: str, *, follow_symlinks: bool = True) -> str:
+    """仓库内路径转绝对路径。follow_symlinks=False 时保留 venv/bin/python  symlink。"""
     path = Path(raw).expanduser()
     if not path.is_absolute():
-        path = (REPO_ROOT / path).resolve()
-    return str(path)
+        path = REPO_ROOT / path
+    if follow_symlinks:
+        return str(path.resolve())
+    return str(path.absolute())
 
 
 def _resolve_command(cmd: str) -> str:
-    resolved = _resolve_path(cmd)
+    resolved = _resolve_path(cmd, follow_symlinks=False)
     if Path(resolved).is_file():
         return resolved
     # 模板里的 venv python 不存在时，尝试同目录 python3 / 系统 python3.13
     parent = Path(resolved).parent
-    for name in ("python3.13", "python3", "python"):
+    for name in ("python3", "python3.13", "python"):
         candidate = parent / name
         if candidate.is_file():
-            return str(candidate)
+            return str(candidate.absolute())
     return resolved
 
 

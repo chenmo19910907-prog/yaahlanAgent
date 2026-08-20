@@ -188,7 +188,7 @@ async def list_tools() -> list[Tool]:
 async def call_tool(name: str, arguments: dict) -> list[TextContent | ImageContent]:
     try:
         if name == "adb_devices":
-            devices = await asyncio.to_thread(list_devices, False)
+            devices = await asyncio.to_thread(lambda: list_devices(ready_only=False))
             payload = {
                 "devices": [{"serial": d.serial, "state": d.state} for d in devices],
             }

@@ -52,6 +52,7 @@ Report/__pycache__/
 adb/screenshots/
 adb/.watch/
 adb/mcp_adb_screen/.venv/
+platform/mcp/.venv/
 adb/.script_abandon.json
 adb/.state/
 adb/.sweep*.json

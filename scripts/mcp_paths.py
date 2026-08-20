@@ -45,14 +45,41 @@ def load_mcp_env(server_key: str) -> dict[str, str]:
     return {}
 
 
+def _abs_repo_path(raw: str, *, follow_symlinks: bool = True) -> str:
+    path = Path(raw).expanduser()
+    if not path.is_absolute():
+        path = ROOT / path
+    if follow_symlinks:
+        return str(path.resolve())
+    return str(path.absolute())
+
+
+def _resolve_mcp_command(cmd: str) -> str:
+    resolved = _abs_repo_path(cmd, follow_symlinks=False)
+    if Path(resolved).is_file():
+        return resolved
+    parent = Path(resolved).parent
+    for name in ("python3", "python3.13", "python"):
+        candidate = parent / name
+        if candidate.is_file():
+            return str(candidate.absolute())
+    return resolved
+
+
 def merge_mcp_local(*, dry_run: bool = False) -> bool:
     """用 mcp.example.json + .mcp.secrets.json 生成本地 .cursor/mcp.json（供 Cursor 读取）。"""
     base = _read_json(MCP_EXAMPLE)
     if not base:
         raise RuntimeError(f"缺少模板 {MCP_EXAMPLE}")
 
+    existing = _read_json(MCP_LOCAL) or {}
     merged = json.loads(json.dumps(base))
     servers = merged.setdefault("mcpServers", {})
+    # 保留模板外已登记服务（如 adb-screen），避免 merge 覆盖
+    for name, srv in (existing.get("mcpServers") or {}).items():
+        if name not in servers and isinstance(srv, dict):
+            servers[name] = json.loads(json.dumps(srv))
+
     secrets = _read_json(MCP_SECRETS) or {}
     secret_servers = secrets.get("mcpServers") or {}
 
@@ -72,6 +99,19 @@ def merge_mcp_local(*, dry_run: bool = False) -> bool:
         for key, value in secret_env.items():
             if str(value).strip():
                 env[key] = value
+
+    for name, srv in servers.items():
+        if not isinstance(srv, dict):
+            continue
+        command = str(srv.get("command") or "").strip()
+        if command:
+            srv["command"] = _resolve_mcp_command(command)
+        args = srv.get("args") or []
+        if isinstance(args, list):
+            srv["args"] = [
+                _abs_repo_path(str(arg)) if str(arg).strip() else str(arg)
+                for arg in args
+            ]
 
     if dry_run:
         print(f"[dry-run] 将写入 {MCP_LOCAL}")

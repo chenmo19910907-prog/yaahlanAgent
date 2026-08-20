@@ -1,7 +1,28 @@
 {
   "mcpServers": {
+    "platform-tools": {
+      "command": "platform/mcp/.venv/bin/python3",
+      "args": [
+        "platform/mcp/server.py"
+      ],
+      "env": {}
+    },
+    "adb-screen": {
+      "command": "adb/mcp_adb_screen/.venv/bin/python3",
+      "args": [
+        "adb/mcp_adb_screen/server.py"
+      ],
+      "env": {}
+    },
+    "adb-screenshot": {
+      "command": ".cursor/skills/adb-screenshot/mcp_adb_screenshot/venv/bin/python3",
+      "args": [
+        ".cursor/skills/adb-screenshot/mcp_adb_screenshot/server.py"
+      ],
+      "env": {}
+    },
     "dingtalk-doc": {
-      "command": ".cursor/skills/dingtalk-doc-read/mcp_dingtalk_doc/venv/bin/python3.13",
+      "command": ".cursor/skills/dingtalk-doc-read/mcp_dingtalk_doc/venv/bin/python3",
       "args": [
         ".cursor/skills/dingtalk-doc-read/mcp_dingtalk_doc/server.py"
       ],
@@ -10,7 +31,7 @@
       }
     },
     "dingtalk-excel-read": {
-      "command": ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/venv/bin/python3.13",
+      "command": ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/venv/bin/python3",
       "args": [
         ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/server_read.py"
       ],
@@ -21,7 +42,7 @@
       }
     },
     "dingtalk-excel-write": {
-      "command": ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/venv/bin/python3.13",
+      "command": ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/venv/bin/python3",
       "args": [
         ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/server_write.py"
       ],
