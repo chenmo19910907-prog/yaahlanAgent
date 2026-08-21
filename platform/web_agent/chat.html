@@ -12203,10 +12203,9 @@
         if (statusEl) statusEl.textContent = '已保存，正在查询…';
         setUsagePanelMode('stats');
         await loadUsageStatsForRange(usageRangeKey, {
-          refresh: true,
           customRange: usageCustomRange,
         });
-        void loadUsageStatsForRange('180d', { silent: true, refresh: true });
+        void loadUsageStatsForRange('180d', { silent: true });
         return true;
       } catch (err) {
         if (statusEl) statusEl.textContent = err?.message || '保存失败';

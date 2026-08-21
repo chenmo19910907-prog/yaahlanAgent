@@ -123,6 +123,7 @@ from cursor_usage import (  # noqa: E402
     clear_user_usage_daily_cache,
     get_usage_date_bounds,
     parse_cursor_session_input,
+    should_clear_usage_cache_on_credential_update,
     summarize_user_usage as summarize_cursor_user_usage,
     verify_session_token,
 )
@@ -2618,14 +2619,23 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                         team_id=parsed_team_id or "",
                         workos_id=parsed_workos_id or "",
                     )
-                status = get_cursor_usage_store().upsert(
+                cred_store = get_cursor_usage_store()
+                old_creds = cred_store.get_credentials(viewer.staff_id)
+                status = cred_store.upsert(
                     viewer.staff_id,
                     session_token=normalized_token if session_token is not None else None,
                     cursor_email=str(cursor_email or "") if cursor_email is not None else None,
                     team_id=parsed_team_id if session_token is not None else None,
                     workos_id=parsed_workos_id if session_token is not None else None,
                 )
-                clear_user_usage_daily_cache(viewer.staff_id)
+                if should_clear_usage_cache_on_credential_update(
+                    old_creds,
+                    session_token=normalized_token if session_token is not None else None,
+                    cursor_email=str(cursor_email or "") if cursor_email is not None else None,
+                    team_id=parsed_team_id if session_token is not None else None,
+                    workos_id=parsed_workos_id if session_token is not None else None,
+                ):
+                    clear_user_usage_daily_cache(viewer.staff_id)
                 clear_user_today_live_cache(viewer.staff_id)
             except CursorAuthError as exc:
                 return _json_response(self, {"error": str(exc)}, 400)

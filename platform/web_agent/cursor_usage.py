@@ -711,6 +711,43 @@ def clear_user_usage_daily_cache(staff_id: str) -> None:
     get_cursor_usage_daily_store().clear_staff(staff_id)
 
 
+def should_clear_usage_cache_on_credential_update(
+    old_creds: dict[str, str],
+    *,
+    session_token: str | None = None,
+    cursor_email: str | None = None,
+    team_id: str | None = None,
+    workos_id: str | None = None,
+) -> bool:
+    """换绑 Cursor 账号时清空历史按日缓存；同账号仅续期 cookie 则保留。"""
+    if not old_creds.get("sessionToken") and not old_creds.get("cursorEmail"):
+        return False
+
+    new_workos = (workos_id or "").strip()
+    old_workos = (old_creds.get("workosId") or "").strip()
+    if new_workos and old_workos and new_workos != old_workos:
+        return True
+
+    new_team = (team_id or "").strip()
+    old_team = (old_creds.get("teamId") or "").strip()
+    if new_team and old_team and new_team != old_team:
+        return True
+
+    if cursor_email is not None:
+        new_email = (cursor_email or "").strip().lower()
+        old_email = (old_creds.get("cursorEmail") or "").strip().lower()
+        if new_email and old_email and new_email != old_email:
+            return True
+
+    if session_token is not None and not new_workos and not new_team:
+        old_token = (old_creds.get("sessionToken") or "").strip()
+        new_token = (session_token or "").strip()
+        if old_token and new_token and old_token != new_token:
+            return False
+
+    return False
+
+
 def clear_user_today_live_cache(staff_id: str) -> None:
     sid = (staff_id or "").strip()
     if not sid:

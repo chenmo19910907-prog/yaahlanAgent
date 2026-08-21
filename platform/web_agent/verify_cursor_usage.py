@@ -23,6 +23,7 @@ from cursor_usage import (
     dashboard_usage_url,
     get_usage_date_bounds,
     parse_cursor_session_input,
+    should_clear_usage_cache_on_credential_update,
     summarize_user_usage,
 )
 from analytics_store import BJ
@@ -336,6 +337,49 @@ class CursorUsageTest(unittest.TestCase):
             self.assertEqual(first["requests"], 5)
             self.assertEqual(second["requests"], 5)
             self.assertEqual(third["requests"], 5)
+
+
+class CredentialCachePolicyTest(unittest.TestCase):
+    def test_same_account_token_refresh_keeps_cache(self) -> None:
+        old = {
+            "sessionToken": "old-jwt",
+            "cursorEmail": "alice@example.com",
+            "teamId": "13421981",
+            "workosId": "user_01",
+        }
+        self.assertFalse(
+            should_clear_usage_cache_on_credential_update(
+                old,
+                session_token="new-jwt",
+                team_id="13421981",
+                workos_id="user_01",
+            )
+        )
+
+    def test_account_switch_clears_cache(self) -> None:
+        old = {
+            "sessionToken": "old-jwt",
+            "cursorEmail": "alice@example.com",
+            "teamId": "13421981",
+            "workosId": "user_01",
+        }
+        self.assertTrue(
+            should_clear_usage_cache_on_credential_update(
+                old,
+                session_token="new-jwt",
+                team_id="99999999",
+                workos_id="user_02",
+            )
+        )
+
+    def test_first_bind_does_not_clear(self) -> None:
+        self.assertFalse(
+            should_clear_usage_cache_on_credential_update(
+                {},
+                session_token="jwt",
+                workos_id="user_01",
+            )
+        )
 
 
 if __name__ == "__main__":
