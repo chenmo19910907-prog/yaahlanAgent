@@ -1,0 +1,451 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 610" width="960" height="610">
+<rect width="960" height="610" fill="#0c0f12"/>
+
+    <rect width="960" height="56" fill="#101316"/>
+    <line x1="0" y1="56" x2="960" y2="56" stroke="#2a3038"/>
+    <text x="16" y="28" fill="#e7ebf1" font-size="15" font-weight="700" font-family="system-ui">砸金蛋测试记录 · 全量 21 行</text>
+    <text x="16" y="44" fill="#8d949f" font-size="12" font-family="system-ui">应得 vs 实际到账 · 全量记录</text>
+    <rect x="16" y="64" width="928" height="0" fill="none" stroke="#2a3038" stroke-width="0"/>
+<rect x="16" y="64" width="928" height="28" fill="#15191e"/>
+<line x1="16" y1="92" x2="944" y2="92" stroke="#2a3038"/>
+<line x1="16" y1="64" x2="16" y2="92" stroke="#2a3038"/>
+<clipPath id="clip_0_0"><rect x="17" y="65" width="152" height="26"/></clipPath>
+<text clip-path="url(#clip_0_0)" x="24" y="80" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">序号</text>
+<line x1="170" y1="64" x2="170" y2="92" stroke="#2a3038"/>
+<clipPath id="clip_0_1"><rect x="171" y="65" width="152" height="26"/></clipPath>
+<text clip-path="url(#clip_0_1)" x="178" y="80" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">砸蛋账号</text>
+<line x1="324" y1="64" x2="324" y2="92" stroke="#2a3038"/>
+<clipPath id="clip_0_2"><rect x="325" y="65" width="152" height="26"/></clipPath>
+<text clip-path="url(#clip_0_2)" x="332" y="80" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">档次奖励</text>
+<line x1="478" y1="64" x2="478" y2="92" stroke="#2a3038"/>
+<clipPath id="clip_0_3"><rect x="479" y="65" width="152" height="26"/></clipPath>
+<text clip-path="url(#clip_0_3)" x="486" y="80" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">神秘奖励</text>
+<line x1="632" y1="64" x2="632" y2="92" stroke="#2a3038"/>
+<clipPath id="clip_0_4"><rect x="633" y="65" width="152" height="26"/></clipPath>
+<text clip-path="url(#clip_0_4)" x="640" y="80" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">实际到账</text>
+<line x1="786" y1="64" x2="786" y2="92" stroke="#2a3038"/>
+<line x1="944" y1="64" x2="944" y2="92" stroke="#2a3038"/>
+<clipPath id="clip_0_5"><rect x="787" y="65" width="156" height="26"/></clipPath>
+<text clip-path="url(#clip_0_5)" x="794" y="80" fill="#8d949f" font-size="11" font-weight="600" font-family="system-ui, -apple-system, sans-serif">验收结论</text>
+<rect x="16" y="92" width="928" height="24" fill="#101316"/>
+<line x1="16" y1="116" x2="944" y2="116" stroke="#2a3038"/>
+<line x1="16" y1="92" x2="16" y2="116" stroke="#2a3038"/>
+<clipPath id="clip_1_0"><rect x="17" y="93" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_1_0)" x="24" y="108" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">1</text>
+<line x1="170" y1="92" x2="170" y2="116" stroke="#2a3038"/>
+<clipPath id="clip_1_1"><rect x="171" y="93" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_1_1)" x="178" y="108" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100083072</text>
+<line x1="324" y1="92" x2="324" y2="116" stroke="#2a3038"/>
+<clipPath id="clip_1_2"><rect x="325" y="93" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_1_2)" x="332" y="108" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">积分×1606；السلطان $×7；VIP经验×300</text>
+<line x1="478" y1="92" x2="478" y2="116" stroke="#2a3038"/>
+<clipPath id="clip_1_3"><rect x="479" y="93" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_1_3)" x="486" y="108" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="632" y1="92" x2="632" y2="116" stroke="#2a3038"/>
+<clipPath id="clip_1_4"><rect x="633" y="93" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_1_4)" x="640" y="108" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×7天；VIP经验×300；积分×1606</text>
+<line x1="786" y1="92" x2="786" y2="116" stroke="#2a3038"/>
+<line x1="944" y1="92" x2="944" y2="116" stroke="#2a3038"/>
+<clipPath id="clip_1_5"><rect x="787" y="93" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_1_5)" x="794" y="108" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="116" width="928" height="24" fill="#121519"/>
+<line x1="16" y1="140" x2="944" y2="140" stroke="#2a3038"/>
+<line x1="16" y1="116" x2="16" y2="140" stroke="#2a3038"/>
+<clipPath id="clip_2_0"><rect x="17" y="117" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_2_0)" x="24" y="132" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">2</text>
+<line x1="170" y1="116" x2="170" y2="140" stroke="#2a3038"/>
+<clipPath id="clip_2_1"><rect x="171" y="117" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_2_1)" x="178" y="132" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100360102</text>
+<line x1="324" y1="116" x2="324" y2="140" stroke="#2a3038"/>
+<clipPath id="clip_2_2"><rect x="325" y="117" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_2_2)" x="332" y="132" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×9；积分×1404；VIP经验×100</text>
+<line x1="478" y1="116" x2="478" y2="140" stroke="#2a3038"/>
+<clipPath id="clip_2_3"><rect x="479" y="117" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_2_3)" x="486" y="132" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="632" y1="116" x2="632" y2="140" stroke="#2a3038"/>
+<clipPath id="clip_2_4"><rect x="633" y="117" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_2_4)" x="640" y="132" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×9天；VIP经验×100；积分×1404</text>
+<line x1="786" y1="116" x2="786" y2="140" stroke="#2a3038"/>
+<line x1="944" y1="116" x2="944" y2="140" stroke="#2a3038"/>
+<clipPath id="clip_2_5"><rect x="787" y="117" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_2_5)" x="794" y="132" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="140" width="928" height="24" fill="#101316"/>
+<line x1="16" y1="164" x2="944" y2="164" stroke="#2a3038"/>
+<line x1="16" y1="140" x2="16" y2="164" stroke="#2a3038"/>
+<clipPath id="clip_3_0"><rect x="17" y="141" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_3_0)" x="24" y="156" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">3</text>
+<line x1="170" y1="140" x2="170" y2="164" stroke="#2a3038"/>
+<clipPath id="clip_3_1"><rect x="171" y="141" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_3_1)" x="178" y="156" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100083072</text>
+<line x1="324" y1="140" x2="324" y2="164" stroke="#2a3038"/>
+<clipPath id="clip_3_2"><rect x="325" y="141" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_3_2)" x="332" y="156" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">积分×1305；السلطان $×10</text>
+<line x1="478" y1="140" x2="478" y2="164" stroke="#2a3038"/>
+<clipPath id="clip_3_3"><rect x="479" y="141" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_3_3)" x="486" y="156" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="632" y1="140" x2="632" y2="164" stroke="#2a3038"/>
+<clipPath id="clip_3_4"><rect x="633" y="141" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_3_4)" x="640" y="156" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×10天；积分×1305</text>
+<line x1="786" y1="140" x2="786" y2="164" stroke="#2a3038"/>
+<line x1="944" y1="140" x2="944" y2="164" stroke="#2a3038"/>
+<clipPath id="clip_3_5"><rect x="787" y="141" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_3_5)" x="794" y="156" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="164" width="928" height="24" fill="#121519"/>
+<line x1="16" y1="188" x2="944" y2="188" stroke="#2a3038"/>
+<line x1="16" y1="164" x2="16" y2="188" stroke="#2a3038"/>
+<clipPath id="clip_4_0"><rect x="17" y="165" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_4_0)" x="24" y="180" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">4</text>
+<line x1="170" y1="164" x2="170" y2="188" stroke="#2a3038"/>
+<clipPath id="clip_4_1"><rect x="171" y="165" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_4_1)" x="178" y="180" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100141463</text>
+<line x1="324" y1="164" x2="324" y2="188" stroke="#2a3038"/>
+<clipPath id="clip_4_2"><rect x="325" y="165" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_4_2)" x="332" y="180" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×9；积分×806；VIP经验×100</text>
+<line x1="478" y1="164" x2="478" y2="188" stroke="#2a3038"/>
+<clipPath id="clip_4_3"><rect x="479" y="165" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_4_3)" x="486" y="180" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">钻石×5000（理论：房间）</text>
+<line x1="632" y1="164" x2="632" y2="188" stroke="#2a3038"/>
+<clipPath id="clip_4_4"><rect x="633" y="165" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_4_4)" x="640" y="180" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×9天；钻石×5000；VIP经验×100；积分×806</text>
+<line x1="786" y1="164" x2="786" y2="188" stroke="#2a3038"/>
+<line x1="944" y1="164" x2="944" y2="188" stroke="#2a3038"/>
+<clipPath id="clip_4_5"><rect x="787" y="165" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_4_5)" x="794" y="180" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="188" width="928" height="24" fill="#101316"/>
+<line x1="16" y1="212" x2="944" y2="212" stroke="#2a3038"/>
+<line x1="16" y1="188" x2="16" y2="212" stroke="#2a3038"/>
+<clipPath id="clip_5_0"><rect x="17" y="189" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_5_0)" x="24" y="204" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">5</text>
+<line x1="170" y1="188" x2="170" y2="212" stroke="#2a3038"/>
+<clipPath id="clip_5_1"><rect x="171" y="189" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_5_1)" x="178" y="204" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100083072</text>
+<line x1="324" y1="188" x2="324" y2="212" stroke="#2a3038"/>
+<clipPath id="clip_5_2"><rect x="325" y="189" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_5_2)" x="332" y="204" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×8；积分×705</text>
+<line x1="478" y1="188" x2="478" y2="212" stroke="#2a3038"/>
+<clipPath id="clip_5_3"><rect x="479" y="189" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_5_3)" x="486" y="204" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">钻石×10000（理论：房间）</text>
+<line x1="632" y1="188" x2="632" y2="212" stroke="#2a3038"/>
+<clipPath id="clip_5_4"><rect x="633" y="189" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_5_4)" x="640" y="204" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×8天；钻石×10000；积分×705</text>
+<line x1="786" y1="188" x2="786" y2="212" stroke="#2a3038"/>
+<line x1="944" y1="188" x2="944" y2="212" stroke="#2a3038"/>
+<clipPath id="clip_5_5"><rect x="787" y="189" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_5_5)" x="794" y="204" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="212" width="928" height="24" fill="#121519"/>
+<line x1="16" y1="236" x2="944" y2="236" stroke="#2a3038"/>
+<line x1="16" y1="212" x2="16" y2="236" stroke="#2a3038"/>
+<clipPath id="clip_6_0"><rect x="17" y="213" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_6_0)" x="24" y="228" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">6</text>
+<line x1="170" y1="212" x2="170" y2="236" stroke="#2a3038"/>
+<clipPath id="clip_6_1"><rect x="171" y="213" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_6_1)" x="178" y="228" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100083072</text>
+<line x1="324" y1="212" x2="324" y2="236" stroke="#2a3038"/>
+<clipPath id="clip_6_2"><rect x="325" y="213" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_6_2)" x="332" y="228" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">积分×1503；السلطان $×10</text>
+<line x1="478" y1="212" x2="478" y2="236" stroke="#2a3038"/>
+<clipPath id="clip_6_3"><rect x="479" y="213" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_6_3)" x="486" y="228" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="632" y1="212" x2="632" y2="236" stroke="#2a3038"/>
+<clipPath id="clip_6_4"><rect x="633" y="213" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_6_4)" x="640" y="228" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×10天；积分×1503</text>
+<line x1="786" y1="212" x2="786" y2="236" stroke="#2a3038"/>
+<line x1="944" y1="212" x2="944" y2="236" stroke="#2a3038"/>
+<clipPath id="clip_6_5"><rect x="787" y="213" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_6_5)" x="794" y="228" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="236" width="928" height="24" fill="#101316"/>
+<line x1="16" y1="260" x2="944" y2="260" stroke="#2a3038"/>
+<line x1="16" y1="236" x2="16" y2="260" stroke="#2a3038"/>
+<clipPath id="clip_7_0"><rect x="17" y="237" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_7_0)" x="24" y="252" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">7</text>
+<line x1="170" y1="236" x2="170" y2="260" stroke="#2a3038"/>
+<clipPath id="clip_7_1"><rect x="171" y="237" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_7_1)" x="178" y="252" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100141463</text>
+<line x1="324" y1="236" x2="324" y2="260" stroke="#2a3038"/>
+<clipPath id="clip_7_2"><rect x="325" y="237" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_7_2)" x="332" y="252" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">积分×2303；السلطان $×8；VIP经验×200</text>
+<line x1="478" y1="236" x2="478" y2="260" stroke="#2a3038"/>
+<clipPath id="clip_7_3"><rect x="479" y="237" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_7_3)" x="486" y="252" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">钻石×20000（理论：用户）</text>
+<line x1="632" y1="236" x2="632" y2="260" stroke="#2a3038"/>
+<clipPath id="clip_7_4"><rect x="633" y="237" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_7_4)" x="640" y="252" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×8天；钻石×20000；VIP经验×200；积分×2303</text>
+<line x1="786" y1="236" x2="786" y2="260" stroke="#2a3038"/>
+<line x1="944" y1="236" x2="944" y2="260" stroke="#2a3038"/>
+<clipPath id="clip_7_5"><rect x="787" y="237" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_7_5)" x="794" y="252" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="260" width="928" height="24" fill="#121519"/>
+<line x1="16" y1="284" x2="944" y2="284" stroke="#2a3038"/>
+<line x1="16" y1="260" x2="16" y2="284" stroke="#2a3038"/>
+<clipPath id="clip_8_0"><rect x="17" y="261" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_8_0)" x="24" y="276" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">8</text>
+<line x1="170" y1="260" x2="170" y2="284" stroke="#2a3038"/>
+<clipPath id="clip_8_1"><rect x="171" y="261" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_8_1)" x="178" y="276" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100141463</text>
+<line x1="324" y1="260" x2="324" y2="284" stroke="#2a3038"/>
+<clipPath id="clip_8_2"><rect x="325" y="261" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_8_2)" x="332" y="276" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×9；积分×2204；VIP经验×100</text>
+<line x1="478" y1="260" x2="478" y2="284" stroke="#2a3038"/>
+<clipPath id="clip_8_3"><rect x="479" y="261" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_8_3)" x="486" y="276" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="632" y1="260" x2="632" y2="284" stroke="#2a3038"/>
+<clipPath id="clip_8_4"><rect x="633" y="261" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_8_4)" x="640" y="276" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×9天；VIP经验×100；积分×2204</text>
+<line x1="786" y1="260" x2="786" y2="284" stroke="#2a3038"/>
+<line x1="944" y1="260" x2="944" y2="284" stroke="#2a3038"/>
+<clipPath id="clip_8_5"><rect x="787" y="261" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_8_5)" x="794" y="276" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="284" width="928" height="24" fill="#101316"/>
+<line x1="16" y1="308" x2="944" y2="308" stroke="#2a3038"/>
+<line x1="16" y1="284" x2="16" y2="308" stroke="#2a3038"/>
+<clipPath id="clip_9_0"><rect x="17" y="285" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_9_0)" x="24" y="300" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">9</text>
+<line x1="170" y1="284" x2="170" y2="308" stroke="#2a3038"/>
+<clipPath id="clip_9_1"><rect x="171" y="285" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_9_1)" x="178" y="300" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100360102</text>
+<line x1="324" y1="284" x2="324" y2="308" stroke="#2a3038"/>
+<clipPath id="clip_9_2"><rect x="325" y="285" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_9_2)" x="332" y="300" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×10；积分×1305</text>
+<line x1="478" y1="284" x2="478" y2="308" stroke="#2a3038"/>
+<clipPath id="clip_9_3"><rect x="479" y="285" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_9_3)" x="486" y="300" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="632" y1="284" x2="632" y2="308" stroke="#2a3038"/>
+<clipPath id="clip_9_4"><rect x="633" y="285" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_9_4)" x="640" y="300" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×10天；积分×1305</text>
+<line x1="786" y1="284" x2="786" y2="308" stroke="#2a3038"/>
+<line x1="944" y1="284" x2="944" y2="308" stroke="#2a3038"/>
+<clipPath id="clip_9_5"><rect x="787" y="285" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_9_5)" x="794" y="300" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="308" width="928" height="24" fill="#121519"/>
+<line x1="16" y1="332" x2="944" y2="332" stroke="#2a3038"/>
+<line x1="16" y1="308" x2="16" y2="332" stroke="#2a3038"/>
+<clipPath id="clip_10_0"><rect x="17" y="309" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_10_0)" x="24" y="324" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">10</text>
+<line x1="170" y1="308" x2="170" y2="332" stroke="#2a3038"/>
+<clipPath id="clip_10_1"><rect x="171" y="309" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_10_1)" x="178" y="324" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100141463</text>
+<line x1="324" y1="308" x2="324" y2="332" stroke="#2a3038"/>
+<clipPath id="clip_10_2"><rect x="325" y="309" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_10_2)" x="332" y="324" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">积分×1305；السلطان $×9；VIP经验×100</text>
+<line x1="478" y1="308" x2="478" y2="332" stroke="#2a3038"/>
+<clipPath id="clip_10_3"><rect x="479" y="309" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_10_3)" x="486" y="324" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="632" y1="308" x2="632" y2="332" stroke="#2a3038"/>
+<clipPath id="clip_10_4"><rect x="633" y="309" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_10_4)" x="640" y="324" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×9天；VIP经验×100；积分×1305</text>
+<line x1="786" y1="308" x2="786" y2="332" stroke="#2a3038"/>
+<line x1="944" y1="308" x2="944" y2="332" stroke="#2a3038"/>
+<clipPath id="clip_10_5"><rect x="787" y="309" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_10_5)" x="794" y="324" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="332" width="928" height="24" fill="#101316"/>
+<line x1="16" y1="356" x2="944" y2="356" stroke="#2a3038"/>
+<line x1="16" y1="332" x2="16" y2="356" stroke="#2a3038"/>
+<clipPath id="clip_11_0"><rect x="17" y="333" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_11_0)" x="24" y="348" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">11</text>
+<line x1="170" y1="332" x2="170" y2="356" stroke="#2a3038"/>
+<clipPath id="clip_11_1"><rect x="171" y="333" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_11_1)" x="178" y="348" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100083072</text>
+<line x1="324" y1="332" x2="324" y2="356" stroke="#2a3038"/>
+<clipPath id="clip_11_2"><rect x="325" y="333" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_11_2)" x="332" y="348" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×10；积分×1008</text>
+<line x1="478" y1="332" x2="478" y2="356" stroke="#2a3038"/>
+<clipPath id="clip_11_3"><rect x="479" y="333" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_11_3)" x="486" y="348" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="632" y1="332" x2="632" y2="356" stroke="#2a3038"/>
+<clipPath id="clip_11_4"><rect x="633" y="333" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_11_4)" x="640" y="348" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×10天；积分×1008</text>
+<line x1="786" y1="332" x2="786" y2="356" stroke="#2a3038"/>
+<line x1="944" y1="332" x2="944" y2="356" stroke="#2a3038"/>
+<clipPath id="clip_11_5"><rect x="787" y="333" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_11_5)" x="794" y="348" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="356" width="928" height="24" fill="#121519"/>
+<line x1="16" y1="380" x2="944" y2="380" stroke="#2a3038"/>
+<line x1="16" y1="356" x2="16" y2="380" stroke="#2a3038"/>
+<clipPath id="clip_12_0"><rect x="17" y="357" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_12_0)" x="24" y="372" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">12</text>
+<line x1="170" y1="356" x2="170" y2="380" stroke="#2a3038"/>
+<clipPath id="clip_12_1"><rect x="171" y="357" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_12_1)" x="178" y="372" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100083072</text>
+<line x1="324" y1="356" x2="324" y2="380" stroke="#2a3038"/>
+<clipPath id="clip_12_2"><rect x="325" y="357" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_12_2)" x="332" y="372" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">积分×2006；السلطان $×9；VIP经验×100</text>
+<line x1="478" y1="356" x2="478" y2="380" stroke="#2a3038"/>
+<clipPath id="clip_12_3"><rect x="479" y="357" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_12_3)" x="486" y="372" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">钻石×10000（理论：用户）</text>
+<line x1="632" y1="356" x2="632" y2="380" stroke="#2a3038"/>
+<clipPath id="clip_12_4"><rect x="633" y="357" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_12_4)" x="640" y="372" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×9天；钻石×10000；VIP经验×100；积分×2006</text>
+<line x1="786" y1="356" x2="786" y2="380" stroke="#2a3038"/>
+<line x1="944" y1="356" x2="944" y2="380" stroke="#2a3038"/>
+<clipPath id="clip_12_5"><rect x="787" y="357" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_12_5)" x="794" y="372" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="380" width="928" height="24" fill="#101316"/>
+<line x1="16" y1="404" x2="944" y2="404" stroke="#2a3038"/>
+<line x1="16" y1="380" x2="16" y2="404" stroke="#2a3038"/>
+<clipPath id="clip_13_0"><rect x="17" y="381" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_13_0)" x="24" y="396" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">13</text>
+<line x1="170" y1="380" x2="170" y2="404" stroke="#2a3038"/>
+<clipPath id="clip_13_1"><rect x="171" y="381" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_13_1)" x="178" y="396" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100083072</text>
+<line x1="324" y1="380" x2="324" y2="404" stroke="#2a3038"/>
+<clipPath id="clip_13_2"><rect x="325" y="381" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_13_2)" x="332" y="396" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">积分×905；钻石×20</text>
+<line x1="478" y1="380" x2="478" y2="404" stroke="#2a3038"/>
+<clipPath id="clip_13_3"><rect x="479" y="381" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_13_3)" x="486" y="396" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="632" y1="380" x2="632" y2="404" stroke="#2a3038"/>
+<clipPath id="clip_13_4"><rect x="633" y="381" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_13_4)" x="640" y="396" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">钻石×20；积分×905</text>
+<line x1="786" y1="380" x2="786" y2="404" stroke="#2a3038"/>
+<line x1="944" y1="380" x2="944" y2="404" stroke="#2a3038"/>
+<clipPath id="clip_13_5"><rect x="787" y="381" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_13_5)" x="794" y="396" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="404" width="928" height="24" fill="#121519"/>
+<line x1="16" y1="428" x2="944" y2="428" stroke="#2a3038"/>
+<line x1="16" y1="404" x2="16" y2="428" stroke="#2a3038"/>
+<clipPath id="clip_14_0"><rect x="17" y="405" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_14_0)" x="24" y="420" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">14</text>
+<line x1="170" y1="404" x2="170" y2="428" stroke="#2a3038"/>
+<clipPath id="clip_14_1"><rect x="171" y="405" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_14_1)" x="178" y="420" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100083072</text>
+<line x1="324" y1="404" x2="324" y2="428" stroke="#2a3038"/>
+<clipPath id="clip_14_2"><rect x="325" y="405" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_14_2)" x="332" y="420" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×10；积分×1008</text>
+<line x1="478" y1="404" x2="478" y2="428" stroke="#2a3038"/>
+<clipPath id="clip_14_3"><rect x="479" y="405" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_14_3)" x="486" y="420" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="632" y1="404" x2="632" y2="428" stroke="#2a3038"/>
+<clipPath id="clip_14_4"><rect x="633" y="405" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_14_4)" x="640" y="420" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×10天；积分×1008</text>
+<line x1="786" y1="404" x2="786" y2="428" stroke="#2a3038"/>
+<line x1="944" y1="404" x2="944" y2="428" stroke="#2a3038"/>
+<clipPath id="clip_14_5"><rect x="787" y="405" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_14_5)" x="794" y="420" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="428" width="928" height="24" fill="#101316"/>
+<line x1="16" y1="452" x2="944" y2="452" stroke="#2a3038"/>
+<line x1="16" y1="428" x2="16" y2="452" stroke="#2a3038"/>
+<clipPath id="clip_15_0"><rect x="17" y="429" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_15_0)" x="24" y="444" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">15</text>
+<line x1="170" y1="428" x2="170" y2="452" stroke="#2a3038"/>
+<clipPath id="clip_15_1"><rect x="171" y="429" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_15_1)" x="178" y="444" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100141463</text>
+<line x1="324" y1="428" x2="324" y2="452" stroke="#2a3038"/>
+<clipPath id="clip_15_2"><rect x="325" y="429" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_15_2)" x="332" y="444" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">积分×1206；钻石×29；Anniversary Kylin×1</text>
+<line x1="478" y1="428" x2="478" y2="452" stroke="#2a3038"/>
+<clipPath id="clip_15_3"><rect x="479" y="429" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_15_3)" x="486" y="444" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="632" y1="428" x2="632" y2="452" stroke="#2a3038"/>
+<clipPath id="clip_15_4"><rect x="633" y="429" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_15_4)" x="640" y="444" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">Anniversary Kylin×1天；钻石×29；积分×1206</text>
+<line x1="786" y1="428" x2="786" y2="452" stroke="#2a3038"/>
+<line x1="944" y1="428" x2="944" y2="452" stroke="#2a3038"/>
+<clipPath id="clip_15_5"><rect x="787" y="429" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_15_5)" x="794" y="444" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="452" width="928" height="24" fill="#121519"/>
+<line x1="16" y1="476" x2="944" y2="476" stroke="#2a3038"/>
+<line x1="16" y1="452" x2="16" y2="476" stroke="#2a3038"/>
+<clipPath id="clip_16_0"><rect x="17" y="453" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_16_0)" x="24" y="468" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">16</text>
+<line x1="170" y1="452" x2="170" y2="476" stroke="#2a3038"/>
+<clipPath id="clip_16_1"><rect x="171" y="453" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_16_1)" x="178" y="468" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100360102</text>
+<line x1="324" y1="452" x2="324" y2="476" stroke="#2a3038"/>
+<clipPath id="clip_16_2"><rect x="325" y="453" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_16_2)" x="332" y="468" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×9；积分×905；VIP经验×100</text>
+<line x1="478" y1="452" x2="478" y2="476" stroke="#2a3038"/>
+<clipPath id="clip_16_3"><rect x="479" y="453" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_16_3)" x="486" y="468" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="632" y1="452" x2="632" y2="476" stroke="#2a3038"/>
+<clipPath id="clip_16_4"><rect x="633" y="453" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_16_4)" x="640" y="468" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">السلطان $×9天；VIP经验×100；积分×905</text>
+<line x1="786" y1="452" x2="786" y2="476" stroke="#2a3038"/>
+<line x1="944" y1="452" x2="944" y2="476" stroke="#2a3038"/>
+<clipPath id="clip_16_5"><rect x="787" y="453" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_16_5)" x="794" y="468" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="476" width="928" height="24" fill="#101316"/>
+<line x1="16" y1="500" x2="944" y2="500" stroke="#2a3038"/>
+<line x1="16" y1="476" x2="16" y2="500" stroke="#2a3038"/>
+<clipPath id="clip_17_0"><rect x="17" y="477" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_17_0)" x="24" y="492" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">17</text>
+<line x1="170" y1="476" x2="170" y2="500" stroke="#2a3038"/>
+<clipPath id="clip_17_1"><rect x="171" y="477" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_17_1)" x="178" y="492" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100360102</text>
+<line x1="324" y1="476" x2="324" y2="500" stroke="#2a3038"/>
+<clipPath id="clip_17_2"><rect x="325" y="477" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_17_2)" x="332" y="492" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">钻石×19；积分×1803</text>
+<line x1="478" y1="476" x2="478" y2="500" stroke="#2a3038"/>
+<clipPath id="clip_17_3"><rect x="479" y="477" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_17_3)" x="486" y="492" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">钻石×50000（理论：用户）</text>
+<line x1="632" y1="476" x2="632" y2="500" stroke="#2a3038"/>
+<clipPath id="clip_17_4"><rect x="633" y="477" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_17_4)" x="640" y="492" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">钻石×50019；积分×1803</text>
+<line x1="786" y1="476" x2="786" y2="500" stroke="#2a3038"/>
+<line x1="944" y1="476" x2="944" y2="500" stroke="#2a3038"/>
+<clipPath id="clip_17_5"><rect x="787" y="477" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_17_5)" x="794" y="492" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="500" width="928" height="24" fill="#121519"/>
+<line x1="16" y1="524" x2="944" y2="524" stroke="#2a3038"/>
+<line x1="16" y1="500" x2="16" y2="524" stroke="#2a3038"/>
+<clipPath id="clip_18_0"><rect x="17" y="501" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_18_0)" x="24" y="516" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">18</text>
+<line x1="170" y1="500" x2="170" y2="524" stroke="#2a3038"/>
+<clipPath id="clip_18_1"><rect x="171" y="501" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_18_1)" x="178" y="516" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100141463</text>
+<line x1="324" y1="500" x2="324" y2="524" stroke="#2a3038"/>
+<clipPath id="clip_18_2"><rect x="325" y="501" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_18_2)" x="332" y="516" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">积分×1804；钻石×24；Anniversary Kylin×1</text>
+<line x1="478" y1="500" x2="478" y2="524" stroke="#2a3038"/>
+<clipPath id="clip_18_3"><rect x="479" y="501" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_18_3)" x="486" y="516" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="632" y1="500" x2="632" y2="524" stroke="#2a3038"/>
+<clipPath id="clip_18_4"><rect x="633" y="501" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_18_4)" x="640" y="516" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">Anniversary Kylin×1天；钻石×24；积分×1804</text>
+<line x1="786" y1="500" x2="786" y2="524" stroke="#2a3038"/>
+<line x1="944" y1="500" x2="944" y2="524" stroke="#2a3038"/>
+<clipPath id="clip_18_5"><rect x="787" y="501" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_18_5)" x="794" y="516" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="524" width="928" height="24" fill="#101316"/>
+<line x1="16" y1="548" x2="944" y2="548" stroke="#2a3038"/>
+<line x1="16" y1="524" x2="16" y2="548" stroke="#2a3038"/>
+<clipPath id="clip_19_0"><rect x="17" y="525" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_19_0)" x="24" y="540" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">19</text>
+<line x1="170" y1="524" x2="170" y2="548" stroke="#2a3038"/>
+<clipPath id="clip_19_1"><rect x="171" y="525" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_19_1)" x="178" y="540" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100141463</text>
+<line x1="324" y1="524" x2="324" y2="548" stroke="#2a3038"/>
+<clipPath id="clip_19_2"><rect x="325" y="525" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_19_2)" x="332" y="540" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">钻石×15；积分×1206</text>
+<line x1="478" y1="524" x2="478" y2="548" stroke="#2a3038"/>
+<clipPath id="clip_19_3"><rect x="479" y="525" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_19_3)" x="486" y="540" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">钻石×5000（理论：用户）</text>
+<line x1="632" y1="524" x2="632" y2="548" stroke="#2a3038"/>
+<clipPath id="clip_19_4"><rect x="633" y="525" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_19_4)" x="640" y="540" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">钻石×5015；积分×1206</text>
+<line x1="786" y1="524" x2="786" y2="548" stroke="#2a3038"/>
+<line x1="944" y1="524" x2="944" y2="548" stroke="#2a3038"/>
+<clipPath id="clip_19_5"><rect x="787" y="525" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_19_5)" x="794" y="540" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="548" width="928" height="24" fill="#121519"/>
+<line x1="16" y1="572" x2="944" y2="572" stroke="#2a3038"/>
+<line x1="16" y1="548" x2="16" y2="572" stroke="#2a3038"/>
+<clipPath id="clip_20_0"><rect x="17" y="549" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_20_0)" x="24" y="564" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">20</text>
+<line x1="170" y1="548" x2="170" y2="572" stroke="#2a3038"/>
+<clipPath id="clip_20_1"><rect x="171" y="549" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_20_1)" x="178" y="564" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">100360102</text>
+<line x1="324" y1="548" x2="324" y2="572" stroke="#2a3038"/>
+<clipPath id="clip_20_2"><rect x="325" y="549" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_20_2)" x="332" y="564" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">钻石×20；积分×2802</text>
+<line x1="478" y1="548" x2="478" y2="572" stroke="#2a3038"/>
+<clipPath id="clip_20_3"><rect x="479" y="549" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_20_3)" x="486" y="564" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif"></text>
+<line x1="632" y1="548" x2="632" y2="572" stroke="#2a3038"/>
+<clipPath id="clip_20_4"><rect x="633" y="549" width="152" height="22"/></clipPath>
+<text clip-path="url(#clip_20_4)" x="640" y="564" fill="#e7ebf1" font-size="11" font-family="system-ui, -apple-system, sans-serif">钻石×20；积分×2802</text>
+<line x1="786" y1="548" x2="786" y2="572" stroke="#2a3038"/>
+<line x1="944" y1="548" x2="944" y2="572" stroke="#2a3038"/>
+<clipPath id="clip_20_5"><rect x="787" y="549" width="156" height="22"/></clipPath>
+<text clip-path="url(#clip_20_5)" x="794" y="564" fill="#60d5a7" font-size="11" font-family="system-ui, -apple-system, sans-serif">通过</text>
+<rect x="16" y="64" width="928" height="508" fill="none" stroke="#2a3038"/><text x="16" y="596" fill="#8d949f" font-size="11" font-family="system-ui">超出列宽的内容已截断 · 可上下左右滑动 · 与钉钉表一致</text>
+</svg>
