@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20260821095329"></script>
-  <script src="demo-api.js?v=20260821095329"></script>
+  <script src="demo-fixtures.js?v=20260821111256"></script>
+  <script src="demo-api.js?v=20260821111256"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -12205,10 +12205,9 @@
         if (statusEl) statusEl.textContent = '已保存，正在查询…';
         setUsagePanelMode('stats');
         await loadUsageStatsForRange(usageRangeKey, {
-          refresh: true,
           customRange: usageCustomRange,
         });
-        void loadUsageStatsForRange('180d', { silent: true, refresh: true });
+        void loadUsageStatsForRange('180d', { silent: true });
         return true;
       } catch (err) {
         if (statusEl) statusEl.textContent = err?.message || '保存失败';
