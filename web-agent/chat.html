@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20260820031315"></script>
-  <script src="demo-api.js?v=20260820031315"></script>
+  <script src="demo-fixtures.js?v=20260821061845"></script>
+  <script src="demo-api.js?v=20260821061845"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -2626,6 +2626,144 @@
       color: var(--accent);
       font-weight: 600;
     }
+    .usage-date-range {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg-soft);
+    }
+    .usage-date-trigger {
+      flex: 1 1 120px;
+      min-width: 0;
+      min-height: 34px;
+      padding: 0 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-input);
+      color: var(--text);
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+      text-align: left;
+      cursor: pointer;
+    }
+    .usage-date-trigger:hover:not(:disabled) {
+      border-color: var(--border-strong);
+    }
+    .usage-date-trigger:focus-visible {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .usage-date-trigger.is-empty {
+      color: var(--muted);
+    }
+    .usage-date-trigger:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .usage-date-picker {
+      position: fixed;
+      z-index: 12050;
+      width: 280px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--dropdown-bg, var(--bg-panel));
+      box-shadow: var(--dropdown-shadow, 0 12px 32px rgba(0, 0, 0, 0.18));
+    }
+    .usage-date-picker[hidden] { display: none; }
+    .usage-date-picker-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .usage-date-picker-title {
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .usage-date-picker-nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .usage-date-picker-nav button {
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.72rem;
+      line-height: 1;
+    }
+    .usage-date-picker-nav button:hover:not(:disabled) {
+      background: var(--bg-hover);
+    }
+    .usage-date-picker-nav button:disabled,
+    .usage-date-picker-nav button.is-disabled {
+      opacity: 0.28;
+      cursor: not-allowed;
+    }
+    .usage-date-picker-weekdays,
+    .usage-date-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+    }
+    .usage-date-picker-weekdays {
+      margin-bottom: 4px;
+    }
+    .usage-date-picker-weekdays span {
+      text-align: center;
+      font-size: 0.68rem;
+      color: var(--muted);
+      padding: 4px 0;
+    }
+    .usage-date-picker-day {
+      height: 32px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .usage-date-picker-day:hover:not(:disabled):not(.is-selected) {
+      background: var(--bg-hover);
+    }
+    .usage-date-picker-day.is-muted {
+      color: var(--muted-soft);
+      font-weight: 400;
+    }
+    .usage-date-picker-day.is-disabled {
+      cursor: default;
+    }
+    .usage-date-picker-day.is-selected {
+      background: var(--accent);
+      color: #fff;
+    }
+    .usage-date-range-sep {
+      font-size: 0.74rem;
+      color: var(--muted);
+      flex: 0 0 auto;
+    }
+    .usage-date-range-hint {
+      flex: 1 1 100%;
+      font-size: 0.68rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .usage-date-range-hint:empty {
+      display: none;
+    }
     .usage-stats-card {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -4460,8 +4598,16 @@
             <button type="button" class="usage-range-option active" data-range="day">本日</button>
             <button type="button" class="usage-range-option" data-range="week">本周</button>
             <button type="button" class="usage-range-option" data-range="month">本月</button>
-            <button type="button" class="usage-range-option" data-range="7d">7天内</button>
+            <button type="button" class="usage-range-option" data-range="yesterday">昨日</button>
+            <button type="button" class="usage-range-option" data-range="7d">上周</button>
+            <button type="button" class="usage-range-option" data-range="last_month">上月</button>
             <button type="button" class="usage-range-option" data-range="30d">30天内</button>
+          </div>
+          <div class="usage-date-range" aria-label="日期区间">
+            <button type="button" class="usage-date-trigger is-empty" id="usage-start-date" aria-label="开始日期" aria-haspopup="dialog" aria-expanded="false" disabled>选择日期</button>
+            <span class="usage-date-range-sep">—</span>
+            <button type="button" class="usage-date-trigger is-empty" id="usage-end-date" aria-label="结束日期" aria-haspopup="dialog" aria-expanded="false" disabled>选择日期</button>
+            <div class="usage-date-range-hint" id="usage-date-range-hint"></div>
           </div>
           <div class="usage-stats-card">
             <div class="usage-stat">
@@ -4483,7 +4629,7 @@
               <span class="lg-tok">Token</span>
             </div>
           </div>
-          <div class="usage-stats-hint" id="usage-stats-hint"></div>
+          <div class="usage-stats-hint" id="usage-stats-hint">数据来源 <a href="https://cursor.com/dashboard/usage" target="_blank" rel="noopener noreferrer">Cursor Dashboard</a></div>
         </div>
         <div class="usage-setup" id="usage-setup" hidden>
           <p class="usage-setup-title">绑定 Cursor 账号</p>
@@ -4509,6 +4655,19 @@
           <div class="usage-setup-status" id="usage-setup-status"></div>
         </div>
       </div>
+    </div>
+    <div class="usage-date-picker" id="usage-date-picker" hidden role="dialog" aria-label="选择日期">
+      <div class="usage-date-picker-head">
+        <span class="usage-date-picker-title" id="usage-date-picker-title"></span>
+        <div class="usage-date-picker-nav">
+          <button type="button" id="usage-date-picker-prev" aria-label="上一月">◀</button>
+          <button type="button" id="usage-date-picker-next" aria-label="下一月">▶</button>
+        </div>
+      </div>
+      <div class="usage-date-picker-weekdays" aria-hidden="true">
+        <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+      </div>
+      <div class="usage-date-picker-grid" id="usage-date-picker-grid"></div>
     </div>
   </div>
 
@@ -4605,16 +4764,15 @@
     /** @type {{ staffId?: string, displayName?: string, isAdmin?: boolean } | null} */
     let currentAuthUser = null;
     let usageRangeKey = 'day';
-    const USAGE_RANGE_KEYS = ['day', 'week', 'month', '7d', '30d'];
-    const USAGE_STATS_CACHE_STORAGE_KEY = 'web_agent_usage_stats_cache';
-    /** @type {Record<string, { ok: boolean, data: object, error?: string }>} */
-    const usageStatsCache = Object.create(null);
+    /** @type {{ start: string, end: string } | null} */
+    let usageCustomRange = null;
+    /** @type {{ minDate?: string, maxDate?: string, earliestWithData?: string, preloadDays?: number } | null} */
+    let usageDateBounds = null;
+    const USAGE_MAX_CUSTOM_DAYS = 180;
     /** @type {Record<string, number>} */
     const usageStatsInflightSeq = Object.create(null);
     /** @type {AbortController | null} */
-    let usageDayAbortController = null;
-    /** @type {{ ok: boolean, data: object, error?: string } | null} */
-    let usageDayLatest = null;
+    let usageLoadAbortController = null;
     let otpAuthEnabled = true;
     /** @type {Map<string, { eventSource: EventSource, runId: string, cancelling?: boolean, failed?: boolean, status: { ack: string, lifecycle: string, phase: string, batch: string, external: string, elapsed: string }, shellEl: HTMLElement | null, sentDraft?: { text: string, images: typeof pendingImages } }>} */
     const activeRuns = new Map();
@@ -4622,6 +4780,8 @@
     const MESSAGES_LOAD_OLDER_ROOT_MARGIN = '160px 0px 0px 0px';
     const MESSAGES_TAIL_DEFAULT = 80;
     const MESSAGES_OLDER_PAGE = 80;
+    const MESSAGES_RENDER_CHUNK = 12;
+    const MESSAGES_FIRST_PAINT_TAIL = 24;
     /** 用户未手动上滑时，流式更新才跟随滚到底；执行完成后强制滚到底 */
     let messagesPinnedToBottom = true;
     let meta = {};
@@ -4681,14 +4841,11 @@
         saveSessionInputDraft(prevSessionId);
         clearMessagesDomRendered();
         loadMessagesAbort?.abort();
-        const nextCached = sessionMessagesCache.get(sessionId);
-        if (!nextCached?.length) {
-          const container = getMessagesEl();
-          if (container) {
-            stopFeatureDemoCarousel();
-            container.innerHTML = '';
-            ensureLoadOlderButton(container);
-          }
+        const container = getMessagesEl();
+        if (container) {
+          stopFeatureDemoCarousel();
+          container.innerHTML = '';
+          ensureLoadOlderButton(container);
         }
       }
       pendingScrollToTimestamp = scrollToTimestamp;
@@ -4698,46 +4855,37 @@
       applySessionPushResultPref(sessionId);
       if (!markSessionListActive(sessionId)) renderSessionList();
       updateDingtalkOwnerBar();
-      await loadMessages({ force: !!scrollToTimestamp });
+      const prefetch = opts.messagesPrefetch
+        || startSessionMessagesPrefetch(sessionId);
+      await loadMessages({
+        force: !!scrollToTimestamp,
+        progressive: scrollToTimestamp ? false : (opts.progressive !== false),
+        messagesPrefetch: prefetch,
+      });
       restoreSessionInputDraft(sessionId);
       void tryReconnectActiveRun(sessionId);
       return true;
     }
 
-    async function tryRestorePersistedSession(id) {
+    async function tryRestorePersistedSession(id, opts = {}) {
       const sessionId = String(id || '').trim();
       if (!sessionId) return false;
       const cached = getSessionFromCache(sessionId);
-      if (cached?.source === 'dingtalk' || isSessionReadOnly(cached)) return false;
-      try {
-        await api(`/api/sessions/${sessionId}/messages?tail=1`);
-      } catch {
-        return false;
-      }
-      return activateSession(sessionId, { force: true });
+      if (!cached || cached.source === 'dingtalk' || isSessionReadOnly(cached)) return false;
+      return activateSession(sessionId, { force: true, ...opts });
     }
 
-    async function restoreOrCreateInitialSession() {
-      if (window.__WEB_AGENT_DEMO__) {
-        const demoIds = ['demo0001stagegift', 'demo0002prdcases', 'demo0003moalookup'];
-        for (const sid of demoIds) {
-          try {
-            await api(`/api/sessions/${sid}/messages`);
-            if (await activateSession(sid, { force: true })) return;
-          } catch { /* try next demo session */ }
-        }
-      }
-
+    async function restoreOrCreateInitialSession(opts = {}) {
       if (isGuestMode()) {
         currentSessionId = '';
         showEmptyState();
         return;
       }
       const savedId = readPersistedSessionId();
-      if (savedId && await tryRestorePersistedSession(savedId)) return;
+      if (savedId && await tryRestorePersistedSession(savedId, opts)) return;
       const mine = myWritableWebSessions();
       if (mine.length) {
-        await activateSession(mine[0].id, { force: true });
+        await activateSession(mine[0].id, { force: true, ...opts });
         return;
       }
       await createSession({ animate: false });
@@ -4758,6 +4906,9 @@
     const sessionInputDrafts = new Map();
     const SESSION_MESSAGES_CACHE_LIMIT = 24;
     const SESSION_SCROLL_CACHE_LIMIT = 48;
+    const SESSION_IDLE_PREFETCH_COUNT = 5;
+    /** @type {Map<string, Promise<string|null>>} */
+    const sessionMessagesPrefetch = new Map();
 
     function rebuildSessionsCacheIndex() {
       sessionsCacheById = new Map();
@@ -4776,6 +4927,70 @@
 
     function sessionMessagesMtimeFromList(sessionId) {
       return Number(getSessionFromCache(sessionId)?.messages_mtime || 0);
+    }
+
+    function startSessionMessagesPrefetch(sessionId) {
+      const sid = String(sessionId || '').trim();
+      if (!sid || sessionMessagesCache.get(sid)?.length) return null;
+      const inflight = sessionMessagesPrefetch.get(sid);
+      if (inflight) return inflight;
+      const task = (async () => {
+        try {
+          const msgHeaders = {};
+          const cachedEtag = sessionMessagesEtags.get(sid);
+          if (cachedEtag) msgHeaders['If-None-Match'] = cachedEtag;
+          let data = await api(
+            `/api/sessions/${sid}/messages?tail=${MESSAGES_TAIL_DEFAULT}`,
+            { cache: 'no-store', headers: msgHeaders },
+          );
+          if (data?.__notModified) {
+            if (data.__etag) sessionMessagesEtags.set(sid, data.__etag);
+            return sessionMessagesCache.get(sid)?.length ? sid : null;
+          }
+          if (!Array.isArray(data.messages)) return null;
+          const pageMeta = {
+            total: data.total,
+            has_older: data.has_older,
+            offset: data.offset,
+            messages_mtime: data.messages_mtime || sessionMessagesMtimeFromList(sid),
+          };
+          rememberSessionMessages(sid, data.messages, pageMeta);
+          if (data.__etag) sessionMessagesEtags.set(sid, data.__etag);
+          return sid;
+        } catch {
+          return null;
+        } finally {
+          sessionMessagesPrefetch.delete(sid);
+        }
+      })();
+      sessionMessagesPrefetch.set(sid, task);
+      return task;
+    }
+
+    function scheduleIdleSessionMessagesPrefetch() {
+      if (sessionSearchQuery.trim()) return;
+      const ids = sessionsCache
+        .slice(0, SESSION_IDLE_PREFETCH_COUNT)
+        .map((s) => s?.id)
+        .filter((id) => id && id !== currentSessionId);
+      if (!ids.length) return;
+      const run = () => {
+        for (const id of ids) startSessionMessagesPrefetch(id);
+      };
+      if (typeof requestIdleCallback === 'function') {
+        requestIdleCallback(run, { timeout: 2500 });
+      } else {
+        window.setTimeout(run, 120);
+      }
+    }
+
+    let idlePrefetchTimer = null;
+    function scheduleIdleSessionMessagesPrefetchDebounced() {
+      clearTimeout(idlePrefetchTimer);
+      idlePrefetchTimer = window.setTimeout(() => {
+        idlePrefetchTimer = null;
+        scheduleIdleSessionMessagesPrefetch();
+      }, 200);
     }
 
     function rememberSessionMessages(sessionId, messages, meta = null) {
@@ -5092,6 +5307,7 @@
       const sid = String(sessionId || '').trim();
       const container = getMessagesEl();
       const hasLiveDom = sid === currentSessionId
+        && messagesDomMatchesSession(sid)
         && container
         && !container.querySelector('.empty-state')
         && container.querySelector('.msg');
@@ -7339,6 +7555,7 @@
       list.scrollTop = scrollTop;
       syncSessionReadOnly(currentSessionId);
       lastSessionListKey = sessionListPatchKey(filtered);
+      scheduleIdleSessionMessagesPrefetchDebounced();
     }
 
     const SESSION_LONG_PRESS_MS = 500;
@@ -7689,6 +7906,9 @@
       });
       el.addEventListener('pointerleave', cancelLongPress);
       el.addEventListener('pointercancel', cancelLongPress);
+      el.addEventListener('pointerenter', () => {
+        startSessionMessagesPrefetch(session.id);
+      }, { passive: true });
       el.addEventListener('click', (event) => {
         if (el.classList.contains('is-editing-title')) {
           event.preventDefault();
@@ -8853,6 +9073,10 @@
         lastSessionListKey = nextKey;
         return;
       }
+      if (opts.deferRender) {
+        lastSessionListKey = nextKey;
+        return;
+      }
       renderSessionList();
       lastSessionListKey = nextKey;
     }
@@ -8972,6 +9196,7 @@
     async function selectSession(id, opts = {}) {
       const scrollTo = (opts.scrollToTimestamp || '').trim();
       if (!opts.force && id === currentSessionId && !scrollTo) return;
+      startSessionMessagesPrefetch(id);
       await activateSession(id, opts);
     }
 
@@ -9657,7 +9882,7 @@
       }
     }
 
-    function renderLoadedMessages(sessionId, msgs, restoreFromBottom) {
+    function renderLoadedMessages(sessionId, msgs, restoreFromBottom, opts = {}) {
       const container = getMessagesEl();
       if (!msgs.length) {
         if (canSkipMessagesRender(sessionId, msgs, sessionMessagesMeta(sessionId))) {
@@ -9667,6 +9892,10 @@
         showEmptyState();
         return;
       }
+      if (opts.progressive && msgs.length > MESSAGES_FIRST_PAINT_TAIL) {
+        renderLoadedMessagesProgressive(sessionId, msgs, restoreFromBottom);
+        return;
+      }
       container.innerHTML = '';
       ensureLoadOlderButton(container);
       const frag = document.createDocumentFragment();
@@ -9674,6 +9903,11 @@
         frag.appendChild(buildMessageElement(m));
       });
       container.appendChild(frag);
+      finalizeLoadedMessagesView(sessionId, msgs, restoreFromBottom);
+    }
+
+    function finalizeLoadedMessagesView(sessionId, msgs, restoreFromBottom) {
+      const container = getMessagesEl();
       updateLoadOlderButton(sessionId);
       if (shouldAppendStreamingShell(sessionId, msgs)) {
         const run = activeRuns.get(sessionId);
@@ -9701,6 +9935,59 @@
       updateScrollToBottomBtn();
       syncLoadOlderAutoLoad(container);
       markMessagesDomRendered(sessionId, msgs, sessionMessagesMeta(sessionId));
+    }
+
+    function renderLoadedMessagesProgressive(sessionId, msgs, restoreFromBottom) {
+      const container = getMessagesEl();
+      container.innerHTML = '';
+      ensureLoadOlderButton(container);
+      const headCount = Math.max(0, msgs.length - MESSAGES_FIRST_PAINT_TAIL);
+      const headMsgs = msgs.slice(0, headCount);
+      const tailMsgs = msgs.slice(headCount);
+      // 记录初始滚动意图：渐进渲染 prepend 历史消息会触发 ResizeObserver 误判 pinned=false
+      const scrollPinnedIntent = restoreFromBottom == null && messagesPinnedToBottom;
+      const tailFrag = document.createDocumentFragment();
+      tailMsgs.forEach((m) => {
+        tailFrag.appendChild(buildMessageElement(m));
+      });
+      container.appendChild(tailFrag);
+      finalizeLoadedMessagesView(sessionId, msgs, restoreFromBottom);
+      if (!headMsgs.length) return;
+
+      let idx = 0;
+      const renderHeadChunk = () => {
+        if (sessionId !== currentSessionId) return;
+        const chunk = headMsgs.slice(idx, idx + MESSAGES_RENDER_CHUNK);
+        idx += MESSAGES_RENDER_CHUNK;
+        if (!chunk.length) return;
+        const btn = ensureLoadOlderButton(container);
+        const anchor = btn ? btn.nextSibling : container.firstChild;
+        const prevHeight = container.scrollHeight;
+        const prevTop = container.scrollTop;
+        const frag = document.createDocumentFragment();
+        chunk.forEach((m) => {
+          frag.appendChild(buildMessageElement(m));
+        });
+        container.insertBefore(frag, anchor);
+        container.scrollTop = prevTop + (container.scrollHeight - prevHeight);
+        bindMessagesMediaLoadScroll(container);
+        updateLoadOlderButton(sessionId);
+        markMessagesDomRendered(sessionId, msgs, sessionMessagesMeta(sessionId));
+        if (idx < headMsgs.length) {
+          requestAnimationFrame(renderHeadChunk);
+          return;
+        }
+        if (sessionId !== currentSessionId) return;
+        if (pendingScrollToTimestamp) return;
+        if (restoreFromBottom != null) {
+          restoreMessagesScrollFromBottom(restoreFromBottom);
+        } else if (scrollPinnedIntent) {
+          messagesPinnedToBottom = true;
+          scheduleScrollMessagesToBottom({ force: !isCurrentSessionStreaming() });
+        }
+        updateScrollToBottomBtn();
+      };
+      requestAnimationFrame(renderHeadChunk);
     }
 
     function messagesEqualForSync(a, b) {
@@ -9780,7 +10067,7 @@
       return true;
     }
 
-    function trySyncTailMessages(sessionId, cached, newMsgs, newMeta, restoreFromBottom) {
+    function trySyncTailMessages(sessionId, cached, newMsgs, newMeta, restoreFromBottom, scrollPinnedIntent = false) {
       if (!Array.isArray(cached) || !cached.length || !Array.isArray(newMsgs) || !newMsgs.length) {
         return false;
       }
@@ -9830,7 +10117,8 @@
         /* 保持搜索跳转逻辑，不做滚动干预 */
       } else if (restoreFromBottom != null) {
         restoreMessagesScrollFromBottom(restoreFromBottom);
-      } else if (messagesPinnedToBottom) {
+      } else if (scrollPinnedIntent || messagesPinnedToBottom) {
+        messagesPinnedToBottom = true;
         scheduleScrollMessagesToBottom();
       }
       updateScrollToBottomBtn();
@@ -9838,7 +10126,7 @@
       return true;
     }
 
-    function tryMergeExpandedHistory(sessionId, cached, incoming, pageMeta, restoreFromBottom) {
+    function tryMergeExpandedHistory(sessionId, cached, incoming, pageMeta, restoreFromBottom, scrollPinnedIntent = false) {
       if (!Array.isArray(cached) || !cached.length || !Array.isArray(incoming) || !incoming.length) {
         return false;
       }
@@ -9880,7 +10168,7 @@
       rememberSessionMessages(sessionId, merged, mergedMeta);
       if (sessionId !== currentSessionId) return true;
 
-      if (trySyncTailMessages(sessionId, merged, incoming, mergedMeta, restoreFromBottom)) {
+      if (trySyncTailMessages(sessionId, merged, incoming, mergedMeta, restoreFromBottom, scrollPinnedIntent)) {
         return true;
       }
       return false;
@@ -9889,14 +10177,21 @@
     async function loadMessages(opts = {}) {
       if (!currentSessionId) { showEmptyState(); return; }
       const sessionId = currentSessionId;
+      if (opts.messagesPrefetch) {
+        try { await opts.messagesPrefetch; } catch { /* ignore */ }
+      }
       let restoreFromBottom = null;
+      let scrollPinnedIntent = true;
       if (!pendingScrollToTimestamp) {
         const scrollState = resolveMessagesScrollState(sessionId);
         messagesPinnedToBottom = scrollState.pinnedToBottom;
         restoreFromBottom = scrollState.fromBottom;
+        scrollPinnedIntent = scrollState.pinnedToBottom && scrollState.fromBottom == null;
       } else {
         messagesPinnedToBottom = false;
+        scrollPinnedIntent = false;
       }
+      const progressiveFirstPaint = !!opts.progressive && !pendingScrollToTimestamp;
       try {
         const cached = sessionMessagesCache.get(sessionId);
         const cachedMeta = sessionMessagesMeta(sessionId);
@@ -9917,12 +10212,12 @@
         );
         if (cached?.length) {
           if (!messagesDomMatchesSession(sessionId)) {
-            renderLoadedMessages(sessionId, cached, restoreFromBottom);
+            renderLoadedMessages(sessionId, cached, restoreFromBottom, { progressive: progressiveFirstPaint });
           } else if (cacheFresh) {
             if (canSkipMessagesRender(sessionId, cached, cachedMeta)) {
               syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
             } else {
-              renderLoadedMessages(sessionId, cached, restoreFromBottom);
+              renderLoadedMessages(sessionId, cached, restoreFromBottom, { progressive: progressiveFirstPaint });
             }
           }
         }
@@ -9942,8 +10237,14 @@
           }
           data = await api(
             `/api/sessions/${sessionId}/messages?tail=${MESSAGES_TAIL_DEFAULT}`,
-            { signal, headers: msgHeaders },
+            { signal, headers: msgHeaders, cache: 'no-store' },
           );
+          if (data?.__notModified && !sessionMessagesCache.get(sessionId)?.length) {
+            data = await api(
+              `/api/sessions/${sessionId}/messages?tail=${MESSAGES_TAIL_DEFAULT}`,
+              { signal, cache: 'no-store' },
+            );
+          }
         } catch (err) {
           if (err?.name === 'AbortError') return;
           throw err;
@@ -9955,7 +10256,7 @@
             if (canSkipMessagesRender(sessionId, cached, cachedMeta)) {
               syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
             } else {
-              renderLoadedMessages(sessionId, cached, restoreFromBottom);
+              renderLoadedMessages(sessionId, cached, restoreFromBottom, { progressive: progressiveFirstPaint });
             }
           }
           return;
@@ -9974,18 +10275,18 @@
           if (canSkipMessagesRender(sessionId, msgs, pageMeta)) {
             syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
           } else {
-            renderLoadedMessages(sessionId, msgs, restoreFromBottom);
+            renderLoadedMessages(sessionId, msgs, restoreFromBottom, { progressive: progressiveFirstPaint });
           }
           return;
         }
-        if (cached?.length && trySyncTailMessages(sessionId, cached, msgs, pageMeta, restoreFromBottom)) {
+        if (cached?.length && trySyncTailMessages(sessionId, cached, msgs, pageMeta, restoreFromBottom, scrollPinnedIntent)) {
           return;
         }
-        if (cached?.length && tryMergeExpandedHistory(sessionId, cached, msgs, pageMeta, restoreFromBottom)) {
+        if (cached?.length && tryMergeExpandedHistory(sessionId, cached, msgs, pageMeta, restoreFromBottom, scrollPinnedIntent)) {
           return;
         }
         rememberSessionMessages(sessionId, msgs, pageMeta);
-        renderLoadedMessages(sessionId, msgs, restoreFromBottom);
+        renderLoadedMessages(sessionId, msgs, restoreFromBottom, { progressive: progressiveFirstPaint });
       } finally {
         if (pendingScrollToTimestamp && sessionId === currentSessionId) {
           void fulfillPendingScrollToTimestamp();
@@ -10608,118 +10909,362 @@
 
     function syncUsageRangeUI() {
       document.querySelectorAll('.usage-range-option').forEach((btn) => {
-        btn.classList.toggle('active', (btn.dataset.range || '') === usageRangeKey);
+        const active = !usageCustomRange && (btn.dataset.range || '') === usageRangeKey;
+        btn.classList.toggle('active', active);
       });
+      syncUsageDateInputsFromActiveRange();
     }
 
-    function usageRangeSkipsCache(rangeKey) {
-      return rangeKey === 'day';
-    }
-
-    function getUsageCacheDateKey() {
-      return new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'Asia/Shanghai',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      }).format(new Date());
-    }
-
-    function mergeTodayIntoUsageData(rangeData, dayData) {
-      if (!rangeData || !dayData) return rangeData;
-      const todayKey = getUsageCacheDateKey();
-      const dayRows = Array.isArray(dayData.daily) ? dayData.daily : [];
-      const todayRow = dayRows.find((row) => row && row.date === todayKey);
-      if (!todayRow) return rangeData;
-
-      const rangeRows = Array.isArray(rangeData.daily) ? rangeData.daily : [];
-      if (!rangeRows.length) return rangeData;
-
-      let hasToday = false;
-      const daily = rangeRows.map((row) => {
-        if (!row || row.date !== todayKey) return row;
-        hasToday = true;
-        return {
-          ...row,
-          requests: Number(todayRow.requests || 0),
-          tokens: Number(todayRow.tokens || 0),
-        };
-      });
-      if (!hasToday) return rangeData;
-
-      let requests = 0;
-      let tokens = 0;
-      for (const row of daily) {
-        requests += Number(row?.requests || 0);
-        tokens += Number(row?.tokens || 0);
+    function buildUsageLoadKey(rangeKey, customRange) {
+      if (customRange?.start && customRange?.end) {
+        return `custom:${customRange.start}:${customRange.end}`;
       }
-      return { ...rangeData, daily, requests, tokens };
+      return rangeKey || 'day';
     }
 
-    function resolveUsageStatsDisplayData(rangeKey, cachedEntry) {
-      if (!cachedEntry) return null;
-      if (usageRangeSkipsCache(rangeKey)) return cachedEntry.data;
-      if (!usageDayLatest?.ok || !usageDayLatest.data) return cachedEntry.data;
-      return mergeTodayIntoUsageData(cachedEntry.data, usageDayLatest.data);
-    }
-
-    function storeUsageDayLatest(entry) {
-      usageDayLatest = entry;
-      if (!entry?.ok || usageRangeSkipsCache(usageRangeKey) || !isUsageCacheValid(usageRangeKey)) return;
-      applyUsageStatsFromCache(usageRangeKey);
-    }
-
-    function loadUsageStatsCacheFromStorage() {
-      try {
-        const raw = localStorage.getItem(USAGE_STATS_CACHE_STORAGE_KEY);
-        if (!raw) return;
-        const parsed = JSON.parse(raw);
-        if (parsed?.dateKey !== getUsageCacheDateKey()) {
-          localStorage.removeItem(USAGE_STATS_CACHE_STORAGE_KEY);
-          return;
-        }
-        const ranges = parsed?.ranges;
-        if (!ranges || typeof ranges !== 'object') return;
-        for (const key of USAGE_RANGE_KEYS) {
-          if (usageRangeSkipsCache(key)) continue;
-          if (ranges[key]) usageStatsCache[key] = ranges[key];
-        }
-      } catch (_) { /* ignore corrupt cache */ }
-    }
-
-    function persistUsageStatsCache() {
-      try {
-        const ranges = Object.create(null);
-        for (const key of USAGE_RANGE_KEYS) {
-          if (usageRangeSkipsCache(key) || !usageStatsCache[key]) continue;
-          ranges[key] = usageStatsCache[key];
-        }
-        localStorage.setItem(USAGE_STATS_CACHE_STORAGE_KEY, JSON.stringify({
-          dateKey: getUsageCacheDateKey(),
-          ranges,
-        }));
-      } catch (_) { /* quota / private mode */ }
-    }
-
-    function clearUsageStatsDailyCache() {
-      for (const key of USAGE_RANGE_KEYS) {
-        if (!usageRangeSkipsCache(key)) delete usageStatsCache[key];
+    function isActiveUsageLoad(rangeKey, customRange) {
+      if (usageCustomRange) {
+        return customRange?.start === usageCustomRange.start
+          && customRange?.end === usageCustomRange.end;
       }
-      usageDayLatest = null;
+      return !customRange && rangeKey === usageRangeKey;
+    }
+
+    function parseUsageDayInput(value) {
+      const text = String(value || '').trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return null;
+      const [y, m, d] = text.split('-').map(Number);
+      if (!y || !m || !d) return null;
+      return { y, m, d };
+    }
+
+    function customUsageSpanDays(start, end) {
+      const startYmd = parseUsageDayInput(start);
+      const endYmd = parseUsageDayInput(end);
+      if (!startYmd || !endYmd) return 0;
+      const startDt = Date.UTC(startYmd.y, startYmd.m - 1, startYmd.d);
+      const endDt = Date.UTC(endYmd.y, endYmd.m - 1, endYmd.d);
+      return Math.floor((endDt - startDt) / 86400000) + 1;
+    }
+
+    function resolveUsageDateBounds() {
+      const maxDate = usageDateBounds?.maxDate || usageDayKey(bjYmd());
+      const minDate = usageDateBounds?.minDate || maxDate;
+      return { minDate, maxDate };
+    }
+
+    function clampUsageDateValue(value, minDate, maxDate) {
+      let next = String(value || '').trim();
+      if (!next) return next;
+      if (minDate && next < minDate) next = minDate;
+      if (maxDate && next > maxDate) next = maxDate;
+      return next;
+    }
+
+    function usageDateFieldEl(role) {
+      return document.getElementById(role === 'start' ? 'usage-start-date' : 'usage-end-date');
+    }
+
+    function getUsageDateFieldValue(el) {
+      return String(el?.dataset?.value || '').trim();
+    }
+
+    function setUsageDateFieldValue(el, value) {
+      if (!el) return;
+      const next = String(value || '').trim();
+      el.dataset.value = next;
+      el.textContent = next || '选择日期';
+      el.classList.toggle('is-empty', !next);
+    }
+
+    function getUsageDateFieldLimits(role) {
+      const { minDate, maxDate } = resolveUsageDateBounds();
+      const startValue = getUsageDateFieldValue(usageDateFieldEl('start'));
+      const endValue = getUsageDateFieldValue(usageDateFieldEl('end'));
+      if (role === 'start') {
+        const hi = endValue ? clampUsageDateValue(endValue, minDate, maxDate) : maxDate;
+        return { lo: minDate, hi };
+      }
+      const lo = startValue ? clampUsageDateValue(startValue, minDate, maxDate) : minDate;
+      return { lo, hi: maxDate };
+    }
+
+    /** @type {{ role: 'start' | 'end', viewYear: number, viewMonth: number, anchorEl: HTMLElement | null }} */
+    const usageDatePickerState = {
+      role: 'start',
+      viewYear: 0,
+      viewMonth: 0,
+      anchorEl: null,
+    };
+
+    function usageMonthTitle(y, m) {
+      return `${y}年${m}月`;
+    }
+
+    function canUsagePickerPrevMonth(y, m, lo) {
+      const min = parseUsageDayInput(lo);
+      if (!min) return true;
+      return y > min.y || (y === min.y && m > min.m);
+    }
+
+    function canUsagePickerNextMonth(y, m, hi) {
+      const max = parseUsageDayInput(hi);
+      if (!max) return true;
+      return y < max.y || (y === max.y && m < max.m);
+    }
+
+    function isUsagePickerMonthInBounds(y, m, minDate, maxDate) {
+      const min = parseUsageDayInput(minDate);
+      const max = parseUsageDayInput(maxDate);
+      if (min && (y < min.y || (y === min.y && m < min.m))) return false;
+      if (max && (y > max.y || (y === max.y && m > max.m))) return false;
+      return true;
+    }
+
+    function usageDaysInMonth(y, m) {
+      return new Date(Date.UTC(y, m, 0)).getUTCDate();
+    }
+
+    function usageWeekdaySunday0(y, m, d) {
+      return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+    }
+
+    function closeUsageDatePicker() {
+      const pop = document.getElementById('usage-date-picker');
+      if (!pop || pop.hidden) return;
+      pop.hidden = true;
+      usageDatePickerState.anchorEl = null;
+      usageDateFieldEl('start')?.setAttribute('aria-expanded', 'false');
+      usageDateFieldEl('end')?.setAttribute('aria-expanded', 'false');
+    }
+
+    function positionUsageDatePicker(anchor) {
+      const pop = document.getElementById('usage-date-picker');
+      if (!pop || !anchor) return;
+      const rect = anchor.getBoundingClientRect();
+      const margin = 8;
+      pop.style.visibility = 'hidden';
+      pop.hidden = false;
+      const popRect = pop.getBoundingClientRect();
+      let top = rect.bottom + margin;
+      let left = rect.left;
+      if (left + popRect.width > window.innerWidth - margin) {
+        left = Math.max(margin, window.innerWidth - popRect.width - margin);
+      }
+      if (top + popRect.height > window.innerHeight - margin) {
+        top = Math.max(margin, rect.top - popRect.height - margin);
+      }
+      pop.style.left = `${left}px`;
+      pop.style.top = `${top}px`;
+      pop.style.visibility = '';
+    }
+
+    function renderUsageDatePicker() {
+      const grid = document.getElementById('usage-date-picker-grid');
+      const title = document.getElementById('usage-date-picker-title');
+      const prevBtn = document.getElementById('usage-date-picker-prev');
+      const nextBtn = document.getElementById('usage-date-picker-next');
+      if (!grid || !title) return;
+
+      const { role, viewYear: y, viewMonth: m } = usageDatePickerState;
+      const { minDate, maxDate } = resolveUsageDateBounds();
+      const { lo, hi } = getUsageDateFieldLimits(role);
+      const selected = getUsageDateFieldValue(usageDateFieldEl(role));
+
+      title.textContent = usageMonthTitle(y, m);
+      if (prevBtn) {
+        const canPrev = canUsagePickerPrevMonth(y, m, minDate);
+        prevBtn.disabled = !canPrev;
+        prevBtn.classList.toggle('is-disabled', !canPrev);
+      }
+      if (nextBtn) {
+        const canNext = canUsagePickerNextMonth(y, m, maxDate);
+        nextBtn.disabled = !canNext;
+        nextBtn.classList.toggle('is-disabled', !canNext);
+      }
+
+      const dim = usageDaysInMonth(y, m);
+      const firstWd = usageWeekdaySunday0(y, m, 1);
+      /** @type {Array<{ y: number, m: number, d: number, muted: boolean, selectable: boolean, selected?: boolean }>} */
+      const cells = [];
+      const prevY = m === 1 ? y - 1 : y;
+      const prevM = m === 1 ? 12 : m - 1;
+      const prevDim = usageDaysInMonth(prevY, prevM);
+      for (let i = firstWd - 1; i >= 0; i -= 1) {
+        const d = prevDim - i;
+        cells.push({ y: prevY, m: prevM, d, muted: true, selectable: false });
+      }
+      for (let d = 1; d <= dim; d += 1) {
+        const key = usageDayKey({ y, m, d });
+        const outOfRange = (lo && key < lo) || (hi && key > hi);
+        cells.push({
+          y,
+          m,
+          d,
+          muted: outOfRange,
+          selectable: !outOfRange,
+          selected: key === selected,
+        });
+      }
+      let nextY = m === 12 ? y + 1 : y;
+      let nextM = m === 12 ? 1 : m + 1;
+      let nd = 1;
+      while (cells.length < 42) {
+        cells.push({ y: nextY, m: nextM, d: nd, muted: true, selectable: false });
+        nd += 1;
+      }
+
+      grid.innerHTML = cells.map((cell) => {
+        const key = usageDayKey({ y: cell.y, m: cell.m, d: cell.d });
+        const classes = ['usage-date-picker-day'];
+        if (cell.muted) classes.push('is-muted');
+        if (cell.selected) classes.push('is-selected');
+        if (!cell.selectable) classes.push('is-disabled');
+        const attrs = cell.selectable
+          ? ` data-day="${escapeHtml(key)}"`
+          : ' disabled';
+        return `<button type="button" class="${classes.join(' ')}"${attrs} aria-label="${escapeHtml(key)}">${cell.d}</button>`;
+      }).join('');
+    }
+
+    function openUsageDatePicker(anchor, role) {
+      if (!anchor || anchor.disabled) return;
+      applyUsageDateInputLimits();
+      const { minDate, maxDate } = resolveUsageDateBounds();
+      const fallback = role === 'start' ? minDate : maxDate;
+      const current = getUsageDateFieldValue(anchor);
+      const seed = parseUsageDayInput(current || fallback) || bjYmd();
+      usageDatePickerState.role = role;
+      usageDatePickerState.viewYear = seed.y;
+      usageDatePickerState.viewMonth = seed.m;
+      usageDatePickerState.anchorEl = anchor;
+      usageDateFieldEl('start')?.setAttribute('aria-expanded', 'false');
+      usageDateFieldEl('end')?.setAttribute('aria-expanded', 'false');
+      renderUsageDatePicker();
+      positionUsageDatePicker(anchor);
+      const pop = document.getElementById('usage-date-picker');
+      if (pop) pop.hidden = false;
+      anchor.setAttribute('aria-expanded', 'true');
+    }
+
+    function shiftUsageDatePickerMonth(delta) {
+      let { viewYear: y, viewMonth: m } = usageDatePickerState;
+      m += delta;
+      if (m < 1) { y -= 1; m = 12; }
+      if (m > 12) { y += 1; m = 1; }
+      const { minDate, maxDate } = resolveUsageDateBounds();
+      if (!isUsagePickerMonthInBounds(y, m, minDate, maxDate)) return;
+      usageDatePickerState.viewYear = y;
+      usageDatePickerState.viewMonth = m;
+      renderUsageDatePicker();
+      positionUsageDatePicker(usageDatePickerState.anchorEl);
+    }
+
+    function onUsageDatePicked(dayKey) {
+      const { role, anchorEl } = usageDatePickerState;
+      const el = anchorEl || usageDateFieldEl(role);
+      setUsageDateFieldValue(el, dayKey);
+      closeUsageDatePicker();
+      applyUsageDateInputLimits();
+      const start = getUsageDateFieldValue(usageDateFieldEl('start'));
+      const end = getUsageDateFieldValue(usageDateFieldEl('end'));
+      if (start && end && start <= end) applyUsageCustomRange();
+    }
+
+    function setUsageDateInputsEnabled(enabled) {
+      const startInput = usageDateFieldEl('start');
+      const endInput = usageDateFieldEl('end');
+      if (startInput) startInput.disabled = !enabled;
+      if (endInput) endInput.disabled = !enabled;
+      if (!enabled) closeUsageDatePicker();
+    }
+
+    function applyUsageDateInputLimits() {
+      const startInput = usageDateFieldEl('start');
+      const endInput = usageDateFieldEl('end');
+      const { minDate, maxDate } = resolveUsageDateBounds();
+      const endValue = getUsageDateFieldValue(endInput);
+      const startValue = getUsageDateFieldValue(startInput);
+      const startMax = endValue ? clampUsageDateValue(endValue, minDate, maxDate) : maxDate;
+      const endMin = startValue ? clampUsageDateValue(startValue, minDate, maxDate) : minDate;
+      if (startInput) {
+        const clampedStart = clampUsageDateValue(getUsageDateFieldValue(startInput), minDate, startMax);
+        if (clampedStart !== getUsageDateFieldValue(startInput)) setUsageDateFieldValue(startInput, clampedStart);
+      }
+      if (endInput) {
+        const clampedEnd = clampUsageDateValue(getUsageDateFieldValue(endInput), endMin, maxDate);
+        if (clampedEnd !== getUsageDateFieldValue(endInput)) setUsageDateFieldValue(endInput, clampedEnd);
+      }
+      const hintEl = document.getElementById('usage-date-range-hint');
+      if (hintEl) hintEl.textContent = '';
+      if (!document.getElementById('usage-date-picker')?.hidden) renderUsageDatePicker();
+    }
+
+    async function loadUsageDateBounds() {
       try {
-        localStorage.removeItem(USAGE_STATS_CACHE_STORAGE_KEY);
+        const res = await fetch('/api/usage/me/bounds');
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) usageDateBounds = data;
       } catch (_) { /* ignore */ }
+      applyUsageDateInputLimits();
+      return usageDateBounds;
     }
 
-    function isUsageCacheValid(rangeKey) {
-      if (usageRangeSkipsCache(rangeKey)) return false;
-      return !!usageStatsCache[rangeKey];
+    function syncUsageDateInputsFromActiveRange() {
+      const startInput = usageDateFieldEl('start');
+      const endInput = usageDateFieldEl('end');
+      if (!startInput || !endInput) return;
+      if (usageCustomRange?.start && usageCustomRange?.end) {
+        setUsageDateFieldValue(startInput, usageCustomRange.start);
+        setUsageDateFieldValue(endInput, usageCustomRange.end);
+        applyUsageDateInputLimits();
+        return;
+      }
+      const { start, end } = resolveUsageRangeStartYmd(usageRangeKey);
+      setUsageDateFieldValue(startInput, usageDayKey(start));
+      setUsageDateFieldValue(endInput, usageDayKey(end));
+      applyUsageDateInputLimits();
     }
 
-    function resetUsageDayLoad() {
-      delete usageStatsCache.day;
-      usageDayAbortController?.abort();
-      usageDayAbortController = null;
+    function applyUsageCustomRange() {
+      const startInput = usageDateFieldEl('start');
+      const endInput = usageDateFieldEl('end');
+      const start = getUsageDateFieldValue(startInput);
+      const end = getUsageDateFieldValue(endInput);
+      const hintEl = document.getElementById('usage-date-range-hint');
+      if (!start || !end) {
+        if (hintEl) hintEl.textContent = '请选择开始与结束日期';
+        return;
+      }
+      if (start > end) {
+        if (hintEl) hintEl.textContent = '开始日期不能晚于结束日期';
+        return;
+      }
+      const spanDays = customUsageSpanDays(start, end);
+      if (spanDays > USAGE_MAX_CUSTOM_DAYS) {
+        if (hintEl) hintEl.textContent = `自定义区间最长 ${USAGE_MAX_CUSTOM_DAYS} 天`;
+        return;
+      }
+      const minDate = usageDateBounds?.minDate || '';
+      const maxDate = usageDateBounds?.maxDate || usageDayKey(bjYmd());
+      if (minDate && start < minDate) {
+        if (hintEl) hintEl.textContent = `最早可选 ${minDate}`;
+        return;
+      }
+      if (maxDate && end > maxDate) {
+        if (hintEl) hintEl.textContent = '结束日期不能晚于今天';
+        return;
+      }
+      applyUsageDateInputLimits();
+      usageCustomRange = { start, end };
+      usageRangeKey = 'custom';
+      syncUsageRangeUI();
+      void loadUsageStatsForRange('custom', { customRange: usageCustomRange });
+    }
+
+    function abortUsageLoad() {
+      usageLoadAbortController?.abort();
+      usageLoadAbortController = null;
     }
 
     async function openUsageModal() {
@@ -10727,19 +11272,24 @@
       trackEvent('panel_open', { panel: 'usage' });
       const modal = document.getElementById('usage-modal');
       if (!modal) return;
-      loadUsageStatsCacheFromStorage();
       usageRangeKey = 'day';
+      usageCustomRange = null;
       syncUsageRangeUI();
       modal.classList.add('open');
       modal.setAttribute('aria-hidden', 'false');
-      resetUsageDayLoad();
-      void loadUsageStatsForRange('day', { refresh: true });
-      void prefetchAllUsageStats();
+      abortUsageLoad();
+      setUsageStatsLoadingUI('day');
+      setUsageDateInputsEnabled(false);
+      await loadUsageDateBounds();
+      setUsageDateInputsEnabled(true);
+      await loadUsageStatsForRange('day', { refresh: true });
+      void loadUsageStatsForRange('180d', { silent: true, refresh: true });
     }
 
     async function closeUsageModal() {
       const modal = document.getElementById('usage-modal');
       if (!modal?.classList.contains('open')) return;
+      closeUsageDatePicker();
       hideUsageChartTooltip();
       await animateOverlayClose(modal);
       modal.classList.remove('open');
@@ -11323,6 +11873,103 @@
       return Number(value || 0).toLocaleString('zh-CN');
     }
 
+    function bjYmd(date = new Date()) {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Shanghai',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).formatToParts(date);
+      const get = (type) => parts.find((part) => part.type === type)?.value || '';
+      return { y: Number(get('year')), m: Number(get('month')), d: Number(get('day')) };
+    }
+
+    function addDaysYmd(ymd, days) {
+      const dt = new Date(Date.UTC(ymd.y, ymd.m - 1, ymd.d));
+      dt.setUTCDate(dt.getUTCDate() + days);
+      return { y: dt.getUTCFullYear(), m: dt.getUTCMonth() + 1, d: dt.getUTCDate() };
+    }
+
+    function usageDayKey(ymd) {
+      return `${ymd.y}-${String(ymd.m).padStart(2, '0')}-${String(ymd.d).padStart(2, '0')}`;
+    }
+
+    function usageDayLabel(ymd) {
+      return `${String(ymd.m).padStart(2, '0')}-${String(ymd.d).padStart(2, '0')}`;
+    }
+
+    function bjWeekdayMonday0(date = new Date()) {
+      const wd = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Shanghai',
+        weekday: 'short',
+      }).format(date);
+      const order = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
+      return order[wd] ?? 0;
+    }
+
+    function resolveUsageRangeStartYmd(rangeKey, customRange) {
+      if (customRange?.start && customRange?.end) {
+        const start = parseUsageDayInput(customRange.start);
+        const end = parseUsageDayInput(customRange.end);
+        if (start && end) return { start, end };
+      }
+      const key = (rangeKey || 'day').trim().toLowerCase();
+      const today = bjYmd();
+      let start = { ...today };
+      let end = { ...today };
+      if (key === 'week') {
+        start = addDaysYmd(today, -bjWeekdayMonday0());
+      } else if (key === 'month') {
+        start = { y: today.y, m: today.m, d: 1 };
+      } else if (key === 'yesterday') {
+        const yday = addDaysYmd(today, -1);
+        start = yday;
+        end = yday;
+      } else if (key === '7d') {
+        const thisMonday = addDaysYmd(today, -bjWeekdayMonday0());
+        start = addDaysYmd(thisMonday, -7);
+        end = addDaysYmd(thisMonday, -1);
+      } else if (key === 'last_month') {
+        const firstOfThisMonth = { y: today.y, m: today.m, d: 1 };
+        const lastDayPrevMonth = addDaysYmd(firstOfThisMonth, -1);
+        start = { y: lastDayPrevMonth.y, m: lastDayPrevMonth.m, d: 1 };
+        end = lastDayPrevMonth;
+      } else if (key === '30d') {
+        start = addDaysYmd(today, -29);
+      } else if (key === '180d') {
+        start = addDaysYmd(today, -179);
+      }
+      return { start, end };
+    }
+
+    function buildUsagePlaceholderDailyRows(rangeKey, customRange) {
+      const { start, end } = resolveUsageRangeStartYmd(rangeKey, customRange);
+      const rows = [];
+      let cur = { ...start };
+      while (true) {
+        rows.push({
+          date: usageDayKey(cur),
+          label: usageDayLabel(cur),
+          requests: 0,
+          tokens: 0,
+        });
+        if (cur.y === end.y && cur.m === end.m && cur.d === end.d) break;
+        cur = addDaysYmd(cur, 1);
+      }
+      return rows;
+    }
+
+    function setUsageStatsLoadingUI(rangeKey, customRange) {
+      setUsagePanelMode('stats');
+      syncUsageRangeUI();
+      const requestsEl = document.getElementById('usage-requests');
+      const tokensEl = document.getElementById('usage-tokens');
+      if (requestsEl) requestsEl.textContent = formatUsageNumber(0);
+      if (tokensEl) tokensEl.textContent = formatUsageNumber(0);
+      renderUsageStatsHint();
+      renderUsageDailyChart(buildUsagePlaceholderDailyRows(rangeKey, customRange));
+    }
+
     function pickUsageDailyLabelIndices(n, plotW) {
       const labelW = 32;
       const minGapPx = 4;
@@ -11511,6 +12158,13 @@
       return text;
     }
 
+    function renderUsageStatsHint(dashboardUrl) {
+      const hintEl = document.getElementById('usage-stats-hint');
+      if (!hintEl) return;
+      const url = (dashboardUrl || '').trim() || 'https://cursor.com/dashboard/usage';
+      hintEl.innerHTML = `数据来源 <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Cursor Dashboard</a>`;
+    }
+
     function setUsagePanelMode(mode) {
       const statsPanel = document.getElementById('usage-stats-panel');
       const setupPanel = document.getElementById('usage-setup');
@@ -11550,9 +12204,11 @@
         if (tokenInput) tokenInput.value = '';
         if (statusEl) statusEl.textContent = '已保存，正在查询…';
         setUsagePanelMode('stats');
-        clearUsageStatsDailyCache();
-        await loadUsageStatsForRange(usageRangeKey, { refresh: true });
-        void prefetchAllUsageStats();
+        await loadUsageStatsForRange(usageRangeKey, {
+          refresh: true,
+          customRange: usageCustomRange,
+        });
+        void loadUsageStatsForRange('180d', { silent: true, refresh: true });
         return true;
       } catch (err) {
         if (statusEl) statusEl.textContent = err?.message || '保存失败';
@@ -11581,9 +12237,7 @@
     function applyUsageStatsResponse(data, resOk, fetchError) {
       const requestsEl = document.getElementById('usage-requests');
       const tokensEl = document.getElementById('usage-tokens');
-      const hintEl = document.getElementById('usage-stats-hint');
       if (!resOk) {
-        const message = fetchError || data?.error || '加载失败';
         if (data?.needsSetup || data?.needsReauth) {
           setUsagePanelMode('setup');
           const setupStatus = document.getElementById('usage-setup-status');
@@ -11597,7 +12251,7 @@
         setUsagePanelMode('stats');
         if (requestsEl) requestsEl.textContent = '—';
         if (tokensEl) tokensEl.textContent = '—';
-        if (hintEl) hintEl.textContent = formatUsageErrorMessage(message) || '用量加载失败';
+        renderUsageStatsHint();
         renderUsageDailyChart([]);
         return;
       }
@@ -11614,99 +12268,48 @@
       setUsagePanelMode('stats');
       if (requestsEl) requestsEl.textContent = formatUsageNumber(data.requests);
       if (tokensEl) tokensEl.textContent = formatUsageNumber(data.tokens);
-      if (hintEl) {
-        const dashboardLink = data.dashboardUrl
-          ? `<a href="${escapeHtml(data.dashboardUrl)}" target="_blank" rel="noopener noreferrer">Cursor Dashboard</a>`
-          : '<a href="https://cursor.com/dashboard/usage" target="_blank" rel="noopener noreferrer">Cursor Dashboard</a>';
-        if (data.error) {
-          hintEl.textContent = formatUsageErrorMessage(data.error);
-        } else if (data.tokensSource === 'cursor' && Number(data.tokens || 0) > 0) {
-          hintEl.innerHTML = `${escapeHtml(data.rangeLabel || '')}累计 · 数据来源 ${dashboardLink}`;
-        } else if (Number(data.requests || 0) > 0) {
-          hintEl.innerHTML = `${escapeHtml(data.rangeLabel || '')}共 ${formatUsageNumber(data.requests)} 次请求 · 数据来源 ${dashboardLink}`;
-        } else {
-          hintEl.innerHTML = `${escapeHtml(data.rangeLabel || '当前范围')}暂无用量 · 可在 ${dashboardLink} 核对`;
-        }
-      }
+      renderUsageStatsHint(data.dashboardUrl);
       syncUsageRangeUI();
       renderUsageDailyChart(data.daily);
-    }
-
-    function applyUsageStatsFromCache(rangeKey) {
-      if (usageRangeSkipsCache(rangeKey)) return false;
-      const cached = usageStatsCache[rangeKey];
-      if (!cached) return false;
-      const data = resolveUsageStatsDisplayData(rangeKey, cached);
-      applyUsageStatsResponse(data, cached.ok, cached.error);
-      return true;
-    }
-
-    function storeUsageStatsCache(rangeKey, entry) {
-      if (usageRangeSkipsCache(rangeKey)) return;
-      usageStatsCache[rangeKey] = entry;
-      persistUsageStatsCache();
     }
 
     async function loadUsageStatsForRange(rangeKey, options = {}) {
       const forceRefresh = options.refresh === true;
       const silent = options.silent === true;
-      const isActive = rangeKey === usageRangeKey;
+      const customRange = options.customRange || null;
+      const loadKey = buildUsageLoadKey(rangeKey, customRange);
+      const isActive = isActiveUsageLoad(rangeKey, customRange);
 
-      if (!usageRangeSkipsCache(rangeKey) && !forceRefresh && isUsageCacheValid(rangeKey)) {
-        if (isActive) applyUsageStatsFromCache(rangeKey);
-        return;
+      const loadSeq = (usageStatsInflightSeq[loadKey] = (usageStatsInflightSeq[loadKey] || 0) + 1);
+      if (isActive) {
+        abortUsageLoad();
+        usageLoadAbortController = new AbortController();
       }
-
-      const loadSeq = (usageStatsInflightSeq[rangeKey] = (usageStatsInflightSeq[rangeKey] || 0) + 1);
-      let fetchSignal;
-      if (usageRangeSkipsCache(rangeKey)) {
-        usageDayAbortController?.abort();
-        usageDayAbortController = new AbortController();
-        fetchSignal = usageDayAbortController.signal;
-      }
-      const requestsEl = document.getElementById('usage-requests');
-      const tokensEl = document.getElementById('usage-tokens');
-      const hintEl = document.getElementById('usage-stats-hint');
-      const chartWrap = document.getElementById('usage-daily-chart-wrap');
+      const fetchSignal = isActive ? usageLoadAbortController?.signal : undefined;
       if (isActive && !silent) {
-        if (requestsEl) requestsEl.textContent = '…';
-        if (tokensEl) tokensEl.textContent = '…';
-        if (hintEl) hintEl.textContent = '';
-        if (chartWrap) chartWrap.hidden = true;
+        setUsageStatsLoadingUI(rangeKey, customRange);
       }
       try {
-        const refreshQs = usageRangeSkipsCache(rangeKey) ? '&refresh=1' : '';
+        const refreshQs = forceRefresh ? '&refresh=1' : '';
         const fetchOpts = fetchSignal ? { signal: fetchSignal } : undefined;
-        const res = await fetch(
-          `/api/usage/me?range=${encodeURIComponent(rangeKey)}${refreshQs}`,
-          fetchOpts,
-        );
-        const data = await res.json();
-        if (loadSeq !== usageStatsInflightSeq[rangeKey]) return;
-        if (!res.ok) {
-          if (usageRangeSkipsCache(rangeKey)) {
-            storeUsageDayLatest({ ok: false, data, error: data.error || '加载失败' });
-          } else {
-            storeUsageStatsCache(rangeKey, { ok: false, data, error: data.error || '加载失败' });
-          }
-        } else if (usageRangeSkipsCache(rangeKey)) {
-          storeUsageDayLatest({ ok: true, data });
-        } else {
-          storeUsageStatsCache(rangeKey, { ok: true, data });
+        let url = `/api/usage/me?range=${encodeURIComponent(rangeKey)}${refreshQs}`;
+        if (customRange?.start && customRange?.end) {
+          url = `/api/usage/me?startDate=${encodeURIComponent(customRange.start)}&endDate=${encodeURIComponent(customRange.end)}${refreshQs}`;
         }
-        if (rangeKey === usageRangeKey) {
-          let displayData = data;
-          if (!usageRangeSkipsCache(rangeKey) && usageDayLatest?.ok && usageDayLatest.data) {
-            displayData = mergeTodayIntoUsageData(data, usageDayLatest.data);
-          }
-          applyUsageStatsResponse(displayData, res.ok, res.ok ? undefined : (data.error || '加载失败'));
+        const res = await fetch(url, fetchOpts);
+        const data = await res.json();
+        if (loadSeq !== usageStatsInflightSeq[loadKey]) return;
+        if (isActive) {
+          applyUsageStatsResponse(data, res.ok, res.ok ? undefined : (data.error || '加载失败'));
+        }
+        if (res.ok && loadKey === '180d') {
+          void loadUsageDateBounds();
         }
       } catch (err) {
         if (err?.name === 'AbortError') return;
-        if (loadSeq !== usageStatsInflightSeq[rangeKey]) return;
+        if (loadSeq !== usageStatsInflightSeq[loadKey]) return;
         const message = err?.message || '用量加载失败';
-        storeUsageStatsCache(rangeKey, { ok: false, data: {}, error: message });
-        if (rangeKey === usageRangeKey) {
+        if (isActive) {
           applyUsageStatsResponse({}, false, message);
         }
       }
@@ -11717,34 +12320,64 @@
       const loggedIn = !!(currentAuthUser?.staffId || '').trim();
       if (usageBtn) usageBtn.hidden = !loggedIn;
       if (!loggedIn) return;
-      await loadUsageStatsForRange(usageRangeKey, options);
-    }
-
-    function prefetchAllUsageStats() {
-      loadUsageStatsCacheFromStorage();
-      for (const key of USAGE_RANGE_KEYS) {
-        if (key === usageRangeKey || usageRangeSkipsCache(key)) continue;
-        if (isUsageCacheValid(key)) continue;
-        void loadUsageStatsForRange(key, { silent: true });
-      }
+      await loadUsageStatsForRange(usageRangeKey, {
+        ...options,
+        customRange: usageCustomRange,
+      });
     }
 
     function initUsageStatsSettings() {
-      loadUsageStatsCacheFromStorage();
       document.querySelectorAll('.usage-range-option').forEach((btn) => {
         btn.addEventListener('click', () => {
           const nextRange = (btn.dataset.range || 'day').trim() || 'day';
-          if (nextRange === usageRangeKey) return;
+          if (!usageCustomRange && nextRange === usageRangeKey) return;
+          usageCustomRange = null;
           usageRangeKey = nextRange;
           syncUsageRangeUI();
-          if (usageRangeSkipsCache(usageRangeKey)) {
-            resetUsageDayLoad();
-            void loadUsageStatsForRange(usageRangeKey, { refresh: true });
-            return;
-          }
-          const hadCache = applyUsageStatsFromCache(usageRangeKey);
-          if (!hadCache) void loadUsageStatsForRange(usageRangeKey);
+          void loadUsageStatsForRange(usageRangeKey);
         });
+      });
+      document.getElementById('usage-start-date')?.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const pop = document.getElementById('usage-date-picker');
+        if (!pop?.hidden && usageDatePickerState.anchorEl === ev.currentTarget) {
+          closeUsageDatePicker();
+          return;
+        }
+        openUsageDatePicker(ev.currentTarget, 'start');
+      });
+      document.getElementById('usage-end-date')?.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const pop = document.getElementById('usage-date-picker');
+        if (!pop?.hidden && usageDatePickerState.anchorEl === ev.currentTarget) {
+          closeUsageDatePicker();
+          return;
+        }
+        openUsageDatePicker(ev.currentTarget, 'end');
+      });
+      document.getElementById('usage-date-picker-prev')?.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        shiftUsageDatePickerMonth(-1);
+      });
+      document.getElementById('usage-date-picker-next')?.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        shiftUsageDatePickerMonth(1);
+      });
+      document.getElementById('usage-date-picker-grid')?.addEventListener('click', (ev) => {
+        const btn = ev.target.closest('[data-day]');
+        if (!btn) return;
+        ev.stopPropagation();
+        onUsageDatePicked(btn.dataset.day || '');
+      });
+      document.addEventListener('click', (ev) => {
+        const pop = document.getElementById('usage-date-picker');
+        if (!pop || pop.hidden) return;
+        if (ev.target.closest('#usage-date-picker') || ev.target.closest('.usage-date-trigger')) return;
+        closeUsageDatePicker();
+      });
+      document.addEventListener('keydown', (ev) => {
+        if (ev.key !== 'Escape') return;
+        closeUsageDatePicker();
       });
       document.getElementById('btn-usage-save')?.addEventListener('click', () => {
         void saveUsageCredentials();
@@ -11869,22 +12502,35 @@
         initThemeSettings();
         initPushResultControls();
         initReplyModeControls();
-        await loadMeta();
+        const bootstrapSessionId = isGuestMode() ? '' : readPersistedSessionId();
+        const messagesPrefetch = bootstrapSessionId
+          ? startSessionMessagesPrefetch(bootstrapSessionId)
+          : null;
+        await Promise.all([loadMeta(), loadSessions({ lite: true, deferRender: true })]);
+        requestAnimationFrame(() => document.body.classList.add('layout-ready'));
+        await restoreOrCreateInitialSession({
+          progressive: true,
+          messagesPrefetch,
+        });
+        renderSessionList();
         initSidebarResize();
         initCatalogResize();
         setSidebarOpen(sidebarOpen, { skipAnimation: true });
-        await initBookmarksPanel();
         initMessageBoardPanel();
         initAboutPanel();
         initMoaRecordPanel();
-        await initCatalogPanel();
-        setCatalogOpen(catalogOpen, { skipAnimation: true });
-        requestAnimationFrame(() => document.body.classList.add('layout-ready'));
-        await loadSessions();
-        await restoreOrCreateInitialSession();
         scheduleScrollMessagesToBottom({ force: true });
         startSessionPolling();
         applyIncomingPrompt();
+        void (async () => {
+          try {
+            await initBookmarksPanel();
+            await initCatalogPanel();
+            setCatalogOpen(catalogOpen, { skipAnimation: true });
+          } catch (err) {
+            console.error('deferred panel init', err);
+          }
+        })();
       } catch (err) {
         document.getElementById('messages').innerHTML =
           `<div class="empty-state"><p>无法连接 Web Agent 服务：${escapeHtml(err.message)}</p>
