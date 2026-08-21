@@ -1,6 +1,6 @@
 # GitHub Pages 演示部署
 
-固定地址（`yaahlan` 分支推送后自动更新）：
+固定地址（`main` 分支推送后自动更新）：
 
 ```text
 https://chenmo19910907-prog.github.io/yaahlanAgent/
