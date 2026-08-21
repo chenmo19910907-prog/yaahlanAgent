@@ -21,15 +21,23 @@ mkdir -p "$DOCS/keynote/pk-atm-guide"
 cp "$SRC/keynote/pk_atm_guide.html" "$DOCS/keynote/pk-atm-guide/index.html"
 cp "$SRC/keynote/pk_atm_guide.md" "$DOCS/keynote/pk-atm-guide/pk_atm_guide.md"
 
-echo "==> 复制 Platform Guide / Family PK Showcase"
+echo "==> 复制 Platform Guide"
 mkdir -p "$DOCS/platform-guide"
 cp "$ROOT/platform/exports/cursor-platform-guide/index.html" "$DOCS/platform-guide/index.html"
+
+echo "==> 生成 Family PK Showcase（静态演示，不依赖 gitignore 的 exports/）"
 mkdir -p "$DOCS/family-pk-showcase"
-if [[ -d "$ROOT/platform/family_pk_report/exports" ]] && [[ -n "$(ls -A "$ROOT/platform/family_pk_report/exports" 2>/dev/null)" ]]; then
-  cp -R "$ROOT/platform/family_pk_report/exports/." "$DOCS/family-pk-showcase/"
-else
-  echo "    (跳过 family-pk-showcase：本地 exports 不存在，CI 环境可忽略)"
-fi
+python3 "$ROOT/platform/family_pk_report/generate.py" --hub --out-dir "$DOCS/family-pk-showcase"
+python3 - <<'PY' "$DOCS/family-pk-showcase"
+import sys
+from pathlib import Path
+
+showcase_dir = Path(sys.argv[1])
+for html_file in showcase_dir.glob("*.html"):
+    html = html_file.read_text(encoding="utf-8")
+    html = html.replace("/family-pk-showcase/", "")
+    html_file.write_text(html, encoding="utf-8")
+PY
 
 echo "==> 修正静态页资源路径"
 python3 - <<'PY' "$DOCS"
