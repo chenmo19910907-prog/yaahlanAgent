@@ -202,6 +202,35 @@ def test_begin_running_clears_queue_body() -> None:
     assert "执行中，已用时" in composed
 
 
+def test_refresh_clears_queue_when_ahead_zero() -> None:
+    """周期刷新在 ahead=0 时应清除残留排队文案。"""
+    from agent_stream_card import AgentStreamCard
+
+    card = AgentStreamCard.__new__(AgentStreamCard)
+    card._mode = "markdown"
+    card._started = True
+    card._progress_timer = __import__("threading").Timer(60, lambda: None)
+    card._agent_body = "排队中（前面约 1 个，预计等待约 30秒）<br>可发「中断操作」打断。"
+    card._status_line = "执行中，已用时 3秒"
+    card._header = ""
+    card._batch_progress_line = ""
+    card._prompt = "测试"
+    card._queue_ahead_provider = lambda: 0
+    card._last_flushed_body = ""
+    card._card_instance_id = "id"
+    card._lock = __import__("threading").Lock()
+    card._min_interval_s = 0.0
+    card._last_push_at = 0.0
+    card._pending = None
+    card._timer = None
+    card._md_card = __import__("unittest.mock", fromlist=["MagicMock"]).MagicMock()
+
+    card._refresh_queue_body_from_provider()
+    composed = card._compose_body()
+    assert "排队中" not in composed
+    assert "执行中，已用时 3秒" in composed
+
+
 def test_reuse_preassigned_card_without_second_start() -> None:
     """预分配卡片已 start 后，begin_running 只 update 不 reply。"""
     from agent_stream_card import AgentStreamCard
@@ -581,6 +610,7 @@ def main() -> int:
     test_streaming_progress_status_line()
     test_progress_not_double_header()
     test_begin_running_clears_queue_body()
+    test_refresh_clears_queue_when_ahead_zero()
     test_reuse_preassigned_card_without_second_start()
     test_persistent_header_survives_finish()
     test_finish_status_clears_agent_body()

@@ -237,6 +237,12 @@ def _external_agent_rules(enabled_ids: list[str]) -> str:
                 )
             query_line += "）"
             lines.append(query_line)
+            if str(item.get("id") or "") == "yaahlan_service":
+                lines.append(
+                    "  - **并行非阻塞**：可 `--async --json` 一次 submit 多个 task（立即返回 task_id，后台轮询）；"
+                    "等待期间继续本机 MOA/Tunnel/ADB；"
+                    "需结果时 `--task-id <id> --wait --json` 或 `--list-tasks --json`"
+                )
     disabled = [item for item in all_agents if str(item.get("id")) not in enabled_ids]
     if disabled:
         lines.append("")

@@ -202,9 +202,25 @@
 .demo-wf-media-only .media-box {
   background: #0c0f12;
 }
+.demo-wf-media-only .media-box {
+  min-height: 120px;
+}
+.demo-wf-media-only .media-box.media-box-sheet {
+  min-height: 480px;
+}
+.demo-wf-media-only .sheet-preview-frame {
+  display: block;
+  width: 100%;
+  height: 480px;
+  border: 0;
+  background: #0c0f12;
+}
 .demo-wf-media-only .media-box img,
 .media-box img {
   background: #0c0f12 !important;
+}
+.demo-wf-media-only .media-box img {
+  min-height: 80px;
 }
 .media-caption {
   background: #101316;

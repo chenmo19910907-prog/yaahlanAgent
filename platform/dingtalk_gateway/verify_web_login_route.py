@@ -21,7 +21,7 @@ from web_otp_auth import WebOtpAuthStore  # noqa: E402
 def test_route_patterns() -> None:
     phrase = "请求访问Yaahlan 智能工具 Agent"
     assert is_web_login_request(phrase)
-    assert not is_likely_fast_route(phrase)
+    assert is_likely_fast_route(phrase)
     assert not is_web_login_request("帮助")
 
 

@@ -119,6 +119,9 @@ from web_file_store import (  # noqa: E402
 from analytics_store import get_analytics_store  # noqa: E402
 from cursor_usage import (  # noqa: E402
     CursorAuthError,
+    clear_user_today_live_cache,
+    clear_user_usage_daily_cache,
+    get_usage_date_bounds,
     parse_cursor_session_input,
     summarize_user_usage as summarize_cursor_user_usage,
     verify_session_token,
@@ -1814,6 +1817,11 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             self.send_header("Location", f"{PLATFORM_GUIDE_URL_PREFIX}/")
             self.end_headers()
             return
+        if raw_path == SHOWCASE_URL_PREFIX:
+            self.send_response(HTTPStatus.MOVED_PERMANENTLY)
+            self.send_header("Location", f"{SHOWCASE_URL_PREFIX}/")
+            self.end_headers()
+            return
         path = raw_path.rstrip("/") or "/"
 
         if path in ("/login.html", "/login"):
@@ -1899,22 +1907,39 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 get_analytics_store().summarize(days=days, limit=limit),
             )
 
+        if path == "/api/usage/me/bounds":
+            viewer = current_web_user(self)
+            if viewer is None:
+                return _json_response(self, {"error": "请先登录"}, 401)
+            return _json_response(self, get_usage_date_bounds(viewer.staff_id))
+
         if path == "/api/usage/me":
             viewer = current_web_user(self)
             if viewer is None:
                 return _json_response(self, {"error": "请先登录"}, 401)
             qs = parse_qs(parsed.query)
             range_key = str((qs.get("range") or ["day"])[0]).strip() or "day"
+            start_date = str((qs.get("startDate") or [""])[0]).strip()
+            end_date = str((qs.get("endDate") or [""])[0]).strip()
             refresh_raw = str((qs.get("refresh") or ["0"])[0]).strip().lower()
             refresh = refresh_raw in ("1", "true", "yes")
-            return _json_response(
-                self,
-                summarize_cursor_user_usage(
-                    viewer.staff_id,
-                    range_key=range_key,
-                    refresh=refresh,
-                ),
-            )
+            try:
+                if start_date and end_date:
+                    payload = summarize_cursor_user_usage(
+                        viewer.staff_id,
+                        start_date=start_date,
+                        end_date=end_date,
+                        refresh=refresh,
+                    )
+                else:
+                    payload = summarize_cursor_user_usage(
+                        viewer.staff_id,
+                        range_key=range_key,
+                        refresh=refresh,
+                    )
+            except ValueError as exc:
+                return _json_response(self, {"error": str(exc)}, 400)
+            return _json_response(self, payload)
 
         if path == "/api/usage/cursor-session":
             viewer = current_web_user(self)
@@ -2028,11 +2053,12 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             )
 
         if path == "/api/sessions":
-            _maybe_sync_conversations(parsed)
-            store = get_session_store()
             qs = parse_qs(parsed.query)
             lite_raw = (qs.get("lite") or ["0"])[0].strip().lower()
             lite = lite_raw in ("1", "true", "yes")
+            if not lite:
+                _maybe_sync_conversations(parsed)
+            store = get_session_store()
             viewer = current_web_user(self)
             viewer_staff_id = viewer.staff_id if viewer is not None else None
             search_q = (qs.get("q") or [""])[0].strip()
@@ -2175,10 +2201,14 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 before=before or None,
                 limit=limit,
             )
-            all_sessions = store.list_sessions(
-                enrich_names=False,
-                sync_derived_meta=False,
-                readonly=True,
+            author_sessions = (
+                store.list_sessions(
+                    enrich_names=False,
+                    sync_derived_meta=False,
+                    readonly=True,
+                )
+                if session_meta.source == "dingtalk"
+                else None
             )
             messages = []
             for msg in slice_msgs:
@@ -2195,7 +2225,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     author_id, author_label = resolve_user_message_author(
                         msg,
                         session_meta,
-                        sessions=all_sessions,
+                        sessions=author_sessions,
                     )
                     if author_id:
                         item["author_id"] = author_id
@@ -2595,6 +2625,8 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     team_id=parsed_team_id if session_token is not None else None,
                     workos_id=parsed_workos_id if session_token is not None else None,
                 )
+                clear_user_usage_daily_cache(viewer.staff_id)
+                clear_user_today_live_cache(viewer.staff_id)
             except CursorAuthError as exc:
                 return _json_response(self, {"error": str(exc)}, 400)
             except ValueError as exc:
@@ -2921,6 +2953,8 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             if viewer is None:
                 return _json_response(self, {"error": "请先登录"}, 401)
             status = get_cursor_usage_store().clear(viewer.staff_id)
+            clear_user_usage_daily_cache(viewer.staff_id)
+            clear_user_today_live_cache(viewer.staff_id)
             return _json_response(self, {"ok": True, **status})
 
         m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})$", path)

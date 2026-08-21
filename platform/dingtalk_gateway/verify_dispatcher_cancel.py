@@ -229,6 +229,39 @@ def main() -> int:
             return 1
         print("[OK] legacy dm lane reconciled")
 
+        # queue_display_ahead 不含本卡任务（首条 commit 后队列为 1 时不应显示排队）
+        dispatcher6 = TaskDispatcher(ConversationStore(index_path=Path(tmp) / "c6.json"))
+        user_f = "cidgroup:user:WB007"
+        with dispatcher6._lock:
+            dispatcher6._user_queues[user_f] = Queue()
+            dispatcher6._user_queues[user_f].put(_fake_task(user_f, "首条"))
+            dispatcher6._user_outstanding[user_f] = 1
+        if dispatcher6.queue_display_ahead(user_f) != 0:
+            print(
+                f"[FAIL] display ahead should exclude self => "
+                f"{dispatcher6.queue_display_ahead(user_f)}",
+                file=sys.stderr,
+            )
+            return 1
+        agent_session_f = dispatcher6._user_session(user_f)
+        agent_session_f.begin("占用", conversation_id=user_f)
+        if dispatcher6.queue_display_ahead(user_f) != 1:
+            print(
+                f"[FAIL] display ahead with busy should be 1 => "
+                f"{dispatcher6.queue_display_ahead(user_f)}",
+                file=sys.stderr,
+            )
+            return 1
+        agent_session_f.end()
+        dispatcher6._user_queues[user_f].put(_fake_task(user_f, "第二条"))
+        if dispatcher6.queue_display_ahead(user_f) != 1:
+            print(
+                f"[FAIL] second task waiting => {dispatcher6.queue_display_ahead(user_f)}",
+                file=sys.stderr,
+            )
+            return 1
+        print("[OK] queue_display_ahead excludes self")
+
     print("[PASS] dispatcher cancel")
     return 0
 

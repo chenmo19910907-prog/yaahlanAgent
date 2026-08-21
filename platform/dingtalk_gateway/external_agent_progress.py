@@ -157,13 +157,67 @@ def clear_external_agent_progress(user_key: str) -> None:
         pass
 
 
+def report_external_agent_multi_querying(
+    user_key: str,
+    *,
+    agent_label: str,
+    details: list[str],
+    started_at: float | None = None,
+) -> ExternalAgentProgressState:
+    """并行外部 Agent：聚合多条在途任务为一条进度。"""
+    key = (user_key or "").strip()
+    if not key:
+        raise ValueError("user_key 不能为空")
+    previews = [_preview(item) for item in details if _preview(item)]
+    detail = "、".join(previews[:4])
+    if len(previews) > 4:
+        detail += f" 等{len(previews)}项"
+    now = time.time()
+    existing = read_external_agent_progress(key)
+    state = ExternalAgentProgressState(
+        user_key=key,
+        agent_id="external_agent_multi",
+        agent_label=(agent_label or "").strip() or "外部 Agent",
+        status="querying",
+        detail=detail,
+        started_at=started_at if started_at is not None else (existing.started_at if existing else now),
+        updated_at=now,
+    )
+    payload = state.as_dict()
+    payload["active_count"] = max(1, len(previews))
+    PROGRESS_DIR.mkdir(parents=True, exist_ok=True)
+    _progress_path(key).write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    return state
+
+
+def _read_active_count(data: dict[str, Any]) -> int:
+    try:
+        count = int(data.get("active_count") or 0)
+    except (TypeError, ValueError):
+        count = 0
+    return count if count > 0 else 1
+
+
 def build_external_agent_progress_message(state: ExternalAgentProgressState | None) -> str:
     if state is None:
         return ""
     label = state.agent_label or "外部 Agent"
     if state.status == "querying":
         elapsed = max(0.0, time.time() - (state.started_at or state.updated_at or time.time()))
-        body = f"{label} 查询中（已 {format_duration(elapsed)}）"
+        path = _progress_path(state.user_key)
+        active_count = 1
+        if path.is_file():
+            try:
+                raw = json.loads(path.read_text(encoding="utf-8"))
+                if isinstance(raw, dict):
+                    active_count = _read_active_count(raw)
+            except (OSError, json.JSONDecodeError):
+                pass
+        count_part = f" ×{active_count}" if active_count > 1 else ""
+        body = f"{label}{count_part} 查询中（已 {format_duration(elapsed)}）"
         if state.detail:
             body += f"：{state.detail}"
         return f"{body}…"

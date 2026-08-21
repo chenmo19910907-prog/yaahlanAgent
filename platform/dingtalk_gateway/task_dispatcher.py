@@ -226,6 +226,19 @@ class TaskDispatcher:
         fast_active = 1 if fast_busy or fast_inflight else 0
         return pending + agent_active + fast_active
 
+    def _queue_ahead_for_display_locked(self, user_key: str) -> int:
+        """排队卡周期刷新：不含本卡任务自身（队尾 pending-1 + 执行中）。"""
+        queue = self._user_queues.get(user_key)
+        pending = queue.qsize() if queue is not None else 0
+        agent_busy, agent_inflight, fast_busy, fast_inflight = (
+            self._lane_active_locked(user_key)
+        )
+        ahead_in_queue = max(0, pending - 1)
+        ahead_running = (1 if agent_busy or agent_inflight else 0) + (
+            1 if fast_busy or fast_inflight else 0
+        )
+        return ahead_in_queue + ahead_running
+
     def _heal_ghost_outstanding_locked(self, user_key: str) -> None:
         """队列与 lane 均空闲时清除残留的 outstanding（中断/丢消息后易残留）。"""
         outstanding = self._user_outstanding.get(user_key, 0)
@@ -372,11 +385,11 @@ class TaskDispatcher:
         return 0, False
 
     def queue_display_ahead(self, user_key: str) -> int:
-        """当前时刻该用户前面还有多少任务（含执行中），供排队卡周期刷新。"""
+        """当前时刻该用户前面还有多少任务，供排队卡周期刷新（不含本卡任务）。"""
         self._reconcile_legacy_lane(user_key)
         with self._lock:
             self._heal_ghost_outstanding_locked(user_key)
-            return self._pending_ahead_locked(user_key)
+            return self._queue_ahead_for_display_locked(user_key)
 
     def _enqueue_locked(self, task: QueuedTask, *, skip_outstanding_inc: bool = False) -> None:
         if task.lane == "fast":

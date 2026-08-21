@@ -15,7 +15,13 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 from urllib.parse import unquote
 
-from analytics_store import BJ, resolve_usage_range
+from analytics_store import (
+    BJ,
+    MAX_USAGE_CUSTOM_DAYS,
+    resolve_usage_custom_range,
+    resolve_usage_range,
+)
+from cursor_usage_daily_store import get_cursor_usage_daily_store
 from cursor_usage_store import get_cursor_usage_store
 
 try:
@@ -31,11 +37,12 @@ CURSOR_ADMIN_EVENTS_URL = "https://api.cursor.com/teams/filtered-usage-events"
 CURSOR_ORIGIN = "https://cursor.com"
 PAGE_SIZE = 100
 MAX_PAGES = 200
-
-_cache_lock = threading.Lock()
-_cache: dict[str, tuple[float, dict[str, Any]]] = {}
+# Dashboard 明细接口单次宽区间常只返回近 ~30 天，按块拉取以覆盖完整半年窗口。
+CURSOR_FETCH_CHUNK_DAYS = 28
 
 _AUTH_HTTP_CODES = frozenset({307, 401, 403})
+_today_live_cache: dict[str, tuple[str, dict[str, int]]] = {}
+_today_live_cache_lock = threading.Lock()
 _DEFAULT_UA = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
     "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"
@@ -54,49 +61,74 @@ def _admin_api_available() -> bool:
     return bool(_env("CURSOR_API_KEY"))
 
 
-def _cache_key(staff_id: str, range_key: str) -> str:
-    return f"{staff_id}:{range_key}"
+def _today_key_bj() -> str:
+    return datetime.now(BJ).strftime("%Y-%m-%d")
 
 
-def _should_cache_range(range_key: str) -> bool:
-    """本日数据每次实时拉取；其余范围按北京时间自然日缓存。"""
-    return (range_key or "").strip().lower() != "day"
+def _iter_day_keys(start: datetime, end: datetime) -> list[str]:
+    start_bj = start.astimezone(BJ).replace(hour=0, minute=0, second=0, microsecond=0)
+    end_bj = end.astimezone(BJ).replace(hour=0, minute=0, second=0, microsecond=0)
+    keys: list[str] = []
+    cur = start_bj
+    while cur <= end_bj:
+        keys.append(cur.strftime("%Y-%m-%d"))
+        cur += timedelta(days=1)
+    return keys
 
 
-def _cache_expires_at_epoch() -> float:
-    """次日北京时间 0 点（UTC epoch 秒）。"""
-    now_bj = datetime.now(BJ)
-    next_midnight_bj = (now_bj + timedelta(days=1)).replace(
-        hour=0,
-        minute=0,
-        second=0,
-        microsecond=0,
-    )
-    return next_midnight_bj.timestamp()
+def _day_start_bj(day_key: str) -> datetime:
+    return datetime.strptime(day_key, "%Y-%m-%d").replace(tzinfo=BJ)
 
 
-def _read_cache(staff_id: str, range_key: str) -> dict[str, Any] | None:
-    if not _should_cache_range(range_key):
-        return None
-    key = _cache_key(staff_id, range_key)
-    with _cache_lock:
-        row = _cache.get(key)
-    if row is None:
-        return None
-    expires_at, payload = row
-    if time.time() >= expires_at:
-        with _cache_lock:
-            _cache.pop(key, None)
-        return None
-    return payload
+def _day_end_ms(day_key: str, *, now_bj: datetime | None = None) -> int:
+    """单日查询上界：历史日为次日 0 点；本日为当前时刻。"""
+    today_key = (now_bj or datetime.now(BJ)).strftime("%Y-%m-%d")
+    start = _day_start_bj(day_key)
+    if day_key >= today_key:
+        return _to_ms((now_bj or datetime.now(BJ)).astimezone(timezone.utc))
+    next_day = start + timedelta(days=1)
+    return _to_ms(next_day.astimezone(timezone.utc))
 
 
-def _write_cache(staff_id: str, range_key: str, payload: dict[str, Any]) -> None:
-    if not _should_cache_range(range_key):
-        return
-    key = _cache_key(staff_id, range_key)
-    with _cache_lock:
-        _cache[key] = (_cache_expires_at_epoch(), payload)
+def _group_consecutive_day_keys(day_keys: list[str]) -> list[list[str]]:
+    if not day_keys:
+        return []
+    ordered = sorted(day_keys)
+    groups: list[list[str]] = [[ordered[0]]]
+    for dk in ordered[1:]:
+        prev = groups[-1][-1]
+        prev_dt = _day_start_bj(prev)
+        cur_dt = _day_start_bj(dk)
+        if (cur_dt - prev_dt).days == 1:
+            groups[-1].append(dk)
+        else:
+            groups.append([dk])
+    return groups
+
+
+def _split_span_chunks(
+    span_days: list[str],
+    *,
+    max_days: int = CURSOR_FETCH_CHUNK_DAYS,
+) -> list[list[str]]:
+    if not span_days:
+        return []
+    if len(span_days) <= max_days:
+        return [span_days]
+    return [span_days[i : i + max_days] for i in range(0, len(span_days), max_days)]
+
+
+def _zero_fill_span_days(span_days: list[str], daily_map: dict[str, Any]) -> dict[str, dict[str, int]]:
+    out: dict[str, dict[str, int]] = {}
+    for dk in span_days:
+        stats = daily_map.get(dk) if isinstance(daily_map, dict) else None
+        if not isinstance(stats, dict):
+            stats = {}
+        out[dk] = {
+            "requests": int(stats.get("requests") or 0),
+            "tokens": int(stats.get("tokens") or 0),
+        }
+    return out
 
 
 def _to_ms(value: datetime) -> int:
@@ -568,15 +600,199 @@ def dashboard_usage_url(start: datetime, end: datetime) -> str:
     )
 
 
+def _resolve_fetch_stats(
+    *,
+    session_token: str,
+    cursor_email: str,
+    team_id: str,
+    workos_id: str,
+    start_ms: int,
+    end_ms: int,
+) -> tuple[dict[str, Any] | None, str, str | None]:
+    """返回 (stats, source, auth_error)。"""
+    admin_available = _admin_api_available() and bool(cursor_email)
+    stats: dict[str, Any] | None = None
+    source = "cursor_dashboard"
+    auth_error: str | None = None
+
+    if session_token:
+        try:
+            stats = _fetch_dashboard_usage(
+                session_token,
+                start_ms=start_ms,
+                end_ms=end_ms,
+                team_id=team_id,
+                workos_id=workos_id,
+            )
+            source = "cursor_dashboard"
+        except CursorAuthError as exc:
+            auth_error = str(exc)
+            logger.warning("Cursor Dashboard 会话失效")
+        except RuntimeError as exc:
+            logger.warning("Cursor Dashboard 用量查询失败: %s", exc)
+            raise
+
+    if stats is None and admin_available:
+        try:
+            stats = _fetch_admin_usage(
+                _env("CURSOR_API_KEY"),
+                email=cursor_email,
+                start_ms=start_ms,
+                end_ms=end_ms,
+            )
+            source = "cursor_admin_api"
+            auth_error = None
+        except RuntimeError as exc:
+            logger.warning("Cursor Admin 用量查询失败: %s", exc)
+            if auth_error:
+                return None, source, auth_error
+            raise
+
+    return stats, source, auth_error
+
+
+def _fetch_and_cache_days(
+    staff_id: str,
+    day_keys: list[str],
+    *,
+    session_token: str,
+    cursor_email: str,
+    team_id: str,
+    workos_id: str,
+) -> tuple[str, str | None, dict[str, dict[str, int]]]:
+    """拉取缺失自然日；仅历史日写入按日缓存，本日只返回不落库。返回 (source, auth_error, fetched)。"""
+    if not day_keys:
+        return "cursor_dashboard", None, {}
+
+    store = get_cursor_usage_daily_store()
+    today_key = _today_key_bj()
+    store.purge_today(staff_id)
+    now_bj = datetime.now(BJ)
+    source = "cursor_dashboard"
+    auth_error: str | None = None
+    fetched: dict[str, dict[str, int]] = {}
+
+    for span in _group_consecutive_day_keys(day_keys):
+        for chunk in _split_span_chunks(span):
+            start_ms = _to_ms(_day_start_bj(chunk[0]).astimezone(timezone.utc))
+            end_ms = _day_end_ms(chunk[-1], now_bj=now_bj)
+            stats, span_source, span_auth = _resolve_fetch_stats(
+                session_token=session_token,
+                cursor_email=cursor_email,
+                team_id=team_id,
+                workos_id=workos_id,
+                start_ms=start_ms,
+                end_ms=end_ms,
+            )
+            if stats is None:
+                if span_auth and not auth_error:
+                    auth_error = span_auth
+                continue
+            source = span_source
+            daily_map = stats.get("daily")
+            if not isinstance(daily_map, dict):
+                daily_map = {}
+            filled = _zero_fill_span_days(chunk, daily_map)
+            fetched.update(filled)
+            to_store = {
+                dk: stats_row
+                for dk, stats_row in filled.items()
+                if dk < today_key
+            }
+            if to_store:
+                store.set_days(staff_id, to_store)
+
+    store.trim_leading_empty_days(staff_id, *_usage_trim_window())
+
+    return source, auth_error, fetched
+
+
+def clear_user_usage_daily_cache(staff_id: str) -> None:
+    get_cursor_usage_daily_store().clear_staff(staff_id)
+
+
+def clear_user_today_live_cache(staff_id: str) -> None:
+    sid = (staff_id or "").strip()
+    if not sid:
+        return
+    with _today_live_cache_lock:
+        _today_live_cache.pop(sid, None)
+
+
+def _get_cached_today(staff_id: str) -> dict[str, int] | None:
+    sid = (staff_id or "").strip()
+    if not sid:
+        return None
+    today_key = _today_key_bj()
+    with _today_live_cache_lock:
+        entry = _today_live_cache.get(sid)
+        if entry and entry[0] == today_key:
+            return dict(entry[1])
+    return None
+
+
+def _set_cached_today(staff_id: str, stats: dict[str, int]) -> None:
+    sid = (staff_id or "").strip()
+    if not sid:
+        return
+    today_key = _today_key_bj()
+    row = {
+        "requests": int(stats.get("requests") or 0),
+        "tokens": int(stats.get("tokens") or 0),
+    }
+    with _today_live_cache_lock:
+        _today_live_cache[sid] = (today_key, row)
+
+
+def _usage_trim_window() -> tuple[str, str]:
+    today_key = _today_key_bj()
+    now_bj = datetime.now(BJ)
+    since = (now_bj - timedelta(days=364)).strftime("%Y-%m-%d")
+    return since, today_key
+
+
+def _trim_leading_empty_usage_days(staff_id: str) -> str | None:
+    sid = (staff_id or "").strip()
+    if not sid:
+        return None
+    since, until = _usage_trim_window()
+    return get_cursor_usage_daily_store().trim_leading_empty_days(sid, since, until)
+
+
+def get_usage_date_bounds(staff_id: str) -> dict[str, Any]:
+    """返回日期选择器边界：可选区间为近 MAX_USAGE_CUSTOM_DAYS 天，且不早于最早有用量自然日。"""
+    sid = (staff_id or "").strip()
+    today_key = _today_key_bj()
+    now_bj = datetime.now(BJ)
+    selectable_min = (
+        now_bj - timedelta(days=MAX_USAGE_CUSTOM_DAYS - 1)
+    ).strftime("%Y-%m-%d")
+    earliest_with_data = _trim_leading_empty_usage_days(sid) if sid else None
+    effective_min = selectable_min
+    if earliest_with_data and earliest_with_data > selectable_min:
+        effective_min = earliest_with_data
+    return {
+        "minDate": effective_min,
+        "maxDate": today_key,
+        "earliestWithData": earliest_with_data or "",
+        "preloadDays": MAX_USAGE_CUSTOM_DAYS,
+    }
+
+
 def summarize_user_usage(
     staff_id: str,
     *,
     range_key: str = "month",
+    start_date: str = "",
+    end_date: str = "",
     refresh: bool = False,
 ) -> dict[str, Any]:
     load_env_local()
     sid = (staff_id or "").strip()
-    start, end, label, key = resolve_usage_range(range_key)
+    if (start_date or "").strip() and (end_date or "").strip():
+        start, end, label, key = resolve_usage_custom_range(start_date, end_date)
+    else:
+        start, end, label, key = resolve_usage_range(range_key)
     base = {
         "range": key,
         "rangeLabel": label,
@@ -593,14 +809,7 @@ def summarize_user_usage(
         base["error"] = "未登录"
         return base
 
-    if _should_cache_range(key):
-        cached = _read_cache(sid, key)
-        if cached is not None:
-            return cached
-
     session_token, cursor_email, team_id, workos_id = _resolve_credentials(sid)
-    start_ms = _to_ms(start)
-    end_ms = _to_ms(end)
     cred_status = get_cursor_usage_store().status_for_staff(sid)
     has_env_session = bool(_env("CURSOR_SESSION_TOKEN"))
     has_env_email = bool(_env("CURSOR_USAGE_EMAIL"))
@@ -620,25 +829,35 @@ def summarize_user_usage(
         )
         return base
 
-    stats: dict[str, Any] | None = None
+    day_keys = _iter_day_keys(start, end)
+    today_key = _today_key_bj()
+    daily_store = get_cursor_usage_daily_store()
+    daily_store.purge_today(sid)
+    _trim_leading_empty_usage_days(sid)
+    if refresh:
+        clear_user_today_live_cache(sid)
+    to_fetch: list[str] = []
+    for dk in day_keys:
+        if dk == today_key:
+            if refresh or _get_cached_today(sid) is None:
+                to_fetch.append(dk)
+        elif refresh or daily_store.get_day(sid, dk) is None:
+            to_fetch.append(dk)
+
     source = "cursor_dashboard"
     auth_error: str | None = None
-
-    if session_token:
+    live_fetched: dict[str, dict[str, int]] = {}
+    if to_fetch:
         try:
-            stats = _fetch_dashboard_usage(
-                session_token,
-                start_ms=start_ms,
-                end_ms=end_ms,
+            source, auth_error, live_fetched = _fetch_and_cache_days(
+                sid,
+                to_fetch,
+                session_token=session_token,
+                cursor_email=cursor_email,
                 team_id=team_id,
                 workos_id=workos_id,
             )
-            source = "cursor_dashboard"
-        except CursorAuthError as exc:
-            auth_error = str(exc)
-            logger.warning("Cursor Dashboard 会话失效 staff=%s", sid[:12])
         except RuntimeError as exc:
-            logger.warning("Cursor Dashboard 用量查询失败 staff=%s: %s", sid[:12], exc)
             base.update(
                 {
                     "error": str(exc),
@@ -648,43 +867,38 @@ def summarize_user_usage(
             )
             return base
 
-    if stats is None and admin_available:
-        try:
-            stats = _fetch_admin_usage(
-                _env("CURSOR_API_KEY"),
-                email=cursor_email,
-                start_ms=start_ms,
-                end_ms=end_ms,
-            )
-            source = "cursor_admin_api"
-            auth_error = None
-        except RuntimeError as exc:
-            logger.warning("Cursor Admin 用量查询失败 staff=%s: %s", sid[:12], exc)
-            if auth_error:
-                base.update(
-                    {
-                        "error": auth_error,
-                        "needsReauth": True,
-                        "configured": True,
-                        "needsSetup": False,
-                        "adminApiAvailable": _admin_api_available(),
-                    }
-                )
-                return base
-            base.update(
-                {
-                    "error": str(exc),
-                    "configured": cred_status["configured"] or has_env_session or has_env_email,
-                    "needsSetup": False,
-                }
-            )
-            return base
+    daily_map: dict[str, dict[str, int]] = {}
+    missing_after_fetch: list[str] = []
+    for dk in day_keys:
+        if dk == today_key:
+            live_today = live_fetched.get(dk)
+            if live_today is not None:
+                daily_map[dk] = live_today
+                _set_cached_today(sid, live_today)
+            else:
+                cached_today = _get_cached_today(sid)
+                if cached_today is not None:
+                    daily_map[dk] = cached_today
+                else:
+                    missing_after_fetch.append(dk)
+            continue
+        row = daily_store.get_day(sid, dk)
+        if row is None:
+            missing_after_fetch.append(dk)
+        else:
+            daily_map[dk] = row
 
-    if stats is None:
+    if missing_after_fetch and not auth_error:
+        if not session_token and not admin_available:
+            auth_error = auth_error or "Cursor 会话无效，请重新绑定"
+        elif missing_after_fetch == [today_key] and not daily_map:
+            auth_error = auth_error or "Cursor 会话无效，请重新绑定"
+
+    if auth_error and not daily_map:
         base.update(
             {
-                "error": auth_error or "Cursor 会话无效，请重新绑定",
-                "needsReauth": bool(auth_error),
+                "error": auth_error,
+                "needsReauth": True,
                 "configured": cred_status["configured"] or has_env_session or has_env_email,
                 "needsSetup": not (
                     cred_status["configured"] or has_env_session or has_env_email
@@ -694,18 +908,23 @@ def summarize_user_usage(
         )
         return base
 
-    daily_map = stats.get("daily")
-    if not isinstance(daily_map, dict):
-        daily_map = {}
+    requests = 0
+    tokens = 0
+    for dk in day_keys:
+        stats = daily_map.get(dk, {"requests": 0, "tokens": 0})
+        requests += int(stats.get("requests") or 0)
+        tokens += int(stats.get("tokens") or 0)
+
     result = {
         **base,
-        "requests": int(stats.get("requests") or 0),
-        "tokens": int(stats.get("tokens") or 0),
-        "tokensSource": "cursor" if int(stats.get("tokens") or 0) > 0 else "none",
+        "requests": requests,
+        "tokens": tokens,
+        "tokensSource": "cursor" if tokens > 0 else "none",
         "source": source,
         "configured": True,
         "needsSetup": False,
         "daily": build_daily_series(start, end, daily_map),
     }
-    _write_cache(sid, key, result)
+    if auth_error:
+        result["error"] = auth_error
     return result

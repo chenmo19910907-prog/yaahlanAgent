@@ -155,6 +155,7 @@ class AgentStreamCard:
         self._prompt = ""
         self._queue_ahead_provider: Any = None
         self._orphan_timer: threading.Timer | None = None
+        self._queue_bootstrap_timers: list[threading.Timer] = []
 
         if self._mode == "ai":
             card = dingtalk_stream.AIMarkdownCardInstance(dingtalk_client, incoming)
@@ -304,6 +305,7 @@ class AgentStreamCard:
             ("_prompt", ""),
             ("_queue_ahead_provider", None),
             ("_orphan_timer", None),
+            ("_queue_bootstrap_timers", []),
         ):
             if not hasattr(self, name):
                 setattr(self, name, default)
@@ -396,6 +398,21 @@ class AgentStreamCard:
             self._orphan_timer.cancel()
             self._orphan_timer = None
 
+    def _is_queue_status_body(self, body: str) -> bool:
+        return "排队中" in (body or "")
+
+    def _clear_queue_body_if_present(self) -> bool:
+        if not self._is_queue_status_body(getattr(self, "_agent_body", "")):
+            return False
+        self._agent_body = ""
+        return True
+
+    def _cancel_queue_bootstrap_burst(self) -> None:
+        timers = getattr(self, "_queue_bootstrap_timers", None) or []
+        for timer in timers:
+            timer.cancel()
+        self._queue_bootstrap_timers = []
+
     def set_queue_ahead_provider(self, provider: Any) -> None:
         """注入排队深度查询（周期刷新卡片「前面约 N 个」）。"""
         self._queue_ahead_provider = provider
@@ -410,6 +427,8 @@ class AgentStreamCard:
             logger.warning("排队深度查询失败: %s", exc)
             return
         if ahead <= 0:
+            if self._clear_queue_body_if_present():
+                self._render(force=True)
             return
         from progress_message import build_queue_message
 
@@ -445,6 +464,7 @@ class AgentStreamCard:
 
     def _schedule_queue_bootstrap_burst(self) -> None:
         """排队卡 create 后短间隔连推，避免单聊长期停在模板「已受理」。"""
+        self._cancel_queue_bootstrap_burst()
 
         def _schedule(delay: float) -> None:
             def _fire() -> None:
@@ -455,6 +475,25 @@ class AgentStreamCard:
 
             timer = threading.Timer(delay, _fire)
             timer.daemon = True
+            self._queue_bootstrap_timers.append(timer)
+            timer.start()
+
+        for delay in QUEUE_BOOTSTRAP_PUSH_DELAYS_S:
+            _schedule(delay)
+
+    def _schedule_render_only_bootstrap_burst(self) -> None:
+        """首条执行卡：仅连推渲染，不注入排队文案。"""
+        self._cancel_queue_bootstrap_burst()
+
+        def _schedule(delay: float) -> None:
+            def _fire() -> None:
+                if not self._started:
+                    return
+                self._render(force=True)
+
+            timer = threading.Timer(delay, _fire)
+            timer.daemon = True
+            self._queue_bootstrap_timers.append(timer)
             timer.start()
 
         for delay in QUEUE_BOOTSTRAP_PUSH_DELAYS_S:
@@ -484,10 +523,13 @@ class AgentStreamCard:
         if not self._started:
             return
         self._cancel_queue_content_refresh()
+        self._cancel_queue_bootstrap_burst()
         self._cancel_orphan_watchdog()
+        had_queue_body = self._clear_queue_body_if_present()
         if self._progress_timer is not None:
+            if had_queue_body:
+                self._render(force=True)
             return
-        self._agent_body = ""
         self._started_at = time.monotonic()
         self._last_content_at = self._started_at
         self._status_line = self._format_progress_markdown()
@@ -554,8 +596,8 @@ class AgentStreamCard:
             self._status_line = self._format_progress_markdown()
             self._schedule_progress_tick()
             self._render(force=True)
-            # 首条也 burst：reply 后钉钉常停在「已受理」，须连推几次
-            self._schedule_queue_bootstrap_burst()
+            # 首条也 burst：reply 后钉钉常停在「已受理」，须连推几次（不刷新排队文案）
+            self._schedule_render_only_bootstrap_burst()
         else:
             # 排队卡：create 内虽已 put 一次，单聊仍常显示「已受理」，须立刻再推 + 短 burst
             self._render(force=True)
@@ -577,6 +619,7 @@ class AgentStreamCard:
         if not self._started:
             return
         self._cancel_queue_content_refresh()
+        self._cancel_queue_bootstrap_burst()
         self._cancel_orphan_watchdog()
         self._header = (header or "").strip()
         if estimate_seconds is not None:
@@ -722,6 +765,7 @@ class AgentStreamCard:
             return False
         self._stop_progress_tick()
         self._cancel_queue_content_refresh()
+        self._cancel_queue_bootstrap_burst()
         self._cancel_orphan_watchdog()
         self._header = ""
         self._batch_progress_line = ""

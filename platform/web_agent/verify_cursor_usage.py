@@ -8,21 +8,20 @@ import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from cursor_usage import (
     CursorAuthError,
     _accumulate_event_daily,
-    _cache_expires_at_epoch,
     _event_tokens,
     _fetch_admin_usage,
     _fetch_dashboard_usage,
     _normalize_session_token,
-    _read_cache,
-    _should_cache_range,
-    _write_cache,
+    _split_span_chunks,
     build_daily_series,
+    clear_user_today_live_cache,
     dashboard_usage_url,
+    get_usage_date_bounds,
     parse_cursor_session_input,
     summarize_user_usage,
 )
@@ -50,10 +49,7 @@ class CursorUsageStoreTest(unittest.TestCase):
 
 class CursorUsageTest(unittest.TestCase):
     def setUp(self) -> None:
-        from cursor_usage import _cache, _cache_lock
-
-        with _cache_lock:
-            _cache.clear()
+        clear_user_today_live_cache("alice")
 
     def test_event_tokens(self) -> None:
         total = _event_tokens(
@@ -75,39 +71,69 @@ class CursorUsageTest(unittest.TestCase):
         self.assertIn("startDate=2026-07-15", url)
         self.assertIn("endDate=2026-08-13", url)
 
-    def test_should_cache_range(self) -> None:
-        self.assertFalse(_should_cache_range("day"))
-        self.assertTrue(_should_cache_range("week"))
-        self.assertTrue(_should_cache_range("month"))
+    def test_get_usage_date_bounds_from_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            from cursor_usage_daily_store import CursorUsageDailyStore
 
-    def test_daily_cache_survives_refresh_flag(self) -> None:
-        payload = {"range": "month", "requests": 9, "tokens": 90}
-        _write_cache("alice", "month", payload)
-        cached = _read_cache("alice", "month")
-        self.assertEqual(cached, payload)
-        with patch("cursor_usage._fetch_dashboard_usage") as fetch_mock:
-            with patch("cursor_usage._resolve_credentials", return_value=("token", "", "", "")):
-                result = summarize_user_usage("alice", range_key="month", refresh=True)
-        fetch_mock.assert_not_called()
-        self.assertEqual(result["requests"], 9)
+            daily_path = Path(tmp) / "daily.json"
+            store = CursorUsageDailyStore(path=daily_path)
+            store.set_days(
+                "alice",
+                {
+                    "2026-02-20": {"requests": 0, "tokens": 0},
+                    "2026-03-01": {"requests": 2, "tokens": 20},
+                    "2026-07-01": {"requests": 0, "tokens": 0},
+                },
+            )
+            fake_now = datetime(2026, 8, 20, 15, 0, 0, tzinfo=BJ)
+            with patch("cursor_usage.get_cursor_usage_daily_store", return_value=store):
+                with patch("cursor_usage.datetime") as dt_mock:
+                    dt_mock.now.return_value = fake_now
+                    bounds = get_usage_date_bounds("alice")
+            self.assertEqual(bounds["maxDate"], "2026-08-20")
+            self.assertEqual(bounds["minDate"], "2026-03-01")
+            self.assertEqual(bounds["earliestWithData"], "2026-03-01")
+            self.assertEqual(bounds["preloadDays"], 180)
+            trimmed = store.get_day("alice", "2026-02-20")
+            self.assertIsNone(trimmed)
 
-    def test_daily_cache_expires_after_midnight_bj(self) -> None:
-        from cursor_usage import _cache, _cache_lock
+    def test_split_span_chunks(self) -> None:
+        days = [f"2026-01-{d:02d}" for d in range(1, 32)]
+        days += [f"2026-02-{d:02d}" for d in range(1, 29)]
+        chunks = _split_span_chunks(days, max_days=28)
+        self.assertEqual(len(chunks), 3)
+        self.assertEqual(sum(len(c) for c in chunks), len(days))
 
-        payload = {"range": "week", "requests": 1, "tokens": 2}
-        midnight_bj = datetime(2026, 8, 15, 0, 0, 0, tzinfo=BJ)
-        with _cache_lock:
-            _cache["alice:week"] = (midnight_bj.timestamp(), payload)
-        with patch("cursor_usage.time.time", return_value=midnight_bj.timestamp()):
-            self.assertIsNone(_read_cache("alice", "week"))
+    def test_summarize_custom_range(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            from cursor_usage_daily_store import CursorUsageDailyStore
 
-    def test_cache_expires_at_next_bj_midnight(self) -> None:
-        noon_bj = datetime(2026, 8, 14, 12, 0, 0, tzinfo=BJ)
-        with patch("cursor_usage.datetime") as dt_mock:
-            dt_mock.now.return_value = noon_bj
-            expires = _cache_expires_at_epoch()
-        expected = datetime(2026, 8, 15, 0, 0, 0, tzinfo=BJ).timestamp()
-        self.assertEqual(expires, expected)
+            cred_store = CursorUsageCredentialStore(path=Path(tmp) / "creds.json")
+            daily_store = CursorUsageDailyStore(path=Path(tmp) / "daily.json")
+            cred_store.upsert("alice", session_token="token-a")
+            daily_store.set_days(
+                "alice",
+                {
+                    "2026-08-10": {"requests": 3, "tokens": 30},
+                    "2026-08-11": {"requests": 2, "tokens": 20},
+                },
+            )
+            fake_now = datetime(2026, 8, 20, 15, 0, 0, tzinfo=BJ)
+            with patch("cursor_usage.get_cursor_usage_store", return_value=cred_store):
+                with patch("cursor_usage.get_cursor_usage_daily_store", return_value=daily_store):
+                    with patch("cursor_usage.load_env_local"):
+                        with patch.dict("os.environ", {}, clear=True):
+                            with patch("cursor_usage.datetime") as dt_mock:
+                                dt_mock.now.return_value = fake_now
+                                summary = summarize_user_usage(
+                                    "alice",
+                                    start_date="2026-08-10",
+                                    end_date="2026-08-11",
+                                )
+            self.assertEqual(summary["requests"], 5)
+            self.assertEqual(summary["tokens"], 50)
+            self.assertEqual(summary["rangeLabel"], "2026-08-10 至 2026-08-11")
+            self.assertEqual(len(summary["daily"]), 2)
 
     def test_summarize_needs_setup_without_credentials(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -205,42 +231,111 @@ class CursorUsageTest(unittest.TestCase):
 
     def test_summarize_reauth_on_dashboard_auth_error(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
+            from cursor_usage_daily_store import CursorUsageDailyStore
+
             store = CursorUsageCredentialStore(path=Path(tmp) / "creds.json")
+            daily_store = CursorUsageDailyStore(path=Path(tmp) / "daily.json")
             store.upsert("alice", session_token="expired-token")
             with patch("cursor_usage.get_cursor_usage_store", return_value=store):
-                with patch("cursor_usage.load_env_local"):
-                    with patch.dict("os.environ", {}, clear=True):
-                        with patch(
-                            "cursor_usage._fetch_dashboard_usage",
-                            side_effect=CursorAuthError("会话过期"),
-                        ):
-                            summary = summarize_user_usage("alice", range_key="month")
+                with patch("cursor_usage.get_cursor_usage_daily_store", return_value=daily_store):
+                    with patch("cursor_usage.load_env_local"):
+                        with patch.dict("os.environ", {}, clear=True):
+                            with patch(
+                                "cursor_usage._fetch_dashboard_usage",
+                                side_effect=CursorAuthError("会话过期"),
+                            ):
+                                summary = summarize_user_usage("alice", range_key="month")
             self.assertTrue(summary["needsReauth"])
             self.assertIn("过期", summary["error"])
 
     def test_summarize_admin_fallback_when_dashboard_auth_fails(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
+            from cursor_usage_daily_store import CursorUsageDailyStore
+
             store = CursorUsageCredentialStore(path=Path(tmp) / "creds.json")
+            daily_store = CursorUsageDailyStore(path=Path(tmp) / "daily.json")
             store.upsert("alice", session_token="expired-token", cursor_email="alice@example.com")
+            fake_now = datetime(2026, 8, 20, 15, 0, 0, tzinfo=BJ)
             with patch("cursor_usage.get_cursor_usage_store", return_value=store):
-                with patch("cursor_usage.load_env_local"):
-                    with patch.dict(
-                        "os.environ",
-                        {"CURSOR_API_KEY": "cursor_test_key"},
-                        clear=True,
-                    ):
-                        with patch(
-                            "cursor_usage._fetch_dashboard_usage",
-                            side_effect=CursorAuthError("会话过期"),
+                with patch("cursor_usage.get_cursor_usage_daily_store", return_value=daily_store):
+                    with patch("cursor_usage.load_env_local"):
+                        with patch.dict(
+                            "os.environ",
+                            {"CURSOR_API_KEY": "cursor_test_key"},
+                            clear=True,
                         ):
-                            with patch(
-                                "cursor_usage._fetch_admin_usage",
-                                return_value={"requests": 3, "tokens": 30, "daily": {}},
-                            ):
-                                summary = summarize_user_usage("alice", range_key="month")
+                            with patch("analytics_store._now_bj", return_value=fake_now):
+                                with patch("cursor_usage._today_key_bj", return_value="2026-08-20"):
+                                    with patch(
+                                        "cursor_usage._fetch_dashboard_usage",
+                                        side_effect=CursorAuthError("会话过期"),
+                                    ):
+                                        with patch(
+                                            "cursor_usage._fetch_admin_usage",
+                                            return_value={
+                                                "requests": 3,
+                                                "tokens": 30,
+                                                "daily": {
+                                                    "2026-08-20": {
+                                                        "requests": 3,
+                                                        "tokens": 30,
+                                                    }
+                                                },
+                                            },
+                                        ):
+                                            summary = summarize_user_usage("alice", range_key="day")
             self.assertEqual(summary["requests"], 3)
             self.assertEqual(summary["tokens"], 30)
             self.assertEqual(summary["source"], "cursor_admin_api")
+
+    def test_today_cached_until_refresh(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            from cursor_usage_daily_store import CursorUsageDailyStore
+
+            cred_store = CursorUsageCredentialStore(path=Path(tmp) / "creds.json")
+            daily_store = CursorUsageDailyStore(path=Path(tmp) / "daily.json")
+            cred_store.upsert("alice", session_token="token-a")
+            fake_now = datetime(2026, 8, 20, 15, 0, 0, tzinfo=BJ)
+            fetch_mock = MagicMock(
+                return_value=(
+                    "cursor_dashboard",
+                    None,
+                    {"2026-08-20": {"requests": 5, "tokens": 50}},
+                )
+            )
+            with patch("cursor_usage.get_cursor_usage_store", return_value=cred_store):
+                with patch("cursor_usage.get_cursor_usage_daily_store", return_value=daily_store):
+                    with patch("cursor_usage.load_env_local"):
+                        with patch.dict("os.environ", {}, clear=True):
+                            with patch("cursor_usage.datetime") as dt_mock:
+                                dt_mock.now.return_value = fake_now
+                                with patch("cursor_usage._today_key_bj", return_value="2026-08-20"):
+                                    with patch(
+                                        "cursor_usage._fetch_and_cache_days",
+                                        fetch_mock,
+                                    ):
+                                        first = summarize_user_usage(
+                                            "alice",
+                                            range_key="day",
+                                            refresh=True,
+                                        )
+                                        self.assertEqual(fetch_mock.call_count, 1)
+                                        second = summarize_user_usage(
+                                            "alice",
+                                            range_key="day",
+                                            refresh=False,
+                                        )
+                                        self.assertEqual(fetch_mock.call_count, 1)
+                                        fetch_mock.reset_mock()
+                                        third = summarize_user_usage(
+                                            "alice",
+                                            range_key="day",
+                                            refresh=True,
+                                        )
+                                        self.assertEqual(fetch_mock.call_count, 1)
+            self.assertEqual(first["requests"], 5)
+            self.assertEqual(second["requests"], 5)
+            self.assertEqual(third["requests"], 5)
 
 
 if __name__ == "__main__":

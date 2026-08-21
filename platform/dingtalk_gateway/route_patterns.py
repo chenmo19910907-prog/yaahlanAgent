@@ -145,10 +145,12 @@ def is_admin_apply_decision_request(text: str) -> bool:
 
 
 def is_likely_fast_route(text: str) -> bool:
-    """入队时判断是否走 fast 队列（不与 Agent 任务互斥）。含 Web Agent 重启与回复详略切换。"""
+    """入队时判断是否走 fast 队列（不与 Agent 任务互斥）。含网页验证码、Web Agent 重启与回复详略切换。"""
     t = (text or "").strip()
     if not t:
         return False
+    if is_web_login_request(t):
+        return True
     return any(pattern.match(t) for pattern in _FAST_ROUTE_RES)
 
 

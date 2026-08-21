@@ -28,7 +28,8 @@ from progress_message import (
 )
 from quoted_reply import quote_text_from_inbound, reply_quoted
 from replay import is_replay_command
-from route_patterns import should_send_text_task_ack
+from route_patterns import is_web_login_request, should_send_text_task_ack
+from web_login_route import handle_web_login_request
 from task_dispatcher import TaskDispatcher
 from temp_cleanup import cleanup_temp_files, start_temp_cleanup_sweeper
 from log_rotate import start_log_rotate_sweeper
@@ -281,6 +282,16 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
                 incoming,
                 inbound,
             )
+            return AckMessage.STATUS_OK, "OK"
+
+        if is_web_login_request(inbound.text):
+            group_reply, _dm_ok = handle_web_login_request(
+                sender_staff_id=incoming.sender_staff_id or incoming.sender_id or "",
+                sender_name=incoming.sender_nick or "",
+                conversation_type=incoming.conversation_type,
+                client=getattr(self, "dingtalk_client", None),
+            )
+            self._reply(group_reply, incoming, inbound)
             return AckMessage.STATUS_OK, "OK"
 
         logger.info(

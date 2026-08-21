@@ -14,6 +14,7 @@ from playbook import load_playbook
 
 REPORT_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = REPORT_DIR / "config" / "showcase.json"
+SHOWCASE_URL_PREFIX = "/family-pk-showcase"
 FAMILY_PK_DEMO_STEPS_PATH = REPORT_DIR / "config" / "family_pk_demo_steps.json"
 ANNIVERSARY_EGG_DEMO_STEPS_PATH = REPORT_DIR / "config" / "anniversary_egg_demo_steps.json"
 SOURCES_PATH = REPORT_DIR.parent / "config" / "sources.json"
@@ -135,11 +136,18 @@ def _media_src(media_file: str, exports_dir: Path) -> Path:
     return exports_dir / "media" / media_file
 
 
+def _showcase_media_href(media_file: str, exports_dir: Path) -> str:
+    src_path = _media_src(media_file, exports_dir)
+    cache_bust = f"?v={int(src_path.stat().st_mtime)}" if src_path.is_file() else ""
+    return f"{SHOWCASE_URL_PREFIX}/media/{media_file}{cache_bust}"
+
+
 def _render_media_item(
     media: dict[str, Any],
     exports_dir: Path,
     *,
     fallback_caption: str = "",
+    lazy: bool = True,
 ) -> str:
     media_type = str(media.get("type") or "image").lower()
     media_file = str(media.get("file") or "").strip()
@@ -154,7 +162,6 @@ def _render_media_item(
         """
 
     src_path = _media_src(media_file, exports_dir)
-    rel = f"media/{media_file}"
     if not src_path.is_file():
         return f"""
         <div class="media-box placeholder">
@@ -168,17 +175,19 @@ def _render_media_item(
         </div>
         """
 
+    href = _showcase_media_href(media_file, exports_dir)
     if media_type == "video":
         return f"""
         <div class="media-box">
-          <video controls playsinline preload="metadata" src="{_esc(rel)}"></video>
+          <video controls playsinline preload="metadata" src="{_esc(href)}"></video>
           <p class="media-caption">{caption}</p>
         </div>
         """
 
+    loading_attr = ' loading="lazy"' if lazy else ' loading="eager" decoding="async"'
     return f"""
     <div class="media-box">
-      <img src="{_esc(rel)}" alt="{caption}" loading="lazy" />
+      <img src="{_esc(href)}" alt="{caption}"{loading_attr} />
       <p class="media-caption">{caption}</p>
     </div>
     """
@@ -740,9 +749,54 @@ def _render_tools_block(step: dict[str, Any]) -> str:
     return f'<ul class="demo-tool-list">{items}</ul>'
 
 
+def _render_sheet_preview_media(
+    media: dict[str, Any],
+    exports_dir: Path,
+    *,
+    fallback_caption: str = "",
+) -> str:
+    media_file = str(media.get("file") or "").strip()
+    caption = _esc(media.get("caption") or fallback_caption or "")
+    if not media_file:
+        return """
+        <div class="media-box placeholder">
+          <div class="ph-inner">未配置 media.file</div>
+          <p class="media-caption"></p>
+        </div>
+        """
+
+    src_path = _media_src(media_file, exports_dir)
+    if not src_path.is_file():
+        return f"""
+        <div class="media-box placeholder">
+          <div class="ph-inner">
+            <strong>待录制</strong>
+            <span>请将素材放到</span>
+            <code>platform/family_pk_report/media/{_esc(media_file)}</code>
+            <span>后重新生成</span>
+          </div>
+          <p class="media-caption">{caption}</p>
+        </div>
+        """
+
+    href = _showcase_media_href(media_file, exports_dir)
+    if media_file.lower().endswith(".svg"):
+        return f"""
+        <div class="media-box media-box-sheet">
+          <iframe class="sheet-preview-frame" src="{_esc(href)}" title="{caption}" loading="eager"></iframe>
+          <p class="media-caption">{caption}</p>
+        </div>
+        """
+    return _render_media_item(media, exports_dir, fallback_caption=fallback_caption, lazy=False)
+
+
 def _render_table_preview_block(step: dict[str, Any], exports_dir: Path) -> str:
     if step.get("media"):
-        return f'<div class="demo-wf-media demo-wf-media-only">{_render_media_item(step.get("media") or {}, exports_dir, fallback_caption=str(step.get("title") or ""))}</div>'
+        return (
+            f'<div class="demo-wf-media demo-wf-media-only">'
+            f"{_render_sheet_preview_media(step.get('media') or {}, exports_dir, fallback_caption=str(step.get('title') or ''))}"
+            f"</div>"
+        )
     return '<p class="wf-record-summary">—</p>'
 
 
@@ -756,15 +810,15 @@ def _render_media_thumb(step: dict[str, Any], exports_dir: Path) -> str:
     src_path = _media_src(media_file, exports_dir)
     if not src_path.is_file():
         return ""
-    rel = f"media/{media_file}"
+    href = _showcase_media_href(media_file, exports_dir)
     caption_raw = str(thumb.get("caption") or "客户端验收截图")
     caption = _esc(caption_raw)
     zoom_label = _esc(f"放大预览：{caption_raw}")
     return f"""
     <button type="button" class="demo-wf-step-thumb demo-zoom-trigger"
-      data-zoom-src="{_esc(rel)}" data-zoom-caption="{caption}"
+      data-zoom-src="{_esc(href)}" data-zoom-caption="{caption}"
       aria-label="{zoom_label}">
-      <img src="{_esc(rel)}" alt="{caption}" loading="lazy" />
+      <img src="{_esc(href)}" alt="{caption}" loading="lazy" />
     </button>
     """
 
@@ -1632,14 +1686,30 @@ def _showcase_tab_script(
       document.querySelectorAll("[data-sub-tabs]").forEach(function (root) {{
         var subLinks = root.querySelectorAll(".sub-tab-link");
         var subPanels = root.querySelectorAll(".sub-tab-panel");
+        function refreshPreviewImages(panel) {{
+          if (!panel) return;
+          panel.querySelectorAll(".demo-wf-media-only img").forEach(function (img) {{
+            img.loading = "eager";
+            var src = img.getAttribute("src");
+            if (src) img.src = src;
+          }});
+          panel.querySelectorAll(".sheet-preview-frame").forEach(function (frame) {{
+            var src = frame.getAttribute("src");
+            if (src) frame.src = src;
+          }});
+        }}
         function activateSub(subId) {{
           if (!subId) subId = "intro";
+          var activePanel = null;
           subPanels.forEach(function (p) {{
-            p.classList.toggle("active", p.getAttribute("data-sub-tab") === subId);
+            var isActive = p.getAttribute("data-sub-tab") === subId;
+            p.classList.toggle("active", isActive);
+            if (isActive) activePanel = p;
           }});
           subLinks.forEach(function (a) {{
             a.classList.toggle("active", a.getAttribute("data-sub-tab") === subId);
           }});
+          refreshPreviewImages(activePanel);
           updateStickyOffsets();
         }}
         subLinks.forEach(function (a) {{

@@ -19,14 +19,22 @@ MESSAGES_DIR = WEB_AGENT_DIR / "data" / "messages"
 
 BJ = timezone(timedelta(hours=8))
 
+
+def _now_bj() -> datetime:
+    return datetime.now(BJ)
+
 USAGE_RANGE_LABELS: dict[str, str] = {
     "day": "本日",
     "week": "本周",
     "month": "本月",
-    "7d": "7天内",
+    "yesterday": "昨日",
+    "7d": "上周",
+    "last_month": "上月",
     "30d": "30天内",
+    "180d": "近半年",
 }
 DEFAULT_USAGE_RANGE = "month"
+MAX_USAGE_CUSTOM_DAYS = 180
 
 _EVENT_NAME_RE = re.compile(r"^[a-z][a-z0-9_\-]{0,63}$")
 
@@ -60,16 +68,68 @@ def estimate_tokens_from_text(text: str) -> int:
     return max(1, (len(raw) + 2) // 3)
 
 
+def parse_usage_day_key(value: str) -> str | None:
+    text = (value or "").strip()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
+        return None
+    try:
+        datetime.strptime(text, "%Y-%m-%d")
+    except ValueError:
+        return None
+    return text
+
+
+def resolve_usage_custom_range(
+    start_day: str,
+    end_day: str,
+) -> tuple[datetime, datetime, str, str]:
+    """自定义区间（北京时间），最长 MAX_USAGE_CUSTOM_DAYS 天。"""
+    start_key = parse_usage_day_key(start_day)
+    end_key = parse_usage_day_key(end_day)
+    if not start_key or not end_key:
+        raise ValueError("日期格式无效，请使用 YYYY-MM-DD")
+
+    now_bj = _now_bj()
+    today_bj = now_bj.replace(hour=0, minute=0, second=0, microsecond=0)
+    start_bj = datetime.strptime(start_key, "%Y-%m-%d").replace(tzinfo=BJ)
+    end_bj = datetime.strptime(end_key, "%Y-%m-%d").replace(tzinfo=BJ)
+
+    if end_bj > today_bj:
+        raise ValueError("结束日期不能晚于今天")
+    if start_bj > end_bj:
+        raise ValueError("开始日期不能晚于结束日期")
+
+    span_days = (end_bj - start_bj).days + 1
+    if span_days > MAX_USAGE_CUSTOM_DAYS:
+        raise ValueError(f"自定义区间最长 {MAX_USAGE_CUSTOM_DAYS} 天")
+
+    start = start_bj.astimezone(timezone.utc)
+    if end_bj.date() == today_bj.date():
+        end = now_bj.astimezone(timezone.utc)
+    else:
+        end_exclusive = (end_bj + timedelta(days=1)).replace(
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
+        end = (end_exclusive - timedelta(microseconds=1)).astimezone(timezone.utc)
+
+    label = f"{start_key} 至 {end_key}"
+    key = f"custom:{start_key}:{end_key}"
+    return start, end, label, key
+
+
 def resolve_usage_range(range_key: str) -> tuple[datetime, datetime, str, str]:
     """返回 (start_utc, end_utc, label, normalized_key)，边界按北京时间。"""
-    now_bj = datetime.now(BJ)
-    end = now_bj.astimezone(timezone.utc)
+    now_bj = _now_bj()
     key = (range_key or DEFAULT_USAGE_RANGE).strip().lower()
     if key not in USAGE_RANGE_LABELS:
         key = DEFAULT_USAGE_RANGE
 
     if key == "day":
         start_bj = now_bj.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = now_bj.astimezone(timezone.utc)
     elif key == "week":
         start_bj = (now_bj - timedelta(days=now_bj.weekday())).replace(
             hour=0,
@@ -77,23 +137,63 @@ def resolve_usage_range(range_key: str) -> tuple[datetime, datetime, str, str]:
             second=0,
             microsecond=0,
         )
+        end = now_bj.astimezone(timezone.utc)
     elif key == "month":
         start_bj = now_bj.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    elif key == "7d":
-        # 含今天共 7 个自然日（非 8 个）
-        start_bj = (now_bj - timedelta(days=6)).replace(
+        end = now_bj.astimezone(timezone.utc)
+    elif key == "yesterday":
+        start_bj = (now_bj - timedelta(days=1)).replace(
             hour=0,
             minute=0,
             second=0,
             microsecond=0,
         )
-    else:  # 30d
+        end_bj = start_bj.replace(hour=23, minute=59, second=59, microsecond=999999)
+        start = start_bj.astimezone(timezone.utc)
+        end = end_bj.astimezone(timezone.utc)
+        return start, end, USAGE_RANGE_LABELS[key], key
+    elif key == "7d":
+        this_monday = (now_bj - timedelta(days=now_bj.weekday())).replace(
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
+        start_bj = this_monday - timedelta(days=7)
+        end_bj = this_monday - timedelta(microseconds=1)
+        start = start_bj.astimezone(timezone.utc)
+        end = end_bj.astimezone(timezone.utc)
+        return start, end, USAGE_RANGE_LABELS[key], key
+    elif key == "last_month":
+        first_of_this_month = now_bj.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        last_instant_prev_month = first_of_this_month - timedelta(microseconds=1)
+        start_bj = last_instant_prev_month.replace(
+            day=1,
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
+        end_bj = last_instant_prev_month
+        start = start_bj.astimezone(timezone.utc)
+        end = end_bj.astimezone(timezone.utc)
+        return start, end, USAGE_RANGE_LABELS[key], key
+    elif key == "30d":
         start_bj = (now_bj - timedelta(days=29)).replace(
             hour=0,
             minute=0,
             second=0,
             microsecond=0,
         )
+        end = now_bj.astimezone(timezone.utc)
+    else:  # 180d
+        start_bj = (now_bj - timedelta(days=179)).replace(
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
+        end = now_bj.astimezone(timezone.utc)
 
     start = start_bj.astimezone(timezone.utc)
     return start, end, USAGE_RANGE_LABELS[key], key

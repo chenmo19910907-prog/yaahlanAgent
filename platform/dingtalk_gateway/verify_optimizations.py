@@ -393,7 +393,7 @@ def test_duration_history() -> None:
 def test_fast_route_skip_text_ack() -> None:
     from route_patterns import is_likely_fast_route, should_send_text_task_ack
 
-    for text in ("重启web agent",):
+    for text in ("重启web agent", "请求访问Yaahlan 智能工具 Agent"):
         assert is_likely_fast_route(text), text
         assert not should_send_text_task_ack(text), text
     assert should_send_text_task_ack("查询用户 100465989")
