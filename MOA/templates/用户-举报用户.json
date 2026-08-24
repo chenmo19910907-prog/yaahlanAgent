@@ -1,0 +1,74 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "",
+  "method": "submit",
+  "header": "",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100334384\",\"sceneType\":1,\"reportedUserId\":\"100381494\",\"targetId\":\"100381494\",\"violationType\":\"illegal,porn,abuse,insult\",\"description\":\"Buub\",\"imageUrls\":[\"https://yaahlan.momocdn.com/picture/19/9D/199D34CC-94FA-F190-5E9B-4B1FC4683E0B20260824_L.jpg\"],\"area\":\"MENA\",\"lang\":\"en\",\"osType\":\"ios\",\"clientType\":\"2\",\"appVersion\":\"2.6.0\",\"osVersion\":\"18.6.2\",\"model\":\"iPhone14,8\",\"country\":\"B1\"}",
+      "type": "json",
+      "value": {
+        "userId": "100334384",
+        "sceneType": 1,
+        "reportedUserId": "100381494",
+        "targetId": "100381494",
+        "violationType": "illegal,porn,abuse,insult",
+        "description": "Buub",
+        "imageUrls": [
+          "https://yaahlan.momocdn.com/picture/19/9D/199D34CC-94FA-F190-5E9B-4B1FC4683E0B20260824_L.jpg"
+        ],
+        "area": "MENA",
+        "lang": "en",
+        "osType": "ios",
+        "clientType": "2",
+        "appVersion": "2.6.0",
+        "osVersion": "18.6.2",
+        "model": "iPhone14,8",
+        "country": "B1"
+      }
+    }
+  ],
+  "_meta": {
+    "httpPath": "/yaahlan/v2/report/submit",
+    "backendPath": "/v2/report/submit",
+    "backendService": "yaahlan-web",
+    "cmdbAppKey": "momo.ibt.yaahlan.service.yaahlan-web",
+    "execution": "CMDB 查 yaahlan-web 实例 IP → POST http://{instance_ip}:8080/v2/report/submit（无 MOA httpproxy）",
+    "tunnelMomoid": "100334384",
+    "tunnelTime": "2026/08/24 11:47:17",
+    "tunnelId": "9mDhMaABpk1mjMPPNdYY",
+    "sceneType": 1,
+    "sceneTypeNote": "1=个人主页举报用户",
+    "reportIdExample": 507,
+    "submitIdExample": 431,
+    "requiredFields": "userId, sceneType, reportedUserId, targetId, violationType, description, imageUrls",
+    "note": "同一举报人对同一被举报人已有未处理工单时会 toast 成功但不新建工单（submitId 仍递增）。批量造数须换 reporter userId。"
+  },
+  "_registry": {
+    "id": "user_report_submit",
+    "name": "用户-举报用户",
+    "category": "客服（/v2/report/submit · Stage HTTP）",
+    "description": "测试环境个人主页举报用户（HTTP /v2/report/submit；sceneType=1）。抓包 100334384 举报 100381494；无 MOA httpproxy，Agent 读模板 body + CMDB yaahlan-web 实例 POST。",
+    "prompts": [
+      "用户 <reporterUserId> 举报用户 <reportedUserId>",
+      "个人主页举报 MOA sceneType=1",
+      "批量举报用户 <reportedUserId> count=<count>"
+    ]
+  }
+}

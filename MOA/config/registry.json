@@ -1373,6 +1373,18 @@
       "command": "python3 Gift/gift_execute.py \\\n  --scene private \\\n  --sender <userId> \\\n  --receivers <toUserId> \\\n  --gift-id 2005001671 \\\n  --num 1\n# 动态帖子须 ext.feedId=<feedId>，见 MOA/templates/动态-帖子送礼.json 抓包 body，Agent 用 Gift/send_stage POST /v2/gift/send\n"
     },
     {
+      "id": "user_report_submit",
+      "name": "用户-举报用户",
+      "category": "客服（/v2/report/submit · Stage HTTP）",
+      "description": "测试环境个人主页举报用户（HTTP /v2/report/submit；sceneType=1）。抓包 100334384 举报 100381494；无 MOA httpproxy，Agent 读 MOA/templates/用户-举报用户.json body + CMDB yaahlan-web 实例 POST。",
+      "prompts": [
+        "用户 <reporterUserId> 举报用户 <reportedUserId>",
+        "个人主页举报 MOA sceneType=1",
+        "批量举报用户 <reportedUserId> count=<count>"
+      ],
+      "command": "# 无 MOA httpproxy：CMDB 查 yaahlan-web 实例 → POST /v2/report/submit\n# body 见 MOA/templates/用户-举报用户.json params[0].value\n# 必填：userId(reporter)、reportedUserId、targetId、sceneType=1、violationType、description、imageUrls\n"
+    },
+    {
       "id": "user_batch_send_p2p_message",
       "name": "用户-批量发消息",
       "category": "用户工具（voga-mts-user-tool-stage）",
