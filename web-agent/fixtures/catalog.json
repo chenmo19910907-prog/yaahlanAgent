@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-21 19:12:56 北京时间",
-  "total_items": 283,
+  "generated_at": "2026-08-24 19:30:45 北京时间",
+  "total_items": 284,
   "module_count": 27,
   "modules": [
     {
@@ -2926,8 +2926,24 @@
     {
       "id": "客服",
       "label": "客服",
-      "item_count": 3,
+      "item_count": 4,
       "categories": [
+        {
+          "name": "客服（/v2/report/submit · Stage HTTP）",
+          "items": [
+            {
+              "name": "用户-举报用户",
+              "prompts": [
+                "用户 <reporterUserId> 举报用户 <reportedUserId>",
+                "个人主页举报 MOA sceneType=1",
+                "批量举报用户 <reportedUserId> count=<count>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            }
+          ]
+        },
         {
           "name": "客服（melon-gateway / cms/customerservice）",
           "items": [

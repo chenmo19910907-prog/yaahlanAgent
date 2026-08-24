@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20260821111256"></script>
-  <script src="demo-api.js?v=20260821111256"></script>
+  <script src="demo-fixtures.js?v=20260824113045"></script>
+  <script src="demo-api.js?v=20260824113045"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -1135,7 +1135,60 @@
       color: var(--muted);
       line-height: 1.5;
     }
+    .session-list-shell {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
     .session-list { overflow-y: auto; flex: 1; padding: 10px 10px 18px; }
+    .session-scroll-to-top-btn {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      z-index: 3;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--scroll-bottom-bg);
+      color: var(--text);
+      box-shadow: var(--scroll-bottom-shadow);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transform: translateX(-50%) translateY(-8px) scale(0.92);
+      opacity: 0;
+      pointer-events: none;
+      transition:
+        opacity 180ms var(--ease-standard),
+        transform 180ms var(--ease-spring),
+        background 180ms var(--ease-standard),
+        border-color 180ms var(--ease-standard);
+    }
+    .session-scroll-to-top-btn.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(6px) scale(1);
+    }
+    .session-scroll-to-top-btn:hover {
+      background: var(--scroll-bottom-bg-hover);
+      border-color: var(--border-strong);
+    }
+    .session-scroll-to-top-btn:active {
+      transform: translateX(-50%) translateY(6px) scale(0.96);
+    }
+    .session-scroll-to-top-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
     .session-item {
       position: relative;
       display: flex;
@@ -4244,7 +4297,15 @@
       <button type="button" id="btn-session-scope" class="session-filter-scope-btn"
         title="全部历史会话 · 点击切换为我的" aria-label="筛选：全部历史会话">全部</button>
     </div>
-    <div class="session-list" id="session-list"></div>
+    <div class="session-list-shell">
+      <div class="session-list" id="session-list"></div>
+      <button type="button" class="session-scroll-to-top-btn" id="btn-session-scroll-top" title="回到列表顶部" hidden aria-label="回到列表顶部">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 19V5"/>
+          <path d="M6 11l6-6 6 6"/>
+        </svg>
+      </button>
+    </div>
     <div class="sidebar-tool-actions-host" id="sidebar-tool-actions-host"></div>
     <div class="sidebar-resizer" id="sidebar-resizer" title="拖动调整历史会话宽度"></div>
   </aside>
@@ -5321,6 +5382,8 @@
       if (window.WebAgentAnalytics) window.WebAgentAnalytics.track(event, props);
     }
     const SESSION_SCOPE_STORAGE_KEY = 'web_agent_session_scope';
+    const SESSION_LIST_SCROLL_STORAGE_PREFIX = 'web_agent_session_list_scroll_v1';
+    const sessionListScrollByScope = { mine: 0, all: 0 };
     let sessionScopeFilter = 'all';
     let currentSessionReadOnly = false;
     /** @type {Array<{ id: string, name: string, mime: string, previewUrl: string, data_base64: string }>} */
@@ -6851,18 +6914,24 @@
       const busy = isCurrentSessionStreaming();
       const readonly = currentSessionReadOnly || isGuestMode();
       btn.hidden = readonly;
-      btn.disabled = readonly || busy;
-      btn.title = busy ? '执行中不可修改回复详略' : REPLY_MODE_TITLES[mode];
+      btn.disabled = readonly;
+      btn.title = busy
+        ? `思考中切换将于下轮对话生效 · ${REPLY_MODE_TITLES[mode]}`
+        : REPLY_MODE_TITLES[mode];
     }
 
     function cycleReplyMode() {
       const btn = document.getElementById('reply-mode-toggle');
       if (!btn || btn.disabled) return;
+      const busy = isCurrentSessionStreaming();
       const current = normalizeReplyMode(btn.dataset.mode || loadReplyMode());
       const next = REPLY_MODES[(REPLY_MODES.indexOf(current) + 1) % REPLY_MODES.length];
       btn.dataset.mode = next;
       saveReplyMode(next);
       syncReplyModeToggleUi();
+      if (busy) {
+        showWebToast(`已切换为${REPLY_MODE_LABELS[next]}，下轮对话生效`);
+      }
     }
 
     function initReplyModeControls() {
@@ -7298,6 +7367,102 @@
       syncSessionScopeButtonUi();
     }
 
+    function sessionListScrollStorageKey() {
+      const staffId = (currentAuthUser?.staffId || 'guest').trim() || 'guest';
+      return `${SESSION_LIST_SCROLL_STORAGE_PREFIX}:${staffId}`;
+    }
+
+    function sessionListMaxScroll(list) {
+      return Math.max(0, list.scrollHeight - list.clientHeight);
+    }
+
+    function sessionListScrollRatio(list) {
+      const max = sessionListMaxScroll(list);
+      if (max <= 0) return 0;
+      return Math.max(0, Math.min(1, list.scrollTop / max));
+    }
+
+    function applySessionListScrollRatio(list, ratio) {
+      const max = sessionListMaxScroll(list);
+      list.scrollTop = Math.max(0, Math.min(max, ratio * max));
+    }
+
+    function loadSessionListScrollByScope() {
+      try {
+        const raw = localStorage.getItem(sessionListScrollStorageKey());
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        const mine = Number(parsed?.mine);
+        const all = Number(parsed?.all);
+        if (Number.isFinite(mine) && mine >= 0 && mine <= 1) sessionListScrollByScope.mine = mine;
+        if (Number.isFinite(all) && all >= 0 && all <= 1) sessionListScrollByScope.all = all;
+      } catch { /* ignore */ }
+    }
+
+    function saveSessionListScrollByScope() {
+      try {
+        localStorage.setItem(sessionListScrollStorageKey(), JSON.stringify({
+          mine: sessionListScrollByScope.mine,
+          all: sessionListScrollByScope.all,
+        }));
+      } catch { /* quota / private mode */ }
+    }
+
+    function currentSessionListScopeKey() {
+      return sessionScopeFilter === 'mine' ? 'mine' : 'all';
+    }
+
+    function rememberSessionListScrollForCurrentScope() {
+      const list = document.getElementById('session-list');
+      if (!list) return;
+      sessionListScrollByScope[currentSessionListScopeKey()] = sessionListScrollRatio(list);
+      saveSessionListScrollByScope();
+    }
+
+    function sessionListScrollForCurrentScope() {
+      return sessionListScrollByScope[currentSessionListScopeKey()] || 0;
+    }
+
+    const SESSION_LIST_SCROLL_TOP_THRESHOLD = 48;
+
+    function updateSessionListScrollToTopBtn() {
+      const btn = document.getElementById('btn-session-scroll-top');
+      const list = document.getElementById('session-list');
+      if (!btn || !list) return;
+      const hasItems = Boolean(list.querySelector('.session-item[data-id]'));
+      const show = hasItems && list.scrollTop > SESSION_LIST_SCROLL_TOP_THRESHOLD;
+      btn.toggleAttribute('hidden', !show);
+      btn.classList.toggle('is-visible', show);
+      btn.setAttribute('aria-hidden', show ? 'false' : 'true');
+    }
+
+    function scrollSessionListToTop(options = {}) {
+      const list = document.getElementById('session-list');
+      if (!list) return;
+      const behavior = options.smooth === false ? 'auto' : 'smooth';
+      list.scrollTo({ top: 0, behavior });
+      sessionListScrollByScope[currentSessionListScopeKey()] = 0;
+      saveSessionListScrollByScope();
+      updateSessionListScrollToTopBtn();
+    }
+
+    let sessionListScrollSaveTimer = 0;
+    function setupSessionListScrollTracking() {
+      const list = document.getElementById('session-list');
+      if (!list || list.dataset.scopeScrollBound) return;
+      list.dataset.scopeScrollBound = '1';
+      list.addEventListener('scroll', () => {
+        updateSessionListScrollToTopBtn();
+        clearTimeout(sessionListScrollSaveTimer);
+        sessionListScrollSaveTimer = window.setTimeout(() => {
+          rememberSessionListScrollForCurrentScope();
+        }, 120);
+      }, { passive: true });
+      document.getElementById('btn-session-scroll-top')?.addEventListener('click', () => {
+        scrollSessionListToTop();
+      });
+    }
+
     function sessionMatchesScope(item) {
       if (sessionScopeFilter !== 'mine') return true;
       if (isGuestMode()) return false;
@@ -7339,15 +7504,16 @@
 
     function toggleSessionScopeFilter() {
       if (isGuestMode()) return;
+      rememberSessionListScrollForCurrentScope();
       const nextScope = sessionScopeFilter === 'mine' ? 'all' : 'mine';
       saveSessionScopeFilter(nextScope);
       trackEvent('session_scope_change', { scope: nextScope });
       if (sessionSearchQuery.trim()) {
-        loadSessions().catch(err => console.error('loadSessions', err));
+        loadSessions({ scopeSwitch: true }).catch(err => console.error('loadSessions', err));
         return;
       }
       syncSessionsCacheFromAll();
-      renderSessionList();
+      renderSessionList({ rememberScroll: false });
     }
 
     function markSessionListActive(sessionId) {
@@ -7504,14 +7670,17 @@
       return true;
     }
 
-    function renderSessionList() {
+    function renderSessionList(options = {}) {
       if (sessionRenameTarget && sessionRenameInputEl && !sessionRenameSaving) {
         return;
       }
       if (!sessionRenameSaving) cancelSessionTitleEdit();
       const list = document.getElementById('session-list');
       if (!list) return;
-      const scrollTop = list.scrollTop;
+      if (options.rememberScroll !== false) {
+        rememberSessionListScrollForCurrentScope();
+      }
+      const scrollRatio = sessionListScrollForCurrentScope();
       list.innerHTML = '';
       const filtered = sessionsCache;
       if (!filtered.length) {
@@ -7521,6 +7690,8 @@
             ? '暂无我的历史会话<br><span style="font-size:0.72rem;opacity:0.85">点击「全部」查看所有会话</span>'
             : '暂无历史会话<br><span style="font-size:0.72rem;opacity:0.85">点击「新对话」开始</span>';
         list.innerHTML = `<div class="session-filter-empty">${hint}</div>`;
+        list.scrollTop = 0;
+        updateSessionListScrollToTopBtn();
         syncSessionReadOnly(currentSessionId);
         return;
       }
@@ -7552,7 +7723,8 @@
         bindSessionItemInteractions(el, s);
         list.appendChild(el);
       });
-      list.scrollTop = scrollTop;
+      applySessionListScrollRatio(list, scrollRatio);
+      updateSessionListScrollToTopBtn();
       syncSessionReadOnly(currentSessionId);
       lastSessionListKey = sessionListPatchKey(filtered);
       scheduleIdleSessionMessagesPrefetchDebounced();
@@ -9077,7 +9249,7 @@
         lastSessionListKey = nextKey;
         return;
       }
-      renderSessionList();
+      renderSessionList({ rememberScroll: opts.scopeSwitch !== true });
       lastSessionListKey = nextKey;
     }
 
@@ -12424,6 +12596,7 @@
       if (bookmarksPanel) bookmarksPanel.setAdmin(!!currentAuthUser?.isAdmin);
       if (messageBoardPanel) messageBoardPanel.setAdmin(!!currentAuthUser?.isAdmin);
       syncAdminApplyMenuItem();
+      loadSessionListScrollByScope();
       applySessionScopeForAuth();
       updateDingtalkOwnerBar();
       refreshSidebarWidthBounds();
@@ -12498,6 +12671,7 @@
         setupMessageShareActions();
         setupMarkdownLinkNewTab();
         setupMessagesScrollTracking();
+        setupSessionListScrollTracking();
         initThemeSettings();
         initPushResultControls();
         initReplyModeControls();
