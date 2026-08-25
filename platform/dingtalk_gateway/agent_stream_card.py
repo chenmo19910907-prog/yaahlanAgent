@@ -34,6 +34,7 @@ CARD_CREATE_MAX_RETRIES = 3
 CARD_PUT_MAX_RETRIES = 3
 # 排队卡须周期 push 才能离开钉钉模板默认「已受理」
 QUEUE_CONTENT_REFRESH_S = 3.0
+QUEUE_CONTENT_REFRESH_TTL_S = 1800.0
 QUEUE_ORPHAN_FAIL_S = 90.0
 # create 后钉钉 Markdown 卡仍可能短暂显示「已受理」，短间隔连推几次
 QUEUE_BOOTSTRAP_PUSH_DELAYS_S = (0.4, 1.2)
@@ -156,6 +157,7 @@ class AgentStreamCard:
         self._queue_ahead_provider: Any = None
         self._orphan_timer: threading.Timer | None = None
         self._queue_bootstrap_timers: list[threading.Timer] = []
+        self._queue_waiting_started_at = 0.0
 
         if self._mode == "ai":
             card = dingtalk_stream.AIMarkdownCardInstance(dingtalk_client, incoming)
@@ -306,6 +308,7 @@ class AgentStreamCard:
             ("_queue_ahead_provider", None),
             ("_orphan_timer", None),
             ("_queue_bootstrap_timers", []),
+            ("_queue_waiting_started_at", 0.0),
         ):
             if not hasattr(self, name):
                 setattr(self, name, default)
@@ -503,10 +506,21 @@ class AgentStreamCard:
         """排队等待期间周期 push（单聊 Markdown 卡 create 后只 put 一次常会一直显示「已受理」）。"""
         self._cancel_queue_content_refresh()
         self._cancel_orphan_watchdog()
+        if not getattr(self, "_queue_waiting_started_at", 0.0):
+            self._queue_waiting_started_at = time.monotonic()
 
         def _fire() -> None:
             self._queue_refresh_timer = None
             if not self._started or self._progress_timer is not None:
+                return
+            started = getattr(self, "_queue_waiting_started_at", 0.0)
+            if started and (time.monotonic() - started) >= QUEUE_CONTENT_REFRESH_TTL_S:
+                logger.warning(
+                    "排队卡刷新超时 id=%s… prompt=%s，停止刷新",
+                    (self._card_instance_id or "")[:12],
+                    (self._prompt or "")[:40],
+                )
+                self.abandon_queue_waiting("⚠️ 排队等待超时，请重新 @ 发送。")
                 return
             self._refresh_queue_body_from_provider()
             self._render(force=True)
@@ -516,6 +530,19 @@ class AgentStreamCard:
         timer.daemon = True
         self._queue_refresh_timer = timer
         timer.start()
+
+    def abandon_queue_waiting(self, message: str = "已取消排队") -> bool:
+        """排队任务被清队/中断/TTL 超时时收尾：停定时器并标记卡片终态。"""
+        self._ensure_stream_state()
+        if not self._started or self._progress_timer is not None:
+            return False
+        self._cancel_queue_content_refresh()
+        self._cancel_queue_bootstrap_burst()
+        self._cancel_orphan_watchdog()
+        self._queue_ahead_provider = None
+        self._queue_waiting_started_at = 0.0
+        body = (message or "已取消排队").strip()
+        return self.finish(body)
 
     def mark_worker_picked_up(self) -> None:
         """Worker 已取到任务：排队/受理态立即切到执行进度，避免连发卡在「已受理」。"""

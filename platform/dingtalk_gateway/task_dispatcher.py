@@ -89,6 +89,18 @@ class TaskDispatcher:
                 self._user_sessions[user_key] = TaskSession()
             return self._user_sessions[user_key]
 
+    @staticmethod
+    def _abandon_stream_card(stream_card: Any, *, message: str = "已取消排队") -> None:
+        if stream_card is None:
+            return
+        abandon = getattr(stream_card, "abandon_queue_waiting", None)
+        if not callable(abandon):
+            return
+        try:
+            abandon(message)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("排队卡 abandon 失败: %s", exc)
+
     def _drain_agent_queue(self, user_key: str) -> int:
         persist = get_queue_persist()
         drained = 0
@@ -101,6 +113,7 @@ class TaskDispatcher:
                     task = queue.get_nowait()
                 except Empty:
                     break
+            self._abandon_stream_card(task.stream_card)
             persist.remove(
                 user_key=task.user_key,
                 prompt=task.inbound.prompt_text(),
@@ -122,6 +135,7 @@ class TaskDispatcher:
             except Empty:
                 break
             if task.user_key == user_key:
+                self._abandon_stream_card(task.stream_card)
                 persist.remove(
                     user_key=task.user_key,
                     prompt=task.inbound.prompt_text(),

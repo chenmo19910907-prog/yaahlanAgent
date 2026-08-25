@@ -202,6 +202,90 @@ def test_begin_running_clears_queue_body() -> None:
     assert "执行中，已用时" in composed
 
 
+def test_abandon_queue_waiting_stops_timers() -> None:
+    """清队/中断时 abandon 应停掉排队刷新定时器并收尾卡片。"""
+    from agent_stream_card import AgentStreamCard
+
+    card = AgentStreamCard.__new__(AgentStreamCard)
+    card._mode = "markdown"
+    card._started = True
+    card._progress_timer = None
+    card._header = ""
+    card._persistent_header = ""
+    card._card_title = ""
+    card._agent_body = "排队中（前面约 1 个）"
+    card._status_line = ""
+    card._batch_progress_line = ""
+    card._min_interval_s = 0.0
+    card._last_push_at = 0.0
+    card._lock = __import__("threading").Lock()
+    card._pending = None
+    card._timer = None
+    card._push_count = 0
+    card._last_flushed_body = ""
+    card._card_instance_id = "id"
+    card._queue_refresh_timer = __import__("threading").Timer(60, lambda: None)
+    card._queue_bootstrap_timers = [__import__("threading").Timer(60, lambda: None)]
+    card._orphan_timer = __import__("threading").Timer(60, lambda: None)
+    card._queue_ahead_provider = lambda: 1
+    card._queue_waiting_started_at = 0.0
+    card._md_card = __import__("unittest.mock", fromlist=["MagicMock"]).MagicMock()
+    card._ai_card = None
+    card._last_put_succeeded = True
+    card._card_sync_degraded = False
+
+    assert card.abandon_queue_waiting("已取消排队") is True
+    assert card._started is False
+    assert card._queue_refresh_timer is None
+    assert card._queue_bootstrap_timers == []
+    assert card._orphan_timer is None
+    assert card._queue_ahead_provider is None
+
+
+def test_queue_refresh_ttl_abandons() -> None:
+    """排队刷新超过 TTL 后应自动 abandon，不再续订定时器。"""
+    import time
+
+    from agent_stream_card import AgentStreamCard, QUEUE_CONTENT_REFRESH_TTL_S
+
+    card = AgentStreamCard.__new__(AgentStreamCard)
+    card._mode = "markdown"
+    card._started = True
+    card._progress_timer = None
+    card._header = ""
+    card._persistent_header = ""
+    card._card_title = ""
+    card._agent_body = "排队中"
+    card._status_line = ""
+    card._batch_progress_line = ""
+    card._min_interval_s = 0.0
+    card._last_push_at = 0.0
+    card._lock = __import__("threading").Lock()
+    card._pending = None
+    card._timer = None
+    card._push_count = 0
+    card._last_flushed_body = ""
+    card._card_instance_id = "id"
+    card._queue_refresh_timer = None
+    card._queue_bootstrap_timers = []
+    card._orphan_timer = None
+    card._queue_ahead_provider = lambda: 1
+    card._queue_waiting_started_at = time.monotonic() - QUEUE_CONTENT_REFRESH_TTL_S - 1
+    card._prompt = "测试"
+    card._md_card = __import__("unittest.mock", fromlist=["MagicMock"]).MagicMock()
+    card._ai_card = None
+    card._last_put_succeeded = True
+    card._card_sync_degraded = False
+
+    card._schedule_queue_content_refresh()
+    assert card._queue_refresh_timer is not None
+    timer = card._queue_refresh_timer
+    timer.cancel()
+    timer.function()
+    assert card._started is False
+    assert card._queue_refresh_timer is None
+
+
 def test_refresh_clears_queue_when_ahead_zero() -> None:
     """周期刷新在 ahead=0 时应清除残留排队文案。"""
     from agent_stream_card import AgentStreamCard
@@ -610,6 +694,8 @@ def main() -> int:
     test_streaming_progress_status_line()
     test_progress_not_double_header()
     test_begin_running_clears_queue_body()
+    test_abandon_queue_waiting_stops_timers()
+    test_queue_refresh_ttl_abandons()
     test_refresh_clears_queue_when_ahead_zero()
     test_reuse_preassigned_card_without_second_start()
     test_persistent_header_survives_finish()
