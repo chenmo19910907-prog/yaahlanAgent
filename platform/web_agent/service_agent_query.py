@@ -34,6 +34,7 @@ from service_agent_task_store import (  # noqa: E402
     register_task,
     update_task,
 )
+from service_agent_run_log import append_service_agent_exchange  # noqa: E402
 from run_child_processes import run_child_guard  # noqa: E402
 from service_agent_webhook import (  # noqa: E402
     cleanup_task_wait,
@@ -558,7 +559,15 @@ def poll_task_background(
                     timeout_s=timeout_s,
                 )
         except RuntimeError as exc:
+            record = get_task(key, tid)
+            question = message or (record.message_preview if record else tid)
             update_task(key, tid, status="failed", error=str(exc))
+            append_service_agent_exchange(
+                key,
+                question=question,
+                error=str(exc),
+                agent_label=AGENT_LABEL,
+            )
             if not list_active_tasks(key):
                 report_external_agent_error(
                     key,
@@ -575,6 +584,13 @@ def poll_task_background(
             status="completed",
             result=answer,
             conversation_id=conv_id or "",
+        )
+        record = get_task(key, tid)
+        append_service_agent_exchange(
+            key,
+            question=message or (record.message_preview if record else ""),
+            answer=answer,
+            agent_label=AGENT_LABEL,
         )
         if list_active_tasks(key):
             _sync_tasks_progress(key)
@@ -795,10 +811,22 @@ def main() -> int:
                     agent_label=AGENT_LABEL,
                     error=str(exc),
                 )
+                append_service_agent_exchange(
+                    user_key,
+                    question=message,
+                    error=str(exc),
+                    agent_label=AGENT_LABEL,
+                )
             raise
         else:
             if user_key:
                 clear_external_agent_progress(user_key)
+                append_service_agent_exchange(
+                    user_key,
+                    question=message,
+                    answer=answer,
+                    agent_label=AGENT_LABEL,
+                )
     if args.json:
         print(
             json.dumps(

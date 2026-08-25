@@ -6362,9 +6362,56 @@
     const markdownRenderCache = new Map();
     const MARKDOWN_CACHE_LIMIT = 256;
 
+    function normalizeQaSummaryMarkdown(text) {
+      const raw = String(text || '');
+      if (!/问答概述/.test(raw)) return raw;
+      const combinedRe = /^(\d+)\.\s*(?:\*\*)?\s*问(?:\*\*)?[：:]\s*(.+?)\s+(?:\*\*)?答(?:\*\*)?[：:]\s*(.+?)\s*$/;
+      const splitQuestionRe = /^(\d+)\.\s*\*\*问\*\*[：:]\s*(.+?)\s*$/;
+      const splitAnswerRe = /^\s*\*\*答\*\*[：:]\s*(.+?)\s*$/;
+      const lines = raw.replace(/\r\n/g, '\n').split('\n');
+      const out = [];
+      let pendingQ = null;
+      const flushPending = () => {
+        if (!pendingQ) return;
+        out.push(`**${pendingQ.num}. 问**：${pendingQ.q}`, '', `**答**：（无回答）`);
+        pendingQ = null;
+      };
+      const emitPair = (num, q, a) => {
+        out.push(`**${num}. 问**：${q}`, '', `**答**：${a}`);
+      };
+      for (const line of lines) {
+        if (!line.trim()) {
+          if (!pendingQ) out.push(line);
+          continue;
+        }
+        const combined = line.match(combinedRe);
+        if (combined) {
+          flushPending();
+          emitPair(combined[1], combined[2].trim(), combined[3].trim());
+          continue;
+        }
+        const splitQ = line.match(splitQuestionRe);
+        if (splitQ) {
+          flushPending();
+          pendingQ = { num: splitQ[1], q: splitQ[2].trim() };
+          continue;
+        }
+        const splitA = line.match(splitAnswerRe);
+        if (splitA && pendingQ) {
+          emitPair(pendingQ.num, pendingQ.q, splitA[1].trim());
+          pendingQ = null;
+          continue;
+        }
+        flushPending();
+        out.push(line);
+      }
+      flushPending();
+      return out.join('\n');
+    }
+
     function renderMarkdown(text, options = {}) {
       const { streaming = false } = options;
-      const raw = String(text || '');
+      const raw = normalizeQaSummaryMarkdown(String(text || ''));
       if (!streaming && raw) {
         const cached = markdownRenderCache.get(raw);
         if (cached) return cached;

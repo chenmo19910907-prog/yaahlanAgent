@@ -88,6 +88,7 @@ from batch_progress import (  # noqa: E402
     read_batch_progress,
 )
 from batch_result import clear_batch_result  # noqa: E402
+from service_agent_run_log import clear_service_agent_run_log  # noqa: E402
 from external_agent_progress import (  # noqa: E402
     build_external_agent_progress_message,
     clear_external_agent_progress,
@@ -850,11 +851,13 @@ def _notify_run_interrupted(run: ActiveRun, text: str) -> bool:
     body = (text or INTERRUPT_REPLY).strip() or INTERRUPT_REPLY
     if run.started_at > 0:
         elapsed = max(0.0, time.monotonic() - run.started_at)
+        user_key = get_session_store().user_key(run.session_id)
         body = finalize_web_reply_text(
             body,
             elapsed,
             task_kind=run.task_kind,
             reply_mode=run.reply_mode,
+            user_key=user_key,
         )
     with run._notify_lock:
         if run.cancel_notified:
@@ -1085,6 +1088,7 @@ def _finalize_cancelled_run(meta: RunMeta) -> None:
         task_kind=classify_task_kind(meta.message),
         prompt=meta.message,
         reply_mode=meta.reply_mode,
+        user_key=user_key,
     )
     get_session_store().append_message(meta.session_id, "assistant", body)
     store.append_event(meta.run_id, {"type": "done", "text": body})
@@ -1125,6 +1129,7 @@ def _finalize_orphan_run(meta: RunMeta) -> None:
         task_kind=classify_task_kind(meta.message),
         prompt=meta.message,
         reply_mode=meta.reply_mode,
+        user_key=user_key,
     )
     get_session_store().append_message(meta.session_id, "assistant", err_text)
     store.append_event(meta.run_id, {"type": "error", "message": "worker lost", "text": err_text})
@@ -1672,6 +1677,7 @@ def _start_chat_run(
     )
     clear_batch_progress(user_key)
     clear_batch_result(user_key)
+    clear_service_agent_run_log(user_key)
     clear_external_agent_progress(user_key)
     started_at = time.monotonic()
     run.started_at = started_at

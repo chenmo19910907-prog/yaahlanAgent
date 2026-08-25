@@ -14,6 +14,7 @@ from typing import Any
 
 from batch_progress import clear_batch_progress
 from batch_result import clear_batch_result
+from service_agent_run_log import clear_service_agent_run_log
 from cursor_runner import resolve_agent_timeout_s
 from web_admin_permission import is_web_admin
 from duration_history import classify_task_kind, get_duration_store
@@ -364,6 +365,7 @@ def execute_web_run(run_id: str) -> int:
                 task_kind=task_kind,
                 prompt=meta.message,
                 reply_mode=meta.reply_mode,
+                user_key=user_key,
             )
             _append_assistant(final_text)
             fresh_meta = store.get_run(run_id) or meta
@@ -405,6 +407,7 @@ def execute_web_run(run_id: str) -> int:
             task_kind=task_kind,
             prompt=meta.message,
             reply_mode=meta.reply_mode,
+            user_key=user_key,
         )
         _append_assistant(final_text)
         fresh_meta = store.get_run(run_id) or meta
@@ -434,6 +437,7 @@ def execute_web_run(run_id: str) -> int:
             task_kind=task_kind,
             prompt=meta.message,
             reply_mode=meta.reply_mode,
+            user_key=user_key,
         )
         _append_assistant(final_text)
         _emit(store, run_id, {"type": "done", "text": final_text})
@@ -458,6 +462,7 @@ def execute_web_run(run_id: str) -> int:
             task_kind=task_kind,
             prompt=meta.message,
             reply_mode=meta.reply_mode,
+            user_key=user_key,
         )
         _append_assistant(final_text)
         _emit(
@@ -473,6 +478,7 @@ def execute_web_run(run_id: str) -> int:
             _ACTIVE_SESSION = None
         clear_batch_progress(user_key)
         clear_batch_result(user_key)
+        clear_service_agent_run_log(user_key)
         clear_external_agent_progress(user_key)
         os.environ.pop(USER_KEY_ENV, None)
         session_ctrl.end()

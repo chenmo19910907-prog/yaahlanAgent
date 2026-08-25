@@ -30,6 +30,11 @@ from adb_execution_guard import (  # noqa: E402
     is_adb_execution_allowed,
     looks_like_adb_execution_request,
 )
+from online_env_guard import (  # noqa: E402
+    is_online_env_operation_allowed,
+    looks_like_online_env_request,
+    online_env_denial_message,
+)
 from cursor_runner import (  # noqa: E402
     DEFAULT_MODEL,
     DEFAULT_TIMEOUT_S,
@@ -108,6 +113,7 @@ def run_web_chat(
     code_allowed = is_web_admin(staff_id=staff_id)
     source_allowed = code_allowed
     adb_allowed = is_adb_execution_allowed(staff_id=staff_id)
+    online_allowed = is_online_env_operation_allowed(staff_id=staff_id)
     allow_moa_registry = allow_moa_registry_in_readonly(code_modify_allowed=code_allowed)
     if looks_like_code_modify_request(message) and not code_allowed:
         return code_modify_denial_message()
@@ -115,6 +121,8 @@ def run_web_chat(
         return source_file_denial_message()
     if looks_like_adb_execution_request(message) and not adb_allowed:
         return adb_execution_denial_message_for_web()
+    if looks_like_online_env_request(message) and not online_allowed:
+        return online_env_denial_message()
 
     agent_message = message
     if should_rotate_cursor_agent(session_id):
@@ -142,6 +150,7 @@ def run_web_chat(
         allow_code_modify=code_allowed,
         allow_moa_registry=allow_moa_registry,
         allow_adb_execution=adb_allowed,
+        allow_online_env_operation=online_allowed,
     )
 
     prev_staff_id = os.environ.get(STAFF_ID_ENV)
