@@ -2,7 +2,7 @@ name: Deploy GitHub Pages Demo
 
 on:
   push:
-    branches: [yaahlan, main, master]
+    branches: [main]
     paths:
       - 'platform/**'
       - 'scripts/build-github-pages-demo.sh'
