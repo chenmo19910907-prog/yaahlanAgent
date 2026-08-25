@@ -275,7 +275,7 @@
       return jsonResponse({ imported: 0 });
     }
     if (pathname === '/api/admin/apply' && methodUpper === 'POST') {
-      return jsonResponse({ status: 'approved', isAdmin: true });
+      return jsonResponse({ ok: true, status: { status: 'none' }, notified: true });
     }
     if (pathname === '/api/messages/forward' && methodUpper === 'POST') {
       return jsonResponse({ ok: true, forwarded: 0 });
