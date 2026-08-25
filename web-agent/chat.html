@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20260825085334"></script>
-  <script src="demo-api.js?v=20260825085334"></script>
+  <script src="demo-fixtures.js?v=20260825161630"></script>
+  <script src="demo-api.js?v=20260825161630"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -4653,7 +4653,6 @@
             <span class="admin-list-head-action-label">申请管理员</span>
           </button>
         </div>
-        <p id="admin-list-desc">查看全员身份；陈墨与超级管理员可修改管理员权限。</p>
         <input type="search" class="collaborators-search" id="admin-list-search"
                placeholder="搜索姓名…" autocomplete="off" aria-label="搜索用户" />
         <div class="collaborators-meta" id="admin-list-meta" aria-live="polite"></div>
@@ -12321,16 +12320,10 @@
 
     function renderAdminListBody() {
       const list = document.getElementById('admin-list-body');
-      const desc = document.getElementById('admin-list-desc');
       if (!list) return;
       const query = document.getElementById('admin-list-search')?.value || '';
       const filtered = filterAdminListUsers(adminListUsers, query);
       updateAdminListMeta(adminListUsers.length, filtered.length, query.trim());
-      if (desc) {
-        desc.textContent = adminListCanManage
-          ? '可设置或撤销管理员身份，并为管理员勾选具体权限（未勾选的不生效）。'
-          : '仅可查看，无法修改管理员身份与权限。';
-      }
       if (!filtered.length) {
         list.innerHTML = adminListLoading
           ? '<div class="collaborators-empty">加载中…</div>'
@@ -12616,6 +12609,7 @@
     function submitAdminApply() {
       const btn = document.getElementById('btn-apply-admin');
       if (!btn || btn.disabled || adminApplyInFlight) return;
+      void setAdminListModalOpen(false);
       adminApplyInFlight = true;
       btn.disabled = true;
       showWebToast('申请成功');
