@@ -1,0 +1,24 @@
+---
+description: 双远端推送：GitLab 走 yaahlan，GitHub 走 main
+alwaysApply: true
+---
+
+# Git 双远端推送
+
+仓库配置两个 remote：
+
+| Remote | 用途 | 推送命令 |
+|--------|------|----------|
+| `origin` | GitLab | `git push origin yaahlan` |
+| `github` | GitHub | `git push github`（映射到 `main`，勿推 `yaahlan`） |
+
+## 必须
+
+- 提交后**分别推送**两个远端：`git push origin yaahlan` + `git push github`
+- GitHub **禁止** `git push github yaahlan` 或推任意非 `main` 分支
+- 本地工作分支仍为 `yaahlan`；GitHub 只维护 `main` 镜像
+
+## 禁止
+
+- 把 GitLab 专用分支名推到 GitHub
+- 仅推一个远端而不推另一个（用户明确要求只推一侧时除外）
