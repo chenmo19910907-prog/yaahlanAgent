@@ -16,10 +16,7 @@ for path in (GATEWAY_DIR, WEB_AGENT_DIR):
 
 from code_modify_permission import looks_like_code_modify_request  # noqa: E402
 from source_file_permission import looks_like_source_file_request  # noqa: E402
-from adb_execution_guard import (  # noqa: E402
-    is_adb_execution_allowed,
-    looks_like_adb_execution_request,
-)
+from adb_execution_guard import looks_like_adb_execution_request  # noqa: E402
 from web_prompt import build_web_prompt  # noqa: E402
 
 
@@ -57,25 +54,16 @@ class WebCodeModifyPermissionTest(unittest.TestCase):
         self.assertTrue(looks_like_source_file_request(prompt))
         self.assertFalse(looks_like_code_modify_request(prompt))
 
-    def test_readonly_prompt_excludes_adb(self) -> None:
-        text = build_web_prompt(
-            "查询用户详情",
-            is_new_session=True,
-            allow_code_modify=False,
-            allow_adb_execution=False,
-        )
-        self.assertIn("不含", text)
-        self.assertIn("ADB", text)
-        self.assertNotIn("本机已连接设备", text)
-
-    def test_admin_prompt_includes_adb(self) -> None:
-        text = build_web_prompt(
-            "查询用户详情",
-            is_new_session=True,
-            allow_code_modify=True,
-            allow_adb_execution=True,
-        )
-        self.assertIn("本机已连接设备", text)
+    def test_prompt_always_excludes_adb(self) -> None:
+        for allow_code in (False, True):
+            text = build_web_prompt(
+                "查询用户详情",
+                is_new_session=True,
+                allow_code_modify=allow_code,
+            )
+            self.assertIn("不含", text)
+            self.assertIn("ADB", text)
+            self.assertNotIn("本机已连接设备", text)
 
     def test_adb_policy_discussion_not_blocked(self) -> None:
         self.assertFalse(looks_like_adb_execution_request("web端也禁用"))

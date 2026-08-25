@@ -120,7 +120,7 @@ def pk_atm_prompt_hint(text: str, *, session_id: str = "") -> str | None:
         "给定总 PK / 个人 PK 要求时，须**先算出各用户各房送礼计划**再执行，禁止边送边算。"
         "跨房 PK **随机匹配前**须确认双方账号 **App 已登录且在自己的房间内**"
         "（Admin onlineStatus=1 + Tunnel 近 5 分钟 heartbeat roomId=自己的 roomId）；"
-        "未满足时先 adb 登录并进房，勿直接 MOA 盲匹配。"
+        "未满足时说明需人工真机登录并进房（Web Agent 不支持 ADB），勿直接 MOA 盲匹配。"
         "匹配失败**最多重试 3 轮**（`--match-retries`，脚本硬上限 3），"
         "3 轮均失败则**立即终止任务**（exit 1），勿再手动循环重跑。"
         "自然结束 PK 时加 `--wait-natural-end`；手动结束则 `--closer-phone <记败方手机号>`。"

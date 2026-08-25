@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import json
 import sys
 import tempfile
 import unittest
@@ -16,17 +15,15 @@ for d in (GATEWAY_DIR, WEB_AGENT_DIR):
     if str(d) not in sys.path:
         sys.path.insert(0, str(d))
 
-from code_modify_permission import (  # noqa: E402
-    ALLOWLIST_LOCAL_PATH,
-    load_code_modify_allowlist,
-)
 from route_patterns import (  # noqa: E402
     is_admin_apply_decision_request,
     parse_admin_apply_decision,
 )
 from web_admin_apply import (  # noqa: E402
+    _record_notification,
+    _recently_notified,
     application_status_for_staff,
-    resolve_application,
+    handle_admin_apply_decision,
     submit_application,
 )
 
@@ -35,110 +32,72 @@ class WebAdminApplyTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.apps_path = Path(self.tmp.name) / "admin_applications.json"
-        self.local_allowlist = Path(self.tmp.name) / "code_modify_allowlist.local.json"
+        self.notify_path = Path(self.tmp.name) / "admin_apply_notifications.json"
 
-    def test_route_patterns(self) -> None:
+    def test_route_patterns_still_parse_legacy_commands(self) -> None:
         self.assertTrue(is_admin_apply_decision_request("同意管理员申请 a1b2c3d4"))
-        self.assertTrue(is_admin_apply_decision_request("拒绝管理员申请 a1b2c3d4"))
-        self.assertFalse(is_admin_apply_decision_request("同意管理员 a1b2c3d4"))
         parsed = parse_admin_apply_decision("同意管理员申请 AbC12345")
         self.assertEqual(parsed, ("abc12345", True))
 
-    @patch("web_admin_apply._notify_admin")
+    def test_handle_admin_apply_decision_points_to_backend(self) -> None:
+        msg = handle_admin_apply_decision(
+            text="同意管理员申请 deadbeef",
+            sender_staff_id="32274159141215328",
+        )
+        self.assertIn("后台手动添加", msg)
+
+    @patch("web_admin_apply._notify_super_admins")
     @patch("web_admin_apply._gateway_import")
-    def test_submit_and_approve(
+    def test_submit_notifies_super_admins(
         self,
         mock_gateway: unittest.mock.MagicMock,
         mock_notify: unittest.mock.MagicMock,
     ) -> None:
-        mock_notify.return_value = None
-
-        def fake_add(staff_id: str) -> bool:
-            data = {"allowedStaffIds": [staff_id]}
-            self.local_allowlist.write_text(
-                json.dumps(data, ensure_ascii=False, indent=2) + "\n",
-                encoding="utf-8",
-            )
-            return True
-
-        mock_gateway.return_value = (
-            fake_add,
-            lambda: ["32274159141215328"],
-            lambda *, sender_staff_id, sender_id: sender_staff_id
-            in {"32274159141215328"},
-        )
-
-        app, err = submit_application(
+        mock_gateway.return_value = lambda *, sender_staff_id, sender_id: False
+        result, err = submit_application(
             staff_id="user_new_001",
             display_name="测试用户",
-            path=self.apps_path,
+            path=self.notify_path,
         )
         self.assertIsNone(err)
-        self.assertIsNotNone(app)
-        assert app is not None
-        self.assertEqual(app["status"], "pending")
+        self.assertIsNotNone(result)
+        assert result is not None
+        self.assertTrue(result["notified"])
         mock_notify.assert_called_once()
+        status = application_status_for_staff("user_new_001", path=self.notify_path)
+        self.assertEqual(status["status"], "none")
 
-        status = application_status_for_staff("user_new_001", path=self.apps_path)
-        self.assertEqual(status["status"], "pending")
+    @patch("web_admin_apply._notify_super_admins")
+    @patch("web_admin_apply._gateway_import")
+    def test_submit_dedup_within_24h(
+        self,
+        mock_gateway: unittest.mock.MagicMock,
+        mock_notify: unittest.mock.MagicMock,
+    ) -> None:
+        mock_gateway.return_value = lambda *, sender_staff_id, sender_id: False
+        _record_notification("user_new_001", path=self.notify_path)
+        self.assertTrue(_recently_notified("user_new_001", path=self.notify_path))
 
-        with patch(
-            "code_modify_permission.ALLOWLIST_LOCAL_PATH",
-            self.local_allowlist,
-        ):
-            load_code_modify_allowlist.cache_clear()
-            with patch("web_admin_apply._notify_applicant"):
-                with patch("web_admin_apply._gateway_import") as mock_gateway2:
-                    mock_gateway2.return_value = (
-                        fake_add,
-                        lambda: ["32274159141215328"],
-                        lambda *, sender_staff_id, sender_id: sender_staff_id
-                        in {"32274159141215328"},
-                    )
-                    approved, err2 = resolve_application(
-                        token=app["token"],
-                        approver_staff_id="32274159141215328",
-                        approve=True,
-                        path=self.apps_path,
-                    )
-            self.assertIsNone(err2)
-            self.assertEqual(approved["status"], "approved")
-            local = json.loads(self.local_allowlist.read_text(encoding="utf-8"))
-            self.assertIn("user_new_001", local["allowedStaffIds"])
+        result, err = submit_application(
+            staff_id="user_new_001",
+            display_name="测试用户",
+            path=self.notify_path,
+        )
+        self.assertIsNone(err)
+        assert result is not None
+        self.assertTrue(result["skippedDuplicate"])
+        mock_notify.assert_not_called()
 
     @patch("web_admin_apply._gateway_import")
-    def test_non_admin_cannot_approve(self, mock_gateway: unittest.mock.MagicMock) -> None:
-        mock_gateway.return_value = (
-            lambda _sid: False,
-            lambda: ["32274159141215328"],
-            lambda *, sender_staff_id, sender_id: False,
+    def test_already_admin_cannot_apply(self, mock_gateway: unittest.mock.MagicMock) -> None:
+        mock_gateway.return_value = lambda *, sender_staff_id, sender_id: sender_staff_id == "admin_x"
+        result, err = submit_application(
+            staff_id="admin_x",
+            display_name="已有管理",
+            path=self.notify_path,
         )
-        self.apps_path.write_text(
-            json.dumps(
-                {
-                    "applications": [
-                        {
-                            "token": "deadbeef",
-                            "staffId": "user_x",
-                            "displayName": "X",
-                            "status": "pending",
-                            "createdAt": "2026-08-05T00:00:00+00:00",
-                        }
-                    ]
-                },
-                ensure_ascii=False,
-            ),
-            encoding="utf-8",
-        )
-        app, err = resolve_application(
-            token="deadbeef",
-            approver_staff_id="999",
-            approve=True,
-            path=self.apps_path,
-        )
-        self.assertIsNone(app)
-        self.assertIn("权限", err or "")
+        self.assertIsNone(result)
+        self.assertIn("已是管理员", err or "")
 
 
 def main() -> None:

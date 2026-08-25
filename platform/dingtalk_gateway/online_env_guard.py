@@ -33,7 +33,9 @@ POLICY_EXCLUDE_RE = re.compile(
     re.I,
 )
 
-_DENY_MESSAGE = "没有权限"
+_DENY_MESSAGE = (
+    "你没有线上环境 / 线上账号操作权限（仅限管理员），请在右上角头像菜单申请管理员权限。"
+)
 
 
 def looks_like_online_env_request(text: str) -> bool:
@@ -53,7 +55,7 @@ def looks_like_online_env_request(text: str) -> bool:
 
 
 def online_env_denial_message() -> str:
-    return _DENY_MESSAGE
+    return _DENY_MESSAGE.strip()
 
 
 def is_online_env_operation_allowed(*, staff_id: str | None = None) -> bool:

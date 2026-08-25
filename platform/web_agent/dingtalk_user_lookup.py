@@ -440,8 +440,8 @@ def _save_org_roster_cache(users: list[dict[str, str]]) -> None:
     _org_roster_cache = payload
 
 
-def load_org_roster(*, refresh: bool = False) -> list[dict[str, str]]:
-    """读取企业通讯录缓存；过期或 refresh 时尝试刷新。"""
+def load_org_roster(*, refresh: bool = False, allow_network: bool = True) -> list[dict[str, str]]:
+    """读取企业通讯录缓存；过期或 refresh 时尝试刷新（allow_network=False 则仅用本地）。"""
     global _org_roster_refresh_attempt_at
 
     cached = _load_org_roster_cache()
@@ -456,6 +456,9 @@ def load_org_roster(*, refresh: bool = False) -> list[dict[str, str]]:
                 continue
             display_name = _public_display_name(str(item.get("displayName") or ""), staff_id)
             users.append({"staffId": staff_id, "displayName": display_name})
+
+    if not allow_network:
+        return users
 
     fetched_at = str(cached.get("fetched_at") or "").strip()
     stale = refresh
@@ -490,6 +493,22 @@ def load_org_roster(*, refresh: bool = False) -> list[dict[str, str]]:
     if not fetched_at:
         _save_org_roster_cache(users)
     return users
+
+
+def collect_cached_staff_labels(
+    sessions: list[SessionMeta],
+    *,
+    allow_org_roster_network: bool = False,
+) -> dict[str, str]:
+    """汇总本地已知人员标签；默认不触发企业通讯录网络刷新。"""
+    known = collect_web_auth_staff_labels()
+    known.update(collect_message_board_staff_labels())
+    with _lock:
+        known.update(_load_cache())
+    known.update(collect_known_labels(sessions))
+    for user in load_org_roster(allow_network=allow_org_roster_network):
+        _merge_staff_label(known, user["staffId"], user["displayName"])
+    return known
 
 
 def collect_static_staff_labels(*, force: bool = False) -> dict[str, str]:

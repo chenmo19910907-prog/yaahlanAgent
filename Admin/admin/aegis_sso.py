@@ -454,6 +454,27 @@ def auto_refresh_yaahlan(env_file: str | Path | None = None) -> SSOLoginResult:
     return result
 
 
+def auto_refresh_yaahlan_online(env_file: str | Path | None = None) -> SSOLoginResult:
+    """
+    一键刷新 Yaahlan 线上 Admin Token 并持久化到 online/.env.local。
+
+    与测试环境 auto_refresh_yaahlan 对称；Aegis 账号密码仍从 Admin/.env.local 读取。
+    """
+    result = refresh_yaahlan_env("yaahlan_online")
+    if not result.success:
+        return result
+
+    if env_file is None:
+        repo_root = Path(__file__).resolve().parents[2]
+        env_file = repo_root / "online" / ".env.local"
+
+    update_env_local(env_file, {
+        "ADMIN_ONLINE_SSO_TOKEN": result.sso_token,
+        "ADMIN_ONLINE_YAAHLAN_JWT": result.jwt_token,
+    })
+    return result
+
+
 def auto_refresh_moa(env_file: str | Path | None = None, *, online: bool = False) -> SSOLoginResult:
     """
     一键刷新 MOA/MSE Cookie 并持久化到 .env.local。
@@ -542,13 +563,8 @@ def main() -> int:
                 auto_refresh_yaahlan()
                 print("  -> Persisted to Admin/.env.local (ADMIN_SSO_TOKEN, ADMIN_YAAHLAN_JWT)")
             elif platform == "yaahlan_online":
-                refresh_yaahlan_env("yaahlan_online")
-                repo_root = Path(__file__).resolve().parents[2]
-                update_env_local(repo_root / "online" / ".env.local", {
-                    "ADMIN_ONLINE_SSO_TOKEN": result.sso_token,
-                    "ADMIN_ONLINE_YAAHLAN_JWT": result.jwt_token,
-                })
-                print("  -> Persisted to online/.env.local")
+                auto_refresh_yaahlan_online()
+                print("  -> Persisted to online/.env.local (ADMIN_ONLINE_SSO_TOKEN, ADMIN_ONLINE_YAAHLAN_JWT)")
             elif platform == "moa_mse":
                 auto_refresh_moa()
                 print("  -> Persisted to MOA/.env.local (MOA_COOKIE)")

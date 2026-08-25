@@ -108,8 +108,8 @@ _WEB_RULES_CORE = f"""\
 5. **测试用例**：生成测试用例时写入 `{_temporary_testcase_hint()}`（Markdown 表格或 CSV）。
 6. **MOA 探活**：仅当用户整条消息为「MOA检查」「检查MOA」「MOA探活」等明确口令时才探活；MOA 业务查询不等于探活。
 7. **失败处理**：用自然语言说明问题与下一步，不要编造结果。
-8. **真机 ADB（仅管理员）**：非管理员**禁止**经 ADB / 真机 UI 执行。禁止调用 `adb/`、`adb_execute.py`、`macro`、`flow run`、`observe`/`capture`/`locate`/`tap`、`autotest`、adb-screen MCP 等。查数用 MOA/Admin；抓包用 Tunnel **只读**查询。用户要求真机点按、礼物面板 UI、截图验收时，说明需管理员授权或在 **Cursor 本机对话** 中操作。
-9. **线上环境（仅管理员）**：非管理员**禁止**涉及「线上环境」「线上账号」「线上」等正式/生产环境操作。禁止调用 `online/`、`--线上环境`、`--target-environment prod` 等；**不得**改走测试环境代替。用户提出此类需求时，直接回复「没有权限」。"""
+8. **真机 ADB**：Web Agent **不支持** ADB / 真机 UI 执行。禁止调用 `adb/`、`adb_execute.py`、`macro`、`flow run`、`observe`/`capture`/`locate`/`tap`、`autotest`、adb-screen MCP 等。查数用 MOA/Admin；抓包用 Tunnel **只读**查询。用户要求真机点按、礼物面板 UI、截图验收时，说明 Web 端不支持，请在 **Cursor 本机对话** 中操作。
+9. **线上环境（仅管理员）**：非管理员**禁止**涉及「线上环境」「线上账号」「线上」等正式/生产环境操作。禁止调用 `online/`、`--线上环境`、`--target-environment prod` 等；**不得**改走测试环境代替。用户提出此类需求时，说明无线上环境权限及原因，并引导联系 admin 或陈墨在「管理员列表」中开通权限。"""
 
 _WEB_RULES_GIFT_FAMILY = f"""\
 10. {_GIFT_RULE}
@@ -247,7 +247,7 @@ def _external_agent_rules(enabled_ids: list[str]) -> str:
             if str(item.get("id") or "") == "yaahlan_service":
                 lines.append(
                     "  - **并行非阻塞**：可 `--async --json` 一次 submit 多个 task（立即返回 task_id，后台轮询）；"
-                    "等待期间继续本机 MOA/Tunnel/ADB；"
+                    "等待期间继续本机 MOA/Tunnel；"
                     "需结果时 `--task-id <id> --wait --json` 或 `--list-tasks --json`"
                 )
     disabled = [item for item in all_agents if str(item.get("id")) not in enabled_ids]
@@ -279,7 +279,6 @@ def _external_agent_rules(enabled_ids: list[str]) -> str:
 def _readonly_permission_note(
     *,
     allow_moa_registry: bool,
-    allow_adb_execution: bool = False,
     allow_online_env_operation: bool = False,
 ) -> str:
     if allow_moa_registry:
@@ -296,10 +295,9 @@ def _readonly_permission_note(
             "禁止打包/下载/回传平台源文件（Skills/Rules/能力源码包等）；若用户索取，说明需管理员授权。"
             "若用户要求改代码，说明需管理员授权。"
         )
-    if not allow_adb_execution:
-        base += "禁止 ADB / 真机 UI 自动化（macro、observe、capture、flow 等）；若用户要求真机操作，说明需管理员授权。"
+    base += "禁止 ADB / 真机 UI 自动化（macro、observe、capture、flow 等）；若用户要求真机操作，说明 Web 端不支持，请在 Cursor 本机对话中操作。"
     if not allow_online_env_operation:
-        base += "禁止线上环境 / 线上账号 / 正式环境操作；若用户提出此类需求，直接回复「没有权限」。"
+        base += "禁止线上环境 / 线上账号 / 正式环境操作；若用户提出此类需求，说明无权限原因并引导联系 admin 或陈墨在「管理员列表」开通。"
     return base
 
 
@@ -308,7 +306,6 @@ def _build_web_rules(
     *,
     allow_code_modify: bool = True,
     allow_moa_registry: bool = False,
-    allow_adb_execution: bool = True,
     allow_online_env_operation: bool = True,
     user_text: str = "",
     image_count: int = 0,
@@ -328,12 +325,8 @@ def _build_web_rules(
     )
     capability_tail = (
         "可用能力：各模块 execute 脚本（含 Gift Stage 送礼、MSE 配置读取）、"
-        "钉钉 MCP、Tunnel 只读抓包"
+        "钉钉 MCP、Tunnel 只读抓包；**不含** ADB 真机操作。"
     )
-    if allow_adb_execution:
-        capability_tail += "、ADB 真机自动化（本机已连接设备时，仅管理员）。"
-    else:
-        capability_tail += "；**不含** ADB 真机操作。"
     if allow_online_env_operation:
         capability_tail += " 线上环境操作（仅管理员）。"
     else:
@@ -351,7 +344,6 @@ def _build_web_rules(
         return rules
     readonly = _readonly_permission_note(
         allow_moa_registry=allow_moa_registry,
-        allow_adb_execution=allow_adb_execution,
         allow_online_env_operation=allow_online_env_operation,
     )
     return f"{readonly}\n\n{rules}"
@@ -371,7 +363,6 @@ def build_web_prompt(
     reply_mode: str | None = None,
     allow_code_modify: bool = True,
     allow_moa_registry: bool = False,
-    allow_adb_execution: bool = True,
     allow_online_env_operation: bool = True,
 ) -> str:
     body = (user_text or "").strip()
@@ -380,7 +371,6 @@ def build_web_prompt(
         extras.append(
             _readonly_permission_note(
                 allow_moa_registry=allow_moa_registry,
-                allow_adb_execution=allow_adb_execution,
                 allow_online_env_operation=allow_online_env_operation,
             )
         )
@@ -472,7 +462,6 @@ def build_web_prompt(
             enabled_external_agents,
             allow_code_modify=allow_code_modify,
             allow_moa_registry=allow_moa_registry,
-            allow_adb_execution=allow_adb_execution,
             allow_online_env_operation=allow_online_env_operation,
             user_text=body,
             image_count=image_count,

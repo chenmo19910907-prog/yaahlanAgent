@@ -146,8 +146,16 @@ from run_progress_reply import (  # noqa: E402
     SERVICE_RESTART_HEADLINE,
     build_run_stop_reply,
 )
+from web_admin_grants import is_super_admin  # noqa: E402
 from web_admin_permission import is_web_admin, web_admin_denial_message  # noqa: E402
 from web_admin_apply import application_status_for_staff, submit_application  # noqa: E402
+from web_admin_manage import (  # noqa: E402
+    list_admin_users,
+    quit_admin_role,
+    remove_admin_list_user,
+    set_admin_permissions,
+    set_admin_role,
+)
 from web_auth import authorize_request, auth_enabled, logout_current_session, _effective_client_ip  # noqa: E402
 from web_otp_auth import (  # noqa: E402
     WEB_LOGIN_PHRASE,
@@ -1861,6 +1869,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                         user.staff_id, user.display_name
                     ),
                     "isAdmin": admin,
+                    "isSuperAdmin": is_super_admin(user.staff_id) if admin else False,
                 }
                 if not admin:
                     user_payload["adminApplyStatus"] = application_status_for_staff(
@@ -1881,6 +1890,20 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             return _json_response(
                 self,
                 application_status_for_staff(user.staff_id),
+            )
+
+        if path == "/api/admin/users":
+            user = current_web_user(self)
+            if user is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            return _json_response(
+                self,
+                list_admin_users(
+                    viewer_staff_id=user.staff_id,
+                    viewer_display_name=lookup_auth_user_display_name(
+                        user.staff_id, user.display_name
+                    ),
+                ),
             )
 
         if not authorize_request(self, method="GET"):
@@ -2440,22 +2463,113 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 return _json_response(self, {"error": "未登录"}, 401)
             if is_web_admin(staff_id=user.staff_id):
                 return _json_response(self, {"error": "你已是管理员"}, 400)
-            application, err = submit_application(
+            result, err = submit_application(
                 staff_id=user.staff_id,
                 display_name=lookup_auth_user_display_name(
                     user.staff_id, user.display_name
                 ),
             )
-            if application is None:
+            if result is None:
                 return _json_response(self, {"error": err or "申请失败"}, 400)
             status = application_status_for_staff(user.staff_id)
             payload: dict[str, Any] = {
                 "ok": True,
                 "status": status,
+                "notified": bool(result.get("notified")),
+                "skippedDuplicate": bool(result.get("skippedDuplicate")),
             }
             if err:
                 payload["warning"] = err
             return _json_response(self, payload)
+
+        if path == "/api/admin/quit":
+            user = current_web_user(self)
+            if user is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            result, err = quit_admin_role(staff_id=user.staff_id)
+            if err:
+                code = 403 if err == "该账号不可退出管理员" else 400
+                return _json_response(self, {"error": err}, code)
+            assert result is not None
+            return _json_response(self, {"ok": True, **result})
+
+        if path == "/api/admin/users/set":
+            user = current_web_user(self)
+            if user is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            target_staff_id = str(body.get("staffId") or "").strip()
+            is_admin_raw = body.get("isAdmin")
+            if not isinstance(is_admin_raw, bool):
+                return _json_response(self, {"error": "isAdmin 须为布尔值"}, 400)
+            result, err = set_admin_role(
+                operator_staff_id=user.staff_id,
+                operator_display_name=lookup_auth_user_display_name(
+                    user.staff_id, user.display_name
+                ),
+                target_staff_id=target_staff_id,
+                is_admin=is_admin_raw,
+            )
+            if err:
+                code = 403 if err == "没有权限" else 400
+                return _json_response(self, {"error": err}, code)
+            assert result is not None
+            return _json_response(self, {"ok": True, **result})
+
+        if path == "/api/admin/users/permissions":
+            user = current_web_user(self)
+            if user is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            target_staff_id = str(body.get("staffId") or "").strip()
+            permissions_raw = body.get("permissions")
+            if not isinstance(permissions_raw, dict):
+                return _json_response(self, {"error": "permissions 须为对象"}, 400)
+            permissions = {
+                str(key): bool(value)
+                for key, value in permissions_raw.items()
+            }
+            result, err = set_admin_permissions(
+                operator_staff_id=user.staff_id,
+                operator_display_name=lookup_auth_user_display_name(
+                    user.staff_id, user.display_name
+                ),
+                target_staff_id=target_staff_id,
+                permissions=permissions,
+            )
+            if err:
+                code = 403 if err == "没有权限" else 400
+                return _json_response(self, {"error": err}, code)
+            assert result is not None
+            return _json_response(self, {"ok": True, **result})
+
+        if path == "/api/admin/users/remove":
+            user = current_web_user(self)
+            if user is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            target_staff_id = str(body.get("staffId") or "").strip()
+            result, err = remove_admin_list_user(
+                operator_staff_id=user.staff_id,
+                operator_display_name=lookup_auth_user_display_name(
+                    user.staff_id, user.display_name
+                ),
+                target_staff_id=target_staff_id,
+            )
+            if err:
+                code = 403 if err == "没有权限" else 400
+                return _json_response(self, {"error": err}, code)
+            assert result is not None
+            return _json_response(self, {"ok": True, **result})
 
         if path == "/api/analytics/event":
             return _handle_analytics_event_post(self)

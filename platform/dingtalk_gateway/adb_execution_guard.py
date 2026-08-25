@@ -44,14 +44,14 @@ _DENY_MESSAGE = """\
 需要在真机上点按、截图验收时，请在 **Cursor 本机对话** 中操作。"""
 
 _WEB_DENY_MESSAGE = """\
-你没有真机 ADB / UI 自动化权限（macro、observe、capture、flow 等）。
+Web Agent **不支持**真机 ADB / UI 自动化（macro、observe、capture、flow 等）。
 
 请改用脚本能力，例如：
 • **送礼（默认）** → `Gift/gift_execute.py` Stage HTTP
 • **查数 / MOA / Admin** → 各模块 `*_execute.py`
 • **抓包验收** → `Tunnel/tunnel_execute.py`（只读查包）
 
-如需真机点按、截图验收，请联系管理员开通，或在 **Cursor 本机对话** 中操作。"""
+如需真机点按、截图验收，请在 **Cursor 本机对话** 中操作。"""
 
 ADB_POLICY_EXCLUDE_RE = re.compile(
     r"(应该|需要|希望|要求|限制|开通|授权|禁用|禁止).{0,24}(管理员|权限|web|Web|钉钉)|"

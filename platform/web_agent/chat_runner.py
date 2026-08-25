@@ -27,11 +27,9 @@ from source_file_permission import (  # noqa: E402
 )
 from adb_execution_guard import (  # noqa: E402
     adb_execution_denial_message_for_web,
-    is_adb_execution_allowed,
     looks_like_adb_execution_request,
 )
 from online_env_guard import (  # noqa: E402
-    is_online_env_operation_allowed,
     looks_like_online_env_request,
     online_env_denial_message,
 )
@@ -44,7 +42,7 @@ from cursor_runner import (  # noqa: E402
 from task_session import TaskSession  # noqa: E402
 from user_agent_pool import get_user_agent_pool  # noqa: E402
 
-from web_admin_permission import is_web_admin  # noqa: E402
+from web_admin_permission import has_admin_permission  # noqa: E402
 from web_prompt import build_web_prompt, normalize_reply_mode  # noqa: E402
 from web_session_context import (  # noqa: E402
     build_rotation_system_note,
@@ -110,16 +108,15 @@ def run_web_chat(
     image_list = list(image_paths or [])
     file_list = list(file_paths or [])
 
-    code_allowed = is_web_admin(staff_id=staff_id)
-    source_allowed = code_allowed
-    adb_allowed = is_adb_execution_allowed(staff_id=staff_id)
-    online_allowed = is_online_env_operation_allowed(staff_id=staff_id)
+    code_allowed = has_admin_permission(staff_id=staff_id, permission="code_modify")
+    source_allowed = has_admin_permission(staff_id=staff_id, permission="source_file")
+    online_allowed = has_admin_permission(staff_id=staff_id, permission="online")
     allow_moa_registry = allow_moa_registry_in_readonly(code_modify_allowed=code_allowed)
     if looks_like_code_modify_request(message) and not code_allowed:
         return code_modify_denial_message()
     if looks_like_source_file_request(message) and not source_allowed:
         return source_file_denial_message()
-    if looks_like_adb_execution_request(message) and not adb_allowed:
+    if looks_like_adb_execution_request(message):
         return adb_execution_denial_message_for_web()
     if looks_like_online_env_request(message) and not online_allowed:
         return online_env_denial_message()
@@ -149,7 +146,6 @@ def run_web_chat(
         reply_mode=reply_mode,
         allow_code_modify=code_allowed,
         allow_moa_registry=allow_moa_registry,
-        allow_adb_execution=adb_allowed,
         allow_online_env_operation=online_allowed,
     )
 

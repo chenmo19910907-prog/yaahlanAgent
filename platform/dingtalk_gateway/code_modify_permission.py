@@ -146,6 +146,45 @@ def get_admin_notify_staff_ids() -> list[str]:
     return sorted(cfg.allowed_staff_ids)
 
 
+def remove_staff_from_local_allowlist(staff_id: str) -> bool:
+    """从 local allowlist 移除 staffId；不存在则返回 False。"""
+    uid = (staff_id or "").strip()
+    if not uid:
+        raise ValueError("staff_id 不能为空")
+
+    local_data: dict[str, object] = {}
+    if ALLOWLIST_LOCAL_PATH.is_file():
+        local_data = json.loads(ALLOWLIST_LOCAL_PATH.read_text(encoding="utf-8"))
+        if not isinstance(local_data, dict):
+            local_data = {}
+
+    existing = _normalize_ids(local_data.get("allowedStaffIds"))
+    if uid not in existing:
+        reload_code_modify_allowlist()
+        return False
+
+    local_data["allowedStaffIds"] = [item for item in existing if item != uid]
+    ALLOWLIST_LOCAL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    ALLOWLIST_LOCAL_PATH.write_text(
+        json.dumps(local_data, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    reload_code_modify_allowlist()
+    return True
+
+
+def is_staff_in_base_allowlist(staff_id: str) -> bool:
+    """是否在主配置 code_modify_allowlist.json（非 local）中登记。"""
+    uid = (staff_id or "").strip()
+    if not uid or not ALLOWLIST_PATH.is_file():
+        return False
+    try:
+        data = json.loads(ALLOWLIST_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    return uid in _normalize_ids(data.get("allowedStaffIds"))
+
+
 def add_staff_to_local_allowlist(staff_id: str) -> bool:
     """追加 staffId 到 local allowlist；已存在则返回 False。"""
     uid = (staff_id or "").strip()

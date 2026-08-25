@@ -220,13 +220,26 @@ def _read_json_response(
 def _try_auto_refresh(auth: str) -> bool:
     """尝试自动刷新 token，成功返回 True。"""
     import sys as _sys
+    from pathlib import Path
+
     try:
-        from .aegis_sso import auto_refresh_mdp_nova, auto_refresh_yaahlan, refresh_yaahlan_env
-        _sys.stderr.write("[Auto-Refresh] Token 过期，正在自动重新登录...\n")
+        from .aegis_sso import (
+            auto_refresh_mdp_nova,
+            auto_refresh_yaahlan,
+            auto_refresh_yaahlan_online,
+        )
+        from .env import load_local_env, load_online_env
+
+        admin_dir = str(Path(__file__).resolve().parents[1])
+        load_local_env(admin_dir)
+        if auth == "yaahlan_online":
+            load_online_env(admin_dir)
+
+        _sys.stderr.write("[Auto-Refresh] Token 过期，正在通过 Aegis SSO 重新登录...\n")
         if auth == "yaahlan":
             result = auto_refresh_yaahlan()
         elif auth == "yaahlan_online":
-            result = refresh_yaahlan_env("yaahlan_online")
+            result = auto_refresh_yaahlan_online()
         elif auth == "mdp_nova":
             result = auto_refresh_mdp_nova()
         else:
