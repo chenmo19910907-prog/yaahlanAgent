@@ -155,6 +155,21 @@
     .theme-quick-btn.is-light .bulb-glass {
       fill: rgba(251, 191, 36, 0.35);
     }
+    .theme-quick-btn .bulb-auto-label {
+      opacity: 0;
+      font-size: 14px;
+      font-weight: 800;
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      fill: currentColor;
+      stroke: var(--card-bg, var(--bg));
+      stroke-width: 1.2px;
+      paint-order: stroke fill;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+    .theme-quick-btn.is-auto .bulb-auto-label {
+      opacity: 0.92;
+    }
     [data-theme="light"] .theme-quick-btn {
       background: rgba(15, 23, 42, 0.04);
     }
@@ -544,11 +559,12 @@
     <p class="error" id="errorBox"></p>
 
     <div class="card-footer">
-      <button type="button" class="theme-quick-btn is-dark" id="btn-theme-toggle" title="切换到白天模式" aria-label="切换白天/夜间模式">
+      <button type="button" class="theme-quick-btn is-auto" id="btn-theme-toggle" title="自动模式" aria-label="切换主题模式">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
           <path d="M9 18h6"/>
           <path d="M10 22h4"/>
           <path class="bulb-glass" d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>
+          <text class="bulb-auto-label" x="12" y="11" text-anchor="middle" dominant-baseline="middle">A</text>
         </svg>
       </button>
       <button type="button" class="message-board-entry-btn" id="btn-message-board" title="反馈">

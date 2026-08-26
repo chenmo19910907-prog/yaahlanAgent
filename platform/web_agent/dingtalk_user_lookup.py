@@ -656,6 +656,17 @@ def is_selectable_collaborator(staff_id: str, display_name: str) -> bool:
     return bool(sid)
 
 
+def localhost_admin_staff_id() -> str:
+    """本机 admin 测试账号 staffId（分享到钉钉等场景需隐藏）。"""
+    try:
+        from web_auth import localhost_admin_config
+
+        staff_id, _ = localhost_admin_config()
+        return (staff_id or "").strip() or "admin"
+    except Exception:  # noqa: BLE001
+        return "admin"
+
+
 def parse_dingtalk_open_conversation_id(dingtalk_key: str) -> str:
     """从 conversation_key 解析群 openConversationId；单聊返回空串。"""
     key = (dingtalk_key or "").strip()
@@ -827,17 +838,21 @@ def list_selectable_staff_users(
     sessions: list[SessionMeta],
     *,
     exclude_staff_id: str = "",
+    exclude_localhost_admin: bool = False,
     query: str = "",
     try_api_for_ascii: bool = True,
 ) -> list[dict[str, str]]:
     """汇总可选人员（会话/登录/留言板/姓名缓存/企业通讯录），按展示名排序。"""
     known = collect_all_staff_labels(sessions, try_api_for_ascii=try_api_for_ascii)
     exclude = (exclude_staff_id or "").strip()
+    hidden_admin = localhost_admin_staff_id() if exclude_localhost_admin else ""
     users: list[dict[str, str]] = []
     seen: set[str] = set()
     for uid, label in known.items():
         staff_id = (uid or "").strip()
         if not staff_id or staff_id in seen or staff_id == exclude:
+            continue
+        if hidden_admin and staff_id == hidden_admin:
             continue
         user = _staff_user(staff_id, label)
         if not is_selectable_collaborator(user["staffId"], user["displayName"]):

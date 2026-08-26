@@ -150,6 +150,7 @@ from web_admin_grants import is_super_admin  # noqa: E402
 from web_admin_permission import is_web_admin, web_admin_denial_message  # noqa: E402
 from web_admin_apply import application_status_for_staff, submit_application  # noqa: E402
 from web_admin_manage import (  # noqa: E402
+    enrich_selectable_users_with_admin_roles,
     list_admin_users,
     quit_admin_role,
     remove_admin_list_user,
@@ -2063,11 +2064,14 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     list_selectable_staff_users,
                 )
 
-                users = list_selectable_staff_users(
-                    store.list_sessions(enrich_names=False),
-                    exclude_staff_id=exclude,
-                    query=query,
-                    try_api_for_ascii=False,
+                users = enrich_selectable_users_with_admin_roles(
+                    list_selectable_staff_users(
+                        store.list_sessions(enrich_names=False),
+                        exclude_staff_id=exclude,
+                        exclude_localhost_admin=include_self,
+                        query=query,
+                        try_api_for_ascii=False,
+                    )
                 )
                 groups = list_selectable_group_chats(
                     store.list_sessions(enrich_names=False),
@@ -2118,6 +2122,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     items,
                     search_q,
                     load_messages=store.get_all_messages,
+                    load_search_entries=store.get_search_entries,
                     known_labels=known,
                 )
             else:
@@ -2822,6 +2827,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     for user in list_selectable_staff_users(
                         store.list_sessions(enrich_names=False),
                         try_api_for_ascii=False,
+                        exclude_localhost_admin=True,
                     )
                 }
                 allowed_groups = {

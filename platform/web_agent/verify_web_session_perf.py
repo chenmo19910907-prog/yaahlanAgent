@@ -149,6 +149,64 @@ class WebSessionPerfTest(unittest.TestCase):
         self.assertEqual(len(hits), 1)
         self.assertEqual(load_calls, 0)
 
+    def test_search_uses_sidecar_without_full_message_load(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            sid = "searchsidecar01"
+            rows = []
+            for i in range(140):
+                rows.append(
+                    {
+                        "role": "user" if i % 2 == 0 else "assistant",
+                        "content": f"payload-{i}-" + ("x" * 900),
+                        "timestamp": f"2026-08-03T10:{i % 60:02d}:00+00:00",
+                    }
+                )
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            store._save_messages(sid, [  # type: ignore[attr-defined]
+                ChatMessage(role=row["role"], content=row["content"], timestamp=row["timestamp"])
+                for row in rows
+            ])
+            index.write_text(
+                json.dumps(
+                    {
+                        sid: {
+                            "title": "unrelated title",
+                            "created_at": _now_iso(),
+                            "updated_at": _now_iso(),
+                            "message_count": len(rows),
+                            "source": "web",
+                            "messages_mtime": store._messages_file_mtime(sid),  # type: ignore[attr-defined]
+                        }
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            original_load = store._load_messages
+            load_calls = 0
+
+            def counting_load(session_id: str) -> list[ChatMessage]:
+                nonlocal load_calls
+                load_calls += 1
+                return original_load(session_id)
+
+            store._load_messages = counting_load  # type: ignore[method-assign]
+            hits = filter_sessions_by_search(
+                store.list_sessions(enrich_names=False),
+                "payload-137",
+                load_messages=counting_load,
+                load_search_entries=store.get_search_entries,
+            )
+            self.assertEqual(len(hits), 1)
+            self.assertTrue(hits[0][1].snippet.startswith("答 ·"))
+            self.assertEqual(load_calls, 0)
+            self.assertTrue(store._search_sidecar_path(sid).is_file())  # type: ignore[attr-defined]
+
     def test_tail_reads_sidecar_without_full_message_load(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -308,6 +366,24 @@ class WebSessionPerfTest(unittest.TestCase):
             offset=int(page_meta["offset"]),  # type: ignore[index]
         )
         self.assertTrue(meta_tag.startswith('W/"'))
+
+    def test_save_index_uses_atomic_write_and_backup(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            meta = store.create_session(title="原子写测试", owner_id="u1", owner_label="测试")
+            self.assertTrue(index.is_file())
+            store.append_message(meta.id, "user", "hello")
+            backup_dir = root / "sessions_backups"
+            self.assertTrue(backup_dir.is_dir())
+            backups = list(backup_dir.glob("sessions_*.json"))
+            self.assertGreaterEqual(len(backups), 1)
+            raw = json.loads(index.read_text(encoding="utf-8"))
+            self.assertIn(meta.id, raw)
+            self.assertNotIn("\n  ", index.read_text(encoding="utf-8"))
 
     def test_estimate_messages_page_meta_returns_none_for_before(self) -> None:
         self.assertIsNone(estimate_messages_page_meta(50, before="2026-08-13T10:00:00+00:00", limit=80))

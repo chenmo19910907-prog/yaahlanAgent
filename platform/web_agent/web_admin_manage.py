@@ -148,6 +148,27 @@ def _collect_all_users() -> list[dict[str, str]]:
     return users
 
 
+def enrich_selectable_users_with_admin_roles(
+    users: list[dict[str, str]],
+) -> list[dict[str, Any]]:
+    """为选人列表补充 isAdmin / isSuperAdmin，供共同对话与分享钉钉展示角色标签。"""
+    cfg = load_code_modify_allowlist()
+    allowed_staff = cfg.allowed_staff_ids
+    localhost_admin = _localhost_admin_staff_id()
+    enriched: list[dict[str, Any]] = []
+    for user in users:
+        staff_id = (user.get("staffId") or "").strip()
+        is_admin = staff_id == localhost_admin or staff_id in allowed_staff
+        enriched.append(
+            {
+                **user,
+                "isAdmin": is_admin,
+                "isSuperAdmin": is_super_admin(staff_id) if is_admin else False,
+            }
+        )
+    return enriched
+
+
 def _admin_list_sort_key(item: dict[str, Any]) -> tuple[int, str, str]:
     """内置超管（陈墨）最前，其次其他超管、管理员、普通用户；同组按姓名。"""
     if item.get("protected") and item.get("isSuperAdmin"):

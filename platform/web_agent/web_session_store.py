@@ -7,6 +7,7 @@ import hashlib
 import json
 import logging
 import os
+import shutil
 import threading
 import uuid
 from collections.abc import Callable, Iterator
@@ -20,6 +21,7 @@ from typing import Any
 
 _TAIL_SIDECAR_MAX = 120
 _TAIL_SIDECAR_SMALL_FILE_BYTES = 65_536
+_SESSIONS_BACKUP_KEEP = 30
 _COMPACT_JSON = (",", ":")
 
 
@@ -125,9 +127,46 @@ def sort_sessions_for_display(sessions: list[dict[str, Any]]) -> list[dict[str, 
 logger = logging.getLogger("web-agent")
 
 WEB_AGENT_DIR = Path(__file__).resolve().parent
-DATA_DIR = WEB_AGENT_DIR / "data"
+
+
+def resolve_web_agent_data_dir() -> Path:
+    """会话/消息落盘根目录；可通过 WEB_AGENT_DATA_DIR 指向 NFS 等共享存储。"""
+    raw = os.environ.get("WEB_AGENT_DATA_DIR", "").strip()
+    if raw:
+        return Path(raw).expanduser().resolve()
+    return WEB_AGENT_DIR / "data"
+
+
+DATA_DIR = resolve_web_agent_data_dir()
 SESSIONS_INDEX = DATA_DIR / "sessions.json"
 MESSAGES_DIR = DATA_DIR / "messages"
+SESSIONS_BACKUP_DIR = DATA_DIR / "sessions_backups"
+
+
+def _atomic_write_text(path: Path, text: str) -> None:
+    """原子写盘，避免进程中断导致 JSON 半写损坏。"""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f"{path.name}.tmp.{os.getpid()}")
+    try:
+        tmp.write_text(text, encoding="utf-8")
+        os.replace(tmp, path)
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
+def _backup_sessions_index(index_path: Path) -> None:
+    if not index_path.is_file():
+        return
+    backup_dir = index_path.parent / "sessions_backups"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    backup_path = backup_dir / f"sessions_{ts}.json"
+    shutil.copy2(index_path, backup_path)
+    backups = sorted(backup_dir.glob("sessions_*.json"))
+    overflow = len(backups) - _SESSIONS_BACKUP_KEEP
+    if overflow > 0:
+        for old in backups[:overflow]:
+            old.unlink(missing_ok=True)
 
 
 def _now_iso() -> str:
@@ -276,6 +315,13 @@ class SessionSearchHit:
     message_timestamp: str = ""
 
 
+@dataclass(frozen=True)
+class SearchIndexEntry:
+    role: str
+    timestamp: str
+    blob: str
+
+
 def _message_search_blob(msg: ChatMessage) -> str:
     content = (msg.content or "").strip().replace("\n", " ")
     author = (msg.author_label or msg.author_id or "").strip()
@@ -299,6 +345,56 @@ def _scroll_message_timestamp(messages: list[ChatMessage], query: str) -> str:
     if messages:
         return (messages[0].timestamp or "").strip()
     return ""
+
+
+def _search_entries_from_messages(messages: list[ChatMessage]) -> list[SearchIndexEntry]:
+    entries: list[SearchIndexEntry] = []
+    for msg in messages:
+        blob = _message_search_blob(msg)
+        if not blob:
+            continue
+        entries.append(
+            SearchIndexEntry(
+                role=msg.role,
+                timestamp=(msg.timestamp or "").strip(),
+                blob=blob,
+            )
+        )
+    return entries
+
+
+def _scroll_timestamp_from_entries(entries: list[SearchIndexEntry], query: str) -> str:
+    q = _normalize_search_query(query)
+    if not q:
+        return ""
+    for entry in reversed(entries):
+        if entry.blob and q in entry.blob.casefold():
+            return entry.timestamp
+    for entry in entries:
+        if entry.role == "user" and entry.blob:
+            return entry.timestamp
+    if entries:
+        return entries[0].timestamp
+    return ""
+
+
+def session_matches_search_entries(
+    entries: list[SearchIndexEntry],
+    query: str,
+) -> SessionSearchHit | None:
+    """在搜索侧车条目中匹配正文；不读全量 messages JSON。"""
+    q = _normalize_search_query(query)
+    if not q:
+        return None
+    for entry in reversed(entries):
+        if not entry.blob or q not in entry.blob.casefold():
+            continue
+        role_tag = "问" if entry.role == "user" else "答"
+        return SessionSearchHit(
+            snippet=f"{role_tag} · {_snippet_around(entry.blob, q)}",
+            message_timestamp=entry.timestamp,
+        )
+    return None
 
 
 def session_matches_metadata(
@@ -364,6 +460,7 @@ def filter_sessions_by_search(
     query: str,
     *,
     load_messages: Callable[[str], list[ChatMessage]],
+    load_search_entries: Callable[[str], list[SearchIndexEntry]] | None = None,
     known_labels: dict[str, str] | None = None,
 ) -> list[tuple[SessionMeta, SessionSearchHit]]:
     q = _normalize_search_query(query)
@@ -373,9 +470,15 @@ def filter_sessions_by_search(
     for meta in sessions:
         hit = session_matches_metadata(meta, q, known_labels=known_labels)
         if hit:
+            if load_search_entries is not None:
+                ts = _scroll_timestamp_from_entries(load_search_entries(meta.id), q)
+                hit = SessionSearchHit(snippet=hit.snippet, message_timestamp=ts)
             matched.append((meta, hit))
             continue
-        hit = session_matches_message_content(load_messages(meta.id), q)
+        if load_search_entries is not None:
+            hit = session_matches_search_entries(load_search_entries(meta.id), q)
+        else:
+            hit = session_matches_message_content(load_messages(meta.id), q)
         if hit:
             matched.append((meta, hit))
     return matched
@@ -838,7 +941,8 @@ class WebSessionStore:
 
     def _save_index(self) -> None:
         self._merge_independent_fields_from_disk()
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        self._index_path.parent.mkdir(parents=True, exist_ok=True)
+        _backup_sessions_index(self._index_path)
         payload = {
             sid: {
                 "title": meta.title,
@@ -864,9 +968,9 @@ class WebSessionStore:
             }
             for sid, meta in self._sessions.items()
         }
-        self._index_path.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2),
-            encoding="utf-8",
+        _atomic_write_text(
+            self._index_path,
+            json.dumps(payload, ensure_ascii=False, separators=_COMPACT_JSON),
         )
         self._index_mtime = self._index_mtime_on_disk()
 
@@ -875,6 +979,9 @@ class WebSessionStore:
 
     def _tail_sidecar_path(self, session_id: str) -> Path:
         return self._messages_path(session_id).with_suffix(".json.tail")
+
+    def _search_sidecar_path(self, session_id: str) -> Path:
+        return self._messages_path(session_id).with_suffix(".json.search")
 
     def _messages_file_mtime(self, session_id: str) -> float:
         try:
@@ -932,12 +1039,92 @@ class WebSessionStore:
             }
             for m in tail_msgs
         ]
-        path.write_text(json.dumps(payload, ensure_ascii=False, separators=_COMPACT_JSON), encoding="utf-8")
+        _atomic_write_text(
+            path,
+            json.dumps(payload, ensure_ascii=False, separators=_COMPACT_JSON),
+        )
         try:
             file_mtime = self._messages_path(session_id).stat().st_mtime
             os.utime(path, (file_mtime, file_mtime))
         except OSError:
             pass
+
+    def _write_search_sidecar(self, session_id: str, messages: list[ChatMessage]) -> None:
+        path = self._search_sidecar_path(session_id)
+        entries = _search_entries_from_messages(messages)
+        if not entries:
+            path.unlink(missing_ok=True)
+            return
+        payload = [
+            {
+                "role": entry.role,
+                "ts": entry.timestamp,
+                "blob": entry.blob,
+            }
+            for entry in entries
+        ]
+        _atomic_write_text(
+            path,
+            json.dumps(payload, ensure_ascii=False, separators=_COMPACT_JSON),
+        )
+        try:
+            file_mtime = self._messages_path(session_id).stat().st_mtime
+            os.utime(path, (file_mtime, file_mtime))
+        except OSError:
+            pass
+
+    def _read_search_sidecar(
+        self,
+        session_id: str,
+        *,
+        file_mtime: float,
+    ) -> list[SearchIndexEntry] | None:
+        path = self._search_sidecar_path(session_id)
+        if not path.is_file():
+            return None
+        try:
+            sidecar_mtime = path.stat().st_mtime
+            if abs(sidecar_mtime - file_mtime) > 1e-6:
+                return None
+            raw = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return None
+        if not isinstance(raw, list):
+            return None
+        entries: list[SearchIndexEntry] = []
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            role = str(item.get("role") or "").strip()
+            blob = str(item.get("blob") or "").strip()
+            if role not in ("user", "assistant") or not blob:
+                continue
+            entries.append(
+                SearchIndexEntry(
+                    role=role,
+                    timestamp=str(item.get("ts") or item.get("timestamp") or "").strip(),
+                    blob=blob,
+                )
+            )
+        return entries
+
+    def get_search_entries(self, session_id: str) -> list[SearchIndexEntry]:
+        """读取搜索侧车；缺失或过期时按需从 messages 重建。"""
+        file_mtime = self._messages_file_mtime(session_id)
+        if file_mtime <= 0:
+            return []
+        entries = self._read_search_sidecar(session_id, file_mtime=file_mtime)
+        if entries is not None:
+            return entries
+        messages = self._read_messages_from_disk(session_id)
+        if not messages:
+            return []
+        self._write_search_sidecar(session_id, messages)
+        rebuilt = self._read_search_sidecar(
+            session_id,
+            file_mtime=self._messages_file_mtime(session_id),
+        )
+        return rebuilt if rebuilt is not None else _search_entries_from_messages(messages)
 
     def _read_tail_from_sidecar(
         self,
@@ -1043,13 +1230,14 @@ class WebSessionStore:
             }
             for m in messages
         ]
-        self._messages_path(session_id).write_text(
+        _atomic_write_text(
+            self._messages_path(session_id),
             json.dumps(payload, ensure_ascii=False, separators=_COMPACT_JSON),
-            encoding="utf-8",
         )
         mtime = self._messages_file_mtime(session_id)
         self._messages_cache[session_id] = (mtime, messages)
         self._write_tail_sidecar(session_id, messages)
+        self._write_search_sidecar(session_id, messages)
 
     def messages_file_size(self, session_id: str) -> int:
         try:
@@ -1596,5 +1784,9 @@ _STORE: WebSessionStore | None = None
 def get_session_store() -> WebSessionStore:
     global _STORE
     if _STORE is None:
-        _STORE = WebSessionStore()
+        data_dir = resolve_web_agent_data_dir()
+        _STORE = WebSessionStore(
+            index_path=data_dir / "sessions.json",
+            messages_dir=data_dir / "messages",
+        )
     return _STORE

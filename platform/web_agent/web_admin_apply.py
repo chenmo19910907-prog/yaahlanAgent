@@ -184,5 +184,5 @@ def handle_admin_apply_decision(
     del text, sender_staff_id, client
     return (
         "管理员申请已改为由超级管理员在 Web Agent 后台手动添加。"
-        "请在网页右上角用户菜单打开「管理员列表」进行授权。"
+        "请在用户头像信息中打开「管理员列表」进行授权。"
     )

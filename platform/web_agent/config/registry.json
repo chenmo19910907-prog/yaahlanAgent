@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "generated_index_path": "platform/web_agent/使用方法.md",
+  "items": [
+    {
+      "id": "open_web_agent",
+      "name": "Web Agent-打开对话页",
+      "category": "Web Agent",
+      "description": "启动 Web Agent HTTP 服务（默认 :18766）并在浏览器打开 chat 对话页",
+      "prompts": [
+        "打开 Web Agent",
+        "打开智能工具 Agent 网页",
+        "启动 web agent 对话页"
+      ],
+      "command": "python3 platform/web_agent/open_web_agent.py"
+    },
+    {
+      "id": "restart_web_agent",
+      "name": "Web Agent-重启服务",
+      "category": "Web Agent",
+      "description": "通过 server_watch 重启 Web Agent 进程并做端口健康检查",
+      "prompts": [
+        "重启 Web Agent",
+        "重启 web agent 服务"
+      ],
+      "command": "python3 platform/web_agent/restart.py"
+    },
+    {
+      "id": "service_agent_query",
+      "name": "Web Agent-服务端 Agent 查询",
+      "category": "Web Agent",
+      "description": "调用 Yaahlan 服务端 Agent Open API，查后端源码、MOA 注册、接口定义等",
+      "prompts": [
+        "问服务端 Agent：<问题>",
+        "查 MOA provideDiamond ServiceUrl",
+        "服务端 Agent 查询接口实现"
+      ],
+      "command": "python3 platform/web_agent/service_agent_query.py --message \"<问题>\""
+    }
+  ]
+}

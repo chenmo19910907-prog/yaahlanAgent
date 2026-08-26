@@ -314,6 +314,25 @@ class DingtalkUserLookupTest(unittest.TestCase):
         self.assertNotIn("测试员", names)
         self.assertNotIn("未知用户", names)
 
+    def test_list_selectable_staff_users_excludes_localhost_admin_for_forward(self) -> None:
+        sessions: list[SessionMeta] = []
+        with patch.object(
+            lookup,
+            "collect_all_staff_labels",
+            return_value={
+                "admin": "管理员",
+                "alice": "Alice",
+            },
+        ), patch.object(lookup, "localhost_admin_staff_id", return_value="admin"):
+            users = lookup.list_selectable_staff_users(
+                sessions,
+                exclude_localhost_admin=True,
+            )
+
+        staff_ids = {user["staffId"] for user in users}
+        self.assertNotIn("admin", staff_ids)
+        self.assertEqual({user["displayName"] for user in users}, {"Alice"})
+
 
 if __name__ == "__main__":
     unittest.main()

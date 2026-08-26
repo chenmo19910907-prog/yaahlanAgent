@@ -11,10 +11,10 @@ WEB_AGENT_DIR = Path(__file__).resolve().parent
 GRANTS_PATH = WEB_AGENT_DIR / "data" / "admin_grants.json"
 
 PERMISSION_DEFS: tuple[dict[str, str], ...] = (
-    {"key": "super_admin", "label": "超级管理员", "short": "超管"},
+    {"key": "super_admin", "label": "超级管理员", "short": "超级管理员"},
     {"key": "code_modify", "label": "代码修改", "short": "改代码"},
     {"key": "source_file", "label": "源文件导出", "short": "源文件"},
-    {"key": "online", "label": "线上环境", "short": "线上"},
+    {"key": "online", "label": "操作线上环境", "short": "线上"},
 )
 
 SUPER_ADMIN_KEY = "super_admin"

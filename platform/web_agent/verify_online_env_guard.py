@@ -50,8 +50,11 @@ class OnlineEnvGuardTest(unittest.TestCase):
     def test_denial_message(self) -> None:
         msg = online_env_denial_message()
         self.assertIn("线上环境", msg)
+        self.assertIn("管理员列表", msg)
         self.assertIn("申请管理员", msg)
+        self.assertIn("用户头像信息", msg)
         self.assertNotIn("原因", msg)
+        self.assertNotIn("右上角", msg)
 
     def test_readonly_prompt_excludes_online(self) -> None:
         text = build_web_prompt(

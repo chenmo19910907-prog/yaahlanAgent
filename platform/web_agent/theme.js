@@ -1,30 +1,31 @@
-/** Web Agent 主题：打开页面按北京时间默认（08:00 白天，17:00 夜间）；设置内可临时切换。 */
+/** Web Agent 主题：自动模式按北京时间切换（08:00 白天，17:00 夜间）；设置内可选自动/白天/夜间。 */
 (function (global) {
   const BEIJING_OFFSET_MIN = 8 * 60;
   const DAY_START_MIN = 8 * 60;
   const NIGHT_START_MIN = 17 * 60;
   const STORAGE_KEY = 'webAgentThemeManual';
+  const THEME_CYCLE = ['auto', 'light', 'dark'];
 
   let autoTimer = null;
-  let manualOverride = null;
+  let themePreference = 'auto';
   let initialized = false;
 
-  function readStoredManualTheme() {
+  function readStoredThemePreference() {
     try {
       const value = localStorage.getItem(STORAGE_KEY);
-      if (value === 'light' || value === 'dark') {
+      if (value === 'light' || value === 'dark' || value === 'auto') {
         return value;
       }
     } catch (_err) {
       // localStorage 不可用时忽略
     }
-    return null;
+    return 'auto';
   }
 
-  function writeStoredManualTheme(theme) {
+  function writeStoredThemePreference(preference) {
     try {
-      if (theme === 'light' || theme === 'dark') {
-        localStorage.setItem(STORAGE_KEY, theme);
+      if (preference === 'light' || preference === 'dark' || preference === 'auto') {
+        localStorage.setItem(STORAGE_KEY, preference);
       } else {
         localStorage.removeItem(STORAGE_KEY);
       }
@@ -46,28 +47,41 @@
   }
 
   function getEffectiveTheme() {
-    return manualOverride || resolveAutoTheme();
+    if (themePreference === 'light' || themePreference === 'dark') {
+      return themePreference;
+    }
+    return resolveAutoTheme();
   }
 
-  function updateThemeButtons(effective) {
+  function updateThemeButtons(preference) {
     document.querySelectorAll('.theme-option[data-theme]').forEach((btn) => {
-      btn.classList.toggle('active', btn.dataset.theme === effective);
+      btn.classList.toggle('active', btn.dataset.theme === preference);
     });
-    updateThemeQuickToggle(effective);
+    updateThemeQuickToggle(preference);
   }
 
-  function updateThemeQuickToggle(effective) {
+  function updateThemeQuickToggle(preference) {
+    const effective = getEffectiveTheme();
     document.querySelectorAll('#btn-theme-toggle').forEach((btn) => {
-      const isLight = effective === 'light';
-      btn.title = isLight ? '切换到夜间模式' : '切换到白天模式';
-      btn.setAttribute('aria-label', btn.title);
+      const isAuto = preference === 'auto';
+      const isLight = preference === 'light' || (isAuto && effective === 'light');
+      const isDark = preference === 'dark' || (isAuto && effective === 'dark');
+      btn.classList.toggle('is-auto', isAuto);
       btn.classList.toggle('is-light', isLight);
-      btn.classList.toggle('is-dark', !isLight);
+      btn.classList.toggle('is-dark', isDark);
+      if (isAuto) {
+        btn.title = `自动模式（当前${effective === 'light' ? '白天' : '夜间'}）· 点击切换`;
+      } else {
+        btn.title = isLight ? '切换到夜间模式' : '切换到白天模式';
+      }
+      btn.setAttribute('aria-label', btn.title);
     });
   }
 
-  function toggleManualTheme() {
-    setManualTheme(getEffectiveTheme() === 'light' ? 'dark' : 'light');
+  function cycleThemePreference() {
+    const idx = THEME_CYCLE.indexOf(themePreference);
+    const nextIdx = ((idx >= 0 ? idx : 0) + 1) % THEME_CYCLE.length;
+    setThemePreference(THEME_CYCLE[nextIdx]);
   }
 
   function clearAutoTimer() {
@@ -92,7 +106,7 @@
 
   function scheduleAutoThemeCheck() {
     clearAutoTimer();
-    if (manualOverride) return;
+    if (themePreference !== 'auto') return;
     autoTimer = setTimeout(() => {
       applyCurrentTheme();
       scheduleAutoThemeCheck();
@@ -100,34 +114,35 @@
   }
 
   function syncThemeFromStorage() {
-    manualOverride = readStoredManualTheme();
+    themePreference = readStoredThemePreference();
     return applyCurrentTheme();
   }
 
   function applyCurrentTheme() {
     const effective = getEffectiveTheme();
     document.documentElement.setAttribute('data-theme', effective);
-    updateThemeButtons(effective);
+    updateThemeButtons(themePreference);
     scheduleAutoThemeCheck();
     return effective;
   }
 
   function applyThemeEarly() {
-    manualOverride = readStoredManualTheme();
+    themePreference = readStoredThemePreference();
     document.documentElement.setAttribute('data-theme', getEffectiveTheme());
   }
 
-  function setManualTheme(theme) {
-    manualOverride = theme === 'light' ? 'light' : 'dark';
-    writeStoredManualTheme(manualOverride);
+  function setThemePreference(preference) {
+    themePreference = preference === 'light' ? 'light' : preference === 'dark' ? 'dark' : 'auto';
+    writeStoredThemePreference(themePreference);
     applyCurrentTheme();
   }
 
   function bindThemeControls() {
-    document.getElementById('theme-dark')?.addEventListener('click', () => setManualTheme('dark'));
-    document.getElementById('theme-light')?.addEventListener('click', () => setManualTheme('light'));
+    document.getElementById('theme-dark')?.addEventListener('click', () => setThemePreference('dark'));
+    document.getElementById('theme-light')?.addEventListener('click', () => setThemePreference('light'));
+    document.getElementById('theme-auto')?.addEventListener('click', () => setThemePreference('auto'));
     document.querySelectorAll('#btn-theme-toggle').forEach((btn) => {
-      btn.addEventListener('click', () => toggleManualTheme());
+      btn.addEventListener('click', () => cycleThemePreference());
     });
   }
 
@@ -166,10 +181,13 @@
   global.WebAgentTheme = {
     resolveAutoTheme: resolveAutoTheme,
     getEffectiveTheme: getEffectiveTheme,
+    getThemePreference: () => themePreference,
     applyThemeEarly: applyThemeEarly,
     applyCurrentTheme: applyCurrentTheme,
-    setManualTheme: setManualTheme,
-    toggleManualTheme: toggleManualTheme,
+    setThemePreference: setThemePreference,
+    setManualTheme: setThemePreference,
+    cycleThemePreference: cycleThemePreference,
+    toggleManualTheme: cycleThemePreference,
     initThemeSettings: initThemeSettings,
     syncThemeFromStorage: syncThemeFromStorage,
   };

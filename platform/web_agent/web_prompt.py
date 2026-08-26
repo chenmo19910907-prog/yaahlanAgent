@@ -109,7 +109,7 @@ _WEB_RULES_CORE = f"""\
 6. **MOA 探活**：仅当用户整条消息为「MOA检查」「检查MOA」「MOA探活」等明确口令时才探活；MOA 业务查询不等于探活。
 7. **失败处理**：用自然语言说明问题与下一步，不要编造结果。
 8. **真机 ADB**：Web Agent **不支持** ADB / 真机 UI 执行。禁止调用 `adb/`、`adb_execute.py`、`macro`、`flow run`、`observe`/`capture`/`locate`/`tap`、`autotest`、adb-screen MCP 等。查数用 MOA/Admin；抓包用 Tunnel **只读**查询。用户要求真机点按、礼物面板 UI、截图验收时，说明 Web 端不支持，请在 **Cursor 本机对话** 中操作。
-9. **线上环境（仅管理员）**：非管理员**禁止**涉及「线上环境」「线上账号」「线上」等正式/生产环境操作。禁止调用 `online/`、`--线上环境`、`--target-environment prod` 等；**不得**改走测试环境代替。用户提出此类需求时，说明无线上环境权限及原因，并引导联系 admin 或陈墨在「管理员列表」中开通权限。"""
+9. **线上环境（仅管理员）**：非管理员**禁止**涉及「线上环境」「线上账号」「线上」等正式/生产环境操作。禁止调用 `online/`、`--线上环境`、`--target-environment prod` 等；**不得**改走测试环境代替。用户提出此类需求时，说明无线上环境权限，并引导在用户头像信息中打开「管理员列表」申请管理员。"""
 
 _WEB_RULES_GIFT_FAMILY = f"""\
 10. {_GIFT_RULE}
@@ -297,7 +297,7 @@ def _readonly_permission_note(
         )
     base += "禁止 ADB / 真机 UI 自动化（macro、observe、capture、flow 等）；若用户要求真机操作，说明 Web 端不支持，请在 Cursor 本机对话中操作。"
     if not allow_online_env_operation:
-        base += "禁止线上环境 / 线上账号 / 正式环境操作；若用户提出此类需求，说明无权限原因并引导联系 admin 或陈墨在「管理员列表」开通。"
+        base += "禁止线上环境 / 线上账号 / 正式环境操作；若用户提出此类需求，说明无权限并引导在用户头像信息中打开「管理员列表」申请管理员。"
     return base
 
 
