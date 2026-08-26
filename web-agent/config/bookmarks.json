@@ -23,7 +23,7 @@
           "label": "MSE 配置",
           "url": "https://mse.wemomo.com",
           "icon": "tool",
-          "description": "服务配置 / MOA"
+          "description": "服务配置MOA"
         }
       ]
     },
@@ -67,7 +67,7 @@
         },
         {
           "id": "bookmark-ms5kmjmi",
-          "label": "代码质量平台",
+          "label": "代码质量",
           "url": "https://cosmos-compass-web.immomo.com/cpm/codeCoverage/testReport?appid=&_bid=0",
           "icon": "link",
           "description": "覆盖率测试"
@@ -138,6 +138,12 @@
           "id": "bookmark-ms5knhvc",
           "label": "SVGA",
           "url": "https://svga.dev",
+          "icon": "link"
+        },
+        {
+          "id": "bookmark-mt9t05rf",
+          "label": "草料二维码",
+          "url": "https://cli.im/text",
           "icon": "link"
         }
       ]

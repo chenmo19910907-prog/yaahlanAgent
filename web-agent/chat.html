@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20260825162054"></script>
-  <script src="demo-api.js?v=20260825162054"></script>
+  <script src="demo-fixtures.js?v=20260826101323"></script>
+  <script src="demo-api.js?v=20260826101323"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -2060,6 +2060,29 @@
       background: var(--accent-soft);
       vertical-align: middle;
     }
+    .collaborators-item-role {
+      display: inline-flex;
+      align-items: center;
+      margin-left: 8px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      line-height: 1.4;
+      font-weight: 600;
+      vertical-align: middle;
+    }
+    .collaborators-item-role.is-admin {
+      color: #2563eb; border: 1px solid rgba(37,99,235,0.35); background: rgba(37,99,235,0.1);
+    }
+    .collaborators-item-role.is-super-admin {
+      color: #b45309; border: 1px solid rgba(180,83,9,0.35); background: rgba(245,158,11,0.12);
+    }
+    [data-theme="dark"] .collaborators-item-role.is-admin {
+      color: #93c5fd; border-color: rgba(147,197,253,0.35); background: rgba(59,130,246,0.15);
+    }
+    [data-theme="dark"] .collaborators-item-role.is-super-admin {
+      color: #fcd34d; border-color: rgba(252,211,77,0.35); background: rgba(245,158,11,0.18);
+    }
     .msg.assistant.streaming .msg-body {
       overflow: visible;
       max-height: none;
@@ -2617,6 +2640,21 @@
     .theme-quick-btn.is-light .bulb-glass {
       fill: rgba(251, 191, 36, 0.35);
     }
+    .theme-quick-btn .bulb-auto-label {
+      opacity: 0;
+      font-size: 14px;
+      font-weight: 800;
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      fill: currentColor;
+      stroke: var(--input-wrap-bg, var(--bg));
+      stroke-width: 1.2px;
+      paint-order: stroke fill;
+      pointer-events: none;
+      transition: opacity 180ms var(--ease-standard);
+    }
+    .theme-quick-btn.is-auto .bulb-auto-label {
+      opacity: 0.92;
+    }
     [data-theme="light"] .input-side-btn.theme-quick-btn {
       background: rgba(15, 23, 42, 0.04);
     }
@@ -2756,7 +2794,7 @@
       letter-spacing: 0.02em;
     }
     .theme-toggle {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
     }
     .theme-option {
       min-height: 42px; border-radius: 10px; border: 1px solid var(--border);
@@ -4563,11 +4601,12 @@
               </button>
             </div>
             <div class="input-side-actions-wrap" id="input-side-actions-wrap">
-            <button type="button" class="input-side-btn theme-quick-btn is-dark" id="btn-theme-toggle" title="切换到白天模式" aria-label="切换白天/夜间模式">
+            <button type="button" class="input-side-btn theme-quick-btn is-auto" id="btn-theme-toggle" title="自动模式" aria-label="切换主题模式">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
                 <path d="M9 18h6"/>
                 <path d="M10 22h4"/>
                 <path class="bulb-glass" d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>
+                <text class="bulb-auto-label" x="12" y="11" text-anchor="middle" dominant-baseline="middle">A</text>
               </svg>
             </button>
             </div>
@@ -4691,6 +4730,7 @@
         <div class="settings-section">
           <div class="settings-label">外观</div>
           <div class="theme-toggle" role="group" aria-label="主题模式">
+            <button type="button" class="theme-option" id="theme-auto" data-theme="auto">自动模式</button>
             <button type="button" class="theme-option" id="theme-light" data-theme="light">白天模式</button>
             <button type="button" class="theme-option" id="theme-dark" data-theme="dark">夜间模式</button>
           </div>
@@ -7685,6 +7725,25 @@
       btn.setAttribute('aria-label', isMine ? '筛选：我的历史会话' : '筛选：全部历史会话');
     }
 
+    async function ensureCurrentSessionMatchesScope() {
+      if (!currentSessionId) return;
+      const item = getSessionFromCache(currentSessionId);
+      if (item && sessionMatchesScope(item)) {
+        syncSessionReadOnly(currentSessionId);
+        return;
+      }
+      const visible = sessionsCache;
+      if (visible.length) {
+        await activateSession(visible[0].id, { force: true });
+        return;
+      }
+      currentSessionId = '';
+      currentSessionReadOnly = false;
+      clearPersistedSessionId();
+      showEmptyState({ animate: false });
+      syncSessionReadOnly('');
+    }
+
     function toggleSessionScopeFilter() {
       if (isGuestMode()) return;
       rememberSessionListScrollForCurrentScope();
@@ -7692,11 +7751,14 @@
       saveSessionScopeFilter(nextScope);
       trackEvent('session_scope_change', { scope: nextScope });
       if (sessionSearchQuery.trim()) {
-        loadSessions({ scopeSwitch: true }).catch(err => console.error('loadSessions', err));
+        loadSessions({ scopeSwitch: true })
+          .then(() => ensureCurrentSessionMatchesScope())
+          .catch(err => console.error('loadSessions', err));
         return;
       }
       syncSessionsCacheFromAll();
       renderSessionList({ rememberScroll: false });
+      ensureCurrentSessionMatchesScope().catch(err => console.error('ensureCurrentSessionMatchesScope', err));
     }
 
     function markSessionListActive(sessionId) {
@@ -8339,6 +8401,10 @@
       return { kind: raw.slice(0, idx), id: raw.slice(idx + 1) };
     }
 
+    function isHiddenForwardRecipient(staffId) {
+      return (staffId || '').trim().toLowerCase() === 'admin';
+    }
+
     function buildShareableForwardTargets() {
       const groups = shareableWebGroups.map(group => ({
         kind: 'group',
@@ -8349,7 +8415,9 @@
         kind: 'staff',
         id: (user.staffId || '').trim(),
         displayName: (user.displayName || '未知用户').trim(),
-      })).filter(item => item.id);
+        isAdmin: !!user.isAdmin,
+        isSuperAdmin: !!user.isSuperAdmin,
+      })).filter(item => item.id && !isHiddenForwardRecipient(item.id));
       return [...groups, ...users];
     }
 
@@ -8410,6 +8478,7 @@
         const kindTag = target.kind === 'group'
           ? ' <span class="collaborators-item-kind">群聊</span>'
           : '';
+        const roleTag = target.kind === 'staff' ? buildStaffAdminRoleTagHtml(target) : '';
         const selfTag = target.kind === 'staff' && target.id && target.id === viewerId
           ? ' <span class="collaborators-item-self">（我）</span>'
           : '';
@@ -8418,7 +8487,7 @@
           <label class="collaborators-item">
             <input type="checkbox" data-target-kind="${escapeHtml(target.kind)}" data-target-id="${escapeHtml(target.id)}"${checked} />
             <span class="collaborators-item-main">
-              <span class="collaborators-item-name">${name}${kindTag}${selfTag}</span>
+              <span class="collaborators-item-name">${name}${roleTag}${kindTag}${selfTag}</span>
             </span>
           </label>`;
       }).join('');
@@ -8596,7 +8665,7 @@
       const labelEl = document.getElementById('owner-bar-label');
       const metaEl = document.getElementById('owner-bar-meta');
       if (!bar || !labelEl) return;
-      const item = sessionsCache.find(s => s.id === currentSessionId);
+      const item = getSessionFromCache(currentSessionId);
       const owner = sessionOwnerName(item);
       if (item?.source === 'dingtalk' && owner) {
         bar.hidden = false;
@@ -8714,12 +8783,13 @@
       list.innerHTML = filtered.map(user => {
         const staffId = (user.staffId || '').trim();
         const name = escapeHtml(publicDisplayName((user.displayName || '未知用户').trim()));
+        const roleTag = buildStaffAdminRoleTagHtml(user);
         const checked = collaboratorDraftIds.has(staffId) ? ' checked' : '';
         return `
           <label class="collaborators-item">
             <input type="checkbox" data-staff-id="${escapeHtml(staffId)}"${checked} />
             <span class="collaborators-item-main">
-              <span class="collaborators-item-name">${name}</span>
+              <span class="collaborators-item-name">${name}${roleTag}</span>
             </span>
           </label>`;
       }).join('');
@@ -8749,7 +8819,7 @@
         modal.setAttribute('aria-hidden', 'true');
         return;
       }
-      const item = sessionsCache.find(s => s.id === currentSessionId);
+      const item = getSessionFromCache(currentSessionId);
       if (!isOwnWebSession(item)) return;
       collaboratorDraftIds = new Set(
         (item.web_collaborator_ids || item.web_collaborators || [])
@@ -8767,7 +8837,7 @@
 
     async function saveSessionCollaborators() {
       if (collaboratorsSaving || !currentSessionId) return;
-      const item = sessionsCache.find(s => s.id === currentSessionId);
+      const item = getSessionFromCache(currentSessionId);
       if (!isOwnWebSession(item)) return;
       collaboratorsSaving = true;
       const confirmBtn = document.getElementById('btn-collaborators-confirm');
@@ -8809,7 +8879,7 @@
       const input = document.getElementById('input');
       const inputWrap = document.querySelector('.input-wrap');
       const hintRow = document.getElementById('input-hint-row');
-      const item = sessionsCache.find(s => s.id === currentSessionId);
+      const item = getSessionFromCache(currentSessionId);
       if (isGuestMode()) {
         clearRetryPlaceholder();
         input.readOnly = true;
@@ -8864,7 +8934,8 @@
     }
 
     function syncSessionReadOnly(sessionId) {
-      const item = sessionsCache.find(s => s.id === sessionId);
+      const sid = String(sessionId || '').trim();
+      const item = sid ? getSessionFromCache(sid) : null;
       currentSessionReadOnly = isSessionReadOnly(item);
       updateReadOnlyState();
       updateDingtalkOwnerBar();
@@ -10177,7 +10248,7 @@
       const stored = publicDisplayName((m.author_label || m.authorLabel || '').trim());
       if (stored) return stored;
       if (currentSessionReadOnly) {
-        const item = sessionsCache.find(s => s.id === currentSessionId);
+        const item = getSessionFromCache(currentSessionId);
         const owner = sessionOwnerName(item);
         if (owner) return owner;
       }
@@ -12187,6 +12258,16 @@
       return !!(user.permissions && user.permissions.super_admin);
     }
 
+    function buildStaffAdminRoleTagHtml(user) {
+      if (!user?.isAdmin) return '';
+      const isSuperAdmin = !!(user.isSuperAdmin || user.permissions?.super_admin);
+      const roleClass = isSuperAdmin
+        ? 'collaborators-item-role is-super-admin'
+        : 'collaborators-item-role is-admin';
+      const roleText = isSuperAdmin ? '超管' : '管理员';
+      return ` <span class="${roleClass}">${roleText}</span>`;
+    }
+
     function syncUserAdminBadgeFromUser(user) {
       const adminBadgeEl = document.getElementById('user-menu-admin-badge');
       const menuBtn = document.getElementById('user-menu-btn');
@@ -12195,7 +12276,7 @@
       if (adminBadgeEl) {
         adminBadgeEl.hidden = !isAdmin;
         adminBadgeEl.textContent = isSuperAdmin ? '超管' : '管理';
-        adminBadgeEl.title = isSuperAdmin ? '超级管理员' : '管理员';
+        adminBadgeEl.title = isSuperAdmin ? '超管' : '管理员';
         adminBadgeEl.classList.toggle('is-super-admin', isSuperAdmin);
       }
       if (menuBtn && user) {
@@ -12203,7 +12284,7 @@
         menuBtn.classList.toggle('is-admin', isAdmin);
         menuBtn.setAttribute(
           'aria-label',
-          isSuperAdmin ? `${displayName}，超级管理员` : (isAdmin ? `${displayName}，管理员` : displayName),
+          isSuperAdmin ? `${displayName}，超管` : (isAdmin ? `${displayName}，管理员` : displayName),
         );
       }
     }
@@ -12225,7 +12306,7 @@
             { key: 'super_admin', label: '超级管理员' },
             { key: 'code_modify', label: '代码修改' },
             { key: 'source_file', label: '源文件导出' },
-            { key: 'online', label: '线上环境' },
+            { key: 'online', label: '操作线上环境' },
           ];
       const staffId = String(user.staffId || '').trim();
       const isSuperAdmin = !!perms.super_admin;
