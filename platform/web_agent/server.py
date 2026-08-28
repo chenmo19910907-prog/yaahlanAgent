@@ -1646,7 +1646,6 @@ def _start_chat_run(
         author_id=author_id,
         author_label=author_label,
     )
-
     if existing_run is not None:
         run = existing_run
     else:

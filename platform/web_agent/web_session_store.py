@@ -939,8 +939,9 @@ class WebSessionStore:
             if sid not in self._sessions:
                 self._sessions[sid] = disk_meta
 
-    def _save_index(self) -> None:
-        self._merge_independent_fields_from_disk()
+    def _save_index(self, *, skip_merge: bool = False) -> None:
+        if not skip_merge:
+            self._merge_independent_fields_from_disk()
         self._index_path.parent.mkdir(parents=True, exist_ok=True)
         _backup_sessions_index(self._index_path)
         payload = {
@@ -1362,10 +1363,14 @@ class WebSessionStore:
             if session_id not in self._sessions:
                 return False
             del self._sessions[session_id]
-            self._save_index()
-        path = self._messages_path(session_id)
-        if path.is_file():
+            self._save_index(skip_merge=True)
+        for path in (
+            self._messages_path(session_id),
+            self._tail_sidecar_path(session_id),
+            self._search_sidecar_path(session_id),
+        ):
             path.unlink(missing_ok=True)
+        self._invalidate_messages_cache(session_id)
         return True
 
     def get_messages(

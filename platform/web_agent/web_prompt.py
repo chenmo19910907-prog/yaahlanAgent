@@ -109,7 +109,11 @@ _WEB_RULES_CORE = f"""\
 6. **MOA 探活**：仅当用户整条消息为「MOA检查」「检查MOA」「MOA探活」等明确口令时才探活；MOA 业务查询不等于探活。
 7. **失败处理**：用自然语言说明问题与下一步，不要编造结果。
 8. **真机 ADB**：Web Agent **不支持** ADB / 真机 UI 执行。禁止调用 `adb/`、`adb_execute.py`、`macro`、`flow run`、`observe`/`capture`/`locate`/`tap`、`autotest`、adb-screen MCP 等。查数用 MOA/Admin；抓包用 Tunnel **只读**查询。用户要求真机点按、礼物面板 UI、截图验收时，说明 Web 端不支持，请在 **Cursor 本机对话** 中操作。
-9. **线上环境（仅管理员）**：非管理员**禁止**涉及「线上环境」「线上账号」「线上」等正式/生产环境操作。禁止调用 `online/`、`--线上环境`、`--target-environment prod` 等；**不得**改走测试环境代替。用户提出此类需求时，说明无线上环境权限，并引导在用户头像信息中打开「管理员列表」申请管理员。"""
+9. **线上环境**：
+   - **全员可用（只读）**：`online/online_execute.py admin --query-user-id`（Admin-查询用户详情）、`online/online_execute.py moa --query-user-by-phone`（MOA-按手机号查 userId）。
+   - **线上 VIP 加/升级**：**禁止** Web Agent 直接执行 MOA；识别到「线上环境/账号 + 加/升级 VIP」时，**仅**钉钉通知负责人 **孙晓东** 人工处理，并告知用户已提交申请。
+   - **全员禁止（含管理员/超管）**：上述两项以外的**所有线上 MOA**（含 `moa_execute.py --线上环境` / `--target-environment prod`、线上造数/改数等）；Web Agent 一律拦截，请在 Cursor 本机对话中操作。
+   - **仅管理员**：Tunnel 抓包、风控解除等其余线上环境操作；非管理员禁止调用 `online/` 其它能力、`--线上环境`、`--target-environment prod` 等；**不得**改走测试环境代替。无权限时引导在用户头像信息中打开「管理员列表」申请管理员。"""
 
 _WEB_RULES_GIFT_FAMILY = f"""\
 10. {_GIFT_RULE}
@@ -280,6 +284,7 @@ def _readonly_permission_note(
     *,
     allow_moa_registry: bool,
     allow_online_env_operation: bool = False,
+    allow_online_public_query: bool = True,
 ) -> str:
     if allow_moa_registry:
         base = (
@@ -296,8 +301,13 @@ def _readonly_permission_note(
             "若用户要求改代码，说明需管理员授权。"
         )
     base += "禁止 ADB / 真机 UI 自动化（macro、observe、capture、flow 等）；若用户要求真机操作，说明 Web 端不支持，请在 Cursor 本机对话中操作。"
+    if allow_online_public_query:
+        base += (
+            "线上环境仅允许只读查询：Admin-查询用户详情、MOA-按手机号查 userId；"
+            "其他线上 MOA 一律不允许（含管理员/超管）。"
+        )
     if not allow_online_env_operation:
-        base += "禁止线上环境 / 线上账号 / 正式环境操作；若用户提出此类需求，说明无权限并引导在用户头像信息中打开「管理员列表」申请管理员。"
+        base += "其余线上环境 / 线上账号 / 正式环境操作需管理员权限；无权限时引导在用户头像信息中打开「管理员列表」申请管理员。"
     return base
 
 
@@ -307,6 +317,7 @@ def _build_web_rules(
     allow_code_modify: bool = True,
     allow_moa_registry: bool = False,
     allow_online_env_operation: bool = True,
+    allow_online_public_query: bool = True,
     user_text: str = "",
     image_count: int = 0,
     file_paths: list[str | Path] | None = None,
@@ -328,7 +339,9 @@ def _build_web_rules(
         "钉钉 MCP、Tunnel 只读抓包；**不含** ADB 真机操作。"
     )
     if allow_online_env_operation:
-        capability_tail += " 线上环境操作（仅管理员）。"
+        capability_tail += " 线上 MOA 除两项只读查询外全员禁止；Tunnel/风控等其余线上操作仅管理员。"
+    elif allow_online_public_query:
+        capability_tail += " 线上环境仅 Admin 查用户详情 / MOA 查手机号 userId；其他线上 MOA 禁止。"
     else:
         capability_tail += "；**不含** 线上环境 / 线上账号操作。"
     if enabled_ids:
@@ -345,6 +358,7 @@ def _build_web_rules(
     readonly = _readonly_permission_note(
         allow_moa_registry=allow_moa_registry,
         allow_online_env_operation=allow_online_env_operation,
+        allow_online_public_query=allow_online_public_query,
     )
     return f"{readonly}\n\n{rules}"
 
@@ -364,6 +378,7 @@ def build_web_prompt(
     allow_code_modify: bool = True,
     allow_moa_registry: bool = False,
     allow_online_env_operation: bool = True,
+    allow_online_public_query: bool = True,
 ) -> str:
     body = (user_text or "").strip()
     extras: list[str] = []
@@ -372,6 +387,7 @@ def build_web_prompt(
             _readonly_permission_note(
                 allow_moa_registry=allow_moa_registry,
                 allow_online_env_operation=allow_online_env_operation,
+                allow_online_public_query=allow_online_public_query,
             )
         )
     reply_note = reply_mode_instruction(reply_mode)
@@ -463,6 +479,7 @@ def build_web_prompt(
             allow_code_modify=allow_code_modify,
             allow_moa_registry=allow_moa_registry,
             allow_online_env_operation=allow_online_env_operation,
+            allow_online_public_query=allow_online_public_query,
             user_text=body,
             image_count=image_count,
             file_paths=file_list,

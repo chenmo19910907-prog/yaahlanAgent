@@ -24,6 +24,20 @@ _PK_SESSION_RE = re.compile(
     re.I,
 )
 
+# 短追问 / 指代型消息：Resume 失败或无轮换摘要时易答非所问
+_VAGUE_FOLLOWUP_RE = re.compile(
+    r"(这个|那个|上面|前文|刚才|之前|继续|再.{0,16}|"
+    r"为什么|能不能|可以吗|能.{0,8}吗|有没有|"
+    r"优化一下|搞错|梳理|分析一下|做成工作流|"
+    r"详细|再说说|然后呢|接着|一下吧)",
+    re.I,
+)
+_EXPLICIT_TASK_RE = re.compile(
+    r"https?://|\d{6,}|online_execute|moa_execute|workflow_execute|"
+    r"admin_execute|tunnel_execute|userId|user\s*id|手机号",
+    re.I,
+)
+
 
 def session_message_stats(session_id: str) -> tuple[int, int]:
     """返回 (消息条数, 消息 JSON 估算字节)。"""
@@ -88,6 +102,37 @@ def build_rotation_system_note(session_id: str) -> str:
         parts.append("近期上下文摘要：")
         parts.append(snippet)
     return "\n\n".join(parts)
+
+
+def looks_like_vague_follow_up(text: str) -> bool:
+    """是否短追问/指代型消息（须附带近期摘要，避免脱离会话主题）。"""
+    t = (text or "").strip()
+    if not t or len(t) > 80:
+        return False
+    if _EXPLICIT_TASK_RE.search(t):
+        return False
+    if _VAGUE_FOLLOWUP_RE.search(t):
+        return True
+    return len(t) <= 20
+
+
+def build_continue_context_note(session_id: str, message: str) -> str:
+    """延续会话短追问：未达轮换阈值时也注入近期摘要。"""
+    sid = (session_id or "").strip()
+    if not sid or not looks_like_vague_follow_up(message):
+        return ""
+    if should_rotate_cursor_agent(sid):
+        return ""
+    snippet = build_rotation_context_snippet(sid)
+    if not snippet:
+        return ""
+    return "\n\n".join(
+        [
+            "【系统】本条为短追问/指代型消息，请结合以下近期对话摘要理解用户意图。",
+            "近期上下文摘要：",
+            snippet,
+        ]
+    )
 
 
 def looks_like_pk_atm_task(text: str) -> bool:

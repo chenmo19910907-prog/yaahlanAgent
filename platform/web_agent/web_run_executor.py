@@ -388,6 +388,7 @@ def execute_web_run(run_id: str) -> int:
             session_id,
             meta.message,
             staff_id=meta.author_id or None,
+            requester_name=meta.author_label or None,
             image_paths=meta.image_paths,
             file_paths=meta.file_paths,
             attachment_names=meta.attachment_names,

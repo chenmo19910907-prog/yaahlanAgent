@@ -30,8 +30,11 @@ from adb_execution_guard import (  # noqa: E402
     looks_like_adb_execution_request,
 )
 from online_env_guard import (  # noqa: E402
-    looks_like_online_env_request,
-    online_env_denial_message,
+    resolve_online_env_denial,
+)
+from online_vip_notify import (  # noqa: E402
+    looks_like_online_vip_request,
+    online_vip_handoff_reply,
 )
 from cursor_runner import (  # noqa: E402
     DEFAULT_MODEL,
@@ -45,6 +48,7 @@ from user_agent_pool import get_user_agent_pool  # noqa: E402
 from web_admin_permission import has_admin_permission  # noqa: E402
 from web_prompt import build_web_prompt, normalize_reply_mode  # noqa: E402
 from web_session_context import (  # noqa: E402
+    build_continue_context_note,
     build_rotation_system_note,
     should_rotate_cursor_agent,
 )
@@ -81,6 +85,7 @@ def run_web_chat(
     message: str,
     *,
     staff_id: str | None = None,
+    requester_name: str | None = None,
     image_paths: list[str | Path] | None = None,
     file_paths: list[str | Path] | None = None,
     attachment_names: list[str] | None = None,
@@ -118,8 +123,15 @@ def run_web_chat(
         return source_file_denial_message()
     if looks_like_adb_execution_request(message):
         return adb_execution_denial_message_for_web()
-    if looks_like_online_env_request(message) and not online_allowed:
-        return online_env_denial_message()
+    if looks_like_online_vip_request(message):
+        return online_vip_handoff_reply(
+            message=message,
+            requester_staff_id=(staff_id or "").strip(),
+            requester_name=(requester_name or "").strip(),
+        )
+    denial = resolve_online_env_denial(message, online_admin_allowed=online_allowed)
+    if denial:
+        return denial
 
     agent_message = message
     if should_rotate_cursor_agent(session_id):
@@ -132,6 +144,10 @@ def run_web_chat(
             session_id[:8],
             user_key,
         )
+    else:
+        continue_note = build_continue_context_note(session_id, message)
+        if continue_note:
+            agent_message = f"{message.rstrip()}\n\n{continue_note}"
 
     _phase(PHASE_PROMPT_BUILD)
     prompt = build_web_prompt(
@@ -147,6 +163,7 @@ def run_web_chat(
         allow_code_modify=code_allowed,
         allow_moa_registry=allow_moa_registry,
         allow_online_env_operation=online_allowed,
+        allow_online_public_query=True,
     )
 
     prev_staff_id = os.environ.get(STAFF_ID_ENV)

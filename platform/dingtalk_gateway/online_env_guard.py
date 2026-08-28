@@ -1,8 +1,37 @@
-"""Web Agent：线上环境 / 线上账号操作仅管理员可执行。"""
+"""Web Agent：线上环境权限 — 全员可查用户/手机号；其余线上 MOA 全员禁止（含管理员/超管）；其他线上操作仅管理员。"""
 
 from __future__ import annotations
 
 import re
+
+ONLINE_ADMIN_QUERY_RE = re.compile(
+    r"online/online_execute\.py\s+admin\s+--query-user-id\b|"
+    r"online_execute\.py\s+admin\s+--query-user-id\b|"
+    r"线上(?:环境|账号)?\s*(?:查|查询)\s*(?:用户|userId|userid)\s*\d+|"
+    r"线上(?:环境|账号)?\s*(?:用户|userId|userid)\s*\d+\s*(?:详情|资料|是否在线)|"
+    r"线上(?:环境|账号)?\s*\d{5,}\s*(?:详情|资料|用户|是否在线)",
+    re.I,
+)
+ONLINE_MOA_PHONE_QUERY_RE = re.compile(
+    r"online/online_execute\.py\s+moa\s+--query-user-by-phone\b|"
+    r"online_execute\.py\s+moa\s+--query-user-by-phone\b|"
+    r"线上(?:环境|账号)?\s*(?:查|查询)\s*(?:手机号|手机)\s*\d+|"
+    r"线上(?:环境|账号)?\s*(?:手机号|手机)\s*\d+\s*(?:查|查询|userId|userid|是否注册)|"
+    r"线上(?:环境|账号)?\s*(?:查|查询)\s*\d{11}\s*(?:的\s*)?(?:userId|userid|对应)",
+    re.I,
+)
+ONLINE_MOA_SCRIPT_RE = re.compile(
+    r"moa_execute\.py[^\n]*(?:--线上环境|--online-env|--target-environment\s+prod)|"
+    r"(?:--线上环境|--online-env|--target-environment\s+prod)[^\n]*moa_execute\.py|"
+    r"online/online_execute\.py\s+moa\b(?!.*--query-user-by-phone)|"
+    r"online_execute\.py\s+moa\b(?!.*--query-user-by-phone)",
+    re.I,
+)
+ONLINE_MOA_MUTATION_NL_RE = re.compile(
+    r"线上(?:环境|账号).{0,16}(?:MOA|moa_execute|升级|VIP|vip|增加|添加|清除|下发|送礼|互关|PK|修改)|"
+    r"线上(?:环境|账号).{0,8}\d{11}.{0,12}(?:升级|添加|加|VIP|vip|增加|清除)",
+    re.I,
+)
 
 ONLINE_EXPLICIT_RE = re.compile(
     r"线上环境|线上账号|线上用户|线上号|"
@@ -36,6 +65,10 @@ POLICY_EXCLUDE_RE = re.compile(
 _DENY_MESSAGE = (
     "你没有线上环境 / 线上账号操作权限（仅限管理员），请在用户头像信息中打开「管理员列表」申请管理员。"
 )
+_ONLINE_MOA_DENY_MESSAGE = (
+    "线上环境除「Admin-查询用户详情」「MOA-按手机号查 userId」外，其他 MOA 操作一律不允许（含管理员/超管）。"
+    "如需线上造数/改数，请在 Cursor 本机对话中操作。"
+)
 
 
 def looks_like_online_env_request(text: str) -> bool:
@@ -56,6 +89,53 @@ def looks_like_online_env_request(text: str) -> bool:
 
 def online_env_denial_message() -> str:
     return _DENY_MESSAGE.strip()
+
+
+def online_moa_denial_message() -> str:
+    return _ONLINE_MOA_DENY_MESSAGE.strip()
+
+
+def looks_like_online_public_query_request(text: str) -> bool:
+    """线上环境全员允许的只读查询：Admin 查用户详情、MOA 按手机号查 userId。"""
+    t = (text or "").strip()
+    if not t or not looks_like_online_env_request(t):
+        return False
+    if ONLINE_ADMIN_QUERY_RE.search(t):
+        return True
+    return bool(ONLINE_MOA_PHONE_QUERY_RE.search(t))
+
+
+def looks_like_online_moa_forbidden_request(text: str) -> bool:
+    """线上环境禁止的 MOA（除按手机号查 userId 外的所有线上 MOA）。"""
+    t = (text or "").strip()
+    if not t or looks_like_online_public_query_request(t):
+        return False
+    if ONLINE_MOA_SCRIPT_RE.search(t):
+        return True
+    if not looks_like_online_env_request(t):
+        return False
+    if ONLINE_MOA_MUTATION_NL_RE.search(t):
+        return True
+    if re.search(r"线上.{0,16}MOA", t, re.I) and not ONLINE_MOA_PHONE_QUERY_RE.search(t):
+        return True
+    return False
+
+
+def resolve_online_env_denial(
+    text: str,
+    *,
+    online_admin_allowed: bool,
+) -> str | None:
+    """返回拦截文案；None 表示允许继续。"""
+    if not looks_like_online_env_request(text):
+        return None
+    if looks_like_online_public_query_request(text):
+        return None
+    if looks_like_online_moa_forbidden_request(text):
+        return online_moa_denial_message()
+    if not online_admin_allowed:
+        return online_env_denial_message()
+    return None
 
 
 def is_online_env_operation_allowed(*, staff_id: str | None = None) -> bool:

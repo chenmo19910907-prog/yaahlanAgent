@@ -5145,10 +5145,16 @@
     /** @type {Map<string, Promise<string|null>>} */
     const sessionMessagesPrefetch = new Map();
 
+    function upsertSessionCacheById(session) {
+      const sid = String(session?.id || '').trim();
+      if (!sid) return;
+      sessionsCacheById.set(sid, session);
+    }
+
     function rebuildSessionsCacheIndex() {
       sessionsCacheById = new Map();
       for (const s of sessionsCacheAll) {
-        if (s?.id) sessionsCacheById.set(s.id, s);
+        upsertSessionCacheById(s);
       }
     }
 
@@ -7812,6 +7818,10 @@
       };
       apply(sessionsCache);
       apply(sessionsCacheAll);
+      if (changed) {
+        const merged = sessionsCacheById.get(sid) || getSessionFromCache(sid);
+        if (merged) upsertSessionCacheById({ ...merged, ...patch });
+      }
       return changed;
     }
 
@@ -8851,8 +8861,7 @@
           alert(data.error || '保存失败');
           return;
         }
-        const idx = sessionsCache.findIndex(s => s.id === currentSessionId);
-        if (idx >= 0) sessionsCache[idx] = { ...sessionsCache[idx], ...data };
+        patchSessionCacheEntry(currentSessionId, data);
         updateDingtalkOwnerBar();
         syncSessionReadOnly(currentSessionId);
         renderSessionList();
@@ -8933,8 +8942,16 @@
 
     function syncSessionReadOnly(sessionId) {
       const sid = String(sessionId || '').trim();
-      const item = sid ? getSessionFromCache(sid) : null;
-      currentSessionReadOnly = isSessionReadOnly(item);
+      if (!sid) {
+        currentSessionReadOnly = false;
+        updateReadOnlyState();
+        updateDingtalkOwnerBar();
+        return;
+      }
+      const item = getSessionFromCache(sid);
+      if (item) {
+        currentSessionReadOnly = isSessionReadOnly(item);
+      }
       updateReadOnlyState();
       updateDingtalkOwnerBar();
     }
@@ -9481,6 +9498,7 @@
       const rows = data.sessions || [];
       if (q) {
         sessionsCache = rows;
+        for (const s of rows) upsertSessionCacheById(s);
         sortSessionsCache();
       } else {
         sessionsCacheAll = rows;

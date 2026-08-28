@@ -158,6 +158,8 @@ class AgentStreamCard:
         self._orphan_timer: threading.Timer | None = None
         self._queue_bootstrap_timers: list[threading.Timer] = []
         self._queue_waiting_started_at = 0.0
+        # finish/fail 后置 True，阻止滞后 progress / enqueue 定时器盖回「执行中」
+        self._terminal = False
 
         if self._mode == "ai":
             card = dingtalk_stream.AIMarkdownCardInstance(dingtalk_client, incoming)
@@ -309,9 +311,14 @@ class AgentStreamCard:
             ("_orphan_timer", None),
             ("_queue_bootstrap_timers", []),
             ("_queue_waiting_started_at", 0.0),
+            ("_terminal", False),
         ):
             if not hasattr(self, name):
                 setattr(self, name, default)
+
+    def _is_live(self) -> bool:
+        """卡片是否仍处于可刷新的执行/排队态（非终态）。"""
+        return bool(self._started) and not getattr(self, "_terminal", False)
 
     def _normalize_agent_text(self, text: str) -> str:
         """卡片内用 <br> 代替段落换行，避免高度跳动。"""
@@ -389,7 +396,7 @@ class AgentStreamCard:
     def _render(self, *, force: bool = False) -> bool:
         """合并三通道后节流刷新卡片（内容未变 / 未到间隔则跳过）。"""
         self._ensure_stream_state()
-        if not self._started:
+        if not self._is_live():
             return False
         composed = self._compose_body()
         if composed == self._last_flushed_body and not force:
@@ -446,7 +453,7 @@ class AgentStreamCard:
 
         def _fire() -> None:
             self._orphan_timer = None
-            if not self._started or self._progress_timer is not None:
+            if not self._is_live() or self._progress_timer is not None:
                 return
             logger.warning(
                 "排队卡超时未执行 id=%s… prompt=%s，标记失败",
@@ -471,7 +478,7 @@ class AgentStreamCard:
 
         def _schedule(delay: float) -> None:
             def _fire() -> None:
-                if not self._started or self._progress_timer is not None:
+                if not self._is_live() or self._progress_timer is not None:
                     return
                 self._refresh_queue_body_from_provider()
                 self._render(force=True)
@@ -490,7 +497,7 @@ class AgentStreamCard:
 
         def _schedule(delay: float) -> None:
             def _fire() -> None:
-                if not self._started:
+                if not self._is_live():
                     return
                 self._render(force=True)
 
@@ -511,7 +518,7 @@ class AgentStreamCard:
 
         def _fire() -> None:
             self._queue_refresh_timer = None
-            if not self._started or self._progress_timer is not None:
+            if not self._is_live() or self._progress_timer is not None:
                 return
             started = getattr(self, "_queue_waiting_started_at", 0.0)
             if started and (time.monotonic() - started) >= QUEUE_CONTENT_REFRESH_TTL_S:
@@ -675,15 +682,16 @@ class AgentStreamCard:
         )
 
     def _schedule_progress_tick(self) -> None:
-        if not self._started:
+        if not self._is_live():
             return
 
         def _fire() -> None:
             self._progress_timer = None
-            if not self._started:
-                return
-            # 内存态每秒更新已用时；卡片 API 由 _render 节流合并
-            self._status_line = self._format_progress_markdown()
+            with self._lock:
+                if not self._is_live():
+                    return
+                # 内存态每秒更新已用时；卡片 API 由 _render 节流合并
+                self._status_line = self._format_progress_markdown()
             self._render()
             self._schedule_progress_tick()
 
@@ -700,7 +708,7 @@ class AgentStreamCard:
     def push(self, markdown: str) -> None:
         """Agent 文本通道更新（思考/工具/回答）；占位状态交给已用时通道。"""
         self._ensure_stream_state()
-        if not self._started:
+        if not self._is_live():
             return
         text = (markdown or "").strip()
         if text and not self._is_progress_status_body(text):
@@ -735,6 +743,9 @@ class AgentStreamCard:
 
     def _flush_locked(self, *, force: bool = False) -> bool:
         self._ensure_stream_state()
+        if getattr(self, "_terminal", False):
+            self._pending = None
+            return False
         if self._timer is not None:
             self._timer.cancel()
             self._timer = None
@@ -790,6 +801,12 @@ class AgentStreamCard:
         self._ensure_stream_state()
         if not self._started:
             return False
+        with self._lock:
+            self._terminal = True
+            if self._timer is not None:
+                self._timer.cancel()
+                self._timer = None
+            self._pending = None
         self._stop_progress_tick()
         self._cancel_queue_content_refresh()
         self._cancel_queue_bootstrap_burst()
@@ -803,11 +820,6 @@ class AgentStreamCard:
         else:
             self._status_line = ""
             self._agent_body = status
-        with self._lock:
-            if self._timer is not None:
-                self._timer.cancel()
-                self._timer = None
-            self._pending = None
         final_body_md = self._compose_body()
         sync_ok = False
         try:

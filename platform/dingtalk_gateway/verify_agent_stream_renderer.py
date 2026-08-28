@@ -407,6 +407,59 @@ def test_finish_status_clears_agent_body() -> None:
     assert "已收到" not in flushed  # 瞬态 header 已清
 
 
+def test_finish_blocks_late_progress_tick() -> None:
+    """finish 后滞后的 progress tick 不得盖回「执行中」。"""
+    import threading
+    from unittest.mock import MagicMock
+
+    from agent_stream_card import AgentStreamCard
+
+    card = AgentStreamCard.__new__(AgentStreamCard)
+    card._mode = "markdown"
+    card._started = True
+    card._terminal = False
+    card._header = "已收到（文字）"
+    card._persistent_header = ""
+    card._card_title = "提问：解除风控"
+    card._min_interval_s = 0.0
+    card._last_push_at = 0.0
+    card._lock = threading.Lock()
+    card._pending = None
+    card._timer = None
+    card._push_count = 0
+    card._progress_timer = None
+    card._agent_body = "正在解除设备风控。"
+    card._status_line = "执行中，已用时 76秒…"
+    card._batch_progress_line = ""
+    card._started_at = 0.0
+    card._last_content_at = 0.0
+    card._last_flushed_body = ""
+    card._estimate_seconds = None
+    card._card_instance_id = "id"
+    card._md_card = MagicMock()
+    card._ai_card = None
+    card._last_put_succeeded = True
+    card._card_sync_degraded = False
+    card._queue_refresh_timer = None
+    card._queue_bootstrap_timers = []
+    card._orphan_timer = None
+
+    card.finish_status("✅ 执行完成，结果见下方消息 ↓")
+
+    # 模拟 finish 时已触发、但在 finish 之后才跑完的 progress tick
+    with card._lock:
+        card._status_line = card._format_progress_markdown()
+    card._render(force=True)
+
+    assert card._terminal is True
+    assert card._started is False
+    card._md_card.update.assert_called_once()
+    flushed = card._md_card.update.call_args[0][0]
+    assert flushed.strip() == "✅ 执行完成，结果见下方消息 ↓"
+    assert "执行中" not in flushed
+    card._md_card._get_card_data.assert_not_called()
+
+
 def test_finish_status_ai_clears_truncated_body_and_sets_title() -> None:
     """AI 卡片完成态：提问写入 static 区，流式区仅保留完成提示。"""
     import threading
@@ -700,6 +753,7 @@ def main() -> int:
     test_reuse_preassigned_card_without_second_start()
     test_persistent_header_survives_finish()
     test_finish_status_clears_agent_body()
+    test_finish_blocks_late_progress_tick()
     test_finish_status_ai_clears_truncated_body_and_sets_title()
     test_compose_ai_static_only_extra()
     test_three_channels_coexist()

@@ -388,6 +388,27 @@ class WebSessionPerfTest(unittest.TestCase):
     def test_estimate_messages_page_meta_returns_none_for_before(self) -> None:
         self.assertIsNone(estimate_messages_page_meta(50, before="2026-08-13T10:00:00+00:00", limit=80))
 
+    def test_delete_session_removes_message_and_sidecar_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            meta = store.create_session(title="delete me", owner_id="u1", owner_label="测试")
+            store.append_message(meta.id, "user", "hello")
+            msg_path = messages_dir / f"{meta.id}.json"
+            tail_path = messages_dir / f"{meta.id}.json.tail"
+            search_path = messages_dir / f"{meta.id}.json.search"
+            self.assertTrue(msg_path.is_file())
+            self.assertTrue(tail_path.is_file())
+            self.assertTrue(search_path.is_file())
+            self.assertTrue(store.delete_session(meta.id))
+            self.assertFalse(msg_path.is_file())
+            self.assertFalse(tail_path.is_file())
+            self.assertFalse(search_path.is_file())
+            self.assertIsNone(store.get_session(meta.id))
+
 
 if __name__ == "__main__":
     unittest.main()
