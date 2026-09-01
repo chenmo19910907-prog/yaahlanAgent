@@ -125,8 +125,9 @@ def _render(registry: dict[str, Any]) -> str:
 
 def _sync_platform_catalog(repo_root: str) -> None:
     script = os.path.join(repo_root, "platform", "scripts", "after_registry_update.py")
-    if os.path.isfile(script):
-        subprocess.run([sys.executable, script], cwd=repo_root, check=False)
+    if not os.path.isfile(script):
+        raise RuntimeError(f"未找到工具台刷新脚本: {script}")
+    subprocess.run([sys.executable, script, "--quiet"], cwd=repo_root, check=True)
 
 
 def main() -> int:

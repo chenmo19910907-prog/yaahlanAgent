@@ -1,0 +1,41 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/yaahlan-anchor-recruit-moa-stage",
+  "method": "userJoinedTrade",
+  "header": "",
+  "params": [
+    {
+      "title": "userId",
+      "name": "1",
+      "txt": "100193373",
+      "json": "",
+      "type": "string",
+      "value": "100193373"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "user_query_joined_trade_union",
+    "name": "用户-查所属公会",
+    "category": "公会（yaahlan-anchor-recruit-moa-stage）",
+    "description": "查询用户当前所属公会（userJoinedTrade；/service/yaahlan-anchor-recruit-moa-stage）。返回 tradeUnionId / tradeUnionName，用于对照盘古 blackUnionIdList 排查榜单/家族基金等发钻被跳过。",
+    "prompts": [
+      "查用户 <userId> 所属公会",
+      "userJoinedTrade <userId>",
+      "用户 <userId> 在哪个公会"
+    ],
+    "cli": "--expr <userId>"
+  }
+}

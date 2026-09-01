@@ -1,0 +1,57 @@
+{
+  "type": "moa",
+  "key": "momo.bpm.biz.gameplatform.overseas-voga-mts-vas",
+  "url": "/service/room/internal/room-pk",
+  "method": "rewardRiskQuery",
+  "header": "",
+  "params": [
+    {
+      "title": "userId",
+      "name": "1",
+      "txt": "100193373",
+      "json": "",
+      "type": "string",
+      "value": "100193373"
+    },
+    {
+      "title": "ruleId",
+      "name": "2",
+      "txt": "221",
+      "json": "",
+      "type": "string",
+      "value": "221"
+    },
+    {
+      "title": "scene",
+      "name": "3",
+      "txt": "match_pk",
+      "json": "",
+      "type": "string",
+      "value": "match_pk"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "reward_dispatch_risk_precheck",
+    "name": "奖励下发-风控预检",
+    "category": "奖励排查（通用）",
+    "description": "通用发钻前风控预检（rewardRiskQuery → SecRiskRequestUtils.secRiskQuery；/service/room/internal/room-pk）。--expr 覆盖 userId；--reward-risk-rule-id / --reward-risk-scene 覆盖 rule_id 与场景（原 pk_type）。control=deny 表示会被拦截不发钻/不发道具。各活动 rule_id 见 MSE/Application rewardRiskRuleId。",
+    "prompts": [
+      "预检用户 <userId> 发奖风控 rule <ruleId>",
+      "奖励下发风控预检 <userId> ruleId=<ruleId>",
+      "rewardRiskQuery <userId> <ruleId> <scene>"
+    ],
+    "cli": "--expr <userId> --reward-risk-rule-id <ruleId> --reward-risk-scene <scene>"
+  }
+}

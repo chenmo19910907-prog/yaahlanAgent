@@ -84,7 +84,8 @@ python3 MOA/moa_execute.py \
 1. 在 **`templates/`** 新增 JSON 模板（须含 `key` 字段）
 2. 如需参数化，扩展 **`moa/`** 包中的 CLI 逻辑
 3. 规则/映射写入 **`config/thresholds.json`**
-4. 运行 **`python3 MOA/scripts/sync_registry.py`**（自动写入 `config/registry.json` 并生成 `使用方法.md`）
+4. 用 **`moa_execute.py --payload-file`** 试跑验收；**跑通且确认无误后自动入库**（未登记模板成功后自动执行 `sync_registry.py`，刷新 `config/registry.json`、`使用方法.md` 与 **工具工作台** `platform/catalog.html`）
+5. 也可手动执行 **`python3 MOA/scripts/sync_registry.py`**（仅补尚未登记的模板）
 
 可选：在模板内加 **`_registry`** 块自定义入库元数据（不会发给 MOA）：
 

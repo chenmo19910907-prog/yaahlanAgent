@@ -33,6 +33,27 @@ _LIFECYCLE_LINE_RES = (
 )
 
 
+_FAILURE_REPLY_PREFIXES = (
+    "⚠️ Agent 执行失败",
+    "⚠️ Agent 启动失败",
+    "⚠️ 任务已中断",
+    "⚠️ 任务因服务重启中断",
+    "⚠️ 任务执行超时",
+)
+
+
+def is_run_failure_reply(text: str) -> bool:
+    """是否为需回填原消息的失败回复（含 Agent 启动/执行失败）。"""
+    body = (text or "").strip()
+    if not body:
+        return False
+    if any(body.startswith(prefix) for prefix in _FAILURE_REPLY_PREFIXES):
+        return True
+    if body.startswith("⚠️") and "已自动重试" in body and "仍失败" in body:
+        return True
+    return False
+
+
 def is_agent_timeout_message(message: str) -> bool:
     text = (message or "").strip().lower()
     if not text:

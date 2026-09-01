@@ -1072,6 +1072,64 @@ def _assistant_reply_since_last_user(session_id: str) -> bool:
     return False
 
 
+def _run_has_persisted_reply(meta: RunMeta) -> bool:
+    """该 run 对应用户提问是否已有落盘 assistant 回复。"""
+    prompt = (meta.display_message or meta.message or "").strip()
+    if not prompt:
+        return False
+    session_store = get_session_store()
+    messages, _ = session_store.get_messages(meta.session_id, tail=48)
+    seen_user = False
+    for msg in messages:
+        if msg.role == "user":
+            user_text = (msg.content or "").strip()
+            if user_text == prompt:
+                seen_user = True
+            elif seen_user:
+                return False
+            continue
+        if seen_user and msg.role == "assistant":
+            return True
+    return False
+
+
+def _release_memory_run(run_id: str) -> None:
+    mem_run = RUN_MANAGER.get(run_id)
+    if mem_run is None or mem_run.done.is_set():
+        return
+    mem_run.done.set()
+    RUN_MANAGER.release_session(mem_run)
+
+
+def _supersede_prior_session_runs(session_id: str, *, keep_run_id: str) -> None:
+    """新消息开始时结束同会话残留 running run，避免后续任务完成后又被当成 active。"""
+    from web_run_executor import _terminate_worker_process
+
+    store = get_run_store()
+    for meta in list(store.list_active_runs()):
+        if meta.session_id != session_id or meta.run_id == keep_run_id:
+            continue
+        if meta.status != RUN_STATUS_RUNNING:
+            continue
+        fresh = store.get_run(meta.run_id) or meta
+        snap = store.get_snapshot(fresh.run_id)
+        if _run_has_persisted_reply(fresh):
+            store.mark_status(fresh.run_id, RUN_STATUS_DONE)
+            _release_memory_run(fresh.run_id)
+            continue
+        if snap.final_text and not str(snap.final_text).lstrip().startswith("⚠️"):
+            store.mark_status(fresh.run_id, RUN_STATUS_DONE)
+            _release_memory_run(fresh.run_id)
+            continue
+        if store.is_worker_alive(fresh.run_id):
+            store.update_meta(fresh.run_id, cancel_requested=True)
+            worker_pid = int(fresh.worker_pid or 0)
+            if worker_pid > 0:
+                _terminate_worker_process(worker_pid)
+        _finalize_orphan_run(store.get_run(fresh.run_id) or fresh)
+        _release_memory_run(fresh.run_id)
+
+
 def _finalize_cancelled_run(meta: RunMeta) -> None:
     """用户中断后 worker 已退出时的兜底落盘（避免误报服务重启）。"""
     store = get_run_store()
@@ -1121,6 +1179,9 @@ def _finalize_orphan_run(meta: RunMeta) -> None:
     if snap.final_text and not str(snap.final_text).lstrip().startswith("⚠️"):
         store.mark_status(meta.run_id, RUN_STATUS_DONE)
         return
+    if _run_has_persisted_reply(meta):
+        store.mark_status(meta.run_id, RUN_STATUS_DONE)
+        return
     if _assistant_reply_since_last_user(meta.session_id):
         store.mark_status(meta.run_id, RUN_STATUS_DONE)
         return
@@ -1140,7 +1201,9 @@ def _finalize_orphan_run(meta: RunMeta) -> None:
         reply_mode=meta.reply_mode,
         user_key=user_key,
     )
-    get_session_store().append_message(meta.session_id, "assistant", err_text)
+    session_store = get_session_store()
+    if not session_store.replace_last_assistant_if_failure(meta.session_id, err_text):
+        session_store.append_message(meta.session_id, "assistant", err_text)
     store.append_event(meta.run_id, {"type": "error", "message": "worker lost", "text": err_text})
     store.mark_status(meta.run_id, RUN_STATUS_ERROR)
     if not snap.final_text:
@@ -1650,6 +1713,8 @@ def _start_chat_run(
         run = existing_run
     else:
         run = RUN_MANAGER.create(session_id)
+
+    _supersede_prior_session_runs(session_id, keep_run_id=run.run_id)
 
     agent_model = _resolve_agent_model(model)
     external_ids = list(enabled_external_agents or [])

@@ -88,8 +88,7 @@ class CursorUsageTest(unittest.TestCase):
             )
             fake_now = datetime(2026, 8, 20, 15, 0, 0, tzinfo=BJ)
             with patch("cursor_usage.get_cursor_usage_daily_store", return_value=store):
-                with patch("cursor_usage.datetime") as dt_mock:
-                    dt_mock.now.return_value = fake_now
+                with patch("analytics_store._now_bj", return_value=fake_now):
                     bounds = get_usage_date_bounds("alice")
             self.assertEqual(bounds["maxDate"], "2026-08-20")
             self.assertEqual(bounds["minDate"], "2026-03-01")
@@ -308,32 +307,30 @@ class CursorUsageTest(unittest.TestCase):
                 with patch("cursor_usage.get_cursor_usage_daily_store", return_value=daily_store):
                     with patch("cursor_usage.load_env_local"):
                         with patch.dict("os.environ", {}, clear=True):
-                            with patch("cursor_usage.datetime") as dt_mock:
-                                dt_mock.now.return_value = fake_now
-                                with patch("cursor_usage._today_key_bj", return_value="2026-08-20"):
-                                    with patch(
-                                        "cursor_usage._fetch_and_cache_days",
-                                        fetch_mock,
-                                    ):
-                                        first = summarize_user_usage(
-                                            "alice",
-                                            range_key="day",
-                                            refresh=True,
-                                        )
-                                        self.assertEqual(fetch_mock.call_count, 1)
-                                        second = summarize_user_usage(
-                                            "alice",
-                                            range_key="day",
-                                            refresh=False,
-                                        )
-                                        self.assertEqual(fetch_mock.call_count, 1)
-                                        fetch_mock.reset_mock()
-                                        third = summarize_user_usage(
-                                            "alice",
-                                            range_key="day",
-                                            refresh=True,
-                                        )
-                                        self.assertEqual(fetch_mock.call_count, 1)
+                            with patch("analytics_store._now_bj", return_value=fake_now):
+                                with patch(
+                                    "cursor_usage._fetch_and_cache_days",
+                                    fetch_mock,
+                                ):
+                                    first = summarize_user_usage(
+                                        "alice",
+                                        range_key="day",
+                                        refresh=True,
+                                    )
+                                    self.assertEqual(fetch_mock.call_count, 1)
+                                    second = summarize_user_usage(
+                                        "alice",
+                                        range_key="day",
+                                        refresh=False,
+                                    )
+                                    self.assertEqual(fetch_mock.call_count, 1)
+                                    fetch_mock.reset_mock()
+                                    third = summarize_user_usage(
+                                        "alice",
+                                        range_key="day",
+                                        refresh=True,
+                                    )
+                                    self.assertEqual(fetch_mock.call_count, 1)
             self.assertEqual(first["requests"], 5)
             self.assertEqual(second["requests"], 5)
             self.assertEqual(third["requests"], 5)

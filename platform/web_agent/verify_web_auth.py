@@ -139,11 +139,19 @@ class WebAuthTest(unittest.TestCase):
             self.assertTrue(is_anonymous_allowed(handler, method="GET"))
             self.assertTrue(authorize_request(handler, method="GET"))
 
-    def test_localhost_bypasses_otp_auth(self) -> None:
+    def test_localhost_requires_otp_when_enabled(self) -> None:
         env = {"WEB_AGENT_OTP_AUTH": "1"}
         handler = _FakeHandler(client="127.0.0.1", path="/api/chat")
         with patch("web_auth.load_env_local", lambda: None), patch.dict(os.environ, env, clear=True):
             self.assertTrue(is_localhost_request(handler))
+            self.assertFalse(authorize_request(handler, method="POST"))
+            self.assertEqual(handler.response_code, 401)
+            self.assertIsNone(current_web_user(handler))
+
+    def test_localhost_admin_when_otp_disabled(self) -> None:
+        env = {"WEB_AGENT_OTP_AUTH": "0"}
+        handler = _FakeHandler(client="127.0.0.1", path="/api/chat")
+        with patch("web_auth.load_env_local", lambda: None), patch.dict(os.environ, env, clear=True):
             self.assertTrue(authorize_request(handler, method="POST"))
             user = current_web_user(handler)
             assert user is not None

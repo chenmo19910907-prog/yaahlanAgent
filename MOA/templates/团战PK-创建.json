@@ -1,0 +1,51 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/room/external/room-pk-api",
+  "method": "openPkMode",
+  "header": "{\"userId\":\"100058235\",\"roomId\":\"36043470\",\"mode\":1,\"seatCount\":8,\"minute\":15,\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100058235\",\"roomId\":\"36043470\",\"mode\":1,\"seatCount\":8,\"minute\":15,\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\"}",
+      "type": "json",
+      "value": {
+        "userId": "100058235",
+        "roomId": "36043470",
+        "mode": 1,
+        "seatCount": 8,
+        "minute": 15,
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "android",
+        "osType": "android"
+      }
+    }
+  ],
+  "_registry": {
+    "id": "team_pk_create",
+    "name": "团战PK-创建",
+    "category": "房间PK（room/external/room-pk-api）",
+    "description": "测试环境房间内开启团战 PK（openPkMode）。body 需 userId（房主/管理员）、roomId、mode=1（团战）、seatCount（8/10/12/14 对应 4v4/5v5/6v6/7v7）、minute（5/15/30）。MOA 模板实测 roomId=36043470 ec=200。",
+    "prompts": [
+      "用户 <userId> 在房间 <roomId> 创建团战PK seatCount=<seatCount> minute=<minute>",
+      "<roomId>房间创建4v4团战PK 15分钟",
+      "MOA openPkMode 团战PK"
+    ]
+  }
+}

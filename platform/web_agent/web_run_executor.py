@@ -27,6 +27,7 @@ from run_progress_reply import (
     RETRY_HINT,
     build_run_stop_reply,
     is_agent_timeout_message,
+    is_run_failure_reply,
     timeout_headline_from_message,
 )
 from web_file_store import consume_pending_outputs
@@ -340,11 +341,18 @@ def execute_web_run(run_id: str) -> int:
 
     def _append_assistant(text: str) -> None:
         output_files = consume_pending_outputs(session_id)
+        file_payload = [item.to_message_dict() for item in output_files]
+        if is_run_failure_reply(text) and session_store.replace_last_assistant_if_failure(
+            session_id,
+            text,
+            files=file_payload,
+        ):
+            return
         session_store.append_message(
             session_id,
             "assistant",
             text,
-            files=[item.to_message_dict() for item in output_files],
+            files=file_payload,
         )
 
     try:

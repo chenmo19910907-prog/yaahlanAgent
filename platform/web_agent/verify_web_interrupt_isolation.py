@@ -13,6 +13,10 @@ GATEWAY_DIR = WEB_AGENT_DIR.parent / "dingtalk_gateway"
 sys.path.insert(0, str(GATEWAY_DIR))
 sys.path.insert(0, str(WEB_AGENT_DIR))
 
+from verify_import_stubs import stub_cursor_runner  # noqa: E402
+
+stub_cursor_runner()
+
 import server  # noqa: E402
 from server import ActiveRun, _interrupt_active_run  # noqa: E402
 from web_run_store import RUN_STATUS_RUNNING, RunMeta, WebRunStore  # noqa: E402

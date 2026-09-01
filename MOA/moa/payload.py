@@ -123,6 +123,31 @@ def apply_top_level_overrides(payload: dict[str, Any], args: argparse.Namespace)
         _ensure_settings(payload)["headerType"] = args.header_type
 
 
+def _apply_reward_risk_precheck(payload: dict[str, Any], args: argparse.Namespace) -> None:
+    if payload.get("method") != "rewardRiskQuery":
+        return
+    params = payload.get("params")
+    if not isinstance(params, list) or len(params) < 3:
+        return
+    touched = False
+    if args.expr is not None:
+        params[0]["value"] = str(args.expr).strip()
+        params[0]["txt"] = str(args.expr).strip()
+        touched = True
+    if args.reward_risk_rule_id is not None:
+        rule_id = str(args.reward_risk_rule_id).strip()
+        params[1]["value"] = rule_id
+        params[1]["txt"] = rule_id
+        touched = True
+    if args.reward_risk_scene is not None:
+        scene = str(args.reward_risk_scene).strip()
+        params[2]["value"] = scene
+        params[2]["txt"] = scene
+        touched = True
+    if not touched:
+        return
+
+
 def _apply_room_expr(payload: dict[str, Any], args: argparse.Namespace) -> None:
     expr: str | None = None
     if args.expr is not None:
@@ -1590,5 +1615,6 @@ def load_payload(args: argparse.Namespace) -> dict[str, Any]:
             handler(args, payload)
             return payload
 
+    _apply_reward_risk_precheck(payload, args)
     _apply_room_expr(payload, args)
     return payload

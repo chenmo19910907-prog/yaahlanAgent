@@ -7,6 +7,7 @@ import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 WEB_AGENT_DIR = Path(__file__).resolve().parent
 BOOKMARKS_PATH = WEB_AGENT_DIR / "config" / "bookmarks.json"
@@ -98,8 +99,31 @@ def save_bookmarks(data: dict[str, Any], path: Path | None = None) -> None:
     )
 
 
-def _item_urls(data: dict[str, Any]) -> set[str]:
+_BUILTIN_BOOKMARK_PATHS = frozenset(
+    {
+        "/catalog.html",
+        "/catalog-standalone.html",
+        "/chat.html",
+    }
+)
+
+
+def _bookmark_path_key(url: str) -> str:
+    parsed = urlparse((url or "").strip())
+    path = (parsed.path or "").rstrip("/").lower() or "/"
+    return path
+
+
+def _is_builtin_bookmark_url(url: str) -> bool:
+    path = _bookmark_path_key(url)
+    if path in _BUILTIN_BOOKMARK_PATHS:
+        return True
+    return path.endswith("/catalog.html") or path.endswith("/catalog-standalone.html")
+
+
+def _item_urls(data: dict[str, Any]) -> tuple[set[str], set[str]]:
     urls: set[str] = set()
+    path_keys: set[str] = set()
     for cat in data.get("categories") or []:
         if not isinstance(cat, dict):
             continue
@@ -108,7 +132,8 @@ def _item_urls(data: dict[str, Any]) -> set[str]:
                 url = str(item.get("url") or "").strip()
                 if url:
                     urls.add(url.rstrip("/"))
-    return urls
+                    path_keys.add(_bookmark_path_key(url))
+    return urls, path_keys
 
 
 def _ensure_category(
@@ -152,7 +177,7 @@ def merge_legacy_bookmarks(
         for cat in legacy_cats
         if isinstance(cat, dict) and str(cat.get("id") or "").strip()
     }
-    seen_urls = _item_urls(merged)
+    seen_urls, seen_path_keys = _item_urls(merged)
     seen_ids: set[str] = set()
     for cat in merged.get("categories") or []:
         if not isinstance(cat, dict):
@@ -170,8 +195,11 @@ def merge_legacy_bookmarks(
         url = str(raw.get("url") or "").strip()
         if not label or not url:
             continue
+        if _is_builtin_bookmark_url(url):
+            continue
         url_key = url.rstrip("/")
-        if url_key in seen_urls:
+        path_key = _bookmark_path_key(url)
+        if url_key in seen_urls or path_key in seen_path_keys:
             continue
         if item_id and item_id in seen_ids:
             continue
@@ -191,6 +219,7 @@ def merge_legacy_bookmarks(
             item["description"] = description
         cat["items"].append(item)
         seen_urls.add(url_key)
+        seen_path_keys.add(path_key)
         if item_id:
             seen_ids.add(item_id)
         added.append({"label": label, "url": url, "category": cat_label})

@@ -99,7 +99,7 @@ def _gateway_rules() -> str:
 12. **源文件导出**：仅管理员可打包/下载/发送平台源文件（`.cursor/skills`、`.cursor/rules`、`platform/` 源码、能力全量包、`platform/exports/` 下 zip 等）；非管理员仅可使用能力，**禁止** zip 附件或回复本地路径交付上述内容。
 13. {_GIFT_DEFAULT_RULE}
     {_FAMILY_JOIN_RULE}
-14. **MOA 探活/检查**：**禁止**因消息中出现「MOA」字样就触发探活。用户发送「MOA检查」「检查MOA」「MOA探活」等时，**走 Cursor Agent 正常链路**执行 Cookie 探活并回复；**MOA 入库/登记模板**（含附图说明接口）时**只做** templates + registry + `sync_registry.py`，**禁止** MOA检查/探活/doctor/test_all；更新其它凭证、业务查询时亦不做探活。通过 `MOA/moa_execute.py` 执行业务接口属于正常任务，**不等于**探活。
+14. **MOA 探活/检查**：**禁止**因消息中出现「MOA」字样就触发探活。用户发送「MOA检查」「检查MOA」「MOA探活」等时，**走 Cursor Agent 正常链路**执行 Cookie 探活并回复；**MOA 入库/登记模板**（含附图说明接口）时须 **templates → moa_execute 试跑 → 成功后自动 sync_registry**，**禁止** MOA检查/探活/doctor/test_all；更新其它凭证、业务查询时亦不做探活。通过 `MOA/moa_execute.py` 执行业务接口属于正常任务，**不等于**探活。
 15. **禁止环境检查**：钉钉群**不支持**「环境检查」「检查环境」「doctor」「scripts/doctor.py」「credential_probe」；用户发送上述口令时**不要执行**，仅回复「钉钉群已取消环境检查，请用 MOA检查 或本机 gateway_ctl.sh health」。
 16. **禁止 ADB / 真机 UI**：钉钉消息**不得**经 ADB 或真机自动化执行。禁止调用 `adb/`、`adb_execute.py`、`macro`、`flow run`、`observe`/`capture`/`locate`/`tap`、`autotest`、adb-screen MCP 等。查数用 MOA/Admin；抓包用 Tunnel **只读**查询。用户要求真机点按、礼物面板 UI、截图验收时，说明「钉钉机器人不支持真机操作，请在 Cursor 本机执行」。
 17. **失败处理**：用自然语言说明问题与下一步，不要编造结果。
@@ -142,10 +142,10 @@ def _readonly_gateway_rules() -> str:
 6. **按需查看全部 / 导出**：按用户明确要求处理；导出成功时群里**只回在线表格链接**。
 7. **回复风格**：自然语言，先结论后细节；禁止贴原始 JSON 或字段名罗列；**时间展示**用北京时间，禁止 UTC。
 8. **测试用例**：若用户要求生成用例，可写入 `{tmp_dir}` 并同步钉钉（这不属于改代码逻辑）。
-9. **MOA 入库（全员）**：只读用户可在 `MOA/templates/` 登记模板并执行 `python3 MOA/scripts/sync_registry.py`；**禁止**改 gateway/.cursor 与其它模块源码。
+9. **MOA 入库（全员）**：只读用户可在 `MOA/templates/` 登记模板 → `moa_execute.py` 试跑验收 → 成功后自动 sync_registry；**禁止**改 gateway/.cursor 与其它模块源码。
 10. {_GIFT_DEFAULT_RULE}
     {_FAMILY_JOIN_RULE}
-11. **MOA 探活/检查**：**禁止**因消息含「MOA」就探活；仅整条口令完全匹配「MOA检查」「检查MOA」等时才探活。**MOA 入库/登记**时禁止探活，只做 sync_registry；`MOA/moa_execute.py` 业务调用不等于探活。
+11. **MOA 探活/检查**：**禁止**因消息含「MOA」就探活；仅整条口令完全匹配「MOA检查」「检查MOA」等时才探活。**MOA 入库/登记**时禁止探活，须试跑后自动 sync_registry；`MOA/moa_execute.py` 业务调用不等于探活。
 12. **禁止环境检查**：钉钉群不支持「环境检查」「doctor」等；不要执行 `scripts/doctor.py` 或 credential_probe，仅说明已取消并引导 MOA检查 或本机 health。
 13. **禁止 ADB / 真机 UI**：不得调用 `adb/`、macro、flow、observe/capture/locate/tap、autotest、adb-screen MCP。抓包用 Tunnel 只读。真机 UI 需求请引导至 Cursor 本机。
 14. **代码改动请求**：若用户要求改网关/Agent/Cursor 逻辑，说明「需管理员授权」，不要擅自改仓库。
@@ -170,7 +170,7 @@ def _readonly_with_moa_registry_rules() -> str:
 
 当前用户**没有修改网关/Agent 代码权限**，但**可以登记 MOA 能力**。必须遵守：
 1. **全自动执行**：直接调用工具/脚本完成任务，不要等待用户点 Run 或二次确认。
-2. **MOA 入库（允许）**：可在 `MOA/templates/` 新建/更新模板 JSON → 执行 `python3 MOA/scripts/sync_registry.py`（自动刷新 `MOA/使用方法.md` 与 `platform/catalog.html`）→ 确认 `MOA/config/registry.json`。**禁止**改 `platform/dingtalk_gateway/`、`.cursor/` 规则与技能、其它模块源码。
+2. **MOA 入库（允许）**：可在 `MOA/templates/` 新建/更新模板 JSON → `moa_execute.py` 试跑验收 → **成功后自动 sync_registry**（刷新 `MOA/使用方法.md` 与 `platform/catalog.html`）→ 确认 `MOA/config/registry.json`。**禁止**改 `platform/dingtalk_gateway/`、`.cursor/` 规则与技能、其它模块源码。
 3. **测试环境默认**：未出现「线上环境」时，只用 Admin/MOA/Tunnel 测试环境脚本，禁止调用 online/。
 4. **查询类回复**：查数、查用户、抓包、榜单等**直接在群里展示结果**（Markdown 表格或自然语言）；不要默认导出钉钉文档。
 5. **用户列表**：查询结果为**用户列表**时，**默认只展示前 10 条**；末尾提示可说「查看全部数据」或「导出」。
@@ -179,7 +179,7 @@ def _readonly_with_moa_registry_rules() -> str:
 8. **测试用例**：若用户要求生成用例，可写入 `{tmp_dir}` 并同步钉钉（这不属于改代码逻辑）。
 9. {_GIFT_DEFAULT_RULE}
    {_FAMILY_JOIN_RULE}
-10. **MOA 探活/检查**：**禁止**因消息含「MOA」就探活；仅整条口令完全匹配「MOA检查」「检查MOA」等时才探活。**MOA 入库/登记**时禁止探活，只做 sync_registry；`MOA/moa_execute.py` 业务调用不等于探活。
+10. **MOA 探活/检查**：**禁止**因消息含「MOA」就探活；仅整条口令完全匹配「MOA检查」「检查MOA」等时才探活。**MOA 入库/登记**时禁止探活，须试跑后自动 sync_registry；`MOA/moa_execute.py` 业务调用不等于探活。
 11. **禁止环境检查**：钉钉群不支持「环境检查」「doctor」等；不要执行 `scripts/doctor.py` 或 credential_probe，仅说明已取消并引导 MOA检查 或本机 health。
 12. **禁止 ADB / 真机 UI**：不得调用 `adb/`、macro、flow、observe/capture/locate/tap、autotest、adb-screen MCP。抓包用 Tunnel 只读。真机 UI 需求请引导至 Cursor 本机。
 13. **网关代码改动请求**：若用户要求改网关/Agent/Cursor 逻辑，说明「需管理员授权」，不要擅自改仓库。

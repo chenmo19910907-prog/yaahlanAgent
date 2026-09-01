@@ -5009,8 +5009,43 @@
     /** @type {AbortController | null} */
     let usageLoadAbortController = null;
     let otpAuthEnabled = true;
-    /** @type {Map<string, { eventSource: EventSource, runId: string, cancelling?: boolean, failed?: boolean, status: { ack: string, lifecycle: string, phase: string, batch: string, external: string, elapsed: string }, shellEl: HTMLElement | null, sentDraft?: { text: string, images: typeof pendingImages } }>} */
+    /** @type {Map<string, { eventSource: EventSource, runId: string, runToken: string, cancelling?: boolean, failed?: boolean, status: { ack: string, lifecycle: string, phase: string, batch: string, external: string, elapsed: string }, shellEl: HTMLElement | null, sentDraft?: { text: string, images: typeof pendingImages } }>} */
     const activeRuns = new Map();
+
+    function makeRunToken() {
+      return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+    }
+
+    function isActiveRun(sessionId, { runToken = '', runId = '' } = {}) {
+      const run = activeRuns.get(sessionId);
+      if (!run) return false;
+      if (runToken && run.runToken !== runToken) return false;
+      if (runId && run.runId && run.runId !== runId) return false;
+      return true;
+    }
+
+    function disposeRunResources(run) {
+      if (!run) return;
+      if (run.cancelWatchdog) {
+        clearTimeout(run.cancelWatchdog);
+        run.cancelWatchdog = null;
+      }
+      if (run.streamPollTimer) {
+        clearInterval(run.streamPollTimer);
+        run.streamPollTimer = null;
+      }
+      if (typeof run.streamDetach === 'function') {
+        const detach = run.streamDetach;
+        run.streamDetach = null;
+        run.eventSource = null;
+        detach();
+        return;
+      }
+      if (run.eventSource) {
+        run.eventSource.close();
+        run.eventSource = null;
+      }
+    }
     const MESSAGES_SCROLL_NEAR_BOTTOM_PX = 80;
     const MESSAGES_LOAD_OLDER_ROOT_MARGIN = '160px 0px 0px 0px';
     const MESSAGES_TAIL_DEFAULT = 80;
@@ -6791,9 +6826,10 @@
       }));
     }
 
-    function stopRunStreamPoll(sessionId) {
+    function stopRunStreamPoll(sessionId, runToken = '') {
       const run = activeRuns.get(sessionId);
       if (!run?.streamPollTimer) return;
+      if (runToken && run.runToken !== runToken) return;
       clearInterval(run.streamPollTimer);
       run.streamPollTimer = null;
     }
@@ -6801,14 +6837,15 @@
     function startRunStreamPoll(sessionId) {
       const sid = String(sessionId || '').trim();
       if (!sid) return;
-      stopRunStreamPoll(sid);
       const run = activeRuns.get(sid);
       if (!run) return;
+      stopRunStreamPoll(sid, run.runToken);
+      const pollToken = run.runToken;
       run.streamPollTimer = setInterval(async () => {
         if (document.hidden) return;
         const current = activeRuns.get(sid);
-        if (!current?.runId || current.cancelling) {
-          stopRunStreamPoll(sid);
+        if (!current || current.runToken !== pollToken || !current.runId || current.cancelling) {
+          stopRunStreamPoll(sid, pollToken);
           return;
         }
         if (current.streamFinalized) return;
@@ -6825,17 +6862,17 @@
           }
           if (active.__etag) activeRunEtags.set(sid, active.__etag);
           if (!active?.active || !active.run_id) {
-            stopRunStreamPoll(sid);
+            stopRunStreamPoll(sid, pollToken);
             if (current.streamFinalized) {
-              if (activeRuns.has(sid)) finishRun(sid);
+              if (isActiveRun(sid, { runToken: pollToken })) finishRun(sid, pollToken);
               else refreshSessionListAfterRunEnd(sid);
               return;
             }
             if (sid === currentSessionId && current.shellEl?.isConnected) {
               await finalizeStreamingShellFromServer(sid);
             }
-            if (activeRuns.has(sid)) {
-              finishRun(sid);
+            if (isActiveRun(sid, { runToken: pollToken })) {
+              finishRun(sid, pollToken);
             } else {
               refreshSessionListAfterRunEnd(sid);
             }
@@ -9060,10 +9097,42 @@
 
     function isFailureReplyText(text) {
       const body = (text || '').trim();
-      return body.startsWith('⚠️ Agent 执行失败')
+      if (!body) return false;
+      if (
+        body.startsWith('⚠️ Agent 执行失败')
+        || body.startsWith('⚠️ Agent 启动失败')
         || body.startsWith('⚠️ 任务已中断')
         || body.startsWith('⚠️ 任务因服务重启中断')
-        || body.startsWith('⚠️ 任务执行超时');
+        || body.startsWith('⚠️ 任务执行超时')
+      ) {
+        return true;
+      }
+      return body.startsWith('⚠️') && body.includes('已自动重试') && body.includes('仍失败');
+    }
+
+    function failureReplyAlreadyVisible(text) {
+      const md = String(text || '').trim();
+      if (!md) return false;
+      return assistantContentAlreadyInDom(md);
+    }
+
+    function showRunFailureReply(sessionId, shellEl, text, run = null) {
+      const body = appendRetryHint(String(text || '').trim());
+      if (!body) return false;
+      if (failureReplyAlreadyVisible(body)) {
+        if (run) run.failed = true;
+        return false;
+      }
+      let shell = shellEl?.isConnected ? shellEl : findActiveAssistantShell(sessionId);
+      if (!shell && currentSessionId === sessionId) {
+        shell = ensureStreamingShell(sessionId);
+        if (run) run.shellEl = shell;
+      }
+      if (!shell) return false;
+      finalizeStreamingShell(sessionId, shell, body);
+      scrollMessagesToBottom({ force: true });
+      if (run) run.failed = true;
+      return true;
     }
 
     function hasCurrentInputDraft() {
@@ -9108,13 +9177,17 @@
 
     function shouldRestoreSentDraft(run, doneText) {
       if (!run?.sentDraft) return false;
+      if (run.draftRestored) return false;
       if (run.cancelling || run.failed) return true;
       return isFailureReplyText(doneText);
     }
 
-    function restoreSentDraft(sessionId, { showRetryHint = true } = {}) {
+    function restoreSentDraft(sessionId, { showRetryHint = true, runToken = '' } = {}) {
       if (currentSessionId !== sessionId || currentSessionReadOnly) return false;
-      const draft = activeRuns.get(sessionId)?.sentDraft;
+      const run = activeRuns.get(sessionId);
+      if (runToken && run?.runToken !== runToken) return false;
+      if (run?.draftRestored) return true;
+      const draft = run?.sentDraft;
       if (!draft) return false;
       const input = document.getElementById('input');
       if (!input || input.readOnly) return false;
@@ -9149,9 +9222,44 @@
         text: draft.text || '',
         attachments: cloneAttachmentDraft(draft.attachments),
       });
+      if (run) run.draftRestored = true;
       updateInputState();
       input.focus();
       return true;
+    }
+
+    function listenOrphanRunStream(sessionId, es, { shellEl = null } = {}) {
+      if (!es) return;
+      es.onmessage = (ev) => {
+        try {
+          const data = JSON.parse(ev.data);
+          if (data.type === 'done' || data.type === 'error') {
+            if (currentSessionId === sessionId) {
+              if (data.type === 'done') {
+                let shell = shellEl?.isConnected ? shellEl : findActiveAssistantShell(sessionId);
+                if (shell) {
+                  setAssistantMessageBody(shell, data.text || '⚠️ 任务已中断。');
+                  ensureAssistantShareButton(shell);
+                  scrollMessagesToBottom({ force: true });
+                }
+              } else {
+                showRunFailureReply(
+                  sessionId,
+                  shellEl,
+                  data.text || `⚠️ ${data.message || 'Agent 执行失败'}`,
+                );
+              }
+            }
+            handleDingtalkPushResult(data.dingtalk_push);
+            es.close();
+          }
+        } catch {
+          es.close();
+        }
+      };
+      es.onerror = () => {
+        if (es.readyState !== EventSource.CONNECTING) es.close();
+      };
     }
 
     async function cancelCurrentRun() {
@@ -9169,24 +9277,19 @@
             session_id: sessionId,
           }),
         });
-        restoreSentDraft(sessionId);
-        if (run.pending) {
-          // 尚未建立 SSE：cancel 事件无人消费，需本地占位
-          showInterruptedReply(sessionId);
-          finishRun(sessionId);
-          return;
+        restoreSentDraft(sessionId, { runToken: run.runToken });
+        showInterruptedReply(sessionId);
+        const orphanEs = run.eventSource;
+        const orphanShell = run.shellEl;
+        if (typeof run.streamDetach === 'function') {
+          run.streamDetach({ orphan: true, shellEl: orphanShell });
+        } else if (orphanEs) {
+          orphanEs.onmessage = null;
+          orphanEs.onerror = null;
+          listenOrphanRunStream(sessionId, orphanEs, { shellEl: orphanShell });
+          run.eventSource = null;
         }
-        if (!run.cancelWatchdog) {
-          run.cancelWatchdog = setTimeout(() => {
-            if (!activeRuns.has(sessionId)) return;
-            const pending = activeRuns.get(sessionId);
-            if (!pending?.cancelling) return;
-            pending.eventSource?.close();
-            showInterruptedReply(sessionId);
-            restoreSentDraft(sessionId);
-            finishRun(sessionId);
-          }, 5000);
-        }
+        finishRun(sessionId, run.runToken);
       } catch (err) {
         run.cancelling = false;
         updateInputState();
@@ -9453,12 +9556,13 @@
       syncToolActionsPlacement();
     }
 
-    function finishRun(sessionId) {
+    function finishRun(sessionId, runToken = '') {
       const run = activeRuns.get(sessionId);
+      if (runToken && run?.runToken !== runToken) return;
       if (run?.cancelWatchdog) {
         clearTimeout(run.cancelWatchdog);
       }
-      stopRunStreamPoll(sessionId);
+      stopRunStreamPoll(sessionId, run?.runToken || runToken);
       activeRunEtags.delete(sessionId);
       activeRuns.delete(sessionId);
       refreshSessionListAfterRunEnd(sessionId);
@@ -10824,18 +10928,19 @@
       return false;
     }
 
-    async function recoverRunStream(sessionId, runId, reconnectAttempt = 0) {
+    async function recoverRunStream(sessionId, runId, reconnectAttempt = 0, runToken = '') {
       const MAX_ATTEMPTS = 24;
       const delays = [300, 500, 800, 1200, 2000, 3000, 4000, 5000];
 
       for (let attempt = reconnectAttempt; attempt < MAX_ATTEMPTS; attempt += 1) {
+        if (!isActiveRun(sessionId, { runToken, runId })) return;
         if (attempt > reconnectAttempt) {
           await sleepMs(delays[Math.min(attempt, delays.length - 1)]);
         }
 
         const active = await fetchActiveRun(sessionId, { retries: 3 });
         if (active?.active && active.run_id) {
-          await attachRunStream(sessionId, active.run_id, { reconnectAttempt: attempt + 1 });
+          await attachRunStream(sessionId, active.run_id, { reconnectAttempt: attempt + 1, runToken });
           return;
         }
 
@@ -10850,13 +10955,17 @@
       throw new Error('流式连接中断');
     }
 
-    function attachRunStream(sessionId, runId, { reconnectAttempt = 0 } = {}) {
+    function attachRunStream(sessionId, runId, { reconnectAttempt = 0, runToken = '' } = {}) {
       let assistantEl = null;
 
       return new Promise((resolve, reject) => {
         const existing = activeRuns.get(sessionId);
         if (!existing) {
           reject(new Error('run state missing'));
+          return;
+        }
+        if (runToken && existing.runToken !== runToken) {
+          resolve();
           return;
         }
         if (existing.cancelling) {
@@ -10867,11 +10976,27 @@
         existing.eventSource?.close();
 
         const es = new EventSource(`${API}/api/chat/stream/${runId}`);
+        let streamSettled = false;
+        const settleStream = () => {
+          if (streamSettled) return;
+          streamSettled = true;
+          resolve();
+        };
         activeRuns.set(sessionId, {
           ...existing,
           pending: false,
           eventSource: es,
           runId,
+          streamDetach({ orphan = false, shellEl: orphanShellEl = null } = {}) {
+            es.onmessage = null;
+            es.onerror = null;
+            if (orphan) {
+              listenOrphanRunStream(sessionId, es, { shellEl: orphanShellEl || existing.shellEl });
+            } else {
+              es.close();
+            }
+            settleStream();
+          },
         });
         if (sessionId === currentSessionId) {
           void syncActiveRunPushPref(isPushResultChecked());
@@ -10884,6 +11009,11 @@
         const isViewing = () => currentSessionId === sessionId;
 
         es.onmessage = (ev) => {
+          if (!isActiveRun(sessionId, { runToken, runId })) {
+            es.close();
+            settleStream();
+            return;
+          }
           const data = JSON.parse(ev.data);
           if (data.type === 'ack') {
             updateRunStatus(sessionId, { ack: data.line || '' });
@@ -10911,14 +11041,19 @@
               scheduleStreamingMsgBodyUpdate(assistantEl, display);
             }
           } else if (data.type === 'done') {
-            stopRunStreamPoll(sessionId);
+            if (!isActiveRun(sessionId, { runToken, runId })) {
+              es.close();
+              settleStream();
+              return;
+            }
+            stopRunStreamPoll(sessionId, runToken);
             const doneRun = activeRuns.get(sessionId);
             if (doneRun?.cancelWatchdog) {
               clearTimeout(doneRun.cancelWatchdog);
             }
             let restoredSentDraft = false;
             if (shouldRestoreSentDraft(doneRun, data.text)) {
-              restoredSentDraft = restoreSentDraft(sessionId);
+              restoredSentDraft = restoreSentDraft(sessionId, { runToken });
             }
             if (isViewing()) {
               if (!assistantEl) {
@@ -10934,32 +11069,60 @@
             }
             handleDingtalkPushResult(data.dingtalk_push);
             es.close();
-            resolve();
+            settleStream();
           } else if (data.type === 'error') {
-            stopRunStreamPoll(sessionId);
+            if (!isActiveRun(sessionId, { runToken, runId })) {
+              es.close();
+              settleStream();
+              return;
+            }
+            stopRunStreamPoll(sessionId, runToken);
             const errorRun = activeRuns.get(sessionId);
-            if (errorRun) errorRun.failed = true;
             if (isViewing()) {
               if (!assistantEl) {
                 assistantEl = ensureStreamingShell(sessionId);
                 activeRuns.get(sessionId).shellEl = assistantEl;
               }
-              const text = appendRetryHint(data.text || `⚠️ ${data.message || 'Agent 执行失败'}`);
-              finalizeStreamingShell(sessionId, assistantEl, text);
-              scrollMessagesToBottom({ force: true });
+              showRunFailureReply(
+                sessionId,
+                assistantEl,
+                data.text || `⚠️ ${data.message || 'Agent 执行失败'}`,
+                errorRun,
+              );
+            } else if (errorRun) {
+              errorRun.failed = true;
             }
             es.close();
-            resolve();
+            settleStream();
           }
         };
 
         es.onerror = async () => {
+          if (streamSettled) return;
+          if (activeRuns.get(sessionId)?.failed) {
+            settleStream();
+            return;
+          }
           if (es.readyState === EventSource.CONNECTING) return;
           es.close();
+          if (!isActiveRun(sessionId, { runToken, runId })) {
+            settleStream();
+            return;
+          }
           try {
-            await recoverRunStream(sessionId, runId, reconnectAttempt);
-            resolve();
+            await recoverRunStream(sessionId, runId, reconnectAttempt, runToken);
+            settleStream();
           } catch (err) {
+            if (!isActiveRun(sessionId, { runToken, runId })) {
+              settleStream();
+              return;
+            }
+            const failRun = activeRuns.get(sessionId);
+            if (failRun?.failed || failureReplyAlreadyVisible(`⚠️ ${err.message}`)) {
+              if (failRun) failRun.failed = true;
+              settleStream();
+              return;
+            }
             reject(err);
           }
         };
@@ -10971,25 +11134,33 @@
       if (!sid) return;
 
       const existing = activeRuns.get(sid);
+      if (existing?.sentDraft) {
+        const es = existing.eventSource;
+        if (es && es.readyState !== EventSource.CLOSED) return;
+        if (existing.pending && !existing.runId) return;
+        if (existing.runId) {
+          try {
+            await attachRunStream(sid, existing.runId, { runToken: existing.runToken });
+          } catch (err) {
+            if (currentSessionId === sid) {
+              document.getElementById('typing-indicator')?.remove();
+              showRunFailureReply(sid, existing.shellEl, `⚠️ ${err.message}`, existing);
+            }
+          }
+        }
+        return;
+      }
       if (existing) {
         const es = existing.eventSource;
         if (es && es.readyState !== EventSource.CLOSED) return;
         if (existing.pending && !existing.runId) return;
         if (existing.runId) {
           try {
-            await attachRunStream(sid, existing.runId);
+            await attachRunStream(sid, existing.runId, { runToken: existing.runToken });
           } catch (err) {
             if (currentSessionId === sid) {
               document.getElementById('typing-indicator')?.remove();
-              const failText = appendRetryHint(`⚠️ ${err.message}`);
-              if (existing.shellEl) {
-                clearRunStatus(sid);
-                existing.shellEl.querySelector('.msg-body').innerHTML = renderMarkdown(failText);
-                setMessageMarkdown(existing.shellEl.querySelector('.msg-body'), failText);
-                ensureAssistantShareButton(existing.shellEl);
-              } else {
-                appendMessage('assistant', failText);
-              }
+              showRunFailureReply(sid, existing.shellEl, `⚠️ ${err.message}`, existing);
             }
           }
           return;
@@ -11011,11 +11182,13 @@
         return;
       }
       if (!data?.active || !data.run_id) return;
+      if (activeRuns.get(sid)?.sentDraft) return;
 
       activeRuns.set(sid, {
         pending: false,
         eventSource: null,
         runId: data.run_id,
+        runToken: makeRunToken(),
         cancelling: false,
         status: {
           ack: data.ack_line || '',
@@ -11056,25 +11229,19 @@
         }
       }
 
+      const reconnectToken = activeRuns.get(sid)?.runToken || '';
       try {
-        await attachRunStream(sid, data.run_id);
+        await attachRunStream(sid, data.run_id, { runToken: reconnectToken });
       } catch (err) {
         const run = activeRuns.get(sid);
-        if (run) run.failed = true;
         if (currentSessionId === sid) {
           document.getElementById('typing-indicator')?.remove();
-          const failText = appendRetryHint(`⚠️ ${err.message}`);
-          if (run?.shellEl) {
-            clearRunStatus(sid);
-            run.shellEl.querySelector('.msg-body').innerHTML = renderMarkdown(failText);
-            setMessageMarkdown(run.shellEl.querySelector('.msg-body'), failText);
-            ensureAssistantShareButton(run.shellEl);
-          } else {
-            appendMessage('assistant', failText);
-          }
+          showRunFailureReply(sid, run?.shellEl, `⚠️ ${err.message}`, run);
+        } else if (run) {
+          run.failed = true;
         }
       } finally {
-        finishRun(sid);
+        finishRun(sid, reconnectToken);
       }
     }
 
@@ -11089,11 +11256,14 @@
         mime: item.mime,
         data_base64: item.data_base64,
       }));
-      if ((!message && !attachmentsToSend.length) || isCurrentSessionStreaming() || currentSessionReadOnly) return;
+      if ((!message && !attachmentsToSend.length) || currentSessionReadOnly) return;
       if (isGuestMode()) {
         goToLogin();
         return;
       }
+
+      const priorRun = activeRuns.get(currentSessionId);
+      if (priorRun && isCurrentSessionStreaming() && !priorRun.cancelling) return;
 
       if (!currentSessionId) {
         if (sessionBootstrapPromise) await sessionBootstrapPromise;
@@ -11128,10 +11298,13 @@
         author_label: authUserDisplayName(currentAuthUser),
       });
       sessionMessagesEtags.delete(sessionId);
+      const runToken = makeRunToken();
+      disposeRunResources(activeRuns.get(sessionId));
       activeRuns.set(sessionId, {
         pending: true,
         eventSource: null,
         runId: '',
+        runToken,
         cancelling: false,
         status: { ack: '', lifecycle: '', phase: '', batch: '', elapsed: '' },
         shellEl: null,
@@ -11166,7 +11339,7 @@
         });
 
         const existing = activeRuns.get(sessionId);
-        if (!existing || existing.cancelling) {
+        if (!existing || existing.runToken !== runToken || existing.cancelling) {
           return;
         }
         existing.runId = run_id;
@@ -11174,32 +11347,26 @@
           void syncActiveRunPushPref(isPushResultChecked());
         }
 
-        await attachRunStream(sessionId, run_id);
+        await attachRunStream(sessionId, run_id, { runToken });
       } catch (err) {
+        if (!isActiveRun(sessionId, { runToken })) return;
         if (await hasAssistantReplySinceLastUser(sessionId)) {
           if (currentSessionId === sessionId) await loadMessages();
           return;
         }
         const run = activeRuns.get(sessionId);
-        if (run) run.failed = true;
         if (currentSessionId === sessionId) {
           document.getElementById('typing-indicator')?.remove();
-          const failText = appendRetryHint(`⚠️ ${err.message}`);
-          if (run?.shellEl) {
-            clearRunStatus(sessionId);
-            run.shellEl.querySelector('.msg-body').innerHTML = renderMarkdown(failText);
-            setMessageMarkdown(run.shellEl.querySelector('.msg-body'), failText);
-            ensureAssistantShareButton(run.shellEl);
-          } else {
-            appendMessage('assistant', failText);
-          }
+          showRunFailureReply(sessionId, run?.shellEl, `⚠️ ${err.message}`, run);
+        } else if (run) {
+          run.failed = true;
         }
       } finally {
         const run = activeRuns.get(sessionId);
-        if (!run) return;
+        if (!run || run.runToken !== runToken) return;
         if (run.eventSource) run.eventSource.close();
-        if (shouldRestoreSentDraft(run)) restoreSentDraft(sessionId);
-        finishRun(sessionId);
+        if (shouldRestoreSentDraft(run)) restoreSentDraft(sessionId, { runToken });
+        finishRun(sessionId, runToken);
       }
     }
 

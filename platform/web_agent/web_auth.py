@@ -258,7 +258,7 @@ def authorize_request(handler: BaseHTTPRequestHandler, *, method: str = "GET") -
     if is_public_auth_path(path):
         return True
 
-    if is_localhost_request(handler):
+    if is_localhost_request(handler) and not otp_auth_enabled():
         return True
 
     if is_anonymous_allowed(handler, method=method):

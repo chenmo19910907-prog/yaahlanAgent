@@ -91,6 +91,14 @@ def build_parser() -> argparse.ArgumentParser:
     src.add_argument("--payload", help="完整 payload JSON 字符串")
 
     parser.add_argument("--expr", help="覆盖 params[0].value / txt 的表达式")
+    parser.add_argument(
+        "--reward-risk-rule-id",
+        help="奖励下发-风控预检：rule_id（默认读模板 params[1]；各活动见 MSE rewardRiskRuleId）",
+    )
+    parser.add_argument(
+        "--reward-risk-scene",
+        help="奖励下发-风控预检：场景参数 pk_type/scene（默认读模板 params[2]）",
+    )
     parser.add_argument("--room-id", help="房间 ID")
     parser.add_argument("--exp", type=int, help="增加的经验值")
     parser.add_argument("--level", type=int, help="目标房间等级")
@@ -782,6 +790,11 @@ def build_parser() -> argparse.ArgumentParser:
         default="en",
         help="3周年砸金蛋：语言（默认 en，对应 smashEgg 第 3 参）",
     )
+    parser.add_argument(
+        "--no-auto-sync-registry",
+        action="store_true",
+        help="试跑成功后不自动入库/刷新工具工作台（默认：未登记模板跑通后自动 sync_registry + catalog）",
+    )
 
     return parser
 
@@ -1075,6 +1088,18 @@ def _print_id_auth_latest_reason(resp: dict[str, object]) -> None:
             print("" if reason is None else str(reason))
 
 
+def _exit_with_auto_sync(code: int, args: argparse.Namespace) -> int:
+    if code != 0 or args.no_auto_sync_registry:
+        return code
+    try:
+        from .registry_sync import auto_sync_registry_after_success
+
+        auto_sync_registry_after_success(getattr(args, "payload_file", None))
+    except (OSError, ValueError, RuntimeError, json.JSONDecodeError) as e:
+        print(f"auto_sync_registry 失败: {e}", file=sys.stderr)
+    return code
+
+
 def main() -> int:
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     load_local_env(base_dir)
@@ -1105,42 +1130,42 @@ def main() -> int:
 
     try:
         if args.package_gift_batch_base_ids:
-            return run_package_gift_batch_add(args, client)
+            return _exit_with_auto_sync(run_package_gift_batch_add(args, client), args)
 
         if args.package_gift_send:
-            return run_package_gift_send(args, client)
+            return _exit_with_auto_sync(run_package_gift_send(args, client), args)
 
         if args.follow_mutual:
-            return run_mutual_follow(args, client)
+            return _exit_with_auto_sync(run_mutual_follow(args, client), args)
 
         if args.id_auth_fix_failure_user_id is not None and args.expr is None:
-            return run_id_auth_fix_failure(args, client)
+            return _exit_with_auto_sync(run_id_auth_fix_failure(args, client), args)
 
         if needs_family_fund_reward_setup(args):
-            return run_family_fund_reward_setup(args, client)
+            return _exit_with_auto_sync(run_family_fund_reward_setup(args, client), args)
 
         if needs_family_detail(args) or needs_family_detail_by_user(args):
-            return run_family_detail(args, client)
+            return _exit_with_auto_sync(run_family_detail(args, client), args)
 
         if needs_family_kick(args):
             if not args.payload_file and not args.payload:
                 args.payload_file = str(
                     Path(__file__).resolve().parents[1] / "templates" / "家族-踢出成员.json"
                 )
-            return run_family_kick_member(args, client)
+            return _exit_with_auto_sync(run_family_kick_member(args, client), args)
 
         if needs_room_member_add(args):
             if not args.payload_file and not args.payload:
                 args.payload_file = str(
                     Path(__file__).resolve().parents[1] / "templates" / "房间成员-快速添加.json"
                 )
-            return run_room_member_add(args, client)
+            return _exit_with_auto_sync(run_room_member_add(args, client), args)
 
         if needs_family_pk_query_receive_rank(args):
-            return run_family_pk_query_receive_rank(args, client)
+            return _exit_with_auto_sync(run_family_pk_query_receive_rank(args, client), args)
 
         if needs_family_pk_member_list(args):
-            return run_family_pk_member_list(args, client)
+            return _exit_with_auto_sync(run_family_pk_member_list(args, client), args)
 
         if needs_vip_level_upgrade(args):
             payload = build_vip_level_upgrade_payload(args, client)
@@ -1174,7 +1199,7 @@ def main() -> int:
     except SystemExit as e:
         return int(e.code)
 
-    return 0
+    return _exit_with_auto_sync(0, args)
 
 
 if __name__ == "__main__":

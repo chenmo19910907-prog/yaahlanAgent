@@ -1,0 +1,51 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/room/external/room-pk-api",
+  "method": "openPkMode",
+  "header": "{\"userId\":\"100486375\",\"roomId\":\"31668628\",\"mode\":3,\"seatCount\":8,\"minute\":10,\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100486375\",\"roomId\":\"31668628\",\"mode\":3,\"seatCount\":8,\"minute\":10,\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\"}",
+      "type": "json",
+      "value": {
+        "userId": "100486375",
+        "roomId": "31668628",
+        "mode": 3,
+        "seatCount": 8,
+        "minute": 10,
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "android",
+        "osType": "android"
+      }
+    }
+  ],
+  "_registry": {
+    "id": "brawl_pk_create",
+    "name": "乱斗PK-创建",
+    "category": "房间PK（room/external/room-pk-api）",
+    "description": "测试环境房间内开启乱斗 PK（openPkMode）。body 需 userId（房主/管理员）、roomId、mode=3（乱斗）、seatCount（8/10/12/15/20）、minute（10/30/60）。Tunnel 100486375 `_id=IA3IW6ABR2LVRzbvplns` 实测 ec=200。",
+    "prompts": [
+      "用户 <userId> 在房间 <roomId> 创建乱斗PK seatCount=<seatCount> minute=<minute>",
+      "<roomId>房间创建8人乱斗PK 10分钟",
+      "MOA openPkMode 乱斗PK"
+    ]
+  }
+}

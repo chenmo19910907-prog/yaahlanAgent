@@ -1,0 +1,75 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-base-service-im-stage",
+  "method": "sendP2PMessageWithNoGreet",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": {
+        "fromUid": "100177651",
+        "receiverList": ["100039199"],
+        "imDataTypeEnum": "TEXT",
+        "text": "Hi, I need help from customer service.",
+        "mustReach": true,
+        "imCallBackTag": 0,
+        "extra": {"is_greet": 0},
+        "messageExtraDto": {
+          "needPush": true,
+          "sendMode": "SEND_SENDER_AND_RECEIVER",
+          "needSaveMsg": true,
+          "addUnReadCount": true
+        }
+      },
+      "json": "{\"fromUid\":\"100177651\",\"receiverList\":[\"100039199\"],\"imDataTypeEnum\":\"TEXT\",\"text\":\"Hi, I need help from customer service.\",\"mustReach\":true,\"imCallBackTag\":0,\"extra\":{\"is_greet\":0},\"messageExtraDto\":{\"needPush\":true,\"sendMode\":\"SEND_SENDER_AND_RECEIVER\",\"needSaveMsg\":true,\"addUnReadCount\":true}}",
+      "type": "json",
+      "value": {
+        "fromUid": "100177651",
+        "receiverList": ["100039199"],
+        "imDataTypeEnum": "TEXT",
+        "text": "Hi, I need help from customer service.",
+        "mustReach": true,
+        "imCallBackTag": 0,
+        "extra": {"is_greet": 0},
+        "messageExtraDto": {
+          "needPush": true,
+          "sendMode": "SEND_SENDER_AND_RECEIVER",
+          "needSaveMsg": true,
+          "addUnReadCount": true
+        }
+      }
+    }
+  ],
+  "settings": {
+    "time": "5000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_meta": {
+    "csUserId": "100039199",
+    "csNickname": "I'll",
+    "kbSource": "testcase-kb/admin_user_pool_active.json",
+    "note": "普通用户给客服账号发私聊，触发客服工单/派单。客服账号不受3条消息限制。批量造数须换 fromUid（活跃池 userId，勿用客服号本身）。"
+  },
+  "_registry": {
+    "id": "user_contact_cs_send_message",
+    "name": "用户-联系客服发消息",
+    "category": "消息（voga-base-service-im-stage）",
+    "description": "测试环境模拟普通用户给客服账号发私聊（sendP2PMessageWithNoGreet；默认客服 100039199）。用于客服接单、派单、客服记录页造数。",
+    "prompts": [
+      "用户 <fromUid> 联系客服 <csUserId> 发消息 <text>",
+      "给客服 100039199 发消息 userId <fromUid>",
+      "批量用户联系客服发消息 csUserId=<csUserId> count=<count>"
+    ],
+    "cli": "--p2p-from-uid <fromUid> --p2p-to-uid <csUserId> [--p2p-text <text>]"
+  }
+}

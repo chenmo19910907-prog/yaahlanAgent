@@ -15,6 +15,10 @@ GATEWAY_DIR = WEB_AGENT_DIR.parent / "dingtalk_gateway"
 sys.path.insert(0, str(GATEWAY_DIR))
 sys.path.insert(0, str(WEB_AGENT_DIR))
 
+from verify_import_stubs import stub_cursor_runner  # noqa: E402
+
+stub_cursor_runner()
+
 from web_run_store import RUN_STATUS_RUNNING, RunMeta, WebRunStore  # noqa: E402
 
 
@@ -151,7 +155,8 @@ class RunRecoveryTailerTests(unittest.TestCase):
         with mock.patch.object(srv, "get_run_store", return_value=self.store):
             with mock.patch.object(self.store, "is_worker_alive", side_effect=[False, True]):
                 with mock.patch.object(srv, "_try_respawn_recent_run") as respawn_mock:
-                    fake_run = srv.RUN_MANAGER.create("sess004", run_id="rec004")
+                    fake_run = mock.MagicMock()
+                    fake_run.run_id = "rec004"
                     respawn_mock.return_value = fake_run
                     run = srv._get_or_recover_run("rec004")
         respawn_mock.assert_called_once()
@@ -185,6 +190,66 @@ class RunRecoveryTailerTests(unittest.TestCase):
         refreshed = self.store.get_run("rec005")
         assert refreshed is not None
         self.assertEqual(refreshed.status, RUN_STATUS_RUNNING)
+
+
+class SupersedePriorSessionRunTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.run_store = WebRunStore(root=Path(self._tmpdir.name) / "runs")
+        self.old_meta = RunMeta(
+            run_id="old001",
+            session_id="sess001",
+            message="切回阿区",
+            display_message="切回阿区",
+            model="composer-2.5",
+            enabled_external_agents=[],
+            author_id="",
+            author_label="",
+            image_paths=[],
+            file_paths=[],
+            attachment_names=[],
+            worker_pid=0,
+            status=RUN_STATUS_RUNNING,
+            started_at=1_700_000_000.0,
+        )
+        self.run_store.create_run(self.old_meta)
+
+    def tearDown(self) -> None:
+        self._tmpdir.cleanup()
+
+    def test_supersede_marks_done_when_run_already_answered(self) -> None:
+        import server as srv
+
+        srv.RUN_MANAGER._runs.clear()
+        session_store = mock.MagicMock()
+        session_store.get_messages.return_value = (
+            [
+                mock.Mock(role="user", content="切回阿区"),
+                mock.Mock(role="assistant", content="已完成"),
+                mock.Mock(role="user", content="加钻石"),
+            ],
+            None,
+        )
+        with mock.patch.object(srv, "get_run_store", return_value=self.run_store):
+            with mock.patch.object(srv, "get_session_store", return_value=session_store):
+                srv._supersede_prior_session_runs("sess001", keep_run_id="new001")
+        refreshed = self.run_store.get_run("old001")
+        assert refreshed is not None
+        self.assertEqual(refreshed.status, "done")
+
+    def test_run_has_persisted_reply_matches_display_message(self) -> None:
+        import server as srv
+
+        session_store = mock.MagicMock()
+        session_store.get_messages.return_value = (
+            [
+                mock.Mock(role="user", content="切回阿区"),
+                mock.Mock(role="assistant", content="已完成"),
+            ],
+            None,
+        )
+        with mock.patch.object(srv, "get_session_store", return_value=session_store):
+            self.assertTrue(srv._run_has_persisted_reply(self.old_meta))
 
 
 if __name__ == "__main__":

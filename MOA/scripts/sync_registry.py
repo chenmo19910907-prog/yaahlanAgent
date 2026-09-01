@@ -220,9 +220,11 @@ def main() -> int:
     if not args.dry_run and not args.no_generate:
         _run_generate_index()
         if added:
-            print("sync_registry: 已刷新 MOA/使用方法.md 与 platform/catalog.html")
+            print(
+                "sync_registry: 已刷新 MOA/使用方法.md 与工具工作台（platform/catalog.html）"
+            )
         else:
-            print("sync_registry: 已同步文档（使用方法.md + catalog）")
+            print("sync_registry: 已同步文档（使用方法.md + 工具工作台 catalog）")
     return 0
 
 

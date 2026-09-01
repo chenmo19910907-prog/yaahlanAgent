@@ -1523,6 +1523,48 @@ class WebSessionStore:
                     self._save_index()
         return meta
 
+    def replace_last_assistant_if_failure(
+        self,
+        session_id: str,
+        content: str,
+        *,
+        files: list[dict[str, object]] | None = None,
+    ) -> bool:
+        """同轮 user 提问已有失败 assistant 时覆盖，避免自动重试落盘多条相同报错。"""
+        from run_progress_reply import is_run_failure_reply
+
+        text = (content or "").strip()
+        file_list = [entry for entry in (files or []) if isinstance(entry, dict)]
+        if not text or not is_run_failure_reply(text):
+            return False
+        with self._exclusive_index():
+            meta = self._sessions.get(session_id)
+            if meta is None:
+                return False
+            messages = self._load_messages(session_id)
+            if not messages or messages[-1].role != "assistant":
+                return False
+            if not is_run_failure_reply(messages[-1].content):
+                return False
+            messages[-1] = ChatMessage(
+                role="assistant",
+                content=text,
+                files=file_list or messages[-1].files,
+            )
+            self._save_messages(session_id, messages)
+            reverted_custom_titles: set[str] = set()
+            _apply_message_derived_meta(
+                meta, messages, custom_title_touched=reverted_custom_titles
+            )
+            self._touch_messages_mtime(meta)
+            self._custom_title_touched.update(reverted_custom_titles)
+            try:
+                self._save_index()
+            finally:
+                for sid in reverted_custom_titles:
+                    self._custom_title_touched.discard(sid)
+        return True
+
     def append_message_if_new(self, session_id: str, role: str, content: str) -> ChatMessage | None:
         text = (content or "").strip()
         if not text or role not in ("user", "assistant"):

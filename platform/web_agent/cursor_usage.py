@@ -21,6 +21,7 @@ from analytics_store import (
     resolve_usage_custom_range,
     resolve_usage_range,
 )
+import analytics_store
 from cursor_usage_daily_store import get_cursor_usage_daily_store
 from cursor_usage_store import get_cursor_usage_store
 
@@ -62,7 +63,7 @@ def _admin_api_available() -> bool:
 
 
 def _today_key_bj() -> str:
-    return datetime.now(BJ).strftime("%Y-%m-%d")
+    return analytics_store._now_bj().strftime("%Y-%m-%d")
 
 
 def _iter_day_keys(start: datetime, end: datetime) -> list[str]:
@@ -667,7 +668,7 @@ def _fetch_and_cache_days(
     store = get_cursor_usage_daily_store()
     today_key = _today_key_bj()
     store.purge_today(staff_id)
-    now_bj = datetime.now(BJ)
+    now_bj = analytics_store._now_bj()
     source = "cursor_dashboard"
     auth_error: str | None = None
     fetched: dict[str, dict[str, int]] = {}
@@ -783,7 +784,7 @@ def _set_cached_today(staff_id: str, stats: dict[str, int]) -> None:
 
 def _usage_trim_window() -> tuple[str, str]:
     today_key = _today_key_bj()
-    now_bj = datetime.now(BJ)
+    now_bj = analytics_store._now_bj()
     since = (now_bj - timedelta(days=364)).strftime("%Y-%m-%d")
     return since, today_key
 
@@ -800,7 +801,7 @@ def get_usage_date_bounds(staff_id: str) -> dict[str, Any]:
     """返回日期选择器边界：可选区间为近 MAX_USAGE_CUSTOM_DAYS 天，且不早于最早有用量自然日。"""
     sid = (staff_id or "").strip()
     today_key = _today_key_bj()
-    now_bj = datetime.now(BJ)
+    now_bj = analytics_store._now_bj()
     selectable_min = (
         now_bj - timedelta(days=MAX_USAGE_CUSTOM_DAYS - 1)
     ).strftime("%Y-%m-%d")

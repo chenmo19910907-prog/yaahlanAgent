@@ -43,9 +43,10 @@ def moa_registry_instruction() -> str:
         "【MOA 入库任务】用户要求把 MOA 接口登记进仓库（非探活）。\n"
         "**禁止**执行 MOA检查、MOA探活、doctor、credential_probe、"
         "moa_execute --vip-query-current 探活或 test_all。\n"
-        "**禁止**用业务接口试跑代替入库。\n"
+        "**禁止**跳过试跑直接 sync_registry；试跑失败不得入库。\n"
         "标准流程：依据附图/描述在 MOA/templates/ 建 JSON（含 key，可选 _registry）"
-        "→ python3 MOA/scripts/sync_registry.py（自动入库并刷新 MOA/使用方法.md 与 catalog）"
+        "→ 用 moa_execute.py --payload-file 试跑验收"
+        "→ **跑通且确认无误后自动入库**（默认：未登记模板成功后自动 sync_registry）"
         "→ 确认 MOA/config/registry.json 已登记。\n"
         "回复须含：能力名、模板路径、registry id、命令示例。"
     )

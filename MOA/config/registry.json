@@ -127,7 +127,7 @@
     {
       "id": "pk_rank_settle",
       "name": "PK榜-周结算发奖",
-      "category": "全服榜单（room/external/room-admin-handle）",
+      "category": "PK榜（room/external/room-admin-handle）",
       "description": "PK 榜周结算并发奖（calculateAndDistributeWeekPrize；params[0]=int 周偏移，0=本周，-1=上周）",
       "prompts": [
         "PK榜本周结算发奖",
@@ -139,7 +139,7 @@
     {
       "id": "pk_rank_query",
       "name": "PK榜-查询数值",
-      "category": "全服榜单（room/external/room-admin-handle）",
+      "category": "PK榜（room/external/room-admin-handle）",
       "description": "查询 PK 周榜 Redis 数据（roomClusterDao.get；key=new:pk:week:rank:record:YYYYMMDDweek；支持 YYYYMMDD/本周）",
       "prompts": [
         "查询本周 PK 榜数值",
@@ -151,7 +151,7 @@
     {
       "id": "pk_rank_value_add",
       "name": "PK榜-增加PK值",
-      "category": "全服榜单（room/external/room-admin-handle）",
+      "category": "PK榜（room/external/room-admin-handle）",
       "description": "给指定用户增加 PK 榜值（pkRankService.handlePkRank；仅需 userId 和增量，第3/4参数固定）",
       "prompts": [
         "给用户 <userId> 增加 <value> PK值",
@@ -1528,7 +1528,7 @@
     {
       "id": "pk提款机_0点公屏活动卡片",
       "name": "PK提款机-0点公屏活动卡片",
-      "category": "房间测试（room）",
+      "category": "PK提款机（room/internal/room-pk）",
       "description": "notifyPkActivityStartTest（/service/room/internal/room-pk）",
       "prompts": [
         "执行 PK提款机-0点公屏活动卡片"
@@ -1538,7 +1538,7 @@
     {
       "id": "across_pk_week_rank_settle",
       "name": "跨房PK-周榜结算",
-      "category": "房间测试（room/internal/room-pk）",
+      "category": "房间PK（room/internal/room-pk）",
       "description": "跨房 PK 周榜结算（settleAcrossPkWeekRank；/service/room/internal/room-pk）。--across-pk-week-rank-settle-offset：0=结算当前周，-1=结算上一周。",
       "prompts": [
         "跨房PK当前周周榜结算",
@@ -1596,6 +1596,114 @@
         "发动态 <text>"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/动态-发布.json \\\n  --feed-publish-user-id \\\n  <userId> \\\n  --feed-publish-text \\\n  <text>\n"
+    },
+    {
+      "id": "reward_dispatch_block_check",
+      "name": "奖励未下发-拦截排查",
+      "category": "奖励排查（通用）",
+      "description": "奖励/道具应发未发时的通用拦截排查：① 公会黑名单（userJoinedTrade + MSE voga-common/blackUnionIdList）② 发钻风控（rewardRiskQuery，输出 ruleId 与 control=deny）。--rule-id / --scene 按活动传入；后续新拦截类型扩展 MOA/scripts/reward_dispatch_block_check.py 的 blocks 即可。",
+      "prompts": [
+        "排查用户 <userId> 奖励未下发原因",
+        "奖励未下发拦截排查 <userId>",
+        "查 <userId> 是否风控或公会黑名单 ruleId=<ruleId>"
+      ],
+      "command": "python3 MOA/scripts/reward_dispatch_block_check.py \\\n  --user-id <userId> \\\n  --rule-id <ruleId> \\\n  --scene <scene>\n"
+    },
+    {
+      "id": "reward_dispatch_risk_precheck",
+      "name": "奖励下发-风控预检",
+      "category": "奖励排查（通用）",
+      "description": "通用发钻前风控预检（rewardRiskQuery → SecRiskRequestUtils.secRiskQuery；/service/room/internal/room-pk）。--expr 覆盖 userId；--reward-risk-rule-id / --reward-risk-scene 覆盖 rule_id 与场景（原 pk_type）。control=deny 表示会被拦截不发钻/不发道具。各活动 rule_id 见 MSE/Application rewardRiskRuleId。",
+      "prompts": [
+        "预检用户 <userId> 发奖风控 rule <ruleId>",
+        "奖励下发风控预检 <userId> ruleId=<ruleId>",
+        "rewardRiskQuery <userId> <ruleId> <scene>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/奖励下发-风控预检.json \\\n  --expr <userId> \\\n  --reward-risk-rule-id <ruleId> \\\n  --reward-risk-scene <scene>\n"
+    },
+    {
+      "id": "user_query_joined_trade_union",
+      "name": "用户-查所属公会",
+      "category": "公会（yaahlan-anchor-recruit-moa-stage）",
+      "description": "查询用户当前所属公会（userJoinedTrade；/service/yaahlan-anchor-recruit-moa-stage）。返回 tradeUnionId / tradeUnionName，用于对照盘古 blackUnionIdList 排查榜单/家族基金等发钻被跳过。",
+      "prompts": [
+        "查用户 <userId> 所属公会",
+        "userJoinedTrade <userId>",
+        "用户 <userId> 在哪个公会"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-查所属公会.json \\\n  --expr \\\n  <userId>\n"
+    },
+    {
+      "id": "user_contact_cs_send_message",
+      "name": "用户-联系客服发消息",
+      "category": "消息（voga-base-service-im-stage）",
+      "description": "测试环境模拟普通用户给客服账号发私聊（sendP2PMessageWithNoGreet；默认客服 100039199）。用于客服接单、派单、客服记录页造数。",
+      "prompts": [
+        "用户 <fromUid> 联系客服 <csUserId> 发消息 <text>",
+        "给客服 100039199 发消息 userId <fromUid>",
+        "批量用户联系客服发消息 csUserId=<csUserId> count=<count>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-联系客服发消息.json \\\n  --p2p-from-uid \\\n  <fromUid> \\\n  --p2p-to-uid \\\n  <csUserId> \\\n  [--p2p-text \\\n  <text>]\n"
+    },
+    {
+      "id": "brawl_pk_create",
+      "name": "乱斗PK-创建",
+      "category": "房间PK（room/external/room-pk-api）",
+      "description": "测试环境房间内开启乱斗 PK（openPkMode）。body 需 userId（房主/管理员）、roomId、mode=3（乱斗）、seatCount（8/10/12/15/20）、minute（10/30/60）。Tunnel 100486375 `_id=IA3IW6ABR2LVRzbvplns` 实测 ec=200。",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 创建乱斗PK seatCount=<seatCount> minute=<minute>",
+        "<roomId>房间创建8人乱斗PK 10分钟",
+        "MOA openPkMode 乱斗PK"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/乱斗PK-创建.json\n"
+    },
+    {
+      "id": "one_v_one_pk_create",
+      "name": "1V1PK-创建",
+      "category": "房间PK（room/external/room-pk-api）",
+      "description": "测试环境房间内开启 1V1 PK（openPkMode）。body 需 userId（房主/管理员）、roomId、mode=2（1V1）、seatCount=2、minute（5/15/30）。MOA 模板实测 roomId=36043470 ec=200。",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 创建1V1PK minute=<minute>",
+        "<roomId>房间创建1V1PK 15分钟",
+        "MOA openPkMode 1V1PK"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/1V1PK-创建.json\n"
+    },
+    {
+      "id": "team_pk_create",
+      "name": "团战PK-创建",
+      "category": "房间PK（room/external/room-pk-api）",
+      "description": "测试环境房间内开启团战 PK（openPkMode）。body 需 userId（房主/管理员）、roomId、mode=1（团战）、seatCount（8/10/12/14 对应 4v4/5v5/6v6/7v7）、minute（5/15/30）。MOA 模板实测 roomId=36043470 ec=200。",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 创建团战PK seatCount=<seatCount> minute=<minute>",
+        "<roomId>房间创建4v4团战PK 15分钟",
+        "MOA openPkMode 团战PK"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/团战PK-创建.json\n"
+    },
+    {
+      "id": "room_pk_start",
+      "name": "房间PK-开始PK",
+      "category": "房间PK（room/external/room-pk-api）",
+      "description": "测试环境房间内开始 PK（startPk）。body 需 userId（房主/管理员/主持）、roomId。对齐 /yaahlan/room/pk/startPk；需先 openPkMode 创建 PK 模式且满足上麦人数条件；MOA 模板实测 roomId=36043470 ec=200。",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 开始PK",
+        "<roomId>房间开始PK",
+        "MOA startPk 开始PK"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间PK-开始PK.json\n"
+    },
+    {
+      "id": "room_pk_close",
+      "name": "房间PK-结束PK",
+      "category": "房间PK（room/external/room-pk-api）",
+      "description": "测试环境房间内结束 PK（closePkMode）。body 需 userId（房主/管理员）、roomId。对齐 /yaahlan/room/pk/closePkMode；MOA 模板实测 roomId=36043470 ec=200。",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 结束PK",
+        "<roomId>房间结束PK",
+        "MOA closePkMode 结束PK"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间PK-结束PK.json\n"
     }
   ]
 }

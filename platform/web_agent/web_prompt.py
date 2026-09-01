@@ -142,7 +142,7 @@ _WEB_RULES_FILES = """\
    - 可多次调用；本轮回复结束前登记的文件会随 assistant 消息在 Web 界面展示下载链接。"""
 
 _WEB_RULES_CODE = """\
-14. **代码修改权限**：仅管理员（`config/code_modify_allowlist.json` 及本地 `.local.json` 登记账号）可修改 `platform/web_agent/`、`platform/dingtalk_gateway/`、`.cursor/` 等代码逻辑；**MOA 能力入库**（`MOA/templates/` + `sync_registry.py` + `MOA/config/registry.json`）与**工具台 MOA 录制**入库**全员可用**，不受只读限制。
+14. **代码修改权限**：仅管理员（`config/code_modify_allowlist.json` 及本地 `.local.json` 登记账号）可修改 `platform/web_agent/`、`platform/dingtalk_gateway/`、`.cursor/` 等代码逻辑；**MOA 能力入库**（`MOA/templates/` + `moa_execute` 试跑后自动 sync_registry + `MOA/config/registry.json`）与**工具台 MOA 录制**入库**全员可用**，不受只读限制。
 15. **源文件导出**：仅管理员可打包/下载/回传平台源文件（`.cursor/skills`、`.cursor/rules`、`platform/` 源码、能力全量包、`platform/exports/` 下 zip 等）；非管理员仅可使用能力，**禁止** zip、`web_share_file`、钉钉附件或回复本地路径交付上述内容。"""
 
 # 兼容旧引用
@@ -289,7 +289,7 @@ def _readonly_permission_note(
     if allow_moa_registry:
         base = (
             "【只读 · 可 MOA 入库】当前用户无代码修改权限，但可登记 MOA 能力："
-            "仅允许改动 MOA/templates/、运行 sync_registry.py（自动刷新文档与 catalog）、"
+            "仅允许改动 MOA/templates/、moa_execute 试跑后自动 sync_registry（刷新文档与 catalog）、"
             "更新 MOA/config/registry.json；工具台 MOA 录制入库同样允许；"
             "禁止改 platform/web_agent/、platform/dingtalk_gateway/、.cursor/ 等。"
         )
