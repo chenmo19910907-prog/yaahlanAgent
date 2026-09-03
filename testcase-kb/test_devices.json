@@ -1,8 +1,8 @@
 {
   "kbPath": "testcase-kb/test_devices.json",
   "importSource": "/Users/user/Desktop/团队测试机统计表.xlsx",
-  "syncedAt": "2026-08-12 06:29:53 UTC",
-  "count": 156,
+  "syncedAt": "2026-09-02 06:36:14 UTC",
+  "count": 157,
   "devices": [
     {
       "项目": "yaahlan",
@@ -2034,7 +2034,20 @@
       "归属人": "",
       "持有人": "",
       "备注": "自动落库 2026-08-12；phone=966|18311439895；userId=106176243；ip=84.75.158.1"
+    },
+    {
+      "项目": "yaahlan",
+      "资产编号": "待补编号",
+      "设备品牌": "Xiaomi",
+      "设备名称": "M2012K11AC",
+      "mmuid": "6b08c6651f44e6d62c4176ecc4f0ada40a00b1e6",
+      "mmuidv3": "e9b2be606e679c9a0d6555e9088b9eb3a10260ce46587fe1f0aad7fff88326edc9",
+      "设备系统": "Android",
+      "系统版本": "13",
+      "归属人": "",
+      "持有人": "",
+      "备注": "自动落库 2026-09-02；phone=966|1339***2003；userId=101099533；ip=223.104.43.63"
     }
   ],
-  "lastIncrementalUpdate": "upsert loginDevice phone=966|18311439895 userId=106176243"
+  "lastIncrementalUpdate": "upsert loginDevice phone=966|1339***2003 userId=101099533"
 }

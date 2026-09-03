@@ -869,7 +869,7 @@
       "id": "diamond_provide",
       "name": "钻石-发放",
       "category": "钻石（voga-base-service-middle-pay-stage）",
-      "description": "给用户发放钻石（provideDiamond）；outOrderId 每次自动生成 system-随机5位数",
+      "description": "给用户发放钻石（provideDiamond）；outOrderId 每次自动生成 system-随机5位数；单次最多 1 亿钻",
       "prompts": [
         "给用户 <userId> 增加 <num> 钻石",
         "给用户 <userId> 发放 <num> 钻石"

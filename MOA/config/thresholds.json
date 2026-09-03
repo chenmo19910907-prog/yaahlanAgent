@@ -203,7 +203,8 @@
     "activityId": "2005000496",
     "taskId": "2005000497",
     "signKey": "189ad0ec4e41438abf29e2f2874d94eb",
-    "outOrderIdPrefix": "system"
+    "outOrderIdPrefix": "system",
+    "maxNum": 100000000
   },
   "user_area": {
     "defaultArea": "MENA",

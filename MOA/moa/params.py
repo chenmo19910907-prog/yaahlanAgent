@@ -826,8 +826,14 @@ def diamond_provide_defaults() -> dict[str, str]:
             "taskId": "2005000497",
             "signKey": "189ad0ec4e41438abf29e2f2874d94eb",
             "outOrderIdPrefix": "system",
+            "maxNum": 100_000_000,
         },
     )
+
+
+def diamond_provide_max_num() -> int:
+    raw = diamond_provide_defaults().get("maxNum", 100_000_000)
+    return int(raw)
 
 
 def query_login_status_defaults() -> dict[str, Any]:
@@ -889,6 +895,9 @@ def set_diamond_provide_params(payload: dict[str, Any], user_id: str, num: int) 
         raise ValueError("user_id 不能为空")
     if num <= 0:
         raise ValueError("num 必须为正整数（钻石数量）")
+    max_num = diamond_provide_max_num()
+    if num > max_num:
+        raise ValueError(f"单次发放钻石数量不能超过 {max_num}（1亿）")
 
     defaults = diamond_provide_defaults()
     value = {
