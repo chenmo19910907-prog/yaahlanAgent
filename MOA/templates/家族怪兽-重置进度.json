@@ -1,0 +1,43 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/vas/internal/family-monster",
+  "method": "resetFamilyMonster",
+  "header": "",
+  "params": [
+    {
+      "name": 0,
+      "title": "familyId",
+      "txt": "",
+      "json": "{\"familyId\":\"105186\"}",
+      "type": "json",
+      "value": {
+        "familyId": "105186"
+      }
+    }
+  ],
+  "settings": {
+    "time": 2000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "family_monster_reset",
+    "name": "家族怪兽-重置进度",
+    "category": "家族怪兽（vas/internal/family-monster）",
+    "description": "测试环境重置指定家族的家族怪兽挑战进度（resetFamilyMonster）。入参 familyId；重置等级/血量/领奖等业务状态，便于重复打怪验收。",
+    "prompts": [
+      "重置家族 <familyId> 怪兽进度",
+      "家族怪兽重置 familyId=<familyId>",
+      "resetFamilyMonster <familyId>"
+    ],
+    "cli": "--family-monster-reset --family-id <familyId>"
+  }
+}

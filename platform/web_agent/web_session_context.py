@@ -24,6 +24,11 @@ _PK_SESSION_RE = re.compile(
     re.I,
 )
 
+_FAMILY_MONSTER_SHEET_RE = re.compile(
+    r"怪兽挑战|family.?monster|FamilyMonster|奖池配置",
+    re.I,
+)
+
 # 短追问 / 指代型消息：Resume 失败或无轮换摘要时易答非所问
 _VAGUE_FOLLOWUP_RE = re.compile(
     r"(这个|那个|上面|前文|刚才|之前|继续|再.{0,16}|"
@@ -170,4 +175,31 @@ def pk_atm_prompt_hint(text: str, *, session_id: str = "") -> str | None:
         "3 轮均失败则**立即终止任务**（exit 1），勿再手动循环重跑。"
         "自然结束 PK 时加 `--wait-natural-end`；手动结束则 `--closer-phone <记败方手机号>`。"
         "PK 时长走完后进入惩罚阶段（stage≥3）即可验收，不必等 stage=4。"
+    )
+
+
+def session_looks_like_family_monster_workbook(session_id: str) -> bool:
+    sid = (session_id or "").strip()
+    if not sid:
+        return False
+    messages, _ = get_session_store().get_messages(sid, tail=24)
+    for msg in messages[-24:]:
+        if _FAMILY_MONSTER_SHEET_RE.search(msg.content or ""):
+            return True
+    return False
+
+
+def family_monster_workbook_hint(text: str, *, session_id: str = "") -> str | None:
+    blob = text or ""
+    if not _FAMILY_MONSTER_SHEET_RE.search(blob) and not session_looks_like_family_monster_workbook(
+        session_id
+    ):
+        return None
+    return (
+        "**家族怪兽挑战钉钉表排版（铁律）**：Sheet「怪兽挑战奖池配置」"
+        "仅 **10 列**（奖池ID、奖池名称、序号、奖品类型、数量/区间、奖品ID、"
+        "奖品名称、限量(limit)、权重占比、名称/备注）；"
+        "**禁止**追加元数据/MSE 映射/同步时间/额外列/「道具明细」Sheet。"
+        "同步脚本：`python3 platform/dingtalk_gateway/family_monster_lottery_to_workbook.py`；"
+        "排版定义见 `platform/dingtalk_gateway/config/family_monster_workbook_layout.json`。"
     )

@@ -14,7 +14,6 @@ from typing import Any
 
 GATEWAY_DIR = Path(__file__).resolve().parent
 REPO_ROOT = GATEWAY_DIR.parents[1]
-_ADMIN_DIR = admin_module_dir()
 _EXCEL_VENV = (
     REPO_ROOT / ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/venv/bin/python3.13"
 )
@@ -44,6 +43,7 @@ from repo_paths import (
     stage_gateway_url,
     tmp_dir,
 )
+_ADMIN_DIR = admin_module_dir()
 if str(_ADMIN_DIR) not in sys.path:
     sys.path.insert(0, str(_ADMIN_DIR))
 

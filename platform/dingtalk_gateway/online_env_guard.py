@@ -139,7 +139,12 @@ def resolve_online_env_denial(
 
 
 def is_online_env_operation_allowed(*, staff_id: str | None = None) -> bool:
-    """Web Agent：与代码修改白名单共用，仅管理员可操作线上环境。"""
-    from source_file_permission import is_source_file_allowed
+    """与 Web Agent 共用 admin_grants 的 online 权限。"""
+    from admin_permission import has_admin_permission
 
-    return is_source_file_allowed(staff_id=staff_id)
+    uid = (staff_id or "").strip()
+    if not uid:
+        from source_file_permission import resolve_staff_id_from_env
+
+        uid = resolve_staff_id_from_env()
+    return has_admin_permission(staff_id=uid, permission="online")

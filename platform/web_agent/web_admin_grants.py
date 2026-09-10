@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import json
+import sys
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 WEB_AGENT_DIR = Path(__file__).resolve().parent
+_gateway = WEB_AGENT_DIR.parent / "dingtalk_gateway"
+if str(_gateway) not in sys.path:
+    sys.path.insert(0, str(_gateway))
 GRANTS_PATH = WEB_AGENT_DIR / "data" / "admin_grants.json"
 
 PERMISSION_DEFS: tuple[dict[str, str], ...] = (
@@ -18,8 +22,17 @@ PERMISSION_DEFS: tuple[dict[str, str], ...] = (
 )
 
 SUPER_ADMIN_KEY = "super_admin"
-# 与 code_modify_allowlist / web_admin_permission 一致
+# 与 code_modify_allowlist / admin_permission 一致
 CHENMO_STAFF_ID = "32274159141215328"
+
+
+def _localhost_admin_staff_id() -> str:
+    import os
+
+    from env_loader import load_env_local
+
+    load_env_local()
+    return os.environ.get("WEB_AGENT_LOCAL_ADMIN_STAFF_ID", "admin").strip() or "admin"
 GRANULAR_PERMISSION_KEYS: frozenset[str] = frozenset(
     item["key"] for item in PERMISSION_DEFS if item["key"] != SUPER_ADMIN_KEY
 )
@@ -79,12 +92,7 @@ def _is_builtin_super_admin(staff_id: str) -> bool:
         return False
     if uid == CHENMO_STAFF_ID:
         return True
-    try:
-        from web_admin_permission import _localhost_admin_staff_id
-
-        return uid == _localhost_admin_staff_id()
-    except ImportError:
-        return uid == "admin"
+    return uid == _localhost_admin_staff_id()
 
 
 def is_super_admin(staff_id: str) -> bool:
@@ -102,14 +110,9 @@ def list_super_admin_staff_ids() -> list[str]:
     ids: set[str] = set()
     if CHENMO_STAFF_ID:
         ids.add(CHENMO_STAFF_ID)
-    try:
-        from web_admin_permission import _localhost_admin_staff_id
-
-        local_id = _localhost_admin_staff_id()
-        if local_id:
-            ids.add(local_id)
-    except ImportError:
-        ids.add("admin")
+    local_id = _localhost_admin_staff_id()
+    if local_id:
+        ids.add(local_id)
     for staff_id, perms in load_admin_grants().items():
         if SUPER_ADMIN_KEY in set(perms):
             ids.add(staff_id)

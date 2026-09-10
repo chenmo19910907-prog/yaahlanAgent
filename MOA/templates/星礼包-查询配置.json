@@ -1,0 +1,48 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/vas/external/activity-backend",
+  "method": "getPrizeBagListNew",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "{\"id\":\"10\",\"lang\":\"zh\"}",
+      "json": "{\"id\":\"10\",\"lang\":\"zh\"}",
+      "type": "json",
+      "value": {
+        "id": "10",
+        "lang": "zh"
+      }
+    }
+  ],
+  "settings": {
+    "time": "10000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_meta": {
+    "httpPath": "/yaahlan/cms/activity/getPrizeList",
+    "note": "开发者后台星礼包配置；榜单验收第一步。修改 params[0].value.id 为目标礼包 ID（如宝藏猎人榜单 id=10）"
+  },
+  "_registry": {
+    "id": "prize_bag_query_config",
+    "name": "星礼包-查询配置",
+    "category": "奖励验收（通用）",
+    "description": "开发者后台星礼包配置查询（getPrizeBagListNew；/service/vas/external/activity-backend）。返回各档位（TOP1/TOP2…）奖励明细：钻石、背包礼物、道具 TOOL/VIP/游戏券等。榜单/活动奖励验收第一步：修改模板 params[0].value.id 为目标礼包 ID 后执行。",
+    "prompts": [
+      "查星礼包配置 id=<prizeBagId>",
+      "getPrizeBagListNew 礼包 <prizeBagId>",
+      "开发者后台星礼包 id=10"
+    ],
+    "cli": "修改模板 params[0].value.id 后执行"
+  }
+}

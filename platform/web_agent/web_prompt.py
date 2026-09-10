@@ -28,7 +28,7 @@ if str(GATEWAY_DIR.parent) not in sys.path:
 
 from project.loader import temporary_testcase_dir, web_agent_name  # noqa: E402
 
-from web_session_context import pk_atm_prompt_hint  # noqa: E402
+from web_session_context import family_monster_workbook_hint, pk_atm_prompt_hint  # noqa: E402
 
 _GIFT_RULE = gateway_gift_rule_line()
 _FAMILY_JOIN_RULE = gateway_family_join_rule_line()
@@ -142,7 +142,7 @@ _WEB_RULES_FILES = """\
    - 可多次调用；本轮回复结束前登记的文件会随 assistant 消息在 Web 界面展示下载链接。"""
 
 _WEB_RULES_CODE = """\
-14. **代码修改权限**：仅管理员（`config/code_modify_allowlist.json` 及本地 `.local.json` 登记账号）可修改 `platform/web_agent/`、`platform/dingtalk_gateway/`、`.cursor/` 等代码逻辑；**MOA 能力入库**（`MOA/templates/` + `moa_execute` 试跑后自动 sync_registry + `MOA/config/registry.json`）与**工具台 MOA 录制**入库**全员可用**，不受只读限制。
+14. **代码修改权限**：管理员身份见 `config/code_modify_allowlist.json`（及 `.local.json`）；细粒度权限（改代码 / 源文件 / 线上）存于 `platform/web_agent/data/admin_grants.json`，**钉钉机器人共用同一套**；须在「管理员列表」逐项勾选。可改 `platform/web_agent/`、`platform/dingtalk_gateway/`、`.cursor/` 等；**MOA 能力入库**与**工具台 MOA 录制**全员可用。
 15. **源文件导出**：仅管理员可打包/下载/回传平台源文件（`.cursor/skills`、`.cursor/rules`、`platform/` 源码、能力全量包、`platform/exports/` 下 zip 等）；非管理员仅可使用能力，**禁止** zip、`web_share_file`、钉钉附件或回复本地路径交付上述内容。"""
 
 # 兼容旧引用
@@ -399,6 +399,9 @@ def build_web_prompt(
     pk_hint = pk_atm_prompt_hint(body, session_id=session_id)
     if pk_hint:
         extras.append(pk_hint)
+    monster_hint = family_monster_workbook_hint(body, session_id=session_id)
+    if monster_hint:
+        extras.append(monster_hint)
     family_join_hint = family_join_prompt_hint(body)
     if family_join_hint:
         extras.append(family_join_hint)

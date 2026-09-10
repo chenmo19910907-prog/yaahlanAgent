@@ -1622,6 +1622,54 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/奖励下发-风控预检.json \\\n  --expr <userId> \\\n  --reward-risk-rule-id <ruleId> \\\n  --reward-risk-scene <scene>\n"
     },
     {
+      "id": "prize_bag_query_config",
+      "name": "星礼包-查询配置",
+      "category": "奖励验收（通用）",
+      "description": "开发者后台星礼包配置查询（getPrizeBagListNew；/service/vas/external/activity-backend）。返回各档位（TOP1/TOP2…）奖励明细：钻石、背包礼物、道具 TOOL/VIP/游戏券等。榜单/活动奖励验收第一步：修改模板 params[0].value.id 为目标礼包 ID 后执行。",
+      "prompts": [
+        "查星礼包配置 id=<prizeBagId>",
+        "getPrizeBagListNew 礼包 <prizeBagId>",
+        "开发者后台星礼包 id=10"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/星礼包-查询配置.json"
+    },
+    {
+      "id": "reward_verify_snapshot",
+      "name": "奖励验收-用户资产快照",
+      "category": "奖励验收（通用）",
+      "description": "发奖前/后各执行一次：钻石余额、diamondHistory 基线、背包礼物（giftId/remain/price/expire）、装扮 props（queryOwnPropList，含头框/房间背景/mini资料卡等）、可选 CP 勋章。snapshotVersion=3。**榜单/活动验收须默认包含道具，不可仅查钻石/背包礼。** prop-types 默认含 10043,10048,10070 等活动常用类型。",
+      "prompts": [
+        "奖励验收发奖前快照 userId=<userId>",
+        "用户资产基线快照 <userId>",
+        "下发前基线 钻石背包礼物道具 userId=<userId>"
+      ],
+      "command": "python3 workflow/scripts/reward_verify.py snapshot \\\n  --user-id <userId> \\\n  --out .tmp/reward_snapshot_<userId>.json \\\n  --prop-types 10043,10048,10070,10045,10069,10177,10180,10182,10183,10140,10144"
+    },
+    {
+      "id": "reward_verify_diff",
+      "name": "奖励验收-发奖前后求差",
+      "category": "奖励验收（通用）",
+      "description": "对比发奖前后 snapshot JSON，输出钻石余额/钻石记录增量、背包礼物 remain/price/expire 差值、装扮 props expireTime 差值（含新增 propId）、CP 勋章个数差值。须先对同一 userId 执行两次「奖励验收-用户资产快照」（下发前/后各一次）。",
+      "prompts": [
+        "奖励验收发奖前后求差",
+        "对比下发前后用户资产",
+        "reward verify diff before after"
+      ],
+      "command": "python3 workflow/scripts/reward_verify.py diff \\\n  --before .tmp/reward_snapshot_<userId>_before.json \\\n  --after .tmp/reward_snapshot_<userId>_after.json \\\n  --out .tmp/reward_diff_<userId>.json"
+    },
+    {
+      "id": "reward_verify_compare",
+      "name": "奖励验收-对照期望配置",
+      "category": "奖励验收（通用）",
+      "description": "对比发奖前后 snapshot 与期望 rewards 配置：钻石增量+钻石记录、背包礼物 giftId+数量+单价(钻)+expire 有效、装扮 propId+有效期天数（±toleranceDays）。期望 JSON 可由星礼包配置解析后写入。",
+      "prompts": [
+        "奖励验收对照期望配置",
+        "compare 发奖前后与期望 rewards",
+        "验证榜单奖励是否符合星礼包配置"
+      ],
+      "command": "python3 workflow/scripts/reward_verify.py compare \\\n  --before .tmp/reward_snapshot_<userId>_before.json \\\n  --after .tmp/reward_snapshot_<userId>_after.json \\\n  --expected .tmp/reward_expected_<userId>.json"
+    },
+    {
       "id": "user_query_joined_trade_union",
       "name": "用户-查所属公会",
       "category": "公会（yaahlan-anchor-recruit-moa-stage）",
@@ -1704,6 +1752,66 @@
         "MOA closePkMode 结束PK"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间PK-结束PK.json\n"
+    },
+    {
+      "id": "family_monster_reset",
+      "name": "家族怪兽-重置进度",
+      "category": "家族怪兽（vas/internal/family-monster）",
+      "description": "测试环境重置指定家族的家族怪兽挑战进度（resetFamilyMonster）。入参 familyId；重置等级/血量/领奖等业务状态，便于重复打怪验收。",
+      "prompts": [
+        "重置家族 <familyId> 怪兽进度",
+        "家族怪兽重置 familyId=<familyId>",
+        "resetFamilyMonster <familyId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族怪兽-重置进度.json \\\n  --family-monster-reset \\\n  --family-id \\\n  <familyId>\n"
+    },
+    {
+      "id": "family_monster_room_damage",
+      "name": "家族怪兽-查房间伤害",
+      "category": "家族怪兽（yh-components/gift-panel · getGiftPanel）",
+      "description": "MOA getGiftPanel 查用户在指定房间的家族怪兽击打伤害（monsterBanner.damageValue）。对齐 /yaahlan/component/giftPanel/getGiftPanel；须传 userId + roomId，不同房间伤害不同。选择飞镖等 associatedGiftIds 礼物时 banner 展示同字段。",
+      "prompts": [
+        "查用户 <userId> 在房间 <roomId> 的怪兽伤害",
+        "家族怪兽房间伤害 userId=<userId> roomId=<roomId>",
+        "getGiftPanel monsterBanner damageValue"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族怪兽-查房间伤害.json \\\n  --family-monster-room-damage-user-id <userId> \\\n  --family-monster-room-damage-room-id <roomId>\n"
+    },
+    {
+      "id": "family_monster_detail",
+      "name": "家族怪兽-查当前等级血量",
+      "category": "家族怪兽（vas/internal/family-monster · getMonsterDetail）",
+      "description": "MOA getMonsterDetail 查家族怪兽当前等级与血量。对齐活动页 /yaahlan/activity/familyMonsterDetail；须传 familyId + userId。当前血量直接读 remainDamage（勿读 hp、勿用 maxHp-hp 推算）。",
+      "prompts": [
+        "查家族 <familyId> 怪兽当前等级血量 userId=<userId>",
+        "家族怪兽等级血量 familyId=<familyId> userId=<userId>",
+        "getMonsterDetail level remainDamage maxHp"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/家族怪兽-查当前等级血量.json \\\n  --family-monster-detail-family-id <familyId> \\\n  --family-monster-detail-user-id <userId>\n"
+    },
+    {
+      "id": "treasure_hunter_prize_draw",
+      "name": "宝藏猎人-翻牌抽奖",
+      "category": "宝藏猎人（vas/external/treasure-hunter-stage · prizeDraw）",
+      "description": "宝藏猎人探索翻牌抽奖（prizeDraw）。对齐 HTTP /yaahlan/activity/treasureHunter/prizeDraw；MOA /service/vas/external/treasure-hunter-stage。body 须 userId + cardId（格式 {轮次}_{10xx}，xx=01~36，如 14_1002=第14轮第2格、15_1033=第15轮第33格）。100070932 Tunnel 实测 cardId=14_1002 返回足球券50。",
+      "prompts": [
+        "宝藏猎人翻牌 userId=<userId> cardId=<cardId>",
+        "prizeDraw 宝藏猎人 <userId> <cardId>",
+        "探索宝藏抽奖 cardId=14_1002"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/宝藏猎人-翻牌抽奖.json \\\n  --treasure-hunter-draw-user-id \\\n  <userId> \\\n  --treasure-hunter-draw-card-id \\\n  <cardId>\n"
+    },
+    {
+      "id": "treasure_hunter_dispatch_rank_prize",
+      "name": "宝藏猎人-下发榜单奖励",
+      "category": "宝藏猎人（vas/external/treasure-hunter-stage · dispatchRankPrize）",
+      "description": "宝藏猎人活动结束后结算并下发榜单奖励（dispatchRankPrize；无参）。MOA /service/vas/external/treasure-hunter-stage。**会真实发奖，须人工确认后再调用。**",
+      "prompts": [
+        "宝藏猎人下发榜单奖励",
+        "dispatchRankPrize 宝藏猎人",
+        "宝藏猎人活动结束发榜奖励"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/宝藏猎人-下发榜单奖励.json"
     }
   ]
 }

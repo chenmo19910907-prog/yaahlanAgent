@@ -46,12 +46,13 @@ from task_chain_estimate import save_batch_task_context
 from command_hints import suggest_command_hint
 from command_router import try_route
 from code_modify_guard import guard_readonly_agent_reply
+from admin_permission import has_admin_permission
 from code_modify_permission import (
     allow_moa_registry_in_readonly,
     code_modify_denial_message,
-    is_code_modify_allowed,
     looks_like_code_modify_request,
 )
+from online_env_guard import resolve_online_env_denial
 from source_file_guard import guard_readonly_source_file_reply
 from source_file_permission import (
     DINGTALK_STAFF_ID_ENV,
@@ -689,15 +690,25 @@ def process_inbound_task(
                 store.save(incoming.conversation_id, prompt, **store_kwargs)
                 return "hint"
 
-            code_allowed = is_code_modify_allowed(
+            code_allowed = has_admin_permission(
                 sender_staff_id=incoming.sender_staff_id,
                 sender_id=incoming.sender_id,
+                permission="code_modify",
             )
             allow_moa_registry = allow_moa_registry_in_readonly(
                 code_modify_allowed=code_allowed,
             )
             code_modify_session = code_allowed
-            source_allowed = code_allowed
+            source_allowed = has_admin_permission(
+                sender_staff_id=incoming.sender_staff_id,
+                sender_id=incoming.sender_id,
+                permission="source_file",
+            )
+            online_allowed = has_admin_permission(
+                sender_staff_id=incoming.sender_staff_id,
+                sender_id=incoming.sender_id,
+                permission="online",
+            )
             if looks_like_code_modify_request(prompt) and not code_allowed:
                 logger.warning(
                     "代码修改权限拒绝 conv=%s staff=%s sender=%s prompt=%s",
@@ -743,6 +754,33 @@ def process_inbound_task(
                 )
                 store.save(incoming.conversation_id, prompt, **store_kwargs)
                 return "source_denied"
+
+            online_denial = resolve_online_env_denial(
+                prompt,
+                online_admin_allowed=online_allowed,
+            )
+            if online_denial:
+                logger.warning(
+                    "线上环境权限拒绝 conv=%s staff=%s sender=%s prompt=%s",
+                    user_key,
+                    incoming.sender_staff_id,
+                    incoming.sender_id,
+                    redact_for_log(prompt),
+                )
+                _reply_final(
+                    handler,
+                    incoming,
+                    inbound,
+                    online_denial,
+                    started=started,
+                    task_kind=task_kind,
+                    user_key=user_key,
+                    user_prompt=prompt,
+                    sender_name=sender_name,
+                    sender_staff_id=sender_staff_id,
+                )
+                store.save(incoming.conversation_id, prompt, **store_kwargs)
+                return "online_denied"
 
             if looks_like_adb_execution_request(prompt):
                 logger.info(

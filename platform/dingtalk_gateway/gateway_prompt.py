@@ -95,7 +95,7 @@ def _gateway_rules() -> str:
    - 禁止：只写「成功/已完成」、禁止 `接口返回：`、禁止 `result.xxx =` 这类字段罗列
    - **时间展示**：面向用户的时间一律用**北京时间**（`YYYY-MM-DD HH:MM:SS`），禁止写 UTC
 10. **测试用例**：生成测试用例时必须写入 `{tmp_dir}`（Markdown 表格或 CSV，含编号/功能模块/测试步骤/预期结果）；网关会自动同步到钉钉文档并在群里**只回在线表格链接**，无需用户再手动导出。
-11. **代码修改权限**：仅 `config/code_modify_allowlist.json`（及本地 `code_modify_allowlist.local.json`）登记的账号可通过机器人修改网关/Cursor 代码逻辑；**MOA 能力入库**（`MOA/templates/` + `sync_registry.py`）**全员可用**，不受只读限制。修改 `platform/dingtalk_gateway/` 并提交 GitLab 后网关会**自动静默重启**；修改 `platform/web_agent/` 后 Web Agent 会**自动重启（带源码监视）**；**不要**手动执行 `gateway_ctl.sh restart`。
+11. **代码修改权限**：管理员身份见 `config/code_modify_allowlist.json`（及 `.local.json`）；**细粒度权限**（改代码 / 源文件 / 线上）与 Web Agent 共用 `platform/web_agent/data/admin_grants.json`，须在 Web「管理员列表」逐项勾选；**MOA 能力入库**全员可用。修改 `platform/dingtalk_gateway/` 提交后网关**自动静默重启**；修改 `platform/web_agent/` 后 Web Agent **自动重启**；**不要**手动 `gateway_ctl.sh restart`。
 12. **源文件导出**：仅管理员可打包/下载/发送平台源文件（`.cursor/skills`、`.cursor/rules`、`platform/` 源码、能力全量包、`platform/exports/` 下 zip 等）；非管理员仅可使用能力，**禁止** zip 附件或回复本地路径交付上述内容。
 13. {_GIFT_DEFAULT_RULE}
     {_FAMILY_JOIN_RULE}

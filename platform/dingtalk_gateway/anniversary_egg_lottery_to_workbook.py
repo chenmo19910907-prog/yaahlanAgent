@@ -211,9 +211,16 @@ def _prize_note(
         return f"propId={prize_id}" if prize_id else "装扮/道具"
     if prize_type == 5 and prize_id:
         info = gift_names.get(prize_id) or {}
+        name = str(info.get("name") or "").strip()
         price = info.get("price")
+        if name and price is not None:
+            p = int(price) if float(price).is_integer() else price
+            return f"{prize_id} {name}({p}钻)"
+        if name:
+            return f"{prize_id} {name}"
         if price is not None:
-            return f"{price}钻"
+            p = int(price) if float(price).is_integer() else price
+            return f"{prize_id}({p}钻)"
         return prize_id
     return prize_id or ""
 

@@ -222,6 +222,74 @@ def set_family_members_query_params(payload: dict[str, Any], family_id: str) -> 
     payload["params"] = [string_param(family_id)]
 
 
+def set_family_monster_reset_params(payload: dict[str, Any], family_id: str) -> None:
+    family_id = str(family_id).strip()
+    if not family_id:
+        raise ValueError("family_id 不能为空")
+    payload["params"] = [json_param({"familyId": family_id})]
+
+
+def set_family_monster_detail_params(
+    payload: dict[str, Any],
+    *,
+    family_id: str,
+    user_id: str,
+) -> None:
+    family_id = str(family_id).strip()
+    user_id = str(user_id).strip()
+    if not family_id:
+        raise ValueError("family_id 不能为空")
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    payload["params"] = [json_param({"familyId": family_id, "userId": user_id})]
+
+
+def set_family_monster_room_damage_params(
+    payload: dict[str, Any],
+    *,
+    user_id: str,
+    room_id: str,
+    area: str = "MENA",
+) -> None:
+    user_id = str(user_id).strip()
+    room_id = str(room_id).strip()
+    area = str(area or "MENA").strip().upper()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    if not room_id:
+        raise ValueError("room_id 不能为空")
+
+    body: dict[str, Any] = {}
+    params = payload.get("params")
+    if isinstance(params, list) and params:
+        first = params[0]
+        if isinstance(first, dict) and isinstance(first.get("value"), dict):
+            body = dict(first["value"])
+    if not body:
+        raise ValueError("家族怪兽-查房间伤害 payload 缺少 params[0].value")
+
+    body["userId"] = user_id
+    body["uid"] = user_id
+    body["roomId"] = room_id
+    body["area"] = area
+
+    header_s = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+    payload["header"] = header_s
+    settings = payload.setdefault("settings", {})
+    if isinstance(settings, dict):
+        settings["headerType"] = "TXT"
+    payload["params"] = [
+        {
+            "name": 0,
+            "title": 0,
+            "txt": "",
+            "json": header_s,
+            "type": "json",
+            "value": body,
+        }
+    ]
+
+
 def set_family_create_time_query_params(payload: dict[str, Any], family_id: str) -> None:
     family_id = str(family_id).strip()
     if not family_id:
@@ -381,6 +449,56 @@ def set_gift_panel_backpack_params(
     payload["header"] = header_s
     if service_url:
         payload["url"] = str(service_url).strip()
+    settings = payload.setdefault("settings", {})
+    if isinstance(settings, dict):
+        settings["headerType"] = "TXT"
+    payload["params"] = [
+        {
+            "name": 0,
+            "title": 0,
+            "txt": "",
+            "json": header_s,
+            "type": "json",
+            "value": body,
+        }
+    ]
+
+
+def set_treasure_hunter_prize_draw_params(
+    payload: dict[str, Any],
+    *,
+    user_id: str,
+    card_id: str,
+) -> None:
+    """treasure-hunter-stage prizeDraw：探索翻牌抽奖。"""
+    user_id = str(user_id).strip()
+    card_id = str(card_id).strip()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    if not card_id:
+        raise ValueError("card_id 不能为空")
+    parts = card_id.split("_", 1)
+    if len(parts) != 2 or not parts[0].isdigit() or not parts[1].isdigit():
+        raise ValueError("card_id 格式须为 {轮次}_{10xx}，如 14_1002、15_1033")
+    slot = int(parts[1])
+    if slot < 1001 or slot > 1036:
+        raise ValueError("card_id 格子段须为 1001~1036（6×6 共 36 格）")
+
+    body: dict[str, Any] = {}
+    params = payload.get("params")
+    if isinstance(params, list) and params:
+        first = params[0]
+        if isinstance(first, dict) and isinstance(first.get("value"), dict):
+            body = dict(first["value"])
+    if not body:
+        raise ValueError("宝藏猎人-翻牌抽奖 payload 缺少 params[0].value")
+
+    body["userId"] = user_id
+    body["uid"] = user_id
+    body["_uid_"] = user_id
+    body["cardId"] = card_id
+    header_s = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+    payload["header"] = header_s
     settings = payload.setdefault("settings", {})
     if isinstance(settings, dict):
         settings["headerType"] = "TXT"

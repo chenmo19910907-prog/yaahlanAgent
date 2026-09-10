@@ -23,21 +23,21 @@ from web_admin_permission import (  # noqa: E402
 class WebAdminPermissionTest(unittest.TestCase):
     def test_allowed_staff_id(self) -> None:
         with patch(
-            "web_admin_permission.is_code_modify_allowed",
+            "admin_permission.is_code_modify_allowed",
             return_value=True,
         ):
             self.assertTrue(is_web_admin(staff_id="32274159141215328"))
 
     def test_localhost_admin_staff_id(self) -> None:
         with patch(
-            "web_admin_permission.is_code_modify_allowed",
+            "admin_permission.is_code_modify_allowed",
             return_value=False,
         ):
             self.assertTrue(is_web_admin(staff_id="admin"))
 
     def test_denied_staff_id(self) -> None:
         with patch(
-            "web_admin_permission.is_code_modify_allowed",
+            "admin_permission.is_code_modify_allowed",
             return_value=False,
         ):
             self.assertFalse(is_web_admin(staff_id="999"))

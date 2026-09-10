@@ -127,20 +127,12 @@ def resolve_staff_id_from_env() -> str:
 
 
 def is_source_file_allowed(*, staff_id: str | None = None) -> bool:
-    from code_modify_permission import is_code_modify_allowed
+    from admin_permission import has_admin_permission
 
     uid = (staff_id or resolve_staff_id_from_env() or "").strip()
     if not uid:
         return False
-    import os
-
-    from env_loader import load_env_local
-
-    load_env_local()
-    local_admin = os.environ.get("WEB_AGENT_LOCAL_ADMIN_STAFF_ID", "admin").strip() or "admin"
-    if uid == local_admin:
-        return True
-    return is_code_modify_allowed(sender_staff_id=uid, sender_id=None)
+    return has_admin_permission(staff_id=uid, permission="source_file")
 
 
 def assert_source_file_share_allowed(

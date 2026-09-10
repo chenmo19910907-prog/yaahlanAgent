@@ -37,6 +37,7 @@ from .params import (
     set_family_leave_params,
     set_family_kick_member_params,
     set_family_pk_page_params,
+    set_treasure_hunter_prize_draw_params,
     set_family_pk_member_list_params,
     set_pk_atm_withdraw_rank_params,
     set_pk_atm_match_reward_detail_params,
@@ -44,6 +45,9 @@ from .params import (
     set_family_delete_params,
     set_family_create_time_query_params,
     set_family_members_query_params,
+    set_family_monster_reset_params,
+    set_family_monster_detail_params,
+    set_family_monster_room_damage_params,
     set_user_joined_family_query_params,
     set_backdoor_execute_expr,
     set_id_auth_delete_person_params,
@@ -990,6 +994,18 @@ def _family_query_members_mode(args: argparse.Namespace) -> bool:
     return bool(args.family_query_members)
 
 
+def _family_monster_reset_mode(args: argparse.Namespace) -> bool:
+    return bool(getattr(args, "family_monster_reset", False))
+
+
+def _family_monster_detail_mode(args: argparse.Namespace) -> bool:
+    return bool(getattr(args, "family_monster_detail_family_id", None))
+
+
+def _family_monster_room_damage_mode(args: argparse.Namespace) -> bool:
+    return bool(getattr(args, "family_monster_room_damage_user_id", None))
+
+
 def _family_query_create_time_mode(args: argparse.Namespace) -> bool:
     return bool(args.family_query_create_time)
 
@@ -1013,6 +1029,9 @@ def _family_add_mode(args: argparse.Namespace) -> bool:
         and not _family_fund_reward_dispatch_clear_mode(args)
         and not _family_member_fund_contrib_mode(args)
         and not _family_query_members_mode(args)
+        and not _family_monster_reset_mode(args)
+        and not _family_monster_detail_mode(args)
+        and not _family_monster_room_damage_mode(args)
         and not _family_query_create_time_mode(args)
         and not _family_delete_mode(args)
     )
@@ -1024,6 +1043,37 @@ def _op_family_query_members(args: argparse.Namespace, payload: dict[str, Any]) 
     if not args.family_id:
         raise ValueError("查询家族成员时，必须提供 --family-id")
     set_family_members_query_params(payload, args.family_id)
+
+
+def _op_family_monster_reset(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/vas/internal/family-monster"
+    payload["method"] = "resetFamilyMonster"
+    if not args.family_id:
+        raise ValueError("重置家族怪兽进度时，必须提供 --family-id")
+    set_family_monster_reset_params(payload, args.family_id)
+
+
+def _op_family_monster_detail(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    family_id = str(getattr(args, "family_monster_detail_family_id", None) or "").strip()
+    user_id = str(getattr(args, "family_monster_detail_user_id", None) or "").strip()
+    if not family_id:
+        raise ValueError("查家族怪兽等级血量时，必须提供 --family-monster-detail-family-id")
+    if not user_id:
+        raise ValueError("查家族怪兽等级血量时，必须提供 --family-monster-detail-user-id")
+    payload["url"] = "/service/vas/internal/family-monster"
+    payload["method"] = "getMonsterDetail"
+    set_family_monster_detail_params(payload, family_id=family_id, user_id=user_id)
+
+
+def _op_family_monster_room_damage(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(getattr(args, "family_monster_room_damage_user_id", None) or "").strip()
+    room_id = str(getattr(args, "family_monster_room_damage_room_id", None) or "").strip()
+    area = str(getattr(args, "family_monster_room_damage_area", None) or "MENA").strip().upper()
+    if not user_id:
+        raise ValueError("查房间怪兽伤害时，必须提供 --family-monster-room-damage-user-id")
+    if not room_id:
+        raise ValueError("查房间怪兽伤害时，必须提供 --family-monster-room-damage-room-id")
+    set_family_monster_room_damage_params(payload, user_id=user_id, room_id=room_id, area=area)
 
 
 def _op_family_query_create_time(args: argparse.Namespace, payload: dict[str, Any]) -> None:
@@ -1095,6 +1145,22 @@ def _op_gift_panel_backpack(args: argparse.Namespace, payload: dict[str, Any]) -
         clear_hash=clear_hash,
         service_url=service_url,
     )
+
+
+def _treasure_hunter_prize_draw_mode(args: argparse.Namespace) -> bool:
+    return bool(getattr(args, "treasure_hunter_draw_user_id", None))
+
+
+def _op_treasure_hunter_prize_draw(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(getattr(args, "treasure_hunter_draw_user_id", None) or "").strip()
+    card_id = str(getattr(args, "treasure_hunter_draw_card_id", None) or "").strip()
+    if not card_id:
+        first = (payload.get("params") or [{}])[0]
+        if isinstance(first, dict) and isinstance(first.get("value"), dict):
+            card_id = str(first["value"].get("cardId") or "").strip()
+    if not card_id:
+        raise ValueError("须提供 --treasure-hunter-draw-card-id 或在模板中设置 cardId")
+    set_treasure_hunter_prize_draw_params(payload, user_id=user_id, card_id=card_id)
 
 
 def _family_pk_page_mode(args: argparse.Namespace) -> bool:
@@ -1572,11 +1638,15 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: _family_fund_contrib_mode(a), _op_family_fund_contrib),
     (lambda a: _family_decrease_mode(a), _op_family_decrease_exp),
     (lambda a: _family_query_members_mode(a), _op_family_query_members),
+    (lambda a: _family_monster_reset_mode(a), _op_family_monster_reset),
+    (lambda a: _family_monster_detail_mode(a), _op_family_monster_detail),
+    (lambda a: _family_monster_room_damage_mode(a), _op_family_monster_room_damage),
     (lambda a: _family_query_create_time_mode(a), _op_family_query_create_time),
     (lambda a: _family_query_joined_mode(a), _op_family_query_joined),
     (lambda a: _family_delete_mode(a), _op_family_delete),
     (lambda a: _family_kick_mode(a), _op_family_kick),
     (lambda a: _gift_panel_backpack_mode(a), _op_gift_panel_backpack),
+    (lambda a: _treasure_hunter_prize_draw_mode(a), _op_treasure_hunter_prize_draw),
     (lambda a: _family_pk_page_mode(a), _op_family_pk_page),
     (lambda a: _pk_atm_match_reward_detail_mode(a), _op_pk_atm_match_reward_detail),
     (lambda a: _pk_atm_withdraw_rank_mode(a), _op_pk_atm_withdraw_rank),

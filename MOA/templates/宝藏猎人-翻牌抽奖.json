@@ -1,0 +1,70 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 10000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/vas/external/treasure-hunter-stage",
+  "method": "prizeDraw",
+  "header": "{\"userId\":\"100070932\",\"uid\":\"100070932\",\"_uid_\":\"100070932\",\"cardId\":\"14_1002\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"ios\",\"osType\":\"ios\",\"clientType\":\"2\",\"dataType\":\"json\",\"appVersion\":\"2.6.1\",\"osVersion\":\"26.2.1\",\"rom\":\"26.2.1\",\"model\":\"iPhone 12 mini\",\"country\":\"B1\",\"timeZone\":\"Asia/Shanghai\",\"deviceId\":\"3417633ddd4d2e4d3c46ff343c8f149d5d152f571772261725d2\",\"mmuid\":\"3417633ddd4d2e4d3c46ff343c8f149d5d152f571772261725d2\",\"netQuality\":4,\"imsi\":0,\"_version_\":1000}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100070932\",\"uid\":\"100070932\",\"_uid_\":\"100070932\",\"cardId\":\"14_1002\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"ios\",\"osType\":\"ios\",\"clientType\":\"2\",\"dataType\":\"json\",\"appVersion\":\"2.6.1\",\"osVersion\":\"26.2.1\",\"rom\":\"26.2.1\",\"model\":\"iPhone 12 mini\",\"country\":\"B1\",\"timeZone\":\"Asia/Shanghai\",\"deviceId\":\"3417633ddd4d2e4d3c46ff343c8f149d5d152f571772261725d2\",\"mmuid\":\"3417633ddd4d2e4d3c46ff343c8f149d5d152f571772261725d2\",\"netQuality\":4,\"imsi\":0,\"_version_\":1000}",
+      "type": "json",
+      "value": {
+        "userId": "100070932",
+        "uid": "100070932",
+        "_uid_": "100070932",
+        "cardId": "14_1002",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "ios",
+        "osType": "ios",
+        "clientType": "2",
+        "dataType": "json",
+        "appVersion": "2.6.1",
+        "osVersion": "26.2.1",
+        "rom": "26.2.1",
+        "model": "iPhone 12 mini",
+        "country": "B1",
+        "timeZone": "Asia/Shanghai",
+        "deviceId": "3417633ddd4d2e4d3c46ff343c8f149d5d152f571772261725d2",
+        "mmuid": "3417633ddd4d2e4d3c46ff343c8f149d5d152f571772261725d2",
+        "netQuality": 4,
+        "imsi": 0,
+        "_version_": 1000
+      }
+    }
+  ],
+  "_meta": {
+    "httpPath": "/yaahlan/activity/treasureHunter/prizeDraw",
+    "tunnelExample": "100070932 cardId=14_1002 → 足球券50",
+    "cardIdFormat": "{wheelId}_{1001..1036}，如 14_1002=第14轮第2格，15_1033=第15轮第33格",
+    "note": "须用户有可用探索次数；card 未被翻且活动进行中；cardId 后四位 1001-1036 对应 6×6 格子序号"
+  },
+  "_registry": {
+    "id": "treasure_hunter_prize_draw",
+    "name": "宝藏猎人-翻牌抽奖",
+    "category": "宝藏猎人（vas/external/treasure-hunter-stage · prizeDraw）",
+    "description": "宝藏猎人探索翻牌抽奖（prizeDraw）。对齐 HTTP /yaahlan/activity/treasureHunter/prizeDraw；MOA /service/vas/external/treasure-hunter-stage。body 须 userId + cardId（格式 {轮次}_{10xx}，xx=01~36，如 14_1002=第14轮第2格、15_1033=第15轮第33格）。100070932 Tunnel 实测 cardId=14_1002 返回足球券50。",
+    "prompts": [
+      "宝藏猎人翻牌 userId=<userId> cardId=<cardId>",
+      "prizeDraw 宝藏猎人 <userId> <cardId>",
+      "探索宝藏抽奖 cardId=14_1002"
+    ],
+    "cli": "--treasure-hunter-draw-user-id <userId> --treasure-hunter-draw-card-id <cardId>"
+  }
+}

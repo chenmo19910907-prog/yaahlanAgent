@@ -1,0 +1,36 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/vas/external/treasure-hunter-stage",
+  "method": "dispatchRankPrize",
+  "header": "",
+  "params": [],
+  "settings": {
+    "time": "60000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_meta": {
+    "servicePackage": "momo.bpm.biz.gameplatform.overseas-voga-mts-vas",
+    "note": "活动结束结算并下发宝藏猎人榜单奖励；会真实发奖，须人工确认后再调用"
+  },
+  "_registry": {
+    "id": "treasure_hunter_dispatch_rank_prize",
+    "name": "宝藏猎人-下发榜单奖励",
+    "category": "宝藏猎人（vas/external/treasure-hunter-stage · dispatchRankPrize）",
+    "description": "宝藏猎人活动结束后结算并下发榜单奖励（dispatchRankPrize；无参）。MOA /service/vas/external/treasure-hunter-stage。**会真实发奖，须人工确认后再调用。**",
+    "prompts": [
+      "宝藏猎人下发榜单奖励 area=<area>",
+      "dispatchRankPrize 宝藏猎人 <area>",
+      "宝藏猎人活动结束发榜奖励 MENA"
+    ],
+    "cli": ""
+  }
+}

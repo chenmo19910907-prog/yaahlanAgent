@@ -1,0 +1,57 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/yh-components/gift-panel",
+  "method": "getGiftPanel",
+  "header": "{\"userId\":\"100292275\",\"uid\":\"100292275\",\"roomId\":\"82896562\",\"area\":\"MENA\",\"show_prop\":true,\"lang\":\"en\",\"appId\":\"2005\",\"osType\":\"android\",\"os\":\"android\",\"channelKey\":\"primary\",\"country\":\"B1\",\"timeZone\":\"Asia/Shanghai\",\"netQuality\":5,\"innerVersion\":\"1\",\"appVersion\":\"2.6.1_dev\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100292275\",\"uid\":\"100292275\",\"roomId\":\"82896562\",\"area\":\"MENA\",\"show_prop\":true,\"lang\":\"en\",\"appId\":\"2005\",\"osType\":\"android\",\"os\":\"android\",\"channelKey\":\"primary\",\"country\":\"B1\",\"timeZone\":\"Asia/Shanghai\",\"netQuality\":5,\"innerVersion\":\"1\",\"appVersion\":\"2.6.1_dev\"}",
+      "type": "json",
+      "value": {
+        "userId": "100292275",
+        "uid": "100292275",
+        "roomId": "82896562",
+        "area": "MENA",
+        "show_prop": true,
+        "lang": "en",
+        "appId": "2005",
+        "osType": "android",
+        "os": "android",
+        "channelKey": "primary",
+        "country": "B1",
+        "timeZone": "Asia/Shanghai",
+        "netQuality": 5,
+        "innerVersion": "1",
+        "appVersion": "2.6.1_dev"
+      }
+    }
+  ],
+  "_registry": {
+    "id": "family_monster_room_damage",
+    "name": "家族怪兽-查房间伤害",
+    "category": "家族怪兽（yh-components/gift-panel · getGiftPanel）",
+    "description": "MOA getGiftPanel 查用户在指定房间的家族怪兽击打伤害（monsterBanner.damageValue）。对齐 /yaahlan/component/giftPanel/getGiftPanel；须传 userId + roomId，不同房间伤害不同。选择飞镖等 associatedGiftIds 礼物时 banner 展示同字段。",
+    "prompts": [
+      "查用户 <userId> 在房间 <roomId> 的怪兽伤害",
+      "家族怪兽房间伤害 userId=<userId> roomId=<roomId>",
+      "getGiftPanel monsterBanner damageValue"
+    ],
+    "cli": "--family-monster-room-damage-user-id <userId> --family-monster-room-damage-room-id <roomId>"
+  }
+}

@@ -157,6 +157,32 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--family-query-current", action="store_true", help="查询当前家族声望值与等级（增量 0）")
     parser.add_argument("--family-query-members", action="store_true", help="查询家族全部成员 userId（getFamilyMembers）")
     parser.add_argument(
+        "--family-monster-reset",
+        action="store_true",
+        help="重置家族怪兽挑战进度（resetFamilyMonster；须配合 --family-id）",
+    )
+    parser.add_argument(
+        "--family-monster-detail-family-id",
+        help="查家族怪兽等级血量：familyId（getMonsterDetail → level/remainDamage/maxHp；当前血量直接读 remainDamage，勿用 maxHp-hp 推算）",
+    )
+    parser.add_argument(
+        "--family-monster-detail-user-id",
+        help="查家族怪兽等级血量：userId（须配合 --family-monster-detail-family-id）",
+    )
+    parser.add_argument(
+        "--family-monster-room-damage-user-id",
+        help="查房间怪兽伤害：userId（getGiftPanel → monsterBanner.damageValue）",
+    )
+    parser.add_argument(
+        "--family-monster-room-damage-room-id",
+        help="查房间怪兽伤害：roomId（不同房间伤害不同）",
+    )
+    parser.add_argument(
+        "--family-monster-room-damage-area",
+        default="MENA",
+        help="查房间怪兽伤害：area（默认 MENA）",
+    )
+    parser.add_argument(
         "--family-query-create-time",
         action="store_true",
         help="查询家族创建时间（getFamilyCreateTime；无返回表示已解散或不存在）",
@@ -300,6 +326,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--gift-panel-backpack-clear-hash",
         action="store_true",
         help="礼物面板查看背包：去掉 giftListHash 以拉完整 gift_list",
+    )
+    parser.add_argument(
+        "--treasure-hunter-draw-user-id",
+        help="宝藏猎人翻牌抽奖：userId（prizeDraw；对齐 /yaahlan/activity/treasureHunter/prizeDraw）",
+    )
+    parser.add_argument(
+        "--treasure-hunter-draw-card-id",
+        help="宝藏猎人翻牌抽奖：cardId，格式 {轮次}_{10xx}，如 14_1002=第14轮第2格、15_1033=第15轮第33格",
     )
     parser.add_argument(
         "--family-pk-page-user-id",

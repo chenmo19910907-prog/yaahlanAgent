@@ -1,0 +1,44 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/vas/internal/family-monster",
+  "method": "getMonsterDetail",
+  "header": "",
+  "params": [
+    {
+      "name": 0,
+      "title": "familyId",
+      "txt": "",
+      "json": "{\"familyId\":\"105186\",\"userId\":\"100292275\"}",
+      "type": "json",
+      "value": {
+        "familyId": "105186",
+        "userId": "100292275"
+      }
+    }
+  ],
+  "settings": {
+    "time": 10000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "family_monster_detail",
+    "name": "家族怪兽-查当前等级血量",
+    "category": "家族怪兽（vas/internal/family-monster · getMonsterDetail）",
+    "description": "MOA getMonsterDetail 查家族怪兽当前等级与血量。对齐活动页 /yaahlan/activity/familyMonsterDetail；须传 familyId + userId。字段语义：当前血量直接读 remainDamage（勿读 hp、勿用 maxHp-hp 推算）；hp=已造成伤害；maxHp=等级上限。100292275 familyId=105186 实测 Lv.2 remainDamage=29802、hp=198、maxHp=30000。",
+    "prompts": [
+      "查家族 <familyId> 怪兽当前等级血量 userId=<userId>",
+      "家族怪兽等级血量 familyId=<familyId> userId=<userId>",
+      "getMonsterDetail level remainDamage maxHp"
+    ],
+    "cli": "--family-monster-detail-family-id <familyId> --family-monster-detail-user-id <userId>"
+  }
+}
