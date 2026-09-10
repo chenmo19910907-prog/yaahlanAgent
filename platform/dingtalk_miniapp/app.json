@@ -1,0 +1,11 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/webview/webview"
+  ],
+  "window": {
+    "defaultTitle": "Yaahlan Agent",
+    "titleBarColor": "#0b0e14",
+    "backgroundColor": "#0b0e14"
+  }
+}

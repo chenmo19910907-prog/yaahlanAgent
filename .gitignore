@@ -42,6 +42,7 @@ platform/family_pk_report/exports/
 platform/dingtalk_gateway/attachments/
 platform/dingtalk_gateway/data/
 platform/web_agent/data/
+platform/dingtalk_miniapp/config.json
 platform/dingtalk_gateway/logs/
 Tunnel/.env
 Tunnel/__pycache__/

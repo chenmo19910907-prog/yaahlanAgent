@@ -1,0 +1,1 @@
+<web-view src="{{targetUrl}}" onMessage="onMessage"></web-view>

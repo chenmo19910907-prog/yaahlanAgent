@@ -1,0 +1,7 @@
+<view class="page">
+  <view class="logo">🕸️</view>
+  <view class="title">Yaahlan 智能工具 Agent</view>
+  <view class="status">{{statusText}}</view>
+  <view a:if="{{errorText}}" class="error">{{errorText}}</view>
+  <button a:if="{{showRetry}}" class="btn" onTap="onRetry">重试</button>
+</view>
