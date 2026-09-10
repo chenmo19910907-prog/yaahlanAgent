@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-09-03 15:14:40 北京时间",
-  "total_items": 293,
-  "module_count": 28,
+  "generated_at": "2026-09-10 11:34:14 北京时间",
+  "total_items": 302,
+  "module_count": 29,
   "modules": [
     {
       "id": "用户",
@@ -2075,7 +2075,7 @@
     {
       "id": "家族",
       "label": "家族",
-      "item_count": 48,
+      "item_count": 51,
       "categories": [
         {
           "name": "家族",
@@ -2344,6 +2344,54 @@
                 "家族PK结算发奖匹配 date=<date>",
                 "跑家族PK匹配任务 <date>",
                 "重置 <date> 家族PK：先清除匹配数据再结算发奖"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            }
+          ]
+        },
+        {
+          "name": "家族怪兽（vas/internal/family-monster · getMonsterDetail）",
+          "items": [
+            {
+              "name": "家族怪兽-查当前等级血量",
+              "prompts": [
+                "查家族 <familyId> 怪兽当前等级血量 userId=<userId>",
+                "家族怪兽等级血量 familyId=<familyId> userId=<userId>",
+                "getMonsterDetail level remainDamage maxHp"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            }
+          ]
+        },
+        {
+          "name": "家族怪兽（vas/internal/family-monster）",
+          "items": [
+            {
+              "name": "家族怪兽-重置进度",
+              "prompts": [
+                "重置家族 <familyId> 怪兽进度",
+                "家族怪兽重置 familyId=<familyId>",
+                "resetFamilyMonster <familyId>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            }
+          ]
+        },
+        {
+          "name": "家族怪兽（yh-components/gift-panel · getGiftPanel）",
+          "items": [
+            {
+              "name": "家族怪兽-查房间伤害",
+              "prompts": [
+                "查用户 <userId> 在房间 <roomId> 的怪兽伤害",
+                "家族怪兽房间伤害 userId=<userId> roomId=<roomId>",
+                "getGiftPanel monsterBanner damageValue"
               ],
               "source": "MOA",
               "source_id": "moa",
@@ -2893,7 +2941,7 @@
     {
       "id": "奖励验收",
       "label": "奖励验收",
-      "item_count": 5,
+      "item_count": 9,
       "categories": [
         {
           "name": "奖励验收",
@@ -2952,6 +3000,55 @@
               "source": "工作流",
               "source_id": "workflow",
               "env": "tool"
+            }
+          ]
+        },
+        {
+          "name": "奖励验收（通用）",
+          "items": [
+            {
+              "name": "奖励验收-发奖前后求差",
+              "prompts": [
+                "奖励验收发奖前后求差",
+                "对比下发前后用户资产",
+                "reward verify diff before after"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            },
+            {
+              "name": "奖励验收-对照期望配置",
+              "prompts": [
+                "奖励验收对照期望配置",
+                "compare 发奖前后与期望 rewards",
+                "验证榜单奖励是否符合星礼包配置"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            },
+            {
+              "name": "奖励验收-用户资产快照",
+              "prompts": [
+                "奖励验收发奖前快照 userId=<userId>",
+                "用户资产基线快照 <userId>",
+                "下发前基线 钻石背包礼物道具 userId=<userId>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            },
+            {
+              "name": "星礼包-查询配置",
+              "prompts": [
+                "查星礼包配置 id=<prizeBagId>",
+                "getPrizeBagListNew 礼包 <prizeBagId>",
+                "开发者后台星礼包 id=10"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
             }
           ]
         }
@@ -3789,6 +3886,45 @@
                 "排查用户 <userId> 奖励未下发原因",
                 "奖励未下发拦截排查 <userId>",
                 "查 <userId> 是否风控或公会黑名单 ruleId=<ruleId>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "宝藏猎人",
+      "label": "宝藏猎人",
+      "item_count": 2,
+      "categories": [
+        {
+          "name": "宝藏猎人（vas/external/treasure-hunter-stage · dispatchRankPrize）",
+          "items": [
+            {
+              "name": "宝藏猎人-下发榜单奖励",
+              "prompts": [
+                "宝藏猎人下发榜单奖励",
+                "dispatchRankPrize 宝藏猎人",
+                "宝藏猎人活动结束发榜奖励"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            }
+          ]
+        },
+        {
+          "name": "宝藏猎人（vas/external/treasure-hunter-stage · prizeDraw）",
+          "items": [
+            {
+              "name": "宝藏猎人-翻牌抽奖",
+              "prompts": [
+                "宝藏猎人翻牌 userId=<userId> cardId=<cardId>",
+                "prizeDraw 宝藏猎人 <userId> <cardId>",
+                "探索宝藏抽奖 cardId=14_1002"
               ],
               "source": "MOA",
               "source_id": "moa",
