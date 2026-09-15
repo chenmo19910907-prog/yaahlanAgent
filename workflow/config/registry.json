@@ -658,7 +658,7 @@
       "id": "reward_verify_compare",
       "name": "奖励验收-前后快照对比",
       "category": "奖励验收",
-      "description": "对比发奖前后 snapshot JSON 与期望 rewards 配置：钻石增量+钻石记录、背包礼物 giftId+数量+单价(钻)+expire 有效、装扮 propId+有效期天数（±toleranceDays）。",
+      "description": "对比发奖前后 snapshot JSON 与期望 rewards 配置：钻石增量+钻石记录、背包礼物 giftId+数量+单价(钻)+expire 有效、装扮 propId+有效期天数（±toleranceDays）、铭牌 NAMEPLATE、CP 空间勋章 MEDAL（True Love 等 medalName 个数增量）。",
       "prompts": [
         "执行工作流 奖励验收-前后快照对比",
         "奖励验收对比 expected.json",

@@ -26,6 +26,12 @@
       "defaultAppId": 2005,
       "defaultAreaCode": "966",
       "templateFile": "templates/用户-按手机号查userId.json"
+    },
+    "service_url_map": {
+      "/service/voga-mts-user-vip-stage": "/service/voga-mts-user-vip-prod",
+      "/service/voga-base-service-middle-pay-stage": "/service/voga-base-service-middle-pay-prod",
+      "/service/voga-mts-user-profile-stage": "/service/voga-mts-user-profile-prod",
+      "/service/mdp-prop/user-prop-api-service-test": "/service/mdp-prop/user-prop-api-service"
     }
   },
   "tunnel": {

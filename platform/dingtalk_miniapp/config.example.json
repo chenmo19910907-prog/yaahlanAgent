@@ -1,4 +1,4 @@
 {
-  "webAgentBaseUrl": "https://your-subdomain.trycloudflare.com",
+  "webAgentBaseUrl": "http://172.18.125.90:18766",
   "corpId": "dingxxxxxxxxxxxxxxxx"
 }

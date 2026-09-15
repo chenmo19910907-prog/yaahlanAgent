@@ -73,6 +73,7 @@ LOGIN_PUBLIC_STATIC_PATHS = frozenset(
     {
         "/theme.js",
         "/dingtalk_oauth.js",
+        "/miniapp_session.js",
         "/analytics.js",
     }
 )

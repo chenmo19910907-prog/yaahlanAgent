@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""线上环境操作权限：全员只读查询；其余线上 MOA 全员禁止（含管理员）；其他线上操作仅管理员。"""
+"""线上环境操作权限：全员只读查询；已入库 MOA 仅管理员；未入库 MOA 全员禁止。"""
 
 from __future__ import annotations
 
@@ -14,11 +14,13 @@ for path in (GATEWAY_DIR, WEB_AGENT_DIR):
         sys.path.insert(0, str(path))
 
 from online_env_guard import (  # noqa: E402
+    looks_like_online_capability_catalog_query,
     looks_like_online_env_request,
     looks_like_online_moa_forbidden_request,
     looks_like_online_public_query_request,
     online_env_denial_message,
     online_moa_denial_message,
+    online_moa_not_registered_message,
     resolve_online_env_denial,
 )
 from web_prompt import build_web_prompt  # noqa: E402
@@ -58,14 +60,44 @@ class OnlineEnvGuardTest(unittest.TestCase):
             looks_like_online_public_query_request("线上环境查手机号 13311111111")
         )
 
+    def test_registered_vip_query_not_public(self) -> None:
+        self.assertFalse(
+            looks_like_online_public_query_request("线上环境查用户 107427060 VIP等级")
+        )
+
     def test_public_query_not_moa_forbidden(self) -> None:
         self.assertFalse(
             looks_like_online_moa_forbidden_request("线上环境查用户 107427060")
         )
 
+    def test_registered_vip_query_is_moa_operation(self) -> None:
+        self.assertTrue(
+            looks_like_online_moa_forbidden_request("线上环境查用户 107427060 VIP等级")
+        )
+
     def test_online_vip_moa_forbidden(self) -> None:
         self.assertTrue(
             looks_like_online_moa_forbidden_request("线上环境13311111111添加vip8")
+        )
+
+    def test_online_moa_catalog_query_detected(self) -> None:
+        self.assertTrue(looks_like_online_capability_catalog_query("线上MOA有哪些"))
+        self.assertTrue(looks_like_online_capability_catalog_query("线上环境 MOA 清单"))
+        self.assertTrue(
+            looks_like_online_capability_catalog_query("online 模块有哪些能力")
+        )
+
+    def test_online_moa_catalog_not_operation(self) -> None:
+        self.assertFalse(looks_like_online_moa_forbidden_request("线上MOA有哪些"))
+
+    def test_resolve_moa_catalog_admin_allowed(self) -> None:
+        self.assertIsNone(
+            resolve_online_env_denial("线上MOA有哪些", online_admin_allowed=True)
+        )
+
+    def test_resolve_moa_catalog_non_admin_allowed(self) -> None:
+        self.assertIsNone(
+            resolve_online_env_denial("线上MOA有哪些", online_admin_allowed=False)
         )
 
     def test_online_moa_script_forbidden(self) -> None:
@@ -88,12 +120,27 @@ class OnlineEnvGuardTest(unittest.TestCase):
             "线上环境13311111111添加vip8",
             online_admin_allowed=False,
         )
-        self.assertEqual(msg, online_moa_denial_message())
+        self.assertEqual(msg, online_moa_not_registered_message())
 
     def test_resolve_moa_mutation_admin(self) -> None:
         msg = resolve_online_env_denial(
             "线上环境13311111111添加vip8",
             online_admin_allowed=True,
+        )
+        self.assertEqual(msg, online_moa_not_registered_message())
+
+    def test_resolve_registered_vip_query_admin(self) -> None:
+        self.assertIsNone(
+            resolve_online_env_denial(
+                "线上环境查用户 107427060 VIP等级",
+                online_admin_allowed=True,
+            )
+        )
+
+    def test_resolve_registered_vip_query_non_admin(self) -> None:
+        msg = resolve_online_env_denial(
+            "线上环境查用户 107427060 VIP等级",
+            online_admin_allowed=False,
         )
         self.assertEqual(msg, online_moa_denial_message())
 
@@ -115,6 +162,12 @@ class OnlineEnvGuardTest(unittest.TestCase):
         msg = online_moa_denial_message()
         self.assertIn("Admin-查询用户详情", msg)
         self.assertIn("MOA-按手机号查 userId", msg)
+        self.assertIn("已入库", msg)
+
+    def test_moa_not_registered_message(self) -> None:
+        msg = online_moa_not_registered_message()
+        self.assertIn("online/config/registry.json", msg)
+        self.assertIn("管理员/超管", msg)
 
     def test_readonly_prompt_includes_public_query(self) -> None:
         text = build_web_prompt(
@@ -126,7 +179,7 @@ class OnlineEnvGuardTest(unittest.TestCase):
         )
         self.assertIn("Admin-查询用户详情", text)
         self.assertIn("MOA-按手机号查 userId", text)
-        self.assertIn("其他线上 MOA", text)
+        self.assertIn("已入库", text)
 
     def test_admin_prompt_includes_online(self) -> None:
         text = build_web_prompt(
@@ -136,6 +189,7 @@ class OnlineEnvGuardTest(unittest.TestCase):
             allow_online_env_operation=True,
         )
         self.assertIn("线上环境", text)
+        self.assertIn("已入库", text)
 
 
 def main() -> int:

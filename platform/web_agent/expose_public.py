@@ -232,11 +232,17 @@ def main() -> int:
     url_file.parent.mkdir(parents=True, exist_ok=True)
     url_file.write_text(public_url + "\n", encoding="utf-8")
 
+    creds = _require_auth_configured()
+
     print("\n" + "=" * 60, flush=True)
     print("Web Agent 公网地址（已启用 HTTP 鉴权）：", flush=True)
     print(f"  {public_url}/", flush=True)
-    print(f"\n登录用户名：{user}", flush=True)
-    print("登录密码：见 .env.local 中 WEB_AGENT_AUTH_PASSWORD", flush=True)
+    if creds:
+        print(f"\n登录用户名：{creds[0]}", flush=True)
+        print("登录密码：见 .env.local 中 WEB_AGENT_AUTH_PASSWORD", flush=True)
+    else:
+        print("\n鉴权方式：钉钉验证码登录（OTP）", flush=True)
+        print("请在 login.html 获取验证码，或使用钉钉 OAuth 免登。", flush=True)
     print("\n首次打开浏览器会弹出登录框；SSE 流式与 API 共用同一鉴权。", flush=True)
     if args.no_wait:
         print("隧道已在后台运行（日志：platform/web_agent/data/tunnel.log）。", flush=True)

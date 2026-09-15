@@ -1908,7 +1908,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             self.path = "/login.html"
             return super().do_GET()
 
-        if path in ("/theme.js", "/dingtalk_oauth.js", "/analytics.js"):
+        if path in ("/theme.js", "/dingtalk_oauth.js", "/miniapp_session.js", "/analytics.js"):
             return super().do_GET()
 
         # 页面依赖的静态脚本须免鉴权，否则浏览器可能收到 login.html 导致 JS 全局变量未定义
@@ -2512,10 +2512,41 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     ),
                 },
             }
+            if str(body.get("bridge") or "").strip().lower() == "miniapp":
+                payload["sessionToken"] = token
             body_bytes = json.dumps(payload, ensure_ascii=False).encode("utf-8")
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             set_session_cookie(self, token)
+            self.send_header("Content-Length", str(len(body_bytes)))
+            self.end_headers()
+            self.wfile.write(body_bytes)
+            return
+
+        if path == "/api/auth/miniapp-bridge":
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            session_token = str(
+                body.get("sessionToken") or body.get("token") or ""
+            ).strip()
+            user = get_web_otp_store().validate_session_token(session_token)
+            if user is None:
+                return _json_response(self, {"error": "会话无效或已过期"}, 401)
+            payload = {
+                "ok": True,
+                "user": {
+                    "staffId": user.staff_id,
+                    "displayName": lookup_auth_user_display_name(
+                        user.staff_id, user.display_name
+                    ),
+                },
+            }
+            body_bytes = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            set_session_cookie(self, session_token)
             self.send_header("Content-Length", str(len(body_bytes)))
             self.end_headers()
             self.wfile.write(body_bytes)

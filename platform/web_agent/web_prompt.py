@@ -112,7 +112,7 @@ _WEB_RULES_CORE = f"""\
 9. **线上环境**：
    - **全员可用（只读）**：`online/online_execute.py admin --query-user-id`（Admin-查询用户详情）、`online/online_execute.py moa --query-user-by-phone`（MOA-按手机号查 userId）。
    - **线上 VIP 加/升级**：**禁止** Web Agent 直接执行 MOA；识别到「线上环境/账号 + 加/升级 VIP」时，**仅**钉钉通知负责人 **孙晓东** 人工处理，并告知用户已提交申请。
-   - **全员禁止（含管理员/超管）**：上述两项以外的**所有线上 MOA**（含 `moa_execute.py --线上环境` / `--target-environment prod`、线上造数/改数等）；Web Agent 一律拦截，请在 Cursor 本机对话中操作。
+   - **已入库线上 MOA（仅管理员/超管）**：`online/config/registry.json` 已登记的 MOA 能力（含纯查询）管理员可执行；**未入库**的线上 MOA **全员禁止（含管理员/超管）**。
    - **仅管理员**：Tunnel 抓包、风控解除等其余线上环境操作；非管理员禁止调用 `online/` 其它能力、`--线上环境`、`--target-environment prod` 等；**不得**改走测试环境代替。无权限时引导在用户头像信息中打开「管理员列表」申请管理员。"""
 
 _WEB_RULES_GIFT_FAMILY = f"""\
@@ -304,7 +304,7 @@ def _readonly_permission_note(
     if allow_online_public_query:
         base += (
             "线上环境仅允许只读查询：Admin-查询用户详情、MOA-按手机号查 userId；"
-            "其他线上 MOA 一律不允许（含管理员/超管）。"
+            "其余已入库线上 MOA 仅管理员/超管；未入库线上 MOA 全员禁止。"
         )
     if not allow_online_env_operation:
         base += "其余线上环境 / 线上账号 / 正式环境操作需管理员权限；无权限时引导在用户头像信息中打开「管理员列表」申请管理员。"
@@ -339,9 +339,15 @@ def _build_web_rules(
         "钉钉 MCP、Tunnel 只读抓包；**不含** ADB 真机操作。"
     )
     if allow_online_env_operation:
-        capability_tail += " 线上 MOA 除两项只读查询外全员禁止；Tunnel/风控等其余线上操作仅管理员。"
+        capability_tail += (
+            " 线上 MOA：两项全员只读；已入库 registry 的 MOA 管理员可执行；未入库禁止。"
+            " Tunnel/风控等其余线上操作仅管理员。"
+        )
     elif allow_online_public_query:
-        capability_tail += " 线上环境仅 Admin 查用户详情 / MOA 查手机号 userId；其他线上 MOA 禁止。"
+        capability_tail += (
+            " 线上环境仅 Admin 查用户详情 / MOA 查手机号 userId；"
+            "已入库 MOA 需管理员；未入库 MOA 禁止。"
+        )
     else:
         capability_tail += "；**不含** 线上环境 / 线上账号操作。"
     if enabled_ids:

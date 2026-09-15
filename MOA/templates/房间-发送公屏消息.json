@@ -1,0 +1,60 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/yaahlan/room/external/room-im-api",
+  "method": "sendChannelMessage",
+  "header": "{\"userId\":\"100465989\",\"roomId\":\"38826842\",\"eventId\":\"816\",\"json\":\"{\\\"content\\\":\\\"示例公屏文案\\\"}\",\"source\":\"0\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"osType\":\"android\",\"os\":\"android\",\"channelKey\":\"primary\",\"country\":\"SG\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100465989\",\"roomId\":\"38826842\",\"eventId\":\"816\",\"json\":\"{\\\"content\\\":\\\"示例公屏文案\\\"}\",\"source\":\"0\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"osType\":\"android\",\"os\":\"android\",\"channelKey\":\"primary\",\"country\":\"SG\"}",
+      "type": "json",
+      "value": {
+        "userId": "100465989",
+        "roomId": "38826842",
+        "eventId": "816",
+        "json": "{\"content\":\"示例公屏文案\"}",
+        "source": "0",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "osType": "android",
+        "os": "android",
+        "channelKey": "primary",
+        "country": "SG"
+      }
+    }
+  ],
+  "settings": {
+    "time": "15000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_meta": {
+    "httpPath": "/yaahlan/chat/setting/query/relation/sendChannelMessage",
+    "eventId": "816",
+    "tunnelRef": "100465989 _id=pMZtpKAB0MxPP6PXoRmu（2026-09-15 17:37:23）",
+    "note": "普通聊聊/公屏文本；eventId=816 为客户端文本公屏；发送账号须在目标房间内（room/heart/heartbeat 建立会话）。"
+  },
+  "_registry": {
+    "id": "room_send_channel_message",
+    "name": "房间-发送公屏消息",
+    "category": "房间（yaahlan/room/external/room-im-api）",
+    "description": "HTTP /yaahlan/chat/setting/query/relation/sendChannelMessage → MOA sendChannelMessage（eventId=816 文本公屏）。body 需 userId、roomId、json.content、source=0。发送账号须在目标房间内。Tunnel 100465989 roomId=38826842（2026-09-15）。",
+    "prompts": [
+      "用户 <userId> 在房间 <roomId> 发公屏 <text>",
+      "房间 <roomId> 公屏消息 userId <userId> <text>",
+      "sendChannelMessage 房间公屏 <roomId> <userId>"
+    ],
+    "cli": "--room-chat-user-id <userId> --room-chat-room-id <roomId> --room-chat-text <text>"
+  }
+}

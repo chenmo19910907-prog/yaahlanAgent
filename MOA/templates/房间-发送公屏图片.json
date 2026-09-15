@@ -1,0 +1,59 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/yaahlan/room/external/room-im-api",
+  "method": "roomSendImage",
+  "header": "{\"userId\":\"100465989\",\"roomId\":\"38826842\",\"eventId\":\"891\",\"imageUrl\":\"https://yaahlan.momocdn.com/roomimg/6F/13/6F13812E-D33F-22EC-70B5-0D07C8B0933520260915_L.webp\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"osType\":\"android\",\"os\":\"android\",\"channelKey\":\"primary\",\"country\":\"SG\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100465989\",\"roomId\":\"38826842\",\"eventId\":\"891\",\"imageUrl\":\"https://yaahlan.momocdn.com/roomimg/6F/13/6F13812E-D33F-22EC-70B5-0D07C8B0933520260915_L.webp\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"osType\":\"android\",\"os\":\"android\",\"channelKey\":\"primary\",\"country\":\"SG\"}",
+      "type": "json",
+      "value": {
+        "userId": "100465989",
+        "roomId": "38826842",
+        "eventId": "891",
+        "imageUrl": "https://yaahlan.momocdn.com/roomimg/6F/13/6F13812E-D33F-22EC-70B5-0D07C8B0933520260915_L.webp",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "osType": "android",
+        "os": "android",
+        "channelKey": "primary",
+        "country": "SG"
+      }
+    }
+  ],
+  "settings": {
+    "time": "15000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_meta": {
+    "httpPath": "/yaahlan/room/im-sender/roomSendImage",
+    "eventId": "891",
+    "tunnelRef": "100465989 _id=VDl5pKABR2LVRzbvl7qp（2026-09-15 17:50:27）",
+    "note": "公屏图片；eventId=891；body 需 userId、roomId、imageUrl。发送账号须在目标房间内。"
+  },
+  "_registry": {
+    "id": "room_send_channel_image",
+    "name": "房间-发送公屏图片",
+    "category": "房间（yaahlan/room/external/room-im-api）",
+    "description": "HTTP roomSendImage → MOA roomSendImage（eventId=891 公屏图片）。body 需 userId、roomId、imageUrl。Tunnel 100465989 roomId=38826842（2026-09-15）。",
+    "prompts": [
+      "用户 <userId> 在房间 <roomId> 发公屏图片",
+      "房间 <roomId> 公屏图片 userId <userId>",
+      "roomSendImage 房间公屏图片 <roomId> <userId>"
+    ],
+    "cli": "--room-chat-user-id <userId> --room-chat-room-id <roomId> --room-chat-image-url <url>"
+  }
+}

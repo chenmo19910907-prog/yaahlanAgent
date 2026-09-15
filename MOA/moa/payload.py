@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from collections.abc import Callable
@@ -77,11 +78,15 @@ from .params import (
     set_vip_info_query_params,
     set_vip_params,
     set_vip_try_dispatch_params,
+    set_user_app_language_params,
     set_user_prop_query_params,
     set_user_follow_params,
     set_feed_comment_params,
     set_feed_publish_params,
     set_p2p_message_params,
+    set_room_channel_emote_params,
+    set_room_channel_image_params,
+    set_room_channel_message_params,
 )
 from .time_utils import resolve_expire_ms, resolve_family_fund_week_key, resolve_family_fund_week_key_with_offset
 from .user_area import describe_user_area, normalize_user_area
@@ -476,6 +481,16 @@ def _op_charm_decr(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     print(
         f"减少魅力值 userId={args.charm_decr_user_id} num={args.charm_decr_num}",
         file=sys.stderr,
+    )
+
+
+def _op_user_app_language_query(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    payload["url"] = "/service/voga-mts-user-profile-stage"
+    payload["method"] = "getUserVersionInfo"
+    set_user_app_language_params(
+        payload,
+        user_id=args.user_app_language_user_id,
+        lang=getattr(args, "user_app_language_lang", None) or "en",
     )
 
 
@@ -1314,8 +1329,24 @@ def _feed_publish_mode(args: argparse.Namespace) -> bool:
     )
 
 
+def _room_channel_emote_mode(args: argparse.Namespace) -> bool:
+    return getattr(args, "room_chat_emote_json", None) is not None or getattr(
+        args, "room_chat_emote_name", None
+    ) is not None
+
+
+def _room_channel_message_mode(args: argparse.Namespace) -> bool:
+    return getattr(args, "room_chat_text", None) is not None
+
+
+def _room_channel_image_mode(args: argparse.Namespace) -> bool:
+    return getattr(args, "room_chat_image_url", None) is not None
+
+
 def _p2p_message_mode(args: argparse.Namespace) -> bool:
     if getattr(args, "p2p_from_uid", None) is not None or getattr(args, "p2p_to_uid", None) is not None:
+        return True
+    if getattr(args, "p2p_greet", False):
         return True
     return any(
         getattr(args, name, None) is not None
@@ -1382,6 +1413,75 @@ def _op_feed_comment(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     )
 
 
+def _op_room_channel_emote(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(args.room_chat_user_id or "").strip()
+    room_id = str(args.room_chat_room_id or "").strip()
+    emote_json = str(args.room_chat_emote_json or "").strip()
+    emote_name = str(args.room_chat_emote_name or "").strip()
+    if not user_id or not room_id or (not emote_json and not emote_name):
+        raise ValueError(
+            "房间公屏表情须同时提供 --room-chat-user-id、--room-chat-room-id，"
+            "以及 --room-chat-emote-name 或 --room-chat-emote-json"
+        )
+    print(
+        f"房间公屏表情: userId={user_id} roomId={room_id} emote={emote_name or emote_json[:80]}",
+        file=sys.stderr,
+    )
+    set_room_channel_emote_params(
+        payload,
+        user_id,
+        room_id,
+        emote_json or None,
+        emote_name=emote_name or None,
+        event_id=str(args.room_chat_event_id or "1831"),
+        source=str(args.room_chat_source or "0"),
+        lang=str(args.room_chat_lang or "en"),
+        area=str(args.room_chat_area or "MENA"),
+        os_name=str(args.room_chat_os or "android"),
+    )
+
+
+def _op_room_channel_message(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(args.room_chat_user_id or "").strip()
+    room_id = str(args.room_chat_room_id or "").strip()
+    text = str(args.room_chat_text or "").strip()
+    if not user_id or not room_id or not text:
+        raise ValueError("房间公屏消息须同时提供 --room-chat-user-id、--room-chat-room-id 与 --room-chat-text")
+    print(f"房间公屏消息: userId={user_id} roomId={room_id} text={text}", file=sys.stderr)
+    set_room_channel_message_params(
+        payload,
+        user_id,
+        room_id,
+        text,
+        event_id=str(args.room_chat_event_id or "816"),
+        source=str(args.room_chat_source or "0"),
+        lang=str(args.room_chat_lang or "en"),
+        area=str(args.room_chat_area or "MENA"),
+        os_name=str(args.room_chat_os or "android"),
+    )
+
+
+def _op_room_channel_image(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(args.room_chat_user_id or "").strip()
+    room_id = str(args.room_chat_room_id or "").strip()
+    image_url = str(args.room_chat_image_url or "").strip()
+    if not user_id or not room_id or not image_url:
+        raise ValueError(
+            "房间公屏图片须同时提供 --room-chat-user-id、--room-chat-room-id 与 --room-chat-image-url"
+        )
+    print(f"房间公屏图片: userId={user_id} roomId={room_id} imageUrl={image_url[:80]}", file=sys.stderr)
+    set_room_channel_image_params(
+        payload,
+        user_id,
+        room_id,
+        image_url,
+        event_id=str(args.room_chat_event_id or "891"),
+        lang=str(args.room_chat_lang or "en"),
+        area=str(args.room_chat_area or "MENA"),
+        os_name=str(args.room_chat_os or "android"),
+    )
+
+
 def _op_p2p_message(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     from_uid = str(args.p2p_from_uid or "").strip()
     to_uid = str(args.p2p_to_uid or "").strip()
@@ -1395,7 +1495,9 @@ def _op_p2p_message(args: argparse.Namespace, payload: dict[str, Any]) -> None:
         if not isinstance(parsed, dict):
             raise ValueError("--p2p-custom-data-json 必须是 JSON object")
         custom_data = parsed
-    print(f"私聊发消息: {from_uid} -> {to_uid} type={msg_type}", file=sys.stderr)
+    is_greet = 1 if getattr(args, "p2p_greet", False) else 0
+    action = "打招呼" if is_greet else "私聊发消息"
+    print(f"{action}: {from_uid} -> {to_uid} type={msg_type}", file=sys.stderr)
     set_p2p_message_params(
         payload,
         from_uid,
@@ -1414,6 +1516,7 @@ def _op_p2p_message(args: argparse.Namespace, payload: dict[str, Any]) -> None:
         goto_text=args.p2p_goto_text,
         goto_click=args.p2p_goto_click,
         send_mode=args.p2p_send_mode,
+        is_greet=is_greet,
     )
 
 
@@ -1604,6 +1707,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.custom_gift_reset_user_id is not None, _op_custom_gift_reset_expire),
     (lambda a: _custom_gift_rank_delete_mode(a), _op_custom_gift_rank_delete),
     (lambda a: _custom_gift_rank_add_mode(a), _op_custom_gift_rank_active),
+    (lambda a: getattr(a, "user_app_language_user_id", None) is not None, _op_user_app_language_query),
     (lambda a: a.user_prop_query_user_id is not None, _op_user_prop_query),
     (lambda a: a.diamond_query_user_id is not None, _op_diamond_query),
     (lambda a: a.diamond_user_id is not None, _op_diamond),
@@ -1656,11 +1760,24 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.follow_uid is not None or a.follow_remote_uid is not None, _op_user_follow),
     (lambda a: _feed_publish_mode(a), _op_feed_publish),
     (lambda a: _feed_comment_mode(a), _op_feed_comment),
+    (lambda a: _room_channel_emote_mode(a), _op_room_channel_emote),
+    (lambda a: _room_channel_image_mode(a), _op_room_channel_image),
+    (lambda a: _room_channel_message_mode(a), _op_room_channel_message),
     (lambda a: _p2p_message_mode(a), _op_p2p_message),
     (lambda a: _family_add_mode(a), _op_family_exp),
     (lambda a: a.noble_user_id is not None, _op_noble),
     (lambda a: a.vip_user_id is not None, _op_vip),
 ]
+
+
+def _apply_online_service_url(payload: dict[str, Any]) -> None:
+    if os.environ.get("ONLINE_ENV", "").strip().lower() not in ("1", "true", "yes"):
+        return
+    from .online_config import remap_online_service_url
+
+    mapped = remap_online_service_url(str(payload.get("url") or ""))
+    if mapped:
+        payload["url"] = mapped
 
 
 def load_payload(args: argparse.Namespace) -> dict[str, Any]:
@@ -1683,8 +1800,10 @@ def load_payload(args: argparse.Namespace) -> dict[str, Any]:
     for predicate, handler in OPERATIONS:
         if predicate(args):
             handler(args, payload)
+            _apply_online_service_url(payload)
             return payload
 
     _apply_reward_risk_precheck(payload, args)
     _apply_room_expr(payload, args)
+    _apply_online_service_url(payload)
     return payload

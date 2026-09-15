@@ -67,11 +67,16 @@ Page({
       url: baseUrl + '/api/auth/dingtalk-oauth',
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      data: JSON.stringify({ authCode }),
+      data: JSON.stringify({ authCode, bridge: 'miniapp' }),
       dataType: 'json',
       success: (res) => {
         if (res.status === 200 && res.data && res.data.ok) {
-          this.openWebview(baseUrl + '/chat.html');
+          let target = baseUrl + '/chat.html';
+          const sessionToken = (res.data.sessionToken || '').trim();
+          if (sessionToken) {
+            target += '?_session=' + encodeURIComponent(sessionToken);
+          }
+          this.openWebview(target);
           return;
         }
         const err = (res.data && res.data.error) || '登录失败';

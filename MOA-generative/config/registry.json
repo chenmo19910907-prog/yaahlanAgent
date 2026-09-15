@@ -274,7 +274,7 @@
       "id": "moa_generative_nameplate_page",
       "name": "生成式MOA-铭牌页",
       "category": "用户资料（userProfile）",
-      "description": "HTTP /yaahlan/userProfile/nameplatePageData → Tunnel 自动读取（无需人工验收）。返回 unlockedNameplates/lockedNameplates（id/unlockTime/remainTime/wearState）。",
+      "description": "HTTP /yaahlan/userProfile/nameplatePageData → Tunnel 优先，MOA 兜底 userNameplateService.getNameplateInfoList。返回铭牌 id/unlockTime/remainTime/wearState，reward_verify 自动验收。",
       "prompts": [
         "查询用户<userId|userId>铭牌页",
         "13311111112 查 sweet CP 1138 铭牌",

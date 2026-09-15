@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -48,10 +49,10 @@ def _query_admin_family_info(family_id: str) -> dict[str, Any]:
     cmd = [
         "python3",
         str(admin_execute_path()),
-        "--query-family",
-        "--family-id",
-        family_id,
     ]
+    if os.environ.get("ONLINE_ENV", "").strip().lower() in ("1", "true", "yes"):
+        cmd.append("--线上环境")
+    cmd.extend(["--query-family", "--family-id", family_id])
     try:
         proc = subprocess.run(
             cmd,

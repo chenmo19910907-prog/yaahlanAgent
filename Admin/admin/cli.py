@@ -1167,8 +1167,13 @@ def main() -> int:
     if getattr(args, "online_env", False):
         load_online_env(base_dir)
     try:
-        if getattr(args, "online_env", False) and args.query_user_id is None:
-            raise ValueError("线上环境当前仅支持 --query-user-id（须用户提示词含「线上环境」）")
+        if getattr(args, "online_env", False) and not (
+            args.query_user_id is not None
+            or (args.query_family and args.family_id)
+        ):
+            raise ValueError(
+                "线上环境 Admin 当前仅支持 --query-user-id 或 --query-family --family-id（须用户提示词含「线上环境」）"
+            )
         if args.schedule_im_message_types:
             results = schedule_im_message_type_smoke(
                 area=str(args.im_area or "MENA").strip() or "MENA",

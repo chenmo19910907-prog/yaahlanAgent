@@ -10,6 +10,7 @@ from typing import Any
 
 from .config import section_defaults
 from .p2p_custom_presets import build_p2p_custom_preset
+from .room_emote_presets import resolve_room_emote
 
 CUSTOM_GIFT_RANK_PERIODS = frozenset({"NOW", "PRE", "PRE_PRE"})
 
@@ -1284,6 +1285,19 @@ def user_prop_query_defaults() -> dict[str, Any]:
     return section_defaults("user_prop_query", {"appId": 2005, "lang": "en"})
 
 
+def set_user_app_language_params(
+    payload: dict[str, Any],
+    *,
+    user_id: str,
+    lang: str = "en",
+) -> None:
+    user_id = str(user_id).strip()
+    if not user_id:
+        raise ValueError("user_id 不能为空")
+    value = {"userId": user_id, "lang": str(lang or "en")}
+    payload["params"] = [json_param(value)]
+
+
 def set_user_prop_query_params(
     payload: dict[str, Any],
     *,
@@ -1366,6 +1380,144 @@ def set_feed_publish_params(
         body["texts"] = json.dumps([{"text": content, "type": "1"}], ensure_ascii=False)
     payload["url"] = "/service/feed/external/feed-stage"
     payload["method"] = "publishFeed"
+    payload["params"] = [json_param(body)]
+    payload["header"] = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+
+
+def set_room_channel_message_params(
+    payload: dict[str, Any],
+    user_id: str,
+    room_id: str,
+    text: str,
+    *,
+    event_id: str = "816",
+    source: str = "0",
+    lang: str = "en",
+    area: str = "MENA",
+    os_name: str = "android",
+    country: str = "SG",
+) -> None:
+    uid = str(user_id).strip()
+    rid = str(room_id).strip()
+    content = str(text).strip()
+    if not uid:
+        raise ValueError("userId 不能为空")
+    if not rid:
+        raise ValueError("roomId 不能为空")
+    if not content:
+        raise ValueError("公屏文案不能为空")
+    body: dict[str, Any] = {
+        "userId": uid,
+        "roomId": rid,
+        "eventId": str(event_id or "816").strip() or "816",
+        "json": json.dumps({"content": content}, ensure_ascii=False),
+        "source": str(source or "0").strip() or "0",
+        "lang": str(lang or "en").strip() or "en",
+        "area": str(area or "MENA").strip() or "MENA",
+        "appId": "2005",
+        "osType": str(os_name or "android").strip() or "android",
+        "os": str(os_name or "android").strip() or "android",
+        "channelKey": "primary",
+        "country": str(country or "SG").strip() or "SG",
+    }
+    payload["url"] = "/service/yaahlan/room/external/room-im-api"
+    payload["method"] = "sendChannelMessage"
+    payload["params"] = [json_param(body)]
+    payload["header"] = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+
+
+def set_room_channel_emote_params(
+    payload: dict[str, Any],
+    user_id: str,
+    room_id: str,
+    emote: dict[str, Any] | str | None = None,
+    *,
+    emote_name: str | None = None,
+    event_id: str = "1831",
+    source: str = "0",
+    lang: str = "en",
+    area: str = "MENA",
+    os_name: str = "android",
+    country: str = "SG",
+) -> None:
+    uid = str(user_id).strip()
+    rid = str(room_id).strip()
+    if not uid:
+        raise ValueError("userId 不能为空")
+    if not rid:
+        raise ValueError("roomId 不能为空")
+    parsed_emote: dict[str, Any] | None = None
+    if isinstance(emote, str) and emote.strip():
+        parsed = json.loads(emote.strip())
+        if not isinstance(parsed, dict):
+            raise ValueError("emote 必须是 JSON object")
+        parsed_emote = parsed
+    elif isinstance(emote, dict) and emote:
+        parsed_emote = emote
+    preset = str(emote_name or "").strip().lower() or None
+    if parsed_emote and str(parsed_emote.get("url") or "").strip() and str(parsed_emote.get("thumbnail") or "").strip():
+        emote_obj = parsed_emote
+    else:
+        emote_obj = resolve_room_emote(name=preset or (parsed_emote or {}).get("name"), emote=parsed_emote)
+    if not emote_obj:
+        raise ValueError("emote 不能为空")
+    emote_inner = json.dumps(emote_obj, ensure_ascii=False, separators=(",", ":"))
+    body: dict[str, Any] = {
+        "userId": uid,
+        "roomId": rid,
+        "eventId": str(event_id or "1831").strip() or "1831",
+        "json": json.dumps({"emote": emote_inner}, ensure_ascii=False, separators=(",", ":")),
+        "source": str(source or "0").strip() or "0",
+        "lang": str(lang or "en").strip() or "en",
+        "area": str(area or "MENA").strip() or "MENA",
+        "appId": "2005",
+        "osType": str(os_name or "android").strip() or "android",
+        "os": str(os_name or "android").strip() or "android",
+        "channelKey": "primary",
+        "country": str(country or "SG").strip() or "SG",
+    }
+    payload["url"] = "/service/yaahlan/room/external/room-im-api"
+    payload["method"] = "sendChannelMessage"
+    payload["params"] = [json_param(body)]
+    payload["header"] = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+
+
+def set_room_channel_image_params(
+    payload: dict[str, Any],
+    user_id: str,
+    room_id: str,
+    image_url: str,
+    *,
+    event_id: str = "891",
+    lang: str = "en",
+    area: str = "MENA",
+    os_name: str = "android",
+    country: str = "SG",
+) -> None:
+    uid = str(user_id).strip()
+    rid = str(room_id).strip()
+    url = str(image_url).strip()
+    if not uid:
+        raise ValueError("userId 不能为空")
+    if not rid:
+        raise ValueError("roomId 不能为空")
+    if not url:
+        raise ValueError("imageUrl 不能为空")
+    body: dict[str, Any] = {
+        "userId": uid,
+        "roomId": rid,
+        "eventId": str(event_id or "891").strip() or "891",
+        "imageUrl": url,
+        "lang": str(lang or "en").strip() or "en",
+        "area": str(area or "MENA").strip() or "MENA",
+        "appId": "2005",
+        "osType": str(os_name or "android").strip() or "android",
+        "os": str(os_name or "android").strip() or "android",
+        "channelKey": "primary",
+        "country": str(country or "SG").strip() or "SG",
+    }
+    payload["url"] = "/service/yaahlan/room/external/room-im-api"
+    payload["method"] = "roomSendImage"
     payload["params"] = [json_param(body)]
     payload["header"] = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
 
@@ -1458,6 +1610,7 @@ def set_p2p_message_params(
     need_push: bool = True,
     need_save_msg: bool = True,
     add_unread_count: bool = True,
+    is_greet: int = 0,
 ) -> None:
     sender = str(from_uid).strip()
     receiver = str(to_uid).strip()
@@ -1477,7 +1630,7 @@ def set_p2p_message_params(
         "imDataTypeEnum": kind,
         "mustReach": True,
         "imCallBackTag": 0,
-        "extra": {"is_greet": 0},
+        "extra": {"is_greet": int(is_greet)},
         "messageExtraDto": _p2p_message_extra(
             send_mode=send_mode,
             need_push=need_push,
@@ -1545,8 +1698,26 @@ def set_p2p_message_params(
         }
 
     payload["url"] = "/service/voga-base-service-im-stage"
-    payload["method"] = "sendP2PMessageWithNoGreet"
+    payload["method"] = "sendP2PMessage" if int(is_greet) == 1 else "sendP2PMessageWithNoGreet"
     payload["params"] = [json_param(body)]
+
+
+def set_p2p_greeting_message_params(
+    payload: dict[str, Any],
+    from_uid: str,
+    to_uid: str,
+    text: str,
+    **kwargs: Any,
+) -> None:
+    set_p2p_message_params(
+        payload,
+        from_uid,
+        to_uid,
+        "TEXT",
+        text=text,
+        is_greet=1,
+        **kwargs,
+    )
 
 
 def set_p2p_text_message_params(

@@ -174,7 +174,7 @@ def _find_diamond_record(
 
 
 def query_nameplates(user_id: str, *, since: int = 0) -> dict[str, dict[str, Any]]:
-    """铭牌页 nameplatePageData（Tunnel 自动读取，无需人工验收）。"""
+    """铭牌页 nameplatePageData（Tunnel → MOA 自动读取，无需人工验收）。"""
     cmd = [
         "python3",
         "MOA-generative/scripts/form_nameplate_page.py",
@@ -1060,8 +1060,7 @@ def compare_rewards(
             plate = plates.get(rid)
             if plate is None or not plate.get("unlocked"):
                 issues.append(
-                    f"[{idx}] 铭牌 {rid} 未检出（snapshot 含 nameplates 时自动 Tunnel 读取；"
-                    f"无抓包时需 App 打开铭牌页一次）"
+                    f"[{idx}] 铭牌 {rid} 未检出（snapshot 含 nameplates 时自动 Tunnel/MOA 读取）"
                 )
                 continue
             expire_days = reward.get("expireDays")
@@ -1074,6 +1073,28 @@ def compare_rewards(
                     issues.append(
                         f"[{idx}] 铭牌 {rid} 有效期不符 期望{expire_days}天 实测{actual}天"
                     )
+        elif rtype in ("MEDAL", "CP_MEDAL"):
+            medal_name = str(
+                reward.get("medalName") or reward.get("rewardName") or ""
+            ).strip()
+            if not medal_name:
+                issues.append(f"[{idx}] CP 勋章缺 medalName/rewardName")
+                continue
+            bmedals = before.get("cpMedals") if isinstance(before.get("cpMedals"), dict) else {}
+            amedals = after.get("cpMedals") if isinstance(after.get("cpMedals"), dict) else {}
+            if not bmedals and not amedals:
+                issues.append(
+                    f"[{idx}] CP 勋章 {medal_name} 未检出（snapshot 须含 cpMedals，传 --cp-user-id）"
+                )
+                continue
+            before_count = int(bmedals.get(medal_name) or 0)
+            after_count = int(amedals.get(medal_name) or 0)
+            delta = after_count - before_count
+            if delta < count:
+                issues.append(
+                    f"[{idx}] CP 勋章 {medal_name} 数量不足 期望+{count} 实际+{delta} "
+                    f"(before={before_count} after={after_count})"
+                )
         elif rtype == "PROP" and rid:
             ptc = str(reward.get("propTypeCode") or reward.get("propType") or "")
             prop = _find_prop(aprops, rid, ptc or None, props_flat=aprops_flat)
@@ -1267,7 +1288,7 @@ def main() -> int:
     p_snap.add_argument(
         "--include-nameplates",
         action="store_true",
-        help="纳入铭牌（Tunnel 自动读取 nameplatePageData；CP 场景传 --cp-user-id 时默认开启）",
+        help="纳入铭牌（Tunnel → MOA 自动读取；CP 场景传 --cp-user-id 时默认开启）",
     )
     p_snap.add_argument(
         "--nameplate-tunnel-since",

@@ -1812,6 +1812,55 @@
         "宝藏猎人活动结束发榜奖励"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/宝藏猎人-下发榜单奖励.json"
+    },
+    {
+      "id": "room_send_channel_message",
+      "name": "房间-发送公屏消息",
+      "category": "房间（yaahlan/room/external/room-im-api）",
+      "description": "HTTP /yaahlan/chat/setting/query/relation/sendChannelMessage → MOA sendChannelMessage（eventId=816 文本公屏）。body 需 userId、roomId、json.content、source=0。发送账号须在目标房间内。Tunnel 100465989 roomId=38826842（2026-09-15）。",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 发公屏 <text>",
+        "房间 <roomId> 公屏消息 userId <userId> <text>",
+        "sendChannelMessage 房间公屏 <roomId> <userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-发送公屏消息.json \\\n  --room-chat-user-id <userId> \\\n  --room-chat-room-id <roomId> \\\n  --room-chat-text <text>\n"
+    },
+    {
+      "id": "room_send_channel_emote",
+      "name": "房间-发送公屏表情",
+      "category": "房间（yaahlan/room/external/room-im-api）",
+      "description": "HTTP sendChannelMessage → MOA sendChannelMessage（eventId=1831 表情公屏）。body 需 userId、roomId、json.emote（含 url/thumbnail 的 stringified emote JSON）、source=0。推荐 --room-chat-emote-name chaoxiao。Tunnel 100465989 roomId=38826842 emote=chaoxiao（2026-09-15）。",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 发公屏表情",
+        "房间 <roomId> 公屏表情 userId <userId>",
+        "sendChannelMessage 房间公屏表情 <roomId> <userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-发送公屏表情.json \\\n  --room-chat-user-id \\\n  <userId> \\\n  --room-chat-room-id \\\n  <roomId> \\\n  --room-chat-emote-name \\\n  chaoxiao\n"
+    },
+    {
+      "id": "room_send_channel_image",
+      "name": "房间-发送公屏图片",
+      "category": "房间（yaahlan/room/external/room-im-api）",
+      "description": "HTTP roomSendImage → MOA roomSendImage（eventId=891 公屏图片）。body 需 userId、roomId、imageUrl。Tunnel 100465989 roomId=38826842（2026-09-15）。",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 发公屏图片",
+        "房间 <roomId> 公屏图片 userId <userId>",
+        "roomSendImage 房间公屏图片 <roomId> <userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-发送公屏图片.json \\\n  --room-chat-user-id \\\n  <userId> \\\n  --room-chat-room-id \\\n  <roomId> \\\n  --room-chat-image-url \\\n  <url>\n"
+    },
+    {
+      "id": "batch_room_channel_messages",
+      "name": "房间-批量发送公屏消息",
+      "category": "房间（yaahlan/room/external/room-im-api）",
+      "description": "指定 userId 在自己房间（或指定 roomId）批量随机发送公屏文字/表情/图片。文字内容为序号编号；≥3 条时内置 Web Agent 批量进度 N/M 上报。",
+      "prompts": [
+        "<userId> 在自己房间发送 <count> 条公屏消息",
+        "批量公屏消息 userId <userId> count=<count>",
+        "房间公屏随机发文字表情图片 <userId> <count> 条",
+        "100465989在自己房间发送1000条公屏消息"
+      ],
+      "command": "python3 MOA/scripts/batch_room_channel_messages.py \\\n  --user-id <userId> \\\n  --count <count>\n"
     }
   ]
 }

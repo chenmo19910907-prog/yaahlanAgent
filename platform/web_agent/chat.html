@@ -4984,6 +4984,7 @@
 
   <script src="https://g.alicdn.com/dingding/dingtalk-jsapi/3.0.25/dingtalk.open.js"></script>
   <script src="dingtalk_oauth.js"></script>
+  <script src="miniapp_session.js"></script>
   <script src="analytics.js"></script>
   <script src="bookmarks_panel.js"></script>
   <script src="message_board_panel.js?v=20260730b"></script>
@@ -13510,6 +13511,9 @@
     });
 
     async function ensureAuthSession() {
+      if (typeof MiniappSession !== 'undefined') {
+        await MiniappSession.bootstrapFromUrl();
+      }
       const authRes = await fetch('/api/auth/status');
       if (!authRes.ok) return null;
       let authData = await authRes.json();

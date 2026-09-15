@@ -27,6 +27,171 @@
       "command": "python3 online/online_execute.py moa --query-user-by-phone <phone>"
     },
     {
+      "id": "online_vip_query_current",
+      "name": "MOA-VIP查询当前等级经验",
+      "category": "MOA 纯查询（overseas）",
+      "description": "线上查询用户 VIP 等级与经验（getVipInfo）",
+      "prompts": [
+        "线上环境查询用户 <userId> VIP等级",
+        "线上环境查 <userId> VIP经验"
+      ],
+      "command": "python3 online/online_execute.py moa --payload-file MOA/templates/VIP-增加经验值.json --vip-user-id <userId> --vip-query-current"
+    },
+    {
+      "id": "online_family_query_members",
+      "name": "MOA-家族查询成员userId",
+      "category": "MOA 纯查询（overseas）",
+      "description": "线上按 familyId 查询全部成员 userId（getFamilyMembers）",
+      "prompts": [
+        "线上环境查询家族 <familyId> 成员",
+        "线上环境家族 <familyId> 成员列表"
+      ],
+      "command": "python3 online/online_execute.py moa --payload-file MOA/templates/家族-查询成员userId.json --family-id <familyId> --family-query-members"
+    },
+    {
+      "id": "online_family_query_joined_by_user",
+      "name": "MOA-按userId查家族id",
+      "category": "MOA 纯查询（overseas）",
+      "description": "线上按 userId 查询所属家族 ID（getUserJoinedFamily）",
+      "prompts": [
+        "线上环境查用户 <userId> 所属家族",
+        "线上环境用户 <userId> 在哪个家族"
+      ],
+      "command": "python3 online/online_execute.py moa --payload-file MOA/templates/家族-按userId查家族id.json --family-query-joined-user-id <userId>"
+    },
+    {
+      "id": "online_family_detail_by_id",
+      "name": "MOA-按familyId查家族详情",
+      "category": "MOA 纯查询（overseas）",
+      "description": "线上组合查询：Admin 家族信息 + MOA 成员 userId 列表",
+      "prompts": [
+        "线上环境查家族 <familyId> 详情",
+        "线上环境家族 <familyId> 详细信息"
+      ],
+      "command": "python3 online/online_execute.py moa --family-id <familyId> --family-detail"
+    },
+    {
+      "id": "online_family_detail_by_user",
+      "name": "MOA-按userId查家族详情",
+      "category": "MOA 纯查询（overseas）",
+      "description": "线上组合查询：MOA 查家族 id → Admin 家族详情 + MOA 成员列表",
+      "prompts": [
+        "线上环境查用户 <userId> 家族详情",
+        "线上环境用户 <userId> 的家族和成员"
+      ],
+      "command": "python3 online/online_execute.py moa --family-detail-by-user-id <userId>"
+    },
+    {
+      "id": "online_id_auth_query",
+      "name": "MOA-实名认证查询记录",
+      "category": "MOA 纯查询（overseas）",
+      "description": "线上查询用户实名认证记录（queryRealPersonRecord）",
+      "prompts": [
+        "线上环境查用户 <userId> 实名认证",
+        "线上环境查询 <userId> 认证结果"
+      ],
+      "command": "python3 online/online_execute.py moa --payload-file MOA/templates/实名认证-查询认证记录.json --id-auth-user-id <userId>"
+    },
+    {
+      "id": "online_ip_find",
+      "name": "MOA-IP查询归属地",
+      "category": "MOA 纯查询（overseas）",
+      "description": "线上根据 IP 查询归属地（findIp）",
+      "prompts": [
+        "线上环境查 IP <ip> 归属地",
+        "线上环境 IP归属地 <ip>"
+      ],
+      "command": "python3 online/online_execute.py moa --payload-file MOA/templates/IP-查询归属地.json --find-ip <ip>"
+    },
+    {
+      "id": "online_user_reg_time_query",
+      "name": "MOA-查询注册时间",
+      "category": "MOA 纯查询（overseas）",
+      "description": "线上查询用户注册时间（getUserRegTime）",
+      "prompts": [
+        "线上环境查用户 <userId> 注册时间",
+        "线上环境 <userId> 注册日期"
+      ],
+      "command": "python3 online/online_execute.py moa --payload-file MOA/templates/用户-查询注册时间.json --user-reg-time-user-id <userId>"
+    },
+    {
+      "id": "online_charm_query_current",
+      "name": "MOA-魅力查询等级",
+      "category": "MOA 纯查询（overseas）",
+      "description": "线上查询用户魅力等级与魅力值（getCharmInfoNoAvatar）",
+      "prompts": [
+        "线上环境查用户 <userId> 魅力等级",
+        "线上环境 <userId> 魅力值"
+      ],
+      "command": "python3 online/online_execute.py moa --payload-file MOA/templates/魅力-查询等级.json --charm-query-user-id <userId>"
+    },
+    {
+      "id": "online_wealth_query_current",
+      "name": "MOA-财富查询等级",
+      "category": "MOA 纯查询（overseas）",
+      "description": "线上查询用户财富等级与财富值（getWealthInfoNoAvatar）",
+      "prompts": [
+        "线上环境查用户 <userId> 财富等级",
+        "线上环境 <userId> 财富值"
+      ],
+      "command": "python3 online/online_execute.py moa --payload-file MOA/templates/财富-查询等级.json --wealth-query-user-id <userId>"
+    },
+    {
+      "id": "online_diamond_query_account",
+      "name": "MOA-钻石查询余额",
+      "category": "MOA 纯查询（overseas）",
+      "description": "线上查询用户钻石余额（queryUserAccount）",
+      "prompts": [
+        "线上环境查用户 <userId> 钻石余额",
+        "线上环境 <userId> 有多少钻"
+      ],
+      "command": "python3 online/online_execute.py moa --payload-file MOA/templates/钻石-查询余额.json --diamond-query-user-id <userId>"
+    },
+    {
+      "id": "online_user_active_days_query",
+      "name": "MOA-查询登录天数",
+      "category": "MOA 纯查询（overseas）",
+      "description": "线上查询用户在日期区间内的活跃/登录天数（calcUserActiveDays；模板内默认 start/end，可用 --expr 覆盖 userId）",
+      "prompts": [
+        "线上环境查用户 <userId> 登录天数",
+        "线上环境 <userId> 活跃天数"
+      ],
+      "command": "python3 online/online_execute.py moa --payload-file MOA/templates/查询用户登录天数.json --expr <userId>"
+    },
+    {
+      "id": "online_user_app_language_query",
+      "name": "MOA-查看app语言",
+      "category": "MOA 纯查询（overseas）",
+      "description": "线上查询用户 app 语言/版本信息（getUserVersionInfo）",
+      "prompts": [
+        "线上环境查用户 <userId> app语言",
+        "线上环境 <userId> 语言设置"
+      ],
+      "command": "python3 online/online_execute.py moa --payload-file MOA/templates/查看用户app语言.json --user-app-language-user-id <userId>"
+    },
+    {
+      "id": "online_user_prop_query_own",
+      "name": "MOA-查询用户拥有装扮",
+      "category": "MOA 纯查询（overseas）",
+      "description": "线上查询用户指定 propTypeCode 的已拥有装扮（queryOwnPropList）",
+      "prompts": [
+        "线上环境查用户 <userId> 装扮 <propTypeCode>",
+        "线上环境 <userId> 资料页背景装扮"
+      ],
+      "command": "python3 online/online_execute.py moa --payload-file MOA/templates/装扮-查询用户拥有道具.json --user-prop-query-user-id <userId> --user-prop-type-code <propTypeCode>"
+    },
+    {
+      "id": "online_user_query_joined_trade_union",
+      "name": "MOA-查所属公会",
+      "category": "MOA 纯查询（overseas）",
+      "description": "线上查询用户当前所属公会（userJoinedTrade）",
+      "prompts": [
+        "线上环境查用户 <userId> 所属公会",
+        "线上环境 <userId> 在哪个公会"
+      ],
+      "command": "python3 online/online_execute.py moa --payload-file MOA/templates/用户-查所属公会.json --expr <userId>"
+    },
+    {
       "id": "tunnel_list_requests",
       "name": "Tunnel-查询用户请求列表",
       "category": "Tunnel 抓包",

@@ -21,7 +21,7 @@
       "label": "期望奖励配置",
       "type": "string",
       "required": true,
-      "prompt": "含 rewards[]：DIAMOND/GIFT/PROP/NAMEPLATE；GIFT 验数量与 expire；PROP 验 expireDays"
+      "prompt": "含 rewards[]：DIAMOND/GIFT/PROP/NAMEPLATE/MEDAL；GIFT 验数量与 expire；PROP 验 expireDays；MEDAL 验 cpMedals 个数增量"
     }
   },
   "steps": [

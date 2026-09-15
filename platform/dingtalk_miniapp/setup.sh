@@ -7,8 +7,34 @@ REPO_ROOT="$(cd "$DIR/../.." && pwd)"
 ENV_LOCAL="$REPO_ROOT/platform/dingtalk_gateway/.env.local"
 PY="$REPO_ROOT/platform/dingtalk_gateway/.venv/bin/python3"
 PORT=18766
+USE_TUNNEL=0
+
+usage() {
+  cat <<EOF
+用法: $(basename "$0") [--tunnel]
+
+  --tunnel   启动 Cloudflare 公网隧道并写入 HTTPS 地址（手机 4G / 真机预览推荐）
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --tunnel) USE_TUNNEL=1; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "未知参数: $1"; usage; exit 1 ;;
+  esac
+done
 
 pick_url() {
+  if [[ "$USE_TUNNEL" == "1" ]]; then
+    echo "==> 启动公网隧道（Cloudflare）…" >&2
+    "$PY" "$REPO_ROOT/platform/web_agent/expose_public.py" --no-wait >&2
+    if [[ -f "$REPO_ROOT/platform/web_agent/data/public_url.txt" ]]; then
+      cat "$REPO_ROOT/platform/web_agent/data/public_url.txt"
+      return 0
+    fi
+    echo "⚠️  隧道 URL 未写入 public_url.txt，回退局域网地址" >&2
+  fi
   if [[ -f "$REPO_ROOT/platform/web_agent/data/public_url.txt" ]]; then
     cat "$REPO_ROOT/platform/web_agent/data/public_url.txt"
     return 0
@@ -40,15 +66,18 @@ echo "    OK http://127.0.0.1:${PORT}/"
 echo "==> 2/4 检查钉钉 OAuth 凭证"
 CLIENT_ID="$(read_env DINGTALK_CLIENT_ID)"
 CORP_ID="$(read_env DINGTALK_CORP_ID)"
-if [[ -z "$CLIENT_ID" ]]; then
-  echo "    ⚠️  DINGTALK_CLIENT_ID 为空"
+OAUTH_FLAG="$(read_env WEB_AGENT_DINGTALK_OAUTH)"
+if [[ -z "$CLIENT_ID" || -z "$CORP_ID" ]]; then
+  echo "    ⚠️  DINGTALK_CLIENT_ID / DINGTALK_CORP_ID 未完整配置"
   echo "    请打开 钉钉开放平台 → Yaahlan智能工具 → 凭证与基础信息"
   echo "    填入 platform/dingtalk_gateway/.env.local："
   echo "      DINGTALK_CLIENT_ID=dingxxxx"
   echo "      DINGTALK_CLIENT_SECRET=xxxx"
+  echo "      DINGTALK_CORP_ID=dingxxxx"
+  echo "      WEB_AGENT_DINGTALK_OAUTH=1"
   echo "    免登暂不可用，小程序会降级到 OTP 登录页。"
 else
-  echo "    OK ClientId 已配置"
+  echo "    OK ClientId / CorpId 已配置 (OAuth=${OAUTH_FLAG:-1})"
 fi
 
 echo "==> 3/4 写入小程序 config.json"
@@ -64,6 +93,7 @@ echo "    corpId = ${CORP_ID:-（空）}"
 
 echo "==> 4/4 开放平台待办（需人工）"
 HOST="$(python3 -c "from urllib.parse import urlparse; u=urlparse('${BASE_URL}'); print(u.hostname or '')")"
+SCHEME="$(python3 -c "from urllib.parse import urlparse; u=urlparse('${BASE_URL}'); print(u.scheme or 'http')")"
 cat <<EOF
 
 请在 https://open-dev.dingtalk.com/ 小程序应用里配置：
@@ -71,11 +101,14 @@ cat <<EOF
   - Webview 可信域名：${HOST}
   - 用钉钉开发者工具导入：${DIR}
 
-若手机 4G 访问，请另开 tunnel：
-  python3 platform/web_agent/expose_public.py
-  然后把 config.json 的 webAgentBaseUrl 改成 HTTPS 公网地址。
+EOF
+if [[ "$SCHEME" != "https" ]]; then
+  cat <<EOF
+⚠️  当前为 HTTP 局域网地址，真机预览 / 4G 可能无法访问。
+   请重新运行：bash platform/dingtalk_miniapp/setup.sh --tunnel
 
 EOF
+fi
 
 if [[ -d "/Applications/钉钉开发者工具.app" ]]; then
   open -a "钉钉开发者工具" "$DIR" || true

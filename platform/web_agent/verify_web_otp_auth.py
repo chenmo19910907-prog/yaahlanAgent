@@ -35,6 +35,8 @@ class WebOtpAuthTest(unittest.TestCase):
         self.assertTrue(is_public_auth_path("/login.html"))
         self.assertTrue(is_public_auth_path("/theme.js"))
         self.assertTrue(is_public_auth_path("/dingtalk_oauth.js"))
+        self.assertTrue(is_public_auth_path("/miniapp_session.js"))
+        self.assertTrue(is_public_auth_path("/api/auth/miniapp-bridge"))
         self.assertTrue(is_public_auth_path("/assets/dingtalk-group-qr.png"))
         self.assertTrue(is_public_auth_path("/api/auth/status"))
         self.assertFalse(is_public_auth_path("/chat.html"))

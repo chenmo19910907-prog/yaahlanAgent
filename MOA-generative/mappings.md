@@ -33,7 +33,9 @@
 | 2026-07-17 | `/yaahlan/feed-comment/publishComment` | `/service/feed/external/feed-comment-stage` | `publishComment` | body：`userId`/`uid`、`feedId`、`content`、`source`（discover）；返回 `commentId`；100 账号批量评论已验证 |
 | 2026-08-19 | `/yaahlan/feed/publishFeed` | `/service/feed/external/feed-stage` | `publishFeed` | body：`userId`、`texts`（JSON 字符串 `[{"text":"...","type":"1"}]`）、`scope`（空=公开 / `FRIEND`=仅好友）、`source`；转发动态加 `originalFeedId`；Tunnel 100366772/100437483 抓包已验证 |
 | 2026-07-27 | `/yaahlan/components/wallet/diamondHistory` | `/service/yaahlan/components/wallet-api` | `diamondHistory` | 钱包钻石记录页；Tunnel `100007541` `_id=QuvEop8Bpk1mjMPP3A5W`；`data.list[]` 含 `desc`/`rechargeMethod`/`diamondDiff`/`createTime`/`balance` |
-| 2026-07-27 | `/yaahlan/userProfile/nameplatePageData` | （Tunnel 抓包；gw-api 需 SESSIONID） | — | 铭牌页；Tunnel `100486375` `_id=rBgAo58Bpk1mjMPP_JqB`；`data.unlockedNameplates[]`/`lockedNameplates[]`（`id`/`unlockTime`/`remainTime`/`wearState`）；CP 宝箱 sweet CP **1138** |
+| 2026-09-15 | `/yaahlan/chat/setting/query/relation/sendChannelMessage` | `/service/yaahlan/room/external/room-im-api` | `sendChannelMessage` | body：`userId`、`roomId`、`eventId=816`（文本公屏）、`json.content`、`source=0`；普通聊聊/公屏文本；Tunnel `100465989` `_id=pMZtpKAB0MxPP6PXoRmu` roomId=38826842（2026-09-15）；MOA 实测 ec=200 |
+| 2026-09-14 | `/yaahlan/userProfile/nameplatePageData` | `/service/voga-mts-user-backdoor` | `execute` | MOA 兜底：`userNameplateService.getNameplateInfoList(userId)`；返回已解锁铭牌（`id`/`unlockTime`/`remainTime`/`wearState`）；CP 宝箱 **1139** |
+| 2026-07-27 | `/yaahlan/userProfile/nameplatePageData` | （Tunnel 抓包；gw-api 需 SESSIONID） | — | 铭牌页 HTTP；优先 Tunnel `nameplatePageData`；`data.unlockedNameplates[]`/`lockedNameplates[]` |
 | 2026-07-28 | `/yaahlan/trick/cpLoveChest/getCpLoveChestHomepage` | `/service/yaahlan-trick/external/cp-love-chest` | `getCpLoveChestHomepage` | params=`userId`,`cpUserId`；读 `data.currentLoveValue`（15天周期爱意值）；**不是** cp-moa loveValue |
 | 2026-07-28 | （MOA 后门） | `/service/yaahlan/user/cp-moa` | `addCpLoveValue` | params=`userId`,`remoteId`,`value`(long)；**CP 总恩爱值 loveValue**；须已有 CP；**不更新**宝箱 currentLoveValue |
 | 2026-07-28 | （MOA 后门） | `/service/vas/external/cp-stage` | `addCpFerrisWheelValue` | params=`userId1`,`userId2`,`value`(long)；摩天轮活动期周期榜；**不是**宝箱 currentLoveValue |
@@ -70,7 +72,7 @@
 | `/yaahlan/v2/gift/send`（`ext.intimate_invite_gift=1`） | **发起**亲密申请：用 `Gift/gift_execute.py --intimate-invite`，不走生成式 MOA |
 | `/yaahlan/trick/cpLoveChest/getCpLoveChestHomepage` | 打开 CP 爱意宝箱主页；读 `data.currentLoveValue`（15天周期爱意值；**≠** cp-moa loveValue） |
 | `/yaahlan/components/wallet/diamondHistory` | 钱包钻石记录页；读 `data.list[]`（`diamondDiff`/`desc`/`rechargeMethod`/`createTime`） |
-| `/yaahlan/userProfile/nameplatePageData` | 铭牌页；读 `data.unlockedNameplates[]` / `lockedNameplates[]`；**Tunnel 自动读取 + `.tmp/nameplate_cache/` 缓存兜底**（`form_nameplate_page.py`） |
+| `/yaahlan/userProfile/nameplatePageData` | 铭牌页；读 `unlockedNameplates`/`lockedNameplates` 或 MOA `getNameplateInfoList`；**Tunnel → MOA → 缓存**（`form_nameplate_page.py`） |
 | `/yaahlan/user/intimate/intimateHomePage` | 打开 CP 空间页；读 `data.cpMedalTab.list`（CP 勋章列表） |
 
 ## 调用链辅助线索

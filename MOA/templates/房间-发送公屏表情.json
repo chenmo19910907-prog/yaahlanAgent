@@ -1,0 +1,60 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/yaahlan/room/external/room-im-api",
+  "method": "sendChannelMessage",
+  "header": "{\"userId\":\"100465989\",\"roomId\":\"38826842\",\"eventId\":\"1831\",\"json\":\"{\\\"emote\\\":\\\"{\\\\\\\"appVersion\\\\\\\":\\\\\\\"1.0.0\\\\\\\",\\\\\\\"approveStatus\\\\\\\":-1,\\\\\\\"emojiId\\\\\\\":\\\\\\\"\\\\\\\",\\\\\\\"id\\\\\\\":0,\\\\\\\"isAddOne\\\\\\\":false,\\\\\\\"memberLevel\\\\\\\":0,\\\\\\\"name\\\\\\\":\\\\\\\"chaoxiao\\\\\\\",\\\\\\\"tabId\\\\\\\":\\\\\\\"\\\\\\\",\\\\\\\"thumbnail\\\\\\\":\\\\\\\"https://oversea.hellogroupcdn.com/s1/u/baihafdhga/voga-mts-components/5783341A-70C0-4F68-AD43-C26618F8171F20231109_L.jpg\\\\\\\",\\\\\\\"url\\\\\\\":\\\\\\\"https://oversea.hellogroupcdn.com/s1/u/baihafdhga/voga-mts-components/chaoxiao.png\\\\\\\",\\\\\\\"vipLevel\\\\\\\":0,\\\\\\\"webPUrl\\\\\\\":\\\\\\\"https://oversea.hellogroupcdn.com/s1/u/jhhaiicbi/chaoxiao.webp\\\\\\\"}\\\"}\",\"source\":\"0\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"osType\":\"android\",\"os\":\"android\",\"channelKey\":\"primary\",\"country\":\"SG\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100465989\",\"roomId\":\"38826842\",\"eventId\":\"1831\",\"json\":\"{\\\"emote\\\":\\\"{\\\\\\\"appVersion\\\\\\\":\\\\\\\"1.0.0\\\\\\\",\\\\\\\"approveStatus\\\\\\\":-1,\\\\\\\"emojiId\\\\\\\":\\\\\\\"\\\\\\\",\\\\\\\"id\\\\\\\":0,\\\\\\\"isAddOne\\\\\\\":false,\\\\\\\"memberLevel\\\\\\\":0,\\\\\\\"name\\\\\\\":\\\\\\\"chaoxiao\\\\\\\",\\\\\\\"tabId\\\\\\\":\\\\\\\"\\\\\\\",\\\\\\\"thumbnail\\\\\\\":\\\\\\\"https://oversea.hellogroupcdn.com/s1/u/baihafdhga/voga-mts-components/5783341A-70C0-4F68-AD43-C26618F8171F20231109_L.jpg\\\\\\\",\\\\\\\"url\\\\\\\":\\\\\\\"https://oversea.hellogroupcdn.com/s1/u/baihafdhga/voga-mts-components/chaoxiao.png\\\\\\\",\\\\\\\"vipLevel\\\\\\\":0,\\\\\\\"webPUrl\\\\\\\":\\\\\\\"https://oversea.hellogroupcdn.com/s1/u/jhhaiicbi/chaoxiao.webp\\\\\\\"}\\\"}\",\"source\":\"0\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"osType\":\"android\",\"os\":\"android\",\"channelKey\":\"primary\",\"country\":\"SG\"}",
+      "type": "json",
+      "value": {
+        "userId": "100465989",
+        "roomId": "38826842",
+        "eventId": "1831",
+        "json": "{\"emote\":\"{\\\"appVersion\\\":\\\"1.0.0\\\",\\\"approveStatus\\\":-1,\\\"emojiId\\\":\\\"\\\",\\\"id\\\":0,\\\"isAddOne\\\":false,\\\"memberLevel\\\":0,\\\"name\\\":\\\"chaoxiao\\\",\\\"tabId\\\":\\\"\\\",\\\"thumbnail\\\":\\\"https://oversea.hellogroupcdn.com/s1/u/baihafdhga/voga-mts-components/5783341A-70C0-4F68-AD43-C26618F8171F20231109_L.jpg\\\",\\\"url\\\":\\\"https://oversea.hellogroupcdn.com/s1/u/baihafdhga/voga-mts-components/chaoxiao.png\\\",\\\"vipLevel\\\":0,\\\"webPUrl\\\":\\\"https://oversea.hellogroupcdn.com/s1/u/jhhaiicbi/chaoxiao.webp\\\"}\"}",
+        "source": "0",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "osType": "android",
+        "os": "android",
+        "channelKey": "primary",
+        "country": "SG"
+      }
+    }
+  ],
+  "settings": {
+    "time": "15000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_meta": {
+    "httpPath": "/yaahlan/chat/setting/query/relation/sendChannelMessage",
+    "eventId": "1831",
+    "tunnelRef": "100465989 _id=8bFwpKABpk1mjMPPqPbq（2026-09-15 17:40:41）",
+    "note": "公屏表情/emoji；eventId=1831；json.emote 为 stringified emote 对象（含 name/url/thumbnail 等）。发送账号须在目标房间内。"
+  },
+  "_registry": {
+    "id": "room_send_channel_emote",
+    "name": "房间-发送公屏表情",
+    "category": "房间（yaahlan/room/external/room-im-api）",
+    "description": "HTTP sendChannelMessage → MOA sendChannelMessage（eventId=1831 表情公屏）。body 需 userId、roomId、json.emote（stringified emote JSON）、source=0。Tunnel 100465989 roomId=38826842 emote=chaoxiao（2026-09-15）。",
+    "prompts": [
+      "用户 <userId> 在房间 <roomId> 发公屏表情",
+      "房间 <roomId> 公屏表情 userId <userId>",
+      "sendChannelMessage 房间公屏表情 <roomId> <userId>"
+    ],
+    "cli": "--room-chat-user-id <userId> --room-chat-room-id <roomId> --room-chat-emote-name <name>"
+  }
+}

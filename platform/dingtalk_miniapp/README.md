@@ -61,10 +61,25 @@
 ## 登录流程
 
 1. 小程序首页 `dd.getAuthCode` 取免登码
-2. `dd.httpRequest` → `POST /api/auth/dingtalk-oauth`（与 H5 相同接口）
-3. 成功后 `web-view` 打开 `{baseUrl}/chat.html`
+2. `dd.httpRequest` → `POST /api/auth/dingtalk-oauth`（body 含 `bridge: "miniapp"`）
+3. 服务端返回 `sessionToken`；`web-view` 打开 `{baseUrl}/chat.html?_session=…`
+4. H5 内 `miniapp_session.js` 调用 `POST /api/auth/miniapp-bridge` 写入 Cookie
+
+> 小程序 `dd.httpRequest` 与 `web-view` **不共享 Cookie**，须通过 `_session` 参数桥接。
 
 若免登失败，web-view 会降级打开 `/login.html`（OTP 验证码登录）。
+
+## 一键联调
+
+```bash
+# 局域网（同 WiFi 真机调试）
+bash platform/dingtalk_miniapp/setup.sh
+
+# 公网 HTTPS（4G / 外网真机预览，推荐）
+bash platform/dingtalk_miniapp/setup.sh --tunnel
+```
+
+脚本会：启动 Web Agent → 写 `config.json` → 提示开放平台域名配置 → 尝试打开钉钉开发者工具。
 
 ## 与 H5 微应用的区别
 

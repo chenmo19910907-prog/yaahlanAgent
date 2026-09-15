@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""查询用户铭牌页（nameplatePageData）：Tunnel 自动读取，无需人工验收。
+"""查询用户铭牌页（nameplatePageData）：Tunnel → MOA 兜底，无需人工验收。
 
 HTTP：/yaahlan/userProfile/nameplatePageData
-数据源：Tunnel 抓包库（Agent 自动查询；不要求测试员人工读数/核对）。
-说明：gw-api 直连需 SESSIONID；MOA ServiceUrl 待确认。抓包可由 App 打开铭牌页产生一次，后续验收自动读 Tunnel。
+数据源优先级：Tunnel 抓包 → MOA 后门 userNameplateService.getNameplateInfoList → 本地缓存。
+说明：gw-api 直连需 SESSIONID；公开 MOA RPC 未暴露 nameplatePageData，走 voga-mts-user-backdoor execute。
 """
 
 from __future__ import annotations
@@ -28,6 +28,10 @@ _TUNNEL_KEYWORD = "userProfile/nameplatePageData"
 _TEMPLATE_BODY = load_body_template("templates/example-nameplatePageData.body.json")
 _CACHE_DIR = _REPO / ".tmp" / "nameplate_cache"
 _DEFAULT_SINCE_TIERS = (7200, 86400, 604800)
+_MOABACKDOOR_URL = "/service/voga-mts-user-backdoor"
+_MOABACKDOOR_METHOD = "execute"
+_MOABACKDOOR_BEAN = "userNameplateService"
+_MOABACKDOOR_LIST_METHOD = "getNameplateInfoList"
 
 
 def _safe_json_loads(raw: str) -> dict[str, Any]:
@@ -63,6 +67,19 @@ def _normalize_nameplate(item: dict[str, Any], *, unlocked: bool) -> dict[str, A
         "count": item.get("count"),
         "unlocked": unlocked,
         "url": item.get("url"),
+    }
+
+
+def _summarize_moa_list(items: list[Any]) -> dict[str, Any]:
+    unlocked = [item for item in items if isinstance(item, dict) and item.get("id") is not None]
+    by_id: dict[str, dict[str, Any]] = {}
+    for item in unlocked:
+        by_id[str(item["id"])] = _normalize_nameplate(item, unlocked=True)
+    return {
+        "unlockedCount": len(unlocked),
+        "lockedCount": 0,
+        "nameplates": by_id,
+        "unlockedIds": [str(x.get("id")) for x in unlocked],
     }
 
 
@@ -145,6 +162,105 @@ def _read_cache(user_id: str) -> dict[str, Any] | None:
     }
 
 
+def _build_moa_backdoor_payload(user_id: str) -> dict[str, Any]:
+    script = (
+        f'context.getBean("{_MOABACKDOOR_BEAN}").{_MOABACKDOOR_LIST_METHOD}("{user_id}")'
+    )
+    return {
+        "type": "moa",
+        "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+        "url": _MOABACKDOOR_URL,
+        "method": _MOABACKDOOR_METHOD,
+        "header": "",
+        "params": [
+            {
+                "title": "参数1",
+                "name": "1",
+                "txt": script,
+                "json": "",
+                "type": "string",
+                "value": script,
+            }
+        ],
+        "settings": {
+            "time": "8000",
+            "group": "default",
+            "host": "",
+            "headerType": "TXT",
+        },
+        "region": "alpha",
+        "env": "alpha",
+        "cluster": "stage",
+        "server": "config",
+        "momoId": "df4c6f364f9fcae3",
+        "momoName": "e88aa376b29864ad",
+    }
+
+
+def _parse_moa_execute_output(stdout: str) -> Any | None:
+    raw = (stdout or "").strip()
+    if "{" not in raw:
+        return None
+    data = json.loads(raw[raw.find("{") : raw.rfind("}") + 1])
+    outer = data.get("result") if isinstance(data.get("result"), dict) else data
+    if isinstance(outer, dict) and "result" in outer:
+        return outer.get("result")
+    return outer
+
+
+def query_from_moa(user_id: str) -> dict[str, Any]:
+    payload_path = _REPO / ".tmp" / f"nameplate_moa_{user_id}.payload.json"
+    payload_path.parent.mkdir(parents=True, exist_ok=True)
+    payload_path.write_text(
+        json.dumps(_build_moa_backdoor_payload(user_id), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    proc = subprocess.run(
+        [
+            "python3",
+            str(_REPO / "MOA/moa_execute.py"),
+            "--payload-file",
+            str(payload_path),
+        ],
+        cwd=str(_REPO),
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    if proc.returncode != 0:
+        return {
+            "ok": False,
+            "source": "moa",
+            "userId": user_id,
+            "error": (proc.stderr or proc.stdout or "moa_execute 失败")[-500:],
+            "payloadFile": str(payload_path),
+        }
+    inner = _parse_moa_execute_output(proc.stdout)
+    if not isinstance(inner, list):
+        return {
+            "ok": False,
+            "source": "moa",
+            "userId": user_id,
+            "error": "MOA getNameplateInfoList 返回非列表",
+            "payloadFile": str(payload_path),
+            "raw": inner,
+        }
+    summary = _summarize_moa_list(inner)
+    result = {
+        "ok": True,
+        "source": "moa",
+        "userId": user_id,
+        "moaService": _MOABACKDOOR_URL,
+        "moaMethod": f"{_MOABACKDOOR_BEAN}.{_MOABACKDOOR_LIST_METHOD}",
+        "payloadFile": str(payload_path),
+        **summary,
+        "raw": inner,
+    }
+    _write_cache(user_id, result)
+    return result
+
+
 def query_from_tunnel(user_id: str, *, since: int = 7200) -> dict[str, Any]:
     proc = subprocess.run(
         [
@@ -203,7 +319,7 @@ def query_from_tunnel(user_id: str, *, since: int = 7200) -> dict[str, Any]:
 
 
 def query_auto(user_id: str, *, since_tiers: tuple[int, ...] = _DEFAULT_SINCE_TIERS) -> dict[str, Any]:
-    """自动读 Tunnel（逐级扩大回溯窗口）→ 本地缓存兜底，无需人工参与验收。"""
+    """自动读 Tunnel（逐级扩大回溯窗口）→ MOA 兜底 → 本地缓存，无需人工参与验收。"""
     last: dict[str, Any] = {"ok": False, "userId": user_id}
     for since in since_tiers:
         result = query_from_tunnel(user_id, since=since)
@@ -211,27 +327,36 @@ def query_auto(user_id: str, *, since_tiers: tuple[int, ...] = _DEFAULT_SINCE_TI
             result["autoSinceTiers"] = list(since_tiers)
             return result
         last = result
+    moa = query_from_moa(user_id)
+    if moa.get("ok"):
+        moa["autoSinceTiers"] = list(since_tiers)
+        moa["fallback"] = "moa_after_tunnel_miss"
+        return moa
     cached = _read_cache(user_id)
     if cached:
         cached["autoSinceTiers"] = list(since_tiers)
-        cached["fallback"] = "cache_after_tunnel_miss"
+        cached["fallback"] = "cache_after_tunnel_moa_miss"
         return cached
     last["error"] = (
-        f"Tunnel 无 nameplatePageData（已尝试 since={list(since_tiers)}），且无本地缓存。"
-        "需 App 打开铭牌页产生一次抓包（仅需一次），之后验收全自动。"
+        f"Tunnel 无 nameplatePageData（已尝试 since={list(since_tiers)}），"
+        f"且 MOA 查询失败：{moa.get('error') or 'unknown'}"
     )
+    last["moaAttempt"] = moa
     return last
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="查询用户铭牌页（Tunnel 自动读取 nameplatePageData）")
+    parser = argparse.ArgumentParser(description="查询用户铭牌页（Tunnel → MOA 自动读取）")
     parser.add_argument("--user-id", required=True, help="userId")
     parser.add_argument("--since", type=int, default=0, help="Tunnel 回溯秒数；0=自动多级回溯")
+    parser.add_argument("--moa-only", action="store_true", help="跳过 Tunnel，直接 MOA 查询")
     parser.add_argument("--nameplate-id", default="", help="仅输出指定铭牌 id（如 1138）")
     args = parser.parse_args()
 
     user_id = str(args.user_id).strip()
-    if int(args.since) > 0:
+    if args.moa_only:
+        result = query_from_moa(user_id)
+    elif int(args.since) > 0:
         result = query_from_tunnel(user_id, since=int(args.since))
     else:
         result = query_auto(user_id)

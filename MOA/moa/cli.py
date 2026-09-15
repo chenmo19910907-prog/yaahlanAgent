@@ -29,6 +29,7 @@ from .family import (
 from .env import load_local_env, load_online_env
 from .family_join_guard import assert_agent_family_join_not_backdoor
 from .online_config import online_defaults, online_query_login_status
+from .online_query import online_moa_query_requested
 from .flows import (
     build_family_level_upgrade_payload,
     build_room_level_upgrade_payload,
@@ -65,7 +66,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--线上环境",
         dest="online_env",
         action="store_true",
-        help="使用线上 MOA（overseas + .env.online.local）；仅当用户提示词含「线上环境」时由 Agent 调用；当前仅支持 --query-user-by-phone",
+        help="使用线上 MOA（overseas + .env.online.local）；仅当用户提示词含「线上环境」时由 Agent 调用；仅开放 online/config/registry.json 登记的纯查询能力",
     )
     parser.add_argument("--host", help='覆盖 payload.settings.host')
     parser.add_argument("--moa-time", type=int, help='覆盖 payload.settings.time（毫秒）')
@@ -249,6 +250,27 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--feed-publish-area", default="MENA", help="发动态：area（默认 MENA）")
     parser.add_argument("--feed-publish-lang", default="en", help="发动态：lang（默认 en）")
     parser.add_argument("--feed-publish-os", default="android", help="发动态：os（默认 android）")
+    parser.add_argument("--room-chat-user-id", help="房间公屏消息：发送方 userId（sendChannelMessage）")
+    parser.add_argument("--room-chat-room-id", help="房间公屏消息：房间 roomId")
+    parser.add_argument("--room-chat-text", help="房间公屏消息：文本内容")
+    parser.add_argument("--room-chat-image-url", help="房间公屏图片：imageUrl（roomSendImage，eventId 默认 891）")
+    parser.add_argument(
+        "--room-chat-emote-json",
+        help="房间公屏表情：emote JSON object（eventId 默认 1831）",
+    )
+    parser.add_argument(
+        "--room-chat-emote-name",
+        help="房间公屏表情 preset 名（如 chaoxiao；缺 url/thumbnail 时自动补全）",
+    )
+    parser.add_argument(
+        "--room-chat-event-id",
+        default=None,
+        help="房间公屏 eventId（文本默认 816，表情默认 1831）",
+    )
+    parser.add_argument("--room-chat-source", default="0", help="房间公屏消息：source（默认 0）")
+    parser.add_argument("--room-chat-area", default="MENA", help="房间公屏消息：area（默认 MENA）")
+    parser.add_argument("--room-chat-lang", default="en", help="房间公屏消息：lang（默认 en）")
+    parser.add_argument("--room-chat-os", default="android", help="房间公屏消息：os/osType（默认 android）")
     parser.add_argument("--p2p-from-uid", help="私聊发消息：发送方 userId")
     parser.add_argument("--p2p-to-uid", help="私聊发消息：接收方 userId")
     parser.add_argument(
@@ -278,6 +300,11 @@ def build_parser() -> argparse.ArgumentParser:
         default="SEND_SENDER_AND_RECEIVER",
         choices=["SEND_RECEIVER_ONLY", "SEND_SENDER_ONLY", "SEND_SENDER_AND_RECEIVER"],
         help="消息可见范围（默认 SEND_SENDER_AND_RECEIVER，双方可见）",
+    )
+    parser.add_argument(
+        "--p2p-greet",
+        action="store_true",
+        help="发打招呼消息（sendP2PMessage，extra.is_greet=1；默认私聊为 sendP2PMessageWithNoGreet）",
     )
     parser.add_argument(
         "--family-detail",
@@ -483,6 +510,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--id-auth-fix-failure-user-id", help="解决认证失败（清 reason 关联账号）")
 
+    parser.add_argument("--user-app-language-user-id", help="查看用户 app 语言 userId（getUserVersionInfo）")
+    parser.add_argument("--user-app-language-lang", default="en", help="getUserVersionInfo lang（默认 en）")
     parser.add_argument("--user-prop-query-user-id", help="查询用户拥有装扮 userId（queryOwnPropList）")
     parser.add_argument("--user-prop-type-code", help="装扮 propTypeCode，如 10144=资料页背景")
     parser.add_argument("--user-prop-lang", default="en", help="queryOwnPropList lang（默认 en）")
@@ -846,9 +875,12 @@ def _apply_optional_headers(args: argparse.Namespace) -> None:
 
 
 def _apply_online_moa_args(args: argparse.Namespace, base_dir: str) -> None:
-    """线上 MOA：overseas 集群 + .env.online.local；当前仅开放手机号查 userId。"""
-    if args.query_user_by_phone is None:
-        raise ValueError("线上环境 MOA 当前仅支持 --query-user-by-phone（须用户提示词含「线上环境」）")
+    """线上 MOA：overseas 集群 + .env.online.local；仅开放纯查询白名单。"""
+    query_id = online_moa_query_requested(args)
+    if query_id is None:
+        raise ValueError(
+            "线上环境 MOA 当前仅支持纯查询能力（见 online/config/registry.json MOA 节；须用户提示词含「线上环境」）"
+        )
 
     load_online_env(base_dir)
     os.environ["ONLINE_ENV"] = "1"

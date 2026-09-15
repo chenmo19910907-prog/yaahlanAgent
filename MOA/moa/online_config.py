@@ -55,3 +55,25 @@ def online_query_login_status() -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ValueError("online/config.json.moa.query_login_status 必须是 object")
     return value
+
+
+def online_service_url_map() -> dict[str, str]:
+    cfg = load_online_config()
+    raw = cfg.get("service_url_map", {})
+    if not isinstance(raw, dict):
+        raise ValueError("online/config.json.moa.service_url_map 必须是 object")
+    out: dict[str, str] = {}
+    for key, value in raw.items():
+        src = str(key).strip()
+        dst = str(value).strip()
+        if src and dst:
+            out[src] = dst
+    return out
+
+
+def remap_online_service_url(url: str) -> str:
+    """测试环境 ServiceUrl → 线上 overseas 可路由地址（见 online/config.json）。"""
+    src = str(url or "").strip()
+    if not src:
+        return src
+    return online_service_url_map().get(src, src)
