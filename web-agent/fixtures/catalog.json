@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-09-10 11:53:47 北京时间",
-  "total_items": 302,
+  "generated_at": "2026-09-15 19:02:34 北京时间",
+  "total_items": 321,
   "module_count": 29,
   "modules": [
     {
@@ -517,7 +517,7 @@
     {
       "id": "房间",
       "label": "房间",
-      "item_count": 30,
+      "item_count": 34,
       "categories": [
         {
           "name": "全服榜单（room/external/room-admin-handle）",
@@ -882,6 +882,51 @@
                 "房间 <roomId> 对外发言飘屏 userId <userId> Lv<unlockLevel>",
                 "roomSendBarrage <roomId> <userId>",
                 "对外飘屏 <roomId> <userId> unlockLevel <unlockLevel>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            },
+            {
+              "name": "房间-发送公屏图片",
+              "prompts": [
+                "用户 <userId> 在房间 <roomId> 发公屏图片",
+                "房间 <roomId> 公屏图片 userId <userId>",
+                "roomSendImage 房间公屏图片 <roomId> <userId>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            },
+            {
+              "name": "房间-发送公屏消息",
+              "prompts": [
+                "用户 <userId> 在房间 <roomId> 发公屏 <text>",
+                "房间 <roomId> 公屏消息 userId <userId> <text>",
+                "sendChannelMessage 房间公屏 <roomId> <userId>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            },
+            {
+              "name": "房间-发送公屏表情",
+              "prompts": [
+                "用户 <userId> 在房间 <roomId> 发公屏表情",
+                "房间 <roomId> 公屏表情 userId <userId>",
+                "sendChannelMessage 房间公屏表情 <roomId> <userId>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            },
+            {
+              "name": "房间-批量发送公屏消息",
+              "prompts": [
+                "<userId> 在自己房间发送 <count> 条公屏消息",
+                "批量公屏消息 userId <userId> count=<count>",
+                "房间公屏随机发文字表情图片 <userId> <count> 条",
+                "100465989在自己房间发送1000条公屏消息"
               ],
               "source": "MOA",
               "source_id": "moa",
@@ -3251,7 +3296,7 @@
     {
       "id": "线上环境",
       "label": "线上环境",
-      "item_count": 6,
+      "item_count": 21,
       "categories": [
         {
           "name": "Admin（yaahlan-admin）",
@@ -3262,6 +3307,161 @@
                 "线上环境查询用户 <userId> 详情",
                 "线上环境查 userId <userId> 的资料",
                 "线上环境用户 <userId> 是否在线"
+              ],
+              "source": "线上环境能力",
+              "source_id": "online",
+              "env": "online"
+            }
+          ]
+        },
+        {
+          "name": "MOA 纯查询（overseas）",
+          "items": [
+            {
+              "name": "MOA-IP查询归属地",
+              "prompts": [
+                "线上环境查 IP <ip> 归属地",
+                "线上环境 IP归属地 <ip>"
+              ],
+              "source": "线上环境能力",
+              "source_id": "online",
+              "env": "online"
+            },
+            {
+              "name": "MOA-VIP查询当前等级经验",
+              "prompts": [
+                "线上环境查询用户 <userId> VIP等级",
+                "线上环境查 <userId> VIP经验"
+              ],
+              "source": "线上环境能力",
+              "source_id": "online",
+              "env": "online"
+            },
+            {
+              "name": "MOA-实名认证查询记录",
+              "prompts": [
+                "线上环境查用户 <userId> 实名认证",
+                "线上环境查询 <userId> 认证结果"
+              ],
+              "source": "线上环境能力",
+              "source_id": "online",
+              "env": "online"
+            },
+            {
+              "name": "MOA-家族查询成员userId",
+              "prompts": [
+                "线上环境查询家族 <familyId> 成员",
+                "线上环境家族 <familyId> 成员列表"
+              ],
+              "source": "线上环境能力",
+              "source_id": "online",
+              "env": "online"
+            },
+            {
+              "name": "MOA-按familyId查家族详情",
+              "prompts": [
+                "线上环境查家族 <familyId> 详情",
+                "线上环境家族 <familyId> 详细信息"
+              ],
+              "source": "线上环境能力",
+              "source_id": "online",
+              "env": "online"
+            },
+            {
+              "name": "MOA-按userId查家族id",
+              "prompts": [
+                "线上环境查用户 <userId> 所属家族",
+                "线上环境用户 <userId> 在哪个家族"
+              ],
+              "source": "线上环境能力",
+              "source_id": "online",
+              "env": "online"
+            },
+            {
+              "name": "MOA-按userId查家族详情",
+              "prompts": [
+                "线上环境查用户 <userId> 家族详情",
+                "线上环境用户 <userId> 的家族和成员"
+              ],
+              "source": "线上环境能力",
+              "source_id": "online",
+              "env": "online"
+            },
+            {
+              "name": "MOA-查所属公会",
+              "prompts": [
+                "线上环境查用户 <userId> 所属公会",
+                "线上环境 <userId> 在哪个公会"
+              ],
+              "source": "线上环境能力",
+              "source_id": "online",
+              "env": "online"
+            },
+            {
+              "name": "MOA-查看app语言",
+              "prompts": [
+                "线上环境查用户 <userId> app语言",
+                "线上环境 <userId> 语言设置"
+              ],
+              "source": "线上环境能力",
+              "source_id": "online",
+              "env": "online"
+            },
+            {
+              "name": "MOA-查询注册时间",
+              "prompts": [
+                "线上环境查用户 <userId> 注册时间",
+                "线上环境 <userId> 注册日期"
+              ],
+              "source": "线上环境能力",
+              "source_id": "online",
+              "env": "online"
+            },
+            {
+              "name": "MOA-查询用户拥有装扮",
+              "prompts": [
+                "线上环境查用户 <userId> 装扮 <propTypeCode>",
+                "线上环境 <userId> 资料页背景装扮"
+              ],
+              "source": "线上环境能力",
+              "source_id": "online",
+              "env": "online"
+            },
+            {
+              "name": "MOA-查询登录天数",
+              "prompts": [
+                "线上环境查用户 <userId> 登录天数",
+                "线上环境 <userId> 活跃天数"
+              ],
+              "source": "线上环境能力",
+              "source_id": "online",
+              "env": "online"
+            },
+            {
+              "name": "MOA-财富查询等级",
+              "prompts": [
+                "线上环境查用户 <userId> 财富等级",
+                "线上环境 <userId> 财富值"
+              ],
+              "source": "线上环境能力",
+              "source_id": "online",
+              "env": "online"
+            },
+            {
+              "name": "MOA-钻石查询余额",
+              "prompts": [
+                "线上环境查用户 <userId> 钻石余额",
+                "线上环境 <userId> 有多少钻"
+              ],
+              "source": "线上环境能力",
+              "source_id": "online",
+              "env": "online"
+            },
+            {
+              "name": "MOA-魅力查询等级",
+              "prompts": [
+                "线上环境查用户 <userId> 魅力等级",
+                "线上环境 <userId> 魅力值"
               ],
               "source": "线上环境能力",
               "source_id": "online",
