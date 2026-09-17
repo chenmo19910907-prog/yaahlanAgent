@@ -2164,6 +2164,33 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 avatars = {}
             return _json_response(self, {"avatars": avatars})
 
+        m = re.match(r"^/api/dingtalk/avatar-inline/([a-zA-Z0-9._-]{1,64})$", path)
+        if m:
+            staff_id = m.group(1)
+            try:
+                from dingtalk_avatar_cache import (
+                    _ensure_source_avatar_cached,
+                    ensure_inline_avatar_thumbnail,
+                )
+
+                _ensure_source_avatar_cached(staff_id)
+                thumb_path = ensure_inline_avatar_thumbnail(staff_id)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("读取 inline 头像失败 staffId=%s: %s", staff_id[:12], exc)
+                thumb_path = None
+            if thumb_path is None or not thumb_path.is_file():
+                self.send_error(HTTPStatus.NOT_FOUND)
+                return
+            data = thumb_path.read_bytes()
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "image/jpeg")
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "public, max-age=604800, immutable")
+            self.send_header("ETag", f'"{int(thumb_path.stat().st_mtime)}"')
+            self.end_headers()
+            self.wfile.write(data)
+            return
+
         m = re.match(r"^/api/dingtalk/avatar/([a-zA-Z0-9._-]{1,64})$", path)
         if m:
             staff_id = m.group(1)

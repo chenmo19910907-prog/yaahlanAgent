@@ -50,15 +50,44 @@ def quote_text_from_inbound(inbound: InboundMessage | None) -> str | None:
     return text or None
 
 
+def format_at_user_prefix(
+    at_label: str,
+    *,
+    at_user_id: str | None = None,
+    avatar_ref: str | None = None,
+) -> str:
+    """@ 提及行：群 webhook 须写 staffId，客户端解析为蓝色姓名。"""
+    mention = (at_user_id or "").strip() or (at_label or "").strip()
+    if not mention:
+        return ""
+    ref = (avatar_ref or "").strip()
+    if ref:
+        if ref.startswith("<"):
+            return f"{ref} @{mention}\n\n"
+        if ref.startswith("data:"):
+            return f"![]({ref}) @{mention}\n\n"
+        if not ref.startswith(("http://", "https://", "@")):
+            ref = f"@{ref}"
+        return f"![]({ref}) @{mention}\n\n"
+    return f"@{mention}\n\n"
+
+
 def compose_quoted_markdown(
     body: str,
     quote_text: str | None,
     *,
     at_user_id: str | None = None,
+    at_user_name: str | None = None,
+    at_user_avatar_ref: str | None = None,
 ) -> str:
     quote = format_markdown_quote(quote_text) if quote_text else ""
     content = (body or "").strip()
-    prefix = f"@{at_user_id}\n\n" if at_user_id else ""
+    at_label = (at_user_name or "").strip() or (at_user_id or "").strip()
+    prefix = format_at_user_prefix(
+        at_label,
+        at_user_id=at_user_id,
+        avatar_ref=at_user_avatar_ref,
+    )
     if quote and content:
         return f"{prefix}{quote}\n\n---\n\n{content}"
     if quote:
@@ -75,14 +104,27 @@ def reply_quoted(
     *,
     quote_text: str | None = None,
     title: str | None = None,
-) -> None:
-    """以 Markdown 发送回复，正文上方引用用户原提问。"""
-    at_user_id = (incoming.sender_staff_id or "").strip() or None
-    message = _truncate_inline(
-        compose_quoted_markdown(body, quote_text, at_user_id=at_user_id),
-        DINGTALK_REPLY_MAX_CHARS,
-    )
-    if not message.strip():
-        return
+    user_key: str | None = None,
+    recall_label: str = "",
+) -> str | None:
+    """以 Markdown 发送回复，正文上方引用用户原提问。返回 processQueryKey（可撤回）。"""
+    from dingtalk_robot_send import send_bot_markdown_reply
+    from sent_message_store import get_sent_message_store
+
     markdown_title = title or markdown_title_from_quote(quote_text)
-    handler.reply_markdown(markdown_title, message, incoming)
+    process_key = send_bot_markdown_reply(
+        handler,
+        incoming,
+        body,
+        quote_text=quote_text,
+        title=markdown_title,
+    )
+    uk = (user_key or "").strip()
+    if process_key and uk:
+        get_sent_message_store().register(
+            uk,
+            process_key,
+            kind="markdown",
+            label=recall_label or markdown_title,
+        )
+    return process_key

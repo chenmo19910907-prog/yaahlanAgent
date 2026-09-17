@@ -145,6 +145,30 @@
         "dry-run MSE 改参 <configKey>"
       ],
       "command": "python3 MSE/mse_execute.py --namespace voga-common --config-key <configKey> --set <key>=<value> --dry-run"
+    },
+    {
+      "id": "export_family_monster_workbook",
+      "name": "家族怪兽-导出钉钉表",
+      "category": "MSE 服务配置",
+      "description": "从 MSE 读取 activityConfig.FamilyMonster，同步到钉钉「怪兽挑战配置」与/或「怪兽挑战奖池配置」（10 列）",
+      "prompts": [
+        "导出家族怪兽 MSE 配置到钉钉表",
+        "同步 activityConfig.FamilyMonster 到怪兽挑战配置",
+        "家族怪兽奖池配置导出钉钉"
+      ],
+      "command": "platform/dingtalk_gateway/.venv/bin/python3 platform/mcp/mse_export.py --config-key activityConfig.FamilyMonster --export-kind both"
+    },
+    {
+      "id": "publish_family_monster_from_workbook",
+      "name": "家族怪兽-表格改参发布",
+      "category": "MSE 服务配置",
+      "description": "从钉钉「怪兽挑战配置」Sheet 读取 configValue JSON 与基础参数，保存并发布到 stage",
+      "prompts": [
+        "根据钉钉表发布家族怪兽配置",
+        "表格改参发布 activityConfig.FamilyMonster",
+        "从怪兽挑战配置表同步到 MSE 并发布"
+      ],
+      "command": "platform/dingtalk_gateway/.venv/bin/python3 platform/dingtalk_gateway/family_monster_workbook_to_mse.py <workbookUrl> --confirm-publish"
     }
   ]
 }

@@ -25,6 +25,16 @@ from catalog import (  # noqa: E402
     load_catalog,
     search_capabilities,
 )
+from mse_tools import (  # noqa: E402
+    MSE_EXPORT_TO_WORKBOOK_TOOL,
+    MSE_PUBLISH_CONFIG_TOOL,
+    MSE_PUBLISH_FROM_WORKBOOK_TOOL,
+    MSE_SAVE_CONFIG_TOOL,
+    call_mse_export_to_workbook,
+    call_mse_publish_config,
+    call_mse_publish_from_workbook,
+    call_mse_save_config,
+)
 from runner import run_argv, run_module_cli  # noqa: E402
 
 server = Server("platform-tools")
@@ -150,6 +160,10 @@ async def list_tools() -> list[Tool]:
                 "additionalProperties": False,
             },
         ),
+        Tool(**MSE_SAVE_CONFIG_TOOL),
+        Tool(**MSE_PUBLISH_CONFIG_TOOL),
+        Tool(**MSE_EXPORT_TO_WORKBOOK_TOOL),
+        Tool(**MSE_PUBLISH_FROM_WORKBOOK_TOOL),
     ]
 
 
@@ -239,6 +253,22 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
             timeout_sec = int(arguments.get("timeout_sec") or 120)
             result = run_module_cli(module_id, args_raw, timeout_sec=timeout_sec)
             return [_json_text(result)]
+
+        if name == "mse_export_to_workbook":
+            _require_str(arguments, "config_key")
+            return [_json_text(call_mse_export_to_workbook(arguments))]
+
+        if name == "mse_publish_from_workbook":
+            _require_str(arguments, "workbook")
+            return [_json_text(call_mse_publish_from_workbook(arguments))]
+
+        if name == "mse_save_config":
+            _require_str(arguments, "config_key")
+            return [_json_text(call_mse_save_config(arguments))]
+
+        if name == "mse_publish_config":
+            _require_str(arguments, "config_key")
+            return [_json_text(call_mse_publish_config(arguments))]
 
         raise McpError(
             ErrorData(code=INVALID_PARAMS, message=f"未知工具: {name}")

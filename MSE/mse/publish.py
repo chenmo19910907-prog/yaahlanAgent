@@ -92,6 +92,20 @@ def _build_config_info_model(
     }
 
 
+def _session_operator(
+    *,
+    base_url: str,
+    cookie: str,
+    timeout_s: float,
+) -> tuple[str, str]:
+    session = get_session_user(base_url=base_url, cookie=cookie, timeout_s=timeout_s)
+    momo_id = str(session.get("userId") or "")
+    momo_name = str(session.get("userCnName") or session.get("userName") or "")
+    if not momo_id:
+        raise RuntimeError("无法从 MSE session 获取操作人 userId")
+    return momo_id, momo_name
+
+
 def save_config_value(
     *,
     base_url: str,
@@ -114,11 +128,7 @@ def save_config_value(
         config_id=config_id,
         timeout_s=timeout_s,
     )
-    session = get_session_user(base_url=base_url, cookie=cookie, timeout_s=timeout_s)
-    momo_id = str(session.get("userId") or "")
-    momo_name = str(session.get("userCnName") or session.get("userName") or "")
-    if not momo_id:
-        raise RuntimeError("无法从 MSE session 获取操作人 userId")
+    momo_id, momo_name = _session_operator(base_url=base_url, cookie=cookie, timeout_s=timeout_s)
 
     config_info = _build_config_info_model(item, config_value=config_value, momo_id=momo_id, momo_name=momo_name)
     payload = {"configInfoModel": config_info, "advancedCheck": {}, "degradeTimePeriod": None}
@@ -149,18 +159,21 @@ def publish_config_value(
     check_max_attempts: int = 5,
     timeout_s: float = 30.0,
 ) -> int:
+    resolved_app_key = str(app_key or "").strip()
     item = get_config_by_id_and_cluster(
         base_url=base_url,
         cookie=cookie,
         region=region,
         env=env,
         cluster=cluster,
-        app_key=app_key,
+        app_key=resolved_app_key,
         config_id=config_id,
         timeout_s=timeout_s,
     )
+    momo_id, momo_name = _session_operator(base_url=base_url, cookie=cookie, timeout_s=timeout_s)
+    # 与 MSE 控制台一致：发布 json.appKey 用查询侧 appKey（默认 voga-mts-vas），非 config 项自带 appKey
     publish_json = {
-        "appKey": item["appKey"],
+        "appKey": resolved_app_key,
         "nameSpace": item["nameSpace"],
         "configKey": item["configKey"],
         "configValues": {cluster: _cluster_config_entry(item, config_value)},
@@ -173,6 +186,8 @@ def publish_config_value(
         env=env,
         cluster=cluster,
         payload=publish_json,
+        momo_id=momo_id,
+        momo_name=momo_name,
         timeout_s=timeout_s,
     )
 
@@ -184,6 +199,8 @@ def publish_config_value(
             env=env,
             cluster=cluster,
             record_id=record_id,
+            momo_id=momo_id,
+            momo_name=momo_name,
             timeout_s=timeout_s,
         )
     else:
@@ -197,6 +214,8 @@ def publish_config_value(
         cluster=cluster,
         record_id=record_id,
         clear_part={cluster: True},
+        momo_id=momo_id,
+        momo_name=momo_name,
         timeout_s=timeout_s,
     )
 
@@ -209,6 +228,8 @@ def publish_config_value(
                 env=env,
                 cluster=cluster,
                 record_id=record_id,
+                momo_id=momo_id,
+                momo_name=momo_name,
                 timeout_s=timeout_s,
             )
             instances = result.get(cluster) if isinstance(result, dict) else None
@@ -223,6 +244,8 @@ def publish_config_value(
         env=env,
         cluster=cluster,
         record_id=record_id,
+        momo_id=momo_id,
+        momo_name=momo_name,
         timeout_s=timeout_s,
     )
     return record_id

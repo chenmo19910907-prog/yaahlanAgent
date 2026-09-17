@@ -85,6 +85,7 @@ from dingtalk_user_profile import (
     resolve_user_profile,
     should_attach_sender_avatar,
 )
+from env_loader import load_env_local
 from export_delivery import deliver_reply, is_view_all_follow_up
 from inbound_message import InboundMessage
 from log_redact import redact_for_log
@@ -164,6 +165,66 @@ def _reply_final(
             sender_name=sender_name,
             sender_staff_id=sender_staff_id,
         )
+
+
+def _should_recall_progress_card() -> bool:
+    load_env_local()
+    raw = os.environ.get("DINGTALK_AGENT_RECALL_PROGRESS_CARD", "1").strip().lower()
+    return raw not in ("0", "false", "no", "off")
+
+
+def _deliver_streaming_agent_result(
+    handler: Any,
+    incoming: dingtalk_stream.ChatbotMessage,
+    inbound: InboundMessage | None,
+    message: str,
+    *,
+    prompt: str,
+    stream_card: Any | None,
+    started: float,
+    task_kind: str,
+    user_key: str,
+    sender_name: str,
+    sender_staff_id: str,
+    reply_mode: str | None,
+) -> None:
+    """流式任务完成：先发送结果，再撤回进度卡（不展示「执行完成」卡片）。"""
+    elapsed = time.monotonic() - started
+    body = message
+    if should_append_duration_footer(reply_mode):
+        body = append_duration_footer(
+            message,
+            elapsed,
+            task_kind=task_kind,
+            prompt=prompt or None,
+        )
+    body = truncate_for_dingtalk(body)
+
+    _reply_final(
+        handler,
+        incoming,
+        inbound,
+        body,
+        started=started,
+        task_kind=task_kind,
+        quote=True,
+        user_key=user_key,
+        user_prompt=prompt,
+        sender_name=sender_name,
+        sender_staff_id=sender_staff_id,
+        reply_mode=None,
+    )
+
+    if stream_card is not None:
+        recalled = False
+        if (
+            _should_recall_progress_card()
+            and (getattr(stream_card, "_process_query_key", "") or "").strip()
+        ):
+            recalled = stream_card.recall_progress_card(handler, incoming)
+            if not recalled:
+                logger.warning("进度卡撤回失败 conv=%s", user_key)
+        stream_card.dismiss_progress_card()
 
 
 def _send_batch_attachment_if_any(
@@ -916,24 +977,16 @@ def process_inbound_task(
                         f"{reply_message}{format_web_agent_restart_note(web_agent_changed)}"
                     )
             session.check_cancelled()
-            reply_text = truncate_for_dingtalk(reply_message)
-            if stream_card is not None:
-                # 流式卡片仅收尾为完成态；最终结果另发新消息（@提问人 + 提问引用 + Markdown）
-                card_synced = stream_card.finish_status("✅ 执行完成，结果见下方消息 ↓")
-                if not card_synced:
-                    logger.warning(
-                        "流式卡片未完成态同步 conv=%s，以下方结果消息为准",
-                        user_key,
-                    )
-            _reply_final(
+            _deliver_streaming_agent_result(
                 handler,
                 incoming,
                 inbound,
-                reply_text,
+                reply_message,
+                prompt=prompt,
+                stream_card=stream_card,
                 started=started,
                 task_kind=task_kind,
                 user_key=user_key,
-                user_prompt=prompt,
                 sender_name=sender_name,
                 sender_staff_id=sender_staff_id,
                 reply_mode=user_reply_mode,

@@ -9,10 +9,11 @@ import sys
 
 from .client import get_configs_by_namespace
 from .env import load_local_env
-from .namespaces import resolve_namespace
+from .mutate import load_context, mse_publish_config, mse_save_config
 from .patch import apply_set_args, parse_config_value
+from .publish import save_config_value
+from .namespaces import resolve_namespace
 from .paths import config_json_path, mse_dir
-from .publish import publish_config_value, save_config_value
 from .summary import format_config_detail, format_config_list
 
 
@@ -162,86 +163,139 @@ def _resolve_new_config_value(
     return json.dumps(updated, ensure_ascii=False), changes
 
 
+def _set_args_to_dict(set_args: list[str]) -> dict[str, object]:
+    from .patch import parse_scalar
+
+    out: dict[str, object] = {}
+    for item in set_args:
+        text = item.strip()
+        if "=" not in text:
+            raise RuntimeError(f"--set 格式错误，应为 key=value：{item!r}")
+        key, raw_value = text.split("=", 1)
+        key = key.strip()
+        if not key:
+            raise RuntimeError(f"--set 缺少 key：{item!r}")
+        out[key] = parse_scalar(raw_value)
+    return out
+
+
 def _run_write_flow(args: argparse.Namespace) -> int:
     if not args.config_key:
         print("写入/发布须指定 --config-key", file=sys.stderr)
         return 2
 
-    api_namespace, display_namespace = resolve_namespace(str(args.name_space))
-    timeout_s = max(int(args.timeout_ms), 1000) / 1000.0
+    if not args.set and not args.config_value and not args.config_value_file:
+        raise RuntimeError("写入/发布须指定 --set、--config-value 或 --config-value-file")
 
-    items = get_configs_by_namespace(
+    ctx = load_context(
         base_url=str(args.base_url),
-        cookie=str(args.cookie),
         region=str(args.region),
         env=str(args.env),
         cluster=str(args.cluster),
         app_key=str(args.app_key),
-        name_space=api_namespace,
-        config_key=str(args.config_key),
-        timeout_s=timeout_s,
+        cookie=str(args.cookie),
+        timeout_s=max(int(args.timeout_ms), 1000) / 1000.0,
     )
-    if not items:
-        print(f"未找到 configKey={args.config_key}", file=sys.stderr)
-        return 1
-    item = items[0]
-    config_id = item.get("id")
-    if config_id is None:
-        print("配置缺少 id，无法写入", file=sys.stderr)
-        return 1
+    api_namespace, display_namespace = resolve_namespace(str(args.name_space))
 
-    current_value = str(item.get("configValue") or "")
-    active_name = str(item.get("activeName") or "json")
-    new_value, changes = _resolve_new_config_value(
-        current_value=current_value,
-        active_name=active_name,
-        set_args=list(args.set or []),
-        config_value=str(args.config_value or ""),
-        config_value_file=str(args.config_value_file or ""),
-    )
+    if args.set and not args.config_value and not args.config_value_file:
+        result = mse_save_config(
+            str(args.config_key),
+            _set_args_to_dict(list(args.set or [])),
+            name_space=str(args.name_space),
+            dry_run=bool(args.dry_run),
+            ctx=ctx,
+        )
+        if not result.get("ok"):
+            raise RuntimeError(str(result.get("error") or result.get("code") or "保存失败"))
+        changes = list(result.get("changes") or [])
+        config_id = result.get("config_id")
+        new_value = str(result.get("after") or "")
 
-    if args.dry_run:
-        print(f"**{args.config_key}**（namespace={display_namespace}）dry-run")
+        if args.dry_run:
+            print(f"**{args.config_key}**（namespace={display_namespace}）dry-run")
+            for line in changes:
+                print(f"- {line}")
+            print("")
+            print("改前：")
+            print(str(result.get("before") or "")[:2000])
+            print("")
+            print("改后：")
+            print(new_value[:2000])
+            return 0
+
+        print(f"已保存 **{args.config_key}**（id={config_id}）")
         for line in changes:
             print(f"- {line}")
-        print("")
-        print("改前：")
-        print(current_value[:2000])
-        print("")
-        print("改后：")
-        print(new_value[:2000])
-        return 0
-
-    save_config_value(
-        base_url=str(args.base_url),
-        cookie=str(args.cookie),
-        region=str(args.region),
-        env=str(args.env),
-        cluster=str(args.cluster),
-        app_key=str(args.app_key),
-        config_id=int(config_id),
-        config_value=new_value,
-        timeout_s=timeout_s,
-    )
-    print(f"已保存 **{args.config_key}**（id={config_id}）")
-    for line in changes:
-        print(f"- {line}")
-
-    if args.publish:
-        skip_grey = not bool(args.with_grey)
-        record_id = publish_config_value(
-            base_url=str(args.base_url),
-            cookie=str(args.cookie),
-            region=str(args.region),
-            env=str(args.env),
-            cluster=str(args.cluster),
-            app_key=str(args.app_key),
+    else:
+        items = get_configs_by_namespace(
+            base_url=ctx.base_url,
+            cookie=ctx.cookie,
+            region=ctx.region,
+            env=ctx.env,
+            cluster=ctx.cluster,
+            app_key=ctx.app_key,
+            name_space=api_namespace,
+            config_key=str(args.config_key),
+            timeout_s=ctx.timeout_s,
+        )
+        if not items:
+            print(f"未找到 configKey={args.config_key}", file=sys.stderr)
+            return 1
+        item = items[0]
+        config_id = item.get("id")
+        if config_id is None:
+            print("配置缺少 id，无法写入", file=sys.stderr)
+            return 1
+        current_value = str(item.get("configValue") or "")
+        active_name = str(item.get("activeName") or "json")
+        new_value, changes = _resolve_new_config_value(
+            current_value=current_value,
+            active_name=active_name,
+            set_args=list(args.set or []),
+            config_value=str(args.config_value or ""),
+            config_value_file=str(args.config_value_file or ""),
+        )
+        if args.dry_run:
+            print(f"**{args.config_key}**（namespace={display_namespace}）dry-run")
+            for line in changes:
+                print(f"- {line}")
+            print("")
+            print("改前：")
+            print(current_value[:2000])
+            print("")
+            print("改后：")
+            print(new_value[:2000])
+            return 0
+        save_config_value(
+            base_url=ctx.base_url,
+            cookie=ctx.cookie,
+            region=ctx.region,
+            env=ctx.env,
+            cluster=ctx.cluster,
+            app_key=ctx.app_key,
             config_id=int(config_id),
             config_value=new_value,
-            skip_grey=skip_grey,
-            timeout_s=timeout_s,
+            timeout_s=ctx.timeout_s,
         )
-        print(f"已发布全量（recordId={record_id}，skipGrey={skip_grey}）")
+        print(f"已保存 **{args.config_key}**（id={config_id}）")
+        for line in changes:
+            print(f"- {line}")
+
+    if args.publish:
+        if args.with_grey:
+            raise RuntimeError("灰度发布尚未实现，请省略 --with-grey")
+        pub = mse_publish_config(
+            str(args.config_key),
+            name_space=str(args.name_space),
+            confirm_publish=True,
+            config_id=int(config_id) if config_id is not None else None,
+            config_value=new_value,
+            ctx=ctx,
+        )
+        if not pub.get("ok"):
+            raise RuntimeError(str(pub.get("error") or pub.get("code") or "发布失败"))
+        print(f"已发布全量（recordId={pub.get('publish_record_id')}，skipGrey=True）")
     return 0
 
 

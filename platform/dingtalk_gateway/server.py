@@ -15,6 +15,7 @@ from gateway_status_notify import register_lifecycle_hooks, touch_notify_group
 from inbound_dedup import InboundDedup
 from inbound_message import InboundMessage, parse_inbound_message
 from interrupt import is_interrupt_command
+from message_recall import handle_recall_command, is_recall_command
 from log_redact import redact_for_log
 from moa_health import probe_moa_cookie
 from moa_watch import start_moa_watch
@@ -71,11 +72,38 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
         inbound: InboundMessage | None = None,
         *,
         quote: bool = True,
+        recall_label: str = "",
     ) -> None:
+        user_key = self._user_session_key(incoming)
         if quote:
-            reply_quoted(self, body, incoming, quote_text=quote_text_from_inbound(inbound))
+            reply_quoted(
+                self,
+                body,
+                incoming,
+                quote_text=quote_text_from_inbound(inbound),
+                user_key=user_key,
+                recall_label=recall_label,
+            )
         else:
-            self.reply_text(body, incoming)
+            from dingtalk_robot_send import send_bot_markdown_reply
+            from sent_message_store import get_sent_message_store
+
+            process_key = send_bot_markdown_reply(
+                self,
+                incoming,
+                body,
+                quote_text=None,
+                title=recall_label or "回复",
+            )
+            if process_key:
+                get_sent_message_store().register(
+                    user_key,
+                    process_key,
+                    kind="text",
+                    label=recall_label,
+                )
+            elif body.strip():
+                self.reply_text(body, incoming)
 
     def _build_task_ack(self, summary: str, *, prompt: str | None = None) -> str:
         return build_task_ack_message(summary, prompt=prompt)
@@ -260,6 +288,16 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
                 self._reply("你当前没有正在执行的任务。", incoming, inbound)
             return AckMessage.STATUS_OK, "OK"
 
+        if is_recall_command(inbound.text):
+            reply = handle_recall_command(
+                self,
+                incoming,
+                user_key=user_key,
+                text=inbound.text,
+            )
+            self._reply(reply, incoming, inbound, quote=False)
+            return AckMessage.STATUS_OK, "OK"
+
         if is_replay_command(inbound.text):
             last_prompt = self._store.get_last(incoming.conversation_id, **store_kwargs)
             if not last_prompt:
@@ -278,7 +316,7 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
             self._reply(
                 "请输入文字、图片或图文链接。常用：\n"
                 "• `MOA检查` — 测试 MOA 是否可用\n"
-                "• `中断操作` / `重新执行`",
+                "• `中断操作` / `重新执行` / `撤回上一条`",
                 incoming,
                 inbound,
             )

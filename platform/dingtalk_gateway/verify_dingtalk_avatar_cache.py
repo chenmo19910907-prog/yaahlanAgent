@@ -81,6 +81,54 @@ class DingtalkAvatarCacheTest(unittest.TestCase):
         self.assertIsNone(path)
         self.assertFalse((cache.AVATAR_CACHE_DIR / "u-placeholder.png").is_file())
 
+    @patch.object(cache, "_download_avatar")
+    def test_inline_avatar_data_uri(self, mock_download) -> None:
+        from PIL import Image
+        import io
+
+        buf = io.BytesIO()
+        Image.new("RGB", (64, 64), (0, 128, 255)).save(buf, format="JPEG")
+        mock_download.return_value = (buf.getvalue(), "image/jpeg")
+        cache.ensure_avatar_cached("u-data", "https://cdn.example/d.jpg")
+        thumb = cache.ensure_inline_avatar_thumbnail("u-data")
+        self.assertIsNotNone(thumb)
+        assert thumb is not None
+        data_uri = cache.inline_avatar_data_uri(thumb)
+        self.assertTrue(data_uri.startswith("data:image/jpeg;base64,"))
+
+    @patch.object(cache, "_download_avatar")
+    def test_resolve_inline_avatar_prefers_data_uri(self, mock_download) -> None:
+        from PIL import Image
+        import io
+
+        buf = io.BytesIO()
+        Image.new("RGB", (64, 64), (0, 128, 255)).save(buf, format="JPEG")
+        mock_download.return_value = (buf.getvalue(), "image/jpeg")
+        cdn = "https://static-legacy.dingtalk.com/media/test.jpg"
+        ref = cache.resolve_inline_avatar_markdown_ref("u-ref", cdn_fallback=cdn)
+        self.assertIsNotNone(ref)
+        assert ref is not None
+        self.assertTrue(ref.startswith("data:image/jpeg;base64,"))
+
+    @patch.object(cache, "_download_avatar")
+    def test_inline_avatar_thumbnail_is_circular(self, mock_download) -> None:
+        from PIL import Image
+        import io
+
+        buf = io.BytesIO()
+        Image.new("RGB", (64, 48), (255, 0, 0)).save(buf, format="JPEG")
+        mock_download.return_value = (buf.getvalue(), "image/jpeg")
+        cache.ensure_avatar_cached("u-circle", "https://cdn.example/c.jpg")
+        thumb = cache.ensure_inline_avatar_thumbnail("u-circle")
+        self.assertIsNotNone(thumb)
+        assert thumb is not None
+        img = Image.open(thumb)
+        corner = img.getpixel((0, 0))
+        center = img.getpixel((img.size[0] // 2, img.size[1] // 2))
+        # 四角为浅灰底（抗锯齿），中心仍为头像主色
+        self.assertGreater(sum(corner), sum(center))
+        self.assertNotEqual(corner, center)
+
     @patch.object(profile, "resolve_user_profile")
     @patch.object(cache, "local_avatar_url_for_staff")
     def test_resolve_user_avatars_returns_local_url(

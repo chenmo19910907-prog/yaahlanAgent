@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import os
@@ -19,6 +20,9 @@ logger = logging.getLogger("dingtalk-gateway")
 
 AVATAR_CACHE_DIR = GATEWAY_DIR / "data" / "avatar_cache"
 MAX_AVATAR_BYTES = 5 * 1024 * 1024
+# 群消息 @ 行内头像：物理缩略图尺寸（钉钉 Markdown 不支持 CSS/width 属性）
+INLINE_AVATAR_SIZE_PX = 32
+INLINE_THUMB_SHAPE = "circle"
 _STAFF_ID_RE = re.compile(r"^[a-zA-Z0-9._-]{1,64}$")
 
 _lock = threading.Lock()
@@ -309,6 +313,180 @@ def resolve_avatar_file(staff_id: str, *, try_api: bool = True) -> tuple[Path, s
     meta = _load_meta(sid)
     ctype = meta.get("contentType") or "image/jpeg"
     return path, ctype
+
+
+def _inline_thumb_path(staff_id: str) -> Path:
+    return AVATAR_CACHE_DIR / f"{staff_id}_inline.jpg"
+
+
+def _center_crop_square(img: "Image.Image") -> "Image.Image":
+    from PIL import Image  # noqa: WPS433
+
+    width, height = img.size
+    side = min(width, height)
+    left = (width - side) // 2
+    top = (height - side) // 2
+    return img.crop((left, top, left + side, top + side))
+
+
+def _render_circular_thumbnail(img: "Image.Image", size: int) -> "Image.Image":
+    """中心裁剪 + 圆形遮罩，输出 JPEG 可用 RGB（浅灰底）。"""
+    from PIL import Image, ImageDraw  # noqa: WPS433
+
+    square = _center_crop_square(img.convert("RGBA"))
+    square = square.resize((size, size), Image.Resampling.LANCZOS)
+    mask = Image.new("L", (size, size), 0)
+    draw = ImageDraw.Draw(mask)
+    draw.ellipse((0, 0, size - 1, size - 1), fill=255)
+    foreground = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    foreground.paste(square, (0, 0), mask=mask)
+    background = Image.new("RGB", (size, size), (245, 245, 245))
+    background.paste(foreground, (0, 0), foreground)
+    return background
+
+
+def _web_agent_port() -> int:
+    cfg_path = GATEWAY_DIR.parent / "web_agent" / "config.json"
+    if not cfg_path.is_file():
+        return 18766
+    try:
+        data = json.loads(cfg_path.read_text(encoding="utf-8"))
+        return int(data.get("port") or 18766)
+    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        return 18766
+
+
+def inline_avatar_public_base() -> str:
+    """钉钉 Markdown 拉图用的 Web Agent 公网/内网基址。"""
+    from env_loader import load_env_local
+
+    load_env_local()
+    for key in ("DINGTALK_INLINE_AVATAR_PUBLIC_BASE", "WEB_AGENT_PUBLIC_BASE_URL"):
+        base = (os.environ.get(key) or "").strip().rstrip("/")
+        if base:
+            return base
+    port = _web_agent_port()
+    try:
+        import socket
+
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.connect(("8.8.8.8", 80))
+            host = sock.getsockname()[0]
+            if host and not host.startswith("127."):
+                return f"http://{host}:{port}"
+    except OSError:
+        pass
+    return ""
+
+
+def inline_avatar_public_url(staff_id: str, thumb_path: Path) -> str:
+    base = inline_avatar_public_base()
+    sid = normalize_staff_id(staff_id)
+    if not base or not sid or not thumb_path.is_file():
+        return ""
+    version = int(thumb_path.stat().st_mtime)
+    quoted = urllib.parse.quote(sid, safe="")
+    return f"{base}/api/dingtalk/avatar-inline/{quoted}?v={version}"
+
+
+def inline_avatar_data_uri(thumb_path: Path) -> str:
+    """内嵌 base64 圆形缩略图，供钉钉 Markdown 拉图（无法访问内网 URL）。"""
+    if not thumb_path.is_file():
+        return ""
+    payload = base64.standard_b64encode(thumb_path.read_bytes()).decode("ascii")
+    return f"data:image/jpeg;base64,{payload}"
+
+
+def _ensure_source_avatar_cached(staff_id: str, *, cdn_hint: str = "") -> Path | None:
+    """确保原图已落盘（meta / 通讯录 / 消息上下文 CDN）。"""
+    sid = normalize_staff_id(staff_id)
+    if not sid:
+        return None
+    cached = get_cached_avatar_file(sid)
+    if cached is not None:
+        return cached[0]
+    meta = _load_meta(sid)
+    source = (meta.get("sourceUrl") or "").strip()
+    if source:
+        path = ensure_avatar_cached(sid, source)
+        if path is not None:
+            return path
+    from dingtalk_user_profile import resolve_user_profile
+
+    profile = resolve_user_profile(sid, try_api=True)
+    source = (profile.avatar_url or "").strip()
+    if source:
+        return ensure_avatar_cached(sid, source)
+    hint = (cdn_hint or "").strip()
+    if hint.startswith(("http://", "https://")):
+        return ensure_avatar_cached(sid, hint)
+    return None
+
+
+def ensure_inline_avatar_thumbnail(
+    staff_id: str,
+    *,
+    size: int = INLINE_AVATAR_SIZE_PX,
+    cdn_hint: str = "",
+) -> Path | None:
+    """生成 @ 行内展示用的小尺寸圆形 JPEG（钉钉只认物理像素，不认 width 属性）。"""
+    sid = normalize_staff_id(staff_id)
+    if not sid:
+        return None
+    src_path = _ensure_source_avatar_cached(sid, cdn_hint=cdn_hint)
+    if src_path is None:
+        return None
+    thumb_path = _inline_thumb_path(sid)
+    src_mtime = str(int(src_path.stat().st_mtime))
+    meta = _load_meta(sid)
+    if (
+        thumb_path.is_file()
+        and meta.get("inlineThumbMtime") == src_mtime
+        and int(meta.get("inlineThumbSize") or 0) == size
+        and meta.get("inlineThumbShape") == INLINE_THUMB_SHAPE
+    ):
+        return thumb_path
+    try:
+        from PIL import Image  # noqa: WPS433
+    except ImportError:
+        logger.debug("Pillow 未安装，跳过 inline 头像缩略图")
+        return None
+    try:
+        img = _render_circular_thumbnail(Image.open(src_path), size)
+        AVATAR_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        img.save(thumb_path, format="JPEG", quality=85)
+        meta["inlineThumbMtime"] = src_mtime
+        meta["inlineThumbSize"] = str(size)
+        meta["inlineThumbShape"] = INLINE_THUMB_SHAPE
+        _save_meta(sid, meta)
+        return thumb_path
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("生成 inline 头像缩略图失败 uid=%s: %s", sid[:12], exc)
+        return None
+
+
+def resolve_inline_avatar_markdown_ref(
+    staff_id: str,
+    *,
+    cdn_fallback: str | None = None,
+) -> str | None:
+    """返回 Markdown @ 行头像：内嵌 base64 圆形缩略图（钉钉无法拉内网 URL）。"""
+    sid = normalize_staff_id(staff_id)
+    if not sid:
+        return None
+    cdn = (cdn_fallback or "").strip()
+    thumb_path = ensure_inline_avatar_thumbnail(sid, cdn_hint=cdn)
+    if thumb_path is not None:
+        data_uri = inline_avatar_data_uri(thumb_path)
+        if data_uri:
+            return data_uri
+    if cdn.startswith("https://"):
+        size = INLINE_AVATAR_SIZE_PX
+        return (
+            f'<img src="{cdn}" width="{size}" height="{size}" '
+            f'style="border-radius:50%;object-fit:cover;" />'
+        )
+    return None
 
 
 def local_avatar_url_for_staff(staff_id: str, source_url: str = "") -> str:

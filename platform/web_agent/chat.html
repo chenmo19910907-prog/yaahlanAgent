@@ -2056,6 +2056,10 @@
       gap: 4px;
       flex-shrink: 0;
     }
+    .left-panel.session-scope-mine .session-meta .session-owner-line,
+    .left-panel.session-scope-mine .session-meta .session-owner-line + .session-meta-sep {
+      display: none;
+    }
     .session-meta .name-avatar,
     .session-meta .name-avatar-fallback,
     .session-meta .name-avatar-agent {
@@ -8109,6 +8113,7 @@
         ? '我的历史会话 · 点击切换为全部'
         : '全部历史会话 · 点击切换为我的';
       btn.setAttribute('aria-label', isMine ? '筛选：我的历史会话' : '筛选：全部历史会话');
+      document.querySelector('.left-panel')?.classList.toggle('session-scope-mine', isMine);
     }
 
     async function ensureCurrentSessionMatchesScope() {
@@ -8130,6 +8135,22 @@
       syncSessionReadOnly('');
     }
 
+    function refreshSessionListForScopeSwitch() {
+      syncSessionsCacheFromAll();
+      enrichSessionsCacheRelativeTimes(sessionsCache);
+      const list = document.getElementById('session-list');
+      if (!sessionsCache.length) {
+        renderSessionList({ rememberScroll: false });
+      } else if (!reconcileSessionListFromCache(sessionsCache)) {
+        renderSessionList({ rememberScroll: false });
+      } else if (list) {
+        applySessionListScrollRatio(list, sessionListScrollForCurrentScope());
+        updateSessionListScrollToTopBtn();
+        scheduleIdleSessionMessagesPrefetchDebounced();
+      }
+      lastSessionListKey = sessionListPatchKey(sessionsCache);
+    }
+
     function toggleSessionScopeFilter() {
       if (isGuestMode()) return;
       rememberSessionListScrollForCurrentScope();
@@ -8142,9 +8163,13 @@
           .catch(err => console.error('loadSessions', err));
         return;
       }
-      syncSessionsCacheFromAll();
-      renderSessionList({ rememberScroll: false });
-      ensureCurrentSessionMatchesScope().catch(err => console.error('ensureCurrentSessionMatchesScope', err));
+      const applyScopeListUpdate = () => {
+        refreshSessionListForScopeSwitch();
+        ensureCurrentSessionMatchesScope().catch(err => console.error('ensureCurrentSessionMatchesScope', err));
+      };
+      requestAnimationFrame(() => {
+        requestAnimationFrame(applyScopeListUpdate);
+      });
     }
 
     function markSessionListActive(sessionId) {

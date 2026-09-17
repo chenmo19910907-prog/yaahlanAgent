@@ -223,6 +223,8 @@ def is_anonymous_allowed(handler: BaseHTTPRequestHandler, *, method: str = "GET"
             return True
         if path.startswith("/api/dingtalk/avatar/"):
             return True
+        if path.startswith("/api/dingtalk/avatar-inline/"):
+            return True
         if path == "/api/message-board" or path.startswith("/api/message-board/"):
             return True
         if path == "/api/web-docs":

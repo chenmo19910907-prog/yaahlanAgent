@@ -109,7 +109,7 @@ def try_create_agent_stream_card(
         logger.warning("流式卡片不可用：handler 无 dingtalk_client")
         return None
     try:
-        return AgentStreamCard(client, incoming)
+        return AgentStreamCard(client, incoming, reply_handler=handler)
     except Exception:  # noqa: BLE001
         logger.exception("创建流式卡片失败，回退文本回复")
         return None
@@ -126,7 +126,9 @@ class AgentStreamCard:
         incoming: dingtalk_stream.ChatbotMessage,
         *,
         min_interval_s: float = DEFAULT_MIN_INTERVAL_S,
+        reply_handler: Any = None,
     ) -> None:
+        self._reply_handler = reply_handler
         self._mode = _card_mode()
         self._min_interval_s = min_interval_s
         self._lock = threading.Lock()
@@ -160,6 +162,7 @@ class AgentStreamCard:
         self._queue_waiting_started_at = 0.0
         # finish/fail 后置 True，阻止滞后 progress / enqueue 定时器盖回「执行中」
         self._terminal = False
+        self._process_query_key = ""
 
         if self._mode == "ai":
             card = dingtalk_stream.AIMarkdownCardInstance(dingtalk_client, incoming)
@@ -254,6 +257,65 @@ class AgentStreamCard:
             return False
         return bool(self._last_put_succeeded)
 
+    def _register_card_process_key(self, process_key: str | None) -> None:
+        key = (process_key or "").strip()
+        self._process_query_key = key
+        user_key = (getattr(self, "_user_key", "") or "").strip()
+        if not key or not user_key:
+            return
+        from sent_message_store import get_sent_message_store
+
+        get_sent_message_store().register(
+            user_key,
+            key,
+            kind="stream_card",
+            label=(getattr(self, "_card_title", "") or "流式卡片"),
+        )
+
+    def _stop_progress_card_lifecycle(self) -> None:
+        """停止进度卡刷新/定时器，不更新卡片正文。"""
+        self._ensure_stream_state()
+        with self._lock:
+            self._terminal = True
+            if self._timer is not None:
+                self._timer.cancel()
+                self._timer = None
+            self._pending = None
+        self._stop_progress_tick()
+        self._cancel_queue_content_refresh()
+        self._cancel_queue_bootstrap_burst()
+        self._cancel_orphan_watchdog()
+        self._started = False
+
+    def dismiss_progress_card(self) -> None:
+        """结束进度卡生命周期，不展示「执行完成」态（结果已另发消息）。"""
+        if not self._started and not (getattr(self, "_process_query_key", "") or "").strip():
+            return
+        self._stop_progress_card_lifecycle()
+
+    def recall_progress_card(self, handler: Any, incoming: Any) -> bool:
+        """撤回执行中进度卡（不更新为完成态）。"""
+        if not self._started and not (getattr(self, "_process_query_key", "") or "").strip():
+            return False
+        self._stop_progress_card_lifecycle()
+
+        process_key = (getattr(self, "_process_query_key", "") or "").strip()
+        if not process_key or handler is None or incoming is None:
+            return False
+        from dingtalk_robot_send import recall_robot_messages
+        from sent_message_store import get_sent_message_store
+
+        recalled, err = recall_robot_messages(handler, incoming, [process_key])
+        user_key = (getattr(self, "_user_key", "") or "").strip()
+        if user_key:
+            get_sent_message_store().remove_key(user_key, process_key)
+        if recalled <= 0:
+            logger.warning("进度卡撤回失败 key=%s… err=%s", process_key[:16], err)
+            return False
+        logger.info("进度卡已撤回 key=%s…", process_key[:16])
+        self._process_query_key = ""
+        return True
+
     def _create_markdown_card(self, body_md: str) -> None:
         assert self._md_card is not None
         last_error = "card_instance_id 为空"
@@ -262,9 +324,28 @@ class AgentStreamCard:
             if self._card_title:
                 self._md_card.set_title_and_logo(self._card_title, "")
             if not replied:
-                self._md_card.reply(body_md)
+                if self._reply_handler is not None:
+                    from dingtalk_robot_send import send_markdown_card_deliver
+
+                    card_data = self._md_card._get_card_data(body_md)
+                    incoming = self._md_card.incoming_message
+                    at_user_id = (
+                        incoming.sender_staff_id or incoming.sender_id or ""
+                    ).strip()
+                    self._card_instance_id, process_key = send_markdown_card_deliver(
+                        self._reply_handler,
+                        incoming,
+                        self._md_card,
+                        card_template_id=self._md_card.card_template_id,
+                        card_data=card_data,
+                        at_sender=bool(at_user_id),
+                    )
+                    self._md_card.card_instance_id = self._card_instance_id
+                    self._register_card_process_key(process_key)
+                else:
+                    self._md_card.reply(body_md)
+                    self._card_instance_id = self._md_card.card_instance_id or ""
                 replied = True
-            self._card_instance_id = self._md_card.card_instance_id or ""
             if self._card_instance_id:
                 # reply 后立刻 update：单聊 Markdown 卡否则常停在模板默认「已受理」
                 synced = False
@@ -312,6 +393,7 @@ class AgentStreamCard:
             ("_queue_bootstrap_timers", []),
             ("_queue_waiting_started_at", 0.0),
             ("_terminal", False),
+            ("_process_query_key", ""),
         ):
             if not hasattr(self, name):
                 setattr(self, name, default)
