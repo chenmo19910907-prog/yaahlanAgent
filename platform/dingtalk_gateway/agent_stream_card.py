@@ -294,7 +294,7 @@ class AgentStreamCard:
         self._stop_progress_card_lifecycle()
 
     def recall_progress_card(self, handler: Any, incoming: Any) -> bool:
-        """撤回执行中进度卡（不更新为完成态）。"""
+        """撤回进度/完成态卡片（须已 register processQueryKey）。"""
         if not self._started and not (getattr(self, "_process_query_key", "") or "").strip():
             return False
         self._stop_progress_card_lifecycle()

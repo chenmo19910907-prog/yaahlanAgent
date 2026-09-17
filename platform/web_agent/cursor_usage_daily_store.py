@@ -1,4 +1,4 @@
-"""按用户、按自然日缓存 Cursor 用量（仅历史自然日；本日不入库，次日按历史加载后再缓存）。"""
+"""团队共享、按自然日缓存 Cursor 用量（仅历史自然日；本日不入库，次日按历史加载后再缓存）。"""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from analytics_store import BJ
+from cursor_usage_store import SHARED_USAGE_SCOPE
 
 logger = logging.getLogger("web-agent")
 
@@ -70,13 +71,49 @@ class CursorUsageDailyStore:
             encoding="utf-8",
         )
 
+    def _migrate_to_shared(self, users: dict[str, dict[str, Any]]) -> bool:
+        shared = users.get(SHARED_USAGE_SCOPE, {})
+        shared_days = shared.get("days") if isinstance(shared, dict) else None
+        if isinstance(shared_days, dict) and shared_days:
+            return False
+        best_uid = ""
+        best_count = 0
+        best_row: dict[str, Any] | None = None
+        for uid, item in users.items():
+            if uid == SHARED_USAGE_SCOPE or not isinstance(item, dict):
+                continue
+            days = item.get("days")
+            if not isinstance(days, dict) or not days:
+                continue
+            count = len(days)
+            if count > best_count:
+                best_count = count
+                best_uid = uid
+                best_row = item
+        if not best_row:
+            return False
+        users[SHARED_USAGE_SCOPE] = {
+            "days": dict(best_row.get("days") or {}),
+            "updatedAt": best_row.get("updatedAt") or _now_iso(),
+        }
+        logger.info("Cursor 按日用量已从 %s 迁移至团队共享", best_uid[:12])
+        return True
+
+    def _load_users_for_scope(self, staff_id: str) -> dict[str, dict[str, Any]]:
+        sid = (staff_id or "").strip()
+        users = self._load()
+        if sid == SHARED_USAGE_SCOPE and self._migrate_to_shared(users):
+            self._save(users)
+        return users
+
     def get_day(self, staff_id: str, day_key: str) -> dict[str, int] | None:
         sid = (staff_id or "").strip()
         dk = (day_key or "").strip()
         if not sid or not dk:
             return None
         with self._lock:
-            row = self._load().get(sid, {})
+            users = self._load_users_for_scope(sid)
+            row = users.get(sid, {})
         days = row.get("days") if isinstance(row, dict) else None
         if not isinstance(days, dict):
             return None
@@ -122,7 +159,7 @@ class CursorUsageDailyStore:
         if not sid or not dk:
             return
         with self._lock:
-            users = self._load()
+            users = self._load_users_for_scope(sid)
             row = users.get(sid)
             if not isinstance(row, dict):
                 return
@@ -149,7 +186,8 @@ class CursorUsageDailyStore:
         if not sid or not since or not until or since > until:
             return None
         with self._lock:
-            row = self._load().get(sid, {})
+            users = self._load_users_for_scope(sid)
+            row = users.get(sid, {})
         days = row.get("days") if isinstance(row, dict) else None
         if not isinstance(days, dict):
             return None
@@ -176,7 +214,7 @@ class CursorUsageDailyStore:
             return None
         sid = (staff_id or "").strip()
         with self._lock:
-            users = self._load()
+            users = self._load_users_for_scope(sid)
             row = users.get(sid)
             if not isinstance(row, dict):
                 return earliest

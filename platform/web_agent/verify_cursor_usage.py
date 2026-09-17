@@ -27,7 +27,7 @@ from cursor_usage import (
     summarize_user_usage,
 )
 from analytics_store import BJ
-from cursor_usage_store import CursorUsageCredentialStore
+from cursor_usage_store import SHARED_USAGE_SCOPE, CursorUsageCredentialStore
 
 
 class CursorUsageStoreTest(unittest.TestCase):
@@ -78,15 +78,16 @@ class CursorUsageTest(unittest.TestCase):
 
             daily_path = Path(tmp) / "daily.json"
             store = CursorUsageDailyStore(path=daily_path)
-            store.set_days(
-                "alice",
-                {
-                    "2026-02-20": {"requests": 0, "tokens": 0},
-                    "2026-03-01": {"requests": 2, "tokens": 20},
-                    "2026-07-01": {"requests": 0, "tokens": 0},
-                },
-            )
             fake_now = datetime(2026, 8, 20, 15, 0, 0, tzinfo=BJ)
+            with patch("cursor_usage_daily_store._today_key_bj", return_value="2026-08-20"):
+                store.set_days(
+                    "alice",
+                    {
+                        "2026-02-20": {"requests": 0, "tokens": 0},
+                        "2026-03-01": {"requests": 2, "tokens": 20},
+                        "2026-07-01": {"requests": 0, "tokens": 0},
+                    },
+                )
             with patch("cursor_usage.get_cursor_usage_daily_store", return_value=store):
                 with patch("analytics_store._now_bj", return_value=fake_now):
                     bounds = get_usage_date_bounds("alice")
@@ -94,7 +95,7 @@ class CursorUsageTest(unittest.TestCase):
             self.assertEqual(bounds["minDate"], "2026-03-01")
             self.assertEqual(bounds["earliestWithData"], "2026-03-01")
             self.assertEqual(bounds["preloadDays"], 180)
-            trimmed = store.get_day("alice", "2026-02-20")
+            trimmed = store.get_day(SHARED_USAGE_SCOPE, "2026-02-20")
             self.assertIsNone(trimmed)
 
     def test_split_span_chunks(self) -> None:
@@ -334,6 +335,54 @@ class CursorUsageTest(unittest.TestCase):
             self.assertEqual(first["requests"], 5)
             self.assertEqual(second["requests"], 5)
             self.assertEqual(third["requests"], 5)
+
+
+class SharedUsageScopeTest(unittest.TestCase):
+    def test_credentials_migrate_to_shared(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            store = CursorUsageCredentialStore(path=Path(tmp) / "creds.json")
+            store.upsert("alice", session_token="token-a")
+            creds = store.get_credentials(SHARED_USAGE_SCOPE)
+            self.assertEqual(creds["sessionToken"], "token-a")
+
+    def test_daily_cache_migrate_to_shared(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            from cursor_usage_daily_store import CursorUsageDailyStore
+
+            store = CursorUsageDailyStore(path=Path(tmp) / "daily.json")
+            store.set_days("alice", {"2026-08-10": {"requests": 1, "tokens": 10}})
+            row = store.get_day(SHARED_USAGE_SCOPE, "2026-08-10")
+            self.assertEqual(row, {"requests": 1, "tokens": 10})
+
+    def test_different_viewers_share_usage_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            from cursor_usage_daily_store import CursorUsageDailyStore
+
+            cred_store = CursorUsageCredentialStore(path=Path(tmp) / "creds.json")
+            daily_store = CursorUsageDailyStore(path=Path(tmp) / "daily.json")
+            cred_store.upsert(SHARED_USAGE_SCOPE, session_token="token-a")
+            daily_store.set_days(
+                SHARED_USAGE_SCOPE,
+                {"2026-08-10": {"requests": 4, "tokens": 40}},
+            )
+            fake_now = datetime(2026, 8, 20, 15, 0, 0, tzinfo=BJ)
+            with patch("cursor_usage.get_cursor_usage_store", return_value=cred_store):
+                with patch("cursor_usage.get_cursor_usage_daily_store", return_value=daily_store):
+                    with patch("cursor_usage.load_env_local"):
+                        with patch.dict("os.environ", {}, clear=True):
+                            with patch("analytics_store._now_bj", return_value=fake_now):
+                                alice = summarize_user_usage(
+                                    "alice",
+                                    start_date="2026-08-10",
+                                    end_date="2026-08-10",
+                                )
+                                bob = summarize_user_usage(
+                                    "bob",
+                                    start_date="2026-08-10",
+                                    end_date="2026-08-10",
+                                )
+            self.assertEqual(alice["requests"], 4)
+            self.assertEqual(bob["requests"], 4)
 
 
 class CredentialCachePolicyTest(unittest.TestCase):

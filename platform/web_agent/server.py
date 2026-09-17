@@ -128,7 +128,7 @@ from cursor_usage import (  # noqa: E402
     summarize_user_usage as summarize_cursor_user_usage,
     verify_session_token,
 )
-from cursor_usage_store import get_cursor_usage_store  # noqa: E402
+from cursor_usage_store import SHARED_USAGE_SCOPE, get_cursor_usage_store  # noqa: E402
 from web_session_store import filter_sessions_by_search, filter_sessions_by_scope, get_session_store, sort_sessions_for_display, compute_sessions_list_etag, compute_messages_page_etag, estimate_messages_page_meta, resolve_user_message_author  # noqa: E402
 from web_run_store import (  # noqa: E402
     RUN_STATUS_DONE,
@@ -2077,7 +2077,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 return _json_response(self, {"error": "请先登录"}, 401)
             return _json_response(
                 self,
-                get_cursor_usage_store().status_for_staff(viewer.staff_id),
+                get_cursor_usage_store().status_for_staff(SHARED_USAGE_SCOPE),
             )
 
         if path == f"{KEYNOTE_URL_PREFIX}/speech_scripts":
@@ -2962,9 +2962,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                         workos_id=parsed_workos_id or "",
                     )
                 cred_store = get_cursor_usage_store()
-                old_creds = cred_store.get_credentials(viewer.staff_id)
+                old_creds = cred_store.get_credentials(SHARED_USAGE_SCOPE)
                 status = cred_store.upsert(
-                    viewer.staff_id,
+                    SHARED_USAGE_SCOPE,
                     session_token=normalized_token if session_token is not None else None,
                     cursor_email=str(cursor_email or "") if cursor_email is not None else None,
                     team_id=parsed_team_id if session_token is not None else None,
@@ -2977,8 +2977,8 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     team_id=parsed_team_id if session_token is not None else None,
                     workos_id=parsed_workos_id if session_token is not None else None,
                 ):
-                    clear_user_usage_daily_cache(viewer.staff_id)
-                clear_user_today_live_cache(viewer.staff_id)
+                    clear_user_usage_daily_cache(SHARED_USAGE_SCOPE)
+                clear_user_today_live_cache(SHARED_USAGE_SCOPE)
             except CursorAuthError as exc:
                 return _json_response(self, {"error": str(exc)}, 400)
             except ValueError as exc:
@@ -3305,9 +3305,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             viewer = current_web_user(self)
             if viewer is None:
                 return _json_response(self, {"error": "请先登录"}, 401)
-            status = get_cursor_usage_store().clear(viewer.staff_id)
-            clear_user_usage_daily_cache(viewer.staff_id)
-            clear_user_today_live_cache(viewer.staff_id)
+            status = get_cursor_usage_store().clear(SHARED_USAGE_SCOPE)
+            clear_user_usage_daily_cache(SHARED_USAGE_SCOPE)
+            clear_user_today_live_cache(SHARED_USAGE_SCOPE)
             return _json_response(self, {"ok": True, **status})
 
         m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})$", path)

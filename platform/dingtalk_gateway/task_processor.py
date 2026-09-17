@@ -188,7 +188,7 @@ def _deliver_streaming_agent_result(
     sender_staff_id: str,
     reply_mode: str | None,
 ) -> None:
-    """流式任务完成：先发送结果，再撤回进度卡（不展示「执行完成」卡片）。"""
+    """流式任务完成：展示完成态 → 发送结果 → 撤回进度/完成卡。"""
     elapsed = time.monotonic() - started
     body = message
     if should_append_duration_footer(reply_mode):
@@ -199,6 +199,14 @@ def _deliver_streaming_agent_result(
             prompt=prompt or None,
         )
     body = truncate_for_dingtalk(body)
+
+    if stream_card is not None:
+        card_synced = stream_card.finish_status("✅ 执行完成，结果见下方消息 ↓")
+        if not card_synced:
+            logger.warning(
+                "流式卡片未完成态同步 conv=%s，以下方结果消息为准",
+                user_key,
+            )
 
     _reply_final(
         handler,
@@ -216,15 +224,14 @@ def _deliver_streaming_agent_result(
     )
 
     if stream_card is not None:
-        recalled = False
         if (
             _should_recall_progress_card()
             and (getattr(stream_card, "_process_query_key", "") or "").strip()
         ):
-            recalled = stream_card.recall_progress_card(handler, incoming)
-            if not recalled:
+            if not stream_card.recall_progress_card(handler, incoming):
                 logger.warning("进度卡撤回失败 conv=%s", user_key)
-        stream_card.dismiss_progress_card()
+        else:
+            stream_card.dismiss_progress_card()
 
 
 def _send_batch_attachment_if_any(

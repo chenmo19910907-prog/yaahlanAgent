@@ -1,4 +1,4 @@
-"""按用户存储 Cursor Dashboard 会话凭据（WorkosCursorSessionToken / email）。"""
+"""团队共享存储 Cursor Dashboard 会话凭据（WorkosCursorSessionToken / email）。"""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ logger = logging.getLogger("web-agent")
 
 WEB_AGENT_DIR = Path(__file__).resolve().parent
 STORE_PATH = WEB_AGENT_DIR / "data" / "cursor_usage_credentials.json"
+SHARED_USAGE_SCOPE = "__shared__"
 
 
 def _now_iso() -> str:
@@ -59,12 +60,37 @@ class CursorUsageCredentialStore:
             encoding="utf-8",
         )
 
+    def _migrate_to_shared(self, users: dict[str, dict[str, str]]) -> bool:
+        shared = users.get(SHARED_USAGE_SCOPE, {})
+        if isinstance(shared, dict) and (
+            shared.get("sessionToken") or shared.get("cursorEmail")
+        ):
+            return False
+        best: dict[str, str] | None = None
+        best_ts = ""
+        for uid, item in users.items():
+            if uid == SHARED_USAGE_SCOPE or not isinstance(item, dict):
+                continue
+            if not (item.get("sessionToken") or item.get("cursorEmail")):
+                continue
+            ts = str(item.get("updatedAt") or "")
+            if best is None or ts >= best_ts:
+                best_ts = ts
+                best = item
+        if not best:
+            return False
+        users[SHARED_USAGE_SCOPE] = dict(best)
+        return True
+
     def get_credentials(self, staff_id: str) -> dict[str, str]:
         sid = (staff_id or "").strip()
         if not sid:
             return {"sessionToken": "", "cursorEmail": "", "teamId": "", "workosId": "", "updatedAt": ""}
         with self._lock:
-            row = self._load().get(sid, {})
+            users = self._load()
+            if sid == SHARED_USAGE_SCOPE and self._migrate_to_shared(users):
+                self._save(users)
+            row = users.get(sid, {})
         return {
             "sessionToken": str(row.get("sessionToken") or "").strip(),
             "cursorEmail": str(row.get("cursorEmail") or "").strip(),

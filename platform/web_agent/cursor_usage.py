@@ -23,7 +23,7 @@ from analytics_store import (
 )
 import analytics_store
 from cursor_usage_daily_store import get_cursor_usage_daily_store
-from cursor_usage_store import get_cursor_usage_store
+from cursor_usage_store import SHARED_USAGE_SCOPE, get_cursor_usage_store
 
 try:
     from env_loader import load_env_local
@@ -709,7 +709,8 @@ def _fetch_and_cache_days(
 
 
 def clear_user_usage_daily_cache(staff_id: str) -> None:
-    get_cursor_usage_daily_store().clear_staff(staff_id)
+    del staff_id
+    get_cursor_usage_daily_store().clear_staff(SHARED_USAGE_SCOPE)
 
 
 def should_clear_usage_cache_on_credential_update(
@@ -750,36 +751,30 @@ def should_clear_usage_cache_on_credential_update(
 
 
 def clear_user_today_live_cache(staff_id: str) -> None:
-    sid = (staff_id or "").strip()
-    if not sid:
-        return
+    del staff_id
     with _today_live_cache_lock:
-        _today_live_cache.pop(sid, None)
+        _today_live_cache.pop(SHARED_USAGE_SCOPE, None)
 
 
 def _get_cached_today(staff_id: str) -> dict[str, int] | None:
-    sid = (staff_id or "").strip()
-    if not sid:
-        return None
+    del staff_id
     today_key = _today_key_bj()
     with _today_live_cache_lock:
-        entry = _today_live_cache.get(sid)
+        entry = _today_live_cache.get(SHARED_USAGE_SCOPE)
         if entry and entry[0] == today_key:
             return dict(entry[1])
     return None
 
 
 def _set_cached_today(staff_id: str, stats: dict[str, int]) -> None:
-    sid = (staff_id or "").strip()
-    if not sid:
-        return
+    del staff_id
     today_key = _today_key_bj()
     row = {
         "requests": int(stats.get("requests") or 0),
         "tokens": int(stats.get("tokens") or 0),
     }
     with _today_live_cache_lock:
-        _today_live_cache[sid] = (today_key, row)
+        _today_live_cache[SHARED_USAGE_SCOPE] = (today_key, row)
 
 
 def _usage_trim_window() -> tuple[str, str]:
@@ -790,11 +785,11 @@ def _usage_trim_window() -> tuple[str, str]:
 
 
 def _trim_leading_empty_usage_days(staff_id: str) -> str | None:
-    sid = (staff_id or "").strip()
-    if not sid:
-        return None
+    del staff_id
     since, until = _usage_trim_window()
-    return get_cursor_usage_daily_store().trim_leading_empty_days(sid, since, until)
+    return get_cursor_usage_daily_store().trim_leading_empty_days(
+        SHARED_USAGE_SCOPE, since, until
+    )
 
 
 def get_usage_date_bounds(staff_id: str) -> dict[str, Any]:
@@ -805,7 +800,7 @@ def get_usage_date_bounds(staff_id: str) -> dict[str, Any]:
     selectable_min = (
         now_bj - timedelta(days=MAX_USAGE_CUSTOM_DAYS - 1)
     ).strftime("%Y-%m-%d")
-    earliest_with_data = _trim_leading_empty_usage_days(sid) if sid else None
+    earliest_with_data = _trim_leading_empty_usage_days(sid) if sid else None  # sid=登录态
     effective_min = selectable_min
     if earliest_with_data and earliest_with_data > selectable_min:
         effective_min = earliest_with_data
@@ -847,8 +842,9 @@ def summarize_user_usage(
         base["error"] = "未登录"
         return base
 
-    session_token, cursor_email, team_id, workos_id = _resolve_credentials(sid)
-    cred_status = get_cursor_usage_store().status_for_staff(sid)
+    scope = SHARED_USAGE_SCOPE
+    session_token, cursor_email, team_id, workos_id = _resolve_credentials(scope)
+    cred_status = get_cursor_usage_store().status_for_staff(scope)
     has_env_session = bool(_env("CURSOR_SESSION_TOKEN"))
     has_env_email = bool(_env("CURSOR_USAGE_EMAIL"))
     admin_available = _admin_api_available() and bool(cursor_email)
@@ -870,16 +866,16 @@ def summarize_user_usage(
     day_keys = _iter_day_keys(start, end)
     today_key = _today_key_bj()
     daily_store = get_cursor_usage_daily_store()
-    daily_store.purge_today(sid)
-    _trim_leading_empty_usage_days(sid)
+    daily_store.purge_today(scope)
+    _trim_leading_empty_usage_days(scope)
     if refresh:
-        clear_user_today_live_cache(sid)
+        clear_user_today_live_cache(scope)
     to_fetch: list[str] = []
     for dk in day_keys:
         if dk == today_key:
-            if refresh or _get_cached_today(sid) is None:
+            if refresh or _get_cached_today(scope) is None:
                 to_fetch.append(dk)
-        elif refresh or daily_store.get_day(sid, dk) is None:
+        elif refresh or daily_store.get_day(scope, dk) is None:
             to_fetch.append(dk)
 
     source = "cursor_dashboard"
@@ -888,7 +884,7 @@ def summarize_user_usage(
     if to_fetch:
         try:
             source, auth_error, live_fetched = _fetch_and_cache_days(
-                sid,
+                scope,
                 to_fetch,
                 session_token=session_token,
                 cursor_email=cursor_email,
@@ -912,15 +908,15 @@ def summarize_user_usage(
             live_today = live_fetched.get(dk)
             if live_today is not None:
                 daily_map[dk] = live_today
-                _set_cached_today(sid, live_today)
+                _set_cached_today(scope, live_today)
             else:
-                cached_today = _get_cached_today(sid)
+                cached_today = _get_cached_today(scope)
                 if cached_today is not None:
                     daily_map[dk] = cached_today
                 else:
                     missing_after_fetch.append(dk)
             continue
-        row = daily_store.get_day(sid, dk)
+        row = daily_store.get_day(scope, dk)
         if row is None:
             missing_after_fetch.append(dk)
         else:
