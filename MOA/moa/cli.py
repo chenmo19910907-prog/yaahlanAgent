@@ -231,6 +231,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--feed-comment-area", default="MENA", help="帖子评论：area（默认 MENA）")
     parser.add_argument("--feed-comment-lang", default="en", help="帖子评论：lang（默认 en）")
     parser.add_argument("--feed-comment-os", default="android", help="帖子评论：os/osType（默认 android）")
+    parser.add_argument("--feed-like-user-id", help="帖子点赞：点赞者 userId（likeContent LIKE_FEED）")
+    parser.add_argument("--feed-like-feed-id", help="帖子点赞：帖子 feedId（作为 contentId）")
+    parser.add_argument("--feed-like-area", default="MENA", help="帖子点赞：area（默认 MENA）")
+    parser.add_argument("--feed-like-lang", default="en", help="帖子点赞：lang（默认 en）")
+    parser.add_argument("--feed-like-os", default="android", help="帖子点赞：os/osType（默认 android）")
     parser.add_argument("--feed-publish-user-id", help="发动态：发帖 userId（publishFeed）")
     parser.add_argument("--feed-publish-text", help="发动态：正文")
     parser.add_argument(

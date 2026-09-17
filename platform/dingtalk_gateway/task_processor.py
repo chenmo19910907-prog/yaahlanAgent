@@ -79,6 +79,12 @@ from web_agent_restart import (
 )
 from dingtalk_group_file import send_group_file
 from dingtalk_media import download_message_images
+from dingtalk_user_profile import (
+    download_sender_avatar,
+    format_sender_context,
+    resolve_user_profile,
+    should_attach_sender_avatar,
+)
 from export_delivery import deliver_reply, is_view_all_follow_up
 from inbound_message import InboundMessage
 from log_redact import redact_for_log
@@ -405,6 +411,15 @@ def process_inbound_task(
 
     sender_name = incoming.sender_nick or incoming.sender_staff_id or incoming.sender_id or ""
     sender_staff_id = incoming.sender_staff_id or incoming.sender_id or ""
+    if sender_staff_id:
+        try:
+            from dingtalk_avatar_cache import touch_avatar_cache
+
+            touch_avatar_cache(sender_staff_id, known_name=sender_name, background=True)
+        except Exception:  # noqa: BLE001
+            pass
+    sender_profile = resolve_user_profile(sender_staff_id, known_name=sender_name)
+    sender_context = format_sender_context(sender_profile)
     user_reply_mode = get_reply_mode_store().get()
     task_kind = classify_task_kind(prompt)
     task_estimate_s = resolve_task_estimate_seconds(task_kind, prompt=prompt)
@@ -633,6 +648,13 @@ def process_inbound_task(
                 session=session,
             )
             session.check_cancelled()
+        if sender_profile.avatar_url and should_attach_sender_avatar(prompt):
+            avatar_path = download_sender_avatar(
+                sender_profile.avatar_url,
+                session_id=incoming.message_id or user_key or "unknown",
+            )
+            if avatar_path is not None:
+                image_paths = [avatar_path, *image_paths]
 
         session.set_phase("route")
         routed = try_route(prompt, session=session)
@@ -817,6 +839,7 @@ def process_inbound_task(
                         session=session,
                         user_key=user_key,
                         sender_name=sender_name,
+                        sender_context=sender_context,
                         allow_code_modify=code_allowed,
                         allow_moa_registry=allow_moa_registry,
                         include_process_in_final=normalize_reply_mode(user_reply_mode) == "detailed",
@@ -830,6 +853,7 @@ def process_inbound_task(
                         session=session,
                         user_key=user_key,
                         sender_name=sender_name,
+                        sender_context=sender_context,
                         allow_code_modify=code_allowed,
                         allow_moa_registry=allow_moa_registry,
                         include_process_in_final=normalize_reply_mode(user_reply_mode) == "detailed",

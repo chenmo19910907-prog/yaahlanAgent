@@ -14,18 +14,23 @@
     "Application": "私有应用配置（MSE 控制台「私有/application」；API nameSpace 为空）"
   },
   "api": {
-    "path": "/apirest/httpproxy/config/getConfigsByAppKeyAndNameSpace",
-    "method": "POST",
-    "content_type": "application/x-www-form-urlencoded",
-    "form_fields": [
-      "region",
-      "appKey",
-      "nameSpace",
-      "cluster",
-      "key",
-      "order",
-      "env",
-      "server"
-    ]
+    "read": {
+      "path": "/apirest/httpproxy/config/getConfigsByAppKeyAndNameSpace",
+      "method": "POST",
+      "content_type": "application/x-www-form-urlencoded"
+    },
+    "save": {
+      "path": "/apirest/httpproxy/record/saveOrUpdateConfigModel",
+      "method": "POST",
+      "content_type": "application/x-www-form-urlencoded",
+      "body": "json={configInfoModel,advancedCheck,degradeTimePeriod}"
+    },
+    "publish": {
+      "create": "/apirest/httpproxy/record/createPublishRecord",
+      "skip_grey": "/apirest/httpproxy/record/updatePublishRecordProcess",
+      "all_publish": "/apirest/httpproxy/record/allPublishByRecord",
+      "check": "/apirest/httpproxy/record/getInstanceByCluster",
+      "complete": "/apirest/httpproxy/record/complete"
+    }
   }
 }

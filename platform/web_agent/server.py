@@ -1459,6 +1459,12 @@ def _build_lite_sessions_response(
         }
         for meta in items
     ])
+    try:
+        from dingtalk_user_lookup import enrich_sessions_with_avatars
+
+        enrich_sessions_with_avatars(sessions)
+    except Exception:  # noqa: BLE001
+        pass
     etag = compute_sessions_list_etag(sessions, scope="all", lite=True)
     payload: dict[str, Any] = {"sessions": sessions, "query": "", "scope": "all"}
     _LITE_SESSIONS_CACHE[cache_key] = (index_mtime, active_session_ids, etag, payload)
@@ -1614,6 +1620,18 @@ def _session_owner_context(user: Any) -> tuple[str, str, float]:
 def _session_owner_from_user(user: Any) -> tuple[str, str]:
     uid, label, _ = _session_owner_context(user)
     return uid, label
+
+
+def _touch_user_avatar_cache(staff_id: str, display_name: str = "") -> None:
+    uid = (staff_id or "").strip()
+    if not uid:
+        return
+    try:
+        from dingtalk_user_lookup import touch_user_avatar_cache
+
+        touch_user_avatar_cache(uid, known_name=display_name, background=True)
+    except Exception:  # noqa: BLE001
+        logger.debug("touch 头像缓存跳过 staff=%s", uid[:12])
 
 
 def _attachment_message_dict(item: StoredAttachment) -> dict[str, object]:
@@ -1940,6 +1958,19 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     user_payload["adminApplyStatus"] = application_status_for_staff(
                         user.staff_id
                     )
+                display_name = user_payload["displayName"]
+                _touch_user_avatar_cache(user.staff_id, display_name)
+                try:
+                    from dingtalk_user_lookup import resolve_user_avatars
+
+                    avatar_url = resolve_user_avatars(
+                        [user.staff_id],
+                        try_api=True,
+                    ).get(user.staff_id, "")
+                    if avatar_url:
+                        user_payload["avatarUrl"] = avatar_url
+                except Exception:  # noqa: BLE001
+                    pass
                 payload["user"] = user_payload
             return _json_response(self, payload)
 
@@ -1961,15 +1992,19 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             user = current_web_user(self)
             if user is None:
                 return _json_response(self, {"error": "未登录"}, 401)
-            return _json_response(
-                self,
-                list_admin_users(
-                    viewer_staff_id=user.staff_id,
-                    viewer_display_name=lookup_auth_user_display_name(
-                        user.staff_id, user.display_name
-                    ),
+            admin_payload = list_admin_users(
+                viewer_staff_id=user.staff_id,
+                viewer_display_name=lookup_auth_user_display_name(
+                    user.staff_id, user.display_name
                 ),
             )
+            try:
+                from dingtalk_user_lookup import enrich_staff_users_with_avatars
+
+                enrich_staff_users_with_avatars(admin_payload.get("users") or [])
+            except Exception:  # noqa: BLE001
+                pass
+            return _json_response(self, admin_payload)
 
         if not authorize_request(self, method="GET"):
             return
@@ -2113,6 +2148,46 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         if path == "/api/web-docs":
             return _json_response(self, _load_web_docs())
 
+        if path == "/api/dingtalk/user-avatars":
+            qs = parse_qs(parsed.query)
+            ids_raw = (qs.get("ids") or [""])[0]
+            staff_ids = [part.strip() for part in ids_raw.split(",") if part.strip()]
+            if len(staff_ids) > 50:
+                staff_ids = staff_ids[:50]
+            try:
+                from dingtalk_user_lookup import resolve_user_avatars
+
+                # 按需调钉钉 API 补全未缓存头像（前端 hydrateAvatars 专用，限 50 个）
+                avatars = resolve_user_avatars(staff_ids, try_api=True)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("批量解析钉钉头像失败: %s", exc)
+                avatars = {}
+            return _json_response(self, {"avatars": avatars})
+
+        m = re.match(r"^/api/dingtalk/avatar/([a-zA-Z0-9._-]{1,64})$", path)
+        if m:
+            staff_id = m.group(1)
+            try:
+                from dingtalk_avatar_cache import resolve_avatar_file
+
+                resolved = resolve_avatar_file(staff_id, try_api=True)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("读取钉钉头像失败 staffId=%s: %s", staff_id[:12], exc)
+                resolved = None
+            if resolved is None:
+                self.send_error(HTTPStatus.NOT_FOUND)
+                return
+            file_path, content_type = resolved
+            data = file_path.read_bytes()
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "public, max-age=604800, immutable")
+            self.send_header("ETag", f'"{int(file_path.stat().st_mtime)}"')
+            self.end_headers()
+            self.wfile.write(data)
+            return
+
         if path == "/api/web-users":
             # 分享/协作选人列表：/api/sessions 轮询已做增量同步，此处跳过以免阻塞弹窗
             store = get_session_store()
@@ -2137,6 +2212,12 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                         try_api_for_ascii=False,
                     )
                 )
+                try:
+                    from dingtalk_user_lookup import enrich_staff_users_with_avatars
+
+                    enrich_staff_users_with_avatars(users)
+                except Exception:  # noqa: BLE001
+                    pass
                 groups = list_selectable_group_chats(
                     store.list_sessions(enrich_names=False),
                     query=query,
@@ -2207,6 +2288,12 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 }
                 for meta, hit in pairs
             ])
+            try:
+                from dingtalk_user_lookup import enrich_sessions_with_avatars
+
+                enrich_sessions_with_avatars(sessions)
+            except Exception:  # noqa: BLE001
+                pass
             etag = compute_sessions_list_etag(
                 sessions,
                 query=search_q,
@@ -2336,6 +2423,12 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     if msg.author_label:
                         item["author_label"] = msg.author_label
                 messages.append(item)
+            try:
+                from dingtalk_user_lookup import enrich_user_messages_with_avatars
+
+                enrich_user_messages_with_avatars(messages)
+            except Exception:  # noqa: BLE001
+                pass
             payload: dict[str, object] = {
                 "messages": messages,
                 "total": page_meta.get("total", len(messages)),
@@ -2754,6 +2847,8 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 owner_label=owner_label,
             )
             author_id, author_label = _session_owner_from_user(viewer)
+            if author_id:
+                _touch_user_avatar_cache(author_id, author_label)
             push_dingtalk_staff_id = ""
             if push_result_to_dingtalk:
                 if viewer is None or not (viewer.staff_id or "").strip():

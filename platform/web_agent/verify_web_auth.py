@@ -139,6 +139,23 @@ class WebAuthTest(unittest.TestCase):
             self.assertTrue(is_anonymous_allowed(handler, method="GET"))
             self.assertTrue(authorize_request(handler, method="GET"))
 
+    def test_otp_guest_can_read_dingtalk_user_avatars(self) -> None:
+        env = {"WEB_AGENT_OTP_AUTH": "1"}
+        handler = _FakeHandler(path="/api/dingtalk/user-avatars", client="8.8.8.8")
+        with patch("web_auth.load_env_local", lambda: None), patch.dict(os.environ, env, clear=True):
+            self.assertTrue(is_anonymous_allowed(handler, method="GET"))
+            self.assertTrue(authorize_request(handler, method="GET"))
+
+    def test_otp_guest_can_read_dingtalk_avatar_file(self) -> None:
+        env = {"WEB_AGENT_OTP_AUTH": "1"}
+        handler = _FakeHandler(
+            path="/api/dingtalk/avatar/32274159141215328",
+            client="8.8.8.8",
+        )
+        with patch("web_auth.load_env_local", lambda: None), patch.dict(os.environ, env, clear=True):
+            self.assertTrue(is_anonymous_allowed(handler, method="GET"))
+            self.assertTrue(authorize_request(handler, method="GET"))
+
     def test_localhost_requires_otp_when_enabled(self) -> None:
         env = {"WEB_AGENT_OTP_AUTH": "1"}
         handler = _FakeHandler(client="127.0.0.1", path="/api/chat")

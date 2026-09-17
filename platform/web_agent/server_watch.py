@@ -305,6 +305,15 @@ def _active_worker_run_count() -> int:
         return 0
 
 
+def _acquire_watch_lock() -> None:
+    """避免 launchd 与手动启动并存时双监视进程互杀子服务。"""
+    existing = read_watch_pid()
+    if existing is not None and existing != os.getpid() and is_process_alive(existing):
+        logger.error("已有 Web Agent 监视进程 pid=%s，本进程退出", existing)
+        raise SystemExit(1)
+    write_pid_file()
+
+
 def run_watch(
     *,
     host: str,
@@ -312,7 +321,7 @@ def run_watch(
     poll_s: float = 1.0,
     debounce_s: float = 0.8,
 ) -> None:
-    write_pid_file()
+    _acquire_watch_lock()
     child = spawn_server(host=host, port=port)
     time.sleep(POST_RESTART_SETTLE_S)
     mtimes = snapshot_mtimes()

@@ -219,7 +219,9 @@ def is_anonymous_allowed(handler: BaseHTTPRequestHandler, *, method: str = "GET"
         # 页面依赖的静态脚本须免鉴权，否则浏览器收到 login.html 导致 JS 变量未定义
         if path.endswith(".js") and not path.startswith("/api/"):
             return True
-        if path in ("/api/meta", "/api/catalog", "/api/sessions"):
+        if path in ("/api/meta", "/api/catalog", "/api/sessions", "/api/dingtalk/user-avatars"):
+            return True
+        if path.startswith("/api/dingtalk/avatar/"):
             return True
         if path == "/api/message-board" or path.startswith("/api/message-board/"):
             return True

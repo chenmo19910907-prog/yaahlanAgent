@@ -1559,6 +1559,38 @@ def set_feed_comment_params(
     payload["params"] = [json_param(body)]
 
 
+def set_feed_like_feed_params(
+    payload: dict[str, Any],
+    user_id: str,
+    feed_id: str,
+    *,
+    area: str = "MENA",
+    lang: str = "en",
+    os_name: str = "android",
+) -> None:
+    uid = str(user_id).strip()
+    fid = str(feed_id).strip()
+    if not uid:
+        raise ValueError("userId 不能为空")
+    if not fid:
+        raise ValueError("feedId 不能为空")
+    body = {
+        "userId": uid,
+        "uid": uid,
+        "action": "LIKE_FEED",
+        "contentId": fid,
+        "appId": "2005",
+        "area": str(area or "MENA").strip() or "MENA",
+        "lang": str(lang or "en").strip() or "en",
+        "os": str(os_name or "android").strip() or "android",
+        "osType": str(os_name or "android").strip() or "android",
+    }
+    payload["url"] = "/service/feed/external/feed-interact-stage"
+    payload["method"] = "likeContent"
+    payload["params"] = [json_param(body)]
+    payload["header"] = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+
+
 _P2P_MSG_TYPES = frozenset({"TEXT", "IMG", "AUDIO", "VIDEO", "CUSTOM"})
 
 

@@ -225,6 +225,7 @@ def build_gateway_prompt(
     allow_moa_registry: bool = False,
     batch_progress_key: str = "",
     reply_mode: str | None = None,
+    sender_context: str = "",
 ) -> str:
     user = (user_text or "").strip()
     extras: list[str] = []
@@ -237,6 +238,9 @@ def build_gateway_prompt(
     batch_note = batch_progress_instruction(batch_progress_key)
     if batch_note:
         extras.append(batch_note)
+    sender_note = (sender_context or "").strip()
+    if sender_note:
+        extras.append(sender_note)
     if looks_like_moa_registry_intent(user):
         extras.append(moa_registry_instruction())
     family_join_hint = family_join_prompt_hint(user)

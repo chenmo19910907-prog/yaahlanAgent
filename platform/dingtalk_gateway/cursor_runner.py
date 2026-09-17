@@ -92,6 +92,7 @@ def _build_prompt_text(
     allow_moa_registry: bool = False,
     batch_progress_key: str = "",
     reply_mode: str | None = None,
+    sender_context: str = "",
 ) -> str:
     link_list = [str(link).strip() for link in links if str(link).strip()]
     if use_gateway_rules and is_new_session:
@@ -103,6 +104,7 @@ def _build_prompt_text(
             allow_moa_registry=allow_moa_registry,
             batch_progress_key=batch_progress_key,
             reply_mode=reply_mode,
+            sender_context=sender_context,
         )
     if use_gateway_rules:
         extras: list[str] = []
@@ -121,6 +123,9 @@ def _build_prompt_text(
         batch_note = batch_progress_instruction(batch_progress_key, compact=True)
         if batch_note:
             extras.append(batch_note)
+        sender_note = (sender_context or "").strip()
+        if sender_note:
+            extras.append(sender_note)
         reply_note = _gateway_reply_mode_instruction(reply_mode)
         if reply_note:
             extras.append(reply_note)
@@ -387,6 +392,7 @@ def run_agent_prompt(
     session: TaskSession | None = None,
     user_key: str | None = None,
     sender_name: str | None = None,
+    sender_context: str | None = None,
     allow_code_modify: bool = True,
     allow_moa_registry: bool = False,
     stream: bool = False,
@@ -430,6 +436,7 @@ def run_agent_prompt(
             session=session,
             user_key=user_key,
             sender_name=sender_name,
+            sender_context=sender_context or "",
             allow_code_modify=allow_code_modify,
             allow_moa_registry=allow_moa_registry,
             stream=stream,
@@ -465,6 +472,7 @@ def _run_agent_prompt_impl(
     session: TaskSession | None,
     user_key: str | None,
     sender_name: str | None,
+    sender_context: str,
     allow_code_modify: bool,
     allow_moa_registry: bool,
     stream: bool,
@@ -551,6 +559,7 @@ def _run_agent_prompt_impl(
                 allow_moa_registry=allow_moa_registry,
                 batch_progress_key=user_key or "",
                 reply_mode=reply_mode,
+                sender_context=sender_context,
             )
 
             if paths:
@@ -668,6 +677,7 @@ def run_agent_prompt_streaming(
     session: TaskSession | None = None,
     user_key: str | None = None,
     sender_name: str | None = None,
+    sender_context: str | None = None,
     allow_code_modify: bool = True,
     allow_moa_registry: bool = False,
     show_thinking: bool = True,
@@ -691,6 +701,7 @@ def run_agent_prompt_streaming(
         session=session,
         user_key=user_key,
         sender_name=sender_name,
+        sender_context=sender_context,
         allow_code_modify=allow_code_modify,
         allow_moa_registry=allow_moa_registry,
         stream=True,

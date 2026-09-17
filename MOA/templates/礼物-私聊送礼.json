@@ -1,0 +1,78 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/mdp-gift/gift-query-service",
+  "method": "batchQueryCategoryPropAndGifts",
+  "header": "",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"appId\":2005,\"uid\":\"100334384\",\"ip\":\"84.75.158.104\",\"deviceId\":\"1d1cdd7be66f8216afd40c72264eb647bc18cc90\",\"innerVersion\":\"1\",\"rom\":\"9.0\",\"osType\":\"android\",\"channelKey\":\"primary\",\"model\":\"SM-G8750\",\"lang\":\"en\",\"category\":2005000189,\"giftId\":\"2005008092\",\"num\":1,\"isPackage\":0,\"isMulti\":0,\"ext\":\"{\\\"source\\\":\\\"p2p\\\",\\\"giftNum\\\":1,\\\"comboId\\\":\\\"8e8faeef-2774-477a-9502-440cbd1df4fb\\\",\\\"comboIndex\\\":1,\\\"receiverIds\\\":\\\"100081602\\\"}\",\"ua\":\"Yaahlan2.6.2_dev Android/416 (SM-G8750; Android 9; Gapps 0; zh_CN; 1; samsung)\",\"giftType\":0,\"giftSubType\":0,\"remoteIdList\":\"[\\\"100081602\\\"]\"}",
+      "type": "json",
+      "value": {
+        "appId": 2005,
+        "uid": "100334384",
+        "ip": "84.75.158.104",
+        "deviceId": "1d1cdd7be66f8216afd40c72264eb647bc18cc90",
+        "innerVersion": "1",
+        "rom": "9.0",
+        "osType": "android",
+        "channelKey": "primary",
+        "model": "SM-G8750",
+        "lang": "en",
+        "category": 2005000189,
+        "giftId": "2005008092",
+        "num": 1,
+        "isPackage": 0,
+        "isMulti": 0,
+        "ext": "{\"source\":\"p2p\",\"giftNum\":1,\"comboId\":\"8e8faeef-2774-477a-9502-440cbd1df4fb\",\"comboIndex\":1,\"receiverIds\":\"100081602\"}",
+        "ua": "Yaahlan2.6.2_dev Android/416 (SM-G8750; Android 9; Gapps 0; zh_CN; 1; samsung)",
+        "giftType": 0,
+        "giftSubType": 0,
+        "remoteIdList": "[\"100081602\"]"
+      }
+    }
+  ],
+  "_meta": {
+    "httpPath": "/yaahlan/v2/gift/send",
+    "backendPath": "/v2/gift/send",
+    "backendService": "yaahlan-web",
+    "cmdbAppKey": "momo.ibt.yaahlan.service.yaahlan-web",
+    "execution": "Gift Stage HTTP POST {instance_ip}:8080/v2/gift/send（无 MOA httpproxy；推荐 Gift/gift_execute.py --scene private）",
+    "tunnelMomoid": "100334384",
+    "tunnelTime": "2026/09/16 16:34:46",
+    "tunnelId": "slpaqaABpk1mjMPPrG5o",
+    "giftId": "2005008092",
+    "giftName": "xin",
+    "priceDiamond": 10,
+    "senderExample": "100334384",
+    "receiverExample": "100081602",
+    "extKeys": "source=p2p, giftNum, comboId, comboIndex, receiverIds",
+    "note": "抓包为个人主页/私聊面板送礼（source=p2p）。执行时 Gift/gift_execute.py --scene private 使用 source=im，均可成功扣钻送礼。"
+  },
+  "_registry": {
+    "id": "p2p_gift_send",
+    "name": "礼物-私聊送礼",
+    "category": "礼物（/v2/gift/send · Stage HTTP）",
+    "description": "测试环境 IM/个人主页私聊送礼（HTTP /v2/gift/send；ext.source=p2p 或 im）。抓包 100334384 → 100081602 giftId=2005008092（xin 10钻）。无 MOA httpproxy，Agent 用 Gift/gift_execute.py --scene private POST。",
+    "prompts": [
+      "用户 <senderUserId> 私聊给 <receiverUserId> 送 <giftId> 礼物",
+      "私聊送礼 MOA p2p gift send",
+      "批量私聊送礼 <receiverUserId> giftId=<giftId> count=<count>"
+    ]
+  }
+}

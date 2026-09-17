@@ -569,43 +569,14 @@ def _fetch_name_from_api(user_id: str) -> str | None:
         gateway_dir = WEB_AGENT_DIR.parent / "dingtalk_gateway"
         if str(gateway_dir) not in sys.path:
             sys.path.insert(0, str(gateway_dir))
-        from alidocs_upload import get_access_token  # noqa: WPS433
+        from dingtalk_user_profile import resolve_user_profile  # noqa: WPS433
 
-        token = get_access_token()
+        profile = resolve_user_profile(uid, try_api=True)
     except Exception as exc:  # noqa: BLE001
-        logger.debug("获取钉钉 token 失败，跳过姓名解析 uid=%s: %s", uid[:12], exc)
-        return None
-
-    url = f"https://oapi.dingtalk.com/topapi/v2/user/get?access_token={token}"
-    payload = json.dumps({"userid": uid, "language": "zh_CN"}).encode("utf-8")
-    req = urllib.request.Request(
-        url,
-        data=payload,
-        headers={"Content-Type": "application/json; charset=utf-8"},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-    except (urllib.error.HTTPError, urllib.error.URLError, json.JSONDecodeError) as exc:
         logger.debug("钉钉用户查询失败 uid=%s: %s", uid[:12], exc)
         return None
-
-    if int(data.get("errcode") or 0) != 0:
-        logger.debug(
-            "钉钉用户查询 errcode=%s uid=%s",
-            data.get("errcode"),
-            uid[:12],
-        )
-        return None
-    result = data.get("result")
-    if not isinstance(result, dict):
-        return None
-    for key in ("name", "nickname", "real_authed_name"):
-        value = str(result.get(key) or "").strip()
-        if value:
-            return value
-    return None
+    name = (profile.display_name or "").strip()
+    return name or None
 
 
 def resolve_dingtalk_name(
@@ -645,6 +616,123 @@ def resolve_dingtalk_name(
         return best
 
     return ""
+
+
+def touch_user_avatar_cache(
+    staff_id: str,
+    *,
+    known_name: str = "",
+    background: bool = True,
+) -> None:
+    """用户活跃时触发 profile + 头像文件缓存刷新（后台、防抖）。"""
+    uid = (staff_id or "").strip()
+    if not uid:
+        return
+    try:
+        from dingtalk_avatar_cache import touch_avatar_cache  # noqa: WPS433
+
+        touch_avatar_cache(uid, known_name=known_name, background=background)
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("touch 头像缓存失败 uid=%s: %s", uid[:12], exc)
+
+
+def resolve_user_avatars(
+    staff_ids: list[str],
+    *,
+    try_api: bool = True,
+) -> dict[str, str]:
+    """批量解析 staffId → 本地头像 URL（读 profile 缓存，缺失时调 API；图片走本地代理）。"""
+    result: dict[str, str] = {}
+    for raw in staff_ids:
+        uid = (raw or "").strip()
+        if not uid or uid in result:
+            continue
+        try:
+            gateway_dir = WEB_AGENT_DIR.parent / "dingtalk_gateway"
+            if str(gateway_dir) not in sys.path:
+                sys.path.insert(0, str(gateway_dir))
+            from dingtalk_avatar_cache import local_avatar_url_for_staff  # noqa: WPS433
+            from dingtalk_user_profile import resolve_user_profile  # noqa: WPS433
+
+            profile = resolve_user_profile(uid, try_api=try_api)
+            if not profile.avatar_url:
+                continue
+            if try_api:
+                from dingtalk_avatar_cache import ensure_avatar_cached  # noqa: WPS433
+
+                ensure_avatar_cached(uid, profile.avatar_url)
+            local_url = local_avatar_url_for_staff(uid, profile.avatar_url)
+            if local_url:
+                result[uid] = local_url
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("解析头像失败 uid=%s: %s", uid[:12], exc)
+    return result
+
+
+def _session_owner_staff_id(row: dict[str, object]) -> str:
+    return str(row.get("dingtalk_owner_id") or row.get("web_owner_id") or "").strip()
+
+
+def enrich_sessions_with_avatars(
+    sessions: list[dict[str, object]],
+    *,
+    try_api: bool = False,
+) -> None:
+    """为会话列表项补 owner_avatar_url（默认只读本地缓存，避免列表接口超时）。"""
+    staff_ids = [_session_owner_staff_id(row) for row in sessions]
+    staff_ids = [sid for sid in staff_ids if sid]
+    if not staff_ids:
+        return
+    avatars = resolve_user_avatars(staff_ids, try_api=try_api)
+    for row in sessions:
+        sid = _session_owner_staff_id(row)
+        url = avatars.get(sid, "")
+        if url:
+            row["owner_avatar_url"] = url
+
+
+def enrich_staff_users_with_avatars(
+    users: list[dict[str, object]],
+    *,
+    try_api: bool = False,
+) -> None:
+    """为 staff 用户列表补 avatarUrl（默认只读本地缓存）。"""
+    staff_ids = [
+        str(u.get("staffId") or "").strip()
+        for u in users
+        if str(u.get("staffId") or "").strip()
+    ]
+    if not staff_ids:
+        return
+    avatars = resolve_user_avatars(staff_ids, try_api=try_api)
+    for user in users:
+        sid = str(user.get("staffId") or "").strip()
+        url = avatars.get(sid, "")
+        if url:
+            user["avatarUrl"] = url
+
+
+def enrich_user_messages_with_avatars(
+    messages: list[dict[str, object]],
+    *,
+    try_api: bool = False,
+) -> None:
+    """为 user 消息补 author_avatar_url（默认只读本地缓存）。"""
+    staff_ids = [
+        str(m.get("author_id") or "").strip()
+        for m in messages
+        if m.get("role") == "user" and str(m.get("author_id") or "").strip()
+    ]
+    if not staff_ids:
+        return
+    avatars = resolve_user_avatars(staff_ids, try_api=try_api)
+    for m in messages:
+        if m.get("role") != "user":
+            continue
+        aid = str(m.get("author_id") or "").strip()
+        url = avatars.get(aid, "")
+        if url:
+            m["author_avatar_url"] = url
 
 
 def is_selectable_collaborator(staff_id: str, display_name: str) -> bool:

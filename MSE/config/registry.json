@@ -110,6 +110,41 @@
         "getConfigs Application giftSpokespersonTaskConfig"
       ],
       "command": "python3 MSE/mse_execute.py --namespace Application --config-key <configKey>"
+    },
+    {
+      "id": "update_config_set",
+      "name": "配置-改参保存",
+      "category": "MSE 服务配置",
+      "description": "读取当前 configValue JSON，按 --set key=value 修改并保存到 MSE（saveOrUpdateConfigModel）；默认 stage 测试环境",
+      "prompts": [
+        "修改 MSE 配置 familyPkConfig basePoolDiamond=1000",
+        "MSE 改参保存 voga-common <configKey>",
+        "更新 MSE 服务配置 <configKey> --set enabled=true"
+      ],
+      "command": "python3 MSE/mse_execute.py --namespace voga-common --config-key <configKey> --set <key>=<value> --save"
+    },
+    {
+      "id": "update_config_publish",
+      "name": "配置-改参保存并发布",
+      "category": "MSE 服务配置",
+      "description": "改参保存后自动发布：createPublishRecord → 跳过灰度 → 全量发布 → complete；适用于 stage 测试环境验收",
+      "prompts": [
+        "修改并发布 MSE 配置 familyPkConfig",
+        "MSE 改参上线 voga-common <configKey>",
+        "更新 MSE 配置并全量发布 <configKey> --set <key>=<value>"
+      ],
+      "command": "python3 MSE/mse_execute.py --namespace voga-common --config-key <configKey> --set <key>=<value> --publish"
+    },
+    {
+      "id": "update_config_dry_run",
+      "name": "配置-改参预览",
+      "category": "MSE 服务配置",
+      "description": "仅预览 configValue 变更 diff，不写入 MSE",
+      "prompts": [
+        "预览 MSE 配置修改 familyPkConfig",
+        "dry-run MSE 改参 <configKey>"
+      ],
+      "command": "python3 MSE/mse_execute.py --namespace voga-common --config-key <configKey> --set <key>=<value> --dry-run"
     }
   ]
 }

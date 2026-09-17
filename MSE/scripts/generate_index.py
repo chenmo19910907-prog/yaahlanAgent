@@ -88,13 +88,19 @@ def _render(registry: dict[str, Any]) -> str:
     lines.append("")
     lines.append("- **提示词**：自然语言口令")
     lines.append("- **命令**：可执行脚本（默认复用 `MOA/.env.local` 的 Cookie）")
-    lines.append("- **接口**：`POST /apirest/httpproxy/config/getConfigsByAppKeyAndNameSpace`")
+    lines.append("- **读取**：`POST /apirest/httpproxy/config/getConfigsByAppKeyAndNameSpace`")
+    lines.append("- **保存**：`POST /apirest/httpproxy/record/saveOrUpdateConfigModel`（body.form `json=...`）")
+    lines.append(
+        "- **发布**：`createPublishRecord` → `updatePublishRecordProcess`（跳过灰度）"
+        " → `allPublishByRecord` → `complete`"
+    )
     lines.append(
         "- **默认**：`appKey=momo.bpm.biz.gameplatform.overseas-voga-mts-vas`；"
         "常用 namespace：`voga-common`（公有通用）、`voga-activity`（公有活动）、"
         "`Application`（私有/application，API nameSpace 为空）"
     )
     lines.append("- **完整响应**：追加 `--output json`；单条值：`--config-key <key> --output value`")
+    lines.append("- **改参**：`--set key=value --save`；保存并发布：`--publish`；预览：`--dry-run`")
     lines.append("")
 
     for idx, cat in enumerate(sorted_cats, start=1):

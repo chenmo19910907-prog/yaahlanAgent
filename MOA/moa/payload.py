@@ -82,6 +82,7 @@ from .params import (
     set_user_prop_query_params,
     set_user_follow_params,
     set_feed_comment_params,
+    set_feed_like_feed_params,
     set_feed_publish_params,
     set_p2p_message_params,
     set_room_channel_emote_params,
@@ -1318,6 +1319,13 @@ def _feed_comment_mode(args: argparse.Namespace) -> bool:
     )
 
 
+def _feed_like_feed_mode(args: argparse.Namespace) -> bool:
+    return (
+        args.feed_like_user_id is not None
+        or args.feed_like_feed_id is not None
+    )
+
+
 def _feed_publish_mode(args: argparse.Namespace) -> bool:
     return any(
         getattr(args, name, None) is not None
@@ -1410,6 +1418,24 @@ def _op_feed_comment(args: argparse.Namespace, payload: dict[str, Any]) -> None:
         area=str(args.feed_comment_area or "MENA"),
         lang=str(args.feed_comment_lang or "en"),
         os_name=str(args.feed_comment_os or "android"),
+    )
+
+
+def _op_feed_like_feed(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(args.feed_like_user_id or "").strip()
+    feed_id = str(args.feed_like_feed_id or "").strip()
+    if not user_id or not feed_id:
+        raise ValueError(
+            "帖子点赞须同时提供 --feed-like-user-id、--feed-like-feed-id"
+        )
+    print(f"帖子点赞: userId={user_id} feedId={feed_id}", file=sys.stderr)
+    set_feed_like_feed_params(
+        payload,
+        user_id,
+        feed_id,
+        area=str(args.feed_like_area or "MENA"),
+        lang=str(args.feed_like_lang or "en"),
+        os_name=str(args.feed_like_os or "android"),
     )
 
 
@@ -1760,6 +1786,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.follow_uid is not None or a.follow_remote_uid is not None, _op_user_follow),
     (lambda a: _feed_publish_mode(a), _op_feed_publish),
     (lambda a: _feed_comment_mode(a), _op_feed_comment),
+    (lambda a: _feed_like_feed_mode(a), _op_feed_like_feed),
     (lambda a: _room_channel_emote_mode(a), _op_room_channel_emote),
     (lambda a: _room_channel_image_mode(a), _op_room_channel_image),
     (lambda a: _room_channel_message_mode(a), _op_room_channel_message),
