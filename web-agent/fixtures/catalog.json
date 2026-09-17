@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-09-17 14:33:40 北京时间",
-  "total_items": 326,
+  "generated_at": "2026-09-17 19:18:23 北京时间",
+  "total_items": 328,
   "module_count": 29,
   "modules": [
     {
@@ -3726,11 +3726,33 @@
     {
       "id": "平台",
       "label": "平台",
-      "item_count": 15,
+      "item_count": 17,
       "categories": [
         {
           "name": "MSE 服务配置",
           "items": [
+            {
+              "name": "家族怪兽-导出钉钉表",
+              "prompts": [
+                "导出家族怪兽 MSE 配置到钉钉表",
+                "同步 activityConfig.FamilyMonster 到怪兽挑战配置",
+                "家族怪兽奖池配置导出钉钉"
+              ],
+              "source": "MSE配置",
+              "source_id": "mse",
+              "env": "test"
+            },
+            {
+              "name": "家族怪兽-表格改参发布",
+              "prompts": [
+                "根据钉钉表发布家族怪兽配置",
+                "表格改参发布 activityConfig.FamilyMonster",
+                "从怪兽挑战配置表同步到 MSE 并发布"
+              ],
+              "source": "MSE配置",
+              "source_id": "mse",
+              "env": "test"
+            },
             {
               "name": "配置-Application 关键字过滤",
               "prompts": [
