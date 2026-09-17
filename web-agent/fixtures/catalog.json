@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-09-15 19:02:34 北京时间",
-  "total_items": 321,
+  "generated_at": "2026-09-17 14:33:16 北京时间",
+  "total_items": 326,
   "module_count": 29,
   "modules": [
     {
@@ -1209,7 +1209,7 @@
     {
       "id": "礼物",
       "label": "礼物",
-      "item_count": 17,
+      "item_count": 18,
       "categories": [
         {
           "name": "Stage送礼（/v2/gift/send）",
@@ -1326,6 +1326,22 @@
               ],
               "source": "MOA-generative",
               "source_id": "moa-generative",
+              "env": "test"
+            }
+          ]
+        },
+        {
+          "name": "礼物（/v2/gift/send · Stage HTTP）",
+          "items": [
+            {
+              "name": "礼物-私聊送礼",
+              "prompts": [
+                "用户 <senderUserId> 私聊给 <receiverUserId> 送 <giftId> 礼物",
+                "私聊送礼 MOA p2p gift send",
+                "批量私聊送礼 <receiverUserId> giftId=<giftId> count=<count>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
               "env": "test"
             }
           ]
@@ -1863,7 +1879,7 @@
     {
       "id": "动态",
       "label": "动态",
-      "item_count": 6,
+      "item_count": 7,
       "categories": [
         {
           "name": "动态（/v2/gift/send · Stage HTTP）",
@@ -1911,6 +1927,17 @@
         {
           "name": "动态（feed-interact-stage）",
           "items": [
+            {
+              "name": "动态-帖子点赞",
+              "prompts": [
+                "用户 <userId> 给帖子 <feedId> 点赞",
+                "动态帖子点赞 MOA LIKE_FEED",
+                "帖子点赞 <feedId>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            },
             {
               "name": "动态-评论点赞",
               "prompts": [
@@ -3699,7 +3726,7 @@
     {
       "id": "平台",
       "label": "平台",
-      "item_count": 12,
+      "item_count": 15,
       "categories": [
         {
           "name": "MSE 服务配置",
@@ -3799,6 +3826,38 @@
                 "读取 voga-common 配置 <configKey>",
                 "查 MSE 配置 key=<configKey>",
                 "getConfigs familyPkConfig"
+              ],
+              "source": "MSE配置",
+              "source_id": "mse",
+              "env": "test"
+            },
+            {
+              "name": "配置-改参保存",
+              "prompts": [
+                "修改 MSE 配置 familyPkConfig basePoolDiamond=1000",
+                "MSE 改参保存 voga-common <configKey>",
+                "更新 MSE 服务配置 <configKey> --set enabled=true"
+              ],
+              "source": "MSE配置",
+              "source_id": "mse",
+              "env": "test"
+            },
+            {
+              "name": "配置-改参保存并发布",
+              "prompts": [
+                "修改并发布 MSE 配置 familyPkConfig",
+                "MSE 改参上线 voga-common <configKey>",
+                "更新 MSE 配置并全量发布 <configKey> --set <key>=<value>"
+              ],
+              "source": "MSE配置",
+              "source_id": "mse",
+              "env": "test"
+            },
+            {
+              "name": "配置-改参预览",
+              "prompts": [
+                "预览 MSE 配置修改 familyPkConfig",
+                "dry-run MSE 改参 <configKey>"
               ],
               "source": "MSE配置",
               "source_id": "mse",
