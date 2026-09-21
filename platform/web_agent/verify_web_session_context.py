@@ -48,7 +48,7 @@ class WebSessionContextTest(unittest.TestCase):
                 _seed_messages(store, sid, msgs)
                 self.assertTrue(should_rotate_cursor_agent(sid))
 
-    def test_rotation_note_contains_count(self) -> None:
+    def test_rotation_system_note(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             data = Path(tmp)
             store = WebSessionStore(
@@ -61,8 +61,9 @@ class WebSessionContextTest(unittest.TestCase):
             with patch("web_session_context.get_session_store", return_value=store):
                 _seed_messages(store, sid, msgs)
                 note = build_rotation_system_note(sid)
-                self.assertIn("85", note)
-                self.assertIn("切换新的 Cursor Agent", note)
+                self.assertIn("立即调用工具", note)
+                self.assertIn("近期上下文摘要", note)
+                self.assertNotIn("切换新的 Cursor Agent", note)
 
     def test_pk_hint(self) -> None:
         self.assertTrue(looks_like_pk_atm_task("来一场符合用例的PK"))

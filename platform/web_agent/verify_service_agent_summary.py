@@ -118,6 +118,26 @@ def main() -> int:
         assert "**1. 问**：3+3等于多少？" in normalized
         assert "**答**：3+3=6。" in normalized
 
+        clear_service_agent_run_log(user_key)
+        append_service_agent_exchange(
+            user_key,
+            question="CP 降级用什么 MOA method？",
+            error="服务 Agent 任务 `1467` 超时（90s），最后状态=running",
+        )
+        timeout_summary = build_service_agent_summary(user_key)
+        assert "查询超时（任务仍在执行）" in timeout_summary
+        assert "查询失败" not in timeout_summary
+
+        append_service_agent_exchange(
+            user_key,
+            question="CP 降级用什么 MOA method？",
+            answer="使用 testChangeCpLevel(userId1, userId2, 当前等级, 目标等级)。",
+        )
+        replaced = build_service_agent_summary(user_key)
+        assert replaced.count("CP 降级用什么 MOA method？") == 1
+        assert "testChangeCpLevel" in replaced
+        assert "查询超时" not in replaced
+
     print("verify_service_agent_summary: OK")
     return 0
 

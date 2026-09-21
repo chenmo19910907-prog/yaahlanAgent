@@ -1,0 +1,53 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/room/external/room-behave-stage",
+  "method": "dismissRoom",
+  "header": "{\"userId\":\"100396049\",\"roomId\":\"41119639\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100396049\",\"roomId\":\"41119639\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\"}",
+      "type": "json",
+      "value": {
+        "userId": "100396049",
+        "roomId": "41119639",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "android",
+        "osType": "android"
+      }
+    }
+  ],
+  "_meta": {
+    "serviceAgentRef": "RoomBehaveApiService.dismissRoom",
+    "note": "userId 须等于房主 ownerId；PK/主题活动/真心话大冒险进行中会拦截解散。"
+  },
+  "_registry": {
+    "id": "room_dismiss",
+    "name": "房间-解散房间",
+    "category": "房间（room/external/room-behave-stage）",
+    "description": "测试环境房主解散语音房（dismissRoom）。body 需 userId（须为房主）、roomId、lang。成功返回 flag=1；PK/主题活动/真心话进行中会 toast 拦截。",
+    "prompts": [
+      "房主 <userId> 解散房间 <roomId>",
+      "解散房间 <roomId> 房主 <userId>",
+      "MOA dismissRoom 解散房间"
+    ],
+    "cli": "--room-dismiss --room-dismiss-user-id <userId> --room-dismiss-room-id <roomId>"
+  }
+}

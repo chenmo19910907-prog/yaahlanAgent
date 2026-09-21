@@ -14,6 +14,7 @@ from .patch import apply_set_args, parse_config_value
 from .publish import save_config_value
 from .namespaces import resolve_namespace
 from .paths import config_json_path, mse_dir
+from .share_link import build_mse_config_share_link, format_share_link_output
 from .summary import format_config_detail, format_config_list
 
 
@@ -52,20 +53,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--app-key",
-        default=os.environ.get(
-            "MSE_APP_KEY",
-            defaults.get("app_key", "momo.bpm.biz.gameplatform.overseas-voga-mts-vas"),
-        ),
-        help="appKey",
+        default=os.environ.get("MSE_APP_KEY") or None,
+        help="appKey（省略则用 config.json defaults.app_key）",
     )
     parser.add_argument(
         "--namespace",
         "--name-space",
         dest="name_space",
-        default=os.environ.get("MSE_NAMESPACE", defaults.get("name_space", "voga-common")),
+        default=os.environ.get("MSE_NAMESPACE") or None,
         help=(
             "命名空间：voga-common / voga-activity；"
-            "Application 或 私有/application 表示私有应用配置（API nameSpace 为空）"
+            "Application 或 私有/application 表示私有应用配置（API nameSpace 为空）；"
+            "省略则用 config.json defaults.name_space"
         ),
     )
     parser.add_argument(
@@ -132,6 +131,16 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="仅展示变更 diff，不写入 MSE",
     )
+    parser.add_argument(
+        "--share-link",
+        action="store_true",
+        help="输出 MSE 控制台分享链接（可与读取配置组合）",
+    )
+    parser.add_argument(
+        "--share-link-only",
+        action="store_true",
+        help="仅输出分享链接，不调用 getConfigs（无需 Cookie）",
+    )
     return parser
 
 
@@ -192,17 +201,17 @@ def _run_write_flow(args: argparse.Namespace) -> int:
         region=str(args.region),
         env=str(args.env),
         cluster=str(args.cluster),
-        app_key=str(args.app_key),
+        app_key=_effective_app_key(args),
         cookie=str(args.cookie),
         timeout_s=max(int(args.timeout_ms), 1000) / 1000.0,
     )
-    api_namespace, display_namespace = resolve_namespace(str(args.name_space))
+    api_namespace, display_namespace = resolve_namespace(_effective_name_space(args))
 
     if args.set and not args.config_value and not args.config_value_file:
         result = mse_save_config(
             str(args.config_key),
             _set_args_to_dict(list(args.set or [])),
-            name_space=str(args.name_space),
+            name_space=_effective_name_space(args),
             dry_run=bool(args.dry_run),
             ctx=ctx,
         )
@@ -287,7 +296,7 @@ def _run_write_flow(args: argparse.Namespace) -> int:
             raise RuntimeError("灰度发布尚未实现，请省略 --with-grey")
         pub = mse_publish_config(
             str(args.config_key),
-            name_space=str(args.name_space),
+            name_space=_effective_name_space(args),
             confirm_publish=True,
             config_id=int(config_id) if config_id is not None else None,
             config_value=new_value,
@@ -299,10 +308,54 @@ def _run_write_flow(args: argparse.Namespace) -> int:
     return 0
 
 
+def _effective_app_key(args: argparse.Namespace) -> str:
+    if args.app_key:
+        return str(args.app_key).strip()
+    defaults = _load_defaults()
+    return str(defaults.get("app_key") or "momo.bpm.biz.gameplatform.overseas-voga-mts-vas").strip()
+
+
+def _effective_name_space(args: argparse.Namespace) -> str:
+    if args.name_space:
+        return str(args.name_space).strip()
+    defaults = _load_defaults()
+    return str(defaults.get("name_space") or "voga-common").strip()
+
+
+def _share_link_app_key(args: argparse.Namespace) -> str:
+    return str(args.app_key or "").strip()
+
+
+def _share_link_name_space(args: argparse.Namespace) -> str:
+    return str(args.name_space or "").strip()
+
+
+def _print_share_link(args: argparse.Namespace) -> int:
+    config_key = str(args.config_key or "").strip()
+    if not config_key:
+        print("分享链接须指定 --config-key", file=sys.stderr)
+        return 2
+    try:
+        print(
+            format_share_link_output(
+                config_key,
+                app_key=_share_link_app_key(args),
+                name_space=_share_link_name_space(args),
+            )
+        )
+    except ValueError as exc:
+        print(f"执行失败: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
 def main() -> int:
     base_dir = mse_dir()
     load_local_env(base_dir)
     args = build_parser().parse_args()
+
+    if args.share_link_only:
+        return _print_share_link(args)
 
     cookie = (args.cookie or "").strip()
     if not cookie:
@@ -325,7 +378,7 @@ def main() -> int:
             print(f"执行失败: {exc}", file=sys.stderr)
             return 1
 
-    api_namespace, display_namespace = resolve_namespace(str(args.name_space))
+    api_namespace, display_namespace = resolve_namespace(_effective_name_space(args))
 
     try:
         items = get_configs_by_namespace(
@@ -334,7 +387,7 @@ def main() -> int:
             region=str(args.region),
             env=str(args.env),
             cluster=str(args.cluster),
-            app_key=str(args.app_key),
+            app_key=_effective_app_key(args),
             name_space=api_namespace,
             config_key=str(args.config_key or "").strip(),
             order=bool(args.order),
@@ -360,7 +413,20 @@ def main() -> int:
         if args.output == "value":
             print(str(item.get("configValue") or ""))
             return 0
-        print(format_config_detail(item))
+        detail = format_config_detail(item)
+        if args.share_link:
+            try:
+                link = build_mse_config_share_link(
+                    str(args.config_key),
+                    app_key=str(item.get("appKey") or _share_link_app_key(args) or _effective_app_key(args)),
+                    name_space=str(args.name_space or item.get("nameSpace") or "Application"),
+                    corp=str(args.region or ""),
+                    env=str(args.cluster or ""),
+                )
+                detail = f"{detail}\n\n**分享链接**\n\n{link}"
+            except ValueError as exc:
+                detail = f"{detail}\n\n分享链接生成失败：{exc}"
+        print(detail)
         return 0
 
     if args.output == "value":
@@ -373,7 +439,7 @@ def main() -> int:
             limit=int(args.limit),
             name_space=api_namespace,
             display_namespace=display_namespace,
-            app_key=str(args.app_key),
+            app_key=_effective_app_key(args),
         )
     )
     return 0

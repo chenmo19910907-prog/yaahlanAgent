@@ -51,6 +51,7 @@ TARGET_ENV_ENV_KEYS = ("YAAHLAN_SERVICE_AGENT_TARGET_ENV", "SERVICE_AGENT_TARGET
 VALID_TARGET_ENVIRONMENTS = frozenset({"prod", "stage"})
 DEFAULT_TARGET_ENVIRONMENT = "stage"
 TERMINAL_STATUSES = frozenset({"completed", "failed", "cancelled"})
+STILL_RUNNING_STATUSES = frozenset({"running", "pending", "submitted", "queued", ""})
 AGENT_ID = "yaahlan_service"
 AGENT_LABEL = "服务端 Agent"
 DEFAULT_TIMEOUT_S = 600
@@ -229,6 +230,54 @@ def _fetch_task_result(
     return _parse_task_query_data(task_id, data)
 
 
+def _poll_timeout_error(task_id: str, timeout_s: int, last_status: str) -> RuntimeError:
+    return RuntimeError(
+        f"服务 Agent 任务 `{task_id}` 超时（{timeout_s}s），最后状态={last_status or 'unknown'}"
+    )
+
+
+def _is_still_running_timeout(exc: BaseException) -> bool:
+    msg = str(exc)
+    if "超时" not in msg:
+        return False
+    for status in STILL_RUNNING_STATUSES:
+        if status and f"最后状态={status}" in msg:
+            return True
+    return "最后状态=running" in msg or "最后状态=pending" in msg
+
+
+def _running_timeout_extension_s(timeout_s: int) -> int:
+    return max(DEFAULT_TIMEOUT_S, timeout_s * 4)
+
+
+def _await_task_result(
+    base_url: str,
+    *,
+    token: str,
+    task_id: str,
+    timeout_s: int,
+    use_webhook: bool,
+) -> tuple[str, str | None]:
+    """轮询任务结果；若超时但仍在 running，自动延长等待后再试一轮。"""
+    if use_webhook:
+        poll = lambda t: _wait_webhook_then_query(  # noqa: E731
+            base_url, token=token, task_id=task_id, timeout_s=t
+        )
+    else:
+        poll = lambda t: _poll_task_result(  # noqa: E731
+            base_url, token=token, task_id=task_id, timeout_s=t
+        )
+    try:
+        return poll(timeout_s)
+    except RuntimeError as exc:
+        if not _is_still_running_timeout(exc):
+            raise
+        extended = _running_timeout_extension_s(timeout_s)
+        if extended <= timeout_s:
+            raise
+        return poll(extended)
+
+
 def _poll_task_result(
     base_url: str,
     *,
@@ -254,9 +303,22 @@ def _poll_task_result(
         time.sleep(poll_interval_s)
         poll_interval_s = min(poll_interval_s * 1.5, 30.0)
 
-    raise RuntimeError(
-        f"服务 Agent 任务 `{task_id}` 超时（{timeout_s}s），最后状态={last_status or 'unknown'}"
-    )
+    try:
+        data = _open_api_request(
+            base_url,
+            "/api/open/v1/task/query",
+            token=token,
+            body={"task_id": task_id},
+            timeout_s=30,
+        )
+        status = str(data.get("status") or "").strip()
+        if status in TERMINAL_STATUSES:
+            return _parse_task_query_data(task_id, data)
+        last_status = status or last_status
+    except RuntimeError:
+        pass
+
+    raise _poll_timeout_error(task_id, timeout_s, last_status)
 
 
 def _wait_webhook_then_query(
@@ -291,9 +353,22 @@ def _wait_webhook_then_query(
             time.sleep(poll_interval_s)
             poll_interval_s = min(poll_interval_s * 1.5, 30.0)
 
-        raise RuntimeError(
-            f"服务 Agent 任务 `{task_id}` 超时（{timeout_s}s），最后状态={last_status or 'unknown'}"
-        )
+        try:
+            data = _open_api_request(
+                base_url,
+                "/api/open/v1/task/query",
+                token=token,
+                body={"task_id": task_id},
+                timeout_s=30,
+            )
+            status = str(data.get("status") or "").strip()
+            if status in TERMINAL_STATUSES:
+                return _parse_task_query_data(task_id, data)
+            last_status = status or last_status
+        except RuntimeError:
+            pass
+
+        raise _poll_timeout_error(task_id, timeout_s, last_status)
     finally:
         cleanup_task_wait(task_id)
 
@@ -364,20 +439,13 @@ def query_service_agent(
             raise
     if submit_conv_id:
         conv_id = submit_conv_id
-    if webhook_on:
-        answer, result_conv_id = _wait_webhook_then_query(
-            base_url,
-            token=token,
-            task_id=task_id,
-            timeout_s=timeout_s,
-        )
-    else:
-        answer, result_conv_id = _poll_task_result(
-            base_url,
-            token=token,
-            task_id=task_id,
-            timeout_s=timeout_s,
-        )
+    answer, result_conv_id = _await_task_result(
+        base_url,
+        token=token,
+        task_id=task_id,
+        timeout_s=timeout_s,
+        use_webhook=webhook_on,
+    )
     return answer, result_conv_id or conv_id
 
 
@@ -544,20 +612,13 @@ def poll_task_background(
         update_task(key, tid, status="running")
         _sync_tasks_progress(key)
         try:
-            if use_webhook:
-                answer, conv_id = _wait_webhook_then_query(
-                    base_url,
-                    token=token,
-                    task_id=tid,
-                    timeout_s=timeout_s,
-                )
-            else:
-                answer, conv_id = _poll_task_result(
-                    base_url,
-                    token=token,
-                    task_id=tid,
-                    timeout_s=timeout_s,
-                )
+            answer, conv_id = _await_task_result(
+                base_url,
+                token=token,
+                task_id=tid,
+                timeout_s=timeout_s,
+                use_webhook=bool(use_webhook),
+            )
         except RuntimeError as exc:
             record = get_task(key, tid)
             question = message or (record.message_preview if record else tid)

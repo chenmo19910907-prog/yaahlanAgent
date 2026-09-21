@@ -1,0 +1,45 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-room-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "context.getBean(\"roomInviteServiceImpl\").delSendInviteMemberTimeLimit(\"77575365\")",
+      "json": "",
+      "type": "string",
+      "value": "context.getBean(\"roomInviteServiceImpl\").delSendInviteMemberTimeLimit(\"77575365\")"
+    }
+  ],
+  "settings": {
+    "time": "5000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_meta": {
+    "serviceAgentRef": "roomInviteServiceImpl.delSendInviteMemberTimeLimit",
+    "note": "清除房间开播通知（成员邀请）冷却时间；MOA 界面「房间开播通知按钮重置」。发送 liveNotice 前/后均可调用，便于连续测试。"
+  },
+  "_registry": {
+    "id": "room_live_notice_reset_cooldown",
+    "name": "房间-重置开播通知冷却",
+    "category": "房间成员（voga-mts-room-backdoor）",
+    "description": "测试环境清除房间开播通知冷却（roomInviteServiceImpl.delSendInviteMemberTimeLimit）。--expr 覆盖 roomId。发送 liveNotice 遇频控时可先调用；连续发送时建议每条通知发送后再重置一次。",
+    "prompts": [
+      "房间 <roomId> 重置开播通知冷却",
+      "清除房间 <roomId> 开播通知倒计时",
+      "delSendInviteMemberTimeLimit roomId=<roomId>"
+    ],
+    "cli": "--expr 'context.getBean(\"roomInviteServiceImpl\").delSendInviteMemberTimeLimit(\"<roomId>\")'"
+  }
+}

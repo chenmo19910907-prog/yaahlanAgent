@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CP 爱意宝箱 · 详细测试报告</title>
+  <style>
+    :root {
+      --bg: #f4f6fb; --card: #fff; --text: #1f2937; --muted: #6b7280; --line: #e5e7eb;
+      --brand: #7c3aed; --pass: #059669;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+      background: linear-gradient(180deg, #ede9fe 0%, var(--bg) 220px); color: var(--text); line-height: 1.6;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 28px 20px 56px; }
+    .hero {
+      background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+      padding: 28px; box-shadow: 0 10px 30px rgba(124,58,237,.08); margin-bottom: 24px;
+    }
+    .eyebrow { color: var(--brand); font-size: 13px; font-weight: 700; letter-spacing: .04em; }
+    .badge {
+      display: inline-block; margin-top: 12px; padding: 6px 14px; border-radius: 999px;
+      background: #d1fae5; color: var(--pass); font-size: 14px; font-weight: 700;
+    }
+    .panel {
+      background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+      padding: 24px 28px; margin-bottom: 20px;
+    }
+    h1 { margin: 8px 0 0; font-size: 28px; }
+    h2 { margin: 0 0 14px; font-size: 20px; color: var(--brand); border-bottom: 2px solid #ede9fe; padding-bottom: 8px; }
+    h3 { margin: 18px 0 10px; font-size: 16px; }
+    p { margin: 0 0 12px; color: var(--text); }
+    p strong { color: #111827; }
+    hr { border: none; border-top: 1px solid var(--line); margin: 20px 0; }
+    blockquote {
+      margin: 12px 0; padding: 10px 14px; border-left: 4px solid var(--brand);
+      background: #f5f3ff; color: var(--muted); border-radius: 0 8px 8px 0;
+    }
+    ul, ol { margin: 0 0 12px 20px; }
+    code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+    .data-table {
+      width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: 14px;
+    }
+    .data-table th, .data-table td {
+      border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top;
+    }
+    .data-table th { background: #f5f3ff; font-weight: 600; white-space: nowrap; }
+    .data-table tr:nth-child(even) td { background: #fafafa; }
+    .footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 24px; }
+    @media (max-width: 720px) {
+      .data-table { display: block; overflow-x: auto; white-space: nowrap; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <p class="eyebrow">Yaahlan · CP 爱意宝箱验收</p>
+      <span class="badge">5 档全部通过 ✅</span>
+    </div>
+    <div class="panel">
+<h1>CP 爱意宝箱 · 详细测试报告</h1>
+<p><strong>执行时间</strong>：2026-07-27 18:04–18:08（UTC+8）<br/><strong>测试账号</strong>：13311111123（100164872，送礼方）× 13311111124（100325190，收礼方）<br/><strong>CP 关系</strong>：<code>100164872-100325190</code>（测试前重新结 CP）<br/><strong>造数方式</strong>：私聊送礼 gift <code>2005004730</code>（1 钻/个，累计爱意值）<br/><strong>验收方式</strong>：每档跨门槛前后 snapshot + diff（钻石 / 背包礼物 / 装扮 / CP 勋章 / 钻石记录）</p>
+<hr/>
+<h2 id="s3">总览结论：<strong>5 档全部通过 ✅</strong></h2>
+<table class="data-table"><tr><th>档位</th><th>门槛</th><th>边界（threshold−1）</th><th>跨门槛后</th><th>宝箱状态</th><th>双方奖励</th></tr><tr><td>1</td><td>2 万</td><td>爱意 19,999 · status=0 未达成</td><td>爱意 20,000 · status=1 已领取</td><td>claimed=1</td><td>✅</td></tr><tr><td>2</td><td>6 万</td><td>爱意 59,999 · status=0</td><td>爱意 60,000 · status=1</td><td>claimed=2</td><td>✅</td></tr><tr><td>3</td><td>20 万</td><td>爱意 199,999 · status=0</td><td>爱意 200,000 · status=1</td><td>claimed=3</td><td>✅</td></tr><tr><td>4</td><td>100 万</td><td>爱意 999,999 · status=0</td><td>爱意 1,000,000 · status=1</td><td>claimed=4</td><td>✅</td></tr><tr><td>5</td><td>500 万</td><td>爱意 4,999,999 · status=0</td><td>爱意 5,000,000 · status=1</td><td>claimed=5</td><td>✅</td></tr></table>
+<p><strong>终态</strong>：<code>currentLoveValue=5,000,000</code>，<code>claimedTierId=5</code>，五档均为 status=1（已领取）</p>
+<hr/>
+<h2 id="s7">边界值验证说明</h2>
+<p>每档测试流程一致：</p>
+<ol><li>从当前爱意值私聊送礼至 <strong>门槛−1</strong> → 验证该档 <strong>status=0（未达成/未领取）</strong></li><li>再送 <strong>1 钻</strong> 跨门槛 → 验证 <strong>status=1（已领取）</strong> 且奖励下发</li><li>双方各做资产快照对比</li></ol>
+<table class="data-table"><tr><th>档位</th><th>本档送礼量</th><th>threshold−1 爱意</th><th>跨门槛爱意</th><th>边界结论</th></tr><tr><td>1</td><td>19,999 + 1</td><td>19,999</td><td>20,000</td><td>✅ 未提前触发</td></tr><tr><td>2</td><td>39,999 + 1</td><td>59,999</td><td>60,000</td><td>✅</td></tr><tr><td>3</td><td>139,999 + 1</td><td>199,999</td><td>200,000</td><td>✅</td></tr><tr><td>4</td><td>799,999 + 1</td><td>999,999</td><td>1,000,000</td><td>✅</td></tr><tr><td>5</td><td>3,999,999 + 1</td><td>4,999,999</td><td>5,000,000</td><td>✅</td></tr></table>
+<hr/>
+<h2 id="s12">各档奖励下发明细</h2>
+<h3>1 级（门槛 2 万）✅</h3>
+<table class="data-table"><tr><th>用户</th><th>钻石增量</th><th>背包礼物</th><th>装扮</th><th>勋章</th><th>钻石记录</th></tr><tr><td>100164872</td><td>+49（含跨档送礼−1）</td><td>My beloved rose +1</td><td>—</td><td>—</td><td>Event reward +50</td></tr><tr><td>100325190</td><td>+50</td><td>My beloved rose +1</td><td>—</td><td>—</td><td>Event reward +50</td></tr></table>
+<h3>2 级（门槛 6 万）✅</h3>
+<table class="data-table"><tr><th>用户</th><th>钻石增量</th><th>背包礼物</th><th>装扮（15 天）</th><th>勋章</th></tr><tr><td>100164872</td><td>+799</td><td>Heart to Heart +1</td><td>头像框 30006426/30006427、上麦特效 30006429</td><td>cp勋章-1 +1</td></tr><tr><td>100325190</td><td>+800</td><td>Heart to Heart +1</td><td>同上</td><td>cp勋章-1 +1</td></tr></table>
+<h3>3 级（门槛 20 万）✅</h3>
+<table class="data-table"><tr><th>用户</th><th>钻石增量</th><th>背包礼物</th><th>装扮（15 天）</th><th>勋章</th></tr><tr><td>100164872</td><td>+3,199</td><td>Tree of Love +1</td><td>麦位声波 30006421/30006422、连麦特效 30006430</td><td>CP勋章-2 +1</td></tr><tr><td>100325190</td><td>+3,200</td><td>Tree of Love +1</td><td>同上</td><td>CP勋章-2 +1</td></tr></table>
+<h3>4 级（门槛 100 万）✅</h3>
+<table class="data-table"><tr><th>用户</th><th>钻石增量</th><th>背包礼物</th><th>装扮（15 天）</th><th>勋章</th></tr><tr><td>100164872</td><td>+21,999</td><td>Romantic love +1</td><td>CP 座驾 30006438、资料页特效 30006440</td><td>CP勋章-3 +1</td></tr><tr><td>100325190</td><td>+22,000</td><td>Romantic love +1</td><td>同上</td><td>CP勋章-3 +1</td></tr></table>
+<h3>5 级（门槛 500 万）✅</h3>
+<table class="data-table"><tr><th>用户</th><th>钻石增量</th><th>背包礼物</th><th>装扮（15 天）</th><th>勋章</th></tr><tr><td>100164872</td><td>+109,999</td><td>Supreme Promise +1、Flawless Love +1</td><td>关系卡皮肤 30006423、进房广播 30006431</td><td>cp勋章-4 +1</td></tr><tr><td>100325190</td><td>+110,000</td><td>Supreme Promise +1、Flawless Love +1</td><td>同上</td><td>cp勋章-4 +1</td></tr></table>
+<blockquote>说明：送礼方钻石增量 = 应发钻石 − 跨档送礼 1 钻，与预期一致。</blockquote>
+<hr/>
+<h2 id="s25">宝箱状态 / 奖励状态验收</h2>
+<table class="data-table"><tr><th>验收项</th><th>结果</th></tr><tr><td>threshold−1 时不触发该档奖励（status=0）</td><td>✅ 5/5 档</td></tr><tr><td>跨门槛后自动领取（status=1）</td><td>✅ 5/5 档</td></tr><tr><td>claimedTierId 逐级递增 1→5</td><td>✅</td></tr><tr><td>双方均收到对应奖励</td><td>✅</td></tr><tr><td>钻石记录含 Event reward</td><td>✅ 每档均有</td></tr><tr><td>背包礼物数量 +1、有效期约 15 天</td><td>✅</td></tr><tr><td>CP 勋章逐级升级（2–5 档）</td><td>✅ cp勋章-1 → CP勋章-2 → CP勋章-3 → cp勋章-4</td></tr><tr><td>1 档无勋章（符合配置）</td><td>✅</td></tr></table>
+<hr/>
+<h2 id="s28">CP 空间勋章终态（100164872）</h2>
+<p>已收集：<strong>cp勋章-1</strong> → <strong>CP勋章-2</strong> → <strong>CP勋章-3</strong> → <strong>cp勋章-4</strong>（共 4 枚，与 2–5 档一致）</p>
+<hr/>
+<h2 id="s31">测试环境</h2>
+<ul><li>测试环境 MOA + Gift 私聊送礼</li><li>100164872 预充 1,000 万钻石用于造数</li><li>原始数据目录：<code>.tmp/cp_love_chest_13323_13324/</code></li></ul>
+    </div>
+    <p class="footer">CP 爱意宝箱 · 详细测试报告 · 13311111123 × 13311111124</p>
+  </div>
+</body>
+</html>

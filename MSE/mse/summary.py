@@ -44,11 +44,13 @@ def format_config_detail(item: dict[str, Any]) -> str:
     desc = str(item.get("configDesc") or "-")
     value = item.get("configValue")
     value_text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, indent=2)
+    ns = item.get("nameSpace")
+    ns_label = ns if ns else "Application（私有）"
     lines = [
         f"**{key}**",
         f"- 说明：{desc}",
         f"- 状态：{item.get('status') or '-'}",
-        f"- namespace：{item.get('nameSpace') or 'Application（私有）'}",
+        f"- namespace：{ns_label}",
         f"- 修改：{item.get('modified') or '-'}",
         "",
         "```json",

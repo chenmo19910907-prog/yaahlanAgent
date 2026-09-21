@@ -276,6 +276,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--room-chat-area", default="MENA", help="房间公屏消息：area（默认 MENA）")
     parser.add_argument("--room-chat-lang", default="en", help="房间公屏消息：lang（默认 en）")
     parser.add_argument("--room-chat-os", default="android", help="房间公屏消息：os/osType（默认 android）")
+    parser.add_argument(
+        "--room-dismiss",
+        action="store_true",
+        help="解散房间（dismissRoom；须配合 --room-dismiss-user-id 与 --room-dismiss-room-id，userId 须为房主）",
+    )
+    parser.add_argument("--room-dismiss-user-id", help="解散房间：房主 userId")
+    parser.add_argument("--room-dismiss-room-id", help="解散房间：roomId")
+    parser.add_argument("--room-dismiss-lang", default="en", help="解散房间：lang（默认 en）")
+    parser.add_argument("--room-dismiss-area", default="MENA", help="解散房间：area（默认 MENA）")
+    parser.add_argument("--room-dismiss-os", default="android", help="解散房间：os/osType（默认 android）")
     parser.add_argument("--p2p-from-uid", help="私聊发消息：发送方 userId")
     parser.add_argument("--p2p-to-uid", help="私聊发消息：接收方 userId")
     parser.add_argument(

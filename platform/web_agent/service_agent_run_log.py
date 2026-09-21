@@ -106,6 +106,45 @@ def _summary_limits(mode: str | None) -> tuple[int, int, int]:
     return QUESTION_MAX_CHARS, ANSWER_SUMMARY_MAX_CHARS, 1
 
 
+def _is_still_running_timeout_error(error: str) -> bool:
+    err = (error or "").strip()
+    if "超时" not in err:
+        return False
+    return any(
+        token in err
+        for token in (
+            "最后状态=running",
+            "最后状态=pending",
+            "最后状态=submitted",
+            "最后状态=queued",
+        )
+    )
+
+
+def _classify_exchange_error(error: str, *, answer_limit: int) -> tuple[str, str]:
+    err = (error or "").strip()
+    if not err:
+        return "completed", ""
+    if _is_still_running_timeout_error(err):
+        return "timeout", _truncate(f"查询超时（任务仍在执行）：{err}", limit=answer_limit)
+    return "failed", _truncate(f"查询失败：{err}", limit=answer_limit)
+
+
+def _replace_prior_failed_exchange(
+    rows: list[dict[str, str]],
+    question: str,
+    new_entry: dict[str, str],
+) -> bool:
+    for index in range(len(rows) - 1, -1, -1):
+        prev = rows[index]
+        if prev.get("question") != question:
+            continue
+        if prev.get("status") in ("failed", "timeout"):
+            rows[index] = new_entry
+            return True
+    return False
+
+
 def _summarize_answer(
     answer: str,
     *,
@@ -115,7 +154,8 @@ def _summarize_answer(
     question_limit, answer_limit, max_paragraphs = _summary_limits(mode)
     del question_limit
     if error.strip():
-        return _truncate(f"查询失败：{error.strip()}", limit=answer_limit)
+        _, summary = _classify_exchange_error(error, answer_limit=answer_limit)
+        return summary
     raw = (answer or "").strip()
     if not raw:
         return "（无回答）"
@@ -150,15 +190,21 @@ def append_service_agent_exchange(
     if not key or not q:
         return
     answer_raw = _truncate_raw(answer, limit=ANSWER_RAW_MAX_CHARS) if not error.strip() else ""
+    _, answer_limit, _ = _summary_limits("standard")
+    status, _ = _classify_exchange_error(error, answer_limit=answer_limit)
     entry = ServiceAgentExchange(
         question=q,
         answer_summary=_summarize_answer(answer, error=error, mode="standard"),
         answer_raw=answer_raw,
         agent_label=(agent_label or "服务端 Agent").strip() or "服务端 Agent",
-        status="failed" if error.strip() else "completed",
+        status=status,
     )
     rows = [item.as_dict() for item in list_service_agent_exchanges(key)]
-    rows.append(entry.as_dict())
+    entry_dict = entry.as_dict()
+    if not error.strip() and _replace_prior_failed_exchange(rows, q, entry_dict):
+        pass
+    else:
+        rows.append(entry_dict)
     if len(rows) > MAX_ENTRIES:
         rows = rows[-MAX_ENTRIES:]
     LOG_DIR.mkdir(parents=True, exist_ok=True)

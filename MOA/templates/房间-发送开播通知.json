@@ -1,0 +1,54 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": "10000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/room/external/room-member-stage",
+  "method": "liveNotice",
+  "header": "{\"userId\":\"100363778\",\"roomId\":\"77575365\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"ios\",\"osType\":\"ios\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100363778\",\"roomId\":\"77575365\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"ios\",\"osType\":\"ios\"}",
+      "type": "json",
+      "value": {
+        "userId": "100363778",
+        "roomId": "77575365",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "ios",
+        "osType": "ios"
+      }
+    }
+  ],
+  "_meta": {
+    "serviceAgentRef": "RoomMemberApiService.liveNotice",
+    "tunnelAlign": "/yaahlan/room/member/liveNotice",
+    "note": "房主/管理员在成员列表发送开播通知；成功返回 nextSendMemberInviteSeconds（默认 28800=8h 频控）。抓包样例：100363778 roomId=77575365，100025048 收到 IM 开播通知。"
+  },
+  "_registry": {
+    "id": "room_member_live_notice",
+    "name": "房间-发送开播通知",
+    "category": "房间（room-member-stage）",
+    "description": "测试环境房主/管理员发送开播通知（liveNotice，对齐 /yaahlan/room/member/liveNotice）。body 需 userId（房主或管理员）、roomId。成功 ec=200，data.nextSendMemberInviteSeconds 为下次可发间隔秒数（默认 28800）。",
+    "prompts": [
+      "用户 <userId> 在房间 <roomId> 发送开播通知",
+      "房主 <userId> 发布开播通知 roomId=<roomId>",
+      "MOA liveNotice 发送开播通知"
+    ],
+    "cli": "python3 MOA/moa_execute.py --payload-file MOA/templates/房间-发送开播通知.json"
+  }
+}

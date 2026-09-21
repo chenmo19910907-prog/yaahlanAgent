@@ -8,6 +8,49 @@
     "name_space": "voga-common",
     "server": "config"
   },
+  "share_link": {
+    "corp": "alpha",
+    "env": "stage",
+    "default_app_key": "momo.bpm.biz.gameplatform.overseas-voga-mts-vas",
+    "default_name_space": "Application",
+    "hints": [
+      {
+        "pattern": "cpLoveChest",
+        "app_key": "momo.ibt.yaahlan.service.yaahlan-trick",
+        "name_space": "Application"
+      },
+      {
+        "pattern": "acrossRoomPk",
+        "app_key": "momo.bpm.biz.gameplatform.overseas-voga-mts-room",
+        "name_space": "Application"
+      },
+      {
+        "pattern": "shiftTime.acrossPk",
+        "app_key": "momo.bpm.biz.gameplatform.overseas-voga-mts-room",
+        "name_space": "Application"
+      },
+      {
+        "pattern": "giftSpokesperson",
+        "app_key": "momo.bpm.biz.gameplatform.overseas-voga-mts-vas",
+        "name_space": "Application"
+      },
+      {
+        "pattern": "familyPk",
+        "app_key": "momo.bpm.biz.gameplatform.overseas-voga-mts-vas",
+        "name_space": "voga-common"
+      },
+      {
+        "pattern": "realPerson",
+        "app_key": "momo.bpm.biz.gameplatform.overseas-voga-mts-user",
+        "name_space": "Application"
+      },
+      {
+        "pattern": "popupConfig",
+        "app_key": "momo.bpm.biz.gameplatform.overseas-voga-components-moa",
+        "name_space": "Application"
+      }
+    ]
+  },
   "namespaces": {
     "voga-common": "公有通用配置",
     "voga-activity": "公有活动配置（MSE 控制台「公有/voga-activity」）",

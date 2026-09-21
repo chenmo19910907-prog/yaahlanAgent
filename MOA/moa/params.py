@@ -1426,6 +1426,39 @@ def set_room_channel_message_params(
     payload["header"] = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
 
 
+def set_room_dismiss_params(
+    payload: dict[str, Any],
+    user_id: str,
+    room_id: str,
+    *,
+    lang: str = "en",
+    area: str = "MENA",
+    os_name: str = "android",
+) -> None:
+    uid = str(user_id).strip()
+    rid = str(room_id).strip()
+    if not uid:
+        raise ValueError("userId 不能为空")
+    if not rid:
+        raise ValueError("roomId 不能为空")
+    body: dict[str, Any] = {
+        "userId": uid,
+        "roomId": rid,
+        "lang": str(lang or "en").strip() or "en",
+        "area": str(area or "MENA").strip() or "MENA",
+        "appId": "2005",
+        "osType": str(os_name or "android").strip() or "android",
+        "os": str(os_name or "android").strip() or "android",
+    }
+    payload["url"] = "/service/room/external/room-behave-stage"
+    payload["method"] = "dismissRoom"
+    payload["params"] = [json_param(body)]
+    payload["header"] = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+    settings = payload.setdefault("settings", {})
+    if isinstance(settings, dict):
+        settings["headerType"] = "TXT"
+
+
 def set_room_channel_emote_params(
     payload: dict[str, Any],
     user_id: str,

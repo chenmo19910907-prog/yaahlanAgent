@@ -88,6 +88,7 @@ from .params import (
     set_room_channel_emote_params,
     set_room_channel_image_params,
     set_room_channel_message_params,
+    set_room_dismiss_params,
 )
 from .time_utils import resolve_expire_ms, resolve_family_fund_week_key, resolve_family_fund_week_key_with_offset
 from .user_area import describe_user_area, normalize_user_area
@@ -1508,6 +1509,26 @@ def _op_room_channel_image(args: argparse.Namespace, payload: dict[str, Any]) ->
     )
 
 
+def _room_dismiss_mode(args: argparse.Namespace) -> bool:
+    return bool(getattr(args, "room_dismiss", False))
+
+
+def _op_room_dismiss(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(args.room_dismiss_user_id or "").strip()
+    room_id = str(args.room_dismiss_room_id or "").strip()
+    if not user_id or not room_id:
+        raise ValueError("解散房间须同时提供 --room-dismiss-user-id 与 --room-dismiss-room-id")
+    print(f"解散房间: userId={user_id} roomId={room_id}", file=sys.stderr)
+    set_room_dismiss_params(
+        payload,
+        user_id,
+        room_id,
+        lang=str(args.room_dismiss_lang or "en"),
+        area=str(args.room_dismiss_area or "MENA"),
+        os_name=str(args.room_dismiss_os or "android"),
+    )
+
+
 def _op_p2p_message(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     from_uid = str(args.p2p_from_uid or "").strip()
     to_uid = str(args.p2p_to_uid or "").strip()
@@ -1790,6 +1811,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: _room_channel_emote_mode(a), _op_room_channel_emote),
     (lambda a: _room_channel_image_mode(a), _op_room_channel_image),
     (lambda a: _room_channel_message_mode(a), _op_room_channel_message),
+    (lambda a: _room_dismiss_mode(a), _op_room_dismiss),
     (lambda a: _p2p_message_mode(a), _op_p2p_message),
     (lambda a: _family_add_mode(a), _op_family_exp),
     (lambda a: a.noble_user_id is not None, _op_noble),

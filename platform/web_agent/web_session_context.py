@@ -97,10 +97,8 @@ def build_rotation_system_note(session_id: str) -> str:
     """轮换 Agent 时追加到用户消息前的系统说明（Markdown）。"""
     if not should_rotate_cursor_agent(session_id):
         return ""
-    count, _ = session_message_stats(session_id)
     snippet = build_rotation_context_snippet(session_id)
     parts = [
-        f"【系统】本 Web 会话已有 {count} 条消息，已切换新的 Cursor Agent 窗口以加速执行（不再 Resume 全量历史）。",
         "请**立即调用工具**执行，勿长时间只做规划。",
     ]
     if snippet:

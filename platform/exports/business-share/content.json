@@ -1,0 +1,63 @@
+{
+  "title": "智能工具平台搭建与测试应用的探索过程",
+  "lead": "",
+  "author": {
+    "name": "陈墨",
+    "role": "产品业务向测试",
+    "department": "Yaahlan 项目测试"
+  },
+  "shareFocus": "我们使用 Cursor 已有的能力，以相对简单高效的方式搭建了智能工具平台，但智能工具的方案并不是最初就规划好的，而是在日常工作解决问题的过程中逐步迭代探索出来的。\n\n作为从事产品业务方向的测试，本次分享零门槛智能工具平台搭建与测试应用的探索过程，主要是一起进行思路上的交流。",
+  "sourceDocUrl": "https://alidocs.dingtalk.com/i/nodes/KGZLxjv9VG349wRwhZ4qkvrkV6EDybno",
+  "agentUrl": "http://172.18.124.255:18766",
+  "chapters": [
+    {
+      "id": "overview",
+      "index": "概",
+      "title": "概况",
+      "intro": "我们使用 Cursor 已有的能力，以相对简单高效的方式搭建了智能工具平台，但智能工具的方案并不是最初就规划好的，而是在日常工作解决问题的过程中逐步迭代探索出来的。\n\n作为从事产品业务方向的测试，本次分享零门槛智能工具平台搭建与测试应用的探索过程，主要是一起进行思路上的交流。",
+      "status": "done"
+    },
+    {
+      "id": "evolution",
+      "index": "一",
+      "title": "智能工具演化",
+      "intro": "从知识库沉淀、MOA 能力录制到自然语言造数——智能工具的四段演进路径。",
+      "status": "done"
+    },
+    {
+      "id": "tunnel",
+      "index": "二",
+      "title": "Tunnel 能力应用",
+      "intro": "抓包、Mock 协助测试，生成式 MOA 能力再翻倍。",
+      "status": "done"
+    },
+    {
+      "id": "dingtalk-bot",
+      "index": "三",
+      "title": "智能工具机器人",
+      "intro": "",
+      "status": "done"
+    },
+    {
+      "id": "platform",
+      "index": "四",
+      "title": "智能工具平台 Agent",
+      "intro": "",
+      "status": "done"
+    },
+    {
+      "id": "security",
+      "index": "五",
+      "title": "安全性",
+      "intro": "",
+      "status": "done"
+    },
+    {
+      "id": "conclusion",
+      "index": "结",
+      "title": "结语",
+      "intro": "智能工具平台不是一次性项目，而是在真实测试与研发工作中不断生长、人人可维护的一套能力体系。",
+      "status": "done"
+    }
+  ]
+}

@@ -1885,6 +1885,54 @@
         "批量私聊送礼 <receiverUserId> giftId=<giftId> count=<count>"
       ],
       "command": "python3 Gift/gift_execute.py \\\n  --scene private \\\n  --sender <senderUserId> \\\n  --receivers <receiverUserId> \\\n  --gift-id 2005008092 \\\n  --num 1\n# 抓包 body 见 MOA/templates/礼物-私聊送礼.json；giftId/收礼人可替换\n"
+    },
+    {
+      "id": "room_dismiss",
+      "name": "房间-解散房间",
+      "category": "房间（room/external/room-behave-stage）",
+      "description": "测试环境房主解散语音房（dismissRoom）。body 需 userId（须为房主）、roomId、lang。成功返回 flag=1；PK/主题活动/真心话进行中会 toast 拦截。",
+      "prompts": [
+        "房主 <userId> 解散房间 <roomId>",
+        "解散房间 <roomId> 房主 <userId>",
+        "MOA dismissRoom 解散房间"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-解散房间.json \\\n  --room-dismiss \\\n  --room-dismiss-user-id \\\n  <userId> \\\n  --room-dismiss-room-id \\\n  <roomId>\n"
+    },
+    {
+      "id": "p2p_gift_send_2",
+      "name": "礼物-私聊送礼",
+      "category": "礼物（/v2/gift/send · Stage HTTP）",
+      "description": "测试环境 IM/个人主页私聊送礼（HTTP /v2/gift/send；ext.source=p2p 或 im）。抓包 100334384 → 100081602 giftId=2005008092（xin 10钻）。无 MOA httpproxy，Agent 用 Gift/gift_execute.py --scene private POST。",
+      "prompts": [
+        "用户 <senderUserId> 私聊给 <receiverUserId> 送 <giftId> 礼物",
+        "私聊送礼 MOA p2p gift send",
+        "批量私聊送礼 <receiverUserId> giftId=<giftId> count=<count>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/礼物-私聊送礼.json\n"
+    },
+    {
+      "id": "room_member_live_notice",
+      "name": "房间-发送开播通知",
+      "category": "房间（room-member-stage）",
+      "description": "测试环境房主/管理员发送开播通知（liveNotice，对齐 /yaahlan/room/member/liveNotice）。body 需 userId（房主或管理员）、roomId。成功 ec=200，data.nextSendMemberInviteSeconds 为下次可发间隔秒数（默认 28800）。",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 发送开播通知",
+        "房主 <userId> 发布开播通知 roomId=<roomId>",
+        "MOA liveNotice 发送开播通知"
+      ],
+      "command": "python3 MOA/moa_execute.py --payload-file MOA/templates/房间-发送开播通知.json\n"
+    },
+    {
+      "id": "room_live_notice_reset_cooldown",
+      "name": "房间-重置开播通知冷却",
+      "category": "房间成员（voga-mts-room-backdoor）",
+      "description": "测试环境清除房间开播通知冷却（roomInviteServiceImpl.delSendInviteMemberTimeLimit）。--expr 覆盖 roomId。发送 liveNotice 遇频控时可先调用；连续发送时建议每条通知发送后再重置一次。",
+      "prompts": [
+        "房间 <roomId> 重置开播通知冷却",
+        "清除房间 <roomId> 开播通知倒计时",
+        "delSendInviteMemberTimeLimit roomId=<roomId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-重置开播通知冷却.json \\\n  --expr \\\n  'context.getBean(\"roomInviteServiceImpl\").delSendInviteMemberTimeLimit(\"<roomId>\")'\n"
     }
   ]
 }

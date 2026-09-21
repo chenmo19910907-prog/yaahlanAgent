@@ -15,6 +15,19 @@
       "command": "python3 MSE/mse_execute.py --namespace voga-common --limit 20"
     },
     {
+      "id": "mse_config_share_link",
+      "name": "配置-生成分享链接",
+      "category": "MSE 服务配置",
+      "description": "按 configKey 生成 MSE 控制台分享链接（无需 Cookie）；可按 configKey 子串匹配 appKey/namespace 提示；示例 cpLoveChestConfigAreaMap → yaahlan-trick Application",
+      "prompts": [
+        "MSE 配置 <configKey> 分享链接",
+        "爱意宝箱 MSE 配置链接",
+        "查 cpLoveChestConfigAreaMap 控制台地址",
+        "给我 MSE 配置 key=<configKey> 的链接"
+      ],
+      "command": "python3 MSE/mse_execute.py --config-key <configKey> --share-link-only"
+    },
+    {
       "id": "get_config_key",
       "name": "配置-按 key 读取",
       "category": "MSE 服务配置",

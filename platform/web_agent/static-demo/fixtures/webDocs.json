@@ -31,7 +31,7 @@
       "name": "案例展示",
       "items": [
         {
-          "title": "家族 PK 测试 Showcase",
+          "title": "复杂活动数据造表测试工作流",
           "desc": "复杂活动数据造表与验收演示",
           "url": "../family-pk-showcase/"
         }
