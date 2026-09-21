@@ -24,6 +24,11 @@
           "title": "PK 提款机：测试搭建与一键验收",
           "desc": "搭建流程：录 MOA → 对话 C1～C9 试跑 → 落 Sheet2 脚本 → 一键重测写钉钉表",
           "url": "/keynote/pk-atm-guide"
+        },
+        {
+          "title": "智能工具平台搭建与测试应用的探索过程",
+          "desc": "思路分享：平台搭建与测试应用探索过程",
+          "url": "/business-share/"
         }
       ]
     },
@@ -31,7 +36,7 @@
       "name": "案例展示",
       "items": [
         {
-          "title": "家族 PK 测试 Showcase",
+          "title": "复杂活动数据造表测试工作流",
           "desc": "复杂活动数据造表与验收演示",
           "url": "/family-pk-showcase/"
         }

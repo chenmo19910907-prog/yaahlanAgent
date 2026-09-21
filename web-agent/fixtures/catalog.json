@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-09-17 19:38:30 北京时间",
-  "total_items": 328,
+  "generated_at": "2026-09-21 19:44:34 北京时间",
+  "total_items": 333,
   "module_count": 29,
   "modules": [
     {
@@ -517,7 +517,7 @@
     {
       "id": "房间",
       "label": "房间",
-      "item_count": 34,
+      "item_count": 37,
       "categories": [
         {
           "name": "全服榜单（room/external/room-admin-handle）",
@@ -628,6 +628,17 @@
         {
           "name": "房间成员（voga-mts-room-backdoor）",
           "items": [
+            {
+              "name": "房间-重置开播通知冷却",
+              "prompts": [
+                "房间 <roomId> 重置开播通知冷却",
+                "清除房间 <roomId> 开播通知倒计时",
+                "delSendInviteMemberTimeLimit roomId=<roomId>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            },
             {
               "name": "房间成员-快速添加",
               "prompts": [
@@ -766,6 +777,17 @@
           "name": "房间（room-member-stage）",
           "items": [
             {
+              "name": "房间-发送开播通知",
+              "prompts": [
+                "用户 <userId> 在房间 <roomId> 发送开播通知",
+                "房主 <userId> 发布开播通知 roomId=<roomId>",
+                "MOA liveNotice 发送开播通知"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            },
+            {
               "name": "房间成员-同意申请",
               "prompts": [
                 "执行 房间成员-同意申请"
@@ -812,6 +834,22 @@
               ],
               "source": "MOA-generative",
               "source_id": "moa-generative",
+              "env": "test"
+            }
+          ]
+        },
+        {
+          "name": "房间（room/external/room-behave-stage）",
+          "items": [
+            {
+              "name": "房间-解散房间",
+              "prompts": [
+                "房主 <userId> 解散房间 <roomId>",
+                "解散房间 <roomId> 房主 <userId>",
+                "MOA dismissRoom 解散房间"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
               "env": "test"
             }
           ]
@@ -1209,7 +1247,7 @@
     {
       "id": "礼物",
       "label": "礼物",
-      "item_count": 18,
+      "item_count": 19,
       "categories": [
         {
           "name": "Stage送礼（/v2/gift/send）",
@@ -1333,6 +1371,17 @@
         {
           "name": "礼物（/v2/gift/send · Stage HTTP）",
           "items": [
+            {
+              "name": "礼物-私聊送礼",
+              "prompts": [
+                "用户 <senderUserId> 私聊给 <receiverUserId> 送 <giftId> 礼物",
+                "私聊送礼 MOA p2p gift send",
+                "批量私聊送礼 <receiverUserId> giftId=<giftId> count=<count>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "env": "test"
+            },
             {
               "name": "礼物-私聊送礼",
               "prompts": [
@@ -3726,7 +3775,7 @@
     {
       "id": "平台",
       "label": "平台",
-      "item_count": 17,
+      "item_count": 18,
       "categories": [
         {
           "name": "MSE 服务配置",
@@ -3880,6 +3929,18 @@
               "prompts": [
                 "预览 MSE 配置修改 familyPkConfig",
                 "dry-run MSE 改参 <configKey>"
+              ],
+              "source": "MSE配置",
+              "source_id": "mse",
+              "env": "test"
+            },
+            {
+              "name": "配置-生成分享链接",
+              "prompts": [
+                "MSE 配置 <configKey> 分享链接",
+                "爱意宝箱 MSE 配置链接",
+                "查 cpLoveChestConfigAreaMap 控制台地址",
+                "给我 MSE 配置 key=<configKey> 的链接"
               ],
               "source": "MSE配置",
               "source_id": "mse",
