@@ -50,6 +50,20 @@ CONCLUSION_TAB = {
         "不断生长、人人可维护的一套能力体系。"
     ),
 }
+DEFAULT_PLATFORM_METRICS = {
+    "cards": [
+        {"label": "工具台登记的能力数量", "value": "333"},
+        {"label": "平台处理过的请求总量", "value": "2,546"},
+        {"label": "知识库规模", "value": "6,017"},
+        {"label": "工作流数量", "value": "25"},
+    ],
+    "summary": [
+        {"title": "能力沉淀", "text": "知识库、MOA、工作流。"},
+        {"title": "对话交付", "text": "钉钉、Web Agent。"},
+        {"title": "全员共建", "text": "人人可用、人人可维护。"},
+        {"title": "安全可控", "text": "鉴权、审计、隔离。"},
+    ],
+}
 SKIP_CHAPTER_IDS = {"intro"}
 SKIP_CHAPTER_TITLES = {"个人介绍"}
 # 以下章节保留钉钉原文，不走 TEXT_POLISH 改写
@@ -173,6 +187,9 @@ TEXT_POLISH: dict[str, str] = {
     "任何人都是工具平台的使用人，任何人也都是工具平台的维护者": (
         "人人可用、人人可维护——使用与沉淀在同一套流程里"
     ),
+    "Q：功能使用依赖录制账号的cookie和token，如果避免鉴权过期中断操作？": (
+        "Q：功能使用依赖录制账号的cookie和token，如何避免鉴权过期中断操作？"
+    ),
     "我们增加了Aegis SSO 重新登录能力，使用工具时检测到鉴权失败，会使用配置的账号密码重新登录更新凭证，用新凭证自动重试原请求。": (
         "接入 Aegis SSO 自动续期：鉴权失败时用配置账号重新登录、更新凭证，并自动重试原请求。"
     ),
@@ -276,6 +293,9 @@ TEXT_POLISH: dict[str, str] = {
     "会话归属创建者，他人默认可读，并且支持邀请同事共创会话": (
         "会话归属创建者，默认可读，支持邀请同事共创"
     ),
+    "执行结果可以选择发送到钉钉，提问后不比原地等待，钉钉自会提示，也可以将执行结果直接通过钉钉转发给他人或群聊。": (
+        "执行结果可以选择发送到钉钉，提问后不必原地等待，钉钉自会提示，也可以将执行结果直接通过钉钉转发给他人或群聊。"
+    ),
     "执行结果可以选择发送到钉钉，也可以将执行结果直接通过钉钉转发给他人或群聊": (
         "执行结果可发钉钉，也可一键转发给他人或群聊"
     ),
@@ -327,6 +347,18 @@ OVERVIEW_QA_INTRO = (
 EVOLUTION_SHARE_TOPIC_INTRO = (
     "从知识库沉淀、MOA 能力录制到自然语言造数——智能工具的四段演进路径。"
 )
+# 仅用于「分享内容概览」列表，不写入各 tab 页 section-intro
+SHARE_TOPIC_OVERVIEW_INTROS: dict[str, str] = {
+    "dingtalk-bot": (
+        "钉钉 Stream 机器人接入 Cursor SDK——团队零门槛在群里调用，移动随时问、权限可管控。"
+    ),
+    "platform": (
+        "Web Agent 承载复杂操作与能力目录——统一交互、工具台一键直达、可接外部 Agent。"
+    ),
+    "security": (
+        "入口鉴权、操作审计与用户隔离——敏感行为可溯源、线上能力分级管控。"
+    ),
+}
 
 CHAPTER_META: dict[str, dict[str, str]] = {
     "智能工具演化": {
@@ -577,8 +609,16 @@ def _sync_content_json() -> dict:
         "shareFocus": OVERVIEW_TAB["intro"],
         "sourceDocUrl": SOURCE_DOC_URL,
         "agentUrl": _read_agent_url(),
+        "platformMetrics": DEFAULT_PLATFORM_METRICS,
         "chapters": chapters,
     }
+    if CONTENT_PATH.is_file():
+        try:
+            existing = json.loads(CONTENT_PATH.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            existing = {}
+        if existing.get("platformMetrics"):
+            data["platformMetrics"] = existing["platformMetrics"]
     CONTENT_PATH.parent.mkdir(parents=True, exist_ok=True)
     CONTENT_PATH.write_text(
         json.dumps(data, ensure_ascii=False, indent=2) + "\n",
@@ -879,6 +919,8 @@ def _render_share_topics_list(data: dict) -> str:
         intro = str(chapter.get("intro") or "").strip()
         if cid == "evolution":
             intro = EVOLUTION_SHARE_TOPIC_INTRO
+        elif not intro:
+            intro = SHARE_TOPIC_OVERVIEW_INTROS.get(cid, "")
         body = f"<strong>{_esc(title)}</strong>"
         if intro:
             body += f"——{_esc(intro)}"
@@ -934,9 +976,37 @@ def _render_overview_panel(data: dict, *, active: bool = True) -> str:
 </div>"""
 
 
-def _render_conclusion_panel(*, active: bool = False) -> str:
+def _platform_metrics(data: dict | None = None) -> dict:
+    metrics = (data or {}).get("platformMetrics") or DEFAULT_PLATFORM_METRICS
+    cards = metrics.get("cards") or DEFAULT_PLATFORM_METRICS["cards"]
+    summary = metrics.get("summary") or DEFAULT_PLATFORM_METRICS["summary"]
+    return {"cards": cards, "summary": summary}
+
+
+def _render_platform_metrics_html(data: dict | None = None) -> str:
+    metrics = _platform_metrics(data)
+    cards_html = "".join(
+        f'<div class="metric"><div class="label">{_esc(card["label"])}</div>'
+        f'<div class="value">{_esc(card["value"])}</div></div>'
+        for card in metrics["cards"]
+    )
+    summary_html = "".join(
+        f'<li><strong class="step-no">{index}.</strong>'
+        f'<strong>{_esc(item["title"])}</strong>——{_esc(item["text"])}</li>'
+        for index, item in enumerate(metrics["summary"], start=1)
+    )
+    return f"""    <div class="metric-grid">
+{cards_html}
+    </div>
+    <ul class="summary-cards">
+{summary_html}
+    </ul>"""
+
+
+def _render_conclusion_panel(data: dict | None = None, *, active: bool = False) -> str:
     active_class = " active" if active else ""
     intro = CONCLUSION_TAB["intro"]
+    metrics_html = _render_platform_metrics_html(data)
     return f"""<div class="tab-panel{active_class}" data-tab="conclusion" role="tabpanel">
 <section class="section" id="conclusion">
   <div class="demo-title-row">
@@ -947,12 +1017,7 @@ def _render_conclusion_panel(*, active: bool = False) -> str:
     <div class="demo-title-row">
       <h3 class="demo-title">平台建设概况</h3>
     </div>
-    <ul class="summary-cards">
-      <li><strong class="step-no">1.</strong><strong>能力沉淀</strong>——知识库、MOA、工作流。</li>
-      <li><strong class="step-no">2.</strong><strong>对话交付</strong>——钉钉、Web Agent。</li>
-      <li><strong class="step-no">3.</strong><strong>全员共建</strong>——人人可用、人人可维护。</li>
-      <li><strong class="step-no">4.</strong><strong>安全可控</strong>——鉴权、审计、隔离。</li>
-    </ul>
+{metrics_html}
   </div>
   <div class="demo-block phase-outlook callout">
     <div class="demo-title-row">
@@ -1309,7 +1374,7 @@ def _build_from_dingtalk(cache_dir: Path) -> tuple[str, dict]:
     close_chapter()
 
     toc.append((CONCLUSION_TAB["title"], CONCLUSION_TAB["id"]))
-    out.append(_render_conclusion_panel(active=False))
+    out.append(_render_conclusion_panel(data, active=False))
 
     default_tab = OVERVIEW_TAB["id"]
     toc_lines = "".join(
@@ -1361,7 +1426,7 @@ def _build_standard(data: dict) -> str:
     toc_lines.append(
         _render_tab_link(CONCLUSION_TAB["title"], CONCLUSION_TAB["id"], active=False)
     )
-    body_parts.append(_render_conclusion_panel(active=False))
+    body_parts.append(_render_conclusion_panel(data, active=False))
 
     hero_html = _render_hero(data["title"])
 

@@ -175,16 +175,16 @@
 .demo-lightbox.open { opacity: 1; visibility: visible; pointer-events: auto; }
 .demo-lightbox-backdrop { position: absolute; inset: 0; background: rgba(4, 6, 8, .88); cursor: zoom-out; }
 .demo-lightbox-panel {
-  position: relative; z-index: 1; margin: 0; max-width: min(92vw, 420px); max-height: 92vh;
+  position: relative; z-index: 1; margin: 0; max-width: 96vw; max-height: 96vh;
   display: flex; flex-direction: column; align-items: center; gap: 10px;
 }
 .demo-lightbox-panel img {
-  display: block; width: auto; height: auto; max-width: min(92vw, 420px); max-height: calc(92vh - 56px);
+  display: block; width: auto; height: auto; max-width: 96vw; max-height: calc(96vh - 56px);
   object-fit: contain; border-radius: 2px; box-shadow: 0 24px 48px rgba(0, 0, 0, .45); background: #0c0f12;
 }
 .demo-lightbox-caption {
   margin: 0; padding: 0 8px; color: #c6ccd5; font-size: 13px; font-weight: 600;
-  text-align: center; line-height: 1.5; max-width: min(92vw, 420px);
+  text-align: center; line-height: 1.5; max-width: 96vw;
 }
 .demo-lightbox-close {
   position: fixed; top: 16px; right: 16px; z-index: 201; width: 40px; height: 40px; border: none;

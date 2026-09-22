@@ -9,6 +9,44 @@
   "shareFocus": "我们使用 Cursor 已有的能力，以相对简单高效的方式搭建了智能工具平台，但智能工具的方案并不是最初就规划好的，而是在日常工作解决问题的过程中逐步迭代探索出来的。\n\n作为从事产品业务方向的测试，本次分享零门槛智能工具平台搭建与测试应用的探索过程，主要是一起进行思路上的交流。",
   "sourceDocUrl": "https://alidocs.dingtalk.com/i/nodes/KGZLxjv9VG349wRwhZ4qkvrkV6EDybno",
   "agentUrl": "http://172.18.124.255:18766",
+  "platformMetrics": {
+    "cards": [
+      {
+        "label": "工具台登记的能力数量",
+        "value": "333"
+      },
+      {
+        "label": "平台处理过的请求总量",
+        "value": "2,546"
+      },
+      {
+        "label": "知识库规模",
+        "value": "6,017"
+      },
+      {
+        "label": "工作流数量",
+        "value": "25"
+      }
+    ],
+    "summary": [
+      {
+        "title": "能力沉淀",
+        "text": "知识库、MOA、工作流。"
+      },
+      {
+        "title": "对话交付",
+        "text": "钉钉、Web Agent。"
+      },
+      {
+        "title": "全员共建",
+        "text": "人人可用、人人可维护。"
+      },
+      {
+        "title": "安全可控",
+        "text": "鉴权、审计、隔离。"
+      }
+    ]
+  },
   "chapters": [
     {
       "id": "overview",

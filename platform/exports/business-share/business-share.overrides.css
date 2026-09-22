@@ -437,6 +437,10 @@ body {
 .section-intro.doc-link p {
   font-size: 15px;
 }
+.section-intro,
+.section-intro.lead-block {
+  max-width: none;
+}
 .section-intro.lead-block {
   margin-bottom: 20px;
   padding: 16px 18px;
@@ -457,6 +461,26 @@ body {
   line-height: 1.9;
   background: transparent;
   border-left: 1px solid var(--brand);
+}
+#conclusion .metric-grid {
+  gap: 12px;
+  background: transparent;
+}
+#conclusion .metric-grid .metric {
+  background: #16161a;
+  border: 1px solid #2a2d33;
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+#conclusion .metric-grid .metric .label {
+  color: #8d949f;
+  font-size: 12px;
+}
+#conclusion .metric-grid .metric .value {
+  color: #6b96ff;
+  font-size: 22px;
+  font-weight: 800;
+  margin-top: 6px;
 }
 #evolution .demo-wf-media-only,
 #tunnel .demo-wf-media-only,

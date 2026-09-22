@@ -1381,16 +1381,16 @@
 .demo-lightbox.open { opacity: 1; visibility: visible; pointer-events: auto; }
 .demo-lightbox-backdrop { position: absolute; inset: 0; background: rgba(4, 6, 8, .88); cursor: zoom-out; }
 .demo-lightbox-panel {
-  position: relative; z-index: 1; margin: 0; max-width: min(92vw, 420px); max-height: 92vh;
+  position: relative; z-index: 1; margin: 0; max-width: 96vw; max-height: 96vh;
   display: flex; flex-direction: column; align-items: center; gap: 10px;
 }
 .demo-lightbox-panel img {
-  display: block; width: auto; height: auto; max-width: min(92vw, 420px); max-height: calc(92vh - 56px);
+  display: block; width: auto; height: auto; max-width: 96vw; max-height: calc(96vh - 56px);
   object-fit: contain; border-radius: 2px; box-shadow: 0 24px 48px rgba(0, 0, 0, .45); background: #0c0f12;
 }
 .demo-lightbox-caption {
   margin: 0; padding: 0 8px; color: #c6ccd5; font-size: 13px; font-weight: 600;
-  text-align: center; line-height: 1.5; max-width: min(92vw, 420px);
+  text-align: center; line-height: 1.5; max-width: 96vw;
 }
 .demo-lightbox-close {
   position: fixed; top: 16px; right: 16px; z-index: 201; width: 40px; height: 40px; border: none;
@@ -1964,6 +1964,10 @@ body {
 .section-intro.doc-link p {
   font-size: 15px;
 }
+.section-intro,
+.section-intro.lead-block {
+  max-width: none;
+}
 .section-intro.lead-block {
   margin-bottom: 20px;
   padding: 16px 18px;
@@ -1984,6 +1988,26 @@ body {
   line-height: 1.9;
   background: transparent;
   border-left: 1px solid var(--brand);
+}
+#conclusion .metric-grid {
+  gap: 12px;
+  background: transparent;
+}
+#conclusion .metric-grid .metric {
+  background: #16161a;
+  border: 1px solid #2a2d33;
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+#conclusion .metric-grid .metric .label {
+  color: #8d949f;
+  font-size: 12px;
+}
+#conclusion .metric-grid .metric .value {
+  color: #6b96ff;
+  font-size: 22px;
+  font-weight: 800;
+  margin-top: 6px;
 }
 #evolution .demo-wf-media-only,
 #tunnel .demo-wf-media-only,
@@ -2126,9 +2150,9 @@ body {
     <ul class="summary-cards">
       <li><strong class="step-no">1.</strong><strong>智能工具演化</strong>——从知识库沉淀、MOA 能力录制到自然语言造数——智能工具的四段演进路径。</li>
       <li><strong class="step-no">2.</strong><strong>Tunnel 能力应用</strong>——抓包、Mock 协助测试，生成式 MOA 能力再翻倍。</li>
-      <li><strong class="step-no">3.</strong><strong>智能工具机器人</strong></li>
-      <li><strong class="step-no">4.</strong><strong>智能工具平台 Agent</strong></li>
-      <li><strong class="step-no">5.</strong><strong>安全性</strong></li>
+      <li><strong class="step-no">3.</strong><strong>智能工具机器人</strong>——钉钉 Stream 机器人接入 Cursor SDK——团队零门槛在群里调用，移动随时问、权限可管控。</li>
+      <li><strong class="step-no">4.</strong><strong>智能工具平台 Agent</strong>——Web Agent 承载复杂操作与能力目录——统一交互、工具台一键直达、可接外部 Agent。</li>
+      <li><strong class="step-no">5.</strong><strong>安全性</strong>——入口鉴权、操作审计与用户隔离——敏感行为可溯源、线上能力分级管控。</li>
     </ul>
   </div>
   <div class="demo-block phase-record">
@@ -2214,7 +2238,13 @@ body {
     </div>
     <ul class="summary-cards">
       <li><strong class="step-no">1.</strong>使用自然语言完成造数操作，结合知识库自动推算所需数值。</li>
+    </ul>
+    <div class="demo-wf-media-only is-single"><div class="media-box"><button type="button" class="demo-zoom-trigger" data-zoom-src="/business-share/images/3e7270bd3c4cdf6207e7641bdc141896.png" data-zoom-caption="配图"><img src="/business-share/images/3e7270bd3c4cdf6207e7641bdc141896.png" alt="配图" loading="lazy" /></button><div class="media-caption">附图 · 点击查看大图</div></div></div>
+    <ul class="summary-cards">
       <li><strong class="step-no">2.</strong>多MOA协同，批量造数，一次完成原先需要人工多步才能完成的操作。</li>
+    </ul>
+    <div class="demo-wf-media-only is-single"><div class="media-box"><button type="button" class="demo-zoom-trigger" data-zoom-src="/business-share/images/e1a072acbb5221a2a3a0958e871b2e70.png" data-zoom-caption="配图"><img src="/business-share/images/e1a072acbb5221a2a3a0958e871b2e70.png" alt="配图" loading="lazy" /></button><div class="media-caption">附图 · 点击查看大图</div></div></div>
+    <ul class="summary-cards">
       <li><strong class="step-no">3.</strong>根据诉求自动分析前置条件，完成账号准备工作，比如下图自定义座驾的上传准备。</li>
     </ul>
     <div class="demo-wf-media-only is-single"><div class="media-box"><button type="button" class="demo-zoom-trigger" data-zoom-src="/business-share/images/389b12a5c73d4b6d7a81f7c8f43af25f.png" data-zoom-caption="配图"><img src="/business-share/images/389b12a5c73d4b6d7a81f7c8f43af25f.png" alt="配图" loading="lazy" /></button><div class="media-caption">附图 · 点击查看大图</div></div></div>
@@ -2232,7 +2262,7 @@ body {
       <div class="qa-lines">
         <div class="qa-row qa-q">
           <span class="qa-label">Q:</span>
-          <div class="qa-text">功能使用依赖录制账号的cookie和token，如果避免鉴权过期中断操作？</div>
+          <div class="qa-text">功能使用依赖录制账号的cookie和token，如何避免鉴权过期中断操作？</div>
         </div>
         <div class="qa-row qa-a">
           <span class="qa-label">A:</span>
@@ -2335,6 +2365,7 @@ body {
       <li><strong class="step-no">5.</strong>验证领取奖励后账号资产变更，确认达标数值和奖励下发与盘古配置一致，符合产品需求。</li>
       <li><strong class="step-no">6.</strong>输出测试报告<a href="http://172.18.124.255:18766/platform-guide/cp_love_chest_report.html" target="_blank" rel="noopener">查看报告</a></li>
     </ul>
+    <div class="demo-wf-media-only is-single"><div class="media-box"><button type="button" class="demo-zoom-trigger" data-zoom-src="/business-share/images/430810a82940773d60c306c01da34c33.png" data-zoom-caption="配图"><img src="/business-share/images/430810a82940773d60c306c01da34c33.png" alt="配图" loading="lazy" /></button><div class="media-caption">附图 · 点击查看大图</div></div></div>
     <p>已落地的工作流还包括：家族 PK、周年砸金蛋、PK 提款机、家族基金造数等</p>
     <div class="section-intro doc-link"><p>关于工作流的搭建和使用有更详细的文档（详见 <a href="http://172.18.124.255:18766/family-pk-showcase/" target="_blank" rel="noopener">工作流参考</a>）</p></div>
   </div>
@@ -2389,7 +2420,7 @@ body {
       <li><strong class="step-no">2.</strong>执行结果有钉钉提醒，无需原地发呆。</li>
       <li><strong class="step-no">3.</strong>移动设备随时问，手机钉钉发送指令，随时想到即刻执行。</li>
       <li><strong class="step-no">4.</strong>操作权限可控，没有添加权限的用户使用机器人会被拦截，无法操作。</li>
-      <li><strong class="step-no">6.</strong>提问信息和用户钉钉账号做绑定，操作可以归属到个人。</li>
+      <li><strong class="step-no">5.</strong>提问信息和用户钉钉账号做绑定，操作可以归属到个人。</li>
     </ul>
   </div>
 </section>
@@ -2470,7 +2501,7 @@ body {
     </ul>
     <div class="demo-wf-media-only is-single"><div class="media-box"><button type="button" class="demo-zoom-trigger" data-zoom-src="/business-share/images/134ca418e78f5517ecc91a9886b5c7f3.png" data-zoom-caption="配图"><img src="/business-share/images/134ca418e78f5517ecc91a9886b5c7f3.png" alt="配图" loading="lazy" /></button><div class="media-caption">附图 · 点击查看大图</div></div></div>
     <ul class="summary-cards">
-      <li><strong class="step-no">6.</strong>执行结果可以选择发送到钉钉，提问后不比原地等待，钉钉自会提示，也可以将执行结果直接通过钉钉转发给他人或群聊。</li>
+      <li><strong class="step-no">6.</strong>执行结果可以选择发送到钉钉，提问后不必原地等待，钉钉自会提示，也可以将执行结果直接通过钉钉转发给他人或群聊。</li>
     </ul>
     <div class="media-gallery">
       <div class="demo-wf-media-only"><div class="media-box"><button type="button" class="demo-zoom-trigger" data-zoom-src="/business-share/images/407ccd32260b165e7c568ca011520da6.png" data-zoom-caption="配图"><img src="/business-share/images/407ccd32260b165e7c568ca011520da6.png" alt="配图" loading="lazy" /></button><div class="media-caption">附图 · 点击查看大图</div></div></div>
@@ -2573,11 +2604,11 @@ body {
     <div class="demo-title-row">
       <h3 class="demo-title">平台建设概况</h3>
     </div>
+    <div class="metric-grid">
+<div class="metric"><div class="label">工具台登记的能力数量</div><div class="value">333</div></div><div class="metric"><div class="label">平台处理过的请求总量</div><div class="value">2,546</div></div><div class="metric"><div class="label">知识库规模</div><div class="value">6,017</div></div><div class="metric"><div class="label">工作流数量</div><div class="value">25</div></div>
+    </div>
     <ul class="summary-cards">
-      <li><strong class="step-no">1.</strong><strong>能力沉淀</strong>——知识库、MOA、工作流。</li>
-      <li><strong class="step-no">2.</strong><strong>对话交付</strong>——钉钉、Web Agent。</li>
-      <li><strong class="step-no">3.</strong><strong>全员共建</strong>——人人可用、人人可维护。</li>
-      <li><strong class="step-no">4.</strong><strong>安全可控</strong>——鉴权、审计、隔离。</li>
+<li><strong class="step-no">1.</strong><strong>能力沉淀</strong>——知识库、MOA、工作流。</li><li><strong class="step-no">2.</strong><strong>对话交付</strong>——钉钉、Web Agent。</li><li><strong class="step-no">3.</strong><strong>全员共建</strong>——人人可用、人人可维护。</li><li><strong class="step-no">4.</strong><strong>安全可控</strong>——鉴权、审计、隔离。</li>
     </ul>
   </div>
   <div class="demo-block phase-outlook callout">
