@@ -421,6 +421,9 @@ body {
   border-radius: 0;
   background: transparent;
 }
+.demo-block + .demo-block.callout {
+  margin-top: 40px;
+}
 .demo-block.callout .demo-title-row {
   margin-bottom: 12px;
   padding-bottom: 12px;

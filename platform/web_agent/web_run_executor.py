@@ -290,6 +290,8 @@ def _record_chat_complete(meta: Any, *, session_id: str, run_id: str, reply_text
 
 def execute_web_run(run_id: str) -> int:
     """执行单次 Web chat run（可在子进程或 HTTP 服务线程内调用）。"""
+    from run_child_processes import kill_run_child_processes, run_child_guard
+
     store = get_run_store()
     meta = store.get_run(run_id)
     if meta is None:
@@ -304,6 +306,28 @@ def execute_web_run(run_id: str) -> int:
     session_store = get_session_store()
     session_id = meta.session_id
     user_key = session_store.user_key(session_id)
+    with run_child_guard(user_key):
+        return _execute_web_run_body(
+            run_id,
+            meta,
+            store,
+            session_store,
+            session_id,
+            user_key,
+            kill_run_child_processes=kill_run_child_processes,
+        )
+
+
+def _execute_web_run_body(
+    run_id: str,
+    meta: Any,
+    store: Any,
+    session_store: Any,
+    session_id: str,
+    user_key: str,
+    *,
+    kill_run_child_processes: Any,
+) -> int:
     if user_key:
         os.environ[USER_KEY_ENV] = user_key
         try:
@@ -431,8 +455,6 @@ def execute_web_run(run_id: str) -> int:
         return 0
     except TaskInterrupted:
         if user_key:
-            from run_child_processes import kill_run_child_processes
-
             kill_run_child_processes(user_key)
         elapsed = time.monotonic() - started_at
         body = build_run_stop_reply(
@@ -577,6 +599,13 @@ def _spawn_one_shot_worker(rid: str) -> int:
     with _RUN_LOCK:
         _RUN_PROCS[rid] = proc
     store.set_worker_pid(rid, proc.pid)
+    run_meta = store.get_run(rid)
+    if run_meta is not None:
+        spawn_user_key = get_session_store().user_key(run_meta.session_id)
+        if spawn_user_key:
+            from run_child_processes import register_run_child
+
+            register_run_child(spawn_user_key, proc.pid)
     logger.info("spawn one-shot worker run=%s pid=%s", rid, proc.pid)
     return int(proc.pid)
 

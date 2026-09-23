@@ -903,9 +903,12 @@ def _interrupt_active_run(run: ActiveRun) -> bool:
     if run.final_text:
         get_session_store().append_message(run.session_id, "assistant", run.final_text)
 
-    if user_key:
-        kill_run_child_processes(user_key)
     meta = store.get_run(run.run_id)
+    extra_roots: list[int] = []
+    if meta is not None and meta.worker_pid > 0:
+        extra_roots.append(int(meta.worker_pid))
+    if user_key:
+        kill_run_child_processes(user_key, extra_root_pids=extra_roots)
     if meta is not None and meta.worker_pid > 0:
         worker_pid = int(meta.worker_pid)
         if not is_shared_worker_daemon_pid(worker_pid):

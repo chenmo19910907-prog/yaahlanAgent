@@ -8,6 +8,8 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
+from external_agent_progress import USER_KEY_ENV
+
 GATEWAY_DIR = Path(__file__).resolve().parents[1] / "dingtalk_gateway"
 if str(GATEWAY_DIR) not in sys.path:
     sys.path.insert(0, str(GATEWAY_DIR))
@@ -63,21 +65,41 @@ logger = logging.getLogger("web-agent")
 _BRIDGE_INIT = False
 
 
-def ensure_bridge(*, on_phase: Callable[[str], None] | None = None) -> None:
+def _register_bridge_child(user_key: str) -> None:
+    key = (user_key or "").strip()
+    if not key:
+        return
+    try:
+        from cursor_sdk._client import _DEFAULT_BRIDGE
+        from run_child_processes import register_run_child
+
+        bridge = _DEFAULT_BRIDGE
+        proc = getattr(bridge, "process", None) if bridge is not None else None
+        pid = int(getattr(proc, "pid", 0) or 0)
+        if pid > 0:
+            register_run_child(key, pid)
+    except (ImportError, OSError, ValueError, AttributeError, TypeError):
+        return
+
+
+def ensure_bridge(*, on_phase: Callable[[str], None] | None = None, user_key: str | None = None) -> None:
     global _BRIDGE_INIT
 
     def _phase(line: str) -> None:
         if on_phase and line:
             on_phase(line)
 
+    bridge_key = (user_key or os.environ.get(USER_KEY_ENV) or "").strip()
     if _BRIDGE_INIT or bridge_initialized():
         _BRIDGE_INIT = True
+        _register_bridge_child(bridge_key)
         return
     _phase(PHASE_BRIDGE_INIT)
     init_sdk_bridge(repo_cwd())
     pool = get_user_agent_pool()
     pool.start_idle_sweeper()
     _BRIDGE_INIT = True
+    _register_bridge_child(bridge_key)
 
 
 def run_web_chat(
@@ -103,11 +125,11 @@ def run_web_chat(
         if on_phase and line:
             on_phase(line)
 
-    ensure_bridge(on_phase=on_phase)
-    if session_ctrl:
-        session_ctrl.check_cancelled()
     store = get_session_store()
     user_key = store.user_key(session_id)
+    ensure_bridge(on_phase=on_phase, user_key=user_key)
+    if session_ctrl:
+        session_ctrl.check_cancelled()
     meta = store.get_session(session_id)
     is_new = meta is None or not meta.has_assistant
     image_list = list(image_paths or [])

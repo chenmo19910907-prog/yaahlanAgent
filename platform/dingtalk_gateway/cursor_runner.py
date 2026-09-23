@@ -252,6 +252,10 @@ def _consume_run_stream(
             update = event.interaction_update
             if update is not None:
                 changed = renderer.apply(update) or changed
+                if user_key:
+                    from run_child_processes import register_shell_tool_update
+
+                    register_shell_tool_update(user_key, update)
                 utype = getattr(update, "type", "") if not isinstance(update, Mapping) else str(update.get("type") or "")
                 if utype in ("tool-call-started", "tool-call-completed"):
                     force_render = True

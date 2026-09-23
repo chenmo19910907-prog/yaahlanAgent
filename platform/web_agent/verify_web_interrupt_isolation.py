@@ -77,7 +77,7 @@ class InterruptIsolationTests(unittest.TestCase):
 
         request_cancel.assert_not_called()
         store.request_cancel.assert_called_once_with("run_a")
-        kill_children.assert_called_once_with("web:sess_a")
+        kill_children.assert_called_once_with("web:sess_a", extra_root_pids=[4242])
         terminate_worker.assert_called_once_with(4242)
         pool.invalidate.assert_called_once_with("web:sess_a")
 

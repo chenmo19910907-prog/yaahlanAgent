@@ -79,6 +79,13 @@ LINK_OVERRIDES: dict[str, str] = {
 
 # 钉钉原文未收录、但分享页需展示的补充条目：(小节标题, [(序号, 正文), ...])
 EXTRA_STEPS: dict[str, list[tuple[str, str]]] = {
+    "二、功能介绍": [
+        (
+            "10",
+            "虽然 Web Agent 有着诸多优势，但是业务逻辑更重，相同问题的处理时间会比钉钉机器人慢 "
+            "15 秒左右，所以简单的 MOA 数值操作更推荐使用机器人进行请求。",
+        ),
+    ],
     "三、外部agent拓展能力": [
         (
             "5",
@@ -305,8 +312,13 @@ TEXT_POLISH: dict[str, str] = {
     "回复详略自由调整，简洁回复、标准回复、详细回复": (
         "回复详略可调：简洁 / 标准 / 详细"
     ),
-    "常用工具直达，token用量统计等，详细介绍": (
-        "常用工具直达、Token 用量统计等"
+    "常用工具直达，token用量统计等关于Yaahlan智能工具agent的详细介绍见文档：http://172.18.124.255:18766/keynote#1。": (
+        "常用工具直达，token用量统计等，更多关于yaahlan智能工具agent的详细介绍见文档 "
+        "http://172.18.124.255:18766/keynote#1"
+    ),
+    "常用工具直达，token用量统计等，更多关于Yaahlan智能工具agent的详细介绍见文档：http://172.18.124.255:18766/keynote#1。": (
+        "常用工具直达，token用量统计等，更多关于yaahlan智能工具agent的详细介绍见文档 "
+        "http://172.18.124.255:18766/keynote#1"
     ),
     "支持接入服务端已有agent，相同的功能不再重复部署，有效避免资源浪费": (
         "接入服务端已有 Agent，避免重复部署与资源浪费"
@@ -543,7 +555,15 @@ CHAPTER_TITLE_ALIASES = {
 def _should_skip_chapter(h1_text: str, sid: str) -> bool:
     if sid in SKIP_CHAPTER_IDS or h1_text in SKIP_CHAPTER_TITLES:
         return True
-    return h1_text.startswith("个人介绍")
+    if h1_text.startswith("个人介绍"):
+        return True
+    # 钉钉文档常把「概况」与导语合并为一个 h1，概况 tab 已由 _render_overview_panel 单独渲染
+    if h1_text.startswith("概况"):
+        return True
+    # 结语 tab 由 _render_conclusion_panel 单独渲染
+    if h1_text == "结语" or sid == "conclusion":
+        return True
+    return False
 
 
 def _chapter_meta(h1_text: str) -> dict[str, str]:
@@ -896,6 +916,7 @@ def _render_step_item(num: str, body: str) -> str:
         if _should_use_see_detail_link(body)
         else _linkify(body)
     )
+    content = content.replace("\n", "<br>")
     return (
         f'      <li><strong class="step-no">{_esc(num)}.</strong>{content}</li>'
     )
