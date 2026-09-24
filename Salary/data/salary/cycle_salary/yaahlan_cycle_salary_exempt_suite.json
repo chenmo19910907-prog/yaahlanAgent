@@ -1,0 +1,57 @@
+{
+  "suite_id": "cycle_salary_exempt",
+  "title": "Yaahlan 主播薪资豁免 E2E",
+  "description": "扣减系数豁免专项：等级豁免（Level≥8）与首次主播豁免（anchor_profile COUNT=1 + 入职日期切点 + 跨周期一次性）。用例数据仍来自 yaahlan_cycle_salary_cases.json，本文件仅定义套件范围与冒烟集。",
+  "source_cases_json": "yaahlan_cycle_salary_cases.json",
+  "execution_flow": [
+    "1. 造数 — 写表1 anchor_work_statistic_5；首次主播用例依赖 anchor_profile 前置（部分用例 runtime 改 create_time）",
+    "2. MOA1 — testUpdateSnapshotData(anchor_id, period_start)",
+    "3. MOA2 — generateAnchorSalary(period_start)",
+    "4. 断言 — 表3 salary_coefficient / 应发金额；表4 deduction_factor"
+  ],
+  "case_names": [
+    "cycle_salary_factor_1_0_level_exempt",
+    "cycle_salary_level7_coins_upper_bound",
+    "cycle_salary_level9_high_tier_exempt",
+    "cycle_salary_rejoin_not_first_anchor_factor_0_6",
+    "cycle_salary_first_anchor_exempt_factor_1_0",
+    "cycle_salary_first_anchor_lower_half_exempt_factor_1_0",
+    "cycle_salary_first_anchor_join_before_day6_factor_0_6",
+    "cycle_salary_first_anchor_join_before_day21_factor_0_6",
+    "cycle_salary_first_anchor_upper_join_day5_boundary_factor_0_6",
+    "cycle_salary_first_anchor_upper_join_day6_boundary_factor_1_0",
+    "cycle_salary_first_anchor_lower_join_day20_boundary_factor_0_6",
+    "cycle_salary_first_anchor_exempt_union_owner_factor_1_0",
+    "cycle_salary_first_anchor_exempt_used_next_period_factor_0_6"
+  ],
+  "smoke_cases": [
+    "cycle_salary_factor_1_0_level_exempt",
+    "cycle_salary_rejoin_not_first_anchor_factor_0_6",
+    "cycle_salary_first_anchor_exempt_factor_1_0",
+    "cycle_salary_first_anchor_lower_half_exempt_factor_1_0",
+    "cycle_salary_first_anchor_exempt_used_next_period_factor_0_6"
+  ],
+  "categories": {
+    "level_exempt": [
+      "cycle_salary_factor_1_0_level_exempt",
+      "cycle_salary_level9_high_tier_exempt"
+    ],
+    "level_exempt_boundary": [
+      "cycle_salary_level7_coins_upper_bound"
+    ],
+    "first_anchor_positive": [
+      "cycle_salary_first_anchor_exempt_factor_1_0",
+      "cycle_salary_first_anchor_lower_half_exempt_factor_1_0",
+      "cycle_salary_first_anchor_upper_join_day6_boundary_factor_1_0",
+      "cycle_salary_first_anchor_exempt_union_owner_factor_1_0"
+    ],
+    "first_anchor_negative": [
+      "cycle_salary_rejoin_not_first_anchor_factor_0_6",
+      "cycle_salary_first_anchor_join_before_day6_factor_0_6",
+      "cycle_salary_first_anchor_join_before_day21_factor_0_6",
+      "cycle_salary_first_anchor_upper_join_day5_boundary_factor_0_6",
+      "cycle_salary_first_anchor_lower_join_day20_boundary_factor_0_6",
+      "cycle_salary_first_anchor_exempt_used_next_period_factor_0_6"
+    ]
+  }
+}

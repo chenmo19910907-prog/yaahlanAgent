@@ -1,0 +1,476 @@
+{
+  "description": "Yaahlan 退款黑名单算薪影响 E2E 数据驱动用例表。\n\n【核心业务规则】\n  过滤条件：is_trade_owner=0（普通主播）被拉黑（active_status=1）→ 表3有记录，表4无记录\n  豁免条件：is_trade_owner=1（公会长）被拉黑 → 表3有记录，表4正常生成\n  已移出：active_status=0 → 恢复正常，有表3有表4\n\n【四种支付场景 × 黑名单过滤矩阵】\n  场景                     is_trade_owner  表4预期\n  主播收-普通主播(2,0)     0               ❌ 无记录（过滤）\n  公会收-普通主播(1,0)     0               ❌ 无记录（过滤）\n  主播收-公会长(2,1)       1               ✅ 有记录（豁免）\n  公会收-公会长(1,1)       1               ✅ 有记录（豁免）\n\n【测试账号】\n  主播收-普通主播：anchor_id=100350014（payment_type=2，is_trade_owner=0，trade_id=41578144）\n  公会收-普通主播：anchor_id=100109582（payment_type=1，is_trade_owner=0，trade_id=2628544820）\n  主播收-公会长：anchor_id=100403090（payment_type=2，is_trade_owner=1，trade_id=2410022938）\n  公会收-公会长：anchor_id=4559（payment_type=1，is_trade_owner=1，trade_id=3894979203）\n\n【已覆盖场景】\n  RB01 cycle_salary_rb01_anchor_collect_regular_blacklist    — 主播收-普通主播被拉黑：有表3无表4（核心过滤场景）\n  RB02 cycle_salary_rb02_guild_collect_regular_blacklist     — 公会收-普通主播被拉黑：有表3无表4（普通主播无论何种收款方式均过滤）\n  RB03 cycle_salary_rb03_anchor_collect_owner_blacklist      — 主播收-公会长被拉黑：有表3有表4（公会长豁免）\n  RB04 cycle_salary_rb04_guild_collect_owner_blacklist       — 公会收-公会长被拉黑：有表3有表4（公会长豁免）\n  RB05 cycle_salary_rb05_status0_restored                   — 普通主播移出黑名单(active_status=0)：表3表4均恢复正常\n  RB06 cycle_salary_rb06_level8_exempt_still_excluded       — 普通主播黑名单+Level 8等级豁免：表3系数=1.0，表4仍无记录\n  RB07 cycle_salary_rb07_source_type1_excluded              — source_type=1(退款本人)：有表3无表4\n  RB08 cycle_salary_rb08_source_type2_excluded              — source_type=2(充值设备关联)：有表3无表4\n  RB09 cycle_salary_rb09_source_type3_excluded              — source_type=3(集中收礼人)：有表3无表4\n\n【用例幻觉检查记录】\n  Level 7(coins=500000): anchor_salary_raw=$100, union_salary_raw=$33；×0.6 → $60/$19.8/total$79.8 ✓\n  Level 8(coins=705600): anchor_salary_raw=$141, union_salary_raw=$39；×1.0(等级豁免) → $141/$39/total$180 ✓\n  5×7920s=39600s=11.0h, effective_workday=5 ✓\n  1×7920s=7920s=2.2h, effective_workday=1 ✓",
+
+  "cases": [
+    {
+      "case_name": "cycle_salary_rb01_anchor_collect_regular_blacklist",
+      "case_name_cn": "主播收-普通主播被拉黑：有表3无表4（核心过滤场景）",
+      "case_name_en": "Anchor-collect regular anchor blacklisted: T3 present, T4 excluded",
+      "scenario_desc": "主播收模式下普通主播（payment_type=2，is_trade_owner=0，anchor_id=100350014），周期20260601-20260615，收礼金币500000（Level 7），有效工作日5天，开播时长11h，系数=0.6。算薪前手动加入退款黑名单（active_status=1，source_type=4）。验证核心规则：普通主播被拉黑后表3正常计算，表4无记录。",
+      "case_purpose": "验证：is_trade_owner=0的主播收普通主播被拉黑后，表3有记录，表4无记录",
+      "anchor_id": "100350014",
+      "period_start": "20260601",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260601", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260603", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260608", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260609", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260614", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "blacklist": {
+          "db": "operation_log",
+          "table": "refund_blacklist",
+          "user_id": "100350014",
+          "source_type": 4,
+          "reason": "测试用例手动添加",
+          "status": 1
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 5,
+        "in_seattime": 11.0,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4_exists": false,
+      "expected_t4": null,
+      "verification_scenarios": [
+        {
+          "point": "表3有记录：退款黑名单不影响主播粒度薪资计算",
+          "construction": "断言表3存在 anchor_id=100350014，salary_start_date='2026-06-01'，salary_level=7，salary_coefficient=0.60，anchor_salary_payable=60.00"
+        },
+        {
+          "point": "表4无记录：主播收-普通主播被拉黑后不参与应得薪资计算",
+          "construction": "断言 salary_expected_detail WHERE salary_period='20260601' AND payment_uid='100350014' 为空（0条）"
+        }
+      ]
+    },
+
+    {
+      "case_name": "cycle_salary_rb02_guild_collect_regular_blacklist",
+      "case_name_cn": "公会收-普通主播被拉黑：有表3无表4（普通主播无论收款方式均过滤）",
+      "case_name_en": "Guild-collect regular anchor blacklisted: T3 present, T4 excluded",
+      "scenario_desc": "公会收模式下普通主播（payment_type=1，is_trade_owner=0，anchor_id=100109582，trade_id=2628544820），周期20260516-20260531，收礼金币500000（Level 7），有效工作日5天，开播时长11h，系数=0.6。算薪前加入退款黑名单（active_status=1，source_type=4）。验证规则：普通主播无论是主播收还是公会收，被拉黑后均不生成表4记录，过滤条件只看 is_trade_owner，不看 payment_type。使用独立周期（20260516）避免与其他用例 MOA2 相互覆盖。",
+      "case_purpose": "验证：is_trade_owner=0的公会收普通主播被拉黑后，表3有记录，表4无记录",
+      "anchor_id": "100109582",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260516", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260518", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260520", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260522", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260524", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "blacklist": {
+          "db": "operation_log",
+          "table": "refund_blacklist",
+          "user_id": "100109582",
+          "source_type": 4,
+          "reason": "测试用例手动添加",
+          "status": 1
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 5,
+        "in_seattime": 11.0,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4_exists": false,
+      "expected_t4": null,
+      "verification_scenarios": [
+        {
+          "point": "表3有记录：退款黑名单不影响主播粒度薪资计算",
+          "construction": "断言表3存在 anchor_id=100109582，salary_start_date='2026-05-16'，salary_level=7，salary_coefficient=0.60，anchor_salary_payable=60.00"
+        },
+        {
+          "point": "表4无记录：公会收-普通主播被拉黑，其表4记录被过滤（payment_uid=100109582 无记录）",
+          "construction": "断言 salary_expected_detail WHERE salary_period='20260516' AND payment_uid='100109582' 为空（0条）"
+        }
+      ]
+    },
+
+    {
+      "case_name": "cycle_salary_rb03_anchor_collect_owner_blacklist",
+      "case_name_cn": "主播收-公会长被拉黑：有表3有表4（公会长豁免，不过滤）",
+      "case_name_en": "Anchor-collect guild owner blacklisted: T3 and T4 both present (guild owner exempt)",
+      "scenario_desc": "主播收模式下公会长（payment_type=2，is_trade_owner=1，anchor_id=100403090，trade_id=2410022938），周期20260501-20260515，收礼金币500000（Level 7），有效工作日5天，开播时长11h，系数=0.6。算薪前加入退款黑名单（active_status=1，source_type=4）。验证规则：公会长被拉黑后不受过滤影响，表3和表4均正常生成。使用独立周期（20260501）避免与其他用例 MOA2 相互覆盖。",
+      "case_purpose": "验证：is_trade_owner=1的主播收公会长被拉黑后，表3有记录，表4有记录（公会长豁免）",
+      "anchor_id": "100403090",
+      "period_start": "20260501",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260501", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260503", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260505", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260507", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260509", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "blacklist": {
+          "db": "operation_log",
+          "table": "refund_blacklist",
+          "user_id": "100403090",
+          "source_type": 4,
+          "reason": "测试公会长黑名单豁免场景",
+          "status": 1
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 5,
+        "in_seattime": 11.0,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4_exists": true,
+      "expected_t4": null,
+      "verification_scenarios": [
+        {
+          "point": "表3有记录：公会长被拉黑不影响主播粒度薪资计算",
+          "construction": "断言表3存在 anchor_id=100403090，salary_start_date='2026-05-01'，salary_level=7，salary_coefficient=0.60，anchor_salary_payable=60.00"
+        },
+        {
+          "point": "表4有记录（存在即可）：公会长被拉黑后豁免，不被过滤",
+          "construction": "断言 salary_expected_detail WHERE salary_period='20260501' AND payment_uid='100403090' 存在记录（≥1条）即通过"
+        }
+      ]
+    },
+
+    {
+      "case_name": "cycle_salary_rb04_guild_collect_owner_blacklist",
+      "case_name_cn": "公会收-公会长被拉黑：有表3有表4（公会长豁免，不过滤）",
+      "case_name_en": "Guild-collect guild owner blacklisted: T3 and T4 both present (guild owner exempt)",
+      "scenario_desc": "公会收模式下公会长（payment_type=1，is_trade_owner=1，anchor_id=4559，trade_id=3894979203），周期20260401-20260415，收礼金币500000（Level 7），有效工作日5天，开播时长11h，系数=0.6。算薪前加入退款黑名单（active_status=1，source_type=4）。验证规则：公会长被拉黑后不受过滤影响，表3和表4均正常生成。使用独立周期（20260401）避免与其他用例 MOA2 相互覆盖。",
+      "case_purpose": "验证：is_trade_owner=1的公会收公会长被拉黑后，表3有记录，表4有记录（公会长豁免）",
+      "anchor_id": "4559",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260401", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260403", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260405", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260407", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260409", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "blacklist": {
+          "db": "operation_log",
+          "table": "refund_blacklist",
+          "user_id": "4559",
+          "source_type": 4,
+          "reason": "测试公会长黑名单不过滤场景",
+          "status": 1
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 5,
+        "in_seattime": 11.0,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4_exists": true,
+      "expected_t4": null,
+      "verification_scenarios": [
+        {
+          "point": "表3有记录：公会长被拉黑不影响主播粒度薪资计算",
+          "construction": "断言表3存在 anchor_id=4559，salary_start_date='2026-04-01'，salary_level=7，salary_coefficient=0.60，anchor_salary_payable=60.00"
+        },
+        {
+          "point": "表4有记录（存在即可）：公会长被拉黑后豁免，不被过滤",
+          "construction": "断言 salary_expected_detail WHERE salary_period='20260401' AND payment_uid='4559' 存在记录（≥1条）即通过"
+        }
+      ]
+    },
+
+    {
+      "case_name": "cycle_salary_rb05_status0_restored",
+      "case_name_cn": "普通主播移出黑名单（active_status=0）：表3表4均恢复正常",
+      "case_name_en": "Regular anchor removed from blacklist (active_status=0): both T3 and T4 restored",
+      "scenario_desc": "主播收模式下普通主播（anchor_id=100350014），周期20260601-20260615，收礼金币500000（Level 7），有效工作日5天，开播时长11h，系数=0.6。refund_blacklist 表中存在该主播记录但 active_status=0（已移出）。系统只过滤 active_status=1 的记录，active_status=0 的主播正常参与算薪全流程，表3和表4均应有记录。",
+      "case_purpose": "验证：refund_blacklist.active_status=0（已移出）的普通主播不被过滤，表3和表4均正常生成",
+      "anchor_id": "100350014",
+      "period_start": "20260601",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260601", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260603", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260608", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260609", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260614", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "blacklist": {
+          "db": "operation_log",
+          "table": "refund_blacklist",
+          "user_id": "100350014",
+          "source_type": 4,
+          "reason": "测试用例模拟已移出状态",
+          "status": 0
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 5,
+        "in_seattime": 11.0,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4_exists": true,
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 11.0,
+        "work_days": 5,
+        "anchor_salary": 60.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "表3有记录：active_status=0不影响主播粒度计算",
+          "construction": "断言表3存在 anchor_id=100350014，salary_start_date='2026-06-01' 的记录"
+        },
+        {
+          "point": "表4有记录：active_status=0的黑名单不生效，主播正常参与应得薪资计算",
+          "construction": "断言 salary_expected_detail WHERE salary_period='20260601' AND payment_uid='100350014' 存在记录（≥1条），anchor_salary=60，deduction_factor=0.6"
+        }
+      ]
+    },
+
+    {
+      "case_name": "cycle_salary_rb06_level8_exempt_still_excluded",
+      "case_name_cn": "普通主播黑名单+Level 8等级豁免：表3系数=1.0，表4仍无记录",
+      "case_name_en": "Regular anchor: blacklist + Level>=8 exemption: T3 coefficient=1.0, T4 still excluded",
+      "scenario_desc": "主播收模式下普通主播（anchor_id=100350014），周期20260601-20260615，收礼金币705600（Level 8最低阈值），有效工作日1天（<9天），开播时长2.2h（<18h），但因等级≥8触发豁免，扣减系数=1.0。算薪前加入退款黑名单（active_status=1）。验证两条规则独立生效：等级豁免只影响扣减系数（表3系数=1.0），黑名单过滤影响表4（无记录），互不干扰。",
+      "case_purpose": "验证：普通主播即使触发Level≥8等级豁免（表3系数=1.0），仍不生成表4记录（黑名单过滤优先级独立）",
+      "anchor_id": "100350014",
+      "period_start": "20260601",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260601", "receive_gift_count": 705600, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "blacklist": {
+          "db": "operation_log",
+          "table": "refund_blacklist",
+          "user_id": "100350014",
+          "source_type": 4,
+          "reason": "测试高等级黑名单场景",
+          "status": 1
+        }
+      },
+      "expected_t3": {
+        "salary_level": 8,
+        "salary_coefficient": 1.0,
+        "coin_income": 705600,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 141.0,
+        "union_salary_raw": 39.0,
+        "anchor_salary_payable": 141.0,
+        "union_salary_payable": 39.0,
+        "total_salary_payable": 180.0
+      },
+      "expected_t4_exists": false,
+      "expected_t4": null,
+      "verification_scenarios": [
+        {
+          "point": "表3有记录：Level 8等级豁免生效，salary_coefficient=1.0，薪资全额发放",
+          "construction": "断言表3 anchor_id=100350014，salary_start_date='2026-06-01'，salary_level=8，salary_coefficient=1.00，anchor_salary_payable=141.00，total_salary_payable=180.00"
+        },
+        {
+          "point": "表4无记录：等级豁免与黑名单过滤独立，黑名单仍生效",
+          "construction": "断言 salary_expected_detail WHERE salary_period='20260601' AND payment_uid='100350014' 为空（0条）"
+        }
+      ]
+    },
+
+    {
+      "case_name": "cycle_salary_rb07_source_type1_excluded",
+      "case_name_cn": "普通主播黑名单来源=退款本人（source_type=1）：有表3无表4",
+      "case_name_en": "Regular anchor blacklist source_type=1 (refund self): T3 present, T4 excluded",
+      "scenario_desc": "主播收模式下普通主播（anchor_id=100350014），周期20260601-20260615，收礼金币500000（Level 7），系数=0.6。以「退款本人」身份（source_type=1，结薪周期内退款达49美元触发）加入黑名单（active_status=1）。验证 source_type=1 的过滤行为与 source_type=4 一致。",
+      "case_purpose": "验证：source_type=1（退款本人）的普通主播被过滤出表4，有表3无表4",
+      "anchor_id": "100350014",
+      "period_start": "20260601",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260601", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260603", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260608", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260609", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260614", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "blacklist": {
+          "db": "operation_log",
+          "table": "refund_blacklist",
+          "user_id": "100350014",
+          "source_type": 1,
+          "reason": "结薪周期内退款达49美元封禁账号",
+          "status": 1
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 5,
+        "in_seattime": 11.0,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4_exists": false,
+      "expected_t4": null,
+      "verification_scenarios": [
+        {
+          "point": "表3有记录：source_type=1不影响主播粒度薪资计算",
+          "construction": "断言表3存在 anchor_id=100350014，salary_start_date='2026-06-01'，各薪资字段正确"
+        },
+        {
+          "point": "表4无记录：source_type=1(退款本人)同样触发过滤",
+          "construction": "断言 salary_expected_detail WHERE salary_period='20260601' AND payment_uid='100350014' 为空（0条）"
+        }
+      ]
+    },
+
+    {
+      "case_name": "cycle_salary_rb08_source_type2_excluded",
+      "case_name_cn": "普通主播黑名单来源=充值设备关联（source_type=2）：有表3无表4",
+      "case_name_en": "Regular anchor blacklist source_type=2 (device-associated): T3 present, T4 excluded",
+      "scenario_desc": "主播收模式下普通主播（anchor_id=100350014），周期20260601-20260615，收礼金币500000（Level 7），系数=0.6。以「充值设备关联」身份（source_type=2，退款用户充值时使用的设备关联的其他账号批量加入黑名单）加入黑名单（active_status=1）。验证 source_type=2 的过滤行为与 source_type=4 一致。",
+      "case_purpose": "验证：source_type=2（充值设备关联）的普通主播被过滤出表4，有表3无表4",
+      "anchor_id": "100350014",
+      "period_start": "20260601",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260601", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260603", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260608", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260609", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260614", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "blacklist": {
+          "db": "operation_log",
+          "table": "refund_blacklist",
+          "user_id": "100350014",
+          "source_type": 2,
+          "reason": "与退款用户xxx共用充值设备",
+          "status": 1
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 5,
+        "in_seattime": 11.0,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4_exists": false,
+      "expected_t4": null,
+      "verification_scenarios": [
+        {
+          "point": "表3有记录：source_type=2不影响主播粒度薪资计算",
+          "construction": "断言表3存在 anchor_id=100350014，salary_start_date='2026-06-01'，各薪资字段正确"
+        },
+        {
+          "point": "表4无记录：source_type=2(充值设备关联)同样触发过滤",
+          "construction": "断言 salary_expected_detail WHERE salary_period='20260601' AND payment_uid='100350014' 为空（0条）"
+        }
+      ]
+    },
+
+    {
+      "case_name": "cycle_salary_rb09_source_type3_excluded",
+      "case_name_cn": "普通主播黑名单来源=集中收礼人（source_type=3）：有表3无表4",
+      "case_name_en": "Regular anchor blacklist source_type=3 (concentrated gift receiver): T3 present, T4 excluded",
+      "scenario_desc": "主播收模式下普通主播（anchor_id=100350014），周期20260601-20260615，收礼金币500000（Level 7），系数=0.6。以「集中收礼人」身份（source_type=3，60天内收到退款用户礼物占总收礼≥90%且礼物价值≥49美元）加入黑名单（active_status=1）。验证 source_type=3 的过滤行为与 source_type=4 一致。",
+      "case_purpose": "验证：source_type=3（集中收礼人）的普通主播被过滤出表4，有表3无表4",
+      "anchor_id": "100350014",
+      "period_start": "20260601",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260601", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260603", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260608", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260609", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 },
+          { "statistic_date": "20260614", "receive_gift_count": 100000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "blacklist": {
+          "db": "operation_log",
+          "table": "refund_blacklist",
+          "user_id": "100350014",
+          "source_type": 3,
+          "reason": "集中收到退款用户xxx送礼",
+          "status": 1
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 5,
+        "in_seattime": 11.0,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4_exists": false,
+      "expected_t4": null,
+      "verification_scenarios": [
+        {
+          "point": "表3有记录：source_type=3不影响主播粒度薪资计算",
+          "construction": "断言表3存在 anchor_id=100350014，salary_start_date='2026-06-01'，各薪资字段正确"
+        },
+        {
+          "point": "表4无记录：source_type=3(集中收礼人)同样触发过滤",
+          "construction": "断言 salary_expected_detail WHERE salary_period='20260601' AND payment_uid='100350014' 为空（0条）"
+        }
+      ]
+    }
+  ]
+}

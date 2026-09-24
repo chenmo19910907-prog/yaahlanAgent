@@ -1,0 +1,564 @@
+{
+  "description": "Yaahlan 公会进步奖（motivation_amount）数据驱动用例。\n新政策自 20260816 生效：满7用近6最高、不满7用注册后最高、本周期新公会基准0；历史基准读 union_salary_detail.total_salary_payable。\n切点前 20260801 仍走旧政策（上周期）。\n造数：确认表+表4 历史 → 本周期表1 → MOA1 → 清本周期表4 → MOA2 → 断言公会长 motivation_amount。不调用区域确认 MOA3。\n冒烟：GP01 / GP03 / GP04。",
+  "smoke_cases": [
+    "guild_progress_gp01_full7_six_period_max",
+    "guild_progress_gp03_under7_register_max",
+    "guild_progress_gp04_new_guild_baseline_zero"
+  ],
+  "cases": [
+    {
+      "case_name": "guild_progress_gp01_full7_six_period_max",
+      "case_name_cn": "满7周期新政策：按近6周期最高查进步奖，不用上周期",
+      "case_name_en": "Full 7 periods: new policy uses 6-period max, not previous period",
+      "case_group": "new_policy_baseline",
+      "scenario_desc": "结算周期 20260816（新政策首个周期）。公会 3894979203 已满7个半月周期。测新口径时该公会须在新政策白名单（内网总开关未全开时，不在名单仍走旧政策）。近6个上周期里最高写在 20260516 为 $15,000；上周期 20260801 仅为 $500。新政策基准应取 $15,000（15,000–19,999 档），不得取上周期 $500。本周期公会长金币 83,335,000，达 Level 27，系数 1.0，单人总薪资 $20,000。增长 $5,000，奖励 $300。若误用上周期 $500，1,000 以下档增长封顶会得到 $130，两口径不同。",
+      "case_purpose": "验证：满7周期且周期>=20260816 时，进步奖按近6周期最高薪资落档，而不是按上周期薪资",
+      "anchor_id": "4559",
+      "trade_id": "3894979203",
+      "period_start": "20260816",
+      "policy": {
+        "baseline_mode": "six_period_max",
+        "assert_not_baseline_mode": "prev_period",
+        "write_confirm_history": true,
+        "write_table4_history": true,
+        "history_salaries": [
+          {"salary_period": "20260801", "union_total_salary": 500},
+          {"salary_period": "20260716", "union_total_salary": 8000},
+          {"salary_period": "20260701", "union_total_salary": 9000},
+          {"salary_period": "20260616", "union_total_salary": 7000},
+          {"salary_period": "20260601", "union_total_salary": 10000},
+          {"salary_period": "20260516", "union_total_salary": 15000}
+        ]
+      },
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260816",
+            "receive_gift_count": 83335000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 27,
+        "salary_coefficient": 1.0,
+        "coin_income": 83335000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 15000.0,
+        "union_salary_raw": 5000.0,
+        "anchor_salary_payable": 15000.0,
+        "union_salary_payable": 5000.0,
+        "total_salary_payable": 20000.0
+      },
+      "expected_t4": {
+        "salary_level": 27,
+        "deduction_factor": 1.0,
+        "motivation_amount": 300.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "进步奖按近6周期最高 $15,000 落档（15,000–19,999），增长 $5,000 发 $300，不按上周期 $500 的封顶 $130",
+          "construction": "确认表+表4 写入 20260516=15000、20260801=500 等6段；本周期 Level 27 总薪资 $20,000；断言公会长 motivation_amount=300，且不得等于仅用上周期 500 的查表结果 130"
+        }
+      ]
+    },
+    {
+      "case_name": "guild_progress_gp02_before_cutover_prev_period",
+      "case_name_cn": "切点前旧政策：20260801 仍按上周期薪资算进步奖",
+      "case_name_en": "Before cutover: 20260801 still uses previous-period salary",
+      "case_group": "cutover_old",
+      "scenario_desc": "结算周期 20260801（小于 20260816，仍走旧政策）。上周期 20260716 公会总薪资写成 $500；近6周期里另有 20260501=$15,000。旧政策基准必须是上周期 $500，不得误用近6周期最高 $15,000。本周期 Level 27、总薪资 $20,000。旧口径：1,000 以下档增长封顶 $130。若误走新口径，基准 $15,000、增长 $5,000 会发 $300。",
+      "case_purpose": "验证：结算周期早于 20260816 时，进步奖仍按上周期公会薪资计算",
+      "anchor_id": "4559",
+      "trade_id": "3894979203",
+      "period_start": "20260801",
+      "policy": {
+        "baseline_mode": "prev_period",
+        "assert_not_baseline_mode": "six_period_max",
+        "write_confirm_history": true,
+        "write_table4_history": true,
+        "history_salaries": [
+          {"salary_period": "20260716", "union_total_salary": 500},
+          {"salary_period": "20260701", "union_total_salary": 8000},
+          {"salary_period": "20260616", "union_total_salary": 7000},
+          {"salary_period": "20260601", "union_total_salary": 9000},
+          {"salary_period": "20260516", "union_total_salary": 10000},
+          {"salary_period": "20260501", "union_total_salary": 15000}
+        ]
+      },
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260801",
+            "receive_gift_count": 83335000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 27,
+        "salary_coefficient": 1.0,
+        "coin_income": 83335000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 15000.0,
+        "union_salary_raw": 5000.0,
+        "anchor_salary_payable": 15000.0,
+        "union_salary_payable": 5000.0,
+        "total_salary_payable": 20000.0
+      },
+      "expected_t4": {
+        "salary_level": 27,
+        "deduction_factor": 1.0,
+        "motivation_amount": 130.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "20260801 进步奖按上周期 $500 封顶 $130，不按近6周期最高 $15,000 的 $300",
+          "construction": "表4+确认表 写入 20260716=500、20260501=15000；本周期 Level 27 总薪资 $20,000；断言 motivation_amount=130，且不得等于新口径 300"
+        }
+      ]
+    },
+    {
+      "case_name": "guild_progress_gp03_under7_register_max",
+      "case_name_cn": "不满7周期：按注册后最高一次薪资算进步奖，发25美元",
+      "case_name_en": "Under 7 periods: use max salary since register, reward $25",
+      "case_group": "new_policy_baseline",
+      "scenario_desc": "结算周期 20260816。公会 4295971494 注册不满7个周期（20260701 起），已加新政策白名单。确认表写入 20260801=$500 为注册后最高，20260716=$100、20260701=$200（覆盖环境里已确认的 $80,000 / $650，避免抢基准）。本周期只给公会长造 Level 15（金币 4,368,000，系数 1.0，总薪资 $1,050），同公会其余成员本周期表1清零。增长 $1,050−$500=$550，落在增长列 500，奖励 $25。若误用基准 0 会发 $60。",
+      "case_purpose": "验证：注册不满7个周期时，进步奖按注册后不含本周期的最高薪资查表，奖励为25美元",
+      "anchor_id": "100154930",
+      "trade_id": "4295971494",
+      "period_start": "20260816",
+      "policy": {
+        "baseline_mode": "since_register_max",
+        "assert_not_baseline_mode": "zero",
+        "write_confirm_history": true,
+        "write_table4_history": true,
+        "replace_confirm_history": true,
+        "history_salaries": [
+          {"salary_period": "20260801", "union_total_salary": 500},
+          {"salary_period": "20260716", "union_total_salary": 100},
+          {"salary_period": "20260701", "union_total_salary": 200}
+        ]
+      },
+      "setup": {
+        "zero_all_period": true,
+        "zero_all_guild_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260816",
+            "receive_gift_count": 4368000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 15,
+        "salary_coefficient": 1.0,
+        "coin_income": 4368000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 786.0,
+        "union_salary_raw": 264.0,
+        "anchor_salary_payable": 786.0,
+        "union_salary_payable": 264.0,
+        "total_salary_payable": 1050.0
+      },
+      "expected_t4": {
+        "salary_level": 15,
+        "deduction_factor": 1.0,
+        "motivation_amount": 25.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "不满7周期：基准 $500（1,000 以下档），增长 $550 走 500 列，进步奖 $25",
+          "construction": "确认表覆盖 20260801=500、20260716=100、20260701=200，其余确认周期置0；全公会 20260816 表1清零后只给会长 Level 15；断言 motivation_amount=25，不得等于基准0时的 $60"
+        }
+      ]
+    },
+    {
+      "case_name": "guild_progress_gp04_new_guild_baseline_zero",
+      "case_name_cn": "本周期新公会：基准为0，增长等于本周期薪资，发25美元",
+      "case_name_en": "New guild this period: baseline 0, growth equals current salary, reward $25",
+      "case_group": "new_policy_lookup",
+      "scenario_desc": "结算周期 20260816。公会 4295971731 为本周期刚注册，无上周期薪资，基准=0（落入 1,000 以下档）。公会长金币 2,688,000，刚好 Level 13，系数 1.0，总薪资 $650。增长=$650，落在 [500,1,000)，奖励 $25。展示口径：0 + 650 = 650 —— $25。",
+      "case_purpose": "验证：本周期刚注册的公会进步奖基准为0，按本周期公会薪资查表发放25美元",
+      "anchor_id": "4631",
+      "trade_id": "4295971731",
+      "period_start": "20260816",
+      "policy": {
+        "baseline_mode": "zero",
+        "write_confirm_history": true,
+        "write_table4_history": false,
+        "replace_confirm_history": true,
+        "history_salaries": []
+      },
+      "setup": {
+        "zero_all_period": true,
+        "zero_all_guild_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260816",
+            "receive_gift_count": 2688000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 13,
+        "salary_coefficient": 1.0,
+        "coin_income": 2688000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 500.0,
+        "union_salary_raw": 150.0,
+        "anchor_salary_payable": 500.0,
+        "union_salary_payable": 150.0,
+        "total_salary_payable": 650.0
+      },
+      "expected_t4": {
+        "salary_level": 13,
+        "deduction_factor": 1.0,
+        "motivation_amount": 25.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "本周期新公会：基准 0，本周期总薪资 $650，进步奖 $25",
+          "construction": "确认表其它周期置0；本周期金币 2688000 达 Level 13；断言表4.motivation_amount=25"
+        }
+      ]
+    },
+    {
+      "case_name": "guild_progress_gp05_new_guild_growth_below_500",
+      "case_name_cn": "本周期新公会：增长不到500美元，进步奖为0",
+      "case_name_en": "New guild: growth below $500 yields $0 progress award",
+      "case_group": "new_policy_lookup",
+      "scenario_desc": "结算周期 20260816。新公会 4295971731 基准=0。公会长金币 500,000 达 Level 7，工作日 1 天、时长 2.2h，双不达标系数 0.6，总薪资 $79.80。增长 $79.80 < 500，无对应增长列，奖励 $0。",
+      "case_purpose": "验证：本周期新公会增长不足500美元时进步奖为0",
+      "anchor_id": "4631",
+      "trade_id": "4295971731",
+      "period_start": "20260816",
+      "policy": {
+        "baseline_mode": "zero",
+        "write_confirm_history": true,
+        "write_table4_history": false,
+        "replace_confirm_history": true,
+        "history_salaries": []
+      },
+      "setup": {
+        "zero_all_period": true,
+        "zero_all_guild_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260816",
+            "receive_gift_count": 500000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "motivation_amount": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "新公会增长 $79.80 小于 500，进步奖 $0",
+          "construction": "本周期金币 500000、时长 2.2h，Level 7 系数 0.6，总薪资 79.80；断言表4.motivation_amount=0"
+        }
+      ]
+    },
+    {
+      "case_name": "guild_progress_gp06_new_guild_cap_at_row_max",
+      "case_name_cn": "本周期新公会：增长超过该行最高档，进步奖封顶130美元",
+      "case_name_en": "New guild: growth past row max still caps at $130",
+      "case_group": "new_policy_lookup",
+      "scenario_desc": "结算周期 20260816。新公会基准=0（1,000 以下档）。公会长金币 13,440,000 达 Level 20，系数 1.0，总薪资 $3,250。增长 $3,250 已超过该行最高有奖列（2,000 列 $130）。行尾 `/` 表示封顶，不是 $0，奖励仍为 $130。",
+      "case_purpose": "验证：1,000 以下档增长再多，进步奖封顶为130美元",
+      "anchor_id": "4631",
+      "trade_id": "4295971731",
+      "period_start": "20260816",
+      "policy": {
+        "baseline_mode": "zero",
+        "write_confirm_history": true,
+        "write_table4_history": false,
+        "replace_confirm_history": true,
+        "history_salaries": []
+      },
+      "setup": {
+        "zero_all_period": true,
+        "zero_all_guild_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260816",
+            "receive_gift_count": 13440000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 20,
+        "salary_coefficient": 1.0,
+        "coin_income": 13440000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 2419.0,
+        "union_salary_raw": 831.0,
+        "anchor_salary_payable": 2419.0,
+        "union_salary_payable": 831.0,
+        "total_salary_payable": 3250.0
+      },
+      "expected_t4": {
+        "salary_level": 20,
+        "deduction_factor": 1.0,
+        "motivation_amount": 130.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "1,000 以下档增长 $3,250 超过 2,000 列，封顶进步奖 $130",
+          "construction": "本周期金币 13440000 达 Level 20，总薪资 3250；断言表4.motivation_amount=130"
+        }
+      ]
+    },
+    {
+      "case_name": "guild_progress_gp07_new_guild_growth_1000_col",
+      "case_name_cn": "本周期新公会：增长落到1000列，进步奖60美元",
+      "case_name_en": "New guild: growth hits 1000 column, reward $60",
+      "case_group": "new_policy_lookup",
+      "scenario_desc": "结算周期 20260816。新公会基准=0。公会长金币 4,368,000 达 Level 15，总薪资 $1,050。增长 $1,050 落入 [1,000,2,000) 即 1,000 列，1,000 以下档对应奖励 $60。用于与 GP04（增长 650 走 500 列发 $25）对照增长列边界。",
+      "case_purpose": "验证：本周期新公会增长达到1000美元档时进步奖为60美元",
+      "anchor_id": "4631",
+      "trade_id": "4295971731",
+      "period_start": "20260816",
+      "policy": {
+        "baseline_mode": "zero",
+        "write_confirm_history": true,
+        "write_table4_history": false,
+        "replace_confirm_history": true,
+        "history_salaries": []
+      },
+      "setup": {
+        "zero_all_period": true,
+        "zero_all_guild_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260816",
+            "receive_gift_count": 4368000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 15,
+        "salary_coefficient": 1.0,
+        "coin_income": 4368000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 786.0,
+        "union_salary_raw": 264.0,
+        "anchor_salary_payable": 786.0,
+        "union_salary_payable": 264.0,
+        "total_salary_payable": 1050.0
+      },
+      "expected_t4": {
+        "salary_level": 15,
+        "deduction_factor": 1.0,
+        "motivation_amount": 60.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "新公会增长 $1,050 走 1,000 列，进步奖 $60",
+          "construction": "本周期金币 4368000 达 Level 15，总薪资 1050；断言表4.motivation_amount=60"
+        }
+      ]
+    },
+    {
+      "case_name": "guild_progress_gp08_full7_outside_window_ignored",
+      "case_name_cn": "满7周期：近6周期窗口外的更高薪资不参与进步奖",
+      "case_name_en": "Full 7 periods: higher salary outside 6-period window is ignored",
+      "case_group": "new_policy_baseline",
+      "scenario_desc": "结算周期 20260816。公会 3894979203 须在新政策白名单。近6个上周期为 20260801～20260516，其中最高写成 $15,000（20260516）。窗口外再往前一周期 20260501 写成 $80,000。新政策不得用 $80,000 落档（否则增长为负、奖励 $0）。基准必须仍是窗口内最高 $15,000。本周期 Level 27、总薪资 $20,000，增长 $5,000，奖励 $300。",
+      "case_purpose": "验证：近6个周期之外的更高历史公会薪资不作为进步奖基准",
+      "anchor_id": "4559",
+      "trade_id": "3894979203",
+      "period_start": "20260816",
+      "policy": {
+        "baseline_mode": "six_period_max",
+        "write_confirm_history": true,
+        "write_table4_history": true,
+        "history_salaries": [
+          {"salary_period": "20260801", "union_total_salary": 8000},
+          {"salary_period": "20260716", "union_total_salary": 9000},
+          {"salary_period": "20260701", "union_total_salary": 10000},
+          {"salary_period": "20260616", "union_total_salary": 11000},
+          {"salary_period": "20260601", "union_total_salary": 12000},
+          {"salary_period": "20260516", "union_total_salary": 15000},
+          {"salary_period": "20260501", "union_total_salary": 80000}
+        ]
+      },
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260816",
+            "receive_gift_count": 83335000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 27,
+        "salary_coefficient": 1.0,
+        "coin_income": 83335000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 15000.0,
+        "union_salary_raw": 5000.0,
+        "anchor_salary_payable": 15000.0,
+        "union_salary_payable": 5000.0,
+        "total_salary_payable": 20000.0
+      },
+      "expected_t4": {
+        "salary_level": 27,
+        "deduction_factor": 1.0,
+        "motivation_amount": 300.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "窗口外 20260501 的 $80,000 不计入，基准仍为近6周期最高 $15,000，进步奖 $300",
+          "construction": "确认表+表4 写入窗口内最高 20260516=15000、窗口外 20260501=80000；本周期 Level 27=$20,000；断言 motivation_amount=300（若误用 80000 则为 $0）"
+        }
+      ]
+    },
+    {
+      "case_name": "guild_progress_gp09_under7_negative_growth",
+      "case_name_cn": "不满7周期：本周期低于注册后最高，进步奖为0",
+      "case_name_en": "Under 7 periods: current below register max yields $0",
+      "case_group": "new_policy_baseline",
+      "scenario_desc": "结算周期 20260816。不满7周期公会确认表最高写成 20260801=$5,000，并把它之前已确认的更高历史（如 20260716=$80,000）置 0。本周期只给会长造 Level 7 系数 0.6，总薪资 $79.80，低于基准，增长为负，奖励 $0。",
+      "case_purpose": "验证：本周期公会薪资低于注册后最高时进步奖为0",
+      "anchor_id": "100154930",
+      "trade_id": "4295971494",
+      "period_start": "20260816",
+      "policy": {
+        "baseline_mode": "since_register_max",
+        "write_confirm_history": true,
+        "write_table4_history": true,
+        "replace_confirm_history": true,
+        "history_salaries": [
+          {"salary_period": "20260801", "union_total_salary": 5000}
+        ]
+      },
+      "setup": {
+        "zero_all_period": true,
+        "zero_all_guild_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260816",
+            "receive_gift_count": 500000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "motivation_amount": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "本周期 $79.80 低于注册后最高 $5,000，进步奖 $0",
+          "construction": "确认表 20260801=5000，其余确认周期置0；全公会本周期表1清零后会长 Level 7 系数 0.6；断言 motivation_amount=0"
+        }
+      ]
+    },
+    {
+      "case_name": "guild_progress_gp10_regular_anchor_no_award",
+      "case_name_cn": "满7周期普通主播：表4进步奖为0，不随公会激励下发",
+      "case_name_en": "Regular member in 7-period guild gets $0 progress award",
+      "case_group": "payout_target",
+      "scenario_desc": "结算周期 20260816。公会 30902974 已满7个周期、主播收。公会长 3966，普通主播 2915（is_trade_owner=0）。库内 20260716 会长已发过进步奖，同期 2915 的 motivation_amount 为 $0。本用例只给 2915 造本周期 Level 7 数据并算薪，断言其表4.motivation_amount 仍为 0（普通主播应得公式不含公会进步奖）。不改全公会表1，避免误伤其他成员。",
+      "case_purpose": "验证：满7周期公会里，普通主播的应得薪资不含进步奖，表4.motivation_amount为0",
+      "anchor_id": "2915",
+      "trade_id": "30902974",
+      "period_start": "20260816",
+      "policy": {
+        "baseline_mode": "six_period_max",
+        "expect_regular_no_award": true,
+        "write_confirm_history": false,
+        "write_table4_history": false,
+        "history_salaries": []
+      },
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260816",
+            "receive_gift_count": 500000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "motivation_amount": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "主播收-普通主播 2915 的表4.motivation_amount=0，不领取公会进步奖",
+          "construction": "公会 30902974、周期 20260816，只给 2915 写入金币 500000；断言 salary_expected_detail 中 payment_uid=2915 的 motivation_amount=0"
+        }
+      ]
+    }
+  ]
+}

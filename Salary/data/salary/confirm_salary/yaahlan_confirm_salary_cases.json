@@ -1,0 +1,126 @@
+{
+  "description": "Yaahlan 确认应得薪资（MOA3 confirmSalaryByArea）独立用例。\n验证：表4 生成后按大区确认，公会确认表 union_salary_detail 写入本周期公会总薪资（total_salary_payable = 表4 会长行 union_total_salary）。\n默认跳过。确认要跑时：RUN_CONFIRM_BY_AREA=1，并备好 sso-token + yaahlan-jwt。\n测完按该周期快照还原确认表。半月结/进步奖主流程不跑这一步。\n冒烟：CS01。",
+  "smoke_cases": [
+    "confirm_salary_cs01_area_confirm_writes_union_detail"
+  ],
+  "cases": [
+    {
+      "case_name": "confirm_salary_cs01_area_confirm_writes_union_detail",
+      "case_name_cn": "确认应得薪资后，公会确认表写入本周期总薪资",
+      "case_name_en": "Area confirm writes this period guild total into union_salary_detail",
+      "case_group": "confirm_ingest",
+      "scenario_desc": "结算周期 20260816。用已有测试新公会 4295971731（会长 4631）。先按 Level 13 造本周期表1（金币 2,688,000，1 天 2.2 小时，等级≥8 系数 1.0），跑快照和算薪，表4 会长行公会总薪资应为 $650（主播 $500 + 分成 $150）。再调用后台「按区域确认应得薪资」（参数是周期开始日 + 表4 上的大区，会改该大区该周期所有公会）。期望：确认表 union_salary_detail 出现该公会本周期行，total_salary_payable=$650，与表4 会长行 union_total_salary 一致；不是表4 里含进步奖的 expected_amount。测完按本周期确认表快照还原。",
+      "case_purpose": "验证：表4 生成后按区域确认，会把本周期公会总薪资写入确认表，供后续周期进步奖当历史基准",
+      "anchor_id": "4631",
+      "trade_id": "4295971731",
+      "period_start": "20260816",
+      "confirm": {
+        "repeat": 1,
+        "map_total_from_table4": "union_total_salary",
+        "map_anchor_from_table4": "anchor_salary",
+        "map_union_from_table4": "union_commission"
+      },
+      "setup": {
+        "zero_all_period": true,
+        "zero_all_guild_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260816",
+            "receive_gift_count": 2688000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 13,
+        "salary_coefficient": 1.0,
+        "coin_income": 2688000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 500.0,
+        "union_salary_raw": 150.0,
+        "anchor_salary_payable": 500.0,
+        "union_salary_payable": 150.0,
+        "total_salary_payable": 650.0
+      },
+      "expected_t4": {
+        "salary_level": 13,
+        "deduction_factor": 1.0,
+        "union_total_salary": 650.0,
+        "anchor_salary": 500.0,
+        "union_commission": 150.0
+      },
+      "expected_confirm": {
+        "total_salary_payable": 650.0,
+        "anchor_salary_payable": 500.0,
+        "union_salary_payable": 150.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "按区域确认后，确认表 total_salary_payable 等于表4 会长行公会总薪资 $650，不是含进步奖的 expected_amount",
+          "construction": "公会 4295971731、周期 20260816、金币 2688000 达 Level 13；MOA1→清本周期表4→MOA2 后读会长行 area；调用 confirmSalaryByArea；断言 operation_log.union_salary_detail 中 anchor_union_id+salary_start_date=2026-08-16 的 total_salary_payable=650、anchor_salary_payable=500、union_salary_payable=150"
+        }
+      ]
+    },
+    {
+      "case_name": "confirm_salary_cs02_repeat_confirm_keeps_amount",
+      "case_name_cn": "同一周期同一大区再确认一次，确认表金额不变",
+      "case_name_en": "Repeating area confirm keeps the same payable amounts",
+      "case_group": "confirm_idempotent",
+      "scenario_desc": "前置与 CS01 相同：新公会 4295971731、周期 20260816、Level 13 总薪资 $650。第一次按区域确认后，确认表 total_salary_payable=$650。紧接着用同一周期、同一大区再调一次确认。期望：接口不把金额改成别的数，确认表仍为 $650 / 主播 $500 / 分成 $150。测完按本周期确认表快照还原。",
+      "case_purpose": "验证：同一周期同一大区重复确认后，确认表公会总薪资仍等于表4 会长行，不会被改成其它值",
+      "anchor_id": "4631",
+      "trade_id": "4295971731",
+      "period_start": "20260816",
+      "confirm": {
+        "repeat": 2,
+        "map_total_from_table4": "union_total_salary",
+        "map_anchor_from_table4": "anchor_salary",
+        "map_union_from_table4": "union_commission"
+      },
+      "setup": {
+        "zero_all_period": true,
+        "zero_all_guild_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260816",
+            "receive_gift_count": 2688000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 13,
+        "salary_coefficient": 1.0,
+        "coin_income": 2688000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 500.0,
+        "union_salary_raw": 150.0,
+        "anchor_salary_payable": 500.0,
+        "union_salary_payable": 150.0,
+        "total_salary_payable": 650.0
+      },
+      "expected_t4": {
+        "salary_level": 13,
+        "deduction_factor": 1.0,
+        "union_total_salary": 650.0,
+        "anchor_salary": 500.0,
+        "union_commission": 150.0
+      },
+      "expected_confirm": {
+        "total_salary_payable": 650.0,
+        "anchor_salary_payable": 500.0,
+        "union_salary_payable": 150.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "同一周期同一大区连续确认两次后，确认表总薪资仍为表4 会长行 $650",
+          "construction": "与 CS01 相同造数与算薪；confirmSalaryByArea 调用两次；每次后断言 union_salary_detail.total_salary_payable=650"
+        }
+      ]
+    }
+  ]
+}

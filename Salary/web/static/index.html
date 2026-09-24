@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Yaahlan 算薪测试后台</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <h1>Yaahlan 算薪测试后台</h1>
+      <p class="subtitle">数据驱动 pytest · 用例浏览 · 一键执行 · 报告查看</p>
+    </div>
+    <div class="topbar-actions">
+      <span id="healthBadge" class="badge badge-muted">检测中…</span>
+      <button id="refreshBtn" class="btn btn-secondary" type="button">刷新</button>
+    </div>
+  </header>
+
+  <section class="panel auth-panel" id="authPanel">
+    <label for="tokenInput">Dashboard Token（内网部署时在 .env 配置 DASHBOARD_TOKEN）</label>
+    <div class="auth-row">
+      <input id="tokenInput" type="password" placeholder="X-Dashboard-Token" autocomplete="off" />
+      <button id="saveTokenBtn" class="btn btn-primary" type="button">保存并连接</button>
+    </div>
+    <p class="hint">未配置 Token 时，仅本机 (127.0.0.1) 可直接访问。</p>
+  </section>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="cases" type="button">用例</button>
+    <button class="tab" data-tab="jobs" type="button">执行记录</button>
+    <button class="tab" data-tab="reports" type="button">报告</button>
+  </nav>
+
+  <main>
+    <section id="tab-cases" class="tab-panel active">
+      <div class="toolbar">
+        <label>
+          测试套件
+          <select id="suiteSelect"></select>
+        </label>
+        <button id="runSelectedBtn" class="btn btn-primary" type="button">执行选中</button>
+        <button id="runAllBtn" class="btn btn-secondary" type="button">执行全量</button>
+      </div>
+      <div class="toolbar toolbar-compact">
+        <label class="checkbox-inline">
+          <input id="selectAllCases" type="checkbox" />
+          全选
+        </label>
+        <span id="selectedCount" class="selected-count">已选 0 条</span>
+      </div>
+      <div id="suiteMeta" class="meta-box meta-box-collapsed"></div>
+      <div id="casesList" class="case-list"></div>
+    </section>
+
+    <section id="tab-jobs" class="tab-panel">
+      <div class="toolbar">
+        <button id="refreshJobsBtn" class="btn btn-secondary" type="button">刷新任务</button>
+      </div>
+      <div id="currentJobBox" class="meta-box hidden"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>任务</th>
+              <th>套件</th>
+              <th>状态</th>
+              <th>耗时</th>
+              <th>开始时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="jobsTableBody"></tbody>
+        </table>
+      </div>
+      <pre id="jobLog" class="log-box hidden"></pre>
+    </section>
+
+    <section id="tab-reports" class="tab-panel">
+      <div class="toolbar">
+        <label>
+          套件筛选
+          <select id="reportSuiteFilter">
+            <option value="">全部</option>
+          </select>
+        </label>
+        <button id="refreshReportsBtn" class="btn btn-secondary" type="button">刷新报告</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>文件名</th>
+              <th>套件</th>
+              <th>格式</th>
+              <th>大小</th>
+              <th>更新时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="reportsTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

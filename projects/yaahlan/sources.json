@@ -14,6 +14,7 @@
     { "group": "动态", "prefixes": ["动态"] },
     { "group": "家族", "prefixes": ["家族"] },
     { "group": "公会", "prefixes": ["公会"] },
+    { "group": "算薪", "prefixes": ["算薪"] },
     { "group": "风控", "keywords": ["风控", "通用名单"] },
     { "group": "抓包", "names": ["Tunnel 抓包", "抓包"], "prefixes": ["抓包转MOA"] },
     { "group": "奖励验收", "prefixes": ["奖励验收"] },
@@ -36,6 +37,7 @@
     "CP",
     "家族",
     "公会",
+    "算薪",
     "风控",
     "抓包",
     "奖励验收",
@@ -147,6 +149,15 @@
       "registry": "workflow/config/registry.json",
       "usage_doc": "workflow/使用方法.md",
       "entry": "python3 workflow/workflow_execute.py"
+    },
+    {
+      "id": "salary",
+      "label": "算薪自动化",
+      "subtitle": "pytest E2E · MySQL 造数 + MOA 算薪",
+      "env": "test",
+      "registry": "Salary/config/registry.json",
+      "usage_doc": "Salary/使用方法.md",
+      "entry": "python3 Salary/salary_execute.py"
     }
   ]
 }

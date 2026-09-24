@@ -1,0 +1,15 @@
+.env
+.pytest_cache/
+mycache/
+virtEnv/
+venv/
+.venv/
+**/__pycache__/
+**/reports/
+web_data/
+
+# Temporary artifacts generated during MCP/table sync workflows
+.chunk_*.json
+.c_chunk_*.json
+.mcp_*.json
+.cycle_salary_*_data.json

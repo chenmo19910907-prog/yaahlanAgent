@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "generated_index_path": "Salary/使用方法.md",
+  "items": [
+    {
+      "id": "salary_check_env",
+      "name": "算薪测试-环境检查",
+      "category": "算薪自动化",
+      "description": "检查 Python、pytest、MySQL 依赖与项目目录是否满足算薪 E2E 运行条件",
+      "prompts": [
+        "算薪测试环境检查",
+        "检查算薪自动化环境"
+      ],
+      "command": "python3 Salary/salary_execute.py check-env\n"
+    },
+    {
+      "id": "salary_list_suites",
+      "name": "算薪测试-列出套件",
+      "category": "算薪自动化",
+      "description": "列出半月结、主播豁免、公会进步奖、退款黑名单、确认应得薪资等 pytest 套件",
+      "prompts": [
+        "算薪有哪些测试套件",
+        "列出算薪自动化套件"
+      ],
+      "command": "python3 Salary/salary_execute.py list-suites\n"
+    },
+    {
+      "id": "salary_cycle_smoke",
+      "name": "算薪测试-半月结冒烟",
+      "category": "半月结算薪",
+      "description": "跑半月结算薪 P0 冒烟集（预提/公会长/幂等等）；MySQL 造数 → MOA1 快照 → MOA2 算薪 → 断言表3/表4",
+      "prompts": [
+        "跑算薪半月结冒烟",
+        "半月结算薪冒烟测试"
+      ],
+      "command": "python3 Salary/salary_execute.py run cycle --smoke -v\n"
+    },
+    {
+      "id": "salary_cycle_report",
+      "name": "算薪测试-半月结全量+报告",
+      "category": "半月结算薪",
+      "description": "执行半月结算薪全量用例并生成 Markdown/HTML 报告；已配置 DINGTALK_WEBHOOK 时发钉钉简报",
+      "prompts": [
+        "跑算薪半月结全量并出报告",
+        "半月结算薪回归带报告"
+      ],
+      "command": "python3 Salary/salary_execute.py run cycle --report -v\n"
+    },
+    {
+      "id": "salary_cycle_case",
+      "name": "算薪测试-半月结单用例",
+      "category": "半月结算薪",
+      "description": "按 case_name 执行单条半月结算薪用例（pytest -k）",
+      "prompts": [
+        "跑算薪用例<caseName|用例名>",
+        "执行半月结用例 cycle_salary_factor_0_6_double_fail"
+      ],
+      "command": "python3 Salary/salary_execute.py run cycle --case <caseName> -v\n"
+    },
+    {
+      "id": "salary_exempt_smoke",
+      "name": "算薪测试-主播豁免冒烟",
+      "category": "半月结算薪",
+      "description": "主播薪资豁免专项冒烟（等级豁免/首次主播/跨周期等 5 条）",
+      "prompts": [
+        "跑算薪主播豁免冒烟",
+        "主播豁免专项测试"
+      ],
+      "command": "python3 Salary/salary_execute.py run exempt --smoke -v\n"
+    },
+    {
+      "id": "salary_guild_progress",
+      "name": "算薪测试-公会进步奖",
+      "category": "公会进步奖",
+      "description": "公会进步奖 E2E：历史基准 → 本周期造数 → MOA1/2 → 断言 motivation_amount；默认 202512 旧口径，新政策加 --guild-progress-policy=202608",
+      "prompts": [
+        "跑公会进步奖算薪测试",
+        "公会进步奖回归"
+      ],
+      "command": "python3 Salary/salary_execute.py run guild-progress -v\n"
+    },
+    {
+      "id": "salary_refund_blacklist",
+      "name": "算薪测试-退款黑名单",
+      "category": "退款黑名单",
+      "description": "退款黑名单主播算薪过滤 E2E：写 blacklist → MOA 算薪 → 断言表3/表4 是否存在",
+      "prompts": [
+        "跑退款黑名单算薪测试",
+        "退款黑名单算薪回归"
+      ],
+      "command": "python3 Salary/salary_execute.py run refund-blacklist -v\n"
+    },
+    {
+      "id": "salary_confirm_by_area",
+      "name": "算薪测试-确认应得薪资",
+      "category": "确认应得薪资",
+      "description": "按大区确认应得薪资（写操作，改 union_salary_detail）；须 RUN_CONFIRM_BY_AREA=1 且 CMS SSO/JWT 凭证",
+      "prompts": [
+        "跑确认应得薪资测试",
+        "确认应得薪资 E2E"
+      ],
+      "command": "RUN_CONFIRM_BY_AREA=1 python3 Salary/salary_execute.py run confirm -v\n"
+    },
+    {
+      "id": "salary_cc_config",
+      "name": "算薪测试-读盘古配置",
+      "category": "算薪自动化",
+      "description": "读盘古配置中心（如公会激励新版本开关 tradeMotivationMaxCycleSwitch）",
+      "prompts": [
+        "读算薪盘古配置",
+        "查公会激励开关"
+      ],
+      "command": "python3 Salary/salary_execute.py cc-config tradeMotivationMaxCycleSwitch\n"
+    },
+    {
+      "id": "salary_dashboard",
+      "name": "算薪测试-可视化后台",
+      "category": "算薪自动化",
+      "description": "启动 FastAPI 测试后台：浏览用例、触发 pytest、查看历史报告（默认 http://127.0.0.1:8088）",
+      "prompts": [
+        "打开算薪测试后台",
+        "启动算薪可视化 dashboard"
+      ],
+      "command": "python3 Salary/salary_execute.py dashboard\n"
+    }
+  ]
+}

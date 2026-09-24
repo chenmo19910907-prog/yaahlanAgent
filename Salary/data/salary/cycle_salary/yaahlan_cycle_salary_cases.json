@@ -1,0 +1,3959 @@
+{
+  "description": "Yaahlan 算薪 E2E 数据驱动用例表。每条用例：造数(表1) → MOA1(生成快照) → MOA2(算薪) → 断言表3/表4。\n\n【已覆盖场景】：\n  TC01 cycle_salary_factor_0_6_double_fail        — 系数0.6：工作日<9 且 时长<18h\n  TC02 cycle_salary_factor_0_8_hours_only_pass    — 系数0.8：仅时长≥18h\n  TC03 cycle_salary_factor_1_0_level_exempt       — 系数1.0：Level≥8等级豁免\n  TC04 cycle_salary_level0_no_income              — Level 0：金币=0无收入\n  TC05 cycle_salary_level1_exact_threshold        — Level 1边界：金币=16700刚好达标\n  TC06 cycle_salary_payment_type2_union_owner     — 主播收-公会长：payment_type=2, is_trade_owner=1（anchor_id=3966）\n  TC07 cycle_salary_payment_type2_regular_anchor  — 主播收-普通主播：payment_type=2, is_trade_owner=0（anchor_id=2915）\n  TC08 cycle_salary_factor_0_8_workdays_only_pass — 系数0.8：仅工作日≥9，时长<18h（anchor_id=8250）\n  TC09 cycle_salary_factor_1_0_double_pass        — 系数1.0：工作日≥9 且时长≥18h（anchor_id=8250）\n\n  TC10 cycle_salary_join_exempt_factor_1_0        — 系数1.0：入职豁免（join_union_time 在周期第6日之后）\n\n【边界场景】：\n  TC11 cycle_salary_level7_coins_upper_bound          — Level 7金币上边界：coins=705599，差1金币不触发Level 8豁免\n  TC12 cycle_salary_level0_coins_upper_bound          — Level 0金币上边界：coins=16699，差1金币不达Level 1\n  TC13 cycle_salary_workday_seconds_below_threshold   — 有效工作日秒数下边界：7055s(<7056)，effective_workday=0\n  TC14 cycle_salary_factor_0_8_workdays_8_hours_pass  — 系数0.8：工作日8天（差1天），时长22.2h达标，仅时长达标\n  TC15 cycle_salary_lower_half_month_period           — 下半月周期(20260416)：验证周期类型切换不影响计算逻辑\n\n【18h精度 & 预提场景】：\n  TC16 cycle_salary_factor_0_8_hours_17_95h_boundary  — 18h精度负向边界：64620s=17.95h→round=17.9h，不满足18h，系数=0.8\n  TC17 cycle_salary_factor_1_0_hours_17_96h_boundary  — 18h精度正向边界：64656s=17.96h→round=18.0h，满足18h，双达标系数=1.0\n  TC18 cycle_salary_level6_coins_upper_bound           — Level 6/7金币边界：coins=499999，差1金币不达Level 7\n  TC19 cycle_salary_union_prepayment_deduction         — 公会预提扣减：union_prepayment=20，验证expected_amount公式正确扣减\n\n【功能性场景（非边界）】：\n  TC20 cycle_salary_anchor_prepayment_deduction        — 主播预提（prepayment_type=2）：anchor_prepayment=10，验证主播收公式扣减\n  TC21 cycle_salary_in_seattime_zero_with_coins        — 防御性：coins=500000但on_seat_seconds=0，in_seattime=0.0，系数0.6\n  TC22 cycle_salary_level9_high_tier_exempt            — Level 9高等级豁免：coins=1008000，等级表$201/$54，系数1.0",
+  "cases": [
+    {
+      "case_name": "cycle_salary_factor_0_6_double_fail",
+      "case_name_cn": "扣减系数0.6：有效工作日(5天)与开播时长(11h)同时不达标",
+      "case_name_en": "Deduction factor 0.6: both workdays(<9) and hours(<18h) fail",
+      "scenario_desc": "上半月周期(20260401-20260415)，主播收礼金币合计500000（达Level 7，未达Level 8的705600阈值），有效工作日5天（<9天不达标），总开播时长11小时（<18h不达标）。非首次成为主播或入职时间早于周期第6日，不触发首次主播豁免；等级低于8不触发等级豁免。两项条件均不满足，走三档扣减逻辑最低档：系数=0.6。主播薪资=Level7原始值$100×0.6=$60，公会分成=$33×0.6=$19.8，total=$79.8。",
+      "case_purpose": "验证：有效工作日(<9天)与开播时长(<18h)均不达标时，扣减系数=0.6，主播薪资与公会分成均按0.6倍计算",
+      "anchor_id": "4559",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260401",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260403",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260408",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260409",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260414",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 5,
+        "in_seattime": 11.0,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 11.0,
+        "work_days": 5,
+        "anchor_salary": 60.0,
+        "union_commission": 19.8,
+        "union_total_salary": 79.8
+      },
+      "verification_scenarios": [
+        {
+          "point": "Level 7 薪资等级：金币500000达Level 7(≥500000)，未达Level 8(705600)；anchor_salary_raw=$100，union_salary_raw=$33",
+          "construction": "5条记录各100000金币，合计500000；断言表3.salary_level=7，anchor_salary_raw=100，union_salary_raw=33"
+        },
+        {
+          "point": "扣减系数=0.6：有效工作日5天(<9)且开播时长11h(<18h)，两项均不达标，命中最低档系数0.6",
+          "construction": "5条记录各7920秒(2.2h)，合计11h；断言表3.salary_coefficient=0.60，表4.deduction_factor=0.60"
+        },
+        {
+          "point": "薪资应发按0.6倍：anchor_salary_payable=$60，union_salary_payable=$19.8，total=$79.8",
+          "construction": "断言表3的anchor_salary_payable=60.00、union_salary_payable=19.80、total_salary_payable=79.80；断言表4的anchor_salary=60.00、union_commission=19.80、union_total_salary=79.80"
+        },
+        {
+          "point": "应得薪资公式正确：expected_amount = union_total_salary + sub_trade_share + motivation_amount - union_prepayment - all_anchor_prepayment",
+          "construction": "读取表4各字段，验证公式计算结果与expected_amount一致（误差<0.01）"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_factor_0_8_hours_only_pass",
+      "case_name_cn": "扣减系数0.8：开播时长(18h)达标但有效工作日(5天)不达标",
+      "case_name_en": "Deduction factor 0.8: hours(>=18h) pass but workdays(<9) fail",
+      "scenario_desc": "上半月周期(20260401-20260415)，主播收礼金币合计500000（Level 7），有效工作日5天（<9天不达标），总开播时长恰好18.0小时（满足≥18h条件）。满足单一条件，走三档扣减中间档：系数=0.8。主播薪资=$100×0.8=$80，公会分成=$33×0.8=$26.4，total=$106.4。",
+      "case_purpose": "验证：仅开播时长达标(≥18h)而有效工作日不达标(<9天)时，扣减系数=0.8，薪资按0.8倍计算",
+      "anchor_id": "4559",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260401",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 12960,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260403",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 12960,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260408",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 12960,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260409",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 12960,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260414",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 12960,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.8,
+        "coin_income": 500000,
+        "effective_workday": 5,
+        "in_seattime": 18.0,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 80.0,
+        "union_salary_payable": 26.4,
+        "total_salary_payable": 106.4
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.8,
+        "coin_income": 500000,
+        "work_hours": 18.0,
+        "work_days": 5,
+        "anchor_salary": 80.0,
+        "union_commission": 26.4,
+        "union_total_salary": 106.4
+      },
+      "verification_scenarios": [
+        {
+          "point": "Level 7 薪资等级：金币500000达Level 7；anchor_salary_raw=$100，union_salary_raw=$33",
+          "construction": "5条记录各100000金币；断言表3.salary_level=7，anchor_salary_raw=100，union_salary_raw=33"
+        },
+        {
+          "point": "扣减系数=0.8：开播时长18h(≥18h达标)，有效工作日5天(<9天不达标)，仅一项达标，命中中间档系数0.8",
+          "construction": "5条记录各12960秒(3.6h)，合计64800秒=18.0h；断言表3.salary_coefficient=0.80，表4.deduction_factor=0.80"
+        },
+        {
+          "point": "薪资应发按0.8倍：anchor_salary_payable=$80，union_salary_payable=$26.4，total=$106.4",
+          "construction": "断言表3的anchor_salary_payable=80.00、union_salary_payable=26.40、total_salary_payable=106.40；断言表4的anchor_salary=80.00、union_commission=26.40、union_total_salary=106.40"
+        },
+        {
+          "point": "应得薪资公式正确：expected_amount = union_total_salary + sub_trade_share + motivation_amount - union_prepayment - all_anchor_prepayment",
+          "construction": "读取表4各字段，验证公式计算结果与expected_amount一致（误差<0.01）"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_factor_1_0_level_exempt",
+      "case_name_cn": "扣减系数1.0：薪资等级≥8触发等级豁免（即使工作日和时长不达标）",
+      "case_name_en": "Deduction factor 1.0: level>=8 exemption (workdays/hours irrelevant)",
+      "scenario_desc": "上半月周期(20260401-20260415)，主播收礼金币恰好等于705600（达Level 8最低阈值）。有效工作日仅1天（<9），总开播时长2.2h（<18h），两项均不达标（若无豁免则系数=0.6）。但业务规定：薪资等级≥8时直接豁免，系数强制取1.0，不走三档逻辑。主播薪资=Level8原始值$141×1.0=$141，公会分成=$39×1.0=$39，total=$180。",
+      "case_purpose": "验证：薪资等级≥8时，无论工作日和开播时长是否达标，扣减系数强制=1.0（等级豁免优先于三档逻辑）",
+      "anchor_id": "4559",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260401",
+            "receive_gift_count": 705600,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 8,
+        "salary_coefficient": 1.0,
+        "coin_income": 705600,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 141.0,
+        "union_salary_raw": 39.0,
+        "anchor_salary_payable": 141.0,
+        "union_salary_payable": 39.0,
+        "total_salary_payable": 180.0
+      },
+      "expected_t4": {
+        "salary_level": 8,
+        "deduction_factor": 1.0,
+        "coin_income": 705600,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "anchor_salary": 141.0,
+        "union_commission": 39.0,
+        "union_total_salary": 180.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "Level 8 薪资等级：金币705600恰好达Level 8阈值(≥705600)；anchor_salary_raw=$141，union_salary_raw=$39",
+          "construction": "1条记录coins=705600；断言表3.salary_level=8，anchor_salary_raw=141，union_salary_raw=39"
+        },
+        {
+          "point": "等级豁免生效：Level 8≥8触发豁免，系数=1.0，忽略有效工作日(1天)和开播时长(2.2h)均不达标的事实",
+          "construction": "1条记录seconds=7920(2.2h)，effective=1；断言表3.salary_coefficient=1.00，表4.deduction_factor=1.00"
+        },
+        {
+          "point": "薪资应发按1.0倍（原值）：anchor_salary_payable=$141，union_salary_payable=$39，total=$180",
+          "construction": "断言表3的anchor_salary_payable=141.00、union_salary_payable=39.00、total_salary_payable=180.00；断言表4的anchor_salary=141.00、union_commission=39.00、union_total_salary=180.00"
+        },
+        {
+          "point": "应得薪资公式正确：expected_amount = union_total_salary + sub_trade_share + motivation_amount - union_prepayment - all_anchor_prepayment",
+          "construction": "读取表4各字段，验证公式计算结果与expected_amount一致（误差<0.01）"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_level0_no_income",
+      "case_name_cn": "Level 0：金币=0，无收入，应得薪资为零",
+      "case_name_en": "Level 0: zero coin income, expected amount is zero",
+      "scenario_desc": "上半月周期(20260401-20260415)，将 anchor_id=4559 本周期所有记录清零（coins=0，seconds=0，effective=0）。金币总计=0，低于Level 1阈值(16700)，命中Level 0。Level 0原始薪资=$0，无论系数为何，应发薪资均为$0，expected_amount=$0。用于验证系统在零收入情况下不产生异常数据。",
+      "case_purpose": "验证：金币=0时，salary_level=0，所有薪资字段=0，expected_amount=0，系统正常处理零收入场景",
+      "anchor_id": "4559",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": []
+      },
+      "expected_t3": {
+        "salary_level": 0,
+        "salary_coefficient": 0.6,
+        "coin_income": 0,
+        "effective_workday": 0,
+        "in_seattime": 0.0,
+        "anchor_salary_raw": 0.0,
+        "union_salary_raw": 0.0,
+        "anchor_salary_payable": 0.0,
+        "union_salary_payable": 0.0,
+        "total_salary_payable": 0.0
+      },
+      "expected_t4": {
+        "salary_level": 0,
+        "deduction_factor": 0.6,
+        "coin_income": 0,
+        "work_hours": 0.0,
+        "work_days": 0,
+        "anchor_salary": 0.0,
+        "union_commission": 0.0,
+        "union_total_salary": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "Level 0：金币=0，未达Level 1阈值(16700)；anchor_salary_raw=$0，union_salary_raw=$0",
+          "construction": "zero_all_period=true，无updates；断言表3.salary_level=0，anchor_salary_raw=0，union_salary_raw=0"
+        },
+        {
+          "point": "扣减系数=0.6：Level 0<8，workdays=0<9，hours=0<18h，走三档最低档；但原始薪资=0，实际薪资仍为0",
+          "construction": "断言表3.salary_coefficient=0.60，表4.deduction_factor=0.60；anchor_salary_payable=0，union_salary_payable=0"
+        },
+        {
+          "point": "应得薪资公式正确：expected_amount=0（union_total_salary=0，sub_trade_share=0，无预提）",
+          "construction": "读取表4各字段，验证公式计算结果与expected_amount一致（误差<0.01），期望均为0"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_level1_exact_threshold",
+      "case_name_cn": "Level 1边界：金币=16700刚好达到Level 1阈值，系数0.6",
+      "case_name_en": "Level 1 boundary: coin=16700 exact threshold, factor 0.6",
+      "scenario_desc": "上半月周期(20260401-20260415)，主播收礼金币恰好等于16700（Level 1最低阈值）。有效工作日1天（<9天不达标），总开播时长2.2h（<18h不达标），走三档最低档系数=0.6。Level 1原始值：anchor_salary=$5，union_salary=$1，total=$6。实际应发：$5×0.6=$3.00，$1×0.6=$0.60，total=$3.60。用于验证等级阈值边界命中逻辑正确。",
+      "case_purpose": "验证：金币恰好等于Level 1阈值(16700)时，salary_level=1，薪资原始值正确，乘以系数0.6后应发值正确",
+      "anchor_id": "4559",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260401",
+            "receive_gift_count": 16700,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 1,
+        "salary_coefficient": 0.6,
+        "coin_income": 16700,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 5.0,
+        "union_salary_raw": 1.0,
+        "anchor_salary_payable": 3.0,
+        "union_salary_payable": 0.6,
+        "total_salary_payable": 3.6
+      },
+      "expected_t4": {
+        "salary_level": 1,
+        "deduction_factor": 0.6,
+        "coin_income": 16700,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "anchor_salary": 3.0,
+        "union_commission": 0.6,
+        "union_total_salary": 3.6
+      },
+      "verification_scenarios": [
+        {
+          "point": "Level 1边界命中：金币16700恰好等于Level 1阈值(≥16700，<33500)；anchor_salary_raw=$5，union_salary_raw=$1",
+          "construction": "1条记录coins=16700；断言表3.salary_level=1，anchor_salary_raw=5.00，union_salary_raw=1.00"
+        },
+        {
+          "point": "扣减系数=0.6：工作日1天(<9)，时长2.2h(<18h)，双不达标，命中最低档系数0.6",
+          "construction": "1条记录seconds=7920(2.2h)，effective=1；断言表3.salary_coefficient=0.60，表4.deduction_factor=0.60"
+        },
+        {
+          "point": "薪资应发按0.6倍：anchor_salary_payable=$3.00，union_salary_payable=$0.60，total=$3.60",
+          "construction": "断言表3的anchor_salary_payable=3.00、union_salary_payable=0.60、total_salary_payable=3.60；断言表4的anchor_salary=3.00、union_commission=0.60、union_total_salary=3.60"
+        },
+        {
+          "point": "应得薪资公式正确(payment_type=1)：expected_amount = union_total_salary + sub_trade_share + motivation_amount - union_prepayment - all_anchor_prepayment",
+          "construction": "读取表4各字段，验证公式计算结果与expected_amount一致（误差<0.01）"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_rejoin_not_first_anchor_factor_0_6",
+      "case_name_cn": "非首次主播不豁免：退会再入会 anchor_profile COUNT=2，系数0.6",
+      "case_name_en": "Rejoin not first-time anchor: anchor_profile COUNT=2, factor 0.6",
+      "scenario_desc": "下半月周期(20251116-20251130)，主播1094在 operation_log.anchor_profile 有2条记录（state=2退会+state=1在会），COUNT>1，不符合【首次成为主播】。入职日期虽≥21日，但新规则下不触发首次主播豁免。Level 2(coins=60000)，工作日0、时长0，系数=0.6。应发：anchor=$9×0.6=$5.40，union=$2×0.6=$1.20，total=$6.60。",
+      "case_purpose": "验证：anchor_profile 同一 user_id  COUNT>1 时不再享受首次主播豁免，走三档最低档系数0.6",
+      "anchor_id": "1094",
+      "period_start": "20251116",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20251116",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 0,
+            "is_effective_day": 0
+          },
+          {
+            "statistic_date": "20251118",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 0,
+            "is_effective_day": 0
+          },
+          {
+            "statistic_date": "20251123",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 0,
+            "is_effective_day": 0
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 2,
+        "salary_coefficient": 0.6,
+        "coin_income": 60000,
+        "effective_workday": 0,
+        "in_seattime": 0.0,
+        "anchor_salary_raw": 9.0,
+        "union_salary_raw": 2.0,
+        "anchor_salary_payable": 5.4,
+        "union_salary_payable": 1.2,
+        "total_salary_payable": 6.6
+      },
+      "expected_t4": {
+        "salary_level": 2,
+        "deduction_factor": 0.6,
+        "coin_income": 60000,
+        "work_hours": 0.0,
+        "work_days": 0,
+        "anchor_salary": 5.4,
+        "union_commission": 1.2,
+        "union_total_salary": 6.6
+      },
+      "verification_scenarios": [
+        {
+          "point": "非首次主播：anchor_profile 中 user_id=1094 存在2条记录，COUNT>1",
+          "construction": "SELECT COUNT(*) FROM anchor_profile WHERE user_id=1094 结果为2；不满足首次成为主播"
+        },
+        {
+          "point": "不触发首次主播豁免：工作日0、时长0，系数=0.6",
+          "construction": "断言表3 salary_coefficient=0.60，anchor_salary_payable=5.40，union_salary_payable=1.20，total_salary_payable=6.60"
+        },
+        {
+          "point": "表4与表3系数/应发一致",
+          "construction": "断言表4 deduction_factor=0.60，anchor_salary=5.40，union_commission=1.20，union_total_salary=6.60"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_first_anchor_exempt_factor_1_0",
+      "case_name_cn": "首次主播豁免：anchor_profile COUNT=1 且入职日期达标，系数1.0",
+      "case_name_en": "First-time anchor exemption: anchor_profile COUNT=1 and join date qualified, factor 1.0",
+      "scenario_desc": "上半月周期(20260801-20260815)，主播100066318在 anchor_profile 仅1条记录(COUNT=1)，create_time=2026-08-14≥当周期第6日，满足【首次成为主播+入职日期达标】。Level 2(coins=60000)，工作日0、时长0，因豁免系数=1.0。应发=原始值：anchor=$9，union=$2，total=$11。注意：首次判定有缓存，若服务未刷新缓存可能失败。",
+      "case_purpose": "验证：anchor_profile COUNT=1 且上半月入职≥6日时，触发首次主播豁免，系数1.0全额发放",
+      "anchor_id": "100066318",
+      "period_start": "20260801",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260801",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 0,
+            "is_effective_day": 0
+          },
+          {
+            "statistic_date": "20260803",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 0,
+            "is_effective_day": 0
+          },
+          {
+            "statistic_date": "20260808",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 0,
+            "is_effective_day": 0
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 2,
+        "salary_coefficient": 1.0,
+        "coin_income": 60000,
+        "effective_workday": 0,
+        "in_seattime": 0.0,
+        "anchor_salary_raw": 9.0,
+        "union_salary_raw": 2.0,
+        "anchor_salary_payable": 9.0,
+        "union_salary_payable": 2.0,
+        "total_salary_payable": 11.0
+      },
+      "expected_t4": {
+        "salary_level": 2,
+        "deduction_factor": 1.0,
+        "coin_income": 60000,
+        "work_hours": 0.0,
+        "work_days": 0,
+        "anchor_salary": 9.0,
+        "union_commission": 2.0,
+        "union_total_salary": 11.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "首次主播：anchor_profile 中 user_id=100066318 仅1条记录",
+          "construction": "SELECT COUNT(*) FROM anchor_profile WHERE user_id=100066318 结果为1"
+        },
+        {
+          "point": "入职日期达标：create_time 对应 2026-08-14 ≥ 上半月第6日",
+          "construction": "断言表3 salary_coefficient=1.00；工作日0、时长0仍全额：payable 与 raw 一致"
+        },
+        {
+          "point": "表4系数与应发一致",
+          "construction": "断言表4 deduction_factor=1.00，anchor_salary=9.00，union_commission=2.00，union_total_salary=11.00"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_first_anchor_lower_half_exempt_factor_1_0",
+      "case_name_cn": "下半月首次主播豁免：anchor_profile COUNT=1 且入职≥21日（第21日边界），系数1.0",
+      "case_name_en": "Lower-half first-time anchor exemption: COUNT=1 and join date>=day 21, factor 1.0",
+      "scenario_desc": "下半月周期(20260816-20260831)，主播100419093在 anchor_profile 仅1条记录(COUNT=1)，create_time=2026-08-21=当周期第21日（下半月切点边界正向：≥21日即达标），满足【首次成为主播+下半月入职日期达标】。Level 2(coins=60000)，工作日0、时长0，因豁免系数=1.0。payment_type=2 is_trade_owner=0。应发=原始值：anchor=$9，union=$2，total=$11。G4 下半月第21日边界正向用例。",
+      "case_purpose": "验证：anchor_profile COUNT=1 且下半月入职≥21日时，触发首次主播豁免，系数1.0全额发放",
+      "anchor_id": "100419093",
+      "period_start": "20260816",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260816",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 0,
+            "is_effective_day": 0
+          },
+          {
+            "statistic_date": "20260820",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 0,
+            "is_effective_day": 0
+          },
+          {
+            "statistic_date": "20260825",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 0,
+            "is_effective_day": 0
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 2,
+        "salary_coefficient": 1.0,
+        "coin_income": 60000,
+        "effective_workday": 0,
+        "in_seattime": 0.0,
+        "anchor_salary_raw": 9.0,
+        "union_salary_raw": 2.0,
+        "anchor_salary_payable": 9.0,
+        "union_salary_payable": 2.0,
+        "total_salary_payable": 11.0
+      },
+      "expected_t4": {
+        "salary_level": 2,
+        "deduction_factor": 1.0,
+        "coin_income": 60000,
+        "work_hours": 0.0,
+        "work_days": 0,
+        "anchor_salary": 9.0,
+        "union_commission": 2.0,
+        "union_total_salary": 11.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "首次主播：anchor_profile 中 user_id=100419093 仅1条记录",
+          "construction": "SELECT COUNT(*) FROM anchor_profile WHERE user_id=100419093 结果为1"
+        },
+        {
+          "point": "下半月入职日期达标：create_time 对应 2026-08-21 ≥ 下半月第21日",
+          "construction": "断言表3 salary_coefficient=1.00；工作日0、时长0仍全额：payable 与 raw 一致"
+        },
+        {
+          "point": "表4系数与应发一致",
+          "construction": "断言表4 deduction_factor=1.00，anchor_salary=9.00，union_commission=2.00，union_total_salary=11.00"
+        },
+        {
+          "point": "普通主播应得薪资公式正确(payment_type=2, is_trade_owner=0)：expected_amount = anchor_salary - anchor_prepayment",
+          "construction": "动态读取表4 anchor_salary 和 anchor_prepayment，验证公式与 expected_amount 误差<0.01"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_first_anchor_join_before_day6_factor_0_6",
+      "case_name_cn": "首次主播但上半月入职<6日：COUNT=1 不豁免，系数0.6",
+      "case_name_en": "First-time anchor but upper-half join before day 6: COUNT=1, no exemption, factor 0.6",
+      "scenario_desc": "上半月周期(20260801-20260815)，主播100100894在 anchor_profile 仅1条记录(COUNT=1)，但 create_time=2026-08-04<当周期第6日，不满足入职日期切点。Level 2(coins=60000)，工作日0、时长0，走三档最低档系数=0.6。应发：anchor=$9×0.6=$5.40，union=$2×0.6=$1.20，total=$6.60。与 TC06b 对称：COUNT=1 但日期不达标仍不豁免。",
+      "case_purpose": "验证：anchor_profile COUNT=1 但上半月入职日期<6日时，不触发首次主播豁免，系数0.6",
+      "anchor_id": "100100894",
+      "period_start": "20260801",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260801",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 0,
+            "is_effective_day": 0
+          },
+          {
+            "statistic_date": "20260803",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 0,
+            "is_effective_day": 0
+          },
+          {
+            "statistic_date": "20260808",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 0,
+            "is_effective_day": 0
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 2,
+        "salary_coefficient": 0.6,
+        "coin_income": 60000,
+        "effective_workday": 0,
+        "in_seattime": 0.0,
+        "anchor_salary_raw": 9.0,
+        "union_salary_raw": 2.0,
+        "anchor_salary_payable": 5.4,
+        "union_salary_payable": 1.2,
+        "total_salary_payable": 6.6
+      },
+      "expected_t4": {
+        "salary_level": 2,
+        "deduction_factor": 0.6,
+        "coin_income": 60000,
+        "work_hours": 0.0,
+        "work_days": 0,
+        "anchor_salary": 5.4,
+        "union_commission": 1.2,
+        "union_total_salary": 6.6
+      },
+      "verification_scenarios": [
+        {
+          "point": "首次主播身份成立：anchor_profile 中 user_id=100100894 仅1条记录",
+          "construction": "SELECT COUNT(*) FROM anchor_profile WHERE user_id=100100894 结果为1"
+        },
+        {
+          "point": "上半月入职日期不达标：create_time 对应 2026-08-04 < 第6日，不豁免",
+          "construction": "断言表3 salary_coefficient=0.60，payable 为 raw×0.6"
+        },
+        {
+          "point": "表4系数与应发一致",
+          "construction": "断言表4 deduction_factor=0.60，anchor_salary=5.40，union_commission=1.20，union_total_salary=6.60"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_first_anchor_join_before_day21_factor_0_6",
+      "case_name_cn": "首次主播但下半月入职<21日：COUNT=1 不豁免，系数0.6",
+      "case_name_en": "First-time anchor but lower-half join before day 21: COUNT=1, no exemption, factor 0.6",
+      "scenario_desc": "下半月周期(20260616-20260630)，主播100142271在 anchor_profile 仅1条记录(COUNT=1)，但 create_time=2026-06-18<当周期第21日（16–20日区间），不满足下半月入职日期切点。Level 2(coins=60000)，工作日0、时长0，系数=0.6。应发：anchor=$5.40，union=$1.20，total=$6.60。与 TC06c 对称：COUNT=1 但下半月日期不达标仍不豁免。",
+      "case_purpose": "验证：anchor_profile COUNT=1 但下半月入职日期<21日时，不触发首次主播豁免，系数0.6",
+      "anchor_id": "100142271",
+      "period_start": "20260616",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260616",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 0,
+            "is_effective_day": 0
+          },
+          {
+            "statistic_date": "20260620",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 0,
+            "is_effective_day": 0
+          },
+          {
+            "statistic_date": "20260625",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 0,
+            "is_effective_day": 0
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 2,
+        "salary_coefficient": 0.6,
+        "coin_income": 60000,
+        "effective_workday": 0,
+        "in_seattime": 0.0,
+        "anchor_salary_raw": 9.0,
+        "union_salary_raw": 2.0,
+        "anchor_salary_payable": 5.4,
+        "union_salary_payable": 1.2,
+        "total_salary_payable": 6.6
+      },
+      "expected_t4": {
+        "salary_level": 2,
+        "deduction_factor": 0.6,
+        "coin_income": 60000,
+        "work_hours": 0.0,
+        "work_days": 0,
+        "anchor_salary": 5.4,
+        "union_commission": 1.2,
+        "union_total_salary": 6.6
+      },
+      "verification_scenarios": [
+        {
+          "point": "首次主播身份成立：anchor_profile 中 user_id=100142271 仅1条记录",
+          "construction": "SELECT COUNT(*) FROM anchor_profile WHERE user_id=100142271 结果为1"
+        },
+        {
+          "point": "下半月入职日期不达标：create_time 对应 2026-06-18 < 第21日，不豁免",
+          "construction": "断言表3 salary_coefficient=0.60，payable 为 raw×0.6"
+        },
+        {
+          "point": "表4系数与应发一致",
+          "construction": "断言表4 deduction_factor=0.60，anchor_salary=5.40，union_commission=1.20，union_total_salary=6.60"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_first_anchor_upper_join_day5_boundary_factor_0_6",
+      "case_name_cn": "上半月入职切点负向边界：第5日 COUNT=1 不豁免，系数0.6",
+      "case_name_en": "Upper-half join cutoff negative boundary: day 5, COUNT=1, factor 0.6",
+      "scenario_desc": "上半月周期(20260601-20260615)，主播100155527 COUNT=1，create_time=2026-06-05（第5日，<切点第6日）。Level 2(coins=60000)，工作日0、时长0，系数=0.6。G4 上半月切点负向边界：验证「≥6日」中第5日不达标。",
+      "case_purpose": "验证：上半月入职第5日（切点前一天）不触发首次主播豁免，系数0.6",
+      "anchor_id": "100155527",
+      "period_start": "20260601",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260601", "receive_gift_count": 20000, "on_seat_seconds": 0, "is_effective_day": 0 },
+          { "statistic_date": "20260605", "receive_gift_count": 20000, "on_seat_seconds": 0, "is_effective_day": 0 },
+          { "statistic_date": "20260610", "receive_gift_count": 20000, "on_seat_seconds": 0, "is_effective_day": 0 }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 2, "salary_coefficient": 0.6, "coin_income": 60000,
+        "effective_workday": 0, "in_seattime": 0.0,
+        "anchor_salary_raw": 9.0, "union_salary_raw": 2.0,
+        "anchor_salary_payable": 5.4, "union_salary_payable": 1.2, "total_salary_payable": 6.6
+      },
+      "expected_t4": {
+        "salary_level": 2, "deduction_factor": 0.6, "coin_income": 60000,
+        "work_hours": 0.0, "work_days": 0,
+        "anchor_salary": 5.4, "union_commission": 1.2, "union_total_salary": 6.6
+      },
+      "verification_scenarios": [
+        { "point": "入职第5日边界负向：create_time=2026-06-05 < 第6日", "construction": "断言表3 salary_coefficient=0.60" },
+        { "point": "表4系数与应发一致", "construction": "断言表4 deduction_factor=0.60，union_total_salary=6.60" }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_first_anchor_upper_join_day6_boundary_factor_1_0",
+      "case_name_cn": "上半月入职切点正向边界：第6日 COUNT=1 豁免，系数1.0",
+      "case_name_en": "Upper-half join cutoff positive boundary: day 6, COUNT=1, factor 1.0",
+      "scenario_desc": "上半月周期(20260701-20260715)，主播100248003 COUNT=1，create_time=2026-07-06（=切点第6日）。Level 2(coins=60000)，工作日0、时长0，系数=1.0。G4 上半月切点正向边界：验证「≥6日」中第6日刚好达标。payment_type=1。",
+      "case_purpose": "验证：上半月入职第6日（切点当日）触发首次主播豁免，系数1.0",
+      "anchor_id": "100248003",
+      "period_start": "20260701",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260701", "receive_gift_count": 20000, "on_seat_seconds": 0, "is_effective_day": 0 },
+          { "statistic_date": "20260706", "receive_gift_count": 20000, "on_seat_seconds": 0, "is_effective_day": 0 },
+          { "statistic_date": "20260710", "receive_gift_count": 20000, "on_seat_seconds": 0, "is_effective_day": 0 }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 2, "salary_coefficient": 1.0, "coin_income": 60000,
+        "effective_workday": 0, "in_seattime": 0.0,
+        "anchor_salary_raw": 9.0, "union_salary_raw": 2.0,
+        "anchor_salary_payable": 9.0, "union_salary_payable": 2.0, "total_salary_payable": 11.0
+      },
+      "expected_t4": {
+        "salary_level": 2, "deduction_factor": 1.0, "coin_income": 60000,
+        "work_hours": 0.0, "work_days": 0,
+        "anchor_salary": 9.0, "union_commission": 2.0, "union_total_salary": 11.0
+      },
+      "verification_scenarios": [
+        { "point": "入职第6日边界正向：create_time=2026-07-06 = 第6日", "construction": "断言表3 salary_coefficient=1.00，payable 与 raw 一致" },
+        { "point": "表4系数与应发一致", "construction": "断言表4 deduction_factor=1.00，union_total_salary=11.00" }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_first_anchor_lower_join_day20_boundary_factor_0_6",
+      "case_name_cn": "下半月入职切点负向边界：第20日 COUNT=1 不豁免，系数0.6",
+      "case_name_en": "Lower-half join cutoff negative boundary: day 20, COUNT=1, factor 0.6",
+      "scenario_desc": "下半月周期(20260716-20260731)，主播100056885 COUNT=1，create_time=2026-07-20（第20日，<切点第21日）。Level 2(coins=60000)，工作日0、时长0，系数=0.6。G4 下半月切点负向边界：验证「≥21日」中第20日不达标。",
+      "case_purpose": "验证：下半月入职第20日（切点前一天）不触发首次主播豁免，系数0.6",
+      "anchor_id": "100056885",
+      "period_start": "20260716",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260716", "receive_gift_count": 20000, "on_seat_seconds": 0, "is_effective_day": 0 },
+          { "statistic_date": "20260720", "receive_gift_count": 20000, "on_seat_seconds": 0, "is_effective_day": 0 },
+          { "statistic_date": "20260725", "receive_gift_count": 20000, "on_seat_seconds": 0, "is_effective_day": 0 }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 2, "salary_coefficient": 0.6, "coin_income": 60000,
+        "effective_workday": 0, "in_seattime": 0.0,
+        "anchor_salary_raw": 9.0, "union_salary_raw": 2.0,
+        "anchor_salary_payable": 5.4, "union_salary_payable": 1.2, "total_salary_payable": 6.6
+      },
+      "expected_t4": {
+        "salary_level": 2, "deduction_factor": 0.6, "coin_income": 60000,
+        "work_hours": 0.0, "work_days": 0,
+        "anchor_salary": 5.4, "union_commission": 1.2, "union_total_salary": 6.6
+      },
+      "verification_scenarios": [
+        { "point": "入职第20日边界负向：create_time=2026-07-20 < 第21日", "construction": "断言表3 salary_coefficient=0.60" },
+        { "point": "表4系数与应发一致", "construction": "断言表4 deduction_factor=0.60，union_total_salary=6.60" }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_first_anchor_exempt_union_owner_factor_1_0",
+      "case_name_cn": "首次主播豁免 smoke：主播收-公会长 payment_type=2 is_trade_owner=1，系数1.0",
+      "case_name_en": "First-time anchor exemption smoke: streamer-pay guild owner, factor 1.0",
+      "scenario_desc": "上半月周期(20260801-20260815)，主播100454959为公会长(payment_type=2, is_trade_owner=1)，anchor_profile COUNT=1，create_time=2026-08-13≥第6日。Level 2(coins=60000)，工作日0、时长0，触发首次主播豁免系数=1.0。表3单主播口径应发全额：anchor=$9，union=$2，total=$11。表4 union_commission/union_total_salary 为公会聚合口径，不做固定值断言，仅断言 deduction_factor=1.0 并按公会长公式动态校验 expected_amount。",
+      "case_purpose": "smoke：首次主播豁免在 payment_type=2 is_trade_owner=1 公会长口径下仍生效，系数1.0；补齐 TC06 系列与 TC07 公会长场景的交叉覆盖",
+      "anchor_id": "100454959",
+      "period_start": "20260801",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260801", "receive_gift_count": 20000, "on_seat_seconds": 0, "is_effective_day": 0 },
+          { "statistic_date": "20260803", "receive_gift_count": 20000, "on_seat_seconds": 0, "is_effective_day": 0 },
+          { "statistic_date": "20260808", "receive_gift_count": 20000, "on_seat_seconds": 0, "is_effective_day": 0 }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 2,
+        "salary_coefficient": 1.0,
+        "coin_income": 60000,
+        "effective_workday": 0,
+        "in_seattime": 0.0,
+        "anchor_salary_raw": 9.0,
+        "union_salary_raw": 2.0,
+        "anchor_salary_payable": 9.0,
+        "union_salary_payable": 2.0,
+        "total_salary_payable": 11.0
+      },
+      "expected_t4": {
+        "salary_level": 2,
+        "deduction_factor": 1.0,
+        "coin_income": 60000,
+        "work_hours": 0.0,
+        "work_days": 0
+      },
+      "verification_scenarios": [
+        { "point": "首次主播+公会长：COUNT=1，create_time=2026-08-13≥上半月第6日", "construction": "断言表3 salary_coefficient=1.00，单主播 payable 与 raw 一致" },
+        { "point": "表4系数=1.0（聚合字段不做固定值断言）", "construction": "断言表4 deduction_factor=1.00" },
+        { "point": "公会长应得薪资公式(payment_type=2, is_trade_owner=1)", "construction": "动态读取表4，按 union_commission+sub_trade_share+motivation+owner_anchor_salary-union_pre-anchor_pre 校验 expected_amount" }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_first_anchor_exempt_used_next_period_factor_0_6",
+      "case_name_cn": "首次主播豁免已用完：次周期 COUNT=1 仍不豁免，系数0.6",
+      "case_name_en": "First-time anchor exemption already used: next period COUNT=1 still no exemption, factor 0.6",
+      "scenario_desc": "上半月周期(20260901-20260915)，主播100419093 anchor_profile COUNT=1 未离职，但上一周期(20260816)已享受首次主播豁免(系数1.0)。本周期 Level 2(coins=60000)，工作日0、时长0，与 TC06c 造数相同，但豁免资格已消耗，走三档最低档系数=0.6。应发：anchor=$5.40，union=$1.20，total=$6.60。验证：首次主播豁免为生涯/跨周期一次性，非每个周期 COUNT=1 均可重复享受。",
+      "case_purpose": "验证：上周期已触发首次主播豁免后，下周期仍在会(COUNT=1)不再豁免，系数0.6",
+      "anchor_id": "100419093",
+      "period_start": "20260901",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260901", "receive_gift_count": 20000, "on_seat_seconds": 0, "is_effective_day": 0 },
+          { "statistic_date": "20260903", "receive_gift_count": 20000, "on_seat_seconds": 0, "is_effective_day": 0 },
+          { "statistic_date": "20260908", "receive_gift_count": 20000, "on_seat_seconds": 0, "is_effective_day": 0 }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 2,
+        "salary_coefficient": 0.6,
+        "coin_income": 60000,
+        "effective_workday": 0,
+        "in_seattime": 0.0,
+        "anchor_salary_raw": 9.0,
+        "union_salary_raw": 2.0,
+        "anchor_salary_payable": 5.4,
+        "union_salary_payable": 1.2,
+        "total_salary_payable": 6.6
+      },
+      "expected_t4": {
+        "salary_level": 2,
+        "deduction_factor": 0.6,
+        "coin_income": 60000,
+        "work_hours": 0.0,
+        "work_days": 0,
+        "anchor_salary": 5.4,
+        "union_commission": 1.2,
+        "union_total_salary": 6.6
+      },
+      "verification_scenarios": [
+        { "point": "跨周期：上一周期 20260816 已享受豁免(历史 salary_coefficient=1.0)", "construction": "本周期仍 COUNT=1、未退会，但不应重复豁免" },
+        { "point": "次周期不豁免：工作日0、时长0，系数=0.6", "construction": "断言表3 salary_coefficient=0.60，payable 为 raw×0.6" },
+        { "point": "表4系数与应发一致", "construction": "断言表4 deduction_factor=0.60，anchor_salary=5.40，union_commission=1.20，union_total_salary=6.60" },
+        { "point": "与 TC06c 对照：同主播同造数，TC06c 首周期 1.0，本用例次周期 0.6", "construction": "两周期系数差异验证豁免一次性" }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_payment_type2_union_owner",
+      "case_name_cn": "主播收-公会长：payment_type=2，is_trade_owner=1，Level 7，系数0.6",
+      "case_name_en": "Streamer-pay guild owner: payment_type=2, is_trade_owner=1, Level 7, factor 0.6",
+      "scenario_desc": "上半月周期(20260401-20260415)，主播3966为公会长(payment_type=2, is_trade_owner=1)。设置5条记录，每条coins=100000，seconds=7920(2.2h)，effective=1。金币合计=500000，命中Level 7(≥500000，<705600)。工作日5天(<9)，总时长11h(<18h)，双不达标，系数=0.6。Level 7原始值：anchor_salary_raw=$100，union_salary_raw=$33，payable分别=$60/$19.80。注意：公会长口径下，表4的 union_commission/union_total_salary 为公会维度聚合值，受同周期其他主播影响，不做固定值断言。应得薪资公式(公会长)：union_commission + sub_trade_share + motivation_amount + owner_anchor_salary - union_prepayment - anchor_prepayment。",
+      "case_purpose": "验证：payment_type=2 is_trade_owner=1 时，系统按公会长公式计算expected_amount；稳定字段（等级/系数/工时工日/coin）与表3应发字段符合单主播理论值，聚合字段通过公式动态校验",
+      "anchor_id": "3966",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260401",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260403",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260409",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260414",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260415",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 5,
+        "in_seattime": 11.0,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 11.0,
+        "work_days": 5
+      },
+      "verification_scenarios": [
+        {
+          "point": "Level 7命中：金币500000恰好等于Level 7阈值(≥500000，<705600)；anchor_salary_raw=$100，union_salary_raw=$33",
+          "construction": "5条记录各coins=100000，合计500000；断言表3.salary_level=7，anchor_salary_raw=100.00，union_salary_raw=33.00"
+        },
+        {
+          "point": "扣减系数=0.6：工作日5天(<9)，时长11h(<18h)，双不达标，命中最低档系数0.6",
+          "construction": "断言表3.salary_coefficient=0.60，表4.deduction_factor=0.60"
+        },
+        {
+          "point": "薪资应发按0.6倍：anchor_salary_payable=$60.00，union_salary_payable=$19.80，total=$79.80",
+          "construction": "断言表3各应发字段（单主播口径）；表4聚合字段不做固定值断言"
+        },
+        {
+          "point": "公会长应得薪资公式正确(payment_type=2, is_trade_owner=1)：expected_amount = union_commission + sub_trade_share + motivation_amount + owner_anchor_salary - union_prepayment - anchor_prepayment",
+          "construction": "动态读取表4各字段，按公会长公式计算，验证与expected_amount误差<0.01（sub_trade_share为实际公会分成，不预设值）"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_payment_type2_regular_anchor",
+      "case_name_cn": "主播收-普通主播：payment_type=2，is_trade_owner=0，Level 6，系数0.6",
+      "case_name_en": "Streamer-pay regular anchor: payment_type=2, is_trade_owner=0, Level 6, factor 0.6",
+      "scenario_desc": "上半月周期(20260401-20260415)，主播2915为普通主播(payment_type=2, is_trade_owner=0)。设置5条记录，每条coins=70000，seconds=7920(2.2h)，effective=1。金币合计=350000，命中Level 6(≥267000，<500000)。工作日5天(<9)，总时长11h(<18h)，双不达标，系数=0.6。Level 6原始值：anchor_salary_raw=$55，union_salary_raw=$17，payable分别=$33/$10.20。应得薪资公式(普通主播)：anchor_salary - anchor_prepayment=$33-$0=$33。",
+      "case_purpose": "验证：payment_type=2 is_trade_owner=0 时，系统按普通主播公式计算expected_amount=anchor_salary-anchor_prepayment；所有薪资字段与Level 6、系数0.6的理论值一致",
+      "anchor_id": "2915",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260403",
+            "receive_gift_count": 70000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260408",
+            "receive_gift_count": 70000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260409",
+            "receive_gift_count": 70000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260414",
+            "receive_gift_count": 70000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260415",
+            "receive_gift_count": 70000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 6,
+        "salary_coefficient": 0.6,
+        "coin_income": 350000,
+        "effective_workday": 5,
+        "in_seattime": 11.0,
+        "anchor_salary_raw": 55.0,
+        "union_salary_raw": 17.0,
+        "anchor_salary_payable": 33.0,
+        "union_salary_payable": 10.2,
+        "total_salary_payable": 43.2
+      },
+      "expected_t4": {
+        "salary_level": 6,
+        "deduction_factor": 0.6,
+        "coin_income": 350000,
+        "work_hours": 11.0,
+        "work_days": 5,
+        "anchor_salary": 33.0,
+        "union_commission": 10.2,
+        "union_total_salary": 43.2
+      },
+      "verification_scenarios": [
+        {
+          "point": "Level 6命中：金币350000在Level 6区间(≥267000，<500000)；anchor_salary_raw=$55，union_salary_raw=$17",
+          "construction": "5条记录各coins=70000，合计350000；断言表3.salary_level=6，anchor_salary_raw=55.00，union_salary_raw=17.00"
+        },
+        {
+          "point": "扣减系数=0.6：工作日5天(<9)，时长11h(<18h)，双不达标，命中最低档系数0.6",
+          "construction": "断言表3.salary_coefficient=0.60，表4.deduction_factor=0.60"
+        },
+        {
+          "point": "薪资应发按0.6倍：anchor_salary_payable=$33.00，union_salary_payable=$10.20，total=$43.20",
+          "construction": "断言表3各应发字段；断言表4 anchor_salary=33.00，union_commission=10.20，union_total_salary=43.20"
+        },
+        {
+          "point": "普通主播应得薪资公式正确(payment_type=2, is_trade_owner=0)：expected_amount = anchor_salary - anchor_prepayment = 33.00 - 0 = 33.00",
+          "construction": "动态读取表4 anchor_salary和anchor_prepayment，验证公式与expected_amount误差<0.01"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_factor_0_8_workdays_only_pass",
+      "case_name_cn": "系数0.8：仅工作日≥9达标，时长<18h不达标",
+      "case_name_en": "Deduction factor 0.8: workdays>=9 pass but hours<18h fail",
+      "scenario_desc": "上半月周期(20260401-20260415)，主播8250(payment_type=1, is_sub_trade=1)。设置9条记录，每条coins=20000，on_seat_seconds=7056(=1.96h，有效工作日最低阈值)，is_effective_day=1。有效工作日=9（≥9达标），总时长=9×7056/3600=17.6h（<18h不达标）。Level 5(≥167000)。仅天数达标 → 系数=0.8。Level 5原始值anchor_raw=$35，union_raw=$10，应发分别$28/$8/$36。",
+      "case_purpose": "验证：有效工作日≥9但总开播时长<18h时，扣减系数=0.8（三档中间档），薪资按0.8倍计算",
+      "anchor_id": "8250",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260401",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 7056,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260403",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 7056,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260407",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 7056,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260408",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 7056,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260409",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 7056,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260410",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 7056,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260413",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 7056,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260414",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 7056,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260415",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 7056,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 5,
+        "salary_coefficient": 0.8,
+        "coin_income": 180000,
+        "effective_workday": 9,
+        "in_seattime": 17.6,
+        "anchor_salary_raw": 35.0,
+        "union_salary_raw": 10.0,
+        "anchor_salary_payable": 28.0,
+        "union_salary_payable": 8.0,
+        "total_salary_payable": 36.0
+      },
+      "expected_t4": {
+        "salary_level": 5,
+        "deduction_factor": 0.8,
+        "coin_income": 180000,
+        "work_hours": 17.6,
+        "work_days": 9,
+        "anchor_salary": 28.0,
+        "union_commission": 8.0,
+        "union_total_salary": 36.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "Level 5命中：金币180000在Level 5区间(≥167000，<267000)；anchor_salary_raw=$35，union_salary_raw=$10",
+          "construction": "9条记录各coins=20000，合计180000；断言表3.salary_level=5，anchor_salary_raw=35.00，union_salary_raw=10.00"
+        },
+        {
+          "point": "扣减系数=0.8：工作日9天(≥9达标)，时长17.6h(<18h不达标)，仅天数达标 → 命中中间档系数0.8",
+          "construction": "9条记录各seconds=7056(1.96h)，effective=1；断言表3.salary_coefficient=0.80，表4.deduction_factor=0.80"
+        },
+        {
+          "point": "薪资应发按0.8倍：anchor_salary_payable=$28.00，union_salary_payable=$8.00，total=$36.00",
+          "construction": "断言表3各应发字段；断言表4 anchor_salary=28.00，union_commission=8.00，union_total_salary=36.00"
+        },
+        {
+          "point": "应得薪资公式正确(payment_type=1，is_sub_trade=1)：expected_amount = union_total_salary + motivation + sub_trade_share(负值) - union_pre - all_anchor_pre",
+          "construction": "动态读取表4各字段，按payment_type=1公式验证，sub_trade_share为子公会负分成，动态读取不预设"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_factor_1_0_double_pass",
+      "case_name_cn": "系数1.0：工作日≥9且时长≥18h均达标（双达标非等级豁免）",
+      "case_name_en": "Deduction factor 1.0: both workdays>=9 and hours>=18h pass (dual qualify, not level exempt)",
+      "scenario_desc": "上半月周期(20260401-20260415)，主播8250(payment_type=1, is_sub_trade=1)。设置9条记录，每条coins=20000，on_seat_seconds=8000(=2.22h)，is_effective_day=1。有效工作日=9（≥9达标），总时长=9×8000/3600=20.0h（≥18h达标）。Level 5(≥167000，<Level 8无等级豁免，join_union_time=0无入职豁免)。双达标 → 系数=1.0。Level 5应发anchor_raw=$35×1.0=$35，union_raw=$10×1.0=$10，total=$45。与TC03等级豁免的区别：TC03靠Level≥8豁免(factor跳过三档直接1.0)，本用例靠工作日+时长双达标正常走三档最高档。",
+      "case_purpose": "验证：有效工作日≥9且总开播时长≥18h时，扣减系数=1.0（三档最高档，双指标达标路径），与等级豁免路径区分",
+      "anchor_id": "8250",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260401",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 8000,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260403",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 8000,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260407",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 8000,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260408",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 8000,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260409",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 8000,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260410",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 8000,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260413",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 8000,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260414",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 8000,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260415",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 8000,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 5,
+        "salary_coefficient": 1.0,
+        "coin_income": 180000,
+        "effective_workday": 9,
+        "in_seattime": 20.0,
+        "anchor_salary_raw": 35.0,
+        "union_salary_raw": 10.0,
+        "anchor_salary_payable": 35.0,
+        "union_salary_payable": 10.0,
+        "total_salary_payable": 45.0
+      },
+      "expected_t4": {
+        "salary_level": 5,
+        "deduction_factor": 1.0,
+        "coin_income": 180000,
+        "work_hours": 20.0,
+        "work_days": 9,
+        "anchor_salary": 35.0,
+        "union_commission": 10.0,
+        "union_total_salary": 45.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "Level 5命中：金币180000在Level 5区间(≥167000，<267000)，Level<8不触发等级豁免",
+          "construction": "9条记录各coins=20000，合计180000；断言表3.salary_level=5（<8，排除等级豁免路径）"
+        },
+        {
+          "point": "扣减系数=1.0：工作日9天(≥9达标)，时长20.0h(≥18h达标)，双达标命中三档最高档系数1.0",
+          "construction": "9条记录各seconds=8000(2.22h)，effective=1；断言表3.salary_coefficient=1.00，表4.deduction_factor=1.00"
+        },
+        {
+          "point": "薪资应发按1.0倍（即原始值）：anchor_salary_payable=$35.00，union_salary_payable=$10.00，total=$45.00",
+          "construction": "断言表3各应发字段；断言表4 anchor_salary=35.00，union_commission=10.00，union_total_salary=45.00"
+        },
+        {
+          "point": "应得薪资公式正确(payment_type=1，is_sub_trade=1)：expected_amount = union_total_salary + motivation + sub_trade_share(负值) - union_pre - all_anchor_pre",
+          "construction": "动态读取表4各字段，按payment_type=1公式验证，sub_trade_share为子公会负分成，动态读取不预设"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_level7_coins_upper_bound",
+      "case_name_cn": "Level 7金币上边界：coins=705599，差1金币不触发Level 8等级豁免",
+      "case_name_en": "Level 7 upper bound: coins=705599, 1 coin short of Level 8 exemption",
+      "scenario_desc": "上半月周期(20260401-20260415)，主播收礼金币合计=705599，比Level 8阈值(705600)少1金币，命中Level 7（不触发等级豁免）。有效工作日1天(<9)，时长2.2h(<18h)，双不达标，系数=0.6。Level 7原始值：anchor_salary_raw=$100，union_salary_raw=$33，应发$60/$19.80/$79.80。与TC03(coins=705600)形成Level 7/8边界对比，验证1金币之差导致豁免失效。",
+      "case_purpose": "验证：coins=705599时命中Level 7（不触发Level≥8等级豁免），扣减系数正常走三档逻辑取0.6",
+      "anchor_id": "4559",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260401",
+            "receive_gift_count": 705599,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 705599,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 705599,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "anchor_salary": 60.0,
+        "union_commission": 19.8,
+        "union_total_salary": 79.8
+      },
+      "verification_scenarios": [
+        {
+          "point": "Level 7精确命中：coins=705599比Level 8阈值(705600)少1金币，应命中Level 7；anchor_salary_raw=$100，union_salary_raw=$33",
+          "construction": "1条记录coins=705599；断言表3.salary_level=7（非8），anchor_salary_raw=100.00，union_salary_raw=33.00"
+        },
+        {
+          "point": "Level 8等级豁免未触发：Level 7 < 8，扣减系数不自动取1.0，须走三档逻辑",
+          "construction": "断言表3.salary_coefficient=0.60（非1.00），表4.deduction_factor=0.60"
+        },
+        {
+          "point": "薪资应发按0.6倍：anchor_salary_payable=$60.00，union_salary_payable=$19.80，total=$79.80",
+          "construction": "断言表3各应发字段；断言表4 anchor_salary=60.00，union_commission=19.80，union_total_salary=79.80"
+        },
+        {
+          "point": "应得薪资公式正确(payment_type=1)：expected_amount = union_total_salary + sub_trade_share + motivation_amount - union_prepayment - all_anchor_prepayment",
+          "construction": "读取表4各字段，验证公式计算结果与expected_amount一致（误差<0.01）"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_level0_coins_upper_bound",
+      "case_name_cn": "Level 0金币上边界：coins=16699，差1金币不达Level 1",
+      "case_name_en": "Level 0 upper bound: coins=16699, 1 coin short of Level 1",
+      "scenario_desc": "上半月周期(20260401-20260415)，主播收礼金币合计=16699，比Level 1阈值(16700)少1金币，仍命中Level 0。Level 0原始薪资=$0，所有薪资字段均为0，expected_amount=$0。与TC05(coins=16700)形成Level 0/1负向边界对比，验证1金币之差导致等级未升级。",
+      "case_purpose": "验证：coins=16699时仍命中Level 0（差1金币不达Level 1），所有薪资字段为0",
+      "anchor_id": "4559",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260401",
+            "receive_gift_count": 16699,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 0,
+        "salary_coefficient": 0.6,
+        "coin_income": 16699,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 0.0,
+        "union_salary_raw": 0.0,
+        "anchor_salary_payable": 0.0,
+        "union_salary_payable": 0.0,
+        "total_salary_payable": 0.0
+      },
+      "expected_t4": {
+        "salary_level": 0,
+        "deduction_factor": 0.6,
+        "coin_income": 16699,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "anchor_salary": 0.0,
+        "union_commission": 0.0,
+        "union_total_salary": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "Level 0负向边界命中：coins=16699比Level 1阈值(16700)少1金币，应仍为Level 0；anchor_salary_raw=$0，union_salary_raw=$0",
+          "construction": "1条记录coins=16699；断言表3.salary_level=0（非1），anchor_salary_raw=0.00，union_salary_raw=0.00"
+        },
+        {
+          "point": "所有薪资字段均为零：即使coins=16699不为0，Level 0原始薪资=$0，乘以任何系数仍为0",
+          "construction": "断言表3所有payable字段=0；断言表4 anchor_salary=0.00，union_commission=0.00，union_total_salary=0.00"
+        },
+        {
+          "point": "应得薪资公式正确：expected_amount=0",
+          "construction": "读取表4各字段，验证公式计算结果与expected_amount=0一致（误差<0.01）"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_workday_seconds_below_threshold",
+      "case_name_cn": "有效工作日秒数下边界：9条记录均为7055秒（<7056阈值），effective_workday=0",
+      "case_name_en": "Effective workday seconds boundary: 9 records at 7055s each (<7056 threshold), effective_workday=0",
+      "scenario_desc": "上半月周期(20260401-20260415)，9条记录每条on_seat_seconds=7055（比有效工作日阈值7056少1秒），is_effective_day=0（不算有效工作日）。总时长=9×7055/3600=17.6h（<18h不达标），effective_workday=0（<9不达标）。双不达标，系数=0.6。Level 5(coins=180000)，应发$21.00/$6.00/$27.00。与TC09(7056秒，effective=1)形成秒级边界对比，验证1秒之差决定有效工作日判定。",
+      "case_purpose": "验证：on_seat_seconds=7055时is_effective_day=0，effective_workday不累计；与TC09(7056)对比，强调7056秒阈值的精确性",
+      "anchor_id": "4559",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260401",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 7055,
+            "is_effective_day": 0
+          },
+          {
+            "statistic_date": "20260403",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 7055,
+            "is_effective_day": 0
+          },
+          {
+            "statistic_date": "20260407",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 7055,
+            "is_effective_day": 0
+          },
+          {
+            "statistic_date": "20260408",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 7055,
+            "is_effective_day": 0
+          },
+          {
+            "statistic_date": "20260409",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 7055,
+            "is_effective_day": 0
+          },
+          {
+            "statistic_date": "20260410",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 7055,
+            "is_effective_day": 0
+          },
+          {
+            "statistic_date": "20260413",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 7055,
+            "is_effective_day": 0
+          },
+          {
+            "statistic_date": "20260414",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 7055,
+            "is_effective_day": 0
+          },
+          {
+            "statistic_date": "20260415",
+            "receive_gift_count": 20000,
+            "on_seat_seconds": 7055,
+            "is_effective_day": 0
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 5,
+        "salary_coefficient": 0.6,
+        "coin_income": 180000,
+        "effective_workday": 0,
+        "in_seattime": 17.6,
+        "anchor_salary_raw": 35.0,
+        "union_salary_raw": 10.0,
+        "anchor_salary_payable": 21.0,
+        "union_salary_payable": 6.0,
+        "total_salary_payable": 27.0
+      },
+      "expected_t4": {
+        "salary_level": 5,
+        "deduction_factor": 0.6,
+        "coin_income": 180000,
+        "work_hours": 17.6,
+        "work_days": 0,
+        "anchor_salary": 21.0,
+        "union_commission": 6.0,
+        "union_total_salary": 27.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "有效工作日=0：9条记录各seconds=7055（<7056阈值），is_effective_day=0，effective_workday累计=0",
+          "construction": "9条记录各seconds=7055，effective=0；断言表3.effective_workday=0（非9），表4.work_days=0"
+        },
+        {
+          "point": "时长=17.6h（<18h不达标）：9×7055/3600=17.6375h，系统截断为17.6h",
+          "construction": "断言表3.in_seattime=17.6，表4.work_hours=17.6；说明接近18h但未满足"
+        },
+        {
+          "point": "扣减系数=0.6：工作日0天(<9)且时长17.6h(<18h)，双不达标命中最低档；与TC09(7056秒)对比：同样9条记录仅差1秒导致系数从0.8→0.6",
+          "construction": "断言表3.salary_coefficient=0.60，表4.deduction_factor=0.60"
+        },
+        {
+          "point": "薪资应发按0.6倍：anchor_salary_payable=$21.00，union_salary_payable=$6.00，total=$27.00",
+          "construction": "断言表3各应发字段；断言表4 anchor_salary=21.00，union_commission=6.00，union_total_salary=27.00"
+        },
+        {
+          "point": "应得薪资公式正确(payment_type=1)：expected_amount = union_total_salary + sub_trade_share + motivation_amount - union_prepayment - all_anchor_prepayment",
+          "construction": "读取表4各字段，验证公式计算结果与expected_amount一致（误差<0.01）"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_factor_0_8_workdays_8_hours_pass",
+      "case_name_cn": "系数0.8：工作日8天（差1天不达9天临界），时长22.2h（≥18h达标）→ 仅时长达标",
+      "case_name_en": "Deduction factor 0.8: workdays=8 (1 short of 9-day threshold), hours=22.2h(>=18h) pass — hours only",
+      "scenario_desc": "上半月周期(20260401-20260415)，8条有效工作日记录（差1天不达9天阈值），每条on_seat_seconds=10000(2.78h)，合计时长22.2h(≥18h达标)。Level 6(coins=400000：8×50000=400000)。工作日8天不达标，时长22.2h达标，仅时长单一达标 → 系数=0.8。Level 6原始值：anchor_raw=$55，union_raw=$17，应发$44.00/$13.60/$57.60。与TC09(工作日=9，时长<18h)形成对称覆盖：TC09=仅工作日达标，本用例=仅时长达标（工作日8<9）。",
+      "case_purpose": "验证：工作日恰好8天（差1天不达9天临界值）且时长≥18h时，系数=0.8（仅时长达标路径）；补充TC02的8天工作日维度",
+      "anchor_id": "4559",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260401",
+            "receive_gift_count": 50000,
+            "on_seat_seconds": 10000,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260403",
+            "receive_gift_count": 50000,
+            "on_seat_seconds": 10000,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260407",
+            "receive_gift_count": 50000,
+            "on_seat_seconds": 10000,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260408",
+            "receive_gift_count": 50000,
+            "on_seat_seconds": 10000,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260409",
+            "receive_gift_count": 50000,
+            "on_seat_seconds": 10000,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260410",
+            "receive_gift_count": 50000,
+            "on_seat_seconds": 10000,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260413",
+            "receive_gift_count": 50000,
+            "on_seat_seconds": 10000,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260414",
+            "receive_gift_count": 50000,
+            "on_seat_seconds": 10000,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 6,
+        "salary_coefficient": 0.8,
+        "coin_income": 400000,
+        "effective_workday": 8,
+        "in_seattime": 22.2,
+        "anchor_salary_raw": 55.0,
+        "union_salary_raw": 17.0,
+        "anchor_salary_payable": 44.0,
+        "union_salary_payable": 13.6,
+        "total_salary_payable": 57.6
+      },
+      "expected_t4": {
+        "salary_level": 6,
+        "deduction_factor": 0.8,
+        "coin_income": 400000,
+        "work_hours": 22.2,
+        "work_days": 8,
+        "anchor_salary": 44.0,
+        "union_commission": 13.6,
+        "union_total_salary": 57.6
+      },
+      "verification_scenarios": [
+        {
+          "point": "Level 6命中：8×50000=400000金币，267000≤400000<500000，Level 6；anchor_salary_raw=$55，union_salary_raw=$17",
+          "construction": "8条记录各coins=50000，合计400000；断言表3.salary_level=6，anchor_salary_raw=55.00，union_salary_raw=17.00"
+        },
+        {
+          "point": "工作日=8（差1天不达标）：8条有效工作日记录，8<9不满足工作日达标条件",
+          "construction": "断言表3.effective_workday=8，表4.work_days=8（强调8≠9的临界值）"
+        },
+        {
+          "point": "时长=22.2h（达标）：8×10000/3600=22.2h，满足≥18h条件",
+          "construction": "断言表3.in_seattime=22.2，表4.work_hours=22.2（≥18h，时长达标）"
+        },
+        {
+          "point": "扣减系数=0.8：仅时长达标（工作日8<9不达标），命中中间档系数0.8",
+          "construction": "断言表3.salary_coefficient=0.80，表4.deduction_factor=0.80（与TC09对称：TC09=仅工作日达标，本例=仅时长达标）"
+        },
+        {
+          "point": "薪资应发按0.8倍：anchor_salary_payable=$44.00，union_salary_payable=$13.60，total=$57.60",
+          "construction": "断言表3各应发字段；断言表4 anchor_salary=44.00，union_commission=13.60，union_total_salary=57.60"
+        },
+        {
+          "point": "应得薪资公式正确(payment_type=1)：expected_amount = union_total_salary + sub_trade_share + motivation_amount - union_prepayment - all_anchor_prepayment",
+          "construction": "读取表4各字段，验证公式计算结果与expected_amount一致（误差<0.01）"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_lower_half_month_period",
+      "case_name_cn": "下半月周期（20260416-20260430）：验证下半月算薪逻辑与周期边界",
+      "case_name_en": "Lower half-month period (20260416-20260430): verify salary calculation for second-half cycle",
+      "scenario_desc": "下半月周期(20260416-20260430)，主播100381218(payment_type=2, is_trade_owner=0)。设置5条记录在下半月日期内：每条coins=100000，seconds=7920(2.2h)，effective=1。金币合计=500000，Level 7(≥500000，<705600)。有效工作日5天(<9)，时长11h(<18h)，双不达标，系数=0.6。应发$60/$19.80/$79.80，expected_amount公式按普通主播计算：anchor_salary-anchor_prepayment=$60-$0=$60。目的：验证下半月周期(16日开始)的算薪逻辑与上半月一致，周期日期边界不影响业务规则。",
+      "case_purpose": "验证：下半月周期(period_start=20260416)的算薪流程正确，周期类型切换不影响等级/系数/公式的计算逻辑",
+      "anchor_id": "100381218",
+      "period_start": "20260416",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          {
+            "statistic_date": "20260416",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260420",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260421",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260422",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          },
+          {
+            "statistic_date": "20260423",
+            "receive_gift_count": 100000,
+            "on_seat_seconds": 7920,
+            "is_effective_day": 1
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 5,
+        "in_seattime": 11.0,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 11.0,
+        "work_days": 5,
+        "anchor_salary": 60.0,
+        "union_commission": 19.8,
+        "union_total_salary": 79.8
+      },
+      "verification_scenarios": [
+        {
+          "point": "下半月周期日期正确：period_start=20260416，period_end=20260430；造数日期全在20260416-20260430范围内",
+          "construction": "5条记录日期：20260416/20260420/20260421/20260422/20260423，均在下半月范围内；验证MOA1/MOA2以20260416为周期正常执行"
+        },
+        {
+          "point": "Level 7命中：金币500000达Level 7；anchor_salary_raw=$100，union_salary_raw=$33",
+          "construction": "5条记录各coins=100000，合计500000；断言表3.salary_level=7，anchor_salary_raw=100.00，union_salary_raw=33.00"
+        },
+        {
+          "point": "扣减系数=0.6：工作日5天(<9)，时长11h(<18h)，双不达标，命中最低档系数0.6（下半月三档规则与上半月相同）",
+          "construction": "断言表3.salary_coefficient=0.60，表4.deduction_factor=0.60"
+        },
+        {
+          "point": "薪资应发按0.6倍：anchor_salary_payable=$60.00，union_salary_payable=$19.80，total=$79.80",
+          "construction": "断言表3各应发字段；断言表4 anchor_salary=60.00，union_commission=19.80"
+        },
+        {
+          "point": "普通主播应得薪资公式正确(payment_type=2, is_trade_owner=0)：expected_amount = anchor_salary - anchor_prepayment = $60.00",
+          "construction": "动态读取表4 anchor_salary和anchor_prepayment，验证公式与expected_amount误差<0.01"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_factor_0_8_hours_17_95h_boundary",
+      "case_name_cn": "系数0.8：在麦时长17.94h精度负向边界（仅工作日达标）",
+      "scenario_desc": "上半月周期(20260401-20260415)，9条记录每条on_seat_seconds=7176（均>7056有效）。总时长=9×7176=64584s=17.94h，round(17.94,1)=17.9，不满足18h。有效工作日=9≥9达标，时长17.9h<18h不达标，仅工作日单一达标 → 系数=0.8。Level 5(coins=9×20000=180000)。应发$28.00/$8.00/$36.00。与TC17(64656s=17.96h→18.0h)形成更稳定的负向边界对。",
+      "case_purpose": "验证18h阈值负向边界：64584s=17.94h，round(1)=17.9，不满足18h判定；与TC17(64656s=17.96h→18.0h)形成精度对边界对",
+      "anchor_id": "8250",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260401", "receive_gift_count": 20000, "on_seat_seconds": 7176, "is_effective_day": 1 },
+          { "statistic_date": "20260403", "receive_gift_count": 20000, "on_seat_seconds": 7176, "is_effective_day": 1 },
+          { "statistic_date": "20260407", "receive_gift_count": 20000, "on_seat_seconds": 7176, "is_effective_day": 1 },
+          { "statistic_date": "20260408", "receive_gift_count": 20000, "on_seat_seconds": 7176, "is_effective_day": 1 },
+          { "statistic_date": "20260409", "receive_gift_count": 20000, "on_seat_seconds": 7176, "is_effective_day": 1 },
+          { "statistic_date": "20260410", "receive_gift_count": 20000, "on_seat_seconds": 7176, "is_effective_day": 1 },
+          { "statistic_date": "20260413", "receive_gift_count": 20000, "on_seat_seconds": 7176, "is_effective_day": 1 },
+          { "statistic_date": "20260414", "receive_gift_count": 20000, "on_seat_seconds": 7176, "is_effective_day": 1 },
+          { "statistic_date": "20260415", "receive_gift_count": 20000, "on_seat_seconds": 7176, "is_effective_day": 1 }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 5,
+        "salary_coefficient": 0.8,
+        "coin_income": 180000,
+        "effective_workday": 9,
+        "in_seattime": 17.9,
+        "anchor_salary_raw": 35.0,
+        "union_salary_raw": 10.0,
+        "anchor_salary_payable": 28.0,
+        "union_salary_payable": 8.0,
+        "total_salary_payable": 36.0
+      },
+      "expected_t4": {
+        "salary_level": 5,
+        "deduction_factor": 0.8,
+        "coin_income": 180000,
+        "work_hours": 17.9,
+        "work_days": 9,
+        "union_total_salary": 36.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "18h精度负向：64584s=17.94h，round(17.94,1)=17.9，不满足时长达标条件",
+          "construction": "9×7176s=64584s；断言表3.in_seattime=17.9，表4.work_hours=17.9"
+        },
+        {
+          "point": "仅工作日达标：9天≥9达标，时长17.9h<18h不达标 → 系数=0.8",
+          "construction": "断言表3.salary_coefficient=0.80，表4.deduction_factor=0.80"
+        },
+        {
+          "point": "薪资应发按0.8倍：$35×0.8=$28.00，$10×0.8=$8.00，合计$36.00",
+          "construction": "断言表3各应发字段；断言表4 union_total_salary=36.00"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_factor_0_8_hours_17_96h_boundary",
+      "case_name_cn": "系数0.8：在麦时长17.96h精度正向边界（仅时长达标）",
+      "scenario_desc": "上半月周期(20260301-20260315)，8条记录每条on_seat_seconds=8082（均>7056有效）。总时长=8×8082=64656s=17.96h，Python round(17.96,1)=18.0（进位满足18h，符合文档注记「17.96h视为满足」）。有效工作日=8<9不达标，时长18.0h≥18h达标，仅时长单一达标 → 系数=0.8。Level 5(coins=8×21000=168000≥167000达标)。应发$28.00/$8.00/$36.00。专项验证18h精度正向临界：64656s=64620s+36s，仅差36秒(0.01h)就使时长从17.9h跨越至18.0h，满足时长阈值。使用period=20260301（3月上半月），该周期仅TC17使用，与TC16的20260401周期完全隔离，避免MOA2冷却锁导致no-op。",
+      "case_purpose": "验证18h阈值浮点精度正向边界：8×8082s=64656s=17.96h，Python float精度后round(1)=18.0，满足18h判定；与TC16(9×7180s=64620s=17.95h→17.9h，工作日达标时长不达标)共同覆盖18h精度正负边界对。TC17使用period=20260301与TC16的20260401彻底隔离，避免MOA2冷却锁影响",
+      "anchor_id": "8250",
+      "period_start": "20260301",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260303", "receive_gift_count": 21000, "on_seat_seconds": 8082, "is_effective_day": 1 },
+          { "statistic_date": "20260304", "receive_gift_count": 21000, "on_seat_seconds": 8082, "is_effective_day": 1 },
+          { "statistic_date": "20260305", "receive_gift_count": 21000, "on_seat_seconds": 8082, "is_effective_day": 1 },
+          { "statistic_date": "20260309", "receive_gift_count": 21000, "on_seat_seconds": 8082, "is_effective_day": 1 },
+          { "statistic_date": "20260310", "receive_gift_count": 21000, "on_seat_seconds": 8082, "is_effective_day": 1 },
+          { "statistic_date": "20260311", "receive_gift_count": 21000, "on_seat_seconds": 8082, "is_effective_day": 1 },
+          { "statistic_date": "20260312", "receive_gift_count": 21000, "on_seat_seconds": 8082, "is_effective_day": 1 },
+          { "statistic_date": "20260313", "receive_gift_count": 21000, "on_seat_seconds": 8082, "is_effective_day": 1 }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 5,
+        "salary_coefficient": 0.8,
+        "coin_income": 168000,
+        "effective_workday": 8,
+        "in_seattime": 18.0,
+        "anchor_salary_raw": 35.0,
+        "union_salary_raw": 10.0,
+        "anchor_salary_payable": 28.0,
+        "union_salary_payable": 8.0,
+        "total_salary_payable": 36.0
+      },
+      "expected_t4": {
+        "salary_level": 5,
+        "deduction_factor": 0.8,
+        "coin_income": 168000,
+        "work_hours": 18.0,
+        "work_days": 8,
+        "union_total_salary": 36.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "18h精度正向：64656s=17.96h，round(17.96,1)=18.0（Python float精度使其进位），满足时长达标条件",
+          "construction": "8×8082s=64656s；断言表3.in_seattime=18.0，表4.work_hours=18.0；文档注记「17.96h视为满足」得到验证"
+        },
+        {
+          "point": "仅时长达标：工作日8天<9不达标，时长18.0h≥18h达标 → 系数=0.8（时长单一达标）",
+          "construction": "断言表3.salary_coefficient=0.80，表4.deduction_factor=0.80"
+        },
+        {
+          "point": "薪资按0.8倍应发：$35×0.8=$28.00，$10×0.8=$8.00，合计$36.00",
+          "construction": "断言表3各应发字段；断言表4 union_total_salary=36.00"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_level6_coins_upper_bound",
+      "case_name_cn": "Level 6金币上边界：coins=499999，差1金币不达Level 7",
+      "scenario_desc": "上半月周期(20260401-20260415)，1条有效工作日记录，coins=499999（Level 7达标线500000少1），on_seat_seconds=7920(2.2h)，is_effective_day=1。499999<500000无法达到Level 7，命中Level 6(267000≤499999<500000)，anchor_salary_raw=$55，union_salary_raw=$17。有效工作日1天(<9)，时长2.2h(<18h)，双不达标 → 系数=0.6。应发$55×0.6=$33.00，$17×0.6=$10.20，合计$43.20。与TC11(Level 7上边界 coins=705599)对比，覆盖Level 6/7的金币分界验证。",
+      "case_purpose": "验证Level 6/7金币分界：coins=499999命中Level 6(非Level 7)；与TC11(705599=Level 7)共同覆盖相邻等级的金币边界精度",
+      "anchor_id": "4559",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260401", "receive_gift_count": 499999, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 6,
+        "salary_coefficient": 0.6,
+        "coin_income": 499999,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 55.0,
+        "union_salary_raw": 17.0,
+        "anchor_salary_payable": 33.0,
+        "union_salary_payable": 10.2,
+        "total_salary_payable": 43.2
+      },
+      "expected_t4": {
+        "salary_level": 6,
+        "deduction_factor": 0.6,
+        "coin_income": 499999,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "union_total_salary": 43.2
+      },
+      "verification_scenarios": [
+        {
+          "point": "Level 6金币上边界：coins=499999命中Level 6；若500000则为Level 7（$100/$33）",
+          "construction": "断言表3.salary_level=6，anchor_salary_raw=55.00，union_salary_raw=17.00；与TC11(499999+1=500000=Level 7起点)形成金币边界对"
+        },
+        {
+          "point": "扣减系数=0.6：1天<9，2.2h<18h，双不达标",
+          "construction": "断言表3.salary_coefficient=0.60，表4.deduction_factor=0.60"
+        },
+        {
+          "point": "薪资应发按0.6倍：$55×0.6=$33.00，$17×0.6=$10.20，合计$43.20",
+          "construction": "断言表3各应发字段；断言表4 union_total_salary=43.20"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_prepayment_deduction",
+      "case_name_cn": "公会预提扣减：union_prepayment=20，验证expected_amount公式",
+      "scenario_desc": "上半月周期(20260401-20260415)，1条有效工作日记录，coins=500000(Level 7)，on_seat_seconds=7920(2.2h)，is_effective_day=1。系数=0.6（1天<9，2.2h<18h，双不达标）。算薪前向salary_prepayments插入公会预提记录：user_id=4559，type=1(公会预提)，trade_id=3894979203，period=20260401，credit_amount=20。算薪后验证表4.union_prepayment=20.0，并验证expected_amount公式：union_total_salary + motivation + sub_trade_share - union_prepayment(20) - all_anchor_prepayment = expected_amount。测试后自动删除预提记录还原环境。",
+      "case_purpose": "验证公会预提(prepayment_type=1)：算薪时正确读取salary_prepayments并将union_prepayment=20扣入expected_amount；这是expected_amount公式中预提扣减项首次通过自动化验证",
+      "anchor_id": "4559",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260401", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "4559",
+          "prepayment_type": 1,
+          "trade_id": "3894979203",
+          "period": 20260401,
+          "credit_amount": 20
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "union_total_salary": 79.8,
+        "union_prepayment": 20.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "预提记录正确写入并被算薪读取：表4.union_prepayment=20.0",
+          "construction": "算薪前插入 salary_prepayments(user_id=4559,type=1,credit_amount=20,period=20260401)；断言表4.union_prepayment=20.00"
+        },
+        {
+          "point": "expected_amount公式正确扣减预提：expected_amount = union_total_salary + motivation + sub_trade_share - 20 - all_anchor_prepayment",
+          "construction": "动态读取表4各字段，验证公式左右两侧误差<0.01；union_prepayment=20使expected_amount比无预提时减少$20"
+        },
+        {
+          "point": "测试后自动清理预提记录：teardown删除salary_prepayments中插入的记录",
+          "construction": "_teardown_prepayment 按 user_id+period+prepayment_type 删除，避免污染其他用例"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_anchor_prepayment_deduction",
+      "case_name_cn": "主播预提扣减：anchor_prepayment=10，验证主播收expected_amount公式",
+      "scenario_desc": "上半月周期(20260401-20260415)，anchor_2915（payment_type=2，is_trade_owner=0，普通主播收）。1条记录coins=500000(Level 7)，on_seat_seconds=7920(2.2h)，is_effective_day=1。算薪前向salary_prepayments插入主播预提记录：user_id=2915，type=2(主播预提)，trade_id=30902974，period=20260401，credit_amount=10。算薪后验证表4.anchor_prepayment=10.0，并验证expected_amount公式：anchor_salary - anchor_prepayment = $60.00 - $10.00 = $50.00。测试后自动删除预提记录还原环境。与TC19(公会预提type=1)形成预提类型全覆盖。",
+      "case_purpose": "验证主播预提(prepayment_type=2)：算薪时正确读取salary_prepayments并将anchor_prepayment=10扣入expected_amount；与TC19(公会预提type=1)共同覆盖两种预提类型",
+      "anchor_id": "2915",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260403", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "2915",
+          "prepayment_type": 2,
+          "trade_id": "30902974",
+          "period": 20260401,
+          "credit_amount": 10
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "anchor_salary": 60.0,
+        "anchor_prepayment": 10.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "主播预提记录正确被算薪读取：表4.anchor_prepayment=10.0",
+          "construction": "算薪前插入 salary_prepayments(user_id=2915,type=2,credit_amount=10,period=20260401)；断言表4.anchor_prepayment=10.00"
+        },
+        {
+          "point": "expected_amount公式正确扣减主播预提：anchor_salary - anchor_prepayment = $60.00 - $10.00 = $50.00",
+          "construction": "动态读取表4.anchor_salary和anchor_prepayment，验证公式误差<0.01；与TC19(公会预提)形成两种预提类型全覆盖"
+        },
+        {
+          "point": "测试后自动清理：teardown删除主播预提记录",
+          "construction": "_teardown_prepayment 按 user_id=2915+period+prepayment_type=2 删除"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_in_seattime_zero_with_coins",
+      "case_name_cn": "防御性：coins=500000但on_seat_seconds=0，in_seattime=0.0，系数0.6",
+      "scenario_desc": "上半月周期(20260401-20260415)，anchor_4559。1条记录coins=500000(Level 7)，on_seat_seconds=0，is_effective_day=0。主播本周期有金币收入（礼物来源，非主动上麦）但完全无在席时长。effective_workday=0(<9不达标)，in_seattime=0.0(<18h不达标)，双不达标 → 系数=0.6。验证系统对in_seattime=0不产生除零或空指针等异常，薪资正常按Level 7系数0.6计算：$60/$19.80/$79.80。",
+      "case_purpose": "防御性测试：验证系统在on_seat_seconds全为0（in_seattime=0.0）时仍能正确计算薪资，不会因0值导致运行时异常",
+      "anchor_id": "4559",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260401", "receive_gift_count": 500000, "on_seat_seconds": 0, "is_effective_day": 0 }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 0,
+        "in_seattime": 0.0,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 0.0,
+        "work_days": 0,
+        "union_total_salary": 79.8
+      },
+      "verification_scenarios": [
+        {
+          "point": "in_seattime=0.0：on_seat_seconds全为0，系统不崩溃，正常生成表3/表4",
+          "construction": "断言表3.in_seattime=0.0，表4.work_hours=0.0；验证MOA执行成功、表3/表4有数据"
+        },
+        {
+          "point": "系数=0.6：0天<9且0.0h<18h，双不达标，命中最低档",
+          "construction": "断言表3.salary_coefficient=0.60，表4.deduction_factor=0.60"
+        },
+        {
+          "point": "薪资按Level 7系数0.6正常计算：$100×0.6=$60.00，$33×0.6=$19.80，合计$79.80",
+          "construction": "断言表3各应发字段；断言表4 union_total_salary=79.80"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_level9_high_tier_exempt",
+      "case_name_cn": "Level 9 高等级豁免：coins=1,008,000，等级表$201/$54，系数1.0",
+      "scenario_desc": "上半月周期(20260401-20260415)，anchor_4559。1条记录coins=1008000(Level 9)，on_seat_seconds=7920(2.2h)，is_effective_day=1。Level 9(coins≥1,008,000)满足等级豁免条件(Level≥8) → 系数=1.0，直接跳过三档规则。按薪资等级明细表Level 9原始值：anchor_salary_raw=$201，union_salary_raw=$54，总薪资$255。应发=$201×1.0=$201.00，$54×1.0=$54.00，合计$255.00。延伸TC03(Level 8豁免)，验证Level 9的等级表查找值与系数豁免逻辑均正确。",
+      "case_purpose": "验证Level 9高等级：等级表查找返回正确的$201/$54原始值，且Level 9≥8触发等级豁免(系数1.0)；目前最高已测等级为Level 8(TC03)，本用例补充Level 9覆盖",
+      "anchor_id": "4559",
+      "period_start": "20260401",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260401", "receive_gift_count": 1008000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 9,
+        "salary_coefficient": 1.0,
+        "coin_income": 1008000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 201.0,
+        "union_salary_raw": 54.0,
+        "anchor_salary_payable": 201.0,
+        "union_salary_payable": 54.0,
+        "total_salary_payable": 255.0
+      },
+      "expected_t4": {
+        "salary_level": 9,
+        "deduction_factor": 1.0,
+        "coin_income": 1008000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "union_total_salary": 255.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "Level 9等级命中：coins=1,008,000恰好达到Level 9阈值；等级表返回anchor_raw=$201，union_raw=$54",
+          "construction": "断言表3.salary_level=9，anchor_salary_raw=201.00，union_salary_raw=54.00"
+        },
+        {
+          "point": "Level 9≥8触发等级豁免：系数=1.0（不走三档规则），1天<9/2.2h<18h均不影响结果",
+          "construction": "断言表3.salary_coefficient=1.00，表4.deduction_factor=1.00；验证豁免条件不依赖工作日/时长"
+        },
+        {
+          "point": "薪资全额应发：$201×1.0=$201.00，$54×1.0=$54.00，合计$255.00",
+          "construction": "断言表3各应发字段；断言表4 union_total_salary=255.00"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_owner_union_prepayment_deduction",
+      "case_name_cn": "公会长场景公会预提扣减：union_prepayment=20，验证expected_amount公式",
+      "case_name_en": "Guild owner with union prepayment deduction: union_prepayment=20 validates expected_amount formula",
+      "scenario_desc": "上半月周期(20260501-20260515)，主播3966（payment_type=2，is_trade_owner=1，公会长）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6（1天<9且2.2h<18h）。算薪前插入公会预提记录：salary_prepayments(user_id=3966, prepayment_type=1, period=20260501, credit_amount=20)。算薪后校验表4.union_prepayment=20，并按公会长公式动态校验expected_amount。注意：union_commission/union_total_salary在公会长场景下是聚合口径，不做固定值断言。",
+      "case_purpose": "补齐 payment_type=2 且 is_trade_owner=1 场景下的公会预提(type=1)扣减覆盖，验证 union_prepayment 正确进入 expected_amount 公式并影响最终应得金额",
+      "anchor_id": "3966",
+      "period_start": "20260501",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260503", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "3966",
+          "prepayment_type": 1,
+          "trade_id": "30902974",
+          "period": 20260501,
+          "credit_amount": 20
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "union_prepayment": 20.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "公会预提写入与读取正确：表4.union_prepayment=20.0",
+          "construction": "算薪前插入salary_prepayments(type=1)；断言表4.union_prepayment=20.00"
+        },
+        {
+          "point": "expected_amount按公会长公式动态校验并扣减union_prepayment",
+          "construction": "expected_amount = union_commission + sub_trade_share + motivation + owner_anchor_salary - union_prepayment - anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=3966 + period=20260501 + prepayment_type=1 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_owner_anchor_prepayment_deduction",
+      "case_name_cn": "公会长场景主播预提扣减：anchor_prepayment=10，验证expected_amount公式",
+      "case_name_en": "Guild owner with anchor prepayment deduction: anchor_prepayment=10 validates expected_amount formula",
+      "scenario_desc": "上半月周期(20260501-20260515)，主播3966（payment_type=2，is_trade_owner=1，公会长）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前插入主播预提记录：salary_prepayments(user_id=3966, prepayment_type=2, period=20260501, credit_amount=10)。算薪后校验表4.anchor_prepayment=10，并按公会长公式动态校验expected_amount。注意：union_commission/union_total_salary为聚合口径，不做固定值断言。",
+      "case_purpose": "补齐 payment_type=2 且 is_trade_owner=1 场景下的主播预提(type=2)扣减覆盖，验证 anchor_prepayment 正确进入 expected_amount 公式并影响最终应得金额",
+      "anchor_id": "3966",
+      "period_start": "20260501",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260503", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "3966",
+          "prepayment_type": 2,
+          "trade_id": "30902974",
+          "period": 20260501,
+          "credit_amount": 10
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "anchor_prepayment": 10.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "主播预提写入与读取正确：表4.anchor_prepayment=10.0",
+          "construction": "算薪前插入salary_prepayments(type=2)；断言表4.anchor_prepayment=10.00"
+        },
+        {
+          "point": "expected_amount按公会长公式动态校验并扣减anchor_prepayment",
+          "construction": "expected_amount = union_commission + sub_trade_share + motivation + owner_anchor_salary - union_prepayment - anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=3966 + period=20260501 + prepayment_type=2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_owner_double_prepayment_deduction",
+      "case_name_cn": "公会长场景双预提扣减：union=20 + anchor=10，验证expected_amount公式",
+      "case_name_en": "Guild owner with dual prepayment deductions validates expected_amount formula",
+      "scenario_desc": "上半月周期(20260501-20260515)，主播3966（payment_type=2，is_trade_owner=1，公会长）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前同时插入两条预提：公会预提(type=1, credit_amount=20) + 主播预提(type=2, credit_amount=10)。算薪后验证表4两个预提字段都正确读取，并按公会长公式动态校验expected_amount。注意：union_commission/union_total_salary在公会长场景下为聚合口径，不做固定值断言。",
+      "case_purpose": "补齐 payment_type=2 且 is_trade_owner=1 场景下双预提同时存在的扣减覆盖，验证 union_prepayment 与 anchor_prepayment 可同时参与 expected_amount 公式计算",
+      "anchor_id": "3966",
+      "period_start": "20260501",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260503", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayments": [
+          {
+            "user_id": "3966",
+            "prepayment_type": 1,
+            "trade_id": "30902974",
+            "period": 20260501,
+            "credit_amount": 20
+          },
+          {
+            "user_id": "3966",
+            "prepayment_type": 2,
+            "trade_id": "30902974",
+            "period": 20260501,
+            "credit_amount": 10
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "union_prepayment": 20.0,
+        "anchor_prepayment": 10.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "双预提写入与读取正确：表4.union_prepayment=20.0 且 anchor_prepayment=10.0",
+          "construction": "算薪前分别插入salary_prepayments(type=1/type=2)；断言表4两个预提字段分别为20.00与10.00"
+        },
+        {
+          "point": "expected_amount按公会长公式动态校验并同时扣减两类预提",
+          "construction": "expected_amount = union_commission + sub_trade_share + motivation + owner_anchor_salary - union_prepayment - anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理两条预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=3966 + period=20260501 + prepayment_type=1/2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_receive_double_prepayment_deduction",
+      "case_name_cn": "公会收入口径双预提扣减：union=20 + all_anchor=10，验证expected_amount公式",
+      "case_name_en": "Union-receive mode with dual prepayment deductions validates expected_amount formula",
+      "scenario_desc": "上半月周期(20260501-20260515)，主播4559（payment_type=1，is_trade_owner=1，公会收入口径）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前同时插入两条预提：公会预提(type=1, credit_amount=20) + 主播预提(type=2, credit_amount=10)。算薪后校验表4.union_prepayment=20、all_anchor_prepayment=10，并按payment_type=1公式动态校验expected_amount。",
+      "case_purpose": "补齐 payment_type=1 场景下双预提同时存在的扣减覆盖，验证 union_prepayment 与 all_anchor_prepayment 可同时参与 expected_amount 计算",
+      "anchor_id": "4559",
+      "period_start": "20260501",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260503", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayments": [
+          {
+            "user_id": "4559",
+            "prepayment_type": 1,
+            "trade_id": "3894979203",
+            "period": 20260501,
+            "credit_amount": 20
+          },
+          {
+            "user_id": "4559",
+            "prepayment_type": 2,
+            "trade_id": "3894979203",
+            "period": 20260501,
+            "credit_amount": 10
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "union_total_salary": 79.8,
+        "union_prepayment": 20.0,
+        "all_anchor_prepayment": 10.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "双预提字段正确：表4.union_prepayment=20.0 且 all_anchor_prepayment=10.0",
+          "construction": "算薪前插入salary_prepayments(type=1/type=2)；断言表4两个字段分别为20.00与10.00"
+        },
+        {
+          "point": "expected_amount按payment_type=1公式动态校验并同时扣减两类预提",
+          "construction": "expected_amount = union_commission + sub_trade_share + motivation - union_prepayment - all_anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理两条预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=4559 + period=20260501 + prepayment_type=1/2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_regular_anchor_double_prepayment_deduction",
+      "case_name_cn": "普通主播场景双预提输入：union=20 + anchor=10，仅anchor预提影响expected_amount",
+      "case_name_en": "Regular anchor with dual prepayment input where only anchor prepayment affects expected_amount",
+      "scenario_desc": "上半月周期(20260501-20260515)，主播2915（payment_type=2，is_trade_owner=0，普通主播收）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前同时插入两条预提：公会预提(type=1, credit_amount=20) + 主播预提(type=2, credit_amount=10)。算薪后校验表4.anchor_prepayment=10，并按普通主播公式动态校验expected_amount=anchor_salary-anchor_prepayment。该场景用于验证非适用的union预提不会影响普通主播应得金额公式。",
+      "case_purpose": "补齐 payment_type=2 且 is_trade_owner=0 场景下的双预提输入覆盖，验证 expected_amount 仅受 anchor_prepayment 影响，避免非适用字段误扣减",
+      "anchor_id": "2915",
+      "period_start": "20260501",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260503", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayments": [
+          {
+            "user_id": "2915",
+            "prepayment_type": 1,
+            "trade_id": "30902974",
+            "period": 20260501,
+            "credit_amount": 20
+          },
+          {
+            "user_id": "2915",
+            "prepayment_type": 2,
+            "trade_id": "30902974",
+            "period": 20260501,
+            "credit_amount": 10
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "anchor_salary": 60.0,
+        "anchor_prepayment": 10.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "双预提输入可被系统接收：普通主播口径下有效扣减项为anchor_prepayment",
+          "construction": "算薪前插入salary_prepayments(type=1/type=2)；断言表4.anchor_prepayment=10.00"
+        },
+        {
+          "point": "expected_amount按普通主播公式动态校验：anchor_salary - anchor_prepayment",
+          "construction": "expected_amount = anchor_salary - anchor_prepayment；动态读取字段验证误差<0.01，确保不被union预提误扣减"
+        },
+        {
+          "point": "测试后自动清理两条预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=2915 + period=20260501 + prepayment_type=1/2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_non_owner_double_prepayment_deduction",
+      "case_name_cn": "公会收-非会长双预提输入：union不入账，anchor_prepayment扣减expected_amount",
+      "case_name_en": "Union-receive non-owner with dual prepayment input where anchor_prepayment is deducted",
+      "scenario_desc": "上半月周期(20260501-20260515)，主播8250（payment_type=1，is_trade_owner=0，公会收-非会长）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前同时插入两条预提：公会预提(type=1, credit_amount=20) + 主播预提(type=2, credit_amount=10)。实际算薪结果显示：union_prepayment/all_anchor_prepayment均为0，anchor_prepayment=10，并按非会长口径公式动态校验expected_amount。",
+      "case_purpose": "补齐 payment_type=1 且 is_trade_owner=0 场景下双预提输入覆盖，验证该口径下 union_prepayment 不入账，扣减项落在 anchor_prepayment",
+      "anchor_id": "8250",
+      "period_start": "20260501",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260503", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayments": [
+          {
+            "user_id": "8250",
+            "prepayment_type": 1,
+            "trade_id": "4182792688",
+            "period": 20260501,
+            "credit_amount": 20
+          },
+          {
+            "user_id": "8250",
+            "prepayment_type": 2,
+            "trade_id": "4182792688",
+            "period": 20260501,
+            "credit_amount": 10
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "union_total_salary": 79.8,
+        "union_prepayment": 0.0,
+        "all_anchor_prepayment": 0.0,
+        "anchor_prepayment": 10.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "双预提输入后字段口径验证：表4.union_prepayment=0.0、all_anchor_prepayment=0.0、anchor_prepayment=10.0",
+          "construction": "算薪前插入salary_prepayments(type=1/type=2)；断言非会长口径下有效扣减落在anchor_prepayment"
+        },
+        {
+          "point": "expected_amount按payment_type=1非会长公式动态校验",
+          "construction": "expected_amount = union_total_salary + sub_trade_share + motivation - union_prepayment - anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理两条预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=8250 + period=20260501 + prepayment_type=1/2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_regular_anchor_union_prepayment_ignored",
+      "case_name_cn": "普通主播仅插公会预提：union_prepayment不入账，不影响expected_amount",
+      "case_name_en": "Regular anchor with union prepayment only where union_prepayment is ignored",
+      "scenario_desc": "上半月周期(20260501-20260515)，主播2915（payment_type=2，is_trade_owner=0，普通主播收）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前仅插入公会预提(type=1, credit_amount=20)。算薪后验证普通主播口径下 union_prepayment 不入账（为0），anchor_prepayment为0，并按公式 expected_amount = anchor_salary - anchor_prepayment 动态校验。",
+      "case_purpose": "补齐 payment_type=2 且 is_trade_owner=0 场景下“仅公会预提输入”的防误扣覆盖，验证非适用预提不会污染普通主播应得薪资",
+      "anchor_id": "2915",
+      "period_start": "20260501",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260503", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "2915",
+          "prepayment_type": 1,
+          "trade_id": "30902974",
+          "period": 20260501,
+          "credit_amount": 20
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "anchor_salary": 60.0,
+        "union_prepayment": 0.0,
+        "anchor_prepayment": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "非适用预提不入账：仅插type=1时，普通主播口径下union_prepayment仍为0",
+          "construction": "算薪前插入salary_prepayments(type=1)；断言表4.union_prepayment=0.00，anchor_prepayment=0.00"
+        },
+        {
+          "point": "expected_amount保持普通主播公式：anchor_salary - anchor_prepayment",
+          "construction": "动态读取表4字段验证公式误差<0.01，确认未被公会预提误扣减"
+        },
+        {
+          "point": "测试后自动清理预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=2915 + period=20260501 + prepayment_type=1 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_non_owner_union_prepayment_ignored",
+      "case_name_cn": "公会收-非会长仅插公会预提：union_prepayment不入账",
+      "case_name_en": "Union-receive non-owner with union prepayment only where union_prepayment is ignored",
+      "scenario_desc": "上半月周期(20260501-20260515)，主播8250（payment_type=1，is_trade_owner=0，公会收-非会长）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前仅插入公会预提(type=1, credit_amount=20)。算薪后验证 union_prepayment 不入账（为0），anchor_prepayment/all_anchor_prepayment均为0，并按非会长口径公式动态校验expected_amount。",
+      "case_purpose": "补齐 payment_type=1 且 is_trade_owner=0 场景下“仅公会预提输入”的防误扣覆盖，明确 union_prepayment 在该口径下不会直接扣减",
+      "anchor_id": "8250",
+      "period_start": "20260501",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260503", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "8250",
+          "prepayment_type": 1,
+          "trade_id": "4182792688",
+          "period": 20260501,
+          "credit_amount": 20
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "union_total_salary": 79.8,
+        "union_prepayment": 0.0,
+        "anchor_prepayment": 0.0,
+        "all_anchor_prepayment": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "非会长口径下仅公会预提不入账：union_prepayment=0.0",
+          "construction": "算薪前插入salary_prepayments(type=1)；断言表4.union_prepayment=0.00 且 anchor/all_anchor 预提均为0.00"
+        },
+        {
+          "point": "expected_amount按非会长公式动态校验且不受公会预提影响",
+          "construction": "expected_amount = union_total_salary + sub_trade_share + motivation - union_prepayment - anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=8250 + period=20260501 + prepayment_type=1 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_regular_anchor_anchor_prepayment_deduction_half2",
+      "case_name_cn": "普通主播下半月主播预提扣减：anchor_prepayment=10，验证跨周期稳定性",
+      "case_name_en": "Regular anchor half2 anchor prepayment deduction validates cross-cycle stability",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播2915（payment_type=2，is_trade_owner=0，普通主播收）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前插入主播预提(type=2, credit_amount=10)。算薪后校验表4.anchor_prepayment=10，并按普通主播公式动态校验expected_amount=anchor_salary-anchor_prepayment，验证与上半月同口径结果一致。",
+      "case_purpose": "补齐 payment_type=2 且 is_trade_owner=0 在下半月周期的预提扣减覆盖，验证周期起点从1号切到16号后公式与扣减行为稳定",
+      "anchor_id": "2915",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "2915",
+          "prepayment_type": 2,
+          "trade_id": "30902974",
+          "period": 20260516,
+          "credit_amount": 10
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "anchor_salary": 60.0,
+        "anchor_prepayment": 10.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "下半月周期仍正确读取主播预提：表4.anchor_prepayment=10.0",
+          "construction": "算薪前插入salary_prepayments(type=2)；断言表4.anchor_prepayment=10.00"
+        },
+        {
+          "point": "expected_amount按普通主播公式稳定扣减",
+          "construction": "expected_amount = anchor_salary - anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=2915 + period=20260516 + prepayment_type=2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_owner_double_prepayment_deduction_half2",
+      "case_name_cn": "公会长下半月双预提扣减：union=20 + anchor=10，验证跨周期稳定性",
+      "case_name_en": "Guild owner half2 dual prepayment deductions validate cross-cycle stability",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播3966（payment_type=2，is_trade_owner=1，公会长）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前同时插入两条预提：公会预提(type=1, credit_amount=20) + 主播预提(type=2, credit_amount=10)。算薪后校验表4.union_prepayment=20、anchor_prepayment=10，并按公会长公式动态校验expected_amount，验证与上半月同口径一致。",
+      "case_purpose": "补齐 payment_type=2 且 is_trade_owner=1 在下半月周期的双预提扣减覆盖，验证 union_prepayment 与 anchor_prepayment 在跨周期场景仍同时生效",
+      "anchor_id": "3966",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayments": [
+          {
+            "user_id": "3966",
+            "prepayment_type": 1,
+            "trade_id": "30902974",
+            "period": 20260516,
+            "credit_amount": 20
+          },
+          {
+            "user_id": "3966",
+            "prepayment_type": 2,
+            "trade_id": "30902974",
+            "period": 20260516,
+            "credit_amount": 10
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "union_prepayment": 20.0,
+        "anchor_prepayment": 10.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "下半月周期双预提字段正确：表4.union_prepayment=20.0 且 anchor_prepayment=10.0",
+          "construction": "算薪前插入salary_prepayments(type=1/type=2)；断言表4两个预提字段分别为20.00与10.00"
+        },
+        {
+          "point": "expected_amount按公会长公式动态校验并同时扣减两类预提",
+          "construction": "expected_amount = union_commission + sub_trade_share + motivation + owner_anchor_salary - union_prepayment - anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理两条预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=3966 + period=20260516 + prepayment_type=1/2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_regular_anchor_union_prepayment_ignored_half2",
+      "case_name_cn": "普通主播下半月仅插公会预提：union_prepayment不入账，不影响expected_amount",
+      "case_name_en": "Regular anchor half2 with union prepayment only where union_prepayment is ignored",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播2915（payment_type=2，is_trade_owner=0，普通主播收）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前仅插入公会预提(type=1, credit_amount=20)。算薪后验证普通主播口径下 union_prepayment 不入账（为0），anchor_prepayment为0，并按公式 expected_amount = anchor_salary - anchor_prepayment 动态校验，验证与上半月行为一致。",
+      "case_purpose": "补齐 payment_type=2 且 is_trade_owner=0 在下半月周期的“仅公会预提输入”防误扣覆盖，验证非适用预提不会影响普通主播应得薪资",
+      "anchor_id": "2915",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "2915",
+          "prepayment_type": 1,
+          "trade_id": "30902974",
+          "period": 20260516,
+          "credit_amount": 20
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "anchor_salary": 60.0,
+        "union_prepayment": 0.0,
+        "anchor_prepayment": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "下半月非适用预提不入账：仅插type=1时，普通主播口径下union_prepayment仍为0",
+          "construction": "算薪前插入salary_prepayments(type=1)；断言表4.union_prepayment=0.00，anchor_prepayment=0.00"
+        },
+        {
+          "point": "expected_amount保持普通主播公式：anchor_salary - anchor_prepayment",
+          "construction": "动态读取表4字段验证公式误差<0.01，确认未被公会预提误扣减"
+        },
+        {
+          "point": "测试后自动清理预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=2915 + period=20260516 + prepayment_type=1 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_non_owner_union_prepayment_ignored_half2",
+      "case_name_cn": "公会收-非会长下半月仅插公会预提：union_prepayment不入账",
+      "case_name_en": "Union-receive non-owner half2 with union prepayment only where union_prepayment is ignored",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播8250（payment_type=1，is_trade_owner=0，公会收-非会长）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前仅插入公会预提(type=1, credit_amount=20)。算薪后验证 union_prepayment 不入账（为0），anchor_prepayment/all_anchor_prepayment均为0，并按非会长口径公式动态校验expected_amount，验证与上半月行为一致。",
+      "case_purpose": "补齐 payment_type=1 且 is_trade_owner=0 在下半月周期的“仅公会预提输入”防误扣覆盖，验证 union_prepayment 在该口径下不会直接扣减",
+      "anchor_id": "8250",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "8250",
+          "prepayment_type": 1,
+          "trade_id": "4182792688",
+          "period": 20260516,
+          "credit_amount": 20
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "union_total_salary": 79.8,
+        "union_prepayment": 0.0,
+        "anchor_prepayment": 0.0,
+        "all_anchor_prepayment": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "下半月非会长口径下仅公会预提不入账：union_prepayment=0.0",
+          "construction": "算薪前插入salary_prepayments(type=1)；断言表4.union_prepayment=0.00 且 anchor/all_anchor 预提均为0.00"
+        },
+        {
+          "point": "expected_amount按非会长公式动态校验且不受公会预提影响",
+          "construction": "expected_amount = union_total_salary + sub_trade_share + motivation - union_prepayment - anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=8250 + period=20260516 + prepayment_type=1 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_regular_anchor_anchor_prepayment_period_isolation",
+      "case_name_cn": "普通主播预提按周期隔离：同主播跨周期预提并存，仅当前周期生效",
+      "case_name_en": "Regular anchor prepayment period isolation with only current period effective",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播2915（payment_type=2，is_trade_owner=0，普通主播收）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前插入两条同类型主播预提(type=2)：当前周期period=20260516, credit_amount=10；历史周期period=20260501, credit_amount=99。算薪后验证只读取当前周期预提，表4.anchor_prepayment=10，并按普通主播公式动态校验expected_amount。",
+      "case_purpose": "补齐预提按 salary_period 隔离的抗干扰覆盖，验证同主播跨周期残留预提不会串到当前周期算薪",
+      "anchor_id": "2915",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayments": [
+          {
+            "user_id": "2915",
+            "prepayment_type": 2,
+            "trade_id": "30902974",
+            "period": 20260516,
+            "credit_amount": 10
+          },
+          {
+            "user_id": "2915",
+            "prepayment_type": 2,
+            "trade_id": "30902974",
+            "period": 20260501,
+            "credit_amount": 99
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "anchor_salary": 60.0,
+        "anchor_prepayment": 10.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "同主播跨周期两条预提并存时，仅当前周期预提入账",
+          "construction": "算薪前插入period=20260516(type=2,10)和period=20260501(type=2,99)；断言表4.anchor_prepayment=10.00"
+        },
+        {
+          "point": "expected_amount按普通主播公式动态校验",
+          "construction": "expected_amount = anchor_salary - anchor_prepayment；动态读取字段验证误差<0.01，确保未读入跨周期99"
+        },
+        {
+          "point": "测试后自动清理两条预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=2915 + period=20260516/20260501 + prepayment_type=2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_owner_double_prepayment_period_isolation",
+      "case_name_cn": "公会长双预提按周期隔离：跨周期预提并存，仅当前周期生效",
+      "case_name_en": "Guild owner dual prepayment period isolation with only current period effective",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播3966（payment_type=2，is_trade_owner=1，公会长）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前插入四条预提：当前周期period=20260516的type=1/2分别20和10；历史周期period=20260501的type=1/2分别200和100。算薪后验证只读取当前周期，表4.union_prepayment=20、anchor_prepayment=10，并按公会长公式动态校验expected_amount。",
+      "case_purpose": "补齐公会长场景双预提按 salary_period 隔离的抗干扰覆盖，验证跨周期大额残留不会串到当前周期",
+      "anchor_id": "3966",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayments": [
+          {
+            "user_id": "3966",
+            "prepayment_type": 1,
+            "trade_id": "30902974",
+            "period": 20260516,
+            "credit_amount": 20
+          },
+          {
+            "user_id": "3966",
+            "prepayment_type": 2,
+            "trade_id": "30902974",
+            "period": 20260516,
+            "credit_amount": 10
+          },
+          {
+            "user_id": "3966",
+            "prepayment_type": 1,
+            "trade_id": "30902974",
+            "period": 20260501,
+            "credit_amount": 200
+          },
+          {
+            "user_id": "3966",
+            "prepayment_type": 2,
+            "trade_id": "30902974",
+            "period": 20260501,
+            "credit_amount": 100
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "union_prepayment": 20.0,
+        "anchor_prepayment": 10.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "同主播跨周期四条预提并存时，仅当前周期type=1/2入账",
+          "construction": "算薪前插入period=20260516(type1=20,type2=10)和period=20260501(type1=200,type2=100)；断言表4.union_prepayment=20.00、anchor_prepayment=10.00"
+        },
+        {
+          "point": "expected_amount按公会长公式动态校验且不受跨周期大额预提干扰",
+          "construction": "expected_amount = union_commission + sub_trade_share + motivation + owner_anchor_salary - union_prepayment - anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理四条预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=3966 + period=20260516/20260501 + prepayment_type=1/2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_regular_anchor_historical_prepayment_not_affect_current",
+      "case_name_cn": "普通主播历史周期预提不影响当前周期：当前无预提应不扣减",
+      "case_name_en": "Regular anchor historical prepayment does not affect current cycle",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播2915（payment_type=2，is_trade_owner=0，普通主播收）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前仅插入历史周期预提：period=20260501, type=2, credit_amount=99；当前周期(20260516)不插任何预提。算薪后验证当前周期不受历史残留影响，表4.anchor_prepayment=0，并按普通主播公式动态校验expected_amount=anchor_salary。",
+      "case_purpose": "补齐“当前周期无预提 + 历史周期有预提”的抗干扰覆盖，验证普通主播场景不会串周期误扣减",
+      "anchor_id": "2915",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "2915",
+          "prepayment_type": 2,
+          "trade_id": "30902974",
+          "period": 20260501,
+          "credit_amount": 99
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "anchor_salary": 60.0,
+        "anchor_prepayment": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "仅存在历史周期预提时，当前周期不入账",
+          "construction": "算薪前插入period=20260501(type=2,99)；断言表4.anchor_prepayment=0.00"
+        },
+        {
+          "point": "expected_amount按普通主播公式动态校验且不受历史预提影响",
+          "construction": "expected_amount = anchor_salary - anchor_prepayment；动态读取字段验证误差<0.01，结果应为60.00"
+        },
+        {
+          "point": "测试后自动清理历史预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=2915 + period=20260501 + prepayment_type=2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_owner_historical_prepayment_not_affect_current",
+      "case_name_cn": "公会长历史周期预提不影响当前周期：当前无预提应不扣减",
+      "case_name_en": "Guild owner historical prepayment does not affect current cycle",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播3966（payment_type=2，is_trade_owner=1，公会长）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前仅插入历史周期两条预提：period=20260501的type=1(200)与type=2(100)；当前周期(20260516)不插预提。算薪后验证当前周期不受历史残留影响，表4.union_prepayment=0、anchor_prepayment=0，并按公会长公式动态校验expected_amount。",
+      "case_purpose": "补齐公会长场景“当前无预提 + 历史有预提”的抗干扰覆盖，验证跨周期残留不会串入当前周期扣减",
+      "anchor_id": "3966",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayments": [
+          {
+            "user_id": "3966",
+            "prepayment_type": 1,
+            "trade_id": "30902974",
+            "period": 20260501,
+            "credit_amount": 200
+          },
+          {
+            "user_id": "3966",
+            "prepayment_type": 2,
+            "trade_id": "30902974",
+            "period": 20260501,
+            "credit_amount": 100
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "union_prepayment": 0.0,
+        "anchor_prepayment": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "仅存在历史周期type=1/2预提时，当前周期两类预提均不入账",
+          "construction": "算薪前插入period=20260501(type1=200,type2=100)；断言表4.union_prepayment=0.00、anchor_prepayment=0.00"
+        },
+        {
+          "point": "expected_amount按公会长公式动态校验且不受历史预提影响",
+          "construction": "expected_amount = union_commission + sub_trade_share + motivation + owner_anchor_salary - union_prepayment - anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理历史预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=3966 + period=20260501 + prepayment_type=1/2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_regular_anchor_zero_anchor_prepayment_no_effect",
+      "case_name_cn": "普通主播零金额主播预提：credit_amount=0 不应影响expected_amount",
+      "case_name_en": "Regular anchor zero anchor prepayment should not affect expected amount",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播2915（payment_type=2，is_trade_owner=0，普通主播收）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前插入主播预提(type=2)但credit_amount=0。算薪后验证表4.anchor_prepayment=0，并按普通主播公式动态校验expected_amount不被误扣。",
+      "case_purpose": "补齐零金额预提的防御性覆盖，验证 credit_amount=0 不会改变普通主播应得金额",
+      "anchor_id": "2915",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "2915",
+          "prepayment_type": 2,
+          "trade_id": "30902974",
+          "period": 20260516,
+          "credit_amount": 0
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "anchor_salary": 60.0,
+        "anchor_prepayment": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "零金额主播预提不产生扣减：表4.anchor_prepayment=0.0",
+          "construction": "算薪前插入salary_prepayments(type=2, credit_amount=0)；断言表4.anchor_prepayment=0.00"
+        },
+        {
+          "point": "expected_amount保持普通主播公式结果：anchor_salary - 0",
+          "construction": "expected_amount = anchor_salary - anchor_prepayment；动态读取字段验证误差<0.01，结果应为60.00"
+        },
+        {
+          "point": "测试后自动清理预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=2915 + period=20260516 + prepayment_type=2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_owner_zero_double_prepayment_no_effect",
+      "case_name_cn": "公会长零金额双预提：type1/type2=0 不应影响expected_amount",
+      "case_name_en": "Guild owner zero dual prepayments should not affect expected amount",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播3966（payment_type=2，is_trade_owner=1，公会长）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前插入两条零金额预提：type=1 credit_amount=0，type=2 credit_amount=0。算薪后验证表4.union_prepayment=0、anchor_prepayment=0，并按公会长公式动态校验expected_amount不被误扣。",
+      "case_purpose": "补齐公会长场景零金额双预提防御性覆盖，验证零值不会改变扣减结果或破坏公式计算",
+      "anchor_id": "3966",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayments": [
+          {
+            "user_id": "3966",
+            "prepayment_type": 1,
+            "trade_id": "30902974",
+            "period": 20260516,
+            "credit_amount": 0
+          },
+          {
+            "user_id": "3966",
+            "prepayment_type": 2,
+            "trade_id": "30902974",
+            "period": 20260516,
+            "credit_amount": 0
+          }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "union_prepayment": 0.0,
+        "anchor_prepayment": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "零金额双预提不产生扣减：表4.union_prepayment=0.0 且 anchor_prepayment=0.0",
+          "construction": "算薪前插入salary_prepayments(type=1/2, credit_amount=0)；断言表4两个字段均为0.00"
+        },
+        {
+          "point": "expected_amount按公会长公式动态校验且不受零值预提影响",
+          "construction": "expected_amount = union_commission + sub_trade_share + motivation + owner_anchor_salary - union_prepayment - anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理零金额预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=3966 + period=20260516 + prepayment_type=1/2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_regular_anchor_anchor_prepayment_trade_id_mismatch",
+      "case_name_cn": "普通主播错误trade_id预提：trade_id不匹配时不入账",
+      "case_name_en": "Regular anchor mismatched trade_id prepayment is ignored",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播2915（payment_type=2，is_trade_owner=0，普通主播收）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前插入主播预提(type=2, credit_amount=10)，但trade_id使用与主播不匹配值99999999。算薪后验证该预提不被读取（anchor_prepayment=0），并按普通主播公式动态校验expected_amount。",
+      "case_purpose": "补齐 trade_id 维度抗干扰覆盖，验证普通主播场景下预提读取依赖 trade_id 精确匹配（不匹配即忽略）",
+      "anchor_id": "2915",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "2915",
+          "prepayment_type": 2,
+          "trade_id": "99999999",
+          "period": 20260516,
+          "credit_amount": 10
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "anchor_salary": 60.0,
+        "anchor_prepayment": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "错误trade_id预提不入账：表4.anchor_prepayment=0.0",
+          "construction": "插入trade_id=99999999的type=2预提后，断言表4.anchor_prepayment=0.00"
+        },
+        {
+          "point": "expected_amount按普通主播公式动态校验且不受错误trade_id预提影响",
+          "construction": "expected_amount = anchor_salary - anchor_prepayment；动态读取字段验证误差<0.01，结果应为60.00"
+        },
+        {
+          "point": "测试后自动清理预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=2915 + period=20260516 + prepayment_type=2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_owner_union_prepayment_trade_id_mismatch",
+      "case_name_cn": "公会长错误trade_id公会预提：trade_id不匹配时不入账",
+      "case_name_en": "Guild owner mismatched trade_id union prepayment is ignored",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播3966（payment_type=2，is_trade_owner=1，公会长）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前插入公会预提(type=1, credit_amount=20)，但trade_id使用不匹配值99999999。算薪后验证该预提不被读取（union_prepayment=0），并按公会长公式动态校验expected_amount。",
+      "case_purpose": "补齐公会长场景 trade_id 维度抗干扰覆盖，验证 union_prepayment 读取依赖 trade_id 精确匹配（不匹配即忽略）",
+      "anchor_id": "3966",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "3966",
+          "prepayment_type": 1,
+          "trade_id": "99999999",
+          "period": 20260516,
+          "credit_amount": 20
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "union_prepayment": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "错误trade_id公会预提不入账：表4.union_prepayment=0.0",
+          "construction": "插入trade_id=99999999的type=1预提后，断言表4.union_prepayment=0.00"
+        },
+        {
+          "point": "expected_amount按公会长公式动态校验且不受错误trade_id预提影响",
+          "construction": "expected_amount = union_commission + sub_trade_share + motivation + owner_anchor_salary - union_prepayment - anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=3966 + period=20260516 + prepayment_type=1 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_receive_owner_union_prepayment_trade_id_mismatch",
+      "case_name_cn": "公会收-会长错误trade_id公会预提：trade_id不匹配时不入账",
+      "case_name_en": "Union-receive owner mismatched trade_id union prepayment is ignored",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播4559（payment_type=1，is_trade_owner=1，公会收-会长）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前插入公会预提(type=1, credit_amount=20)，但trade_id使用不匹配值99999999。算薪后验证该预提不被读取（union_prepayment=0），并按payment_type=1会长公式动态校验expected_amount。",
+      "case_purpose": "补齐 payment_type=1 会长场景 trade_id 错配覆盖，验证 union_prepayment 读取依赖 trade_id 精确匹配（不匹配即忽略）",
+      "anchor_id": "4559",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "4559",
+          "prepayment_type": 1,
+          "trade_id": "99999999",
+          "period": 20260516,
+          "credit_amount": 20
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "union_total_salary": 79.8,
+        "union_prepayment": 0.0,
+        "all_anchor_prepayment": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "错误trade_id公会预提不入账：表4.union_prepayment=0.0",
+          "construction": "插入trade_id=99999999的type=1预提后，断言表4.union_prepayment=0.00"
+        },
+        {
+          "point": "expected_amount按payment_type=1会长公式动态校验且不受错误trade_id影响",
+          "construction": "expected_amount = union_total_salary + motivation + sub_trade_share - union_prepayment - all_anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=4559 + period=20260516 + prepayment_type=1 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_non_owner_anchor_prepayment_trade_id_mismatch",
+      "case_name_cn": "公会收-非会长错误trade_id主播预提：trade_id不匹配时不入账",
+      "case_name_en": "Union-receive non-owner mismatched trade_id anchor prepayment is ignored",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播8250（payment_type=1，is_trade_owner=0，公会收-非会长）。造1条记录：coins=500000（Level 7），on_seat_seconds=7920（2.2h），is_effective_day=1，命中系数0.6。算薪前插入主播预提(type=2, credit_amount=10)，但trade_id使用不匹配值99999999。算薪后验证该预提不被读取（anchor_prepayment=0），并按payment_type=1非会长公式动态校验expected_amount。",
+      "case_purpose": "补齐 payment_type=1 非会长场景 trade_id 错配覆盖，验证 anchor_prepayment 读取依赖 trade_id 精确匹配",
+      "anchor_id": "8250",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "8250",
+          "prepayment_type": 2,
+          "trade_id": "99999999",
+          "period": 20260516,
+          "credit_amount": 10
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7,
+        "salary_coefficient": 0.6,
+        "coin_income": 500000,
+        "effective_workday": 1,
+        "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0,
+        "union_salary_raw": 33.0,
+        "anchor_salary_payable": 60.0,
+        "union_salary_payable": 19.8,
+        "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7,
+        "deduction_factor": 0.6,
+        "coin_income": 500000,
+        "work_hours": 2.2,
+        "work_days": 1,
+        "union_total_salary": 79.8,
+        "union_prepayment": 0.0,
+        "anchor_prepayment": 0.0,
+        "all_anchor_prepayment": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "错误trade_id主播预提不入账：表4.anchor_prepayment=0.0",
+          "construction": "插入trade_id=99999999的type=2预提后，断言表4.anchor_prepayment=0.00"
+        },
+        {
+          "point": "expected_amount按payment_type=1非会长公式动态校验且不受错误trade_id影响",
+          "construction": "expected_amount = union_total_salary + sub_trade_share + motivation - union_prepayment - anchor_prepayment；动态读取字段验证误差<0.01，结果应为79.80"
+        },
+        {
+          "point": "测试后自动清理预提记录：不污染其他case",
+          "construction": "_teardown_prepayment 按 user_id=8250 + period=20260516 + prepayment_type=2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_receive_owner_double_prepayment_period_isolation",
+      "case_name_cn": "公会收-会长双预提按周期隔离：跨周期并存仅当前周期生效",
+      "case_name_en": "Union-receive owner dual prepayments period isolation",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播4559（payment_type=1，is_trade_owner=1）。造1条记录：coins=500000，seconds=7920，effective=1。算薪前插入四条预提：当前周期period=20260516(type1=20,type2=10)；历史周期period=20260501(type1=200,type2=100)。算薪后验证仅当前周期入账（union_prepayment=20、all_anchor_prepayment=10），并按payment_type=1会长公式动态校验expected_amount。",
+      "case_purpose": "补齐 payment_type=1 会长场景周期隔离覆盖，验证历史周期大额预提不串入当前周期",
+      "anchor_id": "4559",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayments": [
+          { "user_id": "4559", "prepayment_type": 1, "trade_id": "3894979203", "period": 20260516, "credit_amount": 20 },
+          { "user_id": "4559", "prepayment_type": 2, "trade_id": "3894979203", "period": 20260516, "credit_amount": 10 },
+          { "user_id": "4559", "prepayment_type": 1, "trade_id": "3894979203", "period": 20260501, "credit_amount": 200 },
+          { "user_id": "4559", "prepayment_type": 2, "trade_id": "3894979203", "period": 20260501, "credit_amount": 100 }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7, "salary_coefficient": 0.6, "coin_income": 500000, "effective_workday": 1, "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0, "union_salary_raw": 33.0, "anchor_salary_payable": 60.0, "union_salary_payable": 19.8, "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7, "deduction_factor": 0.6, "coin_income": 500000, "work_hours": 2.2, "work_days": 1,
+        "union_total_salary": 79.8, "union_prepayment": 20.0, "all_anchor_prepayment": 10.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "跨周期四条预提并存时，仅当前周期type1/type2入账",
+          "construction": "断言表4.union_prepayment=20.00，all_anchor_prepayment=10.00，历史周期200/100不应串入"
+        },
+        {
+          "point": "expected_amount按payment_type=1会长公式动态校验",
+          "construction": "expected_amount = union_total_salary + motivation + sub_trade_share - union_prepayment - all_anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理四条预提记录",
+          "construction": "_teardown_prepayment 按 user_id=4559 + period=20260516/20260501 + prepayment_type=1/2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_non_owner_anchor_prepayment_period_isolation",
+      "case_name_cn": "公会收-非会长主播预提按周期隔离：跨周期并存仅当前周期生效",
+      "case_name_en": "Union-receive non-owner anchor prepayment period isolation",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播8250（payment_type=1，is_trade_owner=0）。造1条记录：coins=500000，seconds=7920，effective=1。算薪前插入两条主播预提：当前周期period=20260516(type2=10) + 历史周期period=20260501(type2=99)。算薪后验证仅当前周期入账（anchor_prepayment=10），并按payment_type=1非会长公式动态校验expected_amount。",
+      "case_purpose": "补齐 payment_type=1 非会长场景周期隔离覆盖，验证历史主播预提不串入当前周期",
+      "anchor_id": "8250",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayments": [
+          { "user_id": "8250", "prepayment_type": 2, "trade_id": "4182792688", "period": 20260516, "credit_amount": 10 },
+          { "user_id": "8250", "prepayment_type": 2, "trade_id": "4182792688", "period": 20260501, "credit_amount": 99 }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7, "salary_coefficient": 0.6, "coin_income": 500000, "effective_workday": 1, "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0, "union_salary_raw": 33.0, "anchor_salary_payable": 60.0, "union_salary_payable": 19.8, "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7, "deduction_factor": 0.6, "coin_income": 500000, "work_hours": 2.2, "work_days": 1,
+        "union_total_salary": 79.8, "union_prepayment": 0.0, "anchor_prepayment": 10.0, "all_anchor_prepayment": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "跨周期主播预提并存时，仅当前周期type2入账",
+          "construction": "断言表4.anchor_prepayment=10.00，历史周期99不应串入"
+        },
+        {
+          "point": "expected_amount按payment_type=1非会长公式动态校验",
+          "construction": "expected_amount = union_total_salary + sub_trade_share + motivation - union_prepayment - anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理两条预提记录",
+          "construction": "_teardown_prepayment 按 user_id=8250 + period=20260516/20260501 + prepayment_type=2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_receive_owner_zero_double_prepayment_no_effect",
+      "case_name_cn": "公会收-会长零金额双预提：type1/type2=0 不应影响expected_amount",
+      "case_name_en": "Union-receive owner zero dual prepayments no effect",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播4559（payment_type=1，is_trade_owner=1）。造1条记录coins=500000, seconds=7920, effective=1。算薪前插入type1=0与type2=0两条预提。算薪后验证union_prepayment=0、all_anchor_prepayment=0，expected_amount不受影响。",
+      "case_purpose": "补齐 payment_type=1 会长场景零金额预提防御覆盖",
+      "anchor_id": "4559",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayments": [
+          { "user_id": "4559", "prepayment_type": 1, "trade_id": "3894979203", "period": 20260516, "credit_amount": 0 },
+          { "user_id": "4559", "prepayment_type": 2, "trade_id": "3894979203", "period": 20260516, "credit_amount": 0 }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7, "salary_coefficient": 0.6, "coin_income": 500000, "effective_workday": 1, "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0, "union_salary_raw": 33.0, "anchor_salary_payable": 60.0, "union_salary_payable": 19.8, "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7, "deduction_factor": 0.6, "coin_income": 500000, "work_hours": 2.2, "work_days": 1,
+        "union_total_salary": 79.8, "union_prepayment": 0.0, "all_anchor_prepayment": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "零金额双预提不扣减：union_prepayment/all_anchor_prepayment均为0",
+          "construction": "断言表4.union_prepayment=0.00，all_anchor_prepayment=0.00"
+        },
+        {
+          "point": "expected_amount按payment_type=1会长公式动态校验",
+          "construction": "expected_amount = union_total_salary + motivation + sub_trade_share - union_prepayment - all_anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理零金额预提记录",
+          "construction": "_teardown_prepayment 按 user_id=4559 + period=20260516 + prepayment_type=1/2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_non_owner_zero_anchor_prepayment_no_effect",
+      "case_name_cn": "公会收-非会长零金额主播预提：type2=0 不应影响expected_amount",
+      "case_name_en": "Union-receive non-owner zero anchor prepayment no effect",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播8250（payment_type=1，is_trade_owner=0）。造1条记录coins=500000, seconds=7920, effective=1。算薪前插入主播预提type2=0。算薪后验证anchor_prepayment=0，expected_amount不受影响。",
+      "case_purpose": "补齐 payment_type=1 非会长场景零金额主播预提防御覆盖",
+      "anchor_id": "8250",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "8250",
+          "prepayment_type": 2,
+          "trade_id": "4182792688",
+          "period": 20260516,
+          "credit_amount": 0
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7, "salary_coefficient": 0.6, "coin_income": 500000, "effective_workday": 1, "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0, "union_salary_raw": 33.0, "anchor_salary_payable": 60.0, "union_salary_payable": 19.8, "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7, "deduction_factor": 0.6, "coin_income": 500000, "work_hours": 2.2, "work_days": 1,
+        "union_total_salary": 79.8, "union_prepayment": 0.0, "anchor_prepayment": 0.0, "all_anchor_prepayment": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "零金额主播预提不扣减：anchor_prepayment=0",
+          "construction": "断言表4.anchor_prepayment=0.00"
+        },
+        {
+          "point": "expected_amount按payment_type=1非会长公式动态校验",
+          "construction": "expected_amount = union_total_salary + sub_trade_share + motivation - union_prepayment - anchor_prepayment；动态读取字段验证误差<0.01，结果应为79.80"
+        },
+        {
+          "point": "测试后自动清理零金额预提记录",
+          "construction": "_teardown_prepayment 按 user_id=8250 + period=20260516 + prepayment_type=2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_receive_owner_mixed_interference",
+      "case_name_cn": "公会收-会长混合干扰：当前正确+当前错误trade_id+历史大额并存",
+      "case_name_en": "Union-receive owner mixed interference with current and historical prepayments",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播4559（payment_type=1，is_trade_owner=1）。造1条记录coins=500000, seconds=7920, effective=1。算薪前插入3条预提：当前周期type1正确trade_id=20；当前周期type2错误trade_id=999；历史周期type2正确trade_id=100。验证仅当前周期且trade_id匹配记录生效。",
+      "case_purpose": "补齐混合干扰组合覆盖，验证 payment_type=1 会长场景下读取顺序为“周期匹配 + trade_id匹配”",
+      "anchor_id": "4559",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayments": [
+          { "user_id": "4559", "prepayment_type": 1, "trade_id": "3894979203", "period": 20260516, "credit_amount": 20 },
+          { "user_id": "4559", "prepayment_type": 2, "trade_id": "99999999", "period": 20260516, "credit_amount": 999 },
+          { "user_id": "4559", "prepayment_type": 2, "trade_id": "3894979203", "period": 20260501, "credit_amount": 100 }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7, "salary_coefficient": 0.6, "coin_income": 500000, "effective_workday": 1, "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0, "union_salary_raw": 33.0, "anchor_salary_payable": 60.0, "union_salary_payable": 19.8, "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7, "deduction_factor": 0.6, "coin_income": 500000, "work_hours": 2.2, "work_days": 1,
+        "union_total_salary": 79.8, "union_prepayment": 20.0, "all_anchor_prepayment": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "混合干扰下仅当前周期且trade_id匹配记录生效",
+          "construction": "断言表4.union_prepayment=20.00，all_anchor_prepayment=0.00"
+        },
+        {
+          "point": "expected_amount按payment_type=1会长公式动态校验",
+          "construction": "expected_amount = union_total_salary + motivation + sub_trade_share - union_prepayment - all_anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理3条预提记录",
+          "construction": "_teardown_prepayment 按 user_id=4559 + period=20260516/20260501 + prepayment_type=1/2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_union_non_owner_mixed_interference",
+      "case_name_cn": "公会收-非会长混合干扰：当前正确+当前错误trade_id+历史大额并存",
+      "case_name_en": "Union-receive non-owner mixed interference with current and historical prepayments",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播8250（payment_type=1，is_trade_owner=0）。造1条记录coins=500000, seconds=7920, effective=1。算薪前插入3条预提：当前周期type2正确trade_id=10；当前周期type1错误trade_id=999；历史周期type2正确trade_id=99。验证仅当前周期且trade_id匹配记录生效。",
+      "case_purpose": "补齐混合干扰组合覆盖，验证 payment_type=1 非会长场景下 anchor_prepayment 的读取稳定性",
+      "anchor_id": "8250",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayments": [
+          { "user_id": "8250", "prepayment_type": 2, "trade_id": "4182792688", "period": 20260516, "credit_amount": 10 },
+          { "user_id": "8250", "prepayment_type": 1, "trade_id": "99999999", "period": 20260516, "credit_amount": 999 },
+          { "user_id": "8250", "prepayment_type": 2, "trade_id": "4182792688", "period": 20260501, "credit_amount": 99 }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7, "salary_coefficient": 0.6, "coin_income": 500000, "effective_workday": 1, "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0, "union_salary_raw": 33.0, "anchor_salary_payable": 60.0, "union_salary_payable": 19.8, "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7, "deduction_factor": 0.6, "coin_income": 500000, "work_hours": 2.2, "work_days": 1,
+        "union_total_salary": 79.8, "union_prepayment": 0.0, "anchor_prepayment": 10.0, "all_anchor_prepayment": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "混合干扰下仅当前周期且trade_id匹配的type2生效",
+          "construction": "断言表4.anchor_prepayment=10.00，union_prepayment=0.00"
+        },
+        {
+          "point": "expected_amount按payment_type=1非会长公式动态校验",
+          "construction": "expected_amount = union_total_salary + sub_trade_share + motivation - union_prepayment - anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理3条预提记录",
+          "construction": "_teardown_prepayment 按 user_id=8250 + period=20260516/20260501 + prepayment_type=1/2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_regular_anchor_negative_anchor_prepayment_behavior",
+      "case_name_cn": "普通主播负值主播预提行为：credit_amount=-10 会按负值入账",
+      "case_name_en": "Regular anchor negative anchor prepayment is booked as negative value",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播2915（payment_type=2，is_trade_owner=0）。造1条记录coins=500000, seconds=7920, effective=1。算薪前插入主播预提type=2且credit_amount=-10。实际算薪表现为负值直接入账（anchor_prepayment=-10），导致expected_amount增加。",
+      "case_purpose": "补齐负值输入行为锁定覆盖，明确当前系统会将负值预提按原值入账并影响expected_amount",
+      "anchor_id": "2915",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "2915",
+          "prepayment_type": 2,
+          "trade_id": "30902974",
+          "period": 20260516,
+          "credit_amount": -10
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7, "salary_coefficient": 0.6, "coin_income": 500000, "effective_workday": 1, "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0, "union_salary_raw": 33.0, "anchor_salary_payable": 60.0, "union_salary_payable": 19.8, "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7, "deduction_factor": 0.6, "coin_income": 500000, "work_hours": 2.2, "work_days": 1,
+        "anchor_salary": 60.0, "anchor_prepayment": -10.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "负值预提按原值入账：anchor_prepayment=-10.0",
+          "construction": "插入credit_amount=-10后，断言表4.anchor_prepayment=-10.00"
+        },
+        {
+          "point": "expected_amount按普通主播公式动态校验（负负得正）",
+          "construction": "expected_amount = anchor_salary - anchor_prepayment；动态读取字段验证误差<0.01，结果应为70.00"
+        },
+        {
+          "point": "测试后自动清理预提记录",
+          "construction": "_teardown_prepayment 按 user_id=2915 + period=20260516 + prepayment_type=2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_regular_anchor_huge_anchor_prepayment_behavior",
+      "case_name_cn": "普通主播超大主播预提行为：credit_amount=99999",
+      "case_name_en": "Regular anchor huge anchor prepayment behavior check",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播2915（payment_type=2，is_trade_owner=0）。造1条记录coins=500000, seconds=7920, effective=1。算薪前插入主播预提type=2且credit_amount=99999，验证是否按原值扣减。",
+      "case_purpose": "补齐超大值输入防御覆盖，验证系统对超大预提的扣减表现",
+      "anchor_id": "2915",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "2915",
+          "prepayment_type": 2,
+          "trade_id": "30902974",
+          "period": 20260516,
+          "credit_amount": 99999
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7, "salary_coefficient": 0.6, "coin_income": 500000, "effective_workday": 1, "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0, "union_salary_raw": 33.0, "anchor_salary_payable": 60.0, "union_salary_payable": 19.8, "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7, "deduction_factor": 0.6, "coin_income": 500000, "work_hours": 2.2, "work_days": 1,
+        "anchor_salary": 60.0, "anchor_prepayment": 99999.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "超大预提按原值入账：anchor_prepayment=99999.0",
+          "construction": "插入credit_amount=99999后，断言表4.anchor_prepayment=99999.00"
+        },
+        {
+          "point": "expected_amount按普通主播公式动态校验（允许为负）",
+          "construction": "expected_amount = anchor_salary - anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理预提记录",
+          "construction": "_teardown_prepayment 按 user_id=2915 + period=20260516 + prepayment_type=2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_regular_anchor_wrong_user_prepayment_ignored",
+      "case_name_cn": "普通主播错误user_id预提：user不匹配时不入账",
+      "case_name_en": "Regular anchor wrong user prepayment is ignored",
+      "scenario_desc": "下半月周期(20260516-20260531)，目标主播2915（payment_type=2，is_trade_owner=0）。造1条记录coins=500000, seconds=7920, effective=1。算薪前插入预提记录但user_id写为1094（其他主播），其余字段正确。验证目标主播不受影响。",
+      "case_purpose": "补齐 user_id 维度抗干扰覆盖，验证预提读取严格依赖目标 payment_uid",
+      "anchor_id": "2915",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "1094",
+          "prepayment_type": 2,
+          "trade_id": "1932211403",
+          "period": 20260516,
+          "credit_amount": 10
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7, "salary_coefficient": 0.6, "coin_income": 500000, "effective_workday": 1, "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0, "union_salary_raw": 33.0, "anchor_salary_payable": 60.0, "union_salary_payable": 19.8, "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7, "deduction_factor": 0.6, "coin_income": 500000, "work_hours": 2.2, "work_days": 1,
+        "anchor_salary": 60.0, "anchor_prepayment": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "错误user_id预提不入账",
+          "construction": "插入user_id=1094预提后，断言目标主播2915的表4.anchor_prepayment=0.00"
+        },
+        {
+          "point": "expected_amount按普通主播公式动态校验",
+          "construction": "expected_amount = anchor_salary - anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理错误user预提",
+          "construction": "_teardown_prepayment 按 user_id=1094 + period=20260516 + prepayment_type=2 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_regular_anchor_invalid_type_prepayment_ignored",
+      "case_name_cn": "普通主播非法prepayment_type预提：type=3 不入账",
+      "case_name_en": "Regular anchor invalid prepayment type is ignored",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播2915（payment_type=2，is_trade_owner=0）。造1条记录coins=500000, seconds=7920, effective=1。算薪前插入非法预提类型prepayment_type=3，验证系统忽略该记录。",
+      "case_purpose": "补齐非法类型输入防御覆盖，验证仅 type=1/2 参与扣减",
+      "anchor_id": "2915",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "2915",
+          "prepayment_type": 3,
+          "trade_id": "30902974",
+          "period": 20260516,
+          "credit_amount": 10
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7, "salary_coefficient": 0.6, "coin_income": 500000, "effective_workday": 1, "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0, "union_salary_raw": 33.0, "anchor_salary_payable": 60.0, "union_salary_payable": 19.8, "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7, "deduction_factor": 0.6, "coin_income": 500000, "work_hours": 2.2, "work_days": 1,
+        "anchor_salary": 60.0, "anchor_prepayment": 0.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "非法type=3预提不入账",
+          "construction": "插入prepayment_type=3后，断言表4.anchor_prepayment=0.00"
+        },
+        {
+          "point": "expected_amount按普通主播公式动态校验",
+          "construction": "expected_amount = anchor_salary - anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理非法type预提",
+          "construction": "_teardown_prepayment 按 user_id=2915 + period=20260516 + prepayment_type=3 删除插入记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_regular_anchor_duplicate_same_key_prepayment_behavior",
+      "case_name_cn": "普通主播同键重复预提行为：同user+period+type插入两条记录",
+      "case_name_en": "Regular anchor duplicate same-key prepayment behavior check",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播2915。造1条记录coins=500000。算薪前对同一键(user_id=2915, period=20260516, type=2, trade_id=30902974)插入两条预提：10 与 15，第二条使用append_without_delete=true保留重复。验证系统对重复记录的读取规则。",
+      "case_purpose": "补齐重复脏数据冲突覆盖，锁定当前服务对同键多条预提记录的处理行为",
+      "anchor_id": "2915",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayments": [
+          { "user_id": "2915", "prepayment_type": 2, "trade_id": "30902974", "period": 20260516, "credit_amount": 10 },
+          { "user_id": "2915", "prepayment_type": 2, "trade_id": "30902974", "period": 20260516, "credit_amount": 15, "append_without_delete": true }
+        ]
+      },
+      "expected_t3": {
+        "salary_level": 7, "salary_coefficient": 0.6, "coin_income": 500000, "effective_workday": 1, "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0, "union_salary_raw": 33.0, "anchor_salary_payable": 60.0, "union_salary_payable": 19.8, "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7, "deduction_factor": 0.6, "coin_income": 500000, "work_hours": 2.2, "work_days": 1,
+        "anchor_salary": 60.0, "anchor_prepayment": 10.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "重复同键预提读取行为锁定",
+          "construction": "同键插入10与15后，断言表4.anchor_prepayment=10.00（当前实现未累加重复记录）"
+        },
+        {
+          "point": "expected_amount按普通主播公式动态校验",
+          "construction": "expected_amount = anchor_salary - anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理同键预提",
+          "construction": "_teardown_prepayment 按 user_id=2915 + period=20260516 + prepayment_type=2 删除记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_regular_anchor_moa2_rerun_idempotent_probe",
+      "case_name_cn": "普通主播同用例二次MOA2探针：重复执行结果一致",
+      "case_name_en": "Regular anchor second MOA2 rerun idempotent probe",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播2915。造1条记录coins=500000，并插入主播预提10。执行一次MOA2并断言后，立即二次触发MOA2并再次断言，验证同一数据状态下结果一致。",
+      "case_purpose": "补齐幂等性与冷却探针覆盖，监控重复触发MOA2时是否出现结果漂移",
+      "anchor_id": "2915",
+      "period_start": "20260516",
+      "rerun_moa2_and_reassert": true,
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "2915",
+          "prepayment_type": 2,
+          "trade_id": "30902974",
+          "period": 20260516,
+          "credit_amount": 10
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7, "salary_coefficient": 0.6, "coin_income": 500000, "effective_workday": 1, "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0, "union_salary_raw": 33.0, "anchor_salary_payable": 60.0, "union_salary_payable": 19.8, "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7, "deduction_factor": 0.6, "coin_income": 500000, "work_hours": 2.2, "work_days": 1,
+        "anchor_salary": 60.0, "anchor_prepayment": 10.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "首轮MOA2断言通过",
+          "construction": "断言表4.anchor_prepayment=10.00，expected_amount公式正确"
+        },
+        {
+          "point": "二次MOA2后断言仍一致",
+          "construction": "再次触发generateAnchorSalary并重复断言，结果保持一致（无漂移）"
+        },
+        {
+          "point": "测试后自动清理预提",
+          "construction": "_teardown_prepayment 按 user_id=2915 + period=20260516 + prepayment_type=2 删除记录"
+        }
+      ]
+    },
+    {
+      "case_name": "cycle_salary_regular_anchor_extreme_large_prepayment_behavior",
+      "case_name_cn": "普通主播极大值预提行为：credit_amount=2147483647",
+      "case_name_en": "Regular anchor extreme large prepayment behavior check",
+      "scenario_desc": "下半月周期(20260516-20260531)，主播2915。造1条记录coins=500000。算薪前插入主播预提type=2且credit_amount=2147483647，验证系统对极大值的入账与公式行为。",
+      "case_purpose": "补齐上界极值防御覆盖，监控大额预提下是否溢出或异常截断",
+      "anchor_id": "2915",
+      "period_start": "20260516",
+      "setup": {
+        "zero_all_period": true,
+        "updates": [
+          { "statistic_date": "20260518", "receive_gift_count": 500000, "on_seat_seconds": 7920, "is_effective_day": 1 }
+        ],
+        "prepayment": {
+          "user_id": "2915",
+          "prepayment_type": 2,
+          "trade_id": "30902974",
+          "period": 20260516,
+          "credit_amount": 2147483647
+        }
+      },
+      "expected_t3": {
+        "salary_level": 7, "salary_coefficient": 0.6, "coin_income": 500000, "effective_workday": 1, "in_seattime": 2.2,
+        "anchor_salary_raw": 100.0, "union_salary_raw": 33.0, "anchor_salary_payable": 60.0, "union_salary_payable": 19.8, "total_salary_payable": 79.8
+      },
+      "expected_t4": {
+        "salary_level": 7, "deduction_factor": 0.6, "coin_income": 500000, "work_hours": 2.2, "work_days": 1,
+        "anchor_salary": 60.0, "anchor_prepayment": 2147483647.0
+      },
+      "verification_scenarios": [
+        {
+          "point": "极大值预提按原值入账",
+          "construction": "断言表4.anchor_prepayment=2147483647.00"
+        },
+        {
+          "point": "expected_amount按公式动态校验（允许负值）",
+          "construction": "expected_amount = anchor_salary - anchor_prepayment；动态读取字段验证误差<0.01"
+        },
+        {
+          "point": "测试后自动清理极值预提",
+          "construction": "_teardown_prepayment 按 user_id=2915 + period=20260516 + prepayment_type=2 删除记录"
+        }
+      ]
+    }
+  ]
+}
