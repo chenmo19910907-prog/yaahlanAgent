@@ -46,12 +46,14 @@ class WebAdminApplyTests(unittest.TestCase):
         )
         self.assertIn("后台手动添加", msg)
 
+    @patch("web_admin_apply.append_admin_audit_entry")
     @patch("web_admin_apply._notify_super_admins")
     @patch("web_admin_apply._gateway_import")
     def test_submit_notifies_super_admins(
         self,
         mock_gateway: unittest.mock.MagicMock,
         mock_notify: unittest.mock.MagicMock,
+        mock_audit: unittest.mock.MagicMock,
     ) -> None:
         mock_gateway.return_value = lambda *, sender_staff_id, sender_id: False
         result, err = submit_application(
@@ -64,15 +66,20 @@ class WebAdminApplyTests(unittest.TestCase):
         assert result is not None
         self.assertTrue(result["notified"])
         mock_notify.assert_called_once()
+        mock_audit.assert_called_once()
+        self.assertEqual(mock_audit.call_args.kwargs["action"], "apply_admin")
+        self.assertEqual(mock_audit.call_args.kwargs["detail"], "已通知超级管理员")
         status = application_status_for_staff("user_new_001", path=self.notify_path)
         self.assertEqual(status["status"], "none")
 
+    @patch("web_admin_apply.append_admin_audit_entry")
     @patch("web_admin_apply._notify_super_admins")
     @patch("web_admin_apply._gateway_import")
     def test_submit_dedup_within_24h(
         self,
         mock_gateway: unittest.mock.MagicMock,
         mock_notify: unittest.mock.MagicMock,
+        mock_audit: unittest.mock.MagicMock,
     ) -> None:
         mock_gateway.return_value = lambda *, sender_staff_id, sender_id: False
         _record_notification("user_new_001", path=self.notify_path)
@@ -87,6 +94,8 @@ class WebAdminApplyTests(unittest.TestCase):
         assert result is not None
         self.assertTrue(result["skippedDuplicate"])
         mock_notify.assert_not_called()
+        mock_audit.assert_called_once()
+        self.assertEqual(mock_audit.call_args.kwargs["detail"], "24小时内重复申请")
 
     @patch("web_admin_apply._gateway_import")
     def test_already_admin_cannot_apply(self, mock_gateway: unittest.mock.MagicMock) -> None:

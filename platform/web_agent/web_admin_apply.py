@@ -9,6 +9,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from web_admin_audit_log import append_admin_audit_entry
+
 logger = logging.getLogger("web-agent")
 
 WEB_AGENT_DIR = Path(__file__).resolve().parent
@@ -156,8 +158,17 @@ def submit_application(
     if is_allowed(sender_staff_id=uid, sender_id=None):
         return None, "你已是管理员"
 
+    name = (display_name or "").strip() or uid
     if _recently_notified(uid, path=path):
         logger.info("管理员申请通知跳过（24h 内已发） staff=%s", uid[:12])
+        append_admin_audit_entry(
+            action="apply_admin",
+            operator_staff_id=uid,
+            operator_display_name=name,
+            target_staff_id=uid,
+            target_display_name=name,
+            detail="24小时内重复申请",
+        )
         return {"notified": False, "skippedDuplicate": True}, None
 
     try:
@@ -171,6 +182,14 @@ def submit_application(
         return None, f"钉钉通知失败：{exc}"
 
     _record_notification(uid, path=path)
+    append_admin_audit_entry(
+        action="apply_admin",
+        operator_staff_id=uid,
+        operator_display_name=name,
+        target_staff_id=uid,
+        target_display_name=name,
+        detail="已通知超级管理员",
+    )
     logger.info("管理员申请已通知超管 staff=%s", uid[:12])
     return {"notified": True}, None
 

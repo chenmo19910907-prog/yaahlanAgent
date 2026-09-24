@@ -149,6 +149,7 @@ from run_progress_reply import (  # noqa: E402
 from web_admin_grants import is_super_admin  # noqa: E402
 from web_admin_permission import is_web_admin, web_admin_denial_message  # noqa: E402
 from web_admin_apply import application_status_for_staff, submit_application  # noqa: E402
+from web_admin_audit_log import list_admin_audit_entries  # noqa: E402
 from web_admin_manage import (  # noqa: E402
     enrich_selectable_users_with_admin_roles,
     list_admin_users,
@@ -2027,6 +2028,59 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             except Exception:  # noqa: BLE001
                 pass
             return _json_response(self, admin_payload)
+
+        if path == "/api/admin/audit-log":
+            user = current_web_user(self)
+            if user is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            qs = parse_qs(parsed.query)
+            try:
+                limit = int(str((qs.get("limit") or ["100"])[0]).strip() or "100")
+            except ValueError:
+                limit = 100
+            payload = list_admin_audit_entries(limit=limit)
+            try:
+                from dingtalk_user_lookup import enrich_staff_users_with_avatars, resolve_user_avatars
+
+                rows = payload.get("entries") or []
+                if isinstance(rows, list):
+                    avatar_users: list[dict[str, object]] = []
+                    for row in rows:
+                        if not isinstance(row, dict):
+                            continue
+                        avatar_users.append(
+                            {"staffId": row.get("operatorStaffId"), "displayName": row.get("operatorName")}
+                        )
+                        avatar_users.append(
+                            {"staffId": row.get("targetStaffId"), "displayName": row.get("targetName")}
+                        )
+                    enrich_staff_users_with_avatars(avatar_users)
+                    avatar_map = {
+                        str(item.get("staffId") or "").strip(): str(item.get("avatarUrl") or "").strip()
+                        for item in avatar_users
+                        if str(item.get("staffId") or "").strip() and str(item.get("avatarUrl") or "").strip()
+                    }
+                    if not avatar_map:
+                        staff_ids = sorted({
+                            str(row.get(key) or "").strip()
+                            for row in rows
+                            if isinstance(row, dict)
+                            for key in ("operatorStaffId", "targetStaffId")
+                            if str(row.get(key) or "").strip()
+                        })
+                        avatar_map = resolve_user_avatars(staff_ids)
+                    for row in rows:
+                        if not isinstance(row, dict):
+                            continue
+                        op_id = str(row.get("operatorStaffId") or "").strip()
+                        tg_id = str(row.get("targetStaffId") or "").strip()
+                        if op_id and avatar_map.get(op_id):
+                            row["operatorAvatarUrl"] = avatar_map[op_id]
+                        if tg_id and avatar_map.get(tg_id):
+                            row["targetAvatarUrl"] = avatar_map[tg_id]
+            except Exception:  # noqa: BLE001
+                pass
+            return _json_response(self, payload)
 
         if not authorize_request(self, method="GET"):
             return

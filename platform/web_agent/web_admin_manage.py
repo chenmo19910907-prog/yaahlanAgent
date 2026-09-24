@@ -30,6 +30,8 @@ from web_admin_grants import (
     remove_admin_grants,
     save_admin_permissions,
 )
+from web_admin_audit_log import append_admin_audit_entry, describe_permission_changes
+from web_admin_notify import notify_admin_change, notify_permission_map_change
 from web_admin_permission import is_protected_web_admin, is_web_admin  # noqa: E402
 
 # 陈墨（钉钉 staffId，与 code_modify_allowlist.json 一致）
@@ -247,11 +249,53 @@ def quit_admin_role(*, staff_id: str) -> tuple[dict[str, Any] | None, str | None
     if not can_quit_admin_role(target):
         return None, "该账号不可退出管理员"
 
+    before_perms = get_admin_permission_map(
+        staff_id=target,
+        is_admin=True,
+        protected=is_protected_admin_account(target),
+    )
+    target_name = lookup_target_display_name(target)
     removed = remove_staff_from_local_allowlist(target)
     if not removed:
         return None, "该用户不在可撤销的管理员列表中"
     remove_admin_grants(target)
+    quit_detail = describe_permission_changes(
+        before=before_perms,
+        after={key: False for key in before_perms},
+    )
+    append_admin_audit_entry(
+        action="quit_admin",
+        operator_staff_id=target,
+        operator_display_name=target_name,
+        target_staff_id=target,
+        target_display_name=target_name,
+        detail=quit_detail if quit_detail != "无变更" else "主动退出",
+    )
+    notify_permission_map_change(
+        action="quit_admin",
+        target_staff_id=target,
+        target_display_name=target_name,
+        operator_display_name=target_name,
+        before=before_perms,
+        after={key: False for key in before_perms},
+    )
     return {"staffId": target, "isAdmin": False}, None
+
+
+def lookup_target_display_name(staff_id: str) -> str:
+    """解析目标用户展示名（供审计日志等使用）。"""
+    target = (staff_id or "").strip()
+    if not target:
+        return ""
+    for user in _collect_all_users():
+        if user["staffId"] == target:
+            return user["displayName"]
+    try:
+        from dingtalk_user_lookup import lookup_auth_user_display_name
+
+        return lookup_auth_user_display_name(target, "")
+    except Exception:  # noqa: BLE001
+        return target
 
 
 def set_admin_role(
@@ -277,12 +321,38 @@ def set_admin_role(
     if not is_admin and is_protected_admin_account(target):
         return None, "该账号不可撤销管理员"
 
+    target_name = lookup_target_display_name(target)
     if is_admin:
+        before_perms = get_admin_permission_map(
+            staff_id=target,
+            is_admin=False,
+            protected=False,
+        )
         if is_code_modify_allowed(sender_staff_id=target, sender_id=None):
             init_admin_grants_empty(target)
-            return {"staffId": target, "isAdmin": True}, None
-        add_staff_to_local_allowlist(target)
-        init_admin_grants_empty(target)
+        else:
+            add_staff_to_local_allowlist(target)
+            init_admin_grants_empty(target)
+        after_perms = get_admin_permission_map(
+            staff_id=target,
+            is_admin=True,
+            protected=False,
+        )
+        append_admin_audit_entry(
+            action="grant_admin",
+            operator_staff_id=operator_staff_id,
+            operator_display_name=operator_display_name,
+            target_staff_id=target,
+            target_display_name=target_name,
+        )
+        notify_permission_map_change(
+            action="grant_admin",
+            target_staff_id=target,
+            target_display_name=target_name,
+            operator_display_name=operator_display_name,
+            before=before_perms,
+            after=after_perms,
+        )
         return {"staffId": target, "isAdmin": True}, None
 
     if not is_code_modify_allowed(sender_staff_id=target, sender_id=None):
@@ -291,10 +361,30 @@ def set_admin_role(
     if is_staff_in_base_allowlist(target):
         return None, "该用户在主配置中登记，无法在此撤销"
 
+    before_perms = get_admin_permission_map(
+        staff_id=target,
+        is_admin=True,
+        protected=is_protected_admin_account(target),
+    )
     removed = remove_staff_from_local_allowlist(target)
     if not removed:
         return None, "该用户不在可撤销的管理员列表中"
     remove_admin_grants(target)
+    append_admin_audit_entry(
+        action="revoke_admin",
+        operator_staff_id=operator_staff_id,
+        operator_display_name=operator_display_name,
+        target_staff_id=target,
+        target_display_name=target_name,
+    )
+    notify_permission_map_change(
+        action="revoke_admin",
+        target_staff_id=target,
+        target_display_name=target_name,
+        operator_display_name=operator_display_name,
+        before=before_perms,
+        after={key: False for key in before_perms},
+    )
     return {"staffId": target, "isAdmin": False}, None
 
 
@@ -325,11 +415,34 @@ def set_admin_permissions(
         key = item["key"]
         normalized[key] = permissions.get(key) is True
 
+    before = get_admin_permission_map(
+        staff_id=target,
+        is_admin=True,
+        protected=False,
+    )
     saved = save_admin_permissions(staff_id=target, permissions=normalized)
     perm_map = get_admin_permission_map(
         staff_id=target,
         is_admin=True,
         protected=False,
+    )
+    detail = describe_permission_changes(before=before, after=perm_map)
+    target_name = lookup_target_display_name(target)
+    append_admin_audit_entry(
+        action="update_permissions",
+        operator_staff_id=operator_staff_id,
+        operator_display_name=operator_display_name,
+        target_staff_id=target,
+        target_display_name=target_name,
+        detail=detail,
+    )
+    notify_permission_map_change(
+        action="update_permissions",
+        target_staff_id=target,
+        target_display_name=target_name,
+        operator_display_name=operator_display_name,
+        before=before,
+        after=perm_map,
     )
     return {
         "staffId": target,
@@ -365,4 +478,11 @@ def remove_admin_list_user(
         return {"staffId": target, "removed": True}, None
     hidden.add(target)
     _save_admin_list_hidden_staff_ids(hidden)
+    append_admin_audit_entry(
+        action="remove_user",
+        operator_staff_id=operator_staff_id,
+        operator_display_name=operator_display_name,
+        target_staff_id=target,
+        target_display_name=lookup_target_display_name(target),
+    )
     return {"staffId": target, "removed": True}, None

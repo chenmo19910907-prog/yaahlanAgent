@@ -1621,6 +1621,43 @@
       display: flex; justify-content: flex-end; gap: 10px;
       padding: 14px 20px 18px; border-top: 1px solid var(--border);
     }
+    .collaborators-actions.is-split {
+      justify-content: space-between; align-items: center;
+    }
+    .collaborators-actions-side {
+      display: flex; gap: 10px; align-items: center;
+    }
+    .admin-audit-item {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--card-bg);
+    }
+    .admin-audit-item-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .admin-audit-item-action {
+      font-size: 0.86rem; font-weight: 600; color: var(--text);
+    }
+    .admin-audit-item-time {
+      font-size: 0.78rem; color: var(--text-soft); white-space: nowrap; flex-shrink: 0;
+    }
+    .admin-audit-item-operator {
+      display: flex; align-items: center; gap: 8px; min-width: 0;
+    }
+    .admin-audit-item-operator .name-avatar,
+    .admin-audit-item-operator .name-avatar-fallback {
+      width: 24px; height: 24px; flex-shrink: 0;
+    }
+    .admin-audit-item-operator-name {
+      font-size: 0.84rem; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .admin-audit-item-detail {
+      font-size: 0.82rem; color: var(--text-soft); line-height: 1.45;
+    }
+    .admin-audit-item-target {
+      font-size: 0.82rem; color: var(--text-soft);
+    }
     .collaborators-actions button {
       border-radius: 10px; padding: 8px 14px; font-size: 0.86rem; cursor: pointer;
       border: 1px solid var(--border); background: var(--btn-subtle-bg); color: var(--text);
@@ -4806,8 +4843,26 @@
         <div class="collaborators-meta" id="admin-list-meta" aria-live="polite"></div>
       </div>
       <div class="collaborators-list" id="admin-list-body"></div>
+      <div class="collaborators-actions is-split">
+        <div class="collaborators-actions-side">
+          <button type="button" id="btn-admin-audit-log">操作记录</button>
+        </div>
+        <div class="collaborators-actions-side">
+          <button type="button" id="btn-admin-list-close">关闭</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="collaborators-modal" id="admin-audit-modal" aria-hidden="true">
+    <div class="collaborators-box" role="dialog" aria-labelledby="admin-audit-title">
+      <div class="collaborators-head">
+        <h3 id="admin-audit-title">操作记录</h3>
+        <div class="collaborators-meta" id="admin-audit-meta" aria-live="polite"></div>
+      </div>
+      <div class="collaborators-list" id="admin-audit-body"></div>
       <div class="collaborators-actions">
-        <button type="button" id="btn-admin-list-close">关闭</button>
+        <button type="button" id="btn-admin-audit-close">关闭</button>
       </div>
     </div>
   </div>
@@ -13029,6 +13084,8 @@
     let adminListSaving = false;
     let adminListLoading = false;
     let adminPermissionDefs = [];
+    let adminAuditEntries = [];
+    let adminAuditLoading = false;
 
     function buildAdminPermissionsHtml(user) {
       if (!user?.isAdmin) return '';
@@ -13353,11 +13410,118 @@
       }
     }
 
+    function formatAdminAuditTime(iso) {
+      const raw = String(iso || '').trim();
+      if (!raw) return '';
+      const date = new Date(raw);
+      if (Number.isNaN(date.getTime())) return raw;
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    function renderAdminAuditBody() {
+      const list = document.getElementById('admin-audit-body');
+      const meta = document.getElementById('admin-audit-meta');
+      if (!list) return;
+      if (meta) {
+        meta.textContent = adminAuditLoading
+          ? '加载中…'
+          : (adminAuditEntries.length ? `共 ${adminAuditEntries.length} 条` : '暂无记录');
+      }
+      if (adminAuditLoading) {
+        list.innerHTML = '<div class="collaborators-empty">加载中…</div>';
+        return;
+      }
+      if (!adminAuditEntries.length) {
+        list.innerHTML = '<div class="collaborators-empty">暂无操作记录</div>';
+        return;
+      }
+      list.innerHTML = adminAuditEntries.map((entry) => {
+        const action = escapeHtml(String(entry.actionLabel || entry.action || '操作'));
+        const time = escapeHtml(formatAdminAuditTime(entry.ts));
+        const operatorName = escapeHtml(publicDisplayName(String(entry.operatorName || '未知用户')));
+        const operatorStaffId = String(entry.operatorStaffId || '').trim();
+        const targetName = escapeHtml(publicDisplayName(String(entry.targetName || '')));
+        const targetStaffId = String(entry.targetStaffId || '').trim();
+        const detail = escapeHtml(String(entry.detail || '').trim());
+        const operatorAvatar = buildStaffPickerAvatarHtml({
+          staffId: operatorStaffId,
+          displayName: entry.operatorName || operatorStaffId,
+          avatarUrl: entry.operatorAvatarUrl || '',
+        });
+        const targetLine = targetName
+          ? `<div class="admin-audit-item-target">对象：${targetName}${targetStaffId && targetStaffId !== operatorStaffId ? `（${escapeHtml(targetStaffId)}）` : ''}</div>`
+          : '';
+        const detailLine = detail ? `<div class="admin-audit-item-detail">${detail}</div>` : '';
+        return `
+          <div class="admin-audit-item">
+            <div class="admin-audit-item-head">
+              <div class="admin-audit-item-action">${action}</div>
+              <div class="admin-audit-item-time">${time}</div>
+            </div>
+            <div class="admin-audit-item-operator">
+              ${operatorAvatar}
+              <div class="admin-audit-item-operator-name">${operatorName}</div>
+            </div>
+            ${targetLine}
+            ${detailLine}
+          </div>`;
+      }).join('');
+      hydrateAvatars(list);
+    }
+
+    async function loadAdminAuditEntries() {
+      adminAuditLoading = true;
+      renderAdminAuditBody();
+      try {
+        const data = await api('/api/admin/audit-log?limit=100');
+        adminAuditEntries = Array.isArray(data.entries) ? data.entries : [];
+        seedUserAvatarCacheFromStaffUsers(
+          adminAuditEntries.flatMap((entry) => ([
+            {
+              staffId: entry.operatorStaffId,
+              displayName: entry.operatorName,
+              avatarUrl: entry.operatorAvatarUrl || '',
+            },
+            {
+              staffId: entry.targetStaffId,
+              displayName: entry.targetName,
+              avatarUrl: entry.targetAvatarUrl || '',
+            },
+          ])),
+        );
+      } catch (err) {
+        adminAuditEntries = [];
+        showWebToast(err.message || '加载操作记录失败', { error: true, durationMs: 4200 });
+      } finally {
+        adminAuditLoading = false;
+        renderAdminAuditBody();
+      }
+    }
+
+    async function setAdminAuditModalOpen(open) {
+      const modal = document.getElementById('admin-audit-modal');
+      if (!modal) return;
+      if (!open) {
+        if (modal.classList.contains('open')) {
+          await animateOverlayClose(modal);
+          modal.classList.remove('open');
+        }
+        modal.setAttribute('aria-hidden', 'true');
+        return;
+      }
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      renderAdminAuditBody();
+      await loadAdminAuditEntries();
+    }
+
     async function setAdminListModalOpen(open) {
       const modal = document.getElementById('admin-list-modal');
       if (!modal) return;
       if (!open) {
         adminApplyInFlight = false;
+        await setAdminAuditModalOpen(false);
         if (modal.classList.contains('open')) {
           await animateOverlayClose(modal);
           modal.classList.remove('open');
@@ -14073,6 +14237,15 @@
     });
     document.getElementById('btn-admin-list-close')?.addEventListener('click', () => {
       setAdminListModalOpen(false);
+    });
+    document.getElementById('btn-admin-audit-log')?.addEventListener('click', () => {
+      void setAdminAuditModalOpen(true);
+    });
+    document.getElementById('btn-admin-audit-close')?.addEventListener('click', () => {
+      void setAdminAuditModalOpen(false);
+    });
+    document.getElementById('admin-audit-modal')?.addEventListener('click', (event) => {
+      if (event.target.id === 'admin-audit-modal') void setAdminAuditModalOpen(false);
     });
     document.getElementById('admin-list-search')?.addEventListener('input', renderAdminListBody);
     document.getElementById('admin-list-modal')?.addEventListener('click', (event) => {

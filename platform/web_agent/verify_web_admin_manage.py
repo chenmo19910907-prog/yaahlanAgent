@@ -67,6 +67,13 @@ class WebAdminManageTests(unittest.TestCase):
     def _patch_hidden(self):
         return patch("web_admin_manage.HIDDEN_USERS_PATH", self.hidden_path)
 
+    def _patch_notify(self):
+        return patch.multiple(
+            "web_admin_manage",
+            notify_admin_change=lambda **_: True,
+            notify_permission_map_change=lambda **_: True,
+        )
+
     def test_can_manage_only_admin_and_chenmo(self) -> None:
         with self._patch_grants():
             reload_admin_grants()
@@ -96,7 +103,7 @@ class WebAdminManageTests(unittest.TestCase):
 
     def test_grant_and_revoke_by_admin(self) -> None:
         target = "0834514151639181"
-        with self._patch_allowlist(), self._patch_grants():
+        with self._patch_allowlist(), self._patch_grants(), self._patch_notify():
             load_code_modify_allowlist.cache_clear()
             reload_admin_grants()
             result, err = set_admin_role(
@@ -126,7 +133,7 @@ class WebAdminManageTests(unittest.TestCase):
 
     def test_set_super_admin_permissions(self) -> None:
         target = "0834514151639181"
-        with self._patch_allowlist(), self._patch_grants():
+        with self._patch_allowlist(), self._patch_grants(), self._patch_notify():
             load_code_modify_allowlist.cache_clear()
             reload_admin_grants()
             set_admin_role(
@@ -156,7 +163,7 @@ class WebAdminManageTests(unittest.TestCase):
 
     def test_set_permissions_for_admin(self) -> None:
         target = "0834514151639181"
-        with self._patch_allowlist(), self._patch_grants():
+        with self._patch_allowlist(), self._patch_grants(), self._patch_notify():
             load_code_modify_allowlist.cache_clear()
             reload_admin_grants()
             set_admin_role(
@@ -346,9 +353,40 @@ class WebAdminManageTests(unittest.TestCase):
             hidden = reload_admin_list_hidden_staff_ids()
             self.assertIn(target, hidden)
 
+    @patch("web_admin_manage.notify_permission_map_change")
+    def test_set_permissions_triggers_notify(self, mock_notify) -> None:
+        target = "0834514151639181"
+        with self._patch_allowlist(), self._patch_grants(), self._patch_notify():
+            load_code_modify_allowlist.cache_clear()
+            reload_admin_grants()
+            set_admin_role(
+                operator_staff_id="admin",
+                operator_display_name="管理员",
+                target_staff_id=target,
+                is_admin=True,
+            )
+        with self._patch_allowlist(), self._patch_grants():
+            load_code_modify_allowlist.cache_clear()
+            reload_admin_grants()
+            set_admin_permissions(
+                operator_staff_id="admin",
+                operator_display_name="管理员",
+                target_staff_id=target,
+                permissions={
+                    "super_admin": False,
+                    "code_modify": True,
+                    "source_file": False,
+                    "online": True,
+                },
+            )
+        mock_notify.assert_called_once()
+        kwargs = mock_notify.call_args.kwargs
+        self.assertEqual(kwargs["action"], "update_permissions")
+        self.assertEqual(kwargs["target_staff_id"], target)
+
     def test_quit_admin_role(self) -> None:
         target = "0834514151639181"
-        with self._patch_allowlist(), self._patch_grants():
+        with self._patch_allowlist(), self._patch_grants(), self._patch_notify():
             load_code_modify_allowlist.cache_clear()
             reload_admin_grants()
             set_admin_role(
