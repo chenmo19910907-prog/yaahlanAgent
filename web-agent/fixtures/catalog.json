@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-09-24 11:36:11 北京时间",
-  "total_items": 333,
-  "module_count": 29,
+  "generated_at": "2026-09-28 16:39:32 北京时间",
+  "total_items": 344,
+  "module_count": 33,
   "modules": [
     {
       "id": "用户",
@@ -2794,8 +2794,23 @@
     {
       "id": "公会",
       "label": "公会",
-      "item_count": 5,
+      "item_count": 6,
       "categories": [
+        {
+          "name": "公会进步奖",
+          "items": [
+            {
+              "name": "算薪测试-公会进步奖",
+              "prompts": [
+                "跑公会进步奖算薪测试",
+                "公会进步奖回归"
+              ],
+              "source": "算薪自动化",
+              "source_id": "salary",
+              "env": "test"
+            }
+          ]
+        },
         {
           "name": "公会（melon-gateway / cms/anchor）",
           "items": [
@@ -2857,6 +2872,58 @@
               ],
               "source": "MOA",
               "source_id": "moa",
+              "env": "test"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "算薪",
+      "label": "算薪",
+      "item_count": 4,
+      "categories": [
+        {
+          "name": "算薪自动化",
+          "items": [
+            {
+              "name": "算薪测试-列出套件",
+              "prompts": [
+                "算薪有哪些测试套件",
+                "列出算薪自动化套件"
+              ],
+              "source": "算薪自动化",
+              "source_id": "salary",
+              "env": "test"
+            },
+            {
+              "name": "算薪测试-可视化后台",
+              "prompts": [
+                "打开算薪测试后台",
+                "启动算薪可视化 dashboard"
+              ],
+              "source": "算薪自动化",
+              "source_id": "salary",
+              "env": "test"
+            },
+            {
+              "name": "算薪测试-环境检查",
+              "prompts": [
+                "算薪测试环境检查",
+                "检查算薪自动化环境"
+              ],
+              "source": "算薪自动化",
+              "source_id": "salary",
+              "env": "test"
+            },
+            {
+              "name": "算薪测试-读盘古配置",
+              "prompts": [
+                "读算薪盘古配置",
+                "查公会激励开关"
+              ],
+              "source": "算薪自动化",
+              "source_id": "salary",
               "env": "test"
             }
           ]
@@ -4148,6 +4215,58 @@
       ]
     },
     {
+      "id": "半月结算薪",
+      "label": "半月结算薪",
+      "item_count": 4,
+      "categories": [
+        {
+          "name": "半月结算薪",
+          "items": [
+            {
+              "name": "算薪测试-主播豁免冒烟",
+              "prompts": [
+                "跑算薪主播豁免冒烟",
+                "主播豁免专项测试"
+              ],
+              "source": "算薪自动化",
+              "source_id": "salary",
+              "env": "test"
+            },
+            {
+              "name": "算薪测试-半月结全量+报告",
+              "prompts": [
+                "跑算薪半月结全量并出报告",
+                "半月结算薪回归带报告"
+              ],
+              "source": "算薪自动化",
+              "source_id": "salary",
+              "env": "test"
+            },
+            {
+              "name": "算薪测试-半月结冒烟",
+              "prompts": [
+                "跑算薪半月结冒烟",
+                "半月结算薪冒烟测试"
+              ],
+              "source": "算薪自动化",
+              "source_id": "salary",
+              "env": "test"
+            },
+            {
+              "name": "算薪测试-半月结单用例",
+              "prompts": [
+                "跑算薪用例<caseName|用例名>",
+                "执行半月结用例 cycle_salary_factor_0_6_double_fail"
+              ],
+              "source": "算薪自动化",
+              "source_id": "salary",
+              "env": "test"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "礼物统计",
       "label": "礼物统计",
       "item_count": 4,
@@ -4304,6 +4423,50 @@
               ],
               "source": "MOA",
               "source_id": "moa",
+              "env": "test"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "确认应得薪资",
+      "label": "确认应得薪资",
+      "item_count": 1,
+      "categories": [
+        {
+          "name": "确认应得薪资",
+          "items": [
+            {
+              "name": "算薪测试-确认应得薪资",
+              "prompts": [
+                "跑确认应得薪资测试",
+                "确认应得薪资 E2E"
+              ],
+              "source": "算薪自动化",
+              "source_id": "salary",
+              "env": "test"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "退款黑名单",
+      "label": "退款黑名单",
+      "item_count": 1,
+      "categories": [
+        {
+          "name": "退款黑名单",
+          "items": [
+            {
+              "name": "算薪测试-退款黑名单",
+              "prompts": [
+                "跑退款黑名单算薪测试",
+                "退款黑名单算薪回归"
+              ],
+              "source": "算薪自动化",
+              "source_id": "salary",
               "env": "test"
             }
           ]

@@ -4,8 +4,8 @@
   "projectId": "yaahlan",
   "mcp_count": 6,
   "skills_count": 12,
-  "modules_count": 29,
-  "capabilities_count": 333,
+  "modules_count": 33,
+  "capabilities_count": 344,
   "defaultAgentModel": "composer-2.5",
   "agentModels": [
     {
