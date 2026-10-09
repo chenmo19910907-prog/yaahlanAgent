@@ -1,0 +1,20 @@
+{
+  "_comment": "测试用图片/视频资源，供私聊/公屏消息发送脚本直接引用。勿提交真实用户资产，此处均为测试 CDN 资源。",
+  "images": [
+    {
+      "url": "https://s.momocdn.com/s1/u/igicbbbcg/IMG_0059.PNG",
+      "desc": "测试图片（PNG，用户上传）"
+    }
+  ],
+  "videos": [
+    {
+      "url": "https://s.momocdn.com/s1/u/igicbbbcg/IMG_1095.MOV",
+      "cover_url": "https://s.momocdn.com/s1/u/igicbbbcg/video_cover_20261009_174854.jpg",
+      "duration_sec": 10,
+      "wh_ratio": 1.0,
+      "desc": "测试视频（MOV，封面为视频首帧）"
+    }
+  ],
+  "static_wemomo_upload_url": "https://static.wemomo.com/api/file/upload",
+  "_updated": "2026-10-09"
+}
