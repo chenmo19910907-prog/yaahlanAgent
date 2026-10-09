@@ -336,6 +336,17 @@ def _execute_web_run_body(
             save_batch_task_context(user_key, meta.message or meta.display_message)
         except (ImportError, OSError, ValueError):
             pass
+    os.environ["WEB_AGENT_RUN_ID"] = run_id
+    author_id = (getattr(meta, "author_id", None) or "").strip()
+    author_label = (getattr(meta, "author_label", None) or "").strip()
+    if author_id:
+        os.environ["WEB_AGENT_CALLER_STAFF_ID"] = author_id
+    else:
+        os.environ.pop("WEB_AGENT_CALLER_STAFF_ID", None)
+    if author_label:
+        os.environ["WEB_AGENT_CALLER_NAME"] = author_label
+    else:
+        os.environ.pop("WEB_AGENT_CALLER_NAME", None)
     task_kind = classify_task_kind(meta.message)
     run_timeout_s = resolve_agent_timeout_s(
         is_admin=is_web_admin(staff_id=meta.author_id or None),
@@ -512,6 +523,9 @@ def _execute_web_run_body(
         clear_service_agent_run_log(user_key)
         clear_external_agent_progress(user_key)
         os.environ.pop(USER_KEY_ENV, None)
+        os.environ.pop("WEB_AGENT_RUN_ID", None)
+        os.environ.pop("WEB_AGENT_CALLER_STAFF_ID", None)
+        os.environ.pop("WEB_AGENT_CALLER_NAME", None)
         session_ctrl.end()
         if status != "interrupted":
             get_duration_store().record(

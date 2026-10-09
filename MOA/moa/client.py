@@ -218,6 +218,12 @@ class MoaClient:
         latest = _current_moa_cookie(self.cookie)
         if latest:
             self.cookie = latest
+        try:
+            from .web_call_log import try_record_moa_call
+
+            try_record_moa_call(payload, result)
+        except ImportError:
+            pass
         return result
 
     def post_expect_inner_ok(self, payload: dict[str, Any], *, action: str) -> Any:

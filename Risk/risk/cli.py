@@ -299,6 +299,12 @@ def _handle_release_online_login_device(args: argparse.Namespace) -> int:
         "kbResult": kb_result,
     }
     print(json.dumps(output, ensure_ascii=False, indent=2))
+    try:
+        from .web_call_log import try_record_risk_call
+
+        try_record_risk_call(args, results)
+    except Exception:  # noqa: BLE001
+        pass
     return 0
 
 
@@ -573,6 +579,12 @@ def main() -> int:
         print(json.dumps(results[0]["response"], ensure_ascii=False, indent=2))
     else:
         print(json.dumps({"batchCount": len(results), "results": results}, ensure_ascii=False, indent=2))
+    try:
+        from .web_call_log import try_record_risk_call
+
+        try_record_risk_call(args, results)
+    except Exception:  # noqa: BLE001
+        pass
     return 0
 
 

@@ -38,6 +38,7 @@ from mcp_config import build_stdio_mcp_servers, inject_scripts_path
 from batch_progress import waive_agent_timeout_deadline
 from external_agent_progress import USER_KEY_ENV
 from task_session import TaskInterrupted, TaskSession, safe_cancel_run
+from web_agent_audit_env import pop_web_agent_audit_env, push_web_agent_audit_env
 
 REPO_ROOT = GATEWAY_DIR.parent.parent
 EXECUTOR_CONFIG = GATEWAY_DIR / "config" / "executor.local.json"
@@ -396,6 +397,8 @@ def run_agent_prompt(
     session: TaskSession | None = None,
     user_key: str | None = None,
     sender_name: str | None = None,
+    sender_staff_id: str | None = None,
+    run_id_hint: str | None = None,
     sender_context: str | None = None,
     allow_code_modify: bool = True,
     allow_moa_registry: bool = False,
@@ -424,6 +427,12 @@ def run_agent_prompt(
     link_list = [str(link).strip() for link in (links or []) if str(link).strip()]
     mcp_servers = build_stdio_mcp_servers() if enable_mcp else None
     prev_batch_key = os.environ.get(USER_KEY_ENV)
+    audit_snap = push_web_agent_audit_env(
+        user_key=user_key,
+        sender_name=sender_name,
+        sender_staff_id=sender_staff_id,
+        run_id_hint=run_id_hint,
+    )
     if user_key:
         os.environ[USER_KEY_ENV] = user_key
     try:
@@ -460,6 +469,7 @@ def run_agent_prompt(
                 os.environ.pop(USER_KEY_ENV, None)
             else:
                 os.environ[USER_KEY_ENV] = prev_batch_key
+        pop_web_agent_audit_env(audit_snap)
 
 
 def _run_agent_prompt_impl(
@@ -681,6 +691,8 @@ def run_agent_prompt_streaming(
     session: TaskSession | None = None,
     user_key: str | None = None,
     sender_name: str | None = None,
+    sender_staff_id: str | None = None,
+    run_id_hint: str | None = None,
     sender_context: str | None = None,
     allow_code_modify: bool = True,
     allow_moa_registry: bool = False,
@@ -705,6 +717,8 @@ def run_agent_prompt_streaming(
         session=session,
         user_key=user_key,
         sender_name=sender_name,
+        sender_staff_id=sender_staff_id,
+        run_id_hint=run_id_hint,
         sender_context=sender_context,
         allow_code_modify=allow_code_modify,
         allow_moa_registry=allow_moa_registry,

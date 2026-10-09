@@ -214,6 +214,19 @@ def _read_json_response(
                 new_req = _rebuild_request_with_new_auth(req, auth)
                 return _read_json_response(new_req, timeout_s=timeout_s, auth=auth, _retried=True)
 
+    try:
+        from .web_call_log import try_record_admin_call
+
+        try_record_admin_call(
+            req.full_url,
+            req.data,
+            obj,
+            http_method=req.get_method() or "POST",
+            auth=auth,
+        )
+    except Exception:  # noqa: BLE001
+        pass
+
     return obj
 
 

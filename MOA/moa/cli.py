@@ -1263,6 +1263,8 @@ def main() -> int:
             print(json.dumps(payload, ensure_ascii=False, indent=2), file=sys.stderr)
 
         assert_agent_family_join_not_backdoor(payload)
+        if getattr(args, "payload_file", None):
+            os.environ["MOA_CALL_LOG_PAYLOAD_FILE"] = str(args.payload_file)
         resp = client.post(payload)
     except (ValueError, RuntimeError, OSError) as e:
         print(f"执行失败: {e}", file=sys.stderr)

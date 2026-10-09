@@ -1658,6 +1658,31 @@
     .admin-audit-item-target {
       font-size: 0.82rem; color: var(--text-soft);
     }
+    #moa-call-log-modal .collaborators-box {
+      width: min(680px, 96vw);
+      max-height: min(82vh, 680px);
+    }
+    #moa-call-log-modal .collaborators-meta {
+      white-space: normal;
+      line-height: 1.45;
+    }
+    #moa-call-log-modal .collaborators-list {
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+    #moa-call-log-modal .admin-audit-item-head {
+      align-items: flex-start;
+    }
+    #moa-call-log-modal .admin-audit-item-action {
+      flex: 1;
+      min-width: 0;
+      word-break: break-word;
+      line-height: 1.45;
+    }
+    #moa-call-log-modal .admin-audit-item-detail,
+    #moa-call-log-modal .admin-audit-item-target {
+      word-break: break-word;
+    }
     .collaborators-actions button {
       border-radius: 10px; padding: 8px 14px; font-size: 0.86rem; cursor: pointer;
       border: 1px solid var(--border); background: var(--btn-subtle-bg); color: var(--text);
@@ -3585,6 +3610,13 @@
       gap: 10px;
       margin-top: 22px;
     }
+    .settings-footer-extra {
+      margin-top: 10px;
+    }
+    .settings-footer-extra .settings-link {
+      width: 100%;
+      flex: none;
+    }
     .settings-link {
       flex: 1;
       min-width: 0;
@@ -4867,6 +4899,19 @@
     </div>
   </div>
 
+  <div class="collaborators-modal" id="moa-call-log-modal" aria-hidden="true">
+    <div class="collaborators-box" role="dialog" aria-labelledby="moa-call-log-title">
+      <div class="collaborators-head">
+        <h3 id="moa-call-log-title">操作记录</h3>
+        <div class="collaborators-meta" id="moa-call-log-meta" aria-live="polite"></div>
+      </div>
+      <div class="collaborators-list" id="moa-call-log-body"></div>
+      <div class="collaborators-actions">
+        <button type="button" id="btn-moa-call-log-close">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <div class="collaborators-modal" id="collaborators-modal" aria-hidden="true">
     <div class="collaborators-box" role="dialog" aria-labelledby="collaborators-title">
       <div class="collaborators-head">
@@ -4931,6 +4976,12 @@
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
               </svg>
               <span>反馈</span>
+            </button>
+          </div>
+          <div class="settings-footer-extra">
+            <button type="button" class="settings-link" id="btn-settings-moa-history" title="MOA / Admin / 风控操作记录" aria-label="操作历史记录">
+              <span>操作历史记录</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
             </button>
           </div>
         </div>
@@ -12549,6 +12600,11 @@
         await closeSettingsModal();
         openUsageModal();
       });
+      document.getElementById('btn-settings-moa-history')?.addEventListener('click', async () => {
+        await closeSettingsModal();
+        trackEvent('panel_open', { panel: 'moa_call_log', source: 'settings' });
+        void setMoaCallLogModalOpen(true);
+      });
       document.getElementById('btn-usage-close')?.addEventListener('click', closeUsageModal);
       document.getElementById('usage-modal')?.addEventListener('click', (e) => {
         if (e.target.id === 'usage-modal') closeUsageModal();
@@ -13086,6 +13142,12 @@
     let adminPermissionDefs = [];
     let adminAuditEntries = [];
     let adminAuditLoading = false;
+    let moaCallLogEntries = [];
+    let moaCallLogTotal = 0;
+    let moaCallLogHasMore = false;
+    let moaCallLogLoading = false;
+    let moaCallLogLoadingMore = false;
+    const MOA_CALL_LOG_PAGE_SIZE = 100;
 
     function buildAdminPermissionsHtml(user) {
       if (!user?.isAdmin) return '';
@@ -13514,6 +13576,154 @@
       modal.setAttribute('aria-hidden', 'false');
       renderAdminAuditBody();
       await loadAdminAuditEntries();
+    }
+
+    function renderMoaCallLogBody() {
+      const list = document.getElementById('moa-call-log-body');
+      const meta = document.getElementById('moa-call-log-meta');
+      if (!list) return;
+      if (meta) {
+        if (moaCallLogLoading && !moaCallLogEntries.length) {
+          meta.textContent = '加载中…';
+        } else if (moaCallLogLoadingMore) {
+          meta.textContent = `共 ${moaCallLogTotal} 条，已展示 ${moaCallLogEntries.length} 条 · 加载中…`;
+        } else if (!moaCallLogTotal) {
+          meta.textContent = '暂无记录';
+        } else {
+          meta.textContent = `共 ${moaCallLogTotal} 条，已展示 ${moaCallLogEntries.length} 条`;
+        }
+      }
+      if (moaCallLogLoading && !moaCallLogEntries.length) {
+        list.innerHTML = '<div class="collaborators-empty">加载中…</div>';
+        return;
+      }
+      if (!moaCallLogEntries.length) {
+        list.innerHTML = '<div class="collaborators-empty">暂无操作记录</div>';
+        return;
+      }
+      list.innerHTML = moaCallLogEntries.map((entry) => {
+        const operation = escapeHtml(String(entry.operation || 'MOA 调用'));
+        const time = escapeHtml(String(entry.timeBj || entry.ts || ''));
+        const operatorName = escapeHtml(publicDisplayName(String(entry.operatorName || '未知用户')));
+        const operatorStaffId = String(entry.operatorStaffId || '').trim();
+        const account = escapeHtml(String(entry.accountSummary || '').trim());
+        const moaInterface = escapeHtml(
+          String(entry.moaInterfaceDisplay || entry.moaInterface || '').trim()
+            || [entry.serviceUrl, entry.method].filter(Boolean).join(' · '),
+        );
+        const params = escapeHtml(String(entry.paramsSummary || '').trim());
+        const count = Number(entry.callCount || 1);
+        const batchHint = count > 1 ? `（合并 ${count} 次）` : '';
+        const operatorAvatar = buildStaffPickerAvatarHtml({
+          staffId: operatorStaffId,
+          displayName: entry.operatorName || operatorStaffId,
+          avatarUrl: entry.operatorAvatarUrl || '',
+        });
+        const accountLine = account
+          ? `<div class="admin-audit-item-target">账号：${account}</div>`
+          : '';
+        const interfaceLine = moaInterface
+          ? `<div class="admin-audit-item-detail">接口：${moaInterface}${batchHint}</div>`
+          : '';
+        const paramsLine = params
+          ? `<div class="admin-audit-item-detail">参数：${params}</div>`
+          : '';
+        return `
+          <div class="admin-audit-item">
+            <div class="admin-audit-item-head">
+              <div class="admin-audit-item-action">${operation}</div>
+              <div class="admin-audit-item-time">${time}</div>
+            </div>
+            <div class="admin-audit-item-operator">
+              ${operatorAvatar}
+              <div class="admin-audit-item-operator-name">${operatorName}</div>
+            </div>
+            ${accountLine}
+            ${interfaceLine}
+            ${paramsLine}
+          </div>`;
+      }).join('');
+      hydrateAvatars(list);
+    }
+
+    function maybeLoadMoreMoaCallLogFromScroll() {
+      const list = document.getElementById('moa-call-log-body');
+      if (!list || !moaCallLogHasMore || moaCallLogLoading || moaCallLogLoadingMore) return;
+      const threshold = 96;
+      if (list.scrollTop + list.clientHeight >= list.scrollHeight - threshold) {
+        void loadMoaCallLogEntries({ append: true });
+      }
+    }
+
+    function fillMoaCallLogViewportIfNeeded() {
+      const list = document.getElementById('moa-call-log-body');
+      if (!list || !moaCallLogHasMore || moaCallLogLoading || moaCallLogLoadingMore) return;
+      if (list.scrollHeight <= list.clientHeight + 8) {
+        void loadMoaCallLogEntries({ append: true });
+      }
+    }
+
+    function seedMoaCallLogAvatars(entries) {
+      seedUserAvatarCacheFromStaffUsers(
+        entries.map((entry) => ({
+          staffId: entry.operatorStaffId,
+          displayName: entry.operatorName,
+          avatarUrl: entry.operatorAvatarUrl || '',
+        })),
+      );
+    }
+
+    async function loadMoaCallLogEntries({ append = false } = {}) {
+      if (append) {
+        moaCallLogLoadingMore = true;
+      } else {
+        moaCallLogLoading = true;
+        moaCallLogEntries = [];
+        moaCallLogTotal = 0;
+        moaCallLogHasMore = false;
+      }
+      renderMoaCallLogBody();
+      const offset = append ? moaCallLogEntries.length : 0;
+      try {
+        const data = await api(
+          `/api/moa/call-log?limit=${MOA_CALL_LOG_PAGE_SIZE}&offset=${offset}`,
+        );
+        const batch = Array.isArray(data.entries) ? data.entries : [];
+        moaCallLogTotal = Number(data.total ?? moaCallLogEntries.length + batch.length);
+        moaCallLogHasMore = data.hasMore === true
+          || moaCallLogEntries.length + batch.length < moaCallLogTotal;
+        moaCallLogEntries = append ? moaCallLogEntries.concat(batch) : batch;
+        seedMoaCallLogAvatars(batch);
+      } catch (err) {
+        if (!append) {
+          moaCallLogEntries = [];
+          moaCallLogTotal = 0;
+          moaCallLogHasMore = false;
+        }
+        showWebToast(err.message || '加载 MOA 调用记录失败', { error: true, durationMs: 4200 });
+      } finally {
+        moaCallLogLoading = false;
+        moaCallLogLoadingMore = false;
+        renderMoaCallLogBody();
+        requestAnimationFrame(() => fillMoaCallLogViewportIfNeeded());
+      }
+    }
+
+    async function setMoaCallLogModalOpen(open) {
+      const modal = document.getElementById('moa-call-log-modal');
+      if (!modal) return;
+      if (!open) {
+        if (modal.classList.contains('open')) {
+          await animateOverlayClose(modal);
+          modal.classList.remove('open');
+        }
+        modal.setAttribute('aria-hidden', 'true');
+        return;
+      }
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      renderMoaCallLogBody();
+      await loadMoaCallLogEntries();
     }
 
     async function setAdminListModalOpen(open) {
@@ -14246,6 +14456,15 @@
     });
     document.getElementById('admin-audit-modal')?.addEventListener('click', (event) => {
       if (event.target.id === 'admin-audit-modal') void setAdminAuditModalOpen(false);
+    });
+    document.getElementById('moa-call-log-body')?.addEventListener('scroll', () => {
+      maybeLoadMoreMoaCallLogFromScroll();
+    }, { passive: true });
+    document.getElementById('btn-moa-call-log-close')?.addEventListener('click', () => {
+      void setMoaCallLogModalOpen(false);
+    });
+    document.getElementById('moa-call-log-modal')?.addEventListener('click', (event) => {
+      if (event.target.id === 'moa-call-log-modal') void setMoaCallLogModalOpen(false);
     });
     document.getElementById('admin-list-search')?.addEventListener('input', renderAdminListBody);
     document.getElementById('admin-list-modal')?.addEventListener('click', (event) => {

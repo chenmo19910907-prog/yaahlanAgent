@@ -132,6 +132,55 @@ def _wait_preassigned_stream_card(stream_card: Any, *, timeout_s: float) -> bool
 STREAMING_BATCH_POLL_INTERVAL_S = 1.0
 
 
+def _halt_stream_card_for_early_exit(stream_card: Any | None, message: str) -> None:
+    """拦截/快捷回复时停止进度计时，避免流式卡 orphan 一直刷「执行中」。"""
+    if stream_card is None:
+        return
+    try:
+        if stream_card.is_active:
+            preview = (message or "").strip().replace("\n", " ")[:200]
+            if preview and not preview.startswith("❌"):
+                preview = f"⏹ 已结束\n\n{preview}"
+            stream_card.fail(preview or "⏹ 已结束")
+        elif getattr(stream_card, "_card_instance_id", ""):
+            stream_card.dismiss_progress_card()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("流式卡片 early-exit 收尾失败: %s", exc)
+
+
+def _reply_early_exit(
+    handler: Any,
+    incoming: dingtalk_stream.ChatbotMessage,
+    inbound: InboundMessage | None,
+    message: str,
+    *,
+    stream_card: Any | None,
+    started: float,
+    task_kind: str,
+    quote: bool = True,
+    user_key: str = "",
+    user_prompt: str = "",
+    sender_name: str = "",
+    sender_staff_id: str = "",
+    reply_mode: str | None = None,
+) -> None:
+    _halt_stream_card_for_early_exit(stream_card, message)
+    _reply_final(
+        handler,
+        incoming,
+        inbound,
+        message,
+        started=started,
+        task_kind=task_kind,
+        quote=quote,
+        user_key=user_key,
+        user_prompt=user_prompt,
+        sender_name=sender_name,
+        sender_staff_id=sender_staff_id,
+        reply_mode=reply_mode,
+    )
+
+
 def _reply_final(
     handler: Any,
     incoming: dingtalk_stream.ChatbotMessage,
@@ -597,11 +646,12 @@ def process_inbound_task(
             cached = store.get_last_full_reply(incoming.conversation_id, **store_kwargs)
             if cached:
                 delivery = deliver_reply(cached, prompt)
-                _reply_final(
+                _reply_early_exit(
                     handler,
                     incoming,
                     inbound,
                     delivery.message,
+                    stream_card=stream_card,
                     started=started,
                     task_kind=task_kind,
                     user_key=user_key,
@@ -611,12 +661,13 @@ def process_inbound_task(
                 )
                 store.save(incoming.conversation_id, prompt, **store_kwargs)
                 return "ok"
-            _reply_final(
+            _reply_early_exit(
                 handler,
                 incoming,
                 inbound,
                 "暂无完整结果缓存。\n"
                 "请先 @机器人 执行一次查询任务，再发「查看全部数据」。",
+                stream_card=stream_card,
                 started=started,
                 task_kind=task_kind,
                 user_key=user_key,
@@ -629,11 +680,12 @@ def process_inbound_task(
 
         if looks_like_env_check_request(prompt):
             logger.info("环境检查已取消 conv=%s", user_key)
-            _reply_final(
+            _reply_early_exit(
                 handler,
                 incoming,
                 inbound,
                 env_check_denial_message(),
+                stream_card=stream_card,
                 started=started,
                 task_kind=classify_task_kind(prompt),
                 user_key=user_key,
@@ -652,11 +704,12 @@ def process_inbound_task(
                 conversation_type=incoming.conversation_type,
                 client=getattr(handler, "dingtalk_client", None),
             )
-            _reply_final(
+            _reply_early_exit(
                 handler,
                 incoming,
                 inbound,
                 group_reply,
+                stream_card=stream_card,
                 started=started,
                 task_kind=task_kind,
                 user_key=user_key,
@@ -673,11 +726,12 @@ def process_inbound_task(
                 sender_staff_id=sender_staff_id,
                 client=getattr(handler, "dingtalk_client", None),
             )
-            _reply_final(
+            _reply_early_exit(
                 handler,
                 incoming,
                 inbound,
                 group_reply,
+                stream_card=stream_card,
                 started=started,
                 task_kind=task_kind,
                 user_key=user_key,
@@ -690,11 +744,12 @@ def process_inbound_task(
         reply_mode_reply = handle_reply_mode_message(prompt)
         if reply_mode_reply is not None:
             task_kind = classify_task_kind(prompt, route_kind="reply_mode")
-            _reply_final(
+            _reply_early_exit(
                 handler,
                 incoming,
                 inbound,
                 reply_mode_reply,
+                stream_card=stream_card,
                 started=started,
                 task_kind=task_kind,
                 user_key=user_key,
@@ -734,6 +789,8 @@ def process_inbound_task(
             result = format_group_reply(raw_result, prompt=prompt, source="route")
             store.save_full_reply(incoming.conversation_id, result, **store_kwargs)
             delivery = deliver_reply(result, prompt)
+            if stream_card is not None and stream_card.is_active:
+                stream_card.finish_status("✅ 已完成，结果见下方消息 ↓")
             _reply_final(
                 handler,
                 incoming,
@@ -765,11 +822,12 @@ def process_inbound_task(
         else:
             hint = suggest_command_hint(prompt)
             if hint:
-                _reply_final(
+                _reply_early_exit(
                     handler,
                     incoming,
                     inbound,
                     hint,
+                    stream_card=stream_card,
                     started=started,
                     task_kind=task_kind,
                     user_key=user_key,
@@ -807,11 +865,12 @@ def process_inbound_task(
                     incoming.sender_id,
                     redact_for_log(prompt),
                 )
-                _reply_final(
+                _reply_early_exit(
                     handler,
                     incoming,
                     inbound,
                     code_modify_denial_message(),
+                    stream_card=stream_card,
                     started=started,
                     task_kind=task_kind,
                     user_key=user_key,
@@ -830,11 +889,12 @@ def process_inbound_task(
                     incoming.sender_id,
                     redact_for_log(prompt),
                 )
-                _reply_final(
+                _reply_early_exit(
                     handler,
                     incoming,
                     inbound,
                     source_file_denial_message(),
+                    stream_card=stream_card,
                     started=started,
                     task_kind=task_kind,
                     user_key=user_key,
@@ -857,11 +917,12 @@ def process_inbound_task(
                     incoming.sender_id,
                     redact_for_log(prompt),
                 )
-                _reply_final(
+                _reply_early_exit(
                     handler,
                     incoming,
                     inbound,
                     online_denial,
+                    stream_card=stream_card,
                     started=started,
                     task_kind=task_kind,
                     user_key=user_key,
@@ -878,11 +939,12 @@ def process_inbound_task(
                     user_key,
                     redact_for_log(prompt),
                 )
-                _reply_final(
+                _reply_early_exit(
                     handler,
                     incoming,
                     inbound,
                     adb_execution_denial_message(),
+                    stream_card=stream_card,
                     started=started,
                     task_kind=task_kind,
                     user_key=user_key,
@@ -907,6 +969,8 @@ def process_inbound_task(
                         session=session,
                         user_key=user_key,
                         sender_name=sender_name,
+                        sender_staff_id=sender_staff_id,
+                        run_id_hint=incoming.message_id,
                         sender_context=sender_context,
                         allow_code_modify=code_allowed,
                         allow_moa_registry=allow_moa_registry,
@@ -921,6 +985,8 @@ def process_inbound_task(
                         session=session,
                         user_key=user_key,
                         sender_name=sender_name,
+                        sender_staff_id=sender_staff_id,
+                        run_id_hint=incoming.message_id,
                         sender_context=sender_context,
                         allow_code_modify=code_allowed,
                         allow_moa_registry=allow_moa_registry,
