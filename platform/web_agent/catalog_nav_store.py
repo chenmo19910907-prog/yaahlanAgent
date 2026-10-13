@@ -130,6 +130,24 @@ def reconcile_nav_tree(
                 if raw.get("subfolder") is True:
                     entry["subfolder"] = True
                 out.append(entry)
+            elif kind == "cap":
+                mid = str(raw.get("moduleId") or "").strip()
+                if mid not in valid_ids:
+                    continue
+                cat_raw = raw.get("catIndex")
+                if isinstance(cat_raw, bool):
+                    continue
+                try:
+                    cat_index = int(cat_raw)
+                except (TypeError, ValueError):
+                    continue
+                if cat_index < 0:
+                    continue
+                entry = {"kind": "cap", "moduleId": mid, "catIndex": cat_index}
+                cap_label = str(raw.get("label") or "").strip()
+                if cap_label:
+                    entry["label"] = cap_label
+                out.append(entry)
         return out
 
     merged = walk(tree)
@@ -206,6 +224,24 @@ def _normalize_nodes(raw_nodes: Any, depth: int = 0) -> list[dict[str, Any]] | N
             }
             if raw.get("subfolder") is True:
                 entry["subfolder"] = True
+            out.append(entry)
+        elif kind == "cap":
+            module_id = str(raw.get("moduleId") or "").strip()
+            if not module_id:
+                return None
+            cat_raw = raw.get("catIndex")
+            if isinstance(cat_raw, bool):
+                return None
+            try:
+                cat_index = int(cat_raw)
+            except (TypeError, ValueError):
+                return None
+            if cat_index < 0:
+                return None
+            entry = {"kind": "cap", "moduleId": module_id, "catIndex": cat_index}
+            cap_label = str(raw.get("label") or "").strip()
+            if cap_label:
+                entry["label"] = cap_label
             out.append(entry)
         else:
             return None

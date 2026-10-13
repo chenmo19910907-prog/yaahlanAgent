@@ -7,139 +7,777 @@
     },
     {
       "kind": "module",
-      "moduleId": "用户"
+      "moduleId": "用户",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "用户",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "用户",
+          "catIndex": 1
+        },
+        {
+          "kind": "cap",
+          "moduleId": "用户",
+          "catIndex": 2
+        },
+        {
+          "kind": "cap",
+          "moduleId": "用户",
+          "catIndex": 3
+        },
+        {
+          "kind": "cap",
+          "moduleId": "用户",
+          "catIndex": 4
+        },
+        {
+          "kind": "cap",
+          "moduleId": "用户",
+          "catIndex": 5
+        },
+        {
+          "kind": "cap",
+          "moduleId": "用户",
+          "catIndex": 6
+        },
+        {
+          "kind": "cap",
+          "moduleId": "用户",
+          "catIndex": 7
+        },
+        {
+          "kind": "cap",
+          "moduleId": "用户",
+          "catIndex": 8
+        },
+        {
+          "kind": "cap",
+          "moduleId": "用户",
+          "catIndex": 9
+        },
+        {
+          "kind": "cap",
+          "moduleId": "用户",
+          "catIndex": 10
+        },
+        {
+          "kind": "cap",
+          "moduleId": "用户",
+          "catIndex": 11
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "实名认证"
+      "moduleId": "实名认证",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "实名认证",
+          "catIndex": 0
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "vip"
+      "moduleId": "vip",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "vip",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "vip",
+          "catIndex": 1
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "房间"
+      "moduleId": "房间",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "房间",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "房间",
+          "catIndex": 1
+        },
+        {
+          "kind": "cap",
+          "moduleId": "房间",
+          "catIndex": 2
+        },
+        {
+          "kind": "cap",
+          "moduleId": "房间",
+          "catIndex": 3
+        },
+        {
+          "kind": "cap",
+          "moduleId": "房间",
+          "catIndex": 4
+        },
+        {
+          "kind": "cap",
+          "moduleId": "房间",
+          "catIndex": 5
+        },
+        {
+          "kind": "cap",
+          "moduleId": "房间",
+          "catIndex": 6
+        },
+        {
+          "kind": "cap",
+          "moduleId": "房间",
+          "catIndex": 7
+        },
+        {
+          "kind": "cap",
+          "moduleId": "房间",
+          "catIndex": 8
+        },
+        {
+          "kind": "cap",
+          "moduleId": "房间",
+          "catIndex": 9
+        },
+        {
+          "kind": "cap",
+          "moduleId": "房间",
+          "catIndex": 10
+        },
+        {
+          "kind": "cap",
+          "moduleId": "房间",
+          "catIndex": 11
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "pk"
+      "moduleId": "pk",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "pk",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "pk",
+          "catIndex": 1
+        },
+        {
+          "kind": "cap",
+          "moduleId": "pk",
+          "catIndex": 2
+        },
+        {
+          "kind": "cap",
+          "moduleId": "pk",
+          "catIndex": 3
+        },
+        {
+          "kind": "cap",
+          "moduleId": "pk",
+          "catIndex": 4
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "礼物"
+      "moduleId": "礼物",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "礼物",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "礼物",
+          "catIndex": 1
+        },
+        {
+          "kind": "cap",
+          "moduleId": "礼物",
+          "catIndex": 2
+        },
+        {
+          "kind": "cap",
+          "moduleId": "礼物",
+          "catIndex": 3
+        },
+        {
+          "kind": "cap",
+          "moduleId": "礼物",
+          "catIndex": 4
+        },
+        {
+          "kind": "cap",
+          "moduleId": "礼物",
+          "catIndex": 5
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "定制"
+      "moduleId": "定制",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "定制",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "定制",
+          "catIndex": 1
+        },
+        {
+          "kind": "cap",
+          "moduleId": "定制",
+          "catIndex": 2
+        },
+        {
+          "kind": "cap",
+          "moduleId": "定制",
+          "catIndex": 3
+        },
+        {
+          "kind": "cap",
+          "moduleId": "定制",
+          "catIndex": 4
+        },
+        {
+          "kind": "cap",
+          "moduleId": "定制",
+          "catIndex": 5
+        },
+        {
+          "kind": "cap",
+          "moduleId": "定制",
+          "catIndex": 6
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "道具"
+      "moduleId": "道具",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "道具",
+          "catIndex": 0
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "活动"
+      "moduleId": "活动",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "活动",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "活动",
+          "catIndex": 1
+        },
+        {
+          "kind": "cap",
+          "moduleId": "活动",
+          "catIndex": 2
+        },
+        {
+          "kind": "cap",
+          "moduleId": "活动",
+          "catIndex": 3
+        },
+        {
+          "kind": "cap",
+          "moduleId": "活动",
+          "catIndex": 4
+        },
+        {
+          "kind": "cap",
+          "moduleId": "活动",
+          "catIndex": 5
+        },
+        {
+          "kind": "cap",
+          "moduleId": "活动",
+          "catIndex": 6
+        },
+        {
+          "kind": "cap",
+          "moduleId": "活动",
+          "catIndex": 7
+        },
+        {
+          "kind": "cap",
+          "moduleId": "活动",
+          "catIndex": 8
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "动态"
+      "moduleId": "动态",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "动态",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "动态",
+          "catIndex": 1
+        },
+        {
+          "kind": "cap",
+          "moduleId": "动态",
+          "catIndex": 2
+        },
+        {
+          "kind": "cap",
+          "moduleId": "动态",
+          "catIndex": 3
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "cp"
+      "moduleId": "cp",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "cp",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "cp",
+          "catIndex": 1
+        },
+        {
+          "kind": "cap",
+          "moduleId": "cp",
+          "catIndex": 2
+        },
+        {
+          "kind": "cap",
+          "moduleId": "cp",
+          "catIndex": 3
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "家族"
+      "moduleId": "家族",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "家族",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "家族",
+          "catIndex": 1
+        },
+        {
+          "kind": "cap",
+          "moduleId": "家族",
+          "catIndex": 2
+        },
+        {
+          "kind": "cap",
+          "moduleId": "家族",
+          "catIndex": 3
+        },
+        {
+          "kind": "cap",
+          "moduleId": "家族",
+          "catIndex": 4
+        },
+        {
+          "kind": "cap",
+          "moduleId": "家族",
+          "catIndex": 5
+        },
+        {
+          "kind": "cap",
+          "moduleId": "家族",
+          "catIndex": 6
+        },
+        {
+          "kind": "cap",
+          "moduleId": "家族",
+          "catIndex": 7
+        },
+        {
+          "kind": "cap",
+          "moduleId": "家族",
+          "catIndex": 8
+        },
+        {
+          "kind": "cap",
+          "moduleId": "家族",
+          "catIndex": 9
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "公会"
+      "moduleId": "公会",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "公会",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "公会",
+          "catIndex": 1
+        },
+        {
+          "kind": "cap",
+          "moduleId": "公会",
+          "catIndex": 2
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "算薪"
+      "moduleId": "算薪",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "算薪",
+          "catIndex": 0
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "风控"
+      "moduleId": "风控",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "风控",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "风控",
+          "catIndex": 1
+        },
+        {
+          "kind": "cap",
+          "moduleId": "风控",
+          "catIndex": 2
+        },
+        {
+          "kind": "cap",
+          "moduleId": "风控",
+          "catIndex": 3
+        },
+        {
+          "kind": "cap",
+          "moduleId": "风控",
+          "catIndex": 4
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "抓包"
+      "moduleId": "抓包",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "抓包",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "抓包",
+          "catIndex": 1
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "奖励验收"
+      "moduleId": "奖励验收",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "奖励验收",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "奖励验收",
+          "catIndex": 1
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "支付"
+      "moduleId": "支付",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "支付",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "支付",
+          "catIndex": 1
+        },
+        {
+          "kind": "cap",
+          "moduleId": "支付",
+          "catIndex": 2
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "客服"
+      "moduleId": "客服",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "客服",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "客服",
+          "catIndex": 1
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "版本"
+      "moduleId": "版本",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "版本",
+          "catIndex": 0
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "测试机"
+      "moduleId": "测试机",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "测试机",
+          "catIndex": 0
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "线上环境"
+      "moduleId": "线上环境",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "线上环境",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "线上环境",
+          "catIndex": 1
+        },
+        {
+          "kind": "cap",
+          "moduleId": "线上环境",
+          "catIndex": 2
+        },
+        {
+          "kind": "cap",
+          "moduleId": "线上环境",
+          "catIndex": 3
+        },
+        {
+          "kind": "cap",
+          "moduleId": "线上环境",
+          "catIndex": 4
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "知识库"
+      "moduleId": "知识库",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "知识库",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "知识库",
+          "catIndex": 1
+        },
+        {
+          "kind": "cap",
+          "moduleId": "知识库",
+          "catIndex": 2
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "平台"
+      "moduleId": "平台",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "平台",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "平台",
+          "catIndex": 1
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "大r用户管理"
+      "moduleId": "大r用户管理",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "大r用户管理",
+          "catIndex": 0
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "tunnel-mock"
+      "moduleId": "tunnel-mock",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "tunnel-mock",
+          "catIndex": 0
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "半月结算薪"
+      "moduleId": "半月结算薪",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "半月结算薪",
+          "catIndex": 0
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "礼物统计"
+      "moduleId": "礼物统计",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "礼物统计",
+          "catIndex": 0
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "奖励排查"
+      "moduleId": "奖励排查",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "奖励排查",
+          "catIndex": 0
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "宝藏猎人"
+      "moduleId": "宝藏猎人",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "宝藏猎人",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "宝藏猎人",
+          "catIndex": 1
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "消息"
+      "moduleId": "消息",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "消息",
+          "catIndex": 0
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "确认应得薪资"
+      "moduleId": "确认应得薪资",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "确认应得薪资",
+          "catIndex": 0
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "退款黑名单"
+      "moduleId": "退款黑名单",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "退款黑名单",
+          "catIndex": 0
+        }
+      ]
     },
     {
       "kind": "module",
-      "moduleId": "钉钉用例表"
+      "moduleId": "钉钉用例表",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "钉钉用例表",
+          "catIndex": 0
+        }
+      ]
     }
   ]
 }

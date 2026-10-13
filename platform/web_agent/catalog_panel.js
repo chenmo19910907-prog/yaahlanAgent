@@ -54,6 +54,38 @@
     return expanded ? svgOpen : svgClosed;
   }
 
+  function navCapInterfaceIconSvg() {
+    return `<svg class="nav-cap-if-svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linejoin="round" aria-hidden="true">
+      <rect x="2.25" y="2.25" width="11.5" height="11.5" rx="1"/>
+      <path d="M2.25 6.25h11.5M2.25 10.25h11.5"/>
+    </svg>`;
+  }
+
+  function navCatalogListIconSvg() {
+    return `<svg class="nav-all-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+      <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+    </svg>`;
+  }
+
+  function navCategoryKey(moduleId, catIndex) {
+    return `cat:${moduleId}:${catIndex}`;
+  }
+
+  function collapseNavDisplayLabel(text) {
+    return String(text || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function parseNavCategoryKey(key) {
+    if (!key || !key.startsWith('cat:')) return null;
+    const rest = key.slice(4);
+    const sep = rest.lastIndexOf(':');
+    if (sep <= 0) return null;
+    const moduleId = rest.slice(0, sep);
+    const catIndex = Number.parseInt(rest.slice(sep + 1), 10);
+    if (!moduleId || Number.isNaN(catIndex)) return null;
+    return { moduleId, catIndex };
+  }
+
   function navChevronSvg(collapsed) {
     if (collapsed) {
       return `<svg class="nav-chevron-svg" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.25 2.25 8 6l-3.75 3.75"/></svg>`;
@@ -90,6 +122,8 @@
     this._navMenuEl = null;
     this._navMenuTarget = null;
     this._dragNodePath = null;
+    this._navDragActive = false;
+    this._pendingNavMove = null;
   }
 
   CatalogPanel.prototype.load = async function load(fetchData) {
@@ -109,6 +143,8 @@
       ? JSON.parse(JSON.stringify(nav.tree))
       : defaultNavTree(this.DATA);
     this.ensureFolderChildren(this.navTree);
+    this.hydrateNavCaps(this.navTree);
+    this.sortNavTreeChildOrder(this.navTree);
     this.resetNavCollapsedAll();
     this.renderNav();
     this.render();
@@ -152,7 +188,7 @@
 
   CatalogPanel.prototype.navNodeSupportsRename = function navNodeSupportsRename(node, depth) {
     if (!node) return false;
-    if (node.kind === 'folder') return true;
+    if (node.kind === 'cap' || node.kind === 'folder') return true;
     return depth === 0 && (node.kind === 'module' || node.kind === 'playbook');
   };
 
@@ -179,6 +215,65 @@
 
   CatalogPanel.prototype.resetNavCollapsedAll = function resetNavCollapsedAll() {
     this.collapsed = new Set(this.collectNavCollapseKeys(this.navTree, 0));
+  };
+
+  CatalogPanel.prototype.collectCapKeysInTree = function collectCapKeysInTree(nodes, out) {
+    const set = out || new Set();
+    (nodes || []).forEach((node) => {
+      if (!node || typeof node !== 'object') return;
+      if (node.kind === 'cap') set.add(navCategoryKey(node.moduleId, node.catIndex));
+      if (Array.isArray(node.children)) this.collectCapKeysInTree(node.children, set);
+    });
+    return set;
+  };
+
+  CatalogPanel.prototype.hydrateNavCaps = function hydrateNavCaps(nodes) {
+    const placed = this.collectCapKeysInTree(this.navTree);
+    (nodes || []).forEach((node) => {
+      if (!node || typeof node !== 'object') return;
+      if (node.kind === 'module' && node.moduleId) {
+        if (!Array.isArray(node.children)) node.children = [];
+        const mod = this.moduleById(node.moduleId);
+        (mod?.categories || []).forEach((cat, catIndex) => {
+          const key = navCategoryKey(node.moduleId, catIndex);
+          if (placed.has(key)) return;
+          node.children.push({ kind: 'cap', moduleId: node.moduleId, catIndex });
+          placed.add(key);
+        });
+      }
+      if (Array.isArray(node.children)) this.hydrateNavCaps(node.children);
+    });
+  };
+
+  CatalogPanel.prototype.navSiblingSortRank = function navSiblingSortRank(node) {
+    if (!node) return 2;
+    if (node.kind === 'folder') return 0;
+    if (node.kind === 'cap') return 1;
+    return 0;
+  };
+
+  CatalogPanel.prototype.sortNavContainerChildren = function sortNavContainerChildren(node) {
+    if (!node || !this.isNavContainer(node) || !Array.isArray(node.children)) return;
+    const children = node.children;
+    if (children.length < 2) return;
+    const tagged = children.map((child, index) => ({ child, index }));
+    tagged.sort((a, b) => {
+      const ra = this.navSiblingSortRank(a.child);
+      const rb = this.navSiblingSortRank(b.child);
+      if (ra !== rb) return ra - rb;
+      return a.index - b.index;
+    });
+    node.children = tagged.map((entry) => entry.child);
+  };
+
+  CatalogPanel.prototype.sortNavTreeChildOrder = function sortNavTreeChildOrder(nodes) {
+    (nodes || []).forEach((node) => {
+      if (!node || typeof node !== 'object') return;
+      if (this.isNavContainer(node)) {
+        this.sortNavContainerChildren(node);
+        this.sortNavTreeChildOrder(node.children);
+      }
+    });
   };
 
   CatalogPanel.prototype.ensureFolderChildren = function ensureFolderChildren(nodes, atRoot) {
@@ -240,6 +335,7 @@
     if (node.kind === 'playbook') return 'playbook';
     if (node.kind === 'module') return `module:${node.moduleId}`;
     if (node.kind === 'folder') return `folder:${node.id}`;
+    if (node.kind === 'cap') return navCategoryKey(node.moduleId, node.catIndex);
     return '';
   };
 
@@ -257,26 +353,51 @@
       return mod?.label || node.moduleId || '';
     }
     if (node.kind === 'folder') return node.label || '分组';
+    if (node.kind === 'cap') {
+      const custom = collapseNavDisplayLabel(node.label);
+      if (custom) return custom;
+      const mod = this.moduleById(node.moduleId);
+      const cat = mod?.categories?.[node.catIndex];
+      return collapseNavDisplayLabel(cat?.name) || '能力接口';
+    }
     return '';
+  };
+
+  CatalogPanel.prototype.capItemCount = function capItemCount(node) {
+    if (!node || node.kind !== 'cap') return 0;
+    const mod = this.moduleById(node.moduleId);
+    const cat = mod?.categories?.[node.catIndex];
+    return (cat?.items || []).length;
   };
 
   CatalogPanel.prototype.navNodeCount = function navNodeCount(node) {
     if (!node) return 0;
     if (node.kind === 'all') return this.DATA?.total_items || 0;
     if (node.kind === 'playbook') return this.playbookCount();
-    if (node.kind === 'module') {
-      let sum = 0;
-      for (const child of node.children || []) sum += this.navNodeCount(child);
-      if (sum > 0) return sum;
-      const mod = this.moduleById(node.moduleId);
-      return mod?.item_count || 0;
-    }
-    if (node.kind === 'folder') {
+    if (node.kind === 'cap') return this.capItemCount(node);
+    if (node.kind === 'module' || node.kind === 'folder') {
       let sum = 0;
       for (const child of node.children || []) sum += this.navNodeCount(child);
       return sum;
     }
     return 0;
+  };
+
+  CatalogPanel.prototype.collectCapsInSubtree = function collectCapsInSubtree(node, out) {
+    const list = out || [];
+    if (!node) return list;
+    const walk = (n) => {
+      if (!n || typeof n !== 'object') return;
+      if (n.kind === 'cap') list.push(n);
+      (n.children || []).forEach(walk);
+    };
+    walk(node);
+    return list;
+  };
+
+  CatalogPanel.prototype.findNavNodeByKey = function findNavNodeByKey(key) {
+    const path = this.findNodePath(key);
+    return path ? this.getNodeAtPath(path) : null;
   };
 
   CatalogPanel.prototype.collectModuleIds = function collectModuleIds(node) {
@@ -295,13 +416,35 @@
     const key = this.activeKey || 'all';
     if (key === 'all') return { mode: 'all' };
     if (key === 'playbook') return { mode: 'playbook' };
-    if (key.startsWith('module:')) return { mode: 'modules', moduleIds: new Set([key.slice(7)]) };
+    if (key.startsWith('module:')) {
+      const node = this.findNavNodeByKey(key);
+      if (node) {
+        return {
+          mode: 'navScope',
+          node,
+          title: this.navNodeLabel(node),
+          icon: 'module',
+        };
+      }
+      return { mode: 'modules', moduleIds: new Set([key.slice(7)]) };
+    }
     if (key.startsWith('folder:')) {
+      const node = this.findNavNodeByKey(key);
+      if (node) {
+        return {
+          mode: 'navScope',
+          node,
+          title: this.navNodeLabel(node),
+          icon: 'module',
+        };
+      }
       const folderId = key.slice(7);
       const folder = this.findFolderById(folderId);
       const moduleIds = folder ? this.collectModuleIds(folder) : new Set();
       return { mode: 'modules', moduleIds };
     }
+    const cat = parseNavCategoryKey(key);
+    if (cat) return { mode: 'category', moduleId: cat.moduleId, catIndex: cat.catIndex };
     return { mode: 'all' };
   };
 
@@ -324,8 +467,8 @@
       const node = list[i];
       const nodeKey = this.navNodeKey(node);
       if (nodeKey === key) return pathPrefix.concat(i);
-      if (this.isNavContainer(node)) {
-        const nested = this.findNodePath(key, node.children || [], pathPrefix.concat([i, 'children']));
+      if (Array.isArray(node.children) && node.children.length) {
+        const nested = this.findNodePath(key, node.children, pathPrefix.concat([i, 'children']));
         if (nested) return nested;
       }
     }
@@ -372,6 +515,30 @@
     return itemPath.slice(0, -2);
   };
 
+  /** 从树中移除 removedPath 后，修正仍指向原位置的 itemPath（如先删根级项再 insert）。 */
+  CatalogPanel.prototype.adjustNavItemPathAfterRemoval = function adjustNavItemPathAfterRemoval(
+    removedPath,
+    itemPath,
+  ) {
+    if (!itemPath || !removedPath) return itemPath;
+    const next = itemPath.slice();
+    let i = 0;
+    while (i < next.length && i < removedPath.length) {
+      const a = next[i];
+      const b = removedPath[i];
+      if (a === b) {
+        i += 1;
+        continue;
+      }
+      if (typeof a === 'number' && typeof b === 'number') {
+        if (i === removedPath.length - 1 && a > b) next[i] = a - 1;
+        return next;
+      }
+      return next;
+    }
+    return next;
+  };
+
   CatalogPanel.prototype.insertNode = function insertNode(parentPath, index, node) {
     let list = this.navTree;
     if (parentPath && parentPath.length) {
@@ -391,16 +558,75 @@
     return ratio > 0.18 && ratio < 0.82;
   };
 
-  CatalogPanel.prototype.resolveNavDropTarget = function resolveNavDropTarget(targetPath, y, rectHeight) {
+  CatalogPanel.prototype.navListDepth = function navListDepth(parentPath) {
+    if (!parentPath || !parentPath.length) return 0;
+    return parentPath.filter((seg) => seg !== 'children').length;
+  };
+
+  CatalogPanel.prototype.navParentPathKey = function navParentPathKey(parentPath) {
+    return JSON.stringify(parentPath || []);
+  };
+
+  CatalogPanel.prototype.resolveNavDropTarget = function resolveNavDropTarget(
+    targetPath,
+    y,
+    rectHeight,
+    fromPath,
+  ) {
     const targetNode = this.getNodeAtPath(targetPath);
     if (this.isDropInsideZone(targetNode, y, rectHeight)) {
       if (!Array.isArray(targetNode.children)) targetNode.children = [];
-      return { toParentPath: targetPath, toIndex: targetNode.children.length };
+      return {
+        kind: 'inside',
+        toParentPath: targetPath,
+        toIndex: targetNode.children.length,
+      };
+    }
+    const before = y < rectHeight / 2;
+    const targetParentPath = this.parentFolderPath(targetPath);
+    const targetIdx = targetPath[targetPath.length - 1];
+    if (
+      before
+      && fromPath
+      && targetParentPath
+      && y <= Math.max(10, rectHeight * 0.28)
+    ) {
+      const fromParent = this.parentFolderPath(fromPath);
+      if (
+        this.navParentPathKey(fromParent) === this.navParentPathKey(targetParentPath)
+        && this.navParentPathKey(fromPath) !== this.navParentPathKey(targetPath)
+      ) {
+        const parentIdx = targetParentPath[targetParentPath.length - 1];
+        return {
+          kind: 'sibling',
+          toParentPath: this.parentFolderPath(targetParentPath),
+          toIndex: parentIdx + 1,
+        };
+      }
     }
     return {
-      toParentPath: this.parentFolderPath(targetPath),
-      toIndex: targetPath[targetPath.length - 1] + (y >= rectHeight / 2 ? 1 : 0),
+      kind: 'sibling',
+      toParentPath: targetParentPath,
+      toIndex: targetIdx + (before ? 0 : 1),
     };
+  };
+
+  CatalogPanel.prototype.isNavDropPlacementAllowed = function isNavDropPlacementAllowed(fromPath, drop) {
+    if (!drop || !fromPath) return false;
+    if (drop.kind === 'inside') {
+      return !this.cannotDropInside(fromPath, drop.toParentPath);
+    }
+    return !this.cannotDropInside(fromPath, drop.toParentPath);
+  };
+
+  CatalogPanel.prototype.applyNavDropIndicator = function applyNavDropIndicator(nav, row, fromPath, targetPath, y, rectHeight) {
+    nav.querySelectorAll('.nav-row.drop-before, .nav-row.drop-after, .nav-row.drop-inside')
+      .forEach((el) => el.classList.remove('drop-before', 'drop-after', 'drop-inside'));
+    const drop = this.resolveNavDropTarget(targetPath, y, rectHeight, fromPath);
+    if (!this.isNavDropPlacementAllowed(fromPath, drop)) return;
+    if (drop.kind === 'inside') row.classList.add('drop-inside');
+    else if (y < rectHeight / 2) row.classList.add('drop-before');
+    else row.classList.add('drop-after');
   };
 
   CatalogPanel.prototype.cannotDropInside = function cannotDropInside(fromPath, toParentPath) {
@@ -424,6 +650,7 @@
   };
 
   CatalogPanel.prototype.buildNavPayload = function buildNavPayload() {
+    this.sortNavTreeChildOrder(this.navTree);
     return {
       version: 1,
       tree: JSON.parse(JSON.stringify(this.navTree)),
@@ -567,6 +794,60 @@
     });
   };
 
+  CatalogPanel.prototype.renderCapCategoryBlock = function renderCapCategoryBlock(capNode, q) {
+    const mod = this.moduleById(capNode.moduleId);
+    const cat = mod?.categories?.[capNode.catIndex];
+    if (!cat) return { html: '', count: 0 };
+    const catLabel = this.navNodeLabel(capNode);
+    const filtered = cat.items.filter((it) => this.matches(it, mod.label, cat.name, q));
+    if (!filtered.length) return { html: '', count: 0 };
+    const items = filtered.map((it) => this.renderCapItem(it)).join('');
+    return {
+      count: filtered.length,
+      html: `<li><span class="cat-name">${escapeHtml(catLabel)}</span><ul class="items">${items}</ul></li>`,
+    };
+  };
+
+  CatalogPanel.prototype.renderNavScopeBody = function renderNavScopeBody(node, q) {
+    let catsHtml = '';
+    let visibleCount = 0;
+    const parts = [];
+    const scopeChildren = (node.children || []).slice().sort((a, b) => {
+      const ra = this.navSiblingSortRank(a);
+      const rb = this.navSiblingSortRank(b);
+      return ra !== rb ? ra - rb : 0;
+    });
+    scopeChildren.forEach((child) => {
+      if (child.kind === 'cap') {
+        const block = this.renderCapCategoryBlock(child, q);
+        if (block.count) {
+          visibleCount += block.count;
+          catsHtml += block.html;
+        }
+      } else if (child.kind === 'folder') {
+        const nested = this.renderNavScopeBody(child, q);
+        if (nested.visibleCount) {
+          visibleCount += nested.visibleCount;
+          parts.push(`<div class="catalog-scope-folder">
+            <h4 class="catalog-scope-folder-title">${escapeHtml(child.label || '分组')}</h4>
+            ${nested.partsHtml}
+            ${nested.catsHtml ? `<ol class="cats">${nested.catsHtml}</ol>` : ''}
+          </div>`);
+        }
+      } else if (child.kind === 'module') {
+        const nested = this.renderNavScopeBody(child, q);
+        if (nested.visibleCount) {
+          visibleCount += nested.visibleCount;
+          parts.push(`<div class="catalog-scope-module">
+            <h4 class="catalog-scope-folder-title">${escapeHtml(this.navNodeLabel(child))}</h4>
+            ${nested.partsHtml}${nested.catsHtml ? `<ol class="cats">${nested.catsHtml}</ol>` : ''}
+          </div>`);
+        }
+      }
+    });
+    return { catsHtml, partsHtml: parts.join(''), visibleCount };
+  };
+
   CatalogPanel.prototype.renderPlaybooks = function renderPlaybooks(container) {
     const playbooks = this.DATA.playbooks || [];
     if (!playbooks.length) return;
@@ -591,6 +872,63 @@
       any = true;
     }
 
+    if (filter.mode === 'navScope') {
+      const body = this.renderNavScopeBody(filter.node, q);
+      if (body.visibleCount) {
+        any = true;
+        const icon = filter.icon === 'module' ? smallIcon('module') : smallIcon('spark');
+        const section = document.createElement('section');
+        section.className = 'catalog-module catalog-module-scope';
+        section.innerHTML = `
+          <div class="module-head">
+            <span class="module-icon" aria-hidden="true">${icon}</span>
+            <div>
+              <h3>${escapeHtml(filter.title)}</h3>
+              <div class="sub">${body.visibleCount} 项能力</div>
+            </div>
+          </div>
+          ${body.partsHtml}
+          ${body.catsHtml ? `<ol class="cats">${body.catsHtml}</ol>` : ''}`;
+        main.appendChild(section);
+      }
+      if (!any) {
+        main.innerHTML = '<div class="catalog-empty">没有匹配的能力</div>';
+      } else {
+        this.bindPromptPanels(main);
+      }
+      return;
+    }
+
+    if (filter.mode === 'category') {
+      const mod = this.DATA.modules.find((m) => m.id === filter.moduleId);
+      const cat = mod?.categories?.[filter.catIndex];
+      if (cat) {
+        const filtered = cat.items.filter((it) => this.matches(it, mod.label, cat.name, q));
+        if (filtered.length) {
+          any = true;
+          const items = filtered.map((it) => this.renderCapItem(it)).join('');
+          const section = document.createElement('section');
+          section.className = 'catalog-module catalog-module-category';
+          section.innerHTML = `
+            <div class="module-head">
+              <span class="module-icon" aria-hidden="true">${smallIcon('spark')}</span>
+              <div>
+                <h3>${escapeHtml(collapseNavDisplayLabel(cat.name))}</h3>
+                <div class="sub">${filtered.length} 项 MOA 能力</div>
+              </div>
+            </div>
+            <ol class="cats"><li><ul class="items">${items}</ul></li></ol>`;
+          main.appendChild(section);
+        }
+      }
+      if (!any) {
+        main.innerHTML = '<div class="catalog-empty">没有匹配的能力</div>';
+      } else {
+        this.bindPromptPanels(main);
+      }
+      return;
+    }
+
     for (const mod of this.DATA.modules) {
       if (filter.mode === 'playbook') continue;
       if (filter.mode === 'modules' && !filter.moduleIds.has(mod.id)) continue;
@@ -602,7 +940,7 @@
         if (!filtered.length) continue;
         visibleCount += filtered.length;
         const items = filtered.map(it => this.renderCapItem(it)).join('');
-        catsHtml += `<li><span class="cat-name">${escapeHtml(cat.name)}</span><ul class="items">${items}</ul></li>`;
+        catsHtml += `<li><span class="cat-name">${escapeHtml(collapseNavDisplayLabel(cat.name))}</span><ul class="items">${items}</ul></li>`;
       }
       if (!visibleCount) continue;
       any = true;
@@ -641,9 +979,12 @@
     const indent = Math.min(depth, 8) * 14;
     const showsFolderIcon = this.navRowShowsFolderIcon(node);
     const folderExpanded = showsFolderIcon && branch && !collapsed;
-    const folderMark = showsFolderIcon
-      ? `<span class="nav-folder-icon${folderExpanded ? ' is-open' : ' is-closed'}" aria-hidden="true">${navFolderIconSvg(folderExpanded)}</span>`
-      : '';
+    const isAll = node.kind === 'all';
+    const folderMark = isAll
+      ? `<span class="nav-folder-icon nav-all-icon" aria-hidden="true">${navCatalogListIconSvg()}</span>`
+      : showsFolderIcon
+        ? `<span class="nav-folder-icon${folderExpanded ? ' is-open' : ' is-closed'}" aria-hidden="true">${navFolderIconSvg(folderExpanded)}</span>`
+        : '';
     const chevron = branch
       ? `<button type="button" class="nav-fold" data-collapse-key="${escapeHtml(collapseKey)}" aria-label="${collapsed ? '展开' : '收起'}">${navChevronSvg(collapsed)}</button>`
       : '<span class="nav-fold-spacer" aria-hidden="true"></span>';
@@ -658,15 +999,42 @@
     </div>`;
   };
 
+  CatalogPanel.prototype.renderNavCapFromNode = function renderNavCapFromNode(node, depth, pathKey) {
+    const mod = this.moduleById(node.moduleId);
+    const cat = mod?.categories?.[node.catIndex];
+    if (!cat) return '';
+    const key = this.navNodeKey(node);
+    const label = this.navNodeLabel(node);
+    const active = this.activeKey === key;
+    const indent = Math.min(depth, 8) * 14;
+    const count = (cat.items || []).length;
+    const drag = this.canEditNav ? ' draggable="true"' : '';
+    return `<div class="nav-row nav-cap-if${active ? ' active' : ''}" data-nav-key="${escapeHtml(key)}" data-path-key="${escapeHtml(pathKey)}" style="--nav-depth:${indent}px"${drag}>
+      <span class="nav-cap-lead" aria-hidden="true"><span class="nav-folder-icon nav-cap-if-icon">${navCapInterfaceIconSvg()}</span></span>
+      <button type="button" class="nav-select nav-select-cap-if">
+        <span class="nav-label">${escapeHtml(label)}</span>
+        <span class="count">${count}</span>
+      </button>
+    </div>`;
+  };
+
   CatalogPanel.prototype.renderNavNodes = function renderNavNodes(nodes, depth, pathPrefix) {
     const parts = [];
     (nodes || []).forEach((node, index) => {
       const pathKey = `${pathPrefix}:${index}`;
+      if (node.kind === 'cap') {
+        parts.push(this.renderNavCapFromNode(node, depth, pathKey));
+        return;
+      }
       parts.push(this.renderNavRow(node, depth, pathKey));
       const collapseKey = this.navCollapseKey(node);
       const branch = this.navRowIsBranch(node);
       if (branch && collapseKey && !this.collapsed.has(collapseKey)) {
-        parts.push(`<div class="nav-children">${this.renderNavNodes(node.children || [], depth + 1, `${pathKey}:c`)}</div>`);
+        const childDepth = depth + 1;
+        const treeInner = this.renderNavNodes(node.children || [], childDepth, `${pathKey}:c`);
+        if (treeInner) {
+          parts.push(`<div class="nav-children nav-children-mixed">${treeInner}</div>`);
+        }
       }
     });
     return parts.join('');
@@ -734,6 +1102,7 @@
     const renameBtn = menu.querySelector('[data-action="rename"]');
     const deleteBtn = menu.querySelector('[data-action="delete"]');
     const isAll = node.kind === 'all';
+    const isCap = node.kind === 'cap';
     const depth = this.navNodeDepth(nodePath);
     const canRename = this.navNodeSupportsRename(node, depth) && this.canEditNav;
     const canDeleteFolder = node.kind === 'folder' && this.canDeleteNav;
@@ -741,15 +1110,16 @@
       && depth === 0
       && this.canEditNav;
     if (addBtn) {
-      addBtn.hidden = !this.canEditNav;
+      addBtn.hidden = isCap || !this.canEditNav;
       addBtn.textContent = isAll ? '新建分组' : '添加子分组';
     }
-    if (renameBtn) renameBtn.hidden = isAll || !canRename;
+    if (renameBtn) {
+      renameBtn.hidden = isAll || !canRename;
+      renameBtn.textContent = '重命名';
+    }
     if (deleteBtn) {
-      deleteBtn.hidden = isAll || !(canDeleteFolder || canDeleteNavRow);
-      if (deleteBtn) {
-        deleteBtn.textContent = node.kind === 'folder' ? '删除' : '从目录移除';
-      }
+      deleteBtn.hidden = isAll || isCap || !(canDeleteFolder || canDeleteNavRow);
+      deleteBtn.textContent = node.kind === 'folder' ? '删除' : '从目录移除';
     }
     this._navMenuTarget = { key, nodePath };
     menu.hidden = false;
@@ -841,6 +1211,11 @@
       const next = window.prompt('分组名称', node.label || '');
       if (!next || !String(next).trim() || String(next).trim() === node.label) return;
       node.label = String(next).trim();
+    } else if (node.kind === 'cap') {
+      const current = this.navNodeLabel(node);
+      const next = window.prompt('能力接口名称', current);
+      if (!next || !String(next).trim() || String(next).trim() === current) return;
+      node.label = String(next).trim();
     } else {
       const current = this.navNodeLabel(node);
       const next = window.prompt('目录显示名称', current);
@@ -904,26 +1279,48 @@
     if (sameParent && fromIndex < toIndex) insertAt -= 1;
     const node = this.removeNodeAtPath(fromPath);
     if (!node) return;
+    let destParentPath = toParentPath;
+    let destIndex = insertAt;
+    if (!sameParent) {
+      if (toParentPath && toParentPath.length) {
+        destParentPath = this.adjustNavItemPathAfterRemoval(fromPath, toParentPath);
+      } else if (fromPath.length === 1 && typeof destIndex === 'number' && fromPath[0] < destIndex) {
+        destIndex -= 1;
+      }
+    }
     if (node.kind === 'folder') {
-      if (!toParentPath || !toParentPath.length) {
+      if (!destParentPath || !destParentPath.length) {
         if (fromParent) node.subfolder = true;
       } else {
         node.subfolder = true;
       }
     }
-    if (!this.insertNode(toParentPath, insertAt, node)) {
+    if (!this.insertNode(destParentPath, destIndex, node)) {
       this.insertNode(fromParent, fromIndex, node);
       return;
     }
-    if (toParentPath && toParentPath.length) {
-      this.expandNavAncestors(toParentPath);
-      const parent = this.getNodeAtPath(toParentPath);
+    const toParent = destParentPath && destParentPath.length
+      ? this.getNodeAtPath(destParentPath)
+      : null;
+    if (toParent && this.isNavContainer(toParent)) this.sortNavContainerChildren(toParent);
+    if (fromParent && fromParent.length) {
+      const fromParentNode = this.getNodeAtPath(
+        this.adjustNavItemPathAfterRemoval(fromPath, fromParent),
+      );
+      if (fromParentNode && this.isNavContainer(fromParentNode)) {
+        this.sortNavContainerChildren(fromParentNode);
+      }
+    }
+    if (destParentPath && destParentPath.length) {
+      this.expandNavAncestors(destParentPath);
+      const parent = this.getNodeAtPath(destParentPath);
       const ck = this.navCollapseKey(parent);
       if (ck) this.collapsed.delete(ck);
     }
     try {
       await this.persistNav();
-      this.renderNav();
+      this.renderNav({ preserveScroll: true });
+      this.render();
     } catch (err) {
       this.removeNodeAtPath(this.findNodePath(this.navNodeKey(node)));
       this.insertNode(fromParent, fromIndex, node);
@@ -961,11 +1358,15 @@
         e.preventDefault();
         e.stopPropagation();
         this.hideNavMenu();
-        if (!this.canEditNav && !this.canDeleteNav) {
+        if (node.kind === 'cap') {
+          if (!this.canEditNav) {
+            window.alert('仅管理员可编辑能力分组');
+            return;
+          }
+        } else if (!this.canEditNav && !this.canDeleteNav) {
           window.alert('仅管理员可编辑能力分组');
           return;
-        }
-        if (!this.canEditNav && node.kind !== 'folder') return;
+        } else if (!this.canEditNav && node.kind !== 'folder') return;
         if (!this.canEditNav && node.kind === 'all') return;
         this.showNavContextMenu(e.clientX, e.clientY, key);
       }, true);
@@ -973,22 +1374,55 @@
 
     if (!this.canEditNav) return;
 
+    if (!this._navDragDocBound) {
+      this._navDragDocBound = true;
+      const blockNavDragNavigate = (e) => {
+        if (!this._navDragActive && !this._dragNodePath) return;
+        e.preventDefault();
+      };
+      ['dragenter', 'dragover', 'drop'].forEach((type) => {
+        document.addEventListener(type, blockNavDragNavigate, true);
+      });
+    }
+
+    const onNavTreeDragOver = (e) => {
+      if (!this._dragNodePath) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+    };
+    nav.addEventListener('dragover', onNavTreeDragOver);
+    nav.addEventListener('drop', (e) => {
+      if (!this._dragNodePath) return;
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
     nav.querySelectorAll('.nav-row[draggable="true"]').forEach((row) => {
       row.addEventListener('dragstart', (e) => {
         const key = row.getAttribute('data-nav-key');
         const path = this.findNodePath(key);
         this._dragNodePath = path;
+        this._navDragActive = true;
+        this._pendingNavMove = null;
         row.classList.add('is-dragging');
         if (e.dataTransfer) {
           e.dataTransfer.effectAllowed = 'move';
-          e.dataTransfer.setData('text/plain', key || '');
+          // 勿写入 cat: / folder: 等可被 WebKit 当作 URL 导航的 text/plain
+          e.dataTransfer.setData('text/plain', 'catalog-nav-reorder');
+          e.dataTransfer.setData('application/x-catalog-nav-drag', key || '');
         }
       });
       row.addEventListener('dragend', () => {
         row.classList.remove('is-dragging');
         nav.querySelectorAll('.nav-row.drop-before, .nav-row.drop-after, .nav-row.drop-inside')
           .forEach((el) => el.classList.remove('drop-before', 'drop-after', 'drop-inside'));
+        const pending = this._pendingNavMove;
+        this._pendingNavMove = null;
         this._dragNodePath = null;
+        this._navDragActive = false;
+        if (pending) {
+          this.moveNavNode(pending.fromPath, pending.toParentPath, pending.toIndex);
+        }
       });
       row.addEventListener('dragover', (e) => {
         if (!this._dragNodePath) return;
@@ -997,23 +1431,24 @@
         e.preventDefault();
         const rect = row.getBoundingClientRect();
         const y = e.clientY - rect.top;
-        row.classList.remove('drop-before', 'drop-after', 'drop-inside');
         const targetPath = this.findNodePath(key);
-        const targetNode = targetPath ? this.getNodeAtPath(targetPath) : null;
-        if (this.isDropInsideZone(targetNode, y, rect.height)) {
-          row.classList.add('drop-inside');
-        } else if (y < rect.height / 2) {
-          row.classList.add('drop-before');
-        } else {
-          row.classList.add('drop-after');
+        if (!targetPath) return;
+        this.applyNavDropIndicator(nav, row, this._dragNodePath, targetPath, y, rect.height);
+        if (e.dataTransfer) {
+          e.dataTransfer.dropEffect = this.isNavDropPlacementAllowed(
+            this._dragNodePath,
+            this.resolveNavDropTarget(targetPath, y, rect.height, this._dragNodePath),
+          ) ? 'move' : 'none';
         }
-        if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
       });
-      row.addEventListener('dragleave', () => {
+      row.addEventListener('dragleave', (e) => {
+        const related = e.relatedTarget;
+        if (related && row.contains(related)) return;
         row.classList.remove('drop-before', 'drop-after', 'drop-inside');
       });
       row.addEventListener('drop', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         if (!this._dragNodePath) return;
         const fromPath = this._dragNodePath.slice();
         const fromNode = this.getNodeAtPath(fromPath);
@@ -1026,8 +1461,13 @@
         if (fromKey === targetKey) return;
         const rect = row.getBoundingClientRect();
         const y = e.clientY - rect.top;
-        const drop = this.resolveNavDropTarget(targetPath, y, rect.height);
-        this.moveNavNode(fromPath, drop.toParentPath, drop.toIndex);
+        const drop = this.resolveNavDropTarget(targetPath, y, rect.height, fromPath);
+        if (!this.isNavDropPlacementAllowed(fromPath, drop)) return;
+        this._pendingNavMove = {
+          fromPath,
+          toParentPath: drop.toParentPath,
+          toIndex: drop.toIndex,
+        };
       });
     });
 
