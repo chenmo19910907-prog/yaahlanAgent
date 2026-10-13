@@ -43,8 +43,10 @@ def push_web_agent_audit_env(
     run_id_hint: str | None = None,
 ) -> WebAgentAuditEnvSnapshot | None:
     """有 user_key 时补全审计 env；已有 WEB_AGENT_RUN_ID 时不覆盖（Web worker）。"""
-    if not (user_key or "").strip():
+    key = (user_key or "").strip()
+    if not key:
         return None
+    is_dingtalk = ":user:" in key
 
     prev_run = os.environ.get(RUN_ID_ENV)
     prev_staff = os.environ.get(CALLER_STAFF_ENV)
@@ -54,19 +56,56 @@ def push_web_agent_audit_env(
     set_staff = False
     set_name = False
 
-    if not (prev_run or "").strip():
-        os.environ[RUN_ID_ENV] = make_dingtalk_run_id(run_id_hint)
+    hint = (run_id_hint or "").strip()
+    if hint and is_dingtalk:
+        new_run = make_dingtalk_run_id(hint)
+        if (os.environ.get(RUN_ID_ENV) or "").strip() != new_run:
+            os.environ[RUN_ID_ENV] = new_run
+            set_run = True
+    elif is_dingtalk and not (prev_run or "").strip():
+        os.environ[RUN_ID_ENV] = make_dingtalk_run_id(hint or None)
         set_run = True
 
     staff = (sender_staff_id or os.environ.get(DINGTALK_STAFF_ID_ENV) or "").strip()
-    if staff and not (os.environ.get(CALLER_STAFF_ENV) or "").strip():
+    if staff and is_dingtalk:
+        prev_staff_env = (os.environ.get(CALLER_STAFF_ENV) or "").strip()
+        if prev_staff_env != staff:
+            os.environ[CALLER_STAFF_ENV] = staff
+            set_staff = True
+    elif staff and not (os.environ.get(CALLER_STAFF_ENV) or "").strip():
         os.environ[CALLER_STAFF_ENV] = staff
         set_staff = True
 
     name = (sender_name or "").strip()
-    if name and not (os.environ.get(CALLER_NAME_ENV) or "").strip():
+    if name and is_dingtalk:
+        prev_name_env = (os.environ.get(CALLER_NAME_ENV) or "").strip()
+        if prev_name_env != name:
+            os.environ[CALLER_NAME_ENV] = name
+            set_name = True
+    elif name and not (os.environ.get(CALLER_NAME_ENV) or "").strip():
         os.environ[CALLER_NAME_ENV] = name
         set_name = True
+
+    if key:
+        try:
+            import sys
+            from pathlib import Path
+
+            web_agent = Path(__file__).resolve().parents[1] / "web_agent"
+            if str(web_agent) not in sys.path:
+                sys.path.insert(0, str(web_agent))
+            from web_agent_audit_context import BATCH_KEY_ENV, publish_audit_context
+
+            os.environ.setdefault(BATCH_KEY_ENV, key)
+            publish_audit_context(
+                batch_key=key,
+                run_id=os.environ.get(RUN_ID_ENV, "").strip(),
+                operator_staff_id=os.environ.get(CALLER_STAFF_ENV, "").strip(),
+                operator_name=os.environ.get(CALLER_NAME_ENV, "").strip(),
+                source="dingtalk",
+            )
+        except Exception:  # noqa: BLE001
+            pass
 
     if not (set_run or set_staff or set_name):
         return None

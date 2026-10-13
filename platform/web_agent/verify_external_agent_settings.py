@@ -22,17 +22,16 @@ def main() -> int:
     agents = external_agents_from_config()
     assert agents, "config.json 应包含 externalAgents"
     assert any(item.get("defaultEnabled") for item in agents), "至少一个外部 Agent 默认启用"
-    assert any(item.get("id") == "mdp_middleware" for item in agents), "应包含 MDP Agent"
+    assert not any(item.get("id") == "mdp_middleware" for item in agents), "不应再展示 MDP Agent"
 
     defaults = default_enabled_external_agent_ids()
     assert defaults, "defaultEnabled 解析失败"
-    assert "mdp_middleware" not in defaults, defaults
 
     enabled = resolve_enabled_external_agent_ids(["yaahlan_service"])
     assert enabled == ["yaahlan_service"], enabled
 
-    enabled_both = resolve_enabled_external_agent_ids(["yaahlan_service", "mdp_middleware"])
-    assert enabled_both == ["yaahlan_service", "mdp_middleware"], enabled_both
+    enabled_stale = resolve_enabled_external_agent_ids(["yaahlan_service", "mdp_middleware"])
+    assert enabled_stale == ["yaahlan_service"], enabled_stale
 
     disabled = resolve_enabled_external_agent_ids([])
     assert disabled == [], disabled
@@ -45,20 +44,7 @@ def main() -> int:
     assert "service_agent_query.py" in prompt_enabled
     assert "服务端 Agent" in prompt_enabled
     assert "--target-environment stage" in prompt_enabled
-    assert "middleware_agent_query.py" in prompt_enabled
-    assert "未勾选（禁止调用）" in prompt_enabled
-    assert "即使用户消息里点名" in prompt_enabled
-
-    prompt_middleware = build_web_prompt(
-        "查 MDP MOA",
-        is_new_session=True,
-        enabled_external_agents=["mdp_middleware"],
-    )
-    assert "middleware_agent_query.py" in prompt_middleware
-    assert "MDP Agent" in prompt_middleware
-    assert "service_agent_query.py" in prompt_middleware
-    assert "未勾选（禁止调用）" in prompt_middleware
-    assert "即使用户消息里点名" in prompt_middleware
+    assert "未勾选（禁止调用）" not in prompt_enabled
 
     prompt_continue = build_web_prompt(
         "使用MDP agent查询VIP",
@@ -69,8 +55,8 @@ def main() -> int:
     assert "batch_key=web:test123" in prompt_continue
     assert "【批量进度 batch_key】" not in prompt_continue
     assert "<!-- 会话上下文" in prompt_continue
-    assert "外部 Agent：服务端 Agent；未勾选 MDP Agent" in prompt_continue
-    assert "即使用户消息点名也不得调用" not in prompt_continue
+    assert "外部 Agent：服务端 Agent" in prompt_continue
+    assert "MDP Agent" not in prompt_continue
 
     prompt_disabled = build_web_prompt(
         "查 provideDiamond MOA",
@@ -79,7 +65,7 @@ def main() -> int:
     )
     assert "不得执行" in prompt_disabled or "禁止调用" in prompt_disabled
     assert "service_agent_query.py" in prompt_disabled
-    assert "middleware_agent_query.py" in prompt_disabled
+    assert "middleware_agent_query.py" not in prompt_disabled
 
     prompt_standard = build_web_prompt("查用户", is_new_session=False, reply_mode="standard")
     assert "回复详略" not in prompt_standard

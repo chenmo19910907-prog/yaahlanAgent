@@ -347,6 +347,18 @@ def _execute_web_run_body(
         os.environ["WEB_AGENT_CALLER_NAME"] = author_label
     else:
         os.environ.pop("WEB_AGENT_CALLER_NAME", None)
+    try:
+        from web_agent_audit_context import publish_audit_context
+
+        publish_audit_context(
+            batch_key=user_key,
+            run_id=run_id,
+            operator_staff_id=author_id,
+            operator_name=author_label,
+            source="web",
+        )
+    except Exception:  # noqa: BLE001
+        pass
     task_kind = classify_task_kind(meta.message)
     run_timeout_s = resolve_agent_timeout_s(
         is_admin=is_web_admin(staff_id=meta.author_id or None),
@@ -374,7 +386,7 @@ def _execute_web_run_body(
             event["process"] = process
         _emit(store, run_id, event)
 
-    def _append_assistant(text: str) -> None:
+    def _append_assistant(text: str) -> list[dict[str, object]]:
         output_files = consume_pending_outputs(session_id)
         file_payload = [item.to_message_dict() for item in output_files]
         if is_run_failure_reply(text) and session_store.replace_last_assistant_if_failure(
@@ -382,13 +394,14 @@ def _execute_web_run_body(
             text,
             files=file_payload,
         ):
-            return
+            return file_payload
         session_store.append_message(
             session_id,
             "assistant",
             text,
             files=file_payload,
         )
+        return file_payload
 
     try:
         from command_router import try_route  # noqa: WPS433
@@ -410,10 +423,12 @@ def _execute_web_run_body(
                 reply_mode=meta.reply_mode,
                 user_key=user_key,
             )
-            _append_assistant(final_text)
+            reply_files = _append_assistant(final_text)
             fresh_meta = store.get_run(run_id) or meta
             dingtalk_push = _maybe_push_result_to_dingtalk(fresh_meta, final_text, success=True)
             done_event: dict[str, Any] = {"type": "done", "text": final_text}
+            if reply_files:
+                done_event["files"] = reply_files
             if dingtalk_push is not None:
                 done_event["dingtalk_push"] = dingtalk_push
             _emit(store, run_id, done_event)
@@ -453,10 +468,12 @@ def _execute_web_run_body(
             reply_mode=meta.reply_mode,
             user_key=user_key,
         )
-        _append_assistant(final_text)
+        reply_files = _append_assistant(final_text)
         fresh_meta = store.get_run(run_id) or meta
         dingtalk_push = _maybe_push_result_to_dingtalk(fresh_meta, final_text, success=True)
         done_event: dict[str, Any] = {"type": "done", "text": final_text}
+        if reply_files:
+            done_event["files"] = reply_files
         if dingtalk_push is not None:
             done_event["dingtalk_push"] = dingtalk_push
         _emit(store, run_id, done_event)

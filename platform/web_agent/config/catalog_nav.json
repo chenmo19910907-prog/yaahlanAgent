@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "collapsed": [],
+  "tree": [
+    {
+      "kind": "all"
+    },
+    {
+      "kind": "module",
+      "moduleId": "用户"
+    },
+    {
+      "kind": "module",
+      "moduleId": "实名认证"
+    },
+    {
+      "kind": "module",
+      "moduleId": "vip"
+    },
+    {
+      "kind": "module",
+      "moduleId": "房间"
+    },
+    {
+      "kind": "module",
+      "moduleId": "pk"
+    },
+    {
+      "kind": "module",
+      "moduleId": "礼物"
+    },
+    {
+      "kind": "module",
+      "moduleId": "定制"
+    },
+    {
+      "kind": "module",
+      "moduleId": "道具"
+    },
+    {
+      "kind": "module",
+      "moduleId": "活动"
+    },
+    {
+      "kind": "module",
+      "moduleId": "动态"
+    },
+    {
+      "kind": "module",
+      "moduleId": "cp"
+    },
+    {
+      "kind": "module",
+      "moduleId": "家族"
+    },
+    {
+      "kind": "module",
+      "moduleId": "公会"
+    },
+    {
+      "kind": "module",
+      "moduleId": "算薪"
+    },
+    {
+      "kind": "module",
+      "moduleId": "风控"
+    },
+    {
+      "kind": "module",
+      "moduleId": "抓包"
+    },
+    {
+      "kind": "module",
+      "moduleId": "奖励验收"
+    },
+    {
+      "kind": "module",
+      "moduleId": "支付"
+    },
+    {
+      "kind": "module",
+      "moduleId": "客服"
+    },
+    {
+      "kind": "module",
+      "moduleId": "版本"
+    },
+    {
+      "kind": "module",
+      "moduleId": "测试机"
+    },
+    {
+      "kind": "module",
+      "moduleId": "线上环境"
+    },
+    {
+      "kind": "module",
+      "moduleId": "知识库"
+    },
+    {
+      "kind": "module",
+      "moduleId": "平台"
+    },
+    {
+      "kind": "module",
+      "moduleId": "大r用户管理"
+    },
+    {
+      "kind": "module",
+      "moduleId": "tunnel-mock"
+    },
+    {
+      "kind": "module",
+      "moduleId": "半月结算薪"
+    },
+    {
+      "kind": "module",
+      "moduleId": "礼物统计"
+    },
+    {
+      "kind": "module",
+      "moduleId": "奖励排查"
+    },
+    {
+      "kind": "module",
+      "moduleId": "宝藏猎人"
+    },
+    {
+      "kind": "module",
+      "moduleId": "消息"
+    },
+    {
+      "kind": "module",
+      "moduleId": "确认应得薪资"
+    },
+    {
+      "kind": "module",
+      "moduleId": "退款黑名单"
+    },
+    {
+      "kind": "module",
+      "moduleId": "钉钉用例表"
+    }
+  ]
+}

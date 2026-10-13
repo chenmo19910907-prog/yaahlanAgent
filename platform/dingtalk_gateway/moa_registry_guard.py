@@ -48,5 +48,11 @@ def moa_registry_instruction() -> str:
         "→ 用 moa_execute.py --payload-file 试跑验收"
         "→ **跑通且确认无误后自动入库**（默认：未登记模板成功后自动 sync_registry）"
         "→ 确认 MOA/config/registry.json 已登记。\n"
-        "回复须含：能力名、模板路径、registry id、命令示例。"
+        "**分类**：入库前读取 MOA/config/registry.json 已有 `category` 与同服务前缀条目，"
+        "新 MOA 的 `category` / 模板 `_registry.category` 须归入**现有分类命名**（同模块、同服务域）；"
+        "禁止自创新顶层分类名或随意改已有 category。\n"
+        "**工具台目录**：以 `platform/web_agent/config/catalog_nav.json` 为当前左侧分组结构；"
+        "MOA 入库与 sync_registry **禁止**修改 catalog_nav（勿增删改 folder/模块顺序）；"
+        "仅改 MOA/templates、registry.json、mappings；目录调整须用户明确要求且由管理员在工具台操作。\n"
+        "回复须含：能力名、模板路径、registry id、category、命令示例。"
     )

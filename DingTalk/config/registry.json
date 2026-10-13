@@ -152,6 +152,19 @@
         "把这篇 PRD 写入 prd-kb"
       ],
       "command": "python3 DingTalk/prd_sync_execute.py --document-url <PRD文档URL>"
+    },
+    {
+      "id": "excel_mark_p0",
+      "name": "用例表-标P0绿色",
+      "category": "钉钉用例表",
+      "description": "在钉钉在线用例表 D 列「预期结果」按约 20% 主路径优先级填充 #92D050，不改文案；可限 Sheet",
+      "prompts": [
+        "帮我把用例 P0 标绿",
+        "钉钉用例表 P0 比例 20%",
+        "跨房PK用例标 P0 绿色",
+        "预期结果列标 P0"
+      ],
+      "command": "python3 DingTalk/mark_p0_execute.py <表格URL> [--ratio 0.2] [--sheet-contains 跨房PK] [--dry-run]"
     }
   ]
 }

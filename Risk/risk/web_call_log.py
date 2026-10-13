@@ -60,8 +60,6 @@ def try_record_risk_call(
 ) -> None:
     if os.environ.get("MOA_CALL_LOG_DISABLE", "").strip().lower() in ("1", "true", "yes"):
         return
-    if not os.environ.get("WEB_AGENT_RUN_ID", "").strip():
-        return
     if not results:
         return
     last = results[-1].get("response") if isinstance(results[-1], dict) else None
@@ -69,7 +67,13 @@ def try_record_risk_call(
         return
     try:
         _ensure_web_agent_path()
+        from web_agent_audit_context import hydrate_audit_env_from_store, resolve_audit_context
         from web_moa_call_log import record_tool_call
+
+        hydrate_audit_env_from_store()
+        ctx = resolve_audit_context()
+        if not ctx:
+            return
 
         operation, account, params, op_id, http_method = _risk_call_meta(args)
         online = getattr(args, "release_online_login_device", False)
@@ -82,10 +86,10 @@ def try_record_risk_call(
             method=http_method,
             params_summary=params,
             interface_display=f"风控 · {op_id}",
-            batch_key=os.environ.get("WEB_AGENT_BATCH_KEY", "").strip(),
-            run_id=os.environ.get("WEB_AGENT_RUN_ID", "").strip(),
-            operator_staff_id=os.environ.get("WEB_AGENT_CALLER_STAFF_ID", "").strip(),
-            operator_name=os.environ.get("WEB_AGENT_CALLER_NAME", "").strip(),
+            batch_key=ctx["batch_key"],
+            run_id=ctx["run_id"],
+            operator_staff_id=ctx["operator_staff_id"],
+            operator_name=ctx["operator_name"],
             environment="online" if online else "test",
         )
     except Exception:  # noqa: BLE001

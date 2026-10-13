@@ -17,6 +17,8 @@ _WEB_AGENT_DIR = _PLATFORM_DIR / "web_agent"
 if str(_WEB_AGENT_DIR) not in sys.path:
     sys.path.insert(0, str(_WEB_AGENT_DIR))
 from web_prompt import normalize_reply_mode, should_append_duration_footer  # noqa: E402
+from web_agent_audit_env import make_dingtalk_run_id  # noqa: E402
+from web_moa_call_log import finalize_dingtalk_call_log  # noqa: E402
 
 from adb_execution_guard import adb_execution_denial_message, looks_like_adb_execution_request
 from env_check_guard import (
@@ -1025,6 +1027,17 @@ def process_inbound_task(
             if final_source == "batch":
                 logger.info("批量任务使用 --result-text 作为最终群消息 conv=%s", user_key)
             store.save_full_reply(incoming.conversation_id, final_body, **store_kwargs)
+            try:
+                finalize_dingtalk_call_log(
+                    run_id=make_dingtalk_run_id(incoming.message_id),
+                    batch_key=user_key or "",
+                    sender_staff_id=sender_staff_id or "",
+                    sender_name=sender_name or "",
+                    user_text=prompt,
+                    assistant_text=final_body,
+                )
+            except Exception:  # noqa: BLE001
+                pass
             session.set_phase("reply")
             session.check_cancelled()
             delivery = deliver_reply(final_body, prompt)

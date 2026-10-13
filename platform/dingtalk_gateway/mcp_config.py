@@ -15,12 +15,15 @@ GATEWAY_DIR = Path(__file__).resolve().parent
 REPO_ROOT = GATEWAY_DIR.parent.parent
 MCP_EXAMPLE = REPO_ROOT / ".cursor" / "mcp.example.json"
 MCP_SECRETS = REPO_ROOT / ".cursor" / ".mcp.secrets.json"
+FIGMA_ENV_LOCAL = REPO_ROOT / ".cursor" / "figma.env.local"
 
 # 钉钉网关默认启用的 MCP（按优先级）
 DEFAULT_SERVER_KEYS = (
     "dingtalk-doc",
     "dingtalk-excel-read",
     "dingtalk-excel-write",
+    "dingtalk-notable-read",
+    "figma-read",
 )
 
 _cache_lock = threading.Lock()
@@ -83,6 +86,36 @@ def _resolve_command(cmd: str) -> str:
     return resolved
 
 
+def _read_dotenv(path: Path) -> dict[str, str]:
+    if not path.is_file():
+        return {}
+    out: dict[str, str] = {}
+    try:
+        for raw_line in path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key = key.strip()
+            value = value.strip().strip("'\"")
+            if key and value:
+                out[key] = value
+    except OSError:
+        return {}
+    return out
+
+
+def _apply_figma_env_overrides(env: dict[str, str]) -> None:
+    """figma-read：合并 .cursor/figma.env.local 与进程环境变量。"""
+    for key, value in _read_dotenv(FIGMA_ENV_LOCAL).items():
+        if key in ("FIGMA_ACCESS_TOKEN", "FIGMA_API_KEY") and value.strip():
+            env[key] = value.strip()
+    for key in ("FIGMA_ACCESS_TOKEN", "FIGMA_API_KEY"):
+        from_env = os.environ.get(key, "").strip()
+        if from_env:
+            env[key] = from_env
+
+
 def _env_ready(server_key: str, env: dict[str, str]) -> bool:
     if server_key == "dingtalk-doc":
         return bool(env.get("DINGTALK_COOKIE", "").strip())
@@ -90,6 +123,17 @@ def _env_ready(server_key: str, env: dict[str, str]) -> bool:
         return all(
             env.get(k, "").strip()
             for k in ("DINGTALK_AEGIS_KEY", "DINGTALK_AEGIS_SECRET", "DINGTALK_WORKID")
+        )
+    if server_key == "dingtalk-notable-read":
+        has_aegis = all(
+            env.get(k, "").strip()
+            for k in ("DINGTALK_AEGIS_KEY", "DINGTALK_AEGIS_SECRET", "DINGTALK_WORKID")
+        )
+        has_cookie = bool(env.get("DINGTALK_COOKIE", "").strip())
+        return has_aegis or has_cookie
+    if server_key == "figma-read":
+        return bool(
+            (env.get("FIGMA_ACCESS_TOKEN") or env.get("FIGMA_API_KEY") or "").strip()
         )
     return bool(env)
 
@@ -101,7 +145,7 @@ def _mcp_files_signature() -> tuple[float, float]:
         except OSError:
             return 0.0
 
-    return (mtime(MCP_EXAMPLE), mtime(MCP_SECRETS))
+    return (mtime(MCP_EXAMPLE), mtime(MCP_SECRETS), mtime(FIGMA_ENV_LOCAL))
 
 
 def _build_stdio_mcp_servers_uncached(
@@ -117,6 +161,8 @@ def _build_stdio_mcp_servers_uncached(
         if not command:
             continue
         env = {str(k): str(v) for k, v in (srv.get("env") or {}).items() if str(v).strip()}
+        if key == "figma-read":
+            _apply_figma_env_overrides(env)
         if not _env_ready(key, env):
             continue
         args = [str(a) for a in (srv.get("args") or [])]

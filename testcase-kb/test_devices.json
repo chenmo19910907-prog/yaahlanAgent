@@ -1,8 +1,8 @@
 {
   "kbPath": "testcase-kb/test_devices.json",
   "importSource": "/Users/user/Desktop/团队测试机统计表.xlsx",
-  "syncedAt": "2026-09-02 06:36:14 UTC",
-  "count": 157,
+  "syncedAt": "2026-10-09 02:44:27 UTC",
+  "count": 158,
   "devices": [
     {
       "项目": "yaahlan",
@@ -2047,7 +2047,20 @@
       "归属人": "",
       "持有人": "",
       "备注": "自动落库 2026-09-02；phone=966|1339***2003；userId=101099533；ip=223.104.43.63"
+    },
+    {
+      "项目": "yaahlan",
+      "资产编号": "待补编号",
+      "设备品牌": "Xiaomi",
+      "设备名称": "24129PN74C",
+      "mmuid": "27181982501bd25c7bc2a66e3b9a8ed42c64b4f8",
+      "mmuidv3": "11def8a41a07a6736f5bb3a57e71fb109cfba7569cc51ea31bb86d4cb7bd9fc828",
+      "设备系统": "Android",
+      "系统版本": "16",
+      "归属人": "陈墨",
+      "持有人": "陈墨",
+      "备注": "自动落库 2026-10-09；phone=13311111111；userId=100465989；ip=172.18.124.226；100465989当前登录设备"
     }
   ],
-  "lastIncrementalUpdate": "upsert loginDevice phone=966|1339***2003 userId=101099533"
+  "lastIncrementalUpdate": "100465989 loginDevice 陈墨"
 }

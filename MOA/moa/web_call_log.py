@@ -19,11 +19,15 @@ def _ensure_web_agent_path() -> None:
 def try_record_moa_call(payload: dict[str, Any], response: dict[str, Any]) -> None:
     if os.environ.get("MOA_CALL_LOG_DISABLE", "").strip().lower() in ("1", "true", "yes"):
         return
-    if not os.environ.get("WEB_AGENT_RUN_ID", "").strip():
-        return
     try:
         _ensure_web_agent_path()
+        from web_agent_audit_context import hydrate_audit_env_from_store, resolve_audit_context
         from web_moa_call_log import _result_from_response, record_moa_call
+
+        hydrate_audit_env_from_store()
+        ctx = resolve_audit_context()
+        if not ctx:
+            return
 
         ok, _ = _result_from_response(response if isinstance(response, dict) else {})
         if not ok:
@@ -34,10 +38,10 @@ def try_record_moa_call(payload: dict[str, Any], response: dict[str, Any]) -> No
             payload=payload,
             response=response,
             payload_file=os.environ.get("MOA_CALL_LOG_PAYLOAD_FILE", "").strip(),
-            batch_key=os.environ.get("WEB_AGENT_BATCH_KEY", "").strip(),
-            run_id=os.environ.get("WEB_AGENT_RUN_ID", "").strip(),
-            operator_staff_id=os.environ.get("WEB_AGENT_CALLER_STAFF_ID", "").strip(),
-            operator_name=os.environ.get("WEB_AGENT_CALLER_NAME", "").strip(),
+            batch_key=ctx["batch_key"],
+            run_id=ctx["run_id"],
+            operator_staff_id=ctx["operator_staff_id"],
+            operator_name=ctx["operator_name"],
             environment="online" if online else "test",
         )
     except Exception:  # noqa: BLE001

@@ -15,9 +15,12 @@ import zlib
 from pathlib import Path
 
 
+TECH_OPT_SECTION_LABEL = "优化需求"
+
+
 def _is_tech_opt_need(title: str) -> bool:
     t = title.strip().rstrip("：:").strip()
-    return t == "技术优化需求"
+    return t in (TECH_OPT_SECTION_LABEL, "技术优化需求")
 
 
 _SUBITEM_PREFIX_RE = re.compile(r"^\s*(?:\d+\s*[)）\.、]|[-*•]\s+)\s*")
@@ -31,7 +34,7 @@ _E2_UNFINISHED_BLOCK_RE = re.compile(r"未完成缺陷\s*[:：]?\s*(.*?)(?=已�
 _E2_FINISHED_BLOCK_RE = re.compile(r"已完成缺陷\s*[:：]?\s*(.*)", re.DOTALL)
 # 钉钉报告：缺陷 / 回归链接写死；版本用例链接由 REPORT_VERSION_CASE_URL 传入表格 URL
 DEFAULT_DEFECT_TB_URL = (
-    "https://teambition.wemomo.com/project/603c619f128c30001daff853/bug"
+    "https://alidocs.dingtalk.com/i/nodes/MNDoBb60VLrMNyOyCmdjOyrr8lemrZQ3"
 )
 DEFAULT_REGRESSION_CASE_URL = (
     "https://alidocs.dingtalk.com/i/nodes/a9E05BDRVQ6AzGLGtYyogmmmJ63zgkYA"
@@ -83,6 +86,8 @@ def guess_version_from_xlsx(xlsx_path: Path) -> str | None:
         wb = load_workbook(str(xlsx_path), data_only=True, read_only=True)
     except OSError:
         return None
+    except Exception:  # openpyxl InvalidFileException 等
+        return None
     try:
         for name in wb.sheetnames:
             m = _YAAHLAN_SEMVER_IN_STEM.search(name)
@@ -114,7 +119,11 @@ def resolve_version_s2(xlsx_stem: str) -> str:
 def _normalize_subitem(s: str) -> str:
     s = s.strip()
     s = _SUBITEM_PREFIX_RE.sub("", s)
-    return s.strip()
+    s = s.strip()
+    cleaned = _clean_tech_opt_display_title(s)
+    if _is_tech_opt_skip_title(cleaned):
+        return ""
+    return cleaned
 
 
 # 版本用例表 D2：与 Excel 中公式一致，按 D/E 列第 7 行起统计用例条数与执行率
@@ -123,17 +132,18 @@ _D2_STATS_TITLE_EXPR = (
     'LEFT(SHEETSNAME(A1),FIND("（",SHEETSNAME(A1)&"（")-1))'
 )
 D2_STATS_FORMULA = (
-    '=IF(COUNTA(D7:D10000)=0,'
-    f'{_D2_STATS_TITLE_EXPR}&"：用例条数0条，实际执行"&COUNTA(E7:E10000)&"条，执行率0.00%",'
-    'IF(COUNTA(E7:E10000)>COUNTA(D7:D10000),'
-    f'{_D2_STATS_TITLE_EXPR}&"：用例条数"&COUNTA(E7:E10000)&"条，实际执行"&COUNTA(E7:E10000)&"条，执行率100.00%",'
-    f'{_D2_STATS_TITLE_EXPR}&"：用例条数"&COUNTA(D7:D10000)&"条，实际执行"&COUNTA(E7:E10000)&"条，执行率"&TEXT(COUNTA(E7:E10000)/COUNTA(D7:D10000),"0.00%")))'
+    '=IF(COUNTA(D7:D10053)=0,'
+    f'{_D2_STATS_TITLE_EXPR}&"：用例条数0条，实际执行"&COUNTA(E7:E10053)&"条，执行率0.00%",'
+    'IF(COUNTA(E7:E10053)>COUNTA(D7:D10053),'
+    f'{_D2_STATS_TITLE_EXPR}&"：用例条数"&COUNTA(E7:E10053)&"条，实际执行"&COUNTA(E7:E10053)&"条，执行率100.00%",'
+    f'{_D2_STATS_TITLE_EXPR}&"：用例条数"&COUNTA(D7:D10053)&"条，实际执行"&COUNTA(E7:E10053)&"条，执行率"&'
+    'TEXT(COUNTA(E7:E10053)/COUNTA(D7:D10053),"0.00%")))'
 )
 _D2_STATS_LINE_RE = re.compile(
     r"^(.+)：用例条数(\d+)条，实际执行(\d+)条，执行率([\d.]+%)$"
 )
 _D2_STATS_ROW_START = 7
-_D2_STATS_ROW_END = 10000
+_D2_STATS_ROW_END = 10053
 _D2_TECH_OPT_ROW_START = 7
 _D2_TECH_OPT_ROW_END = 990
 _TECH_OPT_SHEET_NAMES = frozenset({"优化需求", "技术优化"})
@@ -194,6 +204,61 @@ def _trim_tech_opt_item_title(text: str) -> str:
     return s
 
 
+_TECH_OPT_META_LINE_RE = re.compile(
+    r"^\s*(?:开发|产品|设计|测试|开\s*发|产\s*品)[：:\s]",
+    re.I,
+)
+_TECH_OPT_TRAILING_ROLE_RE = re.compile(
+    r"\s+(?:产品|开发|设计|测试)[：:]\s*\S.*$",
+    re.I,
+)
+_TECH_OPT_LEADING_ENUM_RE = re.compile(
+    r"^[一二三四五六七八九十百千]+[、.．)\s]+"
+)
+_TECH_OPT_TRAILING_STAFF_RE = re.compile(
+    r"\s{4,}[\u4e00-\u9fff]{2,4}(?:、[\u4e00-\u9fff]{2,4})*\s*$"
+)
+_TECH_OPT_GENERIC_SKIP = frozenset(
+    {
+        "新老版本交互",
+        "老版本历史功能回测",
+        "定时任务",
+        "失败与回滚",
+        "幂等",
+        "弱网",
+        "性能",
+    }
+)
+
+
+def _clean_tech_opt_display_title(text: str) -> str:
+    """报告展示用：去掉序号前缀、行尾负责人姓名、产品/开发等元信息。"""
+    s = text.strip()
+    if not s:
+        return ""
+    first_line = s.splitlines()[0].strip()
+    first_line = _TECH_OPT_LEADING_ENUM_RE.sub("", first_line).strip()
+    first_line = _TECH_OPT_TRAILING_ROLE_RE.sub("", first_line).strip()
+    first_line = _TECH_OPT_TRAILING_STAFF_RE.sub("", first_line).strip()
+    return _trim_tech_opt_item_title(first_line)
+
+
+def _is_tech_opt_meta_line(text: str) -> bool:
+    s = _SUBITEM_PREFIX_RE.sub("", text.strip()).strip()
+    if not s:
+        return True
+    return bool(_TECH_OPT_META_LINE_RE.match(s))
+
+
+def _is_tech_opt_skip_title(title: str) -> bool:
+    s = _SUBITEM_PREFIX_RE.sub("", title.strip()).strip()
+    if not s:
+        return True
+    if s in _TECH_OPT_GENERIC_SKIP:
+        return True
+    return _is_tech_opt_meta_line(s)
+
+
 def _is_tech_opt_header_row(b: object | None, c: object | None, d: object | None) -> bool:
     return not _cell_is_empty(b) and _cell_is_empty(c) and _cell_is_empty(d)
 
@@ -210,20 +275,24 @@ def compute_d2_tech_opt_text(ws) -> str:
     ):
         b, c, d = row
         if _is_tech_opt_header_row(b, c, d):
-            headers.append(_trim_tech_opt_item_title(str(b)))
-    lines = ["技术优化需求："]
+            title = _clean_tech_opt_display_title(str(b))
+            if title and not _is_tech_opt_skip_title(title):
+                headers.append(title)
+    lines = [f"{TECH_OPT_SECTION_LABEL}："]
     for i, title in enumerate(headers, start=1):
         lines.append(f"{i}) {title}")
     return "\n".join(lines)
 
 
 def _format_d2_stats_line(title: str, case_count: int, executed_count: int) -> str:
-    """执行率 >100% 时用实际执行数对齐两项并固定 100.00%。"""
+    """与钉钉 D2 公式一致：E>D 时用例条数取 E、执行率 100.00%；D 为空时执行率 0.00%。"""
     if case_count == 0:
         return f"{title}：用例条数0条，实际执行{executed_count}条，执行率0.00%"
     if executed_count > case_count:
-        n = executed_count
-        return f"{title}：用例条数{n}条，实际执行{n}条，执行率100.00%"
+        return (
+            f"{title}：用例条数{executed_count}条，实际执行{executed_count}条，"
+            f"执行率100.00%"
+        )
     rate = executed_count / case_count
     return (
         f"{title}：用例条数{case_count}条，实际执行{executed_count}条，执行率{rate:.2%}"
@@ -246,7 +315,7 @@ def _cap_d2_stats_text(text: str) -> str:
 
 
 def compute_d2_stats_text(ws, sheet_name: str) -> str:
-    """按 D2_STATS_FORMULA 规则从 D/E 列统计，供报告生成或公式未缓存时回退。"""
+    """按 D2_STATS_FORMULA 规则：COUNTA(D7:D10053)、COUNTA(E7:E10053)。"""
     title = _sheet_title_from_name(sheet_name)
     case_count = _count_nonempty_column(
         ws, 4, start_row=_D2_STATS_ROW_START, end_row=_D2_STATS_ROW_END
@@ -255,6 +324,120 @@ def compute_d2_stats_text(ws, sheet_name: str) -> str:
         ws, 5, start_row=_D2_STATS_ROW_START, end_row=_D2_STATS_ROW_END
     )
     return _format_d2_stats_line(title, case_count, executed_count)
+
+
+_PASS_FAIL_NULL_ROW = 2
+_RESULT_COL_HEADER_RE = re.compile(
+    r"(测试组结果|测试组线上|开发自测)",
+    re.I,
+)
+_SHEET1_NAMES = frozenset({"Sheet1", "sheet1"})
+
+
+def _sheet_case_layout(ws) -> tuple[int, int, list[int]]:
+    """返回 (数据起始行, 预期结果列, 结果统计列列表)。"""
+    header_row = 0
+    for r in range(4, 10):
+        label = ws.cell(r, 4).value
+        if label is not None and "预期结果" in str(label):
+            header_row = r
+            break
+    if header_row <= 0:
+        return _D2_STATS_ROW_START, 4, [5, 6, 7, 8]
+
+    result_cols: list[int] = []
+    for col in range(1, 40):
+        head = ws.cell(header_row, col).value
+        if head is not None and _RESULT_COL_HEADER_RE.search(str(head)):
+            result_cols.append(col)
+    if not result_cols:
+        result_cols = [5, 6, 7, 8]
+    return header_row + 1, 4, result_cols
+
+
+def compute_pass_fail_null(
+    ws,
+    result_col: int,
+    *,
+    case_col: int = 4,
+    start_row: int = _D2_STATS_ROW_START,
+    end_row: int = _D2_STATS_ROW_END,
+) -> tuple[int, int, int]:
+    """与用例表第 2 行统计一致：pass/fail 按结果列计数，null=用例条数-pass-fail。"""
+    case_count = _count_nonempty_column(
+        ws, case_col, start_row=start_row, end_row=end_row
+    )
+    pass_count = 0
+    fail_count = 0
+    for row in ws.iter_rows(
+        min_row=start_row,
+        max_row=end_row,
+        min_col=result_col,
+        max_col=result_col,
+        values_only=True,
+    ):
+        v = row[0]
+        if v is None or str(v).strip() == "":
+            continue
+        s = str(v).strip().lower()
+        if s == "pass":
+            pass_count += 1
+        elif s == "fail":
+            fail_count += 1
+    null_count = max(0, case_count - pass_count - fail_count)
+    return pass_count, fail_count, null_count
+
+
+def format_pass_fail_null_cell(pass_count: int, fail_count: int, null_count: int) -> str:
+    return f"pass: {pass_count}\nfail: {fail_count}\nnull: {null_count}"
+
+
+def enrich_sheet_row2_pass_fail_null(ws) -> bool:
+    """按各结果列回填第 2 行 pass/fail/null（与历史 Excel 公式口径一致）。"""
+    data_start, case_col, result_cols = _sheet_case_layout(ws)
+    if data_start <= 0:
+        return False
+    changed = False
+    for col in result_cols:
+        p, f, n = compute_pass_fail_null(
+            ws,
+            col,
+            case_col=case_col,
+            start_row=data_start,
+        )
+        text = format_pass_fail_null_cell(p, f, n)
+        cell = ws.cell(_PASS_FAIL_NULL_ROW, col)
+        if cell.value != text:
+            cell.value = text
+            changed = True
+    return changed
+
+
+def enrich_version_workbook(wb) -> int:
+    """对所有需求 sheet 回填第 2 行 pass/fail/null，返回变更 sheet 数。"""
+    updated = 0
+    for name in wb.sheetnames:
+        if name.strip() in _SHEET1_NAMES:
+            continue
+        ws = wb[name]
+        if getattr(ws, "sheet_state", "visible") != "visible":
+            continue
+        if _is_tech_opt_sheet_name(name):
+            continue
+        if enrich_sheet_row2_pass_fail_null(ws):
+            updated += 1
+    return updated
+
+
+def enrich_version_case_xlsx(xlsx_path: str | Path) -> int:
+    """保存前/后均可调用：打开 xlsx 并回填各 sheet 第 2 行统计。"""
+    from openpyxl import load_workbook
+
+    path = Path(xlsx_path).expanduser().resolve()
+    wb = load_workbook(path)
+    count = enrich_version_workbook(wb)
+    wb.save(path)
+    return count
 
 
 def _is_tech_opt_sheet_name(sheet_name: str) -> bool:
@@ -281,16 +464,14 @@ def _d2_looks_like_tech_opt_text(raw: str) -> bool:
 
 
 def resolve_sheet_d2_text(ws, sheet_name: str, d2_raw: object | None) -> str | None:
-    """读取 D2；为空或为公式且无缓存时，按 sheet 类型回退统计。"""
+    """需求 sheet 始终从 D/E 列现算摘要；技术优化 sheet 仍按 B 列分组规则生成。"""
     if _is_tech_opt_sheet_name(sheet_name):
         if _d2_needs_compute(d2_raw):
             return compute_d2_tech_opt_text(ws)
         if isinstance(d2_raw, str) and _d2_looks_like_tech_opt_text(d2_raw):
             return str(d2_raw)
         return compute_d2_tech_opt_text(ws)
-    if _d2_needs_compute(d2_raw):
-        return compute_d2_stats_text(ws, sheet_name)
-    return _cap_d2_stats_text(str(d2_raw))
+    return compute_d2_stats_text(ws, sheet_name)
 
 
 def _report_link_overrides_from_env() -> tuple[str | None, str | None, str | None]:
@@ -387,6 +568,129 @@ def format_sheet1_i2_text(
     return "\n".join(lines)
 
 
+_SCHEDULE_DEFECT_FINISHED = frozenset({"已关闭", "已解决", "已修复", "关闭"})
+
+
+def _normalize_schedule_severity(raw: object | None) -> str:
+    s = str(raw or "").strip()
+    for key in ("阻碍", "严重", "一般", "轻微"):
+        if key in s:
+            return key
+    return "一般"
+
+
+def _accumulate_defect_counts(
+    unf: dict[str, int],
+    fin: dict[str, int],
+    *,
+    status: str,
+    severity: object | None,
+) -> None:
+    level = _normalize_schedule_severity(severity)
+    if status in _SCHEDULE_DEFECT_FINISHED:
+        fin[level] += 1
+    else:
+        unf[level] += 1
+
+
+def defect_levels_from_schedule_xlsx(
+    xlsx_path: str | Path,
+    version: str,
+    *,
+    sheet_name: str = "缺陷列表",
+    version_col: int = 2,
+    status_col: int = 4,
+    severity_col: int = 10,
+) -> tuple[dict[str, int], dict[str, int]] | None:
+    """从 Q3 排期等工作簿「缺陷列表」按版本汇总未完成/已完成各级缺陷。"""
+    from openpyxl import load_workbook
+
+    target = (version or "").strip()
+    if not target:
+        return None
+    path = Path(xlsx_path).expanduser().resolve()
+    if not path.is_file():
+        return None
+    try:
+        wb = load_workbook(path, data_only=True, read_only=True)
+    except OSError:
+        return None
+    try:
+        if sheet_name not in wb.sheetnames:
+            return None
+        ws = wb[sheet_name]
+        unf = _defect_levels_dict_empty().copy()
+        fin = _defect_levels_dict_empty().copy()
+        matched = 0
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            if not row:
+                continue
+            ver = str(row[version_col - 1] or "").strip()
+            if ver != target:
+                continue
+            matched += 1
+            status = str(row[status_col - 1] or "").strip()
+            _accumulate_defect_counts(
+                unf,
+                fin,
+                status=status,
+                severity=row[severity_col - 1] if len(row) >= severity_col else None,
+            )
+        if matched == 0:
+            return None
+        return unf, fin
+    finally:
+        wb.close()
+
+
+def _apply_defect_levels_to_i2(
+    i2_raw: str | None,
+    levels: tuple[dict[str, int], dict[str, int]] | None,
+    *,
+    defect_tb_url: str | None = None,
+) -> str | None:
+    if levels is None:
+        return i2_raw
+    unf, fin = levels
+    tb, ver_url, reg = _parse_sheet1_e2_urls(i2_raw)
+    return format_sheet1_i2_text(
+        defect_tb_url=defect_tb_url or tb or DEFAULT_DEFECT_TB_URL,
+        version_case_url=ver_url,
+        regression_case_url=reg or DEFAULT_REGRESSION_CASE_URL,
+        unf=unf,
+        fin=fin,
+    )
+
+
+def apply_schedule_defects_to_i2(
+    i2_raw: str | None,
+    schedule_path: str | Path,
+    version: str,
+) -> str | None:
+    """用排期 xlsx「缺陷列表」统计替换 I2。"""
+    return _apply_defect_levels_to_i2(
+        i2_raw,
+        defect_levels_from_schedule_xlsx(schedule_path, version),
+    )
+
+
+def apply_bug_url_defects_to_i2(
+    i2_raw: str | None,
+    version: str,
+    bug_url: str | None = None,
+) -> str | None:
+    """从 bug 地址（AI 表格，见 schedule_links.json）按版本拉取缺陷统计写入 I2。"""
+    from report.bug_notable import defect_levels_from_bug_url  # noqa: WPS433
+
+    url = (bug_url or os.environ.get("REPORT_DEFECT_TB_URL") or DEFAULT_DEFECT_TB_URL).strip()
+    try:
+        levels = defect_levels_from_bug_url(version, url)
+    except Exception as exc:  # noqa: BLE001
+        print(f"从 bug 表拉取缺陷失败（沿用用例表 I2）：{exc}", file=sys.stderr)
+        return i2_raw
+    return _apply_defect_levels_to_i2(i2_raw, levels, defect_tb_url=url)
+
+
 def reformat_raw_i2_like_excel(i2_raw: str | None) -> str:
     """从 I2 原文解析链接与数字后，按 `format_sheet1_i2_text` 规则重排为统一格式。"""
     tb, ver, reg = _parse_sheet1_e2_urls(i2_raw)
@@ -435,14 +739,16 @@ def _parse_sheet1_e2_defect_stats(raw: str | None) -> tuple[int, int, int, int, 
 
 
 def _inject_defect_stats(html_out: str, stats: tuple[int, int, int, int, int, int, int, str] | None) -> str:
-    """将 I2 缺陷统计写入模板中「发现缺陷」列表项（位于 tb 地址之前）。"""
+    """将 I2 缺陷统计写入模板中「发现缺陷」列表项（位于 bug 地址之前）。"""
     if stats is None:
         return html_out
     total, l1, l2, l3, l4, fixed, unfixed, rate_s = stats
 
     start = html_out.find('<span class="s1">发现缺陷</span>')
-    tb = '<span class="s2">tb</span>'
-    end = html_out.find(tb, start)
+    label = _defect_link_label_span()
+    end = html_out.find(label, start)
+    if end < 0:
+        end = html_out.find('<span class="s2">tb</span>', start)
     if start < 0 or end < 0 or start >= end:
         return html_out
 
@@ -474,7 +780,7 @@ def _inject_report_links(
     version_case_url: str | None,
     regression_case_url: str | None,
 ) -> str:
-    """将 I2 中的链接写入「用例地址」「tb 地址」及覆盖表格中两处详情占位。"""
+    """将 I2 中的链接写入「用例地址」「bug 地址」及覆盖表格中两处详情占位。"""
     out = html_out
 
     if version_case_url:
@@ -487,11 +793,17 @@ def _inject_report_links(
 
     if defect_tb_url:
         frag = _html_a_href(defect_tb_url, defect_tb_url, a_class="s8")
-        out = out.replace(
-            '<span class="s2">tb</span><span class="s8">地址：x</span>',
-            f'<span class="s2">tb</span><span class="s8">地址：{frag}</span>',
-            1,
-        )
+        label = _defect_link_label_span()
+        placeholder = f'{label}<span class="s8">地址：x</span>'
+        replacement = f'{label}<span class="s8">地址：{frag}</span>'
+        if placeholder in out:
+            out = out.replace(placeholder, replacement, 1)
+        else:
+            out = out.replace(
+                '<span class="s2">tb</span><span class="s8">地址：x</span>',
+                f'{label}<span class="s8">地址：{frag}</span>',
+                1,
+            )
 
     def _replace_first_between(start_m: str, end_m: str, old: str, new: str) -> None:
         nonlocal out
@@ -686,11 +998,19 @@ def _harden_external_checklist_table(html: str, table_border: str) -> str:
 _REPORT_TEMPLATE_ZLIB_B64 = "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"
 
 
+_DEFECT_LINK_LABEL = "bug"
+
+
+def _defect_link_label_span() -> str:
+    return f'<span class="s2">{_DEFECT_LINK_LABEL}</span>'
+
+
 @functools.lru_cache(maxsize=1)
 def _report_template_html() -> str:
-    return zlib.decompress(base64.b64decode(_REPORT_TEMPLATE_ZLIB_B64.encode("ascii"))).decode(
+    text = zlib.decompress(base64.b64decode(_REPORT_TEMPLATE_ZLIB_B64.encode("ascii"))).decode(
         "utf-8"
     )
+    return text.replace('<span class="s2">tb</span>', _defect_link_label_span())
 
 
 def _build_dynamic_section_html(
@@ -718,7 +1038,7 @@ def _build_dynamic_section_html(
     if tech_opt_items:
         n = len(new_titles) + 1
         parts.append(
-            f'<p class="p10"><span class="s5">{n}.</span><span class="s1">技术优化需求：</span></p>\n'
+            f'<p class="p10"><span class="s5">{n}.</span><span class="s1">{TECH_OPT_SECTION_LABEL}：</span></p>\n'
         )
         for j, item in enumerate(tech_opt_items, start=1):
             parts.append(
@@ -891,6 +1211,11 @@ def main() -> int:
     xlsx_path, want_print_i2 = resolved
 
     try:
+        enrich_version_case_xlsx(xlsx_path)
+    except OSError as e:
+        print(f"回填用例统计失败（继续生成报告）：{e}", file=sys.stderr)
+
+    try:
         wb = load_workbook(xlsx_path, data_only=True, read_only=True)
     except PermissionError:
         print(f"无法读取文件（可能正在被 Excel 占用）：{xlsx_path}", file=sys.stderr)
@@ -917,6 +1242,21 @@ def main() -> int:
 
     sheet1_name = _pick_i2_sheet_name()
     i2_raw = wb[sheet1_name]["I2"].value
+
+    defect_ver = (
+        os.environ.get("REPORT_DEFECT_SCHEDULE_VERSION", "").strip()
+        or guess_version_from_xlsx(Path(xlsx_path))
+        or ""
+    )
+    schedule_xlsx = os.environ.get("REPORT_DEFECT_SCHEDULE_XLSX", "").strip()
+    if schedule_xlsx and defect_ver:
+        merged_i2 = apply_schedule_defects_to_i2(i2_raw, schedule_xlsx, defect_ver)
+        if merged_i2:
+            i2_raw = merged_i2
+    elif defect_ver:
+        merged_i2 = apply_bug_url_defects_to_i2(i2_raw, defect_ver)
+        if merged_i2:
+            i2_raw = merged_i2
 
     if want_print_i2:
         print(reformat_raw_i2_like_excel(i2_raw))
@@ -946,7 +1286,12 @@ def main() -> int:
         first = parts[0]
         rest = parts[1:]
 
-        lines.append(f"{idx}. {first}")
+        heading = (
+            f"{TECH_OPT_SECTION_LABEL}："
+            if _is_tech_opt_need(first)
+            else first
+        )
+        lines.append(f"{idx}. {heading}")
         if _is_tech_opt_need(first) and rest:
             normalized_rest = []
             for item in rest:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -28,40 +29,45 @@ def _parse_body(raw: bytes | None) -> dict[str, Any]:
     return data if isinstance(data, dict) else {}
 
 
+def _environment_from_account_summary(account: str) -> str | None:
+    """按业务 userId 段推断环境（测试 100xxxxxxx / 线上 107xxxxxxx 等）。"""
+    raw = (account or "").strip()
+    if not raw:
+        return None
+    first = re.split(r"[\s、;；]", raw)[0].strip()
+    if first.endswith("个账号"):
+        first = raw.split("等")[0].strip() if "等" in raw else first
+    match = re.match(r"^(\d{6,12})", first)
+    if not match:
+        return None
+    uid = match.group(1)
+    if uid.startswith("100") and len(uid) >= 9:
+        return "test"
+    if uid.startswith("107") and len(uid) >= 9:
+        return "online"
+    return None
+
+
+def _admin_environment_from_request(url: str, *, auth: str) -> str:
+    """按 Admin 请求域名判定环境；auth 仅作 URL 无法解析时的兜底。"""
+    host = (urlparse(url).hostname or "").strip().lower()
+    if host:
+        if "yaahlan-admin.wemomo.com" in host and "alpha" not in host and "stage" not in host:
+            return "online"
+        if any(token in host for token in ("alpha", "stage", "test")):
+            return "test"
+        if host.endswith(".immomo.com") and "stage" in host:
+            return "test"
+    if auth == "yaahlan_online":
+        return "online"
+    return "test"
+
+
 def _admin_call_meta(url: str, body: dict[str, Any], *, http_method: str) -> tuple[str, str, str, str]:
-    path = urlparse(url).path or url
-    uid = str(body.get("userId") or body.get("uid") or body.get("momoid") or "").strip()
-    phone = str(body.get("phone") or body.get("mobile") or "").strip()
-    family_id = str(body.get("familyId") or "").strip()
+    _ensure_web_agent_path()
+    from admin_call_labels import admin_call_meta
 
-    if "queryUserDetail" in path and uid:
-        operation = f"Admin 查询用户 {uid} 详情"
-        account = uid
-        params = f"userId={uid}"
-    elif "queryDeviceHistoryUsers" in path or "historyDevice" in path.lower():
-        mmuid = str(body.get("mmuidv3") or body.get("mmuid") or "").strip()
-        operation = "Admin 查询设备历史登录用户"
-        account = mmuid[:32] + "..." if len(mmuid) > 32 else mmuid
-        params = f"mmuidv3={mmuid}" if body.get("mmuidv3") else f"mmuid={mmuid}"
-    elif "queryUserHistoryDevices" in path and uid:
-        operation = f"Admin 查询用户 {uid} 历史设备"
-        account = uid
-        params = f"userId={uid}"
-    elif "addFamilyMember" in path or "add_family" in path.lower():
-        operation = f"Admin 家族添加成员 userId={uid or '?'}"
-        account = uid or family_id
-        params = f"userId={uid}，familyId={family_id}".strip("，")
-    elif "resetCustomGift" in path or "custom_gift" in path.lower():
-        operation = f"Admin 重置用户 {uid} 定制礼物上传"
-        account = uid
-        params = f"userId={uid}"
-    else:
-        operation = f"Admin {path}"
-        account = uid or phone or family_id
-        parts = [f"{k}={v}" for k, v in list(body.items())[:4] if v is not None]
-        params = "，".join(parts)[:240]
-
-    return operation, account, params, path
+    return admin_call_meta(url, body, http_method=http_method)
 
 
 def try_record_admin_call(
@@ -74,21 +80,24 @@ def try_record_admin_call(
 ) -> None:
     if os.environ.get("MOA_CALL_LOG_DISABLE", "").strip().lower() in ("1", "true", "yes"):
         return
-    if not os.environ.get("WEB_AGENT_RUN_ID", "").strip():
-        return
     if not isinstance(response, dict):
         return
     try:
         _ensure_web_agent_path()
+        from web_agent_audit_context import hydrate_audit_env_from_store, resolve_audit_context
         from web_moa_call_log import record_tool_call
+
+        hydrate_audit_env_from_store()
+        ctx = resolve_audit_context()
+        if not ctx:
+            return
 
         payload = _parse_body(body)
         operation, account, params, path = _admin_call_meta(url, payload, http_method=http_method)
-        online = auth == "yaahlan_online" or os.environ.get("ONLINE_ENV", "").strip().lower() in (
-            "1",
-            "true",
-            "yes",
-        )
+        env = _admin_environment_from_request(url, auth=auth)
+        acc_env = _environment_from_account_summary(account)
+        if acc_env:
+            env = acc_env
         record_tool_call(
             source="admin",
             response=response,
@@ -98,11 +107,11 @@ def try_record_admin_call(
             method=http_method.upper() or "POST",
             params_summary=params,
             interface_display=f"Admin · {http_method.upper()} {path}",
-            batch_key=os.environ.get("WEB_AGENT_BATCH_KEY", "").strip(),
-            run_id=os.environ.get("WEB_AGENT_RUN_ID", "").strip(),
-            operator_staff_id=os.environ.get("WEB_AGENT_CALLER_STAFF_ID", "").strip(),
-            operator_name=os.environ.get("WEB_AGENT_CALLER_NAME", "").strip(),
-            environment="online" if online else "test",
+            batch_key=ctx["batch_key"],
+            run_id=ctx["run_id"],
+            operator_staff_id=ctx["operator_staff_id"],
+            operator_name=ctx["operator_name"],
+            environment=env,
         )
     except Exception:  # noqa: BLE001
         return

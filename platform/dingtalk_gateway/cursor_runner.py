@@ -42,6 +42,8 @@ from web_agent_audit_env import pop_web_agent_audit_env, push_web_agent_audit_en
 
 REPO_ROOT = GATEWAY_DIR.parent.parent
 EXECUTOR_CONFIG = GATEWAY_DIR / "config" / "executor.local.json"
+# 多用户 Agent 并行时共用 os.environ，须串行化审计 env + Agent 调用，避免 MOA 落库串号
+_AGENT_AUDIT_LOCK = threading.RLock()
 DEFAULT_MODEL = "composer-2.5"
 DEFAULT_TIMEOUT_S = 600
 ADMIN_TIMEOUT_S = 1800
@@ -426,50 +428,51 @@ def run_agent_prompt(
 
     link_list = [str(link).strip() for link in (links or []) if str(link).strip()]
     mcp_servers = build_stdio_mcp_servers() if enable_mcp else None
-    prev_batch_key = os.environ.get(USER_KEY_ENV)
-    audit_snap = push_web_agent_audit_env(
-        user_key=user_key,
-        sender_name=sender_name,
-        sender_staff_id=sender_staff_id,
-        run_id_hint=run_id_hint,
-    )
-    if user_key:
-        os.environ[USER_KEY_ENV] = user_key
-    try:
-        return _run_agent_prompt_impl(
-            text=text,
-            paths=paths,
-            link_list=link_list,
-            api_key=api_key,
-            workdir=workdir,
-            timeout_s=timeout_s,
-            model=model,
-            use_gateway_rules=use_gateway_rules,
-            enable_mcp=enable_mcp,
-            session=session,
+    with _AGENT_AUDIT_LOCK:
+        prev_batch_key = os.environ.get(USER_KEY_ENV)
+        audit_snap = push_web_agent_audit_env(
             user_key=user_key,
             sender_name=sender_name,
-            sender_context=sender_context or "",
-            allow_code_modify=allow_code_modify,
-            allow_moa_registry=allow_moa_registry,
-            stream=stream,
-            on_render=on_render,
-            on_phase=on_phase,
-            show_thinking=show_thinking,
-            card_compact=card_compact,
-            web_stream=web_stream,
-            render_min_interval_s=render_min_interval_s,
-            include_process_in_final=include_process_in_final,
-            mcp_servers=mcp_servers,
-            reply_mode=reply_mode,
+            sender_staff_id=sender_staff_id,
+            run_id_hint=run_id_hint,
         )
-    finally:
         if user_key:
-            if prev_batch_key is None:
-                os.environ.pop(USER_KEY_ENV, None)
-            else:
-                os.environ[USER_KEY_ENV] = prev_batch_key
-        pop_web_agent_audit_env(audit_snap)
+            os.environ[USER_KEY_ENV] = user_key
+        try:
+            return _run_agent_prompt_impl(
+                text=text,
+                paths=paths,
+                link_list=link_list,
+                api_key=api_key,
+                workdir=workdir,
+                timeout_s=timeout_s,
+                model=model,
+                use_gateway_rules=use_gateway_rules,
+                enable_mcp=enable_mcp,
+                session=session,
+                user_key=user_key,
+                sender_name=sender_name,
+                sender_context=sender_context or "",
+                allow_code_modify=allow_code_modify,
+                allow_moa_registry=allow_moa_registry,
+                stream=stream,
+                on_render=on_render,
+                on_phase=on_phase,
+                show_thinking=show_thinking,
+                card_compact=card_compact,
+                web_stream=web_stream,
+                render_min_interval_s=render_min_interval_s,
+                include_process_in_final=include_process_in_final,
+                mcp_servers=mcp_servers,
+                reply_mode=reply_mode,
+            )
+        finally:
+            if user_key:
+                if prev_batch_key is None:
+                    os.environ.pop(USER_KEY_ENV, None)
+                else:
+                    os.environ[USER_KEY_ENV] = prev_batch_key
+            pop_web_agent_audit_env(audit_snap)
 
 
 def _run_agent_prompt_impl(

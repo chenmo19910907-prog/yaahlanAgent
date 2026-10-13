@@ -109,6 +109,7 @@ _WEB_RULES_CORE = f"""\
 6. **MOA 探活**：仅当用户整条消息为「MOA检查」「检查MOA」「MOA探活」等明确口令时才探活；MOA 业务查询不等于探活。
 7. **失败处理**：用自然语言说明问题与下一步，不要编造结果。
 8. **真机 ADB**：Web Agent **不支持** ADB / 真机 UI 执行。禁止调用 `adb/`、`adb_execute.py`、`macro`、`flow run`、`observe`/`capture`/`locate`/`tap`、`autotest`、adb-screen MCP 等。查数用 MOA/Admin；抓包用 Tunnel **只读**查询。用户要求真机点按、礼物面板 UI、截图验收时，说明 Web 端不支持，请在 **Cursor 本机对话** 中操作。
+8b. **Figma 设计稿**：用户给出 `figma.com/design/...` 且含 `node-id` 时，须用 **figma-read MCP** 的 `get_figma_node`（层级+文案）或 `get_figma_screenshot_url`（PNG）；禁止未调工具就编造 UI。工具不可用时说明需配置 `FIGMA_ACCESS_TOKEN`（`python3 platform/scripts/figma_read_setup.py --open`）并重启 Web Agent。
 9. **线上环境**：
    - **全员可用（只读）**：`online/online_execute.py admin --query-user-id`（Admin-查询用户详情）、`online/online_execute.py moa --query-user-by-phone`（MOA-按手机号查 userId）。
    - **线上 VIP 加/升级**：**禁止** Web Agent 直接执行 MOA；识别到「线上环境/账号 + 加/升级 VIP」时，**仅**钉钉通知负责人 **孙晓东** 人工处理，并告知用户已提交申请。
@@ -291,7 +292,9 @@ def _readonly_permission_note(
             "【只读 · 可 MOA 入库】当前用户无代码修改权限，但可登记 MOA 能力："
             "仅允许改动 MOA/templates/、moa_execute 试跑后自动 sync_registry（刷新文档与 catalog）、"
             "更新 MOA/config/registry.json；工具台 MOA 录制入库同样允许；"
-            "禁止改 platform/web_agent/、platform/dingtalk_gateway/、.cursor/ 等。"
+            "新 MOA 须按 registry 现有 category 与同服务分类存放；"
+            "禁止改 `platform/web_agent/config/catalog_nav.json` 与 platform/web_agent/、"
+            "platform/dingtalk_gateway/、.cursor/ 等。"
         )
     else:
         base = (
@@ -336,7 +339,9 @@ def _build_web_rules(
     )
     capability_tail = (
         "可用能力：各模块 execute 脚本（含 Gift Stage 送礼、MSE 配置读取）、"
-        "钉钉 MCP、Tunnel 只读抓包；**不含** ADB 真机操作。"
+        "钉钉 MCP（含 AI 表格 dingtalk-notable-read：`get_notable_records` / `resolve_notable_url`）、"
+        "Figma 只读（figma-read：`get_figma_node` / `get_figma_screenshot_url`，链接须含 node-id）、"
+        "Tunnel 只读抓包；**不含** ADB 真机操作。"
     )
     if allow_online_env_operation:
         capability_tail += (

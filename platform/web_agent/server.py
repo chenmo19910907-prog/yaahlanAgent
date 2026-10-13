@@ -182,6 +182,14 @@ from bookmarks_store import (  # noqa: E402
     normalize_bookmarks_payload as _normalize_bookmarks_payload,
     save_bookmarks as _save_bookmarks,
 )
+from catalog_nav_store import (  # noqa: E402
+    catalog_nav_for_response as _catalog_nav_for_response,
+    load_catalog_nav as _load_catalog_nav,
+    nav_tree_removed_folder_ids as _nav_tree_removed_folder_ids,
+    normalize_catalog_nav_payload as _normalize_catalog_nav_payload,
+    reconcile_nav_tree as _reconcile_nav_tree,
+    save_catalog_nav as _save_catalog_nav,
+)
 from message_board_store import (  # noqa: E402
     create_message as _create_message_board_entry,
     delete_message as _delete_message_board_entry,
@@ -296,6 +304,55 @@ def _bookmarks_auth_ok(handler: SimpleHTTPRequestHandler) -> tuple[bool, str | N
     if otp_auth_enabled() and current_web_user(handler) is None:
         return False, "请先登录后再保存快捷入口"
     return True, None
+
+
+def _catalog_nav_auth_ok(
+    handler: SimpleHTTPRequestHandler,
+    *,
+    require_super_admin: bool = False,
+) -> tuple[bool, str | None]:
+    if not otp_auth_enabled():
+        return True, None
+    user = current_web_user(handler)
+    if user is None:
+        return False, "请先登录后再保存能力分组"
+    if require_super_admin:
+        if not is_super_admin(staff_id=user.staff_id):
+            return False, "仅超级管理员可删除能力分组"
+        return True, None
+    if not is_web_admin(staff_id=user.staff_id):
+        return False, web_admin_denial_message()
+    return True, None
+
+
+def _handle_catalog_nav_save(handler: SimpleHTTPRequestHandler, body: Any) -> None:
+    normalized = _normalize_catalog_nav_payload(body)
+    if normalized is None:
+        return _json_response(handler, {"error": "invalid catalog nav payload"}, 400)
+    stored_nav = _load_catalog_nav()
+    old_tree = stored_nav.get("tree") if isinstance(stored_nav.get("tree"), list) else []
+    removed_folders = _nav_tree_removed_folder_ids(old_tree, normalized.get("tree") or [])
+    ok, err = _catalog_nav_auth_ok(handler, require_super_admin=bool(removed_folders))
+    if not ok:
+        status = 403 if otp_auth_enabled() and current_web_user(handler) is not None else 401
+        return _json_response(handler, {"error": err}, status)
+    try:
+        catalog = _load_catalog_data_cached()
+    except (OSError, ValueError, FileNotFoundError) as exc:
+        return _json_response(handler, {"error": str(exc)}, 500)
+    modules = catalog.get("modules") if isinstance(catalog.get("modules"), list) else []
+    playbooks = catalog.get("playbooks") if isinstance(catalog.get("playbooks"), list) else []
+    normalized["tree"] = _reconcile_nav_tree(
+        normalized.get("tree") or [],
+        modules,
+        include_playbook=bool(playbooks),
+    )
+    try:
+        _save_catalog_nav(normalized)
+    except OSError as exc:
+        logger.exception("保存 catalog_nav.json 失败")
+        return _json_response(handler, {"error": f"保存失败：{exc}"}, 500)
+    return _json_response(handler, {"ok": True, "nav": normalized})
 
 
 def _handle_bookmarks_save(handler: SimpleHTTPRequestHandler, body: Any) -> None:
@@ -2232,8 +2289,22 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         if path == "/api/catalog":
             try:
                 data = _load_catalog_data_cached()
+                modules = data.get("modules") if isinstance(data.get("modules"), list) else []
+                playbooks = data.get("playbooks") if isinstance(data.get("playbooks"), list) else []
+                data = dict(data)
+                data["nav"] = _catalog_nav_for_response(
+                    modules,
+                    include_playbook=bool(playbooks),
+                )
+                nav_path = WEB_AGENT_DIR / "config" / "catalog_nav.json"
+                nav_mtime = str(nav_path.stat().st_mtime_ns) if nav_path.is_file() else ""
                 etag = compute_sessions_list_etag(
-                    [{"id": "catalog", "updated_at": _catalog_sources_fingerprint()}],
+                    [
+                        {
+                            "id": "catalog",
+                            "updated_at": _catalog_sources_fingerprint() + "|" + nav_mtime,
+                        },
+                    ],
                 )
                 if _if_none_match_satisfied(self, etag):
                     return _respond_not_modified(self, etag=etag)
@@ -3117,6 +3188,13 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             except json.JSONDecodeError:
                 return _json_response(self, {"error": "invalid json"}, 400)
             return _handle_bookmarks_save(self, body)
+
+        if path == "/api/catalog-nav":
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            return _handle_catalog_nav_save(self, body)
 
         if path == "/api/bookmarks/import-legacy":
             try:

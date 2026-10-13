@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -72,97 +73,13 @@ def _sheet_id_from_entry(entry: dict[str, Any]) -> str:
     return str((inner.get("sheetId") or [""])[0] or "").strip()
 
 
-async def _fetch_notable_records(
-    *,
-    doc_key: str,
-    sheet_id: str,
-) -> list[dict[str, Any]]:
-    import httpx
+def _notable_client():
+    notable_dir = ROOT / "platform" / "mcp_notable_read"
+    if str(notable_dir) not in sys.path:
+        sys.path.insert(0, str(notable_dir))
+    import notable_client as mod
 
-    from dingtalk_kb_source import resolve_aegis_credentials, _import_server_read
-
-    mod = _import_server_read()
-    ak, sec, wid = resolve_aegis_credentials()
-    access, op = await mod.getTokenAndOperatorId(ak, sec, wid)
-    url = f"https://api.dingtalk.com/v1.0/notable/bases/{doc_key}/sheets/{sheet_id}/records/list"
-    headers = {"x-acs-dingtalk-access-token": access, "content-type": "application/json"}
-    records: list[dict[str, Any]] = []
-    next_token = ""
-    async with httpx.AsyncClient(timeout=60) as client:
-        while True:
-            body: dict[str, Any] = {"maxResults": 100}
-            if next_token:
-                body["nextToken"] = next_token
-            resp = await client.post(url, params={"operatorId": op}, headers=headers, json=body)
-            resp.raise_for_status()
-            payload = resp.json()
-            batch = payload.get("records") or []
-            if isinstance(batch, list):
-                records.extend(r for r in batch if isinstance(r, dict))
-            next_token = str(payload.get("nextToken") or "").strip()
-            if not next_token or not batch:
-                break
-    return records
-
-
-def _field_text(value: Any) -> str:
-    if value is None:
-        return ""
-    if isinstance(value, list):
-        parts = [_field_text(v) for v in value]
-        return "、".join(p for p in parts if p)
-    if isinstance(value, dict):
-        for key in ("name", "text", "title", "label", "value"):
-            if value.get(key) not in (None, ""):
-                return _field_text(value.get(key))
-        return json.dumps(value, ensure_ascii=False)
-    return str(value).strip()
-
-
-def _records_to_markdown(
-    records: list[dict[str, Any]],
-    *,
-    label: str,
-    url: str,
-    limit: int = 30,
-) -> str:
-    if not records:
-        return f"**{label}** 当前无记录。\n\n来源：{url}"
-
-    field_names: list[str] = []
-    seen: set[str] = set()
-    for rec in records:
-        fields = rec.get("fields")
-        if not isinstance(fields, dict):
-            continue
-        for name in fields:
-            if name not in seen:
-                seen.add(name)
-                field_names.append(str(name))
-
-    if not field_names:
-        return f"**{label}** 已拉取 {len(records)} 条，但字段为空。\n\n来源：{url}"
-
-    lines = [
-        f"**{label}**（实时自钉钉拉取，共 {len(records)} 条）",
-        "",
-        "| " + " | ".join(field_names) + " |",
-        "| " + " | ".join(["---"] * len(field_names)) + " |",
-    ]
-    shown = records[:limit]
-    for rec in shown:
-        fields = rec.get("fields") if isinstance(rec.get("fields"), dict) else {}
-        row = [_field_text(fields.get(name)) for name in field_names]
-        lines.append("| " + " | ".join(cell.replace("|", "\\|") for cell in row) + " |")
-    if len(records) > limit:
-        lines.extend(
-            [
-                "",
-                f"…（共 {len(records)} 条，已展示前 {limit} 条；回复「查看全部数据」可看完整列表）",
-            ]
-        )
-    lines.extend(["", f"来源：{url}"])
-    return "\n".join(lines)
+    return mod
 
 
 def fetch_schedule_live(entry: dict[str, Any]) -> str:
@@ -179,18 +96,25 @@ def fetch_schedule_live(entry: dict[str, Any]) -> str:
                 f"请打开链接查看：{url}"
             )
         try:
-            records = asyncio.run(_fetch_notable_records(doc_key=doc_key, sheet_id=sheet_id))
-            return _records_to_markdown(records, label=label, url=url)
-        except Exception as exc:  # noqa: BLE001
-            msg = str(exc)
-            if "Notable.Base.Read.All" in msg or "403" in msg:
-                return (
-                    f"排期表 **{label}** 为钉钉 AI 表格（.able），当前应用未开通 Notable 读权限，"
-                    f"无法自动拉取最新行数据。\n\n"
-                    f"请直接打开链接查看：{url}\n\n"
-                    f"或在钉钉中导出为 Excel/.axls 后 @ 机器人导入查询。"
+            nc = _notable_client()
+            from dingtalk_kb_source import resolve_aegis_credentials
+
+            ak, sec, wid = resolve_aegis_credentials()
+            os.environ.setdefault("DINGTALK_AEGIS_KEY", ak)
+            os.environ.setdefault("DINGTALK_AEGIS_SECRET", sec)
+            os.environ.setdefault("DINGTALK_WORKID", wid)
+            node_id = nc.extract_node_id(url) if url else ""
+            records = asyncio.run(
+                nc.fetch_notable_records(
+                    doc_key=doc_key,
+                    sheet_id=sheet_id,
+                    node_id=node_id,
+                    url=url,
                 )
-            return f"拉取 **{label}** 失败：{msg}\n\n请打开链接查看：{url}"
+            )
+            return nc.records_to_markdown(records, label=label, url=url, limit=30)
+        except Exception as exc:  # noqa: BLE001
+            return f"拉取 **{label}** 失败：{exc}\n\n链接：{url}"
 
     if fmt in {"axls", "xlsx", "xls"}:
         from dingtalk_kb_source import fetch_workbook_sheets

@@ -17,10 +17,11 @@ import zipfile
 from pathlib import Path
 
 GATEWAY_DIR = Path(__file__).resolve().parent
-if str(GATEWAY_DIR) not in sys.path:
-    sys.path.insert(0, str(GATEWAY_DIR))
+_PLATFORM = GATEWAY_DIR.parent
+if str(_PLATFORM) not in sys.path:
+    sys.path.insert(0, str(_PLATFORM))
 
-from repo_paths import (  # noqa: E402
+from project.repo_paths import (  # noqa: E402
     dingtalk_lookup_execute,
     get_repo_root,
     report_module_dir,
@@ -134,6 +135,7 @@ def _generate_html_reports(
     *,
     version_case_url: str,
     version_s2: str | None = None,
+    version_label: str | None = None,
 ) -> tuple[Path, Path, str]:
     if str(REPORT_ROOT) not in sys.path:
         sys.path.insert(0, str(REPORT_ROOT))
@@ -151,6 +153,8 @@ def _generate_html_reports(
     }
     if version_s2:
         env["REPORT_VERSION_S2"] = version_s2
+    if version_label:
+        env["REPORT_DEFECT_SCHEDULE_VERSION"] = str(version_label)
     proc = subprocess.run(
         [_report_python(), str(REPORT_ROOT / "report_execute.py"), str(xlsx_path)],
         cwd=str(REPORT_ROOT),
@@ -229,6 +233,7 @@ def generate_reports(
         xlsx_path,
         version_case_url=url,
         version_s2=version_s2,
+        version_label=version_label,
     )
     zip_path = _zip_reports(
         version_label=version_label,

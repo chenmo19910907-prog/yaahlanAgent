@@ -41,6 +41,27 @@
         "DINGTALK_WORKID": ""
       }
     },
+    "figma-read": {
+      "command": "platform/mcp/.venv/bin/python3",
+      "args": [
+        "platform/mcp_figma_read/server.py"
+      ],
+      "env": {
+        "FIGMA_ACCESS_TOKEN": ""
+      }
+    },
+    "dingtalk-notable-read": {
+      "command": "platform/mcp/.venv/bin/python3",
+      "args": [
+        "platform/mcp_notable_read/server.py"
+      ],
+      "env": {
+        "DINGTALK_AEGIS_KEY": "",
+        "DINGTALK_AEGIS_SECRET": "",
+        "DINGTALK_WORKID": "",
+        "DINGTALK_COOKIE": ""
+      }
+    },
     "dingtalk-excel-write": {
       "command": ".cursor/skills/testcase-to-excel/mcp_dingtalk_excel/venv/bin/python3",
       "args": [

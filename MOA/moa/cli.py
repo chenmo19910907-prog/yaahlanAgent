@@ -82,6 +82,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--momo-name", help="覆盖 payload.momoName")
     parser.add_argument("--header", help="覆盖 payload.header")
     parser.add_argument("--dump-payload", action="store_true", help="输出最终 payload 到 stderr")
+    parser.add_argument(
+        "--share-link",
+        action="store_true",
+        help="不执行 MOA，仅将当前 payload 保存到 MSE 并生成 src.cn 分享短链",
+    )
+    parser.add_argument(
+        "--share-link-json",
+        action="store_true",
+        help="与 --share-link 同用，输出 JSON（share_id / page_url / short_url）",
+    )
     parser.add_argument("--origin", default=os.environ.get("MOA_ORIGIN"))
     parser.add_argument("--referer", default=os.environ.get("MOA_REFERER"))
     parser.add_argument("--user-agent", default=os.environ.get("MOA_USER_AGENT"))
@@ -1194,11 +1204,32 @@ def main() -> int:
         print(f"参数错误: {e}", file=sys.stderr)
         return 2
 
-    if not args.entry_url:
-        print("缺少入口 URL：请传 --entry-url 或设置环境变量 MOA_ENTRY_URL", file=sys.stderr)
-        return 2
     if not args.cookie:
         print("缺少 Cookie：请传 --cookie 或设置环境变量 MOA_COOKIE", file=sys.stderr)
+        return 2
+
+    if args.share_link:
+        from .mse_share import create_moa_share_link
+
+        try:
+            payload = load_payload(args)
+            result = create_moa_share_link(
+                payload,
+                args.cookie,
+                timeout_s=max(int(args.timeout_ms), 1000) / 1000.0,
+            )
+        except (ValueError, RuntimeError, OSError) as e:
+            print(f"分享链接生成失败: {e}", file=sys.stderr)
+            return 1
+        if args.share_link_json:
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+        else:
+            print(result["short_url"])
+            print(result["page_url"])
+        return 0
+
+    if not args.entry_url:
+        print("缺少入口 URL：请传 --entry-url 或设置环境变量 MOA_ENTRY_URL", file=sys.stderr)
         return 2
 
     _apply_optional_headers(args)

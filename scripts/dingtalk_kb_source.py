@@ -189,6 +189,11 @@ def _load_mcp_env(server_key: str) -> dict[str, str]:
 
 
 def resolve_dingtalk_cookie() -> str:
+    cookie_file = Path.home() / ".dingtalk_doc_cookie"
+    if cookie_file.is_file():
+        cookie = cookie_file.read_text(encoding="utf-8").strip()
+        if cookie:
+            return cookie
     cookie = os.environ.get("DINGTALK_COOKIE", "").strip()
     if cookie:
         return cookie
@@ -196,9 +201,6 @@ def resolve_dingtalk_cookie() -> str:
         cookie = _load_mcp_env(key).get("DINGTALK_COOKIE", "").strip()
         if cookie:
             return cookie
-    cookie_file = Path.home() / ".dingtalk_doc_cookie"
-    if cookie_file.is_file():
-        return cookie_file.read_text(encoding="utf-8").strip()
     raise RuntimeError(
         "缺少 DINGTALK_COOKIE：请写入 .cursor/.mcp.secrets.json、"
         "~/.dingtalk_doc_cookie，或运行 python3 DingTalk/.cookie_sync_execute.py"

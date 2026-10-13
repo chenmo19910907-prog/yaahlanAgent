@@ -32,7 +32,7 @@
           '',
           `功能说明：${data.intro}`,
           '',
-          '请解析截图中的 ServiceUrl、Method、参数结构，生成 MOA template 并登记 MOA/config/registry.json，调通后返回可执行命令。',
+          '请解析截图中的 ServiceUrl、Method、参数结构，生成 MOA template 并登记 MOA/config/registry.json（category 对齐 registry 现有分类，勿改 catalog_nav.json），调通后返回可执行命令。',
         ].join('\n');
       },
       collectAttachments(data) {
@@ -73,7 +73,7 @@
           data.request,
           '```',
           '',
-          '请解析请求生成 MOA payload/template，登记 MOA/config/registry.json 并调通验收。',
+          '请解析请求生成 MOA payload/template，登记 MOA/config/registry.json（category 对齐现有分类，勿改 catalog_nav.json）并调通验收。',
         ].join('\n');
       },
     },
@@ -110,7 +110,7 @@
           `抓包${data.account}${data.behavior}的 tunnel（since ${since}s），并记录到 MOA。`,
           '',
           '请：1) Tunnel 拉取对应请求；2) 提取 body + 调用链 ServiceUrl/Method；',
-          '3) 生成 MOA template 并登记 MOA/config/registry.json 与 MOA-generative/mappings.md；4) 调通验收。',
+          '3) 生成 MOA template 并登记 MOA/config/registry.json（category 对齐现有分类，勿改 catalog_nav.json）与 MOA-generative/mappings.md；4) 调通验收。',
         ].join('\n');
       },
     },
@@ -135,7 +135,7 @@
           data.operation,
           '',
           '请：1) 定位对应接口/方法实现；2) 生成 MOA payload/template；',
-          '3) 登记 MOA/config/registry.json 与 MOA-generative/mappings.md；4) 调通验收并返回可执行命令。',
+          '3) 登记 MOA/config/registry.json（category 对齐现有分类，勿改 catalog_nav.json）与 MOA-generative/mappings.md；4) 调通验收并返回可执行命令。',
         ].join('\n');
       },
       suggestExternalAgents: ['yaahlan_service'],

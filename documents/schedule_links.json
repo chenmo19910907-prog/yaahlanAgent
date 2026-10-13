@@ -9,7 +9,18 @@
       "url": "https://alidocs.dingtalk.com/i/nodes/Qnp9zOoBVBZxdQzQCnRMpYMzV1DK0g6l?iframeQuery=entrance%3Ddata%26sheetId%3DAfRittZ%26viewId%3DcaaUsJp",
       "format": "able",
       "docKey": "vBPlN5jDD6ALPOdG",
+      "dentryKey": "pW4WYDqYOTQDXyYy",
       "sheetId": "AfRittZ"
+    },
+    {
+      "id": "yaahlan-q3-bugs",
+      "label": "2026-Q3 缺陷列表",
+      "aliases": ["缺陷列表", "bug列表", "Bug列表", "Q3缺陷", "Q3 bug"],
+      "url": "https://alidocs.dingtalk.com/i/nodes/MNDoBb60VLrMNyOyCmdjOyrr8lemrZQ3?corpId=ding7bea6d685b5f346535c2f4657eb6378f&iframeQuery=entrance%3Ddata%26sheetId%3Dk5KAoJo%26viewId%3DPkoKp4U",
+      "format": "able",
+      "docKey": "jP2lRYjD51rDJO8g",
+      "dentryKey": "6nEM3nX77i9K5D2D",
+      "sheetId": "k5KAoJo"
     }
   ]
 }

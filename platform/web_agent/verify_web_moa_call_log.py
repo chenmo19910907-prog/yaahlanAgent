@@ -14,14 +14,23 @@ if str(WEB_AGENT_DIR) not in __import__("sys").path:
     __import__("sys").path.insert(0, str(WEB_AGENT_DIR))
 
 from web_moa_call_log import (  # noqa: E402
+    _dedupe_moa_and_agent_turn_shadow,
     _extract_account_hint,
+    _load_entries,
     _operation_label,
+    _save_entries,
     beautify_account_summary,
+    compose_source_interface_display,
     format_account_summary_display,
     beautify_params_summary,
+    extract_moa_call_details_from_assistant,
     extract_params_summary_from_payload,
+    finalize_dingtalk_call_log,
+    is_ephemeral_audit_user,
     list_moa_call_entries,
+    purge_ephemeral_audit_entries,
     record_moa_call,
+    record_tool_call,
     build_semantic_operation_summary,
     collapse_batch_params_summary,
     format_operation_display,
@@ -126,15 +135,68 @@ class WebMoaCallLogTests(unittest.TestCase):
             ),
             "100465989 等 5 个账号各发放 100 钻石",
         )
+        self.assertEqual(
+            build_semantic_operation_summary(
+                "addPackageGift",
+                'userId=100465989，giftDetails=[{"baseProductId":"2005001494","productNum":1}]',
+                account_summary="100465989 等 5 个账号",
+                call_count=5,
+            ),
+            "100465989 等 5 个账号各下发 1 个背包礼物",
+        )
+        self.assertEqual(
+            _operation_label(
+                payload_file="MOA/templates/背包礼物-下发.json",
+                service_url="/service/voga-base-service-middle-gift-stage",
+                method="addPackageGift",
+            ),
+            "背包礼物-下发",
+        )
+        self.assertEqual(
+            build_semantic_operation_summary(
+                "queryUserAccount",
+                "1=100486506",
+                account_summary="100486506",
+            ),
+            "用户 100486506 查询钻石余额",
+        )
+        self.assertEqual(
+            format_operation_display(
+                "钻石-查询余额",
+                method="queryUserAccount",
+                params_summary="1=100465989（共 3 个账号，不逐一列出）",
+                account_summary="100277713 等 3 个账号",
+                call_count=3,
+            ),
+            "100277713 等 3 个账号 查询钻石余额",
+        )
         collapsed = collapse_batch_params_summary(
             "userId=100465989，num=100；userId=100486375，num=100",
             method="provideDiamond",
             call_count=100,
             account_summary="100465989 等 100 个账号",
         )
-        self.assertIn("每账号 num=100", collapsed)
-        self.assertIn("共 100 个账号", collapsed)
+        self.assertEqual(collapsed, "userId=100465989，num=100")
         self.assertNotIn("100486375", collapsed)
+        self.assertNotIn("不逐一列出", collapsed)
+        dirty = "userId=100000001（同账号查询 4 次）（同账号查询 4 次）"
+        once = collapse_batch_params_summary(
+            dirty,
+            method="getVipInfo",
+            call_count=4,
+            account_summary="100000001",
+        )
+        self.assertEqual(once, "userId=100000001（同账号查询 4 次）")
+        self.assertEqual(
+            format_operation_display(
+                "",
+                method="getVipInfo",
+                params_summary=once,
+                account_summary="100000001",
+                call_count=4,
+            ),
+            "查询用户 100000001 VIP经验值（4 次）",
+        )
 
     def test_get_vip_info_operation_label(self) -> None:
         label = _operation_label(
@@ -161,6 +223,26 @@ class WebMoaCallLogTests(unittest.TestCase):
             "100465989",
         )
 
+    def test_beautify_account_strips_coin_count_mistaken_as_uid(self) -> None:
+        self.assertEqual(
+            beautify_account_summary("100166394、100277713、120000"),
+            "100166394、100277713",
+        )
+
+    def test_assistant_extract_skips_narrative_table_as_params(self) -> None:
+        assistant = (
+            "## 结论\n\n"
+            "| 身份 | 个人钱包（金币 Tab）提现 |\n"
+            "|------|-------------------------|\n"
+            "| **普通用户** | **应支持**（用例：「普通用户正常提现」） |\n"
+            "刚查 **100166394**：`coinCount=120000`，`canCash=1`\n"
+            "`/service/voga-base-service-middle-pay-stage` · `queryUserAccount`\n"
+        )
+        details = extract_moa_call_details_from_assistant(assistant)
+        self.assertEqual(details.get("method"), "queryUserAccount")
+        self.assertNotIn("身份=", details.get("paramsSummary") or "")
+        self.assertNotIn("应支持", details.get("paramsSummary") or "")
+
     def test_account_display_includes_environment(self) -> None:
         self.assertEqual(
             format_account_summary_display("100465989", environment="test"),
@@ -171,10 +253,162 @@ class WebMoaCallLogTests(unittest.TestCase):
             "线上 · 100465989",
         )
 
+    def test_compose_source_interface_display_no_duplicate_prefix(self) -> None:
+        self.assertEqual(
+            compose_source_interface_display(
+                "Admin",
+                "Admin · POST /admin/user/queryUserDetail",
+            ),
+            "Admin · POST /admin/user/queryUserDetail",
+        )
+        self.assertEqual(
+            compose_source_interface_display("风控", "风控 · release_device"),
+            "风控 · release_device",
+        )
+        self.assertEqual(
+            compose_source_interface_display("MOA", "/service/a · m"),
+            "MOA · /service/a · m",
+        )
+
     def test_beautify_legacy_numeric_keys(self) -> None:
         raw = "1=100465989，2=1"
         fixed = beautify_params_summary(raw, method="addVipValue")
         self.assertEqual(fixed, "userId=100465989，value=1")
+
+    def test_dedupe_moa_and_agent_turn_shadow(self) -> None:
+        with self._patch_log():
+            entries = [
+                {
+                    "ts": "2026-10-10T08:24:40+00:00",
+                    "accountSummary": "100247200",
+                    "method": "dispatchTryVip",
+                    "operationKey": "moa#/service/voga-mts-user-vip-stage#dispatchTryVip",
+                    "operatorStaffId": "32274159141215328",
+                    "operatorName": "陈墨",
+                },
+                {
+                    "ts": "2026-10-10T08:24:43+00:00",
+                    "accountSummary": "100247200",
+                    "method": "",
+                    "operationKey": "agent-turn#abc",
+                    "operatorStaffId": "444015100823145286",
+                    "operatorName": "孙冰川",
+                },
+            ]
+            removed = _dedupe_moa_and_agent_turn_shadow(
+                entries,
+                account="100247200",
+                pivot_ts="2026-10-10T08:24:43+00:00",
+                prefer_staff="444015100823145286",
+                prefer_name="孙冰川",
+            )
+            self.assertEqual(removed, 1)
+            self.assertEqual(len(entries), 1)
+            self.assertEqual(entries[0]["operatorName"], "孙冰川")
+            self.assertEqual(entries[0]["method"], "dispatchTryVip")
+
+    def test_finalize_dingtalk_drops_turn_when_moa_exists(self) -> None:
+        with self._patch_log():
+            record_tool_call(
+                source="moa",
+                response={"ec": 200, "result": {"ec": 0}},
+                operation="用户 100247200 下发 VIP10 体验 86400 秒",
+                account_summary="100247200",
+                service_url="/service/voga-mts-user-vip-stage",
+                method="dispatchTryVip",
+                run_id="dingtalk:msgTest1",
+                batch_key="cid:test:user:444015100823145286",
+                operator_staff_id="32274159141215328",
+                operator_name="陈墨",
+            )
+            finalize_dingtalk_call_log(
+                run_id="dingtalk:msgTest1",
+                batch_key="cid:test:user:444015100823145286",
+                sender_staff_id="444015100823145286",
+                sender_name="孙冰川",
+                user_text="把100247200 vip等级设置为10 时长一天",
+                assistant_text="**100247200** 已设置 **VIP10 体验 1 天**",
+            )
+            rows = _load_entries()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["operatorName"], "孙冰川")
+        self.assertEqual(rows[0]["method"], "dispatchTryVip")
+
+    def test_audit_context_resolves_without_run_env(self) -> None:
+        import os
+        from unittest.mock import patch
+
+        from web_agent_audit_context import publish_audit_context, resolve_audit_context
+
+        with tempfile.TemporaryDirectory() as td:
+            audit = Path(td)
+            active = audit / "active.json"
+            by_batch = audit / "by_batch"
+            patches = patch.multiple(
+                "web_agent_audit_context",
+                AUDIT_DIR=audit,
+                ACTIVE_PATH=active,
+                BY_BATCH_DIR=by_batch,
+            )
+            with patches:
+                for key in (
+                    "WEB_AGENT_RUN_ID",
+                    "WEB_AGENT_BATCH_KEY",
+                    "WEB_AGENT_CALLER_STAFF_ID",
+                    "WEB_AGENT_CALLER_NAME",
+                ):
+                    os.environ.pop(key, None)
+                publish_audit_context(
+                    batch_key="cid:test:user:auditctx",
+                    run_id="dingtalk:msgAuditCtx",
+                    operator_staff_id="12585516401214119",
+                    operator_name="陈可",
+                    source="test",
+                )
+                ctx = resolve_audit_context()
+                self.assertIsNotNone(ctx)
+                assert ctx is not None
+                self.assertEqual(ctx["run_id"], "dingtalk:msgAuditCtx")
+                self.assertEqual(ctx["operator_name"], "陈可")
+
+    def test_ephemeral_probe_user_not_recorded(self) -> None:
+        payload = {
+            "url": "/service/voga-mts-user-vip-stage",
+            "method": "getVipInfo",
+            "params": [{"name": "1", "value": "100000001", "type": "string"}],
+        }
+        resp = {"ec": 200, "result": {"ec": 0}}
+        with self._patch_log():
+            record_moa_call(
+                payload=payload,
+                response=resp,
+                run_id="probe-run",
+                operator_name="测试员",
+            )
+            self.assertEqual(list_moa_call_entries(limit=10)["total"], 0)
+
+    def test_purge_ephemeral_audit_entries(self) -> None:
+        with self._patch_log():
+            _save_entries(
+                [
+                    {
+                        "id": "a",
+                        "ts": "2026-01-01T00:00:00+00:00",
+                        "accountSummary": "100000001",
+                        "operation": "查询用户 100000001 VIP经验值",
+                    },
+                    {
+                        "id": "b",
+                        "ts": "2026-01-01T00:00:01+00:00",
+                        "accountSummary": "100465989",
+                        "operation": "用户 100465989 发放 100 钻石",
+                    },
+                ]
+            )
+            self.assertTrue(is_ephemeral_audit_user("100000001", "userId=100000001"))
+            self.assertEqual(purge_ephemeral_audit_entries(), 1)
+            self.assertEqual(len(_load_entries()), 1)
+            self.assertEqual(_load_entries()[0]["id"], "b")
 
     def test_list_newest_first(self) -> None:
         payload = {"url": "/service/a", "method": "m", "params": []}

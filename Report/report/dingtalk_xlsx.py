@@ -188,6 +188,12 @@ def write_workbook_xlsx(
                     ws.cell(row=row_idx, column=col_idx, value=value)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     wb.save(output_path)
+    try:
+        from report.generator import enrich_version_case_xlsx
+
+        enrich_version_case_xlsx(output_path)
+    except Exception:
+        pass
 
 
 def guess_output_stem(sheets: list[tuple[str, list[list[Any]]]]) -> str:

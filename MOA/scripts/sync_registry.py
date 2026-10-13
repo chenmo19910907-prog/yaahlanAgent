@@ -49,6 +49,42 @@ def _slugify(name: str) -> str:
     return s or "moa_template"
 
 
+def _existing_registry_categories(items: list[Any]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        cat = str(item.get("category") or "").strip()
+        if cat and cat not in seen:
+            seen.add(cat)
+            out.append(cat)
+    return out
+
+
+def _category_from_existing(url: str, categories: list[str]) -> str | None:
+    u = str(url or "").lower()
+    if not u or not categories:
+        return None
+    best: tuple[int, str] | None = None
+    for cat in categories:
+        c = cat.lower()
+        score = 0
+        if "(" in cat and ")" in cat:
+            inner = cat[cat.index("(") + 1 : cat.index(")")]
+            for part in re.split(r"[/\s]+", inner):
+                part = part.strip().lower()
+                if len(part) >= 4 and part in u:
+                    score += len(part)
+        for token in re.split(r"[^\w\u4e00-\u9fff]+", cat):
+            token = token.strip().lower()
+            if len(token) >= 2 and token in u:
+                score += len(token)
+        if score > 0 and (best is None or score > best[0]):
+            best = (score, cat)
+    return best[1] if best else None
+
+
 def _category_from_url(url: str) -> str:
     u = str(url or "").strip()
     if not u:
@@ -124,6 +160,7 @@ def _infer_registry_item(
     payload: dict[str, Any],
     *,
     used_ids: set[str],
+    existing_categories: list[str],
 ) -> dict[str, Any]:
     base_name = os.path.splitext(template_file)[0]
     meta = payload.get("_registry")
@@ -136,7 +173,10 @@ def _infer_registry_item(
     name = meta.get("name") if isinstance(meta.get("name"), str) else base_name
     url = str(payload.get("url") or "")
     method = str(payload.get("method") or "")
-    category = meta.get("category") if isinstance(meta.get("category"), str) else _category_from_url(url)
+    if isinstance(meta.get("category"), str) and str(meta.get("category")).strip():
+        category = str(meta.get("category")).strip()
+    else:
+        category = _category_from_existing(url, existing_categories) or _category_from_url(url)
     description = meta.get("description") if isinstance(meta.get("description"), str) else (
         f"{method}（{url}）" if method and url else f"MOA 模板 {base_name}"
     )
@@ -172,6 +212,7 @@ def sync_registry(*, dry_run: bool = False) -> list[dict[str, Any]]:
 
     registered = _collect_registered_templates(items)
     used_ids = _existing_ids(items)
+    existing_categories = _existing_registry_categories(items)
     added: list[dict[str, Any]] = []
 
     template_root = templates_dir()
@@ -184,10 +225,18 @@ def sync_registry(*, dry_run: bool = False) -> list[dict[str, Any]]:
         if not os.path.isfile(path):
             continue
         payload = _read_json(path)
-        item = _infer_registry_item(fname, payload, used_ids=used_ids)
+        item = _infer_registry_item(
+            fname,
+            payload,
+            used_ids=used_ids,
+            existing_categories=existing_categories,
+        )
         items.append(item)
         added.append(item)
         registered.add(fname)
+        cat = str(item.get("category") or "").strip()
+        if cat and cat not in existing_categories:
+            existing_categories.append(cat)
 
     if added and not dry_run:
         registry["items"] = items
