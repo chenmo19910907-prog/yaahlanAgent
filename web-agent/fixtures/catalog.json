@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-10-09 18:21:05 北京时间",
-  "total_items": 344,
-  "module_count": 33,
+  "generated_at": "2026-10-13 12:33:30 北京时间",
+  "total_items": 345,
+  "module_count": 34,
   "modules": [
     {
       "id": "用户",
@@ -4468,6 +4468,30 @@
               "source": "算薪自动化",
               "source_id": "salary",
               "env": "test"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "钉钉用例表",
+      "label": "钉钉用例表",
+      "item_count": 1,
+      "categories": [
+        {
+          "name": "钉钉用例表",
+          "items": [
+            {
+              "name": "用例表-标P0绿色",
+              "prompts": [
+                "帮我把用例 P0 标绿",
+                "钉钉用例表 P0 比例 20%",
+                "跨房PK用例标 P0 绿色",
+                "预期结果列标 P0"
+              ],
+              "source": "钉钉文档",
+              "source_id": "dingtalk",
+              "env": "tool"
             }
           ]
         }

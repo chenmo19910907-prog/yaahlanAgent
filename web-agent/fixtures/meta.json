@@ -4,8 +4,8 @@
   "projectId": "yaahlan",
   "mcp_count": 6,
   "skills_count": 12,
-  "modules_count": 33,
-  "capabilities_count": 344,
+  "modules_count": 34,
+  "capabilities_count": 345,
   "defaultAgentModel": "composer-2.5",
   "agentModels": [
     {
@@ -186,13 +186,6 @@
       "description": "",
       "url": "https://ai-yaahlan.wemomo.com",
       "defaultEnabled": true
-    },
-    {
-      "id": "mdp_middleware",
-      "label": "MDP Agent",
-      "description": "",
-      "url": "http://172.18.50.12:8080",
-      "defaultEnabled": false
     }
   ],
   "quickPrompts": [

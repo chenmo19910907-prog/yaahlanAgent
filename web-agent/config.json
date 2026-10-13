@@ -58,14 +58,6 @@
       "tokenEnvKey": "YAAHLAN_SERVICE_AGENT_TOKEN",
       "targetEnvironment": "stage",
       "defaultEnabled": true
-    },
-    {
-      "id": "mdp_middleware",
-      "label": "MDP Agent",
-      "description": "",
-      "url": "http://172.18.50.12:8080",
-      "queryScript": "platform/web_agent/middleware_agent_query.py",
-      "defaultEnabled": false
     }
   ],
   "quickPromptCount": 4,
