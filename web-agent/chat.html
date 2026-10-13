@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20261013043330"></script>
-  <script src="demo-api.js?v=20261013043330"></script>
+  <script src="demo-fixtures.js?v=20261013080205"></script>
+  <script src="demo-api.js?v=20261013080205"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -4370,7 +4370,13 @@
     }
     .catalog-nav button.active::before { opacity: 1; transform: scaleY(1); }
     .catalog-nav .nav-label {
-      flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      flex: 1; min-width: 0;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .catalog-nav .count {
       flex-shrink: 0; font-size: 0.68rem; color: var(--muted);
@@ -4382,7 +4388,7 @@
     }
     .catalog-nav-tree .nav-tree { display: flex; flex-direction: column; gap: 2px; }
     .catalog-nav-tree .nav-row {
-      display: flex; align-items: center; gap: 2px;
+      display: flex; align-items: flex-start; gap: 2px;
       padding-left: calc(6px + var(--nav-depth, 0px));
       border-radius: 10px; position: relative;
     }
@@ -4391,6 +4397,16 @@
       background: var(--nav-active-bg); color: var(--nav-active-color);
     }
     .catalog-nav-tree .nav-row.active .nav-select { color: var(--nav-active-color); font-weight: 650; }
+    .catalog-nav-tree .nav-cap-if-svg,
+    .catalog-nav-tree .nav-all-svg { width: 16px; height: 16px; display: block; }
+    .catalog-nav-tree .nav-select.nav-select-cap-if .nav-label { flex: 1; min-width: 0; }
+    .catalog-nav-tree .nav-children-mixed > .nav-row.nav-cap-if { margin-top: 0; }
+    .catalog-module-category .cats .cat-name { display: none; }
+    .catalog-scope-folder-title {
+      margin: 14px 0 8px; font-size: 0.82rem; font-weight: 650; color: var(--text-soft);
+    }
+    .catalog-scope-folder .cats,
+    .catalog-scope-module .cats { margin-top: 0; }
     .catalog-nav-tree .nav-row.active::before {
       content: ''; position: absolute; left: 4px; top: 7px; bottom: 7px; width: 2px;
       border-radius: 999px; background: var(--accent); opacity: 1;
@@ -4406,6 +4422,11 @@
     .catalog-nav-tree .nav-row.drop-after::after { bottom: 0; height: 2px; }
     .catalog-nav-tree .nav-row.drop-inside { box-shadow: inset 0 0 0 1px var(--accent); }
     .catalog-nav-tree .nav-fold,
+    .catalog-nav-tree .nav-fold-spacer,
+    .catalog-nav-tree .nav-cap-lead {
+      align-self: center;
+    }
+    .catalog-nav-tree .nav-fold,
     .catalog-nav-tree .nav-fold-spacer {
       flex-shrink: 0; width: 22px; height: 28px; border: 0; background: transparent;
       color: #5c6778; font-size: 0.82rem; line-height: 1; cursor: pointer; padding: 0;
@@ -4415,6 +4436,11 @@
     .catalog-nav-tree .nav-chevron-svg { width: 12px; height: 12px; display: block; }
     .catalog-nav-tree .nav-fold:hover { color: var(--text); }
     .catalog-nav-tree .nav-fold-spacer { cursor: default; }
+    .catalog-nav-tree .nav-cap-lead {
+      flex-shrink: 0; width: 22px; height: 28px;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .catalog-nav-tree .nav-row .nav-actions { align-self: center; }
     .catalog-nav-tree .nav-folder-icon {
       flex-shrink: 0; width: 16px; height: 16px;
       display: inline-flex; align-items: center; justify-content: center;
@@ -4424,7 +4450,7 @@
     .catalog-nav-tree .nav-row:hover .nav-folder-icon,
     .catalog-nav-tree .nav-row.active .nav-folder-icon { color: var(--text); }
     .catalog-nav-tree .nav-select {
-      flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 6px;
+      flex: 1; min-width: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 6px;
       border: 0; background: transparent; padding: 7px 4px 7px 0; cursor: pointer;
       font-size: 0.76rem; color: var(--muted); text-align: left;
     }
@@ -4483,6 +4509,9 @@
     .catalog-module .module-head {
       display: flex; align-items: flex-start; gap: 10px;
     }
+    .catalog-module .module-head > div {
+      flex: 1; min-width: 0;
+    }
     .module-icon, .catalog-title-icon {
       width: 28px; height: 28px; border-radius: 9px;
       display: inline-flex; align-items: center; justify-content: center;
@@ -4494,6 +4523,17 @@
     .module-icon svg, .catalog-title-icon svg { width: 15px; height: 15px; stroke: currentColor; }
     .catalog-module h3, .playbook-section h3 {
       margin: 0; font-size: 0.9rem; font-weight: 600; line-height: 1.35;
+    }
+    .catalog-module h3 {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .catalog-module .cat-name {
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .catalog-module .sub, .playbook-tag-row {
       font-size: 0.72rem; color: var(--muted); margin-top: 4px;
@@ -5287,7 +5327,7 @@
   <script src="bookmarks_panel.js"></script>
   <script src="message_board_panel.js?v=20260730b"></script>
   <script src="about_panel.js?v=20260814a"></script>
-  <script src="catalog_panel.js?v=20261013v"></script>
+  <script src="catalog_panel.js?v=20261014t"></script>
   <script src="moa_record_panel.js?v=20260803d"></script>
   <script src="waiting_fx.js"></script>
   <script>
@@ -13021,6 +13061,8 @@
       if (data?.nav && catalogPanel) {
         catalogPanel.navTree = JSON.parse(JSON.stringify(data.nav.tree || []));
         catalogPanel.ensureFolderChildren(catalogPanel.navTree);
+        catalogPanel.hydrateNavCaps(catalogPanel.navTree);
+        catalogPanel.sortNavTreeChildOrder(catalogPanel.navTree);
       }
     }
 
