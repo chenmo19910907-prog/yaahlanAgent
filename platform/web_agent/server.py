@@ -22,7 +22,7 @@ from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs, quote, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlparse
 
 WEB_AGENT_DIR = Path(__file__).resolve().parent
 PLATFORM_DIR = WEB_AGENT_DIR.parent
@@ -150,7 +150,7 @@ from web_admin_grants import is_super_admin  # noqa: E402
 from web_admin_permission import is_web_admin, web_admin_denial_message  # noqa: E402
 from web_admin_apply import application_status_for_staff, submit_application  # noqa: E402
 from web_admin_audit_log import list_admin_audit_entries  # noqa: E402
-from web_moa_call_log import list_moa_call_entries  # noqa: E402
+from web_moa_call_log import list_moa_call_entries, list_moa_call_log_operators  # noqa: E402
 from web_admin_manage import (  # noqa: E402
     enrich_selectable_users_with_admin_roles,
     list_admin_users,
@@ -217,9 +217,11 @@ CONFIG_PATH = WEB_AGENT_DIR / "config.json"
 FAMILY_PK_EXPORTS_DIR = REPO_ROOT / "platform" / "family_pk_report" / "exports"
 PLATFORM_GUIDE_DIR = REPO_ROOT / "platform" / "exports" / "cursor-platform-guide"
 BUSINESS_SHARE_DIR = REPO_ROOT / "platform" / "exports" / "business-share"
+CATALOG_MANUAL_DIR = REPO_ROOT / "platform" / "exports" / "catalog-manual"
 SHOWCASE_URL_PREFIX = "/family-pk-showcase"
 PLATFORM_GUIDE_URL_PREFIX = "/platform-guide"
 BUSINESS_SHARE_URL_PREFIX = "/business-share"
+CATALOG_MANUAL_URL_PREFIX = "/catalog-manual"
 KEYNOTE_URL_PREFIX = "/keynote"
 KEYNOTE_DIR = WEB_AGENT_DIR / "keynote"
 KEYNOTE_PREVIEW_HTML = KEYNOTE_DIR / "preview.html"
@@ -1988,9 +1990,13 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             inject_analytics=target.suffix.lower() in {".html", ".htm"},
         )
 
+    @staticmethod
+    def _export_rel_path(rel_path: str) -> str:
+        return unquote((rel_path or "").lstrip("/"), errors="strict")
+
     def _serve_platform_guide(self, rel_path: str) -> None:
         root = PLATFORM_GUIDE_DIR.resolve()
-        target = (root / rel_path).resolve()
+        target = (root / self._export_rel_path(rel_path)).resolve()
         if not str(target).startswith(str(root)):
             self.send_error(HTTPStatus.NOT_FOUND)
             return
@@ -2002,13 +2008,25 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
 
     def _serve_business_share(self, rel_path: str) -> None:
         root = BUSINESS_SHARE_DIR.resolve()
-        target = (root / rel_path).resolve()
+        target = (root / self._export_rel_path(rel_path)).resolve()
         if not str(target).startswith(str(root)):
             self.send_error(HTTPStatus.NOT_FOUND)
             return
         self._serve_static_file(
             target,
             not_found_msg="business share doc not found",
+            inject_analytics=target.suffix.lower() in {".html", ".htm"},
+        )
+
+    def _serve_catalog_manual(self, rel_path: str) -> None:
+        root = CATALOG_MANUAL_DIR.resolve()
+        target = (root / self._export_rel_path(rel_path)).resolve()
+        if not str(target).startswith(str(root)):
+            self.send_error(HTTPStatus.NOT_FOUND)
+            return
+        self._serve_static_file(
+            target,
+            not_found_msg="catalog manual not found",
             inject_analytics=target.suffix.lower() in {".html", ".htm"},
         )
 
@@ -2072,6 +2090,11 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         if raw_path == BUSINESS_SHARE_URL_PREFIX:
             self.send_response(HTTPStatus.MOVED_PERMANENTLY)
             self.send_header("Location", f"{BUSINESS_SHARE_URL_PREFIX}/")
+            self.end_headers()
+            return
+        if raw_path == CATALOG_MANUAL_URL_PREFIX:
+            self.send_response(HTTPStatus.MOVED_PERMANENTLY)
+            self.send_header("Location", f"{CATALOG_MANUAL_URL_PREFIX}/")
             self.end_headers()
             return
         if raw_path == SHOWCASE_URL_PREFIX:
@@ -2218,6 +2241,19 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 pass
             return _json_response(self, payload)
 
+        if path == "/api/moa/call-log/operators":
+            user = current_web_user(self)
+            if user is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            operators = list_moa_call_log_operators()
+            try:
+                from dingtalk_user_lookup import enrich_staff_users_with_avatars
+
+                enrich_staff_users_with_avatars(operators)
+            except Exception:  # noqa: BLE001
+                pass
+            return _json_response(self, {"operators": operators})
+
         if path == "/api/moa/call-log":
             user = current_web_user(self)
             if user is None:
@@ -2231,7 +2267,16 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 offset = int(str((qs.get("offset") or ["0"])[0]).strip() or "0")
             except ValueError:
                 offset = 0
-            payload = list_moa_call_entries(limit=limit, offset=offset)
+            operator_staff_id = str((qs.get("operatorStaffId") or [""])[0]).strip()
+            start_date = str((qs.get("startDate") or [""])[0]).strip()
+            end_date = str((qs.get("endDate") or [""])[0]).strip()
+            payload = list_moa_call_entries(
+                limit=limit,
+                offset=offset,
+                operator_staff_id=operator_staff_id,
+                start_date=start_date,
+                end_date=end_date,
+            )
             try:
                 from dingtalk_user_lookup import enrich_staff_users_with_avatars
 
@@ -2360,6 +2405,12 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         ):
             rel = path[len(BUSINESS_SHARE_URL_PREFIX) :].lstrip("/") or "index.html"
             return self._serve_business_share(rel)
+
+        if path == CATALOG_MANUAL_URL_PREFIX or path.startswith(
+            f"{CATALOG_MANUAL_URL_PREFIX}/"
+        ):
+            rel = path[len(CATALOG_MANUAL_URL_PREFIX) :].lstrip("/") or "index.html"
+            return self._serve_catalog_manual(rel)
 
         if path == "/api/meta":
             return _json_response(self, _platform_meta())

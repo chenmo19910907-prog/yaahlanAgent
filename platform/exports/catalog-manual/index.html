@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>工具台能力 · 使用说明书</title>
+  <link rel="stylesheet" href="/assets/fonts/misans/Normal/MiSans-Normal.min.css" />
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: rgba(18, 24, 42, 0.92);
+      --text: #e8edf8;
+      --muted: #9aa8c7;
+      --accent: #5b8cff;
+      --accent-soft: rgba(91, 140, 255, 0.14);
+      --border: rgba(255, 255, 255, 0.08);
+      --code-bg: rgba(0, 0, 0, 0.35);
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "MiSans Normal", "PingFang SC", sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, rgba(91,140,255,.18), transparent 60%),
+                  radial-gradient(900px 500px at 90% 0%, rgba(56,189,248,.08), transparent 55%),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 820px);
+      gap: 32px;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 24px 80px;
+    }
+    .toc {
+      position: sticky;
+      top: 24px;
+      align-self: start;
+      padding: 18px 16px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+    }
+    .toc h2 {
+      font-size: 13px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .toc a {
+      display: block;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      transition: .18s ease;
+    }
+    .toc a:hover { color: var(--text); background: var(--accent-soft); }
+    main {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+      padding: 28px 32px 36px;
+    }
+    .eyebrow { color: var(--accent); font-size: 13px; letter-spacing: .06em; margin-bottom: 10px; }
+    h1 { font-size: clamp(26px, 4vw, 34px); margin-bottom: 16px; line-height: 1.3; }
+    h2 { font-size: 22px; margin: 28px 0 12px; color: #dbe4ff; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    h3 { font-size: 17px; margin: 20px 0 10px; color: #c7d2ea; }
+    h4 { font-size: 15px; margin: 16px 0 8px; color: #b8c5e4; }
+    p { margin: 0 0 12px; color: var(--text); }
+    p strong { color: #fff; }
+    hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+    blockquote {
+      margin: 12px 0 16px;
+      padding: 12px 16px;
+      border-left: 3px solid var(--accent);
+      border-radius: 0 12px 12px 0;
+      background: var(--accent-soft);
+      color: var(--muted);
+      font-size: 15px;
+    }
+    ul, ol { margin: 0 0 14px 22px; color: var(--text); }
+    li { margin-bottom: 6px; }
+    pre {
+      margin: 12px 0 16px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.92em;
+      background: var(--code-bg);
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+    pre code { background: transparent; padding: 0; }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 18px;
+      font-size: 14px;
+    }
+    .data-table th, .data-table td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .data-table th { background: var(--accent-soft); color: #dbe4ff; white-space: nowrap; }
+    .data-table tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+    .ascii {
+      white-space: pre;
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--muted);
+      overflow-x: auto;
+      margin: 12px 0 16px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--code-bg);
+    }
+    .manual-figure {
+      margin: 16px 0 20px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.25);
+    }
+    .manual-figure img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .manual-figure figcaption {
+      padding: 10px 14px;
+      font-size: 13px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+    .footer-note {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 28px;
+      grid-column: 1 / -1;
+    }
+    @media (max-width: 960px) {
+      .layout { grid-template-columns: 1fr; }
+      .toc { position: static; }
+      .data-table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="toc">
+      <h2>目录</h2>
+      <a href="#top">概览</a>
+<a href="#打开方式">1. 打开方式</a>
+<a href="#界面结构">2. 界面结构</a>
+<a href="#普通用户-查找并执行能力">3. 普通用户：查找并执行能力</a>
+<a href="#提示语占位语法">提示语占位语法</a>
+<a href="#管理员-维护分组与能力">4. 管理员：维护分组与能力</a>
+<a href="#1-左侧分组">4.1 左侧分组</a>
+<a href="#2-能力与快捷提示">4.2 能力与快捷提示</a>
+<a href="#3-权限一览">4.3 权限一览</a>
+<a href="#4-moa-录制">4.4 MOA 录制</a>
+<a href="#能力数据从哪来">5. 能力数据从哪来</a>
+<a href="#常见问题">6. 常见问题</a>
+<a href="#相关文档">7. 相关文档</a>
+    </aside>
+    <main>
+      <p class="eyebrow">Yaahlan · 工具台能力</p>
+      <h1 id="top">工具台能力 · 使用说明书</h1>
+<blockquote>当前目录规模（自动生成）：<strong>349</strong> 条能力 · <strong>27</strong> 个功能模块（见 <code>platform/catalog.html</code> 页内 JSON 的 <code>generated_at</code>）。</blockquote>
+<p>工具台把 Admin、MOA、Tunnel、风控、线上环境、钉钉等已登记能力合并成<strong>可搜索、可填参、一键填入 Agent 输入框</strong>的目录。日常在 <strong>Web Agent</strong> 侧栏使用；也可单独打开本地 <code>catalog.html</code>（Cursor bridge 版）。</p>
+<hr/>
+<h2 id="打开方式">1. 打开方式</h2>
+<table class="data-table"><thead><tr><th>入口</th><th>说明</th></tr></thead><tbody><tr><td><strong>Web Agent</strong></td><td>浏览器打开 <code>http://127.0.0.1:18766/chat.html</code> → 顶栏 <strong>工具台</strong> 图标 → 右侧「工具台能力」面板</td></tr><tr><td><strong>说明书网页</strong></td><td><code>python3 platform/open_catalog_manual.py</code> → <code>http://127.0.0.1:18766/catalog-manual/</code>（改 MD 后需重新生成）</td></tr><tr><td><strong>本地目录页</strong></td><td>仓库根目录执行 <code>python3 platform/open_catalog.py</code> → 浏览器 <code>http://127.0.0.1:18765/catalog.html</code></td></tr><tr><td><strong>离线版</strong></td><td>目录页左侧 <strong>导出到桌面</strong>，或 <code>python3 platform/export_catalog.py</code> → 桌面 <code>Yaahlan智能工具平台.html</code>（提示语为 <strong>复制</strong>，无 bridge）</td></tr></tbody></table>
+<figure class="manual-figure"><img src="images/step1-a-能力入口.png" alt="图 1-1：对话页顶栏「能力」入口（红框）" loading="lazy" /><figcaption>图 1-1：对话页顶栏「能力」入口（红框）</figcaption></figure>
+<figure class="manual-figure"><img src="images/step1-b-工具台入口.png" alt="图 1-2：对话页顶栏「工具台」图标入口（红框）" loading="lazy" /><figcaption>图 1-2：对话页顶栏「工具台」图标入口（红框）</figcaption></figure>
+<p>启动 Web Agent：</p>
+<pre><code>bash platform/web_agent/run.sh --serve
+# 或
+python3 platform/web_agent/open_web_agent.py</code></pre>
+<hr/>
+<h2 id="界面结构">2. 界面结构</h2>
+<pre><code>┌─────────────────────────────────────────────────────────┐
+│ 工具台能力                          [MOA 录制]  [关闭]   │
+│ [搜索能力、分类或提示语…]                                │
+├──────────┬──────────────────────────────────────────────┤
+│ 左侧分组 │  功能模块 → 分类 → 能力卡片                    │
+│ （可拖拽）│  来源标签 · 展开快捷提示 · 填参 · [执行]       │
+└──────────┴──────────────────────────────────────────────┘</code></pre>
+<ul><li><strong>左侧分组</strong>：个人/团队可定制的目录树（文件夹、模块、能力入口），与 registry 里的 <strong>category / 模块归属</strong> 相互独立。</li><li><strong>来源标签</strong>：能力卡片上的徽章（如 yaahlan后台、MOA、线上环境），只影响展示样式与文案，<strong>不改变</strong>能力在左侧分组或 registry 文件中的归属。</li><li><strong>搜索</strong>：匹配能力名、分类名、提示语正文。</li><li><strong>拖动</strong>：面板右缘、左侧分组与主列表之间的分隔条可调整宽度。</li></ul>
+<figure class="manual-figure"><img src="images/step2-面板概览.png" alt="图 2：工具台能力面板（搜索、左侧分组、能力列表）" loading="lazy" /><figcaption>图 2：工具台能力面板（搜索、左侧分组、能力列表）</figcaption></figure>
+<hr/>
+<h2 id="普通用户-查找并执行能力">3. 普通用户：查找并执行能力</h2>
+<ol><li>在左侧点选分组，或在搜索框输入关键词。</li><li><strong>点击能力名称</strong>展开/收起「快捷提示」列表（展开状态会保存在浏览器 localStorage）。</li><li>提示语里带 <code>&lt;参数名|说明&gt;</code> 的会变成输入框，填好参数。</li><li>点 <strong>执行</strong>：</li></ol>
+<ul><li><strong>Web Agent</strong>：填入当前对话输入框，<strong>不会自动发送</strong>；确认后自行发送。</li><li><strong>独立 catalog.html（本机 Cursor）</strong>：经本地 bridge 填入 Cursor 聊天输入框。</li></ul>
+<ol><li>需要核对 MOA / Admin / Tunnel 凭证时，点 <strong>检查环境配置</strong>（填入 <code>@新手上手.md 运行环境检查</code>）。</li></ol>
+<figure class="manual-figure"><img src="images/step3-填参执行.png" alt="图 3：展开能力、填写参数并点「执行」" loading="lazy" /><figcaption>图 3：展开能力、填写参数并点「执行」</figcaption></figure>
+<figure class="manual-figure"><img src="images/step4-填入对话.png" alt="图 4：提示语已填入当前对话输入框（需自行发送）" loading="lazy" /><figcaption>图 4：提示语已填入当前对话输入框（需自行发送）</figcaption></figure>
+<h3 id="提示语占位语法">提示语占位语法</h3>
+<table class="data-table"><thead><tr><th>写法</th><th>含义</th></tr></thead><tbody><tr><td><code>&lt;userId&gt;</code></td><td>参数名 <code>userId</code>，默认中文 label</td></tr><tr><td>`&lt;userId\</td><td>用户 ID&gt;`</td><td>参数名 + 输入框占位说明</td></tr><tr><td>多条提示</td><td>同一能力可有多条快捷语，右键可增删（见权限）</td></tr></tbody></table>
+<hr/>
+<h2 id="管理员-维护分组与能力">4. 管理员：维护分组与能力</h2>
+<p>须 <strong>Web Agent 登录</strong> 且账号为 <strong>管理员</strong>（超级管理员权限更大，见下表）。</p>
+<h3 id="1-左侧分组">4.1 左侧分组</h3>
+<table class="data-table"><thead><tr><th>操作</th><th>方式</th></tr></thead><tbody><tr><td>新建根分组</td><td>分组区 <strong>+</strong></td></tr><tr><td>新建子分组</td><td>右键分组 → <strong>添加子分组</strong></td></tr><tr><td>重命名</td><td>右键 → <strong>重命名</strong>（文件夹 / 模块显示名 / 能力接口名）</td></tr><tr><td>排序</td><td>拖拽分组行（「全部」不可拖）</td></tr><tr><td>从目录移除模块</td><td>右键顶层模块 → <strong>从目录移除</strong>（不删 registry 能力本身）</td></tr><tr><td>删除文件夹</td><td>右键 → <strong>删除</strong>（子项归并到上级；<strong>仅超管</strong>）</td></tr></tbody></table>
+<p>分组数据保存在 <code>platform/web_agent/config/catalog_nav.json</code>。</p>
+<figure class="manual-figure"><img src="images/step6-分组右键菜单.png" alt="图 6：左侧分组右键（添加子分组、重命名、从目录移除）" loading="lazy" /><figcaption>图 6：左侧分组右键（添加子分组、重命名、从目录移除）</figcaption></figure>
+<h3 id="2-能力与快捷提示">4.2 能力与快捷提示</h3>
+<table class="data-table"><thead><tr><th>操作</th><th>方式</th></tr></thead><tbody><tr><td>添加能力</td><td>右键 <strong>分类标题</strong>（模块区）→ <strong>添加能力</strong> → 填名称、选 <strong>来源标签</strong></td></tr><tr><td>添加 MOA（生成式）</td><td>MOA 模块分类右键 → <strong>添加 MOA 能力</strong> → 提示语写入对话，走抓包入库流程</td></tr><tr><td>编辑能力名 / 来源标签</td><td>右键能力标题 → <strong>编辑</strong></td></tr><tr><td>编辑 / 添加快捷提示</td><td>右键某条提示 → <strong>编辑</strong> / <strong>添加快捷提示</strong>；对话框可 <strong>插入输入框</strong></td></tr><tr><td>删除一条提示</td><td>右键该条 → <strong>删除</strong></td></tr><tr><td>删除整条能力</td><td>右键能力标题 → <strong>删除能力</strong>（MOA 会同时删模板；<strong>仅超管</strong>）</td></tr></tbody></table>
+<p>变更写入对应模块的 <code>config/registry.json</code>，并刷新工具台目录。</p>
+<figure class="manual-figure"><img src="images/step7-a-添加能力.png" alt="图 7-1：右键分类标题 → 添加能力" loading="lazy" /><figcaption>图 7-1：右键分类标题 → 添加能力</figcaption></figure>
+<figure class="manual-figure"><img src="images/step7-b-能力右键菜单.png" alt="图 7-2：右键能力标题 → 编辑 / 添加快捷提示 / 删除能力" loading="lazy" /><figcaption>图 7-2：右键能力标题 → 编辑 / 添加快捷提示 / 删除能力</figcaption></figure>
+<figure class="manual-figure"><img src="images/step7-c-快捷提示编辑.png" alt="图 7-3：展开快捷提示 → 右键单条提示编辑或删除" loading="lazy" /><figcaption>图 7-3：展开快捷提示 → 右键单条提示编辑或删除</figcaption></figure>
+<figure class="manual-figure"><img src="images/step7-d-编辑能力名称.png" alt="图 7-4：编辑能力名称与来源标签" loading="lazy" /><figcaption>图 7-4：编辑能力名称与来源标签</figcaption></figure>
+<figure class="manual-figure"><img src="images/step7-e-编辑快捷提示弹窗.png" alt="图 7-5：编辑快捷提示（`&lt;参数名|占位说明&gt;` 与「插入输入框」）" loading="lazy" /><figcaption>图 7-5：编辑快捷提示（`&lt;参数名|占位说明&gt;` 与「插入输入框」）</figcaption></figure>
+<h3 id="3-权限一览">4.3 权限一览</h3>
+<table class="data-table"><thead><tr><th>操作</th><th>管理员</th><th>超级管理员</th></tr></thead><tbody><tr><td>添加/编辑分组、拖拽排序、重命名</td><td>✓</td><td>✓</td></tr><tr><td>添加能力、改名称/来源标签/快捷提示</td><td>✓</td><td>✓</td></tr><tr><td>删除分组文件夹</td><td></td><td>✓</td></tr><tr><td>删除 registry 中的能力</td><td></td><td>✓</td></tr></tbody></table>
+<p>未登录或未授权时，服务端 <code>/api/catalog-nav</code>、<code>/api/catalog-prompt</code> 会拒绝保存。</p>
+<h3 id="4-moa-录制">4.4 MOA 录制</h3>
+<p>面板顶栏 <strong>MOA 录制</strong>：打开录制弹窗，可选 <strong>MOA 截图</strong>、<strong>完整请求</strong>、<strong>抓包账号行为</strong>、<strong>服务端代码</strong> 等方式生成 MOA，试跑通过后写入 <code>MOA/templates</code> 与 registry（<strong>全员可用</strong>，与「添加 MOA 能力」互补）。</p>
+<figure class="manual-figure"><img src="images/step8-a-MOA录制入口.png" alt="图 8-1：工具台顶栏「MOA 录制」入口（红框）" loading="lazy" /><figcaption>图 8-1：工具台顶栏「MOA 录制」入口（红框）</figcaption></figure>
+<figure class="manual-figure"><img src="images/step8-b-MOA录制弹窗.png" alt="图 8-2：MOA 录制弹窗（四种方式；示例为 MOA 截图）" loading="lazy" /><figcaption>图 8-2：MOA 录制弹窗（四种方式；示例为 MOA 截图）</figcaption></figure>
+<hr/>
+<h2 id="能力数据从哪来">5. 能力数据从哪来</h2>
+<table class="data-table"><thead><tr><th>来源模块</th><th>registry 路径</th></tr></thead><tbody><tr><td>yaahlan后台</td><td><code>Admin/config/registry.json</code></td></tr><tr><td>MOA</td><td><code>MOA/config/registry.json</code></td></tr><tr><td>风险控制</td><td><code>Risk/config/registry.json</code></td></tr><tr><td>Tunnel 抓包</td><td><code>Tunnel/config/registry.json</code></td></tr><tr><td>线上环境</td><td><code>online/config/registry.json</code></td></tr><tr><td>钉钉文档</td><td><code>DingTalk/config/registry.json</code></td></tr></tbody></table>
+<p>模块登记与一级功能归并：<code>projects/yaahlan/sources.json</code>（<code>AGENT_PROJECT=yaahlan</code> 时生效）。</p>
+<p><strong>开发侧同步</strong>（改 registry 后）：</p>
+<pre><code>python3 Admin/scripts/generate_index.py   # 或 MOA / Risk / Tunnel / online / DingTalk
+# 会自动刷新 platform/catalog.html</code></pre>
+<p>新增整个工具模块时，除 registry 外须在 <code>sources.json</code> 的 <code>modules</code> 中登记。</p>
+<hr/>
+<h2 id="常见问题">6. 常见问题</h2>
+<table class="data-table"><thead><tr><th>现象</th><th>处理</th></tr></thead><tbody><tr><td>执行无反应（独立 catalog）</td><td>确认 <code>open_catalog.py</code> 已启动 bridge（默认 <code>127.0.0.1:18765</code>），Cursor 已打开</td></tr><tr><td>改了来源标签徽章没变</td><td>强刷页面；确认已保存且 catalog 已重新生成</td></tr><tr><td>线上能力误用测试环境</td><td>线上能力在「线上环境」模块，提示语中需带 <strong>线上环境</strong> 字样（见仓库规则）</td></tr><tr><td>能力列表比同事旧</td><td>拉最新代码或让管理员执行 <code>generate_catalog.py</code> / 各模块 <code>generate_index.py</code></td></tr></tbody></table>
+<hr/>
+<h2 id="相关文档">7. 相关文档</h2>
+<ul><li>平台总览：<code>platform/README.md</code></li><li>环境与新手上手：仓库根目录 <code>新手上手.md</code></li><li>说明书网页：<code>platform/exports/catalog-manual/index.html</code>（<code>python3 platform/scripts/generate_catalog_manual_html.py</code>）</li><li>Agent 触发打开工具台：对话中说「工具平台 / 新手引导」等 → <code>python3 platform/open_catalog.py</code></li><li>Cursor 搭建平台长文：<code>platform/exports/cursor-platform-guide/index.html</code>（内网部署后访问 <code>/platform-guide/</code>）</li></ul>
+<hr/>
+<p>*文档版本与仓库 <code>platform/catalog.html</code> 同步维护；能力数以 catalog 生成为准。*</p>
+    </main>
+    <p class="footer-note">生成于 2026-10-14 19:22 CST · 源文件 platform/工具台能力使用说明书.md</p>
+  </div>
+</body>
+</html>

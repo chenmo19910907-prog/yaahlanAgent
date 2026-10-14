@@ -1877,10 +1877,88 @@ def record_agent_turn_call_log(
     return True
 
 
-def list_moa_call_entries(*, limit: int = 100, offset: int = 0) -> dict[str, Any]:
+_YMD_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _normalize_ymd(value: str | None) -> str:
+    raw = str(value or "").strip()
+    if not raw or not _YMD_RE.match(raw):
+        return ""
+    return raw
+
+
+def _entry_bj_ymd(ts_iso: str) -> str:
+    display = iso_to_bj_display(ts_iso)
+    return display[:10] if len(display) >= 10 else ""
+
+
+def _entry_matches_call_log_filters(
+    item: dict[str, Any],
+    *,
+    operator_staff_id: str = "",
+    start_date: str = "",
+    end_date: str = "",
+) -> bool:
+    op_filter = str(operator_staff_id or "").strip()
+    if op_filter:
+        entry_op = str(item.get("operatorStaffId") or "").strip()
+        if entry_op != op_filter:
+            return False
+    start = _normalize_ymd(start_date)
+    end = _normalize_ymd(end_date)
+    if not start and not end:
+        return True
+    day = _entry_bj_ymd(str(item.get("ts") or ""))
+    if not day:
+        return False
+    if start and day < start:
+        return False
+    if end and day > end:
+        return False
+    return True
+
+
+def list_moa_call_log_operators() -> list[dict[str, str]]:
+    """操作记录中出现的操作人（去重，按姓名排序）。"""
+    from dingtalk_user_lookup import _public_display_name
+
+    seen: dict[str, dict[str, str]] = {}
+    for item in _load_entries():
+        if not _visible_in_call_log_list(item):
+            continue
+        staff_id = str(item.get("operatorStaffId") or "").strip()
+        if not staff_id or staff_id in seen:
+            continue
+        raw_name = str(item.get("operatorName") or "").strip() or staff_id
+        name = _public_display_name(raw_name) or raw_name
+        seen[staff_id] = {"staffId": staff_id, "displayName": name}
+    return sorted(seen.values(), key=lambda row: row["displayName"])
+
+
+def list_moa_call_entries(
+    *,
+    limit: int = 100,
+    offset: int = 0,
+    operator_staff_id: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+) -> dict[str, Any]:
     safe_limit = max(1, min(int(limit or 100), 500))
     safe_offset = max(0, int(offset or 0))
-    entries = [item for item in _load_entries() if _visible_in_call_log_list(item)]
+    op_filter = str(operator_staff_id or "").strip()
+    start = _normalize_ymd(start_date)
+    end = _normalize_ymd(end_date)
+    entries = [
+        item
+        for item in _load_entries()
+        if _visible_in_call_log_list(item)
+        and _entry_matches_call_log_filters(
+            item,
+            operator_staff_id=op_filter,
+            start_date=start,
+            end_date=end,
+        )
+    ]
     entries.sort(key=lambda item: str(item.get("ts") or ""), reverse=True)
     total = len(entries)
     slice_rows = entries[safe_offset : safe_offset + safe_limit]

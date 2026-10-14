@@ -83,12 +83,13 @@ def is_public_auth_path(path: str) -> bool:
     p = (path or "").rstrip("/") or "/"
     if p in ("/login.html", "/login"):
         return True
-    if p in ("/keynote", "/platform-guide", "/business-share"):
+    if p in ("/keynote", "/platform-guide", "/business-share", "/catalog-manual"):
         return True
     if (
         p.startswith("/keynote/")
         or p.startswith("/platform-guide/")
         or p.startswith("/business-share/")
+        or p.startswith("/catalog-manual/")
     ):
         return True
     if p.startswith("/assets/"):
