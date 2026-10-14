@@ -33,7 +33,7 @@
   "_registry": {
     "id": "family_pk_reset_settle_data",
     "name": "家族PK-清除结算奖励",
-    "category": "家族PK（vas/internal/family-pk-moa）",
+    "category": "家族PK-MOA（vas/internal/family-pk-moa）",
     "description": "测试环境清除指定日期、大区的家族 PK 结算发奖数据（resetSettleDataForTest）。入参 date 为 yyyy-MM-dd，area 默认 MENA，rerunSettle 默认 false（清除后不重跑结算）。与「家族PK-清除匹配数据」「家族PK-删除全部PK值」不同：本接口仅清结算/发奖记录，便于重复发奖验收。修改模板 params[0].value 后执行",
     "prompts": [
       "清除 <date> 家族PK结算奖励",

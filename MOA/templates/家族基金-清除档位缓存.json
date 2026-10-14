@@ -29,7 +29,7 @@
   "_registry": {
     "id": "family_fund_tier_cache_clear",
     "name": "家族基金-清除档位缓存",
-    "category": "家族（internal/user/family-moa）",
+    "category": "家族-MOA（internal/user/family-moa）",
     "description": "清除 Redis 档位缓存 family:fund:tier:{weekKey}:{familyId}（userClusterDao.del）。须在「家族-设置基金档位」之前执行；设档后勿清。--family-fund-week-offset：0=本周，-1=上周。",
     "prompts": [
       "清除家族 <familyId> 基金档位缓存",

@@ -42,7 +42,7 @@
   "_registry": {
     "id": "pk_atm_match_reward_detail",
     "name": "PK提款机-PK结束返钻弹窗",
-    "category": "房间PK（room/external/room-pk-api）",
+    "category": "房间PK-API（room/external/room-pk-api）",
     "description": "PK 结束后提款机返钻结果弹窗（getPkAtmMatchRewardDetail）。需 userId、roomId、pkId；返回 roomTotalDiamond、myInfo、memberList。Tunnel 13311111111 `_id=0O86258B0MxPP6PX1qHt`（2026-08-07）。",
     "prompts": [
       "查询 PK 结束返钻弹窗 userId=<userId> roomId=<roomId> pkId=<pkId>",

@@ -49,7 +49,7 @@
   "_registry": {
     "id": "room_barrage_internal",
     "name": "房间-发言飘屏（内部）",
-    "category": "房间（room/internal/room-notice-stage）",
+    "category": "房间-发言飘屏内部（room/internal/room-notice-stage）",
     "description": "测试环境内部下发发言飘屏（sendBarrageMessage；不扣钻；params=req JSON, num=1）。req 含 userId/roomId/unlockLevel(2/7/12/17)/lang/json.content。发送前请改模板中 userId、roomId、unlockLevel 与文案。App 验收须在目标房间内。",
     "prompts": [
       "房间 <roomId> 内部发言飘屏 userId <userId> Lv<unlockLevel>",

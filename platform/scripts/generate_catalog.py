@@ -98,6 +98,13 @@ def _workflow_id_to_item_id(workflow_id: str) -> str:
     return workflow_id.strip().replace("-", "_")
 
 
+def _catalog_include_item(item: dict[str, Any]) -> bool:
+    """registry 项 catalog=false 时不进入工具台能力目录（仍保留在模块使用方法.md）。"""
+    if item.get("catalog") is False:
+        return False
+    return True
+
+
 def _catalog_include_playbooks(sources: dict[str, Any]) -> bool:
     raw = sources.get("catalog_include_playbooks")
     if isinstance(raw, bool):
@@ -162,10 +169,12 @@ def _load_playbooks(sources: dict[str, Any]) -> list[dict[str, Any]]:
                 steps_out.append(
                     {
                         "order": int(step.get("order") or 0),
+                        "name": str(step.get("name") or "").strip(),
                         "workflowId": workflow_id,
                         "workflowName": str(item.get("name") or workflow_id).strip(),
                         "sheet": str(step.get("sheet") or "").strip(),
                         "note": str(step.get("note") or "").strip(),
+                        "command": str(step.get("command") or "").strip(),
                         "operations": operations,
                         "prompts": [
                             p.strip()
@@ -206,6 +215,7 @@ def _load_playbooks(sources: dict[str, Any]) -> list[dict[str, Any]]:
                 "title": title,
                 "category": str(playbook.get("category") or "工作流").strip(),
                 "summary": str(playbook.get("summary") or "").strip(),
+                "summaryReadable": str(playbook.get("summaryReadable") or "").strip(),
                 "defaults": defaults,
                 "sheets": sheets,
                 "steps": steps_out,
@@ -232,7 +242,20 @@ def _load_catalog_data() -> dict[str, Any]:
 
     # top_label -> category -> items
     grouped: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: defaultdict(list))
+    registry_sources: list[dict[str, str]] = []
+    sources_by_id: dict[str, dict[str, Any]] = {}
     total_items = 0
+
+    for mod in modules_cfg:
+        if not isinstance(mod, dict):
+            continue
+        mod_id = str(mod.get("id", "")).strip()
+        if not mod_id:
+            continue
+        mod_label = str(mod.get("label", mod_id)).strip()
+        mod_env = str(mod.get("env", "")).strip()
+        registry_sources.append({"id": mod_id, "label": mod_label, "env": mod_env})
+        sources_by_id[mod_id] = mod
 
     for mod in modules_cfg:
         if not isinstance(mod, dict):
@@ -240,6 +263,8 @@ def _load_catalog_data() -> dict[str, Any]:
         mod_id = str(mod.get("id", "")).strip()
         mod_label = str(mod.get("label", mod_id)).strip()
         mod_env = str(mod.get("env", "")).strip()
+        if not mod_id:
+            continue
         registry_rel = str(mod.get("registry", "")).strip()
         registry_path = module_registry_path(mod_id, registry_rel)
         if not registry_path.is_file():
@@ -252,6 +277,8 @@ def _load_catalog_data() -> dict[str, Any]:
 
         for item in items:
             if not isinstance(item, dict):
+                continue
+            if not _catalog_include_item(item):
                 continue
             category = str(item.get("category") or "未分类").strip()
             name = str(item.get("name", "")).strip()
@@ -269,13 +296,24 @@ def _load_catalog_data() -> dict[str, Any]:
                 top_label = "线上环境"
             else:
                 top_label = _resolve_top_level(cat_label, top_level_rules)
+            registry_id = str(item.get("id") or "").strip()
+            tag_raw = str(item.get("source_tag") or "").strip()
+            if tag_raw and tag_raw in sources_by_id:
+                tag_mod = sources_by_id[tag_raw]
+            else:
+                tag_mod = mod
+            badge_label = str(tag_mod.get("label", mod_label)).strip() or mod_label
+            badge_env = str(tag_mod.get("env", mod_env)).strip() or mod_env
+            source_tag_id = tag_raw if tag_raw in sources_by_id else mod_id
             grouped[top_label][category].append(
                 {
                     "name": name,
                     "prompts": prompts,
-                    "source": mod_label,
+                    "source": badge_label,
                     "source_id": mod_id,
-                    "env": mod_env,
+                    "source_tag_id": source_tag_id,
+                    "env": badge_env,
+                    "registry_id": registry_id,
                 }
             )
             total_items += 1
@@ -291,6 +329,8 @@ def _load_catalog_data() -> dict[str, Any]:
         categories: list[dict[str, Any]] = []
         for cat_name in sorted(by_cat.keys()):
             cat_items = sorted(by_cat[cat_name], key=lambda x: (x.get("source", ""), x.get("name", "")))
+            if not cat_items:
+                continue
             categories.append({"name": cat_name, "items": cat_items})
         item_count = sum(len(c["items"]) for c in categories)
         modules.append(
@@ -310,11 +350,14 @@ def _load_catalog_data() -> dict[str, Any]:
         if isinstance(bridge_cfg.get("port"), int) and bridge_cfg["port"] > 0:
             cursor_bridge["port"] = bridge_cfg["port"]
 
+    registry_sources.sort(key=lambda x: x.get("label", ""))
+
     return {
         "generated_at": now_display_time(),
         "total_items": total_items,
         "module_count": len(modules),
         "modules": modules,
+        "registry_sources": registry_sources,
         "playbooks": _load_playbooks(sources),
         "cursor_bridge": cursor_bridge,
         "env_check": _parse_env_check(sources),
@@ -650,7 +693,7 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
       line-height: 1.9; word-break: break-word; min-width: 0;
     }}
     .prompt-field {{
-      display: inline-block; min-width: 3.5em; max-width: 14em;
+      display: inline-block; min-width: 3.5em; max-width: 22em;
       padding: 1px 6px; margin: 0 2px; border: 1px solid #cbd5e1;
       border-radius: 4px; font-size: 0.82rem; background: #fffbeb;
       color: var(--text); vertical-align: baseline;
@@ -800,6 +843,16 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
     }}
 
     const PROMPT_PLACEHOLDER_RE = /<([^>|]+)(?:\\|([^>]+))?>/g;
+    const PROMPT_FIELD_WIDE_CHAR_RE =
+      /[\\u1100-\\u11ff\\u2e80-\\u9fff\\uf900-\\ufaff\\ufe10-\\ufe19\\ufe30-\\ufe6f\\uff00-\\uffef]/;
+
+    function promptFieldWidthEm(label) {{
+      let units = 0;
+      for (const ch of String(label || '')) {{
+        units += PROMPT_FIELD_WIDE_CHAR_RE.test(ch) ? 2 : 1;
+      }}
+      return Math.min(22, Math.max(5, units + 2));
+    }}
 
     function renderPromptLine(text) {{
       const spanParts = [];
@@ -812,7 +865,7 @@ def _render_html(data: dict[str, Any], *, export_mode: bool = False) -> str:
         }}
         const key = m[1];
         const label = (m[2] || key).trim();
-        const width = Math.min(14, Math.max(4, label.length + 1));
+        const width = promptFieldWidthEm(label);
         spanParts.push(
           `<input type="text" class="prompt-field" data-key="${{escapeHtml(key)}}" ` +
           `placeholder="${{escapeHtml(label)}}" aria-label="${{escapeHtml(label)}}" ` +

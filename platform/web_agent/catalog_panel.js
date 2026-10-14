@@ -6,12 +6,354 @@
   'use strict';
 
   const PROMPT_PLACEHOLDER_RE = /<([^>|]+)(?:\|([^>]+))?>/g;
+  const PROMPT_FIELD_WIDE_CHAR_RE =
+    /[\u1100-\u11ff\u2e80-\u9fff\uf900-\ufaff\ufe10-\ufe19\ufe30-\ufe6f\uff00-\uffef]/;
+
+  /** 占位 label 按宽字符（CJK 等）估算 em 宽度，避免 placeholder 被截断 */
+  function promptFieldWidthEm(label) {
+    let units = 0;
+    for (const ch of String(label || '')) {
+      units += PROMPT_FIELD_WIDE_CHAR_RE.test(ch) ? 2 : 1;
+    }
+    return Math.min(22, Math.max(5, units + 2));
+  }
+  const NAV_COLLAPSED_LS_KEY = 'web_agent_catalog_nav_collapsed';
+
+  function readLsStringSet(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return null;
+      return new Set(arr.map(String).filter(Boolean));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function writeLsStringSet(key, set) {
+    try {
+      localStorage.setItem(key, JSON.stringify(Array.from(set || [])));
+    } catch (_) { /* ignore quota */ }
+  }
 
   function escapeHtml(s) {
     return String(s)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
+  }
+
+  function escapeAttr(s) {
+    return escapeHtml(s).replace(/"/g, '&quot;');
+  }
+
+  /** 无 <key|label> 时占位框默认中文 label */
+  const PROMPT_KEY_LABELS = {
+    userId: '用户 ID',
+    senderUserId: '送礼用户 ID',
+    receiverUserId: '收礼用户 ID',
+    cpUserId: 'CP 用户 ID',
+    remoteId: '对方用户 ID',
+    roomId: '房间 ID',
+    familyId: '家族 ID',
+    giftId: '礼物 ID',
+    phone: '手机号',
+    mmuidv3: '设备 mmuidv3',
+    device: '设备标识',
+    serviceUrl: 'MOA 服务地址',
+    method: '方法名',
+    bodyFile: '抓包 body 文件',
+    timeoutMs: '超时（毫秒）',
+    strict: '严格模式',
+    payloadOut: '产物路径',
+    workbookUrl: '表格链接',
+    pkDate: 'PK 日期',
+    baseProductId: '礼物 ID',
+    expectRemain: '期望剩余数量',
+    num: '数量',
+    smashCount: '砸蛋次数',
+    fromUserId: '用户 A ID',
+    toUserId: '用户 B ID',
+    applicantUserId: '申请人 ID',
+    ownerUserId: '房主 ID',
+    propId: '装扮 ID',
+    propTypeCode: '装扮类型码',
+    expectedDays: '有效天数',
+    toleranceDays: '天数容差',
+    referenceTs: '参考时间戳',
+    outFile: '输出文件',
+    propTypes: '装扮类型列表',
+    intimateId: '挚友 ID',
+    tier: '档位',
+    level: '等级',
+    exp: '经验值',
+    value: '数值',
+    area: '大区',
+    rankDate: '榜单日期',
+    sinceSeconds: '抓包时间范围（秒）',
+  };
+
+  /** 能力快捷提示语中的非常用英文 → 中文（不影响 <占位> 语法） */
+  function humanizeCatalogPromptText(text) {
+    let s = String(text || '');
+    if (!s) return '';
+    const protectedChunks = [];
+    s = s.replace(/<[^>]+>/g, (tag) => {
+      const i = protectedChunks.length;
+      protectedChunks.push(tag);
+      return `\x00PH${i}\x00`;
+    });
+    const replacements = [
+      [/\bcooldown\b/gi, '冷却时间'],
+      [/\bHEADER_FRAME\b/g, '头像框'],
+      [/\bVEHICLE\b/g, '座驾'],
+      [/\bNAMEPLATE\b/g, '铭牌'],
+      [/\bMEDAL\b/g, '勋章'],
+      [/\bMENA\b/g, '中东区'],
+      [/\bpayload\b/gi, '请求体'],
+      [/\bstrict\b/gi, '严格校验'],
+      [/\bsnapshot\b/gi, '快照'],
+      [/\bdiff\b/gi, '差异对比'],
+      [/\bbaseline\b/gi, '起点数据'],
+      [/\bStage\b/g, '测试环境'],
+      [/\bmock\b/gi, '模拟'],
+      [/\bE2E\b/g, '端到端'],
+      [/\bVIP\b/g, 'VIP'],
+    ];
+    for (const [re, rep] of replacements) {
+      s = s.replace(re, rep);
+    }
+    s = s.replace(/\x00PH(\d+)\x00/g, (_, i) => protectedChunks[Number(i)] || '');
+    return s;
+  }
+
+  function promptPlaceholderLabel(key, explicitLabel) {
+    const k = String(key || '').trim();
+    const explicit = String(explicitLabel || '').trim();
+    if (explicit && explicit !== k) {
+      return humanizeCatalogPromptText(explicit);
+    }
+    if (PROMPT_KEY_LABELS[k]) return PROMPT_KEY_LABELS[k];
+    if (PLAYBOOK_DEFAULT_LABELS[k]) return PLAYBOOK_DEFAULT_LABELS[k];
+    return humanizeCatalogPromptText(explicit || k);
+  }
+
+  const PLAYBOOK_DEFAULT_LABELS = {
+    userId: '用户',
+    senderUserId: '送礼用户',
+    receiverUserId: '收礼用户',
+    giftId: '礼物 ID',
+    runTag: '本轮标记',
+    tierFrom: '起始档位',
+    tierTo: '结束档位',
+    expectedDays: '装扮有效天数',
+    toleranceDays: '天数容差',
+    sinceSeconds: '抓包时间范围（秒）',
+    workbookUrl: '钉钉表格链接',
+    pkDate: 'PK 日期',
+    rankDate: '收礼榜日期',
+    timeoutMs: '超时（毫秒）',
+  };
+
+  /** 将 registry 中的技术摘要/说明转为更易读的展示文案（保留含义，弱化箭头与字段名） */
+  function humanizePlaybookProse(text) {
+    let s = String(text || '').trim();
+    if (!s) return '';
+    s = s.replace(/\s*(?:→|->|—>)\s*/g, '，然后 ');
+    s = s.replace(/；/g, '。');
+    const replacements = [
+      [/getCpLoveChestHomepage/gi, '查询宝箱主页'],
+      [/cpLoveChestConfigAreaMap/g, '爱意宝箱盘古配置'],
+      [/snapshot\/diff/gi, '发奖前后快照对比'],
+      [/\bbaseline\b/gi, '起点数据'],
+      [/claimedTierId/g, '已领取档位'],
+      [/currentLoveValue/g, '当前周期爱意值'],
+      [/tiers\[\]\.status/g, '各档领取状态'],
+      [/tiers\[\]\.threshold/g, '各档爱意门槛'],
+      [/playbook\s+(\S+)/gi, '工作流「$1」'],
+      [/workflow_execute\s+run\s+(\S+)/gi, '工作流 $1'],
+      [/intimate_cp_form/gi, '结 CP 表单'],
+      [/reward_dispatch_verify/g, '单档奖励下发验收'],
+      [/E2E/g, '端到端'],
+      [/MSE\s+盘古/g, '盘古（MSE）'],
+      [/Stage\s+私聊/g, '测试环境私聊'],
+      [/gift_execute/g, '送礼脚本'],
+      [/plan_cp_love_gift/g, '规划送礼数量'],
+      [/\bcooldown\b/gi, '冷却时间'],
+      [/\bHEADER_FRAME\b/g, '头像框'],
+      [/\bsnapshot\b/gi, '快照'],
+      [/\bdiff\b/gi, '差异对比'],
+      [/\bbaseline\b/gi, '起点数据'],
+      [/\bpayload\b/gi, '请求体'],
+      [/\bstrict\b/gi, '严格校验'],
+      [/\bmock\b/gi, '模拟'],
+    ];
+    for (const [re, rep] of replacements) {
+      s = s.replace(re, rep);
+    }
+    s = s.replace(/\s+/g, ' ').replace(/。+/g, '。').trim();
+    return s;
+  }
+
+  function playbookDefaultLabel(key) {
+    return PLAYBOOK_DEFAULT_LABELS[key] || key;
+  }
+
+  /** 将步骤里的 python 命令转为一句操作说明（详情区不展示原始命令） */
+  function humanizePlaybookCommand(cmd) {
+    const c = String(cmd || '').trim();
+    if (!c) return '';
+    const rules = [
+      [/plan_cp_love_gift\.py[\s\S]*/i, '按爱意增量规划 Rose 送礼数量'],
+      [/gift_execute\.py[\s\S]*/i, '测试环境私聊送礼（Rose）'],
+      [/form_cp_love_chest_homepage[\s\S]*/i, '查询 CP 爱意宝箱主页'],
+      [/mse_execute\.py[\s\S]*share-link-only[\s\S]*/i, '生成盘古配置分享链接，便于浏览器打开核对'],
+      [/mse_execute\.py[\s\S]*/i, '从盘古读取爱意宝箱配置（各档门槛、奖励与跨档礼物）'],
+      [/reward_verify\.py\s+snapshot[\s\S]*/i, '拍摄用户资产快照（钻石、背包、装扮、CP 勋章等）'],
+      [/reward_verify\.py\s+diff[\s\S]*/i, '对比发奖前后资产差异'],
+      [/reward_verify\.py\s+compare[\s\S]*/i, '对照期望清单验收发奖结果'],
+      [/workflow_execute\.py\s+run\s+(\S+)[\s\S]*/i, '运行工作流 $1'],
+      [/adb_execute\.py\s+tunnel\s+capture\s+run\s+(\S+)[\s\S]*/i, 'Tunnel 抓包验收：$1'],
+      [/intimate_cp_form[\s\S]*/i, '结 CP 表单'],
+    ];
+    for (const [re, rep] of rules) {
+      if (re.test(c)) return rep;
+    }
+    if (/^python3\s/m.test(c)) {
+      return '执行本步自动化脚本';
+    }
+    if (/^mkdir\s+-p\s/m.test(c)) {
+      return '创建本轮产物目录';
+    }
+    return humanizePlaybookProse(c);
+  }
+
+  function humanizePlaybookPersistLine(line) {
+    const s = String(line || '').trim();
+    if (/mse_config/i.test(s)) {
+      return '将盘古配置保存到本轮产物目录，供后续对照';
+    }
+    if (/homepage_baseline/i.test(s)) {
+      return '将宝箱主页起点数据保存到本轮产物目录';
+    }
+    if (/cp_love_chest_mse_config/i.test(s)) {
+      return '将盘古配置保存到本地，供期望值与发奖验收对照';
+    }
+    if (/tier\d+_before/i.test(s) || /_before_/i.test(s)) {
+      return '保存本档发奖前的资产快照文件';
+    }
+    if (/report_partial/i.test(s)) {
+      return '汇总各档结论写入本轮报告';
+    }
+    if (/expected_t/i.test(s)) {
+      return '整理各档期望奖励清单';
+    }
+    if (/diff_t/i.test(s)) {
+      return '保存本档发奖前后差异对比结果';
+    }
+    return '将本步结果保存到本轮产物目录';
+  }
+
+  function humanizePlaybookInlineLabel(label) {
+    let s = String(label || '').trim();
+    if (!s) return '';
+    s = s.replace(/^\d+[a-z]?\s+/i, '');
+    return humanizePlaybookProse(s);
+  }
+
+  /** 将 registry 中单条 operation 转为可读短句 */
+  function humanizePlaybookStepHint(text) {
+    let s = String(text || '').trim();
+    if (!s) return '';
+    if (/^落盘\b/.test(s) || /^落盘\s+\.tmp/i.test(s)) {
+      return humanizePlaybookPersistLine(s);
+    }
+    if (/^mkdir\s+-p\s/i.test(s)) {
+      return '创建本轮产物目录';
+    }
+    const stepColon = s.match(/^(\d+[a-z]?)\s+(.+?[：:])\s*(.+)$/i);
+    if (stepColon) {
+      const subLabel = humanizePlaybookInlineLabel(stepColon[2].replace(/[：:]$/, ''));
+      const tail = stepColon[3].trim();
+      if (/^python3\s/m.test(tail)) {
+        const action = humanizePlaybookCommand(tail);
+        return subLabel ? `${subLabel}：${action}` : action;
+      }
+      const tailHuman = humanizePlaybookStepHint(tail);
+      return subLabel ? `${subLabel}：${tailHuman}` : tailHuman;
+    }
+    const replacements = [
+      [/^可选[：:]\s*/i, '（可选）'],
+      [/从 tiers 整理各档 expected[^\s]*\.json[^。]*/i, '整理各档期望奖励清单，并与盘古配置交叉核对'],
+      [/homepage[：:]\s*该档 status=0[^，]*currentLoveValue=threshold−1/i, '核对该档未达成，当前爱意值为「门槛减 1」'],
+      [/homepage[：:]\s*该档 status=1、claimedTierId≥n/i, '核对该档已达成，且已领档位不低于本档'],
+      [/双方发奖前 snapshot[^。]*/i, '双方分别拍摄发奖前资产快照'],
+      [/双方发奖后 snapshot \+ diff[^。]*/i, '双方拍摄发奖后快照并对比差异'],
+      [/跨档 \+1 钻[^。]*/i, '再送 1 钻 Rose 完成跨档'],
+      [/sleep 3–5s/i, '等待 3～5 秒，让异步发奖完成'],
+      [/记录 referenceTs[^。]*/i, '记录操作时间戳，便于查流水'],
+      [/下一档[^。]*/i, '进入下一档，从本档门槛作为起点重复上述步骤'],
+      [/可选 reward_verify compare expected[^\s]*\.json[^。]*/i, '（可选）对照期望清单验收；失败则停档排查'],
+      [/汇总写入[^\s]*report_partial[^\s]*/i, '汇总写入本轮阶段性报告'],
+      [/各档 diff 生成 Markdown[^。]*/i, '（可选）将各档差异整理为 Markdown 报告'],
+      [/从 cpInfo\.userId 取[^\n]*/i, '从主页结果取出 CP 用户 ID，供后续快照使用'],
+      [/tiers\[\]\.reward 可整理为 expected\.json[^。]*/i, '从各档奖励字段整理期望清单，并与盘古配置核对'],
+      [/门槛与步骤 1 MSE 配置交叉核对/i, '各档门槛与盘古配置交叉核对'],
+    ];
+    for (const [re, rep] of replacements) {
+      if (re.test(s)) {
+        s = s.replace(re, rep);
+        break;
+      }
+    }
+    return humanizePlaybookProse(s);
+  }
+
+  function humanizePlaybookOperationLine(op) {
+    const raw = String(op || '').trim();
+    if (!raw) return '';
+    const parts = splitPlaybookOperation(raw);
+    if (parts.cmd) {
+      const action = humanizePlaybookCommand(parts.cmd);
+      const label = parts.label ? humanizePlaybookInlineLabel(parts.label) : '';
+      if (label && action) return `${label}：${action}`;
+      return action;
+    }
+    if (parts.hint) return humanizePlaybookStepHint(parts.hint);
+    if (parts.label) return humanizePlaybookStepHint(parts.label);
+    return humanizePlaybookStepHint(raw);
+  }
+
+  function splitPlaybookOperation(op) {
+    const raw = String(op || '').trim();
+    if (!raw) return { label: '', cmd: '', hint: '' };
+    if (/^python3\s/m.test(raw) || /^mkdir\s+-p\s/m.test(raw)) {
+      return { label: '', cmd: raw, hint: '' };
+    }
+    const colonMatch = raw.match(/^(.+?[：:])\s*(.+)$/);
+    if (colonMatch) {
+      const before = colonMatch[1].replace(/[：:]$/, '').trim();
+      const after = colonMatch[2].trim();
+      const stepPrefix = before.match(/^(\d+[a-z]?)\s*(.+)$/i);
+      const label = stepPrefix ? stepPrefix[2].trim() : before;
+      if (/^python3\s/m.test(after) || /^mkdir\s/m.test(after)) {
+        return { label, cmd: after, hint: '' };
+      }
+      return { label: '', cmd: '', hint: raw };
+    }
+    return { label: '', cmd: '', hint: raw };
+  }
+
+  function collectPlaybookStepOps(step) {
+    const hints = [];
+    const cmd = String(step.command || '').trim();
+    if (cmd) hints.push(humanizePlaybookCommand(cmd));
+    for (const op of step.operations || []) {
+      const line = humanizePlaybookOperationLine(op);
+      if (line) hints.push(line);
+    }
+    return { hints };
   }
 
   function smallIcon(name) {
@@ -39,6 +381,211 @@
 
   function newFolderId() {
     return `nav-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  }
+
+  let navDialogFinish = null;
+  let navDialogKeyHandler = null;
+
+  function navDialogRefs() {
+    return {
+      modal: document.getElementById('catalog-nav-dialog-modal'),
+      title: document.getElementById('catalog-nav-dialog-title'),
+      message: document.getElementById('catalog-nav-dialog-message'),
+      input: document.getElementById('catalog-nav-dialog-input'),
+      sourceRow: document.getElementById('catalog-nav-dialog-source'),
+      sourceSelect: document.getElementById('catalog-nav-dialog-source-select'),
+      cancel: document.getElementById('catalog-nav-dialog-cancel'),
+      submit: document.getElementById('catalog-nav-dialog-submit'),
+    };
+  }
+
+  function hideNavDialogSource(refs) {
+    if (refs?.sourceRow) refs.sourceRow.hidden = true;
+    if (refs?.sourceSelect) {
+      refs.sourceSelect.innerHTML = '';
+      refs.sourceSelect.onchange = null;
+    }
+  }
+
+  function finishNavDialog(value) {
+    const finish = navDialogFinish;
+    navDialogFinish = null;
+    const refs = navDialogRefs();
+    if (navDialogKeyHandler) {
+      document.removeEventListener('keydown', navDialogKeyHandler);
+      navDialogKeyHandler = null;
+    }
+    hideNavDialogSource(refs);
+    if (refs.modal) {
+      refs.modal.classList.remove('open');
+      window.setTimeout(() => {
+        if (refs.modal) refs.modal.hidden = true;
+      }, 200);
+    }
+    if (finish) finish(value);
+  }
+
+  function openNavDialogShell() {
+    const refs = navDialogRefs();
+    if (!refs.modal) return refs;
+    refs.modal.hidden = false;
+    requestAnimationFrame(() => refs.modal.classList.add('open'));
+    return refs;
+  }
+
+  function openNavTextPrompt(title, defaultValue) {
+    const refs = navDialogRefs();
+    if (!refs.modal) {
+      return Promise.resolve(window.prompt(title, defaultValue || ''));
+    }
+    return new Promise((resolve) => {
+      navDialogFinish = resolve;
+      refs.title.textContent = title;
+      refs.message.hidden = true;
+      refs.message.textContent = '';
+      hideNavDialogSource(refs);
+      refs.input.hidden = false;
+      refs.input.value = defaultValue || '';
+      refs.cancel.hidden = false;
+      refs.submit.textContent = '确定';
+      refs.cancel.onclick = () => finishNavDialog(null);
+      refs.submit.onclick = () => finishNavDialog(refs.input.value);
+      refs.modal.onclick = (event) => {
+        if (event.target === refs.modal) finishNavDialog(null);
+      };
+      navDialogKeyHandler = (event) => {
+        if (event.key === 'Escape') finishNavDialog(null);
+        if (event.key === 'Enter' && !refs.input.hidden) {
+          event.preventDefault();
+          finishNavDialog(refs.input.value);
+        }
+      };
+      document.addEventListener('keydown', navDialogKeyHandler);
+      openNavDialogShell();
+      refs.input.focus();
+      refs.input.select();
+    });
+  }
+
+  function openNavAddCapabilityPrompt(opts) {
+    const options = opts || {};
+    const title = options.title || '新能力名称';
+    const sources = Array.isArray(options.sources) ? options.sources : [];
+    const refs = navDialogRefs();
+    if (!refs.modal || !sources.length) {
+      const name = window.prompt(title, options.defaultValue || '');
+      if (name == null) return Promise.resolve(null);
+      const sid = String(options.defaultSourceId || sources[0]?.id || '').trim();
+      if (!sid) return Promise.resolve(null);
+      return Promise.resolve({ name, sourceId: sid });
+    }
+    let selectedId = String(options.defaultSourceId || sources[0].id || '').trim();
+    if (!sources.some((s) => s.id === selectedId)) selectedId = String(sources[0].id || '').trim();
+
+    const paintSourceSelect = () => {
+      if (!refs.sourceSelect) return;
+      refs.sourceSelect.innerHTML = sources.map((src) => {
+        const id = escapeAttr(String(src.id || ''));
+        const label = escapeHtml(String(src.label || src.id || ''));
+        const sel = src.id === selectedId ? ' selected' : '';
+        return `<option value="${id}"${sel}>${label}</option>`;
+      }).join('');
+    };
+
+    const submitAddCap = () => {
+      const name = String(refs.input.value || '').trim();
+      if (!name) return;
+      const sourceId = String(refs.sourceSelect?.value || selectedId || '').trim();
+      if (!sourceId) return;
+      finishNavDialog({ name, sourceId });
+    };
+
+    return new Promise((resolve) => {
+      navDialogFinish = resolve;
+      refs.title.textContent = title;
+      refs.message.hidden = true;
+      refs.message.textContent = '';
+      refs.input.hidden = false;
+      refs.input.value = options.defaultValue || '';
+      if (refs.sourceRow) refs.sourceRow.hidden = false;
+      paintSourceSelect();
+      if (refs.sourceSelect) {
+        refs.sourceSelect.onchange = () => {
+          selectedId = refs.sourceSelect.value || '';
+        };
+      }
+      refs.cancel.hidden = false;
+      refs.submit.textContent = '确定';
+      refs.cancel.onclick = () => finishNavDialog(null);
+      refs.submit.onclick = () => submitAddCap();
+      refs.modal.onclick = (event) => {
+        if (event.target === refs.modal) finishNavDialog(null);
+      };
+      navDialogKeyHandler = (event) => {
+        if (event.key === 'Escape') finishNavDialog(null);
+        if (event.key === 'Enter' && !refs.input.hidden) {
+          event.preventDefault();
+          submitAddCap();
+        }
+      };
+      document.addEventListener('keydown', navDialogKeyHandler);
+      openNavDialogShell();
+      refs.input.focus();
+    });
+  }
+
+  function openNavConfirm(message) {
+    const refs = navDialogRefs();
+    if (!refs.modal) return Promise.resolve(window.confirm(message));
+    return new Promise((resolve) => {
+      navDialogFinish = (value) => resolve(!!value);
+      refs.title.textContent = '请确认';
+      refs.message.hidden = false;
+      refs.message.textContent = message;
+      hideNavDialogSource(refs);
+      refs.input.hidden = true;
+      refs.cancel.hidden = false;
+      refs.submit.textContent = '确定';
+      refs.cancel.onclick = () => finishNavDialog(false);
+      refs.submit.onclick = () => finishNavDialog(true);
+      refs.modal.onclick = (event) => {
+        if (event.target === refs.modal) finishNavDialog(false);
+      };
+      navDialogKeyHandler = (event) => {
+        if (event.key === 'Escape') finishNavDialog(false);
+      };
+      document.addEventListener('keydown', navDialogKeyHandler);
+      openNavDialogShell();
+      refs.submit.focus();
+    });
+  }
+
+  function openNavAlert(message) {
+    const refs = navDialogRefs();
+    if (!refs.modal) {
+      window.alert(message);
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      navDialogFinish = () => resolve();
+      refs.title.textContent = '提示';
+      refs.message.hidden = false;
+      refs.message.textContent = message;
+      hideNavDialogSource(refs);
+      refs.input.hidden = true;
+      refs.cancel.hidden = true;
+      refs.submit.textContent = '好';
+      refs.submit.onclick = () => finishNavDialog();
+      refs.modal.onclick = (event) => {
+        if (event.target === refs.modal) finishNavDialog();
+      };
+      navDialogKeyHandler = (event) => {
+        if (event.key === 'Escape' || event.key === 'Enter') finishNavDialog();
+      };
+      document.addEventListener('keydown', navDialogKeyHandler);
+      openNavDialogShell();
+      refs.submit.focus();
+    });
   }
 
   function navFolderIconSvg(expanded) {
@@ -86,6 +633,31 @@
     return { moduleId, catIndex };
   }
 
+  function navPlaybookItemKey(playbookId) {
+    return `pbi:${playbookId}`;
+  }
+
+  function navPbStepKey(playbookId, stepOrder) {
+    return `pbs:${playbookId}:${stepOrder}`;
+  }
+
+  function parseNavPbStepKey(key) {
+    if (!key || !key.startsWith('pbs:')) return null;
+    const rest = key.slice(4);
+    const sep = rest.indexOf(':');
+    if (sep <= 0) return null;
+    const playbookId = rest.slice(0, sep);
+    const stepOrder = Number.parseInt(rest.slice(sep + 1), 10);
+    if (!playbookId || Number.isNaN(stepOrder)) return null;
+    return { playbookId, stepOrder };
+  }
+
+  function parseNavPlaybookItemKey(key) {
+    if (!key || !key.startsWith('pbi:')) return null;
+    const playbookId = key.slice(4).trim();
+    return playbookId ? { playbookId } : null;
+  }
+
   function navChevronSvg(collapsed) {
     if (collapsed) {
       return `<svg class="nav-chevron-svg" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.25 2.25 8 6l-3.75 3.75"/></svg>`;
@@ -95,8 +667,6 @@
 
   function defaultNavTree(data) {
     const tree = [{ kind: 'all' }];
-    const playbooks = data?.playbooks || [];
-    if (playbooks.length) tree.push({ kind: 'playbook' });
     for (const mod of data?.modules || []) {
       if (mod?.id) tree.push({ kind: 'module', moduleId: mod.id });
     }
@@ -106,7 +676,6 @@
   function CatalogPanel(options) {
     this.onRunPrompt = options.onRunPrompt || function () {};
     this.root = options.root;
-    this.metaEl = options.metaEl;
     this.searchEl = options.searchEl;
     this.navEl = options.navEl;
     this.mainEl = options.mainEl;
@@ -114,23 +683,33 @@
     this.canEditNav = !!options.canEditNav;
     this.canDeleteNav = !!options.canDeleteNav;
     this.saveNav = options.saveNav || null;
+    this.savePrompt = options.savePrompt || null;
+    this.onPromptsSaved = options.onPromptsSaved || null;
     this.DATA = null;
     this.activeKey = 'all';
     this.navTree = [];
     this.collapsed = new Set();
+    this.capExpanded = new Set();
     this.query = '';
     this._navMenuEl = null;
     this._navMenuTarget = null;
+    this._promptMenuEl = null;
+    this._promptMenuTarget = null;
+    this._promptEditTarget = null;
+    this._promptEditBound = false;
+    this._promptMenuDocBound = false;
     this._dragNodePath = null;
     this._navDragActive = false;
     this._pendingNavMove = null;
   }
 
-  CatalogPanel.prototype.load = async function load(fetchData) {
+  CatalogPanel.prototype.load = async function load(fetchData, opts) {
+    const preserveNavUi = !!(opts && opts.preserveNavUi);
+    const prevActiveKey = this.activeKey;
+    const prevQuery = this.query;
+    const prevCollapsed = preserveNavUi ? new Set(this.collapsed) : null;
+
     this.DATA = typeof fetchData === 'function' ? await fetchData() : fetchData;
-    if (this.metaEl && this.DATA) {
-      this.metaEl.textContent = `${this.DATA.module_count} 模块 · ${this.DATA.total_items} 能力`;
-    }
     if (this.envCheckBtn) {
       const envCfg = this.DATA.env_check || {};
       if (envCfg.label) this.envCheckBtn.textContent = envCfg.label;
@@ -144,10 +723,29 @@
       : defaultNavTree(this.DATA);
     this.ensureFolderChildren(this.navTree);
     this.hydrateNavCaps(this.navTree);
+    this.hydrateNavPlaybooks(this.navTree);
+    this.removeEmptyDuplicateFolders();
     this.sortNavTreeChildOrder(this.navTree);
-    this.resetNavCollapsedAll();
+    const resetNavCollapse = !!(opts && opts.resetNavCollapse);
+    if (preserveNavUi) {
+      this.snapshotCapExpandedFromDom();
+      this.activeKey = prevActiveKey;
+      this.query = prevQuery;
+      if (resetNavCollapse) this.resetNavCollapsedAll();
+      else this.collapsed = prevCollapsed || new Set();
+      if (this.searchEl) this.searchEl.value = prevQuery;
+    } else if (resetNavCollapse) {
+      this.resetNavCollapsedAll();
+    } else {
+      this.restoreNavCollapsed();
+    }
+    if (!preserveNavUi) this.capExpanded = new Set();
     this.renderNav();
     this.render();
+  };
+
+  CatalogPanel.prototype.reload = async function reload(fetchData, opts) {
+    await this.load(fetchData, { preserveNavUi: true, ...(opts || {}) });
   };
 
   CatalogPanel.prototype.navCollapseKey = function navCollapseKey(node) {
@@ -155,11 +753,16 @@
     if (node.kind === 'folder') return String(node.id || '');
     if (node.kind === 'module') return `module:${node.moduleId}`;
     if (node.kind === 'playbook') return 'playbook';
+    if (node.kind === 'playbookItem') return navPlaybookItemKey(node.playbookId);
     return '';
   };
 
   CatalogPanel.prototype.isNavContainer = function isNavContainer(node) {
-    return !!node && (node.kind === 'folder' || node.kind === 'module' || node.kind === 'playbook');
+    return !!node && (
+      node.kind === 'folder'
+      || node.kind === 'module'
+      || node.kind === 'playbook'
+    );
   };
 
   CatalogPanel.prototype.hasFolderChildren = function hasFolderChildren(node) {
@@ -168,13 +771,17 @@
 
   CatalogPanel.prototype.navRowIsBranch = function navRowIsBranch(node) {
     if (!this.isNavContainer(node)) return false;
-    if (node.kind === 'folder' || node.kind === 'module' || node.kind === 'playbook') return true;
+    if (node.kind === 'folder' || node.kind === 'module' || node.kind === 'playbook') {
+      return true;
+    }
     return this.hasFolderChildren(node);
   };
 
   CatalogPanel.prototype.navRowShowsFolderIcon = function navRowShowsFolderIcon(node) {
     if (!node) return false;
-    return node.kind === 'folder' || node.kind === 'module' || node.kind === 'playbook';
+    return node.kind === 'folder'
+      || node.kind === 'module'
+      || node.kind === 'playbook';
   };
 
   CatalogPanel.prototype.navNodeDepth = function navNodeDepth(nodePath) {
@@ -188,7 +795,9 @@
 
   CatalogPanel.prototype.navNodeSupportsRename = function navNodeSupportsRename(node, depth) {
     if (!node) return false;
-    if (node.kind === 'cap' || node.kind === 'folder') return true;
+    if (node.kind === 'cap' || node.kind === 'pbStep' || node.kind === 'folder' || node.kind === 'playbookItem') {
+      return true;
+    }
     return depth === 0 && (node.kind === 'module' || node.kind === 'playbook');
   };
 
@@ -215,6 +824,52 @@
 
   CatalogPanel.prototype.resetNavCollapsedAll = function resetNavCollapsedAll() {
     this.collapsed = new Set(this.collectNavCollapseKeys(this.navTree, 0));
+  };
+
+  CatalogPanel.prototype.restoreNavCollapsed = function restoreNavCollapsed() {
+    const allKeys = this.collectNavCollapseKeys(this.navTree, 0);
+    const stored = readLsStringSet(NAV_COLLAPSED_LS_KEY);
+    if (!stored) {
+      this.collapsed = new Set(allKeys);
+      return;
+    }
+    this.collapsed = new Set(allKeys.filter((k) => stored.has(k)));
+  };
+
+  CatalogPanel.prototype.persistNavCollapsed = function persistNavCollapsed() {
+    writeLsStringSet(NAV_COLLAPSED_LS_KEY, this.collapsed);
+  };
+
+  CatalogPanel.prototype.capRegistryKey = function capRegistryKey(sourceId, registryId) {
+    const sid = String(sourceId || '').trim();
+    const rid = String(registryId || '').trim();
+    if (!sid || !rid) return '';
+    return `reg:${sid}:${rid}`;
+  };
+
+  CatalogPanel.prototype.capItemKey = function capItemKey(item, moduleId, catIndex) {
+    const regKey = this.capRegistryKey(item?.source_id, item?.registry_id);
+    if (regKey) return regKey;
+    const sid = String(item?.source_id || '').trim();
+    const name = String(item?.name || '').trim();
+    return `${moduleId}:${catIndex}:${sid || name}`;
+  };
+
+  /** 刷新前列表仍可见时，用 DOM 同步展开态（避免 registry 刷新后 catIndex 变化丢状态） */
+  CatalogPanel.prototype.snapshotCapExpandedFromDom = function snapshotCapExpandedFromDom() {
+    const root = this.mainEl;
+    if (!root) return;
+    root.querySelectorAll('.cap[data-registry-id][data-source-id]').forEach((cap) => {
+      const key = this.capRegistryKey(
+        cap.getAttribute('data-source-id'),
+        cap.getAttribute('data-registry-id'),
+      );
+      if (!key) return;
+      const head = cap.querySelector('.cap-head.is-toggle');
+      if (!head) return;
+      if (head.getAttribute('aria-expanded') === 'true') this.capExpanded.add(key);
+      else this.capExpanded.delete(key);
+    });
   };
 
   CatalogPanel.prototype.collectCapKeysInTree = function collectCapKeysInTree(nodes, out) {
@@ -245,10 +900,96 @@
     });
   };
 
+  function normalizeWorkflowFolderLabel(label) {
+    return String(label || '').trim().replace(/[·•]/g, '');
+  }
+
+  CatalogPanel.prototype.collectPlaybookIdsInTree = function collectPlaybookIdsInTree(nodes, out) {
+    const set = out || new Set();
+    (nodes || []).forEach((node) => {
+      if (!node || typeof node !== 'object') return;
+      if (node.kind === 'playbookItem') {
+        const pid = String(node.playbookId || '').trim();
+        if (pid) set.add(pid);
+      }
+      if (Array.isArray(node.children)) this.collectPlaybookIdsInTree(node.children, set);
+    });
+    return set;
+  };
+
+  CatalogPanel.prototype.findWorkflowRootFolder = function findWorkflowRootFolder(nodes) {
+    for (const node of nodes || []) {
+      if (!node || node.kind !== 'folder') continue;
+      const label = String(node.label || '').trim();
+      if (label === '工作流') return node;
+    }
+    return null;
+  };
+
+  CatalogPanel.prototype.findWorkflowSubfolder = function findWorkflowSubfolder(workflowRoot, categoryLabel) {
+    const want = normalizeWorkflowFolderLabel(categoryLabel || '未分组') || '未分组';
+    for (const child of workflowRoot.children || []) {
+      if (!child || child.kind !== 'folder') continue;
+      if (normalizeWorkflowFolderLabel(child.label) === want) return child;
+    }
+    return null;
+  };
+
+  CatalogPanel.prototype.ensureWorkflowSubfolder = function ensureWorkflowSubfolder(workflowRoot, categoryLabel) {
+    const label = normalizeWorkflowFolderLabel(categoryLabel || '未分组') || '未分组';
+    let folder = this.findWorkflowSubfolder(workflowRoot, label);
+    if (folder) return folder;
+    if (!Array.isArray(workflowRoot.children)) workflowRoot.children = [];
+    folder = {
+      kind: 'folder',
+      id: newFolderId(),
+      label,
+      children: [],
+      subfolder: true,
+    };
+    workflowRoot.children.push(folder);
+    return folder;
+  };
+
+  CatalogPanel.prototype.hydrateNavPlaybooks = function hydrateNavPlaybooks(nodes) {
+    (nodes || []).forEach((node) => {
+      if (!node || typeof node !== 'object') return;
+      if (node.kind === 'playbookItem' && Array.isArray(node.children)) {
+        node.children = node.children.filter((c) => c && c.kind !== 'pbStep');
+      }
+      if (Array.isArray(node.children)) this.hydrateNavPlaybooks(node.children);
+    });
+
+    const placed = this.collectPlaybookIdsInTree(this.navTree);
+    const workflowRoot = this.findWorkflowRootFolder(this.navTree);
+    if (!workflowRoot) return;
+
+    for (const pb of this.DATA?.playbooks || []) {
+      const pid = String(pb?.id || '').trim();
+      if (!pid || placed.has(pid)) continue;
+      const folder = this.ensureWorkflowSubfolder(workflowRoot, pb.category || '未分组');
+      if (!Array.isArray(folder.children)) folder.children = [];
+      folder.children.push({ kind: 'playbookItem', playbookId: pid });
+      placed.add(pid);
+    }
+  };
+
+  CatalogPanel.prototype.navTreeRootSiblings = function navTreeRootSiblings() {
+    return (this.navTree || []).filter((node) => node && node.kind !== 'all');
+  };
+
+  CatalogPanel.prototype.navAllCount = function navAllCount() {
+    let sum = 0;
+    for (const node of this.navTreeRootSiblings()) {
+      sum += this.navNodeCount(node);
+    }
+    return sum;
+  };
+
   CatalogPanel.prototype.navSiblingSortRank = function navSiblingSortRank(node) {
     if (!node) return 2;
     if (node.kind === 'folder') return 0;
-    if (node.kind === 'cap') return 1;
+    if (node.kind === 'cap' || node.kind === 'pbStep' || node.kind === 'playbookItem') return 1;
     return 0;
   };
 
@@ -303,6 +1044,7 @@
       if (ck) this.collapsed.delete(ck);
       cur = node;
     }
+    this.persistNavCollapsed();
   };
 
   CatalogPanel.prototype.scrollNavRowIntoView = function scrollNavRowIntoView(key) {
@@ -329,6 +1071,19 @@
     return (this.DATA?.playbooks || []).length;
   };
 
+  CatalogPanel.prototype.playbookById = function playbookById(playbookId) {
+    const id = String(playbookId || '').trim();
+    if (!id) return null;
+    return (this.DATA?.playbooks || []).find((pb) => pb.id === id) || null;
+  };
+
+  CatalogPanel.prototype.playbookStepByOrder = function playbookStepByOrder(playbookId, stepOrder) {
+    const pb = this.playbookById(playbookId);
+    const order = Number(stepOrder);
+    if (!pb || Number.isNaN(order)) return null;
+    return (pb.steps || []).find((step) => Number(step.order) === order) || null;
+  };
+
   CatalogPanel.prototype.navNodeKey = function navNodeKey(node) {
     if (!node || !node.kind) return '';
     if (node.kind === 'all') return 'all';
@@ -336,6 +1091,8 @@
     if (node.kind === 'module') return `module:${node.moduleId}`;
     if (node.kind === 'folder') return `folder:${node.id}`;
     if (node.kind === 'cap') return navCategoryKey(node.moduleId, node.catIndex);
+    if (node.kind === 'playbookItem') return navPlaybookItemKey(node.playbookId);
+    if (node.kind === 'pbStep') return navPbStepKey(node.playbookId, node.stepOrder);
     return '';
   };
 
@@ -360,6 +1117,18 @@
       const cat = mod?.categories?.[node.catIndex];
       return collapseNavDisplayLabel(cat?.name) || '能力接口';
     }
+    if (node.kind === 'playbookItem') {
+      const custom = String(node.navLabel || '').trim();
+      if (custom) return custom;
+      const pb = this.playbookById(node.playbookId);
+      return pb?.title || node.playbookId || '工作流';
+    }
+    if (node.kind === 'pbStep') {
+      const custom = collapseNavDisplayLabel(node.label);
+      if (custom) return custom;
+      const step = this.playbookStepByOrder(node.playbookId, node.stepOrder);
+      return collapseNavDisplayLabel(step?.workflowName || step?.note) || `步骤 ${node.stepOrder}`;
+    }
     return '';
   };
 
@@ -372,9 +1141,17 @@
 
   CatalogPanel.prototype.navNodeCount = function navNodeCount(node) {
     if (!node) return 0;
-    if (node.kind === 'all') return this.DATA?.total_items || 0;
+    if (node.kind === 'all') return this.navAllCount();
     if (node.kind === 'playbook') return this.playbookCount();
     if (node.kind === 'cap') return this.capItemCount(node);
+    if (node.kind === 'playbookItem') {
+      const pb = this.playbookById(node.playbookId);
+      return (pb?.steps || []).length;
+    }
+    if (node.kind === 'pbStep') {
+      const step = this.playbookStepByOrder(node.playbookId, node.stepOrder);
+      return (step?.prompts || []).length;
+    }
     if (node.kind === 'module' || node.kind === 'folder') {
       let sum = 0;
       for (const child of node.children || []) sum += this.navNodeCount(child);
@@ -445,6 +1222,19 @@
     }
     const cat = parseNavCategoryKey(key);
     if (cat) return { mode: 'category', moduleId: cat.moduleId, catIndex: cat.catIndex };
+    const pbi = parseNavPlaybookItemKey(key);
+    if (pbi) {
+      return { mode: 'playbookItem', playbookId: pbi.playbookId, node: this.findNavNodeByKey(key) };
+    }
+    const pbs = parseNavPbStepKey(key);
+    if (pbs) {
+      return {
+        mode: 'playbookStep',
+        playbookId: pbs.playbookId,
+        stepOrder: pbs.stepOrder,
+        node: this.findNavNodeByKey(key),
+      };
+    }
     return { mode: 'all' };
   };
 
@@ -500,6 +1290,72 @@
   CatalogPanel.prototype.folderPathFromKey = function folderPathFromKey(folderKey) {
     if (!folderKey.startsWith('folder:')) return null;
     return this.findNodePath(folderKey);
+  };
+
+  /** renderNavNodes 的 data-path-key → getNodeAtPath 路径（避免同 folder id 时 findNodePath 命中首项） */
+  CatalogPanel.prototype.itemPathFromPathKey = function itemPathFromPathKey(pathKey) {
+    if (!pathKey || pathKey === 'r') return null;
+    const parts = String(pathKey).split(':');
+    if (parts[0] !== 'r') return null;
+    const path = [];
+    for (let i = 1; i < parts.length; ) {
+      if (parts[i] === 'c') {
+        path.push('children');
+        i += 1;
+        continue;
+      }
+      const idx = Number.parseInt(parts[i], 10);
+      if (Number.isNaN(idx)) return null;
+      path.push(idx);
+      i += 1;
+    }
+    return path.length ? path : null;
+  };
+
+  CatalogPanel.prototype.navItemPathFromRow = function navItemPathFromRow(row) {
+    if (!row) return null;
+    const pathKey = row.getAttribute('data-path-key') || '';
+    const fromPathKey = this.itemPathFromPathKey(pathKey);
+    if (fromPathKey && this.getNodeAtPath(fromPathKey)) return fromPathKey;
+    const key = row.getAttribute('data-nav-key') || '';
+    return key ? this.findNodePath(key) : null;
+  };
+
+  /** 同 id 的空分组壳（拖拽误删/重复写入）清理，保留有内容的那棵 */
+  CatalogPanel.prototype.removeEmptyDuplicateFolders = function removeEmptyDuplicateFolders() {
+    const byId = new Map();
+    const collect = (nodes, path) => {
+      (nodes || []).forEach((node, i) => {
+        const p = path.concat(i);
+        if (node?.kind === 'folder') {
+          const id = String(node.id || '').trim();
+          if (id) {
+            if (!byId.has(id)) byId.set(id, []);
+            byId.get(id).push({
+              path: p,
+              empty: this.navNodeCount(node) === 0,
+            });
+          }
+        }
+        if (Array.isArray(node?.children)) collect(node.children, p.concat('children'));
+      });
+    };
+    collect(this.navTree, []);
+    const toRemove = [];
+    byId.forEach((entries) => {
+      if (entries.length < 2) return;
+      const filled = entries.filter((e) => !e.empty);
+      if (filled.length !== 1) return;
+      entries.forEach((e) => {
+        if (e.empty) toRemove.push(e.path);
+      });
+    });
+    toRemove.sort((a, b) => {
+      const depthA = a.filter((s) => s === 'children').length * 1000 + (a[a.length - 1] || 0);
+      const depthB = b.filter((s) => s === 'children').length * 1000 + (b[b.length - 1] || 0);
+      return depthB - depthA;
+    });
+    toRemove.forEach((path) => this.removeNodeAtPath(path));
   };
 
   CatalogPanel.prototype.removeNodeAtPath = function removeNodeAtPath(path) {
@@ -574,6 +1430,14 @@
     fromPath,
   ) {
     const targetNode = this.getNodeAtPath(targetPath);
+    if (targetNode && targetNode.kind === 'all') {
+      const before = y < rectHeight / 2;
+      return {
+        kind: 'sibling',
+        toParentPath: null,
+        toIndex: before ? 1 : this.navTree.length,
+      };
+    }
     if (this.isDropInsideZone(targetNode, y, rectHeight)) {
       if (!Array.isArray(targetNode.children)) targetNode.children = [];
       return {
@@ -585,30 +1449,58 @@
     const before = y < rectHeight / 2;
     const targetParentPath = this.parentFolderPath(targetPath);
     const targetIdx = targetPath[targetPath.length - 1];
-    if (
-      before
-      && fromPath
-      && targetParentPath
-      && y <= Math.max(10, rectHeight * 0.28)
-    ) {
-      const fromParent = this.parentFolderPath(fromPath);
-      if (
-        this.navParentPathKey(fromParent) === this.navParentPathKey(targetParentPath)
-        && this.navParentPathKey(fromPath) !== this.navParentPathKey(targetPath)
-      ) {
-        const parentIdx = targetParentPath[targetParentPath.length - 1];
-        return {
-          kind: 'sibling',
-          toParentPath: this.parentFolderPath(targetParentPath),
-          toIndex: parentIdx + 1,
-        };
-      }
+    let toIndex = targetIdx + (before ? 0 : 1);
+    if (!targetParentPath || !targetParentPath.length) {
+      toIndex = Math.max(1, toIndex);
     }
     return {
       kind: 'sibling',
       toParentPath: targetParentPath,
-      toIndex: targetIdx + (before ? 0 : 1),
+      toIndex,
     };
+  };
+
+  CatalogPanel.prototype.navChildrenListForDrop = function navChildrenListForDrop(parentPath) {
+    if (!parentPath || !parentPath.length) return this.navTree;
+    const parent = this.getNodeAtPath(parentPath);
+    return Array.isArray(parent?.children) ? parent.children : [];
+  };
+
+  CatalogPanel.prototype.navItemPathForChildIndex = function navItemPathForChildIndex(parentPath, index) {
+    if (!parentPath || !parentPath.length) return [index];
+    return parentPath.concat(['children', index]);
+  };
+
+  CatalogPanel.prototype.navRowElForItemPath = function navRowElForItemPath(nav, itemPath) {
+    if (!itemPath || !itemPath.length) return null;
+    const node = this.getNodeAtPath(itemPath);
+    if (!node) return null;
+    const key = this.navNodeKey(node);
+    if (!key) return null;
+    return nav.querySelector(`.nav-row[data-nav-key="${CSS.escape(key)}"]`);
+  };
+
+  CatalogPanel.prototype.paintSiblingDropIndicator = function paintSiblingDropIndicator(nav, drop) {
+    const parentPath = drop.toParentPath;
+    const children = this.navChildrenListForDrop(parentPath);
+    const idx = Math.max(0, Math.min(drop.toIndex, children.length));
+    if (idx < children.length) {
+      const el = this.navRowElForItemPath(nav, this.navItemPathForChildIndex(parentPath, idx));
+      if (el) el.classList.add('drop-before');
+      return;
+    }
+    if (children.length > 0) {
+      const el = this.navRowElForItemPath(
+        nav,
+        this.navItemPathForChildIndex(parentPath, children.length - 1),
+      );
+      if (el) el.classList.add('drop-after');
+      return;
+    }
+    if (parentPath && parentPath.length) {
+      const el = this.navRowElForItemPath(nav, parentPath);
+      if (el) el.classList.add('drop-inside');
+    }
   };
 
   CatalogPanel.prototype.isNavDropPlacementAllowed = function isNavDropPlacementAllowed(fromPath, drop) {
@@ -619,14 +1511,25 @@
     return !this.cannotDropInside(fromPath, drop.toParentPath);
   };
 
-  CatalogPanel.prototype.applyNavDropIndicator = function applyNavDropIndicator(nav, row, fromPath, targetPath, y, rectHeight) {
+  CatalogPanel.prototype.clearNavDropIndicators = function clearNavDropIndicators(nav) {
     nav.querySelectorAll('.nav-row.drop-before, .nav-row.drop-after, .nav-row.drop-inside')
       .forEach((el) => el.classList.remove('drop-before', 'drop-after', 'drop-inside'));
+  };
+
+  CatalogPanel.prototype.applyNavDropIndicator = function applyNavDropIndicator(nav, row, fromPath, targetPath, y, rectHeight) {
+    this.clearNavDropIndicators(nav);
     const drop = this.resolveNavDropTarget(targetPath, y, rectHeight, fromPath);
     if (!this.isNavDropPlacementAllowed(fromPath, drop)) return;
-    if (drop.kind === 'inside') row.classList.add('drop-inside');
-    else if (y < rectHeight / 2) row.classList.add('drop-before');
-    else row.classList.add('drop-after');
+    const targetNode = this.getNodeAtPath(targetPath);
+    if (targetNode && targetNode.kind === 'all') {
+      row.classList.add('drop-inside');
+      return;
+    }
+    if (drop.kind === 'inside') {
+      row.classList.add('drop-inside');
+      return;
+    }
+    this.paintSiblingDropIndicator(nav, drop);
   };
 
   CatalogPanel.prototype.cannotDropInside = function cannotDropInside(fromPath, toParentPath) {
@@ -650,6 +1553,7 @@
   };
 
   CatalogPanel.prototype.buildNavPayload = function buildNavPayload() {
+    this.removeEmptyDuplicateFolders();
     this.sortNavTreeChildOrder(this.navTree);
     return {
       version: 1,
@@ -671,16 +1575,110 @@
     return hay.includes(q);
   };
 
-  CatalogPanel.prototype.renderPromptLine = function renderPromptLine(text) {
+  CatalogPanel.prototype.renderCategoryListItem = function renderCategoryListItem(catName, itemsHtml) {
+    const label = collapseNavDisplayLabel(catName);
+    return `<li><span class="cat-name">${escapeHtml(label)}</span><ul class="items">${itemsHtml}</ul></li>`;
+  };
+
+  CatalogPanel.prototype.renderModuleHead = function renderModuleHead(opts) {
+    const icon = opts.icon || smallIcon('module');
+    const title = opts.title || '';
+    const sub = opts.sub || '';
+    const moduleId = opts.moduleId || '';
+    const category = opts.category || '';
+    const attrs = ['data-module-head="1"'];
+    if (moduleId) attrs.push(`data-module-id="${escapeAttr(moduleId)}"`);
+    if (category) attrs.push(`data-category="${escapeAttr(category)}"`);
+    return `<div class="module-head" ${attrs.join(' ')}>
+            <span class="module-icon" aria-hidden="true">${icon}</span>
+            <div>
+              <h3>${escapeHtml(title)}</h3>
+              <div class="sub">${escapeHtml(sub)}</div>
+            </div>
+          </div>`;
+  };
+
+  CatalogPanel.prototype._registrySourceFromItem = function _registrySourceFromItem(item, out) {
+    if (!item || !out) return;
+    const id = String(item.source_id || '').trim();
+    if (!id || out.has(id)) return;
+    out.set(id, {
+      id,
+      label: String(item.source || id).trim(),
+      env: String(item.env || '').trim(),
+    });
+  };
+
+  CatalogPanel.prototype.collectAllRegistrySources = function collectAllRegistrySources() {
+    const map = new Map();
+    for (const src of this.DATA?.registry_sources || []) {
+      const id = String(src.id || '').trim();
+      if (!id || map.has(id)) continue;
+      map.set(id, {
+        id,
+        label: String(src.label || id).trim(),
+        env: String(src.env || '').trim(),
+      });
+    }
+    for (const mod of this.DATA?.modules || []) {
+      for (const cat of mod.categories || []) {
+        for (const item of cat.items || []) {
+          this._registrySourceFromItem(item, map);
+        }
+      }
+    }
+    return [...map.values()].sort((a, b) => a.label.localeCompare(b.label, 'zh-CN'));
+  };
+
+  CatalogPanel.prototype.collectRegistrySourcesForCategory = function collectRegistrySourcesForCategory(categoryName) {
+    const catName = String(categoryName || '').trim();
+    const map = new Map();
+    if (!catName) return [];
+    for (const mod of this.DATA?.modules || []) {
+      for (const cat of mod.categories || []) {
+        if (String(cat.name || '').trim() !== catName) continue;
+        for (const item of cat.items || []) {
+          this._registrySourceFromItem(item, map);
+        }
+      }
+    }
+    return [...map.values()].sort((a, b) => a.label.localeCompare(b.label, 'zh-CN'));
+  };
+
+  CatalogPanel.prototype.resolveModuleHeadContext = function resolveModuleHeadContext(head) {
+    let moduleId = head.getAttribute('data-module-id') || '';
+    let category = head.getAttribute('data-category') || '';
+    const filter = this.activeFilter();
+    if (!moduleId && filter.mode === 'category') moduleId = filter.moduleId || '';
+    if (!category && filter.mode === 'category') {
+      const mod = this.moduleById(filter.moduleId);
+      category = mod?.categories?.[filter.catIndex]?.name || '';
+    }
+    if (!moduleId && filter.mode === 'modules' && filter.moduleIds?.size === 1) {
+      moduleId = [...filter.moduleIds][0];
+    }
+    if (!category) {
+      const section = head.closest('.catalog-module');
+      const catNames = section?.querySelectorAll('.cat-name');
+      if (catNames?.length === 1) {
+        category = String(catNames[0].textContent || '').trim();
+      }
+    }
+    return { moduleId, category };
+  };
+
+  CatalogPanel.prototype.renderPromptLine = function renderPromptLine(text, ctx) {
+    const raw = String(text || '');
+    const line = humanizeCatalogPromptText(raw);
     const spanParts = [];
     let last = 0;
     let m;
     const re = new RegExp(PROMPT_PLACEHOLDER_RE.source, 'g');
-    while ((m = re.exec(text)) !== null) {
-      if (m.index > last) spanParts.push(escapeHtml(text.slice(last, m.index)));
+    while ((m = re.exec(line)) !== null) {
+      if (m.index > last) spanParts.push(escapeHtml(line.slice(last, m.index)));
       const key = m[1];
-      const label = (m[2] || key).trim();
-      const width = Math.min(12, Math.max(4, label.length + 1));
+      const label = promptPlaceholderLabel(key, m[2]);
+      const width = promptFieldWidthEm(label);
       spanParts.push(
         `<input type="text" class="prompt-field" data-key="${escapeHtml(key)}" ` +
         `placeholder="${escapeHtml(label)}" aria-label="${escapeHtml(label)}" ` +
@@ -688,8 +1686,14 @@
       );
       last = re.lastIndex;
     }
-    if (last < text.length) spanParts.push(escapeHtml(text.slice(last)));
-    return `<div class="prompt-line">
+    if (last < line.length) spanParts.push(escapeHtml(line.slice(last)));
+    const meta = ctx && ctx.registryId && ctx.sourceId
+      ? ` data-source-id="${escapeAttr(ctx.sourceId)}"` +
+        ` data-registry-id="${escapeAttr(ctx.registryId)}"` +
+        ` data-prompt-index="${Number(ctx.promptIndex) || 0}"` +
+        ` data-prompt-raw="${escapeAttr(raw)}"`
+      : '';
+    return `<div class="prompt-line"${meta}>
       <span class="prompt-text">${spanParts.join('')}</span>
       <div class="prompt-line-footer">
         <button type="button" class="prompt-run" title="填入提问栏">执行</button>
@@ -697,36 +1701,68 @@
     </div>`;
   };
 
-  CatalogPanel.prototype.renderCapItem = function renderCapItem(item) {
+  CatalogPanel.prototype.renderCapItem = function renderCapItem(item, opts) {
     const prompts = item.prompts || [];
     const hasPrompts = prompts.length > 0;
-    const promptHtml = prompts.map(t => this.renderPromptLine(t)).join('');
+    const sourceId = item.source_id || '';
+    const registryId = item.registry_id || '';
+    const promptHtml = prompts.map((t, i) => this.renderPromptLine(t, {
+      sourceId,
+      registryId,
+      promptIndex: i,
+    })).join('');
+    const capDisplayName = collapseNavDisplayLabel(item.name);
     const headToggle = hasPrompts ? ' is-toggle' : '';
-    const headAria = hasPrompts ? ' aria-expanded="false"' : '';
+    const moduleId = opts && opts.moduleId;
+    const catIndex = opts && opts.catIndex;
+    const capKey = hasPrompts && moduleId != null && catIndex != null
+      ? this.capItemKey(item, moduleId, catIndex)
+      : '';
+    const capOpen = capKey && this.capExpanded.has(capKey);
+    const headAria = hasPrompts ? ` aria-expanded="${capOpen ? 'true' : 'false'}"` : '';
     const source = item.source
       ? `<span class="source-badge" data-env="${escapeHtml(item.env || '')}" data-source-id="${escapeHtml(item.source_id || '')}">${escapeHtml(item.source)}</span>`
       : '';
     const chevron = hasPrompts ? '<span class="cap-chevron" aria-hidden="true">▸</span>' : '';
-    return `<li class="cap">
-      <div class="cap-head${headToggle}"${headAria}>
+    const capKeyAttr = capKey ? ` data-cap-key="${escapeHtml(capKey)}"` : '';
+    const sourceTagId = item.source_tag_id || sourceId;
+    const capRegAttr = registryId && sourceId
+      ? ` data-source-id="${escapeAttr(sourceId)}" data-registry-id="${escapeAttr(registryId)}"` +
+        ` data-source-tag-id="${escapeAttr(sourceTagId)}"`
+      : '';
+    const capNameAttr = registryId && sourceId
+      ? ` data-cap-name="${escapeAttr(item.name || '')}"`
+      : '';
+    return `<li class="cap"${capKeyAttr}${capRegAttr}>
+      <div class="cap-head${headToggle}"${headAria}${capNameAttr}>
         ${chevron}
         <span class="cap-icon" aria-hidden="true">${smallIcon('spark')}</span>
         <div class="cap-main">
-          <span class="cap-name">${escapeHtml(item.name)}</span>
+          <span class="cap-name">${escapeHtml(capDisplayName)}</span>
           ${source}
         </div>
       </div>
-      <div class="prompt-panel" hidden>${hasPrompts ? `<div class="prompt-list">${promptHtml}</div>` : ''}</div>
+      <div class="prompt-panel"${hasPrompts && !capOpen ? ' hidden' : ''}>${hasPrompts ? `<div class="prompt-list">${promptHtml}</div>` : ''}</div>
     </li>`;
   };
 
   CatalogPanel.prototype.bindPromptToggles = function bindPromptToggles(root) {
     root.querySelectorAll('.cap-head.is-toggle').forEach(head => {
       head.addEventListener('click', () => {
-        const panel = head.closest('.cap').querySelector('.prompt-panel');
+        const cap = head.closest('.cap');
+        const panel = cap.querySelector('.prompt-panel');
         const open = head.getAttribute('aria-expanded') === 'true';
         head.setAttribute('aria-expanded', open ? 'false' : 'true');
-        panel.hidden = open;
+        if (open) panel.setAttribute('hidden', '');
+        else panel.removeAttribute('hidden');
+        const capKey = this.capRegistryKey(
+          cap.getAttribute('data-source-id'),
+          cap.getAttribute('data-registry-id'),
+        ) || cap.getAttribute('data-cap-key') || '';
+        if (capKey) {
+          if (open) this.capExpanded.delete(capKey);
+          else this.capExpanded.add(capKey);
+        }
       });
     });
   };
@@ -735,10 +1771,112 @@
     this.bindPromptToggles(root);
   };
 
-  CatalogPanel.prototype.renderPlaybookStep = function renderPlaybookStep(step) {
-    const ops = (step.operations || []).map(op => `<li>${escapeHtml(op)}</li>`).join('');
+  CatalogPanel.prototype.renderPlaybookDefaults = function renderPlaybookDefaults(defaults) {
+    const entries = Object.entries(defaults || {}).filter(([, v]) => v != null && String(v).trim());
+    if (!entries.length) return '';
+    const rows = entries.map(([k, v]) =>
+      `<dt>${escapeHtml(playbookDefaultLabel(k))}</dt><dd><code>${escapeHtml(String(v))}</code></dd>`,
+    ).join('');
+    return `<div class="playbook-readable-defaults-wrap">
+      <p class="playbook-readable-defaults-label">默认参数</p>
+      <dl class="playbook-readable-defaults">${rows}</dl>
+    </div>`;
+  };
+
+  CatalogPanel.prototype.renderPlaybookStepReadable = function renderPlaybookStepReadable(step, opts) {
+    const outline = !!(opts && opts.outline);
+    const title = step.name || step.note || `步骤 ${step.order}`;
+    const optional = /可选/.test(title) || /可选/.test(String(step.note || ''));
+    const lead = step.name
+      ? humanizePlaybookProse(step.note || '')
+      : '';
+    const { hints } = collectPlaybookStepOps(step);
+
+    if (outline) {
+      const tag = optional ? ' <span class="playbook-readable-optional">可选</span>' : '';
+      return `<li class="playbook-readable-outline-item">
+        <span class="playbook-readable-outline-num">${step.order}</span>
+        <span class="playbook-readable-outline-title">${escapeHtml(title)}${tag}</span>
+      </li>`;
+    }
+
+    const leadBlock = lead ? `<p class="playbook-readable-step-note">${escapeHtml(lead)}</p>` : '';
+    const hintBlock = hints.length
+      ? `<ul class="playbook-readable-hints">${hints.map((h) =>
+        `<li>${escapeHtml(humanizePlaybookProse(h))}</li>`,
+      ).join('')}</ul>`
+      : '';
+    const optTag = optional ? '<span class="playbook-readable-optional">可选</span>' : '';
+    const verifyBlock = step.sheet
+      ? `<p class="playbook-readable-step-sheet">关联表：${escapeHtml(step.sheet)}</p>`
+      : '';
+    const stepPrompts = (step.prompts || [])
+      .filter(Boolean)
+      .map((t) => this.renderPromptLine(t))
+      .join('');
+    const promptsBlock = stepPrompts
+      ? `<div class="playbook-readable-step-prompts"><div class="prompt-list">${stepPrompts}</div></div>`
+      : '';
+
+    return `<article class="playbook-readable-step">
+      <header class="playbook-readable-step-head">
+        <span class="playbook-readable-step-num">${step.order}</span>
+        <h4 class="playbook-readable-step-title">${escapeHtml(title)}${optTag ? ` ${optTag}` : ''}</h4>
+      </header>
+      ${leadBlock}
+      ${hintBlock}
+      ${verifyBlock}
+      ${promptsBlock}
+    </article>`;
+  };
+
+  CatalogPanel.prototype.renderPlaybookReadable = function renderPlaybookReadable(pb, opts) {
+    if (!pb) return '';
+    const outline = !!(opts && opts.outline);
+    const title = pb.title || pb.id;
+    const category = pb.category || '工作流';
+    const stepCount = (pb.steps || []).length;
+    const summaryLead = humanizePlaybookProse(pb.summaryReadable || pb.summary || '');
+    const prompts = (pb.prompts || [])
+      .filter(Boolean)
+      .map((t) => this.renderPromptLine(t))
+      .join('');
+    const defaultsHtml = !outline ? this.renderPlaybookDefaults(pb.defaults) : '';
+    const stepsHtml = outline
+      ? `<ol class="playbook-readable-outline">${(pb.steps || []).map((s) => this.renderPlaybookStepReadable(s, { outline: true })).join('')}</ol>`
+      : `<div class="playbook-readable-steps">${(pb.steps || []).map((s) => this.renderPlaybookStepReadable(s)).join('')}</div>`;
+    const notes = (pb.notes || []).filter(Boolean);
+    const notesHtml = !outline && notes.length
+      ? `<details class="playbook-readable-more">
+          <summary>技术说明（${notes.length} 条）</summary>
+          <ul>${notes.map((n) => `<li>${escapeHtml(n)}</li>`).join('')}</ul>
+        </details>`
+      : '';
+
+    return `<section class="playbook-readable${outline ? ' is-outline' : ''}" id="playbook-${escapeHtml(pb.id)}">
+      <header class="playbook-readable-head">
+        <p class="playbook-readable-eyebrow">${escapeHtml(category)} · ${stepCount} 步</p>
+        <h3 class="playbook-readable-title">${escapeHtml(title)}</h3>
+        ${summaryLead ? `<p class="playbook-readable-lead">${escapeHtml(summaryLead)}</p>` : ''}
+        ${defaultsHtml}
+        ${prompts ? `<div class="playbook-readable-prompts"><p class="playbook-readable-prompts-label">快捷执行</p><div class="prompt-list">${prompts}</div></div>` : ''}
+      </header>
+      <div class="playbook-readable-body">
+        <p class="playbook-readable-steps-label">${outline ? '步骤概览' : '分步操作'}</p>
+        ${stepsHtml}
+        ${notesHtml}
+      </div>
+    </section>`;
+  };
+
+  CatalogPanel.prototype.renderPlaybookStep = function renderPlaybookStep(step, opts) {
+    const expandAll = !!(opts && opts.expandAllSteps);
+    const ops = (step.operations || []).map((op) => {
+      const text = humanizePlaybookOperationLine(op);
+      return text ? `<li>${escapeHtml(text)}</li>` : '';
+    }).filter(Boolean).join('');
     const prompts = (step.prompts || []).map(t => this.renderPromptLine(t)).join('');
-    const title = step.workflowName || step.workflowId || step.note || `步骤 ${step.order}`;
+    const title = step.name || step.workflowName || step.workflowId || step.note || `步骤 ${step.order}`;
     const subParts = [];
     if (step.workflowId && step.workflowName) subParts.push(`<code>${escapeHtml(step.workflowId)}</code>`);
     if (step.sheet) subParts.push(`Sheet「${escapeHtml(step.sheet)}」`);
@@ -746,14 +1884,14 @@
     const noteBlock = (step.note && title !== step.note)
       ? `<div class="playbook-step-note">${escapeHtml(step.note)}</div>` : '';
     return `<div class="playbook-step">
-      <div class="playbook-step-head" aria-expanded="false">
+      <div class="playbook-step-head" aria-expanded="${expandAll ? 'true' : 'false'}">
         <span class="playbook-step-num">${step.order}</span>
         <div>
           <div class="playbook-step-title">${escapeHtml(title)}</div>
           ${sub ? `<div class="playbook-step-sub">${sub}</div>` : ''}
         </div>
       </div>
-      <div class="playbook-step-body" hidden>
+      <div class="playbook-step-body"${expandAll ? '' : ' hidden'}>
         ${noteBlock}
         ${ops ? `<ol class="playbook-ops">${ops}</ol>` : ''}
         ${prompts ? `<div class="prompt-list">${prompts}</div>` : ''}
@@ -761,13 +1899,13 @@
     </div>`;
   };
 
-  CatalogPanel.prototype.renderPlaybook = function renderPlaybook(pb) {
-    const defaults = Object.entries(pb.defaults || {})
-      .map(([k, v]) => `<span class="default-chip"><code>${escapeHtml(k)}</code> ${escapeHtml(v)}</span>`)
-      .join('');
-    const steps = (pb.steps || []).map(s => this.renderPlaybookStep(s)).join('');
+  CatalogPanel.prototype.renderPlaybook = function renderPlaybook(pb, opts) {
+    const steps = (pb.steps || []).map((s) => this.renderPlaybookStep(s, opts)).join('');
     const topPrompts = (pb.prompts || []).map(t => this.renderPromptLine(t)).join('');
     const stepCount = (pb.steps || []).length;
+    const notesBlock = (pb.notes || []).length
+      ? `<div class="playbook-notes"><strong>说明</strong><ul>${(pb.notes || []).map((n) => `<li>${escapeHtml(n)}</li>`).join('')}</ul></div>`
+      : '';
     return `<section class="playbook-section" id="playbook-${escapeHtml(pb.id)}">
       <div class="playbook-head">
         <h3>${escapeHtml(pb.title)}</h3>
@@ -776,8 +1914,8 @@
           <span class="playbook-tag">${escapeHtml(pb.category || '工作流')}</span>
           <span class="playbook-tag">${stepCount} 步</span>
         </div>
-        ${defaults ? `<div class="playbook-defaults">${defaults}</div>` : ''}
         ${topPrompts ? `<div class="prompt-list" style="margin-top:10px">${topPrompts}</div>` : ''}
+        ${notesBlock}
       </div>
       <div class="playbook-steps">${steps}</div>
     </section>`;
@@ -801,22 +1939,48 @@
     const catLabel = this.navNodeLabel(capNode);
     const filtered = cat.items.filter((it) => this.matches(it, mod.label, cat.name, q));
     if (!filtered.length) return { html: '', count: 0 };
-    const items = filtered.map((it) => this.renderCapItem(it)).join('');
+    const items = filtered.map((it) => this.renderCapItem(it, {
+      moduleId: capNode.moduleId,
+      catIndex: capNode.catIndex,
+      modLabel: mod.label,
+      catName: cat.name,
+    })).join('');
     return {
       count: filtered.length,
-      html: `<li><span class="cat-name">${escapeHtml(catLabel)}</span><ul class="items">${items}</ul></li>`,
+      html: this.renderCategoryListItem(catLabel || cat.name, items),
     };
+  };
+
+  CatalogPanel.prototype.appendNavScopeSections = function appendNavScopeSections(main, nodes, q) {
+    let any = false;
+    for (const rootNode of nodes || []) {
+      if (!rootNode || rootNode.kind === 'all') continue;
+      const body = this.renderNavScopeBody(rootNode, q);
+      if (!body.visibleCount) continue;
+      any = true;
+      const section = document.createElement('section');
+      section.className = 'catalog-module catalog-module-scope';
+      if (rootNode.kind === 'module' && rootNode.moduleId) {
+        section.id = 'catalog-mod-' + rootNode.moduleId;
+      }
+      section.innerHTML = `
+          ${this.renderModuleHead({
+            title: this.navNodeLabel(rootNode),
+            sub: `${body.visibleCount} 项能力`,
+            moduleId: rootNode.kind === 'module' ? (rootNode.moduleId || '') : '',
+          })}
+          ${body.partsHtml}
+          ${body.catsHtml ? `<ol class="cats">${body.catsHtml}</ol>` : ''}`;
+      main.appendChild(section);
+    }
+    return any;
   };
 
   CatalogPanel.prototype.renderNavScopeBody = function renderNavScopeBody(node, q) {
     let catsHtml = '';
     let visibleCount = 0;
     const parts = [];
-    const scopeChildren = (node.children || []).slice().sort((a, b) => {
-      const ra = this.navSiblingSortRank(a);
-      const rb = this.navSiblingSortRank(b);
-      return ra !== rb ? ra - rb : 0;
-    });
+    const scopeChildren = node.children || [];
     scopeChildren.forEach((child) => {
       if (child.kind === 'cap') {
         const block = this.renderCapCategoryBlock(child, q);
@@ -843,6 +2007,25 @@
             ${nested.partsHtml}${nested.catsHtml ? `<ol class="cats">${nested.catsHtml}</ol>` : ''}
           </div>`);
         }
+      } else if (child.kind === 'playbookItem') {
+        const pb = this.playbookById(child.playbookId);
+        if (!pb) return;
+        if (q) {
+          const hay = [
+            pb.title,
+            pb.summary,
+            pb.category,
+            ...(pb.prompts || []),
+            ...(pb.steps || []).flatMap((step) => [
+              step.name,
+              step.note,
+              ...(step.operations || []),
+            ]),
+          ].join(' ').toLowerCase();
+          if (!hay.includes(q)) return;
+        }
+        visibleCount += 1;
+        parts.push(this.renderPlaybookReadable(pb, { outline: true }));
       }
     });
     return { catsHtml, partsHtml: parts.join(''), visibleCount };
@@ -852,7 +2035,7 @@
     const playbooks = this.DATA.playbooks || [];
     if (!playbooks.length) return;
     const filter = this.activeFilter();
-    if (filter.mode !== 'all' && filter.mode !== 'playbook') return;
+    if (filter.mode !== 'playbook') return;
     const wrap = document.createElement('div');
     wrap.innerHTML = playbooks.map(pb => this.renderPlaybook(pb)).join('');
     while (wrap.firstChild) container.appendChild(wrap.firstChild);
@@ -868,9 +2051,6 @@
 
     this.renderPlaybooks(main);
     const filter = this.activeFilter();
-    if ((this.DATA.playbooks || []).length && (filter.mode === 'all' || filter.mode === 'playbook')) {
-      any = true;
-    }
 
     if (filter.mode === 'navScope') {
       const body = this.renderNavScopeBody(filter.node, q);
@@ -880,13 +2060,12 @@
         const section = document.createElement('section');
         section.className = 'catalog-module catalog-module-scope';
         section.innerHTML = `
-          <div class="module-head">
-            <span class="module-icon" aria-hidden="true">${icon}</span>
-            <div>
-              <h3>${escapeHtml(filter.title)}</h3>
-              <div class="sub">${body.visibleCount} 项能力</div>
-            </div>
-          </div>
+          ${this.renderModuleHead({
+            icon,
+            title: filter.title,
+            sub: `${body.visibleCount} 项能力`,
+            moduleId: filter.node?.kind === 'module' ? (filter.node.moduleId || '') : '',
+          })}
           ${body.partsHtml}
           ${body.catsHtml ? `<ol class="cats">${body.catsHtml}</ol>` : ''}`;
         main.appendChild(section);
@@ -899,6 +2078,46 @@
       return;
     }
 
+    if (filter.mode === 'playbookItem') {
+      const pb = this.playbookById(filter.playbookId);
+      if (pb) {
+        any = true;
+        const wrap = document.createElement('div');
+        wrap.innerHTML = this.renderPlaybookReadable(pb);
+        while (wrap.firstChild) main.appendChild(wrap.firstChild);
+        this.bindPromptPanels(main);
+      }
+      if (!any) {
+        main.innerHTML = '<div class="catalog-empty">没有匹配的能力</div>';
+      }
+      return;
+    }
+
+    if (filter.mode === 'playbookStep') {
+      const step = this.playbookStepByOrder(filter.playbookId, filter.stepOrder);
+      if (step) {
+        any = true;
+        const pb = this.playbookById(filter.playbookId);
+        const section = document.createElement('section');
+        section.className = 'catalog-module catalog-module-playbook-step';
+        section.innerHTML = `
+          <div class="module-head">
+            <span class="module-icon" aria-hidden="true">${smallIcon('play')}</span>
+            <div>
+              <h3>${escapeHtml(this.navNodeLabel(filter.node) || `步骤 ${filter.stepOrder}`)}</h3>
+              <div class="sub">${escapeHtml(pb?.title || filter.playbookId)} · 第 ${filter.stepOrder} 步</div>
+            </div>
+          </div>
+          <div class="playbook-readable-steps">${this.renderPlaybookStepReadable(step)}</div>`;
+        main.appendChild(section);
+        this.bindPromptPanels(main);
+      }
+      if (!any) {
+        main.innerHTML = '<div class="catalog-empty">没有匹配的能力</div>';
+      }
+      return;
+    }
+
     if (filter.mode === 'category') {
       const mod = this.DATA.modules.find((m) => m.id === filter.moduleId);
       const cat = mod?.categories?.[filter.catIndex];
@@ -906,21 +2125,40 @@
         const filtered = cat.items.filter((it) => this.matches(it, mod.label, cat.name, q));
         if (filtered.length) {
           any = true;
-          const items = filtered.map((it) => this.renderCapItem(it)).join('');
+          const capNode = this.findNavNodeByKey(this.activeKey);
+          const scopeTitle = capNode
+            ? this.navNodeLabel(capNode)
+            : collapseNavDisplayLabel(cat.name);
+          const items = filtered.map((it) => this.renderCapItem(it, {
+            moduleId: filter.moduleId,
+            catIndex: filter.catIndex,
+            modLabel: mod.label,
+            catName: cat.name,
+          })).join('');
           const section = document.createElement('section');
           section.className = 'catalog-module catalog-module-category';
           section.innerHTML = `
-            <div class="module-head">
-              <span class="module-icon" aria-hidden="true">${smallIcon('spark')}</span>
-              <div>
-                <h3>${escapeHtml(collapseNavDisplayLabel(cat.name))}</h3>
-                <div class="sub">${filtered.length} 项 MOA 能力</div>
-              </div>
-            </div>
+            ${this.renderModuleHead({
+              icon: smallIcon('spark'),
+              title: scopeTitle,
+              sub: `${filtered.length} 项 MOA 能力`,
+              moduleId: filter.moduleId,
+              category: cat.name,
+            })}
             <ol class="cats"><li><ul class="items">${items}</ul></li></ol>`;
           main.appendChild(section);
         }
       }
+      if (!any) {
+        main.innerHTML = '<div class="catalog-empty">没有匹配的能力</div>';
+      } else {
+        this.bindPromptPanels(main);
+      }
+      return;
+    }
+
+    if (filter.mode === 'all') {
+      any = this.appendNavScopeSections(main, this.navTreeRootSiblings(), q);
       if (!any) {
         main.innerHTML = '<div class="catalog-empty">没有匹配的能力</div>';
       } else {
@@ -935,12 +2173,18 @@
 
       let catsHtml = '';
       let visibleCount = 0;
-      for (const cat of mod.categories) {
+      for (let catIndex = 0; catIndex < mod.categories.length; catIndex += 1) {
+        const cat = mod.categories[catIndex];
         const filtered = cat.items.filter(it => this.matches(it, mod.label, cat.name, q));
         if (!filtered.length) continue;
         visibleCount += filtered.length;
-        const items = filtered.map(it => this.renderCapItem(it)).join('');
-        catsHtml += `<li><span class="cat-name">${escapeHtml(collapseNavDisplayLabel(cat.name))}</span><ul class="items">${items}</ul></li>`;
+        const items = filtered.map((it) => this.renderCapItem(it, {
+          moduleId: mod.id,
+          catIndex,
+          modLabel: mod.label,
+          catName: cat.name,
+        })).join('');
+        catsHtml += this.renderCategoryListItem(cat.name, items);
       }
       if (!visibleCount) continue;
       any = true;
@@ -949,13 +2193,11 @@
       section.className = 'catalog-module';
       section.id = 'catalog-mod-' + mod.id;
       section.innerHTML = `
-        <div class="module-head">
-          <span class="module-icon" aria-hidden="true">${smallIcon('module')}</span>
-          <div>
-            <h3>${escapeHtml(mod.label)}</h3>
-            <div class="sub">${visibleCount} 项能力</div>
-          </div>
-        </div>
+        ${this.renderModuleHead({
+          title: mod.label,
+          sub: `${visibleCount} 项能力`,
+          moduleId: mod.id,
+        })}
         <ol class="cats">${catsHtml}</ol>`;
       main.appendChild(section);
     }
@@ -999,6 +2241,42 @@
     </div>`;
   };
 
+  CatalogPanel.prototype.renderNavPbStepFromNode = function renderNavPbStepFromNode(node, depth, pathKey) {
+    const step = this.playbookStepByOrder(node.playbookId, node.stepOrder);
+    if (!step && !node.label) return '';
+    const key = this.navNodeKey(node);
+    const label = this.navNodeLabel(node);
+    const active = this.activeKey === key;
+    const indent = Math.min(depth, 8) * 14;
+    const count = this.navNodeCount(node);
+    const drag = this.canEditNav ? ' draggable="true"' : '';
+    return `<div class="nav-row nav-cap-if nav-pb-step${active ? ' active' : ''}" data-nav-key="${escapeHtml(key)}" data-path-key="${escapeHtml(pathKey)}" style="--nav-depth:${indent}px"${drag}>
+      <span class="nav-cap-lead" aria-hidden="true"><span class="nav-folder-icon nav-cap-if-icon">${smallIcon('play')}</span></span>
+      <button type="button" class="nav-select nav-select-cap-if">
+        <span class="nav-label">${escapeHtml(label)}</span>
+        <span class="count">${count}</span>
+      </button>
+    </div>`;
+  };
+
+  CatalogPanel.prototype.renderNavPlaybookItemFromNode = function renderNavPlaybookItemFromNode(node, depth, pathKey) {
+    const pb = this.playbookById(node.playbookId);
+    if (!pb && !node.navLabel) return '';
+    const key = this.navNodeKey(node);
+    const label = this.navNodeLabel(node);
+    const active = this.activeKey === key;
+    const indent = Math.min(depth, 8) * 14;
+    const count = this.navNodeCount(node);
+    const drag = this.canEditNav ? ' draggable="true"' : '';
+    return `<div class="nav-row nav-cap-if nav-playbook-cap${active ? ' active' : ''}" data-nav-key="${escapeHtml(key)}" data-path-key="${escapeHtml(pathKey)}" style="--nav-depth:${indent}px"${drag}>
+      <span class="nav-cap-lead" aria-hidden="true"><span class="nav-folder-icon nav-cap-if-icon">${navCapInterfaceIconSvg()}</span></span>
+      <button type="button" class="nav-select nav-select-cap-if">
+        <span class="nav-label">${escapeHtml(label)}</span>
+        <span class="count">${count}</span>
+      </button>
+    </div>`;
+  };
+
   CatalogPanel.prototype.renderNavCapFromNode = function renderNavCapFromNode(node, depth, pathKey) {
     const mod = this.moduleById(node.moduleId);
     const cat = mod?.categories?.[node.catIndex];
@@ -1024,6 +2302,14 @@
       const pathKey = `${pathPrefix}:${index}`;
       if (node.kind === 'cap') {
         parts.push(this.renderNavCapFromNode(node, depth, pathKey));
+        return;
+      }
+      if (node.kind === 'playbookItem') {
+        const row = this.renderNavPlaybookItemFromNode(node, depth, pathKey);
+        if (row) parts.push(row);
+        return;
+      }
+      if (node.kind === 'pbStep') {
         return;
       }
       parts.push(this.renderNavRow(node, depth, pathKey));
@@ -1102,7 +2388,7 @@
     const renameBtn = menu.querySelector('[data-action="rename"]');
     const deleteBtn = menu.querySelector('[data-action="delete"]');
     const isAll = node.kind === 'all';
-    const isCap = node.kind === 'cap';
+    const isCap = node.kind === 'cap' || node.kind === 'playbookItem';
     const depth = this.navNodeDepth(nodePath);
     const canRename = this.navNodeSupportsRename(node, depth) && this.canEditNav;
     const canDeleteFolder = node.kind === 'folder' && this.canDeleteNav;
@@ -1147,7 +2433,7 @@
 
   CatalogPanel.prototype.addRootFolder = async function addRootFolder() {
     if (!this.canEditNav) return;
-    const label = window.prompt('分组名称');
+    const label = await openNavTextPrompt('分组名称');
     if (!label || !String(label).trim()) return;
     const folder = {
       kind: 'folder',
@@ -1165,13 +2451,13 @@
       this.render();
       this.scrollNavRowIntoView(newKey);
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : '保存失败');
+      await openNavAlert(err instanceof Error ? err.message : '保存失败');
     }
   };
 
   CatalogPanel.prototype.addSubFolder = async function addSubFolder(parentKey) {
     if (!this.canEditNav) return;
-    const label = window.prompt('子分组名称');
+    const label = await openNavTextPrompt('子分组名称');
     if (!label || !String(label).trim()) return;
     const folder = {
       kind: 'folder',
@@ -1188,6 +2474,7 @@
     this.expandNavAncestors(path);
     const parentCollapseKey = this.navCollapseKey(parent);
     if (parentCollapseKey) this.collapsed.delete(parentCollapseKey);
+    this.persistNavCollapsed();
     this.ensureFolderChildren(this.navTree);
     const newKey = this.navNodeKey(folder);
     this.activeKey = newKey;
@@ -1197,7 +2484,7 @@
       this.render();
       this.scrollNavRowIntoView(newKey);
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : '保存失败');
+      await openNavAlert(err instanceof Error ? err.message : '保存失败');
     }
   };
 
@@ -1208,25 +2495,26 @@
     const depth = path ? this.navNodeDepth(path) : 0;
     if (!node || !this.navNodeSupportsRename(node, depth)) return;
     if (node.kind === 'folder') {
-      const next = window.prompt('分组名称', node.label || '');
+      const next = await openNavTextPrompt('分组名称', node.label || '');
       if (!next || !String(next).trim() || String(next).trim() === node.label) return;
       node.label = String(next).trim();
     } else if (node.kind === 'cap') {
       const current = this.navNodeLabel(node);
-      const next = window.prompt('能力接口名称', current);
+      const next = await openNavTextPrompt('能力接口名称', current);
       if (!next || !String(next).trim() || String(next).trim() === current) return;
       node.label = String(next).trim();
     } else {
       const current = this.navNodeLabel(node);
-      const next = window.prompt('目录显示名称', current);
+      const next = await openNavTextPrompt('目录显示名称', current);
       if (!next || !String(next).trim() || String(next).trim() === current) return;
       node.navLabel = String(next).trim();
     }
     try {
       await this.persistNav();
       this.renderNav();
+      this.render();
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : '保存失败');
+      await openNavAlert(err instanceof Error ? err.message : '保存失败');
     }
   };
 
@@ -1236,7 +2524,7 @@
     const depth = path ? this.navNodeDepth(path) : 0;
     if (!node || !this.navNodeSupportsDelete(node, depth)) return;
     if (node.kind === 'folder' && !this.canDeleteNav) {
-      window.alert('仅超级管理员可删除分组');
+      await openNavAlert('仅超级管理员可删除分组');
       return;
     }
     if ((node.kind === 'module' || node.kind === 'playbook') && !this.canEditNav) return;
@@ -1244,7 +2532,7 @@
     const childCount = (node.children || []).length;
     const parentPath = this.parentFolderPath(path);
     const destLabel = parentPath ? (this.getNodeAtPath(parentPath)?.label || '上级分组') : '全部';
-    const ok = window.confirm(
+    const ok = await openNavConfirm(
       node.kind === 'folder'
         ? (childCount
           ? `删除「${label}」？子项将归属到「${destLabel}」。`
@@ -1265,7 +2553,7 @@
       this.renderNav({ preserveScroll: true });
       this.render();
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : '保存失败');
+      await openNavAlert(err instanceof Error ? err.message : '保存失败');
     }
   };
 
@@ -1290,7 +2578,7 @@
     }
     if (node.kind === 'folder') {
       if (!destParentPath || !destParentPath.length) {
-        if (fromParent) node.subfolder = true;
+        delete node.subfolder;
       } else {
         node.subfolder = true;
       }
@@ -1316,6 +2604,7 @@
       const parent = this.getNodeAtPath(destParentPath);
       const ck = this.navCollapseKey(parent);
       if (ck) this.collapsed.delete(ck);
+      this.persistNavCollapsed();
     }
     try {
       await this.persistNav();
@@ -1324,7 +2613,7 @@
     } catch (err) {
       this.removeNodeAtPath(this.findNodePath(this.navNodeKey(node)));
       this.insertNode(fromParent, fromIndex, node);
-      window.alert(err instanceof Error ? err.message : '保存失败');
+      await openNavAlert(err instanceof Error ? err.message : '保存失败');
     }
   };
 
@@ -1343,12 +2632,13 @@
         if (!collapseKey) return;
         if (this.collapsed.has(collapseKey)) this.collapsed.delete(collapseKey);
         else this.collapsed.add(collapseKey);
+        this.persistNavCollapsed();
         this.renderNav({ preserveScroll: true });
       });
     });
     if (!nav._catalogNavContextBound) {
       nav._catalogNavContextBound = true;
-      nav.addEventListener('contextmenu', (e) => {
+      nav.addEventListener('contextmenu', async (e) => {
         const row = e.target.closest('.nav-row');
         if (!row || !nav.contains(row)) return;
         const key = row.getAttribute('data-nav-key') || '';
@@ -1360,11 +2650,11 @@
         this.hideNavMenu();
         if (node.kind === 'cap') {
           if (!this.canEditNav) {
-            window.alert('仅管理员可编辑能力分组');
+            await openNavAlert('仅管理员可编辑能力分组');
             return;
           }
         } else if (!this.canEditNav && !this.canDeleteNav) {
-          window.alert('仅管理员可编辑能力分组');
+          await openNavAlert('仅管理员可编辑能力分组');
           return;
         } else if (!this.canEditNav && node.kind !== 'folder') return;
         if (!this.canEditNav && node.kind === 'all') return;
@@ -1397,10 +2687,58 @@
       e.stopPropagation();
     });
 
+    const bindNavRowDropTarget = (row) => {
+      row.addEventListener('dragover', (e) => {
+        if (!this._dragNodePath) return;
+        e.preventDefault();
+        const key = row.getAttribute('data-nav-key') || '';
+        const rect = row.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        const targetPath = this.navItemPathFromRow(row);
+        if (!targetPath) return;
+        this.applyNavDropIndicator(nav, row, this._dragNodePath, targetPath, y, rect.height);
+        if (e.dataTransfer) {
+          e.dataTransfer.dropEffect = this.isNavDropPlacementAllowed(
+            this._dragNodePath,
+            this.resolveNavDropTarget(targetPath, y, rect.height, this._dragNodePath),
+          ) ? 'move' : 'none';
+        }
+      });
+      row.addEventListener('dragleave', (e) => {
+        const related = e.relatedTarget;
+        if (related && row.contains(related)) return;
+        if (related && typeof related.closest === 'function' && related.closest('.nav-row')) return;
+      });
+      row.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!this._dragNodePath) return;
+        const fromPath = this._dragNodePath.slice();
+        const fromNode = this.getNodeAtPath(fromPath);
+        if (fromNode && fromNode.kind === 'all') return;
+        const targetPath = this.navItemPathFromRow(row);
+        if (!targetPath) return;
+        const targetNode = this.getNodeAtPath(targetPath);
+        const fromKey = this.navNodeKey(fromNode);
+        if (fromKey && fromKey === this.navNodeKey(targetNode)) {
+          if (JSON.stringify(fromPath) === JSON.stringify(targetPath)) return;
+        }
+        const rect = row.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        const drop = this.resolveNavDropTarget(targetPath, y, rect.height, fromPath);
+        if (!this.isNavDropPlacementAllowed(fromPath, drop)) return;
+        this._pendingNavMove = {
+          fromPath,
+          toParentPath: drop.toParentPath,
+          toIndex: drop.toIndex,
+        };
+      });
+    };
+
     nav.querySelectorAll('.nav-row[draggable="true"]').forEach((row) => {
       row.addEventListener('dragstart', (e) => {
         const key = row.getAttribute('data-nav-key');
-        const path = this.findNodePath(key);
+        const path = this.navItemPathFromRow(row);
         this._dragNodePath = path;
         this._navDragActive = true;
         this._pendingNavMove = null;
@@ -1414,8 +2752,7 @@
       });
       row.addEventListener('dragend', () => {
         row.classList.remove('is-dragging');
-        nav.querySelectorAll('.nav-row.drop-before, .nav-row.drop-after, .nav-row.drop-inside')
-          .forEach((el) => el.classList.remove('drop-before', 'drop-after', 'drop-inside'));
+        this.clearNavDropIndicators(nav);
         const pending = this._pendingNavMove;
         this._pendingNavMove = null;
         this._dragNodePath = null;
@@ -1424,52 +2761,11 @@
           this.moveNavNode(pending.fromPath, pending.toParentPath, pending.toIndex);
         }
       });
-      row.addEventListener('dragover', (e) => {
-        if (!this._dragNodePath) return;
-        const key = row.getAttribute('data-nav-key') || '';
-        if (key === 'all') return;
-        e.preventDefault();
-        const rect = row.getBoundingClientRect();
-        const y = e.clientY - rect.top;
-        const targetPath = this.findNodePath(key);
-        if (!targetPath) return;
-        this.applyNavDropIndicator(nav, row, this._dragNodePath, targetPath, y, rect.height);
-        if (e.dataTransfer) {
-          e.dataTransfer.dropEffect = this.isNavDropPlacementAllowed(
-            this._dragNodePath,
-            this.resolveNavDropTarget(targetPath, y, rect.height, this._dragNodePath),
-          ) ? 'move' : 'none';
-        }
-      });
-      row.addEventListener('dragleave', (e) => {
-        const related = e.relatedTarget;
-        if (related && row.contains(related)) return;
-        row.classList.remove('drop-before', 'drop-after', 'drop-inside');
-      });
-      row.addEventListener('drop', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!this._dragNodePath) return;
-        const fromPath = this._dragNodePath.slice();
-        const fromNode = this.getNodeAtPath(fromPath);
-        if (fromNode && fromNode.kind === 'all') return;
-        const targetKey = row.getAttribute('data-nav-key') || '';
-        if (targetKey === 'all') return;
-        const targetPath = this.findNodePath(targetKey);
-        if (!targetPath) return;
-        const fromKey = this.navNodeKey(fromNode);
-        if (fromKey === targetKey) return;
-        const rect = row.getBoundingClientRect();
-        const y = e.clientY - rect.top;
-        const drop = this.resolveNavDropTarget(targetPath, y, rect.height, fromPath);
-        if (!this.isNavDropPlacementAllowed(fromPath, drop)) return;
-        this._pendingNavMove = {
-          fromPath,
-          toParentPath: drop.toParentPath,
-          toIndex: drop.toIndex,
-        };
-      });
+      bindNavRowDropTarget(row);
     });
+
+    const allRow = nav.querySelector('.nav-row[data-nav-key="all"]');
+    if (allRow) bindNavRowDropTarget(allRow);
 
     if (!this._navMenuDocBound) {
       this._navMenuDocBound = true;
@@ -1483,7 +2779,384 @@
     }
   };
 
+  CatalogPanel.prototype.promptEditRefs = function promptEditRefs() {
+    return {
+      modal: document.getElementById('catalog-prompt-edit-modal'),
+      title: document.getElementById('catalog-prompt-edit-title'),
+      hint: document.getElementById('catalog-prompt-edit-hint'),
+      textarea: document.getElementById('catalog-prompt-edit-textarea'),
+      insertBtn: document.getElementById('catalog-prompt-edit-insert'),
+      cancel: document.getElementById('catalog-prompt-edit-cancel'),
+      submit: document.getElementById('catalog-prompt-edit-submit'),
+    };
+  };
+
+  CatalogPanel.prototype.ensurePromptMenu = function ensurePromptMenu() {
+    if (this._promptMenuEl) return this._promptMenuEl;
+    const menu = document.createElement('div');
+    menu.className = 'catalog-prompt-menu';
+    menu.hidden = true;
+    menu.innerHTML =
+      '<button type="button" data-action="edit">编辑</button>' +
+      '<button type="button" data-action="add">添加快捷提示</button>' +
+      '<button type="button" data-action="delete-cap">删除能力</button>' +
+      '<button type="button" data-action="delete">删除</button>';
+    menu.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn || !this._promptMenuTarget) return;
+      const action = btn.getAttribute('data-action');
+      const target = this._promptMenuTarget;
+      this.hidePromptMenu();
+      if (action === 'edit') {
+        if (target.contextKind === 'header') this.editCapName(target);
+        else this.openPromptEditDialog(target);
+      } else if (action === 'add') {
+        this.openPromptEditDialog({ ...target, mode: 'append' });
+      } else if (action === 'delete-cap') {
+        this.deleteRegistryCapability(target);
+      } else if (action === 'delete') {
+        this.deletePromptLine(target);
+      }
+    });
+    document.body.appendChild(menu);
+    this._promptMenuEl = menu;
+    return menu;
+  };
+
+  CatalogPanel.prototype.hidePromptMenu = function hidePromptMenu() {
+    if (this._promptMenuEl) {
+      this._promptMenuEl.hidden = true;
+      this._promptMenuEl.classList.remove('is-open');
+    }
+    this._promptMenuTarget = null;
+  };
+
+  CatalogPanel.prototype.showPromptContextMenu = function showPromptContextMenu(clientX, clientY, target) {
+    const menu = this.ensurePromptMenu();
+    const editBtn = menu.querySelector('[data-action="edit"]');
+    const addBtn = menu.querySelector('[data-action="add"]');
+    const deleteCapBtn = menu.querySelector('[data-action="delete-cap"]');
+    const deleteBtn = menu.querySelector('[data-action="delete"]');
+    const isHeader = target.contextKind === 'header';
+    if (editBtn) editBtn.hidden = false;
+    if (addBtn) addBtn.hidden = !isHeader;
+    if (deleteCapBtn) deleteCapBtn.hidden = !isHeader || !this.canDeleteNav;
+    if (deleteBtn) deleteBtn.hidden = isHeader;
+    this._promptMenuTarget = target;
+    menu.hidden = false;
+    menu.classList.add('is-open');
+    menu.style.visibility = 'hidden';
+    menu.style.left = '0px';
+    menu.style.top = '0px';
+    const menuRect = menu.getBoundingClientRect();
+    const left = Math.min(Math.max(8, clientX), window.innerWidth - menuRect.width - 8);
+    const top = Math.min(Math.max(8, clientY), window.innerHeight - menuRect.height - 8);
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
+    menu.style.visibility = '';
+  };
+
+  CatalogPanel.prototype.insertPromptPlaceholderAtCursor = function insertPromptPlaceholderAtCursor(textarea) {
+    if (!textarea) return;
+    const snippet = '<param|说明>';
+    const start = textarea.selectionStart ?? textarea.value.length;
+    const end = textarea.selectionEnd ?? start;
+    const before = textarea.value.slice(0, start);
+    const after = textarea.value.slice(end);
+    textarea.value = before + snippet + after;
+    const pos = start + snippet.length;
+    textarea.focus();
+    textarea.setSelectionRange(pos, pos);
+  };
+
+  CatalogPanel.prototype.openPromptEditDialog = function openPromptEditDialog(target) {
+    const refs = this.promptEditRefs();
+    if (!refs.modal || !refs.textarea) {
+      window.prompt('快捷提示语', target.promptRaw || '');
+      return;
+    }
+    const isAppend = target.mode === 'append';
+    this._promptEditTarget = target;
+    refs.title.textContent = isAppend ? '添加快捷提示' : '编辑快捷提示';
+    if (refs.hint) refs.hint.hidden = false;
+    refs.textarea.value = isAppend ? '' : (target.promptRaw || '');
+    refs.modal.hidden = false;
+    requestAnimationFrame(() => refs.modal.classList.add('open'));
+    refs.textarea.focus();
+    if (!isAppend) refs.textarea.select();
+  };
+
+  CatalogPanel.prototype.closePromptEditDialog = function closePromptEditDialog() {
+    const refs = this.promptEditRefs();
+    this._promptEditTarget = null;
+    if (!refs.modal) return;
+    refs.modal.classList.remove('open');
+    window.setTimeout(() => {
+      if (refs.modal) refs.modal.hidden = true;
+    }, 200);
+  };
+
+  CatalogPanel.prototype.editCapName = async function editCapName(target) {
+    if (!target || !this.savePrompt) return;
+    const current = String(target.capName || '').trim();
+    const currentTagId = String(target.sourceTagId || target.sourceId || '').trim();
+    const sources = this.collectAllRegistrySources();
+    if (!sources.length) {
+      await openNavAlert('无可用来源模块');
+      return;
+    }
+    const picked = await openNavAddCapabilityPrompt({
+      title: '编辑能力名称',
+      sources,
+      defaultValue: current,
+      defaultSourceId: currentTagId,
+    });
+    if (picked == null) return;
+    const name = String(picked.name || '').trim();
+    const sourceTagId = String(picked.sourceId || '').trim();
+    if (!name) {
+      await openNavAlert('能力名称不能为空');
+      return;
+    }
+    if (!sourceTagId) {
+      await openNavAlert('请选择来源标签');
+      return;
+    }
+    if (name === current && sourceTagId === currentTagId) return;
+    const payload = {
+      source_id: target.sourceId,
+      registry_id: target.registryId,
+      name,
+      source_tag: sourceTagId,
+    };
+    try {
+      await this.savePrompt(payload);
+      if (this.onPromptsSaved) await this.onPromptsSaved();
+    } catch (err) {
+      await openNavAlert(err instanceof Error ? err.message : '保存失败');
+    }
+  };
+
+  CatalogPanel.prototype.ensureModuleMenu = function ensureModuleMenu() {
+    if (this._moduleMenuEl) return this._moduleMenuEl;
+    const menu = document.createElement('div');
+    menu.className = 'catalog-prompt-menu catalog-module-menu';
+    menu.hidden = true;
+    menu.innerHTML =
+      '<button type="button" data-action="add-cap">添加能力</button>' +
+      '<button type="button" data-action="add-moa">添加 MOA 能力</button>';
+    menu.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn || !this._moduleMenuTarget) return;
+      const action = btn.getAttribute('data-action');
+      const target = this._moduleMenuTarget;
+      this.hideModuleMenu();
+      if (action === 'add-cap') this.addRegistryCapability(target);
+      else if (action === 'add-moa') this.startMoaGenerativeAdd(target);
+    });
+    document.body.appendChild(menu);
+    this._moduleMenuEl = menu;
+    return menu;
+  };
+
+  CatalogPanel.prototype.hideModuleMenu = function hideModuleMenu() {
+    if (this._moduleMenuEl) {
+      this._moduleMenuEl.hidden = true;
+      this._moduleMenuEl.classList.remove('is-open');
+    }
+    this._moduleMenuTarget = null;
+  };
+
+  CatalogPanel.prototype.showModuleContextMenu = function showModuleContextMenu(clientX, clientY, target) {
+    const menu = this.ensureModuleMenu();
+    const addMoaBtn = menu.querySelector('[data-action="add-moa"]');
+    const isMoa = target.moduleId === 'moa';
+    if (addMoaBtn) addMoaBtn.hidden = !isMoa;
+    this._moduleMenuTarget = target;
+    menu.hidden = false;
+    menu.classList.add('is-open');
+    menu.style.visibility = 'hidden';
+    menu.style.left = '0px';
+    menu.style.top = '0px';
+    const menuRect = menu.getBoundingClientRect();
+    const left = Math.min(Math.max(8, clientX), window.innerWidth - menuRect.width - 8);
+    const top = Math.min(Math.max(8, clientY), window.innerHeight - menuRect.height - 8);
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
+    menu.style.visibility = '';
+  };
+
+  CatalogPanel.prototype.addRegistryCapability = async function addRegistryCapability(target) {
+    if (!target || !this.savePrompt) return;
+    let { moduleId, category } = target;
+    if (!moduleId) {
+      await openNavAlert('无法确定所属模块');
+      return;
+    }
+    if (!category) {
+      const picked = await openNavTextPrompt('registry 分类名（category）');
+      if (picked == null) return;
+      category = String(picked).trim();
+      if (!category) {
+        await openNavAlert('分类不能为空');
+        return;
+      }
+    }
+    const categorySources = this.collectRegistrySourcesForCategory(category);
+    const sources = this.collectAllRegistrySources();
+    if (!sources.length) {
+      await openNavAlert('无可用来源模块');
+      return;
+    }
+    const ownerSourceId = categorySources[0]?.id || sources[0]?.id || '';
+    const defaultSourceId = ownerSourceId;
+    const picked = await openNavAddCapabilityPrompt({
+      title: '新能力名称',
+      sources,
+      defaultSourceId,
+    });
+    if (picked == null) return;
+    const name = String(picked.name || '').trim();
+    const sourceTagId = String(picked.sourceId || '').trim();
+    if (!name) {
+      await openNavAlert('能力名称不能为空');
+      return;
+    }
+    if (!sourceTagId) {
+      await openNavAlert('请选择来源标签');
+      return;
+    }
+    if (!ownerSourceId) {
+      await openNavAlert('无法确定 registry 所属模块');
+      return;
+    }
+    try {
+      await this.savePrompt({
+        source_id: ownerSourceId,
+        add_item: { category, name, source_tag: sourceTagId },
+      });
+      if (this.onPromptsSaved) await this.onPromptsSaved();
+    } catch (err) {
+      await openNavAlert(err instanceof Error ? err.message : '添加失败');
+    }
+  };
+
+  CatalogPanel.prototype.startMoaGenerativeAdd = function startMoaGenerativeAdd(target) {
+    const category = String(target?.category || '').trim() || 'MOA';
+    const text =
+      `请按 MOA-generative / Tunnel 抓包入库流程，在 registry 分类「${category}」下新增一条 MOA 能力：` +
+      '（补充接口场景、抓包 userId、期望 method/serviceUrl）';
+    if (typeof this.onRunPrompt === 'function') this.onRunPrompt(text);
+  };
+
+  CatalogPanel.prototype.deleteRegistryCapability = async function deleteRegistryCapability(target) {
+    if (!target || !this.savePrompt) return;
+    if (!this.canDeleteNav) {
+      await openNavAlert('仅超级管理员可删除能力');
+      return;
+    }
+    const label = String(target.capName || target.registryId || '该能力').trim();
+    const moaHint = target.isMoa ? '将同时移除 registry 与 MOA 模板文件。' : '将从 registry 中移除该能力。';
+    const ok = await openNavConfirm(`确定删除能力「${label}」？${moaHint}`);
+    if (!ok) return;
+    try {
+      await this.savePrompt({
+        source_id: target.sourceId,
+        registry_id: target.registryId,
+        delete_item: true,
+      });
+      if (this.onPromptsSaved) await this.onPromptsSaved();
+    } catch (err) {
+      await openNavAlert(err instanceof Error ? err.message : '删除失败');
+    }
+  };
+
+  CatalogPanel.prototype.deletePromptLine = async function deletePromptLine(target) {
+    if (!target || !this.savePrompt) return;
+    const ok = await openNavConfirm('确定删除这条快捷提示？');
+    if (!ok) return;
+    try {
+      await this.savePrompt({
+        source_id: target.sourceId,
+        registry_id: target.registryId,
+        delete_prompt_index: target.promptIndex,
+      });
+      if (this.onPromptsSaved) await this.onPromptsSaved();
+    } catch (err) {
+      await openNavAlert(err instanceof Error ? err.message : '删除失败');
+    }
+  };
+
+  CatalogPanel.prototype.savePromptEditDialog = async function savePromptEditDialog() {
+    const target = this._promptEditTarget;
+    const refs = this.promptEditRefs();
+    if (!target || !refs.textarea) return;
+    const text = String(refs.textarea.value || '').trim();
+    if (!text) {
+      await openNavAlert('快捷提示语不能为空');
+      return;
+    }
+    if (!this.savePrompt) {
+      await openNavAlert('当前环境无法保存');
+      return;
+    }
+    const payload = {
+      source_id: target.sourceId,
+      registry_id: target.registryId,
+    };
+    if (target.mode === 'append') payload.append_prompt = text;
+    else {
+      payload.prompt_index = target.promptIndex;
+      payload.prompt = text;
+    }
+    try {
+      await this.savePrompt(payload);
+      this.closePromptEditDialog();
+      if (this.onPromptsSaved) await this.onPromptsSaved();
+    } catch (err) {
+      await openNavAlert(err instanceof Error ? err.message : '保存失败');
+    }
+  };
+
+  CatalogPanel.prototype.bindPromptEditDialog = function bindPromptEditDialog() {
+    if (this._promptEditBound) return;
+    this._promptEditBound = true;
+    const refs = this.promptEditRefs();
+    refs.cancel?.addEventListener('click', () => this.closePromptEditDialog());
+    refs.submit?.addEventListener('click', () => this.savePromptEditDialog());
+    refs.insertBtn?.addEventListener('click', () => {
+      this.insertPromptPlaceholderAtCursor(refs.textarea);
+    });
+    refs.modal?.addEventListener('click', (e) => {
+      if (e.target === refs.modal) this.closePromptEditDialog();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const refsNow = this.promptEditRefs();
+      if (refsNow.modal && !refsNow.modal.hidden) this.closePromptEditDialog();
+    });
+  };
+
+  CatalogPanel.prototype.bindPromptContextMenus = function bindPromptContextMenus() {
+    if (this._promptMenuDocBound) return;
+    this._promptMenuDocBound = true;
+    document.addEventListener('click', (e) => {
+      if (this._promptMenuEl && !this._promptMenuEl.hidden && !this._promptMenuEl.contains(e.target)) {
+        this.hidePromptMenu();
+      }
+      if (this._moduleMenuEl && !this._moduleMenuEl.hidden && !this._moduleMenuEl.contains(e.target)) {
+        this.hideModuleMenu();
+      }
+    });
+    document.addEventListener('scroll', () => {
+      this.hidePromptMenu();
+      this.hideModuleMenu();
+    }, true);
+  };
+
   CatalogPanel.prototype.bindEvents = function bindEvents() {
+    this.bindPromptEditDialog();
+    this.bindPromptContextMenus();
     if (this.searchEl) {
       this.searchEl.addEventListener('input', e => {
         this.query = e.target.value;
@@ -1497,6 +3170,65 @@
         const line = runBtn.closest('.prompt-line');
         if (line) this.onRunPrompt(assemblePromptLine(line));
       }
+    });
+    this.root.addEventListener('contextmenu', async (e) => {
+      const moduleHead = e.target.closest('.module-head[data-module-head]');
+      const line = e.target.closest('.prompt-line');
+      const head = e.target.closest('.cap[data-registry-id] .cap-head');
+      if (moduleHead && !line && !head) {
+        const categoryOnHead = String(moduleHead.getAttribute('data-category') || '').trim();
+        if (!categoryOnHead) return;
+        e.preventDefault();
+        if (!this.canEditNav) {
+          await openNavAlert('仅管理员可编辑能力');
+          return;
+        }
+        const ctx = this.resolveModuleHeadContext(moduleHead);
+        if (!ctx.moduleId) {
+          await openNavAlert('当前视图未绑定单一模块，请进入具体分类后再添加');
+          return;
+        }
+        if (!ctx.category) ctx.category = categoryOnHead;
+        this.showModuleContextMenu(e.clientX, e.clientY, ctx);
+        return;
+      }
+      if (!line && !head) return;
+      e.preventDefault();
+      if (!this.canEditNav) {
+        await openNavAlert('仅管理员可编辑快捷提示语');
+        return;
+      }
+      let sourceId = '';
+      let registryId = '';
+      if (line) {
+        sourceId = line.getAttribute('data-source-id') || '';
+        registryId = line.getAttribute('data-registry-id') || '';
+        const promptIndex = Number.parseInt(line.getAttribute('data-prompt-index') || '0', 10);
+        const promptRaw = line.getAttribute('data-prompt-raw') || '';
+        if (!sourceId || !registryId) return;
+        this.showPromptContextMenu(e.clientX, e.clientY, {
+          sourceId,
+          registryId,
+          promptIndex,
+          promptRaw,
+          contextKind: 'line',
+        });
+        return;
+      }
+      const cap = head.closest('.cap[data-registry-id]');
+      sourceId = cap?.getAttribute('data-source-id') || head.getAttribute('data-source-id') || '';
+      registryId = cap?.getAttribute('data-registry-id') || head.getAttribute('data-registry-id') || '';
+      const capName = head.getAttribute('data-cap-name') || '';
+      const sourceTagId = cap?.getAttribute('data-source-tag-id') || sourceId;
+      if (!sourceId || !registryId) return;
+      this.showPromptContextMenu(e.clientX, e.clientY, {
+        sourceId,
+        sourceTagId,
+        registryId,
+        capName,
+        isMoa: sourceId === 'moa',
+        contextKind: 'header',
+      });
     });
   };
 

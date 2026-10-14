@@ -36,7 +36,7 @@
   "_registry": {
     "id": "prize_bag_query_config",
     "name": "星礼包-查询配置",
-    "category": "奖励验收（通用）",
+    "category": "奖励验收-MOA（通用）",
     "description": "开发者后台星礼包配置查询（getPrizeBagListNew；/service/vas/external/activity-backend）。返回各档位（TOP1/TOP2…）奖励明细：钻石、背包礼物、道具 TOOL/VIP/游戏券等。榜单/活动奖励验收第一步：修改模板 params[0].value.id 为目标礼包 ID 后执行。",
     "prompts": [
       "查星礼包配置 id=<prizeBagId>",

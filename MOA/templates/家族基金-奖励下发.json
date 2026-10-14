@@ -29,7 +29,7 @@
   "_registry": {
     "id": "family_fund_reward_dispatch",
     "name": "家族基金-奖励下发",
-    "category": "家族（internal/user/family-moa）",
+    "category": "家族-MOA（internal/user/family-moa）",
     "description": "家族基金周结算奖励下发（dispatchFamilyFundRewardTask；/service/internal/user/family-moa）。仅 1 个 int 参数：--family-fund-reward-dispatch-offset，0=本周，-1=上周。",
     "prompts": [
       "家族基金本周奖励下发",

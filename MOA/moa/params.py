@@ -305,6 +305,31 @@ def set_user_joined_family_query_params(payload: dict[str, Any], user_id: str) -
     payload["params"] = [string_param(user_id)]
 
 
+def set_guild_device_mmuidv3_query_params(payload: dict[str, Any], device_id: str) -> None:
+    device_id = str(device_id).strip()
+    if not device_id:
+        raise ValueError("mmuid/mmuidv3 不能为空")
+    payload["params"] = [string_param(device_id)]
+
+
+def set_guild_batch_del_anchor_mmuidv3_params(payload: dict[str, Any], user_ids: list[str]) -> None:
+    if not user_ids:
+        raise ValueError("userIds 不能为空")
+    ids = [str(x).strip() for x in user_ids if str(x).strip()]
+    if not ids:
+        raise ValueError("userIds 不能为空")
+    payload["params"] = [
+        {
+            "name": 0,
+            "title": "userIds",
+            "txt": ids,
+            "json": json.dumps(ids, ensure_ascii=False, separators=(",", ":")),
+            "type": "json",
+            "value": ids,
+        }
+    ]
+
+
 def set_family_leave_params(payload: dict[str, Any], user_id: str) -> None:
     user_id = str(user_id).strip()
     if not user_id:

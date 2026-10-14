@@ -33,7 +33,7 @@
   "_registry": {
     "id": "family_kick_member",
     "name": "家族-踢出成员",
-    "category": "家族（external/user/family-api）",
+    "category": "家族-API（external/user/family-api）",
     "description": "家族长踢出成员（removeMember；对齐客户端 /yaahlan/family/removeMember）。执行前强制校验：操作人=家族长；被踢人在本家族且不是家族长。来源抓包：100486375 踢出 100383703 familyId=101435",
     "prompts": [
       "家族长 <operatorId> 踢出成员 <remoteId>",

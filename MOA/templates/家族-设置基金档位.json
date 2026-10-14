@@ -29,7 +29,7 @@
   "_registry": {
     "id": "family_fund_tier_set",
     "name": "家族-设置基金档位",
-    "category": "家族（internal/user/family-moa）",
+    "category": "家族-MOA（internal/user/family-moa）",
     "description": "设置家族基金档位（backdoor FamilyFundService.batchSetFamilyFundTierForTest；result=更新家族数）。须先清档位缓存再设档；设档后勿清缓存。",
     "prompts": [
       "设置家族 <familyId> 基金档位为 <tier>",

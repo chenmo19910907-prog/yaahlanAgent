@@ -37,7 +37,7 @@
   "_registry": {
     "id": "room_pk_start",
     "name": "房间PK-开始PK",
-    "category": "房间PK（room/external/room-pk-api）",
+    "category": "房间PK-API（room/external/room-pk-api）",
     "description": "测试环境房间内开始 PK（startPk）。body 需 userId（房主/管理员/主持）、roomId。对齐 /yaahlan/room/pk/startPk；需先 openPkMode 创建 PK 模式且满足上麦人数条件；MOA 模板实测 roomId=36043470 ec=200。",
     "prompts": [
       "用户 <userId> 在房间 <roomId> 开始PK",

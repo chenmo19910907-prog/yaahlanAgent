@@ -1,0 +1,40 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/yaahlan-trade-union-data-stage",
+  "method": "batchDelAnchorMmuidv3Record",
+  "header": "",
+  "params": [
+    {
+      "name": 0,
+      "title": "userIds",
+      "txt": [],
+      "json": "[]",
+      "type": "json",
+      "value": []
+    }
+  ],
+  "settings": {
+    "time": "60000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "guild_batch_del_anchor_mmuidv3_record",
+    "name": "公会-批量删除设备入会绑定",
+    "category": "MOA公会数据（yaahlan-trade-union-data-stage）",
+    "description": "删除账号加入公会绑定的设备记录（batchDelAnchorMmuidv3Record；params[0] 为 userId JSON 数组，须先查 getAnchorByMmuidv3Record）。",
+    "prompts": [
+      "批量删除设备入会绑定 <userIdsJson|JSON数组>",
+      "batchDelAnchorMmuidv3Record"
+    ],
+    "cli": "--guild-anchor-user-ids-json '<jsonArray>'"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "id": "guild-device-join-limit-clear",
+  "name": "公会-清除设备入会账号限制",
+  "category": "公会常用工具（workflow）",
+  "description": "测试环境：按设备 mmuid/mmuidv3 查询曾加入公会成功的 userId（getAnchorByMmuidv3Record），再 batchDelAnchorMmuidv3Record 删除绑定，解除「该设备已存在已加入公会账号」限制。",
+  "version": 1,
+  "params": {
+    "mmuidv3": {
+      "label": "设备标识",
+      "type": "string",
+      "required": true,
+      "prompt": "mmuid 或 mmuidv3"
+    }
+  },
+  "steps": [
+    {
+      "id": "clear_device_guild_bind",
+      "name": "查设备曾入会账号并删除绑定",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/guild_device_join_limit_clear.py --mmuidv3 \"{{mmuidv3}}\"",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

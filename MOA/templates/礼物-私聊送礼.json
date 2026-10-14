@@ -67,7 +67,7 @@
   "_registry": {
     "id": "p2p_gift_send",
     "name": "礼物-私聊送礼",
-    "category": "礼物（/v2/gift/send · Stage HTTP）",
+    "category": "Stage HTTP私聊送礼（/v2/gift/send · Stage HTTP）",
     "description": "测试环境 IM/个人主页私聊送礼（HTTP /v2/gift/send；ext.source=p2p 或 im）。抓包 100334384 → 100081602 giftId=2005008092（xin 10钻）。无 MOA httpproxy，Agent 用 Gift/gift_execute.py --scene private POST。",
     "prompts": [
       "用户 <senderUserId> 私聊给 <receiverUserId> 送 <giftId> 礼物",

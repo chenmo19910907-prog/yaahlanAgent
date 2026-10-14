@@ -40,7 +40,7 @@
   "_registry": {
     "id": "brawl_pk_create",
     "name": "乱斗PK-创建",
-    "category": "房间PK（room/external/room-pk-api）",
+    "category": "房间PK-API（room/external/room-pk-api）",
     "description": "测试环境房间内开启乱斗 PK（openPkMode）。body 需 userId（房主/管理员）、roomId、mode=3（乱斗）、seatCount（8/10/12/15/20）、minute（10/30/60）。Tunnel 100486375 `_id=IA3IW6ABR2LVRzbvplns` 实测 ec=200。",
     "prompts": [
       "用户 <userId> 在房间 <roomId> 创建乱斗PK seatCount=<seatCount> minute=<minute>",

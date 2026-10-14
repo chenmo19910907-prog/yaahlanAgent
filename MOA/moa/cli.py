@@ -552,6 +552,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--diamond-num", type=int, help="发放钻石数量")
     parser.add_argument("--diamond-query-user-id", help="查询用户钻石余额 userId（queryUserAccount）")
     parser.add_argument(
+        "--guild-device-mmuidv3",
+        help="设备 mmuid 或 mmuidv3（getAnchorByMmuidv3Record）",
+    )
+    parser.add_argument(
+        "--guild-anchor-user-ids-json",
+        help='曾加入公会 userId 列表 JSON 数组（batchDelAnchorMmuidv3Record），如 ["100138000"]',
+    )
+    parser.add_argument(
         "--change-user-area-user-id",
         help="修改用户大区 userId（changeAreaForTest；params=userId, 大区代码）",
     )

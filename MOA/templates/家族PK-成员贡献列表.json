@@ -56,7 +56,7 @@
   "_registry": {
     "id": "family_pk_member_contrib_list",
     "name": "家族PK-成员贡献列表",
-    "category": "家族PK（vas/activity/family-pk-v2-api）",
+    "category": "家族PK-API（vas/activity/family-pk-v2-api）",
     "description": "点击家族贡献 top3 头像打开的成员榜（getFamilyPkUserList）。对齐 /yaahlan/vas/familyPk/getFamilyPkUserList；抓包样例 13311111118 查 CCVC 2026-07-14。返回 memberList/userInfo/hasNext。",
     "prompts": [
       "家族PK成员贡献列表 familyId=<familyId> date=<date>",

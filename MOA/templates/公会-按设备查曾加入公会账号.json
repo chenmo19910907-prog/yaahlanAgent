@@ -1,0 +1,40 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/yaahlan-trade-union-data-stage",
+  "method": "getAnchorByMmuidv3Record",
+  "header": "",
+  "params": [
+    {
+      "title": "mmuidv3",
+      "name": "1",
+      "txt": "",
+      "json": "",
+      "type": "string",
+      "value": ""
+    }
+  ],
+  "settings": {
+    "time": "30000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "guild_query_anchor_by_mmuidv3_record",
+    "name": "公会-按设备查曾加入公会账号",
+    "category": "MOA公会数据（yaahlan-trade-union-data-stage）",
+    "description": "查询该设备曾申请加入公会成功的账号（getAnchorByMmuidv3Record；params=[mmuid 或 mmuidv3]）。用于排查「设备已存在已加入公会账号」限制。",
+    "prompts": [
+      "查设备 <mmuidv3|mmuid或mmuidv3> 曾加入公会成功的账号",
+      "getAnchorByMmuidv3Record <mmuidv3>"
+    ],
+    "cli": "--guild-device-mmuidv3 <mmuidv3>"
+  }
+}

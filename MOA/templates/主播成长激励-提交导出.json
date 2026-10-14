@@ -1,0 +1,49 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/yaahlan-cms/anchor-salary-moa",
+  "method": "exportAnchorGrowthIncentiveTask",
+  "header": "",
+  "params": [
+    {
+      "title": "period",
+      "name": "1",
+      "txt": "20260916",
+      "json": "",
+      "type": "string",
+      "value": "20260916"
+    },
+    {
+      "title": "area",
+      "name": "2",
+      "txt": "SA",
+      "json": "",
+      "type": "string",
+      "value": "SA"
+    }
+  ],
+  "settings": {
+    "time": "120000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "anchor_growth_incentive_export_task",
+    "name": "主播成长激励-提交导出",
+    "category": "算薪（yaahlan-cms/anchor-salary-moa）",
+    "description": "异步提交主播成长激励 Excel 导出（exportAnchorGrowthIncentiveTask；params=[period yyyyMMdd, area]）。南亚区 area=SA，中东 MENA。返回 data=true 仅表示任务已提交；下载链见钉钉通知。勿用 GrowthIncentiveDao.getExportFileUrl(period) 区分大区——Redis key 不含 area，同周期会被后一次导出覆盖。",
+    "prompts": [
+      "导出 <period> 周期 <area> 主播成长激励",
+      "南亚区主播成长激励导出 period=<period>",
+      "exportAnchorGrowthIncentiveTask <period> <area>"
+    ],
+    "cli": "修改模板 params[0].value=period、params[1].value=area（SA/MENA/TR 等）后执行"
+  }
+}

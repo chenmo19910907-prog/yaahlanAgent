@@ -40,7 +40,7 @@
   "_registry": {
     "id": "feed_publish_comment",
     "name": "动态-帖子评论",
-    "category": "动态（feed-comment-stage）",
+    "category": "动态-评论（feed-comment-stage）",
     "description": "测试环境给动态帖子发表评论（/service/feed/external/feed-comment-stage publishComment）。body 需 userId、feedId、content、source（默认 discover）。100 账号批量评论已验证 ec=200。",
     "prompts": [
       "用户 <userId> 给帖子 <feedId> 评论 <content>",

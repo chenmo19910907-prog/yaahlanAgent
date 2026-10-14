@@ -1,0 +1,41 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/yaahlan-cms/anchor-salary-moa",
+  "method": "exportLastPeriodAnchorGrowthIncentive",
+  "header": "",
+  "params": [
+    {
+      "title": "area",
+      "name": "1",
+      "txt": "SA",
+      "json": "",
+      "type": "string",
+      "value": "SA"
+    }
+  ],
+  "settings": {
+    "time": "120000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "anchor_growth_incentive_export_last_period",
+    "name": "主播成长激励-导出上周期",
+    "category": "算薪（yaahlan-cms/anchor-salary-moa）",
+    "description": "按大区自动取「上一结算周期」并异步导出主播成长激励（exportLastPeriodAnchorGrowthIncentive；params=[area]）。南亚 SA；自动导出 cron 仅含 MENA/TR，不含 SA。",
+    "prompts": [
+      "导出上周期 <area> 主播成长激励",
+      "南亚区上周期主播成长激励导出",
+      "exportLastPeriodAnchorGrowthIncentive SA"
+    ],
+    "cli": "修改模板 params[0].value=area 后执行"
+  }
+}

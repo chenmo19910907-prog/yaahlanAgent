@@ -42,7 +42,7 @@
   "_registry": {
     "id": "room_barrage_external",
     "name": "房间-发言飘屏（对外）",
-    "category": "房间（yaahlan/room/external/room-im-api）",
+    "category": "房间-公屏消息（yaahlan/room/external/room-im-api）",
     "description": "对外发言飘屏 roomSendBarrage（10 钻/条；间隔建议 ≥8s）。发送账号须已在房间内（客户端 room/heart/heartbeat 建立会话），否则 MOA 可能仅扣钻不回推 IM。执行前改模板 userId/roomId/mmuid/unlockLevel/文案。",
     "prompts": [
       "房间 <roomId> 对外发言飘屏 userId <userId> Lv<unlockLevel>",

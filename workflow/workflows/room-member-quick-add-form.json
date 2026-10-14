@@ -1,7 +1,7 @@
 {
   "id": "room-member-quick-add-form",
   "name": "房间成员-快速添加",
-  "category": "房间",
+  "category": "房间-成员快速添加（workflow）",
   "description": "测试环境快速添加房间成员：MOA room-member-stage.apply（申请人）→ agree（房主）。HTTP 对应 /yaahlan/room/member/apply 与 /member/agree。",
   "version": 1,
   "params": {

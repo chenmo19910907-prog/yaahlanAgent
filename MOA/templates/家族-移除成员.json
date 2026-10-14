@@ -31,7 +31,7 @@
   "_registry": {
     "id": "family_member_leave",
     "name": "家族-移除成员",
-    "category": "家族（external/user/family-api）",
+    "category": "家族-API（external/user/family-api）",
     "description": "把用户移出所属家族（leave；header KV 含 userId，params json 含 userId）。用户主动退出或测试环境踢人均可调用",
     "prompts": [
       "把用户 <userId> 移出家族",

@@ -58,7 +58,7 @@
   "_registry": {
     "id": "treasure_hunter_prize_draw",
     "name": "宝藏猎人-翻牌抽奖",
-    "category": "宝藏猎人（vas/external/treasure-hunter-stage · prizeDraw）",
+    "category": "宝藏猎人-抽奖（vas/external/treasure-hunter-stage · prizeDraw）",
     "description": "宝藏猎人探索翻牌抽奖（prizeDraw）。对齐 HTTP /yaahlan/activity/treasureHunter/prizeDraw；MOA /service/vas/external/treasure-hunter-stage。body 须 userId + cardId（格式 {轮次}_{10xx}，xx=01~36，如 14_1002=第14轮第2格、15_1033=第15轮第33格）。100070932 Tunnel 实测 cardId=14_1002 返回足球券50。",
     "prompts": [
       "宝藏猎人翻牌 userId=<userId> cardId=<cardId>",

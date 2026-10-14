@@ -32,7 +32,7 @@
   "_registry": {
     "id": "family_delete",
     "name": "家族-解散家族",
-    "category": "家族（external/user/family-api）",
+    "category": "家族-API（external/user/family-api）",
     "description": "族长解散家族（deleteFamily；header KV 含 userId，params json 含 familyId + userId）。须传族长 userId；解散后可用「家族-查询创建时间」验收 dissolved=true",
     "prompts": [
       "解散家族 <familyId> 族长 <userId>",

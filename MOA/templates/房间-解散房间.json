@@ -41,7 +41,7 @@
   "_registry": {
     "id": "room_dismiss",
     "name": "房间-解散房间",
-    "category": "房间（room/external/room-behave-stage）",
+    "category": "房间-解散（room/external/room-behave-stage）",
     "description": "测试环境房主解散语音房（dismissRoom）。body 需 userId（须为房主）、roomId、lang。成功返回 flag=1；PK/主题活动/真心话进行中会 toast 拦截。",
     "prompts": [
       "房主 <userId> 解散房间 <roomId>",

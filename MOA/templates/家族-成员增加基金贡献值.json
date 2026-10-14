@@ -49,7 +49,7 @@
   "_registry": {
     "id": "family_member_fund_contrib_add",
     "name": "家族-成员增加基金贡献值",
-    "category": "家族（internal/user/family-moa）",
+    "category": "家族-MOA（internal/user/family-moa）",
     "description": "给家族成员增加基金贡献值（/service/internal/user/family-moa batchIncrFundContribution；参数 familyId、weekKey、{userId:贡献值×2} JSON）",
     "prompts": [
       "成员 <userId> 在家族 <familyId> 增加 <contrib> 基金贡献值",

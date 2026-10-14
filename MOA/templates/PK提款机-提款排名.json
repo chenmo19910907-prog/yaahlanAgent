@@ -41,7 +41,7 @@
   "_registry": {
     "id": "pk_atm_withdraw_rank",
     "name": "PK提款机-提款排名",
-    "category": "房间PK（room/external/room-pk-api）",
+    "category": "房间PK-API（room/external/room-pk-api）",
     "description": "PK 提款机活动页「提款排名」tab（getAcrossPkRewardRankV2）。对齐 /yaahlan/room/pk/getAcrossPkRewardRankV2；Tunnel 13311111111→100465989 `_id=El03258Bpk1mjMPPU0uO`（2026-08-07）。返回 data.totalReward（本周已被提走奖金）、data.list（提款排行榜）、data.currentUser（吸底本周已提款）。",
     "prompts": [
       "查询 PK 提款机提款排名 userId=<userId>",

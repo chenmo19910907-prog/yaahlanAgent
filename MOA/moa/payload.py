@@ -59,6 +59,8 @@ from .params import (
     set_anniversary_egg_smash_params,
     set_package_gift_params,
     set_change_user_area_params,
+    set_guild_batch_del_anchor_mmuidv3_params,
+    set_guild_device_mmuidv3_query_params,
     normalize_cp_pair_key,
     parse_cp_pair_keys,
     set_cp_ferris_wheel_area_params,
@@ -514,6 +516,23 @@ def _op_diamond_query(args: argparse.Namespace, payload: dict[str, Any]) -> None
     payload["url"] = "/service/voga-base-service-middle-pay-stage"
     payload["method"] = "queryUserAccount"
     set_diamond_query_params(payload, user_id=args.diamond_query_user_id)
+
+
+def _op_guild_device_mmuidv3_query(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    set_guild_device_mmuidv3_query_params(payload, args.guild_device_mmuidv3)
+
+
+def _op_guild_batch_del_anchor_mmuidv3(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    raw = args.guild_anchor_user_ids_json
+    if not raw:
+        raise ValueError("需提供 --guild-anchor-user-ids-json")
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"guild-anchor-user-ids-json 不是合法 JSON: {e}") from e
+    if not isinstance(parsed, list):
+        raise ValueError("guild-anchor-user-ids-json 必须是 JSON 数组")
+    set_guild_batch_del_anchor_mmuidv3_params(payload, [str(x) for x in parsed])
 
 
 def _op_diamond(args: argparse.Namespace, payload: dict[str, Any]) -> None:
@@ -1758,6 +1777,8 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.user_prop_query_user_id is not None, _op_user_prop_query),
     (lambda a: a.diamond_query_user_id is not None, _op_diamond_query),
     (lambda a: a.diamond_user_id is not None, _op_diamond),
+    (lambda a: getattr(a, "guild_device_mmuidv3", None) is not None, _op_guild_device_mmuidv3_query),
+    (lambda a: getattr(a, "guild_anchor_user_ids_json", None) is not None, _op_guild_batch_del_anchor_mmuidv3),
     (lambda a: _room_set_level_mode(a), _op_room_set_level),
     (lambda a: a.user_rank_area is not None, _op_user_rank_dispatch),
     (lambda a: a.contrib_day_rank_area is not None, _op_contrib_day_rank_dispatch),

@@ -31,7 +31,7 @@
   "_registry": {
     "id": "family_monster_reset",
     "name": "家族怪兽-重置进度",
-    "category": "家族怪兽（vas/internal/family-monster）",
+    "category": "家族怪兽-MOA（vas/internal/family-monster）",
     "description": "测试环境重置指定家族的家族怪兽挑战进度（resetFamilyMonster）。入参 familyId；重置等级/血量/领奖等业务状态，便于重复打怪验收。",
     "prompts": [
       "重置家族 <familyId> 怪兽进度",

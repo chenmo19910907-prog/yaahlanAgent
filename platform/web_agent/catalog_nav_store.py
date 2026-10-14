@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,6 +14,159 @@ CATALOG_NAV_PATH = WEB_AGENT_DIR / "config" / "catalog_nav.json"
 CATALOG_NAV_BACKUP_DIR = WEB_AGENT_DIR / "data" / "catalog_nav_backups"
 CATALOG_NAV_BACKUP_KEEP = 30
 MAX_FOLDER_DEPTH = 12
+
+_CATEGORY_PREFIX_RE = re.compile(r"^([^（(]+)")
+
+
+def _legacy_split_module_id(category_full_name: str) -> str:
+    """category 未命中 top_level_rules 时，catalog 曾用括号前语义 slug 作一级 moduleId。"""
+    match = _CATEGORY_PREFIX_RE.match(category_full_name.strip())
+    cat_label = (match.group(1).strip() if match else category_full_name.strip()) or "未分类"
+    slug = re.sub(r"[\s/]+", "-", cat_label.strip())
+    slug = re.sub(r"[^\w\u4e00-\u9fff-]", "", slug, flags=re.UNICODE)
+    return slug.lower() or "other"
+
+
+def _build_cap_lookup(modules: list[dict[str, Any]]) -> dict[str, tuple[str, int]]:
+    """legacy moduleId / 完整 category 名 / cap label → (moduleId, catIndex)。"""
+    lookup: dict[str, tuple[str, int]] = {}
+    for mod in modules:
+        if not isinstance(mod, dict):
+            continue
+        mid = str(mod.get("id") or "").strip()
+        if not mid:
+            continue
+        categories = mod.get("categories")
+        if not isinstance(categories, list):
+            continue
+        for cat_index, cat in enumerate(categories):
+            if not isinstance(cat, dict):
+                continue
+            name = str(cat.get("name") or "").strip()
+            if not name:
+                continue
+            lookup[name] = (mid, cat_index)
+            legacy = _legacy_split_module_id(name)
+            if legacy:
+                lookup[legacy] = (mid, cat_index)
+    return lookup
+
+
+def _cap_needs_remap(
+    cap: dict[str, Any],
+    *,
+    valid_ids: set[str],
+    cat_counts: dict[str, int],
+) -> bool:
+    mid = str(cap.get("moduleId") or "").strip()
+    cat_raw = cap.get("catIndex")
+    try:
+        cat_index = int(cat_raw)
+    except (TypeError, ValueError):
+        return True
+    if mid not in valid_ids or cat_index < 0:
+        return True
+    return cat_index >= cat_counts.get(mid, 0)
+
+
+def remap_legacy_nav_caps(
+    tree: list[Any],
+    modules: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """将误挂 legacy moduleId（如 admin公会）的 cap 归并到合并后的一级模块，并丢弃无效索引。"""
+    valid_ids = {
+        str(mod.get("id") or "").strip()
+        for mod in modules
+        if isinstance(mod, dict) and str(mod.get("id") or "").strip()
+    }
+    cat_counts: dict[str, int] = {}
+    for mod in modules:
+        if not isinstance(mod, dict):
+            continue
+        mid = str(mod.get("id") or "").strip()
+        if not mid:
+            continue
+        categories = mod.get("categories")
+        cat_counts[mid] = len(categories) if isinstance(categories, list) else 0
+
+    lookup = _build_cap_lookup(modules)
+
+    def resolve_cap(raw: dict[str, Any]) -> dict[str, Any] | None:
+        if str(raw.get("kind") or "").strip() != "cap":
+            return None
+        if not _cap_needs_remap(raw, valid_ids=valid_ids, cat_counts=cat_counts):
+            return dict(raw)
+        label = str(raw.get("label") or "").strip()
+        legacy_mid = str(raw.get("moduleId") or "").strip()
+        target: tuple[str, int] | None = None
+        if label and label in lookup:
+            target = lookup[label]
+        elif legacy_mid in lookup:
+            target = lookup[legacy_mid]
+        if not target:
+            return None
+        mid, cat_index = target
+        entry: dict[str, Any] = {"kind": "cap", "moduleId": mid, "catIndex": cat_index}
+        if label:
+            entry["label"] = label
+        return entry
+
+    def walk(nodes: list[Any]) -> list[dict[str, Any]]:
+        out: list[dict[str, Any]] = []
+        for raw in nodes:
+            if not isinstance(raw, dict):
+                continue
+            kind = str(raw.get("kind") or "").strip()
+            if kind == "cap":
+                fixed = resolve_cap(raw)
+                if fixed:
+                    out.append(fixed)
+                continue
+            if kind == "module":
+                mid = str(raw.get("moduleId") or "").strip()
+                children_raw = raw.get("children")
+                if not isinstance(children_raw, list):
+                    children_raw = []
+                children = walk(children_raw)
+                if mid in valid_ids:
+                    entry: dict[str, Any] = {"kind": "module", "moduleId": mid}
+                    nav_label = str(raw.get("navLabel") or "").strip()
+                    if nav_label:
+                        entry["navLabel"] = nav_label
+                    if children:
+                        entry["children"] = children
+                    out.append(entry)
+                else:
+                    out.extend(children)
+                continue
+            if kind == "folder":
+                folder_id = str(raw.get("id") or "").strip()
+                label = str(raw.get("label") or "").strip()
+                children_raw = raw.get("children")
+                if not folder_id or not label:
+                    continue
+                if not isinstance(children_raw, list):
+                    children_raw = []
+                children = walk(children_raw)
+                entry = {
+                    "kind": "folder",
+                    "id": folder_id,
+                    "label": label,
+                    "children": children,
+                }
+                if raw.get("subfolder") is True:
+                    entry["subfolder"] = True
+                out.append(entry)
+                continue
+            if kind in ("all", "playbook", "playbookItem"):
+                entry = dict(raw)
+                children_raw = raw.get("children")
+                if isinstance(children_raw, list) and children_raw:
+                    entry["children"] = walk(children_raw)
+                out.append(entry)
+        return out
+
+    return walk(tree)
 
 
 def load_catalog_nav(path: Path | None = None) -> dict[str, Any]:
@@ -48,6 +202,7 @@ def build_default_nav_tree(modules: list[dict[str, Any]], *, include_playbook: b
 
 
 def _collect_module_ids(nodes: list[Any]) -> set[str]:
+    """目录树中已出现的一级模块 id（含 module 节点与 cap 引用的 moduleId）。"""
     found: set[str] = set()
     for node in nodes:
         if not isinstance(node, dict):
@@ -57,11 +212,101 @@ def _collect_module_ids(nodes: list[Any]) -> set[str]:
             mid = str(node.get("moduleId") or "").strip()
             if mid:
                 found.add(mid)
-        elif kind == "folder":
-            children = node.get("children")
-            if isinstance(children, list):
-                found |= _collect_module_ids(children)
+        elif kind == "cap":
+            mid = str(node.get("moduleId") or "").strip()
+            if mid:
+                found.add(mid)
+        children = node.get("children")
+        if isinstance(children, list):
+            found |= _collect_module_ids(children)
     return found
+
+
+def _module_ids_with_children(nodes: list[Any]) -> set[str]:
+    """树中至少有一处带 children 的 module 节点（含 cap 子节点）。"""
+    found: set[str] = set()
+    for node in nodes:
+        if not isinstance(node, dict):
+            continue
+        kind = str(node.get("kind") or "").strip()
+        children = node.get("children")
+        if not isinstance(children, list):
+            children = []
+        if kind == "module":
+            mid = str(node.get("moduleId") or "").strip()
+            if mid and children:
+                found.add(mid)
+        if children:
+            found |= _module_ids_with_children(children)
+    return found
+
+
+def _module_ids_referenced_by_caps(nodes: list[Any]) -> set[str]:
+    """任意 cap 节点引用的 moduleId（能力已挂到其它分组下）。"""
+    found: set[str] = set()
+    for node in nodes:
+        if not isinstance(node, dict):
+            continue
+        if str(node.get("kind") or "").strip() == "cap":
+            mid = str(node.get("moduleId") or "").strip()
+            if mid:
+                found.add(mid)
+        children = node.get("children")
+        if isinstance(children, list):
+            found |= _module_ids_referenced_by_caps(children)
+    return found
+
+
+def _prune_duplicate_empty_modules(nodes: list[Any]) -> list[dict[str, Any]]:
+    """同一 moduleId 在树中已有带内容的节点时，去掉无 children 的重复 module 空壳。"""
+    rich_ids = _module_ids_with_children(nodes) | _module_ids_referenced_by_caps(nodes)
+
+    def walk(raw_nodes: list[Any]) -> list[dict[str, Any]]:
+        out: list[dict[str, Any]] = []
+        for raw in raw_nodes:
+            if not isinstance(raw, dict):
+                continue
+            kind = str(raw.get("kind") or "").strip()
+            if kind == "module":
+                mid = str(raw.get("moduleId") or "").strip()
+                children_raw = raw.get("children")
+                if not isinstance(children_raw, list):
+                    children_raw = []
+                if mid and not children_raw and mid in rich_ids:
+                    continue
+                children = walk(children_raw)
+                entry: dict[str, Any] = {"kind": "module", "moduleId": mid}
+                nav_label = str(raw.get("navLabel") or "").strip()
+                if nav_label:
+                    entry["navLabel"] = nav_label
+                if children:
+                    entry["children"] = children
+                out.append(entry)
+            elif kind in ("folder", "playbook"):
+                children_raw = raw.get("children")
+                if not isinstance(children_raw, list):
+                    children_raw = []
+                children = walk(children_raw)
+                entry = dict(raw)
+                entry["children"] = children
+                out.append(entry)
+            else:
+                out.append(dict(raw))
+        return out
+
+    return walk(nodes)
+
+
+def _tree_has_playbook(nodes: list[Any]) -> bool:
+    for node in nodes:
+        if not isinstance(node, dict):
+            continue
+        if str(node.get("kind") or "").strip() == "playbook":
+            return True
+        children = node.get("children")
+        if isinstance(children, list) and _tree_has_playbook(children):
+            return True
+    return False
 
 
 def reconcile_nav_tree(
@@ -70,7 +315,8 @@ def reconcile_nav_tree(
     *,
     include_playbook: bool,
 ) -> list[dict[str, Any]]:
-    """校验并保留用户目录树；移除已不存在的 module 叶子（不在树尾追加新 module）。"""
+    """校验并保留用户目录树；移除已不存在的 module；在根级补登记后新增的一级模块。"""
+    tree = remap_legacy_nav_caps(tree, modules)
     valid_ids = {
         str(mod.get("id") or "").strip()
         for mod in modules
@@ -148,9 +394,33 @@ def reconcile_nav_tree(
                 if cap_label:
                     entry["label"] = cap_label
                 out.append(entry)
+            elif kind == "playbookItem":
+                playbook_id = str(raw.get("playbookId") or "").strip()
+                if not playbook_id:
+                    continue
+                children_raw = raw.get("children")
+                if not isinstance(children_raw, list):
+                    children_raw = []
+                children = [
+                    c for c in walk(children_raw)
+                    if isinstance(c, dict) and str(c.get("kind") or "") != "pbStep"
+                ]
+                entry: dict[str, Any] = {
+                    "kind": "playbookItem",
+                    "playbookId": playbook_id,
+                }
+                nav_label = str(raw.get("navLabel") or "").strip()
+                if nav_label:
+                    entry["navLabel"] = nav_label
+                if children:
+                    entry["children"] = children
+                out.append(entry)
+            elif kind == "pbStep":
+                continue
         return out
 
     merged = walk(tree)
+    merged = _prune_duplicate_empty_modules(merged)
     if not merged:
         merged = build_default_nav_tree(modules, include_playbook=include_playbook)
         return merged
@@ -158,6 +428,19 @@ def reconcile_nav_tree(
     has_all = any(n.get("kind") == "all" for n in merged)
     if not has_all:
         merged.insert(0, {"kind": "all"})
+
+    present_ids = _collect_module_ids(merged)
+    for mod in modules:
+        if not isinstance(mod, dict):
+            continue
+        mid = str(mod.get("id") or "").strip()
+        if mid and mid in valid_ids and mid not in present_ids:
+            merged.append({"kind": "module", "moduleId": mid})
+            present_ids.add(mid)
+
+    if include_playbook and not _tree_has_playbook(merged):
+        insert_at = 1 if merged and merged[0].get("kind") == "all" else 0
+        merged.insert(insert_at, {"kind": "playbook"})
 
     return merged
 
@@ -243,6 +526,32 @@ def _normalize_nodes(raw_nodes: Any, depth: int = 0) -> list[dict[str, Any]] | N
             if cap_label:
                 entry["label"] = cap_label
             out.append(entry)
+        elif kind == "playbookItem":
+            playbook_id = str(raw.get("playbookId") or "").strip()
+            if not playbook_id:
+                return None
+            children_raw = raw.get("children")
+            if not isinstance(children_raw, list):
+                children_raw = []
+            children_norm = _normalize_nodes(children_raw, depth + 1)
+            if children_norm is None:
+                return None
+            children = [
+                c for c in children_norm
+                if isinstance(c, dict) and str(c.get("kind") or "") != "pbStep"
+            ]
+            entry: dict[str, Any] = {
+                "kind": "playbookItem",
+                "playbookId": playbook_id,
+            }
+            nav_label = str(raw.get("navLabel") or "").strip()
+            if nav_label:
+                entry["navLabel"] = nav_label
+            if children:
+                entry["children"] = children
+            out.append(entry)
+        elif kind == "pbStep":
+            continue
         else:
             return None
     return out

@@ -39,7 +39,7 @@
   "_registry": {
     "id": "across_room_pk_accept_invite",
     "name": "跨房PK-接受邀请",
-    "category": "房间PK（room/external/room-pk-api）",
+    "category": "房间PK-API（room/external/room-pk-api）",
     "description": "测试环境接受跨房 PK 指定邀请（acceptAcrossRoomPkInvite）。body 需 userId（操作人/房主或管理员）、roomId（被邀请方房间）、acrossRoomId（发起方房间）、inviteId（邀请 ID，来自邀请弹窗/IM）。Tunnel 100006869 实测 ec=200。",
     "prompts": [
       "用户 <userId> 在房间 <roomId> 接受来自 <acrossRoomId> 的跨房PK邀请",

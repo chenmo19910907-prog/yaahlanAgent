@@ -39,7 +39,7 @@
   "_registry": {
     "id": "across_room_pk_close",
     "name": "跨房PK-结束PK",
-    "category": "房间PK（room/external/room-pk-api）",
+    "category": "房间PK-API（room/external/room-pk-api）",
     "description": "测试环境结束跨房 PK（closeAcrossRoomPk）。body 需 userId（操作人/房主或管理员）、roomId、acrossRoomId（对方房间）、acrossRoomPkId（当前 PK 场次 ID）。Tunnel 100079102 `_id=jANzxp8Bpk1mjMPPm_ig` 实测 ec=200。",
     "prompts": [
       "用户 <userId> 在房间 <roomId> 结束跨房PK",

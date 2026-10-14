@@ -8,11 +8,13 @@
     {
       "kind": "module",
       "moduleId": "用户",
+      "navLabel": "用户",
       "children": [
         {
           "kind": "cap",
           "moduleId": "用户",
-          "catIndex": 0
+          "catIndex": 0,
+          "label": "用户关系（voga-mts-user-relation-stage）"
         },
         {
           "kind": "cap",
@@ -192,6 +194,21 @@
           "kind": "cap",
           "moduleId": "pk",
           "catIndex": 4
+        },
+        {
+          "kind": "cap",
+          "moduleId": "pk",
+          "catIndex": 5
+        },
+        {
+          "kind": "cap",
+          "moduleId": "pk",
+          "catIndex": 6
+        },
+        {
+          "kind": "cap",
+          "moduleId": "pk",
+          "catIndex": 7
         }
       ]
     },
@@ -228,58 +245,21 @@
           "kind": "cap",
           "moduleId": "礼物",
           "catIndex": 5
-        }
-      ]
-    },
-    {
-      "kind": "module",
-      "moduleId": "定制",
-      "children": [
-        {
-          "kind": "cap",
-          "moduleId": "定制",
-          "catIndex": 0
         },
         {
           "kind": "cap",
-          "moduleId": "定制",
-          "catIndex": 1
-        },
-        {
-          "kind": "cap",
-          "moduleId": "定制",
-          "catIndex": 2
-        },
-        {
-          "kind": "cap",
-          "moduleId": "定制",
-          "catIndex": 3
-        },
-        {
-          "kind": "cap",
-          "moduleId": "定制",
-          "catIndex": 4
-        },
-        {
-          "kind": "cap",
-          "moduleId": "定制",
-          "catIndex": 5
-        },
-        {
-          "kind": "cap",
-          "moduleId": "定制",
+          "moduleId": "礼物",
           "catIndex": 6
-        }
-      ]
-    },
-    {
-      "kind": "module",
-      "moduleId": "道具",
-      "children": [
+        },
         {
           "kind": "cap",
-          "moduleId": "道具",
-          "catIndex": 0
+          "moduleId": "礼物",
+          "catIndex": 7
+        },
+        {
+          "kind": "cap",
+          "moduleId": "礼物",
+          "catIndex": 8
         }
       ]
     },
@@ -331,6 +311,16 @@
           "kind": "cap",
           "moduleId": "活动",
           "catIndex": 8
+        },
+        {
+          "kind": "cap",
+          "moduleId": "活动",
+          "catIndex": 9
+        },
+        {
+          "kind": "cap",
+          "moduleId": "活动",
+          "catIndex": 9
         }
       ]
     },
@@ -352,11 +342,65 @@
           "kind": "cap",
           "moduleId": "动态",
           "catIndex": 2
+        }
+      ]
+    },
+    {
+      "kind": "folder",
+      "id": "nav-mv7vfsydmy78",
+      "label": "装扮",
+      "children": [
+        {
+          "kind": "module",
+          "moduleId": "道具",
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "道具",
+              "catIndex": 0
+            }
+          ]
         },
         {
-          "kind": "cap",
-          "moduleId": "动态",
-          "catIndex": 3
+          "kind": "module",
+          "moduleId": "定制",
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "定制",
+              "catIndex": 0
+            },
+            {
+              "kind": "cap",
+              "moduleId": "定制",
+              "catIndex": 1
+            },
+            {
+              "kind": "cap",
+              "moduleId": "定制",
+              "catIndex": 2
+            },
+            {
+              "kind": "cap",
+              "moduleId": "定制",
+              "catIndex": 3
+            },
+            {
+              "kind": "cap",
+              "moduleId": "定制",
+              "catIndex": 4
+            },
+            {
+              "kind": "cap",
+              "moduleId": "定制",
+              "catIndex": 5
+            },
+            {
+              "kind": "cap",
+              "moduleId": "定制",
+              "catIndex": 6
+            }
+          ]
         }
       ]
     },
@@ -367,7 +411,8 @@
         {
           "kind": "cap",
           "moduleId": "cp",
-          "catIndex": 0
+          "catIndex": 0,
+          "label": "CP·恩爱值（yaahlan/user/cp-moa）"
         },
         {
           "kind": "cap",
@@ -424,21 +469,6 @@
           "kind": "cap",
           "moduleId": "家族",
           "catIndex": 6
-        },
-        {
-          "kind": "cap",
-          "moduleId": "家族",
-          "catIndex": 7
-        },
-        {
-          "kind": "cap",
-          "moduleId": "家族",
-          "catIndex": 8
-        },
-        {
-          "kind": "cap",
-          "moduleId": "家族",
-          "catIndex": 9
         }
       ]
     },
@@ -446,6 +476,56 @@
       "kind": "module",
       "moduleId": "公会",
       "children": [
+        {
+          "kind": "module",
+          "moduleId": "算薪",
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "算薪",
+              "catIndex": 0
+            },
+            {
+              "kind": "cap",
+              "moduleId": "算薪",
+              "catIndex": 1
+            },
+            {
+              "kind": "cap",
+              "moduleId": "算薪",
+              "catIndex": 2
+            },
+            {
+              "kind": "cap",
+              "moduleId": "算薪",
+              "catIndex": 3
+            },
+            {
+              "kind": "cap",
+              "moduleId": "算薪",
+              "catIndex": 4
+            }
+          ]
+        },
+        {
+          "kind": "folder",
+          "id": "nav-mv7xtbnlqtsc",
+          "label": "公会常用工具",
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "公会",
+              "catIndex": 3,
+              "label": "清除设备入会申请账号限制"
+            }
+          ],
+          "subfolder": true
+        },
+        {
+          "kind": "cap",
+          "moduleId": "公会",
+          "catIndex": 2
+        },
         {
           "kind": "cap",
           "moduleId": "公会",
@@ -459,18 +539,7 @@
         {
           "kind": "cap",
           "moduleId": "公会",
-          "catIndex": 2
-        }
-      ]
-    },
-    {
-      "kind": "module",
-      "moduleId": "算薪",
-      "children": [
-        {
-          "kind": "cap",
-          "moduleId": "算薪",
-          "catIndex": 0
+          "catIndex": 4
         }
       ]
     },
@@ -502,38 +571,11 @@
           "kind": "cap",
           "moduleId": "风控",
           "catIndex": 4
-        }
-      ]
-    },
-    {
-      "kind": "module",
-      "moduleId": "抓包",
-      "children": [
-        {
-          "kind": "cap",
-          "moduleId": "抓包",
-          "catIndex": 0
         },
         {
           "kind": "cap",
-          "moduleId": "抓包",
-          "catIndex": 1
-        }
-      ]
-    },
-    {
-      "kind": "module",
-      "moduleId": "奖励验收",
-      "children": [
-        {
-          "kind": "cap",
-          "moduleId": "奖励验收",
+          "moduleId": "测试机",
           "catIndex": 0
-        },
-        {
-          "kind": "cap",
-          "moduleId": "奖励验收",
-          "catIndex": 1
         }
       ]
     },
@@ -555,44 +597,6 @@
           "kind": "cap",
           "moduleId": "支付",
           "catIndex": 2
-        }
-      ]
-    },
-    {
-      "kind": "module",
-      "moduleId": "客服",
-      "children": [
-        {
-          "kind": "cap",
-          "moduleId": "客服",
-          "catIndex": 0
-        },
-        {
-          "kind": "cap",
-          "moduleId": "客服",
-          "catIndex": 1
-        }
-      ]
-    },
-    {
-      "kind": "module",
-      "moduleId": "版本",
-      "children": [
-        {
-          "kind": "cap",
-          "moduleId": "版本",
-          "catIndex": 0
-        }
-      ]
-    },
-    {
-      "kind": "module",
-      "moduleId": "测试机",
-      "children": [
-        {
-          "kind": "cap",
-          "moduleId": "测试机",
-          "catIndex": 0
         }
       ]
     },
@@ -651,26 +655,11 @@
     {
       "kind": "module",
       "moduleId": "平台",
+      "navLabel": "MSE 平台",
       "children": [
         {
           "kind": "cap",
           "moduleId": "平台",
-          "catIndex": 0
-        },
-        {
-          "kind": "cap",
-          "moduleId": "平台",
-          "catIndex": 1
-        }
-      ]
-    },
-    {
-      "kind": "module",
-      "moduleId": "大r用户管理",
-      "children": [
-        {
-          "kind": "cap",
-          "moduleId": "大r用户管理",
           "catIndex": 0
         }
       ]
@@ -678,104 +667,166 @@
     {
       "kind": "module",
       "moduleId": "tunnel-mock",
+      "navLabel": "Tunnel抓包",
       "children": [
         {
           "kind": "cap",
-          "moduleId": "tunnel-mock",
-          "catIndex": 0
-        }
-      ]
-    },
-    {
-      "kind": "module",
-      "moduleId": "半月结算薪",
-      "children": [
-        {
-          "kind": "cap",
-          "moduleId": "半月结算薪",
-          "catIndex": 0
-        }
-      ]
-    },
-    {
-      "kind": "module",
-      "moduleId": "礼物统计",
-      "children": [
-        {
-          "kind": "cap",
-          "moduleId": "礼物统计",
-          "catIndex": 0
-        }
-      ]
-    },
-    {
-      "kind": "module",
-      "moduleId": "奖励排查",
-      "children": [
-        {
-          "kind": "cap",
-          "moduleId": "奖励排查",
-          "catIndex": 0
-        }
-      ]
-    },
-    {
-      "kind": "module",
-      "moduleId": "宝藏猎人",
-      "children": [
-        {
-          "kind": "cap",
-          "moduleId": "宝藏猎人",
+          "moduleId": "抓包",
           "catIndex": 0
         },
         {
           "kind": "cap",
-          "moduleId": "宝藏猎人",
+          "moduleId": "tunnel-mock",
+          "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "抓包",
+          "catIndex": 1
+        },
+        {
+          "kind": "cap",
+          "moduleId": "平台",
           "catIndex": 1
         }
       ]
     },
     {
       "kind": "module",
-      "moduleId": "消息",
+      "moduleId": "客服",
       "children": [
         {
           "kind": "cap",
-          "moduleId": "消息",
+          "moduleId": "客服",
           "catIndex": 0
+        },
+        {
+          "kind": "cap",
+          "moduleId": "客服",
+          "catIndex": 1
         }
       ]
     },
     {
-      "kind": "module",
-      "moduleId": "确认应得薪资",
+      "kind": "folder",
+      "id": "nav-mv6grynygc7z",
+      "label": "工作流",
       "children": [
         {
-          "kind": "cap",
-          "moduleId": "确认应得薪资",
-          "catIndex": 0
+          "kind": "folder",
+          "id": "nav-mv6jhgbsmdqw",
+          "label": "CP爱意宝箱",
+          "children": [
+            {
+              "kind": "playbookItem",
+              "playbookId": "cp_love_chest_tier_retest",
+              "navLabel": "CP爱意宝箱-逐级奖励复测（E2E）"
+            },
+            {
+              "kind": "playbookItem",
+              "playbookId": "reward_dispatch_verify",
+              "navLabel": "CP爱意宝箱-单档奖励下发验收"
+            }
+          ],
+          "subfolder": true
+        },
+        {
+          "kind": "folder",
+          "id": "nav-mv7rp02zij6h",
+          "label": "抓包",
+          "children": [
+            {
+              "kind": "playbookItem",
+              "playbookId": "tunnel_capture_common"
+            }
+          ],
+          "subfolder": true
+        },
+        {
+          "kind": "folder",
+          "id": "nav-mv7rp02z7nvn",
+          "label": "家族PK",
+          "children": [
+            {
+              "kind": "playbookItem",
+              "playbookId": "family_pk_data_test"
+            }
+          ],
+          "subfolder": true
+        },
+        {
+          "kind": "folder",
+          "id": "nav-mv7rp02zwi96",
+          "label": "3周年活动",
+          "children": [
+            {
+              "kind": "playbookItem",
+              "playbookId": "anniversary_egg_data_test"
+            }
+          ],
+          "subfolder": true
         }
       ]
     },
     {
-      "kind": "module",
-      "moduleId": "退款黑名单",
+      "kind": "folder",
+      "id": "nav-mv7tkp3jwxln",
+      "label": "其他",
       "children": [
         {
-          "kind": "cap",
-          "moduleId": "退款黑名单",
-          "catIndex": 0
-        }
-      ]
-    },
-    {
-      "kind": "module",
-      "moduleId": "钉钉用例表",
-      "children": [
-        {
-          "kind": "cap",
+          "kind": "module",
           "moduleId": "钉钉用例表",
-          "catIndex": 0
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "钉钉用例表",
+              "catIndex": 0
+            }
+          ]
+        },
+        {
+          "kind": "module",
+          "moduleId": "奖励验收",
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "奖励验收",
+              "catIndex": 0
+            },
+            {
+              "kind": "cap",
+              "moduleId": "奖励验收",
+              "catIndex": 1
+            },
+            {
+              "kind": "cap",
+              "moduleId": "奖励验收",
+              "catIndex": 2
+            }
+          ]
+        },
+        {
+          "kind": "module",
+          "moduleId": "大r用户管理",
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "大r用户管理",
+              "catIndex": 0
+            }
+          ]
+        },
+        {
+          "kind": "module",
+          "moduleId": "版本",
+          "navLabel": "ios审核版本",
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "版本",
+              "catIndex": 0
+            }
+          ]
         }
       ]
     }

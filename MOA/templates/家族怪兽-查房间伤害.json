@@ -45,7 +45,7 @@
   "_registry": {
     "id": "family_monster_room_damage",
     "name": "家族怪兽-查房间伤害",
-    "category": "家族怪兽（yh-components/gift-panel · getGiftPanel）",
+    "category": "家族怪兽-礼物面板（yh-components/gift-panel · getGiftPanel）",
     "description": "MOA getGiftPanel 查用户在指定房间的家族怪兽击打伤害（monsterBanner.damageValue）。对齐 /yaahlan/component/giftPanel/getGiftPanel；须传 userId + roomId，不同房间伤害不同。选择飞镖等 associatedGiftIds 礼物时 banner 展示同字段。",
     "prompts": [
       "查用户 <userId> 在房间 <roomId> 的怪兽伤害",

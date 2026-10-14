@@ -50,7 +50,7 @@
   "_registry": {
     "id": "room_red_packet_send",
     "name": "房间-发红包",
-    "category": "房间（room/external/room-share-stage）",
+    "category": "房间-红包（room/external/room-share-stage）",
     "description": "HTTP /yaahlan/room/redPacket/sendRedPacket → MOA /service/room/external/room-share-stage + sendRedPacket。body 需 userId、roomId、diamondAmount、count、targetType、conditionType、delaySecond、memberLevel。异步扣钻建包，返回不含 packetId。执行前改模板 userId/roomId/金额个数组合。",
     "prompts": [
       "房间 <roomId> 发红包 userId <userId> <diamondAmount>钻 <count>个",

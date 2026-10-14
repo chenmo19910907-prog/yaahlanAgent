@@ -48,7 +48,7 @@
   "_registry": {
     "id": "room_send_channel_emote",
     "name": "房间-发送公屏表情",
-    "category": "房间（yaahlan/room/external/room-im-api）",
+    "category": "房间-公屏消息（yaahlan/room/external/room-im-api）",
     "description": "HTTP sendChannelMessage → MOA sendChannelMessage（eventId=1831 表情公屏）。body 需 userId、roomId、json.emote（stringified emote JSON）、source=0。Tunnel 100465989 roomId=38826842 emote=chaoxiao（2026-09-15）。",
     "prompts": [
       "用户 <userId> 在房间 <roomId> 发公屏表情",

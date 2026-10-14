@@ -61,7 +61,7 @@
   "_registry": {
     "id": "feed_gift_send",
     "name": "动态-帖子送礼",
-    "category": "动态（/v2/gift/send · Stage HTTP）",
+    "category": "动态-帖子送礼（/v2/gift/send · Stage HTTP）",
     "description": "测试环境给动态帖子打赏送礼（HTTP /v2/gift/send；ext 含 feedId）。示例 giftId=2005001671（19 钻 New year fireworks）。无 MOA httpproxy，Agent 读模板 body + Gift/send_stage POST。",
     "prompts": [
       "用户 <userId> 给帖子 <feedId> 送 <giftId> 礼物",

@@ -8,7 +8,7 @@
       "category": "Stage送礼（/v2/gift/send）",
       "description": "测试环境直连 yaahlan-web POST /v2/gift/send，语音房内给指定用户送礼（CMDB 查实例 + MOA 查礼物与用户设备；余额不足自动补钻并校验消耗）",
       "prompts": [
-        "Stage 用户<sender|userId>在房间<roomId|roomId>给<receivers|userId>送礼物<giftId|礼物ID>"
+        "Stage 用户<sender|userId>在房间<roomId|roomId>给<receivers|userId>送礼物<giftId|礼物ID>数量<num|数量>"
       ],
       "command": "python3 Gift/gift_execute.py \\\n  --scene chatroom \\\n  --sender <sender> \\\n  --receivers <receivers> \\\n  --gift-id <giftId> \\\n  --scene-id <roomId> \\\n  --num <num>\n"
     },
@@ -18,7 +18,7 @@
       "category": "Stage送礼（/v2/gift/send）",
       "description": "测试环境 IM 私聊送礼（scene=private，无需 scene-id；送礼前查钻、不足自动补等额钻石、送礼后校验消耗）",
       "prompts": [
-        "Stage 用户<sender|userId>私聊给<receiver|userId>送礼物<giftId|礼物ID>"
+        "Stage 用户<sender|userId>私聊给<receiver|userId>送礼物<giftId|礼物ID>数量<num|数量>"
       ],
       "command": "python3 Gift/gift_execute.py \\\n  --scene private \\\n  --sender <sender> \\\n  --receivers <receiver> \\\n  --gift-id <giftId> \\\n  --num <num>\n"
     },
@@ -28,7 +28,7 @@
       "category": "Stage送礼（/v2/gift/send）",
       "description": "测试环境群组内送礼（scene=group，scene-id 为 groupId）",
       "prompts": [
-        "Stage 用户<sender|userId>在群组<groupId|群组ID>给<receivers|userId>送礼物<giftId|礼物ID>"
+        "Stage 用户<sender|userId>在群组<groupId|群组ID>给<receivers|userId>送礼物<giftId|礼物ID>数量<num|数量>"
       ],
       "command": "python3 Gift/gift_execute.py \\\n  --scene group \\\n  --sender <sender> \\\n  --receivers <receivers> \\\n  --gift-id <giftId> \\\n  --scene-id <groupId> \\\n  --num <num>\n"
     },
@@ -38,7 +38,7 @@
       "category": "Stage送礼（/v2/gift/send）",
       "description": "测试环境语音房全房送礼（自动调 getSendRoomAllSnap 获取 snapId，无需 receivers）",
       "prompts": [
-        "Stage 用户<sender|userId>在房间<roomId|roomId>全房送礼物<giftId|礼物ID>"
+        "Stage 用户<sender|userId>在房间<roomId|roomId>全房送礼物<giftId|礼物ID>数量<num|数量>"
       ],
       "command": "python3 Gift/gift_execute.py \\\n  --scene chatroom \\\n  --sender <sender> \\\n  --gift-id <giftId> \\\n  --scene-id <roomId> \\\n  --num <num> \\\n  --send-room-all\n"
     },
@@ -58,8 +58,7 @@
       "category": "Stage送礼（/v2/gift/send）",
       "description": "只探测 CMDB/MOA（实例 IP、礼物元数据、用户设备），不 POST 送礼",
       "prompts": [
-        "Stage 探测送礼参数 sender=<sender> giftId=<giftId>",
-        "测试环境送礼 probe"
+        "Stage 探测用户<sender|userId>在房间<roomId|roomId>给<receivers|userId>送礼物<giftId|礼物ID>所需 CMDB/MOA"
       ],
       "command": "python3 Gift/gift_execute.py \\\n  --probe \\\n  --scene <chatroom|private|group> \\\n  --sender <sender> \\\n  --receivers <receivers> \\\n  --gift-id <giftId> \\\n  [--scene-id <roomId|groupId>]\n"
     },
@@ -69,8 +68,7 @@
       "category": "Stage送礼（/v2/gift/send）",
       "description": "组装完整 /v2/gift/send payload 但不 POST（dry-run）",
       "prompts": [
-        "Stage dry-run 送礼 sender=<sender> giftId=<giftId>",
-        "测试环境送礼 dry-run"
+        "Stage 预演送礼（不 POST）用户<sender|userId>在房间<roomId|roomId>给<receivers|userId>送礼物<giftId|礼物ID>"
       ],
       "command": "python3 Gift/gift_execute.py \\\n  --dry-run \\\n  --scene <chatroom|private|group> \\\n  --sender <sender> \\\n  --receivers <receivers> \\\n  --gift-id <giftId> \\\n  [--scene-id <roomId|groupId>]\n"
     }

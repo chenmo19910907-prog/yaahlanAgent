@@ -29,7 +29,7 @@
   "_registry": {
     "id": "family_fund_reward_dispatch_clear",
     "name": "家族基金-清除奖励下发记录",
-    "category": "家族（internal/user/family-moa）",
+    "category": "家族-MOA（internal/user/family-moa）",
     "description": "下发前清除 Redis 锁 family:fund:lock:{weekKey}（userClusterDao.del）。与「清除基金贡献值」不同；重复发奖验收须先执行本步再「家族基金-奖励下发」。--family-fund-week-offset：0=本周，-1=上周。",
     "prompts": [
       "清除家族基金本周奖励下发记录",

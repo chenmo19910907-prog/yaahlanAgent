@@ -43,7 +43,7 @@
   "_registry": {
     "id": "room_red_packet_claim",
     "name": "房间-抢红包",
-    "category": "房间（room/external/room-share-stage）",
+    "category": "房间-红包（room/external/room-share-stage）",
     "description": "HTTP /yaahlan/room/redPacket/claimRedPacket → MOA /service/room/external/room-share-stage + claimRedPacket。body 需 userId、roomId、packetId（来自 getRoomLittleRedPacketList）。执行前改模板 userId/roomId/packetId。",
     "prompts": [
       "房间 <roomId> 抢红包 userId <userId> packetId <packetId>",

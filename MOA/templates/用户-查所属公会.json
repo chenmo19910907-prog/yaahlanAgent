@@ -29,7 +29,7 @@
   "_registry": {
     "id": "user_query_joined_trade_union",
     "name": "用户-查所属公会",
-    "category": "公会（yaahlan-anchor-recruit-moa-stage）",
+    "category": "MOA公会招募（yaahlan-anchor-recruit-moa-stage）",
     "description": "查询用户当前所属公会（userJoinedTrade；/service/yaahlan-anchor-recruit-moa-stage）。返回 tradeUnionId / tradeUnionName，用于对照盘古 blackUnionIdList 排查榜单/家族基金等发钻被跳过。",
     "prompts": [
       "查用户 <userId> 所属公会",

@@ -24,7 +24,7 @@
   "_registry": {
     "id": "treasure_hunter_dispatch_rank_prize",
     "name": "宝藏猎人-下发榜单奖励",
-    "category": "宝藏猎人（vas/external/treasure-hunter-stage · dispatchRankPrize）",
+    "category": "宝藏猎人-发榜奖（vas/external/treasure-hunter-stage · dispatchRankPrize）",
     "description": "宝藏猎人活动结束后结算并下发榜单奖励（dispatchRankPrize；无参）。MOA /service/vas/external/treasure-hunter-stage。**会真实发奖，须人工确认后再调用。**",
     "prompts": [
       "宝藏猎人下发榜单奖励 area=<area>",

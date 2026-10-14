@@ -190,6 +190,13 @@ from catalog_nav_store import (  # noqa: E402
     reconcile_nav_tree as _reconcile_nav_tree,
     save_catalog_nav as _save_catalog_nav,
 )
+from catalog_registry_store import (  # noqa: E402
+    add_registry_item as _add_registry_item,
+    delete_registry_item as _delete_registry_item,
+    normalize_catalog_prompt_save_body as _normalize_catalog_prompt_save_body,
+    update_registry_item_name as _update_registry_item_name,
+    update_registry_item_prompts as _update_registry_item_prompts,
+)
 from message_board_store import (  # noqa: E402
     create_message as _create_message_board_entry,
     delete_message as _delete_message_board_entry,
@@ -318,7 +325,7 @@ def _catalog_nav_auth_ok(
         return False, "请先登录后再保存能力分组"
     if require_super_admin:
         if not is_super_admin(staff_id=user.staff_id):
-            return False, "仅超级管理员可删除能力分组"
+            return False, "仅超级管理员可删除"
         return True, None
     if not is_web_admin(staff_id=user.staff_id):
         return False, web_admin_denial_message()
@@ -341,11 +348,10 @@ def _handle_catalog_nav_save(handler: SimpleHTTPRequestHandler, body: Any) -> No
     except (OSError, ValueError, FileNotFoundError) as exc:
         return _json_response(handler, {"error": str(exc)}, 500)
     modules = catalog.get("modules") if isinstance(catalog.get("modules"), list) else []
-    playbooks = catalog.get("playbooks") if isinstance(catalog.get("playbooks"), list) else []
     normalized["tree"] = _reconcile_nav_tree(
         normalized.get("tree") or [],
         modules,
-        include_playbook=bool(playbooks),
+        include_playbook=False,
     )
     try:
         _save_catalog_nav(normalized)
@@ -353,6 +359,72 @@ def _handle_catalog_nav_save(handler: SimpleHTTPRequestHandler, body: Any) -> No
         logger.exception("保存 catalog_nav.json 失败")
         return _json_response(handler, {"error": f"保存失败：{exc}"}, 500)
     return _json_response(handler, {"ok": True, "nav": normalized})
+
+
+def _handle_catalog_prompt_save(handler: SimpleHTTPRequestHandler, body: Any) -> None:
+    normalized = _normalize_catalog_prompt_save_body(body)
+    if normalized is None:
+        return _json_response(handler, {"error": "invalid catalog prompt payload"}, 400)
+    require_super = normalized.get("delete_item") is True
+    ok, err = _catalog_nav_auth_ok(handler, require_super_admin=require_super)
+    if not ok:
+        status = 403 if otp_auth_enabled() and current_web_user(handler) is not None else 401
+        return _json_response(handler, {"error": err}, status)
+    try:
+        kwargs: dict[str, Any] = {
+            "source_id": normalized["source_id"],
+            "registry_id": normalized["registry_id"],
+        }
+        if normalized.get("delete_item") is True:
+            _delete_registry_item(
+                source_id=kwargs["source_id"],
+                registry_id=kwargs["registry_id"],
+            )
+            _invalidate_catalog_cache()
+            return _json_response(handler, {"ok": True, "deleted": True})
+        if "add_item" in normalized:
+            add = normalized["add_item"]
+            created = _add_registry_item(
+                source_id=kwargs["source_id"],
+                category=str(add["category"]),
+                name=str(add["name"]),
+                source_tag=str(add["source_tag"]).strip()
+                if add.get("source_tag") is not None
+                else None,
+                moa_generative=bool(add.get("moa_generative")),
+            )
+            _invalidate_catalog_cache()
+            return _json_response(handler, {"ok": True, "item": created})
+        if "name" in normalized:
+            name_result = _update_registry_item_name(
+                source_id=kwargs["source_id"],
+                registry_id=kwargs["registry_id"],
+                name=str(normalized["name"]),
+                source_tag=str(normalized["source_tag"]).strip()
+                if "source_tag" in normalized
+                else None,
+                target_source_id=normalized.get("target_source_id"),
+            )
+        elif "prompts" in normalized:
+            kwargs["prompts"] = normalized["prompts"]
+            new_prompts = _update_registry_item_prompts(**kwargs)
+        elif "append_prompt" in normalized:
+            kwargs["append_prompt"] = normalized["append_prompt"]
+            new_prompts = _update_registry_item_prompts(**kwargs)
+        elif "delete_prompt_index" in normalized:
+            kwargs["delete_prompt_index"] = normalized["delete_prompt_index"]
+            new_prompts = _update_registry_item_prompts(**kwargs)
+        else:
+            kwargs["prompt_index"] = normalized["prompt_index"]
+            kwargs["prompt"] = normalized["prompt"]
+            new_prompts = _update_registry_item_prompts(**kwargs)
+    except (OSError, ValueError, FileNotFoundError, RuntimeError) as exc:
+        logger.exception("保存 registry prompts 失败")
+        return _json_response(handler, {"error": str(exc)}, 400)
+    _invalidate_catalog_cache()
+    if "name" in normalized:
+        return _json_response(handler, {"ok": True, **name_result})
+    return _json_response(handler, {"ok": True, "prompts": new_prompts})
 
 
 def _handle_bookmarks_save(handler: SimpleHTTPRequestHandler, body: Any) -> None:
@@ -585,6 +657,12 @@ def _load_catalog_data_cached() -> dict[str, Any]:
         _CATALOG_CACHE = data
         _CATALOG_CACHE_FINGERPRINT = fingerprint
     return data
+
+
+def _invalidate_catalog_cache() -> None:
+    global _CATALOG_CACHE, _CATALOG_CACHE_FINGERPRINT
+    _CATALOG_CACHE = None
+    _CATALOG_CACHE_FINGERPRINT = ""
 
 
 def _external_agents_meta(cfg: dict[str, Any] | None = None) -> list[dict[str, str | bool]]:
@@ -2290,11 +2368,10 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             try:
                 data = _load_catalog_data_cached()
                 modules = data.get("modules") if isinstance(data.get("modules"), list) else []
-                playbooks = data.get("playbooks") if isinstance(data.get("playbooks"), list) else []
                 data = dict(data)
                 data["nav"] = _catalog_nav_for_response(
                     modules,
-                    include_playbook=bool(playbooks),
+                    include_playbook=False,
                 )
                 nav_path = WEB_AGENT_DIR / "config" / "catalog_nav.json"
                 nav_mtime = str(nav_path.stat().st_mtime_ns) if nav_path.is_file() else ""
@@ -3195,6 +3272,13 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             except json.JSONDecodeError:
                 return _json_response(self, {"error": "invalid json"}, 400)
             return _handle_catalog_nav_save(self, body)
+
+        if path == "/api/catalog-prompt":
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            return _handle_catalog_prompt_save(self, body)
 
         if path == "/api/bookmarks/import-legacy":
             try:

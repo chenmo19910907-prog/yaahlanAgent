@@ -39,7 +39,7 @@
   "_registry": {
     "id": "feed_like_feed",
     "name": "动态-帖子点赞",
-    "category": "动态（feed-interact-stage）",
+    "category": "动态-互动（feed-interact-stage）",
     "description": "测试环境给动态帖子点赞（/service/feed/external/feed-interact-stage likeContent；action=LIKE_FEED）。contentId 填 feedId（如 7077198_100025048）。HTTP 对照 /yaahlan/feed-interact/likeContent。ec=40002 表示已点赞。",
     "prompts": [
       "用户 <userId> 给帖子 <feedId> 点赞",
