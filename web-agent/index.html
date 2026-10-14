@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20261013080205"></script>
-  <script src="demo-api.js?v=20261013080205"></script>
+  <script src="demo-fixtures.js?v=20261014110019"></script>
+  <script src="demo-api.js?v=20261014110019"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -275,7 +275,7 @@
         linear-gradient(180deg, rgba(255,255,255,0.55), transparent 22%),
         linear-gradient(90deg, rgba(255,255,255,0.35), transparent 18%, transparent 82%, rgba(15,23,42,0.04));
     }
-    [data-theme="light"] header,
+    [data-theme="light"] .app-header,
     [data-theme="light"] .catalog-panel {
       background: var(--panel-bg);
     }
@@ -349,9 +349,6 @@
     [data-theme="light"] .attach-btn {
       background: var(--btn-subtle-bg);
     }
-    [data-theme="light"] .catalog-meta {
-      background: var(--btn-subtle-bg);
-    }
     [data-theme="light"] .catalog-nav .count {
       background: rgba(15, 23, 42, 0.06);
     }
@@ -376,7 +373,7 @@
     [data-theme="light"] .catalog-panel {
       box-shadow: -4px 0 24px rgba(15, 23, 42, 0.08);
     }
-    header {
+    .app-header {
       position: relative;
       z-index: 3;
       grid-column: 2 / -1;
@@ -389,7 +386,7 @@
       background: var(--header-bg);
       backdrop-filter: blur(22px);
     }
-    body:not(.sidebar-collapsed) header {
+    body:not(.sidebar-collapsed) .app-header {
       border-top-left-radius: var(--sidebar-divider-radius, 14px);
       overflow: hidden;
     }
@@ -480,40 +477,6 @@
     .sidebar-tool-actions-host .tool-actions-bar > button svg {
       width: 16px;
       height: 16px;
-    }
-    .sidebar-tool-actions-host .input-side-actions-wrap {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      flex-shrink: 0;
-    }
-    .sidebar-tool-actions-host .input-side-actions-wrap .input-side-btn {
-      position: static;
-      top: auto;
-      left: auto;
-      margin: 0;
-      width: 36px;
-      height: 36px;
-      padding: 8px;
-      border: none;
-      border-radius: 8px;
-      background: transparent;
-      box-shadow: none;
-      transform: none;
-    }
-    .sidebar-tool-actions-host .input-side-actions-wrap .input-side-btn svg {
-      width: 16px;
-      height: 16px;
-    }
-    .sidebar-tool-actions-host .input-side-actions-wrap .input-side-btn:hover:not(:disabled),
-    .sidebar-tool-actions-host .input-side-actions-wrap .input-side-btn.active {
-      background: var(--bg-hover);
-      border: none;
-      box-shadow: none;
-      transform: none;
-    }
-    .sidebar-tool-actions-host .input-side-actions-wrap .input-side-btn:hover:not(:disabled) svg {
-      transform: none;
     }
     .sidebar-tool-actions-host .user-menu {
       margin-left: auto;
@@ -919,7 +882,7 @@
         grid-row: 2;
         grid-template-columns: 1fr;
       }
-      header { grid-column: 1; grid-row: 1; }
+      .app-header { grid-column: 1; grid-row: 1; }
       .left-panel {
         grid-column: initial;
         grid-row: initial;
@@ -2544,53 +2507,10 @@
       width: 100%;
       overflow: visible;
       position: relative;
-      left: -3%;
     }
     .input-composer {
       position: relative;
       width: 100%;
-      margin-right: -52px;
-    }
-    body:not(.sidebar-collapsed) .input-composer {
-      margin-right: 0;
-    }
-    .input-side-btn {
-      position: absolute;
-      top: calc(50% - 20px);
-      flex: 0 0 auto;
-      width: 40px;
-      height: 40px;
-      padding: 0;
-      border-radius: 10px;
-      border: none;
-      background: var(--phrase-bg, rgba(255,255,255,0.04));
-      color: var(--muted);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: color 0.15s ease, background 0.15s ease, transform 0.15s ease;
-    }
-    .input-side-btn svg {
-      width: 18px;
-      height: 18px;
-      stroke: currentColor;
-      flex-shrink: 0;
-    }
-    .input-side-btn:hover {
-      color: var(--accent);
-      background: var(--accent-soft);
-      transform: translateY(-1px);
-    }
-    .input-side-btn:active { transform: scale(0.98); }
-    .input-side-btn.active {
-      color: var(--accent);
-      background: var(--accent-soft);
-    }
-    .theme-quick-btn {
-      left: 100%;
-      margin-left: 12px;
     }
     .input-wrap {
       display: flex; gap: 14px; align-items: center;
@@ -2668,6 +2588,7 @@
       align-items: center;
       gap: 8px;
       flex-shrink: 0;
+      margin-right: -1%;
     }
     .reply-mode-icon {
       display: inline-flex;
@@ -2802,11 +2723,24 @@
     }
     .attach-btn:hover:not(:disabled) { background: rgba(91,140,255,0.12); color: var(--accent); }
     .attach-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .tool-actions-bar .theme-quick-btn {
+      padding: 8px;
+      min-width: 36px;
+      justify-content: center;
+      gap: 0;
+      font-size: 0;
+      line-height: 0;
+      flex: 0 0 auto;
+    }
+    .tool-actions-bar .theme-quick-btn svg {
+      width: 16px;
+      height: 16px;
+    }
     .theme-quick-btn.is-light {
       color: #d97706;
       background: rgba(251, 191, 36, 0.12);
     }
-    .theme-quick-btn.is-light:hover {
+    .theme-quick-btn.is-light:hover:not(:disabled) {
       color: #b45309;
       background: rgba(251, 191, 36, 0.2);
     }
@@ -2819,7 +2753,7 @@
       font-weight: 800;
       font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
       fill: currentColor;
-      stroke: var(--input-wrap-bg, var(--bg));
+      stroke: var(--btn-subtle-bg, var(--bg));
       stroke-width: 1.2px;
       paint-order: stroke fill;
       pointer-events: none;
@@ -2828,7 +2762,7 @@
     .theme-quick-btn.is-auto .bulb-auto-label {
       opacity: 0.92;
     }
-    [data-theme="light"] .input-side-btn.theme-quick-btn {
+    [data-theme="light"] .tool-actions-bar .theme-quick-btn:not(.is-light) {
       background: rgba(15, 23, 42, 0.04);
     }
     [data-theme="light"] .theme-quick-btn.is-light {
@@ -2915,17 +2849,15 @@
       gap: 16px;
       margin-top: 10px;
       width: 100%;
-      margin-right: -52px;
-      padding: 0 2%;
       box-sizing: border-box;
-    }
-    body:not(.sidebar-collapsed) .input-hint-row {
-      margin-right: 0;
+      /* 与 .input-wrap 内边距对齐，左文案 / 右按钮略向内收 */
+      padding: 0 20px 0 28px;
     }
     .input-hint {
       font-size: 0.72rem;
       flex: 1;
       min-width: 0;
+      margin-left: -2%;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -3708,6 +3640,10 @@
     body:not(.sidebar-collapsed) #btn-sidebar {
       display: none;
     }
+    /* 主题灯泡仅在历史侧栏底部展示，顶栏工具条不显示 */
+    .header-actions #btn-theme-toggle {
+      display: none;
+    }
     .bookmarks-modal {
       display: flex; position: fixed; inset: 0; z-index: 110;
       background: var(--modal-overlay, rgba(0,0,0,0.6));
@@ -4219,7 +4155,7 @@
       .topbar-brand .brand {
         max-width: 100%;
       }
-      header { flex-wrap: wrap; }
+      .app-header { flex-wrap: wrap; }
       .message-board-bubble { width: 100%; max-height: 92vh; border-radius: 16px; }
       .about-bubble { width: 100%; max-height: 92vh; border-radius: 16px; }
       .usage-bubble { width: 100%; border-radius: 16px; }
@@ -4273,15 +4209,76 @@
     body.is-resizing .catalog-panel-resizer::after {
       background: rgba(59,130,246,0.55);
     }
+    .catalog-nav-dialog-modal {
+      position: fixed; inset: 0; z-index: 150;
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+      background: rgba(0, 0, 0, 0.45);
+      visibility: hidden; opacity: 0; pointer-events: none;
+      transition: opacity 200ms var(--ease-standard), visibility 0s linear 200ms;
+    }
+    .catalog-nav-dialog-modal.open {
+      visibility: visible; opacity: 1; pointer-events: auto;
+      transition: opacity 240ms var(--ease-spring), visibility 0s linear 0s;
+    }
+    .catalog-nav-dialog-modal.open .catalog-nav-dialog {
+      animation: modal-pop-in 240ms var(--ease-spring) both;
+    }
+    .catalog-nav-dialog-modal[hidden] { display: none !important; }
+    .catalog-nav-dialog {
+      width: min(380px, 92vw);
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px 22px 16px;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.28);
+    }
+    .catalog-nav-dialog h4 {
+      font-size: 0.94rem; font-weight: 650; margin: 0 0 14px; color: var(--text);
+    }
+    .catalog-nav-dialog-message {
+      margin: 0 0 16px; font-size: 0.88rem; line-height: 1.5; color: var(--text-soft);
+    }
+    .catalog-nav-dialog-input {
+      display: block; width: 100%; min-height: 40px; margin-bottom: 16px;
+      border-radius: 10px; border: 1px solid var(--border);
+      background: var(--bg-input); color: var(--text); padding: 0 12px; font-size: 0.88rem;
+    }
+    .catalog-nav-dialog-input:focus { outline: none; border-color: var(--accent); }
+    .catalog-nav-dialog-input[hidden],
+    .catalog-nav-dialog-message[hidden] { display: none !important; margin: 0; }
+    .catalog-nav-dialog-source {
+      display: flex; align-items: center; gap: 10px; margin: -4px 0 16px;
+    }
+    .catalog-nav-dialog-source[hidden] { display: none !important; margin: 0; }
+    .catalog-nav-dialog-source-label {
+      flex-shrink: 0; font-size: 0.82rem; color: var(--muted);
+    }
+    .catalog-nav-dialog-source-select {
+      flex: 1; min-height: 36px; width: 100%;
+      border-radius: 10px; border: 1px solid var(--border);
+      background: var(--bg-input); color: var(--text);
+      padding: 0 10px; font-size: 0.88rem; cursor: pointer;
+    }
+    .catalog-nav-dialog-source-select:focus { outline: none; border-color: var(--accent); }
+    .catalog-nav-dialog-actions {
+      display: flex; justify-content: flex-end; gap: 8px;
+    }
+    .catalog-nav-dialog-actions button {
+      min-height: 36px; padding: 0 14px; border-radius: 10px; cursor: pointer; font-size: 0.82rem;
+    }
+    .catalog-nav-dialog-actions .cancel {
+      border: 1px solid var(--border); background: transparent; color: var(--muted);
+    }
+    .catalog-nav-dialog-actions .submit {
+      border: none; background: var(--accent); color: #fff; font-weight: 600;
+    }
     .catalog-panel-head {
-      min-height: 78px;
-      padding: 18px 16px 14px;
+      min-height: 56px;
+      padding: 16px 16px 14px;
       border-bottom: 1px solid var(--border);
       display: flex; align-items: flex-start; gap: 10px; flex-shrink: 0;
     }
     .catalog-panel-head .head-main { flex: 1; min-width: 0; }
     .catalog-head-title-row {
-      display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 5px;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
     }
     .catalog-panel-head h2 {
       font-size: 0.94rem; font-weight: 650; margin: 0; color: var(--text);
@@ -4289,25 +4286,19 @@
     .btn-moa-record {
       display: inline-flex; align-items: center; gap: 4px;
       padding: 3px 10px; border-radius: 999px;
-      border: 1px solid rgba(251, 191, 36, 0.35);
-      background: rgba(251, 191, 36, 0.12);
-      color: rgba(253, 224, 71, 0.95);
+      border: 1px solid rgba(91, 140, 255, 0.35);
+      background: var(--accent-soft);
+      color: var(--accent);
       font-size: 0.68rem; font-weight: 650; line-height: 1.4;
       cursor: pointer; white-space: nowrap; flex-shrink: 0;
       transition: transform 180ms var(--ease-standard), background 180ms var(--ease-standard), border-color 180ms var(--ease-standard);
     }
     .btn-moa-record:hover {
-      background: rgba(251, 191, 36, 0.2);
-      border-color: rgba(251, 191, 36, 0.55);
+      background: rgba(91, 140, 255, 0.22);
+      border-color: rgba(91, 140, 255, 0.55);
       transform: translateY(-1px);
     }
     .btn-moa-record:active { transform: scale(0.98); }
-    .catalog-meta {
-      display: inline-flex; align-items: center; gap: 4px;
-      font-size: 0.72rem; color: var(--muted);
-      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-      padding: 2px 8px; border-radius: 999px;
-    }
     .catalog-panel-head .head-actions {
       display: flex; align-items: center; gap: 4px; flex-shrink: 0;
     }
@@ -4371,12 +4362,9 @@
     .catalog-nav button.active::before { opacity: 1; transform: scaleY(1); }
     .catalog-nav .nav-label {
       flex: 1; min-width: 0;
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
       overflow: hidden;
-      overflow-wrap: anywhere;
-      word-break: break-word;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
     .catalog-nav .count {
       flex-shrink: 0; font-size: 0.68rem; color: var(--muted);
@@ -4388,7 +4376,7 @@
     }
     .catalog-nav-tree .nav-tree { display: flex; flex-direction: column; gap: 2px; }
     .catalog-nav-tree .nav-row {
-      display: flex; align-items: flex-start; gap: 2px;
+      display: flex; align-items: center; gap: 2px;
       padding-left: calc(6px + var(--nav-depth, 0px));
       border-radius: 10px; position: relative;
     }
@@ -4450,7 +4438,7 @@
     .catalog-nav-tree .nav-row:hover .nav-folder-icon,
     .catalog-nav-tree .nav-row.active .nav-folder-icon { color: var(--text); }
     .catalog-nav-tree .nav-select {
-      flex: 1; min-width: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 6px;
+      flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 6px;
       border: 0; background: transparent; padding: 7px 4px 7px 0; cursor: pointer;
       font-size: 0.76rem; color: var(--muted); text-align: left;
     }
@@ -4485,6 +4473,61 @@
     .catalog-nav-menu button:hover { background: rgba(148, 163, 184, 0.22); }
     [data-theme="dark"] .catalog-nav-menu button:hover { background: rgba(148, 163, 184, 0.18); }
     .catalog-nav-menu button[data-action="delete"] { color: #f87171; }
+    .catalog-prompt-menu {
+      position: fixed; z-index: 12050; min-width: 132px;
+      padding: 4px; border-radius: 10px; border: 1px solid var(--border-strong);
+      background: var(--bg-solid); box-shadow: 0 12px 32px rgba(0,0,0,0.28);
+    }
+    .catalog-prompt-menu[hidden] { display: none !important; }
+    .catalog-prompt-menu button {
+      display: block; width: 100%; text-align: left; border: none; background: transparent;
+      color: var(--text); font-size: 0.82rem; padding: 8px 10px; border-radius: 7px; cursor: pointer;
+    }
+    .catalog-prompt-menu button[hidden] { display: none !important; }
+    .catalog-prompt-menu button:hover { background: rgba(148, 163, 184, 0.22); }
+    .catalog-prompt-menu button[data-action="delete"],
+    .catalog-prompt-menu button[data-action="delete-cap"] { color: #f87171; }
+    .catalog-prompt-edit-modal {
+      position: fixed; inset: 0; z-index: 12060; display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.45); padding: 16px;
+    }
+    .catalog-prompt-edit-modal[hidden] { display: none !important; }
+    .catalog-prompt-edit-modal.open .catalog-prompt-edit-dialog {
+      transform: translateY(0); opacity: 1;
+    }
+    .catalog-prompt-edit-dialog {
+      width: min(520px, 100%); background: var(--bg-solid); border: 1px solid var(--border-strong);
+      border-radius: 12px; padding: 16px 18px; box-shadow: 0 20px 48px rgba(0,0,0,0.35);
+      transform: translateY(8px); opacity: 0; transition: transform 180ms var(--ease-standard), opacity 180ms;
+    }
+    .catalog-prompt-edit-dialog h4 { margin: 0 0 8px; font-size: 0.95rem; }
+    .catalog-prompt-edit-hint {
+      margin: 0 0 10px; font-size: 0.74rem; color: var(--muted); line-height: 1.55;
+    }
+    .catalog-prompt-edit-hint code {
+      font-size: 0.72rem; background: var(--bg-input); padding: 1px 5px; border-radius: 4px;
+    }
+    .catalog-prompt-edit-textarea {
+      width: 100%; min-height: 96px; resize: vertical; box-sizing: border-box;
+      border: 1px solid var(--border); border-radius: 8px; padding: 10px 11px;
+      font-size: 0.82rem; line-height: 1.55; background: var(--bg-soft); color: var(--text);
+    }
+    .catalog-prompt-edit-textarea:focus {
+      outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    }
+    .catalog-prompt-edit-toolbar { display: flex; justify-content: flex-start; margin: 8px 0 12px; }
+    .catalog-prompt-edit-toolbar button {
+      border: 1px solid var(--border); background: var(--bg-soft); color: var(--text-soft);
+      font-size: 0.74rem; padding: 5px 10px; border-radius: 6px; cursor: pointer;
+    }
+    .catalog-prompt-edit-toolbar button:hover { border-color: var(--accent); color: var(--text); }
+    .catalog-prompt-edit-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .catalog-prompt-edit-actions .cancel,
+    .catalog-prompt-edit-actions .submit {
+      border: none; border-radius: 7px; padding: 7px 14px; font-size: 0.8rem; cursor: pointer;
+    }
+    .catalog-prompt-edit-actions .cancel { background: transparent; color: var(--muted); }
+    .catalog-prompt-edit-actions .submit { background: var(--accent); color: #fff; }
     .catalog-main {
       overflow-y: auto; padding: 18px; flex: 1; min-width: 0;
       scrollbar-width: thin;
@@ -4599,15 +4642,15 @@
     .source-badge[data-env="test"] { border-color: rgba(66,211,178,0.22); color: var(--source-test-color); }
     .prompt-panel {
       margin: 2px 8px 10px; padding: 10px;
-      background: var(--prompt-panel-bg); border: 1px solid var(--border); border-radius: 10px;
+      background: var(--prompt-panel-bg); border: 1px solid var(--border); border-radius: 8px;
       animation: prompt-drop 180ms var(--ease-spring) both;
     }
     .prompt-panel[hidden] { display: none; }
     .prompt-list { display: flex; flex-direction: column; gap: 8px; }
     .prompt-line {
-      display: flex; flex-direction: column; gap: 8px;
-      padding: 10px; background: var(--prompt-bg);
-      border: 1px solid var(--border); border-radius: 10px;
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 8px 9px; background: var(--prompt-bg);
+      border: 1px solid var(--border); border-radius: 8px;
     }
     .prompt-text {
       font-size: 0.78rem; color: var(--text-soft);
@@ -4661,6 +4704,9 @@
       display: flex; align-items: flex-start; gap: 10px;
       padding: 10px 12px; cursor: pointer; user-select: none;
     }
+    .playbook-step-head > div {
+      flex: 1; min-width: 0;
+    }
     .playbook-step-head:hover { background: rgba(255,255,255,0.03); }
     .playbook-step:hover { transform: translateY(-1px); border-color: rgba(91,140,255,0.24); }
     .playbook-step-num {
@@ -4672,31 +4718,161 @@
     }
     .playbook-step-title {
       font-weight: 600; font-size: 0.8rem; line-height: 1.4; color: var(--text);
+      overflow-wrap: anywhere; word-break: break-word;
     }
     .playbook-step-sub {
       font-size: 0.72rem; color: var(--muted); margin-top: 3px; line-height: 1.4;
+      overflow-wrap: anywhere; word-break: break-word;
     }
     .playbook-step-sub code {
       font-size: 0.68rem; background: rgba(255,255,255,0.05);
       padding: 1px 4px; border-radius: 3px;
+      overflow-wrap: anywhere; word-break: break-all;
     }
     .playbook-step-body {
       padding: 0 12px 12px 2.8rem;
       border-top: 1px solid rgba(255,255,255,0.04);
     }
     .playbook-step-body[hidden] { display: none; }
-    .playbook-step-note { font-size: 0.76rem; color: var(--muted); margin: 8px 0; line-height: 1.5; }
+    .playbook-step-note {
+      font-size: 0.76rem; color: var(--muted); margin: 8px 0; line-height: 1.5;
+      overflow-wrap: anywhere; word-break: break-word;
+    }
     .playbook-ops {
       margin: 6px 0 0; padding-left: 1.1rem;
       font-size: 0.74rem; color: var(--muted-soft); line-height: 1.5;
+      overflow-wrap: anywhere; word-break: break-word;
     }
-    .playbook-ops li { margin: 3px 0; }
+    .playbook-ops li { margin: 3px 0; overflow-wrap: anywhere; word-break: break-word; }
+    .playbook-notes {
+      margin-top: 10px; font-size: 0.76rem; color: var(--muted); line-height: 1.5;
+    }
+    .playbook-notes ul { margin: 6px 0 0; padding-left: 1.2rem; }
+    .playbook-readable {
+      border: 1px solid var(--border); border-radius: 14px;
+      background: var(--card-bg); padding: 16px;
+      margin-bottom: 16px; min-width: 0;
+    }
+    .playbook-readable.is-outline {
+      padding: 14px; margin-bottom: 12px;
+    }
+    .playbook-readable-head,
+    .playbook-readable-step-head {
+      display: block;
+      position: static;
+      z-index: auto;
+      min-height: 0;
+      padding: 0;
+      margin: 0;
+      background: none;
+      backdrop-filter: none;
+      grid-column: auto;
+      grid-row: auto;
+      border-radius: 0;
+      overflow: visible;
+    }
+    .playbook-readable-defaults-wrap { margin-top: 12px; }
+    .playbook-readable-defaults-label {
+      margin: 0 0 6px; font-size: 0.72rem; font-weight: 600; color: var(--muted);
+    }
+    .playbook-readable-eyebrow {
+      margin: 0; font-size: 0.72rem; color: var(--muted); letter-spacing: 0.02em;
+    }
+    .playbook-readable-title {
+      margin: 4px 0 0; font-size: 1.02rem; font-weight: 650; line-height: 1.35;
+    }
+    .playbook-readable-lead {
+      margin: 8px 0 0; font-size: 0.8rem; color: var(--muted-soft); line-height: 1.55;
+    }
+    .playbook-readable-defaults {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px 12px; margin: 12px 0 0; font-size: 0.74rem;
+    }
+    .playbook-readable-defaults dt {
+      margin: 0; color: var(--muted); font-weight: 500;
+    }
+    .playbook-readable-defaults dd {
+      margin: 2px 0 0; color: var(--text);
+    }
+    .playbook-readable-defaults code {
+      font-size: 0.72rem; background: var(--bg-input); padding: 2px 6px; border-radius: 4px;
+    }
+    .playbook-readable-prompts { margin-top: 14px; }
+    .playbook-readable-prompts-label,
+    .playbook-readable-steps-label {
+      margin: 0 0 8px; font-size: 0.72rem; font-weight: 600; color: var(--muted);
+      text-transform: none; letter-spacing: 0.02em;
+    }
+    .playbook-readable-body { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+    .playbook-readable-steps { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+    .playbook-readable-step {
+      border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
+      background: var(--bg-input); min-width: 0;
+    }
+    .playbook-readable-step-head {
+      display: flex; align-items: flex-start; gap: 10px; margin: 0;
+    }
+    .playbook-readable-step-num {
+      flex-shrink: 0; width: 1.45rem; height: 1.45rem; border-radius: 8px;
+      background: rgba(59,130,246,0.18); color: var(--playbook-num-color);
+      font-size: 0.72rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .playbook-readable-step-title {
+      margin: 0; font-size: 0.84rem; font-weight: 600; line-height: 1.45;
+      flex: 1; min-width: 0;
+      overflow-wrap: anywhere; word-break: break-word;
+    }
+    .playbook-readable-optional {
+      font-size: 0.65rem; font-weight: 600; color: var(--muted);
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+      padding: 1px 6px; border-radius: 999px; vertical-align: middle;
+    }
+    .playbook-readable-step-note,
+    .playbook-readable-step-sheet {
+      margin: 8px 0 0 2.35rem; font-size: 0.76rem; color: var(--muted); line-height: 1.5;
+      overflow-wrap: anywhere; word-break: break-word;
+    }
+    .playbook-readable-cmds { margin: 8px 0 0 2.35rem; display: flex; flex-direction: column; gap: 6px; }
+    .playbook-readable-cmd {
+      display: block; font-size: 0.7rem; line-height: 1.45; padding: 8px 10px;
+      border-radius: 8px; background: rgba(0,0,0,0.22); border: 1px solid var(--border);
+      overflow-x: auto; white-space: pre-wrap; word-break: break-all;
+    }
+    [data-theme="light"] .playbook-readable-cmd { background: rgba(15,23,42,0.04); }
+    .playbook-readable-hints {
+      margin: 6px 0 0 2.35rem; padding-left: 1.1rem;
+      font-size: 0.74rem; color: var(--muted-soft); line-height: 1.45;
+      overflow-wrap: anywhere; word-break: break-word;
+    }
+    .playbook-readable-hints li { overflow-wrap: anywhere; word-break: break-word; }
+    .playbook-readable-outline {
+      list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px;
+    }
+    .playbook-readable-outline-item {
+      display: flex; align-items: baseline; gap: 8px; font-size: 0.8rem; line-height: 1.45;
+      min-width: 0;
+    }
+    .playbook-readable-outline-title {
+      flex: 1; min-width: 0;
+      overflow-wrap: anywhere; word-break: break-word;
+    }
+    .playbook-readable-outline-num {
+      flex-shrink: 0; width: 1.25rem; text-align: center; font-weight: 700;
+      color: var(--playbook-num-color); font-size: 0.72rem;
+    }
+    .playbook-readable-more {
+      margin-top: 14px; font-size: 0.76rem; color: var(--muted); line-height: 1.5;
+    }
+    .playbook-readable-more summary { cursor: pointer; color: var(--muted-soft); user-select: none; }
+    .playbook-readable-more ul { margin: 8px 0 0; padding-left: 1.2rem; }
+    .playbook-readable-more li { overflow-wrap: anywhere; word-break: break-word; }
     .catalog-empty {
       color: var(--muted); text-align: center; padding: 40px 16px;
       font-size: 0.85rem;
     }
     @media (max-width: 760px) {
-      header { align-items: flex-start; gap: 12px; flex-direction: column; }
+      .app-header { align-items: flex-start; gap: 12px; flex-direction: column; }
       .header-start { width: 100%; flex-wrap: wrap; }
       .header-actions { width: 100%; justify-content: flex-start; margin-left: 0; }
       .header-actions button { flex: 1 1 auto; justify-content: center; }
@@ -4773,7 +4949,7 @@
     </div>
   </div>
 
-  <header>
+  <header class="app-header">
     <div class="header-start">
       <div class="header-start-tools">
         <button type="button" class="header-btn" id="btn-new-header" title="新建对话">
@@ -4804,6 +4980,14 @@
           <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/>
         </svg>
         能力
+      </button>
+      <button type="button" class="theme-quick-btn is-auto" id="btn-theme-toggle" title="自动模式" aria-label="切换主题模式">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+          <path d="M9 18h6"/>
+          <path d="M10 22h4"/>
+          <path class="bulb-glass" d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>
+          <text class="bulb-auto-label" x="12" y="11" text-anchor="middle" dominant-baseline="middle">A</text>
+        </svg>
       </button>
       <button type="button" id="btn-settings" title="设置">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
@@ -4899,19 +5083,9 @@
                 </svg>
               </button>
             </div>
-            <div class="input-side-actions-wrap" id="input-side-actions-wrap">
-            <button type="button" class="input-side-btn theme-quick-btn is-auto" id="btn-theme-toggle" title="自动模式" aria-label="切换主题模式">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
-                <path d="M9 18h6"/>
-                <path d="M10 22h4"/>
-                <path class="bulb-glass" d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>
-                <text class="bulb-auto-label" x="12" y="11" text-anchor="middle" dominant-baseline="middle">A</text>
-              </svg>
-            </button>
-            </div>
           </div>
           <div class="input-hint-row" id="input-hint-row">
-            <div class="input-hint">Enter 发送 · Shift+Enter 换行 · 📎 或拖拽/粘贴附件 · 支持图片与 csv/xlsx/pdf/zip/txt/md/json 等</div>
+            <div class="input-hint">Enter 发送 · Shift+Enter 换行 · 📎 或拖拽/粘贴附件 · 支持图片</div>
             <div class="input-hint-actions">
               <button type="button" class="reply-mode-toggle" id="reply-mode-toggle" data-mode="standard" title="点击切换回复详略：精简 / 标准 / 详细">
                 <span class="reply-mode-icon" aria-hidden="true">
@@ -4942,7 +5116,6 @@
             <h2>工具台能力</h2>
             <button type="button" class="btn-moa-record" id="btn-moa-record" title="MOA 录制">MOA 录制</button>
           </div>
-          <span class="catalog-meta" id="catalog-meta"></span>
         </div>
         <div class="head-actions">
           <button type="button" class="btn-close" id="btn-catalog-close" title="关闭">×</button>
@@ -4958,6 +5131,40 @@
         <div class="catalog-main" id="catalog-main"></div>
       </div>
     </aside>
+  </div>
+
+  <div class="catalog-nav-dialog-modal" id="catalog-nav-dialog-modal" hidden>
+    <div class="catalog-nav-dialog" role="dialog" aria-modal="true" aria-labelledby="catalog-nav-dialog-title">
+      <h4 id="catalog-nav-dialog-title"></h4>
+      <p class="catalog-nav-dialog-message" id="catalog-nav-dialog-message" hidden></p>
+      <input class="catalog-nav-dialog-input" id="catalog-nav-dialog-input" type="text" autocomplete="off" />
+      <div class="catalog-nav-dialog-source" id="catalog-nav-dialog-source" hidden>
+        <span class="catalog-nav-dialog-source-label">来源标签</span>
+        <select class="catalog-nav-dialog-source-select" id="catalog-nav-dialog-source-select"></select>
+      </div>
+      <div class="catalog-nav-dialog-actions">
+        <button type="button" class="cancel" id="catalog-nav-dialog-cancel">取消</button>
+        <button type="button" class="submit" id="catalog-nav-dialog-submit">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="catalog-prompt-edit-modal" id="catalog-prompt-edit-modal" hidden aria-hidden="true">
+    <div class="catalog-prompt-edit-dialog" role="dialog" aria-labelledby="catalog-prompt-edit-title">
+      <h4 id="catalog-prompt-edit-title">编辑快捷提示</h4>
+      <p class="catalog-prompt-edit-hint" id="catalog-prompt-edit-hint">
+        输入框语法：<code>&lt;参数名|占位说明&gt;</code>，例如 <code>&lt;userId|用户 ID&gt;</code>。竖线后为输入框默认文案。
+      </p>
+      <textarea id="catalog-prompt-edit-textarea" class="catalog-prompt-edit-textarea"
+                rows="4" spellcheck="false" autocomplete="off"></textarea>
+      <div class="catalog-prompt-edit-toolbar">
+        <button type="button" id="catalog-prompt-edit-insert">插入输入框</button>
+      </div>
+      <div class="catalog-prompt-edit-actions">
+        <button type="button" class="cancel" id="catalog-prompt-edit-cancel">取消</button>
+        <button type="button" class="submit" id="catalog-prompt-edit-submit">保存</button>
+      </div>
+    </div>
   </div>
 
   <div class="session-context-menu" id="session-context-menu" role="menu" hidden>
@@ -5327,7 +5534,7 @@
   <script src="bookmarks_panel.js"></script>
   <script src="message_board_panel.js?v=20260730b"></script>
   <script src="about_panel.js?v=20260814a"></script>
-  <script src="catalog_panel.js?v=20261014t"></script>
+  <script src="catalog_panel.js?v=20261014ai"></script>
   <script src="moa_record_panel.js?v=20260803d"></script>
   <script src="waiting_fx.js"></script>
   <script>
@@ -10307,24 +10514,11 @@
       const wrap = document.getElementById('tool-actions-wrap');
       const headerHost = document.querySelector('.header-actions');
       const sidebarHost = document.getElementById('sidebar-tool-actions-host');
-      const sideActionsWrap = document.getElementById('input-side-actions-wrap');
-      const toolActionsBar = document.getElementById('tool-actions-bar');
-      const inputComposer = document.querySelector('.input-composer');
-      const settingsBtn = document.getElementById('btn-settings');
       if (!wrap || !headerHost || !sidebarHost) return;
       const dockInSidebar = !document.body.classList.contains('sidebar-collapsed');
       const target = dockInSidebar ? sidebarHost : headerHost;
       if (wrap.parentElement !== target) {
         target.insertBefore(wrap, target.firstChild);
-      }
-      if (sideActionsWrap && toolActionsBar && inputComposer && settingsBtn) {
-        if (dockInSidebar) {
-          if (sideActionsWrap.parentElement !== toolActionsBar) {
-            settingsBtn.insertAdjacentElement('afterend', sideActionsWrap);
-          }
-        } else if (sideActionsWrap.parentElement !== inputComposer) {
-          inputComposer.appendChild(sideActionsWrap);
-        }
       }
       const btn = document.getElementById('user-menu-btn');
       if (btn?.getAttribute('aria-expanded') === 'true') {
@@ -12290,7 +12484,8 @@
       updateInputState();
     });
     chatInput.addEventListener('keydown', (e) => {
-      if (e.key !== 'Enter' || e.shiftKey) return;
+      if (e.key !== 'Enter') return;
+      if (e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
       // 输入法组字期间 Enter 用于选词/确认，不应发送消息
       if (inputComposing || e.isComposing || e.keyCode === 229) return;
       e.preventDefault();
@@ -12790,8 +12985,7 @@
       if (open && !wasOpen) {
         trackEvent('panel_open', { panel: 'catalog' });
         if (catalogPanel) {
-          catalogPanel.resetNavCollapsedAll();
-          catalogPanel.renderNav();
+          void refreshCatalogPanel({ resetNavCollapse: true });
         }
       }
       panel.classList.toggle('open', open);
@@ -13043,6 +13237,23 @@
       return userIsWebSuperAdmin(currentAuthUser);
     }
 
+    async function saveCatalogPrompt(payload) {
+      const res = await fetch('/api/catalog-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        let message = '保存失败';
+        try {
+          const data = await res.json();
+          if (data?.error) message = String(data.error);
+        } catch (_) { /* ignore */ }
+        throw new Error(message);
+      }
+      return res.json();
+    }
+
     async function saveCatalogNav(payload) {
       const res = await fetch('/api/catalog-nav', {
         method: 'POST',
@@ -13062,7 +13273,28 @@
         catalogPanel.navTree = JSON.parse(JSON.stringify(data.nav.tree || []));
         catalogPanel.ensureFolderChildren(catalogPanel.navTree);
         catalogPanel.hydrateNavCaps(catalogPanel.navTree);
+        catalogPanel.hydrateNavPlaybooks(catalogPanel.navTree);
         catalogPanel.sortNavTreeChildOrder(catalogPanel.navTree);
+        catalogPanel.renderNav({ preserveScroll: true });
+        catalogPanel.render();
+      }
+    }
+
+    async function fetchCatalogData() {
+      const resp = await fetch(API + '/api/catalog', { credentials: 'same-origin', cache: 'no-store' });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${resp.status}`);
+      }
+      return resp.json();
+    }
+
+    async function refreshCatalogPanel(opts) {
+      if (!catalogPanel) return;
+      try {
+        await catalogPanel.reload(() => fetchCatalogData(), opts);
+      } catch (e) {
+        console.warn('refresh catalog failed', e);
       }
     }
 
@@ -13070,20 +13302,21 @@
       if (typeof CatalogPanel === 'undefined') return;
       catalogPanel = new CatalogPanel({
         root: document.getElementById('catalog-panel'),
-        metaEl: document.getElementById('catalog-meta'),
         searchEl: document.getElementById('catalog-search'),
         navEl: document.getElementById('catalog-nav'),
         mainEl: document.getElementById('catalog-main'),
         canEditNav: catalogNavCanEdit(),
         canDeleteNav: catalogNavCanDelete(),
         saveNav: saveCatalogNav,
+        savePrompt: saveCatalogPrompt,
+        onPromptsSaved: () => refreshCatalogPanel({ preserveNavUi: true }),
         onRunPrompt: (text) => {
           if (!text) return;
           trackEvent('catalog_prompt_run', { length: String(text).length });
           fillInputFromPrompt(text, { appendWhenOccupied: true });
         },
       });
-      await catalogPanel.init(() => api('/api/catalog'));
+      await catalogPanel.init(() => fetchCatalogData());
     }
 
     function ensureExternalAgentsEnabled(agentIds) {
