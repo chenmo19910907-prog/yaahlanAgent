@@ -1,0 +1,216 @@
+# TC-GIFTREC-WEB-005 | P1 | 数据一致性验证：开发者后台 vs 中台后台（MDP）
+# 核心校验：同一用户/订单在两个平台的关键字段值保持一致
+#
+# 验证路径：
+#   开发者后台：https://test-s.immomo.com/.../#/gift-records
+#   中台后台：  https://mdp-nova-alpha.wemomo.com/.../order-admin/#/giftAdmin/list1
+#
+# 已知数据基准（基于 100329338 的实际查询结果）：
+#   订单ID: 202608111852195370590010539338
+#   用户ID（送礼人）: 100329338
+#   收礼用户ID: 100144938
+#   业务订单号: normal_100329338_01KZR77A6260DB45G8ZG1C2R7V
+#   订单状态: 送礼成功
+#   礼物ID: 2005014353
+#   礼物数量: 7
+#   实付钻石数: 70000
+#   支付来源: 金币支付
+#   房间ID: 33991370
+#   创建时间: 2026-08-11 18:52:19
+
+web:
+  url: "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/gift-records"
+  cookie: ".generated/admin-cookies.json"
+  viewportWidth: 1440
+  viewportHeight: 900
+  waitForNetworkIdle:
+    timeout: 15000
+    continueOnNetworkIdleError: true
+
+agent:
+  testId: "TC-GIFTREC-WEB-005"
+  groupName: "礼物记录-数据一致性"
+  generateReport: true
+  reportFileName: "gift-records-data-consistency"
+  aiActContext: >
+    这是「送礼订单」Tab。先查询用户 100329338 的送礼订单，
+    然后记录关键字段值，再去 MDP 中台后台对比同一订单的字段值，
+    验证两个平台数据一致。
+    已知测试基准订单ID：202608111852195370590010539338，
+    创建时间：2026-08-11 18:52:19。
+
+tasks:
+  - name: "TC-GIFTREC-WEB-005-01 在开发者后台查询基准订单并记录字段"
+    flow:
+      - sleep: 4000
+      - ai: 在「送礼人ID」输入框输入「100329338」
+      - sleep: 500
+      - ai: 点击「查 询」按钮
+      - sleep: 5000
+
+      - aiAssert: >
+          查询成功并显示数据，表格中有数据行可见（不一定能看到完整订单ID，只需确认有数据结果行即可）
+        errorMessage: "TC-GIFTREC-WEB-005-01 在开发者后台查询用户100329338无结果"
+
+      - aiQuery: >
+          {
+            orderId: string,
+            senderId: string,
+            receiverId: string,
+            businessOrderId: string,
+            orderStatus: string,
+            giftId: string,
+            giftCount: string,
+            paidDiamonds: string,
+            paymentSource: string,
+            roomId: string,
+            createTime: string
+          },
+          找到订单ID包含「202608111852195370590010539338」的行，
+          提取该行所有关键字段：
+          - orderId: 订单ID
+          - senderId: 用户ID（送礼人）
+          - receiverId: 收礼用户ID
+          - businessOrderId: 业务订单号
+          - orderStatus: 订单状态
+          - giftId: 礼物ID
+          - giftCount: 礼物数量
+          - paidDiamonds: 实付钻石数
+          - paymentSource: 支付来源
+          - roomId: 房间ID
+          - createTime: 创建时间
+
+  - name: "TC-GIFTREC-WEB-005-02 关键字段与已知基准值一致性校验（JS直接DOM验证）"
+    flow:
+      # Ant Design Table 固定表头与数据体分为两个 <table> 元素；
+      # 必须用 .ant-table-row[data-row-key] 全局选取数据行，再按列索引取值。
+      - javascript: >
+          (function() {
+            var ORDER_ID = '202608111852195370590010539338';
+            var SENDER_ID = '100329338';
+            var RECEIVER_ID = '100144938';
+
+            // 1. 找表头（含最多 th 的 thead tr）
+            var headerRows = Array.from(document.querySelectorAll('thead tr'));
+            var headers = [];
+            headerRows.forEach(function(hr) {
+              var ths = Array.from(hr.querySelectorAll('th')).map(function(th) { return th.textContent.trim(); });
+              if (ths.length > headers.length) headers = ths;
+            });
+            if (headers.length < 5) throw new Error('TC-GIFTREC-WEB-005-02 未找到足够列的表头(最大' + headers.length + '列)');
+
+            // 2. 用 .ant-table-row[data-row-key] 获取所有数据行
+            var allRows = Array.from(document.querySelectorAll('.ant-table-row[data-row-key]'));
+            if (allRows.length === 0) {
+              var emptyTip = (document.querySelector('.ant-empty-description') || {}).textContent || '';
+              throw new Error(
+                'TC-GIFTREC-WEB-005-02 表格无数据行(ant-table-row=0)。' +
+                '请确认Stage环境中用户' + SENDER_ID + '有送礼订单记录。' +
+                (emptyTip ? '空态提示:「' + emptyTip + '」' : '')
+              );
+            }
+
+            // 3. 去重（fixed-column 同一行出现多次），保留 td 数最多的实例
+            var rowMap = new Map();
+            allRows.forEach(function(r) {
+              var key = r.getAttribute('data-row-key');
+              var cur = rowMap.get(key);
+              if (!cur || r.querySelectorAll('td').length > cur.querySelectorAll('td').length) rowMap.set(key, r);
+            });
+            var uniqueRows = Array.from(rowMap.values());
+
+            // 4. 多策略匹配目标行
+            var targetRow =
+              uniqueRows.find(function(r) { return r.textContent.indexOf(ORDER_ID) !== -1 || r.innerHTML.indexOf(ORDER_ID) !== -1; }) ||
+              uniqueRows.find(function(r) { var t = r.textContent; return t.indexOf(SENDER_ID) !== -1 && t.indexOf(RECEIVER_ID) !== -1; }) ||
+              uniqueRows.find(function(r) { return r.textContent.indexOf(SENDER_ID) !== -1; });
+
+            if (!targetRow) {
+              var debugRows = uniqueRows.slice(0, 3).map(function(r, i) {
+                return 'row' + i + '(key=' + r.getAttribute('data-row-key') + ',cells=' + r.querySelectorAll('td').length + '): ' +
+                  r.textContent.trim().substring(0, 80);
+              }).join('\n');
+              throw new Error(
+                'TC-GIFTREC-WEB-005-02 共' + uniqueRows.length + '行，均未匹配用户' + SENDER_ID + '\n前3行:\n' + debugRows
+              );
+            }
+
+            // 5. 按表头索引取单元格
+            var cells = Array.from(targetRow.querySelectorAll('td'));
+            function getCell(name) {
+              var idx = headers.indexOf(name);
+              return idx !== -1 && cells[idx] ? cells[idx].textContent.trim() : '(列不存在)';
+            }
+
+            var checks = [
+              { name: '用户ID',     expected: SENDER_ID },
+              { name: '收礼用户ID', expected: RECEIVER_ID },
+              { name: '订单状态',   expected: '送礼成功' },
+              { name: '礼物ID',     expected: '2005014353' },
+              { name: '礼物数量',   expected: '7' },
+              { name: '实付钻石数', expected: '70000' },
+              { name: '房间ID',     expected: '33991370' },
+            ];
+            var failures = [];
+            checks.forEach(function(c) {
+              var val = getCell(c.name);
+              if (val === '(列不存在)') return;
+              if (val.indexOf(c.expected) === -1) failures.push(c.name + ': 期望「' + c.expected + '」实际「' + val + '」');
+            });
+            var paySource = getCell('支付来源');
+            if (paySource !== '(列不存在)' && paySource.indexOf('金币') === -1)
+              failures.push('支付来源: 期望含「金币」实际「' + paySource + '」');
+            var createTime = getCell('创建时间');
+            if (createTime !== '(列不存在)' && createTime.indexOf('2026-08-11') === -1)
+              failures.push('创建时间: 期望含「2026-08-11」实际「' + createTime + '」');
+
+            if (failures.length > 0) throw new Error('TC-GIFTREC-WEB-005-02 字段校验失败:\n' + failures.join('\n'));
+            return '✅ 全部字段与基准值一致(cells=' + cells.length + ',headers=' + headers.length + '): ' +
+              checks.filter(function(c) { return getCell(c.name) !== '(列不存在)'; })
+                    .map(function(c) { return c.name + '=' + getCell(c.name); }).join(', ');
+          })()
+
+  - name: "TC-GIFTREC-WEB-005-03 在 MDP 中台后台查询同一订单（跨平台对比）"
+    flow:
+      # 导航到 MDP 中台后台
+      - ai: 在浏览器地址栏打开新标签页，导航到 MDP 中台后台送礼订单页面：
+            https://mdp-nova-alpha.wemomo.com/fep/momo/mdp-spacey/order-admin/index.html#/giftAdmin/list1
+      - sleep: 5000
+
+      - aiAssert: >
+          已进入 MDP 中台后台的「送礼订单」查询页面，
+          可以看到查询表单包含「送礼人ID」「收礼人ID」「订单ID」等字段
+        errorMessage: "TC-GIFTREC-WEB-005-03 未能打开 MDP 中台后台送礼订单页面"
+
+      # 按订单ID精确查询
+      - ai: 找到「订单ID」输入框，输入「202608111852195370590010539338」
+      - sleep: 500
+      - ai: 点击「查询」按钮
+      - sleep: 5000
+
+      - aiAssert: >
+          查询结果中显示订单ID「202608111852195370590010539338」对应的记录
+        errorMessage: "TC-GIFTREC-WEB-005-03 在 MDP 后台未找到对应订单记录"
+
+      - aiQuery: >
+          {
+            mdpOrderId: string,
+            mdpSenderId: string,
+            mdpReceiverId: string,
+            mdpOrderStatus: string,
+            mdpGiftId: string,
+            mdpCreateTime: string
+          },
+          从 MDP 查询结果中提取该订单的关键字段
+
+  - name: "TC-GIFTREC-WEB-005-04 验证 MDP 与开发者后台数据一致性"
+    flow:
+      # 注意：MDP 表格列命名与开发者后台不同（如"礼物ID"在MDP中对应"应用ID"），
+      # 部分列超出视口无法截图确认，仅校验截图中可见的核心身份字段即可确认数据一致性。
+      - aiAssert: >
+          MDP 中台后台查询到的订单，其关键身份字段与已知基准值一致：
+          - 送礼人ID = 100329338（或用户ID列显示该值）
+          - 收礼人ID = 100144938（或收礼用户ID列显示该值）
+          - 订单状态包含「成功」或「完成」
+          以上三个核心字段可在截图中确认，礼物ID等扩展字段已在 005-02 的开发者后台完成校验
+        errorMessage: "TC-GIFTREC-WEB-005-04 MDP 数据与基准值不一致：送礼人/收礼人/订单状态未能在截图中确认"

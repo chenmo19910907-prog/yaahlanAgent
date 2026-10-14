@@ -1,0 +1,181 @@
+# TC-GIFTREC-WEB-004 | P0/P1 | 开发者后台-收礼订单查询功能
+# 覆盖：切换Tab / 必填项校验 / 正向查询 / 表格列完整性 / 组合过滤 / 重置
+#
+# 前置数据：用户 100144938 在系统中有收礼记录（由 100329338 送礼）
+#           「收礼收益」列（而非「实付钻石数」）是收礼订单特有字段
+
+web:
+  url: "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/gift-records"
+  cookie: ".generated/admin-cookies.json"
+  viewportWidth: 1440
+  viewportHeight: 900
+  waitForNetworkIdle:
+    timeout: 15000
+    continueOnNetworkIdleError: true
+
+agent:
+  testId: "TC-GIFTREC-WEB-004"
+  groupName: "礼物记录-收礼订单查询"
+  generateReport: true
+  reportFileName: "gift-records-recv-order"
+  aiActContext: >
+    这是礼物记录页面的「收礼订单」Tab。
+    需要先点击「收礼订单」Tab 切换过来。
+    「收礼人ID」为必填字段（标有红色*）。
+    查询结果表格列（从左到右）：订单ID / 用户ID / 送礼用户ID / 送礼角色 / 送礼订单号 /
+    订单状态 / 渠道 / 业务ID / 礼物面板ID / 礼物ID / 礼物数量 / 礼物信息（单价）/
+    收礼收益 / 更新时间 / 创建时间 / 业务扩展信息（共 16 列）。
+    注意：收礼订单表格有「收礼收益」列（无「实付钻石数」「支付来源」「房间ID」列），
+    与送礼订单表格列数不同。
+
+tasks:
+  - name: "TC-GIFTREC-WEB-004-01 切换到收礼订单 Tab"
+    flow:
+      - sleep: 4000
+      - ai: 点击「收礼订单」Tab 标签
+      - sleep: 2000
+
+      - aiAssert: >
+          已成功切换到「收礼订单」Tab（该 Tab 处于选中/高亮状态），
+          查询表单第一个必填字段为「收礼人ID」（带*），
+          结果区显示「请输入收礼人ID后点击查询」
+        errorMessage: "TC-GIFTREC-WEB-004-01 切换到收礼订单 Tab 失败或字段不正确"
+
+  - name: "TC-GIFTREC-WEB-004-02 空收礼人ID直接查询（必填校验）"
+    flow:
+      # 不填任何字段
+      - ai: 点击「查 询」按钮（不输入任何查询条件）
+      - sleep: 2000
+
+      - aiAssert: >
+          以下任意一种情况成立（必填项保护机制有效）：
+          1. 「收礼人ID」输入框显示错误提示或边框变红
+          2. 结果区仍然显示「请输入收礼人ID后点击查询」，未发起查询
+          3. 页面弹出「收礼人ID不能为空」等提示
+        errorMessage: "TC-GIFTREC-WEB-004-02 收礼人ID为空时仍发起查询，必填校验失效"
+
+  - name: "TC-GIFTREC-WEB-004-03 输入有效收礼人ID查询（正向，有数据）"
+    flow:
+      - ai: 在「收礼人ID」输入框输入「100144938」
+      - sleep: 500
+      - ai: 点击「查 询」按钮
+      - sleep: 4000
+
+      - aiAssert: >
+          查询成功，结果区域显示数据表格（不是空态），
+          表格中至少有 1 行数据，
+          「用户ID」列数据包含「100144938」
+        errorMessage: "TC-GIFTREC-WEB-004-03 输入有效收礼人ID查询无结果或页面异常"
+
+      - aiQuery: >
+          {
+            resultCount: number,
+            firstOrderId: string | null,
+            firstReceiverId: string | null,
+            firstSenderId: string | null,
+            firstOrderStatus: string | null,
+            firstReceiveProfit: string | null
+          },
+          从查询结果第一行提取：
+          - resultCount: 当前页可见的结果行数
+          - firstOrderId: 第一行「订单ID」的值
+          - firstReceiverId: 第一行「用户ID」（收礼人）的值
+          - firstSenderId: 第一行「送礼用户ID」的值
+          - firstOrderStatus: 第一行「订单状态」文字
+          - firstReceiveProfit: 第一行「收礼收益」的值
+
+  - name: "TC-GIFTREC-WEB-004-04 收礼订单表格列完整性验证（JS断言）"
+    flow:
+      # 用 JavaScript 验证收礼订单特有的列结构
+      - javascript: >
+          (function() {
+            var headers = Array.from(document.querySelectorAll('th'))
+              .map(function(th) { return th.innerText.trim(); })
+              .filter(function(t) { return t.length > 0; });
+            
+            // 验证收礼订单必须有的列
+            var required = [
+              '订单ID','用户ID','送礼用户ID','送礼角色','送礼订单号',
+              '订单状态','渠道','业务ID','礼物面板ID','礼物ID',
+              '礼物数量','礼物信息（单价）','收礼收益',
+              '更新时间','创建时间','业务扩展信息'
+            ];
+            var missing = required.filter(function(e) {
+              return headers.indexOf(e) === -1;
+            });
+            if (missing.length > 0) {
+              throw new Error('TC-GIFTREC-WEB-004-04 收礼订单缺少列: ' + missing.join(', ') +
+                ' | 实际列: ' + headers.join(', '));
+            }
+            
+            // 验证收礼订单不应有的列（送礼订单专属）
+            var sendOnly = ['实付钻石数', '支付来源', '房间ID'];
+            var unexpected = sendOnly.filter(function(e) {
+              return headers.indexOf(e) !== -1;
+            });
+            if (unexpected.length > 0) {
+              throw new Error('TC-GIFTREC-WEB-004-04 收礼订单不应含有送礼专属列: ' + unexpected.join(', '));
+            }
+            
+            return '✅ 收礼订单列结构正确(16列含收礼收益，无送礼专属列): ' + headers.join(', ');
+          })()
+
+  - name: "TC-GIFTREC-WEB-004-05 收礼人ID + 送礼人ID 组合查询"
+    flow:
+      - ai: 点击「重 置」按钮
+      - sleep: 500
+      - ai: 在「收礼人ID」输入框输入「100144938」
+      - sleep: 300
+      - ai: 在「送礼人ID」输入框输入「100329338」
+      - sleep: 300
+      - ai: 点击「查 询」按钮
+      - sleep: 4000
+
+      - aiAssert: >
+          查询结果中，「用户ID」列（收礼人）均为「100144938」，
+          「送礼用户ID」列均为「100329338」，
+          组合过滤有效
+        errorMessage: "TC-GIFTREC-WEB-004-05 收礼+送礼人ID组合查询过滤不正确"
+
+  - name: "TC-GIFTREC-WEB-004-06 不存在的收礼人ID（空结果态）"
+    flow:
+      - ai: 点击「重 置」按钮
+      - sleep: 500
+      - ai: 在「收礼人ID」输入框输入「888888888888」
+      - sleep: 300
+      - ai: 点击「查 询」按钮
+      - sleep: 4000
+
+      - aiAssert: >
+          查询结果为空态（「暂无数据」或类似提示），
+          不显示任何数据行，也不报错崩溃
+        errorMessage: "TC-GIFTREC-WEB-004-06 无效收礼人ID查询未显示空态"
+
+  - name: "TC-GIFTREC-WEB-004-07 重置功能（收礼订单）"
+    flow:
+      - ai: 在「收礼人ID」输入框输入「100144938」
+      - sleep: 300
+      - ai: 在「送礼人ID」输入框输入「100329338」
+      - sleep: 300
+      - ai: 点击「重 置」按钮
+      - sleep: 1000
+
+      - aiAssert: >
+          所有输入框已清空，结果区恢复显示「请输入收礼人ID后点击查询」
+        errorMessage: "TC-GIFTREC-WEB-004-07 收礼订单重置功能未清空表单"
+
+  - name: "TC-GIFTREC-WEB-004-08 收礼订单-业务扩展信息查看"
+    flow:
+      - ai: 在「收礼人ID」输入框输入「100144938」
+      - sleep: 300
+      - ai: 点击「查 询」按钮
+      - sleep: 4000
+      - ai: 点击表格第一行「业务扩展信息」列的「查看」链接
+      - sleep: 2000
+
+      - aiAssert: >
+          弹出详情面板，显示该收礼订单的业务扩展字段信息
+        errorMessage: "TC-GIFTREC-WEB-004-08 收礼订单业务扩展信息查看失败"
+
+      - ai: 关闭详情面板
+      - sleep: 1000

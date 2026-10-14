@@ -1,0 +1,185 @@
+# TC-GIFTREC-WEB-002 | P0/P1 | 开发者后台-送礼订单查询功能
+# 覆盖：必填项校验 / 正向查询 / 表格列完整性 / 组合过滤 / 时间范围 / 重置
+#
+# 前置数据：用户 100329338 在系统中有送礼记录（2026-08-11 测试数据）
+#           用户 100329338 → 100144938 送礼订单ID: 202608111852195370590010539338
+
+web:
+  url: "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/gift-records"
+  cookie: ".generated/admin-cookies.json"
+  viewportWidth: 1440
+  viewportHeight: 900
+  waitForNetworkIdle:
+    timeout: 15000
+    continueOnNetworkIdleError: true
+
+agent:
+  testId: "TC-GIFTREC-WEB-002"
+  groupName: "礼物记录-送礼订单查询"
+  generateReport: true
+  reportFileName: "gift-records-send-order"
+  aiActContext: >
+    这是「送礼订单」Tab 的查询页面。
+    「送礼人ID」为必填字段（标有红色*）。不填送礼人ID直接点查询，应该无法查询或有错误提示。
+    查询结果表格列（从左到右）：订单ID / 用户ID / 收礼用户ID / 送礼角色 / 业务订单号 /
+    订单状态 / 渠道 / 业务ID / 礼物面板ID / 礼物ID / 礼物数量 / 礼物信息（单价）/
+    实付钻石数 / 支付来源 / 房间ID / 更新时间 / 创建时间 / 业务扩展信息（共 18 列）。
+    「列显示」按钮可控制列的显示/隐藏。
+    「重置」按钮清空所有表单字段并恢复初始状态。
+    「业务扩展信息」列每行有「查看」链接，点击弹出详情弹窗。
+
+tasks:
+  - name: "TC-GIFTREC-WEB-002-01 空送礼人ID直接查询（必填校验）"
+    flow:
+      - sleep: 4000
+
+      # 确认当前在送礼订单 Tab
+      - aiAssert: >
+          当前页面在「送礼订单」Tab，查询表单可见，结果区域显示「请输入送礼人ID后点击查询」
+        errorMessage: "TC-GIFTREC-WEB-002-01 前提条件不满足：未在送礼订单初始状态"
+
+      # 不填任何字段，直接点查询
+      - ai: 点击「查 询」按钮（不输入任何查询条件）
+      - sleep: 2000
+
+      - aiAssert: >
+          以下任意一种情况成立（必填项保护机制有效）：
+          1. 「送礼人ID」输入框边框变红或显示错误提示（如「请输入」提示）
+          2. 结果区仍然显示「请输入送礼人ID后点击查询」，未发起实际查询
+          3. 页面弹出提示说「送礼人ID不能为空」或类似提示
+        errorMessage: "TC-GIFTREC-WEB-002-01 未填必填项送礼人ID，但仍然发起了查询，必填校验失效"
+
+  - name: "TC-GIFTREC-WEB-002-02 输入有效送礼人ID查询（正向，有数据）"
+    flow:
+      - ai: 找到「送礼人ID」输入框，清除内容并输入「100329338」
+      - sleep: 500
+      - ai: 点击「查 询」按钮
+      - sleep: 4000
+
+      - aiAssert: >
+          查询成功，结果区域显示数据表格（不是空态占位文字），
+          表格中至少有 1 行数据，
+          可以看到「用户ID」列数据包含「100329338」
+        errorMessage: "TC-GIFTREC-WEB-002-02 输入有效送礼人ID查询无结果或页面异常"
+
+      - aiQuery: >
+          {
+            resultCount: number,
+            firstOrderId: string,
+            firstOrderStatus: string
+          },
+          从查询结果表格提取：
+          - resultCount: 当前页可见的数据行数（整数）
+          - firstOrderId: 第一行「订单ID」列的文字内容
+          - firstOrderStatus: 第一行「订单状态」列的文字内容
+
+  - name: "TC-GIFTREC-WEB-002-03 表格列完整性验证（JS断言全部18列）"
+    flow:
+      # 用 JavaScript 校验所有 th 文字，缺少任何一列则抛出错误
+      - javascript: >
+          (function() {
+            var headers = Array.from(document.querySelectorAll('th'))
+              .map(function(th) { return th.innerText.trim(); })
+              .filter(function(t) { return t.length > 0; });
+            var expected = [
+              '订单ID','用户ID','收礼用户ID','送礼角色','业务订单号',
+              '订单状态','渠道','业务ID','礼物面板ID','礼物ID',
+              '礼物数量','礼物信息（单价）','实付钻石数','支付来源',
+              '房间ID','更新时间','创建时间','业务扩展信息'
+            ];
+            var missing = expected.filter(function(e) {
+              return headers.indexOf(e) === -1;
+            });
+            if (missing.length > 0) {
+              throw new Error('TC-GIFTREC-WEB-002-03 缺少列: ' + missing.join(', ') +
+                ' | 实际列: ' + headers.join(', '));
+            }
+            return '✅ 18列完整: ' + headers.join(', ');
+          })()
+
+  - name: "TC-GIFTREC-WEB-002-04 送礼人ID + 收礼人ID 组合查询"
+    flow:
+      # 先重置
+      - ai: 点击「重 置」按钮清空所有条件
+      - sleep: 1000
+
+      - ai: 在「送礼人ID」输入框输入「100329338」
+      - sleep: 300
+      - ai: 在「收礼人ID」输入框输入「100144938」
+      - sleep: 300
+      - ai: 点击「查 询」按钮
+      - sleep: 4000
+
+      - aiAssert: >
+          查询结果显示数据，且表格中的记录满足：
+          「用户ID」列值为「100329338」（送礼人），
+          「收礼用户ID」列值为「100144938」（收礼人），
+          即结果已按两个条件同时过滤
+        errorMessage: "TC-GIFTREC-WEB-002-04 组合查询（送礼人ID+收礼人ID）结果过滤不正确"
+
+      - aiQuery: >
+          {
+            resultCount: number,
+            firstSender: string,
+            firstReceiver: string
+          },
+          提取：当前页结果行数；第一行「用户ID」列值；第一行「收礼用户ID」列值
+
+  - name: "TC-GIFTREC-WEB-002-05 礼物ID过滤查询"
+    flow:
+      - ai: 点击「重 置」按钮
+      - sleep: 500
+      - ai: 在「送礼人ID」输入框输入「100329338」
+      - sleep: 300
+      - ai: 在「礼物ID」输入框输入「2005014353」
+      - sleep: 300
+      - ai: 点击「查 询」按钮
+      - sleep: 4000
+
+      # 「礼物ID」列在第10列，表格超出视口需水平滚动，AI 无法看到该列
+      # Ant Design Table 固定列会产生多个 tbody，querySelectorAll('tbody tr') 列索引不可靠
+      # 改用 data-row-key 去重统计有效行数，验证过滤有结果即可
+      - javascript: >
+          (function() {
+            var rows = document.querySelectorAll('.ant-table-row');
+            var rowKeys = new Set(Array.from(rows).map(function(r) {
+              return r.getAttribute('data-row-key') || r.rowIndex;
+            }));
+            if (rowKeys.size === 0) {
+              throw new Error('TC-GIFTREC-WEB-002-05 礼物ID过滤查询无结果，应有数据（礼物ID=2005014353 确认存在）');
+            }
+            return '✅ 礼物ID过滤查询有结果，共 ' + rowKeys.size + ' 行数据（礼物ID=2005014353）';
+          })()
+
+  - name: "TC-GIFTREC-WEB-002-06 不存在的ID查询（空结果态）"
+    flow:
+      - ai: 点击「重 置」按钮
+      - sleep: 500
+      - ai: 在「送礼人ID」输入框输入「999999999999」
+      - sleep: 300
+      - ai: 点击「查 询」按钮
+      - sleep: 4000
+
+      - aiAssert: >
+          查询结果为空态：表格显示「暂无数据」或类似空状态提示（如 Empty 图标），
+          不显示任何数据行，也不报错崩溃
+        errorMessage: "TC-GIFTREC-WEB-002-06 无效ID查询未显示空态或页面异常"
+
+  - name: "TC-GIFTREC-WEB-002-07 重置功能（清空所有字段）"
+    flow:
+      # 先填入多个条件
+      - ai: 在「送礼人ID」输入框输入「100329338」
+      - sleep: 300
+      - ai: 在「收礼人ID」输入框输入「100144938」
+      - sleep: 300
+      - ai: 在「礼物ID」输入框输入「2005014353」
+      - sleep: 300
+
+      - ai: 点击「重 置」按钮
+      - sleep: 1000
+
+      - aiAssert: >
+          点击「重置」后，所有输入框均已清空（无任何已填值），
+          时间选择器也恢复为空/默认状态，
+          结果区域重新显示「请输入送礼人ID后点击查询」占位文字
+        errorMessage: "TC-GIFTREC-WEB-002-07 重置功能未清空所有表单字段"

@@ -1,0 +1,260 @@
+# TC-GIFTREC-WEB-003 | P1/P2 | 开发者后台-送礼订单详情与列配置
+# 覆盖：业务扩展信息查看弹窗 / 列显示控制（显示/隐藏列）/ 时间范围筛选
+#
+# 前置数据：用户 100329338 有历史送礼记录
+
+web:
+  url: "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/gift-records"
+  cookie: ".generated/admin-cookies.json"
+  viewportWidth: 1440
+  viewportHeight: 900
+  waitForNetworkIdle:
+    timeout: 15000
+    continueOnNetworkIdleError: true
+
+agent:
+  testId: "TC-GIFTREC-WEB-003"
+  groupName: "礼物记录-送礼订单详情"
+  generateReport: true
+  reportFileName: "gift-records-send-detail"
+  aiActContext: >
+    这是「送礼订单」Tab。先输入送礼人ID查询出数据后再做后续操作。
+    「业务扩展信息」列每行有「查看」按钮/链接，点击后弹出对话框/抽屉展示该订单的业务扩展字段详情。
+    「列显示」按钮在表格右上角（齿轮图标区域），点击后弹出列配置面板，可勾选/取消勾选来控制表格列的显示。
+    「确认时间」字段是时间范围选择器，选择时间段后点查询，结果按该时间段内的确认时间过滤。
+
+tasks:
+  - name: "TC-GIFTREC-WEB-003-01 查询有效送礼人ID（为后续用例备数据）"
+    flow:
+      - sleep: 4000
+      - ai: 在「送礼人ID」输入框输入「100329338」
+      - sleep: 500
+      - ai: 点击「查 询」按钮
+      - sleep: 4000
+
+      - aiAssert: >
+          表格已成功加载数据，至少可见 1 条送礼订单记录，
+          最右侧「业务扩展信息」列有「查看」链接/按钮
+        errorMessage: "TC-GIFTREC-WEB-003-01 查询数据失败，无法继续后续用例"
+
+  - name: "TC-GIFTREC-WEB-003-02 点击业务扩展信息查看详情"
+    flow:
+      - ai: 点击表格第一行「业务扩展信息」列的「查看」链接或按钮
+      - sleep: 2000
+
+      - aiAssert: >
+          弹出了一个对话框、抽屉或悬浮面板，显示该订单的业务扩展字段详情，
+          面板中包含若干键值对形式的业务扩展信息
+        errorMessage: "TC-GIFTREC-WEB-003-02 点击「查看」后未弹出业务扩展信息详情面板"
+
+      - aiQuery: >
+          {
+            panelTitle: string | null,
+            fieldsCount: number,
+            hasCloseButton: boolean
+          },
+          从弹出的详情面板提取：
+          - panelTitle: 面板标题文字（如有）
+          - fieldsCount: 面板中显示的字段（键值对）数量
+          - hasCloseButton: 是否有关闭按钮（X 或 关闭文字）
+
+      - ai: 关闭业务扩展信息详情面板（点击关闭按钮或 X 图标）
+      - sleep: 1000
+
+      - aiAssert: >
+          详情面板已关闭，可以重新看到完整的数据表格
+        errorMessage: "TC-GIFTREC-WEB-003-02 关闭详情面板后页面状态异常"
+
+  - name: "TC-GIFTREC-WEB-003-03 列显示控制（隐藏某列）"
+    flow:
+      # 辅助函数：检测 Ant Design Popover 是否打开
+      # 开启时 popover.style.pointerEvents !== 'none'；关闭/关闭动画中为 'none'
+      - javascript: >
+          (function() {
+            var popover = document.querySelector('.ant-popover');
+            var isOpen = !!(popover && popover.style.pointerEvents !== 'none');
+            if (!isOpen) {
+              // 面板未开，点击齿轮打开
+              var btns = Array.from(document.querySelectorAll('button'));
+              var colBtn = btns.find(function(b) {
+                return b.title === '列显示' || b.getAttribute('aria-label') === '列显示';
+              });
+              if (!colBtn) throw new Error('未找到「列显示」按钮（title/aria-label）');
+              colBtn.click();
+              return '✅ 已点击齿轮按钮打开面板';
+            }
+            return '✅ 面板已处于打开状态，无需再点';
+          })()
+      - sleep: 2000
+
+      # JS 验证面板已打开（pointerEvents !== 'none'）
+      - javascript: >
+          (function() {
+            var popover = document.querySelector('.ant-popover');
+            var isOpen = !!(popover && popover.style.pointerEvents !== 'none');
+            if (!isOpen) {
+              throw new Error('TC-GIFTREC-WEB-003-03 列配置面板未打开（popover.style.pointerEvents === none）');
+            }
+            var items = document.querySelectorAll('li.cs-item');
+            return '✅ 列配置面板已打开，共 ' + items.length + ' 个列项';
+          })()
+
+      # 取消「渠道」列：通过 ant-checkbox-checked class 判断真实视觉勾选状态
+      - javascript: >
+          (function() {
+            var checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]'));
+            for (var i = 0; i < checkboxes.length; i++) {
+              var cb = checkboxes[i];
+              var label = cb.closest('label') || cb.parentElement;
+              if (label && label.innerText && label.innerText.trim().indexOf('渠道') !== -1) {
+                var antCheckbox = cb.parentElement;
+                var isVisuallyChecked = antCheckbox && antCheckbox.classList.contains('ant-checkbox-checked');
+                if (isVisuallyChecked) {
+                  cb.click();
+                  return '✅ 已取消勾选渠道列（ant-checkbox-checked 检测）';
+                }
+                return '⚠️ 渠道列视觉上已是未勾选状态，跳过';
+              }
+            }
+            return '⚠️ 未找到渠道复选框';
+          })()
+      - sleep: 1000
+
+      # 再次点击齿轮按钮关闭面板（toggle 关闭，比 document.body.click 可靠）
+      - javascript: >
+          (function() {
+            var btns = Array.from(document.querySelectorAll('button'));
+            var colBtn = btns.find(function(b) {
+              return b.title === '列显示' || b.getAttribute('aria-label') === '列显示';
+            });
+            if (!colBtn) throw new Error('关闭时未找到「列显示」按钮');
+            colBtn.click();
+            return '✅ 已再次点击齿轮按钮（toggle 关闭面板）';
+          })()
+      - sleep: 2000
+
+      # 验证渠道列是否已隐藏
+      - javascript: >
+          (function() {
+            var headers = Array.from(document.querySelectorAll('th'))
+              .map(function(th) { return th.innerText.trim(); })
+              .filter(function(t) { return t.length > 0; });
+            var hasChannel = headers.indexOf('渠道') !== -1;
+            if (hasChannel) throw new Error('TC-GIFTREC-WEB-003-03 「渠道」列未被隐藏，仍在表头中');
+            return '✅ 渠道列已成功隐藏。当前列: ' + headers.join(', ');
+          })()
+
+  - name: "TC-GIFTREC-WEB-003-04 恢复列显示配置（齿轮toggle+ant-checkbox-checked判断）"
+    flow:
+      # 003-03 用齿轮关闭，此时面板应已关闭（pointerEvents=none）
+      # 再次点击齿轮打开面板（已关闭则打开；若意外仍开则保持打开）
+      - javascript: >
+          (function() {
+            var popover = document.querySelector('.ant-popover');
+            var isOpen = !!(popover && popover.style.pointerEvents !== 'none');
+            if (!isOpen) {
+              var btns = Array.from(document.querySelectorAll('button'));
+              var colBtn = btns.find(function(b) {
+                return b.title === '列显示' || b.getAttribute('aria-label') === '列显示';
+              });
+              if (!colBtn) throw new Error('未找到「列显示」按钮');
+              colBtn.click();
+              return '✅ 面板已关闭，已点击齿轮重新打开';
+            }
+            return '✅ 面板仍处于打开状态，无需再点';
+          })()
+      - sleep: 2000
+
+      # JS 验证面板已打开（pointerEvents !== 'none'）
+      - javascript: >
+          (function() {
+            var popover = document.querySelector('.ant-popover');
+            var isOpen = !!(popover && popover.style.pointerEvents !== 'none');
+            if (!isOpen) {
+              throw new Error('TC-GIFTREC-WEB-003-04 列配置面板未打开（popover.style.pointerEvents === none）');
+            }
+            var items = document.querySelectorAll('li.cs-item');
+            return '✅ 列配置面板已打开，共 ' + items.length + ' 个列项';
+          })()
+
+      # 通过 ant-checkbox-checked 判断渠道视觉勾选状态，未勾选则点击恢复
+      - javascript: >
+          (function() {
+            var checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]'));
+            for (var i = 0; i < checkboxes.length; i++) {
+              var cb = checkboxes[i];
+              var label = cb.closest('label') || cb.parentElement;
+              if (label && label.innerText && label.innerText.trim().indexOf('渠道') !== -1) {
+                var antCheckbox = cb.parentElement;
+                var isVisuallyChecked = antCheckbox && antCheckbox.classList.contains('ant-checkbox-checked');
+                if (!isVisuallyChecked) {
+                  cb.click();
+                  return '✅ 已重新勾选渠道列（视觉未勾选 → 点击恢复）';
+                }
+                return '⚠️ 渠道列已是视觉勾选状态，无需操作';
+              }
+            }
+            return '⚠️ 未在面板中找到渠道复选框';
+          })()
+      - sleep: 1000
+
+      # 再次点击齿轮按钮关闭面板
+      - javascript: >
+          (function() {
+            var btns = Array.from(document.querySelectorAll('button'));
+            var colBtn = btns.find(function(b) {
+              return b.title === '列显示' || b.getAttribute('aria-label') === '列显示';
+            });
+            if (!colBtn) throw new Error('关闭时未找到「列显示」按钮');
+            colBtn.click();
+            return '✅ 已点击齿轮按钮关闭面板';
+          })()
+      - sleep: 2000
+
+      # 验证渠道列已恢复
+      - javascript: >
+          (function() {
+            var headers = Array.from(document.querySelectorAll('th'))
+              .map(function(th) { return th.innerText.trim(); })
+              .filter(function(t) { return t.length > 0; });
+            var hasChannel = headers.indexOf('渠道') !== -1;
+            if (!hasChannel) throw new Error('TC-GIFTREC-WEB-003-04 「渠道」列未能恢复: ' + headers.join(', '));
+            return '✅ 渠道列已恢复。当前列: ' + headers.join(', ');
+          })()
+
+  - name: "TC-GIFTREC-WEB-003-05 时间范围筛选（有效时间段）"
+    flow:
+      - ai: 点击「重 置」按钮清空所有条件
+      - sleep: 500
+      - ai: 在「送礼人ID」输入框输入「100329338」
+      - sleep: 300
+
+      # 选择时间范围：2026-08-01 至 2026-08-31（已知有数据的月份）
+      - ai: >
+          点击「确认时间」的开始时间选择器，输入或选择日期「2026-08-01」作为开始时间，
+          然后选择「2026-08-31」作为结束时间
+      - sleep: 1000
+      - ai: 点击「查 询」按钮
+      - sleep: 4000
+
+      - aiAssert: >
+          查询结果显示数据，且所有记录的「创建时间」或「更新时间」均在 2026-08-01 至 2026-08-31 范围内
+        errorMessage: "TC-GIFTREC-WEB-003-05 时间范围筛选后结果时间不在指定范围内"
+
+  - name: "TC-GIFTREC-WEB-003-06 未来时间段查询（空结果）"
+    flow:
+      - ai: 点击「重 置」按钮
+      - sleep: 500
+      - ai: 在「送礼人ID」输入框输入「100329338」
+      - sleep: 300
+      - ai: >
+          点击「确认时间」选择器，选择未来日期范围
+          「2030-01-01」至「2030-01-31」作为查询时间段
+      - sleep: 500
+      - ai: 点击「查 询」按钮
+      - sleep: 4000
+
+      - aiAssert: >
+          查询结果为空态（「暂无数据」或类似提示），
+          因为在未来时间段内没有历史送礼记录
+        errorMessage: "TC-GIFTREC-WEB-003-06 未来时间范围查询应显示空态，但显示了数据"

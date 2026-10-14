@@ -1,0 +1,101 @@
+# TC-GIFTREC-WEB-001 | P0 | 开发者后台-礼物记录页面加载与布局验证
+# 验证礼物记录页面基础结构：Tab 切换、查询表单字段、初始空态占位提示
+
+web:
+  url: "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/gift-records"
+  cookie: ".generated/admin-cookies.json"
+  viewportWidth: 1440
+  viewportHeight: 900
+  waitForNetworkIdle:
+    timeout: 15000
+    continueOnNetworkIdleError: true
+
+agent:
+  testId: "TC-GIFTREC-WEB-001"
+  groupName: "礼物记录-页面加载"
+  generateReport: true
+  reportFileName: "gift-records-page-load"
+  aiActContext: >
+    这是 Yaahlan 开发者管理后台（developer tools）的礼物记录页面。
+    页面有「送礼订单」和「收礼订单」两个 Tab 页签。
+    「送礼订单」Tab：查询表单包含「送礼人ID（必填，标有*）」「收礼人ID」「礼物ID」「确认时间」（时间范围选择器），
+    以及「查询」和「重置」按钮，右上角有「列显示」按钮。
+    「收礼订单」Tab：查询表单包含「收礼人ID（必填，标有*）」「送礼人ID」「礼物ID」「确认时间」，
+    其他控件相同。
+    未输入查询条件时，结果区域显示占位文字（送礼订单显示"请输入送礼人ID后点击查询"，
+    收礼订单显示"请输入收礼人ID后点击查询"）。
+
+tasks:
+  - name: "TC-GIFTREC-WEB-001-01 页面基础结构完整性"
+    flow:
+      - sleep: 4000
+
+      - aiAssert: >
+          页面成功加载，可以看到：
+          1. 页面顶部或左侧有「Yaahlan 管理后台」导航菜单
+          2. 主内容区顶部有两个 Tab 标签：「送礼订单」和「收礼订单」
+          3. 当前激活（高亮/蓝色下划线）的是「送礼订单」Tab
+        errorMessage: "TC-GIFTREC-WEB-001-01 页面未正确加载或 Tab 结构缺失"
+
+      - aiQuery: >
+          {
+            activeTab: string,
+            tabs: string[],
+            formFields: string[],
+            hasQueryButton: boolean,
+            hasResetButton: boolean,
+            hasColumnToggle: boolean,
+            emptyStateTip: string | null
+          },
+          提取页面布局信息：
+          - activeTab: 当前激活的 Tab 名称
+          - tabs: 所有可见 Tab 标签名列表
+          - formFields: 查询表单中可见的字段标签名（按从上到下顺序）
+          - hasQueryButton: 是否有「查询」按钮
+          - hasResetButton: 是否有「重置」按钮
+          - hasColumnToggle: 是否有「列显示」按钮
+          - emptyStateTip: 结果区域的占位提示文字（如有）
+
+  - name: "TC-GIFTREC-WEB-001-02 送礼订单 Tab 查询表单字段验证"
+    flow:
+      - aiAssert: >
+          当前在「送礼订单」Tab 下，查询表单中：
+          1. 第一个字段标签包含「送礼人ID」且带有「*」必填标识（红色星号）
+          2. 第二个字段标签为「收礼人ID」
+          3. 第三个字段标签为「礼物ID」
+          4. 第四个字段标签为「确认时间」，其输入框显示「开始时间」和「结束时间」占位符
+        errorMessage: "TC-GIFTREC-WEB-001-02 送礼订单表单字段不完整或顺序错误"
+
+  - name: "TC-GIFTREC-WEB-001-03 送礼订单初始空态提示"
+    flow:
+      - aiAssert: >
+          结果区域（表格区）显示提示文字「请输入送礼人ID后点击查询」，
+          没有显示实际的表格数据行（因为未输入任何查询条件）
+        errorMessage: "TC-GIFTREC-WEB-001-03 送礼订单初始空态提示文字缺失或错误"
+
+  - name: "TC-GIFTREC-WEB-001-04 切换到收礼订单 Tab"
+    flow:
+      - ai: 点击「收礼订单」Tab 标签切换到收礼订单页面
+      - sleep: 2000
+
+      - aiAssert: >
+          已切换到「收礼订单」Tab（Tab 标签高亮变化），
+          查询表单中第一个字段标签包含「收礼人ID」且带有「*」必填标识
+        errorMessage: "TC-GIFTREC-WEB-001-04 切换收礼订单 Tab 后表单字段未正确显示"
+
+  - name: "TC-GIFTREC-WEB-001-05 收礼订单表单字段验证"
+    flow:
+      - aiAssert: >
+          当前在「收礼订单」Tab 下，查询表单中：
+          1. 第一个字段标签包含「收礼人ID」且带有「*」必填标识
+          2. 第二个字段标签为「送礼人ID」
+          3. 第三个字段标签为「礼物ID」
+          4. 第四个字段标签为「确认时间」
+        errorMessage: "TC-GIFTREC-WEB-001-05 收礼订单表单字段不完整或顺序错误"
+
+  - name: "TC-GIFTREC-WEB-001-06 收礼订单初始空态提示"
+    flow:
+      - aiAssert: >
+          结果区域显示提示文字「请输入收礼人ID后点击查询」，
+          没有显示实际的表格数据行
+        errorMessage: "TC-GIFTREC-WEB-001-06 收礼订单初始空态提示文字缺失或错误"

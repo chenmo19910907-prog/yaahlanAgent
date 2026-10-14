@@ -1,0 +1,71 @@
+# Gift Records 后台登录初始化（setup 脚本）
+# 处理 Aegis SSO 重定向：打开礼物记录页面，若跳转到 SSO 登录页则自动填写账号密码
+# 配合 --share-browser-context 使后续脚本复用登录态
+#
+# 登录凭证来源：Admin/.env.local (AEGIS_USERNAME / AEGIS_PASSWORD)
+
+web:
+  url: "https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/gift-records"
+  cookie: ".generated/admin-cookies.json"
+  viewportWidth: 1440
+  viewportHeight: 900
+  waitForNetworkIdle:
+    timeout: 20000
+    continueOnNetworkIdleError: true
+
+agent:
+  testId: "GIFTREC-SETUP-LOGIN"
+  groupName: "礼物记录-登录初始化"
+  generateReport: true
+  reportFileName: "gift-records-setup-login"
+  aiActContext: >
+    目标：进入 Yaahlan 管理后台的礼物记录页面。
+    如果页面跳转到 Aegis SSO 登录页（显示「Welcome to Aegis」或邮箱/密码输入框），
+    则使用账号「dingliang8401」和密码「Dlzy171818」登录。
+    登录成功后应看到「Yaahlan 管理后台」导航栏和礼物记录内容。
+    如果直接到了管理后台页面（未出现登录页），说明 cookie 有效，无需登录。
+
+tasks:
+  - name: "GIFTREC-SETUP-001 检测并处理 SSO 登录"
+    flow:
+      - sleep: 5000
+
+      # 判断是否需要登录
+      - aiQuery: >
+          {
+            needLogin: boolean,
+            pageType: string
+          },
+          判断当前页面状态：
+          - needLogin: 是否显示了登录页面（有邮箱/密码输入框，或 "Welcome to Aegis" 标题）
+          - pageType: 描述当前页面类型（"sso_login" / "admin_backend" / "loading" / "other"）
+
+  - name: "GIFTREC-SETUP-002 如需登录则执行 SSO 登录"
+    flow:
+      - ai: >
+          如果当前页面是 Aegis SSO 登录页（有"登录名"输入框和"密码"输入框），
+          请执行以下操作：
+          1. 清空登录名输入框，输入「dingliang8401」
+          2. 清空密码输入框，输入「Dlzy171818」
+          3. 点击「登录」按钮
+          如果页面已经是管理后台（不是登录页），则跳过此步骤。
+      - sleep: 6000
+
+      - aiAssert: >
+          登录已完成，当前页面显示 Yaahlan 管理后台内容，
+          可以看到「礼物记录」菜单项或「送礼订单」/「收礼订单」Tab 标签，
+          而不是登录页面
+        errorMessage: "GIFTREC-SETUP-002 SSO 登录失败，仍然停留在登录页面，请检查账号密码或手动登录"
+
+  - name: "GIFTREC-SETUP-003 导航到礼物记录页面"
+    flow:
+      # 登录后 SSO 重定向会丢失 hash 路由，需要显式导航到礼物记录页
+      - javascript: "window.location.href = 'https://test-s.immomo.com/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/gift-records'"
+      - sleep: 5000
+
+      - aiAssert: >
+          页面正确显示礼物记录内容：
+          1. 可见「送礼订单」和「收礼订单」两个 Tab 标签
+          2. 有查询表单（送礼人ID等字段）
+          3. 没有显示错误页面（如登录页或404）
+        errorMessage: "GIFTREC-SETUP-003 未能进入礼物记录页面，后续测试无法执行"
