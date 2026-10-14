@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20261014110019"></script>
-  <script src="demo-api.js?v=20261014110019"></script>
+  <script src="demo-fixtures.js?v=20261014114156"></script>
+  <script src="demo-api.js?v=20261014114156"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -1647,6 +1647,32 @@
     #moa-call-log-modal .admin-audit-item-detail,
     #moa-call-log-modal .admin-audit-item-target {
       word-break: break-word;
+    }
+    #moa-call-log-modal .call-log-head-top {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; flex-wrap: wrap;
+    }
+    #moa-call-log-modal .call-log-head-top h3 { margin-bottom: 0; flex-shrink: 0; }
+    #moa-call-log-modal .call-log-head-filters {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 8px; flex: 1; min-width: min(100%, 280px); flex-wrap: wrap;
+    }
+    #moa-call-log-modal .call-log-operator-select {
+      width: auto; min-width: 96px; max-width: 132px; box-sizing: border-box;
+      border-radius: 8px; padding: 6px 8px; font-size: 0.76rem;
+      border: 1px solid var(--border); background: var(--input-bg, var(--card-bg));
+      color: var(--text);
+    }
+    #moa-call-log-modal .call-log-date-range {
+      margin-bottom: 0; padding: 4px 8px; gap: 6px;
+      flex: 0 1 auto; min-width: 0;
+    }
+    #moa-call-log-modal .call-log-date-range .usage-date-trigger {
+      flex: 0 1 auto; min-width: 84px; min-height: 30px;
+      padding: 0 8px; font-size: 0.74rem;
+    }
+    #moa-call-log-modal .call-log-date-range .usage-date-range-hint {
+      flex-basis: 100%; font-size: 0.72rem;
     }
     .collaborators-actions button {
       border-radius: 10px; padding: 8px 14px; font-size: 0.86rem; cursor: pointer;
@@ -5230,7 +5256,20 @@
   <div class="collaborators-modal" id="moa-call-log-modal" aria-hidden="true">
     <div class="collaborators-box" role="dialog" aria-labelledby="moa-call-log-title">
       <div class="collaborators-head">
-        <h3 id="moa-call-log-title">操作记录</h3>
+        <div class="call-log-head-top">
+          <h3 id="moa-call-log-title">操作记录</h3>
+          <div class="call-log-head-filters" id="call-log-filters">
+            <select class="call-log-operator-select" id="call-log-operator-select" aria-label="按操作人筛选">
+              <option value="">全部人员</option>
+            </select>
+            <div class="usage-date-range call-log-date-range" aria-label="日期区间">
+              <button type="button" class="usage-date-trigger is-empty" id="call-log-start-date" aria-label="开始日期" aria-haspopup="dialog" aria-expanded="false">选择日期</button>
+              <span class="usage-date-range-sep">—</span>
+              <button type="button" class="usage-date-trigger is-empty" id="call-log-end-date" aria-label="结束日期" aria-haspopup="dialog" aria-expanded="false">选择日期</button>
+              <div class="usage-date-range-hint" id="call-log-date-range-hint"></div>
+            </div>
+          </div>
+        </div>
         <div class="collaborators-meta" id="moa-call-log-meta" aria-live="polite"></div>
       </div>
       <div class="collaborators-list" id="moa-call-log-body"></div>
@@ -5436,19 +5475,20 @@
         </div>
       </div>
     </div>
-    <div class="usage-date-picker" id="usage-date-picker" hidden role="dialog" aria-label="选择日期">
-      <div class="usage-date-picker-head">
-        <span class="usage-date-picker-title" id="usage-date-picker-title"></span>
-        <div class="usage-date-picker-nav">
-          <button type="button" id="usage-date-picker-prev" aria-label="上一月">◀</button>
-          <button type="button" id="usage-date-picker-next" aria-label="下一月">▶</button>
-        </div>
+  </div>
+
+  <div class="usage-date-picker" id="usage-date-picker" hidden role="dialog" aria-label="选择日期">
+    <div class="usage-date-picker-head">
+      <span class="usage-date-picker-title" id="usage-date-picker-title"></span>
+      <div class="usage-date-picker-nav">
+        <button type="button" id="usage-date-picker-prev" aria-label="上一月">◀</button>
+        <button type="button" id="usage-date-picker-next" aria-label="下一月">▶</button>
       </div>
-      <div class="usage-date-picker-weekdays" aria-hidden="true">
-        <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
-      </div>
-      <div class="usage-date-picker-grid" id="usage-date-picker-grid"></div>
     </div>
+    <div class="usage-date-picker-weekdays" aria-hidden="true">
+      <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+    </div>
+    <div class="usage-date-picker-grid" id="usage-date-picker-grid"></div>
   </div>
 
   <div class="about-modal" id="about-modal" aria-hidden="true">
@@ -5550,6 +5590,7 @@
     /** @type {{ minDate?: string, maxDate?: string, earliestWithData?: string, preloadDays?: number } | null} */
     let usageDateBounds = null;
     const USAGE_MAX_CUSTOM_DAYS = 180;
+    const CALL_LOG_MAX_CUSTOM_DAYS = 180;
     /** @type {Record<string, number>} */
     const usageStatsInflightSeq = Object.create(null);
     /** @type {AbortController | null} */
@@ -12574,7 +12615,13 @@
       return Math.floor((endDt - startDt) / 86400000) + 1;
     }
 
-    function resolveUsageDateBounds() {
+    function resolveUsageDateBounds(forNamespace) {
+      const ns = forNamespace || datePickerNamespace();
+      if (ns === 'callLog') {
+        const maxDate = usageDayKey(bjYmd());
+        const minYmd = addDaysYmd(bjYmd(), -(CALL_LOG_MAX_CUSTOM_DAYS - 1));
+        return { minDate: usageDayKey(minYmd), maxDate };
+      }
       const maxDate = usageDateBounds?.maxDate || usageDayKey(bjYmd());
       const minDate = usageDateBounds?.minDate || maxDate;
       return { minDate, maxDate };
@@ -12588,8 +12635,16 @@
       return next;
     }
 
-    function usageDateFieldEl(role) {
+    function usageDateFieldEl(role, namespace) {
+      const ns = namespace || datePickerNamespace();
+      if (ns === 'callLog') {
+        return document.getElementById(role === 'start' ? 'call-log-start-date' : 'call-log-end-date');
+      }
       return document.getElementById(role === 'start' ? 'usage-start-date' : 'usage-end-date');
+    }
+
+    function callLogDateRangeHintEl() {
+      return document.getElementById('call-log-date-range-hint');
     }
 
     function getUsageDateFieldValue(el) {
@@ -12616,13 +12671,18 @@
       return { lo, hi: maxDate };
     }
 
-    /** @type {{ role: 'start' | 'end', viewYear: number, viewMonth: number, anchorEl: HTMLElement | null }} */
+    /** @type {{ role: 'start' | 'end', viewYear: number, viewMonth: number, anchorEl: HTMLElement | null, namespace: 'usage' | 'callLog' }} */
     const usageDatePickerState = {
       role: 'start',
       viewYear: 0,
       viewMonth: 0,
       anchorEl: null,
+      namespace: 'usage',
     };
+
+    function datePickerNamespace() {
+      return usageDatePickerState.namespace === 'callLog' ? 'callLog' : 'usage';
+    }
 
     function usageMonthTitle(y, m) {
       return `${y}年${m}月`;
@@ -12659,10 +12719,12 @@
     function closeUsageDatePicker() {
       const pop = document.getElementById('usage-date-picker');
       if (!pop || pop.hidden) return;
+      const ns = datePickerNamespace();
       pop.hidden = true;
       usageDatePickerState.anchorEl = null;
-      usageDateFieldEl('start')?.setAttribute('aria-expanded', 'false');
-      usageDateFieldEl('end')?.setAttribute('aria-expanded', 'false');
+      usageDateFieldEl('start', ns)?.setAttribute('aria-expanded', 'false');
+      usageDateFieldEl('end', ns)?.setAttribute('aria-expanded', 'false');
+      usageDatePickerState.namespace = 'usage';
     }
 
     function positionUsageDatePicker(anchor) {
@@ -12754,10 +12816,15 @@
       }).join('');
     }
 
-    function openUsageDatePicker(anchor, role) {
+    function openUsageDatePicker(anchor, role, namespace = 'usage') {
       if (!anchor || anchor.disabled) return;
-      applyUsageDateInputLimits();
-      const { minDate, maxDate } = resolveUsageDateBounds();
+      usageDatePickerState.namespace = namespace === 'callLog' ? 'callLog' : 'usage';
+      if (namespace === 'callLog') {
+        applyCallLogDateInputLimits();
+      } else {
+        applyUsageDateInputLimits();
+      }
+      const { minDate, maxDate } = resolveUsageDateBounds(namespace);
       const fallback = role === 'start' ? minDate : maxDate;
       const current = getUsageDateFieldValue(anchor);
       const seed = parseUsageDayInput(current || fallback) || bjYmd();
@@ -12765,8 +12832,8 @@
       usageDatePickerState.viewYear = seed.y;
       usageDatePickerState.viewMonth = seed.m;
       usageDatePickerState.anchorEl = anchor;
-      usageDateFieldEl('start')?.setAttribute('aria-expanded', 'false');
-      usageDateFieldEl('end')?.setAttribute('aria-expanded', 'false');
+      usageDateFieldEl('start', namespace)?.setAttribute('aria-expanded', 'false');
+      usageDateFieldEl('end', namespace)?.setAttribute('aria-expanded', 'false');
       renderUsageDatePicker();
       positionUsageDatePicker(anchor);
       const pop = document.getElementById('usage-date-picker');
@@ -12789,9 +12856,17 @@
 
     function onUsageDatePicked(dayKey) {
       const { role, anchorEl } = usageDatePickerState;
-      const el = anchorEl || usageDateFieldEl(role);
+      const ns = datePickerNamespace();
+      const el = anchorEl || usageDateFieldEl(role, ns);
       setUsageDateFieldValue(el, dayKey);
       closeUsageDatePicker();
+      if (ns === 'callLog') {
+        applyCallLogDateInputLimits();
+        const start = getUsageDateFieldValue(usageDateFieldEl('start', 'callLog'));
+        const end = getUsageDateFieldValue(usageDateFieldEl('end', 'callLog'));
+        if (start && end && start <= end) applyCallLogCustomRange();
+        return;
+      }
       applyUsageDateInputLimits();
       const start = getUsageDateFieldValue(usageDateFieldEl('start'));
       const end = getUsageDateFieldValue(usageDateFieldEl('end'));
@@ -13584,6 +13659,8 @@
     let moaCallLogHasMore = false;
     let moaCallLogLoading = false;
     let moaCallLogLoadingMore = false;
+    let callLogCustomRange = null;
+    let callLogOperatorStaffId = '';
     const MOA_CALL_LOG_PAGE_SIZE = 100;
 
     function buildAdminPermissionsHtml(user) {
@@ -14025,9 +14102,10 @@
         } else if (moaCallLogLoadingMore) {
           meta.textContent = `共 ${moaCallLogTotal} 条，已展示 ${moaCallLogEntries.length} 条 · 加载中…`;
         } else if (!moaCallLogTotal) {
-          meta.textContent = '暂无记录';
+          meta.textContent = callLogFilterActive() ? '无匹配记录' : '暂无记录';
         } else {
-          meta.textContent = `共 ${moaCallLogTotal} 条，已展示 ${moaCallLogEntries.length} 条`;
+          const filterNote = callLogFilterActive() ? '（已筛选）' : '';
+          meta.textContent = `共 ${moaCallLogTotal} 条${filterNote}，已展示 ${moaCallLogEntries.length} 条`;
         }
       }
       if (moaCallLogLoading && !moaCallLogEntries.length) {
@@ -14110,6 +14188,133 @@
       );
     }
 
+    function resetCallLogFilters() {
+      callLogOperatorStaffId = '';
+      callLogCustomRange = null;
+      const select = document.getElementById('call-log-operator-select');
+      if (select) select.value = '';
+      syncCallLogDateUI();
+    }
+
+    function syncCallLogDateUI() {
+      const startInput = usageDateFieldEl('start', 'callLog');
+      const endInput = usageDateFieldEl('end', 'callLog');
+      if (!startInput || !endInput) return;
+      if (callLogCustomRange?.start && callLogCustomRange?.end) {
+        setUsageDateFieldValue(startInput, callLogCustomRange.start);
+        setUsageDateFieldValue(endInput, callLogCustomRange.end);
+      } else {
+        setUsageDateFieldValue(startInput, '');
+        setUsageDateFieldValue(endInput, '');
+        const hintEl = callLogDateRangeHintEl();
+        if (hintEl) hintEl.textContent = '';
+      }
+      applyCallLogDateInputLimits();
+    }
+
+    function applyCallLogDateInputLimits() {
+      const startInput = usageDateFieldEl('start', 'callLog');
+      const endInput = usageDateFieldEl('end', 'callLog');
+      const { minDate, maxDate } = resolveUsageDateBounds('callLog');
+      const endValue = getUsageDateFieldValue(endInput);
+      const startValue = getUsageDateFieldValue(startInput);
+      const startMax = endValue ? clampUsageDateValue(endValue, minDate, maxDate) : maxDate;
+      const endMin = startValue ? clampUsageDateValue(startValue, minDate, maxDate) : minDate;
+      if (startInput) {
+        const clampedStart = clampUsageDateValue(getUsageDateFieldValue(startInput), minDate, startMax);
+        if (clampedStart !== getUsageDateFieldValue(startInput)) setUsageDateFieldValue(startInput, clampedStart);
+      }
+      if (endInput) {
+        const clampedEnd = clampUsageDateValue(getUsageDateFieldValue(endInput), endMin, maxDate);
+        if (clampedEnd !== getUsageDateFieldValue(endInput)) setUsageDateFieldValue(endInput, clampedEnd);
+      }
+      if (!document.getElementById('usage-date-picker')?.hidden && datePickerNamespace() === 'callLog') {
+        renderUsageDatePicker();
+      }
+    }
+
+    function applyCallLogCustomRange() {
+      const startInput = usageDateFieldEl('start', 'callLog');
+      const endInput = usageDateFieldEl('end', 'callLog');
+      const start = getUsageDateFieldValue(startInput);
+      const end = getUsageDateFieldValue(endInput);
+      const hintEl = callLogDateRangeHintEl();
+      if (!start || !end) {
+        if (hintEl) hintEl.textContent = '请选择开始与结束日期';
+        return;
+      }
+      if (start > end) {
+        if (hintEl) hintEl.textContent = '开始日期不能晚于结束日期';
+        return;
+      }
+      const spanDays = customUsageSpanDays(start, end);
+      if (spanDays > CALL_LOG_MAX_CUSTOM_DAYS) {
+        if (hintEl) hintEl.textContent = `自定义区间最长 ${CALL_LOG_MAX_CUSTOM_DAYS} 天`;
+        return;
+      }
+      const { minDate, maxDate } = resolveUsageDateBounds('callLog');
+      if (minDate && start < minDate) {
+        if (hintEl) hintEl.textContent = `最早可选 ${minDate}`;
+        return;
+      }
+      if (maxDate && end > maxDate) {
+        if (hintEl) hintEl.textContent = '结束日期不能晚于今天';
+        return;
+      }
+      if (hintEl) hintEl.textContent = '';
+      applyCallLogDateInputLimits();
+      callLogCustomRange = { start, end };
+      void loadMoaCallLogEntries();
+    }
+
+    function resolveCallLogDateFilter() {
+      if (callLogCustomRange?.start && callLogCustomRange?.end) {
+        return { startDate: callLogCustomRange.start, endDate: callLogCustomRange.end };
+      }
+      return { startDate: '', endDate: '' };
+    }
+
+    function buildCallLogListQuery(offset) {
+      const params = new URLSearchParams();
+      params.set('limit', String(MOA_CALL_LOG_PAGE_SIZE));
+      params.set('offset', String(offset));
+      if (callLogOperatorStaffId) params.set('operatorStaffId', callLogOperatorStaffId);
+      const { startDate, endDate } = resolveCallLogDateFilter();
+      if (startDate) params.set('startDate', startDate);
+      if (endDate) params.set('endDate', endDate);
+      return params.toString();
+    }
+
+    function callLogFilterActive() {
+      const { startDate, endDate } = resolveCallLogDateFilter();
+      return Boolean(callLogOperatorStaffId || startDate || endDate);
+    }
+
+    async function loadCallLogOperators() {
+      const select = document.getElementById('call-log-operator-select');
+      if (!select) return;
+      const prev = callLogOperatorStaffId || select.value || '';
+      try {
+        const data = await api('/api/moa/call-log/operators');
+        const operators = Array.isArray(data.operators) ? data.operators : [];
+        select.innerHTML = '<option value="">全部人员</option>'
+          + operators.map((row) => {
+            const id = escapeHtml(String(row.staffId || '').trim());
+            const name = escapeHtml(publicDisplayName(String(row.displayName || row.staffId || '').trim()));
+            return `<option value="${id}">${name}</option>`;
+          }).join('');
+        if (prev && operators.some((row) => String(row.staffId || '').trim() === prev)) {
+          select.value = prev;
+          callLogOperatorStaffId = prev;
+        } else {
+          select.value = '';
+          callLogOperatorStaffId = '';
+        }
+      } catch (_) {
+        select.innerHTML = '<option value="">全部人员</option>';
+      }
+    }
+
     async function loadMoaCallLogEntries({ append = false } = {}) {
       if (append) {
         moaCallLogLoadingMore = true;
@@ -14122,9 +14327,7 @@
       renderMoaCallLogBody();
       const offset = append ? moaCallLogEntries.length : 0;
       try {
-        const data = await api(
-          `/api/moa/call-log?limit=${MOA_CALL_LOG_PAGE_SIZE}&offset=${offset}`,
-        );
+        const data = await api(`/api/moa/call-log?${buildCallLogListQuery(offset)}`);
         const batch = Array.isArray(data.entries) ? data.entries : [];
         moaCallLogTotal = Number(data.total ?? moaCallLogEntries.length + batch.length);
         moaCallLogHasMore = data.hasMore === true
@@ -14150,6 +14353,7 @@
       const modal = document.getElementById('moa-call-log-modal');
       if (!modal) return;
       if (!open) {
+        if (usageDatePickerState.anchorEl?.closest('#call-log-filters')) closeUsageDatePicker();
         if (modal.classList.contains('open')) {
           await animateOverlayClose(modal);
           modal.classList.remove('open');
@@ -14157,9 +14361,11 @@
         modal.setAttribute('aria-hidden', 'true');
         return;
       }
+      resetCallLogFilters();
       modal.classList.add('open');
       modal.setAttribute('aria-hidden', 'false');
       renderMoaCallLogBody();
+      await loadCallLogOperators();
       await loadMoaCallLogEntries();
     }
 
@@ -14737,7 +14943,7 @@
           closeUsageDatePicker();
           return;
         }
-        openUsageDatePicker(ev.currentTarget, 'start');
+        openUsageDatePicker(ev.currentTarget, 'start', 'usage');
       });
       document.getElementById('usage-end-date')?.addEventListener('click', (ev) => {
         ev.stopPropagation();
@@ -14746,7 +14952,7 @@
           closeUsageDatePicker();
           return;
         }
-        openUsageDatePicker(ev.currentTarget, 'end');
+        openUsageDatePicker(ev.currentTarget, 'end', 'usage');
       });
       document.getElementById('usage-date-picker-prev')?.addEventListener('click', (ev) => {
         ev.stopPropagation();
@@ -14898,6 +15104,32 @@
     document.getElementById('admin-audit-modal')?.addEventListener('click', (event) => {
       if (event.target.id === 'admin-audit-modal') void setAdminAuditModalOpen(false);
     });
+    function initCallLogFilters() {
+      document.getElementById('call-log-operator-select')?.addEventListener('change', (ev) => {
+        callLogOperatorStaffId = String(ev.target.value || '').trim();
+        void loadMoaCallLogEntries();
+      });
+      document.getElementById('call-log-start-date')?.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const pop = document.getElementById('usage-date-picker');
+        if (!pop?.hidden && usageDatePickerState.anchorEl === ev.currentTarget) {
+          closeUsageDatePicker();
+          return;
+        }
+        openUsageDatePicker(ev.currentTarget, 'start', 'callLog');
+      });
+      document.getElementById('call-log-end-date')?.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const pop = document.getElementById('usage-date-picker');
+        if (!pop?.hidden && usageDatePickerState.anchorEl === ev.currentTarget) {
+          closeUsageDatePicker();
+          return;
+        }
+        openUsageDatePicker(ev.currentTarget, 'end', 'callLog');
+      });
+    }
+    initCallLogFilters();
+
     document.getElementById('moa-call-log-body')?.addEventListener('scroll', () => {
       maybeLoadMoreMoaCallLogFromScroll();
     }, { passive: true });
