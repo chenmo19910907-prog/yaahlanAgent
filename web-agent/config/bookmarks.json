@@ -44,6 +44,13 @@
           "url": "https://www.yaahlan.fun/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/#/manage",
           "icon": "link",
           "description": "开发者后台"
+        },
+        {
+          "id": "bookmark-mv9249ox",
+          "label": "创新中台",
+          "url": "https://mdp-nova.wemomo.com/fep/momo/mdp-spacey/order-admin/index.html#/main",
+          "icon": "link",
+          "description": "中台后台"
         }
       ]
     },
