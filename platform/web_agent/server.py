@@ -3512,6 +3512,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 known = collect_all_staff_labels(store.list_sessions(enrich_names=False))
             except Exception:  # noqa: BLE001
                 known = {}
+            _LITE_SESSIONS_CACHE.clear()
             return _json_response(
                 self,
                 meta.to_dict(known_labels=known, viewer_staff_id=viewer.staff_id),

@@ -57,6 +57,54 @@
       ]
     },
     {
+      "id": "salary_e2e_regression",
+      "title": "算薪自动化-全量 pytest 回归",
+      "category": "算薪",
+      "summary": "5 个 pytest 套件：check-env → cycle 全量+报告 → exempt → guild-progress → refund-blacklist。不含 confirm 写库。",
+      "summaryReadable": "先看清楚 5 步各跑哪个套件、做什么，再点「执行」跑组合工作流；也可在下方单步执行某一套件。",
+      "steps": [
+        {
+          "order": 0,
+          "name": "环境检查（check-env）",
+          "workflowId": "salary-check-env",
+          "note": "检查 Python、pytest、MySQL、Salary/.env；不通过则不要继续跑用例。"
+        },
+        {
+          "order": 1,
+          "name": "① 半月结算薪（cycle）",
+          "workflowId": "salary-run-cycle",
+          "note": "套件 id=cycle，约 66 条。MySQL 表1 造数 → MOA1 快照 → MOA2 算薪 → 断言表3/表4；本步带 --report 生成 Markdown/HTML。"
+        },
+        {
+          "order": 2,
+          "name": "② 主播豁免（exempt）",
+          "workflowId": "salary-run-exempt",
+          "note": "套件 id=exempt。等级豁免、首次主播、跨周期一次性等；用例数据来自 cycle 大表。"
+        },
+        {
+          "order": 3,
+          "name": "③ 公会进步奖（guild-progress）",
+          "workflowId": "salary-run-guild-progress",
+          "note": "套件 id=guild-progress（新规 202608，不跑切点旧口径用例）。历史基准 → 本周期造数 → MOA → 断言 motivation_amount。"
+        },
+        {
+          "order": 4,
+          "name": "④ 退款黑名单（refund-blacklist）",
+          "workflowId": "salary-run-refund-blacklist",
+          "note": "套件 id=refund-blacklist。写黑名单 → MOA 算薪 → 断言是否按规则过滤。"
+        }
+      ],
+      "prompts": [
+        "一键执行算薪全量 pytest 回归（5 套件）"
+      ],
+      "notes": [
+        "一键命令：PYTHONPATH=platform python3 workflow/workflow_execute.py run salary-automation-full",
+        "⑤ 确认应得薪资（confirm）会写 union_salary_detail，请单独工作流 salary-run-confirm",
+        "测试后台：python3 Salary/salary_execute.py dashboard → http://127.0.0.1:8088",
+        "套件列表：python3 Salary/salary_execute.py list-suites"
+      ]
+    },
+    {
       "id": "cp_love_chest_tier_retest",
       "title": "CP爱意宝箱-逐级奖励复测（E2E）",
       "category": "CP·爱意宝箱",
@@ -802,6 +850,76 @@
         "清除设备 <mmuidv3|mmuid或mmuidv3> 入会账号限制"
       ],
       "command": "python3 workflow/workflow_execute.py run guild-device-join-limit-clear --mmuidv3 <mmuidv3>"
+    },
+    {
+      "id": "salary_check_env",
+      "name": "算薪-环境检查",
+      "category": "算薪自动化（workflow）",
+      "description": "检查 Python、pytest、MySQL 与 Salary/.env 是否满足算薪 E2E 运行条件（建议全量回归前先跑本步）。",
+      "prompts": [
+        "执行工作流 算薪-环境检查"
+      ],
+      "command": "PYTHONPATH=platform python3 workflow/workflow_execute.py run salary-check-env"
+    },
+    {
+      "id": "salary_run_cycle",
+      "name": "算薪-套件①半月结算薪",
+      "category": "算薪自动化（workflow）",
+      "description": "pytest 套件 cycle：MySQL 表1 造数 → MOA1 快照(testUpdateSnapshotData) → MOA2 算薪(generateAnchorSalary) → 断言表3/表4。全量约 66 条，并生成 Markdown/HTML 报告（--report）。",
+      "prompts": [
+        "单独跑算薪套件 cycle 半月结算薪"
+      ],
+      "command": "PYTHONPATH=platform python3 workflow/workflow_execute.py run salary-run-cycle"
+    },
+    {
+      "id": "salary_run_exempt",
+      "name": "算薪-套件②主播豁免",
+      "category": "算薪自动化（workflow）",
+      "description": "pytest 套件 exempt：扣减系数豁免专项（等级豁免 Level≥8、首次主播、跨周期一次性等），数据来自 cycle 用例表，跑全套 case_names。",
+      "prompts": [
+        "单独跑算薪套件 exempt 主播豁免"
+      ],
+      "command": "PYTHONPATH=platform python3 workflow/workflow_execute.py run salary-run-exempt"
+    },
+    {
+      "id": "salary_run_guild_progress",
+      "name": "算薪-套件③公会进步奖",
+      "category": "算薪自动化（workflow）",
+      "description": "pytest 套件 guild-progress（新规 202608，跳过切点/旧口径用例）：历史基准 → 本周期造数 → MOA1/2 → 断言 motivation_amount。",
+      "prompts": [
+        "执行工作流 算薪-套件③公会进步奖"
+      ],
+      "command": "python3 workflow/workflow_execute.py run salary-run-guild-progress"
+    },
+    {
+      "id": "salary_run_refund_blacklist",
+      "name": "算薪-套件④退款黑名单",
+      "category": "算薪自动化（workflow）",
+      "description": "pytest 套件 refund-blacklist：写入退款黑名单 → MOA 算薪 → 断言表3/表4 是否按规则过滤。",
+      "prompts": [
+        "单独跑算薪套件 refund-blacklist 退款黑名单"
+      ],
+      "command": "PYTHONPATH=platform python3 workflow/workflow_execute.py run salary-run-refund-blacklist"
+    },
+    {
+      "id": "salary_run_confirm",
+      "name": "算薪-套件⑤确认应得薪资（写操作）",
+      "category": "算薪自动化（workflow）",
+      "description": "pytest 套件 confirm：按大区确认应得薪资，会改 union_salary_detail。须 Salary/.env 配置 CMS SSO/JWT；默认不纳入全量回归。",
+      "prompts": [
+        "单独跑算薪套件 confirm 确认应得薪资（写操作）"
+      ],
+      "command": "PYTHONPATH=platform python3 workflow/workflow_execute.py run salary-run-confirm"
+    },
+    {
+      "id": "salary_automation_full",
+      "name": "算薪-全量 pytest 回归（5 套件）",
+      "category": "算薪自动化（workflow）",
+      "description": "按顺序执行：环境检查 → ①半月结全量+报告 → ②主播豁免 → ③公会进步奖 → ④退款黑名单。不含⑤确认应得薪资（写库，请单独工作流）。耗时较长，建议在算薪测试后台或空闲时段执行。",
+      "prompts": [
+        "一键执行算薪全量 pytest 回归（5 套件）"
+      ],
+      "command": "PYTHONPATH=platform python3 workflow/workflow_execute.py run salary-automation-full"
     }
   ]
 }

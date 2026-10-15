@@ -1,0 +1,70 @@
+{
+  "id": "salary-automation-full",
+  "name": "算薪-全量 pytest 回归（5 套件）",
+  "category": "算薪自动化（workflow）",
+  "description": "按顺序执行：环境检查 → ①半月结全量+报告 → ②主播豁免 → ③公会进步奖 → ④退款黑名单。不含⑤确认应得薪资（写库，请单独工作流）。耗时较长，建议在算薪测试后台或空闲时段执行。",
+  "version": 1,
+  "params": {},
+  "steps": [
+    {
+      "id": "step_check_env",
+      "name": "0. 环境检查",
+      "run": {
+        "type": "shell",
+        "command": "python3 Salary/salary_execute.py check-env",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    },
+    {
+      "id": "step_cycle",
+      "name": "1. 半月结算薪（cycle，全量+报告）",
+      "run": {
+        "type": "shell",
+        "command": "python3 Salary/salary_execute.py run cycle --report -v",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    },
+    {
+      "id": "step_exempt",
+      "name": "2. 主播豁免（exempt）",
+      "run": {
+        "type": "shell",
+        "command": "python3 Salary/salary_execute.py run exempt -v",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    },
+    {
+      "id": "step_guild_progress",
+      "name": "3. 公会进步奖（guild-progress）",
+      "run": {
+        "type": "shell",
+        "command": "python3 Salary/salary_execute.py run guild-progress --guild-progress-policy=202608 -v",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    },
+    {
+      "id": "step_refund_blacklist",
+      "name": "4. 退款黑名单（refund-blacklist）",
+      "run": {
+        "type": "shell",
+        "command": "python3 Salary/salary_execute.py run refund-blacklist -v",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

@@ -46,6 +46,10 @@ def compute_sessions_list_etag(
                     "1" if item.get("pinned") else "0",
                     str(item.get("title") or ""),
                     str(item.get("latest_preview") or ""),
+                    ",".join(item.get("web_collaborator_ids") or []),
+                    str(item.get("shared_conversation_badge") or ""),
+                    "1" if item.get("is_collaborator") else "0",
+                    "1" if item.get("read_only") else "0",
                 ]
             )
         )
@@ -493,6 +497,32 @@ def _session_owner_staff_id(meta: SessionMeta) -> str:
     return (meta.web_owner_id or "").strip()
 
 
+def _session_in_mine_scope(meta: SessionMeta, viewer: str) -> bool:
+    if not viewer:
+        return False
+    if _session_owner_staff_id(meta) == viewer:
+        return True
+    if meta.source == "web" and meta.is_collaborator(viewer):
+        return True
+    return False
+
+
+def shared_conversation_badge(
+    meta: SessionMeta,
+    viewer_staff_id: str | None,
+) -> str:
+    """侧栏标签：主建（有共建成员的拥有者）/ 共建（参与人）。"""
+    viewer = (viewer_staff_id or "").strip()
+    if meta.source != "web" or not viewer:
+        return ""
+    owner_id = (meta.web_owner_id or "").strip()
+    if viewer == owner_id and meta.web_collaborator_id_set():
+        return "主建"
+    if meta.is_collaborator(viewer):
+        return "共建"
+    return ""
+
+
 def filter_sessions_by_scope(
     sessions: list[SessionMeta],
     scope: str,
@@ -505,7 +535,7 @@ def filter_sessions_by_scope(
     viewer = (viewer_staff_id or "").strip()
     if not viewer:
         return []
-    return [meta for meta in sessions if _session_owner_staff_id(meta) == viewer]
+    return [meta for meta in sessions if _session_in_mine_scope(meta, viewer)]
 
 
 def _auto_titles_from_messages(messages: list[ChatMessage]) -> set[str]:
@@ -750,20 +780,19 @@ class SessionMeta:
             if self.web_owner_id:
                 payload["web_owner_id"] = self.web_owner_id
             collab_ids = sorted(self.web_collaborator_id_set())
-            if collab_ids:
-                payload["web_collaborator_ids"] = collab_ids
-                from dingtalk_user_lookup import _public_display_name, resolve_staff_display_name
+            payload["web_collaborator_ids"] = collab_ids
+            from dingtalk_user_lookup import _public_display_name, resolve_staff_display_name
 
-                payload["web_collaborators"] = [
-                    {
-                        "staffId": uid,
-                        "displayName": _public_display_name(
-                            resolve_staff_display_name(uid, known_labels=known_labels),
-                            uid,
-                        ),
-                    }
-                    for uid in collab_ids
-                ]
+            payload["web_collaborators"] = [
+                {
+                    "staffId": uid,
+                    "displayName": _public_display_name(
+                        resolve_staff_display_name(uid, known_labels=known_labels),
+                        uid,
+                    ),
+                }
+                for uid in collab_ids
+            ]
             viewer = (viewer_staff_id or "").strip()
             owner_id = (self.web_owner_id or "").strip()
             if viewer and owner_id and viewer == owner_id:
@@ -771,6 +800,9 @@ class SessionMeta:
                 payload["can_manage_collaborators"] = True
             elif viewer and self.is_collaborator(viewer):
                 payload["is_collaborator"] = True
+            badge = shared_conversation_badge(self, viewer_staff_id)
+            if badge:
+                payload["shared_conversation_badge"] = badge
             if self.is_read_only_for_viewer(viewer_staff_id):
                 payload["read_only"] = True
         preview = (self.latest_preview or "").strip()
@@ -832,6 +864,7 @@ class WebSessionStore:
         self._sessions: dict[str, SessionMeta] = {}
         self._custom_title_touched: set[str] = set()
         self._pinned_touched: set[str] = set()
+        self._collaborators_touched: set[str] = set()
         self._messages_cache: dict[str, tuple[float, list[ChatMessage]]] = {}
         self._reload_index_if_stale(force=True)
 
@@ -933,7 +966,11 @@ class WebSessionStore:
                 and sid not in self._pinned_touched
             ):
                 meta.pinned_at = disk_meta.pinned_at
-            if disk_meta.web_collaborator_ids and not meta.web_collaborator_ids:
+            if (
+                disk_meta.web_collaborator_ids
+                and not meta.web_collaborator_ids
+                and sid not in self._collaborators_touched
+            ):
                 meta.web_collaborator_ids = list(disk_meta.web_collaborator_ids)
         for sid, disk_meta in disk_sessions.items():
             if sid not in self._sessions:
@@ -1758,7 +1795,12 @@ class WebSessionStore:
             if session_owner != uid:
                 return False, "forbidden"
             meta.web_collaborator_ids = normalized
-            self._save_index()
+            meta.updated_at = _now_iso()
+            self._collaborators_touched.add(session_id)
+            try:
+                self._save_index()
+            finally:
+                self._collaborators_touched.discard(session_id)
         return True, ""
 
     def is_read_only_for_viewer(

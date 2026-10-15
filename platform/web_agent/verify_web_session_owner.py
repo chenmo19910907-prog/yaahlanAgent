@@ -182,6 +182,43 @@ class WebSessionOwnerLockTest(unittest.TestCase):
             assert meta is not None
             self.assertEqual(meta.web_collaborator_ids, ["user_c"])
 
+    def test_clear_all_collaborators_persists(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            sid = "abc123collab03"
+            index.write_text(
+                json.dumps(
+                    {
+                        sid: {
+                            "title": "共同对话",
+                            "created_at": "2026-07-24T08:00:00+00:00",
+                            "updated_at": "2026-07-24T08:00:00+00:00",
+                            "message_count": 0,
+                            "source": "web",
+                            "web_owner_id": "owner_a",
+                            "web_owner_label": "用户A",
+                            "web_collaborator_ids": ["user_b"],
+                        }
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            ok, err = store.set_web_collaborators(
+                sid,
+                owner_id="owner_a",
+                collaborator_ids=[],
+            )
+            self.assertTrue(ok, err)
+            reloaded = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            meta = reloaded.get_session(sid)
+            assert meta is not None
+            self.assertEqual(meta.web_collaborator_ids, [])
+
     def test_pin_session_sort_and_unpin(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -400,6 +437,44 @@ class WebSessionScopeFilterTest(unittest.TestCase):
                 {"mine000000000001", "ding000000000001"},
             )
             self.assertEqual(filter_sessions_by_scope(items, "mine", viewer_staff_id=""), [])
+
+    def test_filter_sessions_by_scope_mine_includes_collaborator(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            sid = "collabmine000001"
+            index.write_text(
+                json.dumps(
+                    {
+                        sid: {
+                            "title": "共建会话",
+                            "created_at": "2026-08-03T08:00:00+00:00",
+                            "updated_at": "2026-08-03T09:00:00+00:00",
+                            "message_count": 1,
+                            "source": "web",
+                            "web_owner_id": "alice",
+                            "web_owner_label": "Alice",
+                            "web_collaborator_ids": ["bob"],
+                        }
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            items = store.list_sessions(enrich_names=False)
+            bob_mine = filter_sessions_by_scope(items, "mine", viewer_staff_id="bob")
+            self.assertEqual([m.id for m in bob_mine], [sid])
+            meta = store.get_session(sid)
+            assert meta is not None
+            from web_session_store import shared_conversation_badge
+
+            self.assertEqual(shared_conversation_badge(meta, "alice"), "主建")
+            self.assertEqual(shared_conversation_badge(meta, "bob"), "共建")
+            payload = meta.to_dict(viewer_staff_id="bob")
+            self.assertEqual(payload.get("shared_conversation_badge"), "共建")
 
 
 class WebSessionCustomTitleTest(unittest.TestCase):

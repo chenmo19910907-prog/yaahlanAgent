@@ -4,7 +4,7 @@
 新政策自结算周期 20260816（2026年8月下）起生效；此前周期仍按 202512 口径。
 取值：202512（旧，默认）/ 202608（新）/ auto（按周期自动：>=20260816 用新）。
 也接受 old / new。
-优先级：pytest --guild-progress-policy > 环境变量 GUILD_PROGRESS_AWARD_POLICY > 默认 202512。
+优先级：pytest --guild-progress-policy > 环境变量 GUILD_PROGRESS_AWARD_POLICY > 默认 202608（新规）。
 """
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ import os
 
 POLICY_OLD = "202512"
 POLICY_NEW = "202608"
-DEFAULT_POLICY = POLICY_OLD
+DEFAULT_POLICY = POLICY_NEW
 ENV_KEY = "GUILD_PROGRESS_AWARD_POLICY"
 NEW_POLICY_FIRST_PERIOD = "20260816"
 

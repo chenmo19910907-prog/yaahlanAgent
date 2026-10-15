@@ -481,29 +481,23 @@
           "moduleId": "算薪",
           "children": [
             {
-              "kind": "cap",
-              "moduleId": "算薪",
-              "catIndex": 0
+              "kind": "folder",
+              "id": "nav-salary-pytest-auto",
+              "label": "pytest 自动化",
+              "children": [
+                {
+                  "kind": "playbookItem",
+                  "playbookId": "salary_e2e_regression",
+                  "navLabel": "全量与分步回归"
+                }
+              ],
+              "subfolder": true
             },
             {
               "kind": "cap",
               "moduleId": "算薪",
-              "catIndex": 1
-            },
-            {
-              "kind": "cap",
-              "moduleId": "算薪",
-              "catIndex": 2
-            },
-            {
-              "kind": "cap",
-              "moduleId": "算薪",
-              "catIndex": 3
-            },
-            {
-              "kind": "cap",
-              "moduleId": "算薪",
-              "catIndex": 4
+              "catIndex": 4,
+              "label": "MOA 算薪（anchor-salary-moa）"
             }
           ]
         },
@@ -762,6 +756,19 @@
             {
               "kind": "playbookItem",
               "playbookId": "anniversary_egg_data_test"
+            }
+          ],
+          "subfolder": true
+        },
+        {
+          "kind": "folder",
+          "id": "nav-salary-playbook-wf",
+          "label": "算薪",
+          "children": [
+            {
+              "kind": "playbookItem",
+              "playbookId": "salary_e2e_regression",
+              "navLabel": "全量 pytest 回归（5 套件）"
             }
           ],
           "subfolder": true

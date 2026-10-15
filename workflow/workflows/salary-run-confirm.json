@@ -1,0 +1,22 @@
+{
+  "id": "salary-run-confirm",
+  "name": "算薪-套件⑤确认应得薪资（写操作）",
+  "category": "算薪自动化（workflow）",
+  "description": "pytest 套件 confirm：按大区确认应得薪资，会改 union_salary_detail。须 Salary/.env 配置 CMS SSO/JWT；默认不纳入全量回归。",
+  "version": 1,
+  "params": {},
+  "steps": [
+    {
+      "id": "run_confirm",
+      "name": "run confirm",
+      "run": {
+        "type": "shell",
+        "command": "RUN_CONFIRM_BY_AREA=1 python3 Salary/salary_execute.py run confirm -v",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

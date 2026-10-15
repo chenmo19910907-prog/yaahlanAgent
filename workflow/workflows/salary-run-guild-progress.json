@@ -1,0 +1,22 @@
+{
+  "id": "salary-run-guild-progress",
+  "name": "算薪-套件③公会进步奖",
+  "category": "算薪自动化（workflow）",
+  "description": "pytest 套件 guild-progress：历史基准 → 本周期造数 → MOA1/2 → 断言 motivation_amount（公会激励）。",
+  "version": 1,
+  "params": {},
+  "steps": [
+    {
+      "id": "run_guild_progress",
+      "name": "run guild-progress",
+      "run": {
+        "type": "shell",
+        "command": "python3 Salary/salary_execute.py run guild-progress --guild-progress-policy=202608 -v",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

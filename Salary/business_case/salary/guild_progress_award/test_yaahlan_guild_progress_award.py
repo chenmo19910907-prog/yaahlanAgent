@@ -28,6 +28,11 @@ from utils.guild_progress_award_table import (
     baseline_from_history,
     lookup_motivation,
 )
+from utils.guild_progress_policy import (
+    NEW_POLICY_FIRST_PERIOD,
+    POLICY_OLD,
+    get_guild_progress_award_policy,
+)
 from utils.json_utils import JsonUtils
 from utils.moa_utils import MoaUtils
 from utils.mysql_utils import MySQLUtils
@@ -75,8 +80,30 @@ def _load_bundle(json_name: str = DEFAULT_CASES_JSON):
     return JsonUtils.jsonfile_to_dict(DATA_SUBDIR, json_name) or {}
 
 
+_LEGACY_CASE_GROUPS = frozenset({"cutover_old"})
+
+
+def _cases_for_active_policy(cases: list) -> list:
+    """默认新规 202608：不跑切点/旧口径专用用例；显式 --guild-progress-policy=202512 时保留全量。"""
+    policy = get_guild_progress_award_policy()
+    if policy == POLICY_OLD:
+        return cases
+    kept: list = []
+    for case in cases:
+        group = (case.get("case_group") or "").strip()
+        if group in _LEGACY_CASE_GROUPS:
+            continue
+        if (case.get("run_policy") or "").strip() == POLICY_OLD:
+            continue
+        period = str(case.get("period_start") or "")
+        if period and period < NEW_POLICY_FIRST_PERIOD and group.startswith("cutover"):
+            continue
+        kept.append(case)
+    return kept
+
+
 _BUNDLE = _load_bundle()
-_CASES = _BUNDLE.get("cases") or []
+_CASES = _cases_for_active_policy(_BUNDLE.get("cases") or [])
 _SMOKE = {
     x.strip()
     for x in (os.environ.get("SMOKE_CASES") or "").split(",")

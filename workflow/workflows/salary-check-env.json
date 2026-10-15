@@ -1,0 +1,22 @@
+{
+  "id": "salary-check-env",
+  "name": "算薪-环境检查",
+  "category": "算薪自动化（workflow）",
+  "description": "检查 Python、pytest、MySQL 与 Salary/.env 是否满足算薪 E2E 运行条件（建议全量回归前先跑本步）。",
+  "version": 1,
+  "params": {},
+  "steps": [
+    {
+      "id": "check_env",
+      "name": "check-env",
+      "run": {
+        "type": "shell",
+        "command": "python3 Salary/salary_execute.py check-env",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

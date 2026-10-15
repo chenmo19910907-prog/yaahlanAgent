@@ -1,0 +1,22 @@
+{
+  "id": "salary-run-cycle",
+  "name": "算薪-套件①半月结算薪",
+  "category": "算薪自动化（workflow）",
+  "description": "pytest 套件 cycle：MySQL 表1 造数 → MOA1 快照(testUpdateSnapshotData) → MOA2 算薪(generateAnchorSalary) → 断言表3/表4。全量约 66 条，并生成 Markdown/HTML 报告（--report）。",
+  "version": 1,
+  "params": {},
+  "steps": [
+    {
+      "id": "run_cycle",
+      "name": "run cycle --report",
+      "run": {
+        "type": "shell",
+        "command": "python3 Salary/salary_execute.py run cycle --report -v",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

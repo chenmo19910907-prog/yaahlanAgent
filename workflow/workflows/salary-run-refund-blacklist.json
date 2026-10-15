@@ -1,0 +1,22 @@
+{
+  "id": "salary-run-refund-blacklist",
+  "name": "算薪-套件④退款黑名单",
+  "category": "算薪自动化（workflow）",
+  "description": "pytest 套件 refund-blacklist：写入退款黑名单 → MOA 算薪 → 断言表3/表4 是否按规则过滤。",
+  "version": 1,
+  "params": {},
+  "steps": [
+    {
+      "id": "run_refund_blacklist",
+      "name": "run refund-blacklist",
+      "run": {
+        "type": "shell",
+        "command": "python3 Salary/salary_execute.py run refund-blacklist -v",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

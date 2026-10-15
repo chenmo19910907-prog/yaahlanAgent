@@ -224,6 +224,15 @@
       letter-spacing: 0;
       transition: grid-template-columns 300ms var(--ease-spring);
     }
+    body.layout-shell-pending:not(.layout-ready) {
+      transition: none;
+    }
+    body.layout-shell-pending:not(.layout-ready) .left-panel,
+    body.layout-shell-pending:not(.layout-ready) .catalog-panel,
+    body.layout-shell-pending:not(.layout-ready) .sidebar-collapse-btn {
+      animation: none !important;
+      transition: none !important;
+    }
     body.sidebar-collapsed {
       grid-template-columns: 0px minmax(0, 1fr) 0px;
     }
@@ -1363,7 +1372,8 @@
     }
     .session-context-menu button:hover { background: var(--bg-hover); }
     .session-context-menu button.copied { color: var(--success, #34d399); }
-    .session-source {
+    .session-source,
+    .session-collab-badge {
       display: inline-flex;
       flex-shrink: 0;
       align-items: center;
@@ -1376,6 +1386,10 @@
       font-weight: 500;
       white-space: nowrap;
       line-height: 1.2;
+    }
+    .session-collab-badge.is-owner {
+      color: var(--accent);
+      border-color: rgba(91, 140, 255, 0.35);
     }
     .session-owner { color: inherit; }
     .dingtalk-owner-bar {
@@ -1855,6 +1869,22 @@
       display: flex; flex-direction: column; align-items: center;
       justify-content: center; height: 100%; text-align: center; gap: 16px;
       color: var(--muted);
+    }
+    .bootstrap-loading-state {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; height: 100%; min-height: 200px;
+      text-align: center; gap: 14px; color: var(--muted);
+      pointer-events: none; user-select: none;
+    }
+    .bootstrap-loading-spinner {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 2.5px solid var(--border);
+      border-top-color: var(--accent);
+      animation: bootstrap-spin 0.75s linear infinite;
+    }
+    @keyframes bootstrap-spin { to { transform: rotate(360deg); } }
+    .bootstrap-loading-state p {
+      margin: 0; font-size: 0.88rem; color: var(--muted-soft);
     }
     /* 轮播箭头与侧栏收起钮（fixed 50vh）同一水平线 */
     .empty-state:has(.empty-feature-carousel) {
@@ -4345,6 +4375,19 @@
     .catalog-panel-body {
       display: flex; flex-direction: row;
       flex: 1; min-height: 0; min-width: 0;
+      position: relative;
+    }
+    .catalog-panel-loading {
+      position: absolute; inset: 0; z-index: 3;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 14px;
+      background: var(--catalog-bg);
+      color: var(--muted); pointer-events: none; user-select: none;
+    }
+    .catalog-panel-loading[hidden] { display: none !important; }
+    .catalog-panel-loading .bootstrap-loading-spinner { flex-shrink: 0; }
+    .catalog-panel-loading p {
+      margin: 0; font-size: 0.85rem; color: var(--muted-soft);
     }
     .catalog-nav {
       width: var(--catalog-nav-width, 112px);
@@ -4948,7 +4991,9 @@
         title="全部历史会话 · 点击切换为我的" aria-label="筛选：全部历史会话">全部</button>
     </div>
     <div class="session-list-shell">
-      <div class="session-list" id="session-list"></div>
+      <div class="session-list" id="session-list">
+        <div class="session-filter-empty">加载中…</div>
+      </div>
       <button type="button" class="session-scroll-to-top-btn" id="btn-session-scroll-top" title="回到列表顶部" hidden aria-label="回到列表顶部">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 19V5"/>
@@ -5153,9 +5198,63 @@
         <nav class="catalog-nav" id="catalog-nav"></nav>
         <div class="catalog-nav-resizer" id="catalog-nav-resizer" title="拖动调整分类栏宽度"></div>
         <div class="catalog-main" id="catalog-main"></div>
+        <div class="catalog-panel-loading" id="catalog-panel-loading" hidden role="status" aria-live="polite">
+          <div class="bootstrap-loading-spinner" aria-hidden="true"></div>
+          <p>加载中…</p>
+        </div>
       </div>
     </aside>
   </div>
+
+  <script>
+    (function applyWebAgentLayoutShellEarly() {
+      try {
+        var body = document.body;
+        var root = document.documentElement;
+        body.classList.add('layout-shell-pending', 'is-page-bootstrapping');
+        var sidebarPref = localStorage.getItem('web_agent_sidebar_open');
+        var sidebarOpen = sidebarPref === null ? true : sidebarPref === '1';
+        if (!sidebarOpen) body.classList.add('sidebar-collapsed');
+        var catalogPref = localStorage.getItem('web_agent_catalog_open');
+        if (catalogPref === '1') {
+          body.classList.add('catalog-open');
+          var catalogPanel = document.getElementById('catalog-panel');
+          if (catalogPanel) catalogPanel.classList.add('open');
+          var catalogLoading = document.getElementById('catalog-panel-loading');
+          if (catalogLoading) catalogLoading.removeAttribute('hidden');
+        }
+        var sidebarWidth = localStorage.getItem('web_agent_sidebar_width');
+        if (sidebarWidth) root.style.setProperty('--sidebar-width', sidebarWidth + 'px');
+        var catalogWidth = localStorage.getItem('web_agent_catalog_width');
+        if (catalogWidth) root.style.setProperty('--catalog-width', catalogWidth + 'px');
+        var catalogNavWidth = localStorage.getItem('web_agent_catalog_nav_width');
+        if (catalogNavWidth) root.style.setProperty('--catalog-nav-width', catalogNavWidth + 'px');
+        var sidebarBtn = document.getElementById('btn-sidebar');
+        var catalogBtn = document.getElementById('btn-catalog');
+        if (sidebarBtn) sidebarBtn.classList.toggle('active', sidebarOpen);
+        if (catalogBtn) catalogBtn.classList.toggle('active', catalogPref === '1');
+        var legacySessionKey = 'web_agent_session';
+        var sessionId = (localStorage.getItem(legacySessionKey) || '').trim();
+        if (!sessionId) {
+          for (var i = 0; i < localStorage.length; i += 1) {
+            var key = localStorage.key(i);
+            if (!key || key.indexOf('web_agent_last_session_') !== 0) continue;
+            var value = (localStorage.getItem(key) || '').trim();
+            if (value) { sessionId = value; break; }
+          }
+        }
+        if (sessionId) {
+          var messages = document.getElementById('messages');
+          if (messages && !messages.querySelector('.msg, .empty-state, .bootstrap-loading-state')) {
+            messages.insertAdjacentHTML('beforeend',
+              '<div class="bootstrap-loading-state" role="status" aria-live="polite">'
+              + '<div class="bootstrap-loading-spinner" aria-hidden="true"></div>'
+              + '<p>加载中…</p></div>');
+          }
+        }
+      } catch (_) { /* localStorage / DOM */ }
+    })();
+  </script>
 
   <div class="catalog-nav-dialog-modal" id="catalog-nav-dialog-modal" hidden>
     <div class="catalog-nav-dialog" role="dialog" aria-modal="true" aria-labelledby="catalog-nav-dialog-title">
@@ -5572,7 +5671,7 @@
   <script src="bookmarks_panel.js"></script>
   <script src="message_board_panel.js?v=20260730b"></script>
   <script src="about_panel.js?v=20260814a"></script>
-  <script src="catalog_panel.js?v=20261014ai"></script>
+  <script src="catalog_panel.js?v=20261015load"></script>
   <script src="moa_record_panel.js?v=20260803d"></script>
   <script src="waiting_fx.js"></script>
   <script>
@@ -5645,8 +5744,9 @@
     let messageBoardPanel = null;
     let aboutPanel = null;
     let moaRecordPanel = null;
-    /** 能力侧栏默认关闭，仅顶栏「能力」或面板内关闭按钮手动切换；不持久化以免旧默认误开 */
-    let catalogOpen = false;
+    /** 工具台侧栏展开态与历史会话侧栏同键风格持久化；面板内目录/能力仍每次打开或刷新后默认收起 */
+    const catalogPref = localStorage.getItem('web_agent_catalog_open');
+    let catalogOpen = catalogPref === null ? false : catalogPref === '1';
     const sidebarPref = localStorage.getItem('web_agent_sidebar_open');
     let sidebarOpen = sidebarPref === null ? true : sidebarPref === '1';
     function sessionStorageKey() {
@@ -5661,6 +5761,22 @@
       if (currentAuthUser?.staffId) {
         return (localStorage.getItem(LEGACY_SESSION_STORAGE_KEY) || '').trim();
       }
+      return (localStorage.getItem(LEGACY_SESSION_STORAGE_KEY) || '').trim();
+    }
+
+    /** 鉴权完成前推断上次会话（与 layout shell 内联脚本一致） */
+    function readLikelyPersistedSessionId() {
+      const saved = readPersistedSessionId();
+      if (saved) return saved;
+      if (currentAuthUser?.staffId) return '';
+      try {
+        for (let i = 0; i < localStorage.length; i += 1) {
+          const key = localStorage.key(i);
+          if (!key || !key.startsWith('web_agent_last_session_')) continue;
+          const value = (localStorage.getItem(key) || '').trim();
+          if (value) return value;
+        }
+      } catch (_) { /* private mode */ }
       return (localStorage.getItem(LEGACY_SESSION_STORAGE_KEY) || '').trim();
     }
 
@@ -5701,6 +5817,9 @@
           stopFeatureDemoCarousel();
           container.innerHTML = '';
           ensureLoadOlderButton(container);
+          if (document.body.classList.contains('is-page-bootstrapping')) {
+            showMessagesBootstrapLoading();
+          }
         }
       }
       pendingScrollToTimestamp = scrollToTimestamp;
@@ -8585,10 +8704,24 @@
       const viewerId = (currentAuthUser?.staffId || '').trim();
       if (!viewerId) return false;
       if (item?.is_mine === true) return true;
+      if (item?.is_collaborator === true) return true;
       const ownerId = item?.source === 'dingtalk'
         ? (item.dingtalk_owner_id || '').trim()
         : (item.web_owner_id || '').trim();
       return !!ownerId && ownerId === viewerId;
+    }
+
+    function sessionListPrefixBadgesHtml(s) {
+      let html = '';
+      if (s?.source === 'dingtalk') {
+        html += '<span class="session-source">钉钉</span>';
+      }
+      const badge = (s?.shared_conversation_badge || '').trim();
+      if (badge === '主建' || badge === '共建') {
+        const cls = badge === '主建' ? 'session-collab-badge is-owner' : 'session-collab-badge';
+        html += `<span class="${cls}">${badge}</span>`;
+      }
+      return html;
     }
 
     function applySessionScopeFilter(list) {
@@ -8769,6 +8902,10 @@
         s.updated_at || '',
         s.messages_mtime || 0,
         sessionOwnerInfo(s).id || '',
+        (s.web_collaborator_ids || []).join(','),
+        s.shared_conversation_badge || '',
+        s.is_collaborator ? 1 : 0,
+        s.read_only ? 1 : 0,
       ].join('|')).join('\n');
     }
 
@@ -8911,9 +9048,7 @@
       el.className = 'session-item' + (s.id === currentSessionId ? ' active' : '');
       if (s.pinned) el.classList.add('is-pinned');
       el.dataset.id = s.id;
-      const sourceBadge = s.source === 'dingtalk'
-        ? '<span class="session-source">钉钉</span>'
-        : '';
+      const sourceBadge = sessionListPrefixBadgesHtml(s);
       const pinIcon = s.pinned
         ? `<button type="button" class="session-pin-icon session-pin-unpin" title="取消置顶" aria-label="取消置顶"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 12V4h1c.55 0 1-.45 1-1s-.45-1-1-1H8c-.55 0-1 .45-1 1s.45 1 1 1h1v8c0 1.1-.9 2-2 2H5v2h5.2c.4 1.2 1.5 2 2.8 2s2.4-.8 2.8-2H21v-2h-2c-1.1 0-2-.9-2-2z"/></svg></button>`
         : '';
@@ -9002,6 +9137,26 @@
       if (titleText && titleText.textContent !== (s.title || '')) {
         titleText.textContent = s.title || '';
       }
+      const titleRow = el.querySelector('.session-title');
+      if (titleRow) {
+        const wantBadges = sessionListPrefixBadgesHtml(s);
+        const badgeWrap = document.createElement('span');
+        badgeWrap.innerHTML = wantBadges;
+        const existing = titleRow.querySelectorAll('.session-source, .session-collab-badge');
+        const nextBadges = badgeWrap.querySelectorAll('.session-source, .session-collab-badge');
+        let badgesMatch = existing.length === nextBadges.length;
+        if (badgesMatch) {
+          existing.forEach((node, i) => {
+            if (node.outerHTML !== nextBadges[i].outerHTML) badgesMatch = false;
+          });
+        }
+        if (!badgesMatch) {
+          existing.forEach((node) => node.remove());
+          const frag = document.createDocumentFragment();
+          nextBadges.forEach((node) => frag.appendChild(node));
+          titleRow.insertBefore(frag, titleText || titleRow.firstChild);
+        }
+      }
     }
 
     function patchSessionListItemMeta(sessionId) {
@@ -9030,7 +9185,9 @@
       const filtered = sessionsCache;
       try {
         if (!filtered.length) {
-          const hint = sessionSearchQuery.trim()
+          const hint = document.body.classList.contains('is-page-bootstrapping')
+            ? '加载中…'
+            : sessionSearchQuery.trim()
             ? '未找到匹配的会话<br><span style="font-size:0.72rem;opacity:0.85">可尝试问题、用户名或回答中的关键词</span>'
             : sessionScopeFilter === 'mine'
               ? '暂无我的历史会话<br><span style="font-size:0.72rem;opacity:0.85">点击「全部」查看所有会话</span>'
@@ -9787,6 +9944,8 @@
     let shareableWebGroups = [];
     let shareableWebUsersLoadPromise = null;
     let collaboratorDraftIds = new Set();
+    /** 打开共同对话弹窗时的已选快照，仅用于列表排序，勾选过程中不更新 */
+    let collaboratorListInitialSelectedIds = new Set();
     let collaboratorsSaving = false;
 
     async function loadSelectableWebUsers() {
@@ -9837,6 +9996,18 @@
       });
     }
 
+    function sortCollaboratorsByInitialSelection(users) {
+      if (!collaboratorListInitialSelectedIds.size) return users;
+      const head = [];
+      const tail = [];
+      users.forEach(user => {
+        const staffId = (user.staffId || '').trim();
+        if (collaboratorListInitialSelectedIds.has(staffId)) head.push(user);
+        else tail.push(user);
+      });
+      return head.concat(tail);
+    }
+
     function updateCollaboratorsMeta(total, shown, query) {
       const meta = document.getElementById('collaborators-meta');
       if (!meta) return;
@@ -9861,7 +10032,9 @@
         updateCollaboratorsMeta(0, 0, query);
         return;
       }
-      const filtered = filterCollaboratorUsers(selectableWebUsers, query);
+      const filtered = sortCollaboratorsByInitialSelection(
+        filterCollaboratorUsers(selectableWebUsers, query),
+      );
       updateCollaboratorsMeta(selectableWebUsers.length, filtered.length, query);
       if (!filtered.length) {
         list.innerHTML = '<div class="collaborators-empty">未找到匹配人员</div>';
@@ -9901,6 +10074,7 @@
       const modal = document.getElementById('collaborators-modal');
       if (!modal) return;
       if (!open) {
+        collaboratorListInitialSelectedIds = new Set();
         if (modal.classList.contains('open')) {
           await animateOverlayClose(modal);
           modal.classList.remove('open');
@@ -9915,6 +10089,7 @@
           .map(entry => (typeof entry === 'string' ? entry : entry.staffId || '').trim())
           .filter(Boolean),
       );
+      collaboratorListInitialSelectedIds = new Set(collaboratorDraftIds);
       await loadSelectableWebUsers();
       const searchInput = document.getElementById('collaborators-search');
       if (searchInput) searchInput.value = '';
@@ -9942,7 +10117,16 @@
           alert(data.error || '保存失败');
           return;
         }
-        patchSessionCacheEntry(currentSessionId, data);
+        patchSessionCacheEntry(currentSessionId, {
+          ...data,
+          web_collaborator_ids: Array.isArray(data.web_collaborator_ids)
+            ? data.web_collaborator_ids
+            : [],
+          web_collaborators: Array.isArray(data.web_collaborators)
+            ? data.web_collaborators
+            : [],
+          shared_conversation_badge: data.shared_conversation_badge || '',
+        });
         updateDingtalkOwnerBar();
         syncSessionReadOnly(currentSessionId);
         renderSessionList();
@@ -11254,9 +11438,44 @@
       startAutoRotate();
     }
 
+    function bootstrapLoadingHtml() {
+      return `<div class="bootstrap-loading-state" role="status" aria-live="polite">
+        <div class="bootstrap-loading-spinner" aria-hidden="true"></div>
+        <p>加载中…</p>
+      </div>`;
+    }
+
+    function showMessagesBootstrapLoading() {
+      const container = getMessagesEl();
+      if (!container) return;
+      if (container.querySelector('.msg, .empty-state, .bootstrap-loading-state')) return;
+      container.insertAdjacentHTML('beforeend', bootstrapLoadingHtml());
+    }
+
+    function clearMessagesBootstrapLoading() {
+      getMessagesEl()?.querySelectorAll('.bootstrap-loading-state').forEach((el) => el.remove());
+    }
+
+    function showCatalogBootstrapLoading() {
+      const el = document.getElementById('catalog-panel-loading');
+      if (el) el.removeAttribute('hidden');
+    }
+
+    function clearCatalogBootstrapLoading() {
+      const el = document.getElementById('catalog-panel-loading');
+      if (el) el.setAttribute('hidden', '');
+    }
+
     function showEmptyState(opts = {}) {
       const container = document.getElementById('messages');
       if (!container) return;
+      if (
+        document.body.classList.contains('is-page-bootstrapping')
+        && readLikelyPersistedSessionId()
+      ) {
+        showMessagesBootstrapLoading();
+        return;
+      }
       const demos = Array.isArray(meta.featureDemos) ? meta.featureDemos : [];
       const rotateMs = meta.featureDemoRotateMs || 10000;
       const existingEmpty = container.querySelector('.empty-state');
@@ -11467,6 +11686,7 @@
 
     function renderLoadedMessages(sessionId, msgs, restoreFromBottom, opts = {}) {
       const container = getMessagesEl();
+      clearMessagesBootstrapLoading();
       if (!msgs.length) {
         if (canSkipMessagesRender(sessionId, msgs, sessionMessagesMeta(sessionId))) {
           syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
@@ -11810,6 +12030,10 @@
           }
         }
         if (skipFetch) return;
+
+        if (!cached?.length) {
+          showMessagesBootstrapLoading();
+        }
 
         loadMessagesAbort?.abort();
         const abortCtrl = new AbortController();
@@ -13055,12 +13279,16 @@
       const panel = document.getElementById('catalog-panel');
       const wasOpen = catalogOpen;
       catalogOpen = open;
+      localStorage.setItem('web_agent_catalog_open', open ? '1' : '0');
       if (open && !wasOpen) {
         trackEvent('panel_open', { panel: 'catalog' });
         if (catalogPanel) {
           void refreshCatalogPanel({ resetNavCollapse: true });
+        } else {
+          showCatalogBootstrapLoading();
         }
       }
+      if (!open) clearCatalogBootstrapLoading();
       panel.classList.toggle('open', open);
       document.body.classList.toggle('catalog-open', open);
       setHeaderBtnActive(document.getElementById('btn-catalog'), open, opts);
@@ -13533,6 +13761,8 @@
           await loadSessions({ lite: true });
           if (viewingId && currentSessionId === viewingId) {
             const sess = sessionsCache.find((s) => s.id === viewingId);
+            syncSessionReadOnly(viewingId);
+            updateDingtalkOwnerBar();
             const sessionActive = sess?.running;
             if (sessionActive) await tryReconnectActiveRun(viewingId);
             const serverMtime = Number(sess?.messages_mtime || 0);
@@ -13541,6 +13771,9 @@
             if (wasDingtalk || messagesStale) {
               await loadMessages({ force: messagesStale && !wasDingtalk });
             }
+          }
+          if (viewingId && !sessionsCache.some((s) => s.id === viewingId)) {
+            await ensureCurrentSessionMatchesScope();
           }
         } catch { /* ignore poll errors */ }
       }, 15000);
@@ -15192,6 +15425,7 @@
     function showBootstrapConnectionError(err) {
       const container = document.getElementById('messages');
       if (!container || container.querySelector('.msg')) return;
+      clearMessagesBootstrapLoading();
       const msg = escapeHtml(err?.message || '连接失败');
       container.innerHTML = `<div class="empty-state"><p>无法连接 Web Agent 服务：${msg}</p>
            <p style="margin-top:12px;font-size:0.82rem">请运行：python3 platform/web_agent/open_web_agent.py</p></div>`;
@@ -15199,9 +15433,18 @@
 
     (async () => {
       let bootstrapError = null;
+      document.body.classList.add('is-page-bootstrapping', 'layout-shell-pending');
+      if (!isGuestMode() && readLikelyPersistedSessionId()) {
+        showMessagesBootstrapLoading();
+      }
       try {
         mountBrandLogo();
         ensureSessionContextMenuPortal();
+        initSidebarResize();
+        initCatalogResize();
+        setSidebarOpen(sidebarOpen, { skipAnimation: true });
+        setCatalogOpen(catalogOpen, { skipAnimation: true });
+        requestAnimationFrame(() => document.body.classList.add('layout-ready'));
         const authData = await ensureAuthSession();
         if (authData) initAuthUI(authData);
         setupInputAttachmentHandlers();
@@ -15215,10 +15458,12 @@
         initPushResultControls();
         initReplyModeControls();
         const bootstrapSessionId = isGuestMode() ? '' : readPersistedSessionId();
+        if (!isGuestMode() && bootstrapSessionId) {
+          showMessagesBootstrapLoading();
+        }
         const messagesPrefetch = bootstrapSessionId
           ? startSessionMessagesPrefetch(bootstrapSessionId)
           : null;
-        requestAnimationFrame(() => document.body.classList.add('layout-ready'));
         const sessionsLoadPromise = loadSessions({ lite: true, deferRender: true }).catch((err) => {
           console.error('loadSessions', err);
         });
@@ -15258,9 +15503,6 @@
           showEmptyState();
         }
         renderSessionList();
-        initSidebarResize();
-        initCatalogResize();
-        setSidebarOpen(sidebarOpen, { skipAnimation: true });
         initMessageBoardPanel();
         initAboutPanel();
         initMoaRecordPanel();
@@ -15280,6 +15522,8 @@
         bootstrapError = err;
         console.error('bootstrap', err);
       } finally {
+        document.body.classList.remove('is-page-bootstrapping', 'layout-shell-pending');
+        clearMessagesBootstrapLoading();
         document.body.classList.add('layout-ready');
         try {
           if (!meta?.title) {

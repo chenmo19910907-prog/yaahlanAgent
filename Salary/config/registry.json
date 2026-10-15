@@ -66,7 +66,7 @@
       "id": "salary_guild_progress",
       "name": "算薪测试-公会进步奖",
       "category": "公会进步奖",
-      "description": "公会进步奖 E2E：历史基准 → 本周期造数 → MOA1/2 → 断言 motivation_amount；默认 202512 旧口径，新政策加 --guild-progress-policy=202608",
+      "description": "公会进步奖 E2E（新规 202608）：历史基准 → 本周期造数 → MOA1/2 → 断言 motivation_amount；默认跳过切点/旧口径用例。旧规须 --guild-progress-policy=202512",
       "prompts": [
         "公会进步奖回归"
       ],

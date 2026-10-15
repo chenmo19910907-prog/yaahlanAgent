@@ -703,13 +703,22 @@
     this._pendingNavMove = null;
   }
 
+  CatalogPanel.prototype.setLoading = function setLoading(on) {
+    const el = document.getElementById('catalog-panel-loading');
+    if (!el) return;
+    if (on) el.removeAttribute('hidden');
+    else el.setAttribute('hidden', '');
+  };
+
   CatalogPanel.prototype.load = async function load(fetchData, opts) {
     const preserveNavUi = !!(opts && opts.preserveNavUi);
     const prevActiveKey = this.activeKey;
     const prevQuery = this.query;
     const prevCollapsed = preserveNavUi ? new Set(this.collapsed) : null;
 
-    this.DATA = typeof fetchData === 'function' ? await fetchData() : fetchData;
+    this.setLoading(true);
+    try {
+      this.DATA = typeof fetchData === 'function' ? await fetchData() : fetchData;
     if (this.envCheckBtn) {
       const envCfg = this.DATA.env_check || {};
       if (envCfg.label) this.envCheckBtn.textContent = envCfg.label;
@@ -742,6 +751,9 @@
     if (!preserveNavUi) this.capExpanded = new Set();
     this.renderNav();
     this.render();
+    } finally {
+      this.setLoading(false);
+    }
   };
 
   CatalogPanel.prototype.reload = async function reload(fetchData, opts) {

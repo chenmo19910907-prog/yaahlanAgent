@@ -1,0 +1,22 @@
+{
+  "id": "salary-run-exempt",
+  "name": "算薪-套件②主播豁免",
+  "category": "算薪自动化（workflow）",
+  "description": "pytest 套件 exempt：扣减系数豁免专项（等级豁免 Level≥8、首次主播、跨周期一次性等），数据来自 cycle 用例表，跑全套 case_names。",
+  "version": 1,
+  "params": {},
+  "steps": [
+    {
+      "id": "run_exempt",
+      "name": "run exempt",
+      "run": {
+        "type": "shell",
+        "command": "python3 Salary/salary_execute.py run exempt -v",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

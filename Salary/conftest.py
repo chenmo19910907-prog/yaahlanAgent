@@ -27,7 +27,7 @@ def pytest_addoption(parser):
         "--guild-progress-policy",
         action="store",
         default=None,
-        help="公会进步奖政策：202512（旧，默认）/ 202608（新，自20260816起）/ auto（按周期自动）。",
+        help="公会进步奖政策：202608（新，默认）/ 202512（旧）/ auto（按周期自动）。",
     )
     parser.addoption(
         "--salary-report-suite",
