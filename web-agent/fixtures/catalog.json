@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-10-14 19:41:56 北京时间",
-  "total_items": 349,
+  "generated_at": "2026-10-15 12:43:17 北京时间",
+  "total_items": 356,
   "module_count": 27,
   "modules": [
     {
@@ -3087,7 +3087,7 @@
     {
       "id": "算薪",
       "label": "算薪",
-      "item_count": 13,
+      "item_count": 20,
       "categories": [
         {
           "name": "半月结算薪",
@@ -3200,6 +3200,88 @@
               "source_tag_id": "salary",
               "env": "test",
               "registry_id": "salary_cc_config"
+            }
+          ]
+        },
+        {
+          "name": "算薪自动化（workflow）",
+          "items": [
+            {
+              "name": "算薪-全量 pytest 回归（5 套件）",
+              "prompts": [
+                "一键执行算薪全量 pytest 回归（5 套件）"
+              ],
+              "source": "工作流",
+              "source_id": "workflow",
+              "source_tag_id": "workflow",
+              "env": "tool",
+              "registry_id": "salary_automation_full"
+            },
+            {
+              "name": "算薪-套件①半月结算薪",
+              "prompts": [
+                "单独跑算薪套件 cycle 半月结算薪"
+              ],
+              "source": "工作流",
+              "source_id": "workflow",
+              "source_tag_id": "workflow",
+              "env": "tool",
+              "registry_id": "salary_run_cycle"
+            },
+            {
+              "name": "算薪-套件②主播豁免",
+              "prompts": [
+                "单独跑算薪套件 exempt 主播豁免"
+              ],
+              "source": "工作流",
+              "source_id": "workflow",
+              "source_tag_id": "workflow",
+              "env": "tool",
+              "registry_id": "salary_run_exempt"
+            },
+            {
+              "name": "算薪-套件③公会进步奖",
+              "prompts": [
+                "执行工作流 算薪-套件③公会进步奖"
+              ],
+              "source": "工作流",
+              "source_id": "workflow",
+              "source_tag_id": "workflow",
+              "env": "tool",
+              "registry_id": "salary_run_guild_progress"
+            },
+            {
+              "name": "算薪-套件④退款黑名单",
+              "prompts": [
+                "单独跑算薪套件 refund-blacklist 退款黑名单"
+              ],
+              "source": "工作流",
+              "source_id": "workflow",
+              "source_tag_id": "workflow",
+              "env": "tool",
+              "registry_id": "salary_run_refund_blacklist"
+            },
+            {
+              "name": "算薪-套件⑤确认应得薪资（写操作）",
+              "prompts": [
+                "单独跑算薪套件 confirm 确认应得薪资（写操作）"
+              ],
+              "source": "工作流",
+              "source_id": "workflow",
+              "source_tag_id": "workflow",
+              "env": "tool",
+              "registry_id": "salary_run_confirm"
+            },
+            {
+              "name": "算薪-环境检查",
+              "prompts": [
+                "执行工作流 算薪-环境检查"
+              ],
+              "source": "工作流",
+              "source_id": "workflow",
+              "source_tag_id": "workflow",
+              "env": "tool",
+              "registry_id": "salary_check_env"
             }
           ]
         },
@@ -4790,6 +4872,91 @@
         "完整目录：python3 adb/adb_execute.py tunnel capture list",
         "文档：adb/录制脚本/Tunnel抓包常用验收.md",
         "提交表单类须优先抓包，不以 Toast 为准"
+      ]
+    },
+    {
+      "id": "salary_e2e_regression",
+      "title": "算薪自动化-全量 pytest 回归",
+      "category": "算薪",
+      "summary": "5 个 pytest 套件：check-env → cycle 全量+报告 → exempt → guild-progress → refund-blacklist。不含 confirm 写库。",
+      "summaryReadable": "先看清楚 5 步各跑哪个套件、做什么，再点「执行」跑组合工作流；也可在下方单步执行某一套件。",
+      "defaults": {},
+      "sheets": [],
+      "steps": [
+        {
+          "order": 0,
+          "name": "环境检查（check-env）",
+          "workflowId": "salary-check-env",
+          "workflowName": "算薪-环境检查",
+          "sheet": "",
+          "note": "检查 Python、pytest、MySQL、Salary/.env；不通过则不要继续跑用例。",
+          "command": "",
+          "operations": [],
+          "prompts": [
+            "执行工作流 算薪-环境检查"
+          ]
+        },
+        {
+          "order": 1,
+          "name": "① 半月结算薪（cycle）",
+          "workflowId": "salary-run-cycle",
+          "workflowName": "算薪-套件①半月结算薪",
+          "sheet": "",
+          "note": "套件 id=cycle，约 66 条。MySQL 表1 造数 → MOA1 快照 → MOA2 算薪 → 断言表3/表4；本步带 --report 生成 Markdown/HTML。",
+          "command": "",
+          "operations": [],
+          "prompts": [
+            "单独跑算薪套件 cycle 半月结算薪"
+          ]
+        },
+        {
+          "order": 2,
+          "name": "② 主播豁免（exempt）",
+          "workflowId": "salary-run-exempt",
+          "workflowName": "算薪-套件②主播豁免",
+          "sheet": "",
+          "note": "套件 id=exempt。等级豁免、首次主播、跨周期一次性等；用例数据来自 cycle 大表。",
+          "command": "",
+          "operations": [],
+          "prompts": [
+            "单独跑算薪套件 exempt 主播豁免"
+          ]
+        },
+        {
+          "order": 3,
+          "name": "③ 公会进步奖（guild-progress）",
+          "workflowId": "salary-run-guild-progress",
+          "workflowName": "算薪-套件③公会进步奖",
+          "sheet": "",
+          "note": "套件 id=guild-progress（新规 202608，不跑切点旧口径用例）。历史基准 → 本周期造数 → MOA → 断言 motivation_amount。",
+          "command": "",
+          "operations": [],
+          "prompts": [
+            "执行工作流 算薪-套件③公会进步奖"
+          ]
+        },
+        {
+          "order": 4,
+          "name": "④ 退款黑名单（refund-blacklist）",
+          "workflowId": "salary-run-refund-blacklist",
+          "workflowName": "算薪-套件④退款黑名单",
+          "sheet": "",
+          "note": "套件 id=refund-blacklist。写黑名单 → MOA 算薪 → 断言是否按规则过滤。",
+          "command": "",
+          "operations": [],
+          "prompts": [
+            "单独跑算薪套件 refund-blacklist 退款黑名单"
+          ]
+        }
+      ],
+      "prompts": [
+        "一键执行算薪全量 pytest 回归（5 套件）"
+      ],
+      "notes": [
+        "一键命令：PYTHONPATH=platform python3 workflow/workflow_execute.py run salary-automation-full",
+        "⑤ 确认应得薪资（confirm）会写 union_salary_detail，请单独工作流 salary-run-confirm",
+        "测试后台：python3 Salary/salary_execute.py dashboard → http://127.0.0.1:8088",
+        "套件列表：python3 Salary/salary_execute.py list-suites"
       ]
     },
     {
