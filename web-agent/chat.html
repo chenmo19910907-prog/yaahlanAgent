@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20261015062106"></script>
-  <script src="demo-api.js?v=20261015062106"></script>
+  <script src="demo-fixtures.js?v=20261016094312"></script>
+  <script src="demo-api.js?v=20261016094312"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -39,6 +39,7 @@
       --assistant-bg: rgba(20, 24, 33, 0.82);
       --success: #22c55e;
       --danger: #ef4444;
+      --refresh-overlay-bg: rgba(6, 10, 18, 0.78);
       --content-width: 880px;
       --chat-gutter: clamp(52px, 10vw, 144px);
       --sidebar-divider-radius: 14px;
@@ -79,6 +80,7 @@
       --success: #16a34a;
       --danger: #dc2626;
       --modal-overlay: rgba(15, 23, 42, 0.35);
+      --refresh-overlay-bg: rgba(255, 255, 255, 0.82);
       --header-bg: rgba(255, 255, 255, 0.78);
       --panel-bg: rgba(255, 255, 255, 0.76);
       --catalog-bg: rgba(255, 255, 255, 0.78);
@@ -1887,6 +1889,68 @@
     @keyframes bootstrap-spin { to { transform: rotate(360deg); } }
     .bootstrap-loading-state p {
       margin: 0; font-size: 0.88rem; color: var(--muted-soft);
+    }
+    .messages-refresh-status,
+    .sessions-refresh-status {
+      position: absolute;
+      inset: 0;
+      z-index: 8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      background: var(--refresh-overlay-bg);
+      color: var(--muted);
+      opacity: 0;
+      pointer-events: none;
+      user-select: none;
+      transition: opacity 220ms var(--ease-standard);
+    }
+    [data-theme="light"] .messages-refresh-status,
+    [data-theme="light"] .sessions-refresh-status {
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .messages-refresh-status[hidden],
+    .sessions-refresh-status[hidden] {
+      display: none !important;
+    }
+    .messages-refresh-status.is-visible,
+    .sessions-refresh-status.is-visible {
+      opacity: 1;
+    }
+    .messages-refresh-status .bootstrap-loading-spinner,
+    .sessions-refresh-status .bootstrap-loading-spinner {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-width: 2px;
+      border-color: rgba(59, 130, 246, 0.22);
+      border-top-color: #3b82f6;
+      box-shadow: 0 0 22px rgba(59, 130, 246, 0.42);
+    }
+    .messages-refresh-status-label,
+    .sessions-refresh-status-label {
+      margin: 0;
+      font-size: 0.88rem;
+      color: var(--muted-soft);
+    }
+    .messages-shell.is-refresh-success-flash::before,
+    .session-list-shell.is-refresh-success-flash::before,
+    .catalog-panel-body.is-refresh-success-flash::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background: var(--accent-soft);
+      animation: messages-refresh-success-flash 520ms var(--ease-standard) both;
+    }
+    @keyframes messages-refresh-success-flash {
+      0% { opacity: 0; }
+      18% { opacity: 1; }
+      100% { opacity: 0; }
     }
     /* 轮播箭头与侧栏收起钮（fixed 50vh）同一水平线 */
     .empty-state:has(.empty-feature-carousel) {
@@ -4995,6 +5059,10 @@
         title="全部历史会话 · 点击切换为我的" aria-label="筛选：全部历史会话">全部</button>
     </div>
     <div class="session-list-shell">
+      <div class="sessions-refresh-status" id="sessions-refresh-status" role="status" aria-live="polite" hidden>
+        <div class="bootstrap-loading-spinner" aria-hidden="true"></div>
+        <p class="sessions-refresh-status-label">加载中…</p>
+      </div>
       <div class="session-list" id="session-list">
         <div class="session-filter-empty">加载中…</div>
       </div>
@@ -5121,6 +5189,10 @@
         </div>
       </div>
       <div class="messages-shell">
+        <div class="messages-refresh-status" id="messages-refresh-status" role="status" aria-live="polite" hidden>
+          <div class="bootstrap-loading-spinner" aria-hidden="true"></div>
+          <p class="messages-refresh-status-label">加载中…</p>
+        </div>
         <div class="messages" id="messages"></div>
         <button type="button" class="scroll-to-bottom-btn" id="btn-scroll-to-bottom" title="回到最新对话" hidden aria-label="回到最新对话">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -5297,6 +5369,18 @@
   <div class="session-context-menu" id="session-context-menu" role="menu" hidden>
     <button type="button" id="session-context-rename-btn" role="menuitem">修改标题</button>
     <button type="button" id="session-context-pin-btn" role="menuitem">置顶</button>
+  </div>
+
+  <div class="session-context-menu" id="messages-context-menu" role="menu" hidden>
+    <button type="button" id="messages-context-refresh-btn" role="menuitem">刷新</button>
+  </div>
+
+  <div class="session-context-menu" id="sessions-panel-context-menu" role="menu" hidden>
+    <button type="button" id="sessions-panel-context-refresh-btn" role="menuitem">刷新</button>
+  </div>
+
+  <div class="session-context-menu" id="catalog-panel-context-menu" role="menu" hidden>
+    <button type="button" id="catalog-panel-context-refresh-btn" role="menuitem">刷新</button>
   </div>
 
   <div class="collaborators-modal" id="forward-modal" aria-hidden="true">
@@ -5675,7 +5759,7 @@
   <script src="bookmarks_panel.js"></script>
   <script src="message_board_panel.js?v=20260730b"></script>
   <script src="about_panel.js?v=20260814a"></script>
-  <script src="catalog_panel.js?v=20261015load"></script>
+  <script src="catalog_panel.js?v=20261015nav"></script>
   <script src="moa_record_panel.js?v=20260803d"></script>
   <script src="waiting_fx.js"></script>
   <script>
@@ -7711,16 +7795,11 @@
 
     async function refreshAssistantAttachmentsFromServer(sessionId, shellEl) {
       if (!shellEl?.isConnected) return;
+      if (sessionCacheAwaitingAssistantReply(sessionId)) return;
       try {
         const data = await api(`/api/sessions/${sessionId}/messages?tail=15`);
         const msgs = data.messages || [];
-        let lastAssist = null;
-        for (let i = msgs.length - 1; i >= 0; i -= 1) {
-          if (msgs[i].role === 'assistant' && String(msgs[i].content || '').trim()) {
-            lastAssist = msgs[i];
-            break;
-          }
-        }
+        const lastAssist = assistantReplyAfterLastUser(msgs);
         if (!lastAssist?.files?.length && !lastAssist?.images?.length) return;
         const bodyEl = shellEl.querySelector('.msg-body');
         const md = getMessageMarkdown(bodyEl) || String(lastAssist.content || '').trim();
@@ -7735,25 +7814,18 @@
       const run = activeRuns.get(sessionId);
       const shell = run?.shellEl;
       if (!shell?.isConnected || isStreamingShellFinalized(shell)) return;
+      if (sessionCacheAwaitingAssistantReply(sessionId)) return;
       try {
         const data = await api(`/api/sessions/${sessionId}/messages?tail=30`);
         const msgs = data.messages || [];
-        if (!messagesHaveAssistantSinceLastUser(msgs)) return;
-        let lastAssist = null;
-        for (let i = msgs.length - 1; i >= 0; i -= 1) {
-          if (msgs[i].role === 'assistant' && String(msgs[i].content || '').trim()) {
-            lastAssist = msgs[i];
-            break;
-          }
-        }
-        if (lastAssist) {
-          finalizeStreamingShell(sessionId, shell, lastAssist.content, {
-            timestamp: lastAssist.timestamp,
-            files: lastAssist.files || [],
-            images: lastAssist.images || [],
-          });
-          sessionMessagesEtags.delete(sessionId);
-        }
+        const lastAssist = assistantReplyAfterLastUser(msgs);
+        if (!lastAssist) return;
+        finalizeStreamingShell(sessionId, shell, lastAssist.content, {
+          timestamp: lastAssist.timestamp,
+          files: lastAssist.files || [],
+          images: lastAssist.images || [],
+        });
+        sessionMessagesEtags.delete(sessionId);
       } catch { /* 兜底失败时由 loadMessages 重绘 */ }
     }
 
@@ -8438,6 +8510,14 @@
       document.getElementById('btn-scroll-to-bottom')?.addEventListener('click', () => {
         scheduleScrollMessagesToBottom({ force: true });
       });
+      if (!container.dataset.contextMenuBound) {
+        container.dataset.contextMenuBound = '1';
+        container.addEventListener('contextmenu', (event) => {
+          if (!currentSessionId) return;
+          event.preventDefault();
+          showMessagesContextMenu(event.clientX, event.clientY);
+        });
+      }
       if (typeof ResizeObserver !== 'undefined') {
         let resizeRaf = 0;
         const observer = new ResizeObserver(() => {
@@ -9240,6 +9320,16 @@
       sessionContextDismissHandler = null;
     }
 
+    function hideCatalogPanelContextMenu() {
+      const menu = document.getElementById('catalog-panel-context-menu');
+      if (menu && !menu.hidden && typeof setDropdownAnimated === 'function') {
+        setDropdownAnimated(menu, false).then(() => { menu.hidden = true; });
+      } else if (menu) {
+        menu.hidden = true;
+      }
+      detachCatalogPanelContextDismiss();
+    }
+
     function hideSessionContextMenu() {
       const menu = document.getElementById('session-context-menu');
       if (menu && !menu.hidden && typeof setDropdownAnimated === 'function') {
@@ -9289,6 +9379,9 @@
 
     function showSessionContextMenu(session, clientX, clientY, anchorEl) {
       if (isGuestMode()) return;
+      hideMessagesContextMenu();
+      hideSessionsPanelContextMenu();
+      hideCatalogPanelContextMenu();
       const menu = document.getElementById('session-context-menu');
       const pinBtn = document.getElementById('session-context-pin-btn');
       if (!menu || !pinBtn || !session?.id) return;
@@ -9311,6 +9404,261 @@
       document.addEventListener('click', handler, true);
       document.addEventListener('keydown', handler, true);
       document.getElementById('session-list')?.addEventListener('scroll', handler, true);
+    }
+
+    let messagesContextDismissHandler = null;
+
+    function detachMessagesContextDismiss() {
+      if (!messagesContextDismissHandler) return;
+      const handler = messagesContextDismissHandler;
+      document.removeEventListener('pointerdown', handler, true);
+      document.removeEventListener('click', handler, true);
+      document.removeEventListener('keydown', handler, true);
+      getMessagesEl()?.removeEventListener('scroll', handler, true);
+      messagesContextDismissHandler = null;
+    }
+
+    function hideMessagesContextMenu() {
+      const menu = document.getElementById('messages-context-menu');
+      if (menu && !menu.hidden && typeof setDropdownAnimated === 'function') {
+        setDropdownAnimated(menu, false).then(() => { menu.hidden = true; });
+      } else if (menu) {
+        menu.hidden = true;
+      }
+      detachMessagesContextDismiss();
+    }
+
+    function ensureMessagesContextMenuPortal() {
+      const menu = document.getElementById('messages-context-menu');
+      if (menu && menu.parentElement !== document.body) {
+        document.body.appendChild(menu);
+      }
+      return menu;
+    }
+
+    function positionMessagesContextMenu(clientX, clientY) {
+      const menu = ensureMessagesContextMenuPortal();
+      if (!menu) return;
+      menu.classList.remove('dropdown-opening', 'dropdown-closing');
+      menu.hidden = false;
+      menu.style.left = '0px';
+      menu.style.top = '0px';
+      void menu.offsetWidth;
+      const rect = menu.getBoundingClientRect();
+      const margin = 8;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      let left = clientX;
+      let top = clientY;
+      if (left + rect.width + margin > vw) left = clientX - rect.width;
+      if (top + rect.height + margin > vh) top = clientY - rect.height;
+      left = Math.min(Math.max(margin, left), Math.max(margin, vw - rect.width - margin));
+      top = Math.min(Math.max(margin, top), Math.max(margin, vh - rect.height - margin));
+      menu.style.left = `${left}px`;
+      menu.style.top = `${top}px`;
+      if (typeof setDropdownAnimated === 'function') setDropdownAnimated(menu, true);
+    }
+
+    let sessionsPanelContextDismissHandler = null;
+
+    function detachSessionsPanelContextDismiss() {
+      if (!sessionsPanelContextDismissHandler) return;
+      const handler = sessionsPanelContextDismissHandler;
+      document.removeEventListener('pointerdown', handler, true);
+      document.removeEventListener('click', handler, true);
+      document.removeEventListener('keydown', handler, true);
+      document.getElementById('session-list')?.removeEventListener('scroll', handler, true);
+      sessionsPanelContextDismissHandler = null;
+    }
+
+    function hideSessionsPanelContextMenu() {
+      const menu = document.getElementById('sessions-panel-context-menu');
+      if (menu && !menu.hidden && typeof setDropdownAnimated === 'function') {
+        setDropdownAnimated(menu, false).then(() => { menu.hidden = true; });
+      } else if (menu) {
+        menu.hidden = true;
+      }
+      detachSessionsPanelContextDismiss();
+    }
+
+    function ensureSessionsPanelContextMenuPortal() {
+      const menu = document.getElementById('sessions-panel-context-menu');
+      if (menu && menu.parentElement !== document.body) {
+        document.body.appendChild(menu);
+      }
+      return menu;
+    }
+
+    function positionSessionsPanelContextMenu(clientX, clientY) {
+      const menu = ensureSessionsPanelContextMenuPortal();
+      if (!menu) return;
+      menu.classList.remove('dropdown-opening', 'dropdown-closing');
+      menu.hidden = false;
+      menu.style.left = '0px';
+      menu.style.top = '0px';
+      void menu.offsetWidth;
+      const rect = menu.getBoundingClientRect();
+      const margin = 8;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      let left = clientX;
+      let top = clientY;
+      if (left + rect.width + margin > vw) left = clientX - rect.width;
+      if (top + rect.height + margin > vh) top = clientY - rect.height;
+      left = Math.min(Math.max(margin, left), Math.max(margin, vw - rect.width - margin));
+      top = Math.min(Math.max(margin, top), Math.max(margin, vh - rect.height - margin));
+      menu.style.left = `${left}px`;
+      menu.style.top = `${top}px`;
+      if (typeof setDropdownAnimated === 'function') setDropdownAnimated(menu, true);
+    }
+
+    function showSessionsPanelContextMenu(clientX, clientY) {
+      if (isGuestMode()) return;
+      hideSessionContextMenu();
+      hideMessagesContextMenu();
+      hideSessionsPanelContextMenu();
+      hideCatalogPanelContextMenu();
+      const menu = document.getElementById('sessions-panel-context-menu');
+      if (!menu) return;
+      positionSessionsPanelContextMenu(clientX, clientY);
+      const handler = (event) => {
+        if (menu.hidden) return;
+        if (event.type === 'keydown') {
+          if (event.key === 'Escape') hideSessionsPanelContextMenu();
+          return;
+        }
+        if (menu.contains(event.target)) return;
+        hideSessionsPanelContextMenu();
+      };
+      sessionsPanelContextDismissHandler = handler;
+      document.addEventListener('pointerdown', handler, true);
+      document.addEventListener('click', handler, true);
+      document.addEventListener('keydown', handler, true);
+      document.getElementById('session-list')?.addEventListener('scroll', handler, true);
+    }
+
+    function setupSessionsPanelContextMenu() {
+      const panel = document.querySelector('.left-panel');
+      if (!panel || panel.dataset.sessionsPanelContextBound) return;
+      panel.dataset.sessionsPanelContextBound = '1';
+      panel.addEventListener('contextmenu', (event) => {
+        if (isGuestMode()) return;
+        if (event.target.closest('.session-item')) return;
+        if (event.target.closest('#sidebar-resizer, .sidebar-tool-actions-host')) return;
+        event.preventDefault();
+        showSessionsPanelContextMenu(event.clientX, event.clientY);
+      });
+    }
+
+    let catalogPanelContextDismissHandler = null;
+
+    function detachCatalogPanelContextDismiss() {
+      if (!catalogPanelContextDismissHandler) return;
+      const handler = catalogPanelContextDismissHandler;
+      document.removeEventListener('pointerdown', handler, true);
+      document.removeEventListener('click', handler, true);
+      document.removeEventListener('keydown', handler, true);
+      document.getElementById('catalog-nav')?.removeEventListener('scroll', handler, true);
+      document.getElementById('catalog-main')?.removeEventListener('scroll', handler, true);
+      catalogPanelContextDismissHandler = null;
+    }
+
+    function ensureCatalogPanelContextMenuPortal() {
+      const menu = document.getElementById('catalog-panel-context-menu');
+      if (menu && menu.parentElement !== document.body) {
+        document.body.appendChild(menu);
+      }
+      return menu;
+    }
+
+    function positionCatalogPanelContextMenu(clientX, clientY) {
+      const menu = ensureCatalogPanelContextMenuPortal();
+      if (!menu) return;
+      menu.classList.remove('dropdown-opening', 'dropdown-closing');
+      menu.hidden = false;
+      menu.style.left = '0px';
+      menu.style.top = '0px';
+      void menu.offsetWidth;
+      const rect = menu.getBoundingClientRect();
+      const margin = 8;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      let left = clientX;
+      let top = clientY;
+      if (left + rect.width + margin > vw) left = clientX - rect.width;
+      if (top + rect.height + margin > vh) top = clientY - rect.height;
+      left = Math.min(Math.max(margin, left), Math.max(margin, vw - rect.width - margin));
+      top = Math.min(Math.max(margin, top), Math.max(margin, vh - rect.height - margin));
+      menu.style.left = `${left}px`;
+      menu.style.top = `${top}px`;
+      if (typeof setDropdownAnimated === 'function') setDropdownAnimated(menu, true);
+    }
+
+    function showCatalogPanelContextMenu(clientX, clientY) {
+      if (isGuestMode()) return;
+      hideSessionContextMenu();
+      hideMessagesContextMenu();
+      hideSessionsPanelContextMenu();
+      hideCatalogPanelContextMenu();
+      const menu = document.getElementById('catalog-panel-context-menu');
+      if (!menu) return;
+      positionCatalogPanelContextMenu(clientX, clientY);
+      const handler = (event) => {
+        if (menu.hidden) return;
+        if (event.type === 'keydown') {
+          if (event.key === 'Escape') hideCatalogPanelContextMenu();
+          return;
+        }
+        if (menu.contains(event.target)) return;
+        hideCatalogPanelContextMenu();
+      };
+      catalogPanelContextDismissHandler = handler;
+      document.addEventListener('pointerdown', handler, true);
+      document.addEventListener('click', handler, true);
+      document.addEventListener('keydown', handler, true);
+      document.getElementById('catalog-nav')?.addEventListener('scroll', handler, true);
+      document.getElementById('catalog-main')?.addEventListener('scroll', handler, true);
+    }
+
+    function setupCatalogPanelContextMenu() {
+      const panel = document.getElementById('catalog-panel');
+      if (!panel || panel.dataset.catalogPanelContextBound) return;
+      panel.dataset.catalogPanelContextBound = '1';
+      panel.addEventListener('contextmenu', (event) => {
+        if (isGuestMode()) return;
+        if (event.target.closest('#catalog-panel-resizer, #catalog-nav-resizer')) return;
+        if (event.target.closest('.head-actions, #btn-moa-record')) return;
+        if (event.target.closest('.catalog-nav .nav-row')) return;
+        if (event.target.closest('.catalog-main .cap, .catalog-main .prompt-line, .catalog-main .module-head[data-module-head]')) return;
+        event.preventDefault();
+        event.stopPropagation();
+        showCatalogPanelContextMenu(event.clientX, event.clientY);
+      }, true);
+    }
+
+    function showMessagesContextMenu(clientX, clientY) {
+      if (!currentSessionId) return;
+      hideSessionContextMenu();
+      hideSessionsPanelContextMenu();
+      hideCatalogPanelContextMenu();
+      hideMessagesContextMenu();
+      const menu = document.getElementById('messages-context-menu');
+      if (!menu) return;
+      positionMessagesContextMenu(clientX, clientY);
+      const handler = (event) => {
+        if (menu.hidden) return;
+        if (event.type === 'keydown') {
+          if (event.key === 'Escape') hideMessagesContextMenu();
+          return;
+        }
+        if (menu.contains(event.target)) return;
+        hideMessagesContextMenu();
+      };
+      messagesContextDismissHandler = handler;
+      document.addEventListener('pointerdown', handler, true);
+      document.addEventListener('click', handler, true);
+      document.addEventListener('keydown', handler, true);
+      getMessagesEl()?.addEventListener('scroll', handler, true);
     }
 
     function sessionIsRunning(session) {
@@ -9605,6 +9953,28 @@
       const anchorEl = sessionContextAnchorEl;
       hideSessionContextMenu();
       if (target) startSessionTitleEdit(target, anchorEl);
+    });
+
+    document.getElementById('messages-context-refresh-btn')?.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      hideMessagesContextMenu();
+      if (!currentSessionId) return;
+      void runManualMessagesRefresh();
+    });
+
+    document.getElementById('sessions-panel-context-refresh-btn')?.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      hideSessionsPanelContextMenu();
+      void runManualSessionsRefresh();
+    });
+
+    document.getElementById('catalog-panel-context-refresh-btn')?.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      hideCatalogPanelContextMenu();
+      void runManualCatalogRefresh();
     });
 
     let forwardDraftIds = new Set();
@@ -10792,7 +11162,7 @@
         await waitForPendingSessionTitleSave();
         await loadSessions({ lite: true, force: true });
         if (sessionId === currentSessionId) {
-          await loadMessages({ force: true });
+          await loadMessages();
         }
       })();
     }
@@ -11460,6 +11830,148 @@
       getMessagesEl()?.querySelectorAll('.bootstrap-loading-state').forEach((el) => el.remove());
     }
 
+    let messagesManualRefreshSeq = 0;
+    let messagesManualRefreshHideTimer = null;
+
+    function setMessagesManualRefreshStatus(mode) {
+      const statusEl = document.getElementById('messages-refresh-status');
+      const shellEl = document.querySelector('.messages-shell');
+      if (!statusEl || !shellEl) return;
+      if (messagesManualRefreshHideTimer) {
+        clearTimeout(messagesManualRefreshHideTimer);
+        messagesManualRefreshHideTimer = null;
+      }
+      const labelEl = statusEl.querySelector('.messages-refresh-status-label');
+      const spinnerEl = statusEl.querySelector('.bootstrap-loading-spinner');
+      if (mode === 'loading') {
+        statusEl.dataset.mode = 'loading';
+        statusEl.hidden = false;
+        if (labelEl) labelEl.textContent = '加载中…';
+        if (spinnerEl) spinnerEl.hidden = false;
+        shellEl.classList.remove('is-refresh-success-flash');
+        requestAnimationFrame(() => statusEl.classList.add('is-visible'));
+        return;
+      }
+      if (mode === 'success') {
+        statusEl.dataset.mode = '';
+        statusEl.classList.remove('is-visible');
+        statusEl.hidden = true;
+        shellEl.classList.remove('is-refresh-success-flash');
+        void shellEl.offsetWidth;
+        shellEl.classList.add('is-refresh-success-flash');
+        return;
+      }
+      statusEl.classList.remove('is-visible');
+      statusEl.hidden = true;
+      statusEl.dataset.mode = '';
+      shellEl.classList.remove('is-refresh-success-flash');
+    }
+
+    async function runManualMessagesRefresh() {
+      if (!currentSessionId) return;
+      const seq = ++messagesManualRefreshSeq;
+      setMessagesManualRefreshStatus('loading');
+      try {
+        await loadMessages({ force: true, repaint: true });
+        if (seq !== messagesManualRefreshSeq || !currentSessionId) return;
+        setMessagesManualRefreshStatus('success');
+      } catch (err) {
+        if (seq !== messagesManualRefreshSeq) return;
+        setMessagesManualRefreshStatus('hidden');
+        showWebToast('消息刷新失败', { error: true, durationMs: 2800 });
+        console.warn('manual messages refresh failed', err);
+      }
+    }
+
+    let sessionsManualRefreshSeq = 0;
+
+    function setSessionsManualRefreshStatus(mode) {
+      const statusEl = document.getElementById('sessions-refresh-status');
+      const shellEl = document.querySelector('.session-list-shell');
+      if (!statusEl || !shellEl) return;
+      const labelEl = statusEl.querySelector('.sessions-refresh-status-label');
+      const spinnerEl = statusEl.querySelector('.bootstrap-loading-spinner');
+      if (mode === 'loading') {
+        statusEl.dataset.mode = 'loading';
+        statusEl.hidden = false;
+        if (labelEl) labelEl.textContent = '加载中…';
+        if (spinnerEl) spinnerEl.hidden = false;
+        shellEl.classList.remove('is-refresh-success-flash');
+        requestAnimationFrame(() => statusEl.classList.add('is-visible'));
+        return;
+      }
+      if (mode === 'success') {
+        statusEl.dataset.mode = '';
+        statusEl.classList.remove('is-visible');
+        statusEl.hidden = true;
+        shellEl.classList.remove('is-refresh-success-flash');
+        void shellEl.offsetWidth;
+        shellEl.classList.add('is-refresh-success-flash');
+        return;
+      }
+      statusEl.classList.remove('is-visible');
+      statusEl.hidden = true;
+      statusEl.dataset.mode = '';
+      shellEl.classList.remove('is-refresh-success-flash');
+    }
+
+    async function runManualSessionsRefresh() {
+      const seq = ++sessionsManualRefreshSeq;
+      setSessionsManualRefreshStatus('loading');
+      try {
+        const q = sessionSearchQuery.trim();
+        await loadSessions({ lite: !q, force: true });
+        if (seq !== sessionsManualRefreshSeq) return;
+        setSessionsManualRefreshStatus('success');
+      } catch (err) {
+        if (seq !== sessionsManualRefreshSeq) return;
+        setSessionsManualRefreshStatus('hidden');
+        showWebToast('历史会话刷新失败', { error: true, durationMs: 2800 });
+        console.warn('manual sessions refresh failed', err);
+      }
+    }
+
+    let catalogManualRefreshSeq = 0;
+
+    function setCatalogManualRefreshStatus(mode) {
+      const loadingEl = document.getElementById('catalog-panel-loading');
+      const shellEl = document.querySelector('.catalog-panel-body');
+      if (!loadingEl || !shellEl) return;
+      if (mode === 'loading') {
+        loadingEl.removeAttribute('hidden');
+        shellEl.classList.remove('is-refresh-success-flash');
+        return;
+      }
+      if (mode === 'success') {
+        loadingEl.setAttribute('hidden', '');
+        shellEl.classList.remove('is-refresh-success-flash');
+        void shellEl.offsetWidth;
+        shellEl.classList.add('is-refresh-success-flash');
+        return;
+      }
+      loadingEl.setAttribute('hidden', '');
+      shellEl.classList.remove('is-refresh-success-flash');
+    }
+
+    async function runManualCatalogRefresh() {
+      if (!catalogPanel) {
+        showWebToast('工具台尚未加载完成', { error: true, durationMs: 2600 });
+        return;
+      }
+      const seq = ++catalogManualRefreshSeq;
+      setCatalogManualRefreshStatus('loading');
+      try {
+        await catalogPanel.reload(() => fetchCatalogData(), { preserveNavUi: true });
+        if (seq !== catalogManualRefreshSeq) return;
+        setCatalogManualRefreshStatus('success');
+      } catch (err) {
+        if (seq !== catalogManualRefreshSeq) return;
+        setCatalogManualRefreshStatus('hidden');
+        showWebToast('工具台刷新失败', { error: true, durationMs: 2800 });
+        console.warn('manual catalog refresh failed', err);
+      }
+    }
+
     function showCatalogBootstrapLoading() {
       const el = document.getElementById('catalog-panel-loading');
       if (el) el.removeAttribute('hidden');
@@ -11808,10 +12320,20 @@
       if (!Array.isArray(cached) || !cached.length || !Array.isArray(incoming) || !incoming.length) {
         return -1;
       }
-      const anchorTs = cached[cached.length - 1]?.timestamp;
+      const anchor = cached[cached.length - 1];
+      const anchorTs = anchor?.timestamp;
       if (!anchorTs) return -1;
       for (let i = incoming.length - 1; i >= 0; i -= 1) {
         if (incoming[i].timestamp === anchorTs) return i;
+      }
+      if (anchor?.role === 'user') {
+        const anchorText = String(anchor.content || '').trim();
+        if (anchorText) {
+          for (let i = incoming.length - 1; i >= 0; i -= 1) {
+            const m = incoming[i];
+            if (m?.role === 'user' && String(m.content || '').trim() === anchorText) return i;
+          }
+        }
       }
       return -1;
     }
@@ -11821,9 +12343,10 @@
       if (!container || !msgs.length) return;
       const sessionId = currentSessionId;
       const run = activeRuns.get(sessionId);
-      let msgsToAppend = msgs;
+      let msgsToAppend = filterStaleAssistantAppends(sessionId, msgs);
+      if (!msgsToAppend.length) return;
       let mergeShell = null;
-      const tailAssistants = msgs.filter(
+      const tailAssistants = msgsToAppend.filter(
         (m) => m.role === 'assistant' && String(m.content || '').trim(),
       );
       if (tailAssistants.length) {
@@ -11857,7 +12380,14 @@
       if (!container) return false;
       const candidates = [...container.querySelectorAll('.msg:not(.streaming)')];
       const last = candidates[candidates.length - 1];
-      if (!last || last.dataset.timestamp !== m.timestamp) return false;
+      if (!last) return false;
+      if (last.dataset.timestamp !== m.timestamp) {
+        if (m.role !== 'user' || !last.classList.contains('user')) return false;
+        const lastText = (last.querySelector('.msg-body')?.textContent || '').trim();
+        const nextText = String(m.content || '').trim();
+        if (!nextText || lastText !== nextText) return false;
+        last.dataset.timestamp = m.timestamp;
+      }
       if (m.role === 'assistant') {
         const bodyEl = last.querySelector('.msg-body');
         const nextMd = String(m.content || '').trim();
@@ -11989,6 +12519,14 @@
     async function loadMessages(opts = {}) {
       if (!currentSessionId) { showEmptyState(); return; }
       const sessionId = currentSessionId;
+      const refetch = !!opts.force;
+      const repaint = !!opts.repaint;
+      if (refetch) {
+        sessionMessagesEtags.delete(sessionId);
+      }
+      if (repaint && messagesDomMatchesSession(sessionId)) {
+        clearMessagesDomRendered();
+      }
       if (opts.messagesPrefetch) {
         try { await opts.messagesPrefetch; } catch { /* ignore */ }
       }
@@ -12010,7 +12548,7 @@
         const cachedFingerprint = cached ? sessionMessagesFingerprint(cached, cachedMeta) : '';
         const serverMtime = sessionMessagesMtimeFromList(sessionId);
         const cachedMtime = Number(cachedMeta?.mtime || 0);
-        const skipFetch = !opts.force
+        const skipFetch = !refetch
           && !pendingScrollToTimestamp
           && cached?.length
           && serverMtime > 0
@@ -12026,7 +12564,7 @@
           if (!messagesDomMatchesSession(sessionId)) {
             renderLoadedMessages(sessionId, cached, restoreFromBottom, { progressive: progressiveFirstPaint });
           } else if (cacheFresh) {
-            if (canSkipMessagesRender(sessionId, cached, cachedMeta)) {
+            if (!repaint && !refetch && canSkipMessagesRender(sessionId, cached, cachedMeta)) {
               syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
             } else {
               renderLoadedMessages(sessionId, cached, restoreFromBottom, { progressive: progressiveFirstPaint });
@@ -12048,7 +12586,7 @@
         try {
           const msgHeaders = {};
           const cachedEtag = sessionMessagesEtags.get(sessionId);
-          if (cachedEtag && !opts.force) {
+          if (cachedEtag && !refetch) {
             msgHeaders['If-None-Match'] = cachedEtag;
           }
           data = await api(
@@ -12069,7 +12607,7 @@
         if (data?.__notModified) {
           if (data.__etag) sessionMessagesEtags.set(sessionId, data.__etag);
           if (cached?.length) {
-            if (canSkipMessagesRender(sessionId, cached, cachedMeta)) {
+            if (!repaint && !refetch && canSkipMessagesRender(sessionId, cached, cachedMeta)) {
               syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
             } else {
               renderLoadedMessages(sessionId, cached, restoreFromBottom, { progressive: progressiveFirstPaint });
@@ -12078,7 +12616,7 @@
           return;
         }
         if (data?.__etag) sessionMessagesEtags.set(sessionId, data.__etag);
-        const msgs = data.messages || [];
+        const msgs = mergeOptimisticTailUser(sessionId, data.messages || []);
         const pageMeta = {
           total: data.total,
           has_older: data.has_older,
@@ -12086,7 +12624,7 @@
           messages_mtime: data.messages_mtime || serverMtime,
         };
         const nextFingerprint = sessionMessagesFingerprint(msgs, pageMeta);
-        if (nextFingerprint === cachedFingerprint) {
+        if (!repaint && !refetch && nextFingerprint === cachedFingerprint) {
           rememberSessionMessages(sessionId, msgs, pageMeta);
           if (canSkipMessagesRender(sessionId, msgs, pageMeta)) {
             syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
@@ -12095,10 +12633,20 @@
           }
           return;
         }
-        if (cached?.length && trySyncTailMessages(sessionId, cached, msgs, pageMeta, restoreFromBottom, scrollPinnedIntent)) {
+        if (
+          !repaint
+          && !refetch
+          && cached?.length
+          && trySyncTailMessages(sessionId, cached, msgs, pageMeta, restoreFromBottom, scrollPinnedIntent)
+        ) {
           return;
         }
-        if (cached?.length && tryMergeExpandedHistory(sessionId, cached, msgs, pageMeta, restoreFromBottom, scrollPinnedIntent)) {
+        if (
+          !repaint
+          && !refetch
+          && cached?.length
+          && tryMergeExpandedHistory(sessionId, cached, msgs, pageMeta, restoreFromBottom, scrollPinnedIntent)
+        ) {
           return;
         }
         rememberSessionMessages(sessionId, msgs, pageMeta);
@@ -12163,8 +12711,8 @@
       return null;
     }
 
-    function messagesHaveAssistantSinceLastUser(msgs) {
-      if (!Array.isArray(msgs) || !msgs.length) return false;
+    function assistantReplyAfterLastUser(msgs) {
+      if (!Array.isArray(msgs) || !msgs.length) return null;
       let lastUserIdx = -1;
       for (let i = msgs.length - 1; i >= 0; i -= 1) {
         if (msgs[i].role === 'user') {
@@ -12172,13 +12720,54 @@
           break;
         }
       }
-      if (lastUserIdx < 0) return false;
+      if (lastUserIdx < 0) return null;
       for (let i = lastUserIdx + 1; i < msgs.length; i += 1) {
         if (msgs[i].role === 'assistant' && String(msgs[i].content || '').trim()) {
-          return true;
+          return msgs[i];
         }
       }
+      return null;
+    }
+
+    function messagesHaveAssistantSinceLastUser(msgs) {
+      return !!assistantReplyAfterLastUser(msgs);
+    }
+
+    /** 本地已 append 用户消息、服务端尚未落盘时，勿用服务端上一轮 assistant 填充当前 shell。 */
+    function sessionCacheAwaitingAssistantReply(sessionId) {
+      const cached = sessionMessagesCache.get(String(sessionId || '').trim()) || [];
+      if (!cached.length) return false;
+      return cached[cached.length - 1]?.role === 'user';
+    }
+
+    function pendingUserMatchesServerTail(pendingUser, serverMsgs) {
+      if (!pendingUser || pendingUser.role !== 'user') return false;
+      const list = Array.isArray(serverMsgs) ? serverMsgs : [];
+      if (!list.length) return false;
+      const pendingText = String(pendingUser.content || '').trim();
+      if (!pendingText) return false;
+      for (let i = list.length - 1; i >= 0; i -= 1) {
+        const m = list[i];
+        if (m?.role !== 'user') continue;
+        return String(m.content || '').trim() === pendingText;
+      }
       return false;
+    }
+
+    function mergeOptimisticTailUser(sessionId, serverMsgs) {
+      const list = Array.isArray(serverMsgs) ? [...serverMsgs] : [];
+      if (!sessionCacheAwaitingAssistantReply(sessionId)) return list;
+      const cached = sessionMessagesCache.get(String(sessionId || '').trim()) || [];
+      const pendingUser = cached[cached.length - 1];
+      if (!pendingUser?.timestamp || pendingUser.role !== 'user') return list;
+      if (list.some((m) => m?.timestamp === pendingUser.timestamp)) return list;
+      if (pendingUserMatchesServerTail(pendingUser, list)) return list;
+      return list.concat([pendingUser]);
+    }
+
+    function filterStaleAssistantAppends(sessionId, msgs) {
+      if (!sessionCacheAwaitingAssistantReply(sessionId)) return msgs;
+      return (msgs || []).filter((m) => m?.role !== 'assistant');
     }
 
     /** 落盘消息已含 assistant 回复时，勿再挂载 streaming shell（避免双气泡）。 */
@@ -13287,12 +13876,15 @@
       if (open && !wasOpen) {
         trackEvent('panel_open', { panel: 'catalog' });
         if (catalogPanel) {
-          void refreshCatalogPanel({ resetNavCollapse: true });
+          void refreshCatalogPanel({ preserveNavUi: true });
         } else {
           showCatalogBootstrapLoading();
         }
       }
-      if (!open) clearCatalogBootstrapLoading();
+      if (!open) {
+        clearCatalogBootstrapLoading();
+        catalogPanel?.persistNavCollapsed?.();
+      }
       panel.classList.toggle('open', open);
       document.body.classList.toggle('catalog-open', open);
       setHeaderBtnActive(document.getElementById('btn-catalog'), open, opts);
@@ -15458,6 +16050,8 @@
         setupMarkdownLinkNewTab();
         setupMessagesScrollTracking();
         setupSessionListScrollTracking();
+        setupSessionsPanelContextMenu();
+        setupCatalogPanelContextMenu();
         initThemeSettings();
         initPushResultControls();
         initReplyModeControls();

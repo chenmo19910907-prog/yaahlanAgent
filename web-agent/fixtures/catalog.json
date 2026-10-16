@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-10-15 14:21:06 北京时间",
-  "total_items": 356,
+  "generated_at": "2026-10-16 17:43:12 北京时间",
+  "total_items": 359,
   "module_count": 27,
   "modules": [
     {
@@ -1000,7 +1000,7 @@
     {
       "id": "pk",
       "label": "PK",
-      "item_count": 45,
+      "item_count": 48,
       "categories": [
         {
           "name": "MOA PK提款机（room/internal/room-pk）",
@@ -1512,6 +1512,28 @@
               "registry_id": "moa_generative_close_across_room_pk"
             },
             {
+              "name": "生成式MOA-跨房PK贡献榜",
+              "prompts": [
+                "跨房PK贡献榜 acrossPkId=<pkId>"
+              ],
+              "source": "MOA-generative",
+              "source_id": "moa-generative",
+              "source_tag_id": "moa-generative",
+              "env": "test",
+              "registry_id": "moa_generative_contribution_across_ranks"
+            },
+            {
+              "name": "生成式MOA-跨房PK贡献榜",
+              "prompts": [
+                "跨房PK贡献榜 acrossPkId=<pkId>"
+              ],
+              "source": "MOA-generative",
+              "source_id": "moa-generative",
+              "source_tag_id": "moa-generative",
+              "env": "test",
+              "registry_id": "moa_generative_contribution_across_ranks"
+            },
+            {
               "name": "生成式MOA-跨房PK赛况信息",
               "prompts": [
                 "跨房PK对战信息 房间<roomId>"
@@ -1548,6 +1570,18 @@
               "source_tag_id": "moa",
               "env": "test",
               "registry_id": "across_pk_week_rank_settle"
+            },
+            {
+              "name": "跨房吃鸡-活动开启全服飘屏",
+              "prompts": [
+                "跨房吃鸡活动开启下发全服飘屏",
+                "触发跨房吃鸡开活动全服飘屏"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "across_room_pk_chicken_activity_start_broadcast"
             }
           ]
         }
