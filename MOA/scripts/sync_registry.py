@@ -17,6 +17,7 @@ sys.path.insert(0, _SCRIPTS)
 sys.path.insert(0, _MOA)
 
 from moa.paths import moa_dir, registry_path, templates_dir  # noqa: E402
+from moa.trial_verified import is_template_trial_verified  # noqa: E402
 from moa_script_paths import (  # noqa: E402
     moa_execute_repo_rel,
     moa_template_repo_rel,
@@ -204,7 +205,12 @@ def _infer_registry_item(
     }
 
 
-def sync_registry(*, dry_run: bool = False) -> list[dict[str, Any]]:
+def sync_registry(
+    *,
+    dry_run: bool = False,
+    allow_unverified: bool = False,
+    template: str | None = None,
+) -> list[dict[str, Any]]:
     registry = _read_json(registry_path())
     items = registry.get("items")
     if not isinstance(items, list):
@@ -216,10 +222,15 @@ def sync_registry(*, dry_run: bool = False) -> list[dict[str, Any]]:
     added: list[dict[str, Any]] = []
 
     template_root = templates_dir()
+    only = (template or "").strip()
     for fname in sorted(os.listdir(template_root)):
         if not fname.endswith(".json"):
             continue
+        if only and fname != only:
+            continue
         if fname in registered:
+            continue
+        if not allow_unverified and not is_template_trial_verified(fname):
             continue
         path = os.path.join(template_root, fname)
         if not os.path.isfile(path):
@@ -254,11 +265,25 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="MOA 新模板自动入库 registry.json")
     parser.add_argument("--dry-run", action="store_true", help="仅打印将新增的条目，不写文件")
     parser.add_argument("--no-generate", action="store_true", help="入库后不刷新 使用方法.md 与 catalog")
+    parser.add_argument(
+        "--template",
+        metavar="FILE",
+        help="仅处理指定模板文件名（如 钻石-发放.json）",
+    )
+    parser.add_argument(
+        "--allow-unverified",
+        action="store_true",
+        help="允许未通过 moa_execute 试跑验收的模板入库（默认禁止）",
+    )
     args = parser.parse_args()
 
     print(f"sync_registry: 模板目录 {templates_dir()} → command 前缀 {moa_templates_repo_rel()}/")
 
-    added = sync_registry(dry_run=args.dry_run)
+    added = sync_registry(
+        dry_run=args.dry_run,
+        allow_unverified=args.allow_unverified,
+        template=args.template,
+    )
     if not added:
         print("sync_registry: 无新模板需要入库")
     else:

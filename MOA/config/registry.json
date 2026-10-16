@@ -1721,6 +1721,17 @@
         "getAnchorByMmuidv3Record <mmuidv3>"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/公会-按设备查曾加入公会账号.json \\\n  --guild-device-mmuidv3 \\\n  <mmuidv3>\n"
+    },
+    {
+      "id": "across_room_pk_chicken_activity_start_broadcast",
+      "name": "跨房吃鸡-活动开启全服飘屏",
+      "category": "房间PK-MOA（room/internal/room-pk）",
+      "description": "测试环境触发跨房吃鸡开活动 982 全服飘屏（broadcastPkChickenDailyOpen；/service/room/internal/room-pk）。无参；固定 MENA。须 MSE acrossRoomPkChickenConfig.enabled=true。同日 MENA 日期 Redis 幂等，复测需删 chicken:openFloat:{yyyyMMdd} 或次日再调。",
+      "prompts": [
+        "跨房吃鸡活动开启下发全服飘屏",
+        "触发跨房吃鸡开活动全服飘屏"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/跨房吃鸡-活动开启全服飘屏.json\n"
     }
   ]
 }

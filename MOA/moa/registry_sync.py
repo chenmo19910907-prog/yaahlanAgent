@@ -10,6 +10,7 @@ import sys
 from typing import Any
 
 from .paths import moa_dir, registry_path, templates_dir
+from .trial_verified import mark_template_trial_verified
 
 _REPO_ROOT = os.path.dirname(moa_dir())
 _PLATFORM_CATALOG_HOOK = os.path.join(
@@ -86,9 +87,13 @@ def auto_sync_registry_after_success(payload_file: str | None) -> bool:
     if not template_needs_sync(fname):
         return False
 
+    mark_template_trial_verified(fname)
     script = os.path.join(moa_dir(), "scripts", "sync_registry.py")
     print(f"auto_sync_registry: 试跑成功，正在为 {fname} 自动入库…", file=sys.stderr)
-    result = subprocess.run([sys.executable, script], check=False)
+    result = subprocess.run(
+        [sys.executable, script, "--template", fname],
+        check=False,
+    )
     if result.returncode != 0:
         raise RuntimeError(f"sync_registry 退出码 {result.returncode}")
     # sync_registry 已跑 generate_index；再显式刷新 catalog，确保工作台立即生效

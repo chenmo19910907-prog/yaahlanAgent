@@ -290,8 +290,9 @@ def _readonly_permission_note(
     if allow_moa_registry:
         base = (
             "【只读 · 可 MOA 入库】当前用户无代码修改权限，但可登记 MOA 能力："
-            "仅允许改动 MOA/templates/、moa_execute 试跑后自动 sync_registry（刷新文档与 catalog）、"
-            "更新 MOA/config/registry.json；工具台 MOA 录制入库同样允许；"
+            "仅允许改动 MOA/templates/、moa_execute **试跑成功（ec=0/200）后**自动 sync_registry（刷新文档与 catalog）；"
+            "试跑失败禁止 sync_registry/手改 registry 入库；"
+            "更新 MOA/config/registry.json 须以试跑成功为前提；工具台 MOA 录制入库同样允许；"
             "新 MOA 须按 registry 现有 category 与同服务分类存放；"
             "禁止改 `platform/web_agent/config/catalog_nav.json` 与 platform/web_agent/、"
             "platform/dingtalk_gateway/、.cursor/ 等。"

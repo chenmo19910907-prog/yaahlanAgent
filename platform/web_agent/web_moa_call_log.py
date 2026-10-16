@@ -128,6 +128,38 @@ _METHOD_OPERATION_FALLBACK: dict[str, str] = {
 }
 _method_param_labels_cache: dict[str, list[str]] | None = None
 _method_operation_names_cache: dict[str, str] | None = None
+_GENERATIVE_REGISTRY_PATH = REPO_ROOT / "MOA-generative" / "config" / "registry.json"
+# 生成式 MOA 临时 payload 文件名、纯 method 英文名等，不宜作为操作历史展示文案
+_TECHNICAL_OPERATION_RE = re.compile(
+    r"^(?:"
+    r"[a-zA-Z]\w*\.[0-9a-f]{8,}(?:\.payload)?"
+    r"|[a-zA-Z]\w*_\d+\.payload"
+    r"|[a-zA-Z]\w+\.payload"
+    r")$",
+    re.I,
+)
+_METHOD_IN_COMMAND_RE = re.compile(r"--method\s+(\S+)")
+
+
+def _contains_cjk(text: str) -> bool:
+    return bool(re.search(r"[\u4e00-\u9fff]", text or ""))
+
+
+def _is_technical_operation_label(label: str, *, method: str = "") -> bool:
+    s = (label or "").strip()
+    if not s:
+        return True
+    if _TECHNICAL_OPERATION_RE.match(s):
+        return True
+    if s.lower().endswith(".payload"):
+        return True
+    meth = (method or "").strip()
+    if meth and s == meth and not _contains_cjk(s):
+        return True
+    if meth and not _contains_cjk(s):
+        if re.fullmatch(re.escape(meth) + r"(?:[._][\w-]+)*", s):
+            return True
+    return False
 
 
 def _now_iso_utc() -> str:
@@ -476,17 +508,16 @@ def _method_param_labels(method: str) -> list[str]:
     return list(_method_param_labels_cache.get(meth) or _METHOD_PARAM_LABELS_FALLBACK.get(meth) or [])
 
 
-def _build_method_operation_names_index() -> dict[str, str]:
-    index: dict[str, str] = dict(_METHOD_OPERATION_FALLBACK)
-    if not _REGISTRY_PATH.is_file():
-        return index
+def _merge_registry_operation_names(index: dict[str, str], registry_path: Path) -> None:
+    if not registry_path.is_file():
+        return
     try:
-        data = json.loads(_REGISTRY_PATH.read_text(encoding="utf-8"))
+        data = json.loads(registry_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        return index
+        return
     caps = _registry_capability_items(data)
     if not caps:
-        return index
+        return
     for cap in caps:
         if not isinstance(cap, dict):
             continue
@@ -498,11 +529,21 @@ def _build_method_operation_names_index() -> dict[str, str]:
             index["getVipInfo"] = name
             continue
         tpl_m = re.search(r"MOA/templates/([^`\s]+\.json)", command)
-        if not tpl_m:
-            continue
-        _, tpl_method = _lookup_moa_template_url_method(tpl_m.group(1))
-        if tpl_method and tpl_method not in index:
-            index[tpl_method] = name
+        if tpl_m:
+            _, tpl_method = _lookup_moa_template_url_method(tpl_m.group(1))
+            if tpl_method and tpl_method not in index:
+                index[tpl_method] = name
+        m_cmd = _METHOD_IN_COMMAND_RE.search(command)
+        if m_cmd:
+            meth = m_cmd.group(1).strip()
+            if meth and meth not in index:
+                index[meth] = name
+
+
+def _build_method_operation_names_index() -> dict[str, str]:
+    index: dict[str, str] = dict(_METHOD_OPERATION_FALLBACK)
+    _merge_registry_operation_names(index, _REGISTRY_PATH)
+    _merge_registry_operation_names(index, _GENERATIVE_REGISTRY_PATH)
     return index
 
 
@@ -519,12 +560,18 @@ def _method_operation_name(method: str) -> str:
 def resolve_operation_display(operation: str, *, method: str) -> str:
     """按实际 MOA method 修正操作标题（如 getVipInfo 不再显示增加经验值模板名）。"""
     meth = (method or "").strip()
+    op = (operation or "").strip()
+    if _is_technical_operation_label(op, method=meth):
+        op = ""
     if not meth:
-        return (operation or "").strip() or "MOA 调用"
+        return op or "MOA 调用"
     named = _method_operation_name(meth)
     if named:
         return named
-    return (operation or "").strip() or meth
+    fallback = op or meth
+    if fallback and _is_technical_operation_label(fallback, method=meth):
+        return "MOA 调用"
+    return fallback
 
 
 def _strip_same_account_query_suffix(text: str) -> str:
@@ -1129,7 +1176,7 @@ def _operation_label(*, payload_file: str, service_url: str, method: str) -> str
     pf = (payload_file or "").strip()
     if pf:
         stem = Path(pf).stem
-        if stem:
+        if stem and not _is_technical_operation_label(stem, method=meth):
             return stem
     svc = (service_url or "").strip()
     if svc.startswith("/service/"):

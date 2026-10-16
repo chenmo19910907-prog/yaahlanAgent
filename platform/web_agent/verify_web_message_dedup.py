@@ -21,7 +21,7 @@ def main() -> int:
         "function tailAssistantBubbleCount(sessionId)",
         "function assistantContentAlreadyInDom(content)",
         "function mergeAssistantIntoShell(sessionId, shellEl, assistantMsg)",
-        "const tailAssistants = msgs.filter(",
+        "const tailAssistants = msgsToAppend.filter(",
         "shouldAppendStreamingShell(sessionId, msgs)",
         "messagesHaveAssistantSinceLastUser(msgs)",
         "messagesHaveAssistantSinceLastUser(cachedMsgs)",
@@ -31,6 +31,9 @@ def main() -> int:
         "function messagesDomMatchesSession(sessionId)",
         "messagesDomMatchesSession(sessionId)",
         "clearMessagesDomRendered()",
+        "function pendingUserMatchesServerTail(pendingUser, serverMsgs)",
+        "pendingUserMatchesServerTail(pendingUser, list)",
+        "if (pendingUserMatchesServerTail(pendingUser, list)) return list;",
     ]
     missing = [token for token in required if token not in html]
     if missing:

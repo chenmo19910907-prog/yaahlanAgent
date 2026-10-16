@@ -11,6 +11,7 @@ from typing import Any
 
 from web_moa_call_log import (
     LOG_PATH,
+    _is_technical_operation_label,
     _load_entries,
     _moa_call_log_edit,
     _save_entries,
@@ -88,9 +89,11 @@ def _existing_backfill_keys(entries: list[dict[str, Any]]) -> set[str]:
     return keys
 
 
-def _is_poor_operation_label(label: str) -> bool:
+def _is_poor_operation_label(label: str, *, method: str = "") -> bool:
     s = (label or "").strip()
     if not s or len(s) < 2:
+        return True
+    if _is_technical_operation_label(s, method=method):
         return True
     if _POOR_OPERATION_RE.match(s):
         return True

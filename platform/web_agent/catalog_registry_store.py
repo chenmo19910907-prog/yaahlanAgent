@@ -381,7 +381,13 @@ def add_registry_item(
         if not sync_script.is_file():
             raise FileNotFoundError(f"缺少 {sync_script}")
         proc = subprocess.run(
-            [sys.executable, str(sync_script)],
+            [
+                sys.executable,
+                str(sync_script),
+                "--allow-unverified",
+                "--template",
+                f"{file_name}.json",
+            ],
             cwd=str(REPO_ROOT),
             capture_output=True,
             text=True,

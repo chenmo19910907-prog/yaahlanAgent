@@ -1,6 +1,7 @@
 {
   "version": 1,
   "collapsed": [],
+  "suppressPlaybookIds": [],
   "tree": [
     {
       "kind": "all"
@@ -201,9 +202,18 @@
           "catIndex": 5
         },
         {
-          "kind": "cap",
-          "moduleId": "pk",
-          "catIndex": 6
+          "kind": "folder",
+          "id": "nav-pk-cross-room",
+          "label": "跨房PK",
+          "subfolder": true,
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "pk",
+              "catIndex": 6,
+              "navLabel": "指定邀请·随机匹配"
+            }
+          ]
         },
         {
           "kind": "cap",
@@ -266,61 +276,91 @@
     {
       "kind": "module",
       "moduleId": "活动",
+      "hydrateCaps": false,
       "children": [
         {
-          "kind": "cap",
-          "moduleId": "活动",
-          "catIndex": 0
+          "kind": "folder",
+          "id": "nav-activity-3anniv",
+          "label": "3周年",
+          "subfolder": true,
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "活动",
+              "catIndex": 0,
+              "label": "砸金蛋·造数工作流"
+            },
+            {
+              "kind": "cap",
+              "moduleId": "活动",
+              "catIndex": 6,
+              "label": "砸金蛋·MOA 与 MSE 同步"
+            },
+            {
+              "kind": "cap",
+              "moduleId": "活动",
+              "catIndex": 7,
+              "label": "兑换道具"
+            }
+          ]
+        },
+        {
+          "kind": "folder",
+          "id": "nav-activity-admin",
+          "label": "Admin 后台",
+          "subfolder": true,
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "活动",
+              "catIndex": 1,
+              "label": "Banner"
+            },
+            {
+              "kind": "cap",
+              "moduleId": "活动",
+              "catIndex": 2,
+              "label": "IM 定时 / 奖池"
+            }
+          ]
+        },
+        {
+          "kind": "folder",
+          "id": "nav-activity-treasure",
+          "label": "宝藏猎人",
+          "subfolder": true,
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "活动",
+              "catIndex": 4,
+              "label": "翻牌抽奖"
+            },
+            {
+              "kind": "cap",
+              "moduleId": "活动",
+              "catIndex": 3,
+              "label": "榜单发奖"
+            }
+          ]
         },
         {
           "kind": "cap",
           "moduleId": "活动",
-          "catIndex": 1
+          "catIndex": 8,
+          "label": "充值返利（Ultra Recharge）"
         },
         {
           "kind": "cap",
           "moduleId": "活动",
-          "catIndex": 2
+          "catIndex": 9,
+          "label": "模拟送礼（gift-call-back）"
         },
         {
           "kind": "cap",
           "moduleId": "活动",
-          "catIndex": 3
-        },
-        {
-          "kind": "cap",
-          "moduleId": "活动",
-          "catIndex": 4
-        },
-        {
-          "kind": "cap",
-          "moduleId": "活动",
-          "catIndex": 5
-        },
-        {
-          "kind": "cap",
-          "moduleId": "活动",
-          "catIndex": 6
-        },
-        {
-          "kind": "cap",
-          "moduleId": "活动",
-          "catIndex": 7
-        },
-        {
-          "kind": "cap",
-          "moduleId": "活动",
-          "catIndex": 8
-        },
-        {
-          "kind": "cap",
-          "moduleId": "活动",
-          "catIndex": 9
-        },
-        {
-          "kind": "cap",
-          "moduleId": "活动",
-          "catIndex": 9
+          "catIndex": 5,
+          "label": "活动风控黑名单"
         }
       ]
     },
@@ -475,10 +515,12 @@
     {
       "kind": "module",
       "moduleId": "公会",
+      "hydrateCaps": false,
       "children": [
         {
           "kind": "module",
           "moduleId": "算薪",
+          "hydrateCaps": false,
           "children": [
             {
               "kind": "folder",
@@ -492,12 +534,6 @@
                 }
               ],
               "subfolder": true
-            },
-            {
-              "kind": "cap",
-              "moduleId": "算薪",
-              "catIndex": 4,
-              "label": "MOA 算薪（anchor-salary-moa）"
             }
           ]
         },
@@ -519,21 +555,6 @@
           "kind": "cap",
           "moduleId": "公会",
           "catIndex": 2
-        },
-        {
-          "kind": "cap",
-          "moduleId": "公会",
-          "catIndex": 0
-        },
-        {
-          "kind": "cap",
-          "moduleId": "公会",
-          "catIndex": 1
-        },
-        {
-          "kind": "cap",
-          "moduleId": "公会",
-          "catIndex": 4
         }
       ]
     },
@@ -756,19 +777,6 @@
             {
               "kind": "playbookItem",
               "playbookId": "anniversary_egg_data_test"
-            }
-          ],
-          "subfolder": true
-        },
-        {
-          "kind": "folder",
-          "id": "nav-salary-playbook-wf",
-          "label": "算薪",
-          "children": [
-            {
-              "kind": "playbookItem",
-              "playbookId": "salary_e2e_regression",
-              "navLabel": "全量 pytest 回归（5 套件）"
             }
           ],
           "subfolder": true

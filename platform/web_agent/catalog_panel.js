@@ -727,6 +727,11 @@
       };
     }
     const nav = this.DATA?.nav;
+    this.navSuppressPlaybookIds = new Set(
+      (Array.isArray(nav?.suppressPlaybookIds) ? nav.suppressPlaybookIds : [])
+        .map((id) => String(id || '').trim())
+        .filter(Boolean),
+    );
     this.navTree = Array.isArray(nav?.tree) && nav.tree.length
       ? JSON.parse(JSON.stringify(nav.tree))
       : defaultNavTree(this.DATA);
@@ -899,6 +904,7 @@
     (nodes || []).forEach((node) => {
       if (!node || typeof node !== 'object') return;
       if (node.kind === 'module' && node.moduleId) {
+        if (node.hydrateCaps === false) return;
         if (!Array.isArray(node.children)) node.children = [];
         const mod = this.moduleById(node.moduleId);
         (mod?.categories || []).forEach((cat, catIndex) => {
@@ -978,7 +984,7 @@
 
     for (const pb of this.DATA?.playbooks || []) {
       const pid = String(pb?.id || '').trim();
-      if (!pid || placed.has(pid)) continue;
+      if (!pid || placed.has(pid) || this.navSuppressPlaybookIds?.has(pid)) continue;
       const folder = this.ensureWorkflowSubfolder(workflowRoot, pb.category || '未分组');
       if (!Array.isArray(folder.children)) folder.children = [];
       folder.children.push({ kind: 'playbookItem', playbookId: pid });
@@ -1567,10 +1573,13 @@
   CatalogPanel.prototype.buildNavPayload = function buildNavPayload() {
     this.removeEmptyDuplicateFolders();
     this.sortNavTreeChildOrder(this.navTree);
-    return {
+    const payload = {
       version: 1,
       tree: JSON.parse(JSON.stringify(this.navTree)),
     };
+    const suppress = [...(this.navSuppressPlaybookIds || [])].filter(Boolean).sort();
+    if (suppress.length) payload.suppressPlaybookIds = suppress;
+    return payload;
   };
 
   CatalogPanel.prototype.persistNav = async function persistNav() {

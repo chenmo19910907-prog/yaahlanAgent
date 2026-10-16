@@ -85,7 +85,7 @@ python3 MOA/moa_execute.py \
 2. 如需参数化，扩展 **`moa/`** 包中的 CLI 逻辑
 3. 规则/映射写入 **`config/thresholds.json`**
 4. 用 **`moa_execute.py --payload-file`** 试跑验收；**跑通且确认无误后自动入库**（未登记模板成功后自动执行 `sync_registry.py`，刷新 `config/registry.json`、`使用方法.md` 与 **工具工作台** `platform/catalog.html`）
-5. 也可手动执行 **`python3 MOA/scripts/sync_registry.py`**（仅补尚未登记的模板）
+5. 手动 **`sync_registry.py`** 默认**仅**入库已在 `config/trial_verified_templates.json` 登记的模板（由试跑成功写入）；未试跑须 **`--allow-unverified`**（不推荐）
 
 可选：在模板内加 **`_registry`** 块自定义入库元数据（不会发给 MOA）：
 

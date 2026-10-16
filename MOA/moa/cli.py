@@ -1317,6 +1317,14 @@ def main() -> int:
         return 3
 
     try:
+        inner_ec, inner_em, _ = extract_inner_result(resp)
+        if inner_ec not in (0, 200):
+            print(f"业务返回失败: ec={inner_ec}, em={inner_em}", file=sys.stderr)
+            return 4
+    except RuntimeError:
+        pass
+
+    try:
         _print_level_summary(args, resp)
     except SystemExit as e:
         return int(e.code)

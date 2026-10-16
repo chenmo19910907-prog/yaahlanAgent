@@ -210,6 +210,36 @@ class WebMoaCallLogTests(unittest.TestCase):
             "VIP经验值-查询当前等级经验",
         )
 
+    def test_contribution_across_ranks_operation_shows_chinese_name(self) -> None:
+        import web_moa_call_log as mod
+
+        mod._method_operation_names_cache = None
+        self.assertEqual(
+            resolve_operation_display(
+                "contributionAcrossRanks",
+                method="contributionAcrossRanks",
+            ),
+            "生成式MOA-跨房PK贡献榜",
+        )
+
+    def test_generative_payload_operation_shows_chinese_name(self) -> None:
+        import web_moa_call_log as mod
+
+        mod._method_operation_names_cache = None
+        label = _operation_label(
+            payload_file=".tmp/getAcrossRoomPkInfo.646413e948a3.payload",
+            service_url="/service/room/external/room-pk-api",
+            method="getAcrossRoomPkInfo",
+        )
+        self.assertEqual(label, "生成式MOA-跨房PK赛况信息")
+        self.assertEqual(
+            resolve_operation_display(
+                "getAcrossRoomPkInfo.646413e948a3.payload",
+                method="getAcrossRoomPkInfo",
+            ),
+            "生成式MOA-跨房PK赛况信息",
+        )
+
     def test_account_hint_omits_momo_id(self) -> None:
         payload = {
             "momoId": "df4c6f364f9fcae3",

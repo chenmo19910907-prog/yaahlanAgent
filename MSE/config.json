@@ -8,6 +8,16 @@
     "name_space": "voga-common",
     "server": "config"
   },
+  "activity_env": {
+    "console_path": "陌陌 / 本地开发测试 / 预上线环境",
+    "corp": "alpha",
+    "share_link_env": "stage",
+    "cli": {
+      "region": "alpha",
+      "cluster": "stage",
+      "env": "alpha"
+    }
+  },
   "share_link": {
     "corp": "alpha",
     "env": "stage",

@@ -1,14 +1,21 @@
 ---
 name: tunnel-mock
-description: Tunnel 抓包平台 Mock：param_mock 字段覆盖与 mock_cases 整包响应。在用户要 mock 接口返回、改 CP 爱意宝箱倒计时 countdownSec、模拟 ec/分页/字段值，或问 tunnel mock 怎么用 时使用。
+description: Tunnel 抓包平台 Mock：默认优先 mock_cases 整包响应，param_mock 字段覆盖仅作例外。在用户要 mock 接口返回、改 CP 爱意宝箱倒计时 countdownSec、模拟 ec/分页/字段值，或问 tunnel mock 怎么用 时使用。
 ---
 
 # Tunnel Mock
 
+## 优先级（铁律）
+
+1. **默认整包 Mock**（`mock_cases` / `case-create`）：基于最近抓包 response 编辑整段 JSON 后提交，`--enable` 立即生效。
+2. **例外才用字段 Mock**（`param_mock` / `param-set`）：用户明确要求「只改某字段、不要整包」，或整包体积/合并冲突导致不可行时。
+
+清理 Mock：优先 `case-stop` / `case-delete` 整包规则；勿遗留 `param_mock` 与整包叠加。
+
 ## 何时使用
 
-- 改 **单个 response 字段**（推荐）：`param_mock`，如 CP 爱意宝箱 `data.countdownSec`
-- 改 **整段 response JSON**：`mock_cases`
+- 改 **整段 response JSON**（**首选**）：`mock_cases`
+- 改 **单个 response 字段**（例外）：`param_mock`，如仅当用户指定或整包不适用
 - 测异常码、边界值、倒计时归零，而不改后端/MOA
 
 ## 前置条件
@@ -21,8 +28,8 @@ description: Tunnel 抓包平台 Mock：param_mock 字段覆盖与 mock_cases �
 
 | 类型 | API | CLI | 适用 |
 |------|-----|-----|------|
-| **整包 Mock** | `POST /api/mock_cases?g_appid=All&g_env=alpha` | `case-create` | 在 Tunnel 详情页编辑整段 response（如改 `data.countdownSec`） |
-| **字段 Mock** | `POST /api/param_mock` | `param-set` / `field` | 只改单个字段，payload 更小 |
+| **整包 Mock（默认）** | `POST /api/mock_cases?g_appid=All&g_env=alpha` | `case-create` | 编辑整段 response（含单字段改动也走整包） |
+| **字段 Mock（例外）** | `POST /api/param_mock` | `param-set` / `field` | 用户要求仅字段覆盖，或整包不可行 |
 
 抓包列表里 `param_mock=1` / `is_mock=1` 表示该请求已被 Mock 命中。
 
@@ -65,7 +72,24 @@ python3 Tunnel/tunnel_mock_execute.py case-create \
   --since 3600
 ```
 
-## 执行步骤（字段 Mock，轻量替代）
+## 执行步骤（整包 Mock，默认路径）
+
+1. 查 userId（若只有手机号）：`MOA/moa_execute.py --query-user-by-phone`
+2. App 触发一次真实请求（产生抓包 baseline）。
+3. 基于最近抓包编辑 response JSON，`case-create --enable`（或 Tunnel 页 Mock 提交）。
+4. App 重进页面触发新请求。
+5. 验收：Tunnel 该请求 `is_mock=1` 且 response 与编辑一致。
+
+```bash
+python3 Tunnel/tunnel_mock_execute.py case-create \
+  --momoid <userId> \
+  --keyword <keyword> \
+  --response-file /path/to/edited-response.json \
+  --enable \
+  --since 3600
+```
+
+## 执行步骤（字段 Mock，例外）
 
 1. 查 userId（若只有手机号）：
 
@@ -142,7 +166,7 @@ python3 Tunnel/tunnel_mock_execute.py param-delete \
 - 与你在 Tunnel 网页操作完全同源：`POST /api/mock_cases` + query `g_appid` / `g_env`
 - `case-create` 可 `--response-file` 指定 JSON，或自动用最近抓包的 `response`
 - 创建后 `--enable`（即 `enable: 1`）；已有规则用 `case-start` / `case-stop`
-- 只改倒计时时，整包 mock 与 `param-set --key data.countdownSec` 均可；**只改一个字段优先 param_mock**
+- 只改倒计时时：**默认整包 mock** 改 `json` 内 `data.countdownSec`；仅用户指定时才用 `param-set`
 
 ## 与 tunnel-read 配合
 

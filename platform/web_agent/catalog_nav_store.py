@@ -133,6 +133,8 @@ def remap_legacy_nav_caps(
                     nav_label = str(raw.get("navLabel") or "").strip()
                     if nav_label:
                         entry["navLabel"] = nav_label
+                    if raw.get("hydrateCaps") is False:
+                        entry["hydrateCaps"] = False
                     if children:
                         entry["children"] = children
                     out.append(entry)
@@ -172,20 +174,32 @@ def remap_legacy_nav_caps(
 def load_catalog_nav(path: Path | None = None) -> dict[str, Any]:
     target = path or CATALOG_NAV_PATH
     if not target.is_file():
-        return {"version": 1, "collapsed": [], "tree": []}
+        return {"version": 1, "collapsed": [], "tree": [], "suppressPlaybookIds": []}
     try:
         data = json.loads(target.read_text(encoding="utf-8"))
         if not isinstance(data, dict):
-            return {"version": 1, "collapsed": [], "tree": []}
+            return {"version": 1, "collapsed": [], "tree": [], "suppressPlaybookIds": []}
         tree = data.get("tree")
         collapsed = data.get("collapsed")
         if not isinstance(tree, list):
             tree = []
         if not isinstance(collapsed, list):
             collapsed = []
-        return {"version": 1, "collapsed": [str(x) for x in collapsed if str(x).strip()], "tree": tree}
+        suppress_raw = data.get("suppressPlaybookIds")
+        suppress: list[str] = []
+        if isinstance(suppress_raw, list):
+            for item in suppress_raw:
+                pid = str(item or "").strip()
+                if pid:
+                    suppress.append(pid)
+        return {
+            "version": 1,
+            "collapsed": [str(x) for x in collapsed if str(x).strip()],
+            "tree": tree,
+            "suppressPlaybookIds": suppress,
+        }
     except (OSError, json.JSONDecodeError):
-        return {"version": 1, "collapsed": [], "tree": []}
+        return {"version": 1, "collapsed": [], "tree": [], "suppressPlaybookIds": []}
 
 
 def build_default_nav_tree(modules: list[dict[str, Any]], *, include_playbook: bool) -> list[dict[str, Any]]:
@@ -279,6 +293,8 @@ def _prune_duplicate_empty_modules(nodes: list[Any]) -> list[dict[str, Any]]:
                 nav_label = str(raw.get("navLabel") or "").strip()
                 if nav_label:
                     entry["navLabel"] = nav_label
+                if raw.get("hydrateCaps") is False:
+                    entry["hydrateCaps"] = False
                 if children:
                     entry["children"] = children
                 out.append(entry)
@@ -355,6 +371,8 @@ def reconcile_nav_tree(
                     nav_label = str(raw.get("navLabel") or "").strip()
                     if nav_label:
                         entry["navLabel"] = nav_label
+                    if raw.get("hydrateCaps") is False:
+                        entry["hydrateCaps"] = False
                     if children:
                         entry["children"] = children
                     out.append(entry)
@@ -485,6 +503,8 @@ def _normalize_nodes(raw_nodes: Any, depth: int = 0) -> list[dict[str, Any]] | N
             nav_label = str(raw.get("navLabel") or "").strip()
             if nav_label:
                 entry["navLabel"] = nav_label
+            if raw.get("hydrateCaps") is False:
+                entry["hydrateCaps"] = False
             if children:
                 entry["children"] = children
             out.append(entry)
@@ -571,7 +591,17 @@ def normalize_catalog_nav_payload(data: Any) -> dict[str, Any] | None:
             cid = str(item or "").strip()
             if cid:
                 collapsed.append(cid)
-    return {"version": 1, "collapsed": collapsed, "tree": tree}
+    suppress_raw = data.get("suppressPlaybookIds")
+    suppress: list[str] = []
+    if isinstance(suppress_raw, list):
+        for item in suppress_raw:
+            pid = str(item or "").strip()
+            if pid:
+                suppress.append(pid)
+    out: dict[str, Any] = {"version": 1, "collapsed": collapsed, "tree": tree}
+    if suppress:
+        out["suppressPlaybookIds"] = suppress
+    return out
 
 
 def _backup_catalog_nav_file(target: Path) -> None:
@@ -633,4 +663,12 @@ def catalog_nav_for_response(
     else:
         tree = reconcile_nav_tree(tree, modules, include_playbook=include_playbook)
     collapsed = stored.get("collapsed") if isinstance(stored.get("collapsed"), list) else []
-    return {"version": 1, "collapsed": [str(x) for x in collapsed if str(x).strip()], "tree": tree}
+    suppress = stored.get("suppressPlaybookIds")
+    if not isinstance(suppress, list):
+        suppress = []
+    return {
+        "version": 1,
+        "collapsed": [str(x) for x in collapsed if str(x).strip()],
+        "tree": tree,
+        "suppressPlaybookIds": [str(x).strip() for x in suppress if str(x).strip()],
+    }
