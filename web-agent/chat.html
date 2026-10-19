@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20261016094312"></script>
-  <script src="demo-api.js?v=20261016094312"></script>
+  <script src="demo-fixtures.js?v=20261019090359"></script>
+  <script src="demo-api.js?v=20261019090359"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -6147,6 +6147,59 @@
       });
     }
 
+    function bumpSessionMessagesMetaAfterAppend(sessionId, prevCachedLen, nextCachedLen) {
+      const sid = String(sessionId || '').trim();
+      const meta = sessionMessagesMeta(sid);
+      const sess = getSessionFromCache(sid);
+      const prevTotal = Number(meta?.total || sess?.message_count || prevCachedLen);
+      const nextTotal = Math.max(prevTotal + (nextCachedLen - prevCachedLen), nextCachedLen);
+      sessionMessagesMetaCache.set(sid, {
+        total: nextTotal,
+        hasOlder: !!(meta?.hasOlder || nextTotal > nextCachedLen),
+        offset: Number(meta?.offset ?? Math.max(0, nextTotal - nextCachedLen)),
+        mtime: Number(meta?.mtime || sessionMessagesMtimeFromList(sid) || 0),
+      });
+    }
+
+    function appendAssistantMessageToSessionCache(sessionId, assistantMsg) {
+      const sid = String(sessionId || '').trim();
+      if (!sid || !assistantMsg) return;
+      const cached = sessionMessagesCache.get(sid) || [];
+      if (!cached.length || cached[cached.length - 1]?.role !== 'user') return;
+      sessionMessagesCache.set(sid, [...cached, assistantMsg]);
+      bumpSessionMessagesMetaAfterAppend(sid, cached.length, cached.length + 1);
+    }
+
+    /** 中断后已发下一条 user 时，把 assistant 插到对应 user 轮次后（勿挂到最新 user）。 */
+    function insertAssistantForUserTurnInCache(sessionId, assistantMsg, userHint) {
+      const sid = String(sessionId || '').trim();
+      if (!sid || !assistantMsg) return false;
+      const hint = String(typeof userHint === 'string' ? userHint : userHint?.text || '').trim();
+      const cached = sessionMessagesCache.get(sid) || [];
+      if (!cached.length) return false;
+
+      let insertIdx = -1;
+      if (hint) {
+        for (let i = cached.length - 1; i >= 0; i -= 1) {
+          if (cached[i].role !== 'user') continue;
+          if (String(cached[i].content || '').trim() !== hint) continue;
+          if (cached[i + 1]?.role === 'assistant') return false;
+          insertIdx = i + 1;
+          break;
+        }
+      }
+      if (insertIdx < 0) {
+        if (cached[cached.length - 1]?.role !== 'user') return false;
+        insertIdx = cached.length;
+      }
+
+      const nextCached = [...cached];
+      nextCached.splice(insertIdx, 0, assistantMsg);
+      sessionMessagesCache.set(sid, nextCached);
+      bumpSessionMessagesMetaAfterAppend(sid, cached.length, nextCached.length);
+      return true;
+    }
+
     function sessionMessagesFingerprint(msgs, meta = null) {
       if (!Array.isArray(msgs) || !msgs.length) return '0';
       const last = msgs[msgs.length - 1];
@@ -9537,6 +9590,24 @@
       document.getElementById('session-list')?.addEventListener('scroll', handler, true);
     }
 
+    function isNativeContextMenuTarget(target) {
+      if (!target || !(target instanceof Element)) return false;
+      return !!target.closest(
+        'input:not([type="checkbox"]):not([type="radio"]), textarea, select, [contenteditable=""], [contenteditable="true"]'
+      );
+    }
+
+    /** 无自定义右键菜单的区域：静默拦截，不弹出浏览器默认菜单 */
+    function setupGlobalContextMenuGuard() {
+      if (document.documentElement.dataset.contextMenuGuardBound) return;
+      document.documentElement.dataset.contextMenuGuardBound = '1';
+      document.addEventListener('contextmenu', (event) => {
+        if (event.defaultPrevented) return;
+        if (isNativeContextMenuTarget(event.target)) return;
+        event.preventDefault();
+      }, true);
+    }
+
     function setupSessionsPanelContextMenu() {
       const panel = document.querySelector('.left-panel');
       if (!panel || panel.dataset.sessionsPanelContextBound) return;
@@ -10684,16 +10755,52 @@
       return shells.length ? shells[shells.length - 1] : null;
     }
 
-    function showInterruptedReply(sessionId, text) {
+    function findAssistantShellForUserContent(userText) {
+      const hint = String(userText || '').trim();
+      if (!hint) return null;
+      const container = getMessagesEl();
+      if (!container) return null;
+      const nodes = [...container.querySelectorAll('.msg')];
+      for (let i = nodes.length - 1; i >= 0; i -= 1) {
+        if (!nodes[i].classList.contains('user')) continue;
+        const body = (nodes[i].querySelector('.msg-body')?.textContent || '').trim();
+        if (body !== hint) continue;
+        for (let j = i + 1; j < nodes.length; j += 1) {
+          if (nodes[j].classList.contains('user')) break;
+          if (nodes[j].classList.contains('assistant')) return nodes[j];
+        }
+        return null;
+      }
+      return null;
+    }
+
+    function showInterruptedReply(sessionId, text, opts = {}) {
       if (currentSessionId !== sessionId) return;
       const body = text || '⚠️ 任务已中断。';
-      let shell = findActiveAssistantShell(sessionId);
-      if (!shell) shell = ensureStreamingShell(sessionId);
       const run = activeRuns.get(sessionId);
-      if (run) run.shellEl = shell;
-      clearRunStatus(sessionId);
-      setAssistantMessageBody(shell, body);
-      ensureAssistantShareButton(shell);
+      const superseded = !!(opts.runToken && run && run.runToken !== opts.runToken);
+      let shell = opts.shellEl?.isConnected ? opts.shellEl : null;
+      if (!shell) {
+        const hintText = typeof opts.userHint === 'string' ? opts.userHint : opts.userHint?.text;
+        shell = findAssistantShellForUserContent(hintText);
+      }
+      if (!shell && !superseded) {
+        shell = findActiveAssistantShell(sessionId);
+        if (!shell) shell = ensureStreamingShell(sessionId);
+      }
+      if (!shell?.isConnected) return;
+      if (run && !superseded && !opts.shellEl) run.shellEl = shell;
+      clearRunStatus(sessionId, shell);
+      const interruptTs = new Date().toISOString();
+      finalizeStreamingShell(sessionId, shell, body, { timestamp: interruptTs });
+      const assistantMsg = {
+        role: 'assistant',
+        content: body,
+        timestamp: interruptTs,
+      };
+      if (!insertAssistantForUserTurnInCache(sessionId, assistantMsg, opts.userHint)) {
+        appendAssistantMessageToSessionCache(sessionId, assistantMsg);
+      }
       scrollMessagesToBottom({ force: true });
     }
 
@@ -10879,10 +10986,16 @@
             session_id: sessionId,
           }),
         });
-        restoreSentDraft(sessionId, { runToken: run.runToken });
-        showInterruptedReply(sessionId);
-        const orphanEs = run.eventSource;
+        const cancelRunToken = run.runToken;
         const orphanShell = run.shellEl;
+        const userHint = run.sentDraft;
+        restoreSentDraft(sessionId, { runToken: cancelRunToken });
+        showInterruptedReply(sessionId, undefined, {
+          shellEl: orphanShell,
+          runToken: cancelRunToken,
+          userHint,
+        });
+        const orphanEs = run.eventSource;
         if (typeof run.streamDetach === 'function') {
           run.streamDetach({ orphan: true, shellEl: orphanShell });
         } else if (orphanEs) {
@@ -11163,6 +11276,8 @@
         await loadSessions({ lite: true, force: true });
         if (sessionId === currentSessionId) {
           await loadMessages();
+        } else {
+          await refreshSessionMessagesCacheFromServer(sessionId);
         }
       })();
     }
@@ -12338,12 +12453,38 @@
       return -1;
     }
 
+    function filterMessagesAlreadyInDom(msgs) {
+      if (!Array.isArray(msgs) || !msgs.length) return msgs;
+      const container = getMessagesEl();
+      if (!container) return msgs;
+      return msgs.filter((m) => {
+        const ts = String(m?.timestamp || '').trim();
+        if (ts && messageTimestampInDom(ts)) return false;
+        if (m?.role === 'user') {
+          const text = String(m.content || '').trim();
+          if (!text) return true;
+          const users = container.querySelectorAll('.msg.user');
+          for (let i = users.length - 1; i >= 0; i -= 1) {
+            const node = users[i];
+            const body = (node.querySelector('.msg-body')?.textContent || '').trim();
+            if (body === text) return false;
+          }
+        }
+        if (m?.role === 'assistant') {
+          const md = String(m.content || '').trim();
+          if (md && assistantContentAlreadyInDom(md)) return false;
+        }
+        return true;
+      });
+    }
+
     function appendTailMessageElements(msgs) {
       const container = getMessagesEl();
       if (!container || !msgs.length) return;
       const sessionId = currentSessionId;
       const run = activeRuns.get(sessionId);
       let msgsToAppend = filterStaleAssistantAppends(sessionId, msgs);
+      msgsToAppend = filterMessagesAlreadyInDom(msgsToAppend);
       if (!msgsToAppend.length) return;
       let mergeShell = null;
       const tailAssistants = msgsToAppend.filter(
@@ -12438,6 +12579,9 @@
           return false;
         }
         if (sessionId === currentSessionId && !messagesDomMatchesSession(sessionId)) {
+          return false;
+        }
+        if (sessionId === currentSessionId && countLoadedMessageElements() !== merged.length) {
           return false;
         }
         return true;
@@ -12553,7 +12697,8 @@
           && cached?.length
           && serverMtime > 0
           && cachedMtime > 0
-          && serverMtime === cachedMtime;
+          && serverMtime === cachedMtime
+          && !sessionCacheAwaitingAssistantReply(sessionId);
         const cacheFresh = cached?.length && (
           skipFetch
           || serverMtime <= 0
@@ -12593,7 +12738,13 @@
             `/api/sessions/${sessionId}/messages?tail=${MESSAGES_TAIL_DEFAULT}`,
             { signal, headers: msgHeaders, cache: 'no-store' },
           );
-          if (data?.__notModified && !sessionMessagesCache.get(sessionId)?.length) {
+          if (
+            data?.__notModified
+            && (
+              !sessionMessagesCache.get(sessionId)?.length
+              || sessionCacheAwaitingAssistantReply(sessionId)
+            )
+          ) {
             data = await api(
               `/api/sessions/${sessionId}/messages?tail=${MESSAGES_TAIL_DEFAULT}`,
               { signal, cache: 'no-store' },
@@ -12623,6 +12774,7 @@
           offset: data.offset,
           messages_mtime: data.messages_mtime || serverMtime,
         };
+        const cachedForSync = sessionMessagesCache.get(sessionId) || cached || [];
         const nextFingerprint = sessionMessagesFingerprint(msgs, pageMeta);
         if (!repaint && !refetch && nextFingerprint === cachedFingerprint) {
           rememberSessionMessages(sessionId, msgs, pageMeta);
@@ -12636,16 +12788,16 @@
         if (
           !repaint
           && !refetch
-          && cached?.length
-          && trySyncTailMessages(sessionId, cached, msgs, pageMeta, restoreFromBottom, scrollPinnedIntent)
+          && cachedForSync?.length
+          && trySyncTailMessages(sessionId, cachedForSync, msgs, pageMeta, restoreFromBottom, scrollPinnedIntent)
         ) {
           return;
         }
         if (
           !repaint
           && !refetch
-          && cached?.length
-          && tryMergeExpandedHistory(sessionId, cached, msgs, pageMeta, restoreFromBottom, scrollPinnedIntent)
+          && cachedForSync?.length
+          && tryMergeExpandedHistory(sessionId, cachedForSync, msgs, pageMeta, restoreFromBottom, scrollPinnedIntent)
         ) {
           return;
         }
@@ -12752,6 +12904,31 @@
         return String(m.content || '').trim() === pendingText;
       }
       return false;
+    }
+
+    async function refreshSessionMessagesCacheFromServer(sessionId) {
+      const sid = String(sessionId || '').trim();
+      if (!sid) return false;
+      try {
+        sessionMessagesEtags.delete(sid);
+        const data = await api(
+          `/api/sessions/${sid}/messages?tail=${MESSAGES_TAIL_DEFAULT}`,
+          { cache: 'no-store' },
+        );
+        if (!Array.isArray(data?.messages)) return false;
+        const pageMeta = {
+          total: data.total,
+          has_older: data.has_older,
+          offset: data.offset,
+          messages_mtime: data.messages_mtime || sessionMessagesMtimeFromList(sid),
+        };
+        const msgs = mergeOptimisticTailUser(sid, data.messages || []);
+        rememberSessionMessages(sid, msgs, pageMeta);
+        if (data.__etag) sessionMessagesEtags.set(sid, data.__etag);
+        return true;
+      } catch {
+        return false;
+      }
     }
 
     function mergeOptimisticTailUser(sessionId, serverMsgs) {
@@ -12932,6 +13109,13 @@
                 void refreshAssistantAttachmentsFromServer(sessionId, assistantEl);
               }
               scrollMessagesToBottom({ force: true });
+            } else if (data.text) {
+              appendAssistantMessageToSessionCache(sessionId, {
+                role: 'assistant',
+                content: data.text,
+                timestamp: new Date().toISOString(),
+                files: Array.isArray(data.files) ? data.files : [],
+              });
             }
             handleDingtalkPushResult(data.dingtalk_push);
             es.close();
@@ -13047,7 +13231,12 @@
       } catch {
         return;
       }
-      if (!data?.active || !data.run_id) return;
+      if (!data?.active || !data.run_id) {
+        if (currentSessionId === sid && sessionCacheAwaitingAssistantReply(sid)) {
+          await loadMessages({ force: true });
+        }
+        return;
+      }
       if (activeRuns.get(sid)?.sentDraft) return;
 
       activeRuns.set(sid, {
@@ -16050,6 +16239,7 @@
         setupMarkdownLinkNewTab();
         setupMessagesScrollTracking();
         setupSessionListScrollTracking();
+        setupGlobalContextMenuGuard();
         setupSessionsPanelContextMenu();
         setupCatalogPanelContextMenu();
         initThemeSettings();
