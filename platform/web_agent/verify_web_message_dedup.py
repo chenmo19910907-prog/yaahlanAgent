@@ -34,6 +34,20 @@ def main() -> int:
         "function pendingUserMatchesServerTail(pendingUser, serverMsgs)",
         "pendingUserMatchesServerTail(pendingUser, list)",
         "if (pendingUserMatchesServerTail(pendingUser, list)) return list;",
+        "function appendAssistantMessageToSessionCache(sessionId, assistantMsg)",
+        "function insertAssistantForUserTurnInCache(sessionId, assistantMsg, userHint)",
+        "function findAssistantShellForUserContent(userText)",
+        "showInterruptedReply(sessionId, undefined, {",
+        "runToken: cancelRunToken",
+        "function filterMessagesAlreadyInDom(msgs)",
+        "filterMessagesAlreadyInDom(msgsToAppend)",
+        "appendAssistantMessageToSessionCache(sessionId,",
+        "const cachedForSync = sessionMessagesCache.get(sessionId)",
+        "countLoadedMessageElements() !== merged.length",
+        "function refreshSessionMessagesCacheFromServer(sessionId)",
+        "refreshSessionMessagesCacheFromServer(sessionId)",
+        "!sessionCacheAwaitingAssistantReply(sessionId)",
+        "sessionCacheAwaitingAssistantReply(sessionId)",
     ]
     missing = [token for token in required if token not in html]
     if missing:
