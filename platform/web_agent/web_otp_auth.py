@@ -100,6 +100,8 @@ def is_public_auth_path(path: str) -> bool:
         return True
     if p == "/api/service-agent/webhook":
         return True
+    if p.startswith("/api/open/v1/"):
+        return True
     return False
 
 

@@ -175,6 +175,20 @@ from web_dingtalk_oauth import (  # noqa: E402
 )
 from web_favicon_proxy import fetch_favicon  # noqa: E402
 from service_agent_webhook import SIGNATURE_HEADER, handle_webhook_body  # noqa: E402
+from web_agent_open_api import (  # noqa: E402
+    OpenApiTaskRecord,
+    QUERY_PATH,
+    SUBMIT_PATH,
+    authenticate as authenticate_open_api,
+    build_task_query_data,
+    envelope as open_api_envelope,
+    get_open_api_task,
+    is_open_api_path,
+    message_preview as open_api_message_preview,
+    open_api_owner_id,
+    open_api_owner_label,
+    register_open_api_task,
+)
 from web_bookmark_metadata import resolve_bookmark_metadata  # noqa: E402
 from bookmarks_store import (  # noqa: E402
     load_bookmarks as _load_bookmarks,
@@ -1702,6 +1716,177 @@ def _handle_service_agent_webhook_post(handler: SimpleHTTPRequestHandler) -> Non
     return _json_response(handler, payload, status)
 
 
+def _open_api_response(
+    handler: SimpleHTTPRequestHandler,
+    envelope: dict[str, Any],
+    http_status: int = 200,
+) -> None:
+    return _json_response(handler, envelope, http_status)
+
+
+def _handle_open_api_v1_post(handler: SimpleHTTPRequestHandler, path: str) -> None:
+    client_key, err_envelope, err_status = authenticate_open_api(handler)
+    if err_envelope is not None:
+        return _open_api_response(handler, err_envelope, err_status)
+    assert client_key is not None
+    try:
+        body = _read_json_body(handler)
+    except json.JSONDecodeError:
+        return _open_api_response(
+            handler,
+            open_api_envelope("INVALID_ARGUMENT", "invalid json"),
+            400,
+        )
+    if path == SUBMIT_PATH:
+        return _handle_open_api_task_submit(handler, body, client_key)
+    if path == QUERY_PATH:
+        return _handle_open_api_task_query(handler, body, client_key)
+    return _open_api_response(
+        handler,
+        open_api_envelope("NOT_FOUND", f"未知路径: {path}"),
+        404,
+    )
+
+
+def _handle_open_api_task_submit(
+    handler: SimpleHTTPRequestHandler,
+    body: dict[str, Any],
+    client_key: str,
+) -> None:
+    message = str(body.get("message") or "").strip()
+    if not message:
+        return _open_api_response(
+            handler,
+            open_api_envelope("INVALID_ARGUMENT", "message 必填"),
+            400,
+        )
+    session_id = str(body.get("conversation_id") or body.get("session_id") or "").strip()
+    owner_id = open_api_owner_id(client_key)
+    owner_label = open_api_owner_label()
+    store = get_session_store()
+    if session_id:
+        meta = store.get_session(session_id)
+        if meta is None:
+            return _open_api_response(
+                handler,
+                open_api_envelope("NOT_FOUND", "conversation_id 不存在"),
+                404,
+            )
+        session_owner = (meta.web_owner_id or "").strip()
+        if session_owner and session_owner != owner_id:
+            return _open_api_response(
+                handler,
+                open_api_envelope("FORBIDDEN", "无权使用该 conversation_id"),
+                403,
+            )
+    else:
+        meta = store.create_session(
+            title=open_api_message_preview(message),
+            owner_id=owner_id,
+            owner_label=owner_label,
+        )
+        session_id = meta.id
+    active = _resolve_active_run_for_session(session_id)
+    if active is not None and not active.done.is_set():
+        return _open_api_response(
+            handler,
+            open_api_envelope(
+                "CONFLICT",
+                "该会话仍有任务进行中",
+                {
+                    "task_id": active.run_id,
+                    "conversation_id": session_id,
+                },
+            ),
+            409,
+        )
+    run = RUN_MANAGER.create(session_id)
+    try:
+        _start_chat_run(
+            session_id,
+            message,
+            existing_run=run,
+            author_id=owner_id,
+            author_label=owner_label,
+        )
+    except Exception as exc:  # noqa: BLE001
+        run.task_session.end()
+        run.done.set()
+        RUN_MANAGER.release_session(run)
+        logger.exception("Open API 启动任务失败 session=%s", session_id)
+        return _open_api_response(
+            handler,
+            open_api_envelope("INTERNAL", str(exc)),
+            500,
+        )
+    register_open_api_task(
+        OpenApiTaskRecord(
+            task_id=run.run_id,
+            run_id=run.run_id,
+            session_id=session_id,
+            client_key=client_key,
+            message_preview=open_api_message_preview(message),
+            created_at=time.time(),
+        )
+    )
+    return _open_api_response(
+        handler,
+        open_api_envelope(
+            "OK",
+            "",
+            {
+                "task_id": run.run_id,
+                "conversation_id": session_id,
+                "status": "submitted",
+            },
+        ),
+    )
+
+
+def _handle_open_api_task_query(
+    handler: SimpleHTTPRequestHandler,
+    body: dict[str, Any],
+    client_key: str,
+) -> None:
+    task_id = str(body.get("task_id") or "").strip()
+    if not task_id:
+        return _open_api_response(
+            handler,
+            open_api_envelope("INVALID_ARGUMENT", "task_id 必填"),
+            400,
+        )
+    record = get_open_api_task(task_id)
+    run_store = get_run_store()
+    meta = run_store.get_run(task_id)
+    if record is None and meta is None:
+        return _open_api_response(
+            handler,
+            open_api_envelope("NOT_FOUND", "task_id 不存在"),
+            404,
+        )
+    if record is not None and record.client_key != client_key:
+        return _open_api_response(
+            handler,
+            open_api_envelope("FORBIDDEN", "无权查询该 task_id"),
+            403,
+        )
+    if meta is None:
+        return _open_api_response(
+            handler,
+            open_api_envelope("NOT_FOUND", "task_id 不存在"),
+            404,
+        )
+    snap = run_store.get_snapshot(task_id)
+    data = build_task_query_data(
+        task_id=task_id,
+        session_id=meta.session_id,
+        run_status=meta.status,
+        final_text=snap.final_text,
+        error_text=snap.error,
+    )
+    return _open_api_response(handler, open_api_envelope("OK", "", data))
+
+
 def _read_json_body(handler: SimpleHTTPRequestHandler) -> dict[str, Any]:
     length = int(handler.headers.get("Content-Length", "0") or "0")
     raw = handler.rfile.read(length) if length > 0 else b""
@@ -2094,7 +2279,10 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             self.send_header("Pragma", "no-cache")
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header(
+            "Access-Control-Allow-Headers",
+            "Content-Type, Authorization, X-Task-Request-Id",
+        )
         super().end_headers()
 
     def do_OPTIONS(self) -> None:
@@ -3147,6 +3335,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
 
         if path == "/api/service-agent/webhook":
             return _handle_service_agent_webhook_post(self)
+
+        if is_open_api_path(path):
+            return _handle_open_api_v1_post(self, path)
 
         if not authorize_request(self, method="POST"):
             return
