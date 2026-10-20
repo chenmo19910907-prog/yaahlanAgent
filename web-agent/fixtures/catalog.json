@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-10-19 17:03:59 北京时间",
-  "total_items": 359,
+  "generated_at": "2026-10-20 19:02:50 北京时间",
+  "total_items": 360,
   "module_count": 27,
   "modules": [
     {
@@ -3939,11 +3939,23 @@
     {
       "id": "线上环境",
       "label": "线上环境",
-      "item_count": 21,
+      "item_count": 22,
       "categories": [
         {
           "name": "Admin（yaahlan-admin）",
           "items": [
+            {
+              "name": "Admin-按手机号查 userId（MDP Nova）",
+              "prompts": [
+                "线上环境手机号 <phone> 查 userId",
+                "线上环境 +966 <phone> userId"
+              ],
+              "source": "线上环境能力",
+              "source_id": "online",
+              "source_tag_id": "online",
+              "env": "online",
+              "registry_id": "admin_query_user_by_phone_mdp"
+            },
             {
               "name": "Admin-查询用户详情",
               "prompts": [
