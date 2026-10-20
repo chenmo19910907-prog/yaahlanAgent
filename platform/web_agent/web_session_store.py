@@ -7,6 +7,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import shutil
 import threading
 import uuid
@@ -21,6 +22,7 @@ from typing import Any
 
 _TAIL_SIDECAR_MAX = 120
 _TAIL_SIDECAR_SMALL_FILE_BYTES = 65_536
+_OPEN_API_ORIGIN_PROBE = 1
 _SESSIONS_BACKUP_KEEP = 30
 _COMPACT_JSON = (",", ":")
 
@@ -50,6 +52,7 @@ def compute_sessions_list_etag(
                     str(item.get("shared_conversation_badge") or ""),
                     "1" if item.get("is_collaborator") else "0",
                     "1" if item.get("read_only") else "0",
+                    "1" if item.get("open_api_session") else "0",
                 ]
             )
         )
@@ -180,6 +183,12 @@ def _now_iso() -> str:
 def dingtalk_session_id(dingtalk_key: str) -> str:
     digest = hashlib.sha256(dingtalk_key.encode("utf-8")).hexdigest()[:16]
     return f"dt{digest}"
+
+
+def open_api_session_id(client_key: str) -> str:
+    """Open API 调用方固定会话 id（同一 Token / 员工续聊同一会话）。"""
+    digest = hashlib.sha256((client_key or "").encode("utf-8")).hexdigest()[:16]
+    return f"oa{digest}"
 
 
 def parse_dingtalk_user_id(dingtalk_key: str) -> str:
@@ -329,7 +338,11 @@ class SearchIndexEntry:
 def _message_search_blob(msg: ChatMessage) -> str:
     content = (msg.content or "").strip().replace("\n", " ")
     author = (msg.author_label or msg.author_id or "").strip()
-    parts = [content]
+    tag = (msg.source_tag or "").strip()
+    parts: list[str] = []
+    if tag:
+        parts.append(tag)
+    parts.append(content)
     if author:
         parts.append(author)
     return " ".join(part for part in parts if part)
@@ -588,6 +601,28 @@ def _maybe_promote_legacy_custom_title(
     return True
 
 
+_API_SOURCE_TAG_IN_MESSAGES_RE = re.compile(r'"source_tag"\s*:\s*"API"')
+
+
+def _messages_file_has_api_source_tag(path: Path) -> bool:
+    if not path.is_file():
+        return False
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    return bool(_API_SOURCE_TAG_IN_MESSAGES_RE.search(text))
+
+
+def _messages_indicate_open_api_session(messages: list[ChatMessage]) -> bool:
+    for msg in messages:
+        if msg.role != "user":
+            continue
+        if (msg.source_tag or "").strip() == "API":
+            return True
+    return False
+
+
 def _apply_message_derived_meta(
     meta: SessionMeta,
     messages: list[ChatMessage],
@@ -599,6 +634,9 @@ def _apply_message_derived_meta(
         meta.latest_preview = ""
         return False
     changed = False
+    if not meta.open_api_session and _messages_indicate_open_api_session(messages):
+        meta.open_api_session = True
+        changed = True
     if _maybe_revert_mistaken_custom_title(meta, messages):
         changed = True
         if custom_title_touched is not None and meta.id:
@@ -656,6 +694,7 @@ class ChatMessage:
     files: list[dict[str, object]] = field(default_factory=list)
     author_id: str = ""
     author_label: str = ""
+    source_tag: str = ""
 
 
 @dataclass
@@ -677,6 +716,8 @@ class SessionMeta:
     latest_preview: str = field(default="", repr=False)
     messages_mtime: float = 0.0
     has_assistant: bool = False
+    open_api_session: bool = False
+    open_api_origin_probed: int = 0
 
     def display_title(self) -> str:
         custom = (self.custom_title or "").strip()
@@ -728,6 +769,8 @@ class SessionMeta:
         return "未知用户"
 
     def is_read_only_for_viewer(self, viewer_staff_id: str | None = None) -> bool:
+        if self.open_api_session:
+            return True
         if self.source == "dingtalk":
             return True
         owner_id = (self.web_owner_id or "").strip()
@@ -756,6 +799,9 @@ class SessionMeta:
             "relative_time": _rel_time(self.updated_at),
             "source": self.source,
         }
+        if self.open_api_session:
+            payload["open_api_session"] = True
+            payload["read_only"] = True
         if self.source == "dingtalk":
             payload["read_only"] = True
             owner = self.owner_display(known_labels=known_labels)
@@ -797,7 +843,8 @@ class SessionMeta:
             owner_id = (self.web_owner_id or "").strip()
             if viewer and owner_id and viewer == owner_id:
                 payload["is_mine"] = True
-                payload["can_manage_collaborators"] = True
+                if not self.open_api_session:
+                    payload["can_manage_collaborators"] = True
             elif viewer and self.is_collaborator(viewer):
                 payload["is_collaborator"] = True
             badge = shared_conversation_badge(self, viewer_staff_id)
@@ -941,6 +988,8 @@ class WebSessionStore:
                 latest_preview=str(item.get("latest_preview") or "").strip(),
                 messages_mtime=float(item.get("messages_mtime") or 0),
                 has_assistant=bool(item.get("has_assistant")),
+                open_api_session=bool(item.get("open_api_session")),
+                open_api_origin_probed=int(item.get("open_api_origin_probed") or 0),
             )
         return sessions
 
@@ -972,6 +1021,10 @@ class WebSessionStore:
                 and sid not in self._collaborators_touched
             ):
                 meta.web_collaborator_ids = list(disk_meta.web_collaborator_ids)
+            if disk_meta.open_api_session and not meta.open_api_session:
+                meta.open_api_session = True
+            if disk_meta.open_api_origin_probed > meta.open_api_origin_probed:
+                meta.open_api_origin_probed = disk_meta.open_api_origin_probed
         for sid, disk_meta in disk_sessions.items():
             if sid not in self._sessions:
                 self._sessions[sid] = disk_meta
@@ -1003,6 +1056,12 @@ class WebSessionStore:
                 **({"latest_preview": meta.latest_preview} if (meta.latest_preview or "").strip() else {}),
                 **({"messages_mtime": meta.messages_mtime} if meta.messages_mtime > 0 else {}),
                 **({"has_assistant": True} if meta.has_assistant else {}),
+                **({"open_api_session": True} if meta.open_api_session else {}),
+                **(
+                    {"open_api_origin_probed": meta.open_api_origin_probed}
+                    if meta.open_api_origin_probed > 0
+                    else {}
+                ),
             }
             for sid, meta in self._sessions.items()
         }
@@ -1049,6 +1108,7 @@ class WebSessionStore:
             return None
         author_id = str(item.get("author_id") or item.get("authorId") or "").strip()
         author_label = str(item.get("author_label") or item.get("authorLabel") or "").strip()
+        source_tag = str(item.get("source_tag") or item.get("sourceTag") or "").strip()
         return ChatMessage(
             role=role,
             content=content,
@@ -1057,6 +1117,7 @@ class WebSessionStore:
             files=files,
             author_id=author_id,
             author_label=author_label,
+            source_tag=source_tag,
         )
 
     def _write_tail_sidecar(self, session_id: str, messages: list[ChatMessage]) -> None:
@@ -1074,6 +1135,7 @@ class WebSessionStore:
                 **({"files": m.files} if m.files else {}),
                 **({"author_id": m.author_id} if m.author_id else {}),
                 **({"author_label": m.author_label} if m.author_label else {}),
+                **({"source_tag": m.source_tag} if m.source_tag else {}),
             }
             for m in tail_msgs
         ]
@@ -1231,7 +1293,14 @@ class WebSessionStore:
             return True
         if file_mtime > meta.messages_mtime + 1e-6:
             return True
-        return meta.message_count <= 0
+        if meta.message_count <= 0:
+            return True
+        if (
+            not meta.open_api_session
+            and meta.open_api_origin_probed < _OPEN_API_ORIGIN_PROBE
+        ):
+            return True
+        return False
 
     def _sync_message_derived_meta(
         self,
@@ -1249,6 +1318,9 @@ class WebSessionStore:
             meta, messages, custom_title_touched=custom_title_touched
         )
         meta.messages_mtime = self._messages_file_mtime(meta.id)
+        if meta.open_api_origin_probed < _OPEN_API_ORIGIN_PROBE:
+            meta.open_api_origin_probed = _OPEN_API_ORIGIN_PROBE
+            changed = True
         return changed
 
     def _touch_messages_mtime(self, meta: SessionMeta) -> None:
@@ -1265,6 +1337,7 @@ class WebSessionStore:
                 **({"files": m.files} if m.files else {}),
                 **({"author_id": m.author_id} if m.author_id else {}),
                 **({"author_label": m.author_label} if m.author_label else {}),
+                **({"source_tag": m.source_tag} if m.source_tag else {}),
             }
             for m in messages
         ]
@@ -1367,12 +1440,93 @@ class WebSessionStore:
                         self._custom_title_touched.discard(sid)
         return self._sort_session_items(items)
 
+    def find_latest_open_api_session_for_owner(self, owner_id: str) -> SessionMeta | None:
+        uid = (owner_id or "").strip()
+        if not uid:
+            return None
+        with self._lock:
+            self._reload_index_if_stale()
+            candidates = [
+                meta
+                for meta in self._sessions.values()
+                if meta.open_api_session and (meta.web_owner_id or "").strip() == uid
+            ]
+        if not candidates:
+            return None
+        return max(candidates, key=lambda item: (item.updated_at or "", item.created_at or ""))
+
+    def resolve_open_api_session_id(self, *, client_key: str, owner_id: str) -> str:
+        canonical = open_api_session_id(client_key)
+        if self.get_session(canonical) is not None:
+            return canonical
+        latest = self.find_latest_open_api_session_for_owner(owner_id)
+        if latest is not None:
+            return latest.id
+        return canonical
+
+    def get_or_create_open_api_session(
+        self,
+        *,
+        client_key: str,
+        owner_id: str,
+        owner_label: str = "",
+        title_hint: str = "",
+    ) -> SessionMeta:
+        session_id = self.resolve_open_api_session_id(
+            client_key=client_key,
+            owner_id=owner_id,
+        )
+        uid = (owner_id or "").strip()
+        nick = (owner_label or "").strip()
+        with self._exclusive_index():
+            meta = self._sessions.get(session_id)
+            if meta is None:
+                now = _now_iso()
+                hint = (title_hint or "").strip()
+                title = _title_from_text(hint) if hint else "API会话"
+                meta = SessionMeta(
+                    id=session_id,
+                    title=title,
+                    created_at=now,
+                    updated_at=now,
+                    message_count=0,
+                    web_owner_id=uid,
+                    web_owner_label=nick,
+                    open_api_session=True,
+                    open_api_origin_probed=_OPEN_API_ORIGIN_PROBE,
+                )
+                self._sessions[session_id] = meta
+                self._save_index()
+                self._save_messages(session_id, [])
+            else:
+                changed = False
+                if not meta.open_api_session:
+                    meta.open_api_session = True
+                    meta.open_api_origin_probed = _OPEN_API_ORIGIN_PROBE
+                    changed = True
+                if uid and not (meta.web_owner_id or "").strip():
+                    meta.web_owner_id = uid
+                    changed = True
+                if nick and not (meta.web_owner_label or "").strip():
+                    meta.web_owner_label = nick
+                    changed = True
+                hint = (title_hint or "").strip()
+                if hint:
+                    new_title = _title_from_text(hint)
+                    if meta.title != new_title and session_id not in self._custom_title_touched:
+                        meta.title = new_title
+                        changed = True
+                if changed:
+                    self._save_index()
+        return meta
+
     def create_session(
         self,
         *,
         title: str = "新对话",
         owner_id: str = "",
         owner_label: str = "",
+        open_api_session: bool = False,
     ) -> SessionMeta:
         sid = uuid.uuid4().hex[:16]
         now = _now_iso()
@@ -1383,6 +1537,8 @@ class WebSessionStore:
             updated_at=now,
             web_owner_id=(owner_id or "").strip(),
             web_owner_label=(owner_label or "").strip(),
+            open_api_session=bool(open_api_session),
+            open_api_origin_probed=_OPEN_API_ORIGIN_PROBE if open_api_session else 0,
         )
         with self._exclusive_index():
             self._sessions[sid] = meta
@@ -1394,6 +1550,19 @@ class WebSessionStore:
         with self._lock:
             self._reload_index_if_stale()
             return self._sessions.get(session_id)
+
+    def mark_open_api_session(self, session_id: str) -> bool:
+        """Open API 创建的会话：Web 端只读，仅能通过 API 继续提问。"""
+        with self._exclusive_index():
+            meta = self._sessions.get(session_id)
+            if meta is None:
+                return False
+            if meta.open_api_session:
+                return True
+            meta.open_api_session = True
+            meta.open_api_origin_probed = _OPEN_API_ORIGIN_PROBE
+            self._save_index()
+        return True
 
     def delete_session(self, session_id: str) -> bool:
         with self._exclusive_index():
@@ -1789,6 +1958,8 @@ class WebSessionStore:
                 return False, "session not found"
             if meta.source != "web":
                 return False, "only web sessions support collaborators"
+            if meta.open_api_session:
+                return False, "forbidden"
             session_owner = (meta.web_owner_id or "").strip()
             if not session_owner:
                 return False, "session owner not set"
@@ -1829,6 +2000,7 @@ class WebSessionStore:
         files: list[dict[str, object]] | None = None,
         author_id: str = "",
         author_label: str = "",
+        source_tag: str = "",
     ) -> ChatMessage | None:
         text = (content or "").strip()
         image_list = [path.strip() for path in (images or []) if str(path).strip()]
@@ -1840,6 +2012,7 @@ class WebSessionStore:
             if meta is None:
                 return None
             messages = self._load_messages(session_id)
+            normalized_source_tag = (source_tag or "").strip()
             msg = ChatMessage(
                 role=role,
                 content=text,
@@ -1847,7 +2020,11 @@ class WebSessionStore:
                 files=file_list,
                 author_id=(author_id or "").strip(),
                 author_label=(author_label or "").strip(),
+                source_tag=normalized_source_tag,
             )
+            if normalized_source_tag == "API":
+                meta.open_api_session = True
+                meta.open_api_origin_probed = _OPEN_API_ORIGIN_PROBE
             messages.append(msg)
             self._save_messages(session_id, messages)
             reverted_custom_titles: set[str] = set()

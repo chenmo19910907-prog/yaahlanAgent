@@ -418,7 +418,9 @@ INLINE_URL_RE = re.compile(r"https?://[^\s<>\"']+")
 DOC_LINK_HINTS = (
     "关于用 Cursor 搭建智能工具平台有更详细的文档",
     "关于工作流的搭建和使用有更详细的文档",
+    "关于工具台完整使用方法，可以参考工具台使用说明书",
 )
+CATALOG_MANUAL_URL = f"{DEFAULT_AGENT_URL}/catalog-manual/"
 
 
 def _load_content() -> dict:
@@ -1064,6 +1066,11 @@ def _render_paragraph(text: str, *, chapter_id: str = "") -> str | None:
         if hint in normalized:
             if "Cursor 搭建" in hint:
                 link = '<a href="/platform-guide/" target="_blank" rel="noopener">平台搭建参考</a>'
+            elif "工具台" in hint:
+                link = (
+                    f'<a href="{CATALOG_MANUAL_URL}" target="_blank" rel="noopener">'
+                    "工具台使用说明书</a>"
+                )
             else:
                 link = f'<a href="{WORKFLOW_REFERENCE_URL}" target="_blank" rel="noopener">工作流参考</a>'
             return _render_doc_link_paragraph(text, hint, link, chapter_id=chapter_id)
@@ -1368,6 +1375,11 @@ def _build_from_dingtalk(cache_dir: Path) -> tuple[str, dict]:
                 close_prose()
                 if "Cursor 搭建" in hint:
                     link = '<a href="/platform-guide/" target="_blank" rel="noopener">平台搭建参考</a>'
+                elif "工具台" in hint:
+                    link = (
+                        f'<a href="{CATALOG_MANUAL_URL}" target="_blank" rel="noopener">'
+                        "工具台使用说明书</a>"
+                    )
                 else:
                     link = f'<a href="{WORKFLOW_REFERENCE_URL}" target="_blank" rel="noopener">工作流参考</a>'
                 out.append(

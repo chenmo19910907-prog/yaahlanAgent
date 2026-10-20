@@ -20,6 +20,8 @@ TASK_DIR = WEB_AGENT_DIR / "data" / "open_api_tasks"
 SUBMIT_PATH = "/api/open/v1/task/submit"
 QUERY_PATH = "/api/open/v1/task/query"
 
+OPEN_API_MESSAGE_SOURCE_TAG = "API"
+
 TOKEN_ENV_KEYS = (
     "YAAHLAN_WEB_AGENT_OPEN_API_TOKEN",
     "WEB_AGENT_OPEN_API_TOKEN",
@@ -46,9 +48,25 @@ def resolve_open_api_token() -> str:
     return ""
 
 
+STAFF_CLIENT_KEY_PREFIX = "openapi:staff:"
+
+
 def client_key_from_token(token: str) -> str:
     digest = hashlib.sha256(token.encode("utf-8")).hexdigest()
     return digest[:32]
+
+
+def client_key_for_staff(staff_id: str) -> str:
+    sid = (staff_id or "").strip()
+    return f"{STAFF_CLIENT_KEY_PREFIX}{sid}" if sid else ""
+
+
+def staff_id_from_client_key(client_key: str) -> str | None:
+    key = (client_key or "").strip()
+    if not key.startswith(STAFF_CLIENT_KEY_PREFIX):
+        return None
+    sid = key[len(STAFF_CLIENT_KEY_PREFIX) :].strip()
+    return sid or None
 
 
 def parse_bearer_token(handler: BaseHTTPRequestHandler) -> str:
@@ -60,13 +78,11 @@ def parse_bearer_token(handler: BaseHTTPRequestHandler) -> str:
 
 def authenticate(handler: BaseHTTPRequestHandler) -> tuple[str | None, dict[str, Any] | None, int]:
     """返回 (client_key, error_envelope, http_status)。"""
-    configured = resolve_open_api_token()
-    if not configured:
-        return (
-            None,
-            envelope("CONFIG_ERROR", "未配置 Web Agent Open API Token（WEB_AGENT_OPEN_API_TOKEN）"),
-            int(HTTPStatus.SERVICE_UNAVAILABLE),
-        )
+    from web_agent_open_api_user_tokens import (  # noqa: WPS433
+        has_any_user_tokens,
+        resolve_staff_id_from_user_token,
+    )
+
     presented = parse_bearer_token(handler)
     if not presented:
         return (
@@ -74,13 +90,25 @@ def authenticate(handler: BaseHTTPRequestHandler) -> tuple[str | None, dict[str,
             envelope("UNAUTHORIZED", "缺少 Authorization: Bearer <token>"),
             int(HTTPStatus.UNAUTHORIZED),
         )
-    if not _secrets_equal(presented, configured):
+    configured = resolve_open_api_token()
+    if configured and _secrets_equal(presented, configured):
+        return client_key_from_token(presented), None, 200
+
+    staff_id = resolve_staff_id_from_user_token(presented)
+    if staff_id:
+        return client_key_for_staff(staff_id), None, 200
+
+    if not configured and not has_any_user_tokens():
         return (
             None,
-            envelope("UNAUTHORIZED", "Token 无效"),
-            int(HTTPStatus.UNAUTHORIZED),
+            envelope("CONFIG_ERROR", "未配置 Web Agent Open API Token（WEB_AGENT_OPEN_API_TOKEN）"),
+            int(HTTPStatus.SERVICE_UNAVAILABLE),
         )
-    return client_key_from_token(presented), None, 200
+    return (
+        None,
+        envelope("UNAUTHORIZED", "Token 无效"),
+        int(HTTPStatus.UNAUTHORIZED),
+    )
 
 
 def _secrets_equal(a: str, b: str) -> bool:
@@ -102,12 +130,23 @@ def envelope(code: str, message: str, data: dict[str, Any] | None = None) -> dic
 
 
 def open_api_owner_id(client_key: str) -> str:
+    staff_id = staff_id_from_client_key(client_key)
+    if staff_id:
+        return staff_id
     key = (client_key or "").strip()
     return f"openapi:{key[:16]}" if key else "openapi:anonymous"
 
 
-def open_api_owner_label() -> str:
-    return "Open API"
+def open_api_owner_label(client_key: str) -> str:
+    staff_id = staff_id_from_client_key(client_key)
+    if not staff_id:
+        return "Open API"
+    try:
+        from dingtalk_user_lookup import lookup_auth_user_display_name
+
+        return lookup_auth_user_display_name(staff_id, "") or staff_id
+    except Exception:  # noqa: BLE001
+        return staff_id
 
 
 @dataclass(frozen=True)

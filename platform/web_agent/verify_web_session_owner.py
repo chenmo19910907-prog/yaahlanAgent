@@ -182,6 +182,45 @@ class WebSessionOwnerLockTest(unittest.TestCase):
             assert meta is not None
             self.assertEqual(meta.web_collaborator_ids, ["user_c"])
 
+    def test_set_web_collaborators_forbidden_for_open_api_session(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            sid = "abc123api00001"
+            index.write_text(
+                json.dumps(
+                    {
+                        sid: {
+                            "title": "API 会话",
+                            "created_at": "2026-07-24T08:00:00+00:00",
+                            "updated_at": "2026-07-24T08:00:00+00:00",
+                            "message_count": 1,
+                            "source": "web",
+                            "web_owner_id": "owner_a",
+                            "web_owner_label": "用户A",
+                            "open_api_session": True,
+                        }
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            ok, err = store.set_web_collaborators(
+                sid,
+                owner_id="owner_a",
+                collaborator_ids=["user_b"],
+            )
+            self.assertFalse(ok)
+            self.assertEqual(err, "forbidden")
+            meta = store.get_session(sid)
+            assert meta is not None
+            payload = meta.to_dict(viewer_staff_id="owner_a")
+            self.assertTrue(payload.get("is_mine"))
+            self.assertNotIn("can_manage_collaborators", payload)
+
     def test_clear_all_collaborators_persists(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -17,6 +17,7 @@ if str(WEB_AGENT_DIR) not in __import__("sys").path:
     __import__("sys").path.insert(0, str(WEB_AGENT_DIR))
 
 import web_agent_open_api as open_api  # noqa: E402
+import web_agent_open_api_user_tokens as user_tokens  # noqa: E402
 
 
 class _FakeHandler(BaseHTTPRequestHandler):
@@ -85,6 +86,28 @@ class OpenApiAuthTests(unittest.TestCase):
     def test_is_open_api_path(self) -> None:
         self.assertTrue(open_api.is_open_api_path("/api/open/v1/task/submit"))
         self.assertFalse(open_api.is_open_api_path("/api/chat"))
+
+    def test_user_token_authenticate(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            token_path = Path(tmp) / "tokens.json"
+            with mock.patch.object(user_tokens, "USER_TOKENS_PATH", token_path):
+                with mock.patch.dict(os.environ, {}, clear=False):
+                    os.environ.pop("WEB_AGENT_OPEN_API_TOKEN", None)
+                    os.environ.pop("YAAHLAN_WEB_AGENT_OPEN_API_TOKEN", None)
+                    plaintext, _meta = user_tokens.generate_user_token("staff_001")
+                    handler = _FakeHandler({"Authorization": f"Bearer {plaintext}"})
+                    client_key, err, status = open_api.authenticate(handler)
+                    self.assertIsNone(err)
+                    self.assertEqual(status, 200)
+                    self.assertEqual(client_key, open_api.client_key_for_staff("staff_001"))
+                    self.assertEqual(open_api.open_api_owner_id(client_key or ""), "staff_001")
+
+    def test_open_api_owner_id_staff(self) -> None:
+        key = open_api.client_key_for_staff("u123")
+        self.assertEqual(open_api.open_api_owner_id(key), "u123")
+
+    def test_open_api_message_source_tag(self) -> None:
+        self.assertEqual(open_api.OPEN_API_MESSAGE_SOURCE_TAG, "API")
 
 
 if __name__ == "__main__":

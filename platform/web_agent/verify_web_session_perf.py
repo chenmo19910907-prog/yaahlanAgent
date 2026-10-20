@@ -53,6 +53,7 @@ class WebSessionPerfTest(unittest.TestCase):
                 "source": "web",
                 "latest_preview": f"answer {i}",
                 "messages_mtime": file_mtime,
+                "open_api_origin_probed": 1,
             }
         index.write_text(json.dumps(index_payload, ensure_ascii=False), encoding="utf-8")
         store = WebSessionStore(index_path=index, messages_dir=messages_dir)
@@ -180,6 +181,7 @@ class WebSessionPerfTest(unittest.TestCase):
                             "message_count": len(rows),
                             "source": "web",
                             "messages_mtime": store._messages_file_mtime(sid),  # type: ignore[attr-defined]
+                            "open_api_origin_probed": 1,
                         }
                     },
                     ensure_ascii=False,
@@ -387,6 +389,138 @@ class WebSessionPerfTest(unittest.TestCase):
 
     def test_estimate_messages_page_meta_returns_none_for_before(self) -> None:
         self.assertIsNone(estimate_messages_page_meta(50, before="2026-08-13T10:00:00+00:00", limit=80))
+
+    def test_append_message_persists_source_tag(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            meta = store.create_session(title="api tag", owner_id="u1", owner_label="测试")
+            store.append_message(
+                meta.id,
+                "user",
+                "hello from api",
+                source_tag="API",
+            )
+            loaded = store.get_all_messages(meta.id)
+            self.assertEqual(len(loaded), 1)
+            self.assertEqual(loaded[0].source_tag, "API")
+            raw = json.loads((messages_dir / f"{meta.id}.json").read_text(encoding="utf-8"))
+            self.assertEqual(raw[0].get("source_tag"), "API")
+
+    def test_list_sessions_backfills_open_api_session_from_source_tag(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            sid = "abc123def4567890"
+            now = "2026-10-20T12:00:00+00:00"
+            index.write_text(
+                json.dumps(
+                    {
+                        sid: {
+                            "title": "api question",
+                            "created_at": now,
+                            "updated_at": now,
+                            "message_count": 2,
+                            "source": "web",
+                            "web_owner_id": "u1",
+                            "messages_mtime": 1.0,
+                        }
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            (messages_dir / f"{sid}.json").write_text(
+                json.dumps(
+                    [
+                        {
+                            "role": "user",
+                            "content": "hello",
+                            "timestamp": now,
+                            "source_tag": "API",
+                        },
+                        {"role": "assistant", "content": "ok", "timestamp": now},
+                    ],
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            store.list_sessions(enrich_names=False, sync_derived_meta=True)
+            reloaded = store.get_session(sid)
+            assert reloaded is not None
+            self.assertTrue(reloaded.open_api_session)
+            raw = json.loads(index.read_text(encoding="utf-8"))[sid]
+            self.assertTrue(raw.get("open_api_session"))
+
+    def test_open_api_session_reuses_canonical_id(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            client_key = "openapi:staff:u1"
+            first = store.get_or_create_open_api_session(
+                client_key=client_key,
+                owner_id="u1",
+                owner_label="测试",
+                title_hint="第一条",
+            )
+            second = store.get_or_create_open_api_session(
+                client_key=client_key,
+                owner_id="u1",
+                owner_label="测试",
+                title_hint="第二条",
+            )
+            self.assertEqual(first.id, second.id)
+            from web_session_store import open_api_session_id
+
+            self.assertEqual(first.id, open_api_session_id(client_key))
+            self.assertTrue(first.open_api_session)
+
+    def test_open_api_session_reuses_latest_legacy_session(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            legacy = store.create_session(
+                title="旧 API 会话",
+                owner_id="u1",
+                owner_label="测试",
+                open_api_session=True,
+            )
+            client_key = "openapi:staff:u1"
+            resolved = store.get_or_create_open_api_session(
+                client_key=client_key,
+                owner_id="u1",
+                owner_label="测试",
+                title_hint="续聊",
+            )
+            self.assertEqual(resolved.id, legacy.id)
+
+    def test_append_api_message_marks_open_api_session(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            meta = store.create_session(title="api session", owner_id="u1", owner_label="测试")
+            store.append_message(meta.id, "user", "hello from api", source_tag="API")
+            reloaded = store.get_session(meta.id)
+            assert reloaded is not None
+            self.assertTrue(reloaded.open_api_session)
+            payload = reloaded.to_dict(viewer_staff_id="u1")
+            self.assertTrue(payload.get("open_api_session"))
+            self.assertTrue(reloaded.is_read_only_for_viewer("u1"))
 
     def test_delete_session_removes_message_and_sidecar_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

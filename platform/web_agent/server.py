@@ -187,7 +187,12 @@ from web_agent_open_api import (  # noqa: E402
     message_preview as open_api_message_preview,
     open_api_owner_id,
     open_api_owner_label,
+    OPEN_API_MESSAGE_SOURCE_TAG,
     register_open_api_task,
+)
+from web_agent_open_api_user_tokens import (  # noqa: E402
+    generate_user_token,
+    user_token_status,
 )
 from web_bookmark_metadata import resolve_bookmark_metadata  # noqa: E402
 from bookmarks_store import (  # noqa: E402
@@ -1762,7 +1767,7 @@ def _handle_open_api_task_submit(
         )
     session_id = str(body.get("conversation_id") or body.get("session_id") or "").strip()
     owner_id = open_api_owner_id(client_key)
-    owner_label = open_api_owner_label()
+    owner_label = open_api_owner_label(client_key)
     store = get_session_store()
     if session_id:
         meta = store.get_session(session_id)
@@ -1780,12 +1785,14 @@ def _handle_open_api_task_submit(
                 403,
             )
     else:
-        meta = store.create_session(
-            title=open_api_message_preview(message),
+        meta = store.get_or_create_open_api_session(
+            client_key=client_key,
             owner_id=owner_id,
             owner_label=owner_label,
+            title_hint=open_api_message_preview(message),
         )
         session_id = meta.id
+    store.mark_open_api_session(session_id)
     active = _resolve_active_run_for_session(session_id)
     if active is not None and not active.done.is_set():
         return _open_api_response(
@@ -1808,6 +1815,7 @@ def _handle_open_api_task_submit(
             existing_run=run,
             author_id=owner_id,
             author_label=owner_label,
+            source_tag=OPEN_API_MESSAGE_SOURCE_TAG,
         )
     except Exception as exc:  # noqa: BLE001
         run.task_session.end()
@@ -2051,6 +2059,7 @@ def _start_chat_run(
     enabled_external_agents: list[str] | None = None,
     author_id: str = "",
     author_label: str = "",
+    source_tag: str = "",
     push_result_to_dingtalk: bool = False,
     push_dingtalk_staff_id: str = "",
     reply_mode: str | None = None,
@@ -2085,6 +2094,7 @@ def _start_chat_run(
         files=file_entries,
         author_id=author_id,
         author_label=author_label,
+        source_tag=source_tag,
     )
     if existing_run is not None:
         run = existing_run
@@ -2405,6 +2415,15 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             except Exception:  # noqa: BLE001
                 pass
             return _json_response(self, admin_payload)
+
+        if path == "/api/admin/open-api/token":
+            user = current_web_user(self)
+            if user is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            if not is_web_admin(staff_id=user.staff_id):
+                return _json_response(self, {"error": web_admin_denial_message()}, 403)
+            status = user_token_status(user.staff_id)
+            return _json_response(self, {"ok": True, **status})
 
         if path == "/api/admin/audit-log":
             user = current_web_user(self)
@@ -2977,6 +2996,8 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     item["images"] = msg.images
                 if msg.files:
                     item["files"] = msg.files
+                if msg.source_tag:
+                    item["source_tag"] = msg.source_tag
                 if msg.role == "user":
                     author_id, author_label = resolve_user_message_author(
                         msg,
@@ -3241,6 +3262,25 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 payload["warning"] = err
             return _json_response(self, payload)
 
+        if path == "/api/admin/open-api/token/generate":
+            user = current_web_user(self)
+            if user is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            if not is_web_admin(staff_id=user.staff_id):
+                return _json_response(self, {"error": web_admin_denial_message()}, 403)
+            try:
+                plaintext, meta = generate_user_token(user.staff_id)
+            except ValueError as exc:
+                return _json_response(self, {"error": str(exc)}, 400)
+            return _json_response(
+                self,
+                {
+                    "ok": True,
+                    "token": plaintext,
+                    **meta,
+                },
+            )
+
         if path == "/api/admin/quit":
             user = current_web_user(self)
             if user is None:
@@ -3404,7 +3444,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             viewer_staff_id = viewer.staff_id if viewer is not None else None
             if store.is_read_only_for_viewer(session_id, viewer_staff_id):
                 meta = store.get_session(session_id)
-                if meta is not None and meta.source == "dingtalk":
+                if meta is not None and meta.open_api_session:
+                    err = "Open API 会话请在 API 中继续提问，Web 端仅供查看"
+                elif meta is not None and meta.source == "dingtalk":
                     err = "钉钉同步会话只读，请在 Web 新建对话继续"
                 else:
                     err = "该会话归属他人，仅供查看；请新建对话继续"
