@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20261020110357"></script>
-  <script src="demo-api.js?v=20261020110357"></script>
+  <script src="demo-fixtures.js?v=20261020115441"></script>
+  <script src="demo-api.js?v=20261020115441"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -784,6 +784,107 @@
     .user-menu-dropdown button:hover {
       background: var(--dropdown-logout-hover-bg);
       color: var(--dropdown-logout-hover-color);
+    }
+    .open-api-token-field {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .open-api-token-field label {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .open-api-token-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface-elevated);
+      color: var(--text);
+      font-size: 0.78rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .open-api-token-input::placeholder { color: var(--muted-soft); }
+    .open-api-hint {
+      margin: 0;
+      font-size: 0.76rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .open-api-hint code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.72rem;
+    }
+    #open-api-modal .collaborators-box {
+      width: min(560px, 96vw);
+      max-height: min(88vh, 720px);
+    }
+    .open-api-guide {
+      flex: 1;
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding: 12px 20px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.76rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .open-api-guide h4 {
+      margin: 0 0 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .open-api-guide section + section { margin-top: 14px; }
+    .open-api-guide ul {
+      margin: 6px 0 0;
+      padding-left: 1.15em;
+    }
+    .open-api-guide li + li { margin-top: 4px; }
+    .open-api-guide code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.7rem;
+    }
+    .open-api-guide details {
+      margin-top: 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface-elevated);
+      overflow: hidden;
+    }
+    .open-api-guide details summary {
+      cursor: pointer;
+      padding: 8px 12px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--text-soft);
+      list-style: none;
+    }
+    .open-api-guide details summary::-webkit-details-marker { display: none; }
+    .open-api-guide details summary::before {
+      content: '▸ ';
+      display: inline-block;
+      transition: transform 0.15s ease;
+    }
+    .open-api-guide details[open] summary::before { transform: rotate(90deg); }
+    .open-api-guide pre {
+      margin: 0;
+      padding: 10px 12px 12px;
+      border-top: 1px solid var(--border);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.68rem;
+      line-height: 1.45;
+      color: var(--text-soft);
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .open-api-token-block {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
     }
     .user-menu-dropdown button svg {
       width: 15px;
@@ -5193,6 +5294,13 @@
             </svg>
             管理员列表
           </button>
+          <button type="button" id="btn-open-api" role="menuitem" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+            Open API
+          </button>
           <button type="button" id="btn-logout" role="menuitem">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -5430,6 +5538,71 @@
       <div class="collaborators-actions">
         <button type="button" id="btn-forward-cancel">取消</button>
         <button type="button" class="primary" id="btn-forward-confirm">分享</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="collaborators-modal" id="open-api-modal" aria-hidden="true">
+    <div class="collaborators-box" role="dialog" aria-labelledby="open-api-title">
+      <div class="collaborators-head">
+        <h3 id="open-api-title">Open API</h3>
+        <p class="open-api-hint">以 HTTP POST + JSON 调用 Web Agent；请求头携带 <code>Authorization: Bearer &lt;Token&gt;</code>。下方先生成个人 Token，再按接入说明集成。</p>
+        <p class="open-api-hint" id="open-api-base-url" aria-live="polite"></p>
+        <div class="open-api-token-block">
+          <div class="open-api-token-field">
+            <label for="open-api-token-input">我的 Token</label>
+            <input type="text" class="open-api-token-input" id="open-api-token-input"
+                   readonly autocomplete="off" spellcheck="false"
+                   placeholder="尚未生成，点击下方「生成 Token」" />
+          </div>
+          <p class="open-api-hint" style="margin-top:8px;">重新生成后旧 Token 立即失效；关闭弹窗后仅显示脱敏预览，需重新生成才能再次复制完整串。</p>
+          <div class="collaborators-meta" id="open-api-meta" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="open-api-guide" id="open-api-guide">
+        <section aria-labelledby="open-api-guide-auth">
+          <h4 id="open-api-guide-auth">鉴权与响应格式</h4>
+          <ul>
+            <li>所有接口均为 <code>POST</code>，<code>Content-Type: application/json</code></li>
+            <li>响应体统一为 <code>{ "code", "message", "data" }</code>；业务成功时 <code>code</code> 为 <code>OK</code></li>
+            <li>401 表示 Token 缺失或无效；503 表示服务端未配置任何 Token</li>
+          </ul>
+        </section>
+        <section aria-labelledby="open-api-guide-submit">
+          <h4 id="open-api-guide-submit">提交任务 · <code>POST /task/submit</code></h4>
+          <ul>
+            <li><code>message</code>（必填）：发给 Agent 的用户消息</li>
+            <li><code>conversation_id</code>（可选，别名 <code>session_id</code>）：指定会话；省略则自动续用该 Token 对应的 API 会话</li>
+            <li>成功 <code>data</code>：<code>task_id</code>、<code>conversation_id</code>、<code>status: "submitted"</code></li>
+            <li>409：该会话仍有任务进行中，<code>data</code> 含当前 <code>task_id</code></li>
+          </ul>
+          <details>
+            <summary>cURL 示例：提交</summary>
+            <pre id="open-api-example-submit" aria-label="提交任务 cURL 示例"></pre>
+          </details>
+        </section>
+        <section aria-labelledby="open-api-guide-query">
+          <h4 id="open-api-guide-query">查询任务 · <code>POST /task/query</code></h4>
+          <ul>
+            <li><code>task_id</code>（必填）：提交接口返回的任务 ID</li>
+            <li><code>data.status</code>：<code>pending</code> / <code>running</code> / <code>completed</code> / <code>failed</code> / <code>cancelled</code></li>
+            <li>完成时读 <code>data.result</code>（Agent 最终回复）；失败或取消时读 <code>data.error_message</code></li>
+            <li>建议间隔 2～5 秒轮询，直至 <code>completed</code> / <code>failed</code> / <code>cancelled</code></li>
+          </ul>
+          <details>
+            <summary>cURL 示例：查询</summary>
+            <pre id="open-api-example-query" aria-label="查询任务 cURL 示例"></pre>
+          </details>
+        </section>
+      </div>
+      <div class="collaborators-actions is-split">
+        <div class="collaborators-actions-side">
+          <button type="button" id="btn-open-api-generate">生成 Token</button>
+        </div>
+        <div class="collaborators-actions-side">
+          <button type="button" class="primary" id="btn-open-api-copy">复制</button>
+          <button type="button" id="btn-open-api-close">关闭</button>
+        </div>
       </div>
     </div>
   </div>
@@ -7082,6 +7255,7 @@
     let retryHintActive = false;
     const DINGTALK_READONLY_PLACEHOLDER = '此会话来自钉钉同步，仅供查看；继续对话请点「新对话」';
     const WEB_READONLY_PLACEHOLDER = '此会话归属他人，仅供查看；请点「新对话」继续自己的任务';
+    const OPEN_API_READONLY_PLACEHOLDER = '此为 Open API 会话，请在 API 中提问；Web 端仅供查看';
 
     function canAttachFiles() {
       return !currentSessionReadOnly;
@@ -8911,6 +9085,9 @@
 
     function sessionListPrefixBadgesHtml(s) {
       let html = '';
+      if (s?.open_api_session) {
+        html += '<span class="session-source">API</span>';
+      }
       if (s?.source === 'dingtalk') {
         html += '<span class="session-source">钉钉</span>';
       }
@@ -10384,12 +10561,14 @@
 
     function readonlyPlaceholder(item) {
       if (item?.source === 'dingtalk') return DINGTALK_READONLY_PLACEHOLDER;
+      if (item?.open_api_session) return OPEN_API_READONLY_PLACEHOLDER;
       if (item?.read_only) return WEB_READONLY_PLACEHOLDER;
       return DINGTALK_READONLY_PLACEHOLDER;
     }
 
     function isOwnWebSession(item) {
       if (!item || item.source !== 'web') return false;
+      if (item.open_api_session) return false;
       if (isGuestMode()) return false;
       if (item.can_manage_collaborators === true || item.is_mine === true) return true;
       const viewerId = (currentAuthUser?.staffId || '').trim();
@@ -10419,7 +10598,7 @@
       if (item?.source === 'dingtalk' && owner) {
         bar.hidden = false;
         labelEl.innerHTML = buildOwnerBarLabelHtml('钉钉会话', owner);
-        if (metaEl) metaEl.textContent = '';
+        if (metaEl) metaEl.textContent = '（仅查看）';
         syncCollaboratorFilterVisibility(false);
       } else if (item?.source === 'web' && owner) {
         bar.hidden = false;
@@ -10434,7 +10613,8 @@
         } else if (isSessionReadOnly(item)) {
           meta = '（仅查看）';
         }
-        labelEl.innerHTML = buildOwnerBarLabelHtml('网页会话', owner);
+        const webKind = item.open_api_session ? 'API会话' : '网页会话';
+        labelEl.innerHTML = buildOwnerBarLabelHtml(webKind, owner);
         if (metaEl) metaEl.textContent = meta;
         syncCollaboratorFilterVisibility(isOwnWebSession(item));
       } else {
@@ -10694,6 +10874,7 @@
     function isSessionReadOnly(item) {
       if (!item) return false;
       if (item.source === 'dingtalk') return true;
+      if (item.open_api_session) return true;
       const viewerId = (currentAuthUser?.staffId || '').trim();
       const ownerId = (item.web_owner_id || '').trim();
       if (viewerId && ownerId && viewerId === ownerId) return false;
@@ -15018,6 +15199,7 @@
           isSuperAdmin ? `${displayName}，超管` : (isAdmin ? `${displayName}，管理员` : displayName),
         );
       }
+      syncOpenApiMenuItem();
     }
 
     let adminListUsers = [];
@@ -15077,6 +15259,147 @@
       const visible = user && !isGuestStaffId(user.staffId);
       btn.hidden = !visible;
       btn.title = '查看全员身份与管理员权限';
+      syncOpenApiMenuItem();
+    }
+
+    function syncOpenApiMenuItem() {
+      const btn = document.getElementById('btn-open-api');
+      if (!btn) return;
+      const user = currentAuthUser;
+      btn.hidden = !(user && userIsWebAdmin(user));
+      btn.title = '生成或复制 Open API Token';
+    }
+
+    let openApiTokenPlain = '';
+    let openApiLoading = false;
+
+    function refreshOpenApiGuideExamples() {
+      const base = `${window.location.origin}/api/open/v1`;
+      const submitPre = document.getElementById('open-api-example-submit');
+      const queryPre = document.getElementById('open-api-example-query');
+      const tokenHint = openApiTokenPlain ? openApiTokenPlain : 'YOUR_TOKEN';
+      if (submitPre) {
+        submitPre.textContent =
+          `curl -sS -X POST '${base}/task/submit' \\\n`
+          + `  -H 'Authorization: Bearer ${tokenHint}' \\\n`
+          + `  -H 'Content-Type: application/json' \\\n`
+          + `  -d '{"message":"你好，请简要说明 Web Agent 能做什么"}'`;
+      }
+      if (queryPre) {
+        queryPre.textContent =
+          `curl -sS -X POST '${base}/task/query' \\\n`
+          + `  -H 'Authorization: Bearer ${tokenHint}' \\\n`
+          + `  -H 'Content-Type: application/json' \\\n`
+          + `  -d '{"task_id":"<submit 返回的 task_id>"}'`;
+      }
+    }
+
+    async function setOpenApiModalOpen(open) {
+      const modal = document.getElementById('open-api-modal');
+      if (!modal) return;
+      if (!open) {
+        if (modal.classList.contains('open')) {
+          await animateOverlayClose(modal);
+          modal.classList.remove('open');
+        }
+        openApiTokenPlain = '';
+        modal.setAttribute('aria-hidden', 'true');
+        return;
+      }
+      const baseEl = document.getElementById('open-api-base-url');
+      if (baseEl) {
+        baseEl.textContent = `基址：${window.location.origin}/api/open/v1（路径前缀 /task/submit、/task/query）`;
+      }
+      refreshOpenApiGuideExamples();
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      void refreshOpenApiTokenStatus();
+    }
+
+    function renderOpenApiTokenField() {
+      const input = document.getElementById('open-api-token-input');
+      const meta = document.getElementById('open-api-meta');
+      const genBtn = document.getElementById('btn-open-api-generate');
+      const copyBtn = document.getElementById('btn-open-api-copy');
+      if (input) {
+        if (openApiTokenPlain) {
+          input.value = openApiTokenPlain;
+          input.placeholder = '';
+        } else {
+          input.value = '';
+        }
+      }
+      if (genBtn) {
+        genBtn.textContent = openApiTokenPlain ? '重新生成' : '生成 Token';
+        genBtn.disabled = openApiLoading;
+      }
+      if (copyBtn) {
+        copyBtn.disabled = openApiLoading || !openApiTokenPlain;
+      }
+      if (meta) {
+        meta.textContent = openApiLoading ? '加载中…' : '';
+      }
+      if (document.getElementById('open-api-modal')?.classList.contains('open')) {
+        refreshOpenApiGuideExamples();
+      }
+    }
+
+    async function refreshOpenApiTokenStatus() {
+      openApiLoading = true;
+      renderOpenApiTokenField();
+      try {
+        const data = await api('/api/admin/open-api/token');
+        openApiTokenPlain = '';
+        const input = document.getElementById('open-api-token-input');
+        const meta = document.getElementById('open-api-meta');
+        if (input && data?.hasToken && data.tokenPreview) {
+          input.value = '';
+          input.placeholder = `已生成（${data.tokenPreview}），重新生成后可复制完整 Token`;
+        }
+        if (meta && data?.hasToken && data.updatedAt) {
+          const when = new Date(data.updatedAt * 1000);
+          meta.textContent = Number.isFinite(when.getTime())
+            ? `上次更新：${when.toLocaleString()}`
+            : '';
+        } else if (meta) {
+          meta.textContent = '';
+        }
+      } catch (err) {
+        const meta = document.getElementById('open-api-meta');
+        if (meta) meta.textContent = String(err?.message || err || '加载失败');
+      } finally {
+        openApiLoading = false;
+        renderOpenApiTokenField();
+      }
+    }
+
+    async function generateOpenApiToken() {
+      if (openApiLoading) return;
+      const hadToken = !!openApiTokenPlain || !!document.getElementById('open-api-token-input')?.placeholder?.includes('已生成');
+      if (hadToken && !window.confirm('重新生成将使旧 Token 立即失效，是否继续？')) return;
+      openApiLoading = true;
+      renderOpenApiTokenField();
+      try {
+        const data = await api('/api/admin/open-api/token/generate', { method: 'POST' });
+        openApiTokenPlain = String(data?.token || '').trim();
+        const meta = document.getElementById('open-api-meta');
+        if (meta) meta.textContent = '已生成，请立即复制保存；关闭弹窗后无法再次查看完整 Token。';
+        renderOpenApiTokenField();
+      } catch (err) {
+        const meta = document.getElementById('open-api-meta');
+        if (meta) meta.textContent = String(err?.message || err || '生成失败');
+      } finally {
+        openApiLoading = false;
+        renderOpenApiTokenField();
+      }
+    }
+
+    async function copyOpenApiToken() {
+      const text = openApiTokenPlain || document.getElementById('open-api-token-input')?.value || '';
+      if (!text.trim()) return;
+      const ok = await writeMessageClipboard(text.trim());
+      const meta = document.getElementById('open-api-meta');
+      if (meta && ok) meta.textContent = '已复制到剪贴板';
     }
 
     function adminListUserSortKey(user) {
@@ -16464,6 +16787,22 @@
     document.getElementById('btn-admin-list')?.addEventListener('click', () => {
       setUserMenuOpen(false);
       setAdminListModalOpen(true);
+    });
+    document.getElementById('btn-open-api')?.addEventListener('click', () => {
+      setUserMenuOpen(false);
+      setOpenApiModalOpen(true);
+    });
+    document.getElementById('btn-open-api-close')?.addEventListener('click', () => {
+      setOpenApiModalOpen(false);
+    });
+    document.getElementById('btn-open-api-generate')?.addEventListener('click', () => {
+      void generateOpenApiToken();
+    });
+    document.getElementById('btn-open-api-copy')?.addEventListener('click', () => {
+      void copyOpenApiToken();
+    });
+    document.getElementById('open-api-modal')?.addEventListener('click', (event) => {
+      if (event.target.id === 'open-api-modal') setOpenApiModalOpen(false);
     });
     document.getElementById('btn-admin-list-close')?.addEventListener('click', () => {
       setAdminListModalOpen(false);
