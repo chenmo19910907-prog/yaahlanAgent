@@ -13,10 +13,21 @@
       "command": "python3 online/online_execute.py admin --query-user-id <userId>"
     },
     {
+      "id": "admin_query_user_by_phone_mdp",
+      "name": "Admin-按手机号查 userId（MDP Nova）",
+      "category": "Admin（yaahlan-admin）",
+      "description": "线上 +966 手机号 → userId（MDP Nova queryUserProfileList；records[].userId；首选，与 ops-admin 线上一致）",
+      "prompts": [
+        "线上环境手机号 <phone> 查 userId",
+        "线上环境 +966 <phone> userId"
+      ],
+      "command": "python3 online/online_execute.py admin --query-user-list --user-list-phone <phone> --user-list-area-code 966 --user-list-page-no 1 --user-list-page-size 5"
+    },
+    {
       "id": "moa_query_user_by_phone",
       "name": "MOA-按手机号查 userId",
       "category": "MOA（mdp-user-login · overseas）",
-      "description": "线上按手机号查询 userId（queryLoginStatusV2；默认区号 966）",
+      "description": "线上按手机号查询 userId（queryLoginStatusV2；默认区号 966；备用，优先用 Admin MDP queryUserProfileList）",
       "prompts": [
         "线上环境手机号 <phone> 是否已注册"
       ],

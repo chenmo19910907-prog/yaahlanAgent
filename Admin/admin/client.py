@@ -39,6 +39,42 @@ def build_mdp_nova_headers() -> dict[str, str]:
     return headers
 
 
+def build_mdp_nova_online_headers() -> dict[str, str]:
+    """线上 MDP Nova 用户后台（mdp-nova.wemomo.com Cookie 鉴权）。"""
+    aegis_token = os.environ.get("MDP_ONLINE_AEGIS_TOKEN", "").strip()
+    cloud_token = os.environ.get("MDP_ONLINE_CLOUD_AEGIS_TOKEN", "").strip()
+    if not aegis_token:
+        raise ValueError(
+            "缺少 MDP_ONLINE_AEGIS_TOKEN（请写入 online/.env.local；"
+            "python3 Admin/admin/aegis_sso.py mdp_nova_online）"
+        )
+    if not cloud_token:
+        raise ValueError(
+            "缺少 MDP_ONLINE_CLOUD_AEGIS_TOKEN（请写入 online/.env.local；"
+            "python3 Admin/admin/aegis_sso.py mdp_nova_online）"
+        )
+
+    cookie_parts = [
+        f"mdp_aegis_token={aegis_token}",
+        f"CLOUD-AEGIS-TOKEN={cloud_token}",
+    ]
+    extra_cookie = os.environ.get("MDP_ONLINE_ADMIN_COOKIE_EXTRA", "").strip()
+    if extra_cookie:
+        cookie_parts.append(extra_cookie)
+
+    headers: dict[str, str] = {
+        "Cookie": "; ".join(cookie_parts),
+        "Origin": os.environ.get("MDP_ONLINE_ADMIN_ORIGIN", "https://mdp-nova.wemomo.com").strip()
+        or "https://mdp-nova.wemomo.com",
+        "Referer": os.environ.get("MDP_ONLINE_ADMIN_REFERER", "https://mdp-nova.wemomo.com/").strip()
+        or "https://mdp-nova.wemomo.com/",
+    }
+    user_agent = os.environ.get("MDP_ONLINE_ADMIN_USER_AGENT", "").strip()
+    if user_agent:
+        headers["User-Agent"] = user_agent
+    return headers
+
+
 def _build_yaahlan_auth_headers(
     *,
     sso_env: str,
@@ -112,6 +148,8 @@ def http_post_json(
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     if auth == "mdp_nova":
         extra_headers = build_mdp_nova_headers()
+    elif auth == "mdp_nova_online":
+        extra_headers = build_mdp_nova_online_headers()
     elif auth == "yaahlan":
         extra_headers = build_auth_headers()
     elif auth == "yaahlan_online":
@@ -169,7 +207,7 @@ def _is_mdp_business_auth_error(obj: dict[str, Any]) -> bool:
     return "登录" in em
 
 
-_AUTH_REFRESH_MODES = frozenset({"yaahlan", "yaahlan_online", "mdp_nova"})
+_AUTH_REFRESH_MODES = frozenset({"yaahlan", "yaahlan_online", "mdp_nova", "mdp_nova_online"})
 
 
 def _read_json_response(
@@ -208,7 +246,9 @@ def _read_json_response(
     # 检查业务层 ec=401 / ec=20000（HTTP 200 但 token 无效）
     if not _retried and auth in _AUTH_REFRESH_MODES:
         ec = obj.get("ec")
-        if ec in (401, "401") or (auth == "mdp_nova" and _is_mdp_business_auth_error(obj)):
+        if ec in (401, "401") or (
+            auth in ("mdp_nova", "mdp_nova_online") and _is_mdp_business_auth_error(obj)
+        ):
             refreshed = _try_auto_refresh(auth)
             if refreshed:
                 new_req = _rebuild_request_with_new_auth(req, auth)
@@ -238,6 +278,7 @@ def _try_auto_refresh(auth: str) -> bool:
     try:
         from .aegis_sso import (
             auto_refresh_mdp_nova,
+            auto_refresh_mdp_nova_online,
             auto_refresh_yaahlan,
             auto_refresh_yaahlan_online,
         )
@@ -245,7 +286,7 @@ def _try_auto_refresh(auth: str) -> bool:
 
         admin_dir = str(Path(__file__).resolve().parents[1])
         load_local_env(admin_dir)
-        if auth == "yaahlan_online":
+        if auth in ("yaahlan_online", "mdp_nova_online"):
             load_online_env(admin_dir)
 
         _sys.stderr.write("[Auto-Refresh] Token 过期，正在通过 Aegis SSO 重新登录...\n")
@@ -255,6 +296,8 @@ def _try_auto_refresh(auth: str) -> bool:
             result = auto_refresh_yaahlan_online()
         elif auth == "mdp_nova":
             result = auto_refresh_mdp_nova()
+        elif auth == "mdp_nova_online":
+            result = auto_refresh_mdp_nova_online()
         else:
             return False
         if result.success:
@@ -275,6 +318,8 @@ def _rebuild_request_with_new_auth(req: urllib.request.Request, auth: str) -> ur
         new_headers = build_online_auth_headers()
     elif auth == "mdp_nova":
         new_headers = build_mdp_nova_headers()
+    elif auth == "mdp_nova_online":
+        new_headers = build_mdp_nova_online_headers()
     else:
         new_headers = {}
 

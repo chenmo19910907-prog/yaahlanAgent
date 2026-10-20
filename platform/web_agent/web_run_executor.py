@@ -128,6 +128,48 @@ class FileBackedTaskSession(TaskSession):
         super().check_cancelled()
 
 
+def reap_finished_run_procs() -> int:
+    """wait 已结束的 one-shot worker，避免僵尸并释放 _RUN_PROCS 条目。"""
+    reaped = 0
+    with _RUN_LOCK:
+        for rid, proc in list(_RUN_PROCS.items()):
+            if proc.poll() is None:
+                continue
+            try:
+                proc.wait(timeout=0.5)
+            except subprocess.TimeoutExpired:
+                pass
+            _RUN_PROCS.pop(rid, None)
+            reaped += 1
+    return reaped
+
+
+def _spawn_deferred_web_agent_restart(session_id: str) -> None:
+    """回复落盘后再杀 HTTP 服务，避免 Web 端 SSE 断开且 activeRuns 未清理。"""
+    restart_py = WEB_AGENT_DIR / "restart.py"
+    if not restart_py.is_file():
+        logger.error("延迟重启失败：未找到 %s", restart_py)
+        return
+    env = _subprocess_env()
+    sid = (session_id or "").strip()
+    if sid:
+        from web_agent_restart import DEFERRED_RESTART_SESSION_ENV  # noqa: WPS433
+
+        env[DEFERRED_RESTART_SESSION_ENV] = sid
+    try:
+        subprocess.Popen(
+            [sys.executable, str(restart_py)],
+            cwd=str(REPO_ROOT),
+            env=env,
+            start_new_session=True,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except OSError as exc:
+        logger.error("延迟重启 subprocess 启动失败: %s", exc)
+
+
 def is_run_thread_alive(run_id: str) -> bool:
     rid = (run_id or "").strip()
     if not rid:
@@ -414,19 +456,31 @@ def _execute_web_run_body(
                     route_kind=routed.task_kind,
                 )
             elapsed = time.monotonic() - started_at
-            body = routed.output or "任务已完成。"
-            final_text = finalize_web_reply_text(
-                body,
-                elapsed,
-                task_kind=task_kind,
-                prompt=meta.message,
-                reply_mode=meta.reply_mode,
-                user_key=user_key,
-            )
-            reply_files = _append_assistant(final_text)
+            defer_restart = bool(getattr(routed, "defer_web_agent_restart", False))
+            if defer_restart:
+                body = ""
+                final_text = ""
+                reply_files: list[dict[str, object]] = []
+            else:
+                body = routed.output or "任务已完成。"
+                final_text = finalize_web_reply_text(
+                    body,
+                    elapsed,
+                    task_kind=task_kind,
+                    prompt=meta.message,
+                    reply_mode=meta.reply_mode,
+                    user_key=user_key,
+                )
+                reply_files = _append_assistant(final_text)
             fresh_meta = store.get_run(run_id) or meta
-            dingtalk_push = _maybe_push_result_to_dingtalk(fresh_meta, final_text, success=True)
+            dingtalk_push = (
+                None
+                if defer_restart
+                else _maybe_push_result_to_dingtalk(fresh_meta, final_text, success=True)
+            )
             done_event: dict[str, Any] = {"type": "done", "text": final_text}
+            if defer_restart:
+                done_event["deferred_web_agent_restart"] = True
             if reply_files:
                 done_event["files"] = reply_files
             if dingtalk_push is not None:
@@ -440,6 +494,8 @@ def _execute_web_run_body(
                 reply_text=final_text,
             )
             get_duration_store().record(task_kind, elapsed, status="ok")
+            if defer_restart:
+                _spawn_deferred_web_agent_restart(session_id)
             return 0
 
         final = run_web_chat(
@@ -637,6 +693,7 @@ def _spawn_one_shot_worker(rid: str) -> int:
             from run_child_processes import register_run_child
 
             register_run_child(spawn_user_key, proc.pid)
+    reap_finished_run_procs()
     logger.info("spawn one-shot worker run=%s pid=%s", rid, proc.pid)
     return int(proc.pid)
 

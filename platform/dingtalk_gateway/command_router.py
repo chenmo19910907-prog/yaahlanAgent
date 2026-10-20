@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -18,6 +19,7 @@ class RoutedResult:
     output: str = ""
     files: list[Path] = field(default_factory=list)
     task_kind: str = ""
+    defer_web_agent_restart: bool = False
 
 
 def try_route(user_text: str, session: TaskSession | None = None) -> RoutedResult:
@@ -27,6 +29,13 @@ def try_route(user_text: str, session: TaskSession | None = None) -> RoutedResul
         return RoutedResult(handled=False)
 
     if WEB_AGENT_RESTART_RE.match(text):
+        if os.environ.get("WEB_AGENT_RUN_ID"):
+            return RoutedResult(
+                handled=True,
+                output="",
+                task_kind="web_agent_restart",
+                defer_web_agent_restart=True,
+            )
         outcome = force_restart_web_agent()
         return RoutedResult(
             handled=True,

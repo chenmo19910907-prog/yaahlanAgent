@@ -25,6 +25,7 @@ RESTART_LOG = WEB_AGENT_DIR / "data" / "restart.log"
 RESTART_DELAY_S = 3
 FORCE_RESTART_WAIT_S = 10.0
 FORCE_RESTART_TASK_WAIT_S = 15.0
+DEFERRED_RESTART_SESSION_ENV = "WEB_AGENT_DEFERRED_RESTART_SESSION_ID"
 
 _SKIP_DIR_NAMES = frozenset(
     {
@@ -223,9 +224,36 @@ def format_force_restart_reply(outcome: WebAgentRestartOutcome) -> str:
     return (
         "Web Agent 已重启完成，服务运行正常。\n"
         f"{outcome.message}\n"
-        f"本机访问：http://127.0.0.1:{port}/\n"
-        "刷新浏览器页面即可继续使用。"
+        f"本机访问：http://127.0.0.1:{port}/"
     )
+
+
+def format_deferred_web_restart_reply() -> str:
+    """Web 端先落盘回复再异步重启，避免 SSE 中断后页面卡在执行中。"""
+    _, port = _load_web_agent_bind()
+    return (
+        "Web Agent 重启已提交，约数秒内完成。\n"
+        f"本机访问：http://127.0.0.1:{port}/\n"
+        "本页将自动结束「执行中」，无需手动刷新。"
+    )
+
+
+def append_deferred_restart_followup(session_id: str, outcome: WebAgentRestartOutcome) -> None:
+    """延迟重启进程完成后，向 Web 会话追加「已重启完成」回复。"""
+    sid = (session_id or "").strip()
+    if not sid:
+        return
+    body = format_force_restart_reply(outcome)
+    try:
+        web_agent_str = str(WEB_AGENT_DIR)
+        if web_agent_str not in sys.path:
+            sys.path.insert(0, web_agent_str)
+        from web_session_store import get_session_store  # noqa: WPS433
+
+        get_session_store().append_message(sid, "assistant", body)
+        logger.info("延迟重启 follow-up 已落盘 session=%s ok=%s", sid, outcome.ok)
+    except Exception as exc:
+        logger.error("延迟重启 follow-up 落盘失败 session=%s: %s", sid, exc)
 
 
 def _append_restart_log(label: str, *, stdout: str = "", stderr: str = "", exit_code: int = 0) -> None:

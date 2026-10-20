@@ -32,6 +32,7 @@ APP_KEYS = {
     "yaahlan_online": "b8584de3-7226-4c85-930e-ea8b0e878175",
     "moa_mse": "b39691dd-5364-4bd1-a2ee-f65cf6ffa1be",
     "mdp_nova_alpha": "9b385e46-e087-43a4-ac77-d70d08617151",
+    "mdp_nova_online": "6a5dd64a-de06-4216-a901-cb1584a32ee3",
 }
 
 # Token 交换 API
@@ -46,9 +47,11 @@ REDIRECT_URLS = {
     "yaahlan_online": "https://www.yaahlan.fun/fep/momo/yaahlan-fe/yaahlan-operation-manager-platform/",
     "moa_mse": "https://mse.wemomo.com/",
     "mdp_nova_alpha": "https://mdp-nova-alpha.wemomo.com/",
+    "mdp_nova_online": "https://mdp-nova.wemomo.com/",
 }
 
 MDP_AUTH_API_BASE = "https://mdp-auth-api-alpha.wemomo.com"
+MDP_AUTH_API_OVERSEAS_BASE = "https://mdp-auth-api-overseas.wemomo.com"
 
 
 def _follow_redirects_for_cookies(
@@ -237,9 +240,23 @@ def sso_login(
     if platform == "moa_mse":
         _follow_redirects_for_cookies(location, parsed_cookies, max_hops=5)
 
-    # Step 3b: MDP Nova → callbackAegis 换取 alpha_mdp_aegis_token
+    # Step 3b: MDP Nova → callbackAegis 换取 mdp_aegis_token / alpha_mdp_aegis_token
     if platform == "mdp_nova_alpha":
-        return _complete_mdp_nova_login(sso_token, momo_id, parsed_cookies)
+        return _complete_mdp_nova_login(
+            sso_token,
+            momo_id,
+            parsed_cookies,
+            auth_api_base=MDP_AUTH_API_BASE,
+            token_cookie="alpha_mdp_aegis_token",
+        )
+    if platform == "mdp_nova_online":
+        return _complete_mdp_nova_login(
+            sso_token,
+            momo_id,
+            parsed_cookies,
+            auth_api_base=MDP_AUTH_API_OVERSEAS_BASE,
+            token_cookie="mdp_aegis_token",
+        )
 
     return SSOLoginResult(
         success=True,
@@ -255,13 +272,16 @@ def _complete_mdp_nova_login(
     sso_token: str,
     momo_id: str,
     cookies: dict[str, str],
+    *,
+    auth_api_base: str = MDP_AUTH_API_BASE,
+    token_cookie: str = "alpha_mdp_aegis_token",
 ) -> SSOLoginResult:
-    """SSO 成功后调用 MDP Auth callbackAegis，换取 alpha_mdp_aegis_token。"""
+    """SSO 成功后调用 MDP Auth callbackAegis，换取 MDP Nova Cookie。"""
     if not sso_token or not momo_id:
         return SSOLoginResult(success=False, error="SSO 重定向缺少 token 或 momoid")
 
     callback_url = (
-        f"{MDP_AUTH_API_BASE}/login/callbackAegis"
+        f"{auth_api_base.rstrip('/')}/login/callbackAegis"
         f"?momoid={urllib.parse.quote(momo_id, safe='')}"
         f"&token={urllib.parse.quote(sso_token, safe='')}"
     )
@@ -296,9 +316,9 @@ def _complete_mdp_nova_login(
     except Exception as e:
         return SSOLoginResult(success=False, error=f"callbackAegis 请求异常: {e}")
 
-    aegis_token = cookies.get("alpha_mdp_aegis_token", "").strip()
+    aegis_token = cookies.get(token_cookie, "").strip()
     if not aegis_token:
-        return SSOLoginResult(success=False, error="callbackAegis 未返回 alpha_mdp_aegis_token")
+        return SSOLoginResult(success=False, error=f"callbackAegis 未返回 {token_cookie}")
 
     return SSOLoginResult(
         success=True,
@@ -337,6 +357,39 @@ def auto_refresh_mdp_nova(env_file: str | Path | None = None) -> SSOLoginResult:
     update_env_local(env_file, {
         "MDP_AEGIS_TOKEN": aegis_token,
         "MDP_CLOUD_AEGIS_TOKEN": aegis_token,
+    })
+    return result
+
+
+def refresh_mdp_nova_online_env() -> SSOLoginResult:
+    """刷新线上 MDP Nova（mdp-nova.wemomo.com）Cookie。"""
+    result = sso_login("mdp_nova_online")
+    if not result.success:
+        return result
+
+    aegis_token = (result.cookies or {}).get("mdp_aegis_token", "").strip()
+    if not aegis_token:
+        return SSOLoginResult(success=False, error="未获取 mdp_aegis_token")
+
+    os.environ["MDP_ONLINE_AEGIS_TOKEN"] = aegis_token
+    os.environ["MDP_ONLINE_CLOUD_AEGIS_TOKEN"] = aegis_token
+    return result
+
+
+def auto_refresh_mdp_nova_online(env_file: str | Path | None = None) -> SSOLoginResult:
+    """一键刷新线上 MDP Nova Token 并持久化到 online/.env.local。"""
+    result = refresh_mdp_nova_online_env()
+    if not result.success:
+        return result
+
+    aegis_token = os.environ["MDP_ONLINE_AEGIS_TOKEN"]
+    if env_file is None:
+        repo_root = Path(__file__).resolve().parents[2]
+        env_file = repo_root / "online" / ".env.local"
+
+    update_env_local(env_file, {
+        "MDP_ONLINE_AEGIS_TOKEN": aegis_token,
+        "MDP_ONLINE_CLOUD_AEGIS_TOKEN": aegis_token,
     })
     return result
 
@@ -571,6 +624,9 @@ def main() -> int:
             elif platform == "mdp_nova_alpha":
                 auto_refresh_mdp_nova()
                 print("  -> Persisted to Admin/.env.local (MDP_AEGIS_TOKEN, MDP_CLOUD_AEGIS_TOKEN)")
+            elif platform == "mdp_nova_online":
+                auto_refresh_mdp_nova_online()
+                print("  -> Persisted to online/.env.local (MDP_ONLINE_AEGIS_TOKEN, MDP_ONLINE_CLOUD_AEGIS_TOKEN)")
 
     return 0 if all_ok else 1
 

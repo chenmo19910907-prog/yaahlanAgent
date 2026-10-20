@@ -175,6 +175,7 @@ class RunSnapshot:
     last_markdown: str = ""
     last_process: dict[str, Any] | None = None
     final_text: str = ""
+    deferred_web_agent_restart: bool = False
     error: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
@@ -186,6 +187,7 @@ class RunSnapshot:
             "last_phase_line": self.last_phase_line,
             "last_markdown": self.last_markdown,
             "final_text": self.final_text,
+            "deferred_web_agent_restart": self.deferred_web_agent_restart,
             "error": self.error,
         }
         if isinstance(self.last_process, dict):
@@ -205,6 +207,7 @@ class RunSnapshot:
             last_markdown=str(data.get("last_markdown") or ""),
             last_process=proc if isinstance(proc, dict) else None,
             final_text=str(data.get("final_text") or ""),
+            deferred_web_agent_restart=bool(data.get("deferred_web_agent_restart")),
             error=str(err) if err else None,
         )
 
@@ -233,6 +236,8 @@ def _apply_event_to_snapshot(snap: RunSnapshot, event: dict[str, Any]) -> None:
             snap.last_phase_line = resolve_process_phase_line(snap.last_process)
     elif etype == "done":
         snap.final_text = str(event.get("text") or "")
+        if event.get("deferred_web_agent_restart"):
+            snap.deferred_web_agent_restart = True
     elif etype == "error":
         snap.error = str(event.get("message") or "")
         snap.final_text = str(event.get("text") or "")

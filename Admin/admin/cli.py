@@ -163,6 +163,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--user-list-page-no", type=int, help="用户列表页码 pageNo（默认 1）")
     parser.add_argument("--user-list-page-size", type=int, help="用户列表每页条数 pageSize（默认 20）")
     parser.add_argument(
+        "--user-list-include-cancelled",
+        action="store_true",
+        help="手机号查 userId 时保留已注销记录（默认排除 banStatus=3）",
+    )
+    parser.add_argument(
         "--cancel-user",
         action="store_true",
         help="注销用户账号（userAdmin/cancelUser；不可逆，须 --cancel-user-confirm）",
@@ -446,14 +451,16 @@ def _resolve_yaahlan_auth(args: argparse.Namespace) -> str:
     return "yaahlan_online" if getattr(args, "online_env", False) else "yaahlan"
 
 
-def _resolve_mdp_base_url(cfg: dict[str, object]) -> str:
+def _resolve_mdp_base_url(cfg: dict[str, object], *, online: bool = False) -> str:
+    env_key = "MDP_ONLINE_ADMIN_BASE_URL" if online else "MDP_ADMIN_BASE_URL"
     base_url = (
-        os.environ.get("MDP_ADMIN_BASE_URL")
+        os.environ.get(env_key)
         or cfg.get("baseUrl")
         or ""
     ).strip().rstrip("/")
     if not base_url:
-        raise ValueError("缺少 MDP Admin 域名：请设置 MDP_ADMIN_BASE_URL 或 config.json 中 query_gift_list.baseUrl")
+        label = "MDP_ONLINE_ADMIN_BASE_URL" if online else "MDP_ADMIN_BASE_URL"
+        raise ValueError(f"缺少 MDP Admin 域名：请设置 {label} 或 config 中 query_user_profile_list.baseUrl")
     return base_url
 
 
@@ -542,8 +549,9 @@ def _resolve_query_gift_list_request(args: argparse.Namespace) -> tuple[str, dic
 
 
 def _resolve_query_user_profile_list_request(args: argparse.Namespace) -> tuple[str, dict[str, object]]:
-    cfg = defaults("query_user_profile_list")
-    base_url = _resolve_mdp_base_url(cfg)
+    online = bool(getattr(args, "online_env", False))
+    cfg = defaults("query_user_profile_list", online=online)
+    base_url = _resolve_mdp_base_url(cfg, online=online)
     path = str(cfg.get("path", "/userAdmin/queryUserProfileList"))
 
     app_id = args.user_list_app_id
@@ -1170,9 +1178,10 @@ def main() -> int:
         if getattr(args, "online_env", False) and not (
             args.query_user_id is not None
             or (args.query_family and args.family_id)
+            or args.query_user_list
         ):
             raise ValueError(
-                "线上环境 Admin 当前仅支持 --query-user-id 或 --query-family --family-id（须用户提示词含「线上环境」）"
+                "线上环境 Admin 当前仅支持 --query-user-id、--query-user-list 或 --query-family --family-id"
             )
         if args.schedule_im_message_types:
             results = schedule_im_message_type_smoke(
@@ -1253,11 +1262,12 @@ def main() -> int:
             if args.dump_body:
                 print(f"POST {url}", file=sys.stderr)
                 print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
+            mdp_auth = "mdp_nova_online" if getattr(args, "online_env", False) else "mdp_nova"
             resp = http_post_json(
                 url,
                 body,
                 timeout_s=max(args.timeout_ms, 1000) / 1000.0,
-                auth="mdp_nova",
+                auth=mdp_auth,
             )
         elif args.cancel_user:
             url, body = _resolve_cancel_user_request(args)
@@ -1442,7 +1452,13 @@ def main() -> int:
             print(f"MDP 用户后台返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
             print(json.dumps(resp, ensure_ascii=False, indent=2))
             return 3
-        summary = parse_query_user_profile_list_summary(resp.get("data"))
+        phone_filter = str(args.user_list_phone or "").strip()
+        summary = parse_query_user_profile_list_summary(
+            resp.get("data"),
+            filter_phone=phone_filter or None,
+            filter_area_code=args.user_list_area_code,
+            active_only=bool(phone_filter) and not args.user_list_include_cancelled,
+        )
         print(json.dumps(summary, ensure_ascii=False, indent=2))
     elif args.cancel_user:
         if not mdp_user_admin_success(resp.get("ec")):

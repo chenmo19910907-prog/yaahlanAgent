@@ -5,6 +5,14 @@
     },
     "query_user_detail": {
       "path": "/admin/user/queryUserDetail"
+    },
+    "query_user_profile_list": {
+      "baseUrl": "https://mdp-user-admin-api-overseas.wemomo.com",
+      "path": "/userAdmin/queryUserProfileList",
+      "defaultAppId": 2005,
+      "defaultPageNo": 1,
+      "defaultPageSize": 20,
+      "opsAdminUrl": "https://mdp-nova.wemomo.com/fep/momo/mdp-spacey/ops-admin/index.html#/userIndex/list"
     }
   },
   "moa": {

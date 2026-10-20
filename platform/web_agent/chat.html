@@ -1867,6 +1867,40 @@
       pointer-events: none;
       visibility: hidden;
     }
+    .load-older-messages-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      align-self: center;
+      max-width: 100%;
+      padding: 8px 14px;
+      margin: 0 0 12px;
+      border-radius: 999px;
+      background: var(--surface-elevated, rgba(255, 255, 255, 0.06));
+      border: 1px solid var(--border);
+      color: var(--muted-soft);
+      font-size: 0.82rem;
+      line-height: 1.3;
+      pointer-events: none;
+      user-select: none;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity 180ms var(--ease-standard), transform 180ms var(--ease-standard);
+    }
+    .load-older-messages-status.is-active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .load-older-messages-status[hidden] {
+      display: none !important;
+    }
+    .load-older-messages-status .bootstrap-loading-spinner {
+      width: 16px;
+      height: 16px;
+      border-width: 2px;
+      flex-shrink: 0;
+    }
     .empty-state {
       display: flex; flex-direction: column; align-items: center;
       justify-content: center; height: 100%; text-align: center; gap: 16px;
@@ -6311,6 +6345,7 @@
     }
 
     function messagesDomStreamingOk(sessionId) {
+      const sid = String(sessionId || '').trim();
       const run = activeRuns.get(sessionId);
       const container = getMessagesEl();
       if (!container) return false;
@@ -6327,7 +6362,23 @@
       ) {
         return false;
       }
-      if (!run) return !orphanShell;
+      if (
+        deferredRestartAwaiting.has(sid)
+        && !messagesHaveAssistantSinceLastUser(cachedMsgs)
+      ) {
+        return false;
+      }
+      if (!run) {
+        const tail = findFinalizedTailShell(sid);
+        if (
+          tail
+          && !messagesHaveAssistantSinceLastUser(cachedMsgs)
+          && !String(getMessageMarkdown(tail.querySelector('.msg-body')) || '').trim()
+        ) {
+          return false;
+        }
+        return !orphanShell;
+      }
       if (run.shellEl && messagesHaveAssistantSinceLastUser(cachedMsgs)) {
         run.shellEl = null;
         return false;
@@ -6360,6 +6411,7 @@
           refreshStreamingShellFromRun(sessionId);
         }
       }
+      ensureDeferredRestartPendingInDom(sessionId, sessionMessagesCache.get(sessionId) || []);
       if (touchScroll) {
         if (pendingScrollToTimestamp) {
           /* 搜索跳转由 loadMessages finally 统一分页定位 */
@@ -7431,6 +7483,7 @@
       if (/^等待模型响应/.test(t)) return true;
       if (/^Agent\s*已启动/.test(t)) return true;
       if (/^Agent\s*执行中[…\.]?$/.test(t)) return true;
+      if (/^Web Agent 重启中[…\.]?$/.test(t)) return true;
       return false;
     }
 
@@ -7830,10 +7883,14 @@
 
     function finalizeStreamingShell(sessionId, shellEl, markdown, opts = {}) {
       if (!shellEl?.isConnected) return;
+      const sid = String(sessionId || '').trim();
+      const md = String(markdown || '').trim();
+      if (!md && (deferredRestartAwaiting.has(sid) || opts.deferWebAgentRestart)) {
+        return;
+      }
       cancelStreamingMsgBodyUpdate(shellEl);
       shellEl.dataset.streamFinalized = '1';
       clearRunStatus(sessionId, shellEl);
-      const md = String(markdown || '').trim();
       setAssistantMessageBody(shellEl, md || '（无回复）', {
         files: opts.files || [],
         images: opts.images || [],
@@ -7932,7 +7989,11 @@
               else refreshSessionListAfterRunEnd(sid);
               return;
             }
-            if (sid === currentSessionId && current.shellEl?.isConnected) {
+            if (
+              sid === currentSessionId
+              && current.shellEl?.isConnected
+              && !deferredRestartAwaiting.has(sid)
+            ) {
               await finalizeStreamingShellFromServer(sid);
             }
             if (isActiveRun(sid, { runToken: pollToken })) {
@@ -10943,11 +11004,20 @@
           if (data.type === 'done' || data.type === 'error') {
             if (currentSessionId === sessionId) {
               if (data.type === 'done') {
-                let shell = shellEl?.isConnected ? shellEl : findActiveAssistantShell(sessionId);
-                if (shell) {
-                  setAssistantMessageBody(shell, data.text || '⚠️ 任务已中断。');
-                  ensureAssistantShareButton(shell);
-                  scrollMessagesToBottom({ force: true });
+                if (shouldTreatDoneAsDeferredRestart(sessionId, data)) {
+                  applyDeferredWebAgentRestartUi(sessionId, shellEl);
+                } else {
+                  let shell = shellEl?.isConnected ? shellEl : findActiveAssistantShell(sessionId);
+                  if (shell) {
+                    const body = String(data.text || '').trim();
+                    if (body) {
+                      finalizeStreamingShell(sessionId, shell, body);
+                    } else {
+                      setAssistantMessageBody(shell, '⚠️ 任务已中断。');
+                      ensureAssistantShareButton(shell);
+                    }
+                    scrollMessagesToBottom({ force: true });
+                  }
                 }
               } else {
                 showRunFailureReply(
@@ -11256,11 +11326,217 @@
       syncToolActionsPlacement();
     }
 
+    const deferredRestartFollowupTimers = new Map();
+    const deferredRestartAwaiting = new Set();
+    const WEB_AGENT_RESTART_CMD_RE = /^(?:重启|restart)\s*(?:web\s*agent|webagent|网页版\s*agent|网页\s*agent)\s*$/i;
+    const DEFERRED_RESTART_PHASE = 'Web Agent 重启中…';
+
+    function isWebAgentRestartUserText(text) {
+      return WEB_AGENT_RESTART_CMD_RE.test(String(text || '').trim());
+    }
+
+    function lastUserMessageContent(msgs) {
+      if (!Array.isArray(msgs)) return '';
+      for (let i = msgs.length - 1; i >= 0; i -= 1) {
+        const m = msgs[i];
+        if (m?.role === 'user') return String(m.content || '').trim();
+      }
+      return '';
+    }
+
+    function shouldTreatDoneAsDeferredRestart(sessionId, data) {
+      if (data?.deferred_web_agent_restart) return true;
+      if (String(data?.text || '').trim()) return false;
+      const sid = String(sessionId || '').trim();
+      const msgs = sessionMessagesCache.get(sid) || [];
+      return isWebAgentRestartUserText(lastUserMessageContent(msgs));
+    }
+
+    function removeDeferredRestartPendingShells(container) {
+      const root = container || getMessagesEl();
+      if (!root) return;
+      root.querySelectorAll('.msg.assistant[data-deferred-restart-pending="1"]').forEach((el) => {
+        el.remove();
+      });
+      root.querySelector('#typing-indicator')?.remove();
+    }
+
+    function pinDeferredRestartPendingShell(sessionId, shellEl) {
+      const sid = String(sessionId || '').trim();
+      if (!sid || !shellEl?.isConnected) return null;
+      cancelStreamingMsgBodyUpdate(shellEl);
+      clearRunStatus(sid, shellEl);
+      shellEl.classList.remove('streaming');
+      shellEl.dataset.deferredRestartPending = '1';
+      shellEl.dataset.streamFinalized = '1';
+      setAssistantMessageBody(shellEl, DEFERRED_RESTART_PHASE);
+      ensureAssistantShareButton(shellEl);
+      return shellEl;
+    }
+
+    function ensureDeferredRestartPendingInDom(sessionId, msgs) {
+      const sid = String(sessionId || '').trim();
+      if (!sid || !deferredRestartAwaiting.has(sid)) return null;
+      if (messagesHaveAssistantSinceLastUser(msgs || [])) return null;
+      if (sid !== currentSessionId) return null;
+      const container = getMessagesEl();
+      if (!container) return null;
+      const existing = container.querySelector('.msg.assistant[data-deferred-restart-pending="1"]');
+      if (existing) {
+        pinDeferredRestartPendingShell(sid, existing);
+        return existing;
+      }
+      document.getElementById('typing-indicator')?.remove();
+      if (container.querySelector('.empty-state')) dismissEmptyState(container);
+      const el = document.createElement('div');
+      el.className = 'msg assistant';
+      el.innerHTML = `${buildMsgLabelHtml('Agent', new Date().toISOString(), { role: 'assistant' })}
+        <div class="run-status"></div>
+        <div class="msg-body"></div>`;
+      container.appendChild(el);
+      pinDeferredRestartPendingShell(sid, el);
+      if (messagesPinnedToBottom) scrollMessagesToBottom({ force: true });
+      return el;
+    }
+
+    function applyDeferredWebAgentRestartUi(sessionId, assistantEl) {
+      const sid = String(sessionId || '').trim();
+      if (!sid) return assistantEl;
+      deferredRestartAwaiting.add(sid);
+      if (currentSessionId === sid) {
+        let shell = assistantEl;
+        if (!shell?.isConnected) {
+          shell = ensureStreamingShell(sid);
+          const run = activeRuns.get(sid);
+          if (run) run.shellEl = shell;
+        }
+        pinDeferredRestartPendingShell(sid, shell);
+        assistantEl = shell;
+      }
+      syncDeferredRestartFollowupPoll(sid, sessionMessagesCache.get(sid) || []);
+      return assistantEl;
+    }
+
+    function isDeferredRestartSubmittedText(text) {
+      return String(text || '').includes('Web Agent 重启已提交');
+    }
+
+    function isDeferredRestartCompleteText(text) {
+      const t = String(text || '');
+      return t.includes('Web Agent 已重启完成') || t.includes('Web Agent 重启失败');
+    }
+
+    function filterDeferredRestartIntermediateMessages(sessionId, msgs) {
+      if (!Array.isArray(msgs) || !msgs.length) return msgs;
+      const sid = String(sessionId || '').trim();
+      const hasCompleteAfter = (idx) => {
+        for (let i = idx + 1; i < msgs.length; i += 1) {
+          const m = msgs[i];
+          if (m?.role === 'assistant' && isDeferredRestartCompleteText(m.content)) return true;
+        }
+        return false;
+      };
+      return msgs.filter((m, i) => {
+        if (m?.role !== 'assistant' || !isDeferredRestartSubmittedText(m.content)) return true;
+        if (sid && deferredRestartAwaiting.has(sid)) return false;
+        return !hasCompleteAfter(i);
+      });
+    }
+
+    /** 等待 restart.py 落盘最终状态时轮询（不再展示「重启已提交」中间回复）。 */
+    function needsDeferredRestartFollowup(msgs, sessionId) {
+      const sid = String(sessionId || '').trim();
+      if (sid && deferredRestartAwaiting.has(sid)) return true;
+      if (!Array.isArray(msgs) || !msgs.length) return false;
+      if (
+        !messagesHaveAssistantSinceLastUser(msgs)
+        && isWebAgentRestartUserText(lastUserMessageContent(msgs))
+      ) {
+        return true;
+      }
+      let lastSubmittedIdx = -1;
+      for (let i = 0; i < msgs.length; i += 1) {
+        const m = msgs[i];
+        if (m?.role === 'assistant' && isDeferredRestartSubmittedText(m.content)) {
+          lastSubmittedIdx = i;
+        }
+      }
+      if (lastSubmittedIdx < 0) return false;
+      for (let i = lastSubmittedIdx + 1; i < msgs.length; i += 1) {
+        const m = msgs[i];
+        if (m?.role === 'assistant' && isDeferredRestartCompleteText(m.content)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function syncDeferredRestartFollowupPoll(sessionId, msgs) {
+      const sid = String(sessionId || '').trim();
+      if (!sid) return;
+      if (needsDeferredRestartFollowup(msgs, sid)) {
+        startDeferredRestartFollowupPoll(sid);
+      } else {
+        deferredRestartAwaiting.delete(sid);
+        stopDeferredRestartFollowupPoll(sid);
+      }
+    }
+
+    function stopDeferredRestartFollowupPoll(sessionId) {
+      const sid = String(sessionId || '').trim();
+      const timer = deferredRestartFollowupTimers.get(sid);
+      if (!timer) return;
+      clearInterval(timer);
+      deferredRestartFollowupTimers.delete(sid);
+    }
+
+    function startDeferredRestartFollowupPoll(sessionId) {
+      const sid = String(sessionId || '').trim();
+      if (!sid) return;
+      stopDeferredRestartFollowupPoll(sid);
+      let attempts = 0;
+      const maxAttempts = 45;
+      const timer = setInterval(async () => {
+        attempts += 1;
+        try {
+          const data = await api(`/api/sessions/${sid}/messages?tail=25`, { cache: 'no-store' });
+          const msgs = data.messages || [];
+          if (data.messages_mtime) {
+            patchSessionCacheEntry(sid, { messages_mtime: data.messages_mtime });
+          }
+          if (!needsDeferredRestartFollowup(msgs, sid)) {
+            const hadComplete = msgs.some(
+              (m) => m.role === 'assistant' && isDeferredRestartCompleteText(m.content),
+            );
+            deferredRestartAwaiting.delete(sid);
+            stopDeferredRestartFollowupPoll(sid);
+            if (hadComplete) {
+              if (sid === currentSessionId) {
+                await loadMessages({ force: true, repaint: true });
+                scrollMessagesToBottom({ force: true });
+              } else {
+                sessionMessagesEtags.delete(sid);
+                await refreshSessionMessagesCacheFromServer(sid);
+              }
+            }
+            return;
+          }
+        } catch { /* 重启期间服务不可达 */ }
+        if (attempts >= maxAttempts) stopDeferredRestartFollowupPoll(sid);
+      }, 1000);
+      deferredRestartFollowupTimers.set(sid, timer);
+    }
+
     function finishRun(sessionId, runToken = '') {
       const run = activeRuns.get(sessionId);
       if (runToken && run?.runToken !== runToken) return;
       if (run?.cancelWatchdog) {
         clearTimeout(run.cancelWatchdog);
+      }
+      const sid = String(sessionId || '').trim();
+      if (deferredRestartAwaiting.has(sid) && run?.shellEl?.isConnected) {
+        pinDeferredRestartPendingShell(sid, run.shellEl);
+        run.shellEl = null;
       }
       stopRunStreamPoll(sessionId, run?.runToken || runToken);
       activeRunEtags.delete(sessionId);
@@ -11475,12 +11751,14 @@
 
     async function loadOlderMessagesForSession(sessionId) {
       const sid = String(sessionId || '').trim();
-      if (!sid || loadingOlderMessages) return false;
+      if (!sid || loadOlderMessagesInflight > 0) return false;
       const container = getMessagesEl();
       const firstMsg = getOldestLoadedMessageEl(container);
       const beforeTs = firstMsg?.dataset?.timestamp || '';
       if (!beforeTs) return false;
+      loadOlderMessagesInflight += 1;
       loadingOlderMessages = true;
+      if (sid === currentSessionId) setLoadOlderMessagesLoading(true);
       try {
         const data = await api(
           `/api/sessions/${sid}/messages?before=${encodeURIComponent(beforeTs)}&limit=${MESSAGES_OLDER_PAGE}`,
@@ -11512,7 +11790,9 @@
         updateLoadOlderButton(sid);
         return false;
       } finally {
-        loadingOlderMessages = false;
+        loadOlderMessagesInflight = Math.max(0, loadOlderMessagesInflight - 1);
+        loadingOlderMessages = loadOlderMessagesInflight > 0;
+        if (loadOlderMessagesInflight === 0) setLoadOlderMessagesLoading(false);
         if (sid === currentSessionId) {
           scheduleAutoLoadOlderIfNeeded(container);
         }
@@ -12176,9 +12456,47 @@
       return sentinel;
     }
 
+    function ensureLoadOlderMessagesStatus(container) {
+      const root = container || getMessagesEl();
+      if (!root) return null;
+      const sentinel = ensureLoadOlderButton(root);
+      let status = root.querySelector('#load-older-messages-status');
+      if (!status) {
+        status = document.createElement('div');
+        status.id = 'load-older-messages-status';
+        status.className = 'load-older-messages-status';
+        status.setAttribute('role', 'status');
+        status.setAttribute('aria-live', 'polite');
+        status.hidden = true;
+        status.innerHTML = '<div class="bootstrap-loading-spinner" aria-hidden="true"></div>'
+          + '<span class="load-older-messages-status-label">加载更早的消息…</span>';
+      }
+      if (status.previousElementSibling !== sentinel) {
+        sentinel.insertAdjacentElement('afterend', status);
+      }
+      return status;
+    }
+
+    function setLoadOlderMessagesLoading(loading) {
+      const container = getMessagesEl();
+      if (!container) return;
+      const status = ensureLoadOlderMessagesStatus(container);
+      if (!status) return;
+      if (loading) {
+        status.hidden = false;
+        requestAnimationFrame(() => status.classList.add('is-active'));
+        status.setAttribute('aria-busy', 'true');
+        return;
+      }
+      status.classList.remove('is-active');
+      status.hidden = true;
+      status.removeAttribute('aria-busy');
+    }
+
     let loadOlderMessagesObserver = null;
     let loadOlderObservedBtn = null;
     let loadingOlderMessages = false;
+    let loadOlderMessagesInflight = 0;
 
     function isLoadOlderTriggerVisible(container, btn) {
       if (!container || !btn || btn.hidden) return false;
@@ -12242,6 +12560,7 @@
       if (!container) return;
       const sentinel = ensureLoadOlderButton(container);
       sentinel.hidden = !sessionHasOlderMessages(sessionId);
+      ensureLoadOlderMessagesStatus(container);
       syncLoadOlderAutoLoad(container);
     }
 
@@ -12316,6 +12635,7 @@
     function renderLoadedMessages(sessionId, msgs, restoreFromBottom, opts = {}) {
       const container = getMessagesEl();
       clearMessagesBootstrapLoading();
+      msgs = filterDeferredRestartIntermediateMessages(sessionId, msgs);
       if (!msgs.length) {
         if (canSkipMessagesRender(sessionId, msgs, sessionMessagesMeta(sessionId))) {
           syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
@@ -12355,6 +12675,8 @@
           typingEl.textContent = run?.status?.lifecycle || run?.status?.phase || run?.status?.ack || run?.status?.elapsed || 'Agent 思考中…';
           container.appendChild(typingEl);
         }
+      } else {
+        ensureDeferredRestartPendingInDom(sessionId, msgs);
       }
       if (pendingScrollToTimestamp) {
         /* 搜索跳转由 loadMessages finally 统一分页定位 */
@@ -12582,6 +12904,9 @@
         if (sessionId === currentSessionId && countLoadedMessageElements() !== merged.length) {
           return false;
         }
+        if (sessionId === currentSessionId) {
+          ensureDeferredRestartPendingInDom(sessionId, merged);
+        }
         return true;
       }
 
@@ -12594,7 +12919,16 @@
       if (!messagesDomMatchesSession(sessionId)) return false;
 
       if (updateAnchor) patchLastCachedMessageElement(overlapMsg);
-      if (appendSlice.length) appendTailMessageElements(appendSlice);
+      if (appendSlice.length) {
+        if (
+          appendSlice.some(
+            (m) => m?.role === 'assistant' && isDeferredRestartCompleteText(m.content),
+          )
+        ) {
+          removeDeferredRestartPendingShells(container);
+        }
+        appendTailMessageElements(appendSlice);
+      }
       updateMessagesDomFingerprint(sessionId, merged, newMeta);
 
       if (pendingScrollToTimestamp) {
@@ -12805,6 +13139,10 @@
         if (pendingScrollToTimestamp && sessionId === currentSessionId) {
           void fulfillPendingScrollToTimestamp();
         }
+        const cachedForPoll = sessionMessagesCache.get(sessionId);
+        if (cachedForPoll?.length) {
+          syncDeferredRestartFollowupPoll(sessionId, cachedForPoll);
+        }
       }
     }
 
@@ -12982,7 +13320,13 @@
 
         if (await hasAssistantReplySinceLastUser(sessionId)) {
           if (currentSessionId === sessionId) {
+            await finalizeStreamingShellFromServer(sessionId);
             await loadMessages();
+          }
+          if (isActiveRun(sessionId, { runToken, runId })) {
+            finishRun(sessionId, runToken);
+          } else {
+            refreshSessionListAfterRunEnd(sessionId);
           }
           return;
         }
@@ -13091,7 +13435,9 @@
             if (shouldRestoreSentDraft(doneRun, data.text)) {
               restoredSentDraft = restoreSentDraft(sessionId, { runToken });
             }
-            if (isViewing()) {
+            if (shouldTreatDoneAsDeferredRestart(sessionId, data)) {
+              assistantEl = applyDeferredWebAgentRestartUi(sessionId, assistantEl);
+            } else if (isViewing()) {
               if (!assistantEl) {
                 assistantEl = ensureStreamingShell(sessionId);
                 activeRuns.get(sessionId).shellEl = assistantEl;
@@ -13100,6 +13446,10 @@
               if (displayText && shouldRestoreSentDraft(doneRun, data.text) && !restoredSentDraft && hasUserInputDuringRun(sessionId)) {
                 displayText = stripRetryHintMarkdown(displayText);
               }
+              if (!String(displayText || '').trim()) {
+                assistantEl?.remove();
+                if (doneRun) doneRun.shellEl = null;
+              } else {
               finalizeStreamingShell(sessionId, assistantEl, displayText, {
                 files: Array.isArray(data.files) ? data.files : [],
               });
@@ -13107,6 +13457,7 @@
                 void refreshAssistantAttachmentsFromServer(sessionId, assistantEl);
               }
               scrollMessagesToBottom({ force: true });
+              }
             } else if (data.text) {
               appendAssistantMessageToSessionCache(sessionId, {
                 role: 'assistant',
@@ -13114,6 +13465,12 @@
                 timestamp: new Date().toISOString(),
                 files: Array.isArray(data.files) ? data.files : [],
               });
+            }
+            if (!data.deferred_web_agent_restart && isDeferredRestartSubmittedText(data.text)) {
+              syncDeferredRestartFollowupPoll(sessionId, [
+                ...(sessionMessagesCache.get(sessionId) || []),
+                { role: 'assistant', content: data.text },
+              ]);
             }
             handleDingtalkPushResult(data.dingtalk_push);
             es.close();

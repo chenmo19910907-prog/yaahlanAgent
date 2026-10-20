@@ -824,6 +824,7 @@ class ActiveRun:
     events: queue.Queue[dict[str, Any]] = field(default_factory=queue.Queue)
     done: threading.Event = field(default_factory=threading.Event)
     final_text: str = ""
+    deferred_web_agent_restart: bool = False
     error: str | None = None
     task_session: TaskSession = field(default_factory=TaskSession)
     cancel_notified: bool = False
@@ -901,8 +902,19 @@ class ActiveRun:
                     }
                 )
             else:
-                events.append({"type": "done", "text": self.final_text})
+                done_evt: dict[str, Any] = {"type": "done", "text": self.final_text}
+                if self.deferred_web_agent_restart:
+                    done_evt["deferred_web_agent_restart"] = True
+                events.append(done_evt)
         return events
+
+    def build_terminal_sse_event(self) -> dict[str, Any]:
+        if self.error:
+            return {"type": "error", "message": self.error, "text": self.final_text}
+        payload: dict[str, Any] = {"type": "done", "text": self.final_text}
+        if self.deferred_web_agent_restart:
+            payload["deferred_web_agent_restart"] = True
+        return payload
 
     def to_active_run_dict(self) -> dict[str, Any]:
         elapsed_line = self.last_elapsed_line
@@ -1093,6 +1105,7 @@ def _apply_snapshot_to_run(run: ActiveRun, snap) -> None:
     if isinstance(getattr(snap, "last_process", None), dict):
         run.last_process = snap.last_process
     run.final_text = snap.final_text
+    run.deferred_web_agent_restart = bool(getattr(snap, "deferred_web_agent_restart", False))
     run.error = snap.error
 
 
@@ -1329,6 +1342,12 @@ def _finalize_orphan_run(meta: RunMeta) -> None:
     if _assistant_reply_since_last_user(meta.session_id):
         store.mark_status(meta.run_id, RUN_STATUS_DONE)
         return
+    try:
+        from worker_process_hygiene import kill_stray_workers_for_run
+
+        kill_stray_workers_for_run(meta.run_id)
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("finalize 清理 worker 子树失败 run=%s: %s", meta.run_id, exc)
     user_key = get_session_store().user_key(meta.session_id)
     err_body = build_run_stop_reply(
         SERVICE_RESTART_HEADLINE,
@@ -1401,6 +1420,8 @@ def _start_run_event_tailer(run: ActiveRun, *, progress_stop: threading.Event) -
                     if run.done.is_set():
                         continue
                     run.final_text = str(event.get("text") or "")
+                    if event.get("deferred_web_agent_restart"):
+                        run.deferred_web_agent_restart = True
                     run.emit_event(event)
                     run.done.set()
                     RUN_MANAGER.release_session(run)
@@ -1433,7 +1454,7 @@ def _start_run_event_tailer(run: ActiveRun, *, progress_stop: threading.Event) -
                             }
                         )
                     else:
-                        run.emit_event({"type": "done", "text": run.final_text})
+                        run.emit_event(run.build_terminal_sse_event())
                     run.done.set()
                     RUN_MANAGER.release_session(run)
                 progress_stop.set()
@@ -1459,7 +1480,7 @@ def _start_run_event_tailer(run: ActiveRun, *, progress_stop: threading.Event) -
                         {"type": "error", "message": run.error, "text": run.final_text}
                     )
                 else:
-                    run.emit_event({"type": "done", "text": run.final_text})
+                    run.emit_event(run.build_terminal_sse_event())
                 run.done.set()
                 RUN_MANAGER.release_session(run)
                 progress_stop.set()
@@ -1502,6 +1523,9 @@ def _start_stale_run_sweeper(*, interval_s: float = 30.0) -> None:
             time.sleep(interval_s)
             try:
                 sweep_stale_running_runs()
+                from worker_process_hygiene import run_worker_hygiene_pass
+
+                run_worker_hygiene_pass()
             except Exception as exc:  # noqa: BLE001
                 logger.warning("卡死任务 sweep 失败: %s", exc)
 
@@ -1536,6 +1560,12 @@ def recover_active_runs_on_startup() -> None:
                 meta.session_id,
             )
     sweep_stale_running_runs()
+    try:
+        from worker_process_hygiene import run_worker_hygiene_pass
+
+        run_worker_hygiene_pass()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("启动 worker 卫生 sweep 失败: %s", exc)
 
 
 def _active_run_session_ids() -> set[str]:
@@ -2865,11 +2895,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     sent_done = True
                     break
             if not sent_done and run.done.is_set():
-                if run.error:
-                    payload = {"type": "error", "message": run.error, "text": run.final_text}
-                else:
-                    payload = {"type": "done", "text": run.final_text}
-                self._write_sse_event(payload)
+                self._write_sse_event(run.build_terminal_sse_event())
         except (BrokenPipeError, ConnectionResetError):
             # 刷新页面 / 切 tab 会断开 SSE；后台任务继续，客户端可重连
             logger.info(

@@ -63,6 +63,8 @@ def test_moa_check_not_fast_route() -> None:
 
 
 def test_web_agent_restart_fast_route() -> None:
+    import os
+
     from route_patterns import is_likely_fast_route
     from unittest.mock import patch
 
@@ -79,11 +81,20 @@ def test_web_agent_restart_fast_route() -> None:
     assert not try_route("帮我重启web agent").handled
     assert not try_route("请重启 Web Agent 服务").handled
 
-    with patch(
-        "command_router.force_restart_web_agent",
-        return_value=WebAgentRestartOutcome(True, "监视进程 PID 1，端口 18766 健康检查通过。"),
-    ):
-        result = try_route("重启web agent")
+    with patch.dict(os.environ, {"WEB_AGENT_RUN_ID": "run1"}, clear=False):
+        deferred = try_route("重启web agent")
+    assert deferred.handled
+    assert deferred.defer_web_agent_restart
+    assert deferred.task_kind == "web_agent_restart"
+
+    env = os.environ.copy()
+    env.pop("WEB_AGENT_RUN_ID", None)
+    with patch.dict(os.environ, env, clear=True):
+        with patch(
+            "command_router.force_restart_web_agent",
+            return_value=WebAgentRestartOutcome(True, "监视进程 PID 1，端口 18766 健康检查通过。"),
+        ):
+            result = try_route("重启web agent")
     assert result.handled
     assert result.task_kind == "web_agent_restart"
     assert "Web Agent 已重启完成" in result.output

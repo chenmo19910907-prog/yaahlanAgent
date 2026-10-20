@@ -178,6 +178,16 @@ class WebRunStoreTests(unittest.TestCase):
         self.assertEqual(snap.final_text, "ok")
         self.assertEqual(snap.last_markdown, "x4")
 
+    def test_deferred_restart_flag_persisted_in_snapshot(self) -> None:
+        self.store.create_run(self._sample_meta())
+        self.store.append_event(
+            "abc123",
+            {"type": "done", "text": "", "deferred_web_agent_restart": True},
+        )
+        snap = self.store.get_snapshot("abc123")
+        self.assertTrue(snap.deferred_web_agent_restart)
+        self.assertEqual(snap.final_text, "")
+
     def test_event_batching_reduces_disk_appends(self) -> None:
         self.store.create_run(self._sample_meta())
         events_path = self.store._events_path("abc123")

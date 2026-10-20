@@ -10,6 +10,9 @@ from .client import http_post_json
 from .config import defaults
 from .gift import mdp_gift_success as mdp_user_admin_success
 
+# MDP 用户列表 banStatus：3=已注销（与 queryUserDetail accountState=-1 一致）
+BAN_STATUS_CANCELLED = 3
+
 
 def parse_user_id_list(raw: str | None) -> list[int]:
     if raw is None or not str(raw).strip():
@@ -87,6 +90,7 @@ def _simplify_record(row: dict[str, Any]) -> dict[str, Any]:
         "countryName": row.get("countryName"),
         "area": row.get("area"),
         "areaCode": row.get("areaCode"),
+        "phone": row.get("phone"),
         "registerType": row.get("registerType"),
         "registerTime": row.get("registerTime"),
         "lastLoginTime": row.get("lastLoginTime"),
@@ -94,7 +98,77 @@ def _simplify_record(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def parse_query_user_profile_list_summary(data: Any) -> dict[str, Any]:
+def _normalize_phone_digits(text: str | None) -> str:
+    return re.sub(r"\D", "", str(text or ""))
+
+
+def is_active_profile_list_record(row: dict[str, Any]) -> bool:
+    status = row.get("banStatus")
+    if status is None:
+        return True
+    try:
+        return int(status) != BAN_STATUS_CANCELLED
+    except (TypeError, ValueError):
+        return True
+
+
+def profile_list_phone_matches(
+    row: dict[str, Any],
+    *,
+    phone: str,
+    area_code: str | None,
+) -> bool:
+    raw = str(row.get("phone") or "").strip()
+    if not raw:
+        return False
+    want_mobile = _normalize_phone_digits(phone)
+    want_area = _normalize_phone_digits(area_code or "")
+    if "|" in raw:
+        row_area, row_mobile = raw.split("|", 1)
+        row_area = _normalize_phone_digits(row_area)
+        row_mobile = _normalize_phone_digits(row_mobile)
+    else:
+        row_area, row_mobile = "", _normalize_phone_digits(raw)
+    if row_mobile != want_mobile:
+        return False
+    if want_area and row_area and row_area != want_area:
+        return False
+    return True
+
+
+def filter_phone_lookup_records(
+    records: list[dict[str, Any]],
+    *,
+    phone: str | None,
+    area_code: str | None,
+    active_only: bool,
+) -> tuple[list[dict[str, Any]], dict[str, int]]:
+    phone_text = str(phone or "").strip()
+    if not phone_text:
+        return records, {"rawReturnedCount": len(records), "excludedCancelledCount": 0}
+
+    filtered: list[dict[str, Any]] = []
+    excluded_cancelled = 0
+    for row in records:
+        if not profile_list_phone_matches(row, phone=phone_text, area_code=area_code):
+            continue
+        if active_only and not is_active_profile_list_record(row):
+            excluded_cancelled += 1
+            continue
+        filtered.append(row)
+    return filtered, {
+        "rawReturnedCount": len(records),
+        "excludedCancelledCount": excluded_cancelled,
+    }
+
+
+def parse_query_user_profile_list_summary(
+    data: Any,
+    *,
+    filter_phone: str | None = None,
+    filter_area_code: str | None = None,
+    active_only: bool = False,
+) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise RuntimeError("无法解析用户列表 data（不是 object）")
 
@@ -107,7 +181,16 @@ def parse_query_user_profile_list_summary(data: Any) -> dict[str, Any]:
         raise RuntimeError("无法解析用户列表 records（不是 array）")
 
     records = [_simplify_record(row) for row in raw_records if isinstance(row, dict)]
-    return {
+    filter_stats: dict[str, int] = {}
+    if str(filter_phone or "").strip():
+        records, filter_stats = filter_phone_lookup_records(
+            records,
+            phone=filter_phone,
+            area_code=filter_area_code,
+            active_only=active_only,
+        )
+
+    summary: dict[str, Any] = {
         "pageNo": page_info.get("pageNo"),
         "pageSize": page_info.get("pageSize"),
         "totalCount": page_info.get("totalCount"),
@@ -115,6 +198,11 @@ def parse_query_user_profile_list_summary(data: Any) -> dict[str, Any]:
         "returnedCount": len(records),
         "records": records,
     }
+    if filter_stats:
+        summary.update(filter_stats)
+        if len(records) == 1:
+            summary["userId"] = records[0].get("userId")
+    return summary
 
 
 def _resolve_mdp_base_url(cfg: dict[str, Any]) -> str:
