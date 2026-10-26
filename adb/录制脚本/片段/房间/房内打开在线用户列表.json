@@ -27,7 +27,11 @@
       "fallback_tap": [
         844,
         1002
-      ]
+      ],
+      "resourceId": "activity_bg",
+      "bounds": "[14,878][1066,1130]",
+      "className": "android.widget.ImageView",
+      "locatorLearnedAt": "2026-10-09T10:18:29Z"
     },
     {
       "sleep_ms": 1000

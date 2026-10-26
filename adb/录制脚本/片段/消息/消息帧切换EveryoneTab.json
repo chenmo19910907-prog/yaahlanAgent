@@ -1,13 +1,41 @@
 {
   "id": "msg-everyone-tab",
   "name": "消息帧切换EveryoneTab",
-  "recordedOn": { "width": 1080, "height": 2340 },
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
   "capture": "never",
   "description": "消息帧 → Everyone 子 tab（默认会话列表）",
-  "kbRef": ["documents/消息.md（Everyone）"],
+  "kbRef": [
+    "documents/消息.md（Everyone）"
+  ],
   "steps": [
-    { "run_script": "切换消息底栏" },
-    { "tap_pct": [0.160, 0.160], "note": "Everyone（173,374）" },
-    { "sleep_ms": 600 }
+    {
+      "run_script": "切换消息底栏"
+    },
+    {
+      "tap_pct": [
+        0.16,
+        0.16
+      ],
+      "note": "Everyone（173,374）",
+      "resourceId": "tv_game_title",
+      "bounds": "[42,295][395,376]",
+      "uiText": "Casual games",
+      "className": "android.widget.TextView",
+      "fallback_tap_pct": [
+        0.16,
+        0.156
+      ],
+      "fallback_tap": [
+        172,
+        374
+      ],
+      "locatorLearnedAt": "2026-10-09T10:19:15Z"
+    },
+    {
+      "sleep_ms": 600
+    }
   ]
 }

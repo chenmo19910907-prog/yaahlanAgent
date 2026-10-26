@@ -23,6 +23,10 @@ EXPECT_COL_NAMES = frozenset({"预期结果", "期望结果", "预期"})
 MODULE_COL_NAMES = frozenset({"功能模块", "模块"})
 ID_COL_NAMES = frozenset({"编号", "用例id", "用例ID"})
 
+# 【并会-xxx】类需求主题前缀（允许 【后台-】【回测-】）
+_FORBIDDEN_MODULE_PREFIX = re.compile(r"^【(?!后台|回测)[^】]+-.+】")
+_PRD_SECTION_NO = re.compile(r"^\d+\.\d+(?:\.\d+)?[\s\.、]")
+
 
 @dataclass
 class Issue:
@@ -106,6 +110,14 @@ def validate_table(table: TableData, *, source: str) -> list[Issue]:
                         "功能模块列含「-」说明，建议只写模块名，细节放入测试步骤",
                     )
                 )
+            if _FORBIDDEN_MODULE_PREFIX.match(module):
+                issues.append(
+                    Issue(
+                        "ERROR",
+                        r_idx,
+                        "禁止【需求主题-子模块】模块名（如【并会-xxx】）；用能力名或【后台-/回测-】分块",
+                    )
+                )
 
         if case_id:
             prev = seen_ids.get(case_id)
@@ -122,10 +134,22 @@ def validate_table(table: TableData, *, source: str) -> list[Issue]:
                 issues.append(Issue("ERROR", r_idx, "有测试步骤但预期结果为空"))
             if len(step) < 4:
                 issues.append(Issue("WARN", r_idx, "测试步骤过短，建议写可执行操作"))
+            if _PRD_SECTION_NO.match(step):
+                issues.append(
+                    Issue("ERROR", r_idx, "测试步骤勿以 PRD 章节序号（如 2.1）开头，须写可执行操作")
+                )
+            if expect and _PRD_SECTION_NO.match(expect):
+                issues.append(
+                    Issue("ERROR", r_idx, "预期结果勿以 PRD 章节序号（如 1.1）开头，须写可验证结果")
+                )
             continue
 
         # 续行：多预期
         if expect and last_step:
+            if _PRD_SECTION_NO.match(expect):
+                issues.append(
+                    Issue("ERROR", r_idx, "预期结果勿以 PRD 章节序号（如 1.1）开头，须写可验证结果")
+                )
             continue
         if expect and not last_step:
             issues.append(

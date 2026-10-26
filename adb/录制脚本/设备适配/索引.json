@@ -18,6 +18,14 @@
       "deviceModel": "23077RABDC",
       "width": 1080,
       "height": 2460
+    },
+    {
+      "id": "in2010",
+      "name": "OnePlus IN2010",
+      "file": "档案/in2010.json",
+      "deviceModel": "IN2010",
+      "width": 1080,
+      "height": 2400
     }
   ]
 }

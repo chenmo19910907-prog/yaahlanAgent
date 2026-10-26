@@ -1,0 +1,41 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/yaahalan-cms-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "context.getBean(\"bdDeviceIdRedisDao\").delMmuidv3ToBd(\"21d8abbb922dbafff37c2dccfaa42c2702cd96a2b08f211d330807d4148ea34c9\")",
+      "json": "",
+      "type": "string",
+      "value": "context.getBean(\"bdDeviceIdRedisDao\").delMmuidv3ToBd(\"21d8abbb922dbafff37c2dccfaa42c2702cd96a2b08f211d330807d4148ea34c9\")"
+    }
+  ],
+  "settings": {
+    "time": "60000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "bd_device_clear_mmuidv3_login_limit",
+    "name": "BD-清除设备登录限制",
+    "category": "CMS（yaahalan-cms-backdoor）",
+    "description": "清除「一个设备只能登录一个 BD」限制（execute；bdDeviceIdRedisDao.delMmuidv3ToBd(mmuidv3)）",
+    "prompts": [
+      "清除 BD 设备登录限制 mmuidv3=<mmuidv3>",
+      "delMmuidv3ToBd <mmuidv3>",
+      "清除一个设备只能登录一个BD的限制"
+    ],
+    "cli": "--bd-device-clear-mmuidv3 <mmuidv3>"
+  }
+}

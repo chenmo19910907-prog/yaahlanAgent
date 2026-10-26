@@ -1,13 +1,40 @@
 {
   "id": "room-wealth-ranking",
   "name": "房间帧进入财富榜",
-  "recordedOn": { "width": 1080, "height": 2340 },
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
   "capture": "end",
   "description": "Room Explore → Wealth Ranking 横幅 → WebViewActivity",
-  "kbRef": ["documents/房间.md（Wealth Ranking）"],
+  "kbRef": [
+    "documents/房间.md（Wealth Ranking）"
+  ],
   "steps": [
-    { "run_script": "切换房间底栏" },
-    { "tap_pct": [0.500, 0.222], "note": "Wealth Ranking 横幅（540,519）" },
-    { "sleep_ms": 1200 }
+    {
+      "run_script": "切换房间底栏"
+    },
+    {
+      "tap_pct": [
+        0.5,
+        0.222
+      ],
+      "note": "Wealth Ranking 横幅（540,519）",
+      "resourceId": "item_root",
+      "bounds": "[359,404][676,727]",
+      "className": "android.widget.RelativeLayout",
+      "fallback_tap_pct": [
+        0.5,
+        0.21645
+      ],
+      "fallback_tap": [
+        540,
+        519
+      ],
+      "locatorLearnedAt": "2026-10-09T10:14:31Z"
+    },
+    {
+      "sleep_ms": 1200
+    }
   ]
 }

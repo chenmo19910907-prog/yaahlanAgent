@@ -1,19 +1,43 @@
 {
   "id": "room-function-pk-atm",
   "name": "房内RoomFunction打开PKATM",
-  "recordedOn": { "width": 1080, "height": 2340 },
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
   "capture": "end",
   "description": "底栏 more → Room function 第 1 行第 4 格 PK ATM（927,1110）→ WebView PK ATM（Total prize / Ranking / Reward + 倒计时）；BACK 关闭",
-  "kbRef": ["testcase-kb/主题房.md"],
+  "kbRef": [
+    "testcase-kb/主题房.md"
+  ],
   "steps": [
-    { "run_script": "房内打开RoomFunction菜单" },
-    { "sleep_ms": 500 },
     {
-      "tap_pct": [0.858, 0.474],
-      "note": "Room function PK ATM 格中心（927,1110）",
-      "fallback_tap_pct": [0.858, 0.474],
-      "fallback_tap": [927, 1110]
+      "run_script": "房内打开RoomFunction菜单"
     },
-    { "sleep_ms": 1200 }
+    {
+      "sleep_ms": 500
+    },
+    {
+      "tap_pct": [
+        0.858,
+        0.474
+      ],
+      "note": "Room function PK ATM 格中心（927,1110）",
+      "fallback_tap_pct": [
+        0.858,
+        0.474
+      ],
+      "fallback_tap": [
+        927,
+        1110
+      ],
+      "resourceId": "activity_bg",
+      "bounds": "[14,878][1066,1130]",
+      "className": "android.widget.ImageView",
+      "locatorLearnedAt": "2026-10-09T10:16:49Z"
+    },
+    {
+      "sleep_ms": 1200
+    }
   ]
 }

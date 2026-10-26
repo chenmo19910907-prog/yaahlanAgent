@@ -1,19 +1,43 @@
 {
   "id": "room-function-truth-or-dare",
   "name": "房内RoomFunction打开TruthOrDare",
-  "recordedOn": { "width": 1080, "height": 2340 },
+  "recordedOn": {
+    "width": 1080,
+    "height": 2340
+  },
   "capture": "end",
   "description": "底栏 more → Room function 第 2 行第 2 格 Truth or Dare（405,1426）→ Truth or Dare 底 sheet（Game Mode：Random Topic / Custom Topic + Create）；BACK 关闭",
-  "kbRef": ["testcase-kb/主题房.md"],
+  "kbRef": [
+    "testcase-kb/主题房.md"
+  ],
   "steps": [
-    { "run_script": "房内打开RoomFunction菜单" },
-    { "sleep_ms": 500 },
     {
-      "tap_pct": [0.375, 0.609],
-      "note": "Room function Truth or Dare 格中心（405,1426）",
-      "fallback_tap_pct": [0.375, 0.609],
-      "fallback_tap": [405, 1426]
+      "run_script": "房内打开RoomFunction菜单"
     },
-    { "sleep_ms": 1200 }
+    {
+      "sleep_ms": 500
+    },
+    {
+      "tap_pct": [
+        0.375,
+        0.609
+      ],
+      "note": "Room function Truth or Dare 格中心（405,1426）",
+      "fallback_tap_pct": [
+        0.375,
+        0.609
+      ],
+      "fallback_tap": [
+        405,
+        1426
+      ],
+      "resourceId": "item_root",
+      "bounds": "[14,1277][1066,1447]",
+      "className": "android.widget.LinearLayout",
+      "locatorLearnedAt": "2026-10-09T10:17:08Z"
+    },
+    {
+      "sleep_ms": 1200
+    }
   ]
 }
