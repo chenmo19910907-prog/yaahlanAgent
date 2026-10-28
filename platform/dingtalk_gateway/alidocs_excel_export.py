@@ -15,7 +15,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT / "scripts") not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT / "scripts"))
 
-from mcp_paths import load_mcp_env  # noqa: E402
+from mcp_paths import load_mcp_env, resolve_dingtalk_cookie  # noqa: E402
 
 DOC_API = "https://api.dingtalk.com/v1.0/doc"
 TOKEN_API = "http://gaia-hg.momo.com/ding/excel/token"
@@ -97,6 +97,24 @@ def _get_workspace_id(parent_node_id: str, cookie: str) -> str:
     return fetch_dentry_info(parent_node_id, cookie=cookie)["spaceId"]
 
 
+_EXPORT_FOLDER_CONFIG = Path(__file__).resolve().parent / "config" / "export_folder.json"
+
+
+def _resolve_workspace_id(parent_node_id: str) -> str:
+    """优先读 export_folder.json 的 spaceId，避免 Cookie 过期时无法创建表格。"""
+    parent = parent_node_id.strip()
+    if _EXPORT_FOLDER_CONFIG.is_file():
+        try:
+            data = json.loads(_EXPORT_FOLDER_CONFIG.read_text(encoding="utf-8"))
+            if str(data.get("nodeId") or "").strip() == parent:
+                space_id = str(data.get("spaceId") or "").strip()
+                if space_id:
+                    return space_id
+        except (OSError, json.JSONDecodeError, TypeError):
+            pass
+    return _get_workspace_id(parent, resolve_dingtalk_cookie())
+
+
 def _workbook_title_base(name: str) -> str:
     text = (name or "").strip()
     if text.lower().endswith(".axls"):
@@ -104,12 +122,75 @@ def _workbook_title_base(name: str) -> str:
     return text
 
 
+def _box_api_headers(dentry_uuid: str, *, cookie: str = "") -> dict[str, str]:
+    from mcp_paths import resolve_dingtalk_cookie
+    import re
+
+    node_id = dentry_uuid.strip()
+    ck = cookie or resolve_dingtalk_cookie()
+    xsrf = re.search(r"XSRF-TOKEN=([^;]+)", ck)
+    headers = {
+        "cookie": ck,
+        "referer": f"https://alidocs.dingtalk.com/i/nodes/{node_id}",
+        "user-agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15"
+        ),
+        "accept": "application/json, text/plain, */*",
+        "content-type": "application/json",
+        "origin": "https://alidocs.dingtalk.com",
+    }
+    if xsrf:
+        headers["x-xsrf-token"] = xsrf.group(1)
+    return headers
+
+
+def rename_dentry_via_box_api(
+    dentry_uuid: str,
+    new_name: str,
+    *,
+    cookie: str = "",
+) -> str:
+    """与 alidocs 网页一致：POST /box/api/v2/dentry/rename（Cookie + XSRF）。"""
+    node_id = dentry_uuid.strip()
+    title = new_name.strip()
+    if not node_id or not title:
+        raise ValueError("dentry_uuid 与 new_name 不能为空")
+
+    info = fetch_dentry_info(node_id, cookie=cookie)
+    current = (info.get("name") or "").strip()
+    if current == title:
+        return title
+
+    url = "https://alidocs.dingtalk.com/box/api/v2/dentry/rename"
+    body = json.dumps({"dentryUuid": node_id, "name": title}).encode("utf-8")
+    req = urllib.request.Request(url, data=body, headers=_box_api_headers(node_id, cookie=cookie), method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            payload = json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode("utf-8", errors="replace")[:400]
+        raise RuntimeError(f"Box 重命名失败 HTTP {e.code}: {detail}") from e
+
+    if not payload.get("isSuccess", True) and payload.get("status") not in (200, None):
+        raise RuntimeError(f"Box 重命名失败: {payload}")
+
+    _dentry_info_cache.pop(node_id, None)
+    _dentry_cache.pop(node_id, None)
+    return title
+
+
 async def rename_workbook_async(workbook_id: str, new_name: str) -> str:
-    """重命名钉钉在线表格（doc v2 rename）。"""
+    """重命名钉钉在线表格：优先 Box Cookie API，失败再试 OpenAPI。"""
     node_id = workbook_id.strip()
     title = new_name.strip()
     if not node_id or not title:
         raise ValueError("workbook_id 与 new_name 不能为空")
+
+    try:
+        return rename_dentry_via_box_api(node_id, title)
+    except Exception:
+        pass
 
     info = fetch_dentry_info(node_id)
     current = _workbook_title_base(info.get("name", ""))
@@ -363,7 +444,7 @@ async def export_rows_to_folder_async(
         raise ValueError("用例表格为空")
     env = _excel_env()
     token, operator = await _get_token_and_operator(env)
-    workspace_id = _get_workspace_id(parent_node_id, "")
+    workspace_id = _resolve_workspace_id(parent_node_id)
     workbook_id = await _create_workbook(
         token=token,
         operator=operator,
@@ -414,7 +495,7 @@ async def export_csv_to_folder_async(
     rows = _read_csv(path)
     env = _excel_env()
     token, operator = await _get_token_and_operator(env)
-    workspace_id = _get_workspace_id(parent_node_id, "")
+    workspace_id = _resolve_workspace_id(parent_node_id)
     name = workbook_name or path.stem
     workbook_id = await _create_workbook(
         token=token,

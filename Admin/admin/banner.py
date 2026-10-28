@@ -1,43 +1,62 @@
-"""Banner 配置（cms/backend/banner/getBannerList）。"""
+"""Banner 配置（运营后台 /admin/banner/getBannerList）。"""
 
 from __future__ import annotations
 
 from typing import Any
 
-from .client import http_post_json
+from .client import admin_success, http_post_json
 from .config import defaults
 from .custom_gift import gateway_success
 
-# 后台 banner 类型（抓包 + 用例归纳；未列出的仍返回原始 type）
+# 后台 type 整型（运营后台筛选项 + 抓包；未列出的仍返回原始 type）
 BANNER_TYPE_LABELS: dict[int, str] = {
-    1: "房间",
-    2: "钱包",
-    3: "礼物面板",
-    4: "Game 页",
+    1: "房间列表1号位",
+    2: "钱包页",
+    3: "房间内",
+    4: "房间列表4号位",
     5: "活动",
-    6: "消息列表",
-    7: "搜索推荐",
-    8: "聚合页",
+    6: "房间设置页Banner",
+    7: "热门搜索3号位",
+    8: "房间搜索Banner",
+    9: "活动位(扩展)",
+    10: "家族活动房",
+    11: "游戏面板",
 }
 
-# status=-1 表示全部；其余以抓包/后台为准
+# status=-1 表示全部（与运营后台「状态」下拉一致）
 BANNER_STATUS_LABELS: dict[int, str] = {
     -1: "全部",
-    0: "下线",
-    1: "上线",
+    0: "已下线",
+    1: "已上线",
+    2: "白名单",
 }
+
+
+def banner_list_response_ok(resp: dict[str, Any]) -> bool:
+    if gateway_success(resp.get("status")):
+        return True
+    if resp.get("success") is True:
+        return True
+    return admin_success(resp.get("ec"))
+
+
+def banner_list_payload_data(resp: dict[str, Any]) -> Any:
+    if gateway_success(resp.get("status")):
+        return resp.get("data")
+    return resp.get("data")
 
 
 def build_get_banner_list_body(
     *,
     area: str = "MENA",
-    banner_type: int = 5,
+    banner_type: int = -1,
     status: int = -1,
     page: int = 1,
     per_page: int = 10,
     banner_id: str = "",
+    package_id: str = "yaahlan",
 ) -> dict[str, Any]:
-    return {
+    body: dict[str, Any] = {
         "bannerId": str(banner_id or "").strip(),
         "page": int(page),
         "perPage": int(per_page),
@@ -45,6 +64,10 @@ def build_get_banner_list_body(
         "type": int(banner_type),
         "area": str(area or "MENA").strip() or "MENA",
     }
+    pkg = str(package_id or "").strip()
+    if pkg:
+        body["packageId"] = pkg
+    return body
 
 
 def _normalize_banner_row(row: dict[str, Any]) -> dict[str, Any]:
@@ -154,16 +177,20 @@ def parse_query_banner_list_summary(
 def fetch_banner_list(
     *,
     area: str = "MENA",
-    banner_type: int = 5,
+    banner_type: int = -1,
     status: int = -1,
     page: int = 1,
     per_page: int = 10,
     banner_id: str = "",
+    package_id: str = "yaahlan",
     timeout_s: float = 30.0,
 ) -> dict[str, Any]:
     cfg = defaults("query_banner_list")
-    base_url = str(cfg.get("baseUrl") or "https://melon-gateway-alpha-stage.immomo.com").rstrip("/")
-    path = str(cfg.get("path") or "/yaahlan/cms/backend/banner/getBannerList")
+    base_url = str(
+        cfg.get("baseUrl") or defaults("api").get("baseUrl") or "https://yaahlan-admin-alpha.wemomo.com"
+    ).rstrip("/")
+    path = str(cfg.get("path") or "/admin/banner/getBannerList")
+    default_pkg = str(cfg.get("defaultPackageId") or "yaahlan").strip()
     body = build_get_banner_list_body(
         area=area,
         banner_type=banner_type,
@@ -171,8 +198,11 @@ def fetch_banner_list(
         page=page,
         per_page=per_page,
         banner_id=banner_id,
+        package_id=package_id or default_pkg,
     )
     resp = http_post_json(f"{base_url}{path}", body, timeout_s=timeout_s)
-    if not gateway_success(resp.get("status")):
-        raise RuntimeError(f"getBannerList 失败: status={resp.get('status')}, msg={resp.get('msg')}")
+    if not banner_list_response_ok(resp):
+        raise RuntimeError(
+            f"getBannerList 失败: status={resp.get('status')}, ec={resp.get('ec')}, msg={resp.get('msg') or resp.get('em')}"
+        )
     return resp

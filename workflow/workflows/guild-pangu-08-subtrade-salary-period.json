@@ -1,0 +1,35 @@
+{
+  "id": "guild-pangu-08-subtrade-salary-period",
+  "name": "盘古-⑧子公会薪资列表当前周期",
+  "category": "公会常用盘古配置工具（workflow）",
+  "description": "预上线：shiftTime.tradeUnion 偏移后，公会长打开子公会当前周期薪资页，母公会汇总按偏移后周期聚合本块数据。 验收：子公会薪资列表「当前周期」与偏移后算薪周期一致。",
+  "version": 1,
+  "params": {
+    "fixedTimeSec": {
+      "label": "fixedTimeSec",
+      "type": "string",
+      "required": true,
+      "prompt": "Unix 秒（北京时间戳）"
+    },
+    "expireTimeSec": {
+      "label": "expireTimeSec",
+      "type": "string",
+      "required": false,
+      "prompt": "Unix 秒；可与 fixedTimeSec 相同"
+    }
+  },
+  "steps": [
+    {
+      "id": "apply_pangu_shift",
+      "name": "改 MSE 配置并发布",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/guild_pangu_shift_time_apply.py --scenario \"subtrade_salary_period\" --fixed-time-sec \"{{fixedTimeSec}}\" --expire-time-sec \"{{expireTimeSec}}\"",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import logging
 import sys
+from pathlib import Path
 
 import dingtalk_stream
 from dingtalk_stream import AckMessage
@@ -13,7 +14,7 @@ from bridge_manager import init_sdk_bridge
 from conversation_store import ConversationStore
 from gateway_status_notify import register_lifecycle_hooks, touch_notify_group
 from inbound_dedup import InboundDedup
-from inbound_message import InboundMessage, parse_inbound_message
+from inbound_message import InboundMessage, apply_replied_fallback, parse_inbound_message
 from interrupt import is_interrupt_command
 from message_recall import handle_recall_command, is_recall_command
 from log_redact import redact_for_log
@@ -37,6 +38,11 @@ from log_rotate import start_log_rotate_sweeper
 from cursor_runner import repo_cwd
 from env_loader import load_env_local, require_env
 from user_agent_pool import get_user_agent_pool
+
+_WEB_AGENT_DIR = Path(__file__).resolve().parents[1] / "web_agent"
+if str(_WEB_AGENT_DIR) not in sys.path:
+    sys.path.insert(0, str(_WEB_AGENT_DIR))
+from web_new_member_notify import spawn_maybe_notify_new_member  # noqa: E402
 
 logger = logging.getLogger("dingtalk-gateway")
 
@@ -256,9 +262,16 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
     async def process(self, callback: dingtalk_stream.CallbackMessage):
         incoming = dingtalk_stream.ChatbotMessage.from_dict(callback.data)
         touch_notify_group(incoming)
-        inbound = parse_inbound_message(incoming)
+        inbound = parse_inbound_message(incoming, raw=callback.data)
         user_key = self._user_session_key(incoming)
         store_kwargs = self._store_lookup_kwargs(incoming)
+        apply_replied_fallback(
+            inbound,
+            incoming,
+            self._store,
+            conversation_id=incoming.conversation_id,
+            **store_kwargs,
+        )
 
         if is_interrupt_command(inbound.text):
             outcome = self._dispatcher.request_cancel(user_key)
@@ -339,6 +352,12 @@ class GatewayBotHandler(dingtalk_stream.ChatbotHandler):
             incoming.conversation_type or "?",
             redact_for_log(inbound.prompt_text()[:60]),
         )
+        staff_id = (incoming.sender_staff_id or incoming.sender_id or "").strip()
+        if staff_id:
+            spawn_maybe_notify_new_member(
+                staff_id,
+                incoming.sender_nick or staff_id,
+            )
         self._submit_task(incoming, inbound, user_key)
         return AckMessage.STATUS_OK, "OK"
 

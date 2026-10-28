@@ -1,0 +1,42 @@
+{
+  "id": "web-reward-verify-baseline",
+  "name": "奖励验收-记录baseline",
+  "category": "奖励验收",
+  "description": "Web Agent 会话内记录发奖/抽奖前全量资产 baseline（钻石含 diamondHistory、金币、背包礼/道具、装扮、铭牌、CP 勋章）。",
+  "version": 1,
+  "params": {
+    "sessionId": {
+      "label": "Web 会话 ID",
+      "type": "string",
+      "required": true,
+      "prompt": "如 a01e870f16454ed4"
+    },
+    "userId": {
+      "label": "userId",
+      "type": "string",
+      "required": true,
+      "prompt": "验收账号 userId"
+    },
+    "userLabel": {
+      "label": "展示名",
+      "type": "string",
+      "required": false,
+      "default": "",
+      "prompt": "可选，默认同 userId"
+    }
+  },
+  "steps": [
+    {
+      "id": "baseline",
+      "name": "记录 baseline 快照",
+      "run": {
+        "type": "shell",
+        "command": "python3 platform/web_agent/web_reward_verify.py record --session-id {{sessionId}} --slot baseline --user-id {{userId}} --user-label {{userLabel}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

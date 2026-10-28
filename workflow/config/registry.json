@@ -822,6 +822,36 @@
       "command": "python3 workflow/workflow_execute.py run reward-verify-prop-days --user-id <userId> --prop-id <propId> --prop-type-code <propTypeCode> --expected-days <expectedDays> --tolerance-days <toleranceDays> --reference-ts <referenceTs>"
     },
     {
+      "id": "web_reward_verify_baseline",
+      "name": "奖励验收-记录baseline",
+      "category": "装扮-奖励验收（workflow）",
+      "description": "Web Agent 会话：发奖/抽奖前 record 全量 baseline（platform/web_agent/web_reward_verify.py）。",
+      "prompts": [
+        "奖励验收 记录baseline 用户<userId>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run web-reward-verify-baseline --session-id <sessionId> --user-id <userId> --user-label <userLabel>"
+    },
+    {
+      "id": "web_reward_verify_round",
+      "name": "奖励验收-单轮抽奖求差",
+      "category": "装扮-奖励验收（workflow）",
+      "description": "抽奖/发奖后单轮验收：prev 备份 → 重拉 after → 装扮增量天数 + 本轮 diamondHistory 明细 + 金币 Δ；默认相对上一轮 after。",
+      "prompts": [
+        "奖励验收 又抽了一次 用户<userId>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run web-reward-verify-round --session-id <sessionId> --user-id <userId> --user-label <userLabel> --compare-mode <compareMode>"
+    },
+    {
+      "id": "web_reward_verify_export",
+      "name": "奖励验收-导出钉钉表格",
+      "category": "装扮-奖励验收（workflow）",
+      "description": "将会话内 baseline/after 快照全量导出到钉钉在线表格。",
+      "prompts": [
+        "奖励验收导出钉钉 槽位<slot|baseline>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run web-reward-verify-export --session-id <sessionId> --slot <slot>"
+    },
+    {
       "id": "pk_atm_test",
       "name": "PK提款机-跨房PK造数验收",
       "category": "PK提款机-工作流（workflow）",
@@ -920,6 +950,26 @@
         "一键执行算薪全量 pytest 回归（5 套件）"
       ],
       "command": "PYTHONPATH=platform python3 workflow/workflow_execute.py run salary-automation-full"
+    },
+    {
+      "id": "guild_real_person_auth_failure_clear",
+      "name": "公会-清除真人认证失败",
+      "category": "公会常用工具（workflow）",
+      "description": "测试环境：queryRealPersonRecord 读最近失败 reason → 对冲突 userId 执行 internalAuthDeletePerson + resetRelationPersonExpireTime（过期设为过去）→ 循环至无 reason → 清理待认证用户自身状态。适用于公会申请等场景 2003 人脸已被占用。",
+      "prompts": [
+        "清除用户 <userId> 真人认证失败"
+      ],
+      "command": "python3 workflow/workflow_execute.py run guild-real-person-auth-failure-clear --user-id <userId>"
+    },
+    {
+      "id": "guild_pangu_shift_config",
+      "name": "公会盘古时间偏移配置",
+      "category": "公会常用盘古配置工具（workflow）",
+      "description": "预上线 stage：按业务场景改 MSE shiftTime 配置（白名单 + fixedTimeSec / expireTimeSec / shiftTime），保存并全量发布。",
+      "prompts": [
+        "公会盘古 场景=<scenario> whiteUsers=<whiteUsers> fixedTimeSec=<fixedTimeSec> expireTimeSec=<expireTimeSec> shiftTime=<shiftTime> 保存发布"
+      ],
+      "command": "python3 workflow/workflow_execute.py run guild_pangu_shift_config --scenario <scenario> --white-users <whiteUsers> --fixed-time-sec <fixedTimeSec> --expire-time-sec <expireTimeSec> --shift-time <shiftTime>"
     }
   ]
 }

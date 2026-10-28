@@ -11,6 +11,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 _SCRIPTS = Path(__file__).resolve().parent
 if str(_SCRIPTS) not in sys.path:
@@ -44,7 +45,8 @@ _DEFAULT_PROP_TYPES = (
     "10140",
     "10144",
 )
-SNAPSHOT_VERSION = 3
+SNAPSHOT_VERSION = 4
+_BEIJING = ZoneInfo("Asia/Shanghai")
 _DEFAULT_DIAMOND_HISTORY_LIMIT = 30
 
 
@@ -191,6 +193,168 @@ def query_nameplates(user_id: str, *, since: int = 0) -> dict[str, dict[str, Any
     return plates if isinstance(plates, dict) else {}
 
 
+def _beijing_label(value: Any) -> str:
+    ms = _parse_expire_ms(value)
+    if ms is not None:
+        return datetime.fromtimestamp(ms / 1000, tz=_BEIJING).strftime("%Y-%m-%d %H:%M:%S")
+    if value in (None, ""):
+        return "—"
+    text = str(value).strip()
+    if text.isdigit():
+        sec = int(text)
+        if sec > 1_000_000_000_000:
+            sec //= 1000
+        return datetime.fromtimestamp(sec, tz=_BEIJING).strftime("%Y-%m-%d %H:%M:%S")
+    return text or "—"
+
+
+def _all_prop_type_codes() -> list[str]:
+    labels = _load_prop_type_labels()
+    if labels:
+        return sorted(labels.keys())
+    return list(_DEFAULT_PROP_TYPES)
+
+
+def _query_gold_wallet_moa(user_id: str) -> dict[str, Any] | None:
+    rc, out, _ = _run(
+        [
+            "python3",
+            str(moa_execute_path()),
+            "--payload-file",
+            "MOA/templates/钻石-查询余额.json",
+            "--diamond-query-user-id",
+            user_id,
+        ]
+    )
+    if rc != 0:
+        return None
+    data = _json_from_stdout(out)
+    if not isinstance(data, dict):
+        return None
+    return data
+
+
+def query_gold_coin(user_id: str) -> int | None:
+    """钱包金币余额整数（MOA coinCount，与后台原始字段一致）。"""
+    data = _query_gold_wallet_moa(user_id)
+    if not data:
+        return None
+    raw = data.get("coinCount")
+    if raw is None:
+        return None
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def query_gold_coin_wan(user_id: str) -> float | None:
+    """钱包金币展示值（MOA numberIncome，单位「万」，与 Admin 金币栏一致）。"""
+    data = _query_gold_wallet_moa(user_id)
+    if not data:
+        return None
+    raw = data.get("numberIncome")
+    if raw is None:
+        coin = data.get("coinCount")
+        if coin is None:
+            return None
+        try:
+            return int(coin) / 10000.0
+        except (TypeError, ValueError):
+            return None
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def _format_gold_coin_cell(snap: dict[str, Any]) -> str:
+    raw = snap.get("goldCoin")
+    if raw is not None:
+        try:
+            return str(int(raw))
+        except (TypeError, ValueError):
+            return str(raw)
+    return "—"
+
+
+def query_backpack_props(user_id: str) -> dict[str, dict[str, Any]]:
+    rc, out, _ = _run(
+        [
+            "python3",
+            "MOA/scripts/gift_panel_backpack_view.py",
+            "--user-id",
+            user_id,
+            "--moa-only",
+        ]
+    )
+    data = _json_from_stdout(out)
+    props: dict[str, dict[str, Any]] = {}
+    for item in data.get("backpackProps") or []:
+        if not isinstance(item, dict):
+            continue
+        pid = str(
+            item.get("propId")
+            or item.get("id")
+            or item.get("productId")
+            or item.get("bid")
+            or ""
+        ).strip()
+        if not pid:
+            continue
+        count = item.get("num") if item.get("num") is not None else item.get("count")
+        valid_days = item.get("validDays") if item.get("validDays") is not None else item.get("propPackageValidDays")
+        expire = item.get("expireTime") or item.get("expire")
+        props[pid] = {
+            "propId": pid,
+            "name": item.get("propName") or item.get("name") or item.get("title"),
+            "propType": item.get("propType") or item.get("typeName") or "背包道具",
+            "count": int(count) if count is not None else None,
+            "validDays": valid_days,
+            "expire": expire,
+            "expireLabel": _beijing_label(expire) if expire not in (None, "") else None,
+        }
+    return props
+
+
+def query_cp_medal_items(
+    user_id: str,
+    *,
+    cp_user_id: str = "",
+    intimate_id: str = "",
+) -> list[dict[str, Any]]:
+    cmd = [
+        "python3",
+        "MOA-generative/scripts/form_cp_space_medals.py",
+        "--user-id",
+        user_id,
+        "--strict",
+        "0",
+    ]
+    if cp_user_id:
+        cmd.extend(["--cp-user-id", cp_user_id])
+    if intimate_id:
+        cmd.extend(["--intimate-id", intimate_id])
+    rc, out, _ = _run(cmd)
+    if rc != 0:
+        return []
+    data = _json_from_stdout(out)
+    summary = data.get("cpMedalSummary") if isinstance(data.get("cpMedalSummary"), dict) else {}
+    items: list[dict[str, Any]] = []
+    for item in summary.get("medals") or []:
+        if not isinstance(item, dict):
+            continue
+        obtain = item.get("obtainTime") or item.get("obtainTimeMs")
+        items.append(
+            {
+                "medalName": item.get("medalName"),
+                "count": int(item.get("num") or 0),
+                "obtainTimeLabel": _beijing_label(obtain),
+            }
+        )
+    return items
+
+
 def query_cp_medals(
     user_id: str,
     *,
@@ -306,8 +470,13 @@ def snapshot_user(
     include_diamond_history: bool = True,
     include_nameplates: bool = False,
     nameplate_tunnel_since: int = 0,
+    full_inventory: bool = False,
 ) -> dict[str, Any]:
-    types = prop_types or list(_DEFAULT_PROP_TYPES)
+    if full_inventory:
+        types = prop_types or _all_prop_type_codes()
+        include_nameplates = True
+    else:
+        types = prop_types or list(_DEFAULT_PROP_TYPES)
     props_by_type: dict[str, dict[str, dict[str, Any]]] = {}
     props_flat: dict[str, dict[str, Any]] = {}
     for pt in types:
@@ -333,12 +502,35 @@ def snapshot_user(
         "userId": user_id,
         "ts": int(time.time()),
         "tsIso": datetime.now(timezone.utc).isoformat(),
+        "tsBeijing": datetime.now(_BEIJING).strftime("%Y-%m-%d %H:%M:%S"),
         "diamond": query_diamond(user_id),
         "diamondHistory": diamond_history,
         "backpackGifts": query_backpack_gifts(user_id),
         "propsByType": props_by_type,
         "props": props_flat,
     }
+    if full_inventory:
+        wallet = _query_gold_wallet_moa(user_id)
+        if wallet:
+            try:
+                if wallet.get("coinCount") is not None:
+                    snap["goldCoin"] = int(wallet["coinCount"])
+            except (TypeError, ValueError):
+                pass
+            wan_raw = wallet.get("numberIncome")
+            if wan_raw is not None:
+                try:
+                    snap["goldCoinWan"] = float(wan_raw)
+                except (TypeError, ValueError):
+                    pass
+            elif snap.get("goldCoin") is not None:
+                snap["goldCoinWan"] = int(snap["goldCoin"]) / 10000.0
+        snap["backpackProps"] = query_backpack_props(user_id)
+        snap["cpMedalItems"] = query_cp_medal_items(
+            user_id,
+            cp_user_id=cp_user_id,
+            intimate_id=intimate_id,
+        )
     if cp_user_id or intimate_id:
         snap["cpMedals"] = query_cp_medals(
             user_id,
@@ -348,6 +540,8 @@ def snapshot_user(
         include_nameplates = True
     if include_nameplates:
         snap["nameplates"] = query_nameplates(user_id, since=nameplate_tunnel_since)
+    if full_inventory:
+        snap["fullInventory"] = True
     return snap
 
 
@@ -476,7 +670,11 @@ def _enrich_prop_diff_entry(entry: dict[str, Any], *, reference_ts: int) -> dict
         str(expire_after) if expire_after is not None else None
     )
     if status == "new":
-        actual_days = _prop_days({"expireTime": expire_after}, reference_ts=reference_ts)
+        vp = entry.get("validityPeriod")
+        if vp is not None and float(vp) > 0:
+            actual_days = float(vp)
+        else:
+            actual_days = _prop_days({"expireTime": expire_after}, reference_ts=reference_ts)
     elif status == "changed":
         ref_ms = reference_ts * 1000
         if before_ms is not None and before_ms <= ref_ms:
@@ -600,6 +798,301 @@ def _issued_nameplates_from_diff(diff: dict[str, Any]) -> list[dict[str, Any]]:
         elif enriched.get("newlyUnlocked"):
             issued.append(enriched)
     return issued
+
+
+def format_snapshot_inventory(
+    snap: dict[str, Any],
+    *,
+    user_label: str = "",
+) -> str:
+    """将 snapshot JSON 格式化为全量分类清单（展示用，不含 diamondHistory 明细）。"""
+    prop_labels = _load_prop_type_labels()
+    user_id = str(snap.get("userId") or "")
+    label = user_label.strip() or user_id
+    recorded = snap.get("tsBeijing") or _beijing_label(int(snap.get("ts") or 0) * 1000)
+
+    lines = [
+        f"## 用户资产快照（{label}）",
+        "",
+        f"- userId：`{user_id}`",
+        f"- 记录时间（北京）：{recorded}",
+        "",
+        "### 钱包",
+        "",
+        "| 类型 | 数量 | 有效期 |",
+        "| --- | --- | --- |",
+        f"| 钻石 | {snap.get('diamond') if snap.get('diamond') is not None else '—'} | — |",
+        f"| 金币 | {_format_gold_coin_cell(snap)} | — |",
+        "",
+    ]
+
+    gifts = snap.get("backpackGifts") if isinstance(snap.get("backpackGifts"), dict) else {}
+    lines += ["### 礼物面板 · 背包礼物", ""]
+    if gifts:
+        lines += [
+            "| 类型 | 名称 | 数量 | 单价(钻) | 有效期 |",
+            "| --- | --- | --- | --- | --- |",
+        ]
+        for gid in sorted(gifts.keys(), key=lambda x: (str(gifts[x].get("name") or ""), x)):
+            g = gifts[gid]
+            expire = g.get("expireLabel") or _beijing_label(g.get("expire"))
+            lines.append(
+                "| 背包礼物 | {name} | {remain} | {price} | {expire} |".format(
+                    name=g.get("name") or gid,
+                    remain=g.get("remain") if g.get("remain") is not None else "—",
+                    price=g.get("price") if g.get("price") is not None else "—",
+                    expire=expire,
+                )
+            )
+    else:
+        lines.append("（无）")
+    lines.append("")
+
+    panel_props = snap.get("backpackProps") if isinstance(snap.get("backpackProps"), dict) else {}
+    lines += ["### 礼物面板 · 背包道具", ""]
+    if panel_props:
+        lines += ["| 类型 | 名称 | 数量 | 有效期 |", "| --- | --- | --- | --- |"]
+        for pid in sorted(panel_props.keys(), key=lambda x: (str(panel_props[x].get("name") or ""), x)):
+            p = panel_props[pid]
+            validity = p.get("expireLabel") or _beijing_label(p.get("expire"))
+            if validity == "—" and p.get("validDays") is not None:
+                validity = f"{p.get('validDays')} 天"
+            lines.append(
+                "| {ptype} | {name} | {count} | {validity} |".format(
+                    ptype=p.get("propType") or "背包道具",
+                    name=p.get("name") or pid,
+                    count=p.get("count") if p.get("count") is not None else "—",
+                    validity=validity,
+                )
+            )
+    else:
+        lines.append("（无）")
+    lines.append("")
+
+    props_by_type = snap.get("propsByType") if isinstance(snap.get("propsByType"), dict) else {}
+    flat = snap.get("props") if isinstance(snap.get("props"), dict) else {}
+    if not props_by_type and flat:
+        props_by_type = {"": flat}
+    lines += ["### 装扮背包", ""]
+    has_props = False
+    for ptc in sorted(props_by_type.keys(), key=lambda k: (prop_labels.get(k, k), k)):
+        items = props_by_type.get(ptc)
+        if not isinstance(items, dict) or not items:
+            continue
+        type_label = prop_labels.get(str(ptc), str(ptc) or "装扮")
+        if not has_props:
+            lines += ["| 类型 | 名称 | 数量 | 有效期 |", "| --- | --- | --- | --- |"]
+            has_props = True
+        for pid in sorted(items.keys(), key=lambda x: (str(items[x].get("propName") or ""), x)):
+            p = items[pid]
+            expire = _beijing_label(p.get("expireTime") or p.get("expire"))
+            count = p.get("count")
+            lines.append(
+                "| {type_label} | {name} | {count} | {expire} |".format(
+                    type_label=type_label,
+                    name=p.get("propName") or pid,
+                    count=count if count is not None else "—",
+                    expire=expire,
+                )
+            )
+    if not has_props:
+        lines.append("（无）")
+    lines.append("")
+
+    nameplates = snap.get("nameplates") if isinstance(snap.get("nameplates"), dict) else {}
+    medal_items = snap.get("cpMedalItems") if isinstance(snap.get("cpMedalItems"), list) else []
+    lines += ["### Badge / 勋章", ""]
+    badge_rows = 0
+    if nameplates or medal_items:
+        lines += ["| 类型 | 名称 | 数量 | 有效期 |", "| --- | --- | --- | --- |"]
+        for nid in sorted(nameplates.keys(), key=lambda x: (str(nameplates[x].get("title") or ""), x)):
+            plate = nameplates[nid]
+            remain = plate.get("remainDays")
+            validity = f"{remain} 天" if remain is not None else "—"
+            if plate.get("remainTime") is not None and validity == "—":
+                validity = f"{plate.get('remainTime')} 秒剩余"
+            lines.append(
+                "| 铭牌 | {name} | {count} | {validity} |".format(
+                    name=plate.get("title") or nid,
+                    count=plate.get("count") if plate.get("count") is not None else "1",
+                    validity=validity,
+                )
+            )
+            badge_rows += 1
+        for item in medal_items:
+            if not isinstance(item, dict):
+                continue
+            lines.append(
+                "| CP 勋章 | {name} | {count} | {obtain} |".format(
+                    name=item.get("medalName") or "—",
+                    count=item.get("count") if item.get("count") is not None else "—",
+                    obtain=item.get("obtainTimeLabel") or "—",
+                )
+            )
+            badge_rows += 1
+    if badge_rows == 0:
+        lines.append("（无）")
+    lines.append("")
+
+    counts = {
+        "背包礼物": len(gifts),
+        "背包道具": len(panel_props),
+        "装扮": sum(len(v) for v in props_by_type.values() if isinstance(v, dict)),
+        "铭牌": len(nameplates),
+        "CP勋章": len(medal_items),
+    }
+    lines += [
+        "### 汇总",
+        "",
+        "| 分类 | 条数 |",
+        "| --- | --- |",
+    ]
+    for key, val in counts.items():
+        lines.append(f"| {key} | {val} |")
+    lines.append("")
+    return "\n".join(lines)
+
+
+_INVENTORY_SHEET_HEADER = [
+    "序号",
+    "分类",
+    "类型",
+    "名称",
+    "ID",
+    "数量",
+    "单价(钻)",
+    "有效期",
+]
+
+
+def snapshot_inventory_rows(
+    snap: dict[str, Any],
+    *,
+    user_label: str = "",
+) -> list[list[str]]:
+    """将 snapshot 转为钉钉表格行（含表头与元信息行）。"""
+    prop_labels = _load_prop_type_labels()
+    user_id = str(snap.get("userId") or "")
+    label = user_label.strip() or user_id
+    recorded = snap.get("tsBeijing") or _beijing_label(int(snap.get("ts") or 0) * 1000)
+
+    rows: list[list[str]] = [
+        ["用户", label, "userId", user_id, "", "", "", ""],
+        ["记录时间（北京）", str(recorded), "", "", "", "", "", ""],
+        _INVENTORY_SHEET_HEADER,
+    ]
+    seq = 0
+
+    def append_row(
+        category: str,
+        type_label: str,
+        name: str,
+        item_id: str,
+        count: str,
+        price: str,
+        validity: str,
+    ) -> None:
+        nonlocal seq
+        seq += 1
+        rows.append([str(seq), category, type_label, name, item_id, count, price, validity])
+
+    diamond = snap.get("diamond")
+    append_row("钱包", "钻石", "钻石", "", str(diamond) if diamond is not None else "—", "—", "—")
+    append_row(
+        "钱包",
+        "金币",
+        "金币",
+        "",
+        _format_gold_coin_cell(snap),
+        "—",
+        "—",
+    )
+
+    gifts = snap.get("backpackGifts") if isinstance(snap.get("backpackGifts"), dict) else {}
+    for gid in sorted(gifts.keys(), key=lambda x: (str(gifts[x].get("name") or ""), x)):
+        g = gifts[gid]
+        expire = g.get("expireLabel") or _beijing_label(g.get("expire"))
+        append_row(
+            "背包礼物",
+            "背包礼物",
+            str(g.get("name") or gid),
+            str(gid),
+            str(g.get("remain") if g.get("remain") is not None else "—"),
+            str(g.get("price") if g.get("price") is not None else "—"),
+            str(expire),
+        )
+
+    panel_props = snap.get("backpackProps") if isinstance(snap.get("backpackProps"), dict) else {}
+    for pid in sorted(panel_props.keys(), key=lambda x: (str(panel_props[x].get("name") or ""), x)):
+        p = panel_props[pid]
+        validity = p.get("expireLabel") or _beijing_label(p.get("expire"))
+        if validity == "—" and p.get("validDays") is not None:
+            validity = f"{p.get('validDays')} 天"
+        append_row(
+            "背包道具",
+            str(p.get("propType") or "背包道具"),
+            str(p.get("name") or pid),
+            str(pid),
+            str(p.get("count") if p.get("count") is not None else "—"),
+            "—",
+            str(validity),
+        )
+
+    props_by_type = snap.get("propsByType") if isinstance(snap.get("propsByType"), dict) else {}
+    flat = snap.get("props") if isinstance(snap.get("props"), dict) else {}
+    if not props_by_type and flat:
+        props_by_type = {"": flat}
+    for ptc in sorted(props_by_type.keys(), key=lambda k: (prop_labels.get(k, k), k)):
+        items = props_by_type.get(ptc)
+        if not isinstance(items, dict) or not items:
+            continue
+        type_label = prop_labels.get(str(ptc), str(ptc) or "装扮")
+        for pid in sorted(items.keys(), key=lambda x: (str(items[x].get("propName") or ""), x)):
+            p = items[pid]
+            expire = _beijing_label(p.get("expireTime") or p.get("expire"))
+            count = p.get("count")
+            append_row(
+                "装扮背包",
+                type_label,
+                str(p.get("propName") or pid),
+                str(pid),
+                str(count if count is not None else "—"),
+                "—",
+                str(expire),
+            )
+
+    nameplates = snap.get("nameplates") if isinstance(snap.get("nameplates"), dict) else {}
+    for nid in sorted(nameplates.keys(), key=lambda x: (str(nameplates[x].get("title") or ""), x)):
+        plate = nameplates[nid]
+        remain = plate.get("remainDays")
+        validity = f"{remain} 天" if remain is not None else "—"
+        if plate.get("remainTime") is not None and validity == "—":
+            validity = f"{plate.get('remainTime')} 秒剩余"
+        append_row(
+            "Badge/勋章",
+            "铭牌",
+            str(plate.get("title") or nid),
+            str(nid),
+            str(plate.get("count") if plate.get("count") is not None else "1"),
+            "—",
+            str(validity),
+        )
+
+    medal_items = snap.get("cpMedalItems") if isinstance(snap.get("cpMedalItems"), list) else []
+    for item in medal_items:
+        if not isinstance(item, dict):
+            continue
+        append_row(
+            "Badge/勋章",
+            "CP 勋章",
+            str(item.get("medalName") or "—"),
+            "",
+            str(item.get("count") if item.get("count") is not None else "—"),
+            "—",
+            str(item.get("obtainTimeLabel") or "—"),
+        )
+
+    return rows
 
 
 def format_diff_report(
@@ -762,6 +1255,160 @@ def _diamond_history_since(
         )
     rows.sort(key=lambda x: x.get("createTime") or 0)
     return rows
+
+
+def diamond_history_for_round(
+    diamond_history_new: list[dict[str, Any]] | None,
+    *,
+    before_ts: int,
+) -> list[dict[str, Any]]:
+    """单轮验收：仅保留 before 快照 ts 之后的钻石流水（不含 60s 回溯，避免混入上一轮）。"""
+    cutoff_ms = int(before_ts) * 1000
+    kept: list[dict[str, Any]] = []
+    for row in diamond_history_new or []:
+        if not isinstance(row, dict):
+            continue
+        create_ms = row.get("createTime")
+        if create_ms is None:
+            create_ms = _parse_expire_ms(row.get("createTimeLabel"))
+        if create_ms is None or int(create_ms) < cutoff_ms:
+            continue
+        kept.append(row)
+    kept.sort(key=lambda x: int(x.get("createTime") or 0))
+    return kept
+
+
+def summarize_web_reward_round(
+    diff: dict[str, Any],
+    before_snap: dict[str, Any],
+    after_snap: dict[str, Any],
+    *,
+    user_label: str = "",
+    round_no: int | None = None,
+) -> dict[str, Any]:
+    """Web Agent 单轮抽奖/发奖验收摘要（装扮增量天数、钻石明细、金币 Δ）。"""
+    prop_labels = _load_prop_type_labels()
+    user_id = str(diff.get("userId") or before_snap.get("userId") or "")
+    label = (user_label or user_id).strip()
+    diamond = diff.get("diamond") if isinstance(diff.get("diamond"), dict) else {}
+    bg = before_snap.get("goldCoin")
+    ag = after_snap.get("goldCoin")
+    gold_delta = (int(ag) - int(bg)) if bg is not None and ag is not None else None
+
+    before_ts = int(before_snap.get("ts") or diff.get("beforeTs") or 0)
+    hist = diamond_history_for_round(
+        diff.get("diamondHistoryNew") if isinstance(diff.get("diamondHistoryNew"), list) else [],
+        before_ts=before_ts,
+    )
+
+    props_out: list[dict[str, Any]] = []
+    reference_ts = int(diff.get("afterTs") or before_ts or time.time())
+    for item in diff.get("props") or []:
+        if not isinstance(item, dict):
+            continue
+        enriched = item if item.get("issued") is not None else _enrich_prop_diff_entry(
+            item, reference_ts=reference_ts
+        )
+        if not enriched.get("issued"):
+            continue
+        days = enriched.get("actualIssuedDays")
+        if days is None or float(days) <= 0:
+            continue
+        ptc = str(enriched.get("propTypeCode") or "")
+        props_out.append(
+            {
+                "propId": enriched.get("propId"),
+                "name": enriched.get("propName"),
+                "typeLabel": prop_labels.get(ptc, ptc or "装扮"),
+                "incrementDays": float(days),
+                "status": enriched.get("status"),
+            }
+        )
+
+    gifts_out: list[dict[str, Any]] = []
+    for item in _issued_gifts_from_diff(diff):
+        delta = int(item.get("remainDelta") or 0)
+        if delta <= 0:
+            continue
+        gifts_out.append(
+            {
+                "giftId": item.get("giftId"),
+                "name": item.get("name"),
+                "countDelta": delta,
+                "price": item.get("price"),
+                "totalDiamondValue": item.get("totalDiamondValue"),
+            }
+        )
+
+    medals_out: list[dict[str, Any]] = []
+    for item in diff.get("cpMedals") or []:
+        if not isinstance(item, dict):
+            continue
+        delta = int(item.get("countDelta") or 0)
+        if delta > 0:
+            medals_out.append(
+                {
+                    "medalName": item.get("medalName"),
+                    "countDelta": delta,
+                    "countAfter": item.get("countAfter"),
+                }
+            )
+
+    nameplates_out: list[dict[str, Any]] = []
+    for item in _issued_nameplates_from_diff(diff):
+        days = item.get("actualIssuedDays")
+        if days is None and not item.get("newlyUnlocked"):
+            continue
+        nameplates_out.append(
+            {
+                "nameplateId": item.get("nameplateId"),
+                "title": item.get("title"),
+                "incrementDays": float(days) if days is not None else None,
+                "newlyUnlocked": bool(item.get("newlyUnlocked")),
+            }
+        )
+
+    md_lines = [
+        f"### 用户 {label} 第 {round_no} 轮奖励" if round_no else f"### 用户 {label} 本轮奖励",
+        "",
+    ]
+    if props_out:
+        md_lines += ["#### 装扮（增量）", "", "| 名称 | 类型 | 增量 |", "| --- | --- | --- |"]
+        for p in props_out:
+            md_lines.append(
+                f"| {p.get('name') or '—'} | {p.get('typeLabel') or '—'} | **+{p.get('incrementDays')} 天** |"
+            )
+        md_lines.append("")
+    if gold_delta is not None and gold_delta != 0:
+        md_lines += [f"#### 金币\n\n**{'+' if gold_delta > 0 else ''}{gold_delta}**", ""]
+    if hist:
+        md_lines += ["#### 钻石明细（本轮）", "", "| 变动(钻) | 描述 | 时间 |", "| ---: | --- | --- |"]
+        for row in hist:
+            md_lines.append(
+                f"| {row.get('diamondDiff')} | {row.get('desc') or '—'} | {row.get('createTimeLabel') or '—'} |"
+            )
+        md_lines.append("")
+    if diamond:
+        md_lines.append(
+            f"余额 **{diamond.get('before')} → {diamond.get('after')}（Δ{diamond.get('delta')}）**"
+        )
+
+    return {
+        "ok": True,
+        "userId": user_id,
+        "userLabel": label,
+        "round": round_no,
+        "beforeTs": before_ts,
+        "afterTs": diff.get("afterTs"),
+        "goldDelta": gold_delta,
+        "diamond": diamond,
+        "diamondHistory": hist,
+        "props": props_out,
+        "backpackGifts": gifts_out,
+        "nameplates": nameplates_out,
+        "cpMedals": medals_out,
+        "markdown": "\n".join(md_lines).strip(),
+    }
 
 
 def diff_snapshots(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
@@ -1178,6 +1825,7 @@ def cmd_snapshot(args: argparse.Namespace) -> int:
         include_diamond_history=not args.skip_diamond_history,
         include_nameplates=bool(args.include_nameplates),
         nameplate_tunnel_since=int(args.nameplate_tunnel_since),
+        full_inventory=bool(getattr(args, "full_inventory", False)),
     )
     out_path = Path(args.out).expanduser() if args.out else None
     text = json.dumps(snap, ensure_ascii=False, indent=2)
@@ -1185,6 +1833,17 @@ def cmd_snapshot(args: argparse.Namespace) -> int:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(text, encoding="utf-8")
     print(text)
+    return 0
+
+
+def cmd_list(args: argparse.Namespace) -> int:
+    snap = _load_json(Path(args.in_file))
+    report = format_snapshot_inventory(snap, user_label=str(args.user_label or "").strip())
+    out_path = Path(args.out).expanduser() if args.out else None
+    if out_path:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(report, encoding="utf-8")
+    print(report)
     return 0
 
 
@@ -1296,7 +1955,18 @@ def main() -> int:
         default=0,
         help="铭牌 Tunnel 回溯秒数；0=自动多级回溯（2h→24h→7d）",
     )
+    p_snap.add_argument(
+        "--full-inventory",
+        action="store_true",
+        help="全量资产：金币、礼物面板背包道具、全部装扮类型、铭牌与 CP 勋章",
+    )
     p_snap.set_defaults(func=cmd_snapshot)
+
+    p_list = sub.add_parser("list", help="将 snapshot JSON 格式化为全量分类 Markdown")
+    p_list.add_argument("--in", dest="in_file", required=True, help="snapshot JSON 路径")
+    p_list.add_argument("--user-label", default="", help="展示用用户标识（如手机号）")
+    p_list.add_argument("--out", default="", help="Markdown 输出路径")
+    p_list.set_defaults(func=cmd_list)
 
     p_diff = sub.add_parser("diff", help="发奖前后快照求差（钻石/记录/背包/装扮/勋章）")
     p_diff.add_argument("--before", required=True, help="发奖前 snapshot JSON")

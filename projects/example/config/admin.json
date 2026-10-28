@@ -148,10 +148,11 @@
     "path": "/yaahlan/cms/activity/deleteIm"
   },
   "query_banner_list": {
-    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
-    "path": "/yaahlan/cms/backend/banner/getBannerList",
+    "baseUrl": "https://yaahlan-admin-alpha.wemomo.com",
+    "path": "/admin/banner/getBannerList",
     "defaultArea": "MENA",
-    "defaultType": 5,
+    "defaultPackageId": "yaahlan",
+    "defaultType": -1,
     "defaultStatus": -1,
     "defaultPage": 1,
     "defaultPerPage": 10

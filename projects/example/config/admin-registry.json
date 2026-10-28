@@ -342,15 +342,15 @@
     {
       "id": "query_banner_list",
       "name": "活动-查询Banner列表",
-      "category": "活动（melon-gateway / cms/backend/banner）",
-      "description": "查询后台 Banner 配置列表（getBannerList；body 含 bannerId/page/perPage/status/type/area；type=5 为活动 banner；status=-1 为全部）",
+      "category": "Admin Banner（yaahlan-admin /admin/banner）",
+      "description": "查询运营后台 Banner 列表 POST /admin/banner/getBannerList（body 含 packageId=yaahlan）。status: -1全部/0已下线/1已上线/2白名单",
       "prompts": [
         "查询活动 banner 列表",
-        "getBannerList 活动 banner 中东区",
+        "查 MENA 全部 banner 配置",
         "查 banner 类型 <type> 列表",
         "查看 banner 配置 bannerId <bannerId>"
       ],
-      "command": "python3 Admin/admin_execute.py --query-banner-list --banner-type 5 --banner-area MENA"
+      "command": "python3 Admin/admin_execute.py --query-banner-list --banner-type -1 --banner-status -1 --banner-area MENA"
     },
     {
       "id": "delete_im_task",

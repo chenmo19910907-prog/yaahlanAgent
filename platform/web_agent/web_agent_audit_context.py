@@ -78,14 +78,24 @@ def _snapshot_fresh(snap: dict[str, Any], *, ttl_s: int) -> bool:
     return (time.time() - epoch) <= ttl_s
 
 
-def _pick_snapshot(*, batch_hint: str, ttl_s: int) -> dict[str, Any] | None:
+def _pick_snapshot(*, batch_hint: str, run_hint: str = "", ttl_s: int) -> dict[str, Any] | None:
+    """按 batch 文件优先；active.json 仅在与 batch/run  hint 一致时可用（禁止跨任务串线）。"""
     batch = (batch_hint or "").strip()
+    run = (run_hint or "").strip()
     if batch:
         snap = _load_json(BY_BATCH_DIR / f"{_batch_file_key(batch)}.json")
         if snap and _snapshot_fresh(snap, ttl_s=ttl_s):
             return snap
+    if not batch and not run:
+        return None
     snap = _load_json(ACTIVE_PATH)
-    if snap and _snapshot_fresh(snap, ttl_s=ttl_s):
+    if not snap or not _snapshot_fresh(snap, ttl_s=ttl_s):
+        return None
+    active_batch = str(snap.get("batch_key") or "").strip()
+    active_run = str(snap.get("run_id") or "").strip()
+    if run and active_run == run:
+        return snap
+    if batch and active_batch == batch:
         return snap
     return None
 
@@ -93,7 +103,8 @@ def _pick_snapshot(*, batch_hint: str, ttl_s: int) -> dict[str, Any] | None:
 def hydrate_audit_env_from_store(*, ttl_s: int = DEFAULT_TTL_S) -> bool:
     """子进程启动时：用落盘上下文补全 os.environ（仅填空字段）。"""
     batch_hint = (os.environ.get(BATCH_KEY_ENV) or "").strip()
-    snap = _pick_snapshot(batch_hint=batch_hint, ttl_s=ttl_s)
+    run_hint = (os.environ.get(RUN_ID_ENV) or "").strip()
+    snap = _pick_snapshot(batch_hint=batch_hint, run_hint=run_hint, ttl_s=ttl_s)
     if not snap:
         return False
     changed = False
@@ -119,7 +130,7 @@ def resolve_audit_context(*, ttl_s: int = DEFAULT_TTL_S) -> dict[str, str] | Non
     staff = (os.environ.get(CALLER_STAFF_ENV) or "").strip()
     name = (os.environ.get(CALLER_NAME_ENV) or "").strip()
 
-    snap = _pick_snapshot(batch_hint=batch, ttl_s=ttl_s)
+    snap = _pick_snapshot(batch_hint=batch, run_hint=run_id, ttl_s=ttl_s)
     if snap:
         if not batch:
             batch = str(snap.get("batch_key") or "").strip()

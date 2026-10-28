@@ -52,6 +52,19 @@ def _build_cap_lookup(modules: list[dict[str, Any]]) -> dict[str, tuple[str, int
     return lookup
 
 
+def _cap_entry_from_raw(raw: dict[str, Any], *, module_id: str, cat_index: int) -> dict[str, Any]:
+    entry: dict[str, Any] = {"kind": "cap", "moduleId": module_id, "catIndex": cat_index}
+    cap_label = str(raw.get("label") or "").strip()
+    if cap_label:
+        entry["label"] = cap_label
+    source_id = str(raw.get("sourceId") or raw.get("source_id") or "").strip()
+    registry_id = str(raw.get("registryId") or raw.get("registry_id") or "").strip()
+    if source_id and registry_id:
+        entry["sourceId"] = source_id
+        entry["registryId"] = registry_id
+    return entry
+
+
 def _cap_needs_remap(
     cap: dict[str, Any],
     *,
@@ -106,10 +119,7 @@ def remap_legacy_nav_caps(
         if not target:
             return None
         mid, cat_index = target
-        entry: dict[str, Any] = {"kind": "cap", "moduleId": mid, "catIndex": cat_index}
-        if label:
-            entry["label"] = label
-        return entry
+        return _cap_entry_from_raw(raw, module_id=mid, cat_index=cat_index)
 
     def walk(nodes: list[Any]) -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []
@@ -407,11 +417,7 @@ def reconcile_nav_tree(
                     continue
                 if cat_index < 0:
                     continue
-                entry = {"kind": "cap", "moduleId": mid, "catIndex": cat_index}
-                cap_label = str(raw.get("label") or "").strip()
-                if cap_label:
-                    entry["label"] = cap_label
-                out.append(entry)
+                out.append(_cap_entry_from_raw(raw, module_id=mid, cat_index=cat_index))
             elif kind == "playbookItem":
                 playbook_id = str(raw.get("playbookId") or "").strip()
                 if not playbook_id:
@@ -541,11 +547,7 @@ def _normalize_nodes(raw_nodes: Any, depth: int = 0) -> list[dict[str, Any]] | N
                 return None
             if cat_index < 0:
                 return None
-            entry = {"kind": "cap", "moduleId": module_id, "catIndex": cat_index}
-            cap_label = str(raw.get("label") or "").strip()
-            if cap_label:
-                entry["label"] = cap_label
-            out.append(entry)
+            out.append(_cap_entry_from_raw(raw, module_id=module_id, cat_index=cat_index))
         elif kind == "playbookItem":
             playbook_id = str(raw.get("playbookId") or "").strip()
             if not playbook_id:

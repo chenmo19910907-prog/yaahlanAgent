@@ -1,0 +1,129 @@
+{
+  "version": 3,
+  "category": "公会常用盘古配置工具（workflow）",
+  "doc_note": "业务文档原序号跳号（缺 4、5）；共 9 条业务场景，本清单按 ①–⑨ 连续编号。Web 面板「场景说明」优先读各条 usage_note，否则读对应 workflow/*.json 的 description；操作人可在面板「补充说明」自行编辑（仅存浏览器）。",
+  "web_usage": {
+    "title": "改参并发布",
+    "env_hint": "预上线 stage：改参后保存并全量发布。",
+    "field_help": {
+      "whiteUsers": "逗号分隔 userId；仅白名单账号走该条配置的偏移/窗口逻辑。"
+    }
+  },
+  "env": {
+    "region": "alpha",
+    "cluster": "stage",
+    "env": "alpha",
+    "app_key": "momo.bpm.biz.gameplatform.overseas-voga-mts-vas"
+  },
+  "scenarios": [
+    {
+      "key": "salary_prep_window",
+      "workflow_id": "guild-pangu-01-salary-prep-window",
+      "name": "盘古-①薪资预提窗口",
+      "doc_index": 1,
+      "config_key": "shiftTime.isAllowedTimeForSalaryPrepayment",
+      "namespace": "Application",
+      "fields": ["fixedTimeSec", "expireTimeSec"],
+      "only_edit_fields": ["fixedTimeSec", "expireTimeSec"],
+      "example": "",
+      "prompt": "设置盘古薪资预提窗口 fixedTimeSec=<fixedTimeSec> expireTimeSec=<expireTimeSec> 并发布"
+    },
+    {
+      "key": "anchor_removal_window",
+      "workflow_id": "guild-pangu-02-anchor-removal-window",
+      "name": "盘古-②公会长移除主播窗口",
+      "doc_index": 2,
+      "config_key": "shiftTime.isAllowedTimeForAnchorRemoval",
+      "namespace": "Application",
+      "fields": ["expireTimeSec", "fixedTimeSec"],
+      "only_edit_fields": ["expireTimeSec"],
+      "example": "",
+      "prompt": "设置盘古公会长移除主播窗口 expireTimeSec=<expireTimeSec> fixedTimeSec=<fixedTimeSec> 并发布"
+    },
+    {
+      "key": "salary_day_no_transfer",
+      "workflow_id": "guild-pangu-03-salary-day-no-transfer",
+      "name": "盘古-③算薪日禁转会退会",
+      "doc_index": 3,
+      "config_key": "shiftTime.tradeUnion",
+      "namespace": "voga-common",
+      "fields": ["fixedTimeSec", "expireTimeSec"],
+      "only_edit_fields": ["fixedTimeSec"],
+      "example": "",
+      "prompt": "设置盘古算薪日禁转会退会 fixedTimeSec=<fixedTimeSec> 并发布"
+    },
+    {
+      "key": "anchor_expire_display",
+      "workflow_id": "guild-pangu-04-anchor-expire-display",
+      "name": "盘古-④公会长端主播到期展示",
+      "doc_index": 4,
+      "config_key": "shiftTime.tradeAnchorExpire",
+      "namespace": "voga-common",
+      "fields": ["fixedTimeSec", "expireTimeSec"],
+      "only_edit_fields": ["fixedTimeSec"],
+      "example": "fixedTimeSec=1789423200",
+      "prompt": "设置盘古主播到期展示 fixedTimeSec=<fixedTimeSec> 并发布"
+    },
+    {
+      "key": "gift_statistic_date",
+      "workflow_id": "guild-pangu-05-gift-statistic-date",
+      "name": "盘古-⑤收礼statistic_date",
+      "doc_index": 5,
+      "config_key": "shiftTime.tradeUnion",
+      "namespace": "voga-common",
+      "fields": ["fixedTimeSec", "expireTimeSec"],
+      "only_edit_fields": ["fixedTimeSec"],
+      "example": "",
+      "prompt": "设置盘古收礼statistic_date fixedTimeSec=<fixedTimeSec> 并发布"
+    },
+    {
+      "key": "heartbeat_effective_day",
+      "workflow_id": "guild-pangu-06-heartbeat-effective-day",
+      "name": "盘古-⑥心跳有效在麦日",
+      "doc_index": 6,
+      "config_key": "shiftTime.tradeUnion",
+      "namespace": "voga-common",
+      "fields": ["fixedTimeSec", "expireTimeSec"],
+      "only_edit_fields": ["fixedTimeSec"],
+      "example": "",
+      "prompt": "设置盘古心跳有效在麦日 fixedTimeSec=<fixedTimeSec> 并发布"
+    },
+    {
+      "key": "quit_super_trade",
+      "workflow_id": "guild-pangu-07-quit-super-trade",
+      "name": "盘古-⑦子公会退出母公会窗口",
+      "doc_index": 7,
+      "config_key": "shiftTime.quitSuperTrade",
+      "namespace": "voga-common",
+      "fields": ["fixedTimeSec", "expireTimeSec"],
+      "only_edit_fields": ["fixedTimeSec", "expireTimeSec"],
+      "example": "",
+      "prompt": "设置盘古子公会退出母公会 fixedTimeSec=<fixedTimeSec> expireTimeSec=<expireTimeSec> 并发布"
+    },
+    {
+      "key": "subtrade_salary_period",
+      "workflow_id": "guild-pangu-08-subtrade-salary-period",
+      "name": "盘古-⑧子公会薪资列表当前周期",
+      "doc_index": 8,
+      "config_key": "shiftTime.tradeUnion",
+      "namespace": "voga-common",
+      "fields": ["fixedTimeSec", "expireTimeSec"],
+      "only_edit_fields": ["fixedTimeSec"],
+      "example": "",
+      "prompt": "设置盘古子公会薪资当前周期 fixedTimeSec=<fixedTimeSec> 并发布"
+    },
+    {
+      "key": "merge_trade_time",
+      "workflow_id": "guild-pangu-09-merge-trade-time",
+      "name": "盘古-⑨修改并会时间",
+      "doc_index": 9,
+      "config_key": "shiftTime.tradeUnion",
+      "namespace": "voga-common",
+      "fields": ["fixedTimeSec", "expireTimeSec"],
+      "only_edit_fields": ["fixedTimeSec"],
+      "extra_note": "并会需同时准备两个公会 ID；时间为北京时间戳。",
+      "example": "fixedTimeSec=1793567100（11 月 2 日 0 点后）；fixedTimeSec=1792357500（10 月 19 日）",
+      "prompt": "设置盘古并会时间 fixedTimeSec=<fixedTimeSec> 并发布"
+    }
+  ]
+}

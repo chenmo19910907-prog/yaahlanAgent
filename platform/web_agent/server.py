@@ -117,7 +117,7 @@ from web_file_store import (  # noqa: E402
     resolve_upload_file,
     save_chat_attachments,
 )
-from analytics_store import get_analytics_store  # noqa: E402
+from analytics_store import get_analytics_store, record_chat_send  # noqa: E402
 from cursor_usage import (  # noqa: E402
     CursorAuthError,
     clear_user_today_live_cache,
@@ -129,7 +129,7 @@ from cursor_usage import (  # noqa: E402
     verify_session_token,
 )
 from cursor_usage_store import SHARED_USAGE_SCOPE, get_cursor_usage_store  # noqa: E402
-from web_session_store import filter_sessions_by_search, filter_sessions_by_scope, get_session_store, sort_sessions_for_display, compute_sessions_list_etag, compute_messages_page_etag, estimate_messages_page_meta, resolve_user_message_author  # noqa: E402
+from web_session_store import filter_sessions_by_search, filter_sessions_by_scope, filter_session_dicts_by_scope, get_session_store, sort_sessions_for_display, paginate_sessions_list, compute_sessions_list_etag, compute_messages_page_etag, estimate_messages_page_meta, resolve_user_message_author  # noqa: E402
 from web_run_store import (  # noqa: E402
     RUN_STATUS_DONE,
     RUN_STATUS_ERROR,
@@ -148,9 +148,16 @@ from run_progress_reply import (  # noqa: E402
 )
 from web_admin_grants import is_super_admin  # noqa: E402
 from web_admin_permission import is_web_admin, web_admin_denial_message  # noqa: E402
-from web_admin_apply import application_status_for_staff, submit_application  # noqa: E402
+from web_admin_apply import (  # noqa: E402
+    application_review_payload,
+    application_status_for_staff,
+    resolve_application,
+    submit_application,
+)
+from web_new_member_notify import spawn_maybe_notify_new_member  # noqa: E402
 from web_admin_audit_log import list_admin_audit_entries  # noqa: E402
 from web_moa_call_log import list_moa_call_entries, list_moa_call_log_operators  # noqa: E402
+from web_guild_pangu import guild_pangu_current_payload, guild_pangu_scenarios_payload  # noqa: E402
 from web_admin_manage import (  # noqa: E402
     enrich_selectable_users_with_admin_roles,
     list_admin_users,
@@ -158,6 +165,11 @@ from web_admin_manage import (  # noqa: E402
     remove_admin_list_user,
     set_admin_permissions,
     set_admin_role,
+)
+from web_super_admin_user_profile import (  # noqa: E402
+    get_user_profile_card,
+    list_super_admin_dingtalk_message_log,
+    send_super_admin_dingtalk_message,
 )
 from web_auth import authorize_request, auth_enabled, logout_current_session, _effective_client_ip  # noqa: E402
 from web_otp_auth import (  # noqa: E402
@@ -185,10 +197,13 @@ from web_agent_open_api import (  # noqa: E402
     get_open_api_task,
     is_open_api_path,
     message_preview as open_api_message_preview,
-    open_api_owner_id,
-    open_api_owner_label,
+    normalize_open_api_callback_url,
     OPEN_API_MESSAGE_SOURCE_TAG,
+    parse_open_api_submit_attachment_items,
     register_open_api_task,
+    resolve_submit_identity,
+    schedule_open_api_callback,
+    submit_title_hint,
 )
 from web_agent_open_api_user_tokens import (  # noqa: E402
     generate_user_token,
@@ -1619,11 +1634,69 @@ def _invalidate_active_run_ids_cache() -> None:
     _ACTIVE_RUN_IDS_CACHE = None
 
 
-_LITE_SESSIONS_CACHE: dict[str, tuple[float, frozenset[str], str, dict[str, Any]]] = {}
+_LITE_SESSIONS_CACHE: dict[str, tuple[float, frozenset[str], list[dict[str, Any]]]] = {}
+
+
+def _parse_sessions_list_page(qs: dict[str, list[str]]) -> tuple[int | None, int]:
+    limit_raw = (qs.get("limit") or [""])[0].strip()
+    offset_raw = (qs.get("offset") or ["0"])[0].strip()
+    limit: int | None = None
+    if limit_raw:
+        try:
+            limit = max(1, min(100, int(limit_raw)))
+        except ValueError:
+            limit = 30
+    try:
+        offset = max(0, int(offset_raw))
+    except ValueError:
+        offset = 0
+    return limit, offset
+
+
+def _lite_sessions_payload_from_full(
+    full_sessions: list[dict[str, Any]],
+    *,
+    viewer_staff_id: str | None,
+    limit: int | None,
+    offset: int,
+    scope: str = "all",
+) -> tuple[str, dict[str, Any]]:
+    scoped = filter_session_dicts_by_scope(
+        full_sessions,
+        scope,
+        viewer_staff_id=viewer_staff_id,
+    )
+    page, page_meta = paginate_sessions_list(scoped, offset=offset, limit=limit)
+    try:
+        from dingtalk_user_lookup import enrich_sessions_with_avatars
+
+        enrich_sessions_with_avatars(page)
+    except Exception:  # noqa: BLE001
+        pass
+    normalized_scope = (scope or "all").strip().lower()
+    etag = compute_sessions_list_etag(
+        page,
+        scope=normalized_scope,
+        lite=True,
+        offset=page_meta["offset"],
+        limit=page_meta["limit"] if limit is not None else None,
+        total=page_meta["total"],
+    )
+    payload: dict[str, Any] = {
+        "sessions": page,
+        "query": "",
+        "scope": normalized_scope,
+        **page_meta,
+    }
+    return etag, payload
 
 
 def _build_lite_sessions_response(
     viewer_staff_id: str | None,
+    *,
+    limit: int | None = None,
+    offset: int = 0,
+    scope: str = "all",
 ) -> tuple[str, dict[str, Any]]:
     """lite 轮询专用：跳过 derived meta 同步，并按 index mtime + 活跃 run 缓存响应。"""
     store = get_session_store()
@@ -1636,32 +1709,31 @@ def _build_lite_sessions_response(
         and cached[0] == index_mtime
         and cached[1] == active_session_ids
     ):
-        return cached[2], cached[3]
+        full_sessions = cached[2]
+    else:
+        items = store.list_sessions(enrich_names=False, sync_derived_meta=False, readonly=True)
+        try:
+            from dingtalk_user_lookup import collect_cached_staff_labels
 
-    items = store.list_sessions(enrich_names=False, sync_derived_meta=False, readonly=True)
-    try:
-        from dingtalk_user_lookup import collect_known_labels
+            known = collect_cached_staff_labels(items)
+        except Exception:  # noqa: BLE001
+            known = {}
+        full_sessions = sort_sessions_for_display([
+            {
+                **meta.to_dict(known_labels=known, viewer_staff_id=viewer_staff_id),
+                "running": meta.id in active_session_ids,
+            }
+            for meta in items
+        ])
+        _LITE_SESSIONS_CACHE[cache_key] = (index_mtime, active_session_ids, full_sessions)
 
-        known = collect_known_labels(items)
-    except Exception:  # noqa: BLE001
-        known = {}
-    sessions = sort_sessions_for_display([
-        {
-            **meta.to_dict(known_labels=known, viewer_staff_id=viewer_staff_id),
-            "running": meta.id in active_session_ids,
-        }
-        for meta in items
-    ])
-    try:
-        from dingtalk_user_lookup import enrich_sessions_with_avatars
-
-        enrich_sessions_with_avatars(sessions)
-    except Exception:  # noqa: BLE001
-        pass
-    etag = compute_sessions_list_etag(sessions, scope="all", lite=True)
-    payload: dict[str, Any] = {"sessions": sessions, "query": "", "scope": "all"}
-    _LITE_SESSIONS_CACHE[cache_key] = (index_mtime, active_session_ids, etag, payload)
-    return etag, payload
+    return _lite_sessions_payload_from_full(
+        full_sessions,
+        viewer_staff_id=viewer_staff_id,
+        limit=limit,
+        offset=offset,
+        scope=scope,
+    )
 
 
 def _resolve_active_run_for_session(session_id: str) -> ActiveRun | None:
@@ -1759,15 +1831,29 @@ def _handle_open_api_task_submit(
     client_key: str,
 ) -> None:
     message = str(body.get("message") or "").strip()
-    if not message:
+    attachment_items = parse_open_api_submit_attachment_items(body)
+    if not message and not attachment_items:
         return _open_api_response(
             handler,
-            open_api_envelope("INVALID_ARGUMENT", "message 必填"),
+            open_api_envelope("INVALID_ARGUMENT", "message 或 images/attachments 必填"),
             400,
         )
+    callback_raw = str(body.get("callback_url") or "").strip()
+    callback_url = ""
+    if callback_raw:
+        normalized = normalize_open_api_callback_url(callback_raw)
+        if not normalized:
+            return _open_api_response(
+                handler,
+                open_api_envelope("INVALID_CALLBACK_URL", "callback_url 无效或不可达"),
+                400,
+            )
+        callback_url = normalized
     session_id = str(body.get("conversation_id") or body.get("session_id") or "").strip()
-    owner_id = open_api_owner_id(client_key)
-    owner_label = open_api_owner_label(client_key)
+    identity = resolve_submit_identity(body, client_key)
+    owner_id = identity.owner_id
+    owner_label = identity.owner_label
+    session_client_key = identity.session_client_key
     store = get_session_store()
     if session_id:
         meta = store.get_session(session_id)
@@ -1786,10 +1872,10 @@ def _handle_open_api_task_submit(
             )
     else:
         meta = store.get_or_create_open_api_session(
-            client_key=client_key,
+            client_key=session_client_key,
             owner_id=owner_id,
             owner_label=owner_label,
-            title_hint=open_api_message_preview(message),
+            title_hint=submit_title_hint(message, attachment_items),
         )
         session_id = meta.id
     store.mark_open_api_session(session_id)
@@ -1809,9 +1895,20 @@ def _handle_open_api_task_submit(
         )
     run = RUN_MANAGER.create(session_id)
     try:
+        saved_attachments = save_chat_attachments(session_id, attachment_items)
+    except FileUploadError as exc:
+        run.done.set()
+        RUN_MANAGER.release_session(run)
+        return _open_api_response(
+            handler,
+            open_api_envelope("INVALID_ARGUMENT", str(exc)),
+            400,
+        )
+    try:
         _start_chat_run(
             session_id,
             message,
+            attachments=saved_attachments,
             existing_run=run,
             author_id=owner_id,
             author_label=owner_label,
@@ -1833,8 +1930,9 @@ def _handle_open_api_task_submit(
             run_id=run.run_id,
             session_id=session_id,
             client_key=client_key,
-            message_preview=open_api_message_preview(message),
+            message_preview=submit_title_hint(message, attachment_items),
             created_at=time.time(),
+            callback_url=callback_url,
         )
     )
     return _open_api_response(
@@ -1891,7 +1989,11 @@ def _handle_open_api_task_query(
         run_status=meta.status,
         final_text=snap.final_text,
         error_text=snap.error,
+        phase_line=snap.last_phase_line,
+        last_markdown=snap.last_markdown,
     )
+    if str(data.get("status") or "") in {"completed", "failed", "cancelled"}:
+        schedule_open_api_callback(task_id)
     return _open_api_response(handler, open_api_envelope("OK", "", data))
 
 
@@ -2155,6 +2257,24 @@ def _start_chat_run(
     _start_run_worker(run.run_id)
     _start_run_event_tailer(run, progress_stop=progress_stop)
     run.tailers_attached = True
+    chat_channel = (
+        "api"
+        if (source_tag or "").strip() == OPEN_API_MESSAGE_SOURCE_TAG
+        else "web"
+    )
+    record_chat_send(
+        staff_id=author_id,
+        display_name=author_label,
+        channel=chat_channel,
+        session_id=session_id,
+        props={
+            "model": agent_model,
+            "external_agents": len(external_ids),
+            "attachments": len(attachment_list),
+            "push_dingtalk": bool(push_result_to_dingtalk),
+            "reply_mode": normalized_reply_mode,
+        },
+    )
     return run
 
 
@@ -2398,6 +2518,25 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 application_status_for_staff(user.staff_id),
             )
 
+        if path == "/api/admin/apply/review":
+            user = current_web_user(self)
+            if user is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            query = parse_qs(urlparse(self.path).query)
+            token = (query.get("token") or [""])[0].strip()
+            if not token:
+                return _json_response(self, {"error": "缺少 token"}, 400)
+            payload, err = application_review_payload(
+                token,
+                viewer_staff_id=user.staff_id,
+                viewer_display_name=lookup_auth_user_display_name(
+                    user.staff_id, user.display_name
+                ),
+            )
+            if payload is None:
+                return _json_response(self, {"error": err or "无法加载申请"}, 403)
+            return _json_response(self, payload)
+
         if path == "/api/admin/users":
             user = current_web_user(self)
             if user is None:
@@ -2415,6 +2554,47 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             except Exception:  # noqa: BLE001
                 pass
             return _json_response(self, admin_payload)
+
+        if path == "/api/admin/user-profile":
+            user = current_web_user(self)
+            if user is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            qs = parse_qs(parsed.query)
+            target = str((qs.get("staffId") or [""])[0]).strip()
+            fallback = str((qs.get("displayName") or [""])[0]).strip()
+            if not target:
+                return _json_response(self, {"error": "缺少 staffId"}, 400)
+            card, err = get_user_profile_card(
+                target_staff_id=target,
+                viewer_staff_id=user.staff_id,
+                fallback_label=fallback,
+            )
+            if card is None:
+                return _json_response(self, {"error": err or "无法加载资料"}, 403)
+            return _json_response(self, {"ok": True, "profile": card})
+
+        if path == "/api/admin/user-profile/message-log":
+            user = current_web_user(self)
+            if user is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            qs = parse_qs(parsed.query)
+            target = str((qs.get("staffId") or qs.get("targetStaffId") or [""])[0]).strip()
+            limit_raw = (qs.get("limit") or ["50"])[0]
+            offset_raw = (qs.get("offset") or ["0"])[0]
+            try:
+                limit = int(limit_raw)
+                offset = int(offset_raw)
+            except ValueError:
+                return _json_response(self, {"error": "invalid limit or offset"}, 400)
+            result, err = list_super_admin_dingtalk_message_log(
+                viewer_staff_id=user.staff_id,
+                target_staff_id=target or None,
+                limit=limit,
+                offset=offset,
+            )
+            if result is None:
+                return _json_response(self, {"error": err or "无法加载记录"}, 403)
+            return _json_response(self, result)
 
         if path == "/api/admin/open-api/token":
             user = current_web_user(self)
@@ -2608,6 +2788,29 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 return _json_response(self, {"error": str(exc)}, 400)
             return _json_response(self, payload)
 
+        if path == "/api/usage/question-rank":
+            viewer = current_web_user(self)
+            if viewer is None:
+                return _json_response(self, {"error": "请先登录"}, 401)
+            qs = parse_qs(parsed.query)
+            range_key = str((qs.get("range") or ["day"])[0]).strip() or "day"
+            start_date = str((qs.get("startDate") or [""])[0]).strip()
+            end_date = str((qs.get("endDate") or [""])[0]).strip()
+            try:
+                limit = int(str((qs.get("limit") or ["50"])[0]).strip() or "50")
+            except ValueError:
+                limit = 50
+            try:
+                payload = get_analytics_store().summarize_question_rank(
+                    range_key=range_key,
+                    start_date=start_date,
+                    end_date=end_date,
+                    limit=limit,
+                )
+            except ValueError as exc:
+                return _json_response(self, {"error": str(exc)}, 400)
+            return _json_response(self, payload)
+
         if path == "/api/usage/cursor-session":
             viewer = current_web_user(self)
             if viewer is None:
@@ -2651,6 +2854,24 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
 
         if path == "/api/meta":
             return _json_response(self, _platform_meta())
+
+        if path == "/api/guild/pangu/scenarios":
+            try:
+                return _json_response(self, guild_pangu_scenarios_payload())
+            except (RuntimeError, ValueError) as exc:
+                logger.exception("guild pangu scenarios")
+                return _json_response(self, {"error": str(exc)}, 500)
+
+        if path == "/api/guild/pangu/current":
+            qs = parse_qs(parsed.query)
+            scenario_key = str((qs.get("scenario") or [""])[0]).strip()
+            try:
+                return _json_response(self, guild_pangu_current_payload(scenario_key))
+            except ValueError as exc:
+                return _json_response(self, {"error": str(exc)}, 400)
+            except (RuntimeError, KeyError) as exc:
+                logger.exception("guild pangu current")
+                return _json_response(self, {"error": str(exc)}, 500)
 
         if path == "/api/catalog":
             try:
@@ -2824,26 +3045,37 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             qs = parse_qs(parsed.query)
             lite_raw = (qs.get("lite") or ["0"])[0].strip().lower()
             lite = lite_raw in ("1", "true", "yes")
-            if not lite:
+            page_limit, page_offset = _parse_sessions_list_page(qs)
+            search_q = (qs.get("q") or [""])[0].strip()
+            fast_list = lite or bool(search_q)
+            if not fast_list:
                 _maybe_sync_conversations(parsed)
             store = get_session_store()
             viewer = current_web_user(self)
             viewer_staff_id = viewer.staff_id if viewer is not None else None
-            search_q = (qs.get("q") or [""])[0].strip()
             scope = (qs.get("scope") or ["all"])[0].strip().lower()
-            if lite and not search_q and scope == "all":
-                etag, payload = _build_lite_sessions_response(viewer_staff_id)
+            if lite and not search_q and scope in ("all", "mine"):
+                etag, payload = _build_lite_sessions_response(
+                    viewer_staff_id,
+                    limit=page_limit,
+                    offset=page_offset,
+                    scope=scope,
+                )
                 if _if_none_match_satisfied(self, etag):
                     return _respond_not_modified(self, etag=etag)
                 return _json_response(self, payload, etag=etag)
-            items = store.list_sessions(enrich_names=False, sync_derived_meta=not lite)
+            items = store.list_sessions(
+                enrich_names=False,
+                sync_derived_meta=not fast_list,
+                readonly=fast_list,
+            )
             try:
-                from dingtalk_user_lookup import collect_all_staff_labels, collect_known_labels
+                from dingtalk_user_lookup import collect_all_staff_labels, collect_cached_staff_labels
 
-                if lite:
-                    known = collect_known_labels(items)
+                if fast_list:
+                    known = collect_cached_staff_labels(items)
                 else:
-                    known = collect_all_staff_labels(items, try_api_for_ascii=not lite)
+                    known = collect_all_staff_labels(items, try_api_for_ascii=True)
             except Exception:  # noqa: BLE001
                 known = {}
             items = filter_sessions_by_scope(
@@ -2877,23 +3109,31 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 }
                 for meta, hit in pairs
             ])
+            page, page_meta = paginate_sessions_list(
+                sessions,
+                offset=page_offset,
+                limit=page_limit,
+            )
             try:
                 from dingtalk_user_lookup import enrich_sessions_with_avatars
 
-                enrich_sessions_with_avatars(sessions)
+                enrich_sessions_with_avatars(page)
             except Exception:  # noqa: BLE001
                 pass
             etag = compute_sessions_list_etag(
-                sessions,
+                page,
                 query=search_q,
                 scope=scope,
                 lite=lite,
+                offset=page_meta["offset"],
+                limit=page_meta["limit"] if page_limit is not None else None,
+                total=page_meta["total"],
             )
             if _if_none_match_satisfied(self, etag):
                 return _respond_not_modified(self, etag=etag)
             return _json_response(
                 self,
-                {"sessions": sessions, "query": search_q, "scope": scope},
+                {"sessions": page, "query": search_q, "scope": scope, **page_meta},
                 etag=etag,
             )
 
@@ -2931,6 +3171,33 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             if _if_none_match_satisfied(self, etag):
                 return _respond_not_modified(self, etag=etag)
             return _json_response(self, payload, etag=etag)
+
+        m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})/message-search$", path)
+        if m:
+            session_id = m.group(1)
+            store = get_session_store()
+            session_meta = store.get_session(session_id)
+            if session_meta is None:
+                return _json_response(self, {"error": "session not found"}, 404)
+            qs = parse_qs(parsed.query)
+            query = (qs.get("q") or [""])[0].strip()
+            limit_raw = (qs.get("limit") or [""])[0].strip()
+            limit = int(limit_raw) if limit_raw.isdigit() else 50
+            hits = store.search_message_hits(session_id, query, limit=limit)
+            return _json_response(
+                self,
+                {
+                    "query": query,
+                    "total": len(hits),
+                    "matches": [
+                        {
+                            "timestamp": h.message_timestamp,
+                            "snippet": h.snippet,
+                        }
+                        for h in hits
+                    ],
+                },
+            )
 
         m = re.match(rf"^/api/sessions/({SESSION_ID_PATTERN})/messages$", path)
         if m:
@@ -3243,11 +3510,22 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 return _json_response(self, {"error": "未登录"}, 401)
             if is_web_admin(staff_id=user.staff_id):
                 return _json_response(self, {"error": "你已是管理员"}, 400)
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                body = {}
+            requested_raw = body.get("requestedPermissions")
+            if requested_raw is None:
+                requested_raw = body.get("permissions")
+            requested_permissions = (
+                list(requested_raw) if isinstance(requested_raw, list) else None
+            )
             result, err = submit_application(
                 staff_id=user.staff_id,
                 display_name=lookup_auth_user_display_name(
                     user.staff_id, user.display_name
                 ),
+                requested_permissions=requested_permissions,
             )
             if result is None:
                 return _json_response(self, {"error": err or "申请失败"}, 400)
@@ -3261,6 +3539,27 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             if err:
                 payload["warning"] = err
             return _json_response(self, payload)
+
+        if path == "/api/admin/apply/resolve":
+            user = current_web_user(self)
+            if user is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            token = str(body.get("token") or "").strip().lower()
+            if not token:
+                return _json_response(self, {"error": "缺少 token"}, 400)
+            approve = body.get("approve") is True
+            app, err = resolve_application(
+                token=token,
+                approver_staff_id=user.staff_id,
+                approve=approve,
+            )
+            if app is None:
+                return _json_response(self, {"error": err or "审批失败"}, 400)
+            return _json_response(self, {"ok": True, "application": app})
 
         if path == "/api/admin/open-api/token/generate":
             user = current_web_user(self)
@@ -3280,6 +3579,28 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                     **meta,
                 },
             )
+
+        if path == "/api/admin/user-profile/send-message":
+            user = current_web_user(self)
+            if user is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            target = str(body.get("staffId") or body.get("targetStaffId") or "").strip()
+            message = str(body.get("message") or body.get("text") or "").strip()
+            result, err = send_super_admin_dingtalk_message(
+                operator_staff_id=user.staff_id,
+                operator_display_name=lookup_auth_user_display_name(
+                    user.staff_id, user.display_name
+                ),
+                target_staff_id=target,
+                message=message,
+            )
+            if result is None:
+                return _json_response(self, {"error": err or "发送失败"}, 400)
+            return _json_response(self, result)
 
         if path == "/api/admin/quit":
             user = current_web_user(self)
@@ -3460,6 +3781,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             author_id, author_label = _session_owner_from_user(viewer)
             if author_id:
                 _touch_user_avatar_cache(author_id, author_label)
+                spawn_maybe_notify_new_member(author_id, author_label)
             push_dingtalk_staff_id = ""
             if push_result_to_dingtalk:
                 if viewer is None or not (viewer.staff_id or "").strip():
@@ -3507,19 +3829,6 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 RUN_MANAGER.release_session(run)
                 logger.exception("启动 Web chat 失败 session=%s", session_id)
                 return _json_response(self, {"error": str(exc)}, 500)
-            _record_analytics(
-                self,
-                event="chat_send",
-                page="/chat.html",
-                props={
-                    "session_id": session_id,
-                    "model": agent_model,
-                    "external_agents": len(enabled_external_agents),
-                    "attachments": len(saved_attachments),
-                    "push_dingtalk": push_result_to_dingtalk,
-                    "reply_mode": reply_mode,
-                },
-            )
             return _json_response(self, {"run_id": run.run_id, "session_id": session_id})
 
         if path == "/api/usage/cursor-session":
@@ -3929,6 +4238,16 @@ def serve(host: str, port: int) -> None:
     init_agent_runtime()
     recover_active_runs_on_startup()
     _start_stale_run_sweeper()
+
+    def _backfill_super_admin_message_log() -> None:
+        try:
+            from web_super_admin_message_log_backfill import ensure_super_admin_message_log_backfill
+
+            ensure_super_admin_message_log_backfill()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("超管资料卡发送记录回溯: %s", exc)
+
+    threading.Thread(target=_backfill_super_admin_message_log, name="super-admin-msg-backfill", daemon=True).start()
     server = ThreadingHTTPServer((host, port), WebAgentHandler)
     print(f"Web Agent: http://{host}:{port}/")
 

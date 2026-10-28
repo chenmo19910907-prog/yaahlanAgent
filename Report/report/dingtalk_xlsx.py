@@ -197,6 +197,21 @@ def write_workbook_xlsx(
 
 
 def guess_output_stem(sheets: list[tuple[str, list[list[Any]]]]) -> str:
+    _scripts = _REPORT_ROOT.parent / "scripts"
+    if str(_scripts) not in sys.path:
+        sys.path.insert(0, str(_scripts))
+    from version_case_workbook_naming import (  # noqa: E402
+        build_version_case_workbook_title,
+        compose_feature_overview,
+        parse_version_tuple,
+    )
+
+    sheet_names = [n for n, _ in sheets]
+    sheet1_rows = None
+    for name, rows in sheets:
+        if name.strip() in ("Sheet1", "sheet1"):
+            sheet1_rows = rows
+            break
     for _name, rows in sheets:
         for row in rows[:6]:
             if not isinstance(row, list):
@@ -207,7 +222,14 @@ def guess_output_stem(sheets: list[tuple[str, list[list[Any]]]]) -> str:
                 text = str(cell)
                 m = _VERSION_STEM_RE.search(text)
                 if m:
-                    return f"{m.group(1)}版本用例"
+                    ver = parse_version_tuple(f"{m.group(1)}版本用例")
+                    if not ver:
+                        return f"{m.group(1)}版本用例"
+                    overview = compose_feature_overview(
+                        sheet_names=sheet_names,
+                        sheet1_rows=sheet1_rows,
+                    )
+                    return build_version_case_workbook_title(ver, overview)
     return "钉钉版本用例"
 
 

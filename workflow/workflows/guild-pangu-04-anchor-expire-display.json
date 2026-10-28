@@ -1,0 +1,35 @@
+{
+  "id": "guild-pangu-04-anchor-expire-display",
+  "name": "盘古-④公会长端主播到期展示",
+  "category": "公会常用盘古配置工具（workflow）",
+  "description": "预上线：改 voga-common.shiftTime.tradeAnchorExpire 的 fixedTimeSec，控制公会长端主播到期日、主播自主退会时间展示（偏移后日期）。示例：1789423200。 验收：公会长端主播列表/详情到期日与偏移时间一致。",
+  "version": 1,
+  "params": {
+    "fixedTimeSec": {
+      "label": "fixedTimeSec",
+      "type": "string",
+      "required": true,
+      "prompt": "Unix 秒（北京时间戳）"
+    },
+    "expireTimeSec": {
+      "label": "expireTimeSec",
+      "type": "string",
+      "required": false,
+      "prompt": "Unix 秒；可与 fixedTimeSec 相同"
+    }
+  },
+  "steps": [
+    {
+      "id": "apply_pangu_shift",
+      "name": "改 MSE 配置并发布",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/guild_pangu_shift_time_apply.py --scenario \"anchor_expire_display\" --fixed-time-sec \"{{fixedTimeSec}}\" --expire-time-sec \"{{expireTimeSec}}\"",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

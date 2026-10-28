@@ -84,6 +84,15 @@ def _emit_phase(store: Any, run_id: str, phase_line: str) -> None:
     _emit(store, run_id, {"type": "status", "phase_line": line})
 
 
+def _notify_open_api_terminal(run_id: str) -> None:
+    try:
+        from web_agent_open_api import schedule_open_api_callback  # noqa: WPS433
+
+        schedule_open_api_callback(run_id)
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def _terminate_worker_process(worker_pid: int) -> None:
     """终止 worker 及其子进程（Agent Shell / python 脚本）。"""
     from run_child_processes import terminate_process_tree
@@ -487,6 +496,7 @@ def _execute_web_run_body(
                 done_event["dingtalk_push"] = dingtalk_push
             _emit(store, run_id, done_event)
             store.mark_status(run_id, RUN_STATUS_DONE)
+            _notify_open_api_terminal(run_id)
             _record_chat_complete(
                 meta,
                 session_id=session_id,
@@ -534,6 +544,7 @@ def _execute_web_run_body(
             done_event["dingtalk_push"] = dingtalk_push
         _emit(store, run_id, done_event)
         store.mark_status(run_id, RUN_STATUS_DONE)
+        _notify_open_api_terminal(run_id)
         _record_chat_complete(meta, session_id=session_id, run_id=run_id, reply_text=final_text)
         status = "ok"
         return 0
@@ -557,6 +568,7 @@ def _execute_web_run_body(
         _append_assistant(final_text)
         _emit(store, run_id, {"type": "done", "text": final_text})
         store.mark_status(run_id, RUN_STATUS_INTERRUPTED)
+        _notify_open_api_terminal(run_id)
         status = "interrupted"
         return 0
     except Exception as exc:  # noqa: BLE001
@@ -586,6 +598,7 @@ def _execute_web_run_body(
             {"type": "error", "message": err_msg, "text": final_text},
         )
         store.mark_status(run_id, RUN_STATUS_ERROR)
+        _notify_open_api_terminal(run_id)
         return 1
     finally:
         global _ACTIVE_SESSION

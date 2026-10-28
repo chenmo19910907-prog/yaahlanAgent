@@ -1,0 +1,48 @@
+{
+  "id": "guild_pangu_shift_config",
+  "name": "公会盘古时间偏移配置",
+  "category": "公会常用盘古配置工具（workflow）",
+  "description": "预上线 stage：按业务场景改 MSE shiftTime 配置（白名单 + fixedTimeSec / expireTimeSec / shiftTime），保存并全量发布。",
+  "version": 1,
+  "params": {
+    "scenario": {
+      "label": "业务场景",
+      "type": "string",
+      "required": true
+    },
+    "whiteUsers": {
+      "label": "whiteUsers",
+      "type": "string",
+      "required": false
+    },
+    "fixedTimeSec": {
+      "label": "fixedTimeSec",
+      "type": "string",
+      "required": false
+    },
+    "expireTimeSec": {
+      "label": "expireTimeSec",
+      "type": "string",
+      "required": false
+    },
+    "shiftTime": {
+      "label": "shiftTime",
+      "type": "string",
+      "required": false
+    }
+  },
+  "steps": [
+    {
+      "id": "apply_pangu_shift",
+      "name": "改 MSE 配置并发布",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/guild_pangu_shift_time_apply.py --scenario \"{{scenario}}\" --white-users \"{{whiteUsers}}\" --fixed-time-sec \"{{fixedTimeSec}}\" --expire-time-sec \"{{expireTimeSec}}\" --shift-time \"{{shiftTime}}\"",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

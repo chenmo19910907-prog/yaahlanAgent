@@ -1,0 +1,35 @@
+{
+  "id": "guild-pangu-01-salary-prep-window",
+  "name": "盘古-①薪资预提窗口",
+  "category": "公会常用盘古配置工具（workflow）",
+  "description": "预上线：改 Application.shiftTime.isAllowedTimeForSalaryPrepayment 的 fixedTimeSec/expireTimeSec，控制当前是否允许薪资预提（时间拦截）。改后保存并全量发布。 验收：公会长/主播端预提入口与算薪周期拦截符合偏移后的「当前日」；whiteUsers 内测试号优先生效。",
+  "version": 1,
+  "params": {
+    "fixedTimeSec": {
+      "label": "fixedTimeSec",
+      "type": "string",
+      "required": true,
+      "prompt": "Unix 秒（北京时间戳）"
+    },
+    "expireTimeSec": {
+      "label": "expireTimeSec",
+      "type": "string",
+      "required": false,
+      "prompt": "Unix 秒；可与 fixedTimeSec 相同"
+    }
+  },
+  "steps": [
+    {
+      "id": "apply_pangu_shift",
+      "name": "改 MSE 配置并发布",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/guild_pangu_shift_time_apply.py --scenario \"salary_prep_window\" --fixed-time-sec \"{{fixedTimeSec}}\" --expire-time-sec \"{{expireTimeSec}}\"",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "id": "guild-pangu-05-gift-statistic-date",
+  "name": "盘古-⑤收礼statistic_date",
+  "category": "公会常用盘古配置工具（workflow）",
+  "description": "预上线：通过 shiftTime.tradeUnion 偏移，使收礼写入 statistic_date 的「礼物日期」变化；在公会长主播表现页查看。 验收：送礼后 statistic_date / 表现页礼物日期按偏移后日切。",
+  "version": 1,
+  "params": {
+    "fixedTimeSec": {
+      "label": "fixedTimeSec",
+      "type": "string",
+      "required": true,
+      "prompt": "Unix 秒（北京时间戳）"
+    },
+    "expireTimeSec": {
+      "label": "expireTimeSec",
+      "type": "string",
+      "required": false,
+      "prompt": "Unix 秒；可与 fixedTimeSec 相同"
+    }
+  },
+  "steps": [
+    {
+      "id": "apply_pangu_shift",
+      "name": "改 MSE 配置并发布",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/guild_pangu_shift_time_apply.py --scenario \"gift_statistic_date\" --fixed-time-sec \"{{fixedTimeSec}}\" --expire-time-sec \"{{expireTimeSec}}\"",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

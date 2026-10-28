@@ -125,7 +125,11 @@ _METHOD_OPERATION_FALLBACK: dict[str, str] = {
     "addVipValue": "VIP经验值-增加",
     "delVipInfo": "VIP等级-清除VIP信息",
     "dispatchTryVip": "VIP体验卡-下发",
+    "changeAreaForTest": "用户-修改大区",
+    "intimateHomePage": "亲密关系-主页查询",
+    "testChangeCpLevel": "CP-调整等级（测试）",
 }
+_METHOD_DOT_SUFFIX_RE = re.compile(r"^[\w-]+\s*[·•]\s*[\w-]+$")
 _method_param_labels_cache: dict[str, list[str]] | None = None
 _method_operation_names_cache: dict[str, str] | None = None
 _GENERATIVE_REGISTRY_PATH = REPO_ROOT / "MOA-generative" / "config" / "registry.json"
@@ -154,10 +158,15 @@ def _is_technical_operation_label(label: str, *, method: str = "") -> bool:
     if s.lower().endswith(".payload"):
         return True
     meth = (method or "").strip()
+    if meth and not _contains_cjk(s):
+        if re.match(rf"^{re.escape(meth)}\s*[·•]\s*[\w-]+$", s):
+            return True
     if meth and s == meth and not _contains_cjk(s):
         return True
     if meth and not _contains_cjk(s):
         if re.fullmatch(re.escape(meth) + r"(?:[._][\w-]+)*", s):
+            return True
+        if _METHOD_DOT_SUFFIX_RE.match(s):
             return True
     return False
 
@@ -363,6 +372,53 @@ def _account_in_summary(account: str, summary: str) -> bool:
 
 def _is_agent_turn_entry(entry: dict[str, Any]) -> bool:
     return str(entry.get("operationKey") or "").startswith("agent-turn#")
+
+
+def _reattribute_moa_entries_in_window(
+    entries: list[dict[str, Any]],
+    *,
+    account: str,
+    pivot_ts: str,
+    prefer_staff: str,
+    prefer_name: str,
+    batch_key: str = "",
+    run_id: str = "",
+    window_sec: float = 900.0,
+) -> int:
+    """钉钉/Web 任务结束：同账号时间窗内误挂 run/调用人 的 MOA 明细改回当前发令人。"""
+    pivot = _parse_ts_epoch(pivot_ts)
+    staff = (prefer_staff or "").strip()
+    name = (prefer_name or "").strip() or _lookup_operator_display_name(staff)
+    batch = (batch_key or "").strip()
+    rid = (run_id or "").strip()
+    if pivot is None or not staff or not (account or "").strip():
+        return 0
+    updated = 0
+    for item in entries:
+        if not str(item.get("method") or "").strip():
+            continue
+        if _is_agent_turn_entry(item):
+            continue
+        if not _account_in_summary(account, str(item.get("accountSummary") or "")):
+            continue
+        ts = _parse_ts_epoch(str(item.get("ts") or ""))
+        if ts is None or abs(ts - pivot) > window_sec:
+            continue
+        cur_staff = str(item.get("operatorStaffId") or "").strip()
+        cur_run = str(item.get("runId") or "").strip()
+        if cur_staff == staff and (not rid or cur_run == rid):
+            continue
+        if rid and cur_run == rid:
+            continue
+        item["operatorStaffId"] = staff
+        if name:
+            item["operatorName"] = name
+        if batch:
+            item["batchKey"] = batch
+        if rid:
+            item["runId"] = rid
+        updated += 1
+    return updated
 
 
 def _dedupe_moa_and_agent_turn_shadow(
@@ -789,6 +845,25 @@ def build_semantic_operation_summary(
         if batch_n > 1:
             return f"{subject}各增加 {num} {kind}"
         return f"用户 {uid} 增加 {num} {kind}"
+    if meth == "changeAreaForTest" and (uid or batch_n > 1):
+        area = (
+            _param_from_summary(params_summary, "2")
+            or params.get("2")
+            or params.get("area")
+            or "?"
+        )
+        if batch_n > 1:
+            return f"{subject}各切换大区 {area}"
+        return f"用户 {uid} 切换大区 {area}"
+    if meth == "intimateHomePage" and (uid or batch_n > 1):
+        if batch_n > 1:
+            return f"{subject}各查询亲密关系主页"
+        return f"用户 {uid} 查询亲密关系主页"
+    if meth == "testChangeCpLevel" and (uid or batch_n > 1):
+        level = _param_from_summary(params_summary, "p4") or params.get("p4") or "?"
+        if batch_n > 1:
+            return f"{subject}各调整 CP 等级至 {level}"
+        return f"用户 {uid} 调整 CP 等级至 {level}"
 
     if uid and params.get("num"):
         reg = _method_operation_name(meth)
@@ -1771,7 +1846,16 @@ def finalize_dingtalk_call_log(
                 entries=entries,
             )
 
-        if account:
+        if account and staff:
+            _reattribute_moa_entries_in_window(
+                entries,
+                account=account,
+                pivot_ts=pivot_ts,
+                prefer_staff=staff,
+                prefer_name=name,
+                batch_key=batch,
+                run_id=rid,
+            )
             _dedupe_moa_and_agent_turn_shadow(
                 entries,
                 account=account,

@@ -67,6 +67,20 @@ IM_MESSAGE_TYPE_BILINGUAL: dict[int, dict[str, str]] = {
 }
 
 
+def normalize_im_white_list(user_ids: str) -> str:
+    """将 userId 列表规范为 addIm.whiteList 逗号分隔字符串。"""
+    raw = str(user_ids or "").replace("\n", ",").replace(" ", ",").replace("，", ",")
+    parts = [p.strip() for p in raw.split(",") if p.strip()]
+    if not parts:
+        raise ValueError("白名单 userId 不能为空")
+    normalized: list[str] = []
+    for part in parts:
+        if not part.isdigit():
+            raise ValueError(f"非法 userId: {part!r}")
+        normalized.append(part)
+    return ",".join(normalized)
+
+
 def build_add_im_payload(
     *,
     name: str,
@@ -121,6 +135,83 @@ def build_add_im_payload(
         "bgColor": bg_color,
         "area": area,
     }
+
+
+def create_im_task(
+    *,
+    name: str,
+    msg_type: int,
+    user_ids: str | None = None,
+    white_list: str = "",
+    user_type: int | None = None,
+    delivery_type: int = IM_SCHEDULED_DELIVERY_TYPE,
+    send_time_ms: int | None = None,
+    start_offset_minutes: int = 1,
+    area: str = "MENA",
+    msg_en: str | None = None,
+    msg_ar: str | None = None,
+    image_en: str = "",
+    image_ar: str = "",
+    goto_url: str = "",
+    bg_color: str = "",
+    dry_run: bool = False,
+    timeout_s: float = 30.0,
+) -> dict[str, Any]:
+    """创建单条 IM 任务；指定 user_ids 时默认 userType=3（白名单用户）并写入 whiteList。"""
+    task_name = str(name or "").strip()
+    if not task_name:
+        raise ValueError("任务名称 name 不能为空")
+
+    resolved_white_list = white_list
+    if user_ids:
+        resolved_white_list = normalize_im_white_list(user_ids)
+    if resolved_white_list and user_type is None:
+        user_type = 3
+    if user_type is None:
+        user_type = 2
+
+    if start_offset_minutes < 1:
+        raise ValueError("start_offset_minutes 至少为 1")
+    if send_time_ms is None:
+        send_time_ms = int(time.time() * 1000) + start_offset_minutes * 60_000
+
+    payload = build_add_im_payload(
+        name=task_name,
+        msg_type=msg_type,
+        user_type=user_type,
+        delivery_type=delivery_type,
+        send_time_ms=send_time_ms,
+        area=area,
+        msg_en=msg_en,
+        msg_ar=msg_ar,
+        image_en=image_en,
+        image_ar=image_ar,
+        goto_url=goto_url,
+        bg_color=bg_color,
+        white_list=resolved_white_list,
+    )
+    summary: dict[str, Any] = {
+        "name": task_name,
+        "area": area,
+        "messageType": msg_type,
+        "messageTypeLabel": IM_MESSAGE_TYPES.get(msg_type),
+        "userType": user_type,
+        "userTypeLabel": IM_USER_TYPES.get(user_type),
+        "deliveryType": delivery_type,
+        "deliveryTypeLabel": IM_DELIVERY_TYPES.get(delivery_type),
+        "whiteList": resolved_white_list,
+        "sendTimeMs": send_time_ms,
+        "sendTimeLocal": datetime.fromtimestamp(send_time_ms / 1000).strftime("%Y-%m-%d %H:%M:%S"),
+        "payload": payload,
+    }
+    if dry_run:
+        summary["status"] = "dry_run"
+        return summary
+
+    resp = add_im_task(payload, timeout_s=timeout_s)
+    summary["status"] = "created"
+    summary["response"] = resp
+    return summary
 
 
 def add_im_task(payload: dict[str, Any], *, timeout_s: float = 30.0) -> dict[str, Any]:

@@ -109,6 +109,40 @@ def send_robot_private_text(
     )
 
 
+def send_robot_private_action_card2(
+    staff_id: str,
+    *,
+    title: str,
+    text: str,
+    action_title1: str,
+    action_url1: str,
+    action_title2: str,
+    action_url2: str,
+    client: Any | None = None,
+    robot_code: str | None = None,
+) -> None:
+    """向指定用户私聊发送双按钮 ActionCard（msgKey=sampleActionCard2）。"""
+    body_text = (text or "").strip()
+    title_text = (title or "").strip() or "Web Agent"
+    if not body_text:
+        raise ValueError("text 不能为空")
+    _send_robot_private(
+        staff_id,
+        msg_key="sampleActionCard2",
+        msg_param={
+            "title": title_text,
+            "text": body_text,
+            "actionTitle1": (action_title1 or "").strip() or "确定",
+            "actionURL1": (action_url1 or "").strip(),
+            "actionTitle2": (action_title2 or "").strip() or "取消",
+            "actionURL2": (action_url2 or "").strip(),
+        },
+        client=client,
+        robot_code=robot_code,
+        log_label="ActionCard",
+    )
+
+
 def send_robot_private_markdown(
     staff_id: str,
     title: str,

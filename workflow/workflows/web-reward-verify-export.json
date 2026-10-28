@@ -1,0 +1,36 @@
+{
+  "id": "web-reward-verify-export",
+  "name": "奖励验收-导出钉钉表格",
+  "category": "奖励验收",
+  "description": "将已记录的 baseline/after 全量资产快照导出为钉钉在线表格（Agent 导出目录）。",
+  "version": 1,
+  "params": {
+    "sessionId": {
+      "label": "Web 会话 ID",
+      "type": "string",
+      "required": true,
+      "prompt": "如 a01e870f16454ed4"
+    },
+    "slot": {
+      "label": "slot",
+      "type": "string",
+      "required": false,
+      "default": "baseline",
+      "prompt": "baseline 或 after"
+    }
+  },
+  "steps": [
+    {
+      "id": "export",
+      "name": "导出钉钉表格",
+      "run": {
+        "type": "shell",
+        "command": "python3 platform/web_agent/web_reward_verify.py export --session-id {{sessionId}} --slot {{slot}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

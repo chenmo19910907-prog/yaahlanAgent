@@ -59,8 +59,17 @@ def _normalize_ids(raw: object) -> list[str]:
     return ids
 
 
+def _allowlist_source_mtime() -> float:
+    mtimes: list[float] = []
+    for path in (ALLOWLIST_PATH, ALLOWLIST_LOCAL_PATH):
+        if path.is_file():
+            mtimes.append(path.stat().st_mtime)
+    return max(mtimes) if mtimes else 0.0
+
+
 @lru_cache(maxsize=1)
-def load_code_modify_allowlist() -> CodeModifyAllowlist:
+def _load_code_modify_allowlist_cached(source_mtime: float) -> CodeModifyAllowlist:
+    del source_mtime  # 仅用于按文件 mtime 失效缓存（跨进程写入后自动重读）
     data: dict[str, object] = {}
     if ALLOWLIST_PATH.is_file():
         data.update(json.loads(ALLOWLIST_PATH.read_text(encoding="utf-8")))
@@ -79,8 +88,12 @@ def load_code_modify_allowlist() -> CodeModifyAllowlist:
     )
 
 
+def load_code_modify_allowlist() -> CodeModifyAllowlist:
+    return _load_code_modify_allowlist_cached(_allowlist_source_mtime())
+
+
 def reload_code_modify_allowlist() -> CodeModifyAllowlist:
-    load_code_modify_allowlist.cache_clear()
+    _load_code_modify_allowlist_cached.cache_clear()
     return load_code_modify_allowlist()
 
 

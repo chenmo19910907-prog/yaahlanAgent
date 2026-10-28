@@ -220,20 +220,16 @@ def force_restart_web_agent(*, wait_s: float = FORCE_RESTART_WAIT_S) -> WebAgent
 def format_force_restart_reply(outcome: WebAgentRestartOutcome) -> str:
     if not outcome.ok:
         return f"❌ Web Agent 重启失败：{outcome.message}"
-    _, port = _load_web_agent_bind()
     return (
         "Web Agent 已重启完成，服务运行正常。\n"
-        f"{outcome.message}\n"
-        f"本机访问：http://127.0.0.1:{port}/"
+        f"{outcome.message}"
     )
 
 
 def format_deferred_web_restart_reply() -> str:
     """Web 端先落盘回复再异步重启，避免 SSE 中断后页面卡在执行中。"""
-    _, port = _load_web_agent_bind()
     return (
         "Web Agent 重启已提交，约数秒内完成。\n"
-        f"本机访问：http://127.0.0.1:{port}/\n"
         "本页将自动结束「执行中」，无需手动刷新。"
     )
 

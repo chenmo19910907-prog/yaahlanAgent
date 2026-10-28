@@ -15,6 +15,7 @@ if str(WEB_AGENT_DIR) not in __import__("sys").path:
 
 from web_moa_call_log import (  # noqa: E402
     _dedupe_moa_and_agent_turn_shadow,
+    _reattribute_moa_entries_in_window,
     _extract_account_hint,
     _load_entries,
     _operation_label,
@@ -240,6 +241,26 @@ class WebMoaCallLogTests(unittest.TestCase):
             "生成式MOA-跨房PK赛况信息",
         )
 
+    def test_method_dot_service_operation_shows_semantic_chinese(self) -> None:
+        self.assertEqual(
+            format_operation_display(
+                "intimateHomePage · intimate-api",
+                method="intimateHomePage",
+                params_summary="userId=100301334",
+                account_summary="100301334",
+            ),
+            "用户 100301334 查询亲密关系主页",
+        )
+        self.assertEqual(
+            format_operation_display(
+                "testChangeCpLevel · cp-moa",
+                method="testChangeCpLevel",
+                params_summary="p1=100301334，p4=9",
+                account_summary="100301334",
+            ),
+            "用户 100301334 调整 CP 等级至 9",
+        )
+
     def test_account_hint_omits_momo_id(self) -> None:
         payload = {
             "momoId": "df4c6f364f9fcae3",
@@ -364,7 +385,7 @@ class WebMoaCallLogTests(unittest.TestCase):
         self.assertEqual(rows[0]["operatorName"], "孙冰川")
         self.assertEqual(rows[0]["method"], "dispatchTryVip")
 
-    def test_audit_context_resolves_without_run_env(self) -> None:
+    def test_audit_context_no_active_fallback_without_hint(self) -> None:
         import os
         from unittest.mock import patch
 
@@ -388,6 +409,68 @@ class WebMoaCallLogTests(unittest.TestCase):
                     "WEB_AGENT_CALLER_NAME",
                 ):
                     os.environ.pop(key, None)
+                publish_audit_context(
+                    batch_key="web:other_session",
+                    run_id="web:run_other",
+                    operator_staff_id="01302434415723305026",
+                    operator_name="孙晓东",
+                    source="web",
+                )
+                self.assertIsNone(resolve_audit_context())
+
+    def test_finalize_reattributes_misassigned_moa_in_window(self) -> None:
+        with self._patch_log():
+            record_tool_call(
+                source="moa",
+                response={"ec": 200, "result": {"ec": 0}},
+                operation="用户 100414599 发放钻石",
+                account_summary="100414599",
+                service_url="/service/voga-mts-user-account-stage",
+                method="provideDiamond",
+                run_id="web:wrong_run",
+                batch_key="web:93abf6165aac4681",
+                operator_staff_id="01302434415723305026",
+                operator_name="孙晓东",
+                entry_ts_override="2026-10-27T09:36:50+00:00",
+            )
+            finalize_dingtalk_call_log(
+                run_id="dingtalk:liu_cp",
+                batch_key="cid:test:user:0130310828673242",
+                sender_staff_id="0130310828673242",
+                sender_name="刘哲",
+                user_text="给100414599加钻石",
+                assistant_text="**100414599** 已发放 **1 亿** 钻石",
+                ts_iso="2026-10-27T09:37:00+00:00",
+            )
+            rows = _load_entries()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["operatorName"], "刘哲")
+        self.assertEqual(rows[0]["runId"], "dingtalk:liu_cp")
+
+    def test_audit_context_resolves_without_run_env(self) -> None:
+        import os
+        from unittest.mock import patch
+
+        from web_agent_audit_context import publish_audit_context, resolve_audit_context
+
+        with tempfile.TemporaryDirectory() as td:
+            audit = Path(td)
+            active = audit / "active.json"
+            by_batch = audit / "by_batch"
+            patches = patch.multiple(
+                "web_agent_audit_context",
+                AUDIT_DIR=audit,
+                ACTIVE_PATH=active,
+                BY_BATCH_DIR=by_batch,
+            )
+            with patches:
+                for key in (
+                    "WEB_AGENT_BATCH_KEY",
+                    "WEB_AGENT_CALLER_STAFF_ID",
+                    "WEB_AGENT_CALLER_NAME",
+                ):
+                    os.environ.pop(key, None)
+                os.environ["WEB_AGENT_RUN_ID"] = "dingtalk:msgAuditCtx"
                 publish_audit_context(
                     batch_key="cid:test:user:auditctx",
                     run_id="dingtalk:msgAuditCtx",

@@ -7,6 +7,7 @@ from pathlib import Path
 
 from family_join_defaults import family_join_prompt_hint, gateway_family_join_rule_line
 from gift_defaults import gateway_gift_rule_line
+from im_activity_defaults import gateway_im_whitelist_rule_line
 from moa_registry_guard import looks_like_moa_registry_intent, moa_registry_instruction
 
 GATEWAY_DIR = Path(__file__).resolve().parent
@@ -21,6 +22,7 @@ EXPORT_CONFIG = GATEWAY_DIR / "config" / "export_folder.json"
 BATCH_MAX_WORKERS = 5
 
 _GIFT_DEFAULT_RULE = gateway_gift_rule_line()
+_IM_WHITELIST_RULE = gateway_im_whitelist_rule_line()
 _FAMILY_JOIN_RULE = gateway_family_join_rule_line()
 
 
@@ -98,6 +100,7 @@ def _gateway_rules() -> str:
 11. **代码修改权限**：管理员身份见 `config/code_modify_allowlist.json`（及 `.local.json`）；**细粒度权限**（改代码 / 源文件 / 线上）与 Web Agent 共用 `platform/web_agent/data/admin_grants.json`，须在 Web「管理员列表」逐项勾选；**MOA 能力入库**全员可用。修改 `platform/dingtalk_gateway/` 提交后网关**自动静默重启**；修改 `platform/web_agent/` 后 Web Agent **自动重启**；**不要**手动 `gateway_ctl.sh restart`。
 12. **源文件导出**：仅管理员可打包/下载/发送平台源文件（`.cursor/skills`、`.cursor/rules`、`platform/` 源码、能力全量包、`platform/exports/` 下 zip 等）；非管理员仅可使用能力，**禁止** zip 附件或回复本地路径交付上述内容。
 13. {_GIFT_DEFAULT_RULE}
+    {_IM_WHITELIST_RULE}
     {_FAMILY_JOIN_RULE}
 14. **MOA 探活/检查**：**禁止**因消息中出现「MOA」字样就触发探活。用户发送「MOA检查」「检查MOA」「MOA探活」等时，**走 Cursor Agent 正常链路**执行 Cookie 探活并回复；**MOA 入库/登记模板**（含附图说明接口）时须 **templates → moa_execute 试跑 → 成功后自动 sync_registry**，**禁止** MOA检查/探活/doctor/test_all；更新其它凭证、业务查询时亦不做探活。通过 `MOA/moa_execute.py` 执行业务接口属于正常任务，**不等于**探活。
 15. **禁止环境检查**：钉钉群**不支持**「环境检查」「检查环境」「doctor」「scripts/doctor.py」「credential_probe」；用户发送上述口令时**不要执行**，仅回复「钉钉群已取消环境检查，请用 MOA检查 或本机 gateway_ctl.sh health」。
@@ -144,6 +147,7 @@ def _readonly_gateway_rules() -> str:
 8. **测试用例**：若用户要求生成用例，可写入 `{tmp_dir}` 并同步钉钉（这不属于改代码逻辑）。
 9. **MOA 入库（全员）**：只读用户可在 `MOA/templates/` 登记模板 → `moa_execute.py` 试跑验收 → 成功后自动 sync_registry；**禁止**改 gateway/.cursor 与其它模块源码。
 10. {_GIFT_DEFAULT_RULE}
+    {_IM_WHITELIST_RULE}
     {_FAMILY_JOIN_RULE}
 11. **MOA 探活/检查**：**禁止**因消息含「MOA」就探活；仅整条口令完全匹配「MOA检查」「检查MOA」等时才探活。**MOA 入库/登记**时禁止探活，须试跑后自动 sync_registry；`MOA/moa_execute.py` 业务调用不等于探活。
 12. **禁止环境检查**：钉钉群不支持「环境检查」「doctor」等；不要执行 `scripts/doctor.py` 或 credential_probe，仅说明已取消并引导 MOA检查 或本机 health。
@@ -178,7 +182,8 @@ def _readonly_with_moa_registry_rules() -> str:
 7. **回复风格**：自然语言，先结论后细节；禁止贴原始 JSON 或字段名罗列；**时间展示**用北京时间，禁止 UTC。
 8. **测试用例**：若用户要求生成用例，可写入 `{tmp_dir}` 并同步钉钉（这不属于改代码逻辑）。
 9. {_GIFT_DEFAULT_RULE}
-   {_FAMILY_JOIN_RULE}
+    {_IM_WHITELIST_RULE}
+    {_FAMILY_JOIN_RULE}
 10. **MOA 探活/检查**：**禁止**因消息含「MOA」就探活；仅整条口令完全匹配「MOA检查」「检查MOA」等时才探活。**MOA 入库/登记**时禁止探活，须试跑后自动 sync_registry；`MOA/moa_execute.py` 业务调用不等于探活。
 11. **禁止环境检查**：钉钉群不支持「环境检查」「doctor」等；不要执行 `scripts/doctor.py` 或 credential_probe，仅说明已取消并引导 MOA检查 或本机 health。
 12. **禁止 ADB / 真机 UI**：不得调用 `adb/`、macro、flow、observe/capture/locate/tap、autotest、adb-screen MCP。抓包用 Tunnel 只读。真机 UI 需求请引导至 Cursor 本机。

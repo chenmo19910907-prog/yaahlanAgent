@@ -16,6 +16,7 @@ _PLATFORM_DIR = Path(__file__).resolve().parents[1]
 _WEB_AGENT_DIR = _PLATFORM_DIR / "web_agent"
 if str(_WEB_AGENT_DIR) not in sys.path:
     sys.path.insert(0, str(_WEB_AGENT_DIR))
+from analytics_store import record_chat_send  # noqa: E402
 from web_prompt import normalize_reply_mode, should_append_duration_footer  # noqa: E402
 from web_agent_audit_env import make_dingtalk_run_id  # noqa: E402
 from web_moa_call_log import finalize_dingtalk_call_log  # noqa: E402
@@ -640,6 +641,13 @@ def process_inbound_task(
             sender_name,
             incoming.message_id,
             redact_for_log(prompt),
+        )
+        record_chat_send(
+            staff_id=sender_staff_id,
+            display_name=sender_name,
+            channel="dingtalk",
+            session_id=user_key,
+            props={"task_kind": task_kind, "lane": lane},
         )
         session.check_cancelled()
 

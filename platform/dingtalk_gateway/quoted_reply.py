@@ -46,7 +46,9 @@ def markdown_title_from_quote(quote_text: str | None) -> str:
 def quote_text_from_inbound(inbound: InboundMessage | None) -> str | None:
     if inbound is None:
         return None
-    text = (inbound.prompt_text() or inbound.text or "").strip()
+    text = (inbound.text or "").strip()
+    if not text and inbound.links:
+        text = "链接：" + " ".join(inbound.links[:3])
     return text or None
 
 

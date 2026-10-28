@@ -1,0 +1,49 @@
+{
+  "id": "web-reward-verify-round",
+  "name": "奖励验收-单轮抽奖求差",
+  "category": "奖励验收",
+  "description": "抽奖/发奖后：备份上一轮 after 为 prev → 重拉 after → 与 prev（或 baseline）求差；输出装扮增量天数、diamondHistory 本轮明细、金币 Δ 及 Markdown 摘要。",
+  "version": 1,
+  "params": {
+    "sessionId": {
+      "label": "Web 会话 ID",
+      "type": "string",
+      "required": true,
+      "prompt": "如 a01e870f16454ed4"
+    },
+    "userId": {
+      "label": "userId",
+      "type": "string",
+      "required": true,
+      "prompt": "验收账号 userId"
+    },
+    "userLabel": {
+      "label": "展示名",
+      "type": "string",
+      "required": false,
+      "default": "",
+      "prompt": "可选"
+    },
+    "compareMode": {
+      "label": "对比基准",
+      "type": "string",
+      "required": false,
+      "default": "prev",
+      "prompt": "prev（默认，相对上一轮）或 baseline"
+    }
+  },
+  "steps": [
+    {
+      "id": "round",
+      "name": "单轮验收",
+      "run": {
+        "type": "shell",
+        "command": "python3 platform/web_agent/web_reward_verify.py round --session-id {{sessionId}} --user-id {{userId}} --user-label {{userLabel}} --compare {{compareMode}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

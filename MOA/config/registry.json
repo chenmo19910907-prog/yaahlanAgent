@@ -727,11 +727,11 @@
       "id": "user_area_change",
       "name": "用户-修改大区",
       "category": "用户大区（yaahlan/components/callback/user-area）",
-      "description": "测试环境切换用户大区（changeAreaForTest；params[0]=userId, params[1]=大区代码）",
+      "description": "【已弃用 MOA changeAreaForTest】请改用 Admin userAdmin/updateUserArea（--update-user-area）。本条目保留仅为兼容旧 prompt",
       "prompts": [
         "修改用户<userId|userId>大区为<area|大区>"
       ],
-      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-修改大区.json \\\n  --change-user-area-user-id <userId> \\\n  --user-area <area>\n"
+      "command": "python3 Admin/admin_execute.py \\\n  --update-user-area \\\n  --update-user-area-user-id <userId> \\\n  --update-user-area-after <area>\n"
     },
     {
       "id": "diamond_query_account",
@@ -1153,9 +1153,11 @@
       "id": "房间成员_申请加入",
       "name": "房间成员-申请加入",
       "category": "房间-成员与开播（room-member-stage）",
-      "description": "apply（/service/room/external/room-member-stage）",
+      "description": "测试环境用户申请加入房间成员（apply，对齐 /yaahlan/room/member/apply）。body 需 userId（申请人）、roomId。成功 ec=200；若已在申请中或已是成员会返回对应业务码。审批请用「房间成员-同意申请」。",
       "prompts": [
-        "执行 房间成员-申请加入"
+        "用户 <userId> 申请加入房间 <roomId> 成员",
+        "执行 房间成员-申请加入",
+        "<userId> 申请 <roomId> 房间成员"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间成员-申请加入.json\n"
     },
@@ -1732,6 +1734,16 @@
         "触发跨房吃鸡开活动全服飘屏"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/跨房吃鸡-活动开启全服飘屏.json\n"
+    },
+    {
+      "id": "用户_修改性别",
+      "name": "用户-修改性别",
+      "category": "用户装扮（mdp-prop/user-prop-api-service-test）",
+      "description": "updateUser（/service/mdp-user-service）",
+      "prompts": [
+        "执行 用户-修改性别"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-修改性别.json\n"
     }
   ]
 }

@@ -1,10 +1,81 @@
 {
   "version": 1,
   "collapsed": [],
-  "suppressPlaybookIds": [],
   "tree": [
     {
       "kind": "all"
+    },
+    {
+      "kind": "module",
+      "moduleId": "公会",
+      "hydrateCaps": false,
+      "children": [
+        {
+          "kind": "module",
+          "moduleId": "算薪",
+          "hydrateCaps": false,
+          "children": [
+            {
+              "kind": "folder",
+              "id": "nav-salary-pytest-auto",
+              "label": "pytest 自动化",
+              "children": [
+                {
+                  "kind": "playbookItem",
+                  "playbookId": "salary_e2e_regression",
+                  "navLabel": "全量与分步回归"
+                }
+              ],
+              "subfolder": true
+            }
+          ]
+        },
+        {
+          "kind": "folder",
+          "id": "nav-mv7xtbnlqtsc",
+          "label": "公会常用moa工具",
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "公会",
+              "catIndex": 3,
+              "label": "清除设备入会申请账号限制",
+              "sourceId": "workflow",
+              "registryId": "guild_device_join_limit_clear"
+            },
+            {
+              "kind": "cap",
+              "moduleId": "公会",
+              "catIndex": 3,
+              "label": "清除真人认证失败",
+              "sourceId": "workflow",
+              "registryId": "guild_real_person_auth_failure_clear"
+            }
+          ],
+          "subfolder": true
+        },
+        {
+          "kind": "folder",
+          "id": "nav-mvrq4xapbs5x",
+          "label": "公会常用盘古配置工具",
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "公会",
+              "catIndex": 4,
+              "label": "公会盘古时间偏移配置",
+              "sourceId": "workflow",
+              "registryId": "guild_pangu_shift_config"
+            }
+          ],
+          "subfolder": true
+        },
+        {
+          "kind": "cap",
+          "moduleId": "公会",
+          "catIndex": 2
+        }
+      ]
     },
     {
       "kind": "module",
@@ -172,6 +243,19 @@
       "moduleId": "pk",
       "children": [
         {
+          "kind": "folder",
+          "id": "nav-pk-cross-room",
+          "label": "跨房PK",
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "pk",
+              "catIndex": 6
+            }
+          ],
+          "subfolder": true
+        },
+        {
           "kind": "cap",
           "moduleId": "pk",
           "catIndex": 0
@@ -200,20 +284,6 @@
           "kind": "cap",
           "moduleId": "pk",
           "catIndex": 5
-        },
-        {
-          "kind": "folder",
-          "id": "nav-pk-cross-room",
-          "label": "跨房PK",
-          "subfolder": true,
-          "children": [
-            {
-              "kind": "cap",
-              "moduleId": "pk",
-              "catIndex": 6,
-              "navLabel": "指定邀请·随机匹配"
-            }
-          ]
         },
         {
           "kind": "cap",
@@ -282,7 +352,6 @@
           "kind": "folder",
           "id": "nav-activity-3anniv",
           "label": "3周年",
-          "subfolder": true,
           "children": [
             {
               "kind": "cap",
@@ -302,13 +371,13 @@
               "catIndex": 7,
               "label": "兑换道具"
             }
-          ]
+          ],
+          "subfolder": true
         },
         {
           "kind": "folder",
           "id": "nav-activity-admin",
           "label": "Admin 后台",
-          "subfolder": true,
           "children": [
             {
               "kind": "cap",
@@ -322,13 +391,13 @@
               "catIndex": 2,
               "label": "IM 定时 / 奖池"
             }
-          ]
+          ],
+          "subfolder": true
         },
         {
           "kind": "folder",
           "id": "nav-activity-treasure",
           "label": "宝藏猎人",
-          "subfolder": true,
           "children": [
             {
               "kind": "cap",
@@ -342,7 +411,8 @@
               "catIndex": 3,
               "label": "榜单发奖"
             }
-          ]
+          ],
+          "subfolder": true
         },
         {
           "kind": "cap",
@@ -441,6 +511,38 @@
               "catIndex": 6
             }
           ]
+        },
+        {
+          "kind": "folder",
+          "id": "nav-web-reward-verify",
+          "label": "奖励验收",
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "道具",
+              "catIndex": 0,
+              "label": "奖励验收-记录baseline",
+              "sourceId": "workflow",
+              "registryId": "web_reward_verify_baseline"
+            },
+            {
+              "kind": "cap",
+              "moduleId": "道具",
+              "catIndex": 0,
+              "label": "奖励验收-单轮抽奖求差",
+              "sourceId": "workflow",
+              "registryId": "web_reward_verify_round"
+            },
+            {
+              "kind": "cap",
+              "moduleId": "道具",
+              "catIndex": 0,
+              "label": "奖励验收-导出钉钉表格",
+              "sourceId": "workflow",
+              "registryId": "web_reward_verify_export"
+            }
+          ],
+          "subfolder": true
         }
       ]
     },
@@ -509,52 +611,6 @@
           "kind": "cap",
           "moduleId": "家族",
           "catIndex": 6
-        }
-      ]
-    },
-    {
-      "kind": "module",
-      "moduleId": "公会",
-      "hydrateCaps": false,
-      "children": [
-        {
-          "kind": "module",
-          "moduleId": "算薪",
-          "hydrateCaps": false,
-          "children": [
-            {
-              "kind": "folder",
-              "id": "nav-salary-pytest-auto",
-              "label": "pytest 自动化",
-              "children": [
-                {
-                  "kind": "playbookItem",
-                  "playbookId": "salary_e2e_regression",
-                  "navLabel": "全量与分步回归"
-                }
-              ],
-              "subfolder": true
-            }
-          ]
-        },
-        {
-          "kind": "folder",
-          "id": "nav-mv7xtbnlqtsc",
-          "label": "公会常用工具",
-          "children": [
-            {
-              "kind": "cap",
-              "moduleId": "公会",
-              "catIndex": 3,
-              "label": "清除设备入会申请账号限制"
-            }
-          ],
-          "subfolder": true
-        },
-        {
-          "kind": "cap",
-          "moduleId": "公会",
-          "catIndex": 2
         }
       ]
     },
@@ -842,6 +898,17 @@
               "catIndex": 0
             }
           ]
+        }
+      ]
+    },
+    {
+      "kind": "module",
+      "moduleId": "yaahlan-日志",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "yaahlan-日志",
+          "catIndex": 0
         }
       ]
     }

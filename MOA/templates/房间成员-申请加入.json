@@ -15,17 +15,17 @@
   "momoName": "e88aa376b29864ad",
   "url": "/service/room/external/room-member-stage",
   "method": "apply",
-  "header": "{\"userId\":\"100379555\",\"roomId\":\"31668628\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\"}",
+  "header": "{\"userId\":\"100477622\",\"roomId\":\"82617067\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\"}",
   "params": [
     {
       "name": 0,
       "title": 0,
       "txt": "",
-      "json": "{\"userId\":\"100379555\",\"roomId\":\"31668628\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\"}",
+      "json": "{\"userId\":\"100477622\",\"roomId\":\"82617067\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\"}",
       "type": "json",
       "value": {
-        "userId": "100379555",
-        "roomId": "31668628",
+        "userId": "100477622",
+        "roomId": "82617067",
         "lang": "en",
         "area": "MENA",
         "appId": "2005",
@@ -33,5 +33,22 @@
         "osType": "android"
       }
     }
-  ]
+  ],
+  "_meta": {
+    "serviceAgentRef": "RoomMemberApiService.apply",
+    "tunnelAlign": "/yaahlan/room/member/apply",
+    "note": "用户申请成为房间成员；成功后待房主/管理员 agree。与「房间成员-快速添加」不同：本接口只提交申请。"
+  },
+  "_registry": {
+    "id": "房间成员_申请加入",
+    "name": "房间成员-申请加入",
+    "category": "房间-成员与开播（room-member-stage）",
+    "description": "测试环境用户申请加入房间成员（apply，对齐 /yaahlan/room/member/apply）。body 需 userId（申请人）、roomId。成功 ec=200；若已在申请中或已是成员会返回对应业务码。审批请用「房间成员-同意申请」。",
+    "prompts": [
+      "用户 <userId> 申请加入房间 <roomId> 成员",
+      "执行 房间成员-申请加入",
+      "<userId> 申请 <roomId> 房间成员"
+    ],
+    "cli": "python3 MOA/moa_execute.py --payload-file MOA/templates/房间成员-申请加入.json"
+  }
 }

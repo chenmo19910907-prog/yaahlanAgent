@@ -1,0 +1,35 @@
+{
+  "id": "guild-pangu-09-merge-trade-time",
+  "name": "盘古-⑨修改并会时间",
+  "category": "公会常用盘古配置工具（workflow）",
+  "description": "预上线：改 shiftTime.tradeUnion 的 fixedTimeSec（北京时间戳）。并会场景需同时准备两个公会 ID；示例：1793567100（11/2 0点后）或 1792357500（10/19）。 验收：并会/合并相关时间判断与配置的北京时间戳一致。",
+  "version": 1,
+  "params": {
+    "fixedTimeSec": {
+      "label": "fixedTimeSec",
+      "type": "string",
+      "required": true,
+      "prompt": "Unix 秒（北京时间戳）"
+    },
+    "expireTimeSec": {
+      "label": "expireTimeSec",
+      "type": "string",
+      "required": false,
+      "prompt": "Unix 秒；可与 fixedTimeSec 相同"
+    }
+  },
+  "steps": [
+    {
+      "id": "apply_pangu_shift",
+      "name": "改 MSE 配置并发布",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/guild_pangu_shift_time_apply.py --scenario \"merge_trade_time\" --fixed-time-sec \"{{fixedTimeSec}}\" --expire-time-sec \"{{expireTimeSec}}\"",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

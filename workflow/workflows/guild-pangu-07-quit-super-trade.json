@@ -1,0 +1,35 @@
+{
+  "id": "guild-pangu-07-quit-super-trade",
+  "name": "盘古-⑦子公会退出母公会窗口",
+  "category": "公会常用盘古配置工具（workflow）",
+  "description": "预上线：改 voga-common.shiftTime.quitSuperTrade（tradeId/subTid 场景时间拦截），控制子公会当前是否可退出母公会。 验收：子公会退出母公会在窗口内可操作、窗外拦截；需准备母/子 tradeId。",
+  "version": 1,
+  "params": {
+    "fixedTimeSec": {
+      "label": "fixedTimeSec",
+      "type": "string",
+      "required": true,
+      "prompt": "Unix 秒（北京时间戳）"
+    },
+    "expireTimeSec": {
+      "label": "expireTimeSec",
+      "type": "string",
+      "required": false,
+      "prompt": "Unix 秒；可与 fixedTimeSec 相同"
+    }
+  },
+  "steps": [
+    {
+      "id": "apply_pangu_shift",
+      "name": "改 MSE 配置并发布",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/guild_pangu_shift_time_apply.py --scenario \"quit_super_trade\" --fixed-time-sec \"{{fixedTimeSec}}\" --expire-time-sec \"{{expireTimeSec}}\"",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

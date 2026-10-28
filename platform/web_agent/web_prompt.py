@@ -28,7 +28,12 @@ if str(GATEWAY_DIR.parent) not in sys.path:
 
 from project.loader import temporary_testcase_dir, web_agent_name  # noqa: E402
 
-from web_session_context import family_monster_workbook_hint, pk_atm_prompt_hint  # noqa: E402
+from web_session_context import (  # noqa: E402
+    family_monster_workbook_hint,
+    pk_atm_prompt_hint,
+    prop_backpack_issue_prompt_hint,
+    reward_verify_prompt_hint,
+)
 
 _GIFT_RULE = gateway_gift_rule_line()
 _FAMILY_JOIN_RULE = gateway_family_join_rule_line()
@@ -108,6 +113,7 @@ _WEB_RULES_CORE = f"""\
 5. **测试用例**：生成测试用例时写入 `{_temporary_testcase_hint()}`（Markdown 表格或 CSV）。
 6. **MOA 探活**：仅当用户整条消息为「MOA检查」「检查MOA」「MOA探活」等明确口令时才探活；MOA 业务查询不等于探活。
 7. **失败处理**：用自然语言说明问题与下一步，不要编造结果。
+7b. **服务重启汇报**：汇报 Web Agent / 钉钉网关重启结果时只写状态（健康检查、pid、launchd 等），勿附 `127.0.0.1` / localhost 访问链接。
 8. **真机 ADB**：Web Agent **不支持** ADB / 真机 UI 执行。禁止调用 `adb/`、`adb_execute.py`、`macro`、`flow run`、`observe`/`capture`/`locate`/`tap`、`autotest`、adb-screen MCP 等。查数用 MOA/Admin；抓包用 Tunnel **只读**查询。用户要求真机点按、礼物面板 UI、截图验收时，说明 Web 端不支持，请在 **Cursor 本机对话** 中操作。
 8b. **Figma 设计稿**：用户给出 `figma.com/design/...` 且含 `node-id` 时，须用 **figma-read MCP** 的 `get_figma_node`（层级+文案）或 `get_figma_screenshot_url`（PNG）；禁止未调工具就编造 UI。工具不可用时说明需配置 `FIGMA_ACCESS_TOKEN`（`python3 platform/scripts/figma_read_setup.py --open`）并重启 Web Agent。
 9. **线上环境**：
@@ -414,6 +420,12 @@ def build_web_prompt(
     monster_hint = family_monster_workbook_hint(body, session_id=session_id)
     if monster_hint:
         extras.append(monster_hint)
+    prop_backpack_hint = prop_backpack_issue_prompt_hint(body, session_id=session_id)
+    if prop_backpack_hint:
+        extras.append(prop_backpack_hint)
+    reward_verify_hint = reward_verify_prompt_hint(body, session_id=session_id)
+    if reward_verify_hint:
+        extras.append(reward_verify_hint)
     family_join_hint = family_join_prompt_hint(body)
     if family_join_hint:
         extras.append(family_join_hint)

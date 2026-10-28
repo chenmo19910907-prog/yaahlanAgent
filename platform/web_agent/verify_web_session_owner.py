@@ -815,6 +815,40 @@ class WebSessionOwnerDisplayTest(unittest.TestCase):
             self.assertEqual(payload["dingtalk_owner"], "王凯波")
             self.assertEqual(payload["dingtalk_label"], "王凯波")
 
+    def test_web_owner_display_with_known_labels_skips_api(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            sid = "webownerknown01"
+            index.write_text(
+                json.dumps(
+                    {
+                        sid: {
+                            "title": "测试",
+                            "created_at": "2026-08-10T08:00:00+00:00",
+                            "updated_at": "2026-08-10T09:00:00+00:00",
+                            "message_count": 1,
+                            "source": "web",
+                            "web_owner_id": "uid_test",
+                            "web_owner_label": "",
+                        }
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            meta = store.get_session(sid)
+            assert meta is not None
+            with unittest.mock.patch(
+                "dingtalk_user_lookup.lookup_auth_user_display_name",
+            ) as mock_lookup:
+                name = meta.web_owner_display(known_labels={"uid_test": "张三"})
+            mock_lookup.assert_not_called()
+            self.assertEqual(name, "张三")
+
     def test_web_owner_display_upgrades_unknown_admin_label(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -29,6 +29,28 @@ _FAMILY_MONSTER_SHEET_RE = re.compile(
     re.I,
 )
 
+_PROP_BACKPACK_ISSUE_RE = re.compile(
+    r"下发.{0,8}道具|道具.{0,8}下发|离线下发|addPropTask|propTaskIssue|"
+    r"下发到背包|背包.{0,6}道具",
+    re.I,
+)
+
+_PROP_BACKPACK_SESSION_RE = re.compile(
+    r"addPropTaskV2|propTaskIssueAdmin|Later 工单|auditStatus|"
+    r"下发至背包|propPackageValidDays",
+    re.I,
+)
+
+_REWARD_VERIFY_RE = re.compile(
+    r"奖励下发验证|奖励.*验收|发奖前|发奖后|资产快照|展示.*物品|记录.*物品",
+    re.I,
+)
+
+_REWARD_VERIFY_SESSION_RE = re.compile(
+    r"web_reward_verify\.py|full-inventory|奖励下发验证",
+    re.I,
+)
+
 # 短追问 / 指代型消息：Resume 失败或无轮换摘要时易答非所问
 _VAGUE_FOLLOWUP_RE = re.compile(
     r"(这个|那个|上面|前文|刚才|之前|继续|再.{0,16}|"
@@ -185,6 +207,71 @@ def session_looks_like_family_monster_workbook(session_id: str) -> bool:
         if _FAMILY_MONSTER_SHEET_RE.search(msg.content or ""):
             return True
     return False
+
+
+def session_looks_like_prop_backpack_issue(session_id: str) -> bool:
+    sid = (session_id or "").strip()
+    if not sid:
+        return False
+    messages, _ = get_session_store().get_messages(sid, tail=24)
+    for msg in messages[-24:]:
+        if _PROP_BACKPACK_ISSUE_RE.search(msg.content or ""):
+            return True
+        if _PROP_BACKPACK_SESSION_RE.search(msg.content or ""):
+            return True
+    return False
+
+
+def session_looks_like_reward_verify(session_id: str) -> bool:
+    sid = (session_id or "").strip()
+    if not sid:
+        return False
+    messages, _ = get_session_store().get_messages(sid, tail=24)
+    for msg in messages[-24:]:
+        if _REWARD_VERIFY_RE.search(msg.content or ""):
+            return True
+        if _REWARD_VERIFY_SESSION_RE.search(msg.content or ""):
+            return True
+    return False
+
+
+def reward_verify_prompt_hint(text: str, *, session_id: str = "") -> str | None:
+    blob = text or ""
+    if not _REWARD_VERIFY_RE.search(blob) and not session_looks_like_reward_verify(session_id):
+        return None
+    sid = (session_id or "").strip() or "<session_id>"
+    return (
+        "**奖励下发验证（Web Agent）**：给用户做发奖前/后验收时，"
+        "须用 `python3 platform/web_agent/web_reward_verify.py record "
+        f"--session-id {sid} --slot baseline --user-id <userId>`（或 `--phone`）"
+        "记录**全量**资产（钻石、金币、礼物背包礼/道具、装扮背包、铭牌、CP 勋章）。"
+        "用户要求展示时用 `web_reward_verify.py show --session-id "
+        f"{sid} --slot baseline`，**逐条全量**输出 Markdown 表格，不可省略。"
+        "用户要求导出钉钉表格时用 `web_reward_verify.py export --session-id "
+        f"{sid} --slot baseline`，只回在线表格链接。"
+        "抽奖/发奖后单轮验收：`web_reward_verify.py round --session-id "
+        f"{sid} --user-id <userId>`（或工作流 web-reward-verify-round）；"
+        "输出 JSON 含 markdown、diamondHistory（本轮明细）、装扮 incrementDays。"
+        "baseline：`record --slot baseline` 或 web-reward-verify-baseline；"
+        "导出钉钉：web-reward-verify-export。"
+    )
+
+
+def prop_backpack_issue_prompt_hint(text: str, *, session_id: str = "") -> str | None:
+    blob = text or ""
+    if not _PROP_BACKPACK_ISSUE_RE.search(blob) and not session_looks_like_prop_backpack_issue(
+        session_id
+    ):
+        return None
+    return (
+        "**道具离线下发至背包（铁律）**：测试 MDP "
+        "`POST …/propTaskIssueAdmin/addPropTaskV2`（`type=1` 下发至背包，"
+        "`propPackageValidDays` 为背包有效天数；`useType=20`）。"
+        "工单创建成功后**同轮立即**走 Later `custom_831` 审批（"
+        "`GET /v3/approve-confirm` → `POST /v3/approve`），"
+        "勿等用户再发「直接审批」。"
+        "最后用 MOA `礼物面板-查看背包道具`（propPackageList）验收到账。"
+    )
 
 
 def family_monster_workbook_hint(text: str, *, session_id: str = "") -> str | None:

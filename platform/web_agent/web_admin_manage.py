@@ -18,6 +18,7 @@ from code_modify_permission import (  # noqa: E402
     is_code_modify_allowed,
     is_staff_in_base_allowlist,
     load_code_modify_allowlist,
+    reload_code_modify_allowlist,
     remove_staff_from_local_allowlist,
 )
 from web_admin_grants import (
@@ -27,6 +28,7 @@ from web_admin_grants import (
     is_super_admin,
     load_admin_grants,
     permission_definitions,
+    reload_admin_grants,
     remove_admin_grants,
     save_admin_permissions,
 )
@@ -186,6 +188,8 @@ def _admin_list_sort_key(item: dict[str, Any]) -> tuple[int, str, str]:
 
 def list_admin_users(*, viewer_staff_id: str, viewer_display_name: str = "") -> dict[str, Any]:
     """返回管理员列表及当前查看者是否可编辑。"""
+    reload_code_modify_allowlist()
+    reload_admin_grants()
     users = _collect_all_users()
     cfg = load_code_modify_allowlist()
     allowed_staff = cfg.allowed_staff_ids
@@ -328,11 +332,8 @@ def set_admin_role(
             is_admin=False,
             protected=False,
         )
-        if is_code_modify_allowed(sender_staff_id=target, sender_id=None):
-            init_admin_grants_empty(target)
-        else:
-            add_staff_to_local_allowlist(target)
-            init_admin_grants_empty(target)
+        add_staff_to_local_allowlist(target)
+        init_admin_grants_empty(target)
         after_perms = get_admin_permission_map(
             staff_id=target,
             is_admin=True,

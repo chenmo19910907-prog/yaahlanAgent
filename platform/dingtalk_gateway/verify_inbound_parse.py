@@ -40,6 +40,41 @@ def test_picture_only() -> None:
     _assert("default prompt", "附图" in inbound.prompt_text())
 
 
+def test_text_reply_replied_msg() -> None:
+    msg = dingtalk_stream.ChatbotMessage.from_dict(
+        {
+            "msgtype": "text",
+            "text": {
+                "content": "变更成 sister",
+                "isReplyMsg": True,
+                "repliedMsg": {
+                    "msgType": "text",
+                    "content": {"text": "bestie 100301334/3818"},
+                },
+            },
+        }
+    )
+    inbound = parse_inbound_message(msg)
+    _assert("reply body", inbound.text == "变更成 sister")
+    _assert("replied", inbound.replied_text == "bestie 100301334/3818")
+    _assert("prompt", "【引用消息】" in inbound.prompt_text())
+    _assert("summary", "引用" in inbound.summary_label())
+
+
+def test_text_reply_legacy_quote_message() -> None:
+    msg = dingtalk_stream.ChatbotMessage.from_dict(
+        {
+            "msgtype": "text",
+            "text": {
+                "content": "继续",
+                "quoteMessage": {"text": {"content": "旧版引用正文"}},
+            },
+        }
+    )
+    inbound = parse_inbound_message(msg)
+    _assert("legacy quoted", inbound.replied_text == "旧版引用正文")
+
+
 def test_rich_text_mixed() -> None:
     msg = dingtalk_stream.ChatbotMessage.from_dict(
         {
@@ -62,7 +97,13 @@ def test_rich_text_mixed() -> None:
 
 
 def main() -> int:
-    tests = [test_text_with_link, test_picture_only, test_rich_text_mixed]
+    tests = [
+        test_text_with_link,
+        test_picture_only,
+        test_text_reply_replied_msg,
+        test_text_reply_legacy_quote_message,
+        test_rich_text_mixed,
+    ]
     for test in tests:
         test()
         print(f"[OK] {test.__name__}")

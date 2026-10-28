@@ -55,6 +55,17 @@
       "command": "python3 DingTalk/collect_execute.py --only-spreadsheet --output ~/Documents/cursor-mcp/dingExcel/folder-links.json"
     },
     {
+      "id": "rename_version_case_workbooks",
+      "name": "用例表-补全文档名功能概况",
+      "category": "钉钉目录",
+      "description": "将 >2.5.0 且文件名为「x.y.z版本用例」的钉钉表重命名为「x.y.z版本用例（功能概况…）」：优先读 Sheet1「功能概况」，否则由各需求 sheet 名用「、」拼接",
+      "prompts": [
+        "补全 2.5.0 以后版本用例文档名括号功能概况",
+        "重命名版本用例表加上功能概况"
+      ],
+      "command": "python3 DingTalk/rename_version_case_workbooks_execute.py --dry-run"
+    },
+    {
       "id": "kb_sync_list",
       "name": "知识库-预览可同步版本表",
       "category": "testcase-kb 同步",

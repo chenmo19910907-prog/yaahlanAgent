@@ -1,0 +1,29 @@
+{
+  "id": "guild-real-person-auth-failure-clear",
+  "name": "公会-清除真人认证失败",
+  "category": "公会常用工具（workflow）",
+  "description": "测试环境：queryRealPersonRecord 读最近失败 reason → 对冲突 userId 执行 internalAuthDeletePerson + resetRelationPersonExpireTime（过期设为过去）→ 循环至无 reason → 清理待认证用户自身状态。适用于公会申请等场景 2003 人脸已被占用。",
+  "version": 1,
+  "params": {
+    "userId": {
+      "label": "用户 ID",
+      "type": "string",
+      "required": true,
+      "prompt": "待重新认证的 userId"
+    }
+  },
+  "steps": [
+    {
+      "id": "clear_real_person_auth_failure",
+      "name": "查 reason 并清冲突账号",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/guild_real_person_auth_failure_clear.py --user-id \"{{userId}}\"",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

@@ -122,6 +122,11 @@
     "protectedPhoneMin": 13311111111,
     "protectedPhoneMax": 13311111130
   },
+  "update_user_area": {
+    "baseUrl": "https://alpha-mdp-user-admin-api-stage.wemomo.com",
+    "path": "/userAdmin/updateUserArea",
+    "defaultAppId": 2005
+  },
   "query_user_profile_list": {
     "baseUrl": "https://alpha-mdp-user-admin-api-stage.wemomo.com",
     "path": "/userAdmin/queryUserProfileList",
@@ -148,10 +153,11 @@
     "path": "/yaahlan/cms/activity/deleteIm"
   },
   "query_banner_list": {
-    "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
-    "path": "/yaahlan/cms/backend/banner/getBannerList",
+    "baseUrl": "https://yaahlan-admin-alpha.wemomo.com",
+    "path": "/admin/banner/getBannerList",
     "defaultArea": "MENA",
-    "defaultType": 5,
+    "defaultPackageId": "yaahlan",
+    "defaultType": -1,
     "defaultStatus": -1,
     "defaultPage": 1,
     "defaultPerPage": 10

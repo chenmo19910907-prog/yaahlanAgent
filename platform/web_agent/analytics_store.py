@@ -16,6 +16,7 @@ logger = logging.getLogger("web-agent")
 WEB_AGENT_DIR = Path(__file__).resolve().parent
 EVENTS_PATH = WEB_AGENT_DIR / "data" / "analytics" / "events.jsonl"
 MESSAGES_DIR = WEB_AGENT_DIR / "data" / "messages"
+SESSIONS_INDEX = WEB_AGENT_DIR / "data" / "sessions.json"
 
 BJ = timezone(timedelta(hours=8))
 
@@ -66,6 +67,96 @@ def estimate_tokens_from_text(text: str) -> int:
     if not raw.strip():
         return 0
     return max(1, (len(raw) + 2) // 3)
+
+
+def _chat_send_channel(row: dict[str, Any]) -> str:
+    props = row.get("props")
+    if isinstance(props, dict):
+        ch = str(props.get("channel") or "").strip().lower()
+        if ch in ("web", "dingtalk", "api"):
+            return ch
+    page = str(row.get("page") or "").strip()
+    if page == "/open-api":
+        return "api"
+    if page == "/dingtalk":
+        return "dingtalk"
+    return "web"
+
+
+def _session_owner_staff_id_from_index(item: dict[str, Any]) -> str:
+    from web_session_store import parse_dingtalk_user_id
+
+    if str(item.get("source") or "").strip() == "dingtalk":
+        owner = str(item.get("dingtalk_owner_id") or "").strip()
+        if owner:
+            return owner
+        return parse_dingtalk_user_id(str(item.get("dingtalk_key") or ""))
+    return str(item.get("web_owner_id") or "").strip()
+
+
+def _session_external_channel(item: dict[str, Any]) -> str | None:
+    if str(item.get("source") or "").strip() == "dingtalk":
+        return "dingtalk"
+    if item.get("open_api_session"):
+        return "api"
+    return None
+
+
+def _merge_session_user_requests(
+    counts: dict[str, int],
+    names: dict[str, str],
+    *,
+    start: datetime,
+    end: datetime,
+    staff_filter: str = "",
+) -> None:
+    """钉钉 / Open API：从 sessions 索引与消息落盘补历史提问（避免与 chat_send 重复计数）。"""
+    if not SESSIONS_INDEX.is_file() or not MESSAGES_DIR.is_dir():
+        return
+    try:
+        index = json.loads(SESSIONS_INDEX.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return
+    if not isinstance(index, dict):
+        return
+
+    viewer = (staff_filter or "").strip()
+    for session_id, item in index.items():
+        if not isinstance(item, dict):
+            continue
+        if _session_external_channel(item) is None:
+            continue
+        if int(item.get("message_count") or 0) <= 0:
+            continue
+        owner_id = _session_owner_staff_id_from_index(item)
+        fallback_name = (
+            str(item.get("dingtalk_label") or "").strip()
+            or str(item.get("web_owner_label") or "").strip()
+        )
+        path = MESSAGES_DIR / f"{session_id}.json"
+        if not path.is_file():
+            continue
+        try:
+            rows = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if not isinstance(row, dict) or row.get("role") != "user":
+                continue
+            ts = _parse_ts(str(row.get("timestamp") or ""))
+            if ts is None or ts < start or ts > end:
+                continue
+            sid = str(row.get("author_id") or "").strip() or owner_id
+            if not sid:
+                continue
+            if viewer and sid != viewer:
+                continue
+            counts[sid] += 1
+            display = str(row.get("author_label") or "").strip() or fallback_name
+            if display:
+                names[sid] = display
 
 
 def parse_usage_day_key(value: str) -> str | None:
@@ -410,7 +501,8 @@ class AnalyticsStore:
                 continue
             event = str(row.get("event") or "").strip()
             if event == "chat_send":
-                requests += 1
+                if _chat_send_channel(row) not in ("dingtalk", "api"):
+                    requests += 1
                 continue
             if event != "chat_complete":
                 continue
@@ -421,6 +513,17 @@ class AnalyticsStore:
             raw_tokens = props.get("total_tokens")
             if isinstance(raw_tokens, (int, float)) and raw_tokens > 0:
                 tokens_recorded += int(raw_tokens)
+
+        session_counts: dict[str, int] = defaultdict(int)
+        session_names: dict[str, str] = {}
+        _merge_session_user_requests(
+            session_counts,
+            session_names,
+            start=start,
+            end=end,
+            staff_filter=sid,
+        )
+        requests += session_counts.get(sid, 0)
 
         tokens = tokens_recorded
         tokens_source = "recorded" if completes >= requests and tokens_recorded > 0 else "none"
@@ -437,6 +540,97 @@ class AnalyticsStore:
             "tokens": tokens,
             "tokensSource": tokens_source,
         }
+
+    def summarize_question_rank(
+        self,
+        *,
+        range_key: str = DEFAULT_USAGE_RANGE,
+        start_date: str = "",
+        end_date: str = "",
+        limit: int = 50,
+    ) -> dict[str, Any]:
+        if (start_date or "").strip() and (end_date or "").strip():
+            start, end, label, key = resolve_usage_custom_range(start_date, end_date)
+        else:
+            start, end, label, key = resolve_usage_range(range_key)
+
+        max_items = max(1, min(int(limit or 50), 200))
+        counts: dict[str, int] = defaultdict(int)
+        names: dict[str, str] = {}
+
+        for row in self.iter_events():
+            if str(row.get("event") or "").strip() != "chat_send":
+                continue
+            if _chat_send_channel(row) in ("dingtalk", "api"):
+                continue
+            ts = _parse_ts(str(row.get("ts") or ""))
+            if ts is None or ts < start or ts > end:
+                continue
+            sid = str(row.get("staff_id") or "").strip()
+            if not sid:
+                continue
+            counts[sid] += 1
+            display = str(row.get("display_name") or "").strip()
+            if display:
+                names[sid] = display
+
+        _merge_session_user_requests(counts, names, start=start, end=end)
+
+        ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+        items = [
+            {
+                "staffId": sid,
+                "displayName": names.get(sid) or sid,
+                "requests": count,
+            }
+            for sid, count in ranked[:max_items]
+        ]
+        return {
+            "range": key,
+            "rangeLabel": label,
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+            "totalRequests": sum(counts.values()),
+            "userCount": len(counts),
+            "items": items,
+        }
+
+
+def record_chat_send(
+    *,
+    staff_id: str,
+    display_name: str = "",
+    channel: str = "web",
+    session_id: str = "",
+    props: dict[str, Any] | None = None,
+) -> None:
+    """统一记录一次用户提问（Web / 钉钉 / Open API）。"""
+    sid = (staff_id or "").strip()
+    if not sid:
+        return
+    ch = (channel or "web").strip().lower()
+    if ch not in ("web", "dingtalk", "api"):
+        ch = "web"
+    merged = dict(_sanitize_props(props))
+    if session_id:
+        merged["session_id"] = (session_id or "").strip()[:256]
+    merged["channel"] = ch
+    page = "/chat.html"
+    source = "server"
+    if ch == "api":
+        page = "/open-api"
+        source = "api"
+    elif ch == "dingtalk":
+        page = "/dingtalk"
+        source = "dingtalk"
+    get_analytics_store().record_event(
+        event="chat_send",
+        page=page,
+        staff_id=sid,
+        display_name=(display_name or "").strip(),
+        source=source,
+        props=merged,
+    )
 
 
 _STORE: AnalyticsStore | None = None

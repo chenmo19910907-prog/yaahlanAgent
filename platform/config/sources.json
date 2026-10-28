@@ -12,7 +12,7 @@
     { "group": "房间", "prefixes": ["房间", "全服榜单"] },
     { "group": "礼物", "names": ["Stage送礼", "Gift"], "prefixes": ["礼物面板", "Stage HTTP", "Admin礼物", "MOA背包", "背包礼物", "动态-帖子送礼", "礼物统计"] },
     { "group": "定制", "prefixes": ["定制", "Admin定制", "MOA定制"] },
-    { "group": "道具", "names": ["道具"] },
+    { "group": "道具", "names": ["道具"], "prefixes": ["装扮-"] },
     { "group": "活动", "prefixes": ["活动", "3周年", "Admin活动", "Admin Banner", "宝藏猎人", "生成式活动"] },
     { "group": "动态", "prefixes": ["动态"] },
     { "group": "家族", "prefixes": ["家族", "Admin家族", "家族怪兽"] },
@@ -20,6 +20,7 @@
     { "group": "算薪", "prefixes": ["算薪", "半月结算薪", "确认应得薪资", "退款黑名单"] },
     { "group": "风控", "keywords": ["风控", "通用名单"] },
     { "group": "抓包", "names": ["Tunnel 抓包", "抓包"], "prefixes": ["抓包转MOA"] },
+    { "group": "日志", "names": ["Yaahlan 日志（Kibana）"], "prefixes": ["日志", "Kibana"] },
     { "group": "奖励验收", "prefixes": ["奖励验收", "奖励排查"] },
     { "group": "支付", "names": ["支付测试"], "prefixes": ["MOA钻石", "生成式MOA钻石", "钻石"] },
     { "group": "客服", "prefixes": ["Admin客服", "Stage HTTP举报", "客服", "消息"] },
@@ -44,6 +45,7 @@
     "算薪",
     "风控",
     "抓包",
+    "日志",
     "奖励验收",
     "支付",
     "客服",
@@ -126,6 +128,15 @@
       "registry": "Tunnel/config/registry.json",
       "usage_doc": "Tunnel/使用方法.md",
       "entry": "python3 Tunnel/tunnel_execute.py"
+    },
+    {
+      "id": "log",
+      "label": "Yaahlan日志",
+      "subtitle": "Kibana Discover · yaahlan-log*",
+      "env": "test",
+      "registry": "Log/config/registry.json",
+      "usage_doc": "Log/使用方法.md",
+      "entry": "python3 Log/log_execute.py"
     },
     {
       "id": "online",

@@ -85,6 +85,17 @@
       "command": "python3 Admin/admin_execute.py \\\n  --cancel-user \\\n  --cancel-user-id <userId> \\\n  --cancel-user-confirm"
     },
     {
+      "id": "update_user_area",
+      "name": "用户-修改大区",
+      "category": "Nova用户（mdp-nova / userAdmin）",
+      "description": "修改用户所在大区（userAdmin/updateUserArea；body: appId,userId,beforeArea,afterArea）。未传 beforeArea 时自动 queryUserDetail 读取当前大区。优先于 MOA changeAreaForTest",
+      "prompts": [
+        "修改用户 <userId> 大区为 <area>",
+        "把 <userId> 账号大区改为 <area>"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --update-user-area \\\n  --update-user-area-user-id <userId> \\\n  --update-user-area-after <area>"
+    },
+    {
       "id": "query_prop_info",
       "name": "道具-查询配置列表",
       "category": "道具（mdp-nova / propAdmin）",
@@ -260,6 +271,18 @@
       "command": "python3 Admin/admin_execute.py --query-activity-lottery-list --lottery-id <lotteryId>"
     },
     {
+      "id": "add_im_whitelist_task",
+      "name": "活动-IM白名单用户定时下发",
+      "category": "Admin活动（melon-gateway / cms/activity）",
+      "description": "为指定 userId 创建 IM 定时任务（addIm；userType=3 白名单用户 + whiteList 逗号分隔 userId，无需上传 xlsx）。sendType：0 活动通知 / 1 活动奖励 / 2~5 官方与客服消息",
+      "prompts": [
+        "指定用户id下发活动奖励消息",
+        "IM白名单下发活动消息",
+        "addIm 白名单 userId"
+      ],
+      "command": "python3 Admin/admin_execute.py --add-im-task --im-task-name <任务名> --im-send-type 1 --im-user-ids <userId> --im-area MENA"
+    },
+    {
       "id": "schedule_im_message_types",
       "name": "活动-IM六种消息类型定时下发",
       "category": "Admin活动（melon-gateway / cms/activity）",
@@ -282,13 +305,14 @@
     {
       "id": "query_banner_list",
       "name": "活动-查询Banner列表",
-      "category": "Admin Banner（melon-gateway / cms/backend/banner）",
-      "description": "查询后台 Banner 配置列表（getBannerList；body 含 bannerId/page/perPage/status/type/area；type=5 为活动 banner；status=-1 为全部）",
+      "category": "Admin Banner（yaahlan-admin /admin/banner）",
+      "description": "查询运营后台 Banner 列表 POST /admin/banner/getBannerList（body: bannerId,page,perPage,status,type,area,packageId=yaahlan）。status: -1全部/0已下线/1已上线/2白名单。type: -1全部；1房间列表1号位/2钱包页/3房间内/4房间列表4号位/5活动/6房间设置页/7热门搜索3号位/8房间搜索等",
       "prompts": [
+        "查 MENA 全部 banner 配置",
         "查 banner 类型 <type> 列表",
         "查看 banner 配置 bannerId <bannerId>"
       ],
-      "command": "python3 Admin/admin_execute.py --query-banner-list --banner-type 5 --banner-area MENA"
+      "command": "python3 Admin/admin_execute.py --query-banner-list --banner-type -1 --banner-status -1 --banner-area MENA"
     },
     {
       "id": "delete_im_task",

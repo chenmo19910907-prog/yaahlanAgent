@@ -1,0 +1,35 @@
+{
+  "id": "guild-pangu-02-anchor-removal-window",
+  "name": "盘古-②公会长移除主播窗口",
+  "category": "公会常用盘古配置工具（workflow）",
+  "description": "预上线：改 Application.shiftTime.isAllowedTimeForAnchorRemoval（重点 expireTimeSec / fixedTimeSec），控制公会长当前是否可移除主播。 验收：公会长端移除主播按钮/接口在窗口内可操作、窗口外被拦截。",
+  "version": 1,
+  "params": {
+    "fixedTimeSec": {
+      "label": "fixedTimeSec",
+      "type": "string",
+      "required": false,
+      "prompt": "Unix 秒（北京时间戳）"
+    },
+    "expireTimeSec": {
+      "label": "expireTimeSec",
+      "type": "string",
+      "required": true,
+      "prompt": "Unix 秒；可与 fixedTimeSec 相同"
+    }
+  },
+  "steps": [
+    {
+      "id": "apply_pangu_shift",
+      "name": "改 MSE 配置并发布",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/guild_pangu_shift_time_apply.py --scenario \"anchor_removal_window\" --fixed-time-sec \"{{fixedTimeSec}}\" --expire-time-sec \"{{expireTimeSec}}\"",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

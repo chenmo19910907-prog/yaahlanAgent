@@ -10,8 +10,9 @@ import sys
 import urllib.parse
 
 from .activity import parse_query_lottery_list_summary
-from .banner import parse_query_banner_list_summary
+from .banner import banner_list_payload_data, banner_list_response_ok, parse_query_banner_list_summary
 from .im_activity import (
+    create_im_task,
     delete_im_task,
     delete_im_tasks_above_id,
     parse_im_list_summary,
@@ -53,6 +54,10 @@ from .cancel_user import (
     assert_cancel_user_allowed,
     parse_cancel_user_summary,
     protected_phone_range_label,
+)
+from .update_user_area import (
+    build_update_user_area_body,
+    parse_update_user_area_summary,
 )
 from .gift import mdp_gift_success as mdp_user_admin_success
 from .user import (
@@ -179,6 +184,18 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="二次确认注销（必须显式传入才会调用 cancelUser）",
     )
+    parser.add_argument(
+        "--update-user-area",
+        action="store_true",
+        help="修改用户大区（userAdmin/updateUserArea；须 --update-user-area-user-id 与 --update-user-area-after）",
+    )
+    parser.add_argument("--update-user-area-user-id", help="修改大区 userId（配合 --update-user-area）")
+    parser.add_argument(
+        "--update-user-area-before",
+        help="修改前大区 beforeArea（可省略，将 queryUserDetail 自动读取）",
+    )
+    parser.add_argument("--update-user-area-after", help="修改后大区 afterArea（配合 --update-user-area）")
+    parser.add_argument("--update-user-area-app-id", type=int, help="修改大区 appId（默认 2005=Yaahlan）")
     parser.add_argument(
         "--query-custom-gift-list",
         action="store_true",
@@ -337,7 +354,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="查询 IM 配置任务列表（getImList；body={area}；可按 --im-task-id / --im-task-name 筛选）",
     )
     parser.add_argument("--im-task-id", help="IM 任务 ID（配合 --query-im-list）")
-    parser.add_argument("--im-task-name", help="IM 任务名称精确匹配（配合 --query-im-list）")
+    parser.add_argument(
+        "--im-task-name",
+        help="IM 任务名称（配合 --query-im-list 精确匹配；配合 --add-im-task 为新建任务名）",
+    )
     parser.add_argument(
         "--im-name-contains",
         help="IM 任务名称模糊筛选（配合 --query-im-list，如 im-type-smoke）",
@@ -358,6 +378,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Banner 状态 status（配合 --query-banner-list；默认 -1=全部）",
     )
     parser.add_argument("--banner-area", help="Banner 分区 area（配合 --query-banner-list；默认 MENA）")
+    parser.add_argument(
+        "--banner-package-id",
+        help="Banner packageId（配合 --query-banner-list；默认 yaahlan）",
+    )
     parser.add_argument("--banner-id", help="Banner ID（配合 --query-banner-list）")
     parser.add_argument(
         "--banner-name-contains",
@@ -396,8 +420,40 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--im-dry-run",
         action="store_true",
-        help="仅打印 6 条 addIm payload，不实际创建任务",
+        help="仅打印 addIm payload，不实际创建任务（配合 --schedule-im-message-types 或 --add-im-task）",
     )
+    parser.add_argument(
+        "--add-im-task",
+        action="store_true",
+        help="创建单条 IM 配置任务（addIm；指定 --im-user-ids 时默认白名单用户 userType=3 + whiteList）",
+    )
+    parser.add_argument(
+        "--im-send-type",
+        type=int,
+        help="消息类型 sendType（配合 --add-im-task；0 活动通知 1 活动奖励 2~5 见 im_activity）",
+    )
+    parser.add_argument(
+        "--im-user-ids",
+        help="白名单 userId，逗号/空格分隔（配合 --add-im-task）",
+    )
+    parser.add_argument(
+        "--im-user-type",
+        type=int,
+        help="下发用户 userType（配合 --add-im-task；指定 --im-user-ids 时默认 3）",
+    )
+    parser.add_argument(
+        "--im-delivery-type",
+        type=int,
+        default=2,
+        help="下发类型 type（配合 --add-im-task；默认 2 定时任务下发）",
+    )
+    parser.add_argument(
+        "--im-send-time-ms",
+        type=int,
+        help="下发时间毫秒时间戳（配合 --add-im-task；与 --im-start-offset-minutes 二选一）",
+    )
+    parser.add_argument("--im-msg-en", help="英文文案 msgContent.en（配合 --add-im-task）")
+    parser.add_argument("--im-msg-ar", help="阿语文案 msgContent.ar（配合 --add-im-task）")
     parser.add_argument(
         "--query-app-store-review-version",
         action="store_true",
@@ -601,6 +657,54 @@ def _fetch_user_phone_for_cancel(args: argparse.Namespace, user_id: str) -> str 
     summary = parse_user_detail_summary(resp.get("data"))
     phone = summary.get("phone")
     return str(phone).strip() if phone is not None and str(phone).strip() else None
+
+
+def _fetch_user_area_for_update(args: argparse.Namespace, user_id: str) -> str:
+    base_url = _resolve_base_url(args)
+    path = str(defaults("query_user_detail").get("path", "/admin/user/queryUserDetail"))
+    url = f"{base_url}{path}"
+    resp = http_post_json(
+        url,
+        {"userId": user_id},
+        timeout_s=max(args.timeout_ms, 1000) / 1000.0,
+        auth=_resolve_yaahlan_auth(args),
+    )
+    if not admin_success(resp.get("ec")):
+        raise ValueError(
+            f"修改大区前查询用户详情失败: ec={resp.get('ec')}, em={resp.get('em')}"
+        )
+    summary = parse_user_detail_summary(resp.get("data"))
+    area = summary.get("area")
+    before = str(area).strip().upper() if area is not None and str(area).strip() else ""
+    if not before:
+        raise ValueError(f"无法从 queryUserDetail 解析 userId={user_id} 的当前大区 area")
+    return before
+
+
+def _resolve_update_user_area_request(args: argparse.Namespace) -> tuple[str, dict[str, object]]:
+    cfg = defaults("update_user_area")
+    user_id = str(args.update_user_area_user_id or "").strip()
+    if not user_id:
+        raise ValueError("必须提供 --update-user-area-user-id")
+
+    before_area = str(args.update_user_area_before or "").strip().upper()
+    if not before_area:
+        before_area = _fetch_user_area_for_update(args, user_id)
+
+    after_area = str(args.update_user_area_after or "").strip().upper()
+    app_id = args.update_user_area_app_id
+    if app_id is None:
+        app_id = int(cfg.get("defaultAppId", 2005))
+
+    body = build_update_user_area_body(
+        user_id=user_id,
+        before_area=before_area,
+        after_area=after_area,
+        app_id=app_id,
+    )
+    base_url = _resolve_mdp_base_url(cfg)
+    path = str(cfg.get("path", "/userAdmin/updateUserArea"))
+    return f"{base_url}{path}", body
 
 
 def _lookup_protected_user_ids_via_moa(cfg: dict[str, object]) -> set[str]:
@@ -891,7 +995,7 @@ def _resolve_query_banner_list_request(args: argparse.Namespace) -> tuple[str, d
     banner_type = (
         int(args.banner_type)
         if args.banner_type is not None
-        else int(cfg.get("defaultType", 5))
+        else int(cfg.get("defaultType", -1))
     )
     banner_status = (
         int(args.banner_status)
@@ -903,6 +1007,9 @@ def _resolve_query_banner_list_request(args: argparse.Namespace) -> tuple[str, d
         args.banner_per_page if args.banner_per_page is not None else cfg.get("defaultPerPage", 10)
     )
     banner_id = str(args.banner_id or "").strip()
+    package_id = str(
+        args.banner_package_id or cfg.get("defaultPackageId") or "yaahlan"
+    ).strip()
     url = f"{base_url}{path}"
     body: dict[str, object] = {
         "bannerId": banner_id,
@@ -912,6 +1019,8 @@ def _resolve_query_banner_list_request(args: argparse.Namespace) -> tuple[str, d
         "type": banner_type,
         "area": area,
     }
+    if package_id:
+        body["packageId"] = package_id
     return url, body
 
 
@@ -1183,6 +1292,32 @@ def main() -> int:
             raise ValueError(
                 "线上环境 Admin 当前仅支持 --query-user-id、--query-user-list 或 --query-family --family-id"
             )
+        if args.add_im_task:
+            task_name = str(args.im_task_name or "").strip()
+            if not task_name:
+                raise ValueError("add-im-task 必须提供 --im-task-name")
+            if args.im_send_type is None:
+                raise ValueError("add-im-task 必须提供 --im-send-type")
+            user_ids = str(args.im_user_ids or "").strip() or None
+            if not user_ids:
+                raise ValueError("add-im-task 必须提供 --im-user-ids（白名单 userId）")
+            area = str(args.im_area or "MENA").strip() or "MENA"
+            summary = create_im_task(
+                name=task_name,
+                msg_type=int(args.im_send_type),
+                user_ids=user_ids,
+                user_type=int(args.im_user_type) if args.im_user_type is not None else None,
+                delivery_type=int(args.im_delivery_type),
+                send_time_ms=int(args.im_send_time_ms) if args.im_send_time_ms is not None else None,
+                start_offset_minutes=int(args.im_start_offset_minutes),
+                area=area,
+                msg_en=str(args.im_msg_en).strip() if args.im_msg_en else None,
+                msg_ar=str(args.im_msg_ar).strip() if args.im_msg_ar else None,
+                dry_run=bool(args.im_dry_run),
+                timeout_s=max(args.timeout_ms, 1000) / 1000.0,
+            )
+            print(json.dumps(summary, ensure_ascii=False, indent=2))
+            return 0 if summary.get("status") in ("created", "dry_run") else 3
         if args.schedule_im_message_types:
             results = schedule_im_message_type_smoke(
                 area=str(args.im_area or "MENA").strip() or "MENA",
@@ -1271,6 +1406,17 @@ def main() -> int:
             )
         elif args.cancel_user:
             url, body = _resolve_cancel_user_request(args)
+            if args.dump_body:
+                print(f"POST {url}", file=sys.stderr)
+                print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
+            resp = http_post_json(
+                url,
+                body,
+                timeout_s=max(args.timeout_ms, 1000) / 1000.0,
+                auth="mdp_nova",
+            )
+        elif args.update_user_area:
+            url, body = _resolve_update_user_area_request(args)
             if args.dump_body:
                 print(f"POST {url}", file=sys.stderr)
                 print(json.dumps(body, ensure_ascii=False, indent=2), file=sys.stderr)
@@ -1467,6 +1613,20 @@ def main() -> int:
             return 3
         summary = parse_cancel_user_summary(resp, user_id=str(args.cancel_user_id).strip())
         print(json.dumps(summary, ensure_ascii=False, indent=2))
+    elif args.update_user_area:
+        if not mdp_user_admin_success(resp.get("ec")):
+            print(f"MDP 用户后台返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
+            print(json.dumps(resp, ensure_ascii=False, indent=2))
+            return 3
+        body_before = str(body.get("beforeArea") or "")
+        body_after = str(body.get("afterArea") or "")
+        summary = parse_update_user_area_summary(
+            resp,
+            user_id=str(args.update_user_area_user_id).strip(),
+            before_area=body_before,
+            after_area=body_after,
+        )
+        print(json.dumps(summary, ensure_ascii=False, indent=2))
     elif args.query_custom_gift_list:
         if not gateway_success(resp.get("status")):
             print(f"Gateway 返回失败: status={resp.get('status')}, msg={resp.get('msg')}", file=sys.stderr)
@@ -1538,8 +1698,12 @@ def main() -> int:
         )
         print(json.dumps(summary, ensure_ascii=False, indent=2))
     elif args.query_banner_list:
-        if not gateway_success(resp.get("status")):
-            print(f"Banner 列表接口返回失败: status={resp.get('status')}, msg={resp.get('msg')}", file=sys.stderr)
+        if not banner_list_response_ok(resp):
+            print(
+                f"Banner 列表接口返回失败: status={resp.get('status')}, ec={resp.get('ec')}, "
+                f"msg={resp.get('msg') or resp.get('em')}",
+                file=sys.stderr,
+            )
             print(json.dumps(resp, ensure_ascii=False, indent=2))
             return 3
         cfg = defaults("query_banner_list")
@@ -1547,7 +1711,7 @@ def main() -> int:
         banner_type = (
             int(args.banner_type)
             if args.banner_type is not None
-            else int(cfg.get("defaultType", 5))
+            else int(cfg.get("defaultType", -1))
         )
         banner_status = (
             int(args.banner_status)
@@ -1559,7 +1723,7 @@ def main() -> int:
             args.banner_per_page if args.banner_per_page is not None else cfg.get("defaultPerPage", 10)
         )
         summary = parse_query_banner_list_summary(
-            resp.get("data"),
+            banner_list_payload_data(resp),
             area=area,
             banner_type=banner_type,
             status=banner_status,
@@ -1693,6 +1857,10 @@ def main() -> int:
         if not mdp_user_admin_success(resp.get("ec")):
             print(f"MDP 用户后台返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
             return 3
+    elif args.update_user_area:
+        if not mdp_user_admin_success(resp.get("ec")):
+            print(f"MDP 用户后台返回失败: ec={resp.get('ec')}, em={resp.get('em')}", file=sys.stderr)
+            return 3
     elif (
         args.query_custom_gift_list
         or args.add_family_member
@@ -1700,10 +1868,17 @@ def main() -> int:
         or args.list_all_families
         or args.query_app_store_review_version
         or args.update_app_store_review_version
-        or args.query_banner_list
     ):
         if not gateway_success(resp.get("status")):
             print(f"Gateway 返回失败: status={resp.get('status')}, msg={resp.get('msg')}", file=sys.stderr)
+            return 3
+    elif args.query_banner_list:
+        if not banner_list_response_ok(resp):
+            print(
+                f"Banner 列表接口返回失败: status={resp.get('status')}, ec={resp.get('ec')}, "
+                f"msg={resp.get('msg') or resp.get('em')}",
+                file=sys.stderr,
+            )
             return 3
     elif args.add_guild_member or args.remove_guild_member or args.change_guild_member or args.query_guild or args.query_cs_data or args.save_cs_data or args.change_cs_taking_order or args.query_activity_lottery_list:
         if not anchor_success(resp):

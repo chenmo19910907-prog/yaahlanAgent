@@ -51,6 +51,7 @@
   /** 无 <key|label> 时占位框默认中文 label */
   const PROMPT_KEY_LABELS = {
     userId: '用户 ID',
+    sessionId: '会话 ID',
     senderUserId: '送礼用户 ID',
     receiverUserId: '收礼用户 ID',
     cpUserId: 'CP 用户 ID',
@@ -92,6 +93,7 @@
     area: '大区',
     rankDate: '榜单日期',
     sinceSeconds: '抓包时间范围（秒）',
+    slot: '快照槽位',
   };
 
   /** 能力快捷提示语中的非常用英文 → 中文（不影响 <占位> 语法） */
@@ -633,6 +635,24 @@
     return { moduleId, catIndex };
   }
 
+  function navCapRegistryKey(sourceId, registryId) {
+    const sid = String(sourceId || '').trim();
+    const rid = String(registryId || '').trim();
+    if (!sid || !rid) return '';
+    return `capreg:${sid}:${rid}`;
+  }
+
+  function parseNavCapRegistryKey(key) {
+    if (!key || !key.startsWith('capreg:')) return null;
+    const rest = key.slice(7);
+    const sep = rest.indexOf(':');
+    if (sep <= 0) return null;
+    const sourceId = rest.slice(0, sep);
+    const registryId = rest.slice(sep + 1);
+    if (!sourceId || !registryId) return null;
+    return { sourceId, registryId };
+  }
+
   function navPlaybookItemKey(playbookId) {
     return `pbi:${playbookId}`;
   }
@@ -685,6 +705,7 @@
     this.saveNav = options.saveNav || null;
     this.savePrompt = options.savePrompt || null;
     this.onPromptsSaved = options.onPromptsSaved || null;
+    this.getSessionId = typeof options.getSessionId === 'function' ? options.getSessionId : null;
     this.DATA = null;
     this.activeKey = 'all';
     this.navTree = [];
@@ -1108,7 +1129,11 @@
     if (node.kind === 'playbook') return 'playbook';
     if (node.kind === 'module') return `module:${node.moduleId}`;
     if (node.kind === 'folder') return `folder:${node.id}`;
-    if (node.kind === 'cap') return navCategoryKey(node.moduleId, node.catIndex);
+    if (node.kind === 'cap') {
+      const regKey = navCapRegistryKey(node.sourceId, node.registryId);
+      if (regKey) return regKey;
+      return navCategoryKey(node.moduleId, node.catIndex);
+    }
     if (node.kind === 'playbookItem') return navPlaybookItemKey(node.playbookId);
     if (node.kind === 'pbStep') return navPbStepKey(node.playbookId, node.stepOrder);
     return '';
@@ -1152,9 +1177,23 @@
 
   CatalogPanel.prototype.capItemCount = function capItemCount(node) {
     if (!node || node.kind !== 'cap') return 0;
+    if (node.sourceId && node.registryId) return 1;
     const mod = this.moduleById(node.moduleId);
     const cat = mod?.categories?.[node.catIndex];
     return (cat?.items || []).length;
+  };
+
+  CatalogPanel.prototype.filterCapItemsForNavNode = function filterCapItemsForNavNode(items, capNode) {
+    const list = items || [];
+    if (!capNode || capNode.kind !== 'cap') return list;
+    const sourceId = String(capNode.sourceId || '').trim();
+    const registryId = String(capNode.registryId || '').trim();
+    if (!sourceId || !registryId) return list;
+    return list.filter((it) => {
+      const sid = String(it?.source_id || it?.sourceId || '').trim();
+      const rid = String(it?.registry_id || it?.registryId || '').trim();
+      return sid === sourceId && rid === registryId;
+    });
   };
 
   CatalogPanel.prototype.navNodeCount = function navNodeCount(node) {
@@ -1237,6 +1276,18 @@
       const folder = this.findFolderById(folderId);
       const moduleIds = folder ? this.collectModuleIds(folder) : new Set();
       return { mode: 'modules', moduleIds };
+    }
+    const capReg = parseNavCapRegistryKey(key);
+    if (capReg) {
+      const node = this.findNavNodeByKey(key);
+      if (node && node.kind === 'cap') {
+        return {
+          mode: 'category',
+          moduleId: node.moduleId,
+          catIndex: node.catIndex,
+          capNode: node,
+        };
+      }
     }
     const cat = parseNavCategoryKey(key);
     if (cat) return { mode: 'category', moduleId: cat.moduleId, catIndex: cat.catIndex };
@@ -1699,12 +1750,22 @@
       if (m.index > last) spanParts.push(escapeHtml(line.slice(last, m.index)));
       const key = m[1];
       const label = promptPlaceholderLabel(key, m[2]);
-      const width = promptFieldWidthEm(label);
-      spanParts.push(
-        `<input type="text" class="prompt-field" data-key="${escapeHtml(key)}" ` +
-        `placeholder="${escapeHtml(label)}" aria-label="${escapeHtml(label)}" ` +
-        `style="width:${width}em">`
-      );
+      const autoSession = key === 'sessionId' && this.getSessionId
+        ? String(this.getSessionId() || '').trim()
+        : '';
+      if (autoSession) {
+        spanParts.push(
+          `<input type="hidden" class="prompt-field" data-key="${escapeHtml(key)}" ` +
+          `value="${escapeAttr(autoSession)}" aria-hidden="true">`
+        );
+      } else {
+        const width = promptFieldWidthEm(label);
+        spanParts.push(
+          `<input type="text" class="prompt-field" data-key="${escapeHtml(key)}" ` +
+          `placeholder="${escapeHtml(label)}" aria-label="${escapeHtml(label)}" ` +
+          `style="width:${width}em">`
+        );
+      }
       last = re.lastIndex;
     }
     if (last < line.length) spanParts.push(escapeHtml(line.slice(last)));
@@ -1958,7 +2019,8 @@
     const cat = mod?.categories?.[capNode.catIndex];
     if (!cat) return { html: '', count: 0 };
     const catLabel = this.navNodeLabel(capNode);
-    const filtered = cat.items.filter((it) => this.matches(it, mod.label, cat.name, q));
+    let filtered = cat.items.filter((it) => this.matches(it, mod.label, cat.name, q));
+    filtered = this.filterCapItemsForNavNode(filtered, capNode);
     if (!filtered.length) return { html: '', count: 0 };
     const items = filtered.map((it) => this.renderCapItem(it, {
       moduleId: capNode.moduleId,
@@ -2143,31 +2205,47 @@
       const mod = this.DATA.modules.find((m) => m.id === filter.moduleId);
       const cat = mod?.categories?.[filter.catIndex];
       if (cat) {
-        const filtered = cat.items.filter((it) => this.matches(it, mod.label, cat.name, q));
+        let filtered = cat.items.filter((it) => this.matches(it, mod.label, cat.name, q));
+        const capNode = filter.capNode || this.findNavNodeByKey(this.activeKey);
+        filtered = this.filterCapItemsForNavNode(filtered, capNode);
         if (filtered.length) {
           any = true;
-          const capNode = this.findNavNodeByKey(this.activeKey);
           const scopeTitle = capNode
             ? this.navNodeLabel(capNode)
             : collapseNavDisplayLabel(cat.name);
-          const items = filtered.map((it) => this.renderCapItem(it, {
-            moduleId: filter.moduleId,
-            catIndex: filter.catIndex,
-            modLabel: mod.label,
-            catName: cat.name,
-          })).join('');
+          const guildOnly = filtered.length === 1
+            && typeof global.isGuildPanguCapItem === 'function'
+            && global.isGuildPanguCapItem(filtered[0])
+            && global.GuildPanguPanel;
           const section = document.createElement('section');
           section.className = 'catalog-module catalog-module-category';
           section.innerHTML = `
             ${this.renderModuleHead({
               icon: smallIcon('spark'),
               title: scopeTitle,
-              sub: `${filtered.length} 项 MOA 能力`,
+              sub: guildOnly ? '公会盘古 · 预上线改参' : `${filtered.length} 项 MOA 能力`,
               moduleId: filter.moduleId,
               category: cat.name,
             })}
-            <ol class="cats"><li><ul class="items">${items}</ul></li></ol>`;
+            <div class="guild-pangu-panel-host" data-guild-pangu-host="${guildOnly ? '1' : '0'}"></div>`;
           main.appendChild(section);
+          if (guildOnly) {
+            const host = section.querySelector('[data-guild-pangu-host="1"]');
+            void global.GuildPanguPanel.mount(host, (text) => {
+              if (typeof this.onRunPrompt === 'function') this.onRunPrompt(text);
+            });
+          } else {
+            const items = filtered.map((it) => this.renderCapItem(it, {
+              moduleId: filter.moduleId,
+              catIndex: filter.catIndex,
+              modLabel: mod.label,
+              catName: cat.name,
+            })).join('');
+            const host = section.querySelector('[data-guild-pangu-host="0"]');
+            if (host) {
+              host.outerHTML = `<ol class="cats"><li><ul class="items">${items}</ul></li></ol>`;
+            }
+          }
         }
       }
       if (!any) {
@@ -2306,7 +2384,7 @@
     const label = this.navNodeLabel(node);
     const active = this.activeKey === key;
     const indent = Math.min(depth, 8) * 14;
-    const count = (cat.items || []).length;
+    const count = this.capItemCount(node);
     const drag = this.canEditNav ? ' draggable="true"' : '';
     return `<div class="nav-row nav-cap-if${active ? ' active' : ''}" data-nav-key="${escapeHtml(key)}" data-path-key="${escapeHtml(pathKey)}" style="--nav-depth:${indent}px"${drag}>
       <span class="nav-cap-lead" aria-hidden="true"><span class="nav-folder-icon nav-cap-if-icon">${navCapInterfaceIconSvg()}</span></span>

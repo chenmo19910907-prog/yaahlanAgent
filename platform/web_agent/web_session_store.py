@@ -33,9 +33,14 @@ def compute_sessions_list_etag(
     query: str = "",
     scope: str = "all",
     lite: bool = False,
+    offset: int = 0,
+    limit: int | None = None,
+    total: int | None = None,
 ) -> str:
     """会话列表指纹，供 /api/sessions 返回 ETag。"""
     parts = [query.strip(), scope.strip(), "1" if lite else "0"]
+    if limit is not None:
+        parts.append(f"p:{int(offset)}:{int(limit)}:{int(total if total is not None else len(sessions))}")
     for item in sessions:
         parts.append(
             "|".join(
@@ -116,6 +121,32 @@ def compute_messages_page_etag(
     ]
     digest = hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()[:16]
     return f'W/"{digest}"'
+
+
+def paginate_sessions_list(
+    sessions: list[dict[str, Any]],
+    *,
+    offset: int = 0,
+    limit: int | None = None,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """对已排序的会话列表切片，并返回分页 meta。"""
+    total = len(sessions)
+    off = max(0, int(offset or 0))
+    if limit is None:
+        return sessions, {
+            "total": total,
+            "offset": 0,
+            "limit": total,
+            "has_more": False,
+        }
+    cap = max(1, min(100, int(limit)))
+    page = sessions[off : off + cap]
+    return page, {
+        "total": total,
+        "offset": off,
+        "limit": cap,
+        "has_more": off + cap < total,
+    }
 
 
 def sort_sessions_for_display(sessions: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -395,6 +426,33 @@ def _scroll_timestamp_from_entries(entries: list[SearchIndexEntry], query: str) 
     return ""
 
 
+def list_message_search_hits(
+    entries: list[SearchIndexEntry],
+    query: str,
+    *,
+    limit: int = 50,
+) -> list[SessionSearchHit]:
+    """按时间倒序返回本会话内全部正文命中（用于顶栏会话内搜索）。"""
+    q = _normalize_search_query(query)
+    if not q:
+        return []
+    safe_limit = max(1, min(int(limit or 50), 200))
+    hits: list[SessionSearchHit] = []
+    for entry in reversed(entries):
+        if not entry.blob or q not in entry.blob.casefold():
+            continue
+        role_tag = "问" if entry.role == "user" else "答"
+        hits.append(
+            SessionSearchHit(
+                snippet=f"{role_tag} · {_snippet_around(entry.blob, q)}",
+                message_timestamp=entry.timestamp,
+            )
+        )
+        if len(hits) >= safe_limit:
+            break
+    return hits
+
+
 def session_matches_search_entries(
     entries: list[SearchIndexEntry],
     query: str,
@@ -551,6 +609,36 @@ def filter_sessions_by_scope(
     return [meta for meta in sessions if _session_in_mine_scope(meta, viewer)]
 
 
+def session_dict_in_mine_scope(item: dict[str, Any], viewer: str) -> bool:
+    """与侧栏 sessionMatchesScope 一致，用于 lite 列表 dict 筛选。"""
+    if not viewer:
+        return False
+    if item.get("is_mine") is True:
+        return True
+    if item.get("is_collaborator") is True:
+        return True
+    if item.get("source") == "dingtalk":
+        owner_id = (item.get("dingtalk_owner_id") or "").strip()
+    else:
+        owner_id = (item.get("web_owner_id") or "").strip()
+    return bool(owner_id) and owner_id == viewer
+
+
+def filter_session_dicts_by_scope(
+    sessions: list[dict[str, Any]],
+    scope: str,
+    *,
+    viewer_staff_id: str | None = None,
+) -> list[dict[str, Any]]:
+    normalized = (scope or "all").strip().lower()
+    if normalized != "mine":
+        return sessions
+    viewer = (viewer_staff_id or "").strip()
+    if not viewer:
+        return []
+    return [s for s in sessions if session_dict_in_mine_scope(s, viewer)]
+
+
 def _auto_titles_from_messages(messages: list[ChatMessage]) -> set[str]:
     titles: set[str] = set()
     for msg in messages:
@@ -612,6 +700,20 @@ def _messages_file_has_api_source_tag(path: Path) -> bool:
     except OSError:
         return False
     return bool(_API_SOURCE_TAG_IN_MESSAGES_RE.search(text))
+
+
+def _backfill_open_api_session_from_messages_file(
+    meta: SessionMeta,
+    messages_path: Path,
+) -> bool:
+    """消息里已有 source_tag=API 但 index 缺标记时补回（lite 列表也会走）。"""
+    if meta.open_api_session:
+        return False
+    if not _messages_file_has_api_source_tag(messages_path):
+        return False
+    meta.open_api_session = True
+    meta.open_api_origin_probed = _OPEN_API_ORIGIN_PROBE
+    return True
 
 
 def _messages_indicate_open_api_session(messages: list[ChatMessage]) -> bool:
@@ -744,12 +846,49 @@ class SessionMeta:
         return viewer in self.web_collaborator_id_set()
 
     def web_owner_display(self, *, known_labels: dict[str, str] | None = None) -> str:
-        from dingtalk_user_lookup import lookup_auth_user_display_name
+        from dingtalk_user_lookup import (
+            _COLLABORATOR_EXCLUDED_DISPLAY_NAMES,
+            lookup_auth_user_display_name,
+        )
 
         uid = (self.web_owner_id or "").strip()
         if not uid:
             return ""
-        return lookup_auth_user_display_name(uid, self.web_owner_label or "")
+        session_label = (self.web_owner_label or "").strip()
+        if session_label in _COLLABORATOR_EXCLUDED_DISPLAY_NAMES or session_label == uid:
+            session_label = ""
+        fallback = session_label or uid
+
+        if known_labels is not None:
+            from dingtalk_user_lookup import (
+                _localhost_admin_display_name,
+                _public_display_name,
+                chinese_display_name,
+                resolve_staff_display_name,
+            )
+
+            resolved = resolve_staff_display_name(
+                uid,
+                known_labels=known_labels,
+                fallback_label=session_label,
+                try_api=False,
+            )
+            pub = _public_display_name(resolved, uid)
+            if pub != "未知用户":
+                return pub
+            local_name = _localhost_admin_display_name(uid)
+            if local_name:
+                return local_name
+            if session_label and session_label != uid:
+                pub = _public_display_name(session_label, uid)
+                if pub != "未知用户":
+                    return pub
+                plain = chinese_display_name(session_label)
+                if plain and plain != uid:
+                    return plain
+            return pub
+
+        return lookup_auth_user_display_name(uid, fallback)
 
     def owner_display(self, *, known_labels: dict[str, str] | None = None) -> str:
         from dingtalk_user_lookup import resolve_staff_display_name
@@ -1226,6 +1365,20 @@ class WebSessionStore:
         )
         return rebuilt if rebuilt is not None else _search_entries_from_messages(messages)
 
+    def search_message_hits(
+        self,
+        session_id: str,
+        query: str,
+        *,
+        limit: int = 50,
+    ) -> list[SessionSearchHit]:
+        entries = self.get_search_entries(session_id)
+        if not entries:
+            messages = self._read_messages_from_disk(session_id)
+            if messages:
+                entries = _search_entries_from_messages(messages)
+        return list_message_search_hits(entries, query, limit=limit)
+
     def _read_tail_from_sidecar(
         self,
         session_id: str,
@@ -1370,6 +1523,18 @@ class WebSessionStore:
             items = [s for s in self._sessions.values() if s.message_count > 0]
         return self._sort_session_items(items)
 
+    def _persist_open_api_backfill_from_message_files(self) -> None:
+        dirty = False
+        for meta in self._sessions.values():
+            if meta.message_count <= 0:
+                continue
+            if _backfill_open_api_session_from_messages_file(
+                meta, self._messages_path(meta.id)
+            ):
+                dirty = True
+        if dirty:
+            self._save_index()
+
     def list_sessions(
         self,
         *,
@@ -1378,7 +1543,18 @@ class WebSessionStore:
         readonly: bool = False,
     ) -> list[SessionMeta]:
         if readonly:
-            return self._list_sessions_readonly()
+            items = self._list_sessions_readonly()
+            needs_backfill = any(
+                not meta.open_api_session
+                and _messages_file_has_api_source_tag(self._messages_path(meta.id))
+                for meta in items
+            )
+            if needs_backfill:
+                with self._exclusive_index():
+                    self._reload_index_if_stale()
+                    self._persist_open_api_backfill_from_message_files()
+                items = self._list_sessions_readonly()
+            return items
         with self._exclusive_index():
             self._reload_index_if_stale()
             dirty = False

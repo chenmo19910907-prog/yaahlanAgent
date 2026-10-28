@@ -19,6 +19,7 @@ from web_session_store import (
     compute_sessions_list_etag,
     estimate_messages_page_meta,
     filter_sessions_by_search,
+    paginate_sessions_list,
 )
 
 
@@ -263,6 +264,19 @@ class WebSessionPerfTest(unittest.TestCase):
             self.assertTrue(tail_meta["has_older"])
             self.assertEqual(load_calls, 0)
 
+    def test_paginate_sessions_list(self) -> None:
+        rows = [{"id": f"s{i}", "updated_at": f"2026-08-03T10:{i:02d}:00+00:00"} for i in range(5)]
+        page, meta = paginate_sessions_list(rows, offset=0, limit=2)
+        self.assertEqual([item["id"] for item in page], ["s0", "s1"])
+        self.assertEqual(meta["total"], 5)
+        self.assertTrue(meta["has_more"])
+        page2, meta2 = paginate_sessions_list(rows, offset=2, limit=2)
+        self.assertEqual([item["id"] for item in page2], ["s2", "s3"])
+        self.assertTrue(meta2["has_more"])
+        page3, meta3 = paginate_sessions_list(rows, offset=4, limit=2)
+        self.assertEqual([item["id"] for item in page3], ["s4"])
+        self.assertFalse(meta3["has_more"])
+
     def test_compute_sessions_list_etag_changes_with_running_flag(self) -> None:
         base = {
             "id": "sess001",
@@ -457,6 +471,57 @@ class WebSessionPerfTest(unittest.TestCase):
             self.assertTrue(reloaded.open_api_session)
             raw = json.loads(index.read_text(encoding="utf-8"))[sid]
             self.assertTrue(raw.get("open_api_session"))
+
+    def test_list_sessions_readonly_backfills_open_api_session(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "sessions.json"
+            messages_dir = root / "messages"
+            messages_dir.mkdir()
+            sid = "abc123def4567890"
+            now = "2026-10-20T12:00:00+00:00"
+            index.write_text(
+                json.dumps(
+                    {
+                        sid: {
+                            "title": "api question",
+                            "created_at": now,
+                            "updated_at": now,
+                            "message_count": 2,
+                            "source": "web",
+                            "web_owner_id": "u1",
+                            "messages_mtime": 1.0,
+                        }
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            (messages_dir / f"{sid}.json").write_text(
+                json.dumps(
+                    [
+                        {
+                            "role": "user",
+                            "content": "hello",
+                            "timestamp": now,
+                            "source_tag": "API",
+                        },
+                        {"role": "assistant", "content": "ok", "timestamp": now},
+                    ],
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            store = WebSessionStore(index_path=index, messages_dir=messages_dir)
+            items = store.list_sessions(
+                enrich_names=False, sync_derived_meta=False, readonly=True
+            )
+            self.assertEqual(len(items), 1)
+            payload = items[0].to_dict(viewer_staff_id="u1")
+            self.assertTrue(payload.get("open_api_session"))
+            reloaded = store.get_session(sid)
+            assert reloaded is not None
+            self.assertTrue(reloaded.open_api_session)
 
     def test_open_api_session_reuses_canonical_id(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -20,6 +20,7 @@ from code_modify_permission import (  # noqa: E402
     ALLOWLIST_LOCAL_PATH,
     ALLOWLIST_PATH,
     load_code_modify_allowlist,
+    reload_code_modify_allowlist,
 )
 from web_admin_manage import (  # noqa: E402
     CHENMO_STAFF_ID,
@@ -91,7 +92,7 @@ class WebAdminManageTests(unittest.TestCase):
     def test_can_manage_includes_super_admin(self) -> None:
         target = "0834514151639181"
         with self._patch_allowlist(), self._patch_grants():
-            load_code_modify_allowlist.cache_clear()
+            reload_code_modify_allowlist()
             reload_admin_grants()
             self.grants_path.write_text(
                 json.dumps({target: ["super_admin"]}, ensure_ascii=False) + "\n",
@@ -104,7 +105,7 @@ class WebAdminManageTests(unittest.TestCase):
     def test_grant_and_revoke_by_admin(self) -> None:
         target = "0834514151639181"
         with self._patch_allowlist(), self._patch_grants(), self._patch_notify():
-            load_code_modify_allowlist.cache_clear()
+            reload_code_modify_allowlist()
             reload_admin_grants()
             result, err = set_admin_role(
                 operator_staff_id="admin",
@@ -134,7 +135,7 @@ class WebAdminManageTests(unittest.TestCase):
     def test_set_super_admin_permissions(self) -> None:
         target = "0834514151639181"
         with self._patch_allowlist(), self._patch_grants(), self._patch_notify():
-            load_code_modify_allowlist.cache_clear()
+            reload_code_modify_allowlist()
             reload_admin_grants()
             set_admin_role(
                 operator_staff_id="admin",
@@ -164,7 +165,7 @@ class WebAdminManageTests(unittest.TestCase):
     def test_set_permissions_for_admin(self) -> None:
         target = "0834514151639181"
         with self._patch_allowlist(), self._patch_grants(), self._patch_notify():
-            load_code_modify_allowlist.cache_clear()
+            reload_code_modify_allowlist()
             reload_admin_grants()
             set_admin_role(
                 operator_staff_id="admin",
@@ -193,7 +194,7 @@ class WebAdminManageTests(unittest.TestCase):
 
     def test_viewer_cannot_modify(self) -> None:
         with self._patch_allowlist(), self._patch_grants():
-            load_code_modify_allowlist.cache_clear()
+            reload_code_modify_allowlist()
             reload_admin_grants()
             _, err = set_admin_role(
                 operator_staff_id="0834514151639181",
@@ -205,7 +206,7 @@ class WebAdminManageTests(unittest.TestCase):
 
     def test_cannot_revoke_chenmo(self) -> None:
         with self._patch_allowlist(), self._patch_grants():
-            load_code_modify_allowlist.cache_clear()
+            reload_code_modify_allowlist()
             _, err = set_admin_role(
                 operator_staff_id="admin",
                 operator_display_name="管理员",
@@ -216,7 +217,7 @@ class WebAdminManageTests(unittest.TestCase):
 
     def test_list_excludes_placeholder_accounts(self) -> None:
         with self._patch_allowlist(), self._patch_grants(), self._patch_hidden():
-            load_code_modify_allowlist.cache_clear()
+            reload_code_modify_allowlist()
             reload_admin_grants()
             reload_admin_list_hidden_staff_ids()
             with patch(
@@ -243,14 +244,14 @@ class WebAdminManageTests(unittest.TestCase):
         target = "0834514151639181"
         regular_admin = "regular-admin-id"
         with self._patch_allowlist(), self._patch_grants(), self._patch_hidden():
-            load_code_modify_allowlist.cache_clear()
+            reload_code_modify_allowlist()
             reload_admin_grants()
             reload_admin_list_hidden_staff_ids()
             self.local_allowlist.write_text(
                 json.dumps({"allowedStaffIds": [regular_admin]}, ensure_ascii=False) + "\n",
                 encoding="utf-8",
             )
-            load_code_modify_allowlist.cache_clear()
+            reload_code_modify_allowlist()
             self.grants_path.write_text(
                 json.dumps({target: ["super_admin"]}, ensure_ascii=False) + "\n",
                 encoding="utf-8",
@@ -284,7 +285,7 @@ class WebAdminManageTests(unittest.TestCase):
     def test_list_sorts_builtin_super_admin_before_other_super_admin(self) -> None:
         target = "0834514151639181"
         with self._patch_allowlist(), self._patch_grants(), self._patch_hidden():
-            load_code_modify_allowlist.cache_clear()
+            reload_code_modify_allowlist()
             reload_admin_grants()
             reload_admin_list_hidden_staff_ids()
             self.grants_path.write_text(
@@ -315,7 +316,7 @@ class WebAdminManageTests(unittest.TestCase):
 
     def test_list_excludes_localhost_admin(self) -> None:
         with self._patch_allowlist(), self._patch_grants(), self._patch_hidden():
-            load_code_modify_allowlist.cache_clear()
+            reload_code_modify_allowlist()
             reload_admin_grants()
             reload_admin_list_hidden_staff_ids()
             with patch(
@@ -339,7 +340,7 @@ class WebAdminManageTests(unittest.TestCase):
     def test_remove_ordinary_user(self) -> None:
         target = "0834514151639181"
         with self._patch_allowlist(), self._patch_grants(), self._patch_hidden():
-            load_code_modify_allowlist.cache_clear()
+            reload_code_modify_allowlist()
             reload_admin_grants()
             reload_admin_list_hidden_staff_ids()
             result, err = remove_admin_list_user(
@@ -357,7 +358,7 @@ class WebAdminManageTests(unittest.TestCase):
     def test_set_permissions_triggers_notify(self, mock_notify) -> None:
         target = "0834514151639181"
         with self._patch_allowlist(), self._patch_grants(), self._patch_notify():
-            load_code_modify_allowlist.cache_clear()
+            reload_code_modify_allowlist()
             reload_admin_grants()
             set_admin_role(
                 operator_staff_id="admin",
@@ -366,7 +367,7 @@ class WebAdminManageTests(unittest.TestCase):
                 is_admin=True,
             )
         with self._patch_allowlist(), self._patch_grants():
-            load_code_modify_allowlist.cache_clear()
+            reload_code_modify_allowlist()
             reload_admin_grants()
             set_admin_permissions(
                 operator_staff_id="admin",
@@ -387,7 +388,7 @@ class WebAdminManageTests(unittest.TestCase):
     def test_quit_admin_role(self) -> None:
         target = "0834514151639181"
         with self._patch_allowlist(), self._patch_grants(), self._patch_notify():
-            load_code_modify_allowlist.cache_clear()
+            reload_code_modify_allowlist()
             reload_admin_grants()
             set_admin_role(
                 operator_staff_id="admin",
@@ -404,7 +405,7 @@ class WebAdminManageTests(unittest.TestCase):
 
     def test_protected_cannot_quit(self) -> None:
         with self._patch_allowlist(), self._patch_grants():
-            load_code_modify_allowlist.cache_clear()
+            reload_code_modify_allowlist()
             reload_admin_grants()
             self.assertFalse(can_quit_admin_role(CHENMO_STAFF_ID))
             _, err = quit_admin_role(staff_id=CHENMO_STAFF_ID)

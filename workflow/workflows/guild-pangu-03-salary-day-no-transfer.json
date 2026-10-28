@@ -1,0 +1,35 @@
+{
+  "id": "guild-pangu-03-salary-day-no-transfer",
+  "name": "盘古-③算薪日禁转会退会",
+  "category": "公会常用盘古配置工具（workflow）",
+  "description": "预上线：改 voga-common.shiftTime.tradeUnion（公会统一时间偏移），模拟算薪日是否允许转会/退会。 验收：算薪日相关转会/退会操作被时间拦截或放行与偏移后日期一致。",
+  "version": 1,
+  "params": {
+    "fixedTimeSec": {
+      "label": "fixedTimeSec",
+      "type": "string",
+      "required": true,
+      "prompt": "Unix 秒（北京时间戳）"
+    },
+    "expireTimeSec": {
+      "label": "expireTimeSec",
+      "type": "string",
+      "required": false,
+      "prompt": "Unix 秒；可与 fixedTimeSec 相同"
+    }
+  },
+  "steps": [
+    {
+      "id": "apply_pangu_shift",
+      "name": "改 MSE 配置并发布",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/guild_pangu_shift_time_apply.py --scenario \"salary_day_no_transfer\" --fixed-time-sec \"{{fixedTimeSec}}\" --expire-time-sec \"{{expireTimeSec}}\"",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}
