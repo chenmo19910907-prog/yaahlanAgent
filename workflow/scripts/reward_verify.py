@@ -800,12 +800,61 @@ def _issued_nameplates_from_diff(diff: dict[str, Any]) -> list[dict[str, Any]]:
     return issued
 
 
+def _snapshot_category_counts(snap: dict[str, Any]) -> dict[str, int]:
+    gifts = snap.get("backpackGifts") if isinstance(snap.get("backpackGifts"), dict) else {}
+    panel_props = snap.get("backpackProps") if isinstance(snap.get("backpackProps"), dict) else {}
+    props_by_type = snap.get("propsByType") if isinstance(snap.get("propsByType"), dict) else {}
+    flat = snap.get("props") if isinstance(snap.get("props"), dict) else {}
+    if not props_by_type and flat:
+        props_by_type = {"": flat}
+    nameplates = snap.get("nameplates") if isinstance(snap.get("nameplates"), dict) else {}
+    medal_items = snap.get("cpMedalItems") if isinstance(snap.get("cpMedalItems"), list) else []
+    return {
+        "backpackGifts": len(gifts),
+        "backpackProps": len(panel_props),
+        "outfits": sum(len(v) for v in props_by_type.values() if isinstance(v, dict)),
+        "nameplates": len(nameplates),
+        "cpMedals": len(medal_items),
+    }
+
+
+def format_snapshot_overview(
+    snap: dict[str, Any],
+    *,
+    user_label: str = "",
+    slot: str = "",
+) -> str:
+    """资产概况（钻石/金币 + 各类条数），Web Agent 常规展示用。"""
+    user_id = str(snap.get("userId") or "")
+    label = user_label.strip() or user_id
+    recorded = snap.get("tsBeijing") or _beijing_label(int(snap.get("ts") or 0) * 1000)
+    counts = _snapshot_category_counts(snap)
+    diamond = snap.get("diamond")
+    diamond_cell = diamond if diamond is not None else "—"
+    slot_note = f" · {slot}" if (slot or "").strip() else ""
+    lines = [
+        f"## 资产概况（{label}{slot_note}）",
+        "",
+        f"- userId：`{user_id}` · 记录时间（北京）：{recorded}",
+        "",
+        "| 项 | 值 |",
+        "| --- | --- |",
+        f"| 钻石 | {diamond_cell} |",
+        f"| 金币 | {_format_gold_coin_cell(snap)} |",
+        f"| 背包礼物 | {counts['backpackGifts']} |",
+        f"| 装扮 | {counts['outfits']} |",
+        f"| 铭牌 | {counts['nameplates']} |",
+        "",
+    ]
+    return "\n".join(lines)
+
+
 def format_snapshot_inventory(
     snap: dict[str, Any],
     *,
     user_label: str = "",
 ) -> str:
-    """将 snapshot JSON 格式化为全量分类清单（展示用，不含 diamondHistory 明细）。"""
+    """将 snapshot JSON 格式化为全量分类清单（导出/全量展示用，不含 diamondHistory 明细）。"""
     prop_labels = _load_prop_type_labels()
     user_id = str(snap.get("userId") or "")
     label = user_label.strip() or user_id
@@ -934,12 +983,13 @@ def format_snapshot_inventory(
         lines.append("（无）")
     lines.append("")
 
+    cat = _snapshot_category_counts(snap)
     counts = {
-        "背包礼物": len(gifts),
-        "背包道具": len(panel_props),
-        "装扮": sum(len(v) for v in props_by_type.values() if isinstance(v, dict)),
-        "铭牌": len(nameplates),
-        "CP勋章": len(medal_items),
+        "背包礼物": cat["backpackGifts"],
+        "背包道具": cat["backpackProps"],
+        "装扮": cat["outfits"],
+        "铭牌": cat["nameplates"],
+        "CP勋章": cat["cpMedals"],
     }
     lines += [
         "### 汇总",

@@ -15,11 +15,27 @@ if str(_SCRIPTS) not in sys.path:
 
 from reward_verify import (  # noqa: E402
     format_snapshot_inventory,
+    format_snapshot_overview,
     summarize_web_reward_round,
 )
 
 
 class FormatSnapshotInventoryTests(unittest.TestCase):
+    def test_overview_is_compact(self) -> None:
+        snap = {
+            "userId": "100001",
+            "tsBeijing": "2026-10-28 14:00:00",
+            "diamond": 10,
+            "goldCoin": 5,
+            "backpackGifts": {"g1": {"name": "Rose"}},
+            "propsByType": {"10043": {"h1": {"propName": "框1"}}},
+            "nameplates": {"1139": {"title": "铭牌X"}},
+        }
+        md = format_snapshot_overview(snap, user_label="测试号", slot="baseline")
+        self.assertIn("| 背包礼物 | 1 |", md)
+        self.assertIn("| 装扮 | 1 |", md)
+        self.assertNotIn("Rose", md)
+
     def test_lists_all_categories(self) -> None:
         snap = {
             "userId": "100001",

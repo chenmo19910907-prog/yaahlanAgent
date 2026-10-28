@@ -167,21 +167,16 @@ def cmd_show(args: argparse.Namespace) -> int:
         return 1
 
     user_label = str(args.user_label or entry.get("userLabel") or entry.get("userId") or "").strip()
-    rc, out, err = _run(
-        [
-            "python3",
-            "workflow/scripts/reward_verify.py",
-            "list",
-            "--in",
-            str(snap_path),
-            "--user-label",
-            user_label,
-        ]
-    )
-    if rc != 0:
-        print(err or out, file=sys.stderr)
-        return rc
-    print(out)
+    snap = json.loads(snap_path.read_text(encoding="utf-8"))
+    scripts_dir = _REPO / "workflow" / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    from reward_verify import format_snapshot_inventory, format_snapshot_overview  # noqa: E402
+
+    if getattr(args, "full", False):
+        print(format_snapshot_inventory(snap, user_label=user_label))
+    else:
+        print(format_snapshot_overview(snap, user_label=user_label, slot=slot))
     return 0
 
 
@@ -204,7 +199,7 @@ def cmd_export(args: argparse.Namespace) -> int:
         if str(p) not in sys.path:
             sys.path.insert(0, str(p))
 
-    from reward_verify import snapshot_inventory_rows  # noqa: E402
+    from reward_verify import format_snapshot_overview, snapshot_inventory_rows  # noqa: E402
 
     rows = snapshot_inventory_rows(snap, user_label=user_label)
 
@@ -233,6 +228,7 @@ def cmd_export(args: argparse.Namespace) -> int:
         "workbookName": workbook_name,
         "rowCount": data_rows,
         "url": file_url,
+        "overviewMarkdown": format_snapshot_overview(snap, user_label=user_label, slot=slot),
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
@@ -371,10 +367,15 @@ def main() -> int:
     p_rec.add_argument("--intimate-id", default="")
     p_rec.set_defaults(func=cmd_record)
 
-    p_show = sub.add_parser("show", help="展示已记录快照的全量分类清单")
+    p_show = sub.add_parser("show", help="展示已记录快照的资产概况（全量明细请 export 钉钉）")
     p_show.add_argument("--session-id", required=True)
     p_show.add_argument("--slot", default="baseline")
     p_show.add_argument("--user-label", default="")
+    p_show.add_argument(
+        "--full",
+        action="store_true",
+        help="输出全量分类 Markdown（默认仅概况表）",
+    )
     p_show.set_defaults(func=cmd_show)
 
     p_st = sub.add_parser("status", help="查看本会话已记录的 slot")

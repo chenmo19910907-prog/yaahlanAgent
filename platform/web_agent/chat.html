@@ -12067,36 +12067,35 @@
       return true;
     }
 
-    function listenOrphanRunStream(sessionId, es, { shellEl = null } = {}) {
+    function listenOrphanRunStream(sessionId, es, { shellEl = null, uiSettled = false } = {}) {
       if (!es) return;
+      const pinnedShell = shellEl?.isConnected ? shellEl : null;
       es.onmessage = (ev) => {
         try {
           const data = JSON.parse(ev.data);
           if (data.type === 'done' || data.type === 'error') {
-            if (currentSessionId === sessionId) {
-              if (data.type === 'done') {
+            if (currentSessionId === sessionId && !uiSettled && pinnedShell) {
+              if (isStreamingShellFinalized(pinnedShell)) {
+                /* showInterruptedReply 等已落盘，勿再改 DOM/缓存 */
+              } else if (data.type === 'done') {
                 if (shouldTreatDoneAsDeferredRestart(sessionId, data)) {
-                  applyDeferredWebAgentRestartUi(sessionId, shellEl);
+                  applyDeferredWebAgentRestartUi(sessionId, pinnedShell);
                 } else {
-                  let shell = shellEl?.isConnected ? shellEl : findActiveAssistantShell(sessionId);
-                  if (shell) {
-                    const body = resolveDoneAssistantDisplayText(data.text, null, shell)
-                      || String(data.text || '').trim();
-                    if (body) {
-                      finalizeStreamingShell(sessionId, shell, body);
-                      commitAssistantReplyToSessionCache(sessionId, body);
-                    } else {
-                      setAssistantMessageBody(shell, '⚠️ 任务已中断。');
-                      ensureAssistantShareButton(shell);
-                      commitAssistantReplyToSessionCache(sessionId, '⚠️ 任务已中断。');
-                    }
-                    scrollMessagesToBottom({ force: true });
+                  const body = resolveDoneAssistantDisplayText(data.text, null, pinnedShell)
+                    || String(data.text || '').trim();
+                  if (body) {
+                    finalizeStreamingShell(sessionId, pinnedShell, body);
+                    commitAssistantReplyToSessionCache(sessionId, body);
+                  } else {
+                    finalizeStreamingShell(sessionId, pinnedShell, '⚠️ 任务已中断。');
+                    commitAssistantReplyToSessionCache(sessionId, '⚠️ 任务已中断。');
                   }
+                  scrollMessagesToBottom({ force: true });
                 }
               } else {
                 showRunFailureReply(
                   sessionId,
-                  shellEl,
+                  pinnedShell,
                   data.text || `⚠️ ${data.message || 'Agent 执行失败'}`,
                 );
               }
@@ -12143,7 +12142,7 @@
         } else if (orphanEs) {
           orphanEs.onmessage = null;
           orphanEs.onerror = null;
-          listenOrphanRunStream(sessionId, orphanEs, { shellEl: orphanShell });
+          listenOrphanRunStream(sessionId, orphanEs, { shellEl: orphanShell, uiSettled: true });
           run.eventSource = null;
         }
         finishRun(sessionId, run.runToken);
@@ -12622,6 +12621,12 @@
       void (async () => {
         await waitForPendingSessionTitleSave();
         await loadSessions({ lite: true, force: true });
+        if (activeRuns.has(sessionId)) {
+          if (sessionId !== currentSessionId) {
+            await refreshSessionMessagesCacheFromServer(sessionId);
+          }
+          return;
+        }
         if (sessionId === currentSessionId) {
           await loadMessages();
         } else {
