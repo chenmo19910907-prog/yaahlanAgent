@@ -19,6 +19,8 @@ ACTION_LABELS: dict[str, str] = {
     "quit_admin": "主动退出管理员",
     "apply_admin": "申请管理员",
     "remove_user": "从列表移除",
+    "restart_web_agent": "重启 Web Agent",
+    "restart_dingtalk_gateway": "重启钉钉网关",
 }
 
 

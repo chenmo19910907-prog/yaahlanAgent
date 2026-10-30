@@ -14,6 +14,7 @@ from typing import Any
 from env_loader import GATEWAY_DIR
 from batch_duration_history import get_batch_duration_store
 from progress_message import format_duration, format_eta_remaining
+from batch_operation_guard import assert_batch_total_allowed
 from task_chain_estimate import (
     clear_batch_task_context,
     estimate_batch_sec_per_item,
@@ -88,6 +89,7 @@ def report_batch_progress(
     if not key:
         raise ValueError("user_key 不能为空")
     total_n = max(1, int(total))
+    assert_batch_total_allowed(total_n, user_key=key)
     if not is_batch_scope(total_n):
         clear_batch_progress(key)
         logger.info(

@@ -49,12 +49,13 @@ from task_chain_estimate import save_batch_task_context
 from command_hints import suggest_command_hint
 from command_router import try_route
 from code_modify_guard import guard_readonly_agent_reply
-from admin_permission import has_admin_permission
+from admin_permission import has_admin_permission, is_admin
 from code_modify_permission import (
     allow_moa_registry_in_readonly,
     code_modify_denial_message,
     looks_like_code_modify_request,
 )
+from batch_operation_guard import resolve_batch_operation_denial
 from online_env_guard import resolve_online_env_denial
 from source_file_guard import guard_readonly_source_file_reply
 from source_file_permission import (
@@ -914,6 +915,36 @@ def process_inbound_task(
                 )
                 store.save(incoming.conversation_id, prompt, **store_kwargs)
                 return "source_denied"
+
+            batch_denial = resolve_batch_operation_denial(
+                prompt,
+                is_admin_user=is_admin(
+                    sender_staff_id=incoming.sender_staff_id,
+                    sender_id=incoming.sender_id,
+                ),
+            )
+            if batch_denial:
+                logger.warning(
+                    "批量操作上限拒绝 conv=%s staff=%s prompt=%s",
+                    user_key,
+                    incoming.sender_staff_id,
+                    redact_for_log(prompt),
+                )
+                _reply_early_exit(
+                    handler,
+                    incoming,
+                    inbound,
+                    batch_denial,
+                    stream_card=stream_card,
+                    started=started,
+                    task_kind=task_kind,
+                    user_key=user_key,
+                    user_prompt=prompt,
+                    sender_name=sender_name,
+                    sender_staff_id=sender_staff_id,
+                )
+                store.save(incoming.conversation_id, prompt, **store_kwargs)
+                return "batch_denied"
 
             online_denial = resolve_online_env_denial(
                 prompt,

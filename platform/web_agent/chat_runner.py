@@ -31,6 +31,7 @@ from adb_execution_guard import (  # noqa: E402
     adb_execution_denial_message_for_web,
     looks_like_adb_execution_request,
 )
+from batch_operation_guard import resolve_batch_operation_denial  # noqa: E402
 from online_env_guard import (  # noqa: E402
     resolve_online_env_denial,
 )
@@ -47,7 +48,7 @@ from cursor_runner import (  # noqa: E402
 from task_session import TaskSession  # noqa: E402
 from user_agent_pool import get_user_agent_pool  # noqa: E402
 
-from web_admin_permission import has_admin_permission  # noqa: E402
+from web_admin_permission import has_admin_permission, is_web_admin  # noqa: E402
 from web_prompt import build_web_prompt, normalize_reply_mode  # noqa: E402
 from web_session_context import (  # noqa: E402
     build_continue_context_note,
@@ -154,6 +155,12 @@ def run_web_chat(
     denial = resolve_online_env_denial(message, online_admin_allowed=online_allowed)
     if denial:
         return denial
+    batch_denial = resolve_batch_operation_denial(
+        message,
+        is_admin_user=is_web_admin(staff_id=staff_id),
+    )
+    if batch_denial:
+        return batch_denial
 
     agent_message = message
     if should_rotate_cursor_agent(session_id):

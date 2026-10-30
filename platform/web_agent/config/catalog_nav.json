@@ -69,11 +69,6 @@
             }
           ],
           "subfolder": true
-        },
-        {
-          "kind": "cap",
-          "moduleId": "公会",
-          "catIndex": 2
         }
       ]
     },

@@ -109,6 +109,7 @@ def _gateway_rules() -> str:
 18. **批量操作进度**：对 **≥3 项**的循环/批量（多手机号、多 userId、多笔送礼等），**每完成一个批量项**必须上报进度（网关会推送到群里）：
    `python3 platform/dingtalk_gateway/batch_progress_report.py --user-key <见下方 batch_key> --current N --total M --label "操作类型" [--detail "当前项标识"]`
    **N/M 语义**：`M` = 批量项总数（如 10 个手机号则 M=10）；`N` = 已完整处理完的批量项数（如已处理 3 个手机号则 N=3）。**禁止**把单个批量项内部的子步骤（查 userId、调 MOA、二次确认等）当作进度上报；一项内多步全部做完后，再 `--current +1` 一次。
+   **项数上限**：非管理员单任务 `M` 最多 **1000**（管理员不限）；超限会被网关拒绝，须拆分任务。
    批量开始前先 `--current 0 --total M` 初始化；**最后一项** `--current M --total M` 时须附带完整结果：`--result-text "Markdown表格或结论"` 或 `--result-file /path/to/result.md`（网关**仅**以此 Markdown 作为群内最终结果，保留表格格式）。Agent 最终回复**只能一行**（如「已完成。」），**禁止**在 Agent 回复里再贴 Markdown 表格/汇总，完整数据**只**写在 `--result-text`。不要在最终回复里重复贴逐项进度。
    {batch_parallel_rule_snippet()}
 19. **MSE 服务配置改参导出**：用户要求**修改/调整某个服务配置**（如 MSE `familyPkConfig` 门槛、奖金、时段等）时，**默认流程**：

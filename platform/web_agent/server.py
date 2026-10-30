@@ -155,7 +155,8 @@ from web_admin_apply import (  # noqa: E402
     submit_application,
 )
 from web_new_member_notify import spawn_maybe_notify_new_member  # noqa: E402
-from web_admin_audit_log import list_admin_audit_entries  # noqa: E402
+from web_admin_audit_log import append_admin_audit_entry, list_admin_audit_entries  # noqa: E402
+from web_service_restart import execute_service_restart, format_service_restart_summary  # noqa: E402
 from web_moa_call_log import list_moa_call_entries, list_moa_call_log_operators  # noqa: E402
 from web_guild_pangu import guild_pangu_current_payload, guild_pangu_scenarios_payload  # noqa: E402
 from web_admin_manage import (  # noqa: E402
@@ -3612,6 +3613,52 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 return _json_response(self, {"error": err}, code)
             assert result is not None
             return _json_response(self, {"ok": True, **result})
+
+        if path == "/api/admin/service/restart":
+            user = current_web_user(self)
+            if user is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            if not is_super_admin(staff_id=user.staff_id):
+                return _json_response(self, {"error": "仅超级管理员可用"}, 403)
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            target = str(body.get("target") or "").strip().lower()
+            silent_raw = body.get("silent")
+            silent = True if silent_raw is None else bool(silent_raw)
+            outcome = execute_service_restart(target=target, silent=silent)
+            if outcome.target in ("web_agent", "dingtalk_gateway"):
+                operator_name = lookup_auth_user_display_name(
+                    user.staff_id, user.display_name
+                )
+                audit_action = (
+                    "restart_web_agent"
+                    if outcome.target == "web_agent"
+                    else "restart_dingtalk_gateway"
+                )
+                try:
+                    append_admin_audit_entry(
+                        action=audit_action,
+                        operator_staff_id=user.staff_id,
+                        operator_display_name=operator_name,
+                        target_staff_id="",
+                        target_display_name="服务",
+                        detail=format_service_restart_summary(outcome),
+                    )
+                except ValueError:
+                    pass
+            status = 200 if outcome.ok else 409
+            return _json_response(
+                self,
+                {
+                    "ok": outcome.ok,
+                    "target": outcome.target,
+                    "silent": outcome.silent,
+                    "message": outcome.message,
+                },
+                status,
+            )
 
         if path == "/api/admin/users/set":
             user = current_web_user(self)

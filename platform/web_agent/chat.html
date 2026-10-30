@@ -3258,6 +3258,53 @@
       margin: 0;
       accent-color: var(--accent);
     }
+    .settings-service-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 10px;
+    }
+    .settings-service-row .settings-toggle-row {
+      flex-shrink: 0;
+      margin: 0;
+    }
+    .settings-service-restart-btn {
+      flex: 1 1 0;
+      min-width: 0;
+      font-size: 0.84rem;
+      padding: 8px 14px;
+      text-align: center;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--btn-subtle-bg);
+      color: var(--text-soft);
+      cursor: pointer;
+      transition: border-color 120ms, color 120ms, background 120ms;
+    }
+    .settings-service-restart-btn:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: var(--text);
+      background: var(--accent-soft);
+    }
+    .settings-service-restart-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .settings-service-restart-btn.is-pending {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+    .settings-service-restart-btn.is-done {
+      border-color: #22c55e;
+      color: #15803d;
+      background: rgba(34, 197, 94, 0.12);
+    }
+    .settings-service-restart-btn.is-error {
+      border-color: #ef4444;
+      color: #b91c1c;
+      background: rgba(239, 68, 68, 0.1);
+    }
     .input-wrap.has-content {
       border-color: var(--input-wrap-border);
       box-shadow: var(--input-wrap-glow), var(--input-wrap-shadow);
@@ -6334,6 +6381,17 @@
           <div class="settings-label">外部 Agent</div>
           <div class="external-agent-list" id="external-agent-list"></div>
         </div>
+        <div class="settings-section" id="settings-service-section" hidden>
+          <div class="settings-label">服务</div>
+          <div class="settings-service-row">
+            <button type="button" class="settings-service-restart-btn" id="btn-settings-restart-web-agent">重启 Web Agent</button>
+            <button type="button" class="settings-service-restart-btn" id="btn-settings-restart-gateway">重启钉钉网关</button>
+            <label class="settings-toggle-row" title="勾选时不向钉钉群推送启停通知（主要影响钉钉网关）">
+              <input type="checkbox" id="chk-restart-service-silent" checked />
+              静默
+            </label>
+          </div>
+        </div>
         <div class="settings-section">
           <div class="settings-label">其他</div>
           <div class="settings-footer-links">
@@ -9133,6 +9191,28 @@
     const MODEL_KEY = 'web_agent_model';
     const EXTERNAL_AGENTS_KEY = 'web_agent_enabled_external_agents';
     const REPLY_MODE_STORAGE_KEY = 'web_agent_reply_mode';
+    const RESTART_SERVICE_SILENT_KEY = 'web_agent_settings_restart_silent';
+    const RESTART_WEB_SILENT_KEY_LEGACY = 'web_agent_settings_restart_web_silent';
+    const RESTART_GATEWAY_SILENT_KEY_LEGACY = 'web_agent_settings_restart_gateway_silent';
+    const SERVICE_RESTART_UI = {
+      web_agent: {
+        btnId: 'btn-settings-restart-web-agent',
+        idle: '重启 Web Agent',
+        pending: 'Web Agent 重启中…',
+        done: 'Web Agent 重启完成',
+        fail: 'Web Agent 重启失败',
+      },
+      dingtalk_gateway: {
+        btnId: 'btn-settings-restart-gateway',
+        idle: '重启钉钉网关',
+        pending: '钉钉网关重启中…',
+        done: '钉钉网关重启完成',
+        fail: '钉钉网关重启失败',
+      },
+    };
+    /** @type {Map<string, ReturnType<typeof setTimeout>>} */
+    const serviceRestartResetTimers = new Map();
+    let serviceRestartInFlight = false;
     /** @type {Map<string, boolean>} 各会话「结果发钉钉」勾选，默认不勾选 */
     const sessionPushResultPrefs = new Map();
     const REPLY_MODES = ['concise', 'standard', 'detailed'];
@@ -9237,6 +9317,172 @@
           el.hidden = true;
         }, 200);
       }, durationMs);
+    }
+
+    function syncSettingsServiceSection() {
+      const section = document.getElementById('settings-service-section');
+      if (!section) return;
+      section.hidden = !userIsWebSuperAdmin(currentAuthUser);
+    }
+
+    function loadServiceRestartSilentPrefs() {
+      const chk = document.getElementById('chk-restart-service-silent');
+      if (!chk) return;
+      let stored = localStorage.getItem(RESTART_SERVICE_SILENT_KEY);
+      if (stored === null) {
+        const webLegacy = localStorage.getItem(RESTART_WEB_SILENT_KEY_LEGACY);
+        const gwLegacy = localStorage.getItem(RESTART_GATEWAY_SILENT_KEY_LEGACY);
+        if (webLegacy !== null || gwLegacy !== null) {
+          stored = webLegacy === '0' || gwLegacy === '0' ? '0' : '1';
+        }
+      }
+      chk.checked = stored === null ? true : stored === '1';
+    }
+
+    function persistServiceRestartSilentPref(checked) {
+      localStorage.setItem(RESTART_SERVICE_SILENT_KEY, checked ? '1' : '0');
+    }
+
+    function isServiceRestartSilent() {
+      const chk = document.getElementById('chk-restart-service-silent');
+      return chk ? !!chk.checked : true;
+    }
+
+    function syncServiceRestartButtonsDisabled() {
+      const disabled = serviceRestartInFlight;
+      document.getElementById('btn-settings-restart-web-agent')?.toggleAttribute('disabled', disabled);
+      document.getElementById('btn-settings-restart-gateway')?.toggleAttribute('disabled', disabled);
+    }
+
+    function setServiceRestartButtonPhase(target, phase) {
+      const cfg = SERVICE_RESTART_UI[target];
+      if (!cfg) return;
+      const btn = document.getElementById(cfg.btnId);
+      if (!btn) return;
+      btn.classList.remove('is-pending', 'is-done', 'is-error');
+      if (phase === 'pending') {
+        btn.textContent = cfg.pending;
+        btn.classList.add('is-pending');
+      } else if (phase === 'done') {
+        btn.textContent = cfg.done;
+        btn.classList.add('is-done');
+      } else if (phase === 'error') {
+        btn.textContent = cfg.fail;
+        btn.classList.add('is-error');
+      } else {
+        btn.textContent = cfg.idle;
+      }
+    }
+
+    function scheduleServiceRestartButtonIdle(target, delayMs = 4000) {
+      const prev = serviceRestartResetTimers.get(target);
+      if (prev) clearTimeout(prev);
+      const timer = setTimeout(() => {
+        serviceRestartResetTimers.delete(target);
+        setServiceRestartButtonPhase(target, 'idle');
+      }, delayMs);
+      serviceRestartResetTimers.set(target, timer);
+    }
+
+    async function waitWebAgentRestartOnline(maxWaitMs = 90000) {
+      await new Promise((resolve) => { setTimeout(resolve, 1200); });
+      const deadline = Date.now() + maxWaitMs;
+      let sawDown = false;
+      while (Date.now() < deadline) {
+        try {
+          const resp = await fetch(`${API}/api/meta`, {
+            credentials: 'same-origin',
+            cache: 'no-store',
+          });
+          if (resp.ok) {
+            if (sawDown) return true;
+          } else {
+            sawDown = true;
+          }
+        } catch {
+          sawDown = true;
+        }
+        await new Promise((resolve) => { setTimeout(resolve, 1000); });
+      }
+      try {
+        const resp = await fetch(`${API}/api/meta`, {
+          credentials: 'same-origin',
+          cache: 'no-store',
+        });
+        return resp.ok;
+      } catch {
+        return false;
+      }
+    }
+
+    function confirmServiceRestart(target, silent) {
+      if (target === 'web_agent') {
+        return window.confirm(
+          '确定重启 Web Agent？\n\n进行中的 Agent 任务可能被中断，页面可能短暂断开连接。',
+        );
+      }
+      const notifyHint = silent
+        ? '已勾选静默：不向钉钉群推送启停通知。'
+        : '未勾选静默：将向钉钉群推送启停通知。';
+      return window.confirm(
+        `确定重启钉钉网关？\n\n${notifyHint}\n进行中的 @ 机器人任务可能受影响。`,
+      );
+    }
+
+    async function invokeServiceRestart(target) {
+      if (serviceRestartInFlight) return;
+      if (!userIsWebSuperAdmin(currentAuthUser)) {
+        showWebToast('仅超管可重启服务', { error: true });
+        return;
+      }
+      const silent = isServiceRestartSilent();
+      if (!confirmServiceRestart(target, silent)) return;
+      serviceRestartInFlight = true;
+      setServiceRestartButtonPhase(target, 'pending');
+      syncServiceRestartButtonsDisabled();
+      try {
+        const res = await fetch('/api/admin/service/restart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ target, silent }),
+        });
+        let data = {};
+        try {
+          data = await res.json();
+        } catch { /* ignore */ }
+        const message = String(data.message || '').trim()
+          || (res.ok ? '重启已提交' : `重启失败（HTTP ${res.status}）`);
+        if (!res.ok) {
+          setServiceRestartButtonPhase(target, 'error');
+          scheduleServiceRestartButtonIdle(target, 4500);
+          showWebToast(message, { error: true });
+          return;
+        }
+        if (target === 'web_agent') {
+          const online = await waitWebAgentRestartOnline();
+          if (online) {
+            setServiceRestartButtonPhase(target, 'done');
+            scheduleServiceRestartButtonIdle(target);
+            showWebToast('Web Agent 重启完成', { durationMs: 3200 });
+          } else {
+            setServiceRestartButtonPhase(target, 'error');
+            scheduleServiceRestartButtonIdle(target, 5000);
+            showWebToast('等待 Web Agent 上线超时', { error: true });
+          }
+        } else {
+          setServiceRestartButtonPhase(target, 'done');
+          scheduleServiceRestartButtonIdle(target);
+          showWebToast(message, { durationMs: 3200 });
+        }
+      } catch (err) {
+        setServiceRestartButtonPhase(target, 'error');
+        scheduleServiceRestartButtonIdle(target, 4500);
+        showWebToast(err?.message || '重启请求失败', { error: true });
+      } finally {
+        serviceRestartInFlight = false;
+        syncServiceRestartButtonsDisabled();
+      }
     }
 
     function handleDingtalkPushResult(payload) {
@@ -15406,6 +15652,8 @@
       }
       renderModelOptions();
       renderExternalAgentOptions();
+      syncSettingsServiceSection();
+      loadServiceRestartSilentPrefs();
       closeModelPicker();
     }
 
@@ -15877,6 +16125,16 @@
         trackEvent('panel_open', { panel: 'moa_call_log', source: 'settings' });
         void setMoaCallLogModalOpen(true);
       });
+      document.getElementById('chk-restart-service-silent')?.addEventListener('change', (ev) => {
+        persistServiceRestartSilentPref(!!ev.target.checked);
+      });
+      document.getElementById('btn-settings-restart-web-agent')?.addEventListener('click', () => {
+        void invokeServiceRestart('web_agent');
+      });
+      document.getElementById('btn-settings-restart-gateway')?.addEventListener('click', () => {
+        void invokeServiceRestart('dingtalk_gateway');
+      });
+      loadServiceRestartSilentPrefs();
       document.getElementById('btn-usage-close')?.addEventListener('click', closeUsageModal);
       document.getElementById('usage-modal')?.addEventListener('click', (e) => {
         if (e.target.id === 'usage-modal') closeUsageModal();
@@ -18604,6 +18862,7 @@
       if (currentAuthUser) void loadShareableWebUsers();
       const usageBtn = document.getElementById('btn-settings-usage');
       if (usageBtn) usageBtn.hidden = !(currentAuthUser?.staffId || '').trim();
+      syncSettingsServiceSection();
     }
 
     async function logoutCurrentUser() {

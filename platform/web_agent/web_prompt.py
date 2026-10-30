@@ -28,6 +28,11 @@ if str(GATEWAY_DIR.parent) not in sys.path:
 
 from project.loader import temporary_testcase_dir, web_agent_name  # noqa: E402
 
+from web_agent_urls import (  # noqa: E402
+    web_agent_catalog_manual_url,
+    web_agent_chat_url,
+    web_agent_public_base_url,
+)
 from web_session_context import (  # noqa: E402
     family_monster_workbook_hint,
     pk_atm_prompt_hint,
@@ -114,6 +119,7 @@ _WEB_RULES_CORE = f"""\
 6. **MOA 探活**：仅当用户整条消息为「MOA检查」「检查MOA」「MOA探活」等明确口令时才探活；MOA 业务查询不等于探活。
 7. **失败处理**：用自然语言说明问题与下一步，不要编造结果。
 7b. **服务重启汇报**：汇报 Web Agent / 钉钉网关重启结果时只写状态（健康检查、pid、launchd 等），勿附 `127.0.0.1` / localhost 访问链接。
+7c. **Web Agent 访问地址**：用户问网页版/入口/链接/地址时，内网统一答复 `{web_agent_chat_url()}`（基址 `{web_agent_public_base_url()}`）；工具台说明书 `{web_agent_catalog_manual_url()}`。**禁止**写 `127.0.0.1`、localhost、cloudflare 临时域名，除非用户明确问本机 localhost 调试。
 8. **真机 ADB**：Web Agent **不支持** ADB / 真机 UI 执行。禁止调用 `adb/`、`adb_execute.py`、`macro`、`flow run`、`observe`/`capture`/`locate`/`tap`、`autotest`、adb-screen MCP 等。查数用 MOA/Admin；抓包用 Tunnel **只读**查询。用户要求真机点按、礼物面板 UI、截图验收时，说明 Web 端不支持，请在 **Cursor 本机对话** 中操作。
 8b. **Figma 设计稿**：用户给出 `figma.com/design/...` 且含 `node-id` 时，须用 **figma-read MCP** 的 `get_figma_node`（层级+文案）或 `get_figma_screenshot_url`（PNG）；禁止未调工具就编造 UI。工具不可用时说明需配置 `FIGMA_ACCESS_TOKEN`（`python3 platform/scripts/figma_read_setup.py --open`）并重启 Web Agent。
 9. **线上环境**：
@@ -131,6 +137,7 @@ _WEB_RULES_BATCH = f"""\
    `python3 platform/dingtalk_gateway/batch_progress_report.py --current N --total M --label "操作类型" [--detail "当前项标识"]`
    （Web Agent worker 已注入 `WEB_AGENT_BATCH_KEY`，**可省略 `--user-key`**；钉钉网关仍传 `--user-key <batch_key>`）
    **N/M 语义**：`M` = 批量项总数；`N` = 已完整处理完的批量项数（不是项内子步骤）。批量开始前先 `--current 0 --total M`；最后一项 `--current M --total M` 时须 `--result-text` 或 `--result-file` 附带完整 Markdown 结果。
+   **项数上限**：非管理员单任务 `M` 最多 **1000**（管理员不限）；超限会被拒绝，须拆分任务。
    **手机号段两两互关**：优先 `python3 MOA/scripts/batch_phone_clique_mutual_follow.py --phone-start <起> --phone-end <止>`（内置进度上报），勿手写循环。
    **已有批量脚本（≥3 项优先复用，内置并行+进度）**：
    `MOA/scripts/batch_phone_clique_mutual_follow.py`、
