@@ -1,5 +1,33 @@
 {
   "modules": {
+    "CP好友-关系入口展示": {
+      "label": "CP好友关系 · 资料页关系入口展示",
+      "intents": ["intents/关系/CP好友/cp-friend-profile-entry.yaml"]
+    },
+    "CP好友-组成关系弹窗": {
+      "label": "CP好友关系 · 组成关系弹窗（邀请/申请）",
+      "intents": ["intents/关系/CP好友/cp-friend-build-dialog.yaml"]
+    },
+    "CP好友-建联消息": {
+      "label": "CP好友关系 · 建联消息（邀请/结成/拒绝）",
+      "intents": ["intents/关系/CP好友/cp-friend-message.yaml"]
+    },
+    "CP好友-主态关系空间": {
+      "label": "CP好友关系 · 主态关系空间操作",
+      "intents": ["intents/关系/CP好友/cp-friend-space-main.yaml"]
+    },
+    "CP好友-客态关系空间": {
+      "label": "CP好友关系 · 客态关系空间（点赞/祝福/记录）",
+      "intents": ["intents/关系/CP好友/cp-friend-space-visitor.yaml"]
+    },
+    "CP好友-榜单": {
+      "label": "CP好友关系 · 榜单（周榜/总榜/好友榜）",
+      "intents": ["intents/关系/CP好友/cp-friend-ranking.yaml"]
+    },
+    "CP好友-关系特权": {
+      "label": "CP好友关系 · 关系特权（等级/保级/任务/权益）",
+      "intents": ["intents/关系/CP好友/cp-friend-privileges.yaml"]
+    },
     "语音动态-录制弹窗": {
       "label": "语音动态 · 录制弹窗",
       "intents": ["intents/动态/语音动态/voice-record.yaml"]

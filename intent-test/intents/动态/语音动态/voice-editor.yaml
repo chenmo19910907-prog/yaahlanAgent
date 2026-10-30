@@ -112,7 +112,7 @@ setup:
 intent:
   action: 点击确认删除按钮
   expected:
-    - 语音条从编辑页消失
+    - 当前页面可见 "Post" 按钮（已返回编辑页）
     - "+ Add Voice" 按钮重新显示
 
 timeoutMs: 120000

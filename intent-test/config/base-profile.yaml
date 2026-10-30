@@ -52,7 +52,7 @@ platforms:
     app:
       androidPackage: com.immomo.biz.yaahlan
     env:
-      ANDROID_DEVICE_ID: "47130DLAQ012BU"
+      ANDROID_DEVICE_ID: "172.18.124.55:5555"
       ANDROID_APP_ID: com.immomo.biz.yaahlan
       DEVICE_WIDTH: "1080"
       DEVICE_HEIGHT: "2424"

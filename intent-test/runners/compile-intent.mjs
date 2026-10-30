@@ -359,7 +359,16 @@ function compileOne(doc) {
   if (platform === 'ios') {
     lines.push('ios: {}');
   } else {
-    lines.push('android: {}');
+    // displayId: 0 forces midscene to use shell screencap instead of
+    // exec-out screencap, which prevents repeated exec-out calls from
+    // crashing the Android adbd daemon and causing device disconnection.
+    // deviceId: explicitly set from ANDROID_DEVICE_ID env (supports wifi ADB like 172.x.x.x:5555)
+    const deviceId = process.env.ANDROID_DEVICE_ID;
+    lines.push('android:');
+    if (deviceId) {
+      lines.push(`  deviceId: "${deviceId}"`);
+    }
+    lines.push('  displayId: 0');
   }
 
   lines.push('');
