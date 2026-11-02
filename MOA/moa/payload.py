@@ -56,11 +56,13 @@ from .params import (
     set_id_auth_params,
     set_id_auth_reset_expire_params,
     set_noble_params,
+    set_new_user_invite_test_add_user_params,
     set_anniversary_egg_smash_params,
     set_package_gift_params,
     set_change_user_area_params,
     set_guild_batch_del_anchor_mmuidv3_params,
     set_guild_device_mmuidv3_query_params,
+    set_guild_force_update_trade_level_params,
     normalize_cp_pair_key,
     parse_cp_pair_keys,
     set_cp_ferris_wheel_area_params,
@@ -91,6 +93,8 @@ from .params import (
     set_room_channel_image_params,
     set_room_channel_message_params,
     set_room_dismiss_params,
+    intimate_id_for_users,
+    set_intimate_buddy_change_params,
 )
 from .time_utils import resolve_expire_ms, resolve_family_fund_week_key, resolve_family_fund_week_key_with_offset
 from .user_area import describe_user_area, normalize_user_area
@@ -533,6 +537,24 @@ def _op_guild_batch_del_anchor_mmuidv3(args: argparse.Namespace, payload: dict[s
     if not isinstance(parsed, list):
         raise ValueError("guild-anchor-user-ids-json 必须是 JSON 数组")
     set_guild_batch_del_anchor_mmuidv3_params(payload, [str(x) for x in parsed])
+
+
+def _guild_force_update_trade_level_mode(args: argparse.Namespace) -> bool:
+    return getattr(args, "guild_force_trade_level", None) is not None or getattr(
+        args, "guild_force_trade_id", None
+    ) is not None
+
+
+def _op_guild_force_update_trade_level(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if args.guild_force_trade_level is None:
+        raise ValueError("强制修改公会等级时须提供 --guild-force-trade-level")
+    if not args.guild_force_trade_id:
+        raise ValueError("强制修改公会等级时须提供 --guild-force-trade-id")
+    set_guild_force_update_trade_level_params(
+        payload,
+        level=args.guild_force_trade_level,
+        trade_union_id=args.guild_force_trade_id,
+    )
 
 
 def _op_diamond(args: argparse.Namespace, payload: dict[str, Any]) -> None:
@@ -1403,8 +1425,10 @@ def _op_feed_publish(args: argparse.Namespace, payload: dict[str, Any]) -> None:
         raise ValueError("发动态须提供 --feed-publish-user-id")
     if not text and not original_feed_id:
         raise ValueError("发动态须提供 --feed-publish-text 或 --feed-publish-original-feed-id")
+    topic_id = str(getattr(args, "feed_publish_topic_id", None) or "").strip() or None
     print(
-        f"发动态: userId={user_id} text={text[:40] if text else '(repost)'} scope={args.feed_publish_scope or 'public'}",
+        f"发动态: userId={user_id} text={text[:40] if text else '(repost)'} "
+        f"scope={args.feed_publish_scope or 'public'} topicId={topic_id or '(none)'}",
         file=sys.stderr,
     )
     set_feed_publish_params(
@@ -1417,6 +1441,7 @@ def _op_feed_publish(args: argparse.Namespace, payload: dict[str, Any]) -> None:
         lang=str(args.feed_publish_lang or "en"),
         os_name=str(args.feed_publish_os or "android"),
         original_feed_id=original_feed_id,
+        topic_id=topic_id,
     )
 
 
@@ -1729,6 +1754,72 @@ def _op_vip(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     raise ValueError("提供了 --vip-user-id 时，必须同时提供 --vip-exp 或 --vip-level 或 --vip-query-current")
 
 
+def _resolve_intimate_id_from_args(args: argparse.Namespace, user_id: str | None) -> str:
+    intimate_id = str(getattr(args, "intimate_id", None) or "").strip()
+    if intimate_id:
+        return intimate_id
+    partner = str(getattr(args, "intimate_partner_user_id", None) or "").strip()
+    uid = str(user_id or "").strip()
+    if uid and partner:
+        return intimate_id_for_users(uid, partner)
+    raise ValueError("变更好友类型须提供 --intimate-id 或 --intimate-partner-user-id")
+
+
+def _intimate_buddy_change_apply_mode(args: argparse.Namespace) -> bool:
+    return getattr(args, "intimate_buddy_change_apply_user_id", None) is not None
+
+
+def _intimate_buddy_change_accept_mode(args: argparse.Namespace) -> bool:
+    return getattr(args, "intimate_buddy_change_accept_user_id", None) is not None
+
+
+def _op_intimate_buddy_change_apply(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if not args.intimate_buddy_type:
+        raise ValueError("发起变更好友类型须提供 --intimate-buddy-type")
+    user_id = str(args.intimate_buddy_change_apply_user_id).strip()
+    intimate_id = _resolve_intimate_id_from_args(args, user_id)
+    rel = str(getattr(args, "intimate_relationship_type", None) or "2")
+    set_intimate_buddy_change_params(
+        payload,
+        user_id=user_id,
+        intimate_id=intimate_id,
+        buddy_type=args.intimate_buddy_type,
+        relationship_type=rel,
+        accept=False,
+    )
+
+
+def _op_intimate_buddy_change_accept(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if not args.intimate_buddy_type:
+        raise ValueError("接受变更好友类型须提供 --intimate-buddy-type")
+    user_id = str(args.intimate_buddy_change_accept_user_id).strip()
+    intimate_id = _resolve_intimate_id_from_args(args, user_id)
+    rel = str(getattr(args, "intimate_relationship_type", None) or "2")
+    set_intimate_buddy_change_params(
+        payload,
+        user_id=user_id,
+        intimate_id=intimate_id,
+        buddy_type=args.intimate_buddy_type,
+        relationship_type=rel,
+        accept=True,
+    )
+
+
+def _op_new_user_invite_test_add(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if not args.new_user_invite_invitee_user_id:
+        raise ValueError("星光大使模拟拉新须同时提供 --new-user-invite-inviter-user-id 与 --new-user-invite-invitee-user-id")
+    set_new_user_invite_test_add_user_params(
+        payload,
+        inviter_user_id=args.new_user_invite_inviter_user_id,
+        invitee_user_id=args.new_user_invite_invitee_user_id,
+    )
+    print(
+        f"星光大使模拟拉新：inviter={args.new_user_invite_inviter_user_id} "
+        f"invitee={args.new_user_invite_invitee_user_id}",
+        file=sys.stderr,
+    )
+
+
 def _op_activity_mock_gift(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     if not args.activity_gift_to_user_id:
         raise ValueError("活动模拟送礼需提供 --activity-gift-to-user-id")
@@ -1750,6 +1841,9 @@ def _op_activity_mock_gift(args: argparse.Namespace, payload: dict[str, Any]) ->
 
 # (predicate, handler) — 按优先级匹配首个操作
 OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = [
+    (lambda a: _intimate_buddy_change_apply_mode(a), _op_intimate_buddy_change_apply),
+    (lambda a: _intimate_buddy_change_accept_mode(a), _op_intimate_buddy_change_accept),
+    (lambda a: a.new_user_invite_inviter_user_id is not None, _op_new_user_invite_test_add),
     (lambda a: a.activity_gift_from_user_id is not None, _op_activity_mock_gift),
     (lambda a: _cp_ferris_tier_mode(a), _op_cp_ferris_tier),
     (lambda a: _cp_ferris_area_mode(a), _op_cp_ferris_area),
@@ -1779,6 +1873,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.diamond_user_id is not None, _op_diamond),
     (lambda a: getattr(a, "guild_device_mmuidv3", None) is not None, _op_guild_device_mmuidv3_query),
     (lambda a: getattr(a, "guild_anchor_user_ids_json", None) is not None, _op_guild_batch_del_anchor_mmuidv3),
+    (lambda a: _guild_force_update_trade_level_mode(a), _op_guild_force_update_trade_level),
     (lambda a: _room_set_level_mode(a), _op_room_set_level),
     (lambda a: a.user_rank_area is not None, _op_user_rank_dispatch),
     (lambda a: a.contrib_day_rank_area is not None, _op_contrib_day_rank_dispatch),

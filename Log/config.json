@@ -1,0 +1,6 @@
+{
+  "kibanaBaseUrl": "https://alpha-kibana.wemomo.com",
+  "bsearchPath": "/alpha-public/internal/bsearch",
+  "defaultIndex": "yaahlan-log*",
+  "kbnVersion": "7.17.29"
+}

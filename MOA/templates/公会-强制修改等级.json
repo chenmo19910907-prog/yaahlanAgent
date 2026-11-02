@@ -1,0 +1,49 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/yaahlan-anchor-recruit-moa-stage",
+  "method": "testUpdateTradeLevel",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "5",
+      "json": "",
+      "type": "int",
+      "value": "5"
+    },
+    {
+      "title": "参数2",
+      "name": "2",
+      "txt": "41578144",
+      "json": "",
+      "type": "string",
+      "value": "41578144"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "guild_force_update_trade_level",
+    "name": "公会-强制修改等级",
+    "category": "MOA公会招募（yaahlan-anchor-recruit-moa-stage）",
+    "description": "测试环境强制修改公会等级（testUpdateTradeLevel；params[0]=目标等级 int，params[1]=公会 tradeUnionId string）。用于等级上限、掉级、助理名额等验收造数。",
+    "prompts": [
+      "公会<tradeUnionId|公会ID>强制改为<level|等级>级",
+      "把公会 <tradeUnionId> 等级改成 <level>",
+      "testUpdateTradeLevel <level> <tradeUnionId>"
+    ],
+    "cli": "--guild-force-trade-level <level> --guild-force-trade-id <tradeUnionId>"
+  }
+}

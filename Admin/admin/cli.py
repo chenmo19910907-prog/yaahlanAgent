@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import urllib.parse
@@ -32,6 +33,12 @@ from .custom_gift import (
 )
 from .gift import mdp_gift_success, parse_query_gift_list_summary
 from .prop import mdp_prop_success, parse_query_prop_info_summary
+from .prop_task_issue import (
+    approve_later_wos,
+    issue_prop_offline_batch,
+    parse_validity_map,
+    resolve_delivery_type,
+)
 from .custom_prop import DEFAULT_PROP_TYPE, parse_reset_custom_prop_cooldown_summary
 from .custom_vehicle import parse_reset_custom_vehicle_cooldown_summary
 from .customer_service import (
@@ -129,6 +136,54 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--prop-identifier", help="标识符 identifier")
     parser.add_argument("--prop-page-no", type=int, help="道具列表页码 pageNo（默认 1）")
     parser.add_argument("--prop-page-size", type=int, help="道具列表每页条数 pageSize（默认 20）")
+    parser.add_argument(
+        "--prop-offline-issue",
+        action="store_true",
+        help="道具离线下发 addPropTaskV2 + Later custom_831 同轮自动审批（装扮中心 type=0 / 背包 type=1）",
+    )
+    parser.add_argument(
+        "--prop-offline-user-ids",
+        help="离线下发 userId，逗号/空格分隔（配合 --prop-offline-issue）",
+    )
+    parser.add_argument(
+        "--prop-offline-prop-ids",
+        help="离线下发 propId 列表，逗号/空格分隔（配合 --prop-offline-issue）",
+    )
+    parser.add_argument(
+        "--prop-offline-target",
+        default="center",
+        help="下发目标：center=装扮中心/装扮商城（type=0），backpack=礼物背包（type=1）；默认 center",
+    )
+    parser.add_argument(
+        "--prop-offline-prop-package-valid-days",
+        type=int,
+        default=30,
+        help="背包下发 propPackageValidDays（仅 type=1；默认 30）",
+    )
+    parser.add_argument(
+        "--prop-offline-validity-days",
+        default=None,
+        help="未在 config/prop_offline_validity_days.json 登记的 propId 的统一 fallback 天数（勿用来覆盖整批已知道具）",
+    )
+    parser.add_argument(
+        "--prop-offline-validity-map",
+        default=None,
+        help="按 propId 覆盖有效天数，如 30006691:1,30006485:15",
+    )
+    parser.add_argument(
+        "--prop-offline-no-auto-approve",
+        action="store_true",
+        help="仅创建 MDP 工单，不自动走 Later 审批",
+    )
+    parser.add_argument(
+        "--later-approve-wos-id",
+        help="单独审批 Later custom_831 工单（配合 --later-approve-only）",
+    )
+    parser.add_argument(
+        "--later-approve-only",
+        action="store_true",
+        help="仅执行 Later 审批（不调用 addPropTaskV2）",
+    )
     parser.add_argument(
         "--query-gift-list",
         action="store_true",
@@ -1370,6 +1425,44 @@ def main() -> int:
             )
             print(json.dumps(summary, ensure_ascii=False, indent=2))
             return 0 if summary.get("failedCount", 0) == 0 else 3
+        if args.later_approve_only:
+            wos = str(args.later_approve_wos_id or "").strip()
+            if not wos:
+                raise ValueError("later-approve-only 必须提供 --later-approve-wos-id")
+            summary = approve_later_wos(wos)
+            print(json.dumps({"wosId": wos, "laterApprove": summary}, ensure_ascii=False, indent=2))
+            return 0
+        if args.prop_offline_issue:
+            user_ids = [
+                x
+                for x in re.split(r"[\s,，、]+", str(args.prop_offline_user_ids or "").strip())
+                if x
+            ]
+            prop_ids = [
+                x
+                for x in re.split(r"[\s,，、]+", str(args.prop_offline_prop_ids or "").strip())
+                if x
+            ]
+            if not user_ids:
+                raise ValueError("prop-offline-issue 必须提供 --prop-offline-user-ids")
+            if not prop_ids:
+                raise ValueError("prop-offline-issue 必须提供 --prop-offline-prop-ids")
+            delivery_type = resolve_delivery_type(str(args.prop_offline_target or "center"))
+            validity_map = parse_validity_map(str(args.prop_offline_validity_map or ""))
+            default_days = str(args.prop_offline_validity_days).strip() if args.prop_offline_validity_days else None
+            summary = issue_prop_offline_batch(
+                user_ids=user_ids,
+                prop_ids=prop_ids,
+                delivery_type=delivery_type,
+                prop_package_valid_days=int(args.prop_offline_prop_package_valid_days or 30),
+                validity_days_by_prop=validity_map or None,
+                default_validity_days=default_days,
+                auto_approve=not bool(args.prop_offline_no_auto_approve),
+                timeout_s=max(args.timeout_ms, 1000) / 1000.0,
+            )
+            print(json.dumps(summary, ensure_ascii=False, indent=2))
+            failed = [r for r in summary.get("results") or [] if not r.get("auditApproved")]
+            return 0 if not failed else 3
         if args.query_prop_list:
             url, body = _resolve_query_prop_info_request(args)
             if args.dump_body:

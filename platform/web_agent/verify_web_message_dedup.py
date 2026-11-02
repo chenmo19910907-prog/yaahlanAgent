@@ -48,6 +48,10 @@ def main() -> int:
         "refreshSessionMessagesCacheFromServer(sessionId)",
         "!sessionCacheAwaitingAssistantReply(sessionId)",
         "sessionCacheAwaitingAssistantReply(sessionId)",
+        "isStreamingShellFinalized(run.shellEl)",
+        "activeAfterFinalize.shellEl = null",
+        "function insertAssistantBubbleForUserTurn(userHint, assistantMsg)",
+        "insertAssistantBubbleForUserTurn(opts.userHint",
     ]
     missing = [token for token in required if token not in html]
     if missing:

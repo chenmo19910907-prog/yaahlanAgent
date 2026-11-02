@@ -3456,6 +3456,17 @@
     .send-btn:hover svg { transform: translateY(-2px); }
     .send-btn:active { transform: translateY(0) scale(0.96); }
     .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .send-btn .send-spinner { display: none; }
+    /* 中断落盘等待：发送位红色不可点 + 转圈（勿用蓝色发送钮转圈） */
+    .stop-btn.is-cancel-flight-settle .stop-icon { display: none; }
+    .stop-btn.is-cancel-flight-settle .stop-spinner {
+      display: block;
+      animation: stop-spin 0.75s linear infinite;
+    }
+    .stop-btn.is-cancel-flight-settle:disabled {
+      opacity: 0.85;
+      cursor: not-allowed;
+    }
     .send-btn[hidden], .stop-btn[hidden] { display: none; }
     .stop-btn {
       background: var(--danger); border: none; color: #fff;
@@ -5977,9 +5988,13 @@
                   <path d="M12 3a9 9 0 0 1 9 9" stroke-linecap="round"/>
                 </svg>
               </button>
-              <button type="button" class="send-btn" id="btn-send" title="发送">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <button type="button" class="send-btn" id="btn-send" title="发送" aria-busy="false">
+                <svg class="send-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path d="M12 19V5M5 12l7-7 7 7"/>
+                </svg>
+                <svg class="send-spinner" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" stroke-opacity="0.25"/>
+                  <path d="M12 3a9 9 0 0 1 9 9" stroke-linecap="round"/>
                 </svg>
               </button>
             </div>
@@ -6680,6 +6695,10 @@
     let otpAuthEnabled = true;
     /** @type {Map<string, { eventSource: EventSource, runId: string, runToken: string, cancelling?: boolean, failed?: boolean, status: { ack: string, lifecycle: string, phase: string, batch: string, external: string, elapsed: string }, shellEl: HTMLElement | null, sentDraft?: { text: string, images: typeof pendingImages } }>} */
     const activeRuns = new Map();
+    /** 中断 API + 落盘完成前阻塞同会话 send，避免新 run 复用未 finalize 的 shell。 */
+    const sessionCancelFlights = new Map();
+    /** sendMessage 正在 await cancelFlight 时为 true，用于发送钮转圈。 */
+    let sendAwaitingCancelFlight = false;
 
     function makeRunToken() {
       return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
@@ -6793,12 +6812,14 @@
       const scrollToTimestamp = (opts.scrollToTimestamp || '').trim();
       if (!opts.force && sessionId === currentSessionId && !scrollToTimestamp) return true;
       const prevSessionId = currentSessionId;
-      if (prevSessionId && prevSessionId !== sessionId) {
+      const switchedSession = !!(prevSessionId && prevSessionId !== sessionId);
+      if (switchedSession) {
         resetChatMessageSearch({ clearInput: true });
         saveCurrentSessionScrollState();
         saveSessionInputDraft(prevSessionId);
         clearMessagesDomRendered();
         loadMessagesAbort?.abort();
+        sessionMessagesEtags.delete(sessionId);
         const container = getMessagesEl();
         if (container) {
           stopFeatureDemoCarousel();
@@ -6809,7 +6830,10 @@
       }
       pendingScrollToTimestamp = scrollToTimestamp;
       currentSessionId = sessionId;
-      activeSessionLoadSeq += 1;
+      /* 同会话 force 刷新勿递增序号，避免进行中的 loadMessages 被误判 stale 后留白 */
+      if (switchedSession || scrollToTimestamp || !prevSessionId) {
+        activeSessionLoadSeq += 1;
+      }
       const loadSeq = activeSessionLoadSeq;
       persistSessionId(sessionId);
       syncSessionReadOnly(sessionId);
@@ -6819,7 +6843,12 @@
       const prefetch = opts.messagesPrefetch
         || startSessionMessagesPrefetch(sessionId);
       await loadMessages({
-        force: !!scrollToTimestamp,
+        force: !!(
+          opts.force
+          || scrollToTimestamp
+          || switchedSession
+          || sessionMessagesStaleAgainstIndex(sessionId)
+        ),
         progressive: scrollToTimestamp ? false : (opts.progressive !== false),
         messagesPrefetch: prefetch,
         loadSeq,
@@ -6942,9 +6971,28 @@
       return Number(getSessionFromCache(sessionId)?.messages_mtime || 0);
     }
 
+    /** 侧栏 index 与本地消息缓存不一致时需重新拉取（避免切换会话后仍显示旧 tail / 304 命中）。 */
+    function sessionMessagesStaleAgainstIndex(sessionId) {
+      const sid = String(sessionId || '').trim();
+      if (!sid) return true;
+      const sess = getSessionFromCache(sid);
+      if (!sess) return false;
+      const serverCount = Number(sess.message_count || 0);
+      const meta = sessionMessagesMeta(sid);
+      const cachedTotal = Number(meta?.total || 0);
+      if (serverCount > 0 && cachedTotal > 0 && serverCount !== cachedTotal) return true;
+      const serverMtime = Number(sess.messages_mtime || 0);
+      const cachedMtime = Number(meta?.mtime || 0);
+      if (serverMtime > 0 && cachedMtime > 0 && serverMtime !== cachedMtime) return true;
+      const cached = sessionMessagesCache.get(sid) || [];
+      if (serverCount > 0 && !cached.length) return true;
+      return false;
+    }
+
     function startSessionMessagesPrefetch(sessionId) {
       const sid = String(sessionId || '').trim();
-      if (!sid || sessionMessagesCache.get(sid)?.length) return null;
+      if (!sid) return null;
+      if (sessionMessagesCache.get(sid)?.length && !sessionMessagesStaleAgainstIndex(sid)) return null;
       const inflight = sessionMessagesPrefetch.get(sid);
       if (inflight) return inflight;
       const task = (async () => {
@@ -7324,8 +7372,28 @@
       const sid = String(sessionId || '').trim();
       if (!sid || sid !== currentSessionId || messagesDomHasConversation()) return false;
       const live = sessionMessagesCache.get(sid);
-      if (!live?.length || !sessionMessagesRenderAllowed(sid, loadSeq)) return false;
-      renderLoadedMessages(sid, live, restoreFromBottom, { ...paintOpts, loadSeq });
+      if (!live?.length) return false;
+      const seq = loadSeq ?? activeSessionLoadSeq;
+      if (!sessionMessagesRenderAllowed(sid, seq)) return false;
+      renderLoadedMessages(sid, live, restoreFromBottom, {
+        progressive: false,
+        ...paintOpts,
+        loadSeq: seq,
+      });
+      return messagesDomHasConversation();
+    }
+
+    /** 主区空白但缓存有消息时强制同步重绘（刷新后偶现空白兜底） */
+    function repaintEmptyMessagesFromCache(sessionId) {
+      const sid = String(sessionId || '').trim();
+      if (!sid || sid !== currentSessionId || messagesDomHasConversation()) return false;
+      const live = sessionMessagesCache.get(sid);
+      if (!live?.length) return false;
+      const scrollState = resolveMessagesScrollState(sid);
+      renderLoadedMessages(sid, live, scrollState.fromBottom, {
+        progressive: false,
+        loadSeq: activeSessionLoadSeq,
+      });
       return messagesDomHasConversation();
     }
 
@@ -9922,9 +9990,13 @@
     function ensureStreamingShell(sessionId) {
       const run = activeRuns.get(sessionId);
       if (run?.shellEl?.isConnected) {
-        removeAssistantShareButton(run.shellEl);
-        run.shellEl.classList.add('streaming');
-        return run.shellEl;
+        if (isStreamingShellFinalized(run.shellEl)) {
+          run.shellEl = null;
+        } else {
+          removeAssistantShareButton(run.shellEl);
+          run.shellEl.classList.add('streaming');
+          return run.shellEl;
+        }
       }
       const orphan = findOrphanStreamingShell(sessionId);
       if (orphan) {
@@ -12100,9 +12172,16 @@
       const sendBtn = document.getElementById('btn-send');
       const stopBtn = document.getElementById('btn-stop');
       const run = activeRuns.get(currentSessionId);
-      sendBtn.hidden = busy;
-      stopBtn.hidden = !busy || currentSessionReadOnly;
-      sendBtn.disabled = currentSessionReadOnly || busy || !hasDraft;
+      const cancelFlightPending = !!currentSessionId
+        && (sessionCancelFlights.has(currentSessionId) || sendAwaitingCancelFlight);
+      const sendCancelPending = cancelFlightPending && !busy;
+      const showStopSlot = busy || sendCancelPending;
+      sendBtn.hidden = showStopSlot;
+      stopBtn.hidden = !showStopSlot || currentSessionReadOnly;
+      sendBtn.classList.remove('is-cancel-flight-pending');
+      sendBtn.setAttribute('aria-busy', 'false');
+      sendBtn.title = '发送';
+      sendBtn.disabled = currentSessionReadOnly || busy || sendCancelPending || !hasDraft;
       const attachBtn = document.getElementById('btn-attach');
       if (attachBtn) {
         attachBtn.disabled = currentSessionReadOnly || busy;
@@ -12111,10 +12190,13 @@
           : (busy ? '思考中暂不可添加附件' : '添加附件');
       }
       const cancelling = !!run?.cancelling;
-      stopBtn.disabled = currentSessionReadOnly || !busy || cancelling;
-      stopBtn.classList.toggle('is-cancelling', cancelling);
-      stopBtn.title = cancelling ? '中断发起中…' : '中断思考';
-      stopBtn.setAttribute('aria-busy', cancelling ? 'true' : 'false');
+      stopBtn.disabled = currentSessionReadOnly || !showStopSlot || cancelling || sendCancelPending;
+      stopBtn.classList.toggle('is-cancelling', cancelling && busy);
+      stopBtn.classList.toggle('is-cancel-flight-settle', sendCancelPending);
+      stopBtn.title = sendCancelPending
+        ? '等待中断落盘…'
+        : (cancelling ? '中断发起中…' : '中断思考');
+      stopBtn.setAttribute('aria-busy', ((cancelling && busy) || sendCancelPending) ? 'true' : 'false');
       if (window.WaitingFx) {
         WaitingFx.setActive(busy && !currentSessionReadOnly);
       }
@@ -12124,10 +12206,15 @@
 
     function findActiveAssistantShell(sessionId) {
       const run = activeRuns.get(sessionId);
-      if (run?.shellEl?.isConnected) return run.shellEl;
+      if (run?.shellEl?.isConnected && !isStreamingShellFinalized(run.shellEl)) return run.shellEl;
       const msgs = document.getElementById('messages');
       const shells = msgs?.querySelectorAll('.msg.assistant') || [];
-      return shells.length ? shells[shells.length - 1] : null;
+      for (let i = shells.length - 1; i >= 0; i -= 1) {
+        const el = shells[i];
+        if (isStreamingShellFinalized(el)) continue;
+        if (el.classList.contains('streaming') || !el.dataset.timestamp) return el;
+      }
+      return null;
     }
 
     function findAssistantShellForUserContent(userText) {
@@ -12149,25 +12236,82 @@
       return null;
     }
 
+    /** 中断后已发下一条 user 时，在对应 user 轮次后插入静态 assistant（勿抢新 run 的 streaming shell）。 */
+    function insertAssistantBubbleForUserTurn(userHint, assistantMsg) {
+      const hint = String(typeof userHint === 'string' ? userHint : userHint?.text || '').trim();
+      const container = getMessagesEl();
+      if (!container || !hint || !assistantMsg) return null;
+      const md = String(assistantMsg.content || '').trim();
+      if (!md) return null;
+      const nodes = [...container.querySelectorAll('.msg')];
+      for (let i = nodes.length - 1; i >= 0; i -= 1) {
+        if (!nodes[i].classList.contains('user')) continue;
+        const body = (nodes[i].querySelector('.msg-body')?.textContent || '').trim();
+        if (body !== hint) continue;
+        for (let j = i + 1; j < nodes.length; j += 1) {
+          if (nodes[j].classList.contains('user')) break;
+          if (nodes[j].classList.contains('assistant')) {
+            const existing = getMessageMarkdown(nodes[j].querySelector('.msg-body'));
+            if (existing === md) return nodes[j];
+            return null;
+          }
+        }
+        const el = buildMessageElement({
+          role: 'assistant',
+          content: md,
+          timestamp: assistantMsg.timestamp || new Date().toISOString(),
+        });
+        el.dataset.streamFinalized = '1';
+        const anchor = nodes[i + 1] || null;
+        if (anchor) container.insertBefore(el, anchor);
+        else container.appendChild(el);
+        bindMessagesMediaLoadScroll(container);
+        hydrateAvatars(el);
+        return el;
+      }
+      return null;
+    }
+
     function showInterruptedReply(sessionId, text, opts = {}) {
       if (currentSessionId !== sessionId) return;
-      const body = text || '⚠️ 任务已中断。';
+      const headline = String(text || '⚠️ 任务已中断。').trim() || '⚠️ 任务已中断。';
+      const body = appendRetryHint(headline);
       const run = activeRuns.get(sessionId);
       const superseded = !!(opts.runToken && run && run.runToken !== opts.runToken);
+      const interruptTs = new Date().toISOString();
       let shell = opts.shellEl?.isConnected ? opts.shellEl : null;
       if (!shell) {
         const hintText = typeof opts.userHint === 'string' ? opts.userHint : opts.userHint?.text;
         shell = findAssistantShellForUserContent(hintText);
       }
+      if (!shell && superseded) {
+        shell = insertAssistantBubbleForUserTurn(opts.userHint, {
+          role: 'assistant',
+          content: body,
+          timestamp: interruptTs,
+        });
+      }
       if (!shell && !superseded) {
         shell = findActiveAssistantShell(sessionId);
         if (!shell) shell = ensureStreamingShell(sessionId);
       }
+      if (!shell?.isConnected && superseded) {
+        shell = appendMessage('assistant', body, false, [], [], interruptTs);
+        if (shell) shell.dataset.streamFinalized = '1';
+      }
       if (!shell?.isConnected) return;
       if (run && !superseded && !opts.shellEl) run.shellEl = shell;
-      clearRunStatus(sessionId, shell);
-      const interruptTs = new Date().toISOString();
-      finalizeStreamingShell(sessionId, shell, body, { timestamp: interruptTs });
+      const staticInterruptShell = shell.dataset.streamFinalized === '1' && !shell.classList.contains('streaming')
+        && !shell.querySelector('.run-status')?.innerHTML?.trim();
+      if (!staticInterruptShell) {
+        clearRunStatus(sessionId, shell);
+        finalizeStreamingShell(sessionId, shell, body, { timestamp: interruptTs });
+      }
+      const activeAfterFinalize = activeRuns.get(sessionId);
+      if (activeAfterFinalize?.shellEl === shell) {
+        activeAfterFinalize.shellEl = null;
+        activeAfterFinalize.streamFinalized = false;
+      }
       const assistantMsg = {
         role: 'assistant',
         content: body,
@@ -12362,6 +12506,9 @@
       const sessionId = currentSessionId;
       const run = activeRuns.get(sessionId);
       if (!run || run.cancelling) return;
+      let resolveCancelFlight;
+      const cancelFlight = new Promise((resolve) => { resolveCancelFlight = resolve; });
+      sessionCancelFlights.set(sessionId, cancelFlight);
       run.cancelling = true;
       updateRunStatus(sessionId, { ack: '', batch: '', external: '', elapsed: '中断发起中…' });
       updateInputState();
@@ -12396,6 +12543,10 @@
         run.cancelling = false;
         updateInputState();
         alert(err.message || '中断失败');
+      } finally {
+        sessionCancelFlights.delete(sessionId);
+        resolveCancelFlight?.();
+        if (currentSessionId === sessionId) updateInputState();
       }
     }
 
@@ -14480,6 +14631,9 @@
         ) {
           return false;
         }
+        if (sessionId === currentSessionId && !messagesDomHasConversation()) {
+          return false;
+        }
         if (sessionId === currentSessionId && !messagesDomMatchesSession(sessionId)) {
           return false;
         }
@@ -14620,7 +14774,8 @@
           && serverMtime > 0
           && cachedMtime > 0
           && serverMtime === cachedMtime
-          && !sessionCacheAwaitingAssistantReply(sessionId);
+          && !sessionCacheAwaitingAssistantReply(sessionId)
+          && !sessionMessagesStaleAgainstIndex(sessionId);
         const cacheFresh = cached?.length && (
           skipFetch
           || serverMtime <= 0
@@ -14720,14 +14875,28 @@
         };
         const cachedForSync = sessionMessagesCache.get(sessionId) || cached || [];
         const nextFingerprint = sessionMessagesFingerprint(msgs, pageMeta);
-        if (!repaint && !refetch && nextFingerprint === cachedFingerprint) {
+        if (!repaint && nextFingerprint === cachedFingerprint) {
           rememberSessionMessages(sessionId, msgs, pageMeta);
           if (canSkipMessagesRender(sessionId, msgs, pageMeta)) {
             syncMessagesViewChrome(sessionId, restoreFromBottom, { touchScroll: false });
-          } else {
-            renderLoadedMessages(sessionId, msgs, restoreFromBottom, paintOpts);
+            return;
           }
-          return;
+          if (
+            cachedForSync?.length
+            && trySyncTailMessages(sessionId, cachedForSync, msgs, pageMeta, restoreFromBottom, scrollPinnedIntent)
+          ) {
+            return;
+          }
+          if (
+            cachedForSync?.length
+            && tryMergeExpandedHistory(sessionId, cachedForSync, msgs, pageMeta, restoreFromBottom, scrollPinnedIntent)
+          ) {
+            return;
+          }
+          if (!refetch) {
+            renderLoadedMessages(sessionId, msgs, restoreFromBottom, paintOpts);
+            return;
+          }
         }
         if (
           !repaint
@@ -14763,6 +14932,7 @@
             scrollState.fromBottom,
             { loadSeq: activeSessionLoadSeq },
           );
+          repaintEmptyMessagesFromCache(sessionId);
         }
         if (sessionId === currentSessionId && !messagesDomHasConversation()) {
           endSessionMessagesLoading();
@@ -15354,6 +15524,20 @@
       if (isGuestMode()) {
         goToLogin();
         return;
+      }
+
+      if (currentSessionId) {
+        const cancelFlight = sessionCancelFlights.get(currentSessionId);
+        if (cancelFlight) {
+          sendAwaitingCancelFlight = true;
+          updateInputState();
+          try {
+            await cancelFlight;
+          } finally {
+            sendAwaitingCancelFlight = false;
+            updateInputState();
+          }
+        }
       }
 
       const priorRun = activeRuns.get(currentSessionId);
@@ -16674,7 +16858,6 @@
       sessionPollTimer = setInterval(async () => {
         if (document.hidden) return;
         const viewingId = currentSessionId;
-        const wasDingtalk = currentSessionReadOnly;
         try {
           await loadSessions({ lite: true });
           if (viewingId && currentSessionId === viewingId) {
@@ -16683,11 +16866,8 @@
             updateDingtalkOwnerBar();
             const sessionActive = sess?.running;
             if (sessionActive) await tryReconnectActiveRun(viewingId);
-            const serverMtime = Number(sess?.messages_mtime || 0);
-            const cachedMtime = Number(sessionMessagesMeta(viewingId)?.mtime || 0);
-            const messagesStale = serverMtime > 0 && cachedMtime > 0 && serverMtime !== cachedMtime;
-            if (wasDingtalk || messagesStale) {
-              await loadMessages({ force: messagesStale && !wasDingtalk });
+            if (sessionMessagesStaleAgainstIndex(viewingId)) {
+              await loadMessages({ force: true, repaint: false });
             }
           }
         } catch { /* ignore poll errors */ }
@@ -16711,10 +16891,8 @@
           if (sessionActive || activeRuns.has(sid)) {
             await tryReconnectActiveRun(sid);
           }
-          const serverMtime = Number(sess?.messages_mtime || 0);
-          const cachedMtime = Number(sessionMessagesMeta(sid)?.mtime || 0);
-          if (serverMtime > 0 && cachedMtime > 0 && serverMtime !== cachedMtime) {
-            await loadMessages({ force: true });
+          if (sessionMessagesStaleAgainstIndex(sid)) {
+            await loadMessages({ force: true, repaint: false });
           }
         } catch { /* ignore */ }
       })();
@@ -19134,6 +19312,9 @@
               allowMissingCache: true,
             });
             if (restored) {
+              if (!messagesDomHasConversation()) {
+                repaintEmptyMessagesFromCache(currentSessionId);
+              }
               finishPageBootstrapShell();
               void ensureSessionsListLoaded(sessionsLoadPromise).catch((err) => {
                 console.error('ensureSessionsListLoaded', err);
@@ -19208,7 +19389,9 @@
           if (!currentSessionId) {
             showEmptyState();
           } else if (!messagesDomHasConversation()) {
-            void loadMessages({ force: true, loadSeq: activeSessionLoadSeq });
+            if (!repaintEmptyMessagesFromCache(currentSessionId)) {
+              void loadMessages({ force: true, loadSeq: activeSessionLoadSeq });
+            }
           }
         } catch (err) {
           console.error('bootstrap finally', err);

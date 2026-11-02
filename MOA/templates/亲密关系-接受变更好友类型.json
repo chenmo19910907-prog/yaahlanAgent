@@ -1,0 +1,51 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/yaahlan/user/intimate-api",
+  "method": "acceptChangeBuddyTypeInvitation",
+  "header": "{\"userId\":\"100486375\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100486375\",\"uid\":\"100486375\",\"_uid_\":\"100486375\",\"relationshipType\":\"2\",\"intimateId\":\"100465989-100486375\",\"buddyType\":\"soulmate\",\"area\":\"MENA\",\"lang\":\"en\",\"appId\":\"2005\",\"osType\":\"android\"}",
+      "type": "json",
+      "value": {
+        "userId": "100486375",
+        "uid": "100486375",
+        "_uid_": "100486375",
+        "relationshipType": "2",
+        "intimateId": "100465989-100486375",
+        "buddyType": "soulmate",
+        "area": "MENA",
+        "lang": "en",
+        "appId": "2005",
+        "osType": "android"
+      }
+    }
+  ],
+  "_registry": {
+    "id": "intimate_buddy_change_accept",
+    "name": "亲密关系-接受变更好友类型",
+    "category": "CP·亲密关系（user/intimate-api）",
+    "description": "同意挚友空间 buddyType 变更（acceptChangeBuddyTypeInvitation）。接受方 userId；body 须含 intimateId、与 pending 申请一致的 buddyType。Tunnel 13311111112 同意灵魂伴侣 2026-10-30 实测 ec=200。",
+    "prompts": [
+      "用户 <userId> 同意变更好友类型为 <buddyType> intimateId=<intimateId>",
+      "接受灵魂伴侣/姐妹关系变更申请"
+    ],
+    "cli": "--intimate-buddy-change-accept-user-id <userId> --intimate-partner-user-id <partnerUserId> --intimate-buddy-type <buddyType> --intimate-id <intimateId>"
+  }
+}

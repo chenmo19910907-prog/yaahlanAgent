@@ -2,7 +2,7 @@
   "id": "intimate-buddy-form",
   "name": "亲密关系-结挚友",
   "category": "亲密关系",
-  "description": "测试环境结挚友：Gift --intimate-invite 发起（默认 gift 2005007129）→ MOA acceptIntimateInvitation 同意 → intimateHomePage 验收。可选先 dismiss。relationshipType 默认 2。",
+  "description": "测试环境结挚友（须指定具体关系 buddyType）：Gift --intimate-invite 发起（默认 gift 2005007129）→ MOA acceptIntimateInvitation 同意（body 含 buddyType）→ intimateHomePage 验收 spaceTitle。可选先 dismiss。relationshipType 默认 2。",
   "version": 1,
   "params": {
     "fromUserId": {
@@ -32,11 +32,18 @@
       "prompt": "1=先 intimateDismiss（默认）；0=不解除"
     },
     "relationshipType": {
-      "label": "关系类型",
+      "label": "relationshipType",
       "type": "string",
       "required": false,
       "default": "2",
       "prompt": "2=挚友；1=CP（须换 cpGiftList 的 giftId）"
+    },
+    "buddyType": {
+      "label": "具体关系 buddyType",
+      "type": "string",
+      "required": true,
+      "default": "friend",
+      "prompt": "挚友须带具体关系：friend/bestie/brother/sister/soulmate 或中文（闺蜜、姐妹、灵魂伴侣等）；汇报用「挚友-<具体关系>」"
     }
   },
   "steps": [
@@ -45,7 +52,7 @@
       "name": "Gift发起并MOA同意",
       "run": {
         "type": "shell",
-        "command": "python3 MOA-generative/scripts/form_intimate_pair.py --from-user '{{fromUserId}}' --to-user '{{toUserId}}' --gift-id '{{giftId}}' --dismiss-first {{dismissFirst}} --relationship-type '{{relationshipType}}'",
+        "command": "python3 MOA-generative/scripts/form_intimate_pair.py --from-user '{{fromUserId}}' --to-user '{{toUserId}}' --gift-id '{{giftId}}' --dismiss-first {{dismissFirst}} --relationship-type '{{relationshipType}}' --buddy-type '{{buddyType}}'",
         "cwd": "."
       },
       "expect": {

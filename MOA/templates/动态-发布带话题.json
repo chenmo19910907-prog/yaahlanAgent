@@ -1,0 +1,50 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/feed/external/feed-stage",
+  "method": "publishFeed",
+  "header": "{\"appId\":2005,\"area\":\"MENA\",\"lang\":\"en\",\"os\":\"android\",\"source\":\"discover\",\"userId\":\"100499706\",\"scope\":\"\",\"topicId\":\"86\",\"texts\":\"[{\\\"text\\\":\\\"#tag活动111 测试\\\",\\\"type\\\":\\\"1\\\"}]\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"appId\":2005,\"area\":\"MENA\",\"lang\":\"en\",\"os\":\"android\",\"source\":\"discover\",\"userId\":\"100499706\",\"scope\":\"\",\"topicId\":\"86\",\"texts\":\"[{\\\"text\\\":\\\"#tag活动111 测试\\\",\\\"type\\\":\\\"1\\\"}]\"}",
+      "type": "json",
+      "value": {
+        "appId": 2005,
+        "area": "MENA",
+        "lang": "en",
+        "os": "android",
+        "source": "discover",
+        "userId": "100499706",
+        "scope": "",
+        "topicId": "86",
+        "texts": "[{\"text\":\"#tag活动111 测试\",\"type\":\"1\"}]"
+      }
+    }
+  ],
+  "_registry": {
+    "id": "feed_publish_topic",
+    "name": "动态-发布带话题",
+    "category": "动态-发布（feed-stage）",
+    "description": "测试环境发布带话题标签的动态（publishFeed + topicId）。参考 100499706 带 #tag活动111（topicId=86）发帖；body 需 userId、topicId、texts（JSON 字符串 [{\"text\":\"...\",\"type\":\"1\"}]）；scope 空为公开。HTTP 对照 /yaahlan/feed/publishFeed。",
+    "prompts": [
+      "用户 <userId> 发布带话题 <topicId> 的动态 <text>",
+      "发动态带标签 topicId <topicId> <text>"
+    ],
+    "cli": "--feed-publish-user-id <userId> --feed-publish-topic-id <topicId> --feed-publish-text <text>"
+  }
+}

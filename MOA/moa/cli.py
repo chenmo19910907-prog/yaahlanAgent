@@ -265,6 +265,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--feed-publish-area", default="MENA", help="发动态：area（默认 MENA）")
     parser.add_argument("--feed-publish-lang", default="en", help="发动态：lang（默认 en）")
     parser.add_argument("--feed-publish-os", default="android", help="发动态：os（默认 android）")
+    parser.add_argument(
+        "--feed-publish-topic-id",
+        help="发动态：话题 topicId（publishFeed，如活动标签 86）",
+    )
     parser.add_argument("--room-chat-user-id", help="房间公屏消息：发送方 userId（sendChannelMessage）")
     parser.add_argument("--room-chat-room-id", help="房间公屏消息：房间 roomId")
     parser.add_argument("--room-chat-text", help="房间公屏消息：文本内容")
@@ -560,6 +564,15 @@ def build_parser() -> argparse.ArgumentParser:
         help='曾加入公会 userId 列表 JSON 数组（batchDelAnchorMmuidv3Record），如 ["100138000"]',
     )
     parser.add_argument(
+        "--guild-force-trade-level",
+        type=int,
+        help="强制修改公会等级：目标等级 int（testUpdateTradeLevel；须与 --guild-force-trade-id 同用）",
+    )
+    parser.add_argument(
+        "--guild-force-trade-id",
+        help="强制修改公会等级：公会 tradeUnionId（testUpdateTradeLevel）",
+    )
+    parser.add_argument(
         "--change-user-area-user-id",
         help="修改用户大区 userId（changeAreaForTest；params=userId, 大区代码）",
     )
@@ -851,6 +864,31 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         help="增加 CP 摩天轮周期爱意值（正整数；服务端内部 diamonds*10）",
     )
+    parser.add_argument(
+        "--intimate-buddy-change-apply-user-id",
+        help="挚友空间变更好友类型：发起方 userId（applyChangeBuddyTypeInvitation）",
+    )
+    parser.add_argument(
+        "--intimate-buddy-change-accept-user-id",
+        help="挚友空间变更好友类型：接受方 userId（acceptChangeBuddyTypeInvitation）",
+    )
+    parser.add_argument(
+        "--intimate-partner-user-id",
+        help="挚友 intimateId 对方 userId（与 --intimate-id 二选一，用于自动生成小-大 intimateId）",
+    )
+    parser.add_argument(
+        "--intimate-id",
+        help="挚友 intimateId（如 100465989-100486375）",
+    )
+    parser.add_argument(
+        "--intimate-buddy-type",
+        help="好友类型 buddyType：friend/bestie/brother/sister/soulmate",
+    )
+    parser.add_argument(
+        "--intimate-relationship-type",
+        default="2",
+        help="relationshipType（默认 2=挚友/Friends）",
+    )
 
     parser.add_argument("--activity-gift-from-user-id", help="活动模拟送礼：送礼方 userId")
     parser.add_argument("--activity-gift-to-user-id", help="活动模拟送礼：收礼方 userId")
@@ -865,6 +903,20 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--activity-gift-real-fee", type=int, help="活动模拟送礼：real_fee")
     parser.add_argument("--activity-gift-total-fee", type=int, help="活动模拟送礼：total_fee")
     parser.add_argument("--activity-gift-room-id", default="", help="活动模拟送礼：room_id（房内送礼时填写）")
+
+    parser.add_argument(
+        "--new-user-invite-inviter-user-id",
+        help="星光大使模拟拉新 testAddUser：邀请人 userId（params[0]）",
+    )
+    parser.add_argument(
+        "--new-user-invite-invitee-user-id",
+        help="星光大使模拟拉新 testAddUser：被邀请人 userId（params[1]）",
+    )
+    parser.add_argument(
+        "--new-user-invite-extra",
+        default="",
+        help="星光大使模拟拉新 testAddUser：第三参预留字符串（默认空）",
+    )
 
     parser.add_argument("--anniversary-egg-user-id", help="3周年砸金蛋：userId")
     parser.add_argument(

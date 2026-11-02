@@ -78,6 +78,26 @@ def three_params_str_str_long(first: str, second: str, third: int) -> list[dict[
     ]
 
 
+def set_new_user_invite_test_add_user_params(
+    payload: dict[str, Any],
+    inviter_user_id: str,
+    invitee_user_id: str,
+    extra: str = "",
+) -> None:
+    """星光大使拉新测试：testAddUser（params=邀请人 uid、被邀请人 uid；仅 2 参，勿传空第三参）。"""
+    inviter_user_id = str(inviter_user_id).strip()
+    invitee_user_id = str(invitee_user_id).strip()
+    if not inviter_user_id or not invitee_user_id:
+        raise ValueError("邀请人与被邀请人 userId 均不能为空")
+    payload["key"] = "momo.bpm.biz.gameplatform.overseas-voga-mts-vas"
+    payload["url"] = "/service/vas/activity/new-user-invite"
+    payload["method"] = "testAddUser"
+    payload["params"] = [
+        _param("参数1", "1", inviter_user_id, ptype="string", txt=inviter_user_id),
+        _param("参数2", "2", invitee_user_id, ptype="string", txt=invitee_user_id),
+    ]
+
+
 def set_cp_love_value_add_params(
     payload: dict[str, Any],
     user_id: str,
@@ -310,6 +330,23 @@ def set_guild_device_mmuidv3_query_params(payload: dict[str, Any], device_id: st
     if not device_id:
         raise ValueError("mmuid/mmuidv3 不能为空")
     payload["params"] = [string_param(device_id)]
+
+
+def set_guild_force_update_trade_level_params(
+    payload: dict[str, Any], level: int, trade_union_id: str
+) -> None:
+    trade_union_id = str(trade_union_id).strip()
+    if not trade_union_id:
+        raise ValueError("guild_force_trade_id 不能为空")
+    if level < 1:
+        raise ValueError("guild_force_trade_level 必须为正整数")
+    level_str = str(level)
+    payload["url"] = "/service/yaahlan-anchor-recruit-moa-stage"
+    payload["method"] = "testUpdateTradeLevel"
+    payload["params"] = [
+        _param("参数1", "1", level_str, ptype="int", txt=level_str),
+        _param("参数2", "2", trade_union_id, ptype="string", txt=trade_union_id),
+    ]
 
 
 def set_guild_batch_del_anchor_mmuidv3_params(payload: dict[str, Any], user_ids: list[str]) -> None:
@@ -1382,6 +1419,7 @@ def set_feed_publish_params(
     lang: str = "en",
     os_name: str = "android",
     original_feed_id: str | None = None,
+    topic_id: str | None = None,
 ) -> None:
     uid = str(user_id).strip()
     content = str(text).strip()
@@ -1403,6 +1441,9 @@ def set_feed_publish_params(
         body["originalFeedId"] = original_id
     if content:
         body["texts"] = json.dumps([{"text": content, "type": "1"}], ensure_ascii=False)
+    tid = str(topic_id or "").strip()
+    if tid:
+        body["topicId"] = tid
     payload["url"] = "/service/feed/external/feed-stage"
     payload["method"] = "publishFeed"
     payload["params"] = [json_param(body)]
@@ -1818,3 +1859,53 @@ def set_p2p_text_message_params(
     **kwargs: Any,
 ) -> None:
     set_p2p_message_params(payload, from_uid, to_uid, "TEXT", text=text, **kwargs)
+
+
+INTIMATE_BUDDY_TYPES = frozenset({"friend", "bestie", "brother", "sister", "soulmate"})
+
+
+def intimate_id_for_users(user_id: str, partner_user_id: str) -> str:
+    a, b = str(user_id).strip(), str(partner_user_id).strip()
+    if not a or not b:
+        raise ValueError("user_id 与 partner_user_id 均不能为空")
+    return f"{a}-{b}" if int(a) <= int(b) else f"{b}-{a}"
+
+
+def set_intimate_buddy_change_params(
+    payload: dict[str, Any],
+    *,
+    user_id: str,
+    intimate_id: str,
+    buddy_type: str,
+    relationship_type: str = "2",
+    accept: bool = False,
+) -> None:
+    user_id = str(user_id).strip()
+    intimate_id = str(intimate_id).strip()
+    buddy_type = str(buddy_type).strip().lower()
+    if not user_id or not intimate_id:
+        raise ValueError("user_id 与 intimate_id 不能为空")
+    if buddy_type not in INTIMATE_BUDDY_TYPES:
+        raise ValueError(
+            f"buddy_type 须为 {', '.join(sorted(INTIMATE_BUDDY_TYPES))} 之一，当前: {buddy_type!r}"
+        )
+    method = "acceptChangeBuddyTypeInvitation" if accept else "applyChangeBuddyTypeInvitation"
+    body = {
+        "userId": user_id,
+        "uid": user_id,
+        "_uid_": user_id,
+        "relationshipType": str(relationship_type),
+        "intimateId": intimate_id,
+        "buddyType": buddy_type,
+        "area": "MENA",
+        "lang": "en",
+        "appId": "2005",
+        "osType": "ios",
+    }
+    payload["url"] = "/service/yaahlan/user/intimate-api"
+    payload["method"] = method
+    payload["header"] = json.dumps({"userId": user_id}, ensure_ascii=False, separators=(",", ":"))
+    settings = payload.setdefault("settings", {})
+    if isinstance(settings, dict):
+        settings["headerType"] = "TXT"
+    payload["params"] = [json_param(body)]

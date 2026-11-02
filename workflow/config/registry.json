@@ -743,11 +743,12 @@
       "id": "intimate_buddy_form",
       "name": "亲密关系-结挚友",
       "category": "CP·亲密关系",
-      "description": "测试环境结挚友：Gift --intimate-invite 发起（默认 gift 2005007129）→ MOA acceptIntimateInvitation 同意 → intimateHomePage 验收。可选先 dismiss。relationshipType 默认 2。",
+      "description": "测试环境结挚友（须 buddyType 具体关系）：Gift --intimate-invite 发起（默认 gift 2005007129）→ acceptIntimateInvitation 同意时 body 含 buddyType → intimateHomePage 验收。可选先 dismiss。Agent 汇报须写「挚友-<具体关系>」（如挚友-闺蜜）。",
       "prompts": [
-        "<fromUserId|userId>和<toUserId|userId>结为挚友关系"
+        "<fromUserId|userId>和<toUserId|userId>结为挚友-<buddyType|闺蜜|姐妹|兄弟|灵魂伴侣|好友>关系",
+        "<fromUserId|userId>和<toUserId|userId>结为挚友 buddyType=<buddyType>"
       ],
-      "command": "python3 workflow/workflow_execute.py run intimate-buddy-form --from-user-id <fromUserId> --to-user-id <toUserId> --gift-id <giftId> --dismiss-first <dismissFirst> --relationship-type <relationshipType>"
+      "command": "python3 workflow/workflow_execute.py run intimate-buddy-form --from-user-id <fromUserId> --to-user-id <toUserId> --gift-id <giftId> --dismiss-first <dismissFirst> --relationship-type <relationshipType> --buddy-type <buddyType>"
     },
     {
       "id": "intimate_cp_form",
@@ -758,6 +759,18 @@
         "工作流 intimate-cp-form <fromUserId> <toUserId> <giftId> <dismissFirst>"
       ],
       "command": "python3 workflow/workflow_execute.py run intimate-cp-form --from-user-id <fromUserId> --to-user-id <toUserId> --gift-id <giftId> --dismiss-first <dismissFirst>"
+    },
+    {
+      "id": "intimate_buddy_type_change",
+      "name": "亲密关系-变更好友类型",
+      "category": "CP·亲密关系",
+      "description": "测试环境变更挚友空间好友类型：MOA applyChangeBuddyTypeInvitation（发起方）→ acceptChangeBuddyTypeInvitation（接受方，buddyType 须一致）→ intimateHomePage 验收 spaceTitle。buddyType：friend/bestie/brother/sister/soulmate。",
+      "prompts": [
+        "<fromUserId|userId>向<toUserId|userId>发起变更成<buddyType|灵魂伴侣|姐妹|闺蜜>好友类型",
+        "<fromUserId>-<toUserId>变更成<buddyType|闺蜜|姐妹|灵魂伴侣>关系",
+        "变更好友关系 buddyType=<buddyType> intimateId=<intimateId>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run intimate-buddy-type-change --from-user-id <fromUserId> --to-user-id <toUserId> --buddy-type <buddyType> --intimate-id <intimateId> --relationship-type <relationshipType>"
     },
     {
       "id": "room_member_quick_add_form",

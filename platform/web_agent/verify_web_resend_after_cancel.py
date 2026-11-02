@@ -36,6 +36,12 @@ def main() -> int:
         "if (existing?.sentDraft)",
         "if (activeRuns.get(sid)?.sentDraft) return;",
         "if (priorRun && isCurrentSessionStreaming() && !priorRun.cancelling) return;",
+        "const sessionCancelFlights = new Map();",
+        "sessionCancelFlights.set(sessionId, cancelFlight);",
+        "sessionCancelFlights.delete(sessionId);",
+        "function insertAssistantBubbleForUserTurn(userHint, assistantMsg)",
+        "sendAwaitingCancelFlight = true;",
+        "await cancelFlight;",
     ]
     missing = [token for token in required if token not in html]
     if missing:

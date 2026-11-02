@@ -1,0 +1,11 @@
+{
+  "description": "离线下发 addPropTaskV2 的 validityPeriod（天）。queryPropInfo 无该字段时以此为准；可被 --prop-offline-validity-map 覆盖。",
+  "byPropId": {
+    "30006691": "1",
+    "30004773": "7",
+    "30006692": "1",
+    "30006695": "1",
+    "30006485": "15",
+    "30006484": "15"
+  }
+}

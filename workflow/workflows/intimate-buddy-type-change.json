@@ -1,0 +1,56 @@
+{
+  "id": "intimate-buddy-type-change",
+  "name": "亲密关系-变更好友类型",
+  "category": "CP·亲密关系",
+  "description": "测试环境变更挚友空间好友类型：MOA applyChangeBuddyTypeInvitation（发起方）→ acceptChangeBuddyTypeInvitation（接受方，buddyType 须一致）→ intimateHomePage 验收 spaceTitle。buddyType：friend/bestie/brother/sister/soulmate。",
+  "version": 1,
+  "params": {
+    "fromUserId": {
+      "label": "发起方userId",
+      "type": "string",
+      "required": true,
+      "prompt": "发起变更申请的一方"
+    },
+    "toUserId": {
+      "label": "接受方userId",
+      "type": "string",
+      "required": true,
+      "prompt": "同意变更的一方"
+    },
+    "buddyType": {
+      "label": "目标好友类型",
+      "type": "string",
+      "required": true,
+      "default": "sister",
+      "prompt": "friend/bestie/brother/sister/soulmate 或 姐妹、灵魂伴侣"
+    },
+    "intimateId": {
+      "label": "intimateId",
+      "type": "string",
+      "required": false,
+      "default": "",
+      "prompt": "空则按两 userId 小-大自动生成"
+    },
+    "relationshipType": {
+      "label": "relationshipType",
+      "type": "string",
+      "required": false,
+      "default": "2",
+      "prompt": "默认 2=挚友/Friends"
+    }
+  },
+  "steps": [
+    {
+      "id": "change_buddy_type",
+      "name": "发起并同意变更",
+      "run": {
+        "type": "shell",
+        "command": "python3 MOA-generative/scripts/change_intimate_buddy_type.py --from-user '{{fromUserId}}' --to-user '{{toUserId}}' --buddy-type '{{buddyType}}' --intimate-id '{{intimateId}}' --relationship-type '{{relationshipType}}'",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

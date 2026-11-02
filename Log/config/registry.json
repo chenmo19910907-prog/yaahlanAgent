@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "generated_index_path": "Log/使用方法.md",
+  "items": [
+    {
+      "id": "discover_phrase_today",
+      "name": "日志-短语搜索（当日）",
+      "category": "Yaahlan 日志（Kibana）",
+      "description": "在 yaahlan-log* 按 Discover 短语 AND 搜索（与 Kibana 搜索框一致）；默认东八区当日；POST internal/bsearch",
+      "prompts": [
+        "查日志 <keyword|关键字>",
+        "Kibana 搜 <keyword1> 和 <keyword2>",
+        "yaahlan 日志 <userId|roomId|eventId>"
+      ],
+      "command": "python3 Log/log_execute.py --today --phrase <keyword>"
+    },
+    {
+      "id": "discover_phrase_hours",
+      "name": "日志-短语搜索（最近N小时）",
+      "category": "Yaahlan 日志（Kibana）",
+      "description": "最近 N 小时内短语 AND 搜索；适合复现刚发生的操作",
+      "prompts": [
+        "查最近<hours|小时>日志 <keyword>",
+        "最近1小时日志 <userId>"
+      ],
+      "command": "python3 Log/log_execute.py --hours <hours> --phrase <keyword>"
+    },
+    {
+      "id": "discover_user_today",
+      "name": "日志-用户当日轨迹",
+      "category": "Yaahlan 日志（Kibana）",
+      "description": "按 userId 查当日服务端日志（sendIMMessage、送礼、进房等 line 字段）",
+      "prompts": [
+        "查用户<userId>今日日志",
+        "userId <userId> 服务端日志"
+      ],
+      "command": "python3 Log/log_execute.py --today --phrase <userId> --size 30"
+    },
+    {
+      "id": "discover_room_im",
+      "name": "日志-房间IM推送",
+      "category": "Yaahlan 日志（Kibana）",
+      "description": "roomId + eventId（如 811 热度榜、808 房间 CUSTOM IM）组合查 sendRoomMessage/sendIMMessage2",
+      "prompts": [
+        "查房间<roomId> eventId <eventId> 日志",
+        "811 推送 roomId <roomId>"
+      ],
+      "command": "python3 Log/log_execute.py --today --phrase <eventId> --phrase <roomId>"
+    },
+    {
+      "id": "discover_count",
+      "name": "日志-命中统计",
+      "category": "Yaahlan 日志（Kibana）",
+      "description": "只返回命中总数，不拉取 line 明细",
+      "prompts": [
+        "日志命中数 <keyword>",
+        "统计日志 <keyword>"
+      ],
+      "command": "python3 Log/log_execute.py --today --phrase <keyword> --count-only"
+    },
+    {
+      "id": "discover_json",
+      "name": "日志-JSON输出",
+      "category": "Yaahlan 日志（Kibana）",
+      "description": "结构化 JSON（total、hits[].line/timeBeijing），供 Agent 解析",
+      "prompts": [
+        "日志 JSON <keyword>"
+      ],
+      "command": "python3 Log/log_execute.py --today --phrase <keyword> --output json --size 50"
+    }
+  ]
+}

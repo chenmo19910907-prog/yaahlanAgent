@@ -52,6 +52,107 @@ def _build_cap_lookup(modules: list[dict[str, Any]]) -> dict[str, tuple[str, int
     return lookup
 
 
+def _build_item_cap_lookups(
+    modules: list[dict[str, Any]],
+) -> tuple[dict[tuple[str, str], tuple[str, int]], dict[str, tuple[str, int]]]:
+    """(sourceId, registryId) 与能力展示名 → (moduleId, catIndex)。"""
+    by_registry: dict[tuple[str, str], tuple[str, int]] = {}
+    by_name: dict[str, tuple[str, int]] = {}
+    for mod in modules:
+        if not isinstance(mod, dict):
+            continue
+        mid = str(mod.get("id") or "").strip()
+        if not mid:
+            continue
+        categories = mod.get("categories")
+        if not isinstance(categories, list):
+            continue
+        for cat_index, cat in enumerate(categories):
+            if not isinstance(cat, dict):
+                continue
+            items = cat.get("items")
+            if not isinstance(items, list):
+                continue
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                item_name = str(item.get("name") or "").strip()
+                sid = str(item.get("source_id") or item.get("sourceId") or "").strip()
+                rid = str(item.get("registry_id") or item.get("registryId") or "").strip()
+                if sid and rid:
+                    by_registry[(sid, rid)] = (mid, cat_index)
+                if item_name and item_name not in by_name:
+                    by_name[item_name] = (mid, cat_index)
+    return by_registry, by_name
+
+
+def _module_cat_counts(modules: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for mod in modules:
+        if not isinstance(mod, dict):
+            continue
+        mid = str(mod.get("id") or "").strip()
+        if not mid:
+            continue
+        categories = mod.get("categories")
+        counts[mid] = len(categories) if isinstance(categories, list) else 0
+    return counts
+
+
+def _resolve_cap_node(
+    raw: dict[str, Any],
+    *,
+    valid_ids: set[str],
+    cat_counts: dict[str, int],
+    category_lookup: dict[str, tuple[str, int]],
+    registry_lookup: dict[tuple[str, str], tuple[str, int]],
+    name_lookup: dict[str, tuple[str, int]],
+) -> dict[str, Any] | None:
+    """补全或校正 cap 的 moduleId / catIndex；缺 catIndex 时按 registryId 或能力名解析。"""
+    if str(raw.get("kind") or "").strip() != "cap":
+        return None
+    mid = str(raw.get("moduleId") or "").strip()
+    source_id = str(raw.get("sourceId") or raw.get("source_id") or "").strip()
+    registry_id = str(raw.get("registryId") or raw.get("registry_id") or "").strip()
+    label = str(raw.get("label") or "").strip()
+    cat_raw = raw.get("catIndex")
+    if isinstance(cat_raw, bool):
+        cat_index: int | None = None
+    else:
+        try:
+            cat_index = int(cat_raw)
+        except (TypeError, ValueError):
+            cat_index = None
+
+    has_valid_index = (
+        mid in valid_ids
+        and cat_index is not None
+        and cat_index >= 0
+        and cat_index < cat_counts.get(mid, 0)
+    )
+    if has_valid_index and source_id and registry_id:
+        target = registry_lookup.get((source_id, registry_id))
+        if target and target != (mid, cat_index):
+            mid, cat_index = target
+            has_valid_index = cat_index < cat_counts.get(mid, 0)
+    if has_valid_index and cat_index is not None:
+        return _cap_entry_from_raw(raw, module_id=mid, cat_index=cat_index)
+
+    target: tuple[str, int] | None = None
+    if source_id and registry_id:
+        target = registry_lookup.get((source_id, registry_id))
+    if not target and label:
+        target = name_lookup.get(label) or category_lookup.get(label)
+    if not target and mid in category_lookup:
+        target = category_lookup[mid]
+    if not target:
+        return None
+    mid, cat_index = target
+    if mid not in valid_ids or cat_index < 0 or cat_index >= cat_counts.get(mid, 0):
+        return None
+    return _cap_entry_from_raw(raw, module_id=mid, cat_index=cat_index)
+
+
 def _cap_entry_from_raw(raw: dict[str, Any], *, module_id: str, cat_index: int) -> dict[str, Any]:
     entry: dict[str, Any] = {"kind": "cap", "moduleId": module_id, "catIndex": cat_index}
     cap_label = str(raw.get("label") or "").strip()
@@ -65,23 +166,6 @@ def _cap_entry_from_raw(raw: dict[str, Any], *, module_id: str, cat_index: int) 
     return entry
 
 
-def _cap_needs_remap(
-    cap: dict[str, Any],
-    *,
-    valid_ids: set[str],
-    cat_counts: dict[str, int],
-) -> bool:
-    mid = str(cap.get("moduleId") or "").strip()
-    cat_raw = cap.get("catIndex")
-    try:
-        cat_index = int(cat_raw)
-    except (TypeError, ValueError):
-        return True
-    if mid not in valid_ids or cat_index < 0:
-        return True
-    return cat_index >= cat_counts.get(mid, 0)
-
-
 def remap_legacy_nav_caps(
     tree: list[Any],
     modules: list[dict[str, Any]],
@@ -92,34 +176,20 @@ def remap_legacy_nav_caps(
         for mod in modules
         if isinstance(mod, dict) and str(mod.get("id") or "").strip()
     }
-    cat_counts: dict[str, int] = {}
-    for mod in modules:
-        if not isinstance(mod, dict):
-            continue
-        mid = str(mod.get("id") or "").strip()
-        if not mid:
-            continue
-        categories = mod.get("categories")
-        cat_counts[mid] = len(categories) if isinstance(categories, list) else 0
-
-    lookup = _build_cap_lookup(modules)
+    cat_counts = _module_cat_counts(modules)
+    category_lookup = _build_cap_lookup(modules)
+    registry_lookup, name_lookup = _build_item_cap_lookups(modules)
 
     def resolve_cap(raw: dict[str, Any]) -> dict[str, Any] | None:
-        if str(raw.get("kind") or "").strip() != "cap":
-            return None
-        if not _cap_needs_remap(raw, valid_ids=valid_ids, cat_counts=cat_counts):
-            return dict(raw)
-        label = str(raw.get("label") or "").strip()
-        legacy_mid = str(raw.get("moduleId") or "").strip()
-        target: tuple[str, int] | None = None
-        if label and label in lookup:
-            target = lookup[label]
-        elif legacy_mid in lookup:
-            target = lookup[legacy_mid]
-        if not target:
-            return None
-        mid, cat_index = target
-        return _cap_entry_from_raw(raw, module_id=mid, cat_index=cat_index)
+        fixed = _resolve_cap_node(
+            raw,
+            valid_ids=valid_ids,
+            cat_counts=cat_counts,
+            category_lookup=category_lookup,
+            registry_lookup=registry_lookup,
+            name_lookup=name_lookup,
+        )
+        return fixed
 
     def walk(nodes: list[Any]) -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []
@@ -348,6 +418,9 @@ def reconcile_nav_tree(
         for mod in modules
         if isinstance(mod, dict) and str(mod.get("id") or "").strip()
     }
+    cat_counts = _module_cat_counts(modules)
+    category_lookup = _build_cap_lookup(modules)
+    registry_lookup, name_lookup = _build_item_cap_lookups(modules)
 
     def walk(nodes: list[Any]) -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []
@@ -405,19 +478,16 @@ def reconcile_nav_tree(
                     entry["subfolder"] = True
                 out.append(entry)
             elif kind == "cap":
-                mid = str(raw.get("moduleId") or "").strip()
-                if mid not in valid_ids:
-                    continue
-                cat_raw = raw.get("catIndex")
-                if isinstance(cat_raw, bool):
-                    continue
-                try:
-                    cat_index = int(cat_raw)
-                except (TypeError, ValueError):
-                    continue
-                if cat_index < 0:
-                    continue
-                out.append(_cap_entry_from_raw(raw, module_id=mid, cat_index=cat_index))
+                fixed_cap = _resolve_cap_node(
+                    raw,
+                    valid_ids=valid_ids,
+                    cat_counts=cat_counts,
+                    category_lookup=category_lookup,
+                    registry_lookup=registry_lookup,
+                    name_lookup=name_lookup,
+                )
+                if fixed_cap:
+                    out.append(fixed_cap)
             elif kind == "playbookItem":
                 playbook_id = str(raw.get("playbookId") or "").strip()
                 if not playbook_id:

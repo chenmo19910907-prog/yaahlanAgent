@@ -10,6 +10,9 @@
 | 2026-07-15 | `/yaahlan/user/intimate/intimateDismiss` | `/service/yaahlan/user/intimate-api` | `intimateDismiss` | 解除亲密关系；同 ServiceUrl |
 | 2026-07-15 | `/yaahlan/user/intimate/intimateInvitationInfo` | `/service/yaahlan/user/intimate-api` | `intimateInvitationInfo` | 查申请状态 |
 | 2026-07-15 | `/yaahlan/user/intimate/intimateHomePage` | `/service/yaahlan/user/intimate-api` | `intimateHomePage` | CP/挚友空间主页；body 需 `userId`、`intimateId`、`relationshipType`；返回 `cpMedalTab.list`（CP 勋章：medalName/num/obtainTime/imageUrl/dynamicImageUrl）、`intimateInfo` 等；无关系 ec=404；MOA 实测 `100486375`（13311111112） |
+| 2026-10-30 | `/yaahlan/user/intimate/applyChangeBuddyTypeInvitation` | `/service/yaahlan/user/intimate-api` | `applyChangeBuddyTypeInvitation` | 变更挚友空间 buddyType 申请；body：`userId`（发起方）、`intimateId`（小-大）、`relationshipType`（2）、`buddyType`（friend/bestie/brother/sister/soulmate）；Tunnel `100465989`（13311111111）`_id=aMKDi6EBpk1mjMPPwgUA` |
+| 2026-10-30 | `/yaahlan/user/intimate/acceptChangeBuddyTypeInvitation` | `/service/yaahlan/user/intimate-api` | `acceptChangeBuddyTypeInvitation` | 同意 buddyType 变更；body：`userId`（接受方）、`intimateId`、`relationshipType`、`buddyType`（**须与 pending 申请一致**）；Tunnel 13311111112 同意 soulmate；MOA 实测 ec=200 |
+| 2026-10-30 | `/yaahlan/user/intimate/changBuddyTypePreviewPage` | `/service/yaahlan/user/intimate-api` | `changBuddyTypePreviewPage` | 变更类型预览页；返回 `buddyTypeList` 与当前 `buddyType`；Tunnel `100465989` |
 | 2026-07-15 | `/yaahlan/room/member/apply` | `/service/room/external/room-member-stage` | `apply` | body：`userId`（申请人）、`roomId`；Tunnel 未录到 apply 包，body 由 agree 抓包推断，MOA 实测 ec=200 |
 | 2026-07-15 | `/yaahlan/room/member/agree` | `/service/room/external/room-member-stage` | `agree` | body：`userId`（房主）、`roomId`、`remoteId`（申请人）；已加入再调 ec=20210111 |
 | 2026-08-03 | `/yaahlan/room/acrossRoomPk/applyAcrossRoomPk` | `/service/room/external/room-pk-api` | `applyAcrossRoomPk` | body：`userId`、`roomId`（发起方）、`acrossPkType`（1=随机匹配 / 2=指定邀请）、`pkMinute`（5/10/30）、`hostSeat`（0=无主持人位）；**随机匹配**：`acrossRoomId` 为空，`acrossPkType=1`，Tunnel `100079102` `_id=VmdPzJ8BR2LVRzbvVZwa`（2026-08-04 18:26）；**指定邀请**：`acrossRoomId` 为目标房间，`acrossPkType=2`，Tunnel `_id=ZPxoxp8Bpk1mjMPPZg6N`；MOA 实测 ec=200 |
@@ -84,10 +87,11 @@
 ## 结挚友 / 结CP 一键（已入库工作流）
 
 ```bash
-# 挚友 relationshipType=2，默认 gift 2005007129
+# 挚友 relationshipType=2，默认 gift 2005007129；accept 须带 buddyType（汇报写「挚友-<具体关系>」）
 python3 workflow/workflow_execute.py run intimate-buddy-form \
   --from-user-id <发起方> \
-  --to-user-id <接受方>
+  --to-user-id <接受方> \
+  --buddy-type bestie
 
 # CP relationshipType=1，默认 gift 2005004592（Neon Heart，cpGiftList 1500钻）
 python3 workflow/workflow_execute.py run intimate-cp-form \
@@ -95,7 +99,23 @@ python3 workflow/workflow_execute.py run intimate-cp-form \
   --to-user-id <接受方>
 ```
 
-脚本等价：`python3 MOA-generative/scripts/form_intimate_pair.py --from-user ... --to-user ... [--relationship-type 1|2]`
+## 变更挚友空间好友类型（buddyType）
+
+```bash
+# 闭环：发起 + 同意 + intimateHomePage 验收
+python3 workflow/workflow_execute.py run intimate-buddy-type-change \
+  --from-user-id <发起方> \
+  --to-user-id <接受方> \
+  --buddy-type soulmate
+
+# 单步 MOA
+python3 MOA/moa_execute.py --payload-file MOA/templates/亲密关系-发起变更好友类型.json \
+  --intimate-buddy-change-apply-user-id <userId> \
+  --intimate-partner-user-id <partnerUserId> \
+  --intimate-buddy-type sister
+```
+
+脚本等价：`python3 MOA-generative/scripts/form_intimate_pair.py --from-user ... --to-user ... --buddy-type sister [--relationship-type 1|2]`
 
 ## 快速添加房间成员（已入库工作流）
 

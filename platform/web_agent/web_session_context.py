@@ -31,7 +31,7 @@ _FAMILY_MONSTER_SHEET_RE = re.compile(
 
 _PROP_BACKPACK_ISSUE_RE = re.compile(
     r"下发.{0,8}道具|道具.{0,8}下发|离线下发|addPropTask|propTaskIssue|"
-    r"下发到背包|背包.{0,6}道具",
+    r"下发到背包|背包.{0,6}道具|装扮中心|装扮商城|我的装扮",
     re.I,
 )
 
@@ -265,13 +265,15 @@ def prop_backpack_issue_prompt_hint(text: str, *, session_id: str = "") -> str |
     ):
         return None
     return (
-        "**道具离线下发至背包（铁律）**：测试 MDP "
-        "`POST …/propTaskIssueAdmin/addPropTaskV2`（`type=1` 下发至背包，"
-        "`propPackageValidDays` 为背包有效天数；`useType=20`）。"
-        "工单创建成功后**同轮立即**走 Later `custom_831` 审批（"
-        "`GET /v3/approve-confirm` → `POST /v3/approve`），"
-        "勿等用户再发「直接审批」。"
-        "最后用 MOA `礼物面板-查看背包道具`（propPackageList）验收到账。"
+        "**道具离线下发（铁律）**：优先 `python3 Admin/admin_execute.py --prop-offline-issue`"
+        "（内置 Later `custom_831` 同轮自动审批，勿等用户说「直接审批」）。"
+        "目标：`--prop-offline-target center` → 装扮中心/我的装扮（口语「装扮商城」，`type=0`）；"
+        "`backpack` → 礼物背包（`type=1`，`propPackageValidDays`；`useType=20`）。"
+        "底层 MDP `POST …/propTaskIssueAdmin/addPropTaskV2`。"
+        "Later 手动路径：`GET /v3/approve-confirm?id=<wosId>&category=custom_831&type=confirm`"
+        "→ `POST /v3/approve` body `{id,category,type:confirm,content}`。"
+        "验收：center → MOA `装扮-查询用户拥有道具`（queryOwnPropList）；"
+        "backpack → MOA `礼物面板-查看背包道具`（propPackageList）。"
     )
 
 

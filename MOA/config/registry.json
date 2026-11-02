@@ -1451,6 +1451,16 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-查所属公会.json \\\n  --expr \\\n  <userId>\n"
     },
     {
+      "id": "guild_force_update_trade_level",
+      "name": "公会-强制修改等级",
+      "category": "MOA公会招募（yaahlan-anchor-recruit-moa-stage）",
+      "description": "测试环境强制修改公会等级（testUpdateTradeLevel；params[0]=目标等级 int，params[1]=公会 tradeUnionId string）。用于等级上限、掉级、助理名额等验收造数。",
+      "prompts": [
+        "公会<tradeUnionId|公会ID>强制改为<level|等级>级"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/公会-强制修改等级.json \\\n  --guild-force-trade-level <level> \\\n  --guild-force-trade-id <tradeUnionId>\n"
+    },
+    {
       "id": "user_contact_cs_send_message",
       "name": "用户-联系客服发消息",
       "category": "消息（voga-base-service-im-stage）",
@@ -1754,6 +1764,62 @@
         "执行 用户-修改大区"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/用户-修改大区.json\n"
+    },
+    {
+      "id": "intimate_buddy_change_apply",
+      "name": "亲密关系-发起变更好友类型",
+      "category": "CP·亲密关系（user/intimate-api）",
+      "description": "挚友空间变更 buddyType 申请（applyChangeBuddyTypeInvitation）。须已有 relationshipType=2 关系；body 含发起方 userId、intimateId（小-大）、buddyType（friend/bestie/brother/sister/soulmate）。Tunnel 13311111111 2026-10-30 实测 ec=200。",
+      "prompts": [
+        "用户 <userId> 向 <partnerUserId> 发起变更好友类型为 <buddyType>",
+        "发起灵魂伴侣/姐妹关系变更申请 intimateId=<intimateId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/亲密关系-发起变更好友类型.json \\\n  --intimate-buddy-change-apply-user-id \\\n  <userId> \\\n  --intimate-partner-user-id \\\n  <partnerUserId> \\\n  --intimate-buddy-type \\\n  <buddyType> \\\n  --intimate-id \\\n  <intimateId>\n"
+    },
+    {
+      "id": "bd_device_clear_mmuidv3_login_limit",
+      "name": "BD-清除设备登录限制",
+      "category": "CMS（yaahalan-cms-backdoor）",
+      "description": "清除「一个设备只能登录一个 BD」限制（execute；bdDeviceIdRedisDao.delMmuidv3ToBd(mmuidv3)）",
+      "prompts": [
+        "清除 BD 设备登录限制 mmuidv3=<mmuidv3>",
+        "delMmuidv3ToBd <mmuidv3>",
+        "清除一个设备只能登录一个BD的限制"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/BD-清除设备登录限制.json \\\n  --bd-device-clear-mmuidv3 \\\n  <mmuidv3>\n"
+    },
+    {
+      "id": "intimate_buddy_change_accept",
+      "name": "亲密关系-接受变更好友类型",
+      "category": "CP·亲密关系（user/intimate-api）",
+      "description": "同意挚友空间 buddyType 变更（acceptChangeBuddyTypeInvitation）。接受方 userId；body 须含 intimateId、与 pending 申请一致的 buddyType。Tunnel 13311111112 同意灵魂伴侣 2026-10-30 实测 ec=200。",
+      "prompts": [
+        "用户 <userId> 同意变更好友类型为 <buddyType> intimateId=<intimateId>",
+        "接受灵魂伴侣/姐妹关系变更申请"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/亲密关系-接受变更好友类型.json \\\n  --intimate-buddy-change-accept-user-id \\\n  <userId> \\\n  --intimate-partner-user-id \\\n  <partnerUserId> \\\n  --intimate-buddy-type \\\n  <buddyType> \\\n  --intimate-id \\\n  <intimateId>\n"
+    },
+    {
+      "id": "feed_publish_topic",
+      "name": "动态-发布带话题",
+      "category": "动态-发布（feed-stage）",
+      "description": "测试环境发布带话题标签的动态（publishFeed + topicId）。参考 100499706 带 #tag活动111（topicId=86）发帖；body 需 userId、topicId、texts（JSON 字符串 [{\"text\":\"...\",\"type\":\"1\"}]）；scope 空为公开。HTTP 对照 /yaahlan/feed/publishFeed。",
+      "prompts": [
+        "用户 <userId> 发布带话题 <topicId> 的动态 <text>",
+        "发动态带标签 topicId <topicId> <text>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/动态-发布带话题.json \\\n  --feed-publish-user-id \\\n  <userId> \\\n  --feed-publish-topic-id \\\n  <topicId> \\\n  --feed-publish-text \\\n  <text>\n"
+    },
+    {
+      "id": "new_user_invite_test_add_user",
+      "name": "星光大使-模拟拉新",
+      "category": "活动（vas/activity/new-user-invite）",
+      "description": "测试环境模拟星光大使成功拉新（testAddUser；/service/vas/activity/new-user-invite）。params[0]=邀请人 userId，params[1]=被邀请人 userId（仅 2 个参数，勿传空第三参）。",
+      "prompts": [
+        "星光大使模拟拉新 邀请人<inviterUserId> 被邀请人<inviteeUserId>",
+        "testAddUser 星光大使拉新造数"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/星光大使-模拟拉新.json \\\n  --new-user-invite-inviter-user-id \\\n  <inviterUserId> \\\n  --new-user-invite-invitee-user-id \\\n  <inviteeUserId>\n"
     }
   ]
 }

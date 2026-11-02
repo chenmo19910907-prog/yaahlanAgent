@@ -6,7 +6,8 @@ Flow:
   2) Gift --intimate-invite (from -> to)
   3) resolve pending intimateId via intimateInvitationInfo (status=1)
   4) acceptIntimateInvitation as to-user
-  5) intimateHomePage verify
+  5) 若非默认 friend：applyChangeBuddyTypeInvitation + acceptChangeBuddyTypeInvitation
+  6) intimateHomePage 验收 detailedType / spaceTitle
 
 relationshipType: 2=挚友（默认 gift 2005007129），1=CP（默认 gift 2005004592）
 ServiceUrl: /service/yaahlan/user/intimate-api
@@ -26,7 +27,20 @@ _SCRIPTS = Path(__file__).resolve().parent
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
+from change_intimate_buddy_type import (  # noqa: E402
+    _SPACE_TITLE,
+    intimate_id_for,
+    normalize_buddy_type,
+)
 from project_api import repo_root, service_url  # noqa: E402
+
+_BUDDY_LABEL_CN: dict[str, str] = {
+    "friend": "好友",
+    "bestie": "闺蜜",
+    "brother": "兄弟",
+    "sister": "姐妹",
+    "soulmate": "灵魂伴侣",
+}
 
 _REPO = repo_root()
 _URL = service_url("intimateApiService", "/service/yaahlan/user/intimate-api")
@@ -38,7 +52,14 @@ def _default_gift_for_relationship(relationship_type: str) -> str:
     return _DEFAULT_CP_GIFT if str(relationship_type) == "1" else _DEFAULT_BUDDY_GIFT
 
 
-def _write_body(path: Path, user_id: str, intimate_id: str, relationship_type: str) -> None:
+def _write_body(
+    path: Path,
+    user_id: str,
+    intimate_id: str,
+    relationship_type: str,
+    *,
+    buddy_type: str | None = None,
+) -> None:
     body = {
         "userId": user_id,
         "uid": user_id,
@@ -50,6 +71,8 @@ def _write_body(path: Path, user_id: str, intimate_id: str, relationship_type: s
         "appId": "2005",
         "osType": "ios",
     }
+    if str(relationship_type) == "2" and buddy_type:
+        body["buddyType"] = buddy_type
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(body, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
@@ -147,6 +170,99 @@ def _gift_invite(*, sender: str, receiver: str, gift_id: str) -> dict[str, Any]:
     return data
 
 
+def _write_homepage_body(path: Path, user_id: str, intimate_id: str, relationship_type: str) -> None:
+    body = {
+        "userId": user_id,
+        "uid": user_id,
+        "_uid_": user_id,
+        "relationshipType": str(relationship_type),
+        "intimateId": intimate_id,
+        "area": "MENA",
+        "lang": "en",
+        "appId": "2005",
+        "osType": "ios",
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(body, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _fetch_homepage(
+    *,
+    viewer_user: str,
+    intimate_id: str,
+    relationship_type: str,
+    body_path: Path,
+    work: Path,
+    timeout_ms: int,
+    tag: str,
+) -> dict[str, Any]:
+    _write_homepage_body(body_path, viewer_user, intimate_id, relationship_type)
+    summary = _run_generative(
+        method="intimateHomePage",
+        body_path=body_path,
+        out_path=work / f"home_{tag}.json",
+        timeout_ms=timeout_ms,
+        strict=0,
+    )
+    biz = summary.get("business") or {}
+    data = biz.get("data") if isinstance(biz.get("data"), dict) else {}
+    info = data.get("intimateInfo") if isinstance(data.get("intimateInfo"), dict) else {}
+    detailed = str(data.get("detailedType") or info.get("buddyType") or "")
+    space_title = str(info.get("spaceTitle") or data.get("spaceTitle") or "")
+    return {
+        "ec": biz.get("ec"),
+        "em": biz.get("em"),
+        "from": (data.get("fromInfo") or {}).get("userId"),
+        "to": (data.get("toInfo") or {}).get("userId"),
+        "level": info.get("level"),
+        "intimateId": info.get("intimateId") or data.get("intimateId") or intimate_id,
+        "detailedType": detailed or None,
+        "spaceTitle": space_title or None,
+    }
+
+
+def _apply_buddy_type_change(
+    *,
+    from_user: str,
+    to_user: str,
+    buddy_type: str,
+    intimate_id: str,
+    relationship_type: str,
+    work: Path,
+    timeout_ms: int,
+) -> dict[str, Any]:
+    proc = subprocess.run(
+        [
+            "python3",
+            str(_SCRIPTS / "change_intimate_buddy_type.py"),
+            "--from-user",
+            from_user,
+            "--to-user",
+            to_user,
+            "--buddy-type",
+            buddy_type,
+            "--intimate-id",
+            intimate_id,
+            "--relationship-type",
+            str(relationship_type),
+            "--workdir",
+            str(work / "buddy_change"),
+            "--timeout-ms",
+            str(timeout_ms),
+        ],
+        cwd=str(_REPO),
+        capture_output=True,
+        text=True,
+        timeout=max(60, timeout_ms // 1000 + 30),
+        check=False,
+    )
+    data = _safe_json_loads(proc.stdout or "")
+    if not data:
+        data = {"ok": False, "error": (proc.stderr or proc.stdout or "")[-400:]}
+    data["_returncode"] = proc.returncode
+    return data
+
+
 def _id_candidates(from_user: str, to_user: str) -> list[str]:
     # 邀请 pending 时常见 from-to；主页落库常见小-大
     a = f"{from_user}-{to_user}"
@@ -175,6 +291,12 @@ def main() -> int:
         choices=(0, 1),
         help="1=先尝试解除已有关系（默认）；0=不解除",
     )
+    parser.add_argument(
+        "--buddy-type",
+        default="friend",
+        help="挚友具体关系 buddyType（relationshipType=2 时 accept 必带）："
+        "friend/bestie/brother/sister/soulmate 或中文（闺蜜、姐妹、灵魂伴侣等）；默认 friend",
+    )
     parser.add_argument("--timeout-ms", type=int, default=20000)
     parser.add_argument(
         "--workdir",
@@ -186,6 +308,10 @@ def main() -> int:
     from_user = str(args.from_user).strip()
     to_user = str(args.to_user).strip()
     gift_id = str(args.gift_id).strip() or _default_gift_for_relationship(args.relationship_type)
+    rel_type = str(args.relationship_type)
+    buddy_type: str | None = None
+    if rel_type == "2":
+        buddy_type = normalize_buddy_type(args.buddy_type)
     if not from_user or not to_user:
         print(json.dumps({"ok": False, "error": "from/to user 不能为空"}, ensure_ascii=False))
         return 2
@@ -200,11 +326,14 @@ def main() -> int:
         "ok": False,
         "fromUser": from_user,
         "toUser": to_user,
-        "relationshipType": str(args.relationship_type),
+        "relationshipType": rel_type,
         "giftId": gift_id,
         "dismissFirst": bool(args.dismiss_first),
         "steps": {},
     }
+    if buddy_type:
+        report["buddyType"] = buddy_type
+        report["buddyLabel"] = f"挚友-{_BUDDY_LABEL_CN.get(buddy_type, buddy_type)}"
 
     ids = _id_candidates(from_user, to_user)
 
@@ -212,7 +341,7 @@ def main() -> int:
         dismiss_rows: list[dict[str, Any]] = []
         for uid in (from_user, to_user):
             for iid in ids:
-                _write_body(body_path, uid, iid, args.relationship_type)
+                _write_body(body_path, uid, iid, rel_type, buddy_type=buddy_type)
                 summary = _run_generative(
                     method="intimateDismiss",
                     body_path=body_path,
@@ -250,7 +379,7 @@ def main() -> int:
     pending_id: str | None = None
     info_rows: list[dict[str, Any]] = []
     for iid in ids:
-        _write_body(body_path, to_user, iid, args.relationship_type)
+        _write_body(body_path, to_user, iid, rel_type, buddy_type=buddy_type)
         summary = _run_generative(
             method="intimateInvitationInfo",
             body_path=body_path,
@@ -279,7 +408,7 @@ def main() -> int:
         report["steps"]["invitationInfoFallback"] = pending_id
 
     report["intimateId"] = pending_id
-    _write_body(body_path, to_user, pending_id, args.relationship_type)
+    _write_body(body_path, to_user, pending_id, rel_type, buddy_type=buddy_type)
 
     accept = _run_generative(
         method="acceptIntimateInvitation",
@@ -299,26 +428,52 @@ def main() -> int:
         print(json.dumps(report, ensure_ascii=False, indent=2))
         return 1
 
-    home = _run_generative(
-        method="intimateHomePage",
+    stored_intimate_id = intimate_id_for(from_user, to_user)
+    report["intimateId"] = stored_intimate_id
+
+    if rel_type == "2" and buddy_type and buddy_type != "friend":
+        change = _apply_buddy_type_change(
+            from_user=from_user,
+            to_user=to_user,
+            buddy_type=buddy_type,
+            intimate_id=stored_intimate_id,
+            relationship_type=rel_type,
+            work=work,
+            timeout_ms=args.timeout_ms,
+        )
+        report["steps"]["buddyTypeChange"] = change
+        if not change.get("ok"):
+            report["error"] = change.get("error") or "挚友具体关系变更失败"
+            print(json.dumps(report, ensure_ascii=False, indent=2))
+            return 1
+
+    home_row = _fetch_homepage(
+        viewer_user=to_user,
+        intimate_id=stored_intimate_id,
+        relationship_type=rel_type,
         body_path=body_path,
-        out_path=work / "home.json",
+        work=work,
         timeout_ms=args.timeout_ms,
-        strict=0,
+        tag="final",
     )
-    biz = home.get("business") or {}
-    data = biz.get("data") if isinstance(biz.get("data"), dict) else {}
-    info = data.get("intimateInfo") if isinstance(data.get("intimateInfo"), dict) else {}
-    report["steps"]["homepage"] = {
-        "ec": biz.get("ec"),
-        "em": biz.get("em"),
-        "from": (data.get("fromInfo") or {}).get("userId"),
-        "to": (data.get("toInfo") or {}).get("userId"),
-        "level": info.get("level"),
-        "intimateId": info.get("intimateId") or data.get("intimateId"),
-    }
-    if biz.get("ec") not in (0, 200):
-        report["error"] = f"主页验收失败: ec={biz.get('ec')} em={biz.get('em')}"
+    report["steps"]["homepage"] = home_row
+    detailed = str(home_row.get("detailedType") or "")
+    if rel_type == "2" and buddy_type:
+        expected_title = _SPACE_TITLE.get(buddy_type, "")
+        if detailed and detailed != buddy_type:
+            report["error"] = f"detailedType 不符: 期望 {buddy_type!r} 实际 {detailed!r}"
+            print(json.dumps(report, ensure_ascii=False, indent=2))
+            return 1
+        if expected_title and home_row.get("spaceTitle") != expected_title:
+            report["error"] = (
+                f"spaceTitle 不符: 期望 {expected_title!r} 实际 {home_row.get('spaceTitle')!r}"
+            )
+            print(json.dumps(report, ensure_ascii=False, indent=2))
+            return 1
+        report["buddyType"] = buddy_type
+        report["buddyLabel"] = f"挚友-{_BUDDY_LABEL_CN.get(buddy_type, buddy_type)}"
+    if home_row.get("ec") not in (0, 200):
+        report["error"] = f"主页验收失败: ec={home_row.get('ec')} em={home_row.get('em')}"
         print(json.dumps(report, ensure_ascii=False, indent=2))
         return 1
 

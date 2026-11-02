@@ -55,5 +55,8 @@ def moa_registry_instruction() -> str:
         "**工具台目录**：以 `platform/web_agent/config/catalog_nav.json` 为当前左侧分组结构；"
         "MOA 入库与 sync_registry **禁止**修改 catalog_nav（勿增删改 folder/模块顺序）；"
         "仅改 MOA/templates、registry.json、mappings；目录调整须用户明确要求且由管理员在工具台操作。\n"
+        "**用户明确要求挂到左侧某文件夹时**：在对应 folder 下增加 `kind: cap` 节点，"
+        "必须带 `moduleId`、`sourceId`（如 moa/workflow）、`registryId`；"
+        "`catIndex` 可省略（服务端会按 registry 自动补全，但禁止只写 label 不写 registryId）。\n"
         "回复须含：能力名、模板路径、registry id、category、命令示例。"
     )

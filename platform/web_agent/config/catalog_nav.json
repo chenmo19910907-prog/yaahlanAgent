@@ -50,6 +50,14 @@
               "label": "清除真人认证失败",
               "sourceId": "workflow",
               "registryId": "guild_real_person_auth_failure_clear"
+            },
+            {
+              "kind": "cap",
+              "moduleId": "公会",
+              "catIndex": 1,
+              "label": "公会-强制修改等级",
+              "sourceId": "moa",
+              "registryId": "guild_force_update_trade_level"
             }
           ],
           "subfolder": true
@@ -465,6 +473,28 @@
               "catIndex": 0
             }
           ]
+        },
+        {
+          "kind": "folder",
+          "id": "nav-prop-offline-issue",
+          "label": "离线下发",
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "道具",
+              "label": "道具-离线下发至装扮中心",
+              "sourceId": "admin",
+              "registryId": "prop_offline_issue_center"
+            },
+            {
+              "kind": "cap",
+              "moduleId": "道具",
+              "label": "道具-离线下发至礼物背包",
+              "sourceId": "admin",
+              "registryId": "prop_offline_issue_backpack"
+            }
+          ],
+          "subfolder": true
         },
         {
           "kind": "module",

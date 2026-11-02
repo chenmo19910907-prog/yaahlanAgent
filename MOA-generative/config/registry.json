@@ -68,11 +68,11 @@
       "id": "moa_generative_buddy_form",
       "name": "生成式MOA-结挚友一键",
       "category": "CP·亲密关系",
-      "description": "结挚友闭环：Gift intimate-invite 发起 + MOA acceptIntimateInvitation 同意 + homepage 验收。推荐工作流 intimate-buddy-form。",
+      "description": "结挚友闭环（须 buddyType）：Gift intimate-invite + acceptIntimateInvitation（含 buddyType）+ homepage 验收。推荐工作流 intimate-buddy-form；汇报「挚友-<具体关系>」。",
       "prompts": [
-        "<fromUserId|userId>和<toUserId|userId>结为挚友关系"
+        "<fromUserId|userId>和<toUserId|userId>结为挚友-<buddyType|闺蜜|姐妹|兄弟|灵魂伴侣|好友>关系"
       ],
-      "command": "python3 workflow/workflow_execute.py run intimate-buddy-form \\\n  --from-user-id <fromUserId> \\\n  --to-user-id <toUserId> \\\n  --gift-id 2005007129 \\\n  --dismiss-first 1"
+      "command": "python3 workflow/workflow_execute.py run intimate-buddy-form \\\n  --from-user-id <fromUserId> \\\n  --to-user-id <toUserId> \\\n  --gift-id 2005007129 \\\n  --dismiss-first 1 \\\n  --buddy-type <buddyType>"
     },
     {
       "id": "moa_generative_cp_form",

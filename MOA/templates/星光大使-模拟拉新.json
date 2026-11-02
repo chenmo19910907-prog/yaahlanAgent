@@ -1,0 +1,48 @@
+{
+  "type": "moa",
+  "key": "momo.bpm.biz.gameplatform.overseas-voga-mts-vas",
+  "url": "/service/vas/activity/new-user-invite",
+  "method": "testAddUser",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "100292912",
+      "json": "",
+      "type": "string",
+      "value": "100292912"
+    },
+    {
+      "title": "参数2",
+      "name": "2",
+      "txt": "7384",
+      "json": "",
+      "type": "string",
+      "value": "7384"
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "new_user_invite_test_add_user",
+    "name": "星光大使-模拟拉新",
+    "category": "活动（vas/activity/new-user-invite）",
+    "description": "测试环境模拟星光大使成功拉新（testAddUser；/service/vas/activity/new-user-invite）。params[0]=邀请人 userId，params[1]=被邀请人 userId（仅 2 个参数，勿传空第三参）。",
+    "prompts": [
+      "星光大使模拟拉新 邀请人<inviterUserId> 被邀请人<inviteeUserId>",
+      "testAddUser 星光大使拉新造数"
+    ],
+    "cli": "--new-user-invite-inviter-user-id <inviterUserId> --new-user-invite-invitee-user-id <inviteeUserId>"
+  }
+}
