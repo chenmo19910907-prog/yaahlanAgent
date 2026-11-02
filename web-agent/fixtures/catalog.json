@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-10-20 19:54:41 北京时间",
-  "total_items": 360,
-  "module_count": 27,
+  "generated_at": "2026-11-02 19:34:57 北京时间",
+  "total_items": 385,
+  "module_count": 29,
   "modules": [
     {
       "id": "用户",
       "label": "用户",
-      "item_count": 26,
+      "item_count": 29,
       "categories": [
         {
           "name": "Admin用户（yaahlan-admin）",
@@ -103,6 +103,18 @@
         {
           "name": "Nova用户（mdp-nova / userAdmin）",
           "items": [
+            {
+              "name": "用户-修改大区",
+              "prompts": [
+                "修改用户 <userId> 大区为 <area>",
+                "把 <userId> 账号大区改为 <area>"
+              ],
+              "source": "yaahlan后台",
+              "source_id": "admin",
+              "source_tag_id": "admin",
+              "env": "test",
+              "registry_id": "update_user_area"
+            },
             {
               "name": "用户-查询列表",
               "prompts": [
@@ -278,6 +290,17 @@
               "source_tag_id": "moa",
               "env": "test",
               "registry_id": "user_area_change"
+            },
+            {
+              "name": "用户-修改大区",
+              "prompts": [
+                "执行 用户-修改大区"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "用户_修改大区"
             }
           ]
         },
@@ -344,6 +367,17 @@
         {
           "name": "用户装扮（mdp-prop/user-prop-api-service-test）",
           "items": [
+            {
+              "name": "用户-修改性别",
+              "prompts": [
+                "执行 用户-修改性别"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "用户_修改性别"
+            },
             {
               "name": "装扮-查询用户拥有道具",
               "prompts": [
@@ -691,7 +725,9 @@
             {
               "name": "房间成员-申请加入",
               "prompts": [
-                "执行 房间成员-申请加入"
+                "用户 <userId> 申请加入房间 <roomId> 成员",
+                "执行 房间成员-申请加入",
+                "<userId> 申请 <roomId> 房间成员"
               ],
               "source": "MOA",
               "source_id": "moa",
@@ -2061,8 +2097,77 @@
     {
       "id": "道具",
       "label": "道具",
-      "item_count": 1,
+      "item_count": 6,
       "categories": [
+        {
+          "name": "装扮-奖励验收（workflow）",
+          "items": [
+            {
+              "name": "奖励验收-单轮抽奖求差",
+              "prompts": [
+                "奖励验收 又抽了一次 用户<userId>"
+              ],
+              "source": "工作流",
+              "source_id": "workflow",
+              "source_tag_id": "workflow",
+              "env": "tool",
+              "registry_id": "web_reward_verify_round"
+            },
+            {
+              "name": "奖励验收-导出钉钉表格",
+              "prompts": [
+                "奖励验收导出钉钉 槽位<slot|baseline>"
+              ],
+              "source": "工作流",
+              "source_id": "workflow",
+              "source_tag_id": "workflow",
+              "env": "tool",
+              "registry_id": "web_reward_verify_export"
+            },
+            {
+              "name": "奖励验收-记录baseline",
+              "prompts": [
+                "奖励验收 记录baseline 用户<userId>"
+              ],
+              "source": "工作流",
+              "source_id": "workflow",
+              "source_tag_id": "workflow",
+              "env": "tool",
+              "registry_id": "web_reward_verify_baseline"
+            }
+          ]
+        },
+        {
+          "name": "道具-离线下发",
+          "items": [
+            {
+              "name": "道具-离线下发至礼物背包",
+              "prompts": [
+                "给用户 <userId> 离线下发道具 <propId> 到礼物背包",
+                "离线下发道具到背包 userId <userId> propId <propId>",
+                "下发道具到礼物背包 userId <userId> propIds <propId>"
+              ],
+              "source": "yaahlan后台",
+              "source_id": "admin",
+              "source_tag_id": "admin",
+              "env": "test",
+              "registry_id": "prop_offline_issue_backpack"
+            },
+            {
+              "name": "道具-离线下发至装扮中心",
+              "prompts": [
+                "给用户 <userId> 离线下发道具 <propId> 到装扮中心",
+                "给用户 <userId> 离线下发道具到装扮商城",
+                "下发道具到装扮中心 userId <userId> propIds <propId>"
+              ],
+              "source": "yaahlan后台",
+              "source_id": "admin",
+              "source_tag_id": "admin",
+              "env": "test",
+              "registry_id": "prop_offline_issue_center"
+            }
+          ]
+        },
         {
           "name": "道具（mdp-nova / propAdmin）",
           "items": [
@@ -2085,7 +2190,7 @@
     {
       "id": "活动",
       "label": "活动",
-      "item_count": 22,
+      "item_count": 24,
       "categories": [
         {
           "name": "3周年活动",
@@ -2104,11 +2209,12 @@
           ]
         },
         {
-          "name": "Admin Banner（melon-gateway / cms/backend/banner）",
+          "name": "Admin Banner（yaahlan-admin /admin/banner）",
           "items": [
             {
               "name": "活动-查询Banner列表",
               "prompts": [
+                "查 MENA 全部 banner 配置",
                 "查 banner 类型 <type> 列表",
                 "查看 banner 配置 bannerId <bannerId>"
               ],
@@ -2133,6 +2239,19 @@
               "source_tag_id": "admin",
               "env": "test",
               "registry_id": "schedule_im_message_types"
+            },
+            {
+              "name": "活动-IM白名单用户定时下发",
+              "prompts": [
+                "指定用户id下发活动奖励消息",
+                "IM白名单下发活动消息",
+                "addIm 白名单 userId"
+              ],
+              "source": "yaahlan后台",
+              "source_id": "admin",
+              "source_tag_id": "admin",
+              "env": "test",
+              "registry_id": "add_im_whitelist_task"
             },
             {
               "name": "活动-删除IM配置任务",
@@ -2366,6 +2485,23 @@
           ]
         },
         {
+          "name": "活动（vas/activity/new-user-invite）",
+          "items": [
+            {
+              "name": "星光大使-模拟拉新",
+              "prompts": [
+                "星光大使模拟拉新 邀请人<inviterUserId> 被邀请人<inviteeUserId>",
+                "testAddUser 星光大使拉新造数"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "new_user_invite_test_add_user"
+            }
+          ]
+        },
+        {
           "name": "活动（vas/gift-call-back）",
           "items": [
             {
@@ -2386,7 +2522,7 @@
     {
       "id": "动态",
       "label": "动态",
-      "item_count": 5,
+      "item_count": 6,
       "categories": [
         {
           "name": "动态-互动（feed-interact-stage）",
@@ -2430,6 +2566,18 @@
               "source_tag_id": "moa",
               "env": "test",
               "registry_id": "feed_publish"
+            },
+            {
+              "name": "动态-发布带话题",
+              "prompts": [
+                "用户 <userId> 发布带话题 <topicId> 的动态 <text>",
+                "发动态带标签 topicId <topicId> <text>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "feed_publish_topic"
             }
           ]
         },
@@ -2465,7 +2613,7 @@
     {
       "id": "cp",
       "label": "CP",
-      "item_count": 13,
+      "item_count": 16,
       "categories": [
         {
           "name": "CP·MOA（yaahlan/user/cp-moa）",
@@ -2511,7 +2659,7 @@
             {
               "name": "生成式MOA-结挚友一键",
               "prompts": [
-                "<fromUserId|userId>和<toUserId|userId>结为挚友关系"
+                "<fromUserId|userId>和<toUserId|userId>结为挚友-<buddyType|闺蜜|姐妹|兄弟|灵魂伴侣|好友>关系"
               ],
               "source": "MOA-generative",
               "source_id": "moa-generative",
@@ -2531,6 +2679,19 @@
               "registry_id": "stage_gift_intimate_invite"
             },
             {
+              "name": "亲密关系-变更好友类型",
+              "prompts": [
+                "<fromUserId|userId>向<toUserId|userId>发起变更成<buddyType|灵魂伴侣|姐妹|闺蜜>好友类型",
+                "<fromUserId>-<toUserId>变更成<buddyType|闺蜜|姐妹|灵魂伴侣>关系",
+                "变更好友关系 buddyType=<buddyType> intimateId=<intimateId>"
+              ],
+              "source": "工作流",
+              "source_id": "workflow",
+              "source_tag_id": "workflow",
+              "env": "tool",
+              "registry_id": "intimate_buddy_type_change"
+            },
+            {
               "name": "亲密关系-结CP",
               "prompts": [
                 "工作流 intimate-cp-form <fromUserId> <toUserId> <giftId> <dismissFirst>"
@@ -2544,13 +2705,43 @@
             {
               "name": "亲密关系-结挚友",
               "prompts": [
-                "<fromUserId|userId>和<toUserId|userId>结为挚友关系"
+                "<fromUserId|userId>和<toUserId|userId>结为挚友-<buddyType|闺蜜|姐妹|兄弟|灵魂伴侣|好友>关系",
+                "<fromUserId|userId>和<toUserId|userId>结为挚友 buddyType=<buddyType>"
               ],
               "source": "工作流",
               "source_id": "workflow",
               "source_tag_id": "workflow",
               "env": "tool",
               "registry_id": "intimate_buddy_form"
+            }
+          ]
+        },
+        {
+          "name": "CP·亲密关系（user/intimate-api）",
+          "items": [
+            {
+              "name": "亲密关系-发起变更好友类型",
+              "prompts": [
+                "用户 <userId> 向 <partnerUserId> 发起变更好友类型为 <buddyType>",
+                "发起灵魂伴侣/姐妹关系变更申请 intimateId=<intimateId>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "intimate_buddy_change_apply"
+            },
+            {
+              "name": "亲密关系-接受变更好友类型",
+              "prompts": [
+                "用户 <userId> 同意变更好友类型为 <buddyType> intimateId=<intimateId>",
+                "接受灵魂伴侣/姐妹关系变更申请"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "intimate_buddy_change_accept"
             }
           ]
         },
@@ -2986,7 +3177,7 @@
     {
       "id": "公会",
       "label": "公会",
-      "item_count": 9,
+      "item_count": 12,
       "categories": [
         {
           "name": "Admin公会（melon-gateway / cms/anchor）",
@@ -3043,6 +3234,17 @@
           "name": "MOA公会招募（yaahlan-anchor-recruit-moa-stage）",
           "items": [
             {
+              "name": "公会-强制修改等级",
+              "prompts": [
+                "公会<tradeUnionId|公会ID>强制改为<level|等级>级"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "guild_force_update_trade_level"
+            },
+            {
               "name": "用户-查所属公会",
               "prompts": [
                 "查用户 <userId> 所属公会"
@@ -3088,6 +3290,17 @@
           "name": "公会常用工具（workflow）",
           "items": [
             {
+              "name": "公会-清除真人认证失败",
+              "prompts": [
+                "清除用户 <userId> 真人认证失败"
+              ],
+              "source": "工作流",
+              "source_id": "workflow",
+              "source_tag_id": "workflow",
+              "env": "tool",
+              "registry_id": "guild_real_person_auth_failure_clear"
+            },
+            {
               "name": "公会-清除设备入会账号限制",
               "prompts": [
                 "清除设备 <mmuidv3|mmuid或mmuidv3> 入会账号限制"
@@ -3097,6 +3310,22 @@
               "source_tag_id": "workflow",
               "env": "tool",
               "registry_id": "guild_device_join_limit_clear"
+            }
+          ]
+        },
+        {
+          "name": "公会常用盘古配置工具（workflow）",
+          "items": [
+            {
+              "name": "公会盘古时间偏移配置",
+              "prompts": [
+                "公会盘古 场景=<scenario> whiteUsers=<whiteUsers> fixedTimeSec=<fixedTimeSec> expireTimeSec=<expireTimeSec> shiftTime=<shiftTime> 保存发布"
+              ],
+              "source": "工作流",
+              "source_id": "workflow",
+              "source_tag_id": "workflow",
+              "env": "tool",
+              "registry_id": "guild_pangu_shift_config"
             }
           ]
         },
@@ -4214,7 +4443,7 @@
     {
       "id": "知识库",
       "label": "知识库",
-      "item_count": 13,
+      "item_count": 14,
       "categories": [
         {
           "name": "prd-kb 同步",
@@ -4317,6 +4546,18 @@
         {
           "name": "钉钉目录",
           "items": [
+            {
+              "name": "用例表-补全文档名功能概况",
+              "prompts": [
+                "补全 2.5.0 以后版本用例文档名括号功能概况",
+                "重命名版本用例表加上功能概况"
+              ],
+              "source": "钉钉文档",
+              "source_id": "dingtalk",
+              "source_tag_id": "dingtalk",
+              "env": "tool",
+              "registry_id": "rename_version_case_workbooks"
+            },
             {
               "name": "目录-列举全部表格",
               "prompts": [
@@ -4692,6 +4933,90 @@
       ]
     },
     {
+      "id": "yaahlan-日志",
+      "label": "Yaahlan 日志",
+      "item_count": 6,
+      "categories": [
+        {
+          "name": "Yaahlan 日志（Kibana）",
+          "items": [
+            {
+              "name": "日志-JSON输出",
+              "prompts": [
+                "日志 JSON <keyword>"
+              ],
+              "source": "Yaahlan日志",
+              "source_id": "log",
+              "source_tag_id": "log",
+              "env": "test",
+              "registry_id": "discover_json"
+            },
+            {
+              "name": "日志-命中统计",
+              "prompts": [
+                "日志命中数 <keyword>",
+                "统计日志 <keyword>"
+              ],
+              "source": "Yaahlan日志",
+              "source_id": "log",
+              "source_tag_id": "log",
+              "env": "test",
+              "registry_id": "discover_count"
+            },
+            {
+              "name": "日志-房间IM推送",
+              "prompts": [
+                "查房间<roomId> eventId <eventId> 日志",
+                "811 推送 roomId <roomId>"
+              ],
+              "source": "Yaahlan日志",
+              "source_id": "log",
+              "source_tag_id": "log",
+              "env": "test",
+              "registry_id": "discover_room_im"
+            },
+            {
+              "name": "日志-用户当日轨迹",
+              "prompts": [
+                "查用户<userId>今日日志",
+                "userId <userId> 服务端日志"
+              ],
+              "source": "Yaahlan日志",
+              "source_id": "log",
+              "source_tag_id": "log",
+              "env": "test",
+              "registry_id": "discover_user_today"
+            },
+            {
+              "name": "日志-短语搜索（当日）",
+              "prompts": [
+                "查日志 <keyword|关键字>",
+                "Kibana 搜 <keyword1> 和 <keyword2>",
+                "yaahlan 日志 <userId|roomId|eventId>"
+              ],
+              "source": "Yaahlan日志",
+              "source_id": "log",
+              "source_tag_id": "log",
+              "env": "test",
+              "registry_id": "discover_phrase_today"
+            },
+            {
+              "name": "日志-短语搜索（最近N小时）",
+              "prompts": [
+                "查最近<hours|小时>日志 <keyword>",
+                "最近1小时日志 <userId>"
+              ],
+              "source": "Yaahlan日志",
+              "source_id": "log",
+              "source_tag_id": "log",
+              "env": "test",
+              "registry_id": "discover_phrase_hours"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "tunnel-mock",
       "label": "Tunnel Mock",
       "item_count": 5,
@@ -4760,6 +5085,31 @@
       ]
     },
     {
+      "id": "cms",
+      "label": "CMS",
+      "item_count": 1,
+      "categories": [
+        {
+          "name": "CMS（yaahalan-cms-backdoor）",
+          "items": [
+            {
+              "name": "BD-清除设备登录限制",
+              "prompts": [
+                "清除 BD 设备登录限制 mmuidv3=<mmuidv3>",
+                "delMmuidv3ToBd <mmuidv3>",
+                "清除一个设备只能登录一个BD的限制"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "bd_device_clear_mmuidv3_login_limit"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "钉钉用例表",
       "label": "钉钉用例表",
       "item_count": 1,
@@ -4807,6 +5157,11 @@
     {
       "id": "tunnel",
       "label": "Tunnel抓包",
+      "env": "test"
+    },
+    {
+      "id": "log",
+      "label": "Yaahlan日志",
       "env": "test"
     },
     {
