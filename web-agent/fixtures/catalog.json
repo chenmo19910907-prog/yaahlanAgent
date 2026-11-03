@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-11-02 19:34:57 北京时间",
-  "total_items": 385,
+  "generated_at": "2026-11-03 16:49:08 北京时间",
+  "total_items": 387,
   "module_count": 29,
   "modules": [
     {
       "id": "用户",
       "label": "用户",
-      "item_count": 29,
+      "item_count": 30,
       "categories": [
         {
           "name": "Admin用户（yaahlan-admin）",
@@ -208,6 +208,18 @@
               "source_tag_id": "moa",
               "env": "test",
               "registry_id": "ip_find"
+            },
+            {
+              "name": "房间-下发全服广播",
+              "prompts": [
+                "给房间 <roomId> 下发 eventId <eventId> 的全服广播",
+                "房间 <roomId> 全服广播 eventId=<eventId>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "room_im_broadcast_send"
             },
             {
               "name": "用户-修改注册国家",
@@ -2190,7 +2202,7 @@
     {
       "id": "活动",
       "label": "活动",
-      "item_count": 24,
+      "item_count": 25,
       "categories": [
         {
           "name": "3周年活动",
@@ -2514,6 +2526,22 @@
               "source_tag_id": "moa",
               "env": "test",
               "registry_id": "activity_mock_gift"
+            }
+          ]
+        },
+        {
+          "name": "活动（vas/internal/activity-reward-im）",
+          "items": [
+            {
+              "name": "活动-活动中心消息聚合IM",
+              "prompts": [
+                "给用户 <userId|userId> 下发活动中心聚合 IM"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "activity_center_reward_im_send"
             }
           ]
         }

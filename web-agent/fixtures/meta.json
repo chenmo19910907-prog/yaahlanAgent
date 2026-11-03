@@ -5,7 +5,7 @@
   "mcp_count": 6,
   "skills_count": 12,
   "modules_count": 29,
-  "capabilities_count": 385,
+  "capabilities_count": 387,
   "defaultAgentModel": "composer-2.5",
   "agentModels": [
     {
