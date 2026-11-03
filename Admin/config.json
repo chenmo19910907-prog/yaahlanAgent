@@ -141,7 +141,8 @@
   },
   "add_im": {
     "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",
-    "path": "/yaahlan/cms/activity/addIm"
+    "path": "/yaahlan/cms/activity/addIm",
+    "defaultPackageId": "yaahlan"
   },
   "query_im_list": {
     "baseUrl": "https://melon-gateway-alpha-stage.immomo.com",

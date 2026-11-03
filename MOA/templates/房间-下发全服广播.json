@@ -1,0 +1,42 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-user-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "com.immomo.yaahlan.business.utils.enums.AreaEnum area=com.immomo.yaahlan.business.utils.enums.AreaEnum.MENA; String roomId=\"51250967\"; String userId=\"100465989\"; int eventId=831; java.util.HashMap userInfo=new java.util.HashMap(); userInfo.put(\"userId\",userId); userInfo.put(\"nickname\",\"Broadcast\"); userInfo.put(\"avatar\",\"https://yaahlan.momocdn.com/picture/9C/6E/9C6E109D-5483-48E8-533F-9B6449FBC8FF20260428_S.jpg\"); userInfo.put(\"staticAvatar\",\"https://yaahlan.momocdn.com/picture/9C/6E/9C6E109D-5483-48E8-533F-9B6449FBC8FF20260428_S.jpg\"); java.util.HashMap msgMap=new java.util.HashMap(); msgMap.put(\"en\",\"Room is online now!\"); msgMap.put(\"ar\",\"Room is online now!\"); msgMap.put(\"hi\",\"Room is online now!\"); msgMap.put(\"ru\",\"Room is online now!\"); msgMap.put(\"pt\",\"Room is online now!\"); java.util.HashMap dataMap=new java.util.HashMap(); dataMap.put(\"userInfo\",userInfo); dataMap.put(\"goto\",\"goto://room?roomId=\"+roomId+\"&source=notice&sourceV2=broadcast_live\"); dataMap.put(\"type\",\"send\"); dataMap.put(\"msgMap\",msgMap); boolean ok=context.getBean(\"userBatchImMoaServiceImpl\").sendAllActiveUserSystemMessageV2(area,Integer.valueOf(eventId),dataMap); return String.valueOf(ok);",
+      "json": "",
+      "type": "string",
+      "value": "com.immomo.yaahlan.business.utils.enums.AreaEnum area=com.immomo.yaahlan.business.utils.enums.AreaEnum.MENA; String roomId=\"51250967\"; String userId=\"100465989\"; int eventId=831; java.util.HashMap userInfo=new java.util.HashMap(); userInfo.put(\"userId\",userId); userInfo.put(\"nickname\",\"Broadcast\"); userInfo.put(\"avatar\",\"https://yaahlan.momocdn.com/picture/9C/6E/9C6E109D-5483-48E8-533F-9B6449FBC8FF20260428_S.jpg\"); userInfo.put(\"staticAvatar\",\"https://yaahlan.momocdn.com/picture/9C/6E/9C6E109D-5483-48E8-533F-9B6449FBC8FF20260428_S.jpg\"); java.util.HashMap msgMap=new java.util.HashMap(); msgMap.put(\"en\",\"Room is online now!\"); msgMap.put(\"ar\",\"Room is online now!\"); msgMap.put(\"hi\",\"Room is online now!\"); msgMap.put(\"ru\",\"Room is online now!\"); msgMap.put(\"pt\",\"Room is online now!\"); java.util.HashMap dataMap=new java.util.HashMap(); dataMap.put(\"userInfo\",userInfo); dataMap.put(\"goto\",\"goto://room?roomId=\"+roomId+\"&source=notice&sourceV2=broadcast_live\"); dataMap.put(\"type\",\"send\"); dataMap.put(\"msgMap\",msgMap); boolean ok=context.getBean(\"userBatchImMoaServiceImpl\").sendAllActiveUserSystemMessageV2(area,Integer.valueOf(eventId),dataMap); return String.valueOf(ok);"
+    }
+  ],
+  "settings": {
+    "time": "120000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_meta": {
+    "note": "顶栏全服广播（如 eventId=831）须 userBatchImMoaServiceImpl.sendAllActiveUserSystemMessageV2(AreaEnum.MENA, eventId, dataMap)；勿用 im-stage sendRoomMessage（会走 P2P）。改 expr 内 roomId、eventId、userId、msgMap。"
+  },
+  "_registry": {
+    "id": "room_im_broadcast_send",
+    "name": "房间-下发全服广播",
+    "category": "用户后门（voga-mts-user-backdoor）",
+    "description": "测试环境全服顶栏广播：user-backdoor execute → sendAllActiveUserSystemMessageV2(MENA, eventId, dataMap)。831 等 goto 广播需 userInfo、goto、msgMap、type=send。勿用 im-stage sendRoomMessage。",
+    "prompts": [
+      "给房间 <roomId> 下发 eventId <eventId> 的全服广播",
+      "房间 <roomId> 全服广播 eventId=<eventId>"
+    ]
+  }
+}

@@ -4825,10 +4825,10 @@
       box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.35), inset 0 0 0 1px rgba(251, 191, 36, 0.12);
     }
     .moa-record-mode.is-selected .moa-record-mode-label {
-      color: rgba(253, 224, 71, 1);
+      color: var(--accent);
     }
     .moa-record-mode-label {
-      font-size: 0.84rem; font-weight: 650; color: rgba(253, 224, 71, 0.95);
+      font-size: 0.84rem; font-weight: 650; color: var(--accent);
     }
     .moa-record-mode-desc {
       font-size: 0.72rem; color: var(--muted); line-height: 1.45;
@@ -4906,10 +4906,10 @@
     }
     .moa-record-submit {
       min-height: 36px; padding: 0 18px; border-radius: 10px;
-      border: none; background: rgba(251, 191, 36, 0.92); color: #1a1408;
+      border: none; background: var(--accent); color: #fff;
       font-size: 0.84rem; font-weight: 650; cursor: pointer;
     }
-    .moa-record-submit:hover { background: rgba(253, 224, 71, 0.98); }
+    .moa-record-submit:hover { background: var(--accent-hover); }
     .moa-record-submit:disabled { opacity: 0.55; cursor: not-allowed; }
     @media (max-width: 520px) {
       .moa-record-mode-list { grid-template-columns: 1fr; }

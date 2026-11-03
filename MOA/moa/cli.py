@@ -564,6 +564,19 @@ def build_parser() -> argparse.ArgumentParser:
         help='曾加入公会 userId 列表 JSON 数组（batchDelAnchorMmuidv3Record），如 ["100138000"]',
     )
     parser.add_argument(
+        "--activity-reward-im-user-id",
+        help="活动中心消息聚合 IM：目标 userId（sendActivityRewardIm；imId 默认取自模板）",
+    )
+    parser.add_argument(
+        "--activity-reward-im-id",
+        help="活动中心消息聚合 IM：覆盖模板内默认 imId（可选）",
+    )
+    parser.add_argument(
+        "--activity-reward-im-replace",
+        default="",
+        help="活动中心消息聚合 IM：replace 占位替换（默认空）",
+    )
+    parser.add_argument(
         "--guild-force-trade-level",
         type=int,
         help="强制修改公会等级：目标等级 int（testUpdateTradeLevel；须与 --guild-force-trade-id 同用）",

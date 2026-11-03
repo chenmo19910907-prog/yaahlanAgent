@@ -418,6 +418,21 @@
           "subfolder": true
         },
         {
+          "kind": "folder",
+          "id": "nav-mw0ft18gcum6",
+          "label": "活动moa工具",
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "活动",
+              "label": "活动-活动中心消息聚合IM",
+              "sourceId": "moa",
+              "registryId": "activity_center_reward_im_send"
+            }
+          ],
+          "subfolder": true
+        },
+        {
           "kind": "cap",
           "moduleId": "活动",
           "catIndex": 8,
@@ -471,30 +486,13 @@
               "kind": "cap",
               "moduleId": "道具",
               "catIndex": 0
-            }
-          ]
-        },
-        {
-          "kind": "folder",
-          "id": "nav-prop-offline-issue",
-          "label": "离线下发",
-          "children": [
-            {
-              "kind": "cap",
-              "moduleId": "道具",
-              "label": "道具-离线下发至装扮中心",
-              "sourceId": "admin",
-              "registryId": "prop_offline_issue_center"
             },
             {
               "kind": "cap",
               "moduleId": "道具",
-              "label": "道具-离线下发至礼物背包",
-              "sourceId": "admin",
-              "registryId": "prop_offline_issue_backpack"
+              "catIndex": 1
             }
-          ],
-          "subfolder": true
+          ]
         },
         {
           "kind": "module",
@@ -936,6 +934,10 @@
           "catIndex": 0
         }
       ]
+    },
+    {
+      "kind": "module",
+      "moduleId": "cms"
     }
   ]
 }

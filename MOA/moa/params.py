@@ -332,6 +332,26 @@ def set_guild_device_mmuidv3_query_params(payload: dict[str, Any], device_id: st
     payload["params"] = [string_param(device_id)]
 
 
+def set_activity_reward_im_send_params(
+    payload: dict[str, Any],
+    user_id: str,
+    im_id: str,
+    *,
+    replace: str = "",
+) -> None:
+    user_id = str(user_id).strip()
+    im_id = str(im_id).strip()
+    if not user_id:
+        raise ValueError("activity-reward-im-user-id 不能为空")
+    if not im_id:
+        raise ValueError("activity-reward-im-id 不能为空")
+    payload["url"] = "/service/vas/internal/activity-reward-im"
+    payload["method"] = "sendActivityRewardIm"
+    payload["params"] = [
+        json_param({"userId": user_id, "imId": im_id, "replace": str(replace or "")})
+    ]
+
+
 def set_guild_force_update_trade_level_params(
     payload: dict[str, Any], level: int, trade_union_id: str
 ) -> None:

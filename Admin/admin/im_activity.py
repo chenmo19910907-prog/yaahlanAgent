@@ -117,9 +117,11 @@ def build_add_im_payload(
         content_ar = bilingual.get("ar") or f"[اختبار IM] {label} / {IM_USER_TYPES[user_type]} / {area}"
     else:
         content_ar = msg_ar
+    pkg = str(defaults("add_im").get("defaultPackageId") or "yaahlan").strip() or "yaahlan"
     return {
         "id": task_id,
         "name": name,
+        "packageId": pkg,
         "msgContent": {"en": content_en, "ar": content_ar},
         "userFilterType": 0,
         "type": delivery_type,

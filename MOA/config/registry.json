@@ -1820,6 +1820,27 @@
         "testAddUser 星光大使拉新造数"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/星光大使-模拟拉新.json \\\n  --new-user-invite-inviter-user-id \\\n  <inviterUserId> \\\n  --new-user-invite-invitee-user-id \\\n  <inviteeUserId>\n"
+    },
+    {
+      "id": "room_im_broadcast_send",
+      "name": "房间-下发全服广播",
+      "category": "用户后门（voga-mts-user-backdoor）",
+      "description": "测试环境全服顶栏广播：user-backdoor execute → sendAllActiveUserSystemMessageV2(MENA, eventId, dataMap)。831 等 goto 广播需 userInfo、goto、msgMap、type=send。勿用 im-stage sendRoomMessage。",
+      "prompts": [
+        "给房间 <roomId> 下发 eventId <eventId> 的全服广播",
+        "房间 <roomId> 全服广播 eventId=<eventId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-下发全服广播.json\n"
+    },
+    {
+      "id": "activity_center_reward_im_send",
+      "name": "活动-活动中心消息聚合IM",
+      "category": "活动（vas/internal/activity-reward-im）",
+      "description": "测试环境向指定用户下发活动中心聚合 IM（sendActivityRewardIm；/service/vas/internal/activity-reward-im）。模板内置 imId=585、replace 为空；仅需填写 userId。",
+      "prompts": [
+        "给用户 <userId|userId> 下发活动中心聚合 IM"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/活动-活动中心消息聚合IM.json \\\n  --activity-reward-im-user-id \\\n  <userId> \\\n  [--activity-reward-im-id \\\n  <imId>]\n"
     }
   ]
 }

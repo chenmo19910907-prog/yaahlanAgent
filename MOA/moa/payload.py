@@ -62,6 +62,7 @@ from .params import (
     set_change_user_area_params,
     set_guild_batch_del_anchor_mmuidv3_params,
     set_guild_device_mmuidv3_query_params,
+    set_activity_reward_im_send_params,
     set_guild_force_update_trade_level_params,
     normalize_cp_pair_key,
     parse_cp_pair_keys,
@@ -537,6 +538,53 @@ def _op_guild_batch_del_anchor_mmuidv3(args: argparse.Namespace, payload: dict[s
     if not isinstance(parsed, list):
         raise ValueError("guild-anchor-user-ids-json 必须是 JSON 数组")
     set_guild_batch_del_anchor_mmuidv3_params(payload, [str(x) for x in parsed])
+
+
+def _activity_reward_im_send_mode(args: argparse.Namespace) -> bool:
+    return getattr(args, "activity_reward_im_user_id", None) is not None or getattr(
+        args, "activity_reward_im_id", None
+    ) is not None
+
+
+def _default_activity_reward_im_from_payload(payload: dict[str, Any]) -> tuple[str, str]:
+    params = payload.get("params")
+    if not isinstance(params, list) or not params:
+        return "", ""
+    raw = params[0].get("value")
+    if raw is None:
+        raw = params[0].get("txt")
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except json.JSONDecodeError:
+            return "", ""
+    if not isinstance(raw, dict):
+        return "", ""
+    return str(raw.get("imId") or "").strip(), str(raw.get("replace") or "")
+
+
+def _op_activity_reward_im_send(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if not args.activity_reward_im_user_id:
+        raise ValueError("下发活动中心聚合 IM 时须提供 --activity-reward-im-user-id")
+    im_id = str(getattr(args, "activity_reward_im_id", None) or "").strip()
+    replace_arg = getattr(args, "activity_reward_im_replace", None)
+    default_im, default_replace = _default_activity_reward_im_from_payload(payload)
+    if not im_id:
+        im_id = default_im
+    if not im_id:
+        raise ValueError(
+            "下发活动中心聚合 IM 时未提供 --activity-reward-im-id，且模板 params 中无默认 imId"
+        )
+    if replace_arg is None or replace_arg == "":
+        replace = default_replace
+    else:
+        replace = str(replace_arg)
+    set_activity_reward_im_send_params(
+        payload,
+        user_id=args.activity_reward_im_user_id,
+        im_id=im_id,
+        replace=replace,
+    )
 
 
 def _guild_force_update_trade_level_mode(args: argparse.Namespace) -> bool:
@@ -1873,6 +1921,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.diamond_user_id is not None, _op_diamond),
     (lambda a: getattr(a, "guild_device_mmuidv3", None) is not None, _op_guild_device_mmuidv3_query),
     (lambda a: getattr(a, "guild_anchor_user_ids_json", None) is not None, _op_guild_batch_del_anchor_mmuidv3),
+    (lambda a: _activity_reward_im_send_mode(a), _op_activity_reward_im_send),
     (lambda a: _guild_force_update_trade_level_mode(a), _op_guild_force_update_trade_level),
     (lambda a: _room_set_level_mode(a), _op_room_set_level),
     (lambda a: a.user_rank_area is not None, _op_user_rank_dispatch),
