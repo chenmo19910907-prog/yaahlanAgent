@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20261106024035"></script>
-  <script src="demo-api.js?v=20261106024035"></script>
+  <script src="demo-fixtures.js?v=20261106091929"></script>
+  <script src="demo-api.js?v=20261106091929"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -1900,6 +1900,9 @@
     #moa-call-log-modal .admin-audit-item-target {
       word-break: break-word;
     }
+    #moa-call-log-modal .collaborators-head {
+      display: flex; flex-direction: column; gap: 6px;
+    }
     #moa-call-log-modal .call-log-head-top {
       display: flex; align-items: center; justify-content: space-between;
       gap: 10px; flex-wrap: wrap;
@@ -1925,6 +1928,174 @@
     }
     #moa-call-log-modal .call-log-date-range .usage-date-range-hint {
       flex-basis: 100%; font-size: 0.72rem;
+    }
+    #moa-call-log-modal .call-log-head-sub {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 8px; flex-wrap: nowrap; width: 100%;
+    }
+    #moa-call-log-modal .call-log-head-sub .collaborators-meta {
+      flex: 1 1 auto; min-width: 0; margin-top: 0;
+    }
+    #moa-call-log-modal .call-log-title-search {
+      flex: 0 1 240px; width: auto; min-width: 140px; max-width: 280px;
+      margin-top: 0; padding: 6px 10px; font-size: 0.76rem; border-radius: 8px;
+    }
+    #moa-call-log-modal .admin-audit-item-operator-name {
+      flex: 1;
+      min-width: 0;
+    }
+    #moa-call-log-modal .admin-audit-item-operator .call-log-replay-btn {
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    #moa-call-log-modal .call-log-replay-btn {
+      font-size: 0.76rem;
+      padding: 4px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--btn-subtle-bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+    #moa-call-log-modal .call-log-replay-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    #call-log-replay-modal .collaborators-box {
+      width: min(480px, 96vw);
+      max-height: min(82vh, 620px);
+    }
+    #call-log-replay-modal .collaborators-head {
+      padding-bottom: 14px;
+    }
+    #call-log-replay-modal #call-log-replay-sub {
+      white-space: normal;
+      overflow: visible;
+      text-overflow: unset;
+      line-height: 1.45;
+      margin-top: 6px;
+    }
+    .call-log-replay-body {
+      flex: 1;
+      overflow: auto;
+      padding: 4px 20px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 0;
+    }
+    .call-log-replay-notice {
+      font-size: 0.76rem;
+      line-height: 1.45;
+      padding: 8px 11px;
+      border-radius: 10px;
+      border: 1px solid rgba(91, 140, 255, 0.28);
+      background: rgba(91, 140, 255, 0.08);
+      color: var(--text);
+    }
+    .call-log-replay-notice[hidden],
+    .call-log-replay-result[hidden] { display: none !important; }
+    .call-log-replay-notice.is-warn {
+      border-color: rgba(180, 83, 9, 0.28);
+      background: rgba(180, 83, 9, 0.08);
+    }
+    .call-log-replay-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .call-log-replay-fields.is-empty {
+      padding: 14px 12px;
+      border-radius: 12px;
+      border: 1px dashed var(--border);
+      background: var(--btn-subtle-bg);
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-align: center;
+    }
+    .call-log-replay-field label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .call-log-replay-field input {
+      width: 100%;
+      box-sizing: border-box;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 9px 11px;
+      font-size: 0.88rem;
+      background: var(--input-bg, var(--card-bg));
+      color: var(--text);
+      outline: none;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+    .call-log-replay-field input:focus {
+      border-color: rgba(91, 140, 255, 0.55);
+      box-shadow: 0 0 0 3px rgba(91, 140, 255, 0.12);
+    }
+    .call-log-replay-help {
+      font-size: 0.74rem;
+      color: var(--muted);
+      line-height: 1.45;
+      margin: 0;
+    }
+    .call-log-replay-help:empty { display: none; }
+    .call-log-replay-result {
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      overflow: hidden;
+    }
+    .call-log-replay-result-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      background: var(--btn-subtle-bg);
+    }
+    .call-log-replay-result-head.is-ok { color: #15803d; }
+    .call-log-replay-result-head.is-err { color: #b45309; }
+    .call-log-replay-result-meta {
+      margin: 0;
+      padding: 10px 12px 12px;
+      display: grid;
+      grid-template-columns: minmax(72px, 34%) 1fr;
+      gap: 8px 10px;
+      align-items: start;
+      font-size: 0.72rem;
+      line-height: 1.4;
+    }
+    .call-log-replay-result-meta dt {
+      margin: 0;
+      color: var(--muted);
+      font-weight: 600;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      word-break: break-all;
+    }
+    .call-log-replay-result-meta dd {
+      margin: 0;
+      color: var(--text);
+      word-break: break-all;
+    }
+    .call-log-replay-result-raw {
+      margin: 0;
+      padding: 10px 12px;
+      font-size: 0.7rem;
+      line-height: 1.45;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 120px;
+      overflow: auto;
     }
     .collaborators-actions button {
       border-radius: 10px; padding: 8px 14px; font-size: 0.86rem; cursor: pointer;
@@ -6314,11 +6485,34 @@
             </div>
           </div>
         </div>
-        <div class="collaborators-meta" id="moa-call-log-meta" aria-live="polite"></div>
+        <div class="call-log-head-sub">
+          <div class="collaborators-meta" id="moa-call-log-meta" aria-live="polite"></div>
+          <input type="search" class="collaborators-search call-log-title-search" id="call-log-title-search"
+            placeholder="搜索标题关键字" aria-label="按标题搜索" autocomplete="off" />
+        </div>
       </div>
       <div class="collaborators-list" id="moa-call-log-body"></div>
       <div class="collaborators-actions">
         <button type="button" id="btn-moa-call-log-close">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="collaborators-modal" id="call-log-replay-modal" aria-hidden="true">
+    <div class="collaborators-box" role="dialog" aria-labelledby="call-log-replay-title">
+      <div class="collaborators-head">
+        <h3 id="call-log-replay-title">执行参数</h3>
+        <p id="call-log-replay-sub" class="collaborators-meta"></p>
+      </div>
+      <div class="call-log-replay-body">
+        <div id="call-log-replay-notice" class="call-log-replay-notice" hidden></div>
+        <div class="call-log-replay-fields" id="call-log-replay-fields" aria-label="执行参数"></div>
+        <p id="call-log-replay-help" class="call-log-replay-help"></p>
+        <div id="call-log-replay-result" class="call-log-replay-result" hidden></div>
+      </div>
+      <div class="collaborators-actions">
+        <button type="button" id="btn-call-log-replay-cancel">取消</button>
+        <button type="button" class="primary" id="btn-call-log-replay-run">直接运行</button>
       </div>
     </div>
   </div>
@@ -6671,7 +6865,7 @@
   <script src="bookmarks_panel.js"></script>
   <script src="message_board_panel.js?v=20260730b"></script>
   <script src="about_panel.js?v=20260814a"></script>
-  <script src="guild_pangu_panel.js?v=20261028c"></script>
+  <script src="guild_pangu_panel.js?v=20261106a"></script>
   <script src="catalog_panel.js?v=20261028pangu"></script>
   <script src="moa_record_panel.js?v=20260803d"></script>
   <script src="waiting_fx.js"></script>
@@ -13147,6 +13341,13 @@
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
+    function truncateDisplayText(text, maxLen) {
+      const s = String(text || '');
+      const n = Number(maxLen);
+      if (!Number.isFinite(n) || n <= 0 || s.length <= n) return s;
+      return `${s.slice(0, n)}…`;
+    }
+
     let creatingSession = false;
     let sessionBootstrapPromise = null;
 
@@ -17268,8 +17469,16 @@
     let moaCallLogHasMore = false;
     let moaCallLogLoading = false;
     let moaCallLogLoadingMore = false;
+    /** 操作记录卡片「参数」展示上限（超出截断并加省略号） */
+    const CALL_LOG_PARAMS_DISPLAY_MAX = 160;
     let callLogCustomRange = null;
     let callLogOperatorStaffId = '';
+    let callLogTitleKeyword = '';
+    let callLogTitleSearchTimer = null;
+    let callLogReplayEntryId = '';
+    let callLogReplayCanRun = false;
+    let callLogReplayRunning = false;
+    let callLogReplayLoadSeq = 0;
     const MOA_CALL_LOG_PAGE_SIZE = 100;
 
     function buildAdminPermissionsHtml(user) {
@@ -17948,7 +18157,9 @@
           String(entry.moaInterfaceDisplay || entry.moaInterface || '').trim()
             || [entry.serviceUrl, entry.method].filter(Boolean).join(' · '),
         );
-        const params = escapeHtml(String(entry.paramsSummary || '').trim());
+        const paramsRaw = String(entry.paramsSummary || '').trim();
+        const paramsTruncated = paramsRaw.length > CALL_LOG_PARAMS_DISPLAY_MAX;
+        const params = escapeHtml(truncateDisplayText(paramsRaw, CALL_LOG_PARAMS_DISPLAY_MAX));
         const count = Number(entry.callCount || 1);
         const batchHint = count > 1 ? `（合并 ${count} 次）` : '';
         const operatorAvatar = buildStaffPickerAvatarHtml({
@@ -17962,11 +18173,15 @@
         const interfaceLine = moaInterface
           ? `<div class="admin-audit-item-detail">接口：${moaInterface}${batchHint}</div>`
           : '';
-        const paramsLine = params
-          ? `<div class="admin-audit-item-detail">参数：${params}</div>`
+        const paramsTitle = paramsTruncated
+          ? ` title="${escapeHtml(paramsRaw).replace(/"/g, '&quot;')}"`
           : '';
+        const paramsLine = params
+          ? `<div class="admin-audit-item-detail admin-audit-item-detail-params"${paramsTitle}>参数：${params}</div>`
+          : '';
+        const entryId = escapeHtml(String(entry.id || '').trim());
         return `
-          <div class="admin-audit-item">
+          <div class="admin-audit-item" data-call-log-id="${entryId}">
             <div class="admin-audit-item-head">
               <div class="admin-audit-item-action">${operation}</div>
               <div class="admin-audit-item-time">${time}</div>
@@ -17974,6 +18189,7 @@
             <div class="admin-audit-item-operator">
               ${operatorAvatar}
               <div class="admin-audit-item-operator-name">${operatorName}</div>
+              <button type="button" class="call-log-replay-btn" data-entry-id="${entryId}">运行</button>
             </div>
             ${accountLine}
             ${interfaceLine}
@@ -17981,6 +18197,223 @@
           </div>`;
       }).join('');
       hydrateAvatars(list);
+    }
+
+    function setCallLogReplayModalOpen(open) {
+      const modal = document.getElementById('call-log-replay-modal');
+      if (!modal) return;
+      if (!open) {
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+        callLogReplayEntryId = '';
+        callLogReplayCanRun = false;
+        return;
+      }
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function readCallLogReplayParamsFromTable() {
+      const root = document.getElementById('call-log-replay-fields');
+      if (!root) return [];
+      return Array.from(root.querySelectorAll('.call-log-replay-field')).map((row) => {
+        const key = String(row.dataset.paramKey || '').trim();
+        const input = row.querySelector('input');
+        const value = input ? String(input.value || '').trim() : '';
+        const placeholder = String(row.dataset.placeholder || '').trim();
+        return { key, value, placeholder };
+      }).filter((row) => row.key);
+    }
+
+    function clearCallLogReplayResult() {
+      const el = document.getElementById('call-log-replay-result');
+      if (!el) return;
+      el.hidden = true;
+      el.innerHTML = '';
+    }
+
+    function parseCallLogReplayRequestMeta(text) {
+      const raw = String(text || '').trim();
+      const reqIdx = raw.indexOf('请求信息:');
+      const slice = reqIdx >= 0 ? raw.slice(reqIdx + '请求信息:'.length).trim() : raw;
+      const pairs = [];
+      const re = /([a-zA-Z_][\w]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^,\s]+))/g;
+      let m;
+      while ((m = re.exec(slice)) !== null) {
+        pairs.push({ key: m[1], value: m[2] ?? m[3] ?? m[4] ?? '' });
+      }
+      return pairs;
+    }
+
+    function renderCallLogReplayResult(summary, tail, resultRows) {
+      const el = document.getElementById('call-log-replay-result');
+      if (!el) return;
+      const sum = String(summary || '').trim();
+      const tailText = String(tail || '').trim();
+      const rows = Array.isArray(resultRows) ? resultRows : [];
+      if (!sum && !tailText && !rows.length) {
+        el.hidden = true;
+        el.innerHTML = '';
+        return;
+      }
+      const ok = /^成功/.test(sum);
+      const bizHtml = rows.length
+        ? rows.map(({ label, value }) => `
+              <dt>${escapeHtml(String(label || ''))}</dt>
+              <dd>${escapeHtml(String(value ?? ''))}</dd>`).join('')
+        : '';
+      let rawBlock = '';
+      if (!bizHtml && tailText) {
+        const trimmed = tailText.trim();
+        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+          rawBlock = `<pre class="call-log-replay-result-raw">${escapeHtml(trimmed.slice(-600))}</pre>`;
+        } else if (!trimmed.includes('请求信息:')) {
+          rawBlock = `<pre class="call-log-replay-result-raw">${escapeHtml(trimmed.slice(-400))}</pre>`;
+        }
+      }
+      el.hidden = false;
+      el.innerHTML = `
+        <div class="call-log-replay-result-head ${ok ? 'is-ok' : 'is-err'}">${escapeHtml(sum || (ok ? '成功' : '失败'))}</div>
+        ${bizHtml ? `<dl class="call-log-replay-result-meta">${bizHtml}</dl>` : ''}
+        ${rawBlock}`;
+    }
+
+    function renderCallLogReplayTable(rows) {
+      const root = document.getElementById('call-log-replay-fields');
+      if (!root) return;
+      root.classList.remove('is-empty');
+      if (!rows.length) {
+        root.classList.add('is-empty');
+        root.textContent = '无需修改参数，可直接运行';
+        return;
+      }
+      root.innerHTML = rows.map((row) => {
+        const key = escapeHtml(String(row.key || ''));
+        const label = escapeHtml(String(row.label || row.key || ''));
+        const val = escapeHtml(String(row.value || ''));
+        const ph = escapeHtml(String(row.placeholder || ''));
+        const phAttr = ph ? ` placeholder="${ph}"` : '';
+        return `
+          <div class="call-log-replay-field" data-param-key="${key}" data-placeholder="${ph}">
+            <label for="call-log-replay-${key}">${label}</label>
+            <input id="call-log-replay-${key}" type="text" value="${val}" aria-label="${label}"${phAttr} />
+          </div>`;
+      }).join('');
+    }
+
+    function callLogReplayFetchErrorMessage(err, fallback = '加载失败') {
+      const raw = String(err?.message || err || '').trim();
+      if (/^load failed$/i.test(raw) || /^failed to fetch$/i.test(raw)) {
+        return '网络或服务异常，请刷新页面后重试';
+      }
+      return raw || fallback;
+    }
+
+    async function openCallLogReplayModal(entryId) {
+      const id = String(entryId || '').trim();
+      if (!id || callLogReplayRunning) return;
+      const loadSeq = ++callLogReplayLoadSeq;
+      callLogReplayEntryId = id;
+      const sub = document.getElementById('call-log-replay-sub');
+      const notice = document.getElementById('call-log-replay-notice');
+      const help = document.getElementById('call-log-replay-help');
+      const runBtn = document.getElementById('btn-call-log-replay-run');
+      if (sub) sub.textContent = '加载中…';
+      if (notice) {
+        notice.hidden = true;
+        notice.textContent = '';
+        notice.classList.remove('is-warn');
+      }
+      if (help) help.textContent = '';
+      clearCallLogReplayResult();
+      renderCallLogReplayTable([]);
+      if (runBtn) runBtn.disabled = true;
+      setCallLogReplayModalOpen(true);
+      try {
+        const spec = await api(`/api/moa/call-log/replay-spec?id=${encodeURIComponent(id)}`);
+        if (loadSeq !== callLogReplayLoadSeq) return;
+        callLogReplayCanRun = spec.canReplay === true;
+        if (sub) {
+          const cap = spec.capabilityName ? ` · ${spec.capabilityName}` : '';
+          sub.textContent = `${spec.operation || '操作'}${cap}`;
+        }
+        renderCallLogReplayTable(Array.isArray(spec.paramsRows) ? spec.paramsRows : []);
+        const extra = String(spec.replayHint || '').trim();
+        if (notice && extra) {
+          notice.hidden = false;
+          notice.textContent = extra;
+        }
+        if (help) {
+          help.textContent = spec.canReplay
+            ? '修改参数后点「直接运行」，将按 registry 脚本执行（不经过 Agent）。'
+            : (spec.reason || '暂不支持运行');
+        }
+        if (notice && !spec.canReplay) {
+          notice.hidden = false;
+          notice.classList.add('is-warn');
+          notice.textContent = spec.reason || '暂不支持运行';
+        }
+        if (runBtn) runBtn.disabled = !spec.canReplay;
+      } catch (err) {
+        if (loadSeq !== callLogReplayLoadSeq) return;
+        const msg = callLogReplayFetchErrorMessage(err);
+        if (notice) {
+          notice.hidden = false;
+          notice.classList.add('is-warn');
+          notice.textContent = msg;
+        }
+        if (help) help.textContent = '';
+        callLogReplayCanRun = false;
+        if (runBtn) runBtn.disabled = true;
+      }
+    }
+
+    async function runCallLogReplayDirect() {
+      if (!callLogReplayEntryId || !callLogReplayCanRun || callLogReplayRunning) return;
+      const runBtn = document.getElementById('btn-call-log-replay-run');
+      const help = document.getElementById('call-log-replay-help');
+      callLogReplayRunning = true;
+      if (runBtn) runBtn.disabled = true;
+      if (help) help.textContent = '执行中…';
+      clearCallLogReplayResult();
+      try {
+        const paramsRows = readCallLogReplayParamsFromTable();
+        const result = await api('/api/moa/call-log/replay', {
+          method: 'POST',
+          body: JSON.stringify({
+            entryId: callLogReplayEntryId,
+            paramsRows,
+            sessionId: currentSessionId || '',
+          }),
+        });
+        const ok = result.ok === true;
+        const displaySummary = String(result.displaySummary || result.summary || '').trim();
+        showWebToast(displaySummary || (ok ? '执行成功' : '执行失败'), {
+          error: !ok,
+          durationMs: ok ? 3200 : 5200,
+        });
+        const tail = String(result.stdoutTail || result.stderrTail || result.detailTail || '').trim();
+        renderCallLogReplayResult(
+          displaySummary || result.summary || '',
+          tail,
+          Array.isArray(result.resultRows) ? result.resultRows : [],
+        );
+        if (help) {
+          help.textContent = ok
+            ? '执行完成，结果见下方。'
+            : '执行失败，请查看下方输出或修改参数后重试。';
+        }
+        // 重跑后不刷新操作记录列表；下次打开「操作记录」弹窗时再 load（见 setMoaCallLogModalOpen）
+      } catch (err) {
+        const msg = callLogReplayFetchErrorMessage(err, '执行失败');
+        showWebToast(msg, { error: true, durationMs: 4200 });
+        renderCallLogReplayResult('失败', msg);
+        if (help) help.textContent = '';
+        if (runBtn) runBtn.disabled = false;
+      } finally {
+        callLogReplayRunning = false;
+        if (runBtn && callLogReplayCanRun) runBtn.disabled = false;
+      }
     }
 
     function maybeLoadMoreMoaCallLogFromScroll() {
@@ -18013,8 +18446,15 @@
     function resetCallLogFilters() {
       callLogOperatorStaffId = '';
       callLogCustomRange = null;
+      callLogTitleKeyword = '';
+      if (callLogTitleSearchTimer) {
+        clearTimeout(callLogTitleSearchTimer);
+        callLogTitleSearchTimer = null;
+      }
       const select = document.getElementById('call-log-operator-select');
       if (select) select.value = '';
+      const titleSearch = document.getElementById('call-log-title-search');
+      if (titleSearch) titleSearch.value = '';
       syncCallLogDateUI();
     }
 
@@ -18104,12 +18544,13 @@
       const { startDate, endDate } = resolveCallLogDateFilter();
       if (startDate) params.set('startDate', startDate);
       if (endDate) params.set('endDate', endDate);
+      if (callLogTitleKeyword) params.set('titleKeyword', callLogTitleKeyword);
       return params.toString();
     }
 
     function callLogFilterActive() {
       const { startDate, endDate } = resolveCallLogDateFilter();
-      return Boolean(callLogOperatorStaffId || startDate || endDate);
+      return Boolean(callLogOperatorStaffId || startDate || endDate || callLogTitleKeyword);
     }
 
     async function loadCallLogOperators() {
@@ -18184,6 +18625,8 @@
         return;
       }
       resetCallLogFilters();
+      const selfStaffId = String(currentAuthUser?.staffId || '').trim();
+      if (selfStaffId) callLogOperatorStaffId = selfStaffId;
       modal.classList.add('open');
       modal.setAttribute('aria-hidden', 'false');
       renderMoaCallLogBody();
@@ -19113,6 +19556,16 @@
         callLogOperatorStaffId = String(ev.target.value || '').trim();
         void loadMoaCallLogEntries();
       });
+      document.getElementById('call-log-title-search')?.addEventListener('input', (ev) => {
+        const next = String(ev.target.value || '').trim();
+        if (callLogTitleSearchTimer) clearTimeout(callLogTitleSearchTimer);
+        callLogTitleSearchTimer = setTimeout(() => {
+          callLogTitleSearchTimer = null;
+          if (next === callLogTitleKeyword) return;
+          callLogTitleKeyword = next;
+          void loadMoaCallLogEntries();
+        }, 280);
+      });
       document.getElementById('call-log-start-date')?.addEventListener('click', (ev) => {
         ev.stopPropagation();
         const pop = document.getElementById('usage-date-picker');
@@ -19134,9 +19587,25 @@
     }
     initCallLogFilters();
 
+    document.getElementById('moa-call-log-body')?.addEventListener('click', (event) => {
+      const btn = event.target.closest('.call-log-replay-btn');
+      if (btn?.dataset?.entryId) {
+        event.preventDefault();
+        void openCallLogReplayModal(btn.dataset.entryId);
+      }
+    });
     document.getElementById('moa-call-log-body')?.addEventListener('scroll', () => {
       maybeLoadMoreMoaCallLogFromScroll();
     }, { passive: true });
+    document.getElementById('btn-call-log-replay-cancel')?.addEventListener('click', () => {
+      setCallLogReplayModalOpen(false);
+    });
+    document.getElementById('btn-call-log-replay-run')?.addEventListener('click', () => {
+      void runCallLogReplayDirect();
+    });
+    document.getElementById('call-log-replay-modal')?.addEventListener('click', (event) => {
+      if (event.target.id === 'call-log-replay-modal') setCallLogReplayModalOpen(false);
+    });
     document.getElementById('btn-moa-call-log-close')?.addEventListener('click', () => {
       void setMoaCallLogModalOpen(false);
     });
