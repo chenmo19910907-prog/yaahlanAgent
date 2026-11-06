@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 import tempfile
@@ -115,6 +116,20 @@ class WebRunStoreTests(unittest.TestCase):
         assert found is not None
         self.assertEqual(found.run_id, "abc123")
         self.store.mark_status("abc123", RUN_STATUS_DONE)
+        self.assertIsNone(self.store.find_active_by_session("sess1"))
+
+    def test_reconcile_active_runs_from_disk_drops_stale_memory_index(self) -> None:
+        """模拟 worker 子进程落盘 done 后主进程 _active_runs 未更新的情况。"""
+        self.store.create_run(self._sample_meta())
+        self.assertEqual(len(self.store.list_active_runs()), 1)
+        meta_path = self.store._meta_path("abc123")
+        payload = json.loads(meta_path.read_text(encoding="utf-8"))
+        payload["status"] = RUN_STATUS_DONE
+        meta_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        self.assertEqual(len(self.store.list_active_runs()), 1)
+        removed = self.store.reconcile_active_runs_from_disk()
+        self.assertEqual(removed, 1)
+        self.assertEqual(self.store.list_active_runs(), [])
         self.assertIsNone(self.store.find_active_by_session("sess1"))
 
     def test_cancel_flag(self) -> None:

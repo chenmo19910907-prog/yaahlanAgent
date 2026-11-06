@@ -1811,6 +1811,17 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/动态-发布带话题.json \\\n  --feed-publish-user-id \\\n  <userId> \\\n  --feed-publish-topic-id \\\n  <topicId> \\\n  --feed-publish-text \\\n  <text>\n"
     },
     {
+      "id": "nameplate_dispatch",
+      "name": "铭牌-下发",
+      "category": "用户后门（voga-mts-user-backdoor）",
+      "description": "测试环境为用户下发配置中心铭牌（userNameplateService.dispatchConfigCenterNameplateById）。第三参为有效秒数；CLI 默认 7 天（604800 秒）。验收：MOA-generative form_nameplate_page.py --moa-only。",
+      "prompts": [
+        "给用户<userId|userId>下发铭牌<nameplateId|铭牌ID>",
+        "下发铭牌<nameplateId>给用户<userId> 有效<days|天数>天"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/铭牌-下发.json \\\n  --nameplate-dispatch-user-id \\\n  <userId> \\\n  --nameplate-dispatch-id \\\n  <nameplateId> \\\n  [--nameplate-dispatch-valid-days \\\n  <days>]\n"
+    },
+    {
       "id": "new_user_invite_test_add_user",
       "name": "星光大使-模拟拉新",
       "category": "活动（vas/activity/new-user-invite）",
@@ -1841,6 +1852,41 @@
         "给用户 <userId|userId> 下发活动中心聚合 IM"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/活动-活动中心消息聚合IM.json \\\n  --activity-reward-im-user-id \\\n  <userId> \\\n  [--activity-reward-im-id \\\n  <imId>]\n"
+    },
+    {
+      "id": "room_treasure_rain_im_849",
+      "name": "房间-下发宝箱雨IM849",
+      "category": "消息（voga-base-service-im-stage）",
+      "description": "测试环境向指定房间下发 eventId=849 的 CUSTOM 房间 IM（sendRoomMessage），用于触发宝箱雨。改模板 params 内 roomId、fromUid 后执行。",
+      "prompts": [
+        "向房间 <roomId> 下发 849 宝箱雨 IM",
+        "房间 <roomId> 触发宝箱雨 eventId 849"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-下发宝箱雨IM849.json\n"
+    },
+    {
+      "id": "game_level_target",
+      "name": "游戏等级-升至目标",
+      "category": "用户后门（voga-mts-user-backdoor）",
+      "description": "按目标等级补差游戏经验（gameLevelUpdate + calcLevel 门槛；非直接 setLevel）。目标 1-21。",
+      "prompts": [
+        "用户 <userId> 游戏等级升到 <level>",
+        "<userId> 游戏等级升级到 <level>",
+        "游戏等级升至 <level> <userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/游戏等级-升至目标.json \\\n  --game-level-user-id \\\n  <userId> \\\n  --game-level-target \\\n  <level>\n"
+    },
+    {
+      "id": "game_exp_add",
+      "name": "游戏等级-增加经验",
+      "category": "用户后门（voga-mts-user-backdoor）",
+      "description": "测试环境增加游戏经验（gameLevelMoaServiceImpl.gameLevelUpdate；GameLevelUpdateReq.bettingAmount，1=1游戏值）。禁止直接改 gameLevelDao.setLevel。",
+      "prompts": [
+        "用户 <userId> 增加游戏经验 <amount>",
+        "<userId> 加游戏值 <amount>",
+        "游戏等级加经验 <userId> <amount>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/游戏等级-增加经验.json \\\n  --game-exp-user-id \\\n  <userId> \\\n  --game-exp-amount \\\n  <amount>\n"
     }
   ]
 }

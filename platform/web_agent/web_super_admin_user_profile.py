@@ -268,7 +268,7 @@ def _analytics_usage_rows(staff_id: str) -> list[tuple[str, str]]:
         token_text = f"{token_text}（{token_note}）"
     if token_text and label:
         token_text = f"{token_text} · {label}"
-    return [("Web 提问次数", req_text), ("Token 用量", token_text)]
+    return [("提问次数", req_text), ("Token 用量", token_text)]
 
 
 def _build_profile_card_rows(

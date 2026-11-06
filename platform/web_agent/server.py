@@ -1533,6 +1533,8 @@ def _start_run_event_tailer(run: ActiveRun, *, progress_stop: threading.Event) -
 def sweep_stale_running_runs() -> int:
     """worker 已退出或僵尸时自动落盘结束态，避免前端一直「思考中」。"""
     store = get_run_store()
+    store.reconcile_active_runs_from_disk()
+    _reconcile_run_manager_with_disk(store)
     finalized = 0
     for meta in store.list_active_runs():
         if meta.status != RUN_STATUS_RUNNING:
@@ -1603,6 +1605,20 @@ def recover_active_runs_on_startup() -> None:
         logger.warning("启动 worker 卫生 sweep 失败: %s", exc)
 
 
+def _reconcile_run_manager_with_disk(store) -> None:
+    """内存 RunManager 与磁盘 meta 不一致时释放，避免列表长期「思考中」。"""
+    for sid in list(RUN_MANAGER.active_session_ids()):
+        run = RUN_MANAGER.find_active_by_session(sid)
+        if run is None:
+            continue
+        fresh = store.get_run(run.run_id)
+        if fresh is None or fresh.status != RUN_STATUS_RUNNING:
+            _release_memory_run(run.run_id)
+            continue
+        if not store.is_worker_alive(run.run_id):
+            _release_memory_run(run.run_id)
+
+
 def _active_run_session_ids() -> set[str]:
     """一次扫描活跃 run，供会话列表批量标记 running（避免 O(会话数×run 数)）。"""
     global _ACTIVE_RUN_IDS_CACHE
@@ -1611,16 +1627,28 @@ def _active_run_session_ids() -> set[str]:
     if cached is not None and now - cached[0] < _ACTIVE_RUN_IDS_CACHE_TTL:
         return set(cached[1])
 
-    ids = RUN_MANAGER.active_session_ids()
     store = get_run_store()
+    removed = store.reconcile_active_runs_from_disk()
+    _reconcile_run_manager_with_disk(store)
+    if removed:
+        _invalidate_active_run_ids_cache()
+
+    ids: set[str] = set()
+    for sid in RUN_MANAGER.active_session_ids():
+        run = RUN_MANAGER.find_active_by_session(sid)
+        if run is None:
+            continue
+        if store.is_worker_alive(run.run_id):
+            ids.add(sid)
+
     for meta in store.list_active_runs():
-        sid = (meta.session_id or "").strip()
+        fresh = store.get_run(meta.run_id)
+        if fresh is None or fresh.status != RUN_STATUS_RUNNING:
+            continue
+        sid = (fresh.session_id or "").strip()
         if not sid or sid in ids:
             continue
-        pid = int(meta.worker_pid or 0)
-        if pid > 0 and store.is_pid_alive(pid):
-            ids.add(sid)
-        elif store.is_worker_alive(meta.run_id):
+        if store.is_worker_alive(fresh.run_id):
             ids.add(sid)
     _ACTIVE_RUN_IDS_CACHE = (now, frozenset(ids))
     return set(ids)

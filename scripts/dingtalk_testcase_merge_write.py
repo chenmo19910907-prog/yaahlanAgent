@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -43,11 +44,17 @@ MERGE_API = API_BASE_URL
 def _parse_md_table(path: Path) -> list[tuple[str, str, str, str]]:
     rows: list[tuple[str, str, str, str]] = []
     for line in path.read_text(encoding="utf-8").splitlines():
-        if not line.startswith("| RCUI_"):
+        if not line.startswith("|"):
             continue
         parts = [p.strip() for p in line.strip("|").split("|")]
-        if len(parts) >= 4:
-            rows.append((parts[0], parts[1], parts[2], parts[3]))
+        if len(parts) < 4:
+            continue
+        cid = parts[0]
+        if cid in ("编号", "------") or cid.startswith("---"):
+            continue
+        if not re.match(r"^[A-Z][A-Z0-9_]+_\d+$", cid):
+            continue
+        rows.append((cid, parts[1], parts[2], parts[3]))
     return rows
 
 

@@ -8,10 +8,10 @@
     {
       "title": "参数1",
       "name": "1",
-      "txt": "context.getBean(\"rechargeRebateService\").handleRecharge(\"8250\",1L)",
+      "txt": "context.getBean(\"rechargeRebateService\").handleRecharge(\"8250\",1L,\"system-00001\")",
       "json": "",
       "type": "string",
-      "value": "context.getBean(\"rechargeRebateService\").handleRecharge(\"8250\",1L)"
+      "value": "context.getBean(\"rechargeRebateService\").handleRecharge(\"8250\",1L,\"system-00001\")"
     }
   ],
   "settings": {

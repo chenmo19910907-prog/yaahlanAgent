@@ -58,7 +58,7 @@ class WebSuperAdminUserProfileTests(unittest.TestCase):
         self.assertTrue(payload.get("cardRows"))
 
     @patch("web_admin_grants.is_super_admin", return_value=True)
-    @patch.object(profile, "_analytics_usage_rows", return_value=[("Web 提问次数", "3 次（本月）"), ("Token 用量", "")])
+    @patch.object(profile, "_analytics_usage_rows", return_value=[("提问次数", "3 次（本月）"), ("Token 用量", "")])
     @patch.object(profile, "_dingtalk_user_detail_cached", return_value={"title": "工程师"})
     @patch("dingtalk_user_lookup.lookup_auth_user_display_name", return_value="用户A")
     @patch("dingtalk_user_profile.resolve_user_profile")

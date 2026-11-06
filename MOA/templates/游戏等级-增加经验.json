@@ -1,0 +1,41 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-user-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "",
+      "json": "",
+      "type": "string",
+      "value": ""
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "game_exp_add",
+    "name": "游戏等级-增加经验",
+    "category": "用户后门（voga-mts-user-backdoor）",
+    "description": "测试环境增加游戏经验（gameLevelMoaServiceImpl.gameLevelUpdate；GameLevelUpdateReq.bettingAmount，1=1游戏值）。禁止直接改 gameLevelDao.setLevel。",
+    "prompts": [
+      "用户 <userId> 增加游戏经验 <amount>",
+      "<userId> 加游戏值 <amount>",
+      "游戏等级加经验 <userId> <amount>"
+    ],
+    "cli": "--game-exp-user-id <userId> --game-exp-amount <amount>"
+  }
+}

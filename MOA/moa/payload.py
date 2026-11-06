@@ -50,6 +50,8 @@ from .params import (
     set_family_monster_detail_params,
     set_family_monster_room_damage_params,
     set_user_joined_family_query_params,
+    build_game_exp_add_expr,
+    build_game_level_target_expr,
     set_backdoor_execute_expr,
     set_id_auth_delete_person_params,
     set_id_auth_del_relation_by_scene_params,
@@ -65,6 +67,7 @@ from .params import (
     set_activity_reward_im_send_params,
     set_guild_force_update_trade_level_params,
     normalize_cp_pair_key,
+    random_five_digit_out_order_id,
     parse_cp_pair_keys,
     set_cp_ferris_wheel_area_params,
     set_cp_ferris_wheel_tier_params,
@@ -427,6 +430,28 @@ def _op_wealth_query(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     payload["method"] = "execute"
     expr = build_wealth_charm_query_expr("getWealthInfoNoAvatar", args.wealth_query_user_id)
     set_backdoor_execute_expr(payload, expr)
+
+
+def _op_game_exp_add(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if args.game_exp_amount is None:
+        raise ValueError("增加游戏经验需提供 --game-exp-amount")
+    expr = build_game_exp_add_expr(args.game_exp_user_id, args.game_exp_amount)
+    set_backdoor_execute_expr(payload, expr)
+    print(
+        f"增加游戏经验 userId={args.game_exp_user_id} bettingAmount={args.game_exp_amount}",
+        file=sys.stderr,
+    )
+
+
+def _op_game_level_target(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if args.game_level_target is None:
+        raise ValueError("升至目标游戏等级需提供 --game-level-target")
+    expr = build_game_level_target_expr(args.game_level_user_id, args.game_level_target)
+    set_backdoor_execute_expr(payload, expr)
+    print(
+        f"游戏等级升至 target={args.game_level_target} userId={args.game_level_user_id}（gameLevelUpdate 补经验）",
+        file=sys.stderr,
+    )
 
 
 def _op_wealth_incr(args: argparse.Namespace, payload: dict[str, Any]) -> None:
@@ -836,12 +861,16 @@ def _op_recharge_rebate_simulate(args: argparse.Namespace, payload: dict[str, An
         raise ValueError("recharge_rebate_user_id 不能为空")
     if diamonds <= 0:
         raise ValueError("recharge_rebate_diamonds 必须为正整数")
-    expr = f'context.getBean("rechargeRebateService").handleRecharge("{user_id}",{diamonds}L)'
+    out_order_id = random_five_digit_out_order_id("system")
+    expr = (
+        f'context.getBean("rechargeRebateService").handleRecharge('
+        f'"{user_id}",{diamonds}L,"{out_order_id}")'
+    )
     payload["url"] = "/service/voga-mts-vas-backdoor"
     payload["method"] = "execute"
     set_backdoor_execute_expr(payload, expr)
     print(
-        f"Ultra Recharge 模拟充值：userId={user_id} diamonds={diamonds}",
+        f"Ultra Recharge 模拟充值：userId={user_id} diamonds={diamonds} outOrderId={out_order_id}",
         file=sys.stderr,
     )
 
@@ -1868,6 +1897,32 @@ def _op_new_user_invite_test_add(args: argparse.Namespace, payload: dict[str, An
     )
 
 
+def _op_nameplate_dispatch(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    """铭牌下发（voga-mts-user-backdoor execute；dispatchConfigCenterNameplateById）。"""
+    if args.nameplate_dispatch_id is None:
+        raise ValueError("铭牌下发需提供 --nameplate-dispatch-id")
+    user_id = str(args.nameplate_dispatch_user_id).strip()
+    nameplate_id = str(args.nameplate_dispatch_id).strip()
+    if not user_id or not nameplate_id:
+        raise ValueError("铭牌下发 userId / nameplateId 不能为空")
+    valid_days = 7 if args.nameplate_dispatch_valid_days is None else int(args.nameplate_dispatch_valid_days)
+    if valid_days <= 0:
+        raise ValueError("铭牌有效天数须 > 0")
+    valid_seconds = valid_days * 86400
+    payload["url"] = "/service/voga-mts-user-backdoor"
+    payload["method"] = "execute"
+    expr = (
+        f'context.getBean("userNameplateService").dispatchConfigCenterNameplateById('
+        f'"{user_id}", "{nameplate_id}", {valid_seconds})'
+    )
+    set_backdoor_execute_expr(payload, expr)
+    print(
+        f"铭牌下发 userId={user_id} nameplateId={nameplate_id} "
+        f"validDays={valid_days} validSeconds={valid_seconds}",
+        file=sys.stderr,
+    )
+
+
 def _op_activity_mock_gift(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     if not args.activity_gift_to_user_id:
         raise ValueError("活动模拟送礼需提供 --activity-gift-to-user-id")
@@ -1892,6 +1947,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: _intimate_buddy_change_apply_mode(a), _op_intimate_buddy_change_apply),
     (lambda a: _intimate_buddy_change_accept_mode(a), _op_intimate_buddy_change_accept),
     (lambda a: a.new_user_invite_inviter_user_id is not None, _op_new_user_invite_test_add),
+    (lambda a: a.nameplate_dispatch_user_id is not None, _op_nameplate_dispatch),
     (lambda a: a.activity_gift_from_user_id is not None, _op_activity_mock_gift),
     (lambda a: _cp_ferris_tier_mode(a), _op_cp_ferris_tier),
     (lambda a: _cp_ferris_area_mode(a), _op_cp_ferris_area),
@@ -1902,6 +1958,8 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: a.charm_decr_user_id is not None, _op_charm_decr),
     (lambda a: a.wealth_decr_user_id is not None, _op_wealth_decr),
     (lambda a: a.charm_incr_user_id is not None, _op_charm_incr),
+    (lambda a: a.game_exp_user_id is not None, _op_game_exp_add),
+    (lambda a: a.game_level_user_id is not None, _op_game_level_target),
     (lambda a: a.wealth_incr_user_id is not None, _op_wealth_incr),
     (lambda a: a.charm_query_user_id is not None, _op_charm_query),
     (lambda a: a.wealth_query_user_id is not None, _op_wealth_query),

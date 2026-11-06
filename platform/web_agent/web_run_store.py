@@ -545,8 +545,30 @@ class WebRunStore:
                 out.append(meta)
         return out
 
+    def reconcile_active_runs_from_disk(self) -> int:
+        """主进程 _active_runs 可能在 worker 子进程落盘 done 后仍滞留，与磁盘对齐。"""
+        self._ensure_active_index()
+        removed = 0
+        with self._lock:
+            for run_id in list(self._active_runs.keys()):
+                fresh = self.get_run(run_id)
+                if fresh is not None and fresh.status == RUN_STATUS_RUNNING:
+                    if self._active_runs.get(run_id) is not fresh:
+                        self._active_runs[run_id] = fresh
+                    continue
+                stale = self._active_runs.pop(run_id, None)
+                if stale is not None:
+                    sid = (stale.session_id or "").strip()
+                    if sid and self._session_active_run.get(sid) == run_id:
+                        self._session_active_run.pop(sid, None)
+                    removed += 1
+        if removed:
+            self._invalidate_active_run_caches()
+        return removed
+
     def list_active_runs(self) -> list[RunMeta]:
         self._ensure_active_index()
+        self.reconcile_active_runs_from_disk()
         now = time.monotonic()
         cached = self._list_active_cache
         if cached is not None and now - cached[0] < _ACTIVE_RUNS_CACHE_TTL_S:

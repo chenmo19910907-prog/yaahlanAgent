@@ -1,0 +1,40 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-user-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "context.getBean(\"userNameplateService\").dispatchConfigCenterNameplateById(\"100194510\", \"1149\", 604800)",
+      "json": "",
+      "type": "string",
+      "value": "context.getBean(\"userNameplateService\").dispatchConfigCenterNameplateById(\"100194510\", \"1149\", 604800)"
+    }
+  ],
+  "settings": {
+    "time": "8000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "nameplate_dispatch",
+    "name": "铭牌-下发",
+    "category": "用户后门（voga-mts-user-backdoor）",
+    "description": "测试环境为用户下发配置中心铭牌（userNameplateService.dispatchConfigCenterNameplateById）。第三参为有效秒数；CLI 默认 7 天（604800 秒）。验收：MOA-generative form_nameplate_page.py --moa-only。",
+    "prompts": [
+      "给用户<userId|userId>下发铭牌<nameplateId|铭牌ID>",
+      "下发铭牌<nameplateId>给用户<userId> 有效<days|天数>天"
+    ],
+    "cli": "--nameplate-dispatch-user-id <userId> --nameplate-dispatch-id <nameplateId> [--nameplate-dispatch-valid-days <days>]"
+  }
+}

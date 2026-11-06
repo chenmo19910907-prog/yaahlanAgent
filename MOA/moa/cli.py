@@ -614,6 +614,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="查询财富等级 userId（getWealthInfoNoAvatar）",
     )
     parser.add_argument(
+        "--game-exp-user-id",
+        help="增加游戏经验 userId（backdoor gameLevelUpdate bettingAmount）",
+    )
+    parser.add_argument(
+        "--game-exp-amount",
+        type=int,
+        help="游戏经验增量 bettingAmount（与 --game-exp-user-id 联用）",
+    )
+    parser.add_argument(
+        "--game-level-user-id",
+        help="升至目标游戏等级 userId（backdoor gameLevelUpdate 按门槛补经验）",
+    )
+    parser.add_argument(
+        "--game-level-target",
+        type=int,
+        help="目标游戏等级 1-21（与 --game-level-user-id 联用）",
+    )
+    parser.add_argument(
         "--wealth-incr-user-id",
         help="增加财富值 userId（gift-statistics-stage incrUserSendGiftDiamondsNum）",
     )
@@ -929,6 +947,19 @@ def build_parser() -> argparse.ArgumentParser:
         "--new-user-invite-extra",
         default="",
         help="星光大使模拟拉新 testAddUser：第三参预留字符串（默认空）",
+    )
+    parser.add_argument(
+        "--nameplate-dispatch-user-id",
+        help="铭牌下发：用户 userId（dispatchConfigCenterNameplateById）",
+    )
+    parser.add_argument(
+        "--nameplate-dispatch-id",
+        help="铭牌下发：铭牌 id（配置中心 nameplateId）",
+    )
+    parser.add_argument(
+        "--nameplate-dispatch-valid-days",
+        type=int,
+        help="铭牌下发：有效天数（默认 7；内部换算为秒传给 MOA）",
     )
 
     parser.add_argument("--anniversary-egg-user-id", help="3周年砸金蛋：userId")

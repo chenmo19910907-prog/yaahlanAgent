@@ -1,0 +1,52 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-base-service-im-stage",
+  "method": "sendRoomMessage",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "type": "json",
+      "value": {
+        "roomId": "57503537",
+        "fromUid": "100184021",
+        "imCallBackTag": 0,
+        "customIMDataDto": {
+          "eventId": 849,
+          "dataInfo": {},
+          "data": "{}"
+        }
+      },
+      "json": "{\"roomId\":\"57503537\",\"fromUid\":\"100184021\",\"imCallBackTag\":0,\"customIMDataDto\":{\"eventId\":849,\"dataInfo\":{},\"data\":\"{}\"}}",
+      "txt": "{\"roomId\":\"57503537\",\"fromUid\":\"100184021\",\"imCallBackTag\":0,\"customIMDataDto\":{\"eventId\":849,\"dataInfo\":{},\"data\":\"{}\"}}"
+    }
+  ],
+  "settings": {
+    "time": "60000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_meta": {
+    "note": "房间 CUSTOM IM eventId=849，触发宝箱雨动画。im-stage sendRoomMessage；fromUid 为系统/发信账号，roomId 为目标房间。"
+  },
+  "_registry": {
+    "id": "room_treasure_rain_im_849",
+    "name": "房间-下发宝箱雨IM849",
+    "category": "消息（voga-base-service-im-stage）",
+    "description": "测试环境向指定房间下发 eventId=849 的 CUSTOM 房间 IM（sendRoomMessage），用于触发宝箱雨。改模板 params 内 roomId、fromUid 后执行。",
+    "prompts": [
+      "向房间 <roomId> 下发 849 宝箱雨 IM",
+      "房间 <roomId> 触发宝箱雨 eventId 849"
+    ],
+    "command": "python3 MOA/moa_execute.py --payload-file MOA/templates/房间-下发宝箱雨IM849.json"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-user-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "",
+      "json": "",
+      "type": "string",
+      "value": ""
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "game_level_target",
+    "name": "游戏等级-升至目标",
+    "category": "用户后门（voga-mts-user-backdoor）",
+    "description": "按目标等级补差游戏经验（gameLevelUpdate + calcLevel 门槛；非直接 setLevel）。目标 1-21。",
+    "prompts": [
+      "用户 <userId> 游戏等级升到 <level>",
+      "<userId> 游戏等级升级到 <level>",
+      "游戏等级升至 <level> <userId>"
+    ],
+    "cli": "--game-level-user-id <userId> --game-level-target <level>"
+  }
+}

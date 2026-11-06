@@ -832,6 +832,57 @@ def set_backdoor_execute_expr(payload: dict[str, Any], expr: str) -> None:
     payload["params"] = [string_param(expr)]
 
 
+def build_game_exp_add_expr(user_id: str, amount: int) -> str:
+    uid = str(user_id).strip()
+    amt = int(amount)
+    if not uid:
+        raise ValueError("userId 不能为空")
+    if amt <= 0:
+        raise ValueError("游戏经验 bettingAmount 须 > 0")
+    return (
+        'reqClass = Class.forName("com.immomo.voga.mts.user.api.req.gamelevel.GameLevelUpdateReq");\n'
+        "req = reqClass.newInstance();\n"
+        f'req.setUserId("{uid}");\n'
+        f"req.setBettingAmount({amt});\n"
+        'context.getBean("gameLevelMoaServiceImpl").gameLevelUpdate(req);\n'
+        f'return context.getBean("gameLevelDao").getGameLevel("{uid}");'
+    )
+
+
+def build_game_level_target_expr(user_id: str, target_level: int) -> str:
+    uid = str(user_id).strip()
+    target = int(target_level)
+    if not uid:
+        raise ValueError("userId 不能为空")
+    if target < 1 or target > 21:
+        raise ValueError("目标游戏等级须在 1-21")
+    return (
+        f'String uid="{uid}";\n'
+        f"int target={target};\n"
+        'com.immomo.voga.mts.user.service.gamelevel.GameLevelBaseService base='
+        'context.getBean("gameLevelBaseService");\n'
+        "long lo=0L, hi=100000000000L;\n"
+        "while (lo < hi) {\n"
+        "  long mid = (lo + hi) / 2L;\n"
+        "  if (base.calcLevel(mid) < target) lo = mid + 1L;\n"
+        "  else hi = mid;\n"
+        "}\n"
+        "long needScore = lo;\n"
+        "long cur = 0L;\n"
+        'model = context.getBean("gameLevelDao").getGameLevel(uid);\n'
+        "if (model != null) cur = model.getScore();\n"
+        "long delta = needScore - cur;\n"
+        'if (delta <= 0L) return context.getBean("gameLevelDao").getGameLevel(uid);\n'
+        "if (delta > 2147483647L) delta = 2147483647L;\n"
+        'reqClass = Class.forName("com.immomo.voga.mts.user.api.req.gamelevel.GameLevelUpdateReq");\n'
+        "req = reqClass.newInstance();\n"
+        "req.setUserId(uid);\n"
+        "req.setBettingAmount((int)delta);\n"
+        'context.getBean("gameLevelMoaServiceImpl").gameLevelUpdate(req);\n'
+        'return context.getBean("gameLevelDao").getGameLevel(uid);'
+    )
+
+
 def set_vip_del_params(payload: dict[str, Any], user_id: str) -> None:
     user_id = str(user_id).strip()
     if not user_id:

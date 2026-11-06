@@ -425,6 +425,7 @@
             {
               "kind": "cap",
               "moduleId": "活动",
+              "catIndex": 11,
               "label": "活动-活动中心消息聚合IM",
               "sourceId": "moa",
               "registryId": "activity_center_reward_im_send"
@@ -491,6 +492,11 @@
               "kind": "cap",
               "moduleId": "道具",
               "catIndex": 1
+            },
+            {
+              "kind": "cap",
+              "moduleId": "道具",
+              "catIndex": 2
             }
           ]
         },
@@ -593,6 +599,11 @@
           "kind": "cap",
           "moduleId": "cp",
           "catIndex": 3
+        },
+        {
+          "kind": "cap",
+          "moduleId": "cp",
+          "catIndex": 4
         }
       ]
     },
@@ -937,7 +948,14 @@
     },
     {
       "kind": "module",
-      "moduleId": "cms"
+      "moduleId": "cms",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "cms",
+          "catIndex": 0
+        }
+      ]
     }
   ]
 }
