@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "category": "公会常用盘古配置工具（workflow）",
   "doc_note": "业务文档原序号跳号（缺 4、5）；共 9 条业务场景，本清单按 ①–⑨ 连续编号。Web 面板「场景说明」优先读各条 usage_note，否则读对应 workflow/*.json 的 description；操作人可在面板「补充说明」自行编辑（仅存浏览器）。",
   "web_usage": {
@@ -33,12 +33,16 @@
       "workflow_id": "guild-pangu-02-anchor-removal-window",
       "name": "盘古-②公会长移除主播窗口",
       "doc_index": 2,
-      "config_key": "shiftTime.isAllowedTimeForAnchorRemoval",
-      "namespace": "Application",
-      "fields": ["expireTimeSec", "fixedTimeSec"],
-      "only_edit_fields": ["expireTimeSec"],
-      "example": "",
-      "prompt": "设置盘古公会长移除主播窗口 expireTimeSec=<expireTimeSec> fixedTimeSec=<fixedTimeSec> 并发布"
+      "config_key": "shiftTime.tradeUnion",
+      "namespace": "voga-common",
+      "fields": ["fixedTimeSec", "expireTimeSec"],
+      "only_edit_fields": ["fixedTimeSec", "expireTimeSec"],
+      "field_help": {
+        "whiteUsers": "须填写待测公会长的 userId（逗号分隔）；仅白名单账号走该条配置的偏移/窗口逻辑。"
+      },
+      "usage_note": "预上线：改 voga-common.shiftTime.tradeUnion。业务上主要改 fixedTimeSec（公会统一时间偏移）控制公会长当前是否可移除主播；expireTimeSec 需尽量设大（一般 2029 年之后，避免窗口过早失效）。whiteUsers 须填公会长 ID。验收：公会长端移除主播按钮/接口在窗口内可操作、窗口外被拦截。举例：fixedTimeSec=1794931200（11 月 18 日）；expireTimeSec=1919865600（2030 年）。",
+      "example": "fixedTimeSec=1794931200（11 月 18 日）；expireTimeSec=1919865600（2030 年）",
+      "prompt": "设置盘古公会长移除主播窗口 fixedTimeSec=<fixedTimeSec> expireTimeSec=<expireTimeSec> 并发布"
     },
     {
       "key": "salary_day_no_transfer",
@@ -57,7 +61,7 @@
       "workflow_id": "guild-pangu-04-anchor-expire-display",
       "name": "盘古-④公会长端主播到期展示",
       "doc_index": 4,
-      "config_key": "shiftTime.tradeAnchorExpire",
+      "config_key": "shiftTime.tradeUnion",
       "namespace": "voga-common",
       "fields": ["fixedTimeSec", "expireTimeSec"],
       "only_edit_fields": ["fixedTimeSec"],
@@ -93,7 +97,7 @@
       "workflow_id": "guild-pangu-07-quit-super-trade",
       "name": "盘古-⑦子公会退出母公会窗口",
       "doc_index": 7,
-      "config_key": "shiftTime.quitSuperTrade",
+      "config_key": "shiftTime.tradeUnion",
       "namespace": "voga-common",
       "fields": ["fixedTimeSec", "expireTimeSec"],
       "only_edit_fields": ["fixedTimeSec", "expireTimeSec"],

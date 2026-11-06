@@ -2023,17 +2023,28 @@ def _entry_bj_ymd(ts_iso: str) -> str:
     return display[:10] if len(display) >= 10 else ""
 
 
+def _entry_display_title(item: dict[str, Any]) -> str:
+    display = dict(item)
+    _refresh_tool_operation_field(display)
+    return str(display.get("operation") or "").strip()
+
+
 def _entry_matches_call_log_filters(
     item: dict[str, Any],
     *,
     operator_staff_id: str = "",
     start_date: str = "",
     end_date: str = "",
+    title_keyword: str = "",
 ) -> bool:
     op_filter = str(operator_staff_id or "").strip()
     if op_filter:
         entry_op = str(item.get("operatorStaffId") or "").strip()
         if entry_op != op_filter:
+            return False
+    needle = str(title_keyword or "").strip().casefold()
+    if needle:
+        if needle not in _entry_display_title(item).casefold():
             return False
     start = _normalize_ymd(start_date)
     end = _normalize_ymd(end_date)
@@ -2073,10 +2084,12 @@ def list_moa_call_entries(
     operator_staff_id: str | None = None,
     start_date: str | None = None,
     end_date: str | None = None,
+    title_keyword: str | None = None,
 ) -> dict[str, Any]:
     safe_limit = max(1, min(int(limit or 100), 500))
     safe_offset = max(0, int(offset or 0))
     op_filter = str(operator_staff_id or "").strip()
+    title_filter = str(title_keyword or "").strip()
     start = _normalize_ymd(start_date)
     end = _normalize_ymd(end_date)
     entries = [
@@ -2088,6 +2101,7 @@ def list_moa_call_entries(
             operator_staff_id=op_filter,
             start_date=start,
             end_date=end,
+            title_keyword=title_filter,
         )
     ]
     entries.sort(key=lambda item: str(item.get("ts") or ""), reverse=True)

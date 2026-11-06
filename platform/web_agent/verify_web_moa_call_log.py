@@ -544,6 +544,27 @@ class WebMoaCallLogTests(unittest.TestCase):
         self.assertEqual(len(rows), 2)
         self.assertTrue(rows[0]["timeBj"] >= rows[1]["timeBj"] or rows[0]["ts"] >= rows[1]["ts"])
 
+    def test_list_title_keyword_filter(self) -> None:
+        resp = {"ec": 200, "result": {"ec": 0}}
+        with self._patch_log():
+            record_moa_call(
+                payload={"url": "/service/a", "method": "queryUserAccount", "params": []},
+                response=resp,
+                run_id="r1",
+                operator_name="测试员",
+            )
+            record_moa_call(
+                payload={"url": "/service/b", "method": "provideDiamond", "params": []},
+                response=resp,
+                run_id="r2",
+                operator_name="测试员",
+            )
+            all_rows = list_moa_call_entries(limit=10)
+            self.assertEqual(all_rows["total"], 2)
+            diamond_only = list_moa_call_entries(limit=10, title_keyword="钻石")
+            self.assertEqual(diamond_only["total"], 1)
+            self.assertIn("钻石", diamond_only["entries"][0]["operation"])
+
 
 if __name__ == "__main__":
     raise SystemExit(unittest.main())

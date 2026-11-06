@@ -1,11 +1,13 @@
 /**
- * Web Agent · 公会盘古统一配置面板（改参并发布 + 场景说明 + 白名单 + 三时间字段预填）
+ * Web Agent · 公会盘古统一配置面板（改参并发布 + 场景说明 + 白名单 + 三时间字段本地记忆）
  */
 (function (global) {
   'use strict';
 
   const REGISTRY_ID = 'guild_pangu_shift_config';
   const USER_NOTE_LS_PREFIX = 'web_agent_guild_pangu_user_note_';
+  const TIME_FIELDS_LS_PREFIX = 'web_agent_guild_pangu_time_fields_';
+  const TIME_FIELD_NAMES = ['fixedTimeSec', 'expireTimeSec', 'shiftTime'];
 
   function escapeHtml(s) {
     return String(s)
@@ -29,6 +31,15 @@
     return names.length ? `仅修改 ${names.join('、')}，其他字段请勿改动。` : '';
   }
 
+  /** 场景说明正文：usage_note + example（example 未写入 usage 时追加） */
+  function scenarioUsageDisplayText(meta) {
+    const usage = String(meta?.usageNote || '').trim();
+    const ex = String(meta?.example || '').trim();
+    if (!ex || (usage && usage.includes(ex))) return usage;
+    const exLine = `举例：${ex}`;
+    return usage ? `${usage}\n${exLine}` : exLine;
+  }
+
   function loadUserNote(scenarioKey) {
     const key = String(scenarioKey || '').trim();
     if (!key) return '';
@@ -47,6 +58,61 @@
     } catch (_e) {
       /* ignore quota / private mode */
     }
+  }
+
+  function loadSavedTimeFields(scenarioKey) {
+    const key = String(scenarioKey || '').trim();
+    if (!key) return null;
+    try {
+      const raw = localStorage.getItem(TIME_FIELDS_LS_PREFIX + key);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return null;
+      const out = {};
+      if (parsed.whiteUsers != null && String(parsed.whiteUsers).trim() !== '') {
+        out.whiteUsers = String(parsed.whiteUsers);
+      }
+      TIME_FIELD_NAMES.forEach((name) => {
+        if (parsed[name] != null && String(parsed[name]).trim() !== '') {
+          out[name] = String(parsed[name]);
+        }
+      });
+      return Object.keys(out).length ? out : null;
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  function saveTimeFieldsFromRoot(root, scenarioKey) {
+    const key = String(scenarioKey || '').trim();
+    if (!key) return;
+    const payload = {
+      whiteUsers: root.querySelector('[data-gp-white]')?.value?.trim() || '',
+      fixedTimeSec: root.querySelector('[data-gp-fixed]')?.value?.trim() || '',
+      expireTimeSec: root.querySelector('[data-gp-expire]')?.value?.trim() || '',
+      shiftTime: root.querySelector('[data-gp-shift]')?.value?.trim() || '',
+    };
+    try {
+      localStorage.setItem(TIME_FIELDS_LS_PREFIX + key, JSON.stringify(payload));
+    } catch (_e) {
+      /* ignore quota / private mode */
+    }
+  }
+
+  function syncSavedTimeFields(root, scenarioKey) {
+    const saved = loadSavedTimeFields(scenarioKey) || {};
+    const w = root.querySelector('[data-gp-white]');
+    if (w) w.value = saved.whiteUsers != null ? String(saved.whiteUsers) : '';
+    TIME_FIELD_NAMES.forEach((name) => {
+      const input =
+        name === 'fixedTimeSec'
+          ? root.querySelector('[data-gp-fixed]')
+          : name === 'expireTimeSec'
+            ? root.querySelector('[data-gp-expire]')
+            : root.querySelector('[data-gp-shift]');
+      if (!input) return;
+      input.value = saved[name] != null ? String(saved[name]) : '';
+    });
   }
 
   function scenarioGuideItemHtml(s) {
@@ -88,7 +154,7 @@
           <p class="guild-pangu-env" data-gp-env></p>
           <p class="guild-pangu-guide-lead">九条业务说明（可展开查看完整文案；选中场景后下方也会展示同一份说明）：</p>
           <ul class="guild-pangu-scenario-guide" data-gp-scenario-guide></ul>
-          <p class="guild-pangu-form-lead">选择业务场景后，下方会代入<strong>当前预上线配置</strong>；只改说明里要求改的字段即可。</p>
+          <p class="guild-pangu-form-lead">选择业务场景后，下方三时间字段会代入<strong>本浏览器该场景上次填写的值</strong>；需对照预上线时点「刷新当前值」。只改说明里要求改的字段即可。</p>
           <label class="guild-pangu-field">
             <span>业务场景</span>
             <select data-gp-scenario disabled><option>加载中…</option></select>
@@ -106,7 +172,7 @@
           </div>
           <label class="guild-pangu-field">
             <span>whiteUsers（逗号分隔 userId）</span>
-            <input type="text" data-gp-white autocomplete="off" placeholder="100447582,4295973599" />
+            <input type="text" data-gp-white autocomplete="off" />
           </label>
           <p class="guild-pangu-field-help" data-gp-white-help></p>
           <div class="guild-pangu-time-row">
@@ -197,7 +263,7 @@
       if (hint) {
         const names = [...editFields];
         hint.textContent = names.length
-          ? `当前场景：${onlyEditShort(meta)}（下方三时间字段已代入预上线当前值。）`
+          ? `当前场景：${onlyEditShort(meta)}（三时间字段为上次填写值；点「刷新当前值」可拉取预上线配置。）`
           : '';
       }
       ['fixedTimeSec', 'expireTimeSec', 'shiftTime'].forEach((name) => {
@@ -216,22 +282,35 @@
       ta.value = loadUserNote(key);
     },
 
+    whiteUsersHelpText(catalog, meta) {
+      const globalFh = catalog?.web_usage?.field_help || {};
+      const scenarioFh = meta?.fieldHelp || {};
+      return (
+        String(scenarioFh.whiteUsers || '').trim() ||
+        String(globalFh.whiteUsers || '').trim()
+      );
+    },
+
     updateScenarioDetail(root, catalog, key) {
       const meta = this.scenarioMeta(catalog, key);
       const usageEl = root.querySelector('[data-gp-usage-note]');
+      const whiteHelp = root.querySelector('[data-gp-white-help]');
       this.highlightGuideItem(root, key);
       if (!meta) {
         if (usageEl) usageEl.textContent = '';
+        if (whiteHelp) whiteHelp.textContent = this.whiteUsersHelpText(catalog, null);
         this.updateFieldHighlights(root, null);
         this.syncUserNoteField(root, '');
         return;
       }
-      const usage = String(meta.usageNote || '').trim();
+      if (whiteHelp) whiteHelp.textContent = this.whiteUsersHelpText(catalog, meta);
+      const usage = scenarioUsageDisplayText(meta);
       if (usageEl) {
         usageEl.textContent = usage || '（该场景暂无长说明；可在下方「补充说明」自行填写，或改仓库 workflow 的 description。）';
       }
       this.updateFieldHighlights(root, meta);
       this.syncUserNoteField(root, key);
+      syncSavedTimeFields(root, key);
     },
 
     setStatus(root, text, isError) {
@@ -287,7 +366,7 @@
       const expire = root.querySelector('[data-gp-expire]')?.value?.trim() || '';
       const shift = root.querySelector('[data-gp-shift]')?.value?.trim() || '';
       const only = onlyEditFields(meta).join('、');
-      const usage = String(meta?.usageNote || '').trim();
+      const usage = scenarioUsageDisplayText(meta);
       const userNote = root.querySelector('[data-gp-user-note]')?.value?.trim() || '';
       const lines = [
         `请执行公会盘古配置：场景「${name}」（${key}），预上线 stage 保存并全量发布。`,
@@ -318,11 +397,20 @@
         this._currentScenario = String(sel.value || '');
         const catalog = await this.loadCatalog();
         this.updateScenarioDetail(root, catalog, this._currentScenario);
-        await this.refreshCurrent(root);
       });
       userNoteEl?.addEventListener('input', () => {
         const key = sel ? String(sel.value || '').trim() : '';
         saveUserNote(key, userNoteEl.value);
+      });
+      root.querySelector('[data-gp-white]')?.addEventListener('input', () => {
+        const key = sel ? String(sel.value || '').trim() : '';
+        saveTimeFieldsFromRoot(root, key);
+      });
+      ['[data-gp-fixed]', '[data-gp-expire]', '[data-gp-shift]'].forEach((selInput) => {
+        root.querySelector(selInput)?.addEventListener('input', () => {
+          const key = sel ? String(sel.value || '').trim() : '';
+          saveTimeFieldsFromRoot(root, key);
+        });
       });
       root.querySelector('[data-gp-refresh]')?.addEventListener('click', () => {
         this.refreshCurrent(root);
@@ -330,6 +418,8 @@
       root.querySelector('[data-gp-run]')?.addEventListener('click', async () => {
         try {
           const catalog = await this.loadCatalog();
+          const key = sel ? String(sel.value || '').trim() : '';
+          saveTimeFieldsFromRoot(root, key);
           const text = this.buildPrompt(root, catalog);
           if (typeof onSubmit === 'function') onSubmit(text);
         } catch (err) {
@@ -348,7 +438,6 @@
         this.fillScenarioSelect(root, catalog);
         this.updateScenarioDetail(root, catalog, root.querySelector('[data-gp-scenario]')?.value);
         this.bind(root, onSubmit);
-        await this.refreshCurrent(root);
       } catch (err) {
         this.setStatus(root, `加载失败：${err.message || err}`, true);
       }

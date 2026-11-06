@@ -2,20 +2,20 @@
   "id": "guild-pangu-02-anchor-removal-window",
   "name": "盘古-②公会长移除主播窗口",
   "category": "公会常用盘古配置工具（workflow）",
-  "description": "预上线：改 Application.shiftTime.isAllowedTimeForAnchorRemoval（重点 expireTimeSec / fixedTimeSec），控制公会长当前是否可移除主播。 验收：公会长端移除主播按钮/接口在窗口内可操作、窗口外被拦截。",
+  "description": "预上线：改 voga-common.shiftTime.tradeUnion。主要改 fixedTimeSec（公会统一时间偏移）控制公会长当前是否可移除主播；expireTimeSec 需尽量设大（一般 2029 年之后，避免窗口过早失效）。whiteUsers 须填公会长 userId。验收：公会长端移除主播按钮/接口在窗口内可操作、窗口外被拦截。举例：fixedTimeSec=1794931200（11 月 18 日）；expireTimeSec=1919865600（2030 年）。",
   "version": 1,
   "params": {
     "fixedTimeSec": {
       "label": "fixedTimeSec",
       "type": "string",
-      "required": false,
-      "prompt": "Unix 秒（北京时间戳）"
+      "required": true,
+      "prompt": "Unix 秒（北京时间戳）；例：11 月 18 日 1794931200"
     },
     "expireTimeSec": {
       "label": "expireTimeSec",
       "type": "string",
       "required": true,
-      "prompt": "Unix 秒；可与 fixedTimeSec 相同"
+      "prompt": "尽量设大（2029 年后）；例：2030 年 1919865600"
     }
   },
   "steps": [

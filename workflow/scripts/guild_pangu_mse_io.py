@@ -128,6 +128,8 @@ def scenarios_for_web() -> dict[str, Any]:
             continue
         fields = list(raw.get("fields") or [])
         only_edit = list(raw.get("only_edit_fields") or raw.get("required_fields") or fields)
+        field_help_raw = raw.get("field_help")
+        field_help = field_help_raw if isinstance(field_help_raw, dict) else {}
         scenarios_out.append(
             {
                 "key": raw.get("key"),
@@ -137,6 +139,7 @@ def scenarios_for_web() -> dict[str, Any]:
                 "example": str(raw.get("example") or "").strip(),
                 "extraNote": str(raw.get("extra_note") or "").strip(),
                 "usageNote": _scenario_usage_note(raw),
+                "fieldHelp": field_help,
             }
         )
     env = catalog.get("env") or {}

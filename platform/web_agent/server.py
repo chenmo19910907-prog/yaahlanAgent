@@ -158,6 +158,7 @@ from web_new_member_notify import spawn_maybe_notify_new_member  # noqa: E402
 from web_admin_audit_log import append_admin_audit_entry, list_admin_audit_entries  # noqa: E402
 from web_service_restart import execute_service_restart, format_service_restart_summary  # noqa: E402
 from web_moa_call_log import list_moa_call_entries, list_moa_call_log_operators  # noqa: E402
+from web_call_log_replay import execute_replay, replay_spec  # noqa: E402
 from web_guild_pangu import guild_pangu_current_payload, guild_pangu_scenarios_payload  # noqa: E402
 from web_admin_manage import (  # noqa: E402
     enrich_selectable_users_with_admin_roles,
@@ -2700,6 +2701,22 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 pass
             return _json_response(self, {"operators": operators})
 
+        if path == "/api/moa/call-log/replay-spec":
+            user = current_web_user(self)
+            if user is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            qs = parse_qs(parsed.query)
+            entry_id = str((qs.get("id") or qs.get("entryId") or [""])[0]).strip()
+            if not entry_id:
+                return _json_response(self, {"error": "缺少 id"}, 400)
+            try:
+                return _json_response(self, replay_spec(entry_id))
+            except ValueError as exc:
+                return _json_response(self, {"error": str(exc)}, 400)
+            except Exception as exc:  # noqa: BLE001
+                logger.exception("replay-spec failed entry=%s", entry_id)
+                return _json_response(self, {"error": f"加载重跑参数失败：{exc}"}, 500)
+
         if path == "/api/moa/call-log":
             user = current_web_user(self)
             if user is None:
@@ -2716,12 +2733,14 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             operator_staff_id = str((qs.get("operatorStaffId") or [""])[0]).strip()
             start_date = str((qs.get("startDate") or [""])[0]).strip()
             end_date = str((qs.get("endDate") or [""])[0]).strip()
+            title_keyword = str((qs.get("titleKeyword") or [""])[0]).strip()
             payload = list_moa_call_entries(
                 limit=limit,
                 offset=offset,
                 operator_staff_id=operator_staff_id,
                 start_date=start_date,
                 end_date=end_date,
+                title_keyword=title_keyword,
             )
             try:
                 from dingtalk_user_lookup import enrich_staff_users_with_avatars
@@ -3412,6 +3431,41 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/")
+
+        if path == "/api/moa/call-log/replay":
+            user = current_web_user(self)
+            if user is None:
+                return _json_response(self, {"error": "未登录"}, 401)
+            try:
+                body = _read_json_body(self)
+            except json.JSONDecodeError:
+                return _json_response(self, {"error": "invalid json"}, 400)
+            entry_id = str(body.get("entryId") or body.get("id") or "").strip()
+            rows = body.get("paramsRows") or body.get("params") or []
+            if not isinstance(rows, list):
+                return _json_response(self, {"error": "paramsRows 须为数组"}, 400)
+            session_id = str(body.get("sessionId") or "").strip()
+            try:
+                timeout_sec = int(body.get("timeoutSec") or 180)
+            except (TypeError, ValueError):
+                timeout_sec = 180
+            staff_id = str(user.staff_id or "").strip()
+            staff_name = str(user.display_name or staff_id).strip()
+            try:
+                payload = execute_replay(
+                    entry_id=entry_id,
+                    params_rows=rows,
+                    operator_staff_id=staff_id,
+                    operator_name=staff_name,
+                    session_id=session_id,
+                    timeout_sec=timeout_sec,
+                )
+            except ValueError as exc:
+                return _json_response(self, {"error": str(exc)}, 400)
+            except Exception as exc:  # noqa: BLE001
+                logger.exception("call-log replay failed entry=%s", entry_id)
+                return _json_response(self, {"error": f"重跑执行失败：{exc}"}, 500)
+            return _json_response(self, payload)
 
         if path == "/api/auth/login":
             try:

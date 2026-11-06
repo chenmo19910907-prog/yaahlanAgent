@@ -83,6 +83,7 @@ def main() -> int:
         return 0
 
     fields = list(scenario.get("fields") or ["fixedTimeSec", "expireTimeSec"])
+    writable = list(scenario.get("only_edit_fields") or fields)
     required_fields = list(scenario.get("required_fields") or [])
     if not required_fields and "fixedTimeSec" in fields:
         required_fields = ["fixedTimeSec"]
@@ -104,11 +105,11 @@ def main() -> int:
         expire = fixed
 
     set_pairs: list[str] = []
-    if fixed is not None and "fixedTimeSec" in fields:
+    if fixed is not None and "fixedTimeSec" in writable:
         set_pairs.append(f"fixedTimeSec={fixed}")
-    if expire is not None and "expireTimeSec" in fields:
+    if expire is not None and "expireTimeSec" in writable:
         set_pairs.append(f"expireTimeSec={expire}")
-    if shift is not None:
+    if shift is not None and "shiftTime" in writable:
         set_pairs.append(f"shiftTime={shift}")
     if white_users is not None:
         set_pairs.append(f"whiteUsers={json.dumps(white_users, ensure_ascii=False)}")
