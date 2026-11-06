@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-11-03 16:49:08 北京时间",
-  "total_items": 387,
+  "generated_at": "2026-11-06 10:40:35 北京时间",
+  "total_items": 391,
   "module_count": 29,
   "modules": [
     {
       "id": "用户",
       "label": "用户",
-      "item_count": 30,
+      "item_count": 33,
       "categories": [
         {
           "name": "Admin用户（yaahlan-admin）",
@@ -222,6 +222,32 @@
               "registry_id": "room_im_broadcast_send"
             },
             {
+              "name": "游戏等级-升至目标",
+              "prompts": [
+                "用户 <userId> 游戏等级升到 <level>",
+                "<userId> 游戏等级升级到 <level>",
+                "游戏等级升至 <level> <userId>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "game_level_target"
+            },
+            {
+              "name": "游戏等级-增加经验",
+              "prompts": [
+                "用户 <userId> 增加游戏经验 <amount>",
+                "<userId> 加游戏值 <amount>",
+                "游戏等级加经验 <userId> <amount>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "game_exp_add"
+            },
+            {
               "name": "用户-修改注册国家",
               "prompts": [
                 "修改用户 <userId> 注册国家为 <country>"
@@ -275,6 +301,18 @@
               "source_tag_id": "moa",
               "env": "test",
               "registry_id": "wealth_query_current"
+            },
+            {
+              "name": "铭牌-下发",
+              "prompts": [
+                "给用户<userId|userId>下发铭牌<nameplateId|铭牌ID>",
+                "下发铭牌<nameplateId>给用户<userId> 有效<days|天数>天"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "nameplate_dispatch"
             },
             {
               "name": "魅力-查询等级",
@@ -4056,7 +4094,7 @@
     {
       "id": "客服",
       "label": "客服",
-      "item_count": 5,
+      "item_count": 6,
       "categories": [
         {
           "name": "Admin客服（melon-gateway / cms/customerservice）",
@@ -4099,6 +4137,18 @@
         {
           "name": "消息（voga-base-service-im-stage）",
           "items": [
+            {
+              "name": "房间-下发宝箱雨IM849",
+              "prompts": [
+                "向房间 <roomId> 下发 849 宝箱雨 IM",
+                "房间 <roomId> 触发宝箱雨 eventId 849"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "room_treasure_rain_im_849"
+            },
             {
               "name": "用户-联系客服发消息",
               "prompts": [
