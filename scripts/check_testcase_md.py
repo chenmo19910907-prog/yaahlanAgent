@@ -20,7 +20,7 @@ DEFAULT_DIR = temporary_testcase_dir()
 
 STEP_COL_NAMES = frozenset({"测试步骤", "步骤"})
 EXPECT_COL_NAMES = frozenset({"预期结果", "期望结果", "预期"})
-MODULE_COL_NAMES = frozenset({"功能模块", "模块"})
+MODULE_COL_NAMES = frozenset({"功能模块", "模块", "一级模块"})
 ID_COL_NAMES = frozenset({"编号", "用例id", "用例ID"})
 
 # 【并会-xxx】类需求主题前缀（允许 【后台-】【回测-】）
