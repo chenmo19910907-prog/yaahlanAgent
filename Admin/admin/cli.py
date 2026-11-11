@@ -73,6 +73,12 @@ from .user import (
     parse_user_feed_list_summary,
     parse_user_history_device_summary,
 )
+from .user_relation import (
+    fetch_user_relation_list_all,
+    normalize_relation_type,
+    query_user_relation_list_page,
+    query_user_relation_summary,
+)
 from .user_list import (
     build_query_user_profile_list_body,
     parse_query_user_profile_list_summary,
@@ -108,6 +114,27 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--feed-list-index", type=int, help="用户动态分页 index（默认 0）")
     parser.add_argument("--feed-list-count", type=int, help="用户动态每页条数 count（默认 20）")
+    parser.add_argument(
+        "--query-user-relation-summary",
+        action="store_true",
+        help="查询用户好友/关注/粉丝/拉黑数量（queryUserRelationSummary；需 --query-user-id）",
+    )
+    parser.add_argument(
+        "--query-user-relation-list",
+        action="store_true",
+        help="查询用户关系列表（queryUserRelationList；需 --query-user-id 与 --user-relation-type）",
+    )
+    parser.add_argument(
+        "--user-relation-type",
+        help="关系类型：friend（好友）/ attention 或 follow（关注）/ fans（粉丝）/ block（拉黑）",
+    )
+    parser.add_argument("--user-relation-index", type=int, help="关系列表分页 index（默认 0）")
+    parser.add_argument("--user-relation-page-size", type=int, help="关系列表每页条数 pageSize（默认 20）")
+    parser.add_argument(
+        "--user-relation-fetch-all",
+        action="store_true",
+        help="自动翻页拉取该关系类型全部列表（index + pageSize 分页）",
+    )
     parser.add_argument(
         "--query-user-history-devices",
         action="store_true",
@@ -1343,10 +1370,66 @@ def main() -> int:
             args.query_user_id is not None
             or (args.query_family and args.family_id)
             or args.query_user_list
+            or args.query_user_relation_summary
+            or args.query_user_relation_list
         ):
             raise ValueError(
-                "线上环境 Admin 当前仅支持 --query-user-id、--query-user-list 或 --query-family --family-id"
+                "线上环境 Admin 当前仅支持 --query-user-id、--query-user-list、"
+                "--query-user-relation-* 或 --query-family --family-id"
             )
+        if args.query_user_relation_summary or args.query_user_relation_list:
+            user_id = str(args.query_user_id or "").strip()
+            if not user_id:
+                raise ValueError("必须提供 --query-user-id")
+            online = bool(getattr(args, "online_env", False))
+            base_url = _resolve_base_url(args)
+            auth = _resolve_yaahlan_auth(args)
+            timeout_s = max(args.timeout_ms, 1000) / 1000.0
+            list_cfg = defaults("query_user_relation_list", online=online)
+            page_size = args.user_relation_page_size
+            if page_size is None:
+                page_size = int(list_cfg.get("defaultPageSize", 20))
+            if page_size <= 0:
+                raise ValueError("user-relation-page-size 必须为正整数")
+            if args.query_user_relation_summary:
+                summary = query_user_relation_summary(
+                    base_url=base_url,
+                    auth=auth,
+                    user_id=user_id,
+                    timeout_s=timeout_s,
+                    online=online,
+                )
+                print(json.dumps(summary, ensure_ascii=False, indent=2))
+                return 0
+            relation_type = normalize_relation_type(str(args.user_relation_type or ""))
+            index = args.user_relation_index
+            if index is None:
+                index = int(list_cfg.get("defaultIndex", 0))
+            if index < 0:
+                raise ValueError("user-relation-index 不能为负数")
+            if args.user_relation_fetch_all:
+                summary = fetch_user_relation_list_all(
+                    base_url=base_url,
+                    auth=auth,
+                    user_id=user_id,
+                    relation_type=relation_type,
+                    page_size=page_size,
+                    timeout_s=timeout_s,
+                    online=online,
+                )
+            else:
+                summary = query_user_relation_list_page(
+                    base_url=base_url,
+                    auth=auth,
+                    user_id=user_id,
+                    relation_type=relation_type,
+                    index=index,
+                    page_size=page_size,
+                    timeout_s=timeout_s,
+                    online=online,
+                )
+            print(json.dumps(summary, ensure_ascii=False, indent=2))
+            return 0
         if args.add_im_task:
             task_name = str(args.im_task_name or "").strip()
             if not task_name:
@@ -1984,6 +2067,8 @@ def main() -> int:
         or args.query_device_history_users
         or args.query_user_history_devices
         or args.query_user_feed_list
+        or args.query_user_relation_summary
+        or args.query_user_relation_list
         or args.query_user_id is not None
     ):
         if not admin_success(resp.get("ec")):

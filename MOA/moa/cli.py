@@ -1295,9 +1295,24 @@ def _exit_with_auto_sync(code: int, args: argparse.Namespace) -> int:
     return code
 
 
+def _hydrate_web_agent_audit_env() -> None:
+    try:
+        repo = Path(__file__).resolve().parents[2]
+        web_agent = repo / "platform" / "web_agent"
+        path = str(web_agent)
+        if path not in sys.path:
+            sys.path.insert(0, path)
+        from web_agent_audit_context import hydrate_audit_env_from_store
+
+        hydrate_audit_env_from_store()
+    except Exception:  # noqa: BLE001
+        return
+
+
 def main() -> int:
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     load_local_env(base_dir)
+    _hydrate_web_agent_audit_env()
 
     args = build_parser().parse_args()
 

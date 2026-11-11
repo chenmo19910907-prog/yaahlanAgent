@@ -561,9 +561,39 @@ class WebMoaCallLogTests(unittest.TestCase):
             )
             all_rows = list_moa_call_entries(limit=10)
             self.assertEqual(all_rows["total"], 2)
-            diamond_only = list_moa_call_entries(limit=10, title_keyword="钻石")
-            self.assertEqual(diamond_only["total"], 1)
-            self.assertIn("钻石", diamond_only["entries"][0]["operation"])
+            grant_only = list_moa_call_entries(limit=10, title_keyword="发放")
+            self.assertEqual(grant_only["total"], 1)
+            self.assertIn("发放", grant_only["entries"][0]["operation"])
+
+
+    def test_finalize_dingtalk_diamond_recharge_wording(self) -> None:
+        user = "给 100092463 充一亿钻"
+        assistant = (
+            "**已成功**：用户 100092463 (6571) 已发放 1 亿 钻石。\n\n"
+            "| 订单号 | 当前余额 |\n|---|---|\n"
+            "| 20261109153026805022701512463 | 100,000,000 |"
+        )
+        from web_moa_call_log_backfill import _pair_qualifies
+
+        self.assertTrue(_pair_qualifies(user, assistant))
+        details = extract_moa_call_details_from_assistant(assistant)
+        self.assertEqual(details.get("method"), "provideDiamond")
+        self.assertIn("100092463", details.get("paramsSummary", ""))
+
+        with self._patch_log():
+            finalize_dingtalk_call_log(
+                run_id="dingtalk:msgTestRecharge",
+                batch_key="cidtest:user:034053666132897501",
+                sender_staff_id="034053666132897501",
+                sender_name="范其乐",
+                user_text=user,
+                assistant_text=assistant,
+                ts_iso="2026-11-09T07:30:20.000000+00:00",
+            )
+            rows = list_moa_call_entries(limit=5)["entries"]
+        self.assertGreaterEqual(len(rows), 1)
+        self.assertEqual(rows[0]["operatorName"], "范其乐")
+        self.assertIn("100092463", rows[0].get("accountSummary", ""))
 
 
 if __name__ == "__main__":

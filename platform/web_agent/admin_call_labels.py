@@ -70,6 +70,32 @@ def _build_admin_path_operation_index() -> dict[str, str]:
             if name:
                 index[path] = name
 
+    _API_TOKEN_IN_DESC_RE = re.compile(
+        r"(?:POST|GET|PUT|DELETE|PATCH)?\s*"
+        r"((?:[a-zA-Z]+/)?[a-zA-Z]+(?:Admin|Api)?/[a-zA-Z0-9]+|"
+        r"[a-z]{2,}[A-Z][a-zA-Z0-9]+)",
+    )
+    if _ADMIN_REGISTRY_PATH.is_file():
+        try:
+            reg_data = json.loads(_ADMIN_REGISTRY_PATH.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            reg_data = {}
+        for cap in _registry_capability_list(reg_data):
+            name = str(cap.get("name") or "").strip()
+            if not name:
+                continue
+            desc = str(cap.get("description") or "")
+            for m in _API_TOKEN_IN_DESC_RE.finditer(desc):
+                token = m.group(1).strip().rstrip("；;，,")
+                if len(token) < 5:
+                    continue
+                if "/" in token:
+                    path = _normalize_admin_path(token if token.startswith("/") else f"/{token}")
+                    index.setdefault(path, name)
+                else:
+                    pseudo = f"/{token}"
+                    index.setdefault(pseudo, name)
+
     return index
 
 

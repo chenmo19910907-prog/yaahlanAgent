@@ -1,0 +1,58 @@
+{
+  "type": "moa",
+  "key": "momo.bpm.biz.gameplatform.overseas-voga-mts-vas",
+  "url": "/service/vas/activity",
+  "method": "customerSendProp",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "100422986",
+      "json": "",
+      "type": "string",
+      "value": "100422986"
+    },
+    {
+      "title": "参数2",
+      "name": "2",
+      "txt": "30002141",
+      "json": "",
+      "type": "string",
+      "value": "30002141"
+    },
+    {
+      "title": "参数3",
+      "name": "3",
+      "txt": "1",
+      "json": "",
+      "type": "string",
+      "value": "1"
+    }
+  ],
+  "settings": {
+    "time": "30000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_meta": {
+    "note": "customerSendProp(userId, propId, count)。propId 须与活动/客服侧「游戏券/补偿卡」配置一致；模板默认值为试跑占位。"
+  },
+  "_registry": {
+    "id": "activity_customer_send_prop",
+    "name": "活动-客服下发道具",
+    "category": "活动（vas/activity）",
+    "description": "测试环境客服侧下发道具/游戏券（customerSendProp；/service/vas/activity）。params：userId、propId、数量。",
+    "prompts": [
+      "给用户 <userId> 下发道具 propId <propId> 数量 <count>",
+      "客服下发游戏券 <userId> <propId> <count>"
+    ]
+  }
+}

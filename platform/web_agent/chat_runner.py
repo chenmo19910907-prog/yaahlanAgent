@@ -119,6 +119,7 @@ def run_web_chat(
     enabled_external_agents: list[str] | None = None,
     reply_mode: str | None = None,
     on_phase: Callable[[str], None] | None = None,
+    on_terminal: Callable[[str], None] | None = None,
 ) -> str:
     """在指定 Web 会话中运行 Agent，返回最终 assistant 文本。"""
 
@@ -215,6 +216,7 @@ def run_web_chat(
             include_process_in_final=normalize_reply_mode(reply_mode) == "detailed",
             model=model or DEFAULT_MODEL,
             on_phase=on_phase,
+            on_terminal=on_terminal,
         )
     finally:
         if staff_id:

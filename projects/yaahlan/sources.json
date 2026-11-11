@@ -22,6 +22,7 @@
     { "group": "支付", "names": ["支付测试"], "prefixes": ["MOA钻石", "生成式MOA钻石", "钻石"] },
     { "group": "客服", "prefixes": ["Admin客服", "Stage HTTP举报", "客服", "消息"] },
     { "group": "知识库", "prefixes": ["testcase-kb", "prd-kb"], "names": ["钉钉目录"] },
+    { "group": "开发代码", "prefixes": ["开发代码", "服务端代码", "voga-repos", "voga_ios", "voga_android", "代码×", "代码开发中"], "names": ["拉取开发代码", "拉取指定开发仓", "代码×用例交叉审查"] },
     { "group": "工作流", "names": ["工作流"], "prefixes": ["背包礼物-工作流", "家族-基金", "家族PK-工作流", "PK提款机-工作流"] },
     { "group": "平台", "names": ["Admin", "MOA", "MSE", "MOA-generative", "生成式MOA", "MSE 服务配置"] }
   ],
@@ -50,6 +51,7 @@
     "测试机",
     "线上环境",
     "知识库",
+    "开发代码",
     "工作流",
     "平台"
   ],
@@ -152,6 +154,15 @@
       "registry": "DingTalk/config/registry.json",
       "usage_doc": "DingTalk/使用方法.md",
       "entry": "python3 DingTalk/lookup_execute.py"
+    },
+    {
+      "id": "devcode",
+      "label": "开发代码",
+      "subtitle": "voga-repos 拉仓 · 代码×用例审查（开发中）",
+      "env": "tool",
+      "registry": "DevCode/config/registry.json",
+      "usage_doc": "DevCode/使用方法.md",
+      "entry": "python3 DevCode/voga_pull_execute.py"
     },
     {
       "id": "workflow",

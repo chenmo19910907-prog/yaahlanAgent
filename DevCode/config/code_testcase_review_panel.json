@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "category": "开发代码（代码开发中）",
+  "registry_id": "code_testcase_review",
+  "doc_note": "Agent 按 Skill 串行执行，非一键脚本。",
+  "web_usage": {
+    "title": "代码×用例交叉审查",
+    "env_hint": "本机 voga-repos（9 仓·含 H5） + 钉钉用例表 · 代码仓只读 · 表仅写 E/F",
+    "field_help": {
+      "sheetUrl": "钉钉 AliDocs 链接（须含 workbookId）",
+      "sheetName": "可选；留空由 Agent 列举确认"
+    }
+  },
+  "skill_path": ".cursor/skills/code-testcase-review/SKILL.md",
+  "scenarios": [
+    {
+      "key": "full",
+      "doc_index": 0,
+      "name": "全流程（①→⑤）",
+      "guide_short": "①→⑤ 一次跑完",
+      "usage_note": "读表 A:E → 按 E 拉 9 仓 → 与 Java/Android/iOS/H5 比对 → E 标 fail、F 写原因 → 末尾补用例并复核。",
+      "prompt": "用例覆盖率分析 <sheetUrl>"
+    },
+    {
+      "key": "read_sheet",
+      "doc_index": 1,
+      "name": "① 读用例",
+      "guide_short": "A:E 与备注",
+      "usage_note": "读 A–E；解析 E 列仓库/分支。B7=覆盖率任务代码质量平台时读 C7/D7 分支（否则忽略）。",
+      "prompt": "读取用例表 <sheetUrl> 准备代码交叉审查"
+    },
+    {
+      "key": "pull_repos",
+      "doc_index": 2,
+      "name": "② 拉代码",
+      "guide_short": "voga_pull",
+      "usage_note": "python3 DevCode/voga_pull_execute.py（或 --repo）；按 E 列 checkout/pull 至 voga-repos/。禁止 commit/push。",
+      "prompt": "拉取开发代码并按用例表 E 列更新 voga-repos"
+    },
+    {
+      "key": "cross_check",
+      "doc_index": 3,
+      "name": "③ 比对",
+      "guide_short": "代码↔用例",
+      "usage_note": "Java / Android / iOS / yaahlan-fe 分仓扫描，整理行为清单并与用例行对照。",
+      "prompt": "代码用例交叉验证 <sheetUrl>"
+    },
+    {
+      "key": "mark_fail",
+      "doc_index": 4,
+      "name": "④ 标注",
+      "guide_short": "E fail",
+      "usage_note": "不符项：E 列 fail，F 列原因；不改 A–D。",
+      "prompt": "读取用例结合代码标注fail <sheetUrl>"
+    },
+    {
+      "key": "append_cases",
+      "doc_index": 5,
+      "name": "⑤ 补用例",
+      "guide_short": "末尾追加",
+      "usage_note": "未覆盖场景在表末追加 A–D，编号续接；写入后 GET 验证。",
+      "prompt": "根据代码补充未覆盖测试用例 <sheetUrl>"
+    }
+  ]
+}

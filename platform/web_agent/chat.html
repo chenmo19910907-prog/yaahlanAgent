@@ -3012,6 +3012,92 @@
       margin-bottom: 6px;
       letter-spacing: 0.04em;
     }
+    .stream-section-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 6px;
+    }
+    .stream-section-title-row .stream-section-title {
+      margin-bottom: 0;
+    }
+    .stream-terminal-btn {
+      flex-shrink: 0;
+      font-size: 0.75rem;
+      line-height: 1.2;
+      padding: 0.15rem 0.55rem;
+      border-radius: 6px;
+      border: 1px solid var(--border, rgba(128, 128, 128, 0.35));
+      background: var(--surface, rgba(127, 127, 127, 0.08));
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .stream-terminal-btn:hover {
+      color: var(--text);
+      border-color: var(--primary, #4a7fd7);
+    }
+    .stream-terminal-btn[hidden] {
+      display: none !important;
+    }
+    .web-terminal-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 12000;
+      background: var(--modal-overlay, rgba(0, 0, 0, 0.6));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .web-terminal-modal-backdrop[hidden] {
+      display: none !important;
+    }
+    .web-terminal-modal {
+      width: min(920px, 96vw);
+      max-height: min(72vh, 640px);
+      display: flex;
+      flex-direction: column;
+      border-radius: var(--panel-radius, 10px);
+      background: var(--bg-panel);
+      color: var(--text);
+      box-shadow: var(--shadow-soft, 0 12px 40px rgba(0, 0, 0, 0.45));
+      border: 1px solid var(--border);
+    }
+    .web-terminal-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 0.85rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--text-soft, var(--text));
+    }
+    .web-terminal-modal-close {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1.1rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .web-terminal-modal-close:hover {
+      color: var(--text);
+    }
+    .web-terminal-modal-body {
+      margin: 0;
+      padding: 0.75rem 0.85rem;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      background: var(--code-bg, var(--bg-soft));
+      color: var(--code-text, var(--text));
+      white-space: pre-wrap;
+      word-break: break-word;
+      flex: 1 1 auto;
+      min-height: 200px;
+    }
     .msg.assistant.streaming .stream-section {
       width: 100%;
       min-width: 0;
@@ -3488,6 +3574,11 @@
       border-color: var(--input-wrap-focus-border);
       background: rgba(59,130,246,0.08);
       box-shadow: var(--input-wrap-focus-glow), inset 0 0 0 1px rgba(59,130,246,0.1);
+    }
+    .input-wrap.drag-over-reject {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, 0.08);
+      box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.25), inset 0 0 0 1px rgba(239, 68, 68, 0.12);
     }
     .input-wrap.readonly { opacity: 0.92; }
     .pending-images {
@@ -5708,10 +5799,40 @@
       border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px;
       background: var(--surface-elevated, rgba(255,255,255,0.02));
     }
-    .guild-pangu-form-title { margin: 0 0 6px; font-size: 0.9rem; }
+    .guild-pangu-form-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+    .guild-pangu-form-title { margin: 0; font-size: 0.9rem; }
+    .guild-pangu-form-badge {
+      font-size: 0.68rem; font-weight: 500; padding: 2px 8px; border-radius: 999px;
+      color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+      background: color-mix(in srgb, var(--bg) 88%, var(--accent) 12%);
+    }
+    .guild-pangu-env--compact { margin-bottom: 10px; font-size: 0.74rem; line-height: 1.45; }
+    .guild-pangu-form-lead--compact { margin: 8px 0 10px; font-size: 0.72rem; }
+    .guild-pangu-flow {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 4px 2px; margin: 0 0 4px;
+    }
+    .guild-pangu-flow-arrow { color: var(--muted); font-size: 0.72rem; padding: 0 2px; user-select: none; }
+    .guild-pangu-flow-step {
+      border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px;
+      font-size: 0.72rem; line-height: 1.35; cursor: pointer; font-family: inherit;
+      background: var(--bg); color: var(--muted); transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    .guild-pangu-flow-step:hover { color: var(--text); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+    .guild-pangu-flow-step.is-active {
+      color: var(--accent); font-weight: 600;
+      border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+      background: color-mix(in srgb, var(--bg) 82%, var(--accent) 18%);
+    }
+    .guild-pangu-usage-block--slim { margin-top: 6px; padding: 8px 10px; }
+    .guild-pangu-usage-block--slim .guild-pangu-usage-readonly {
+      margin: 0 0 8px; padding: 0; border: none; background: transparent;
+      max-height: none; font-size: 0.76rem; color: var(--text);
+    }
+    .guild-pangu-field--compact { margin-bottom: 0; }
+    .guild-pangu-field--compact textarea { min-height: 52px; font-size: 0.76rem; }
     .guild-pangu-field { display: block; margin-bottom: 10px; }
     .guild-pangu-field > span { display: block; margin-bottom: 4px; color: var(--muted); font-size: 0.74rem; }
-    .guild-pangu-field input, .guild-pangu-field select {
+    .guild-pangu-field input, .guild-pangu-field select, .guild-pangu-field textarea {
       width: 100%; box-sizing: border-box; padding: 7px 10px; border-radius: 6px;
       border: 1px solid var(--border); background: var(--input-bg); color: var(--text);
     }
@@ -6313,6 +6434,7 @@
   </div>
 
   <div class="session-context-menu" id="messages-context-menu" role="menu" hidden>
+    <button type="button" id="messages-context-copy-btn" role="menuitem" hidden>复制</button>
     <button type="button" id="messages-context-refresh-btn" role="menuitem">刷新</button>
   </div>
 
@@ -6864,7 +6986,9 @@
   <script src="message_board_panel.js?v=20260730b"></script>
   <script src="about_panel.js?v=20260814a"></script>
   <script src="guild_pangu_panel.js?v=20261106a"></script>
-  <script src="catalog_panel.js?v=20261028pangu"></script>
+  <script src="code_testcase_review_panel.js?v=20261110c"></script>
+  <script src="code_multilang_review_panel.js?v=20261111a"></script>
+  <script src="catalog_panel.js?v=20261110c"></script>
   <script src="moa_record_panel.js?v=20260803d"></script>
   <script src="waiting_fx.js"></script>
   <script>
@@ -8240,7 +8364,7 @@
           break;
         }
         if (!isAllowedAttachment(file)) {
-          alert(`不支持的文件类型：${file.name}`);
+          showUnsupportedAttachmentToast([file]);
           continue;
         }
         const isImage = isImageFile(file);
@@ -8287,7 +8411,7 @@
       return canAttachFiles() && !isCurrentSessionStreaming();
     }
 
-    function collectAttachmentFilesFromDataTransfer(dataTransfer) {
+    function collectAllFilesFromDataTransfer(dataTransfer) {
       if (!dataTransfer) return [];
       const files = [];
       if (dataTransfer.items?.length) {
@@ -8301,7 +8425,34 @@
       if (!files.length && dataTransfer.files?.length) {
         for (const file of dataTransfer.files) files.push(file);
       }
-      return files.filter(isAllowedAttachment);
+      return files;
+    }
+
+    function attachmentRejectToastMessage(files) {
+      const list = Array.from(files || []).filter(Boolean);
+      if (!list.length) return '不支持的文件类型';
+      const shown = list.slice(0, 3).map(f => f.name || '未命名');
+      const suffix = list.length > 3 ? ` 等 ${list.length} 个` : '';
+      const exts = allowedExtensions().map(e => e.replace(/^\./, '')).join('、');
+      return `不支持的文件类型：${shown.join('、')}${suffix}（支持：${exts}）`;
+    }
+
+    function showUnsupportedAttachmentToast(files) {
+      if (!files?.length) return;
+      showWebToast(attachmentRejectToastMessage(files), { error: true, durationMs: 4200 });
+    }
+
+    function ingestAttachmentFilesFromDataTransfer(dataTransfer) {
+      const all = collectAllFilesFromDataTransfer(dataTransfer);
+      if (!all.length) return;
+      const allowed = [];
+      const rejected = [];
+      for (const file of all) {
+        if (isAllowedAttachment(file)) allowed.push(file);
+        else rejected.push(file);
+      }
+      if (rejected.length) showUnsupportedAttachmentToast(rejected);
+      if (allowed.length) addPendingAttachmentFiles(allowed);
     }
 
     function setupInputAttachmentHandlers() {
@@ -8323,39 +8474,53 @@
 
       textarea.addEventListener('paste', (e) => {
         if (!canAttachFiles()) return;
-        const files = collectAttachmentFilesFromDataTransfer(e.clipboardData);
-        if (!files.length) return;
+        const all = collectAllFilesFromDataTransfer(e.clipboardData);
+        if (!all.length) return;
         e.preventDefault();
-        addPendingAttachmentFiles(files);
+        ingestAttachmentFilesFromDataTransfer(e.clipboardData);
       });
+
+      function clearInputDragOverState() {
+        inputWrap.classList.remove('drag-over', 'drag-over-reject');
+      }
+
+      function refreshInputDragOverState(dataTransfer) {
+        const all = collectAllFilesFromDataTransfer(dataTransfer);
+        const hasAllowed = all.some(isAllowedAttachment);
+        const hasRejected = all.some(f => !isAllowedAttachment(f));
+        inputWrap.classList.toggle('drag-over', hasAllowed);
+        inputWrap.classList.toggle('drag-over-reject', !!all.length && !hasAllowed && hasRejected);
+        return { hasAllowed, hasRejected, total: all.length };
+      }
 
       inputWrap.addEventListener('dragenter', (e) => {
         if (!canAttachFiles()) return;
         if (![...(e.dataTransfer?.types || [])].includes('Files')) return;
         e.preventDefault();
-        inputWrap.classList.add('drag-over');
+        refreshInputDragOverState(e.dataTransfer);
       });
 
       inputWrap.addEventListener('dragover', (e) => {
         if (!canAttachFiles()) return;
         if (![...(e.dataTransfer?.types || [])].includes('Files')) return;
         e.preventDefault();
-        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-        inputWrap.classList.add('drag-over');
+        const { hasAllowed, hasRejected, total } = refreshInputDragOverState(e.dataTransfer);
+        if (e.dataTransfer) {
+          e.dataTransfer.dropEffect = total && !hasAllowed && hasRejected ? 'none' : 'copy';
+        }
       });
 
       inputWrap.addEventListener('dragleave', (e) => {
         if (!inputWrap.contains(e.relatedTarget)) {
-          inputWrap.classList.remove('drag-over');
+          clearInputDragOverState();
         }
       });
 
       inputWrap.addEventListener('drop', (e) => {
         e.preventDefault();
-        inputWrap.classList.remove('drag-over');
+        clearInputDragOverState();
         if (!canAttachFiles()) return;
-        const files = collectAttachmentFilesFromDataTransfer(e.dataTransfer);
-        if (files.length) addPendingAttachmentFiles(files);
+        ingestAttachmentFilesFromDataTransfer(e.dataTransfer);
       });
     }
 
@@ -8681,7 +8846,7 @@
       if (/^等待模型响应/.test(t)) return true;
       if (/^Agent\s*已启动/.test(t)) return true;
       if (/^Agent\s*执行中[…\.]?$/.test(t)) return true;
-      if (/^Web Agent 重启中[…\.]?$/.test(t)) return true;
+      if (/^(?:Web )?Agent 重启中[…\.]?$/.test(t)) return true;
       return false;
     }
 
@@ -8764,9 +8929,125 @@
       const body = text || phaseText;
       if (!body) return '';
       return `<section class="stream-section stream-section-think">
-        <div class="stream-section-title">思考中</div>
+        <div class="stream-section-title-row">
+          <div class="stream-section-title">思考中</div>
+          <button type="button" class="stream-terminal-btn" data-terminal-btn hidden>终端</button>
+        </div>
         <div class="stream-thinking">${escapeHtml(body)}</div>
       </section>`;
+    }
+
+    let terminalModalSessionId = '';
+
+    function ensureRunTerminalState(sessionId) {
+      const run = activeRuns.get(sessionId);
+      if (!run) return null;
+      if (!run.terminal) run.terminal = { text: '', seq: 0 };
+      return run.terminal;
+    }
+
+    function ensureTerminalModal() {
+      let el = document.getElementById('web-terminal-modal-backdrop');
+      if (el) return el;
+      el = document.createElement('div');
+      el.id = 'web-terminal-modal-backdrop';
+      el.className = 'web-terminal-modal-backdrop';
+      el.hidden = true;
+      el.innerHTML = `<div class="web-terminal-modal" role="dialog" aria-label="终端输出">
+        <div class="web-terminal-modal-header">
+          <span>终端输出</span>
+          <button type="button" class="web-terminal-modal-close" aria-label="关闭">×</button>
+        </div>
+        <pre class="web-terminal-modal-body"></pre>
+      </div>`;
+      el.addEventListener('click', (ev) => {
+        if (ev.target === el) closeTerminalModal();
+      });
+      el.querySelector('.web-terminal-modal-close')?.addEventListener('click', closeTerminalModal);
+      document.body.appendChild(el);
+      return el;
+    }
+
+    function refreshTerminalModalContent() {
+      const backdrop = document.getElementById('web-terminal-modal-backdrop');
+      if (!backdrop || backdrop.hidden) return;
+      const buf = ensureRunTerminalState(terminalModalSessionId);
+      const pre = backdrop.querySelector('.web-terminal-modal-body');
+      if (!pre) return;
+      const next = String(buf?.text || '').trim();
+      const display = next || '（暂无输出：本轮 Agent 尚未通过 Shell 产生 stdout）';
+      if (pre.textContent !== display) {
+        pre.textContent = display;
+        pre.scrollTop = pre.scrollHeight;
+      }
+    }
+
+    function openTerminalModal(sessionId) {
+      const sid = String(sessionId || '').trim();
+      if (!sid) return;
+      terminalModalSessionId = sid;
+      const backdrop = ensureTerminalModal();
+      backdrop.hidden = false;
+      refreshTerminalModalContent();
+    }
+
+    function closeTerminalModal() {
+      const backdrop = document.getElementById('web-terminal-modal-backdrop');
+      if (backdrop) backdrop.hidden = true;
+      terminalModalSessionId = '';
+    }
+
+    function appendRunTerminalText(sessionId, chunk, seq) {
+      const buf = ensureRunTerminalState(sessionId);
+      if (!buf || !chunk) return;
+      if (seq && seq <= buf.seq) return;
+      if (seq) buf.seq = seq;
+      buf.text += chunk;
+      if (buf.text.length > 200000) buf.text = buf.text.slice(-200000);
+    }
+
+    function syncRunTerminalFromServer(sessionId, text, seq) {
+      const buf = ensureRunTerminalState(sessionId);
+      if (!buf) return;
+      const nextSeq = Number(seq) || 0;
+      if (nextSeq > 0 && nextSeq < buf.seq) return;
+      buf.text = String(text || '');
+      if (nextSeq) buf.seq = nextSeq;
+    }
+
+    function bindTerminalButton(shell, sessionId) {
+      if (!shell) return;
+      const btn = shell.querySelector('[data-terminal-btn]');
+      if (!btn || btn.dataset.bound === '1') return;
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        openTerminalModal(sessionId);
+      });
+    }
+
+    function updateTerminalButtonVisibility(shell) {
+      if (!shell || isStreamingShellFinalized(shell)) {
+        shell?.querySelectorAll('[data-terminal-btn]').forEach((btn) => { btn.hidden = true; });
+        return;
+      }
+      const thinkSec = shell.querySelector('.stream-section-think');
+      const btn = shell.querySelector('[data-terminal-btn]');
+      if (!btn) return;
+      btn.hidden = !thinkSec;
+    }
+
+    function handleTerminalStreamEvent(sessionId, data) {
+      if (!data || data.type !== 'terminal') return;
+      if (data.sync) {
+        syncRunTerminalFromServer(sessionId, data.text, data.seq);
+      } else {
+        appendRunTerminalText(sessionId, data.chunk || '', data.seq);
+      }
+      if (terminalModalSessionId === sessionId) refreshTerminalModalContent();
+      const run = activeRuns.get(sessionId);
+      if (run?.shellEl?.isConnected) updateTerminalButtonVisibility(run.shellEl);
     }
 
     function renderToolsSectionHtml(tools) {
@@ -9144,6 +9425,8 @@
       }
       cancelStreamingMsgBodyUpdate(shellEl);
       shellEl.dataset.streamFinalized = '1';
+      updateTerminalButtonVisibility(shellEl);
+      if (terminalModalSessionId === sessionId) refreshTerminalModalContent();
       clearRunStatus(sessionId, shellEl);
       setAssistantMessageBody(shellEl, md || '（无回复）', {
         files: opts.files || [],
@@ -9300,6 +9583,12 @@
               external: active.external_line || '',
             });
           }
+          const tSeq = Number(active.terminal_seq) || 0;
+          const curSeq = Number(current.terminal?.seq) || 0;
+          if (active.terminal_text != null && tSeq >= curSeq) {
+            syncRunTerminalFromServer(sid, active.terminal_text, tSeq);
+            if (terminalModalSessionId === sid) refreshTerminalModalContent();
+          }
         } catch {
           /* 轮询失败忽略，SSE 仍为主通道 */
         }
@@ -9350,6 +9639,7 @@
       if (!body) return false;
       if (thinkEl.textContent !== body) thinkEl.textContent = body;
       scrollStreamThinkingIfPinned(thinkEl);
+      updateTerminalButtonVisibility(bodyEl.closest('.msg.assistant'));
       return true;
     }
 
@@ -9385,6 +9675,9 @@
         return;
       }
       bodyEl.innerHTML = buildStreamingMsgBodyHtml(payload, thinkPhase, answerForLayout);
+      const sid = shellSessionId(shell);
+      bindTerminalButton(shell, sid);
+      updateTerminalButtonVisibility(shell);
       scrollStreamThinkingIfPinned(bodyEl.querySelector('.stream-thinking'));
       if (messagesPinnedToBottom) {
         scheduleScrollMessagesToBottom();
@@ -9460,8 +9753,8 @@
       web_agent: {
         btnId: 'btn-settings-restart-web-agent',
         idle: '重启 Web Agent',
-        pending: 'Web Agent 重启中…',
-        done: 'Web Agent 重启完成',
+        pending: 'Agent 重启中…',
+        done: 'Agent 重启完成',
         fail: 'Web Agent 重启失败',
       },
       dingtalk_gateway: {
@@ -10135,8 +10428,12 @@
         container.dataset.contextMenuBound = '1';
         container.addEventListener('contextmenu', (event) => {
           if (!currentSessionId) return;
+          if (event.target.closest('.msg-file-link, .msg-images a, button, a')) return;
+          const userMsg = event.target.closest('.msg.user');
           event.preventDefault();
-          showMessagesContextMenu(event.clientX, event.clientY);
+          showMessagesContextMenu(event.clientX, event.clientY, {
+            copyTarget: userMsg || null,
+          });
         });
       }
       if (typeof ResizeObserver !== 'undefined') {
@@ -10212,9 +10509,19 @@
       if (messagesPinnedToBottom) scrollMessagesToBottom();
       if (run) {
         run.shellEl = el;
+        el.dataset.streamSessionId = sessionId;
         renderRunStatusEl(el.querySelector('.run-status'), run.status);
       }
       return el;
+    }
+
+    function shellSessionId(shell) {
+      const direct = String(shell?.dataset?.streamSessionId || '').trim();
+      if (direct) return direct;
+      for (const [sid, run] of activeRuns.entries()) {
+        if (run.shellEl === shell) return sid;
+      }
+      return currentSessionId;
     }
 
     function updateRunStatus(sessionId, patch) {
@@ -11097,6 +11404,7 @@
     }
 
     let messagesContextDismissHandler = null;
+    let messagesContextCopyTarget = null;
 
     function detachMessagesContextDismiss() {
       if (!messagesContextDismissHandler) return;
@@ -11115,6 +11423,7 @@
       } else if (menu) {
         menu.hidden = true;
       }
+      messagesContextCopyTarget = null;
       detachMessagesContextDismiss();
     }
 
@@ -11344,7 +11653,7 @@
       }, true);
     }
 
-    function showMessagesContextMenu(clientX, clientY) {
+    function showMessagesContextMenu(clientX, clientY, opts = {}) {
       if (!currentSessionId) return;
       hideSessionContextMenu();
       hideSessionsPanelContextMenu();
@@ -11352,6 +11661,12 @@
       hideMessagesContextMenu();
       const menu = document.getElementById('messages-context-menu');
       if (!menu) return;
+      messagesContextCopyTarget = opts.copyTarget || null;
+      const copyBtn = document.getElementById('messages-context-copy-btn');
+      const refreshBtn = document.getElementById('messages-context-refresh-btn');
+      const onUserBubble = !!messagesContextCopyTarget;
+      if (copyBtn) copyBtn.hidden = !onUserBubble;
+      if (refreshBtn) refreshBtn.hidden = onUserBubble;
       positionMessagesContextMenu(clientX, clientY);
       const handler = (event) => {
         if (menu.hidden) return;
@@ -11661,6 +11976,18 @@
       const anchorEl = sessionContextAnchorEl;
       hideSessionContextMenu();
       if (target) startSessionTitleEdit(target, anchorEl);
+    });
+
+    document.getElementById('messages-context-copy-btn')?.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const target = messagesContextCopyTarget;
+      hideMessagesContextMenu();
+      if (!target) return;
+      void (async () => {
+        const ok = await copyMessageContent(target);
+        showWebToast(ok ? '已复制' : '无可复制内容', { error: !ok, durationMs: 2400 });
+      })();
     });
 
     document.getElementById('messages-context-refresh-btn')?.addEventListener('click', (event) => {
@@ -12657,6 +12984,10 @@
       es.onmessage = (ev) => {
         try {
           const data = JSON.parse(ev.data);
+          if (data.type === 'terminal') {
+            handleTerminalStreamEvent(sessionId, data);
+            return;
+          }
           if (data.type === 'done' || data.type === 'error') {
             if (currentSessionId === sessionId && !uiSettled && pinnedShell) {
               if (isStreamingShellFinalized(pinnedShell)) {
@@ -12993,7 +13324,7 @@
     const deferredRestartFollowupTimers = new Map();
     const deferredRestartAwaiting = new Set();
     const WEB_AGENT_RESTART_CMD_RE = /^(?:重启|restart)\s*(?:web\s*agent|webagent|网页版\s*agent|网页\s*agent)\s*$/i;
-    const DEFERRED_RESTART_PHASE = 'Web Agent 重启中…';
+    const DEFERRED_RESTART_PHASE = 'Agent 重启中…';
 
     function isWebAgentRestartUserText(text) {
       return WEB_AGENT_RESTART_CMD_RE.test(String(text || '').trim());
@@ -15468,6 +15799,8 @@
             if (display) {
               scheduleStreamingMsgBodyUpdate(assistantEl, display);
             }
+          } else if (data.type === 'terminal') {
+            handleTerminalStreamEvent(sessionId, data);
           } else if (data.type === 'done') {
             if (!isActiveRun(sessionId, { runToken, runId })) {
               es.close();
@@ -15665,6 +15998,7 @@
         },
         shellEl: null,
         sentDraft: null,
+        terminal: { text: String(data.terminal_text || ''), seq: Number(data.terminal_seq) || 0 },
       });
       patchSessionCacheEntry(sid, { running: true });
       updateInputState();
@@ -15791,6 +16125,7 @@
         status: { ack: '', lifecycle: '', phase: '', batch: '', elapsed: '' },
         shellEl: null,
         sentDraft,
+        terminal: { text: '', seq: 0 },
       });
       patchSessionCacheEntry(sessionId, { running: true });
       if (currentSessionId === sessionId) {

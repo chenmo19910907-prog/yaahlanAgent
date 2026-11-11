@@ -71,3 +71,6 @@ temporary_testcase/*
 .tmp/*
 !.tmp/.gitkeep
 docs/
+
+# 本地 clone 的业务服务端仓库（独立 git，勿提交）
+voga-repos/

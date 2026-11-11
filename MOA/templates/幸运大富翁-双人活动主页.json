@@ -1,0 +1,52 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/vas/activity2026",
+  "method": "luckyRichManCPHome",
+  "header": "",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100259235\",\"id\":\"100231028\",\"area\":\"MENA\",\"lang\":\"en\",\"appId\":\"2005\",\"osType\":\"android\",\"_uid_\":\"100259235\"}",
+      "type": "json",
+      "value": {
+        "userId": "100259235",
+        "id": "100231028",
+        "area": "MENA",
+        "lang": "en",
+        "appId": "2005",
+        "osType": "android",
+        "_uid_": "100259235"
+      }
+    }
+  ],
+  "settings": {
+    "time": "20000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_meta": {
+    "httpPath": "/yaahlan/activity/luckyRichMan/cp/home",
+    "note": "主态 userId + 选中伙伴 id（partnerUserId）；验收 myLotteryNum、relationList、activityStatus"
+  },
+  "_registry": {
+    "id": "lucky_rich_man_cp_home",
+    "name": "幸运大富翁-双人活动主页",
+    "category": "幸运大富翁·双人（vas/activity2026 · luckyRichManCPHome）",
+    "description": "查询双人幸运之旅 CP/挚友赛道活动主页（luckyRichManCPHome；/service/vas/activity2026）。body 须主态 userId、选中伙伴 id、area/lang。返回 myLotteryNum、relationList、选中队伍等。Tunnel 100259235+100231028 挚友队实测 ec=200。",
+    "prompts": [
+      "查询 <userId> 与伙伴 <partnerUserId> 双人幸运大富翁主页",
+      "luckyRichManCPHome userId=<userId> partner=<partnerUserId>"
+    ],
+    "cli": ""
+  }
+}

@@ -10,6 +10,14 @@
     "defaultIndex": 0,
     "defaultCount": 20
   },
+  "query_user_relation_summary": {
+    "path": "/admin/user/queryUserRelationSummary"
+  },
+  "query_user_relation_list": {
+    "path": "/admin/user/queryUserRelationList",
+    "defaultIndex": 0,
+    "defaultPageSize": 20
+  },
   "query_user_history_device_list": {
     "path": "/yaahlan/backend/deviceHistory/queryUserHistoryDeviceList",
     "defaultPage": 1,

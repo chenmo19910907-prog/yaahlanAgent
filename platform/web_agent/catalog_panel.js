@@ -2014,6 +2014,66 @@
     });
   };
 
+  CatalogPanel.prototype.resolveCustomCapPanel = function resolveCustomCapPanel(item) {
+    if (!item || typeof item !== 'object') return null;
+    const rid = String(item.registry_id || item.registryId || '').trim();
+    if (rid === 'guild_pangu_shift_config' && global.GuildPanguPanel) {
+      return { panel: global.GuildPanguPanel, sub: '公会盘古 · 预上线改参' };
+    }
+    if (rid === 'code_testcase_review') {
+      const base = {
+        keepCapList: true,
+        sub: '代码×用例 · Agent Skill 五阶段',
+      };
+      if (global.CodeTestcaseReviewPanel) {
+        return { ...base, panel: global.CodeTestcaseReviewPanel };
+      }
+      return { ...base, panel: null, missingScript: true };
+    }
+    if (rid === 'multilang_doc_writeback') {
+      const base = {
+        keepCapList: true,
+        sub: '写回翻译文档 · I/J/K/L',
+      };
+      if (global.CodeMultilangReviewPanel) {
+        return { ...base, panel: global.CodeMultilangReviewPanel };
+      }
+      return { ...base, panel: null, missingScript: true };
+    }
+    return null;
+  };
+
+  CatalogPanel.prototype.customCapPanelForCapNode = function customCapPanelForCapNode(capNode, items) {
+    const list = items || [];
+    const fromItem = list.length === 1 ? this.resolveCustomCapPanel(list[0]) : null;
+    if (fromItem) return fromItem;
+    if (!capNode || capNode.kind !== 'cap') return null;
+    const rid = String(capNode.registryId || capNode.registry_id || '').trim();
+    if (!rid) return null;
+    return this.resolveCustomCapPanel({ registry_id: rid });
+  };
+
+  CatalogPanel.prototype.mountCustomCapPanelHosts = function mountCustomCapPanelHosts(root) {
+    const scope = root || this.mainEl;
+    if (!scope) return;
+    scope.querySelectorAll('[data-custom-cap-panel-host="1"]').forEach((host) => {
+      if (host.getAttribute('data-custom-mounted') === '1') return;
+      const rid = String(host.getAttribute('data-registry-id') || '').trim();
+      const custom = this.resolveCustomCapPanel({ registry_id: rid });
+      if (!custom) return;
+      if (custom.missingScript) {
+        host.setAttribute('data-custom-mounted', '1');
+        host.innerHTML = '<p class="catalog-panel-missing">用例审查面板脚本未加载，请硬刷新页面（Cmd+Shift+R）或在设置中重启 Web Agent。</p>';
+        return;
+      }
+      if (!custom.panel) return;
+      host.setAttribute('data-custom-mounted', '1');
+      void custom.panel.mount(host, (text) => {
+        if (typeof this.onRunPrompt === 'function') this.onRunPrompt(text);
+      });
+    });
+  };
+
   CatalogPanel.prototype.renderCapCategoryBlock = function renderCapCategoryBlock(capNode, q) {
     const mod = this.moduleById(capNode.moduleId);
     const cat = mod?.categories?.[capNode.catIndex];
@@ -2022,6 +2082,30 @@
     let filtered = cat.items.filter((it) => this.matches(it, mod.label, cat.name, q));
     filtered = this.filterCapItemsForNavNode(filtered, capNode);
     if (!filtered.length) return { html: '', count: 0 };
+    const customCapPanel = this.customCapPanelForCapNode(capNode, filtered);
+    if (customCapPanel && (customCapPanel.panel || customCapPanel.missingScript)) {
+      const rid = String(
+        filtered[0]?.registry_id
+        || capNode.registryId
+        || capNode.registry_id
+        || '',
+      ).trim();
+      const hostHtml = `<div class="guild-pangu-panel-host" data-custom-cap-panel-host="1" data-registry-id="${escapeAttr(rid)}"></div>`;
+      let inner = hostHtml;
+      if (customCapPanel.keepCapList) {
+        const items = filtered.map((it) => this.renderCapItem(it, {
+          moduleId: capNode.moduleId,
+          catIndex: capNode.catIndex,
+          modLabel: mod.label,
+          catName: cat.name,
+        })).join('');
+        inner = `<ol class="cats catalog-cap-with-custom-panel"><li><ul class="items">${items}</ul></li></ol>${hostHtml}`;
+      }
+      return {
+        count: filtered.length,
+        html: this.renderCategoryListItem(catLabel || cat.name, inner),
+      };
+    }
     const items = filtered.map((it) => this.renderCapItem(it, {
       moduleId: capNode.moduleId,
       catIndex: capNode.catIndex,
@@ -2055,6 +2139,7 @@
           ${body.partsHtml}
           ${body.catsHtml ? `<ol class="cats">${body.catsHtml}</ol>` : ''}`;
       main.appendChild(section);
+      this.mountCustomCapPanelHosts(section);
     }
     return any;
   };
@@ -2213,27 +2298,41 @@
           const scopeTitle = capNode
             ? this.navNodeLabel(capNode)
             : collapseNavDisplayLabel(cat.name);
-          const guildOnly = filtered.length === 1
-            && typeof global.isGuildPanguCapItem === 'function'
-            && global.isGuildPanguCapItem(filtered[0])
-            && global.GuildPanguPanel;
+          const customCapPanel = this.customCapPanelForCapNode(capNode, filtered);
+          const capListSub = `${filtered.length} 项 MOA 能力`;
+          const headSub = customCapPanel
+            ? (customCapPanel.keepCapList ? capListSub : customCapPanel.sub)
+            : capListSub;
+          const capItemsHtml = filtered.map((it) => this.renderCapItem(it, {
+            moduleId: filter.moduleId,
+            catIndex: filter.catIndex,
+            modLabel: mod.label,
+            catName: cat.name,
+          })).join('');
+          const capListBlock = customCapPanel?.keepCapList
+            ? `<ol class="cats catalog-cap-with-custom-panel"><li><ul class="items">${capItemsHtml}</ul></li></ol>`
+            : '';
           const section = document.createElement('section');
           section.className = 'catalog-module catalog-module-category';
           section.innerHTML = `
             ${this.renderModuleHead({
               icon: smallIcon('spark'),
               title: scopeTitle,
-              sub: guildOnly ? '公会盘古 · 预上线改参' : `${filtered.length} 项 MOA 能力`,
+              sub: headSub,
               moduleId: filter.moduleId,
               category: cat.name,
             })}
-            <div class="guild-pangu-panel-host" data-guild-pangu-host="${guildOnly ? '1' : '0'}"></div>`;
+            ${capListBlock}
+            <div class="guild-pangu-panel-host" data-custom-cap-panel-host="${customCapPanel ? '1' : '0'}"${
+              customCapPanel
+                ? ` data-registry-id="${escapeAttr(
+                  String(filtered[0]?.registry_id || capNode?.registryId || '').trim(),
+                )}"`
+                : ''
+            }></div>`;
           main.appendChild(section);
-          if (guildOnly) {
-            const host = section.querySelector('[data-guild-pangu-host="1"]');
-            void global.GuildPanguPanel.mount(host, (text) => {
-              if (typeof this.onRunPrompt === 'function') this.onRunPrompt(text);
-            });
+          if (customCapPanel && (customCapPanel.panel || customCapPanel.missingScript)) {
+            this.mountCustomCapPanelHosts(section);
           } else {
             const items = filtered.map((it) => this.renderCapItem(it, {
               moduleId: filter.moduleId,
@@ -2241,7 +2340,7 @@
               modLabel: mod.label,
               catName: cat.name,
             })).join('');
-            const host = section.querySelector('[data-guild-pangu-host="0"]');
+            const host = section.querySelector('[data-custom-cap-panel-host="0"]');
             if (host) {
               host.outerHTML = `<ol class="cats"><li><ul class="items">${items}</ul></li></ol>`;
             }

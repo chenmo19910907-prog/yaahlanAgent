@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "category": "开发代码",
+  "registry_id": "multilang_doc_writeback",
+  "doc_note": "在钉钉翻译/多语言词条表上写校验列（I=服务端 J=Android K=iOS L=H5）；A–H 词条列只读。Agent 按 Skill 串行，非一键脚本。",
+  "default_multilang_doc_url": "https://alidocs.dingtalk.com/i/nodes/ZgpG2NdyVXrA0gOgCx07o2kO8MwvDqPk",
+  "web_usage": {
+    "title": "写回翻译文档",
+    "env_hint": "本机 voga-repos + 钉钉翻译表 · 仅写 I/J/K/L",
+    "field_help": {
+      "multilangDocUrl": "翻译/多语言词条表 AliDocs（默认全量翻译文档）",
+      "sheetUrl": "可与上相同；留空则与词条表 URL 一致",
+      "sheetName": "功能版本 Sheet 名（如 2.6.1·家族怪兽）"
+    }
+  },
+  "skill_path": ".cursor/skills/code-multilang-review/SKILL.md",
+  "scenarios": [
+    {
+      "key": "full",
+      "doc_index": 0,
+      "name": "全流程（①→⑤）",
+      "usage_note": "读翻译表 Sheet → 拉 9 仓/H5 功能仓 → 四端扫描与 zh/en/ar 词条对齐 → 写 I/J/K/L → GET 复核。",
+      "prompt": "写回翻译文档校验结果 <multilangDocUrl>"
+    },
+    {
+      "key": "read_doc",
+      "doc_index": 1,
+      "name": "① 读翻译表",
+      "usage_note": "读指定 Sheet 至 H 列；确认 I/J/K/L 表头；建立场景/key → 行号索引。",
+      "prompt": "读取翻译文档准备多语言校验 <multilangDocUrl>"
+    },
+    {
+      "key": "pull_repos",
+      "doc_index": 2,
+      "name": "② 拉代码",
+      "usage_note": "python3 DevCode/voga_pull_execute.py；H5 用 fe_pull_execute.py --feature；只读。",
+      "prompt": "拉取开发代码写回翻译文档校验"
+    },
+    {
+      "key": "scan_four_ends",
+      "doc_index": 3,
+      "name": "③ 四端扫描",
+      "usage_note": "multiLang / strings / Localizable / yaahlan-fe i18n；缺 key 或文案不一致记待写回。",
+      "prompt": "四端代码与翻译文档词条交叉验证 <multilangDocUrl>"
+    },
+    {
+      "key": "write_ijkl",
+      "doc_index": 4,
+      "name": "④ 写 I/J/K/L",
+      "usage_note": "I 服务端 J Android K iOS L H5；`缺失:` 附 B/C/D 词条摘要；禁止改 A–H。",
+      "prompt": "写回翻译文档 I J K L 列 <multilangDocUrl>"
+    },
+    {
+      "key": "verify_sheet",
+      "doc_index": 5,
+      "name": "⑤ 复核",
+      "usage_note": "GET I:L 抽样；汇总缺失/不一致行数。",
+      "prompt": "复核翻译文档 I J K L 写入结果 <multilangDocUrl>"
+    }
+  ]
+}

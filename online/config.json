@@ -6,6 +6,14 @@
     "query_user_detail": {
       "path": "/admin/user/queryUserDetail"
     },
+    "query_user_relation_summary": {
+      "path": "/admin/user/queryUserRelationSummary"
+    },
+    "query_user_relation_list": {
+      "path": "/admin/user/queryUserRelationList",
+      "defaultIndex": 0,
+      "defaultPageSize": 20
+    },
     "query_user_profile_list": {
       "baseUrl": "https://mdp-user-admin-api-overseas.wemomo.com",
       "path": "/userAdmin/queryUserProfileList",

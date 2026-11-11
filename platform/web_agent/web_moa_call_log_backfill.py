@@ -62,11 +62,13 @@ _MOA_EXEC_ASSISTANT_RE = re.compile(
     r"已升级为|已升至|已降至|已为\s*\*\*VIP|已设置\s*\*\*VIP|"
     r"VIP\s*\d+\s*体验|体验\s*\d+\s*天|"
     r"\"ec\":\s*0|ec=200|ec=0[^0-9]|"
-    r"操作成功|验收通过",
+    r"操作成功|验收通过|"
+    r"已发放\s*.{0,24}钻|已成功.*发放|订单号",
     re.I,
 )
 _MOA_EXEC_USER_RE = re.compile(
     r"升级\s*(?:到|至)?\s*vip|升到\s*vip|发\s*\d+\s*钻|发放\s*钻石|"
+    r"充\s*.{0,16}钻|充值\s*.{0,16}钻|给\s*.{0,32}充|"
     r"加\s*vip|vip\s*经验|清除\s*vip|下发\s*vip|provideDiamond|addVipValue",
     re.I,
 )

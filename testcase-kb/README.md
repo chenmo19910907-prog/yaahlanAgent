@@ -52,7 +52,7 @@ python3 DingTalk/kb_sync_execute.py --no-optimize
 
 本地 xlsx 回退（可选）：`python3 scripts/xlsx_kb_sync.py --file /path/to/2.5.2版本用例.xlsx`
 
-## 文件列表（26 个）
+## 文件列表（27 个）
 
 ### 独立功能（跨模块抽取，强相关才拆出）
 
@@ -96,6 +96,7 @@ python3 DingTalk/kb_sync_execute.py --no-optimize
 | `活动.md` | 运营活动（节日活动、活动入口、每日任务等） |
 | `人脸认证.md` | 真人认证 |
 | [`测试机.md`](测试机.md) | 团队测试机台账（mmuid/mmuidv3、资产编号、持有人；数据源为 `test_devices.json`） |
+| [`前端H5仓.md`](前端H5仓.md) | yaahlan-fe 独立 H5 功能↔仓库（H/O/P；数据源为 `fe_feature_repos.json`） |
 
 ## 文档结构
 
@@ -127,4 +128,5 @@ python3 scripts/kb_filter_locales.py
 python3 scripts/kb_filter_version_compat.py
 
 python3 scripts/sync_test_devices_kb.py --xlsx <外部xlsx>  # 测试机台账（独立）
+python3 scripts/sync_fe_feature_repos_kb.py             # 前端汇总表 H/O/P → fe_feature_repos.json
 ```

@@ -87,6 +87,11 @@ def _pick_snapshot(*, batch_hint: str, run_hint: str = "", ttl_s: int) -> dict[s
         if snap and _snapshot_fresh(snap, ttl_s=ttl_s):
             return snap
     if not batch and not run:
+        snap = _load_json(ACTIVE_PATH)
+        if snap and _snapshot_fresh(snap, ttl_s=ttl_s):
+            active_run = str(snap.get("run_id") or "").strip()
+            if active_run.startswith("dingtalk:"):
+                return snap
         return None
     snap = _load_json(ACTIVE_PATH)
     if not snap or not _snapshot_fresh(snap, ttl_s=ttl_s):

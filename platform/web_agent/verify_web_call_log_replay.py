@@ -161,6 +161,141 @@ class CallLogReplayTests(unittest.TestCase):
         labels = [r["label"] for r in view["resultRows"]]
         self.assertIn("userId", labels)
 
+    def test_find_online_admin_relation_list_by_audit_title(self) -> None:
+        from web_call_log_replay import find_capability_for_entry
+
+        entry = {
+            "source": "admin",
+            "environment": "online",
+            "operation": "Admin 用户-查询关系列表",
+            "serviceUrl": "/admin/user/queryUserRelationList",
+            "method": "POST",
+            "paramsSummary": "userId=107427060，relationType=friend，index=0，pageSize=20",
+        }
+        cap = find_capability_for_entry(entry)
+        self.assertIsNotNone(cap)
+        assert cap is not None
+        self.assertEqual(cap.name, "Admin-查询关系列表")
+        self.assertEqual(cap.module_id, "online")
+
+    def test_find_online_admin_relation_list_by_service_url_only(self) -> None:
+        from web_call_log_replay import find_capability_for_entry
+
+        entry = {
+            "source": "admin",
+            "environment": "online",
+            "operation": "Admin /admin/user/queryUserRelationList",
+            "serviceUrl": "/admin/user/queryUserRelationList",
+            "method": "POST",
+            "paramsSummary": "userId=107427060，relationType=friend",
+        }
+        cap = find_capability_for_entry(entry)
+        self.assertIsNotNone(cap)
+        assert cap is not None
+        self.assertEqual(cap.name, "Admin-查询关系列表")
+
+    def test_find_risk_release_test_device_by_service_url(self) -> None:
+        from web_call_log_replay import find_capability_for_entry, params_rows_for_entry
+
+        entry = {
+            "source": "risk",
+            "environment": "test",
+            "operation": "风控 解除测试机 GZ3021030074,GZ3019060023 设备风控",
+            "serviceUrl": "/risk/release_test_device",
+            "method": "POST",
+            "moaInterface": "风控 · release_test_device",
+            "paramsSummary": "device=GZ3021030074，reason=测试",
+            "operationKey": "risk#/risk/release_test_device#POST",
+        }
+        cap = find_capability_for_entry(entry)
+        self.assertIsNotNone(cap)
+        assert cap is not None
+        self.assertEqual(cap.id, "release_test_device")
+        self.assertEqual(cap.name, "测试机-解除设备风控")
+        rows = params_rows_for_entry(entry, cap)
+        by_key = {r["key"]: r for r in rows}
+        self.assertEqual(by_key["assetId"]["value"], "GZ3021030074")
+
+    def test_find_generative_moa_by_operation_title(self) -> None:
+        from web_call_log_replay import find_capability_for_entry
+
+        entry = {
+            "source": "moa",
+            "environment": "test",
+            "operation": "生成式MOA-跨房PK赛况信息",
+            "serviceUrl": "/service/room/external/room-pk-api",
+            "method": "getAcrossRoomPkInfo",
+            "paramsSummary": "userId=100079102，roomId=50861924",
+        }
+        cap = find_capability_for_entry(entry)
+        self.assertIsNotNone(cap)
+        assert cap is not None
+        self.assertEqual(cap.module_id, "moa-generative")
+
+    def test_find_risk_menu_operate_alias(self) -> None:
+        from web_call_log_replay import find_capability_for_entry
+
+        entry = {
+            "source": "risk",
+            "environment": "test",
+            "operation": "批量 2 项 · 风控 菜单加白",
+            "serviceUrl": "/risk/risk_menu_operate",
+            "method": "POST",
+            "paramsSummary": "reason=测试",
+        }
+        cap = find_capability_for_entry(entry)
+        self.assertIsNotNone(cap)
+        assert cap is not None
+        self.assertEqual(cap.id, "generic_menu_operate")
+
+    def test_find_online_risk_release_login_device(self) -> None:
+        from web_call_log_replay import find_capability_for_entry
+
+        entry = {
+            "source": "risk",
+            "environment": "online",
+            "operation": "风控 线上解除 116622633 登录设备/手机号",
+            "serviceUrl": "/risk/release_online_login_device",
+            "method": "POST",
+            "paramsSummary": "userId=116622633",
+        }
+        cap = find_capability_for_entry(entry)
+        self.assertIsNotNone(cap)
+        assert cap is not None
+        self.assertEqual(cap.id, "release_online_login_device")
+
+    def test_find_moa_method_embedded_service_url(self) -> None:
+        from web_call_log_replay import find_capability_for_entry
+
+        entry = {
+            "source": "moa",
+            "environment": "test",
+            "operation": "activity",
+            "serviceUrl": "",
+            "method": "customerSendProp（/service/vas/activity）",
+            "paramsSummary": "userId=100422986",
+        }
+        cap = find_capability_for_entry(entry)
+        self.assertIsNotNone(cap)
+        assert cap is not None
+        self.assertIn("客服", cap.name)
+
+    def test_find_admin_add_im_by_path(self) -> None:
+        from web_call_log_replay import find_capability_for_entry
+
+        entry = {
+            "source": "admin",
+            "environment": "test",
+            "operation": "Admin /yaahlan/cms/activity/addIm",
+            "serviceUrl": "/yaahlan/cms/activity/addIm",
+            "method": "POST",
+            "paramsSummary": "whiteList=100299850",
+        }
+        cap = find_capability_for_entry(entry)
+        self.assertIsNotNone(cap)
+        assert cap is not None
+        self.assertEqual(cap.id, "add_im_whitelist_task")
+
     def test_room_add_bots_chinese_param_labels(self) -> None:
         from web_call_log_replay import find_capability_for_entry, params_rows_for_entry
 
@@ -182,6 +317,8 @@ class CallLogReplayTests(unittest.TestCase):
         self.assertEqual(by_key["onMic"]["value"], "0")
         self.assertNotIn("总数", by_key)
         self.assertNotIn("麦上数", by_key)
+        self.assertEqual(by_key["total"]["label"], "机器人总数")
+        self.assertEqual(by_key["onMic"]["label"], "上麦数")
 
 
 if __name__ == "__main__":

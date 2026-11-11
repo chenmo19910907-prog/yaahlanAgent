@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "category": "开发代码（多语言校验）",
+  "registry_id": "code_multilang_review",
+  "doc_note": "五阶段由 Cursor Agent 按 Skill 串行执行。多语言文档为词条真源；版本表 I/J/K 分别为服务端、Android、iOS 校验结果（只写这三列）。voga-repos 只读。",
+  "default_multilang_doc_url": "https://alidocs.dingtalk.com/i/nodes/ZgpG2NdyVXrA0gOgCx07o2kO8MwvDqPk",
+  "web_usage": {
+    "title": "版本×代码多语言校验",
+    "env_hint": "本机 voga-repos/ + 钉钉 AliDocs；Agent 按 Skill 串行（①→⑤）。",
+    "field_help": {
+      "multilangDocUrl": "多语言词条表（A 列场景/zh/en/ar… 等为真源）",
+      "sheetUrl": "版本测试/用例表（含 I/J/K 三端校验列；A 列或备注须能对应词条行）",
+      "sheetName": "可选 Sheet 名；多语言文档与版本表可不同 Sheet"
+    }
+  },
+  "skill_path": ".cursor/skills/code-multilang-review/SKILL.md",
+  "scenarios": [
+    {
+      "key": "full",
+      "doc_index": 0,
+      "name": "全流程（①→⑤）",
+      "usage_note": "读多语言文档 + 版本表 → 拉 voga-repos → 三端扫描 multiLang/strings/Localizable 与文档词条对齐 → 写 I/J/K → GET 复核。",
+      "prompt": "版本多语言代码校验 <sheetUrl>"
+    },
+    {
+      "key": "read_docs",
+      "doc_index": 1,
+      "name": "① 读文档",
+      "usage_note": "读多语言 AliDocs（默认 ZgpG2… 节点）；读版本表至 H 列并确认 I/J/K 表头；建立「词条/场景 → 行号」索引。",
+      "prompt": "读取多语言文档与版本表准备校验 <sheetUrl>"
+    },
+    {
+      "key": "pull_repos",
+      "doc_index": 2,
+      "name": "② 拉代码",
+      "usage_note": "python3 DevCode/voga_pull_execute.py；按版本表备注 checkout 对应分支。只读，禁止 commit/push。",
+      "prompt": "拉取开发代码做版本多语言校验"
+    },
+    {
+      "key": "scan_three_ends",
+      "doc_index": 3,
+      "name": "③ 三端扫描",
+      "usage_note": "服务端 resources/multiLang；Android values*/strings.xml；iOS *.lproj/Localizable.strings。核对 key/文案/语种缺失与硬编码中文。",
+      "prompt": "三端代码多语言与文档交叉验证 <sheetUrl>"
+    },
+    {
+      "key": "write_ijk",
+      "doc_index": 4,
+      "name": "④ 写 I/J/K",
+      "usage_note": "按行写：I=服务端、J=Android、K=iOS。`缺失` 须写明文档词条：`缺失:zh「…」 en「…」 ar「…」`（对应 B/C/D）。禁止改 I/J/K 以外需保护的列（A–H 只读除非用户明确允许）。",
+      "prompt": "把多语言校验结果写入表格 I J K 列 <sheetUrl>"
+    },
+    {
+      "key": "verify_sheet",
+      "doc_index": 5,
+      "name": "⑤ 复核",
+      "usage_note": "GET 读取 I:K 抽样核对；汇总 fail/缺失行数。",
+      "prompt": "复核版本表多语言 I J K 列写入结果 <sheetUrl>"
+    }
+  ]
+}

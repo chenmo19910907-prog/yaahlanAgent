@@ -1,0 +1,136 @@
+{
+  "version": 1,
+  "generated_index_path": "DevCode/使用方法.md",
+  "items": [
+    {
+      "id": "pull_voga_repos",
+      "name": "拉取开发代码",
+      "category": "开发代码",
+      "description": "对 voga-repos/ 下共 9 仓（5 服务端 + voga_android + voga_ios + voga_ios_modules + yaahlan-fe H5，清单见 DevCode/config/repos.json）已 clone 目录执行 git pull --ff-only，输出各仓分支与 HEAD",
+      "prompts": [
+        "拉取开发代码",
+        "更新开发代码",
+        "更新服务端代码",
+        "voga-repos 拉最新",
+        "拉取ios开发代码",
+        "拉取android开发代码",
+        "拉取H5开发代码",
+        "拉取前端开发代码",
+        "更新yaahlan-fe"
+      ],
+      "command": "python3 DevCode/voga_pull_execute.py"
+    },
+    {
+      "id": "pull_fe_by_feature",
+      "name": "按功能拉取前端仓",
+      "category": "开发代码",
+      "description": "优先 testcase-kb/fe_feature_repos.json 按功能关键词匹配 H/O/P；知识库未命中时再读钉钉前端项目汇总表，仅 SSH clone/pull 对应 yaahlan-fe 独立仓；与九仓 voga_pull 分离",
+      "prompts": [
+        "拉取VIP页面前端代码",
+        "拉取前端代码 <功能名|VIP>",
+        "按功能拉取H5代码 <功能名>",
+        "前端项目汇总表拉代码 <功能名>"
+      ],
+      "command": "python3 DevCode/fe_pull_execute.py --feature <功能名>"
+    },
+    {
+      "id": "sync_fe_feature_repos_kb",
+      "name": "同步前端功能仓知识库",
+      "category": "开发代码",
+      "description": "从钉钉前端项目汇总表拉取 H/O/P 映射，写入 testcase-kb/fe_feature_repos.json 与 前端H5仓.md",
+      "prompts": [
+        "同步前端功能仓知识库",
+        "前端功能和仓库的关系记录到知识库",
+        "更新前端H5仓知识库"
+      ],
+      "command": "python3 scripts/sync_fe_feature_repos_kb.py"
+    },
+    {
+      "id": "pull_fe_repo_one",
+      "name": "拉取指定前端仓",
+      "category": "开发代码",
+      "description": "不读汇总表，直接对 yaahlan-fe 下某一独立 H5 仓 clone/pull（SSH 默认）",
+      "prompts": [
+        "拉取前端仓 <yaahlan-h5-vip>",
+        "拉取H5仓库 <仓库名>"
+      ],
+      "command": "python3 DevCode/fe_pull_execute.py --repo <仓库名>"
+    },
+    {
+      "id": "pull_voga_repo_one",
+      "name": "拉取指定开发仓",
+      "category": "开发代码",
+      "description": "仅对 voga-repos 下某一个仓 git pull（仓库名见 DevCode/config/repos.json，含服务端、Android/iOS 与 yaahlan-fe H5）",
+      "prompts": [
+        "拉取开发代码 <仓库名|voga-mts-room>",
+        "拉取指定仓 <仓库名|voga_ios|voga_android|yaahlan-fe>",
+        "拉取H5代码 <yaahlan-fe>",
+        "拉取前端代码 <yaahlan-fe>"
+      ],
+      "command": "python3 DevCode/voga_pull_execute.py --repo <仓库名>"
+    },
+    {
+      "id": "code_testcase_review",
+      "name": "代码×用例交叉审查",
+      "category": "开发代码（代码开发中）",
+      "description": "五阶段：读钉钉用例 A:E → DevCode 拉 voga-repos（9 仓）→ 按 E 列分流扫描 Java/Android/iOS/H5 与用例比对 → E 列标 fail → 末尾补用例；Agent Skill 串行执行",
+      "panel_config": "DevCode/config/code_testcase_review_panel.json",
+      "skill": ".cursor/skills/code-testcase-review/SKILL.md",
+      "workflow": [
+        {"step": 1, "name": "读用例", "detail": "AliDocs workbookId+Sheet，A–E；备注解析 voga/* 或 git.wemomo.com/yaahlan-fe 仓库与分支"},
+        {"step": 2, "name": "拉代码", "detail": "python3 DevCode/voga_pull_execute.py → voga-repos/；按 E 列 checkout/pull"},
+        {"step": 3, "name": "比对比", "detail": "Biz/Service/Controller·multiLang | Android strings/VM | iOS Localizable/VC | yaahlan-fe i18n/locale；行为清单↔用例"},
+        {"step": 4, "name": "标注", "detail": "不符 → E列 fail、F列原因；A–D 只读"},
+        {"step": 5, "name": "补用例", "detail": "未覆盖 → 末尾 A–D 追加、编号续接；写后 GET 验证"}
+      ],
+      "prompts": [
+        "用例覆盖率分析 <钉钉用例表URL|表格链接>",
+        "代码用例交叉验证 <钉钉用例表URL>",
+        "读取用例结合代码标注fail <表格链接>",
+        "拉取代码和用例做比对",
+        "ios用例代码交叉审查 <表格链接>",
+        "安卓用例代码交叉审查 <表格链接>",
+        "H5用例代码交叉审查 <表格链接>",
+        "前端用例代码交叉审查 <表格链接>"
+      ],
+      "command": "# Agent Skill：.cursor/skills/code-testcase-review/SKILL.md\n# 1读用例→2拉代码→3比对比→4标注fail→5补用例\n# 前置：python3 DevCode/voga_pull_execute.py\n# 代码仓只读；表仅写 E/F\n"
+    },
+    {
+      "id": "moa_source_anchor",
+      "name": "MOA方法源码验收锚定",
+      "category": "开发代码",
+      "description": "给定 MOA method：串联本仓 MOA/templates 试跑命令 + voga-repos 内 *MoaService* 实现行 + Req 字段注释（验收分支），一句造数后按锚点验 MOA",
+      "prompts": [
+        "MOA源码锚定 queryOwnPropList",
+        "MOA方法源码验收锚定 <method>",
+        "从本地代码查MOA验收字段 <method>",
+        "装扮验收源码锚点 queryOwnPropList"
+      ],
+      "command": "python3 DevCode/moa_source_anchor_execute.py <method>"
+    },
+    {
+      "id": "multilang_doc_writeback",
+      "name": "写回翻译文档",
+      "category": "开发代码",
+      "description": "五阶段：读钉钉翻译/多语言词条表（按版本 Sheet）→ 拉 voga-repos/H5 → 四端扫描与 zh/en/ar 词条对齐 → 在词条表 I/J/K/L 写服务端/Android/iOS/H5 校验结果；A–H 只读",
+      "panel_config": "DevCode/config/multilang_doc_writeback_panel.json",
+      "skill": ".cursor/skills/code-multilang-review/SKILL.md",
+      "workflow": [
+        {"step": 1, "name": "读翻译表", "detail": "AliDocs + Sheet 名；读至 H；I/J/K/L 表头"},
+        {"step": 2, "name": "拉代码", "detail": "voga_pull + fe_pull --feature"},
+        {"step": 3, "name": "四端扫描", "detail": "multiLang·strings·Localizable·H5 i18n"},
+        {"step": 4, "name": "写 I/J/K/L", "detail": "仅校验列；缺失附词条摘要"},
+        {"step": 5, "name": "复核", "detail": "GET I:L"}
+      ],
+      "prompts": [
+        "写回翻译文档 <钉钉翻译表URL>",
+        "写回翻译文档校验结果 <URL>",
+        "多语言文档写回 I J K L <URL>",
+        "L列写H5相关 <URL>",
+        "对照翻译文档与代码写回 <URL>",
+        "家族怪兽翻译文档写回 L列"
+      ],
+      "command": "# Agent Skill：.cursor/skills/code-multilang-review/SKILL.md\n# ①读表→②拉代码→③扫描→④写I/J/K/L→⑤复核\n# 默认文档 ZgpG2Ndy…；仅写 I/J/K/L\n"
+    }
+  ]
+}

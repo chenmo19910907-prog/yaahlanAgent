@@ -9,6 +9,7 @@ import sys
 import uuid
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 WEB_AGENT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = WEB_AGENT_DIR.parents[1]
@@ -49,19 +50,272 @@ _PROMPT_PLACEHOLDER_RE = re.compile(r"<([^>|]+)(?:\|([^>]+))?>")
 
 _TEMPLATE_JSON_RE = re.compile(r"MOA/templates/([^`\s]+\.json)")
 _METHOD_IN_COMMAND_RE = re.compile(r"--method\s+(\S+)")
+_CAMEL_TO_KEBAB_RE = re.compile(r"([a-z0-9])([A-Z])")
+_METHOD_WITH_SERVICE_URL_RE = re.compile(
+    r"^([a-zA-Z][a-zA-Z0-9_]*)\s*[（(]\s*(/service/[^）)]+)\s*[）)]\s*$"
+)
+_DIAMOND_PROVIDE_OP_RE = re.compile(
+    r"给\s*(\d{6,12})\s*(?:发|增加)\s*([\d.]+)\s*(万)?\s*钻石",
+    re.I,
+)
+
+
+def _normalize_entry_http_fields(
+    entry: dict[str, Any],
+) -> tuple[str, str]:
+    meth = str(entry.get("method") or "").strip()
+    svc = str(entry.get("serviceUrl") or "").strip()
+    m = _METHOD_WITH_SERVICE_URL_RE.match(meth)
+    if m:
+        return m.group(1).strip(), m.group(2).strip()
+    if not svc:
+        iface = str(entry.get("moaInterface") or "").strip()
+        m2 = _METHOD_WITH_SERVICE_URL_RE.match(iface)
+        if m2:
+            return m2.group(1).strip(), m2.group(2).strip()
+    return meth, svc
+
+
+def _find_inferred_moa_capability(
+    caps: list[Capability], entry: dict[str, Any]
+) -> Capability | None:
+    op = str(entry.get("operation") or "").strip()
+    is_agent_turn = str(entry.get("operationKey") or "").startswith("agent-turn#")
+    if not is_agent_turn and not op:
+        return None
+    if not is_agent_turn and "钻石" not in op and "风控" not in op:
+        return None
+    if "钻石" in op:
+        provide = [c for c in caps if c.module_id == "moa" and c.name == "钻石-发放"]
+        if len(provide) == 1:
+            return provide[0]
+    account = str(entry.get("accountSummary") or "").strip()
+    if "风控" in op and account.isdigit():
+        release = [
+            c
+            for c in caps
+            if c.module_id == "risk"
+            and c.id in ("release_recharge_risk", "release_activity_risk")
+        ]
+        if len(release) == 1:
+            return release[0]
+    return None
+
+
+def _admin_path_api_tail(service_url: str) -> str:
+    raw = (service_url or "").strip()
+    if not raw:
+        return ""
+    if "://" in raw:
+        raw = urlparse(raw).path or raw
+    raw = raw.rstrip("/")
+    return raw.rsplit("/", 1)[-1] if raw else ""
+
+
+def _camel_tail_to_cli_flag(tail: str) -> str:
+    if not tail:
+        return ""
+    kebab = _CAMEL_TO_KEBAB_RE.sub(r"\1-\2", tail).lower()
+    return f"--{kebab}"
+
+
+def _online_admin_registry_name(test_admin_registry_name: str) -> str:
+    name = (test_admin_registry_name or "").strip()
+    if name.startswith("用户-"):
+        return f"Admin-{name[3:]}"
+    return ""
+
+
+_BATCH_OP_PREFIX_RE = re.compile(r"^(?:\d{6,11}\s+等\s+\d+\s*个账号\s+)?批量\s+\d+\s*项\s*·\s*")
+_RISK_OP_PREFIX_RE = re.compile(r"^风控\s+")
+
+
+def _strip_batch_operation_prefix(op: str) -> str:
+    text = (op or "").strip()
+    if not text:
+        return ""
+    text = _BATCH_OP_PREFIX_RE.sub("", text).strip()
+    return text
+
+
+def _prepend_unique_name(names: list[str], name: str) -> None:
+    label = (name or "").strip()
+    if not label:
+        return
+    names[:] = [label] + [n for n in names if n != label]
+
+
+def _operation_name_variants(op: str, *, module_ids: list[str]) -> list[str]:
+    o = _strip_batch_operation_prefix(op)
+    if not o:
+        return []
+    variants: list[str] = []
+    if _RISK_OP_PREFIX_RE.match(o):
+        variants.append(_RISK_OP_PREFIX_RE.sub("", o).strip())
+    if o.startswith("Admin /"):
+        path = o[len("Admin ") :].strip()
+        named = _admin_operation_name_for_path(path)
+        if named:
+            variants.append(named)
+            if "online" in module_ids:
+                online_name = _online_admin_registry_name(named)
+                if online_name:
+                    variants.append(online_name)
+    if "online" in module_ids or "admin" in module_ids:
+        if o.startswith("Admin 用户-"):
+            variants.append(f"Admin-{o[len('Admin 用户-') :]}")
+        m = re.match(r"^Admin\s+(.+)$", o)
+        if m:
+            rest = m.group(1).strip()
+            if rest and not rest.startswith("/"):
+                variants.append(rest)
+                mapped = _online_admin_registry_name(rest)
+                if mapped:
+                    variants.append(mapped)
+    return variants
+
+
+def _capability_matches_admin_service_url(cap: Capability, service_url: str) -> bool:
+    tail = _admin_path_api_tail(service_url)
+    if not tail:
+        return False
+    if tail in (cap.description or ""):
+        return True
+    flag = _camel_tail_to_cli_flag(tail)
+    return bool(flag and flag in (cap.command or ""))
+
+
+def _module_ids_for_entry(entry: dict[str, Any]) -> list[str]:
+    env = str(entry.get("environment") or "test").strip().lower()
+    src = str(entry.get("source") or "moa").strip().lower()
+    ids: list[str] = []
+    if src == "risk":
+        ids.append("risk")
+    elif src == "admin":
+        if env == "online":
+            ids.extend(["online", "admin"])
+        else:
+            ids.append("admin")
+    elif src == "moa":
+        if env == "online":
+            ids.append("online")
+        ids.extend(["moa", "moa-generative"])
+    else:
+        fallback = {"moa": "moa", "admin": "admin", "risk": "risk"}.get(src, "")
+        if fallback:
+            ids.append(fallback)
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for mid in ids:
+        if mid and mid not in seen:
+            seen.add(mid)
+            ordered.append(mid)
+    return ordered
 
 
 def _module_id_for_entry(entry: dict[str, Any]) -> str:
-    env = str(entry.get("environment") or "test").strip().lower()
-    if env == "online":
-        return "online"
-    src = str(entry.get("source") or "moa").strip().lower()
-    return {"moa": "moa", "admin": "admin", "risk": "risk"}.get(src, "")
+    mids = _module_ids_for_entry(entry)
+    return mids[0] if mids else ""
+
+
+_RISK_REGISTRY_ID_ALIASES = {
+    "risk_menu_operate": "generic_menu_operate",
+}
+
+
+def _risk_registry_id_from_entry(entry: dict[str, Any]) -> str:
+    svc = str(entry.get("serviceUrl") or "").strip()
+    if svc.startswith("/risk/"):
+        tail = svc[len("/risk/") :].strip("/")
+        if tail:
+            return _RISK_REGISTRY_ID_ALIASES.get(tail, tail)
+    iface = str(entry.get("moaInterface") or "").strip()
+    m = re.match(r"^风控\s*[·.]\s*(\S+)\s*$", iface)
+    if m:
+        return m.group(1).strip()
+    op_key = str(entry.get("operationKey") or "")
+    m = re.match(r"^risk#/risk/([^#]+)#", op_key)
+    if m:
+        return m.group(1).strip()
+    return ""
+
+
+def _find_risk_capability(caps: list[Capability], entry: dict[str, Any]) -> Capability | None:
+    rid = _risk_registry_id_from_entry(entry)
+    if not rid:
+        return None
+    matches = [c for c in caps if c.id == rid]
+    if len(matches) == 1:
+        return matches[0]
+    if matches:
+        return _disambiguate(matches, entry)
+    cli_flag = f"--{rid.replace('_', '-')}"
+    flag_matches = [c for c in caps if cli_flag in (c.command or "")]
+    if len(flag_matches) == 1:
+        return flag_matches[0]
+    if flag_matches:
+        return _disambiguate(flag_matches, entry)
+    return None
 
 
 def _capabilities_for_module(module_id: str) -> list[Capability]:
     _, caps = load_catalog()
     return [c for c in caps.values() if c.module_id == module_id]
+
+
+def _capabilities_for_entry(entry: dict[str, Any]) -> list[Capability]:
+    _, caps = load_catalog()
+    module_ids = _module_ids_for_entry(entry)
+    if not module_ids:
+        return []
+    return [c for c in caps.values() if c.module_id in module_ids]
+
+
+def _capability_matches_moa_service_url(cap: Capability, service_url: str, method: str) -> bool:
+    svc = (service_url or "").strip()
+    meth = (method or "").strip()
+    if not svc:
+        return False
+    command = cap.command or ""
+    if svc in command and (not meth or meth in command or f"--method {meth}" in command):
+        return True
+    tail = svc.rstrip("/").rsplit("/", 1)[-1]
+    desc = cap.description or ""
+    if tail and meth:
+        return tail in desc and meth in desc
+    return False
+
+
+def _find_generative_capability(caps: list[Capability], entry: dict[str, Any]) -> Capability | None:
+    svc = str(entry.get("serviceUrl") or "").strip()
+    meth = str(entry.get("method") or "").strip()
+    op = _strip_batch_operation_prefix(str(entry.get("operation") or ""))
+    if op.startswith("生成式MOA-"):
+        matches = [c for c in caps if c.name == op]
+        if len(matches) == 1:
+            return matches[0]
+        if matches:
+            return _disambiguate(matches, entry)
+    gen_caps = [c for c in caps if c.module_id == "moa-generative"]
+    if not gen_caps:
+        return None
+    if svc and meth:
+        url_matches = [c for c in gen_caps if _capability_matches_moa_service_url(c, svc, meth)]
+        if len(url_matches) == 1:
+            return url_matches[0]
+        if url_matches:
+            return _disambiguate(url_matches, entry)
+    if meth:
+        method_matches = [c for c in gen_caps if _capability_matches_method(c, meth)]
+        if method_matches:
+            picked = _disambiguate(method_matches, entry)
+            if picked:
+                return picked
+    if svc and meth and svc.startswith("/service/"):
+        fallback = [c for c in gen_caps if c.id == "moa_generative_workflow_run"]
+        if fallback:
+            return fallback[0]
+    return None
 
 
 def _capability_matches_method(cap: Capability, method: str) -> bool:
@@ -83,8 +337,14 @@ def _capability_matches_method(cap: Capability, method: str) -> bool:
 
 
 def _disambiguate(matches: list[Capability], entry: dict[str, Any]) -> Capability | None:
+    if not matches:
+        return None
+    if len(matches) == 1:
+        return matches[0]
     svc = str(entry.get("serviceUrl") or "")
     meth = str(entry.get("method") or "")
+    if meth.upper() in ("POST", "GET", "PUT", "DELETE", "PATCH"):
+        meth = ""
     if svc or meth:
         narrowed = [
             c
@@ -93,51 +353,110 @@ def _disambiguate(matches: list[Capability], entry: dict[str, Any]) -> Capabilit
         ]
         if len(narrowed) == 1:
             return narrowed[0]
-    return matches[0] if len(matches) == 1 else None
+        if narrowed:
+            matches = narrowed
+    if svc:
+        desc_hits = [
+            c
+            for c in matches
+            if svc in (c.description or "") or svc.rsplit("/", 1)[-1] in (c.description or "")
+        ]
+        if len(desc_hits) == 1:
+            return desc_hits[0]
+        if desc_hits:
+            matches = desc_hits
+    if meth:
+        method_hits = [c for c in matches if _capability_matches_method(c, meth)]
+        if len(method_hits) == 1:
+            return method_hits[0]
+        if method_hits:
+            matches = method_hits
+    non_deprecated = [c for c in matches if "弃用" not in (c.description or "")]
+    if len(non_deprecated) == 1:
+        return non_deprecated[0]
+    if non_deprecated:
+        matches = non_deprecated
+    return matches[0]
 
 
 def find_capability_for_entry(entry: dict[str, Any]) -> Capability | None:
-    mod_id = _module_id_for_entry(entry)
-    if not mod_id:
+    module_ids = _module_ids_for_entry(entry)
+    if not module_ids:
         return None
-    caps = _capabilities_for_module(mod_id)
+    caps = _capabilities_for_entry(entry)
     if not caps:
         return None
 
-    op = str(entry.get("operation") or "").strip()
-    meth = str(entry.get("method") or "").strip()
+    meth, svc = _normalize_entry_http_fields(entry)
+    norm_entry = dict(entry)
+    if meth:
+        norm_entry["method"] = meth
+    if svc:
+        norm_entry["serviceUrl"] = svc
+    op = _strip_batch_operation_prefix(str(entry.get("operation") or ""))
+    src = str(entry.get("source") or "moa").strip().lower()
     names: list[str] = []
     if op:
         names.append(op)
-    if meth:
+        for variant in _operation_name_variants(op, module_ids=module_ids):
+            if variant not in names:
+                names.append(variant)
+    if meth and meth != "POST":
         reg_name = _method_operation_name(meth)
         if reg_name and reg_name not in names:
             names.append(reg_name)
-    if mod_id == "admin":
-        path_name = _admin_operation_name_for_path(str(entry.get("serviceUrl") or ""))
-        if path_name and path_name not in names:
-            names.insert(0, path_name)
+    if src == "admin":
+        path_name = _admin_operation_name_for_path(str(norm_entry.get("serviceUrl") or ""))
+        if path_name:
+            _prepend_unique_name(names, path_name)
+        if "online" in module_ids and path_name:
+            online_name = _online_admin_registry_name(path_name)
+            if online_name:
+                _prepend_unique_name(names, online_name)
 
-    for name in names:
-        matches = [c for c in caps if c.name == name]
-        if matches:
-            picked = _disambiguate(matches, entry)
-            if picked:
-                return picked
+    for mid in module_ids:
+        mod_caps = [c for c in caps if c.module_id == mid]
+        for name in names:
+            matches = [c for c in mod_caps if c.name == name]
+            if matches:
+                picked = _disambiguate(matches, norm_entry)
+                if picked:
+                    return picked
 
-    svc = str(entry.get("serviceUrl") or "").strip()
-    if svc and meth:
+    if not svc:
+        svc = str(norm_entry.get("serviceUrl") or "").strip()
+    if svc and meth and meth != "POST":
         url_matches = [c for c in caps if svc in c.command and meth in c.command]
         if len(url_matches) == 1:
             return url_matches[0]
         if url_matches:
-            return _disambiguate(url_matches, entry)
-    if meth:
+            return _disambiguate(url_matches, norm_entry)
+    if meth and meth != "POST":
         method_matches = [c for c in caps if _capability_matches_method(c, meth)]
         if method_matches:
-            picked = _disambiguate(method_matches, entry)
+            picked = _disambiguate(method_matches, norm_entry)
             if picked:
                 return picked
+    if svc and src == "admin":
+        admin_url_matches = [c for c in caps if _capability_matches_admin_service_url(c, svc)]
+        if len(admin_url_matches) == 1:
+            return admin_url_matches[0]
+        if admin_url_matches:
+            picked = _disambiguate(admin_url_matches, norm_entry)
+            if picked:
+                return picked
+    if src == "moa":
+        picked = _find_generative_capability(caps, norm_entry)
+        if picked:
+            return picked
+    if src == "risk":
+        picked = _find_risk_capability(caps, norm_entry)
+        if picked:
+            return picked
+    if src == "moa":
+        picked = _find_inferred_moa_capability(caps, norm_entry)
+        if picked:
+            return picked
     return None
 
 
@@ -206,6 +525,11 @@ def _capability_param_maps(
         alias_to_canon[label] = canon
         if label != canon:
             canon_to_label.setdefault(canon, label)
+
+    command = cap.command or ""
+    if "<assetId>" in command and "device-asset" in command:
+        alias_to_canon.setdefault("device", "assetId")
+        alias_to_canon.setdefault("deviceName", "assetId")
 
     return alias_to_canon, canon_to_label
 

@@ -437,6 +437,16 @@ def _execute_web_run_body(
             event["process"] = process
         _emit(store, run_id, event)
 
+    terminal_seq = 0
+
+    def on_terminal(chunk: str) -> None:
+        nonlocal terminal_seq
+        piece = str(chunk or "")
+        if not piece:
+            return
+        terminal_seq += 1
+        _emit(store, run_id, {"type": "terminal", "chunk": piece, "seq": terminal_seq})
+
     def _append_assistant(text: str) -> list[dict[str, object]]:
         output_files = consume_pending_outputs(session_id)
         file_payload = [item.to_message_dict() for item in output_files]
@@ -523,6 +533,7 @@ def _execute_web_run_body(
             enabled_external_agents=meta.enabled_external_agents or None,
             reply_mode=meta.reply_mode or None,
             on_phase=on_phase,
+            on_terminal=on_terminal,
         )
         elapsed = time.monotonic() - started_at
         body = final or last_markdown

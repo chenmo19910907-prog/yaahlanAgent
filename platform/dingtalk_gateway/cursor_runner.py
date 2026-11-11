@@ -163,6 +163,7 @@ def _consume_run_stream(
     user_key: str | None = None,
     on_render: Callable[[str], None] | None,
     on_phase: Callable[[str], None] | None = None,
+    on_terminal: Callable[[str], None] | None = None,
     show_thinking: bool = True,
     card_compact: bool = False,
     web_stream: bool = False,
@@ -259,6 +260,11 @@ def _consume_run_stream(
                     from run_child_processes import register_shell_tool_update
 
                     register_shell_tool_update(user_key, update)
+                if on_terminal:
+                    from shell_output_stream import consume_shell_stream_chunks
+
+                    for piece in consume_shell_stream_chunks(update):
+                        on_terminal(piece)
                 utype = getattr(update, "type", "") if not isinstance(update, Mapping) else str(update.get("type") or "")
                 if utype in ("tool-call-started", "tool-call-completed"):
                     force_render = True
@@ -266,6 +272,11 @@ def _consume_run_stream(
             sdk_message = event.sdk_message
             if sdk_message is not None:
                 msg_type = getattr(sdk_message, "type", "")
+                if on_terminal:
+                    from shell_output_stream import consume_shell_sdk_message_chunks
+
+                    for piece in consume_shell_sdk_message_chunks(sdk_message):
+                        on_terminal(piece)
                 if msg_type == "assistant":
                     chunk = assistant_text_chunk(sdk_message)
                     if renderer.update_answer(chunk):
@@ -278,6 +289,11 @@ def _consume_run_stream(
 
             step = event.step
             if step is not None:
+                if on_terminal:
+                    from shell_output_stream import consume_shell_step_chunks
+
+                    for piece in consume_shell_step_chunks(step):
+                        on_terminal(piece)
                 thinking = thinking_text_from_step(step)
                 if thinking and renderer.update_thinking(thinking):
                     changed = True
@@ -407,6 +423,7 @@ def run_agent_prompt(
     stream: bool = False,
     on_render: Callable[[str], None] | None = None,
     on_phase: Callable[[str], None] | None = None,
+    on_terminal: Callable[[str], None] | None = None,
     show_thinking: bool = True,
     card_compact: bool = False,
     web_stream: bool = False,
@@ -458,6 +475,7 @@ def run_agent_prompt(
                 stream=stream,
                 on_render=on_render,
                 on_phase=on_phase,
+                on_terminal=on_terminal,
                 show_thinking=show_thinking,
                 card_compact=card_compact,
                 web_stream=web_stream,
@@ -495,6 +513,7 @@ def _run_agent_prompt_impl(
     stream: bool,
     on_render: Callable[[str], None] | None,
     on_phase: Callable[[str], None] | None,
+    on_terminal: Callable[[str], None] | None,
     show_thinking: bool,
     card_compact: bool,
     web_stream: bool,
@@ -606,6 +625,7 @@ def _run_agent_prompt_impl(
                     user_key=user_key,
                     on_render=on_render,
                     on_phase=on_phase,
+                    on_terminal=on_terminal,
                     show_thinking=show_thinking,
                     card_compact=card_compact,
                     web_stream=web_stream,
@@ -703,6 +723,7 @@ def run_agent_prompt_streaming(
     include_process_in_final: bool = False,
     web_stream: bool = False,
     on_phase: Callable[[str], None] | None = None,
+    on_terminal: Callable[[str], None] | None = None,
     reply_mode: str | None = None,
 ) -> str:
     """流式运行 Agent：thinking/text/tool 事件经 on_render 推送，返回最终文本。"""
@@ -728,6 +749,7 @@ def run_agent_prompt_streaming(
         stream=True,
         on_render=on_render,
         on_phase=on_phase,
+        on_terminal=on_terminal,
         show_thinking=show_thinking,
         card_compact=not web_stream,
         web_stream=web_stream,

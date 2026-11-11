@@ -23,6 +23,26 @@
       "command": "python3 Admin/admin_execute.py --query-user-feed-list --query-user-id <userId>"
     },
     {
+      "id": "query_user_relation_summary",
+      "name": "用户-查询关系数量",
+      "category": "Admin用户（yaahlan-admin）",
+      "description": "开发者后台 queryUserRelationSummary：好友/关注/粉丝/拉黑数量",
+      "prompts": [
+        "查询用户 <userId> 好友粉丝关注拉黑数量"
+      ],
+      "command": "python3 Admin/admin_execute.py --query-user-relation-summary --query-user-id <userId>"
+    },
+    {
+      "id": "query_user_relation_list",
+      "name": "用户-查询关系列表",
+      "category": "Admin用户（yaahlan-admin）",
+      "description": "queryUserRelationList（index+pageSize）；relationType：friend/attention/fans/block；--user-relation-fetch-all 自动翻页",
+      "prompts": [
+        "查询用户 <userId> 全部<relationType|好友|关注|粉丝|拉黑>列表"
+      ],
+      "command": "python3 Admin/admin_execute.py \\\n  --query-user-relation-list \\\n  --query-user-id <userId> \\\n  --user-relation-type <relationType> \\\n  --user-relation-fetch-all\n"
+    },
+    {
       "id": "query_user_history_device_list",
       "name": "用户-查询历史登录设备",
       "category": "Admin用户（yaahlan-admin）",

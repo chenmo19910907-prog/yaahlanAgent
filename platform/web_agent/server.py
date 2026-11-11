@@ -159,6 +159,8 @@ from web_admin_audit_log import append_admin_audit_entry, list_admin_audit_entri
 from web_service_restart import execute_service_restart, format_service_restart_summary  # noqa: E402
 from web_moa_call_log import list_moa_call_entries, list_moa_call_log_operators  # noqa: E402
 from web_call_log_replay import execute_replay, replay_spec  # noqa: E402
+from web_code_testcase_review import code_testcase_review_scenarios_payload  # noqa: E402
+from web_code_multilang_review import code_multilang_review_scenarios_payload  # noqa: E402
 from web_guild_pangu import guild_pangu_current_payload, guild_pangu_scenarios_payload  # noqa: E402
 from web_admin_manage import (  # noqa: E402
     enrich_selectable_users_with_admin_roles,
@@ -873,6 +875,8 @@ class ActiveRun:
     last_phase_line: str = ""
     last_markdown: str = ""
     last_process: dict[str, Any] | None = None
+    last_terminal_text: str = ""
+    last_terminal_seq: int = 0
     reply_mode: str = "standard"
     tailers_attached: bool = False
     _notify_lock: threading.Lock = field(default_factory=threading.Lock)
@@ -903,6 +907,16 @@ class ActiveRun:
                 from web_run_store import resolve_process_phase_line
 
                 self.last_phase_line = resolve_process_phase_line(self.last_process)
+        elif etype == "terminal":
+            from web_run_store import _apply_terminal_event_to_snapshot, RunSnapshot
+
+            buf = RunSnapshot(
+                last_terminal_text=self.last_terminal_text,
+                last_terminal_seq=self.last_terminal_seq,
+            )
+            _apply_terminal_event_to_snapshot(buf, event)
+            self.last_terminal_text = buf.last_terminal_text
+            self.last_terminal_seq = buf.last_terminal_seq
         self.events.put(event)
 
     def snapshot_events(self) -> list[dict[str, Any]]:
@@ -928,6 +942,15 @@ class ActiveRun:
             if isinstance(self.last_process, dict):
                 evt["process"] = self.last_process
             events.append(evt)
+        if self.last_terminal_text and not self.done.is_set():
+            events.append(
+                {
+                    "type": "terminal",
+                    "text": self.last_terminal_text,
+                    "seq": self.last_terminal_seq,
+                    "sync": True,
+                }
+            )
         if self.done.is_set():
             if self.error:
                 events.append(
@@ -967,6 +990,8 @@ class ActiveRun:
             "phase_line": self.last_phase_line,
             "markdown": self.last_markdown,
             "process": self.last_process,
+            "terminal_text": self.last_terminal_text,
+            "terminal_seq": self.last_terminal_seq,
         }
 
 
@@ -1140,6 +1165,8 @@ def _apply_snapshot_to_run(run: ActiveRun, snap) -> None:
     run.last_markdown = snap.last_markdown
     if isinstance(getattr(snap, "last_process", None), dict):
         run.last_process = snap.last_process
+    run.last_terminal_text = str(getattr(snap, "last_terminal_text", "") or "")
+    run.last_terminal_seq = int(getattr(snap, "last_terminal_seq", 0) or 0)
     run.final_text = snap.final_text
     run.deferred_web_agent_restart = bool(getattr(snap, "deferred_web_agent_restart", False))
     run.error = snap.error
@@ -2908,6 +2935,20 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 return _json_response(self, guild_pangu_scenarios_payload())
             except (RuntimeError, ValueError) as exc:
                 logger.exception("guild pangu scenarios")
+                return _json_response(self, {"error": str(exc)}, 500)
+
+        if path == "/api/devcode/code-testcase-review/scenarios":
+            try:
+                return _json_response(self, code_testcase_review_scenarios_payload())
+            except (RuntimeError, ValueError) as exc:
+                logger.exception("code testcase review scenarios")
+                return _json_response(self, {"error": str(exc)}, 500)
+
+        if path == "/api/devcode/code-multilang-review/scenarios":
+            try:
+                return _json_response(self, code_multilang_review_scenarios_payload())
+            except (RuntimeError, ValueError) as exc:
+                logger.exception("multilang doc writeback scenarios")
                 return _json_response(self, {"error": str(exc)}, 500)
 
         if path == "/api/guild/pangu/current":

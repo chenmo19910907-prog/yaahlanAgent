@@ -1,0 +1,43 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-vas-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "return \"use --expr\";",
+      "json": "",
+      "type": "string",
+      "value": "return \"use --expr\";"
+    }
+  ],
+  "settings": {
+    "time": "60000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_meta": {
+    "note": "stage 专用 MOA addLotteryNum 不可用；须 backdoor LuckyRichManCPDao.updateLotteryNum。intimateId 格式小uid-大uid；num 为设置后的剩余次数（非增量）。"
+  },
+  "_registry": {
+    "id": "lucky_rich_man_cp_update_lottery",
+    "name": "幸运大富翁-双人设置掷骰次数",
+    "category": "幸运大富翁·双人（voga-mts-vas-backdoor · LuckyRichManCPDao）",
+    "description": "测试环境为双人赛道关系对双方设置掷骰剩余次数（LuckyRichManCPDao.updateLotteryNum；/service/voga-mts-vas-backdoor execute）。params：活动 version、intimateId（小-大）、各 userId、目标剩余次数。100231028-100259235 实测 ec=0 返回 1000,1000。",
+    "prompts": [
+      "给关系对 <intimateId> 用户 <userIdA> <userIdB> 各设置 <num> 次双人幸运大富翁掷骰机会",
+      "双人幸运大富翁造数 掷骰次数 <num>"
+    ],
+    "cli": "--expr 'dao=context.getBean(\"luckyRichManCPDao\");svc=context.getBean(\"luckyRichManCPService\");v=svc.ver();id=\"<intimateId>\";return dao.updateLotteryNum(v,id,\"<userIdA>\",<num>L)+\",\"+dao.updateLotteryNum(v,id,\"<userIdB>\",<num>L);'"
+  }
+}

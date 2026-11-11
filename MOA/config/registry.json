@@ -99,7 +99,7 @@
       "category": "房间经验值（voga-mts-room-backdoor）",
       "description": "给房间增加在线机器人（addOnlineUsersToRoom；params=roomId, 总数, 麦上数）",
       "prompts": [
-        "房间<roomId|roomId>加<total|数量>个机器人，<onMic|数量>个上麦"
+        "房间<roomId|roomId>加<total|机器人总数>个机器人，<onMic|上麦数>个上麦"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-增加机器人.json \\\n  --room-bot-room-id <roomId> \\\n  --room-bot-total <total> \\\n  --room-bot-on-mic <onMic>\n"
     },
@@ -1833,6 +1833,17 @@
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/星光大使-模拟拉新.json \\\n  --new-user-invite-inviter-user-id \\\n  <inviterUserId> \\\n  --new-user-invite-invitee-user-id \\\n  <inviteeUserId>\n"
     },
     {
+      "id": "activity_customer_send_prop",
+      "name": "活动-客服下发道具",
+      "category": "活动（vas/activity）",
+      "description": "测试环境客服侧下发道具/游戏券（customerSendProp；/service/vas/activity）。params：userId、propId、数量。",
+      "prompts": [
+        "给用户 <userId> 下发道具 propId <propId> 数量 <count>",
+        "客服下发游戏券 <userId> <propId> <count>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/活动-客服下发道具.json\n"
+    },
+    {
       "id": "room_im_broadcast_send",
       "name": "房间-下发全服广播",
       "category": "用户后门（voga-mts-user-backdoor）",
@@ -1887,6 +1898,28 @@
         "游戏等级加经验 <userId> <amount>"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/游戏等级-增加经验.json \\\n  --game-exp-user-id \\\n  <userId> \\\n  --game-exp-amount \\\n  <amount>\n"
+    },
+    {
+      "id": "lucky_rich_man_cp_home",
+      "name": "幸运大富翁-双人活动主页",
+      "category": "幸运大富翁·双人（vas/activity2026 · luckyRichManCPHome）",
+      "description": "查询双人幸运之旅 CP/挚友赛道活动主页（luckyRichManCPHome；/service/vas/activity2026）。body 须主态 userId、选中伙伴 id、area/lang。返回 myLotteryNum、relationList、选中队伍等。Tunnel 100259235+100231028 挚友队实测 ec=200。",
+      "prompts": [
+        "查询 <userId> 与伙伴 <partnerUserId> 双人幸运大富翁主页",
+        "luckyRichManCPHome userId=<userId> partner=<partnerUserId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/幸运大富翁-双人活动主页.json\n"
+    },
+    {
+      "id": "lucky_rich_man_cp_update_lottery",
+      "name": "幸运大富翁-双人设置掷骰次数",
+      "category": "幸运大富翁·双人（voga-mts-vas-backdoor · LuckyRichManCPDao）",
+      "description": "测试环境为双人赛道关系对双方设置掷骰剩余次数（LuckyRichManCPDao.updateLotteryNum；/service/voga-mts-vas-backdoor execute）。params：活动 version、intimateId（小-大）、各 userId、目标剩余次数。100231028-100259235 实测 ec=0 返回 1000,1000。",
+      "prompts": [
+        "给关系对 <intimateId> 用户 <userIdA> <userIdB> 各设置 <num> 次双人幸运大富翁掷骰机会",
+        "双人幸运大富翁造数 掷骰次数 <num>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/幸运大富翁-双人增加掷骰次数.json \\\n  --expr \\\n  'dao=context.getBean(\"luckyRichManCPDao\");svc=context.getBean(\"luckyRichManCPService\");v=svc.ver();id=\"<intimateId>\";return \\\n  dao.updateLotteryNum(v,id,\"<userIdA>\",<num>L)+\",\"+dao.updateLotteryNum(v,id,\"<userIdB>\",<num>L);'\n"
     }
   ]
 }

@@ -1213,8 +1213,20 @@ def extract_moa_call_details_from_assistant(
         method = "addVipValue"
         if not service_url:
             service_url = "/service/voga-mts-user-vip-stage"
+    if not method and re.search(
+        r"已发放\s*.{0,32}钻|provideDiamond|订单号.*当前余额",
+        text,
+        re.I,
+    ):
+        method = "provideDiamond"
+        if not service_url:
+            service_url = "/service/voga-base-service-middle-pay-stage"
 
     param_parts = _extract_assistant_table_params(text)
+    if method == "provideDiamond":
+        m_uid = re.search(r"用户\s+(1\d{8})", text)
+        if m_uid and not any(p.startswith("userId=") for p in param_parts):
+            param_parts.insert(0, f"userId={m_uid.group(1)}")
     if not param_parts:
         for flag, name in (
             (r"--diamond-user-id\s+(\S+)", "userId"),

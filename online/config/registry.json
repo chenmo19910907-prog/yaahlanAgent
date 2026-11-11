@@ -13,6 +13,26 @@
       "command": "python3 online/online_execute.py admin --query-user-id <userId>"
     },
     {
+      "id": "admin_query_user_relation_summary",
+      "name": "Admin-查询关系数量",
+      "category": "Admin（yaahlan-admin）",
+      "description": "线上开发者后台 queryUserRelationSummary：好友/关注/粉丝/拉黑四类数量",
+      "prompts": [
+        "线上环境查询用户 <userId> 好友粉丝关注拉黑数量"
+      ],
+      "command": "python3 online/online_execute.py admin --query-user-relation-summary --query-user-id <userId>"
+    },
+    {
+      "id": "admin_query_user_relation_list",
+      "name": "Admin-查询关系列表",
+      "category": "Admin（yaahlan-admin）",
+      "description": "线上 queryUserRelationList 分页（index+pageSize）；relationType：friend/attention/fans/block；加 --user-relation-fetch-all 拉全量",
+      "prompts": [
+        "线上环境查询用户 <userId> 全部<relationType|好友|关注|粉丝|拉黑>列表"
+      ],
+      "command": "python3 online/online_execute.py admin \\\n  --query-user-relation-list \\\n  --query-user-id <userId> \\\n  --user-relation-type <relationType> \\\n  --user-relation-fetch-all\n"
+    },
+    {
       "id": "admin_query_user_by_phone_mdp",
       "name": "Admin-按手机号查 userId（MDP Nova）",
       "category": "Admin（yaahlan-admin）",

@@ -1,0 +1,12 @@
+{
+  "workbook_url": "https://alidocs.dingtalk.com/i/nodes/kDnRL6jAJM3jk7A7hDK5ve77WyMoPYe1",
+  "sheet_name": "版本",
+  "columns": {
+    "project_name": "H",
+    "repo_name": "O",
+    "feature_desc": "P"
+  },
+  "header_row": 1,
+  "data_start_row": 2,
+  "max_row": 200
+}

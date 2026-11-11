@@ -1,0 +1,21 @@
+{
+  "repos_dir": "voga-repos",
+  "default_clone_base": "https://git.wemomo.com/voga",
+  "fe_clone_transport": "ssh",
+  "fe_clone_base_ssh": "git@git.wemomo.com:yaahlan-fe",
+  "fe_clone_base_https": "https://git.wemomo.com/yaahlan-fe",
+  "clone_urls": {
+    "yaahlan-fe": "https://git.wemomo.com/yaahlan-fe"
+  },
+  "repos": [
+    "voga-common",
+    "voga-mts-components",
+    "voga-mts-feed",
+    "voga-mts-room",
+    "voga-mts-user",
+    "voga_android",
+    "voga_ios",
+    "voga_ios_modules",
+    "yaahlan-fe"
+  ]
+}

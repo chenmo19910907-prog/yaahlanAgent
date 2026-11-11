@@ -1,0 +1,364 @@
+{
+  "kbPath": "testcase-kb/fe_feature_repos.json",
+  "workbookUrl": "https://alidocs.dingtalk.com/i/nodes/kDnRL6jAJM3jk7A7hDK5ve77WyMoPYe1",
+  "sheetName": "版本",
+  "configPath": "DevCode/config/fe_projects_sheet.json",
+  "syncedAt": "2026-11-10 11:01:37 UTC",
+  "count": 44,
+  "reposDir": "voga-repos",
+  "cloneTransport": "ssh",
+  "entries": [
+    {
+      "row": "2",
+      "project_name": "任务",
+      "repo_name": "yaahlan-tasks",
+      "feature_desc": "签到弹窗\r\n惊喜礼物弹窗\r\n7天签到弹窗\r\n任务\r\n禁言\r\nyaha签到页\r\n\r\nBD中心首页\r\nBD规则页\r\n申请成为BD页",
+      "local_path": "voga-repos/yaahlan-tasks",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-tasks.git"
+    },
+    {
+      "row": "3",
+      "project_name": "yaahlan-mk-pages",
+      "repo_name": "yaahlan-mk-pages",
+      "feature_desc": "brokerList 币商充值列表\r\nbrokerAccount  币商转账\r\nbrokerDetails 币商钻石明细\r\nsettings 币商设置\r\nroomHourReward房间小时奖励弹窗（线上无入口）\r\nvipPrivilege vip （不再维护）\r\nvipRecord 会员成长值明细（不再维护）\r\nindex 全服榜单首页\r\nliveRankFull  全服榜单（已弃用）\r\nliveRank 房间榜单 =>  已在yaahlan-new-rank项目中重构，可不再维护\r\ngiftRank 个人榜单（支持者，守护者）=>  已在yaahlan-new-rank项目中重构，可不再维护\r\nmyLevel 老版财富、魅力等级（根据客户端版本区分使用新旧版本，此页面可不再维护）\r\nyaahlan-mk-pages 项目升级",
+      "local_path": "voga-repos/yaahlan-mk-pages",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-mk-pages.git"
+    },
+    {
+      "row": "4",
+      "project_name": "充值转盘",
+      "repo_name": "yaahlan-prize-wheel",
+      "feature_desc": "新用户转盘抽奖充值\r\n抽奖结果\r\n\r\nps: gift‎Pack页面可删除",
+      "local_path": "voga-repos/yaahlan-prize-wheel",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-prize-wheel.git"
+    },
+    {
+      "row": "5",
+      "project_name": "yaahlan-mk-pages-v2",
+      "repo_name": "yaahlan-mk-pages-v2",
+      "feature_desc": "铭牌\r\n客服或运营查看用户信息页\r\n20麦位体验卡购买\r\n热度礼物\r\n有奖征集首页、上传||上传记录、外部网站共享检查（入口已删除，不再维护）\r\n老房间等级、房间等级规则 (根据客户端版本区分使用新旧版本，不再维护，已无访问量)",
+      "local_path": "voga-repos/yaahlan-mk-pages-v2",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-mk-pages-v2.git"
+    },
+    {
+      "row": "6",
+      "project_name": "公会",
+      "repo_name": "yaahlan-union",
+      "feature_desc": "",
+      "local_path": "voga-repos/yaahlan-union",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-union.git"
+    },
+    {
+      "row": "7",
+      "project_name": "App分享-站外",
+      "repo_name": "invite-friends-outside",
+      "feature_desc": "moment分享站外详情（分享出去的域名是www.yaahlan.fun）",
+      "local_path": "voga-repos/invite-friends-outside",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/invite-friends-outside.git"
+    },
+    {
+      "row": "8",
+      "project_name": "主播星光计划",
+      "repo_name": "anchor-starlight-plan",
+      "feature_desc": "yaahlan star主页\r\nyaahlan star规则页",
+      "local_path": "voga-repos/anchor-starlight-plan",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/anchor-starlight-plan.git"
+    },
+    {
+      "row": "9",
+      "project_name": "家族",
+      "repo_name": "yaahlan-new-family",
+      "feature_desc": "申请和操作记录\r\n创建家族\r\n家族说明和家族特权\r\n家族主页\r\n家族广场\r\n邀请成员\r\n家族成员和群聊管理\r\n家族设置\r\n任务和家族基金",
+      "local_path": "voga-repos/yaahlan-new-family",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-new-family.git"
+    },
+    {
+      "row": "10",
+      "project_name": "checkout 支付",
+      "repo_name": "yaahlan-checkout-pay",
+      "feature_desc": "ps：页面是白色的，不需要加loading",
+      "local_path": "voga-repos/yaahlan-checkout-pay",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-checkout-pay.git"
+    },
+    {
+      "row": "11",
+      "project_name": "VIP",
+      "repo_name": "yaahlan-h5-vip",
+      "feature_desc": "vip主页面\r\nvip成长值\r\n靓号",
+      "local_path": "voga-repos/yaahlan-h5-vip",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-h5-vip.git"
+    },
+    {
+      "row": "12",
+      "project_name": "装扮商城",
+      "repo_name": "yaahlan-outfit",
+      "feature_desc": "装扮商城\r\n我的装扮\r\n背包礼物商城\r\n背包礼物购买记录\r\n自定义头像框",
+      "local_path": "voga-repos/yaahlan-outfit",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-outfit.git"
+    },
+    {
+      "row": "13",
+      "project_name": "yaahlan-fe-page",
+      "repo_name": "yaahlan-fe-page",
+      "feature_desc": "账号注销申请\r\n房间热度挑战\r\n真心话大冒险\r\n房间右下角入口",
+      "local_path": "voga-repos/yaahlan-fe-page",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-fe-page.git"
+    },
+    {
+      "row": "14",
+      "project_name": "主播任务",
+      "repo_name": "yaahlan-anchor-task",
+      "feature_desc": "主播今日任务\r\n历史记录\r\n任务说明\r\n关闭任务\r\n关闭系统自动任务邀请",
+      "local_path": "voga-repos/yaahlan-anchor-task",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-anchor-task.git"
+    },
+    {
+      "row": "15",
+      "project_name": "账单明细",
+      "repo_name": "bill-details",
+      "feature_desc": "充值记录\r\n账单明细",
+      "local_path": "voga-repos/bill-details",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/bill-details.git"
+    },
+    {
+      "row": "16",
+      "project_name": "PK贡献榜",
+      "repo_name": "pk-contribution",
+      "feature_desc": "PK贡献榜（个人）",
+      "local_path": "voga-repos/pk-contribution",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/pk-contribution.git"
+    },
+    {
+      "row": "17",
+      "project_name": "账号安全",
+      "repo_name": "account-security",
+      "feature_desc": "举报中心首页\r\n举报中心规则页\r\n举报中心已处理页\r\n举报中心已搜索页\r\n举报提交页",
+      "local_path": "voga-repos/account-security",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/account-security.git"
+    },
+    {
+      "row": "18",
+      "project_name": "礼物代言人",
+      "repo_name": "yaahlan-gift-spokeperson",
+      "feature_desc": "礼物代言人--已下线\r\n礼物定制大赛---OK",
+      "local_path": "voga-repos/yaahlan-gift-spokeperson",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-gift-spokeperson.git"
+    },
+    {
+      "row": "19",
+      "project_name": "玩家战令千夜之梦",
+      "repo_name": "yaahlan-battle-pass",
+      "feature_desc": "",
+      "local_path": "voga-repos/yaahlan-battle-pass",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-battle-pass.git"
+    },
+    {
+      "row": "20",
+      "project_name": "兑换奖励",
+      "repo_name": "yaahlan-transfers",
+      "feature_desc": "",
+      "local_path": "voga-repos/yaahlan-transfers",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-transfers.git"
+    },
+    {
+      "row": "21",
+      "project_name": "房主学院",
+      "repo_name": "yaahlan-college",
+      "feature_desc": "房主学院\r\nwhatwapp建联",
+      "local_path": "voga-repos/yaahlan-college",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-college.git"
+    },
+    {
+      "row": "22",
+      "project_name": "新房间等级",
+      "repo_name": "yaahlan-room-level",
+      "feature_desc": "1.房间等级\r\n2.房间红包\r\n3.神秘人特权页\r\n4.神秘人规则页",
+      "local_path": "voga-repos/yaahlan-room-level",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-room-level.git"
+    },
+    {
+      "row": "23",
+      "project_name": "CP 和 关系",
+      "repo_name": "yaahlan-cp-friends",
+      "feature_desc": "组成关系页面\r\ncp摩天轮\r\ncp摩天轮规则页\r\n关系主页（cp和好友）\r\n关系排行（cp和好友）\r\n爱意宝箱\r\n关系规则页",
+      "local_path": "voga-repos/yaahlan-cp-friends",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-cp-friends.git"
+    },
+    {
+      "row": "24",
+      "project_name": "幸运祈愿",
+      "repo_name": "yaahlan-lucky-wishes",
+      "feature_desc": "",
+      "local_path": "voga-repos/yaahlan-lucky-wishes",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-lucky-wishes.git"
+    },
+    {
+      "row": "25",
+      "project_name": "转账",
+      "repo_name": "yaahlan-h5-transfer",
+      "feature_desc": "公会提现->代收提现->好友聊天->转账页面",
+      "local_path": "voga-repos/yaahlan-h5-transfer",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-h5-transfer.git"
+    },
+    {
+      "row": "26",
+      "project_name": "我的等级",
+      "repo_name": "yaahlan-level-privilege-v2",
+      "feature_desc": "我的等级（财富、魅力、游戏）\r\n贵族等级\r\n贵族落地页\r\n贵族说明\r\n特权中心\r\n等级规则",
+      "local_path": "voga-repos/yaahlan-level-privilege-v2",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-level-privilege-v2.git"
+    },
+    {
+      "row": "27",
+      "project_name": "pk记录",
+      "repo_name": "yaahlan-h5-pk-record",
+      "feature_desc": "PK记录--OK\r\nPK提款机--OK\r\n跨房PK宣传页--已下线\r\nPK提款机规则--OK\r\n跨房间PK礼物--OK\r\npk贡献榜（跨房）--OK\r\n跨房间PK规则--OK\r\n跨房间PK宣传页--已下线\r\n团队PK规则--OK",
+      "local_path": "voga-repos/yaahlan-h5-pk-record",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-h5-pk-record.git"
+    },
+    {
+      "row": "28",
+      "project_name": "成就展馆",
+      "repo_name": "yaahlan-pavilion",
+      "feature_desc": "",
+      "local_path": "voga-repos/yaahlan-pavilion",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-pavilion.git"
+    },
+    {
+      "row": "29",
+      "project_name": "活动主题房",
+      "repo_name": "yaahlan-event-room",
+      "feature_desc": "主页\r\n记录页\r\n详情页\r\n规则页",
+      "local_path": "voga-repos/yaahlan-event-room",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-event-room.git"
+    },
+    {
+      "row": "30",
+      "project_name": "全服榜单新首页",
+      "repo_name": "yaahlan-new-rank",
+      "feature_desc": "全服榜单\r\n个人榜\r\n房间榜\r\n足球之王活动（已下线）",
+      "local_path": "voga-repos/yaahlan-new-rank",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-new-rank.git"
+    },
+    {
+      "row": "31",
+      "project_name": "游戏相关的H5页面",
+      "repo_name": "yaahlan-game-pages",
+      "feature_desc": "1.游戏客服信息查询 --OK\r\n2.游戏券包--OK\r\n3.券包明细--OK\r\n改名卡--已过期下线",
+      "local_path": "voga-repos/yaahlan-game-pages",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-game-pages.git"
+    },
+    {
+      "row": "32",
+      "project_name": "规则页项目",
+      "repo_name": "yaahlan-rule-pages",
+      "feature_desc": "",
+      "local_path": "voga-repos/yaahlan-rule-pages",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-rule-pages.git"
+    },
+    {
+      "row": "33",
+      "project_name": "星光大使改版（邀请好友）\r\n yaahlan-star-ambassador-v2",
+      "repo_name": "yaahlan-star-ambassador-v2",
+      "feature_desc": "主页\r\n规则页",
+      "local_path": "voga-repos/yaahlan-star-ambassador-v2",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-star-ambassador-v2.git"
+    },
+    {
+      "row": "34",
+      "project_name": "yaahlan-h5",
+      "repo_name": "yaahlan-h5",
+      "feature_desc": "购买协议\r\n。。。",
+      "local_path": "voga-repos/yaahlan-h5",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-h5.git"
+    },
+    {
+      "row": "35",
+      "project_name": "邀请好友",
+      "repo_name": "invite-friends\r\n入口已被1005767替代，暂未使用",
+      "feature_desc": "room.html 从2.2.6版本后没有使用(v2.2.6版本用例（房间分享支持deeplink、新用户承接优化）)",
+      "local_path": "voga-repos/invite-friends\r\n入口已被1005767替代，暂未使用",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/invite-friends\r\n入口已被1005767替代，暂未使用.git"
+    },
+    {
+      "row": "36",
+      "project_name": "概率游戏宝箱奖励",
+      "repo_name": "yaahlan-h5-treasure-rewards",
+      "feature_desc": "",
+      "local_path": "voga-repos/yaahlan-h5-treasure-rewards",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-h5-treasure-rewards.git"
+    },
+    {
+      "row": "37",
+      "project_name": "yaahlan-vue3-pages",
+      "repo_name": "yaahlan-vue3-pages",
+      "feature_desc": "",
+      "local_path": "voga-repos/yaahlan-vue3-pages",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-vue3-pages.git"
+    },
+    {
+      "row": "38",
+      "project_name": "pc和h5官网",
+      "repo_name": "yaahlan-official-website",
+      "feature_desc": "https://www.yaahlan.fun/ 官网地址",
+      "local_path": "voga-repos/yaahlan-official-website",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-official-website.git"
+    },
+    {
+      "row": "39",
+      "project_name": "开发者运营管理后台",
+      "repo_name": "yaahlan-operation-manager-platform",
+      "feature_desc": "",
+      "local_path": "voga-repos/yaahlan-operation-manager-platform",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-operation-manager-platform.git"
+    },
+    {
+      "row": "40",
+      "project_name": "直播间里H5",
+      "repo_name": "yaahlan-live-mk",
+      "feature_desc": "第3个页面已迁移到yaahlan-mk-pages-v2里面（不再维护）\r\n\r\n第三个OK，其他两个找不到了\r\n\r\n不要往项目添加新功能了！！！！",
+      "local_path": "voga-repos/yaahlan-live-mk",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-live-mk.git"
+    },
+    {
+      "row": "41",
+      "project_name": "pc端客服系统",
+      "repo_name": "yaahlan-customer-service-system",
+      "feature_desc": "pc端客服系统",
+      "local_path": "voga-repos/yaahlan-customer-service-system",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-customer-service-system.git"
+    },
+    {
+      "row": "42",
+      "project_name": "CP",
+      "repo_name": "yaahlan-cp",
+      "feature_desc": "老版本（改用新版cp和关系）已弃用",
+      "local_path": "voga-repos/yaahlan-cp",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-cp.git"
+    },
+    {
+      "row": "43",
+      "project_name": "游戏等级",
+      "repo_name": "yaahlan-game-level",
+      "feature_desc": "需求迭代已合并到yaahlan-level-privilege-v2项目中（序号34）该项目已弃用",
+      "local_path": "voga-repos/yaahlan-game-level",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-game-level.git"
+    },
+    {
+      "row": "44",
+      "project_name": "家族旧版",
+      "repo_name": "yaahlan-family",
+      "feature_desc": "旧版（不再维护）",
+      "local_path": "voga-repos/yaahlan-family",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-family.git"
+    },
+    {
+      "row": "45",
+      "project_name": "老全服榜单",
+      "repo_name": "yaahlan-ranking-list",
+      "feature_desc": "家族榜规则页\r\nCP榜规则页\r\n【废弃】",
+      "local_path": "voga-repos/yaahlan-ranking-list",
+      "clone_url": "git@git.wemomo.com:yaahlan-fe/yaahlan-ranking-list.git"
+    }
+  ]
+}

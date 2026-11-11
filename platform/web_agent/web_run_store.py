@@ -22,10 +22,12 @@ RUN_STATUS_DONE = "done"
 RUN_STATUS_ERROR = "error"
 RUN_STATUS_INTERRUPTED = "interrupted"
 
+TERMINAL_LOG_MAX_CHARS = 200_000
+
 _SNAPSHOT_FLUSH_INTERVAL_S = 1.5
 _EVENT_FLUSH_INTERVAL_S = 0.4
 _IMMEDIATE_SNAPSHOT_EVENTS = frozenset({"ack", "done", "error"})
-_IMMEDIATE_EVENT_TYPES = frozenset({"ack", "done", "error", "status"})
+_IMMEDIATE_EVENT_TYPES = frozenset({"ack", "done", "error", "status", "terminal"})
 _ACTIVE_RUNS_CACHE_TTL_S = 2.0
 _WORKER_ALIVE_CACHE_TTL_S = 1.0
 _COMPACT_JSON = (",", ":")
@@ -56,6 +58,7 @@ def compute_active_run_etag(session_id: str, payload: dict[str, Any]) -> str:
         str(payload.get("phase_line") or ""),
         str(len(markdown)),
         proc_fp,
+        str(payload.get("terminal_seq") or 0),
     ]
     digest = hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()[:16]
     return f'W/"{digest}"'
@@ -174,6 +177,8 @@ class RunSnapshot:
     last_phase_line: str = ""
     last_markdown: str = ""
     last_process: dict[str, Any] | None = None
+    last_terminal_text: str = ""
+    last_terminal_seq: int = 0
     final_text: str = ""
     deferred_web_agent_restart: bool = False
     error: str | None = None
@@ -186,6 +191,8 @@ class RunSnapshot:
             "last_external_line": self.last_external_line,
             "last_phase_line": self.last_phase_line,
             "last_markdown": self.last_markdown,
+            "last_terminal_text": self.last_terminal_text,
+            "last_terminal_seq": self.last_terminal_seq,
             "final_text": self.final_text,
             "deferred_web_agent_restart": self.deferred_web_agent_restart,
             "error": self.error,
@@ -206,10 +213,30 @@ class RunSnapshot:
             last_phase_line=str(data.get("last_phase_line") or ""),
             last_markdown=str(data.get("last_markdown") or ""),
             last_process=proc if isinstance(proc, dict) else None,
+            last_terminal_text=str(data.get("last_terminal_text") or ""),
+            last_terminal_seq=int(data.get("last_terminal_seq") or 0),
             final_text=str(data.get("final_text") or ""),
             deferred_web_agent_restart=bool(data.get("deferred_web_agent_restart")),
             error=str(err) if err else None,
         )
+
+
+def _apply_terminal_event_to_snapshot(snap: RunSnapshot, event: dict[str, Any]) -> None:
+    if event.get("sync"):
+        snap.last_terminal_text = str(event.get("text") or "")
+        snap.last_terminal_seq = int(event.get("seq") or snap.last_terminal_seq)
+        if len(snap.last_terminal_text) > TERMINAL_LOG_MAX_CHARS:
+            snap.last_terminal_text = snap.last_terminal_text[-TERMINAL_LOG_MAX_CHARS:]
+        return
+    chunk = str(event.get("chunk") or "")
+    if not chunk:
+        return
+    seq = int(event.get("seq") or 0)
+    if seq > snap.last_terminal_seq:
+        snap.last_terminal_seq = seq
+    snap.last_terminal_text = f"{snap.last_terminal_text}{chunk}"
+    if len(snap.last_terminal_text) > TERMINAL_LOG_MAX_CHARS:
+        snap.last_terminal_text = snap.last_terminal_text[-TERMINAL_LOG_MAX_CHARS:]
 
 
 def _apply_event_to_snapshot(snap: RunSnapshot, event: dict[str, Any]) -> None:
@@ -234,6 +261,8 @@ def _apply_event_to_snapshot(snap: RunSnapshot, event: dict[str, Any]) -> None:
             prev = snap.last_process if isinstance(snap.last_process, dict) else None
             snap.last_process = _merge_process_payload(prev, proc)
             snap.last_phase_line = resolve_process_phase_line(snap.last_process)
+    elif etype == "terminal":
+        _apply_terminal_event_to_snapshot(snap, event)
     elif etype == "done":
         snap.final_text = str(event.get("text") or "")
         if event.get("deferred_web_agent_restart"):
