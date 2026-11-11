@@ -1,16 +1,38 @@
 {
-  "generated_at": "2026-11-06 17:19:29 北京时间",
-  "total_items": 391,
-  "module_count": 29,
+  "generated_at": "2026-11-11 18:40:47 北京时间",
+  "total_items": 406,
+  "module_count": 31,
   "modules": [
     {
       "id": "用户",
       "label": "用户",
-      "item_count": 33,
+      "item_count": 35,
       "categories": [
         {
           "name": "Admin用户（yaahlan-admin）",
           "items": [
+            {
+              "name": "用户-查询关系列表",
+              "prompts": [
+                "查询用户 <userId> 全部<relationType|好友|关注|粉丝|拉黑>列表"
+              ],
+              "source": "yaahlan后台",
+              "source_id": "admin",
+              "source_tag_id": "admin",
+              "env": "test",
+              "registry_id": "query_user_relation_list"
+            },
+            {
+              "name": "用户-查询关系数量",
+              "prompts": [
+                "查询用户 <userId> 好友粉丝关注拉黑数量"
+              ],
+              "source": "yaahlan后台",
+              "source_id": "admin",
+              "source_tag_id": "admin",
+              "env": "test",
+              "registry_id": "query_user_relation_summary"
+            },
             {
               "name": "用户-查询动态列表",
               "prompts": [
@@ -983,7 +1005,7 @@
             {
               "name": "房间-增加机器人",
               "prompts": [
-                "房间<roomId|roomId>加<total|数量>个机器人，<onMic|数量>个上麦"
+                "房间<roomId|roomId>加<total|机器人总数>个机器人，<onMic|上麦数>个上麦"
               ],
               "source": "MOA",
               "source_id": "moa",
@@ -2240,7 +2262,7 @@
     {
       "id": "活动",
       "label": "活动",
-      "item_count": 25,
+      "item_count": 26,
       "categories": [
         {
           "name": "3周年活动",
@@ -2548,6 +2570,23 @@
               "source_tag_id": "moa",
               "env": "test",
               "registry_id": "new_user_invite_test_add_user"
+            }
+          ]
+        },
+        {
+          "name": "活动（vas/activity）",
+          "items": [
+            {
+              "name": "活动-客服下发道具",
+              "prompts": [
+                "给用户 <userId> 下发道具 propId <propId> 数量 <count>",
+                "客服下发游戏券 <userId> <propId> <count>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "activity_customer_send_prop"
             }
           ]
         },
@@ -4246,7 +4285,7 @@
     {
       "id": "线上环境",
       "label": "线上环境",
-      "item_count": 22,
+      "item_count": 24,
       "categories": [
         {
           "name": "Admin（yaahlan-admin）",
@@ -4262,6 +4301,28 @@
               "source_tag_id": "online",
               "env": "online",
               "registry_id": "admin_query_user_by_phone_mdp"
+            },
+            {
+              "name": "Admin-查询关系列表",
+              "prompts": [
+                "线上环境查询用户 <userId> 全部<relationType|好友|关注|粉丝|拉黑>列表"
+              ],
+              "source": "线上环境能力",
+              "source_id": "online",
+              "source_tag_id": "online",
+              "env": "online",
+              "registry_id": "admin_query_user_relation_list"
+            },
+            {
+              "name": "Admin-查询关系数量",
+              "prompts": [
+                "线上环境查询用户 <userId> 好友粉丝关注拉黑数量"
+              ],
+              "source": "线上环境能力",
+              "source_id": "online",
+              "source_tag_id": "online",
+              "env": "online",
+              "registry_id": "admin_query_user_relation_summary"
             },
             {
               "name": "Admin-查询用户详情",
@@ -4690,6 +4751,143 @@
               "source_tag_id": "dingtalk",
               "env": "tool",
               "registry_id": "folder_show_registered"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "开发代码",
+      "label": "开发代码",
+      "item_count": 8,
+      "categories": [
+        {
+          "name": "开发代码",
+          "items": [
+            {
+              "name": "MOA方法源码验收锚定",
+              "prompts": [
+                "MOA源码锚定 queryOwnPropList",
+                "MOA方法源码验收锚定 <method>",
+                "从本地代码查MOA验收字段 <method>",
+                "装扮验收源码锚点 queryOwnPropList"
+              ],
+              "source": "开发代码",
+              "source_id": "devcode",
+              "source_tag_id": "devcode",
+              "env": "tool",
+              "registry_id": "moa_source_anchor"
+            },
+            {
+              "name": "写回翻译文档",
+              "prompts": [
+                "写回翻译文档 <钉钉翻译表URL>",
+                "写回翻译文档校验结果 <URL>",
+                "多语言文档写回 I J K L <URL>",
+                "L列写H5相关 <URL>",
+                "对照翻译文档与代码写回 <URL>",
+                "家族怪兽翻译文档写回 L列"
+              ],
+              "source": "开发代码",
+              "source_id": "devcode",
+              "source_tag_id": "devcode",
+              "env": "tool",
+              "registry_id": "multilang_doc_writeback"
+            },
+            {
+              "name": "同步前端功能仓知识库",
+              "prompts": [
+                "同步前端功能仓知识库",
+                "前端功能和仓库的关系记录到知识库",
+                "更新前端H5仓知识库"
+              ],
+              "source": "开发代码",
+              "source_id": "devcode",
+              "source_tag_id": "devcode",
+              "env": "tool",
+              "registry_id": "sync_fe_feature_repos_kb"
+            },
+            {
+              "name": "拉取开发代码",
+              "prompts": [
+                "拉取开发代码",
+                "更新开发代码",
+                "更新服务端代码",
+                "voga-repos 拉最新",
+                "拉取ios开发代码",
+                "拉取android开发代码",
+                "拉取H5开发代码",
+                "拉取前端开发代码",
+                "更新yaahlan-fe"
+              ],
+              "source": "开发代码",
+              "source_id": "devcode",
+              "source_tag_id": "devcode",
+              "env": "tool",
+              "registry_id": "pull_voga_repos"
+            },
+            {
+              "name": "拉取指定前端仓",
+              "prompts": [
+                "拉取前端仓 <yaahlan-h5-vip>",
+                "拉取H5仓库 <仓库名>"
+              ],
+              "source": "开发代码",
+              "source_id": "devcode",
+              "source_tag_id": "devcode",
+              "env": "tool",
+              "registry_id": "pull_fe_repo_one"
+            },
+            {
+              "name": "拉取指定开发仓",
+              "prompts": [
+                "拉取开发代码 <仓库名|voga-mts-room>",
+                "拉取指定仓 <仓库名|voga_ios|voga_android|yaahlan-fe>",
+                "拉取H5代码 <yaahlan-fe>",
+                "拉取前端代码 <yaahlan-fe>"
+              ],
+              "source": "开发代码",
+              "source_id": "devcode",
+              "source_tag_id": "devcode",
+              "env": "tool",
+              "registry_id": "pull_voga_repo_one"
+            },
+            {
+              "name": "按功能拉取前端仓",
+              "prompts": [
+                "拉取VIP页面前端代码",
+                "拉取前端代码 <功能名|VIP>",
+                "按功能拉取H5代码 <功能名>",
+                "前端项目汇总表拉代码 <功能名>"
+              ],
+              "source": "开发代码",
+              "source_id": "devcode",
+              "source_tag_id": "devcode",
+              "env": "tool",
+              "registry_id": "pull_fe_by_feature"
+            }
+          ]
+        },
+        {
+          "name": "开发代码（代码开发中）",
+          "items": [
+            {
+              "name": "代码×用例交叉审查",
+              "prompts": [
+                "用例覆盖率分析 <钉钉用例表URL|表格链接>",
+                "代码用例交叉验证 <钉钉用例表URL>",
+                "读取用例结合代码标注fail <表格链接>",
+                "拉取代码和用例做比对",
+                "ios用例代码交叉审查 <表格链接>",
+                "安卓用例代码交叉审查 <表格链接>",
+                "H5用例代码交叉审查 <表格链接>",
+                "前端用例代码交叉审查 <表格链接>"
+              ],
+              "source": "开发代码",
+              "source_id": "devcode",
+              "source_tag_id": "devcode",
+              "env": "tool",
+              "registry_id": "code_testcase_review"
             }
           ]
         }
@@ -5163,6 +5361,47 @@
       ]
     },
     {
+      "id": "幸运大富翁双人",
+      "label": "幸运大富翁·双人",
+      "item_count": 2,
+      "categories": [
+        {
+          "name": "幸运大富翁·双人（vas/activity2026 · luckyRichManCPHome）",
+          "items": [
+            {
+              "name": "幸运大富翁-双人活动主页",
+              "prompts": [
+                "查询 <userId> 与伙伴 <partnerUserId> 双人幸运大富翁主页",
+                "luckyRichManCPHome userId=<userId> partner=<partnerUserId>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "lucky_rich_man_cp_home"
+            }
+          ]
+        },
+        {
+          "name": "幸运大富翁·双人（voga-mts-vas-backdoor · LuckyRichManCPDao）",
+          "items": [
+            {
+              "name": "幸运大富翁-双人设置掷骰次数",
+              "prompts": [
+                "给关系对 <intimateId> 用户 <userIdA> <userIdB> 各设置 <num> 次双人幸运大富翁掷骰机会",
+                "双人幸运大富翁造数 掷骰次数 <num>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "lucky_rich_man_cp_update_lottery"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "cms",
       "label": "CMS",
       "item_count": 1,
@@ -5250,6 +5489,11 @@
     {
       "id": "workflow",
       "label": "工作流",
+      "env": "tool"
+    },
+    {
+      "id": "devcode",
+      "label": "开发代码",
       "env": "tool"
     },
     {
