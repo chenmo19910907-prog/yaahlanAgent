@@ -1,0 +1,62 @@
+{
+  "id": "PERF-04-02-五底栏往返",
+  "type": "performance",
+  "priority": "P0",
+  "caseNo": "2",
+  "name": "五底栏 Game→Room→Message→Moment→Me 往返",
+  "module": "底栏",
+  "automationStatus": "auto",
+  "source": {
+    "perfCaseDoc": "temporary_testcase/主版本性能case_2026Q4.md",
+    "section": "§4 序号 2",
+    "runnerRef": "scripts/perf_main_version_run_all.sh#case2"
+  },
+  "account": {
+    "precondition": "Me 帧运营弹窗已关（P2）；否则 Me 步可能失败"
+  },
+  "rhythm": {
+    "fastSwipeIntervalSec": 0.5,
+    "repeatCount": 5,
+    "envOverride": "PERF_TAB_ROUNDS"
+  },
+  "macroFlags": ["--no-capture", "--no-popup-gate", "--force-script"],
+  "operationFlowDoc": [
+    "循环 5 轮：切换游戏底栏 → 房间 → 消息 → 动态 → 我的底栏，段间 0.5s",
+    "正式性能测每轮结束后另加 10s 间隔（全链路跑批在 case 间 wait_perf 8～10）"
+  ],
+  "experienceExpect": "切帧流畅；无白屏卡死",
+  "observeMetrics": ["FPS", "Jank", "GPU"],
+  "perfdog": {
+    "enabled": false,
+    "sessionLabel": "§4-02-五底栏",
+    "notes": "高掉帧常出现在 Room↔Gift 或 Me 弹窗未关"
+  },
+  "testPoints": [
+    {
+      "id": "TP-PATH",
+      "name": "一轮五底栏 macro 全部成功",
+      "verifyMethod": "path_ok"
+    },
+    {
+      "id": "TP-PERF",
+      "name": "切帧流畅度",
+      "verifyMethod": "perfdog_manual"
+    }
+  ],
+  "operations": [
+    {
+      "step": 1,
+      "description": "五底栏一轮",
+      "action": "macro_sequence",
+      "macros": [
+        "切换游戏底栏",
+        "切换房间底栏",
+        "切换消息底栏",
+        "切换动态底栏",
+        "切换我的底栏"
+      ],
+      "intervalSec": 0.5,
+      "macroFlags": ["--no-capture", "--no-popup-gate", "--force-script"]
+    }
+  ]
+}

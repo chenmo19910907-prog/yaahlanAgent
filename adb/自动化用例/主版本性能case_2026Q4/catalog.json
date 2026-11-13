@@ -1,0 +1,39 @@
+{
+  "requirementId": "req-主版本性能case-2026Q4",
+  "folder": "主版本性能case_2026Q4",
+  "name": "主版本性能 case（2026 Q4）",
+  "module": "性能",
+  "type": "performance",
+  "perfdogService": false,
+  "sourceDoc": "temporary_testcase/主版本性能case_2026Q4.md",
+  "registry": "registry.json",
+  "runnerScript": "scripts/perf_main_version_run_all.sh",
+  "pilotScript": "scripts/perf_main_version_pilot.sh",
+  "suites": [
+    {
+      "id": "req-主版本性能case-2026Q4-path-smoke",
+      "name": "§4 路径冒烟（设计阶段 · path_ok）",
+      "priority": "P0",
+      "requirementId": "req-主版本性能case-2026Q4",
+      "cases": [
+        "PERF-04-01-冷启动",
+        "PERF-04-02-五底栏往返"
+      ],
+      "note": "无 PerfDog 时仅验证 macro 路径；全量 §4 见 registry + run_all"
+    },
+    {
+      "id": "req-主版本性能case-2026Q4-manual",
+      "name": "§4 仅手工（PerfDog 待购）",
+      "priority": "P0",
+      "requirementId": "req-主版本性能case-2026Q4",
+      "registryOnly": true,
+      "caseIds": [
+        "PERF-04-11-送Rose",
+        "PERF-04-12-LoveCarriage",
+        "PERF-04-12a-礼物Tab切换",
+        "PERF-04-30-浸泡A",
+        "PERF-04-31-浸泡B"
+      ]
+    }
+  ]
+}

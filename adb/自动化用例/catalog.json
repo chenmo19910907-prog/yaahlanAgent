@@ -24,6 +24,17 @@
       "manualCaseUrl": "https://alidocs.dingtalk.com/i/nodes/N7dx2rn0JbZQqA9ACQgRM0D3JMGjLRb3",
       "manualCaseSheet": "动态支持发布视频",
       "registry": "registry.json"
+    },
+    {
+      "id": "req-主版本性能case-2026Q4",
+      "folder": "主版本性能case_2026Q4",
+      "name": "主版本性能 case（2026 Q4）",
+      "module": "性能",
+      "type": "performance",
+      "sourceDoc": "temporary_testcase/主版本性能case_2026Q4.md",
+      "registry": "registry.json",
+      "perfdogService": false,
+      "runnerScript": "scripts/perf_main_version_run_all.sh"
     }
   ],
   "suites": [

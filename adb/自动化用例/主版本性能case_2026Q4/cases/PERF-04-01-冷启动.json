@@ -1,0 +1,56 @@
+{
+  "id": "PERF-04-01-冷启动",
+  "type": "performance",
+  "priority": "P0",
+  "caseNo": "1",
+  "name": "冷启动进入 Game/Home 帧",
+  "module": "启动",
+  "automationStatus": "auto",
+  "source": {
+    "perfCaseDoc": "temporary_testcase/主版本性能case_2026Q4.md",
+    "dingtalkWorkbook": "性能测试 / 主版本性能case",
+    "section": "§4 序号 1",
+    "runnerRef": "scripts/perf_main_version_run_all.sh#case1"
+  },
+  "account": {
+    "precondition": "temporary_testcase/主版本性能case_2026Q4.md §3 P1～P7；force-stop 后执行"
+  },
+  "rhythm": { "waitAfterSec": 10 },
+  "macroFlags": ["--no-capture", "--no-popup-gate", "--force-script"],
+  "operationFlowDoc": [
+    "1. 确认前置 P7（force-stop）",
+    "2. macro 冷启动回首页",
+    "3. 等待 10s（与旧表间隔一致，便于日后 PerfDog 书签）"
+  ],
+  "experienceExpect": "首屏可交互 ≤ 产品基线；无 ANR",
+  "observeMetrics": ["FPS", "Jank", "CPU", "Memory"],
+  "perfdog": {
+    "enabled": false,
+    "sessionLabel": "§4-01-冷启动",
+    "bookmarkAtStart": "case1 开始 log 时刻",
+    "notes": "购买服务后：本段单独录屏或全链路录屏内书签"
+  },
+  "testPoints": [
+    {
+      "id": "TP-PATH",
+      "name": "冷启动 macro 成功",
+      "verifyMethod": "path_ok"
+    },
+    {
+      "id": "TP-PERF",
+      "name": "启动体验",
+      "verifyMethod": "perfdog_manual",
+      "manualExpect": "见 experienceExpect"
+    }
+  ],
+  "operations": [
+    {
+      "step": 1,
+      "description": "冷启动回首页",
+      "action": "macro",
+      "macro": "冷启动回首页",
+      "macroFlags": ["--no-capture", "--no-popup-gate", "--force-script"],
+      "sleepAfterSec": 10
+    }
+  ]
+}

@@ -1,0 +1,412 @@
+{
+  "requirementId": "req-主版本性能case-2026Q4",
+  "version": "2026Q4",
+  "sourceDoc": "temporary_testcase/主版本性能case_2026Q4.md",
+  "dingtalkRef": "性能测试 · Sheet「主版本性能case」",
+  "perfdogService": false,
+  "observeMetricsDefault": ["FPS", "Jank", "CPU", "Memory", "GPU", "Temperature"],
+  "meta": {
+    "summary": {
+      "total": 35,
+      "auto": 24,
+      "partial": 5,
+      "manual": 11,
+      "caseJsonWritten": 3,
+      "note": "manual 保持 registry 台账；有 macro 后改为 partial/auto 并补 cases/*.json"
+    }
+  },
+  "cases": [
+    {
+      "caseNo": "1",
+      "id": "PERF-04-01-冷启动",
+      "module": "启动",
+      "title": "冷启动进入 Game/Home 帧",
+      "automationStatus": "auto",
+      "runnerRef": "case1",
+      "macroRefs": ["冷启动回首页"],
+      "rhythm": { "waitAfterSec": 10 },
+      "experienceExpect": "首屏可交互 ≤ 产品基线；无 ANR",
+      "caseJson": "cases/PERF-04-01-冷启动.json"
+    },
+    {
+      "caseNo": "2",
+      "id": "PERF-04-02-五底栏往返",
+      "module": "底栏",
+      "title": "Game→Room→Message→Moment→Me 往返",
+      "automationStatus": "auto",
+      "runnerRef": "case2",
+      "macroRefs": ["切换游戏底栏", "切换房间底栏", "切换消息底栏", "切换动态底栏", "切换我的底栏"],
+      "rhythm": { "fastSwipeIntervalSec": 0.5, "repeatCount": 5, "paramEnv": "PERF_TAB_ROUNDS" },
+      "experienceExpect": "切帧流畅；无白屏卡死",
+      "caseJson": "cases/PERF-04-02-五底栏往返.json"
+    },
+    {
+      "caseNo": "3",
+      "id": "PERF-04-03-Game列表快滑",
+      "module": "Game",
+      "title": "Online 用户列表上下滑",
+      "automationStatus": "auto",
+      "runnerRef": "case3",
+      "macroRefs": ["切换游戏底栏"],
+      "rhythm": { "fastSwipeIntervalSec": 0.5, "swipeCount": 20, "paramEnv": "PERF_SWIPE_N" },
+      "experienceExpect": "列表跟手；头像/昵称不闪白"
+    },
+    {
+      "caseNo": "4",
+      "id": "PERF-04-04-榜单往返",
+      "module": "Room 列表",
+      "title": "财富榜等往返",
+      "automationStatus": "auto",
+      "runnerRef": "case4",
+      "macroRefs": ["切换房间底栏", "房间帧进入财富榜"],
+      "rhythm": { "waitAfterSec": 10, "repeatCount": 10 },
+      "experienceExpect": "榜单 WebView/Native 切换无长时间假死"
+    },
+    {
+      "caseNo": "5",
+      "id": "PERF-04-05-Hot列表与Tab",
+      "module": "Room 列表",
+      "title": "Hot 列表滑动 + 房间 Tab 切换",
+      "automationStatus": "partial",
+      "runnerRef": "case5",
+      "macroRefs": ["切换房间底栏", "房间帧切换Hot分类"],
+      "rhythm": { "fastSwipeIntervalSec": 0.5, "swipeCount": 30 },
+      "experienceExpect": "封面/在线人数加载稳定",
+      "gap": "房间 Follow/Nearby Tab 切换仍须读图或补片段"
+    },
+    {
+      "caseNo": "6",
+      "id": "PERF-04-06-反复进性能房",
+      "module": "Room 列表",
+      "title": "反复进入我的房间（性能房）",
+      "automationStatus": "auto",
+      "runnerRef": "case6",
+      "macroRefs": ["切换房间底栏", "搜索进房", "退出房间"],
+      "rhythm": { "waitAfterSec": 10, "repeatCount": 10, "paramEnv": "PERF_ROOM_ID" },
+      "experienceExpect": "进退房动画连贯；无黑屏"
+    },
+    {
+      "caseNo": "7a",
+      "id": "PERF-04-07a-PKATM",
+      "module": "Room 功能",
+      "title": "Room function · PK ATM",
+      "automationStatus": "auto",
+      "runnerRef": "case7a",
+      "macroRefs": ["房内RoomFunction打开PKATM"],
+      "rhythm": { "waitAfterSec": 10 },
+      "experienceExpect": "H5/半屏打开 ≤3s；关闭后回房正常"
+    },
+    {
+      "caseNo": "7b",
+      "id": "PERF-04-07b-PopularityChallenge",
+      "module": "Room 功能",
+      "title": "Room function · Popularity Challenge",
+      "automationStatus": "auto",
+      "runnerRef": "case7b",
+      "macroRefs": ["房内RoomFunction打开PopularityChallenge"],
+      "rhythm": { "waitAfterSec": 10 },
+      "experienceExpect": "H5/半屏打开 ≤3s；关闭后回房正常"
+    },
+    {
+      "caseNo": "7c",
+      "id": "PERF-04-07c-TruthOrDare",
+      "module": "Room 功能",
+      "title": "Room function · Truth or Dare",
+      "automationStatus": "auto",
+      "runnerRef": "case7c",
+      "macroRefs": ["房内RoomFunction打开TruthOrDare"],
+      "rhythm": { "waitAfterSec": 10 },
+      "experienceExpect": "H5/半屏打开 ≤3s；关闭后回房正常"
+    },
+    {
+      "caseNo": "8",
+      "id": "PERF-04-08-RoomPK入口",
+      "module": "Room PK",
+      "title": "打开 Room PK / 跨房 PK 配置页后退出",
+      "automationStatus": "auto",
+      "runnerRef": "case8",
+      "macroRefs": ["房内RoomFunction打开PK"],
+      "rhythm": { "waitAfterSec": 10 },
+      "experienceExpect": "配置页不闪退；返回后音频正常"
+    },
+    {
+      "caseNo": "9",
+      "id": "PERF-04-09-房内BGM",
+      "module": "房内音频",
+      "title": "播放背景音乐 30s",
+      "automationStatus": "partial",
+      "runnerRef": "case9",
+      "macroRefs": ["房内RoomFunction打开BGM"],
+      "rhythm": { "holdSec": 30 },
+      "experienceExpect": "CPU/内存无异常爬升；无爆音",
+      "gap": "音质与爆音仍须主观听感"
+    },
+    {
+      "caseNo": "10",
+      "id": "PERF-04-10-打开礼物面板",
+      "module": "礼物",
+      "title": "点资料卡打开礼物面板",
+      "automationStatus": "auto",
+      "runnerRef": "case10",
+      "macroRefs": ["打开礼物面板"],
+      "rhythm": { "waitAfterSec": 10 },
+      "experienceExpect": "面板弹出流畅"
+    },
+    {
+      "caseNo": "11",
+      "id": "PERF-04-11-送Rose",
+      "module": "礼物",
+      "title": "手动送 Rose ×10",
+      "automationStatus": "manual",
+      "runnerRef": null,
+      "rhythm": { "repeatCount": 10 },
+      "experienceExpect": "公屏/动效不掉帧严重",
+      "loadAssist": "辅测 gift_execute 仅加压，不替代本步",
+      "caseJson": "cases/PERF-04-11-送Rose.manual.json"
+    },
+    {
+      "caseNo": "12",
+      "id": "PERF-04-12-LoveCarriage",
+      "module": "礼物",
+      "title": "手动送 Love Carriage ×10",
+      "automationStatus": "manual",
+      "runnerRef": null,
+      "rhythm": { "repeatCount": 10, "waitPerGiftEnd": true },
+      "experienceExpect": "动效播完可点下一步；无卡死"
+    },
+    {
+      "caseNo": "12a",
+      "id": "PERF-04-12a-礼物Tab切换",
+      "module": "礼物",
+      "title": "礼物面板各 Tab 切换",
+      "automationStatus": "manual",
+      "runnerRef": null,
+      "experienceExpect": "Tab 切换无长时间 Loading"
+    },
+    {
+      "caseNo": "13",
+      "id": "PERF-04-13-退出性能房",
+      "module": "进退房",
+      "title": "退出性能房",
+      "automationStatus": "auto",
+      "runnerRef": "case13",
+      "macroRefs": ["退出房间"],
+      "rhythm": { "waitAfterSec": 10 },
+      "experienceExpect": "退出到 Room 列表正常"
+    },
+    {
+      "caseNo": "14",
+      "id": "PERF-04-14-Hot首卡进房",
+      "module": "进退房",
+      "title": "进入 Hot 列表第一间",
+      "automationStatus": "auto",
+      "runnerRef": "case14",
+      "macroRefs": ["切换房间底栏", "房间帧切换Hot分类", "房间帧点击首个房间卡片"],
+      "experienceExpect": "进房耗时可接受"
+    },
+    {
+      "caseNo": "15",
+      "id": "PERF-04-15-成员列表滑",
+      "module": "房内列表",
+      "title": "房间成员列表滑动",
+      "automationStatus": "auto",
+      "runnerRef": "case15",
+      "macroRefs": ["房内打开在线用户列表", "房内在线列表切换MembersTab"],
+      "rhythm": { "fastSwipeIntervalSec": 0.5, "swipeCount": 20 },
+      "experienceExpect": "滚动流畅"
+    },
+    {
+      "caseNo": "16",
+      "id": "PERF-04-16-在线列表滑",
+      "module": "房内列表",
+      "title": "在线用户列表滑动",
+      "automationStatus": "auto",
+      "runnerRef": "case16",
+      "macroRefs": ["房内打开在线用户列表"],
+      "rhythm": { "fastSwipeIntervalSec": 0.5, "swipeCount": 20 },
+      "experienceExpect": "滚动流畅"
+    },
+    {
+      "caseNo": "17",
+      "id": "PERF-04-17-退出当前房",
+      "module": "进退房",
+      "title": "退出当前房间",
+      "automationStatus": "auto",
+      "runnerRef": "case17",
+      "macroRefs": ["退出房间"],
+      "experienceExpect": "正常"
+    },
+    {
+      "caseNo": "18",
+      "id": "PERF-04-18-家族群聊多媒体",
+      "module": "消息",
+      "title": "家族群聊文字/表情/相册/视频/相机",
+      "automationStatus": "partial",
+      "runnerRef": "case18",
+      "macroRefs": ["切换消息底栏", "消息帧进入家族群聊"],
+      "experienceExpect": "发送/预览不 ANR；缩略图渐进加载",
+      "gap": "9 图/视频/相机不宜 macro 连跑"
+    },
+    {
+      "caseNo": "19",
+      "id": "PERF-04-19-动态列表快滑",
+      "module": "动态",
+      "title": "Moment Recommend/Following 滑动",
+      "automationStatus": "partial",
+      "runnerRef": "case19",
+      "macroRefs": ["切换动态底栏"],
+      "rhythm": { "fastSwipeIntervalSec": 0.5, "swipeCount": 40 },
+      "experienceExpect": "视频卡片滑动不严重掉帧",
+      "gap": "Tab 切换与视频区 swipe 待片段细化"
+    },
+    {
+      "caseNo": "20",
+      "id": "PERF-04-20-MyRelationship",
+      "module": "Me · 关系",
+      "title": "Friends/CP 关系入口反复进入",
+      "automationStatus": "auto",
+      "runnerRef": "case20",
+      "macroRefs": ["切换我的底栏", "关闭Me页弹窗", "我的页进入MyRelationship"],
+      "rhythm": { "repeatCount": 10 },
+      "experienceExpect": "列表/WebView 正常"
+    },
+    {
+      "caseNo": "21",
+      "id": "PERF-04-21-好友列表滑",
+      "module": "Me · 关系",
+      "title": "好友列表滑动",
+      "automationStatus": "manual",
+      "runnerRef": null,
+      "rhythm": { "swipeCount": 10 },
+      "experienceExpect": "流畅"
+    },
+    {
+      "caseNo": "22",
+      "id": "PERF-04-22-Following滑",
+      "module": "Me · 关系",
+      "title": "Following 滑动",
+      "automationStatus": "manual",
+      "runnerRef": null,
+      "rhythm": { "swipeCount": 10 },
+      "experienceExpect": "流畅"
+    },
+    {
+      "caseNo": "23",
+      "id": "PERF-04-23-Followers滑",
+      "module": "Me · 关系",
+      "title": "Followers 滑动后退出",
+      "automationStatus": "manual",
+      "runnerRef": null,
+      "rhythm": { "swipeCount": 10 },
+      "experienceExpect": "流畅"
+    },
+    {
+      "caseNo": "24",
+      "id": "PERF-04-24-个人资料详情",
+      "module": "资料",
+      "title": "进入个人主页编辑入口",
+      "automationStatus": "auto",
+      "runnerRef": "case24",
+      "macroRefs": ["切换我的底栏", "我的页进入个人资料详情"],
+      "experienceExpect": "进入编辑页无长时间白屏"
+    },
+    {
+      "caseNo": "25",
+      "id": "PERF-04-25-编辑资料保存",
+      "module": "资料",
+      "title": "改头像/昵称等并保存",
+      "automationStatus": "manual",
+      "runnerRef": null,
+      "experienceExpect": "保存成功；返回 Me 信息刷新"
+    },
+    {
+      "caseNo": "26",
+      "id": "PERF-04-26-CP挚友空间",
+      "module": "空间",
+      "title": "CP 或挚友空间反复进入",
+      "automationStatus": "manual",
+      "runnerRef": null,
+      "rhythm": { "repeatCount": 10 },
+      "experienceExpect": "H5/Native 混合页流畅"
+    },
+    {
+      "caseNo": "27",
+      "id": "PERF-04-27-Visitors滑",
+      "module": "Me",
+      "title": "Visitors 列表滑动",
+      "automationStatus": "auto",
+      "runnerRef": "case27",
+      "macroRefs": ["切换我的底栏", "我的页进入ViewedMe"],
+      "rhythm": { "swipeCount": 10 },
+      "experienceExpect": "流畅"
+    },
+    {
+      "caseNo": "28a",
+      "id": "PERF-04-28a-Level往返",
+      "module": "财富/商店",
+      "title": "财富等级 Level 进入退出",
+      "automationStatus": "auto",
+      "runnerRef": "case28a",
+      "macroRefs": ["切换我的底栏", "我的页进入Level"],
+      "rhythm": { "repeatCount": 10 },
+      "experienceExpect": "页面打开稳定"
+    },
+    {
+      "caseNo": "28b",
+      "id": "PERF-04-28b-OutfitStore往返",
+      "module": "财富/商店",
+      "title": "商店/装扮 Store 进入退出",
+      "automationStatus": "auto",
+      "runnerRef": "case28b",
+      "macroRefs": ["我的页进入OutfitStore"],
+      "rhythm": { "repeatCount": 10 },
+      "experienceExpect": "SVGA/WebP 不拖死主线程"
+    },
+    {
+      "caseNo": "29",
+      "id": "PERF-04-29-压后台",
+      "module": "收尾",
+      "title": "压后台静止 1 min",
+      "automationStatus": "auto",
+      "runnerRef": "case29",
+      "rhythm": { "holdSec": 60 },
+      "experienceExpect": "回前台后 App 仍存活、音频/IM 状态正常"
+    },
+    {
+      "caseNo": "30",
+      "id": "PERF-04-30-浸泡A",
+      "module": "浸泡",
+      "title": "Room Hot 榜停留 3 min",
+      "automationStatus": "manual",
+      "runnerRef": null,
+      "rhythm": { "holdSec": 180 },
+      "experienceExpect": "榜单/Banner 轮播无内存泄漏式卡顿",
+      "perfdog": { "sessionLabel": "§4-30-浸泡A", "enabled": false }
+    },
+    {
+      "caseNo": "31",
+      "id": "PERF-04-31-浸泡B",
+      "module": "浸泡",
+      "title": "高人数房间 5 min + 压后台",
+      "automationStatus": "manual",
+      "runnerRef": null,
+      "rhythm": { "holdSec": 300 },
+      "experienceExpect": "长时房内 CPU/内存曲线平稳",
+      "loadAssist": "可与辅测低频送礼叠加"
+    }
+  ],
+  "extensionsP1": [
+    {
+      "id": "PERF-05-01-公屏洪峰",
+      "section": "§5.1",
+      "automationStatus": "partial",
+      "note": "辅测发消息 + 被测观房；见房间公屏消息性能优化用例"
+    },
+    {
+      "id": "PERF-05-02-PKATM高峰",
+      "section": "§5.2",
+      "automationStatus": "partial",
+      "runnerRef": "workflow:pk-atm-test"
+    }
+  ]
+}

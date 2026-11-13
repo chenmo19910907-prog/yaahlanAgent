@@ -1,0 +1,43 @@
+{
+  "id": "PERF-04-11-送Rose",
+  "type": "performance",
+  "priority": "P0",
+  "caseNo": "11",
+  "name": "手动送 Rose ×10",
+  "module": "礼物",
+  "automationStatus": "manual",
+  "source": {
+    "perfCaseDoc": "temporary_testcase/主版本性能case_2026Q4.md",
+    "section": "§4 序号 11"
+  },
+  "rhythm": { "repeatCount": 10, "waitPerGiftSec": "动效结束" },
+  "operationFlowDoc": [
+    "在性能房内点上麦用户 mini 资料卡",
+    "礼物面板选择 Rose，连送 10 次",
+    "每轮等低动效结束再点下一次"
+  ],
+  "experienceExpect": "公屏/动效不掉帧严重",
+  "observeMetrics": ["FPS", "Jank", "GPU"],
+  "loadAssist": {
+    "allowed": "辅测 gift_execute 单送造背景压力",
+    "forbidden": "不可替代被测机本步 UI 操作"
+  },
+  "perfdog": {
+    "enabled": false,
+    "sessionLabel": "§4-11-Rose×10",
+    "notes": "高优 PerfDog 段；购买后此条为 manual + 录屏必做"
+  },
+  "testPoints": [
+    {
+      "id": "TP-MANUAL",
+      "name": "手工执行 checklist",
+      "verifyMethod": "manual_checklist"
+    },
+    {
+      "id": "TP-PERF",
+      "name": "送礼掉帧",
+      "verifyMethod": "perfdog_manual"
+    }
+  ],
+  "operations": []
+}
