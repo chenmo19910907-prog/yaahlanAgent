@@ -1,0 +1,33 @@
+{
+  "id": "PERF-OPT-30-结束压后台",
+  "type": "performance",
+  "priority": "P0",
+  "caseNo": "30",
+  "name": "结束压后台",
+  "module": "性能·case优化",
+  "automationStatus": "auto",
+  "source": {
+    "dingtalkWorkbook": "https://alidocs.dingtalk.com/i/nodes/vy20BglGWOekp0O0TmrNb91lJA7depqY",
+    "dingtalkSheet": "case优化",
+    "runnerRef": "scripts/perf_automation_full.sh#scene_30",
+    "automationImpl": "HOME + monkey 拉回"
+  },
+  "macroFlags": [
+    "--no-capture",
+    "--no-popup-gate",
+    "--force-script"
+  ],
+  "experienceExpect": "path_ok；PerfDog 人工书签 PERF-30",
+  "perfdog": {
+    "enabled": false,
+    "sessionLabel": "case优化-30"
+  },
+  "operations": [
+    {
+      "step": 1,
+      "description": "执行全链路脚本场景 30",
+      "action": "shell",
+      "command": "PERF_ONLY=30 ./scripts/perf_automation_full.sh"
+    }
+  ]
+}

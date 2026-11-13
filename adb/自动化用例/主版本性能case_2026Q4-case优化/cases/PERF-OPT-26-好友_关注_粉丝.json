@@ -1,0 +1,33 @@
+{
+  "id": "PERF-OPT-26-好友_关注_粉丝",
+  "type": "performance",
+  "priority": "P0",
+  "caseNo": "26",
+  "name": "好友/关注/粉丝",
+  "module": "性能·case优化",
+  "automationStatus": "auto",
+  "source": {
+    "dingtalkWorkbook": "https://alidocs.dingtalk.com/i/nodes/vy20BglGWOekp0O0TmrNb91lJA7depqY",
+    "dingtalkSheet": "case优化",
+    "runnerRef": "scripts/perf_automation_full.sh#scene_26",
+    "automationImpl": "macro 好友/关注/粉丝列表"
+  },
+  "macroFlags": [
+    "--no-capture",
+    "--no-popup-gate",
+    "--force-script"
+  ],
+  "experienceExpect": "path_ok；PerfDog 人工书签 PERF-26",
+  "perfdog": {
+    "enabled": false,
+    "sessionLabel": "case优化-26"
+  },
+  "operations": [
+    {
+      "step": 1,
+      "description": "执行全链路脚本场景 26",
+      "action": "shell",
+      "command": "PERF_ONLY=26 ./scripts/perf_automation_full.sh"
+    }
+  ]
+}

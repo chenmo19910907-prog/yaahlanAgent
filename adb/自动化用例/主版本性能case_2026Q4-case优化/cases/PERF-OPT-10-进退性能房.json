@@ -1,0 +1,33 @@
+{
+  "id": "PERF-OPT-10-进退性能房",
+  "type": "performance",
+  "priority": "P0",
+  "caseNo": "10",
+  "name": "进退性能房",
+  "module": "性能·case优化",
+  "automationStatus": "auto",
+  "source": {
+    "dingtalkWorkbook": "https://alidocs.dingtalk.com/i/nodes/vy20BglGWOekp0O0TmrNb91lJA7depqY",
+    "dingtalkSheet": "case优化",
+    "runnerRef": "scripts/perf_automation_full.sh#scene_10",
+    "automationImpl": "macro 搜索进房/退出房间"
+  },
+  "macroFlags": [
+    "--no-capture",
+    "--no-popup-gate",
+    "--force-script"
+  ],
+  "experienceExpect": "path_ok；PerfDog 人工书签 PERF-10",
+  "perfdog": {
+    "enabled": false,
+    "sessionLabel": "case优化-10"
+  },
+  "operations": [
+    {
+      "step": 1,
+      "description": "执行全链路脚本场景 10",
+      "action": "shell",
+      "command": "PERF_ONLY=10 ./scripts/perf_automation_full.sh"
+    }
+  ]
+}

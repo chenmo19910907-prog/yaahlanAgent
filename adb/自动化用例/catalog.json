@@ -35,6 +35,17 @@
       "registry": "registry.json",
       "perfdogService": false,
       "runnerScript": "scripts/perf_main_version_run_all.sh"
+    },
+    {
+      "id": "req-主版本性能case-2026Q4-case优化",
+      "folder": "主版本性能case_2026Q4-case优化",
+      "name": "主版本性能 · case优化全链路（实验）",
+      "module": "性能",
+      "type": "performance",
+      "dingtalkRef": "https://alidocs.dingtalk.com/i/nodes/vy20BglGWOekp0O0TmrNb91lJA7depqY",
+      "registry": "registry.json",
+      "perfdogService": false,
+      "runnerScript": "scripts/perf_automation_full.sh"
     }
   ],
   "suites": [

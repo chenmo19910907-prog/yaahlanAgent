@@ -1,0 +1,20 @@
+{
+  "requirementId": "req-主版本性能case-2026Q4-case优化",
+  "folder": "主版本性能case_2026Q4-case优化",
+  "name": "主版本性能 · case优化全链路（实验）",
+  "module": "性能",
+  "type": "performance",
+  "dingtalkRef": "https://alidocs.dingtalk.com/i/nodes/vy20BglGWOekp0O0TmrNb91lJA7depqY · Sheet「case优化」",
+  "registry": "registry.json",
+  "runnerScript": "scripts/perf_automation_full.sh",
+  "suites": [
+    {
+      "id": "req-perf-case优化-full",
+      "name": "case优化 场景01–30 全链路",
+      "priority": "P0",
+      "requirementId": "req-主版本性能case-2026Q4-case优化",
+      "runnerScript": "scripts/perf_automation_full.sh",
+      "note": "单次跑通约 15–25 分钟（含场景11浸泡180s）；可用 PERF_ONLY 分段"
+    }
+  ]
+}

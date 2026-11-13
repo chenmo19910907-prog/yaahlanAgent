@@ -1,0 +1,33 @@
+{
+  "id": "PERF-OPT-02-Game帧Online列表快滑",
+  "type": "performance",
+  "priority": "P0",
+  "caseNo": "02",
+  "name": "Game帧Online列表快滑",
+  "module": "性能·case优化",
+  "automationStatus": "auto",
+  "source": {
+    "dingtalkWorkbook": "https://alidocs.dingtalk.com/i/nodes/vy20BglGWOekp0O0TmrNb91lJA7depqY",
+    "dingtalkSheet": "case优化",
+    "runnerRef": "scripts/perf_automation_full.sh#scene_2",
+    "automationImpl": "do_swipe_v(30)"
+  },
+  "macroFlags": [
+    "--no-capture",
+    "--no-popup-gate",
+    "--force-script"
+  ],
+  "experienceExpect": "path_ok；PerfDog 人工书签 PERF-02",
+  "perfdog": {
+    "enabled": false,
+    "sessionLabel": "case优化-02"
+  },
+  "operations": [
+    {
+      "step": 1,
+      "description": "执行全链路脚本场景 02",
+      "action": "shell",
+      "command": "PERF_ONLY=02 ./scripts/perf_automation_full.sh"
+    }
+  ]
+}

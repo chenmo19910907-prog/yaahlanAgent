@@ -1,0 +1,33 @@
+{
+  "id": "PERF-OPT-13-房内贵族列表",
+  "type": "performance",
+  "priority": "P0",
+  "caseNo": "13",
+  "name": "房内贵族列表",
+  "module": "性能·case优化",
+  "automationStatus": "auto",
+  "source": {
+    "dingtalkWorkbook": "https://alidocs.dingtalk.com/i/nodes/vy20BglGWOekp0O0TmrNb91lJA7depqY",
+    "dingtalkSheet": "case优化",
+    "runnerRef": "scripts/perf_automation_full.sh#scene_13",
+    "automationImpl": "macro NobilityTab"
+  },
+  "macroFlags": [
+    "--no-capture",
+    "--no-popup-gate",
+    "--force-script"
+  ],
+  "experienceExpect": "path_ok；PerfDog 人工书签 PERF-13",
+  "perfdog": {
+    "enabled": false,
+    "sessionLabel": "case优化-13"
+  },
+  "operations": [
+    {
+      "step": 1,
+      "description": "执行全链路脚本场景 13",
+      "action": "shell",
+      "command": "PERF_ONLY=13 ./scripts/perf_automation_full.sh"
+    }
+  ]
+}

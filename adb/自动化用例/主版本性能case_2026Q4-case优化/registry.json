@@ -1,0 +1,284 @@
+{
+  "requirementId": "req-主版本性能case-2026Q4-case优化",
+  "version": "2026Q4-exp",
+  "dingtalkRef": "https://alidocs.dingtalk.com/i/nodes/vy20BglGWOekp0O0TmrNb91lJA7depqY",
+  "dingtalkSheet": "case优化",
+  "runnerScript": "scripts/perf_automation_full.sh",
+  "meta": {
+    "total": 30,
+    "auto": 26,
+    "partial": 4
+  },
+  "cases": [
+    {
+      "caseNo": "01",
+      "id": "PERF-OPT-01-开跑冷启动",
+      "title": "开跑冷启动",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_1",
+      "caseJson": "cases/PERF-OPT-01-开跑冷启动.json",
+      "automationImpl": "macro 冷启动回首页"
+    },
+    {
+      "caseNo": "02",
+      "id": "PERF-OPT-02-Game帧Online列表快滑",
+      "title": "Game帧Online列表快滑",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_2",
+      "caseJson": "cases/PERF-OPT-02-Game帧Online列表快滑.json",
+      "automationImpl": "do_swipe_v(30)"
+    },
+    {
+      "caseNo": "03",
+      "id": "PERF-OPT-03-Game帧下拉刷新",
+      "title": "Game帧下拉刷新",
+      "automationStatus": "partial",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_3",
+      "caseJson": "cases/PERF-OPT-03-Game帧下拉刷新.json",
+      "automationImpl": "手势下拉占位"
+    },
+    {
+      "caseNo": "04",
+      "id": "PERF-OPT-04-Game帧进出子页内存",
+      "title": "Game帧进出子页内存",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_4",
+      "caseJson": "cases/PERF-OPT-04-Game帧进出子页内存.json",
+      "automationImpl": "macro 游戏帧进入个人资料/活动中心"
+    },
+    {
+      "caseNo": "05",
+      "id": "PERF-OPT-05-Game帧静置",
+      "title": "Game帧静置",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_5",
+      "caseJson": "cases/PERF-OPT-05-Game帧静置.json",
+      "automationImpl": "sleep 30"
+    },
+    {
+      "caseNo": "06",
+      "id": "PERF-OPT-06-房间列表快滑",
+      "title": "房间列表快滑",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_6",
+      "caseJson": "cases/PERF-OPT-06-房间列表快滑.json",
+      "automationImpl": "do_swipe_v(30)"
+    },
+    {
+      "caseNo": "07",
+      "id": "PERF-OPT-07-房间Hot_Mine_Egypt Tab",
+      "title": "房间Hot/Mine/Egypt Tab",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_7",
+      "caseJson": "cases/PERF-OPT-07-房间Hot_Mine_Egypt Tab.json",
+      "automationImpl": "macro 房间帧切换Hot/Mine/Egypt"
+    },
+    {
+      "caseNo": "08",
+      "id": "PERF-OPT-08-房间子分类 Tab",
+      "title": "房间子分类 Tab",
+      "automationStatus": "partial",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_8",
+      "caseJson": "cases/PERF-OPT-08-房间子分类 Tab.json",
+      "automationImpl": "Hot/PK/Game/Chat"
+    },
+    {
+      "caseNo": "09",
+      "id": "PERF-OPT-09-房间列表下拉刷新",
+      "title": "房间列表下拉刷新",
+      "automationStatus": "partial",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_9",
+      "caseJson": "cases/PERF-OPT-09-房间列表下拉刷新.json",
+      "automationImpl": "手势下拉占位"
+    },
+    {
+      "caseNo": "10",
+      "id": "PERF-OPT-10-进退性能房",
+      "title": "进退性能房",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_10",
+      "caseJson": "cases/PERF-OPT-10-进退性能房.json",
+      "automationImpl": "macro 搜索进房/退出房间"
+    },
+    {
+      "caseNo": "11",
+      "id": "PERF-OPT-11-Hot首卡进房浸泡",
+      "title": "Hot首卡进房浸泡",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_11",
+      "caseJson": "cases/PERF-OPT-11-Hot首卡进房浸泡.json",
+      "automationImpl": "macro 进房 + sleep 180"
+    },
+    {
+      "caseNo": "12",
+      "id": "PERF-OPT-12-房内在线列表",
+      "title": "房内在线列表",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_12",
+      "caseJson": "cases/PERF-OPT-12-房内在线列表.json",
+      "automationImpl": "macro 房内打开在线用户列表"
+    },
+    {
+      "caseNo": "13",
+      "id": "PERF-OPT-13-房内贵族列表",
+      "title": "房内贵族列表",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_13",
+      "caseJson": "cases/PERF-OPT-13-房内贵族列表.json",
+      "automationImpl": "macro NobilityTab"
+    },
+    {
+      "caseNo": "14",
+      "id": "PERF-OPT-14-房内成员列表",
+      "title": "房内成员列表",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_14",
+      "caseJson": "cases/PERF-OPT-14-房内成员列表.json",
+      "automationImpl": "macro MembersTab"
+    },
+    {
+      "caseNo": "15",
+      "id": "PERF-OPT-15-退房回列表静置",
+      "title": "退房回列表静置",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_15",
+      "caseJson": "cases/PERF-OPT-15-退房回列表静置.json",
+      "automationImpl": "macro 退出房间 + sleep"
+    },
+    {
+      "caseNo": "16",
+      "id": "PERF-OPT-16-消息列表快滑",
+      "title": "消息列表快滑",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_16",
+      "caseJson": "cases/PERF-OPT-16-消息列表快滑.json",
+      "automationImpl": "do_swipe_v(30)"
+    },
+    {
+      "caseNo": "17",
+      "id": "PERF-OPT-17-消息列表静置",
+      "title": "消息列表静置",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_17",
+      "caseJson": "cases/PERF-OPT-17-消息列表静置.json",
+      "automationImpl": "sleep 30"
+    },
+    {
+      "caseNo": "18",
+      "id": "PERF-OPT-18-会话进出压测",
+      "title": "会话进出压测",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_18",
+      "caseJson": "cases/PERF-OPT-18-会话进出压测.json",
+      "automationImpl": "macro 消息帧进入家族群聊"
+    },
+    {
+      "caseNo": "19",
+      "id": "PERF-OPT-19-动态Discover快滑",
+      "title": "动态Discover快滑",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_19",
+      "caseJson": "cases/PERF-OPT-19-动态Discover快滑.json",
+      "automationImpl": "macro DiscoverTab + swipe"
+    },
+    {
+      "caseNo": "20",
+      "id": "PERF-OPT-20-动态Following快滑",
+      "title": "动态Following快滑",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_20",
+      "caseJson": "cases/PERF-OPT-20-动态Following快滑.json",
+      "automationImpl": "macro 切换动态关注tab"
+    },
+    {
+      "caseNo": "21",
+      "id": "PERF-OPT-21-动态点赞刷新",
+      "title": "动态点赞刷新",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_21",
+      "caseJson": "cases/PERF-OPT-21-动态点赞刷新.json",
+      "automationImpl": "macro Discover点赞首条"
+    },
+    {
+      "caseNo": "22",
+      "id": "PERF-OPT-22-动态详情评论滑",
+      "title": "动态详情评论滑",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_22",
+      "caseJson": "cases/PERF-OPT-22-动态详情评论滑.json",
+      "automationImpl": "macro 动态详情 + swipe"
+    },
+    {
+      "caseNo": "23",
+      "id": "PERF-OPT-23-动态详情收礼Tab滑",
+      "title": "动态详情收礼Tab滑",
+      "automationStatus": "partial",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_23",
+      "caseJson": "cases/PERF-OPT-23-动态详情收礼Tab滑.json",
+      "automationImpl": "需补图 收礼Tab"
+    },
+    {
+      "caseNo": "24",
+      "id": "PERF-OPT-24-动态列表静置",
+      "title": "动态列表静置",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_24",
+      "caseJson": "cases/PERF-OPT-24-动态列表静置.json",
+      "automationImpl": "sleep 30"
+    },
+    {
+      "caseNo": "25",
+      "id": "PERF-OPT-25-Me首屏静置",
+      "title": "Me首屏静置",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_25",
+      "caseJson": "cases/PERF-OPT-25-Me首屏静置.json",
+      "automationImpl": "sleep 5"
+    },
+    {
+      "caseNo": "26",
+      "id": "PERF-OPT-26-好友_关注_粉丝",
+      "title": "好友/关注/粉丝",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_26",
+      "caseJson": "cases/PERF-OPT-26-好友_关注_粉丝.json",
+      "automationImpl": "macro 好友/关注/粉丝列表"
+    },
+    {
+      "caseNo": "27",
+      "id": "PERF-OPT-27-个人资料进出",
+      "title": "个人资料进出",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_27",
+      "caseJson": "cases/PERF-OPT-27-个人资料进出.json",
+      "automationImpl": "macro 我的页进入个人资料详情"
+    },
+    {
+      "caseNo": "28",
+      "id": "PERF-OPT-28-Me静置",
+      "title": "Me静置",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_28",
+      "caseJson": "cases/PERF-OPT-28-Me静置.json",
+      "automationImpl": "sleep 30"
+    },
+    {
+      "caseNo": "29",
+      "id": "PERF-OPT-29-五帧快切30次",
+      "title": "五帧快切30次",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_29",
+      "caseJson": "cases/PERF-OPT-29-五帧快切30次.json",
+      "automationImpl": "macro 切换*底栏"
+    },
+    {
+      "caseNo": "30",
+      "id": "PERF-OPT-30-结束压后台",
+      "title": "结束压后台",
+      "automationStatus": "auto",
+      "runnerRef": "scripts/perf_automation_full.sh#scene_30",
+      "caseJson": "cases/PERF-OPT-30-结束压后台.json",
+      "automationImpl": "HOME + monkey 拉回"
+    }
+  ]
+}

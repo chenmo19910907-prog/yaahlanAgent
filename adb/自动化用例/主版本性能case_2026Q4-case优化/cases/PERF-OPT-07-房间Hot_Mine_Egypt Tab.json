@@ -1,0 +1,33 @@
+{
+  "id": "PERF-OPT-07-房间Hot_Mine_Egypt Tab",
+  "type": "performance",
+  "priority": "P0",
+  "caseNo": "07",
+  "name": "房间Hot/Mine/Egypt Tab",
+  "module": "性能·case优化",
+  "automationStatus": "auto",
+  "source": {
+    "dingtalkWorkbook": "https://alidocs.dingtalk.com/i/nodes/vy20BglGWOekp0O0TmrNb91lJA7depqY",
+    "dingtalkSheet": "case优化",
+    "runnerRef": "scripts/perf_automation_full.sh#scene_7",
+    "automationImpl": "macro 房间帧切换Hot/Mine/Egypt"
+  },
+  "macroFlags": [
+    "--no-capture",
+    "--no-popup-gate",
+    "--force-script"
+  ],
+  "experienceExpect": "path_ok；PerfDog 人工书签 PERF-07",
+  "perfdog": {
+    "enabled": false,
+    "sessionLabel": "case优化-07"
+  },
+  "operations": [
+    {
+      "step": 1,
+      "description": "执行全链路脚本场景 07",
+      "action": "shell",
+      "command": "PERF_ONLY=07 ./scripts/perf_automation_full.sh"
+    }
+  ]
+}
