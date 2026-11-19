@@ -90,19 +90,12 @@
     }
   }
 
-  function scenarioGuideItemHtml(s) {
-    const name = escapeHtml(s.name || '');
+  function scenarioFlowBtnHtml(s) {
     const skey = escapeHtml(String(s.key || ''));
-    const usage = String(s.usageNote || '').trim();
-    if (usage.length > 120) {
-      return `<li data-cmr-guide-key="${skey}">
-        <details class="guild-pangu-guide-details">
-          <summary><strong>${name}</strong> — 展开查看完整说明</summary>
-          <p class="guild-pangu-guide-full">${escapeHtml(usage)}</p>
-        </details>
-      </li>`;
-    }
-    return `<li data-cmr-guide-key="${skey}"><strong>${name}</strong> ${escapeHtml(usage)}</li>`;
+    const name = escapeHtml(s.name || skey);
+    const tip = escapeHtml(String(s.guideShort || '').trim() || String(s.usageNote || '').trim());
+    const titleAttr = tip ? ` title="${tip}"` : '';
+    return `<button type="button" class="guild-pangu-flow-step" data-cmr-guide-key="${skey}" data-cmr-pick="${skey}"${titleAttr}>${name}</button>`;
   }
 
   const CodeMultilangReviewPanel = {
@@ -114,39 +107,38 @@
       return `<div class="guild-pangu-panel" data-cmr-panel="1">
         <div class="guild-pangu-status" data-cmr-status hidden></div>
         <section class="guild-pangu-form-wrap">
-          <h4 class="guild-pangu-form-title">五阶段工作流 · 多语言</h4>
+          <header class="guild-pangu-form-head">
+            <h4 class="guild-pangu-form-title" data-cmr-panel-title>写回翻译文档</h4>
+            <span class="guild-pangu-form-badge">五阶段</span>
+          </header>
           <p class="guild-pangu-doc-note" data-cmr-doc-note hidden></p>
-          <p class="guild-pangu-env" data-cmr-env></p>
-          <p class="guild-pangu-guide-lead">六条入口（含全流程；选中后下方展示同一份阶段说明）：</p>
-          <ul class="guild-pangu-scenario-guide" data-cmr-scenario-guide></ul>
-          <p class="guild-pangu-form-lead">填写多语言文档与版本表链接后点「填入提问栏」；结果写入 <strong>I/J/K</strong>（服务端/Android/iOS）。</p>
+          <p class="guild-pangu-env guild-pangu-env--compact" data-cmr-env></p>
+          <nav class="guild-pangu-flow" data-cmr-scenario-guide role="tablist" aria-label="工作流阶段"></nav>
+          <p class="guild-pangu-form-lead guild-pangu-form-lead--compact">点阶段切换入口；填链接后「填入提问栏」。写 <strong>I/J/K/L</strong>。</p>
           <label class="guild-pangu-field">
             <span>执行入口</span>
             <select data-cmr-scenario disabled><option>加载中…</option></select>
           </label>
-          <div class="guild-pangu-usage-block">
-            <div class="guild-pangu-field guild-pangu-usage-readonly-wrap">
-              <span>阶段说明（来自仓库 DevCode 配置，只读）</span>
-              <pre class="guild-pangu-usage-readonly" data-cmr-usage-note></pre>
-            </div>
-            <label class="guild-pangu-field">
-              <span>补充说明（可编辑，按入口保存在本浏览器）</span>
-              <textarea rows="4" data-cmr-user-note autocomplete="off" placeholder="版本号、Sheet 名、指定仓库/分支等。"></textarea>
+          <div class="guild-pangu-usage-block guild-pangu-usage-block--slim">
+            <p class="guild-pangu-usage-readonly" data-cmr-usage-note></p>
+            <label class="guild-pangu-field guild-pangu-field--compact">
+              <span>补充说明 <em class="guild-pangu-field-tag">本机保存</em></span>
+              <textarea rows="2" data-cmr-user-note autocomplete="off" placeholder="版本号、Sheet 名、指定仓…"></textarea>
             </label>
           </div>
-          <label class="guild-pangu-field">
-            <span>多语言词条文档</span>
+          <label class="guild-pangu-field guild-pangu-field--primary is-primary-field">
+            <span>翻译词条表 <em class="guild-pangu-field-tag">必填</em></span>
             <input type="url" data-cmr-multilang-url autocomplete="off" placeholder="https://alidocs.dingtalk.com/i/nodes/..." />
           </label>
           <p class="guild-pangu-field-help" data-cmr-multilang-url-help></p>
-          <label class="guild-pangu-field">
-            <span>版本测试表（含 I/J/K 列）</span>
-            <input type="url" data-cmr-sheet-url autocomplete="off" placeholder="https://alidocs.dingtalk.com/i/nodes/..." />
+          <label class="guild-pangu-field is-secondary-field">
+            <span>版本表 <em class="guild-pangu-field-tag">可选</em></span>
+            <input type="url" data-cmr-sheet-url autocomplete="off" placeholder="默认同上" />
           </label>
           <p class="guild-pangu-field-help" data-cmr-sheet-url-help></p>
-          <label class="guild-pangu-field">
-            <span>Sheet 名（可选）</span>
-            <input type="text" data-cmr-sheet-name autocomplete="off" placeholder="留空则由 Agent 列举确认" />
+          <label class="guild-pangu-field is-secondary-field">
+            <span>Sheet 名 <em class="guild-pangu-field-tag">可选</em></span>
+            <input type="text" data-cmr-sheet-name autocomplete="off" placeholder="留空自动列举" />
           </label>
           <div class="guild-pangu-actions">
             <button type="button" class="guild-pangu-btn primary" data-cmr-run>填入提问栏</button>
@@ -166,6 +158,9 @@
 
     renderFormHeader(root, catalog) {
       const web = catalog.web_usage || {};
+      const titleEl = root.querySelector('[data-cmr-panel-title]');
+      const panelTitle = String(catalog.panelTitle || web.title || '').trim();
+      if (titleEl && panelTitle) titleEl.textContent = panelTitle;
       const docEl = root.querySelector('[data-cmr-doc-note]');
       const docNote = String(catalog.docNote || '').trim();
       if (docEl) {
@@ -188,7 +183,12 @@
       const guideEl = root.querySelector('[data-cmr-scenario-guide]');
       if (!guideEl) return;
       const scenarios = (catalog.scenarios || []).filter((s) => String(s.key) !== 'full');
-      guideEl.innerHTML = scenarios.map((s) => scenarioGuideItemHtml(s)).join('');
+      guideEl.innerHTML = scenarios
+        .map((s, i) => {
+          const sep = i > 0 ? '<span class="guild-pangu-flow-arrow" aria-hidden="true">→</span>' : '';
+          return sep + scenarioFlowBtnHtml(s);
+        })
+        .join('');
     },
 
     fillScenarioSelect(root, catalog) {
@@ -213,12 +213,9 @@
     },
 
     highlightGuideItem(root, key) {
-      if (String(key) === 'full') {
-        root.querySelectorAll('[data-cmr-guide-key]').forEach((li) => li.classList.remove('is-active'));
-        return;
-      }
-      root.querySelectorAll('[data-cmr-guide-key]').forEach((li) => {
-        li.classList.toggle('is-active', li.getAttribute('data-cmr-guide-key') === String(key));
+      const activeKey = String(key) === 'full' ? '' : String(key);
+      root.querySelectorAll('[data-cmr-guide-key]').forEach((el) => {
+        el.classList.toggle('is-active', activeKey && el.getAttribute('data-cmr-guide-key') === activeKey);
       });
     },
 
@@ -233,8 +230,8 @@
       }
       const usage = String(meta.usageNote || '').trim();
       if (usageEl) {
-        usageEl.textContent =
-          usage || '（该入口暂无说明；请改 DevCode/config/code_multilang_review_panel.json）';
+        usageEl.textContent = usage || '（暂无说明）';
+        usageEl.hidden = !usage;
       }
       this.syncUserNoteField(root, key);
     },
@@ -315,6 +312,16 @@
       const sheetUrlEl = root.querySelector('[data-cmr-sheet-url]');
       const sheetNameEl = root.querySelector('[data-cmr-sheet-name]');
 
+      root.querySelectorAll('[data-cmr-pick]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const pick = String(btn.getAttribute('data-cmr-pick') || '').trim();
+          if (!pick || !sel) return;
+          sel.value = pick;
+          this._currentScenario = pick;
+          const catalog = await this.loadCatalog();
+          this.updateScenarioDetail(root, catalog, pick);
+        });
+      });
       sel?.addEventListener('change', async () => {
         this._currentScenario = String(sel.value || '');
         const catalog = await this.loadCatalog();

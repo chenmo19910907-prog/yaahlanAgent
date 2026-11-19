@@ -18,6 +18,7 @@ for path in (str(GATEWAY_DIR), str(WEB_AGENT_DIR)):
 from batch_progress import report_batch_progress  # noqa: E402
 from batch_result import save_batch_result  # noqa: E402
 from external_agent_progress import report_external_agent_querying  # noqa: E402
+from run_display_escape import format_terminal_for_display, unescape_display_escapes  # noqa: E402
 from run_progress_reply import (  # noqa: E402
     build_run_stop_reply,
     is_agent_timeout_message,
@@ -63,6 +64,32 @@ class RunProgressReplyTests(unittest.TestCase):
         body = build_run_stop_reply("⚠️ 任务已中断。")
         self.assertIn("⚠️ 任务已中断。", body)
         self.assertNotIn("## 当前进度", body)
+
+    def test_interrupt_reply_omits_terminal_block(self) -> None:
+        blob = (
+            "{'exitCode': 2, 'stdout': 'line1\\nline2\\nerror: bad\\n', 'stderr': ''}"
+        )
+        terminal = f"\n$ python3 foo.py\n{blob}"
+        body = build_run_stop_reply(
+            "⚠️ 任务已中断。",
+            stream_markdown="### 思考中\\n\\n查钻石",
+            terminal_text=terminal,
+        )
+        self.assertIn("查钻石", body)
+        self.assertNotIn("Shell 输出", body)
+        self.assertNotIn("line1\nline2", body)
+        formatted = format_terminal_for_display(terminal)
+        self.assertIn("line1\nline2", formatted)
+        self.assertIn("error: bad", formatted)
+
+    def test_unescape_nested_json_markdown_field(self) -> None:
+        raw = '{"markdown": "### 标题\\\\n\\\\n| a | b |\\\\n"}'
+        out = unescape_display_escapes(raw)
+        self.assertIn("### 标题\n\n", out)
+        fmt = format_terminal_for_display(
+            "{'exitCode': 0, 'stdout': '" + raw.replace("'", "\\'") + "', 'stderr': ''}"
+        )
+        self.assertIn("### 标题", fmt)
 
     def test_stale_batch_result_not_shown_without_current_run_activity(self) -> None:
         user_key = "web:test-stale-result"

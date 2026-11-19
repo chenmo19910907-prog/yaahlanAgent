@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "category": "币商盘古配置（workflow）",
+  "doc_note": "预上线 Application.shiftTime.dealerAssistant：控制币商助理本结薪周期额度刷新与「下一次额度刷新时间」展示。",
+  "web_usage": {
+    "title": "改参并发布",
+    "env_hint": "预上线 stage：改参后保存并全量发布。",
+    "field_help": {
+      "whiteUsers": "逗号分隔币商 userId（白名单）；仅列表内币商走偏移后的助理额度刷新周期。"
+    }
+  },
+  "env": {
+    "region": "alpha",
+    "cluster": "stage",
+    "env": "alpha",
+    "app_key": "momo.bpm.biz.gameplatform.overseas-voga-mts-vas"
+  },
+  "scenarios": [
+    {
+      "key": "dealer_assistant_quota",
+      "name": "币商助理额度刷新时间",
+      "config_key": "shiftTime.dealerAssistant",
+      "namespace": "Application",
+      "fields": ["fixedTimeSec", "expireTimeSec", "shiftTime"],
+      "only_edit_fields": ["whiteUsers", "fixedTimeSec"],
+      "required_fields": ["fixedTimeSec"],
+      "field_help": {
+        "whiteUsers": "填写待测币商 userId（不是助理 id）",
+        "fixedTimeSec": "中东区（MENA）算薪结算时刻（秒级时间戳）"
+      },
+      "defaults": {
+        "fixedTimeSec": "1796227200"
+      },
+      "usage_note": "预上线：改 Application.shiftTime.dealerAssistant。主要改 whiteUsers（币商 id）与 fixedTimeSec（时间偏移后的「当前日」，用于助理额度按结薪周期刷新）；expireTimeSec 保持足够大（如 2030 年）。验收：白名单币商 App 内助理列表「下一次额度刷新时间」、跨周期后已用/剩余额度重置与偏移后中东算薪周期一致。",
+      "example": "fixedTimeSec=1796227200；expireTimeSec=1919865600（2030 年）",
+      "prompt": "设置币商助理额度刷新盘古 whiteUsers=<whiteUsers> fixedTimeSec=<fixedTimeSec> 并发布"
+    },
+    {
+      "key": "dealer_recharge_auth_whitelist",
+      "name": "跳过币商充值真人认证白名单",
+      "config_key": "dealerAuthConfig",
+      "namespace": "Application",
+      "app_key": "momo.bpm.biz.gameplatform.overseas-voga-mts-user",
+      "fields": ["whitelistUserIds"],
+      "only_edit_fields": ["whitelistUserIds"],
+      "required_fields": ["whitelistUserIds"],
+      "white_list_field": "whitelistUserIds",
+      "field_help": {
+        "whitelistUserIds": "逗号分隔币商 userId；列表内账号跳过在线充值真人认证（发布前须保留已有 id）"
+      },
+      "usage_note": "预上线（用户服务）：改 Application.dealerAuthConfig 的 whitelistUserIds。新增测试币商时把 id 追加进列表后保存全量发布；勿清空已有白名单。验收：白名单币商 App 内在线充值不再弹真人认证。",
+      "example": "whitelistUserIds=100063802,100111647,...（与 MSE 当前值合并）",
+      "prompt": "设置币商充值跳过真人认证白名单 whitelistUserIds=<whitelistUserIds> 并发布"
+    }
+  ]
+}

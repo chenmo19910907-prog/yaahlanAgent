@@ -447,6 +447,18 @@ def _execute_web_run_body(
         terminal_seq += 1
         _emit(store, run_id, {"type": "terminal", "chunk": piece, "seq": terminal_seq})
 
+    def _terminal_fields_for_event() -> dict[str, Any]:
+        snap = store.get_snapshot(run_id)
+        if snap is None:
+            return {}
+        text = str(getattr(snap, "last_terminal_text", "") or "").strip()
+        if not text:
+            return {}
+        return {
+            "terminal_text": text,
+            "terminal_seq": int(getattr(snap, "last_terminal_seq", 0) or 0),
+        }
+
     def _append_assistant(text: str) -> list[dict[str, object]]:
         output_files = consume_pending_outputs(session_id)
         file_payload = [item.to_message_dict() for item in output_files]
@@ -454,6 +466,7 @@ def _execute_web_run_body(
             session_id,
             text,
             files=file_payload,
+            run_id=run_id,
         ):
             return file_payload
         session_store.append_message(
@@ -461,6 +474,7 @@ def _execute_web_run_body(
             "assistant",
             text,
             files=file_payload,
+            run_id=run_id,
         )
         return file_payload
 
@@ -497,7 +511,12 @@ def _execute_web_run_body(
                 if defer_restart
                 else _maybe_push_result_to_dingtalk(fresh_meta, final_text, success=True)
             )
-            done_event: dict[str, Any] = {"type": "done", "text": final_text}
+            done_event: dict[str, Any] = {
+                "type": "done",
+                "text": final_text,
+                "run_id": run_id,
+                **_terminal_fields_for_event(),
+            }
             if defer_restart:
                 done_event["deferred_web_agent_restart"] = True
             if reply_files:
@@ -548,7 +567,12 @@ def _execute_web_run_body(
         reply_files = _append_assistant(final_text)
         fresh_meta = store.get_run(run_id) or meta
         dingtalk_push = _maybe_push_result_to_dingtalk(fresh_meta, final_text, success=True)
-        done_event: dict[str, Any] = {"type": "done", "text": final_text}
+        done_event = {
+            "type": "done",
+            "text": final_text,
+            "run_id": run_id,
+            **_terminal_fields_for_event(),
+        }
         if reply_files:
             done_event["files"] = reply_files
         if dingtalk_push is not None:
@@ -563,10 +587,15 @@ def _execute_web_run_body(
         if user_key:
             kill_run_child_processes(user_key)
         elapsed = time.monotonic() - started_at
+        snap = store.get_snapshot(run_id)
+        terminal_text = str(getattr(snap, "last_terminal_text", "") or "") if snap else ""
         body = build_run_stop_reply(
             INTERRUPT_REPLY,
             user_key=user_key,
             stream_markdown=last_markdown,
+            batch_line=str(getattr(snap, "last_batch_line", "") or "") if snap else "",
+            external_line=str(getattr(snap, "last_external_line", "") or "") if snap else "",
+            terminal_text=terminal_text,
         )
         final_text = finalize_web_reply_text(
             body,
@@ -577,7 +606,16 @@ def _execute_web_run_body(
             user_key=user_key,
         )
         _append_assistant(final_text)
-        _emit(store, run_id, {"type": "done", "text": final_text})
+        _emit(
+            store,
+            run_id,
+            {
+                "type": "done",
+                "text": final_text,
+                "run_id": run_id,
+                **_terminal_fields_for_event(),
+            },
+        )
         store.mark_status(run_id, RUN_STATUS_INTERRUPTED)
         _notify_open_api_terminal(run_id)
         status = "interrupted"
@@ -587,10 +625,14 @@ def _execute_web_run_body(
         err_msg = str(exc)
         logger.exception("Web chat run failed run=%s session=%s", run_id, session_id)
         if is_agent_timeout_message(err_msg):
+            snap = store.get_snapshot(run_id)
             body = build_run_stop_reply(
                 timeout_headline_from_message(err_msg),
                 user_key=user_key,
                 stream_markdown=last_markdown,
+                batch_line=str(getattr(snap, "last_batch_line", "") or "") if snap else "",
+                external_line=str(getattr(snap, "last_external_line", "") or "") if snap else "",
+                terminal_text=str(getattr(snap, "last_terminal_text", "") or "") if snap else "",
             )
         else:
             body = f"⚠️ {err_msg}\n\n{RETRY_HINT}"
@@ -606,7 +648,13 @@ def _execute_web_run_body(
         _emit(
             store,
             run_id,
-            {"type": "error", "message": err_msg, "text": final_text},
+            {
+                "type": "error",
+                "message": err_msg,
+                "text": final_text,
+                "run_id": run_id,
+                **_terminal_fields_for_event(),
+            },
         )
         store.mark_status(run_id, RUN_STATUS_ERROR)
         _notify_open_api_terminal(run_id)

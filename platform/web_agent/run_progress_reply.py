@@ -16,6 +16,7 @@ from external_agent_progress import (  # noqa: E402
     build_external_agent_progress_message,
     read_external_agent_progress,
 )
+from run_display_escape import unescape_display_escapes  # noqa: E402
 
 RETRY_HINT = "💡 原消息已回填到输入框，请检查后重试。"
 INTERRUPT_HEADLINE = "⚠️ 任务已中断。"
@@ -24,6 +25,7 @@ SERVICE_RESTART_HEADLINE = "⚠️ 任务因服务重启中断"
 
 STREAM_BODY_MAX_CHARS = 4000
 BATCH_RESULT_MAX_CHARS = 6000
+TERMINAL_PROGRESS_MAX_CHARS = 8000
 
 _LIFECYCLE_LINE_RES = (
     re.compile(r"^⏳\s*Agent\s*(启动|执行)中"),
@@ -88,6 +90,11 @@ def _truncate_block(text: str, *, limit: int) -> str:
     return body[: limit - 1].rstrip() + "…"
 
 
+def _normalize_progress_text(text: str, *, limit: int) -> str:
+    body = unescape_display_escapes((text or "").strip())
+    return _truncate_block(body, limit=limit)
+
+
 def _normalize_stream_markdown(markdown: str) -> str:
     lines: list[str] = []
     for line in (markdown or "").splitlines():
@@ -99,7 +106,7 @@ def _normalize_stream_markdown(markdown: str) -> str:
         if line.strip() in {"### 思考中", "### 执行工作"} and lines and lines[-1].strip() == line.strip():
             continue
         lines.append(line)
-    body = "\n".join(lines).strip()
+    body = unescape_display_escapes("\n".join(lines).strip())
     return _truncate_block(body, limit=STREAM_BODY_MAX_CHARS)
 
 
@@ -138,6 +145,7 @@ def build_run_stop_reply(
     stream_markdown: str = "",
     batch_line: str = "",
     external_line: str = "",
+    terminal_text: str = "",
     include_retry_hint: bool = True,
 ) -> str:
     """拼接中断/超时回复：标题 + 当前进度 +（可选）流式正文 + 重试提示。"""
@@ -153,8 +161,8 @@ def build_run_stop_reply(
     key = (user_key or "").strip()
     batch_result = ""
     # 仅在本轮 run 已有批量/流式进度时附带 batch_result，避免上一场任务的落盘结果误展示。
-    if key and (status_lines or stream_body):
-        batch_result = _truncate_block(
+    if key and (status_lines or stream_body or (terminal_text or "").strip()):
+        batch_result = _normalize_progress_text(
             read_batch_result(key) or "",
             limit=BATCH_RESULT_MAX_CHARS,
         )

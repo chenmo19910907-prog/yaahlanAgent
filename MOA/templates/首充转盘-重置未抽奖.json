@@ -1,0 +1,46 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/voga-mts-vas-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "dao=context.getBean(\"firstRechargeWheelDao\"); dao.delWheelStatus(\"100283764\"); dao.setWheelStatus(\"100283764\"); return \"status=\"+dao.getWheelStatus(\"100283764\")+\",time=\"+dao.getWheelTime(\"100283764\");",
+      "json": "",
+      "type": "string",
+      "value": "dao=context.getBean(\"firstRechargeWheelDao\"); dao.delWheelStatus(\"100283764\"); dao.setWheelStatus(\"100283764\"); return \"status=\"+dao.getWheelStatus(\"100283764\")+\",time=\"+dao.getWheelTime(\"100283764\");"
+    }
+  ],
+  "settings": {
+    "time": "60000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_meta": {
+    "serviceAgentRef": "FirstRechargeWheelDao.delWheelStatus+setWheelStatus",
+    "httpPath": "/yaahlan/vas/first-recharge/firstRechargeWheelPage",
+    "note": "清除首充转盘已抽奖态（待支付 status=2）并恢复可抽奖（API status=1，按钮「免费抽奖」）。顺序：delWheelStatus 后 setWheelStatus(userId)。"
+  },
+  "_registry": {
+    "id": "first_recharge_wheel_reset_not_drawn",
+    "name": "首充转盘-重置未抽奖",
+    "category": "首充转盘（voga-mts-vas-backdoor · FirstRechargeWheelDao）",
+    "description": "测试环境将用户首充转盘从「已抽奖待支付」（firstRechargeWheelPage status=2）恢复为「未抽奖」（status=1）。后门 execute：FirstRechargeWheelDao.delWheelStatus + setWheelStatus。Tunnel 对照 firstRechargeWheelInfo.buttonText=免费抽奖。",
+    "prompts": [
+      "首充转盘重置未抽奖 <userId>",
+      "将 <userId> 首充转盘改成没有抽奖状态",
+      "firstRechargeWheel 恢复免费抽奖 <userId>"
+    ],
+    "cli": "--expr 'dao=context.getBean(\"firstRechargeWheelDao\"); dao.delWheelStatus(\"<userId>\"); dao.setWheelStatus(\"<userId>\"); return \"status=\"+dao.getWheelStatus(\"<userId>\");'"
+  }
+}

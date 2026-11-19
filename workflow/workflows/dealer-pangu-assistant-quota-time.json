@@ -1,0 +1,43 @@
+{
+  "id": "dealer-pangu-assistant-quota-time",
+  "name": "币商助理额度刷新时间",
+  "category": "币商盘古配置（workflow）",
+  "description": "预上线 stage：改 Application.shiftTime.dealerAssistant（白名单币商 id + fixedTimeSec 对齐中东区算薪结算时刻），保存并全量发布。",
+  "version": 1,
+  "params": {
+    "whiteUsers": {
+      "label": "whiteUsers（币商 id）",
+      "type": "string",
+      "required": true
+    },
+    "fixedTimeSec": {
+      "label": "fixedTimeSec",
+      "type": "string",
+      "required": true
+    },
+    "expireTimeSec": {
+      "label": "expireTimeSec",
+      "type": "string",
+      "required": false
+    },
+    "shiftTime": {
+      "label": "shiftTime",
+      "type": "string",
+      "required": false
+    }
+  },
+  "steps": [
+    {
+      "id": "apply_dealer_pangu",
+      "name": "改 MSE 配置并发布",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/guild_pangu_shift_time_apply.py --scenarios-file workflow/config/dealer_pangu_shift_scenarios.json --scenario dealer_assistant_quota --white-users \"{{whiteUsers}}\" --fixed-time-sec \"{{fixedTimeSec}}\" --expire-time-sec \"{{expireTimeSec}}\" --shift-time \"{{shiftTime}}\"",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

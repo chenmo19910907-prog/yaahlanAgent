@@ -352,6 +352,23 @@ def set_activity_reward_im_send_params(
     ]
 
 
+def set_guild_clear_super_trade_president_daily_invite_record_params(
+    payload: dict[str, Any], record_date: str, user_id: str
+) -> None:
+    record_date = str(record_date).strip()
+    user_id = str(user_id).strip()
+    if not record_date:
+        raise ValueError("guild_super_trade_invite_record_date 不能为空（格式 yyyyMMdd）")
+    if not user_id:
+        raise ValueError("guild_super_trade_invite_record_user_id 不能为空")
+    if len(record_date) != 8 or not record_date.isdigit():
+        raise ValueError("guild_super_trade_invite_record_date 须为 8 位数字 yyyyMMdd")
+    expr = (
+        f'context.getBean("userNodeDao").del("1","sub:trade:invite:record:{record_date}:{user_id}")'
+    )
+    set_backdoor_execute_expr(payload, expr)
+
+
 def set_guild_force_update_trade_level_params(
     payload: dict[str, Any], level: int, trade_union_id: str
 ) -> None:

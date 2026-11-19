@@ -1,7 +1,7 @@
 {
   "kbPath": "testcase-kb/test_devices.json",
   "importSource": "/Users/user/Desktop/团队测试机统计表.xlsx",
-  "syncedAt": "2026-10-29 03:29:22 UTC",
+  "syncedAt": "2026-11-17 10:44:57 UTC",
   "count": 161,
   "devices": [
     {
@@ -1143,13 +1143,13 @@
       "资产编号": "待补编号",
       "设备品牌": "INFINIX",
       "设备名称": "InfinixX669",
-      "mmuid": "",
+      "mmuid": "c1d1cf1db997ccf08ae2c0279eb789ca4eedbacc",
       "mmuidv3": "e0984a1ab29ed70347184df8662daeab2be64495fd0c7ae1fe102571549d2ddf09",
       "设备系统": "Android",
       "系统版本": "12",
       "归属人": "",
       "持有人": "",
-      "备注": "自动落库 2026-07-06；phone=19900001111；userId=102574370；ip=8.219.127.157"
+      "备注": "自动落库 2026-07-06；phone=19900001111；userId=102574370；ip=8.219.127.157；自动落库 2026-11-17；userId=112793737；ip=101.47.40.59"
     },
     {
       "项目": "yaahlan",
@@ -2101,5 +2101,5 @@
       "备注": "刘哲设备知识库登记 2026-10-29"
     }
   ],
-  "lastIncrementalUpdate": "资产编号 GZ3026090069 → Xiaomi 24129PN74C"
+  "lastIncrementalUpdate": "upsert loginDevice phone= userId=112793737"
 }

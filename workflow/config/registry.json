@@ -983,6 +983,26 @@
         "公会盘古 场景=<scenario> whiteUsers=<whiteUsers> fixedTimeSec=<fixedTimeSec> expireTimeSec=<expireTimeSec> shiftTime=<shiftTime> 保存发布"
       ],
       "command": "python3 workflow/workflow_execute.py run guild_pangu_shift_config --scenario <scenario> --white-users <whiteUsers> --fixed-time-sec <fixedTimeSec> --expire-time-sec <expireTimeSec> --shift-time <shiftTime>"
+    },
+    {
+      "id": "dealer_pangu_assistant_quota_time",
+      "name": "币商助理额度刷新时间",
+      "category": "币商盘古配置（workflow）",
+      "description": "预上线 stage：改 Application.shiftTime.dealerAssistant（白名单币商 id + fixedTimeSec 对齐中东区算薪结算/tradeUnion），保存并全量发布。",
+      "prompts": [
+        "币商助理额度盘古 whiteUsers=<whiteUsers> fixedTimeSec=<fixedTimeSec> 保存发布"
+      ],
+      "command": "python3 workflow/workflow_execute.py run dealer-pangu-assistant-quota-time --white-users <whiteUsers> --fixed-time-sec <fixedTimeSec> --expire-time-sec <expireTimeSec> --shift-time <shiftTime>"
+    },
+    {
+      "id": "dealer_pangu_recharge_auth_whitelist",
+      "name": "跳过币商充值真人认证白名单",
+      "category": "币商盘古配置（workflow）",
+      "description": "预上线 stage：改用户服务 Application.dealerAuthConfig.whitelistUserIds，列表内币商跳过在线充值真人认证；发布前保留已有 id。",
+      "prompts": [
+        "币商充值跳过真人认证白名单 whitelistUserIds=<whitelistUserIds> 保存发布"
+      ],
+      "command": "python3 workflow/workflow_execute.py run dealer-pangu-recharge-auth-whitelist --white-users <whiteUsers>"
     }
   ]
 }

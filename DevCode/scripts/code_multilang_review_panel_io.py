@@ -31,13 +31,16 @@ def scenarios_for_web() -> dict[str, Any]:
                 "key": raw.get("key"),
                 "docIndex": raw.get("doc_index"),
                 "name": raw.get("name"),
+                "guideShort": str(raw.get("guide_short") or "").strip(),
                 "usageNote": str(raw.get("usage_note") or "").strip(),
                 "promptTemplate": str(raw.get("prompt") or "").strip(),
             }
         )
+    web_usage = catalog.get("web_usage") or {}
     return {
         "docNote": catalog.get("doc_note") or "",
-        "web_usage": catalog.get("web_usage") or {},
+        "panelTitle": str(web_usage.get("title") or "").strip(),
+        "web_usage": web_usage,
         "skillPath": catalog.get("skill_path") or "",
         "registryId": catalog.get("registry_id") or "multilang_doc_writeback",
         "defaultMultilangDocUrl": catalog.get("default_multilang_doc_url") or "",

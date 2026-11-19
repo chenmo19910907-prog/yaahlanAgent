@@ -1,0 +1,28 @@
+{
+  "id": "dealer-pangu-recharge-auth-whitelist",
+  "name": "跳过币商充值真人认证白名单",
+  "category": "币商盘古配置（workflow）",
+  "description": "预上线 stage：改用户服务 Application.dealerAuthConfig.whitelistUserIds（追加币商 id 时须保留已有白名单），保存并全量发布。",
+  "version": 1,
+  "params": {
+    "whiteUsers": {
+      "label": "whitelistUserIds（币商 id）",
+      "type": "string",
+      "required": true
+    }
+  },
+  "steps": [
+    {
+      "id": "apply_dealer_auth_whitelist",
+      "name": "改 MSE 配置并发布",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/guild_pangu_shift_time_apply.py --scenarios-file workflow/config/dealer_pangu_shift_scenarios.json --scenario dealer_recharge_auth_whitelist --white-users \"{{whiteUsers}}\"",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

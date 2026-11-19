@@ -64,11 +64,11 @@ async def list_sheets(token: str, op: str, workbook_id: str) -> list[dict]:
 
 
 async def find_sheet_id(token: str, op: str, workbook_id: str, sheet_name: str) -> str | None:
-    """按 tab 名称查找 sheetId"""
+    """按 tab 名称查找 sheetId（API 可能返回 id 或 sheetId）"""
     sheets = await list_sheets(token, op, workbook_id)
     for s in sheets:
         if s.get("name") == sheet_name:
-            return s.get("sheetId")
+            return s.get("sheetId") or s.get("id")
     return None
 
 
@@ -85,13 +85,111 @@ async def read_range(token: str, op: str, workbook_id: str, sheet_id: str, range
 
 async def find_last_data_row(token: str, op: str, workbook_id: str, sheet_id: str,
                               max_row: int = 600) -> int:
-    """找 A 列最后有数据的行号（1-indexed）"""
+    """找 A 列最后有数据的行号（1-indexed）。勿用于补用例定位（表头 A 列常为空）。"""
     values = await read_range(token, op, workbook_id, sheet_id, f"A1:A{max_row}")
     last = 0
     for i, row in enumerate(values):
         if row and any(c for c in row):
             last = i + 1
     return last
+
+
+def detect_header_row(values: list[list]) -> int:
+    """表头行：B 列含「功能模块」或 A 列「用例编号」。默认 6。"""
+    for row_1 in range(4, 16):
+        if _cell_at(values, row_1, 0) == "用例编号":
+            return row_1
+        if "功能模块" in _cell_at(values, row_1, 1):
+            return row_1
+    return 6
+
+
+def detect_case_start_row(values: list[list]) -> int:
+    """
+    首条用例行（1-based）。跳过 B=覆盖率任务代码质量平台 的配置行（常在 7–8 行）。
+    """
+    header = detect_header_row(values)
+    row_1 = header + 1
+    while row_1 <= min(len(values), header + 12):
+        b = _cell_at(values, row_1, 1)
+        if b.replace(" ", "") == COVERAGE_QUALITY_PLATFORM_B7.replace(" ", ""):
+            row_1 += 1
+            continue
+        c, d = _cell_at(values, row_1, 2), _cell_at(values, row_1, 3)
+        if c or d:
+            return row_1
+        row_1 += 1
+    return header + 1
+
+
+def protected_row_end(values: list[list]) -> int:
+    """禁止写入 A–D 的上边界（含表头与覆盖率配置行）。"""
+    start = detect_case_start_row(values)
+    return max(1, start - 1)
+
+
+def find_last_case_row_from_values(values: list[list], case_start: int | None = None) -> int:
+    """按 C/D 列（步骤/预期）定位最后一条用例行，1-based。"""
+    if case_start is None:
+        case_start = detect_case_start_row(values)
+    last = case_start - 1
+    for i in range(case_start - 1, len(values)):
+        row = values[i]
+        if not row:
+            continue
+        c = str(row[2]).strip() if len(row) > 2 else ""
+        d = str(row[3]).strip() if len(row) > 3 else ""
+        if c or d:
+            last = i + 1
+    return last
+
+
+async def find_last_case_row(token: str, op: str, workbook_id: str, sheet_id: str,
+                             max_row: int = 800) -> tuple[int, int]:
+    """
+    返回 (last_case_row, append_start_row)。
+    append_start_row = last_case_row + 1，且一定大于 protected_row_end。
+    """
+    values = await read_range(token, op, workbook_id, sheet_id, f"A1:D{max_row}")
+    case_start = detect_case_start_row(values)
+    last = find_last_case_row_from_values(values, case_start)
+    append_at = max(last + 1, protected_row_end(values) + 1)
+    return last, append_at
+
+
+_REPO_NAME_RE = __import__("re").compile(
+    r"(voga[_\-a-z0-9]+|yaahlan[_\-a-z0-9]+|voga_android|voga_ios(?:_modules)?)",
+    __import__("re").I,
+)
+
+
+def _parse_repo_names_from_cell(raw: str) -> list[str]:
+    """从覆盖率行 C 列解析仓名，如「服务端voga-mts-user，voga-mts-components」。"""
+    if not raw:
+        return []
+    found = _REPO_NAME_RE.findall(raw.replace("，", ",").replace("、", ","))
+    out: list[str] = []
+    for name in found:
+        name = name.strip().rstrip("，,。")
+        if name and name not in out:
+            out.append(name)
+    return out
+
+
+def extract_coverage_platform_repos(values: list[list]) -> list[dict]:
+    """
+    扫描 B=覆盖率任务代码质量平台 的行：C 列仓库描述，D 列分支。
+  常见为多行（服务端一行、H5 一行）。
+    """
+    repos: list[dict] = []
+    for row_1 in range(6, min(len(values) + 1, 25)):
+        b = _cell_at(values, row_1, 1)
+        if b.replace(" ", "") != COVERAGE_QUALITY_PLATFORM_B7.replace(" ", ""):
+            continue
+        branch = _parse_branch_cell(_cell_at(values, row_1, 3)) or _cell_at(values, row_1, 3)
+        for repo in _parse_repo_names_from_cell(_cell_at(values, row_1, 2)):
+            repos.append({"repo": repo, "branch": branch or "main", "coverage_row": row_1})
+    return repos
 
 
 COVERAGE_QUALITY_PLATFORM_B7 = "覆盖率任务代码质量平台"
@@ -121,15 +219,19 @@ def _parse_branch_cell(raw: str) -> str:
 
 def extract_b7_requirement_branches(values: list[list]) -> list[str]:
     """
-    版本用例表第 7 行：B7 为「覆盖率任务代码质量平台」时，C7、D7 可填需求所属分支名；否则忽略。
+    覆盖率配置行：分支在 **D 列**（C 列为仓库描述，勿当分支解析）。
     """
-    b7 = _cell_at(values, 7, 1)
-    if b7.replace(" ", "") != COVERAGE_QUALITY_PLATFORM_B7.replace(" ", ""):
-        return []
     out: list[str] = []
-    for col in (2, 3):
-        br = _parse_branch_cell(_cell_at(values, 7, col))
-        if br and br not in out:
+    for row_1 in range(6, min(len(values) + 1, 25)):
+        if _cell_at(values, row_1, 1).replace(" ", "") != COVERAGE_QUALITY_PLATFORM_B7.replace(" ", ""):
+            continue
+        br = _parse_branch_cell(_cell_at(values, row_1, 3)) or _cell_at(values, row_1, 3)
+        if not br:
+            continue
+        low = br.lower()
+        if "voga" in low or "yaahlan" in low or "服务端" in br or "前端" in br:
+            continue
+        if br not in out:
             out.append(br)
     return out
 
@@ -180,12 +282,20 @@ def _merge_b7_branches(repos: list[dict], b7_branches: list[str]) -> list[dict]:
 def extract_sheet_git_context(values: list[list]) -> dict:
     """
     汇总拉代码所需信息。
-    返回 {"repos": [...], "requirement_branches": [...]}；
-    requirement_branches 仅当 B7 为覆盖率任务代码质量平台且 C7/D7 有内容时非空。
+    返回 {"repos", "requirement_branches", "case_start_row", "protected_end_row"}。
+    优先：覆盖率配置行 C/D；其次 E 列备注；B7 C/D 分支补全。
     """
     b7_branches = extract_b7_requirement_branches(values)
-    repos = _merge_b7_branches(_extract_repo_info_from_remarks(values), b7_branches)
-    return {"repos": repos, "requirement_branches": b7_branches}
+    repos = extract_coverage_platform_repos(values)
+    if not repos:
+        repos = _extract_repo_info_from_remarks(values)
+    repos = _merge_b7_branches(repos, b7_branches)
+    return {
+        "repos": repos,
+        "requirement_branches": b7_branches,
+        "case_start_row": detect_case_start_row(values),
+        "protected_end_row": protected_row_end(values),
+    }
 
 
 def extract_repo_info(values: list[list]) -> list[dict]:
@@ -199,11 +309,16 @@ def extract_repo_info(values: list[list]) -> list[dict]:
 
 # ── 写入 ─────────────────────────────────────────────────────────────────
 async def write_range(token: str, op: str, workbook_id: str, sheet_id: str,
-                       rows: list[list], start_row: int, start_col: str = "A") -> bool:
+                       rows: list[list], start_row: int, start_col: str = "A",
+                       protected_end_row: int = 0) -> bool:
     """
     从 start_row 起批量写入 rows（每行 = [A, B, C, D] 等）。
-    自动推算结束列（按 rows[0] 的长度）。
+    protected_end_row>0 时禁止覆盖表头/覆盖率行。
     """
+    if protected_end_row and start_row <= protected_end_row:
+        raise ValueError(
+            f"拒绝写入：start_row={start_row} 位于保护区 1–{protected_end_row}（表头/覆盖率配置）"
+        )
     if not rows:
         return True
     num_cols = max(len(r) for r in rows)
@@ -241,15 +356,97 @@ async def mark_fail(token: str, op: str, workbook_id: str, sheet_id: str,
             print(f"  行{row} E列 → fail {'(+ reason)' if reason else ''}，状态 {r.status_code}")
 
 
+# ── 同步 HTTP（无 httpx 时 Web Agent / 本机 CLI 使用）────────────────────
+import json as _json
+import urllib.request as _urllib_request
+
+
+def get_token_sync() -> tuple[str, str]:
+    url = f"{TOKEN_URL}?aegisKey={AEGIS_KEY}&aegisSecret={AEGIS_SECRET}&workid={WORKID}"
+    req = _urllib_request.Request(url, headers=_BASE_HEADERS)
+    with _urllib_request.urlopen(req, timeout=30) as r:
+        d = _json.loads(r.read())
+    return d["data"]["token"], d["data"]["operatorId"]
+
+
+def _http_get_sync(url: str, token: str) -> dict:
+    headers = {**_auth_headers(token)}
+    req = _urllib_request.Request(url, headers=headers)
+    with _urllib_request.urlopen(req, timeout=60) as r:
+        return _json.loads(r.read())
+
+
+def _http_put_sync(url: str, token: str, payload: dict) -> int:
+    body = _json.dumps(payload).encode()
+    headers = {**_auth_headers(token)}
+    req = _urllib_request.Request(url, data=body, headers=headers, method="PUT")
+    with _urllib_request.urlopen(req, timeout=60) as r:
+        return r.status
+
+
+def find_sheet_id_sync(token: str, op: str, workbook_id: str, sheet_name: str) -> str | None:
+    data = _http_get_sync(f"{API_BASE}/workbooks/{workbook_id}/sheets?operatorId={op}", token)
+    for s in data.get("sheets") or data.get("value") or []:
+        if s.get("name") == sheet_name:
+            return s.get("sheetId") or s.get("id")
+    return None
+
+
+def read_range_sync(token: str, op: str, workbook_id: str, sheet_id: str, range_str: str) -> list[list]:
+    url = f"{API_BASE}/workbooks/{workbook_id}/sheets/{sheet_id}/ranges/{range_str}?operatorId={op}"
+    return _http_get_sync(url, token).get("values", [])
+
+
+def write_range_sync(
+    token: str,
+    op: str,
+    workbook_id: str,
+    sheet_id: str,
+    rows: list[list],
+    start_row: int,
+    start_col: str = "A",
+    protected_end_row: int = 0,
+) -> int:
+    if protected_end_row and start_row <= protected_end_row:
+        raise ValueError(
+            f"拒绝写入：start_row={start_row} 位于保护区 1–{protected_end_row}"
+        )
+    if not rows:
+        return 204
+    num_cols = max(len(r) for r in rows)
+    end_col = chr(ord(start_col) + num_cols - 1)
+    end_row = start_row + len(rows) - 1
+    range_str = f"{start_col}{start_row}:{end_col}{end_row}"
+    url = f"{API_BASE}/workbooks/{workbook_id}/sheets/{sheet_id}/ranges/{range_str}?operatorId={op}"
+    normalized = [[str(c) for c in row] for row in rows]
+    return _http_put_sync(url, token, {"values": normalized})
+
+
+def mark_fail_sync(
+    token: str,
+    op: str,
+    workbook_id: str,
+    sheet_id: str,
+    items: list[tuple[int, str]],
+) -> None:
+    for row, reason in items:
+        rng = f"E{row}:F{row}" if reason else f"E{row}"
+        val = [["fail", reason[:450]]] if reason else [["fail"]]
+        url = f"{API_BASE}/workbooks/{workbook_id}/sheets/{sheet_id}/ranges/{rng}?operatorId={op}"
+        _http_put_sync(url, token, {"values": val})
+
+
+def workbook_id_from_url(url: str) -> str:
+    """从 alidocs 链接提取 nodes/{id}。"""
+    if "/nodes/" not in url:
+        raise ValueError("非 AliDocs nodes URL")
+    return url.split("/nodes/", 1)[1].split("?")[0].strip("/")
+
+
 # ── 快速入口（命令行测试用）───────────────────────────────────────────────
 if __name__ == "__main__":
     async def _demo():
         token, op = await get_token()
         print(f"Token 获取成功，operatorId={op}")
-
-        # 示例：列举 sheets
-        # sheets = await list_sheets(token, op, "YOUR_WORKBOOK_ID")
-        # for s in sheets:
-        #     print(f"  {s['name']} -> {s['sheetId']}")
 
     asyncio.run(_demo())

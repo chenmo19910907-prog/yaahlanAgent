@@ -65,6 +65,7 @@ from .params import (
     set_guild_batch_del_anchor_mmuidv3_params,
     set_guild_device_mmuidv3_query_params,
     set_activity_reward_im_send_params,
+    set_guild_clear_super_trade_president_daily_invite_record_params,
     set_guild_force_update_trade_level_params,
     normalize_cp_pair_key,
     random_five_digit_out_order_id,
@@ -609,6 +610,29 @@ def _op_activity_reward_im_send(args: argparse.Namespace, payload: dict[str, Any
         user_id=args.activity_reward_im_user_id,
         im_id=im_id,
         replace=replace,
+    )
+
+
+def _guild_clear_super_trade_president_daily_invite_record_mode(
+    args: argparse.Namespace,
+) -> bool:
+    return (
+        getattr(args, "guild_super_trade_invite_record_date", None) is not None
+        or getattr(args, "guild_super_trade_invite_record_user_id", None) is not None
+    )
+
+
+def _op_guild_clear_super_trade_president_daily_invite_record(
+    args: argparse.Namespace, payload: dict[str, Any]
+) -> None:
+    if not args.guild_super_trade_invite_record_date:
+        raise ValueError("清除母公会长当日邀请记录须提供 --guild-super-trade-invite-record-date")
+    if not args.guild_super_trade_invite_record_user_id:
+        raise ValueError("清除母公会长当日邀请记录须提供 --guild-super-trade-invite-record-user-id")
+    set_guild_clear_super_trade_president_daily_invite_record_params(
+        payload,
+        record_date=args.guild_super_trade_invite_record_date,
+        user_id=args.guild_super_trade_invite_record_user_id,
     )
 
 
@@ -1980,6 +2004,10 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: getattr(a, "guild_device_mmuidv3", None) is not None, _op_guild_device_mmuidv3_query),
     (lambda a: getattr(a, "guild_anchor_user_ids_json", None) is not None, _op_guild_batch_del_anchor_mmuidv3),
     (lambda a: _activity_reward_im_send_mode(a), _op_activity_reward_im_send),
+    (
+        lambda a: _guild_clear_super_trade_president_daily_invite_record_mode(a),
+        _op_guild_clear_super_trade_president_daily_invite_record,
+    ),
     (lambda a: _guild_force_update_trade_level_mode(a), _op_guild_force_update_trade_level),
     (lambda a: _room_set_level_mode(a), _op_room_set_level),
     (lambda a: a.user_rank_area is not None, _op_user_rank_dispatch),

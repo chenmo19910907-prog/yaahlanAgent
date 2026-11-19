@@ -11,12 +11,23 @@ from pathlib import Path
 from typing import Any
 
 REPO = Path(__file__).resolve().parents[2]
-SCENARIOS_PATH = REPO / "workflow/config/guild_pangu_shift_scenarios.json"
+DEFAULT_SCENARIOS_PATH = REPO / "workflow/config/guild_pangu_shift_scenarios.json"
 MSE = REPO / "MSE/mse_execute.py"
 
 
-def _load_scenarios() -> dict[str, Any]:
-    with SCENARIOS_PATH.open("r", encoding="utf-8") as f:
+def _resolve_scenarios_path(raw: str | None) -> Path:
+    text = str(raw or "").strip()
+    if not text:
+        return DEFAULT_SCENARIOS_PATH
+    p = Path(text)
+    if not p.is_absolute():
+        p = REPO / p
+    return p
+
+
+def _load_scenarios(path: Path | None = None) -> dict[str, Any]:
+    scenarios_path = path or DEFAULT_SCENARIOS_PATH
+    with scenarios_path.open("r", encoding="utf-8") as f:
         data = json.load(f)
     if not isinstance(data, dict):
         raise RuntimeError("guild_pangu_shift_scenarios.json 格式错误")
@@ -57,6 +68,12 @@ def _parse_white_users(raw: str | None) -> list[str] | None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="公会盘古 shiftTime 改参")
     parser.add_argument("--scenario", required=True, help="scenarios.json 中的 key")
+    parser.add_argument(
+        "--scenarios-file",
+        dest="scenarios_file",
+        default="",
+        help="场景清单 JSON 路径（默认 workflow/config/guild_pangu_shift_scenarios.json）",
+    )
     parser.add_argument("--fixed-time-sec", dest="fixed_time_sec", default="")
     parser.add_argument("--expire-time-sec", dest="expire_time_sec", default="")
     parser.add_argument("--shift-time", dest="shift_time", default="")
@@ -65,7 +82,8 @@ def main() -> int:
     parser.add_argument("--no-publish", action="store_true")
     args = parser.parse_args()
 
-    catalog = _load_scenarios()
+    scenarios_path = _resolve_scenarios_path(args.scenarios_file or None)
+    catalog = _load_scenarios(scenarios_path)
     scenario = _scenario_by_key(catalog, args.scenario)
     if scenario.get("read_only"):
         config_key = str(scenario["config_key"])
@@ -111,7 +129,10 @@ def main() -> int:
         set_pairs.append(f"expireTimeSec={expire}")
     if shift is not None and "shiftTime" in writable:
         set_pairs.append(f"shiftTime={shift}")
-    if white_users is not None:
+    wl_mse_key = str(scenario.get("white_list_field") or "whiteUsers")
+    if white_users is not None and wl_mse_key in writable:
+        set_pairs.append(f"{wl_mse_key}={json.dumps(white_users, ensure_ascii=False)}")
+    elif white_users is not None and "whiteUsers" in writable:
         set_pairs.append(f"whiteUsers={json.dumps(white_users, ensure_ascii=False)}")
     if not set_pairs:
         print("未指定任何可写字段", file=sys.stderr)
@@ -119,7 +140,11 @@ def main() -> int:
 
     config_key = str(scenario["config_key"])
     namespace = str(scenario["namespace"])
+    env = catalog.get("env") or {}
+    app_key = str(scenario.get("app_key") or env.get("app_key") or "").strip()
     mse_args = ["--namespace", namespace, "--config-key", config_key]
+    if app_key:
+        mse_args.extend(["--app-key", app_key])
     for pair in set_pairs:
         mse_args.extend(["--set", pair])
     if args.dry_run:
@@ -132,15 +157,16 @@ def main() -> int:
     print(f"场景：{scenario.get('name')} → {namespace}/{config_key}")
     _run_mse(mse_args)
     if not args.dry_run:
-        _run_mse(
-            [
-                "--namespace",
-                namespace,
-                "--config-key",
-                config_key,
-                "--share-link-only",
-            ]
-        )
+        share_args = [
+            "--namespace",
+            namespace,
+            "--config-key",
+            config_key,
+            "--share-link-only",
+        ]
+        if app_key:
+            share_args.extend(["--app-key", app_key])
+        _run_mse(share_args)
     return 0
 
 

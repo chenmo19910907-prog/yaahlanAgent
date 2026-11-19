@@ -586,6 +586,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="强制修改公会等级：公会 tradeUnionId（testUpdateTradeLevel）",
     )
     parser.add_argument(
+        "--guild-super-trade-invite-record-date",
+        help="清除母公会长当日邀请记录：日期 yyyyMMdd（sub:trade:invite:record）",
+    )
+    parser.add_argument(
+        "--guild-super-trade-invite-record-user-id",
+        help="清除母公会长当日邀请记录：母公会长 userId",
+    )
+    parser.add_argument(
         "--change-user-area-user-id",
         help="修改用户大区 userId（changeAreaForTest；params=userId, 大区代码）",
     )

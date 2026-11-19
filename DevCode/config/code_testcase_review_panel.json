@@ -5,7 +5,7 @@
   "doc_note": "Agent 按 Skill 串行执行，非一键脚本。",
   "web_usage": {
     "title": "代码×用例交叉审查",
-    "env_hint": "本机 voga-repos（9 仓·含 H5） + 钉钉用例表 · 代码仓只读 · 表仅写 E/F",
+    "env_hint": "本机 voga-repos + 钉钉用例表 · 代码只读 · 仅写 E/F · 补用例须用 sheet-info 定行号",
     "field_help": {
       "sheetUrl": "钉钉 AliDocs 链接（须含 workbookId）",
       "sheetName": "可选；留空由 Agent 列举确认"
@@ -18,15 +18,15 @@
       "doc_index": 0,
       "name": "全流程（①→⑤）",
       "guide_short": "①→⑤ 一次跑完",
-      "usage_note": "读表 A:E → 按 E 拉 9 仓 → 与 Java/Android/iOS/H5 比对 → E 标 fail、F 写原因 → 末尾补用例并复核。",
-      "prompt": "用例覆盖率分析 <sheetUrl>"
+      "usage_note": "读 A–F · B7 覆盖率行 C/D 拉仓 → 比对 → mark-fail/append 走 code_testcase_review_execute.py · 写后复核。",
+      "prompt": "读取用例表 <sheetUrl> Sheet：<sheetName>，结合服务端和前端仓库及代码分析哪些不符合用例并在对应E标fail、F写原因→末尾补用例并复核"
     },
     {
       "key": "read_sheet",
       "doc_index": 1,
       "name": "① 读用例",
       "guide_short": "A:E 与备注",
-      "usage_note": "读 A–E；解析 E 列仓库/分支。B7=覆盖率任务代码质量平台时读 C7/D7 分支（否则忽略）。",
+      "usage_note": "先 sheet-info；覆盖率行 C=仓库 D=分支（可多行）；用例自 case_start_row 起。",
       "prompt": "读取用例表 <sheetUrl> 准备代码交叉审查"
     },
     {
@@ -58,7 +58,7 @@
       "doc_index": 5,
       "name": "⑤ 补用例",
       "guide_short": "末尾追加",
-      "usage_note": "未覆盖场景在表末追加 A–D，编号续接；写入后 GET 验证。",
+      "usage_note": "append-cases 使用 append_start_row；禁止覆盖 1–protected_end_row；写入后 GET 验证。",
       "prompt": "根据代码补充未覆盖测试用例 <sheetUrl>"
     }
   ]

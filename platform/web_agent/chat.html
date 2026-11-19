@@ -2914,6 +2914,9 @@
       min-width: 0;
       max-width: 100%;
     }
+    .msg.assistant .msg-body {
+      position: relative;
+    }
     .msg.assistant .msg-actions {
       position: absolute;
       left: calc(100% + 6px);
@@ -2923,7 +2926,19 @@
       pointer-events: auto;
     }
     .msg.assistant.streaming .msg-actions { display: none; }
-    .msg-share-btn {
+    .msg.assistant .msg-terminal-external {
+      position: absolute;
+      left: calc(100% + 6px);
+      top: 0;
+      display: flex;
+      flex-shrink: 0;
+      pointer-events: auto;
+    }
+    .msg-terminal-external[hidden] {
+      display: none !important;
+    }
+    .msg-share-btn,
+    .msg-terminal-btn {
       appearance: none;
       border: none;
       background: transparent;
@@ -2938,17 +2953,20 @@
       cursor: pointer;
       transition: color 180ms var(--ease-standard), background 180ms var(--ease-standard);
     }
-    .msg-share-btn svg {
+    .msg-share-btn svg,
+    .msg-terminal-btn svg {
       width: 15px;
       height: 15px;
       stroke: currentColor;
       flex-shrink: 0;
     }
-    .msg-share-btn:hover {
+    .msg-share-btn:hover,
+    .msg-terminal-btn:hover {
       color: var(--accent);
       background: var(--accent-soft);
     }
-    .msg-share-btn:focus-visible {
+    .msg-share-btn:focus-visible,
+    .msg-terminal-btn:focus-visible {
       outline: 2px solid var(--accent);
       outline-offset: 2px;
     }
@@ -3063,6 +3081,7 @@
       color: var(--text);
       box-shadow: var(--shadow-soft, 0 12px 40px rgba(0, 0, 0, 0.45));
       border: 1px solid var(--border);
+      overflow: hidden;
     }
     .web-terminal-modal-header {
       display: flex;
@@ -3097,6 +3116,7 @@
       word-break: break-word;
       flex: 1 1 auto;
       min-height: 200px;
+      border-radius: 0 0 calc(var(--panel-radius, 10px) - 1px) calc(var(--panel-radius, 10px) - 1px);
     }
     .msg.assistant.streaming .stream-section {
       width: 100%;
@@ -6986,8 +7006,10 @@
   <script src="message_board_panel.js?v=20260730b"></script>
   <script src="about_panel.js?v=20260814a"></script>
   <script src="guild_pangu_panel.js?v=20261106a"></script>
+  <script src="dealer_pangu_panel.js?v=20261117b"></script>
+  <script src="dealer_recharge_auth_panel.js?v=20261119a"></script>
   <script src="code_testcase_review_panel.js?v=20261110c"></script>
-  <script src="code_multilang_review_panel.js?v=20261111a"></script>
+  <script src="code_multilang_review_panel.js?v=20261111b"></script>
   <script src="catalog_panel.js?v=20261110c"></script>
   <script src="moa_record_panel.js?v=20260803d"></script>
   <script src="waiting_fx.js"></script>
@@ -8001,6 +8023,10 @@
       return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
     }
 
+    function terminalIconHtml() {
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>`;
+    }
+
     function setMessageMarkdown(bodyEl, markdown) {
       if (!bodyEl) return;
       const md = String(markdown || '').trim();
@@ -8234,7 +8260,59 @@
 
     function removeAssistantShareButton(msgEl) {
       msgEl?.querySelector('.msg-actions')?.remove();
+      const wrap = msgEl?.querySelector(':scope > .msg-body-wrap');
+      if (wrap?.querySelector('.msg-terminal-external')) return;
       unwrapAssistantMessageBody(msgEl);
+    }
+
+    function removeAssistantTerminalButton(msgEl) {
+      const slot = msgEl?.querySelector('.msg-terminal-external');
+      if (slot) slot.hidden = true;
+    }
+
+    function ensureAssistantTerminalButton(msgEl) {
+      if (!msgEl?.classList?.contains('assistant')) return null;
+      const bodyEl = msgEl.querySelector('.msg-body');
+      if (!bodyEl) return null;
+      const wrap = ensureAssistantMessageBodyWrap(bodyEl);
+      let slot = wrap.querySelector(':scope > .msg-terminal-external');
+      if (!slot) {
+        slot = document.createElement('div');
+        slot.className = 'msg-terminal-external';
+        slot.hidden = true;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'msg-terminal-btn';
+        btn.setAttribute('data-terminal-btn', '');
+        btn.title = '终端输出';
+        btn.setAttribute('aria-label', '终端输出');
+        btn.innerHTML = terminalIconHtml();
+        slot.appendChild(btn);
+        const actions = wrap.querySelector('.msg-actions');
+        if (actions) wrap.insertBefore(slot, actions);
+        else wrap.appendChild(slot);
+      }
+      return slot;
+    }
+
+    function purgeInlineTerminalButtons(bodyEl) {
+      if (!bodyEl) return;
+      bodyEl.querySelector('.msg-result-terminal-row')?.remove();
+      bodyEl.querySelectorAll('[data-terminal-btn]').forEach((btn) => btn.remove());
+    }
+
+    function shouldShowMsgTerminalButton(msgEl, sessionId = '') {
+      if (!msgEl?.classList?.contains('assistant')) return false;
+      const streaming = msgEl.classList.contains('streaming') && !isStreamingShellFinalized(msgEl);
+      const sid = String(sessionId || shellSessionId(msgEl) || '').trim();
+      const run = sid ? activeRuns.get(sid) : null;
+      if (run?.runId && run.shellEl === msgEl && !msgEl.dataset.runId) {
+        msgEl.dataset.runId = String(run.runId);
+      }
+      if (streaming && run?.shellEl === msgEl) return true;
+      const runId = String(msgEl.dataset.runId || run?.runId || '').trim();
+      const inlineText = resolveMsgTerminalText(msgEl, sessionId);
+      return Boolean(runId || inlineText.trim());
     }
 
     function ensureAssistantShareButton(msgEl) {
@@ -8284,6 +8362,22 @@
           event.clipboardData.setData('text/plain', plainText);
           event.clipboardData.setData('text/html', html);
         }
+      });
+    }
+
+    function setupMessageTerminalActions() {
+      const container = getMessagesEl();
+      if (!container || container.dataset.msgTerminalBound === '1') return;
+      container.dataset.msgTerminalBound = '1';
+      container.addEventListener('click', (event) => {
+        const btn = event.target.closest('[data-terminal-btn]');
+        if (!btn) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const msgEl = btn.closest('.msg.assistant');
+        if (!msgEl) return;
+        const sid = String(currentSessionId || '').trim();
+        openTerminalModalForMessage(msgEl, sid);
       });
     }
 
@@ -8929,15 +9023,13 @@
       const body = text || phaseText;
       if (!body) return '';
       return `<section class="stream-section stream-section-think">
-        <div class="stream-section-title-row">
-          <div class="stream-section-title">思考中</div>
-          <button type="button" class="stream-terminal-btn" data-terminal-btn hidden>终端</button>
-        </div>
+        <div class="stream-section-title">思考中</div>
         <div class="stream-thinking">${escapeHtml(body)}</div>
       </section>`;
     }
 
-    let terminalModalSessionId = '';
+    const msgTerminalTextCache = new WeakMap();
+    let terminalModalSource = { sessionId: '', msgEl: null, text: '' };
 
     function ensureRunTerminalState(sessionId) {
       const run = activeRuns.get(sessionId);
@@ -8968,13 +9060,168 @@
       return el;
     }
 
+    const TERMINAL_ESCAPE_MAP = { n: '\n', t: '\t', r: '\r', '"': '"', "'": "'", '\\': '\\' };
+
+    function unescapeDisplayEscapes(text) {
+      let body = String(text || '');
+      if (!body.includes('\\')) return body;
+      for (let round = 0; round < 6; round += 1) {
+        const next = body.replace(/\\([ntr'"\\])/g, (_, ch) => TERMINAL_ESCAPE_MAP[ch] || `\\${ch}`);
+        if (next === body) break;
+        body = next;
+      }
+      return body;
+    }
+
+    function formatTerminalDisplayText(text) {
+      const raw = String(text || '');
+      if (!raw.trim()) return '';
+      const marker = "{'exitCode'";
+      const parts = [];
+      let i = 0;
+      while (i < raw.length) {
+        const pos = raw.indexOf(marker, i);
+        if (pos < 0) {
+          const tail = raw.slice(i).trim();
+          if (tail) parts.push(unescapeDisplayEscapes(tail));
+          break;
+        }
+        if (pos > i) {
+          const prefix = raw.slice(i, pos).trimEnd();
+          if (prefix) parts.push(prefix);
+        }
+        let end = -1;
+        for (let j = pos + 12; j <= Math.min(raw.length, pos + 250000); j += 1) {
+          const chunk = raw.slice(pos, j);
+          if ((chunk.match(/\{/g) || []).length > (chunk.match(/\}/g) || []).length + 2) continue;
+          try {
+            // eslint-disable-next-line no-new-func
+            const parsed = Function(`"use strict"; return (${chunk});`)();
+            if (parsed && typeof parsed === 'object' && 'exitCode' in parsed) {
+              const block = [];
+              block.push(`exitCode: ${parsed.exitCode}`);
+              ['stdout', 'stderr'].forEach((key) => {
+                const piece = unescapeDisplayEscapes(String(parsed[key] || '')).trim();
+                if (piece) block.push(piece);
+              });
+              parts.push(block.join('\n'));
+              end = j;
+              break;
+            }
+          } catch {
+            /* continue */
+          }
+        }
+        if (end < 0) {
+          parts.push(unescapeDisplayEscapes(raw.slice(pos, pos + 400)));
+          i = pos + 1;
+        } else {
+          i = end;
+        }
+      }
+      return parts.join('\n').trim();
+    }
+
+    function stripInterruptShellBlock(markdown) {
+      return String(markdown || '').replace(/\n#### Shell 输出（节选）\n\n```[\s\S]*?```/g, '').trim();
+    }
+
+    function resolveMsgTerminalText(msgEl, sessionId = '') {
+      if (!msgEl) return '';
+      const cached = msgTerminalTextCache.get(msgEl);
+      if (cached) return cached;
+      const sid = String(sessionId || '').trim();
+      const run = sid ? activeRuns.get(sid) : null;
+      if (run?.shellEl === msgEl && run.terminal?.text) {
+        return String(run.terminal.text || '');
+      }
+      return '';
+    }
+
+    function storeMsgTerminalText(msgEl, text) {
+      const body = String(text || '').trim();
+      if (!msgEl || !body) return;
+      msgTerminalTextCache.set(msgEl, body);
+    }
+
+    function bindTerminalButton(shell, sessionId) {
+      if (!shell) return;
+      shell.querySelectorAll('[data-terminal-btn]').forEach((btn) => {
+        if (btn.dataset.bound === '1') return;
+        btn.dataset.bound = '1';
+        btn.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          const sid = String(sessionId || shellSessionId(shell) || currentSessionId || '').trim();
+          openTerminalModalForMessage(shell, sid);
+        });
+      });
+    }
+
+    function updateTerminalButtonVisibility(shell) {
+      if (!shell?.classList?.contains('assistant')) return;
+      syncMsgTerminalButton(shell, shellSessionId(shell));
+    }
+
+    function syncMsgTerminalButton(msgEl, sessionId = '') {
+      if (!msgEl?.classList?.contains('assistant')) return;
+      const bodyEl = msgEl.querySelector('.msg-body');
+      if (!bodyEl) return;
+      purgeInlineTerminalButtons(bodyEl);
+      const inlineText = resolveMsgTerminalText(msgEl, sessionId);
+      if (inlineText.trim()) storeMsgTerminalText(msgEl, inlineText);
+      const show = shouldShowMsgTerminalButton(msgEl, sessionId);
+      if (!show) {
+        removeAssistantTerminalButton(msgEl);
+        return;
+      }
+      ensureAssistantTerminalButton(msgEl);
+      const slot = msgEl.querySelector('.msg-terminal-external');
+      if (slot) slot.hidden = false;
+      bindTerminalButton(msgEl, sessionId);
+    }
+
+    async function hydrateMsgTerminalFromRun(msgEl) {
+      const runId = String(msgEl?.dataset?.runId || '').trim();
+      if (!runId || resolveMsgTerminalText(msgEl)) return;
+      try {
+        const data = await api(`/api/runs/${runId}/terminal`, { cache: 'no-store' });
+        const text = String(data?.terminal_text || '').trim();
+        if (text) {
+          storeMsgTerminalText(msgEl, text);
+          syncMsgTerminalButton(msgEl);
+        }
+      } catch { /* 历史终端缺失可忽略 */ }
+    }
+
+    function attachTerminalFromDoneEvent(msgEl, sessionId, data = {}) {
+      if (!msgEl?.isConnected) return;
+      const runId = String(data.run_id || data.runId || '').trim();
+      if (runId) msgEl.dataset.runId = runId;
+      const text = String(data.terminal_text || '').trim();
+      if (text) storeMsgTerminalText(msgEl, text);
+      else if (sessionId) {
+        const buf = ensureRunTerminalState(sessionId);
+        if (buf?.text) storeMsgTerminalText(msgEl, buf.text);
+      }
+      syncMsgTerminalButton(msgEl, sessionId);
+      if (!text && runId) void hydrateMsgTerminalFromRun(msgEl);
+    }
+
     function refreshTerminalModalContent() {
       const backdrop = document.getElementById('web-terminal-modal-backdrop');
       if (!backdrop || backdrop.hidden) return;
-      const buf = ensureRunTerminalState(terminalModalSessionId);
       const pre = backdrop.querySelector('.web-terminal-modal-body');
       if (!pre) return;
-      const next = String(buf?.text || '').trim();
+      let raw = String(terminalModalSource.text || '').trim();
+      if (!raw && terminalModalSource.msgEl) {
+        raw = resolveMsgTerminalText(terminalModalSource.msgEl, terminalModalSource.sessionId);
+      }
+      if (!raw && terminalModalSource.sessionId) {
+        const buf = ensureRunTerminalState(terminalModalSource.sessionId);
+        raw = String(buf?.text || '').trim();
+      }
+      const next = formatTerminalDisplayText(raw);
       const display = next || '（暂无输出：本轮 Agent 尚未通过 Shell 产生 stdout）';
       if (pre.textContent !== display) {
         pre.textContent = display;
@@ -8982,19 +9229,27 @@
       }
     }
 
-    function openTerminalModal(sessionId) {
+    function openTerminalModalForMessage(msgEl, sessionId, textOverride = '') {
       const sid = String(sessionId || '').trim();
-      if (!sid) return;
-      terminalModalSessionId = sid;
+      if (!msgEl?.isConnected) return;
+      terminalModalSource = {
+        sessionId: sid,
+        msgEl,
+        text: String(textOverride || resolveMsgTerminalText(msgEl, sid) || '').trim(),
+      };
       const backdrop = ensureTerminalModal();
       backdrop.hidden = false;
-      refreshTerminalModalContent();
+      if (!terminalModalSource.text && msgEl.dataset.runId) {
+        void hydrateMsgTerminalFromRun(msgEl).then(() => refreshTerminalModalContent());
+      } else {
+        refreshTerminalModalContent();
+      }
     }
 
     function closeTerminalModal() {
       const backdrop = document.getElementById('web-terminal-modal-backdrop');
       if (backdrop) backdrop.hidden = true;
-      terminalModalSessionId = '';
+      terminalModalSource = { sessionId: '', msgEl: null, text: '' };
     }
 
     function appendRunTerminalText(sessionId, chunk, seq) {
@@ -9015,29 +9270,6 @@
       if (nextSeq) buf.seq = nextSeq;
     }
 
-    function bindTerminalButton(shell, sessionId) {
-      if (!shell) return;
-      const btn = shell.querySelector('[data-terminal-btn]');
-      if (!btn || btn.dataset.bound === '1') return;
-      btn.dataset.bound = '1';
-      btn.addEventListener('click', (ev) => {
-        ev.preventDefault();
-        ev.stopPropagation();
-        openTerminalModal(sessionId);
-      });
-    }
-
-    function updateTerminalButtonVisibility(shell) {
-      if (!shell || isStreamingShellFinalized(shell)) {
-        shell?.querySelectorAll('[data-terminal-btn]').forEach((btn) => { btn.hidden = true; });
-        return;
-      }
-      const thinkSec = shell.querySelector('.stream-section-think');
-      const btn = shell.querySelector('[data-terminal-btn]');
-      if (!btn) return;
-      btn.hidden = !thinkSec;
-    }
-
     function handleTerminalStreamEvent(sessionId, data) {
       if (!data || data.type !== 'terminal') return;
       if (data.sync) {
@@ -9045,9 +9277,14 @@
       } else {
         appendRunTerminalText(sessionId, data.chunk || '', data.seq);
       }
-      if (terminalModalSessionId === sessionId) refreshTerminalModalContent();
+      if (terminalModalSource.sessionId === sessionId) refreshTerminalModalContent();
       const run = activeRuns.get(sessionId);
-      if (run?.shellEl?.isConnected) updateTerminalButtonVisibility(run.shellEl);
+      if (run?.shellEl?.isConnected) {
+        const text = run.terminal?.text || '';
+        if (text) storeMsgTerminalText(run.shellEl, text);
+        syncMsgTerminalButton(run.shellEl, sessionId);
+        updateTerminalButtonVisibility(run.shellEl);
+      }
     }
 
     function renderToolsSectionHtml(tools) {
@@ -9419,19 +9656,22 @@
     function finalizeStreamingShell(sessionId, shellEl, markdown, opts = {}) {
       if (!shellEl?.isConnected) return;
       const sid = String(sessionId || '').trim();
-      const md = String(markdown || '').trim();
+      let md = String(markdown || '').trim();
+      if (isFailureReplyText(md)) md = stripInterruptShellBlock(md);
       if (!md && (deferredRestartAwaiting.has(sid) || opts.deferWebAgentRestart)) {
         return;
       }
       cancelStreamingMsgBodyUpdate(shellEl);
       shellEl.dataset.streamFinalized = '1';
-      updateTerminalButtonVisibility(shellEl);
-      if (terminalModalSessionId === sessionId) refreshTerminalModalContent();
+      shellEl.classList.remove('streaming');
+      if (terminalModalSource.msgEl === shellEl) refreshTerminalModalContent();
       clearRunStatus(sessionId, shellEl);
       setAssistantMessageBody(shellEl, md || '（无回复）', {
         files: opts.files || [],
         images: opts.images || [],
       });
+      const terminalMeta = opts.terminal && typeof opts.terminal === 'object' ? opts.terminal : {};
+      attachTerminalFromDoneEvent(shellEl, sid, terminalMeta);
       ensureAssistantShareButton(shellEl);
       if (opts.timestamp) shellEl.dataset.timestamp = opts.timestamp;
       const run = activeRuns.get(sessionId);
@@ -9587,7 +9827,7 @@
           const curSeq = Number(current.terminal?.seq) || 0;
           if (active.terminal_text != null && tSeq >= curSeq) {
             syncRunTerminalFromServer(sid, active.terminal_text, tSeq);
-            if (terminalModalSessionId === sid) refreshTerminalModalContent();
+            if (terminalModalSource.sessionId === sid) refreshTerminalModalContent();
           }
         } catch {
           /* 轮询失败忽略，SSE 仍为主通道 */
@@ -9639,7 +9879,11 @@
       if (!body) return false;
       if (thinkEl.textContent !== body) thinkEl.textContent = body;
       scrollStreamThinkingIfPinned(thinkEl);
-      updateTerminalButtonVisibility(bodyEl.closest('.msg.assistant'));
+      const shell = bodyEl.closest('.msg.assistant');
+      const sid = shellSessionId(shell);
+      syncMsgTerminalButton(shell, sid);
+      bindTerminalButton(shell, sid);
+      updateTerminalButtonVisibility(shell);
       return true;
     }
 
@@ -9676,6 +9920,7 @@
       }
       bodyEl.innerHTML = buildStreamingMsgBodyHtml(payload, thinkPhase, answerForLayout);
       const sid = shellSessionId(shell);
+      syncMsgTerminalButton(shell, sid);
       bindTerminalButton(shell, sid);
       updateTerminalButtonVisibility(shell);
       scrollStreamThinkingIfPinned(bodyEl.querySelector('.stream-thinking'));
@@ -10486,6 +10731,7 @@
         } else {
           removeAssistantShareButton(run.shellEl);
           run.shellEl.classList.add('streaming');
+          syncMsgTerminalButton(run.shellEl, sessionId);
           return run.shellEl;
         }
       }
@@ -10494,6 +10740,7 @@
         removeAssistantShareButton(orphan);
         orphan.classList.add('streaming');
         if (run) run.shellEl = orphan;
+        syncMsgTerminalButton(orphan, sessionId);
         return orphan;
       }
       const container = document.getElementById('messages');
@@ -10512,6 +10759,7 @@
         el.dataset.streamSessionId = sessionId;
         renderRunStatusEl(el.querySelector('.run-status'), run.status);
       }
+      syncMsgTerminalButton(el, sessionId);
       return el;
     }
 
@@ -12795,8 +13043,10 @@
 
     function showInterruptedReply(sessionId, text, opts = {}) {
       if (currentSessionId !== sessionId) return;
-      const headline = String(text || '⚠️ 任务已中断。').trim() || '⚠️ 任务已中断。';
-      const body = appendRetryHint(headline);
+      const headline = '⚠️ 任务已中断。';
+      let rawBody = String(text || '').trim() || headline;
+      if (isFailureReplyText(rawBody)) rawBody = stripInterruptShellBlock(rawBody);
+      const body = appendRetryHint(rawBody);
       const run = activeRuns.get(sessionId);
       const superseded = !!(opts.runToken && run && run.runToken !== opts.runToken);
       const interruptTs = new Date().toISOString();
@@ -12826,7 +13076,18 @@
         && !shell.querySelector('.run-status')?.innerHTML?.trim();
       if (!staticInterruptShell) {
         clearRunStatus(sessionId, shell);
-        finalizeStreamingShell(sessionId, shell, body, { timestamp: interruptTs });
+        finalizeStreamingShell(sessionId, shell, body, {
+          timestamp: interruptTs,
+          terminal: {
+            run_id: run?.runId || '',
+            terminal_text: run?.terminal?.text || '',
+          },
+        });
+      } else {
+        attachTerminalFromDoneEvent(shell, sessionId, {
+          run_id: run?.runId || '',
+          terminal_text: run?.terminal?.text || '',
+        });
       }
       const activeAfterFinalize = activeRuns.get(sessionId);
       if (activeAfterFinalize?.shellEl === shell) {
@@ -12837,6 +13098,7 @@
         role: 'assistant',
         content: body,
         timestamp: interruptTs,
+        run_id: run?.runId || '',
       };
       if (!insertAssistantForUserTurnInCache(sessionId, assistantMsg, opts.userHint)) {
         appendAssistantMessageToSessionCache(sessionId, assistantMsg);
@@ -12999,10 +13261,10 @@
                   const body = resolveDoneAssistantDisplayText(data.text, null, pinnedShell)
                     || String(data.text || '').trim();
                   if (body) {
-                    finalizeStreamingShell(sessionId, pinnedShell, body);
+                    finalizeStreamingShell(sessionId, pinnedShell, body, { terminal: data });
                     commitAssistantReplyToSessionCache(sessionId, body);
                   } else {
-                    finalizeStreamingShell(sessionId, pinnedShell, '⚠️ 任务已中断。');
+                    finalizeStreamingShell(sessionId, pinnedShell, '⚠️ 任务已中断。', { terminal: data });
                     commitAssistantReplyToSessionCache(sessionId, '⚠️ 任务已中断。');
                   }
                   scrollMessagesToBottom({ force: true });
@@ -14855,6 +15117,9 @@
         <div class="msg-body">${bodyHtml || attachmentHtml}</div>`;
       if (m.role === 'assistant') {
         setMessageMarkdown(el.querySelector('.msg-body'), text);
+        if (m.run_id) el.dataset.runId = String(m.run_id);
+        syncMsgTerminalButton(el, currentSessionId);
+        void hydrateMsgTerminalFromRun(el).then(() => syncMsgTerminalButton(el, currentSessionId));
         ensureAssistantShareButton(el);
       }
       bindAvatarImages(el);
@@ -15838,6 +16103,7 @@
               } else {
                 finalizeStreamingShell(sessionId, assistantEl, displayText, {
                   files: Array.isArray(data.files) ? data.files : [],
+                  terminal: data,
                 });
                 commitAssistantReplyToSessionCache(sessionId, displayText, {
                   files: Array.isArray(data.files) ? data.files : [],
@@ -16160,6 +16426,10 @@
           return;
         }
         existing.runId = run_id;
+        if (existing.shellEl?.isConnected) {
+          existing.shellEl.dataset.runId = run_id;
+          syncMsgTerminalButton(existing.shellEl, sessionId);
+        }
         if (sessionId === currentSessionId) {
           void syncActiveRunPushPref(isPushResultChecked());
         }
@@ -20056,6 +20326,7 @@
         setupMessageFileDownloads();
         setupMessageCopyHandler();
         setupMessageShareActions();
+        setupMessageTerminalActions();
         bindSuperAdminUserProfileClicks();
         setupMarkdownLinkNewTab();
         setupMessagesScrollTracking();

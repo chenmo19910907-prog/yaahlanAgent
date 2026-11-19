@@ -797,6 +797,7 @@ class ChatMessage:
     author_id: str = ""
     author_label: str = ""
     source_tag: str = ""
+    run_id: str = ""
 
 
 @dataclass
@@ -1248,6 +1249,7 @@ class WebSessionStore:
         author_id = str(item.get("author_id") or item.get("authorId") or "").strip()
         author_label = str(item.get("author_label") or item.get("authorLabel") or "").strip()
         source_tag = str(item.get("source_tag") or item.get("sourceTag") or "").strip()
+        run_id = str(item.get("run_id") or item.get("runId") or "").strip()
         return ChatMessage(
             role=role,
             content=content,
@@ -1257,6 +1259,7 @@ class WebSessionStore:
             author_id=author_id,
             author_label=author_label,
             source_tag=source_tag,
+            run_id=run_id,
         )
 
     def _write_tail_sidecar(self, session_id: str, messages: list[ChatMessage]) -> None:
@@ -1275,6 +1278,7 @@ class WebSessionStore:
                 **({"author_id": m.author_id} if m.author_id else {}),
                 **({"author_label": m.author_label} if m.author_label else {}),
                 **({"source_tag": m.source_tag} if m.source_tag else {}),
+                **({"run_id": m.run_id} if m.run_id else {}),
             }
             for m in tail_msgs
         ]
@@ -1491,6 +1495,7 @@ class WebSessionStore:
                 **({"author_id": m.author_id} if m.author_id else {}),
                 **({"author_label": m.author_label} if m.author_label else {}),
                 **({"source_tag": m.source_tag} if m.source_tag else {}),
+                **({"run_id": m.run_id} if m.run_id else {}),
             }
             for m in messages
         ]
@@ -1911,6 +1916,7 @@ class WebSessionStore:
         content: str,
         *,
         files: list[dict[str, object]] | None = None,
+        run_id: str = "",
     ) -> bool:
         """同轮 user 提问已有失败 assistant 时覆盖，避免自动重试落盘多条相同报错。"""
         from run_progress_reply import is_run_failure_reply
@@ -1931,7 +1937,9 @@ class WebSessionStore:
             messages[-1] = ChatMessage(
                 role="assistant",
                 content=text,
+                timestamp=messages[-1].timestamp,
                 files=file_list or messages[-1].files,
+                run_id=(run_id or messages[-1].run_id or "").strip(),
             )
             self._save_messages(session_id, messages)
             reverted_custom_titles: set[str] = set()
@@ -2177,6 +2185,7 @@ class WebSessionStore:
         author_id: str = "",
         author_label: str = "",
         source_tag: str = "",
+        run_id: str = "",
     ) -> ChatMessage | None:
         text = (content or "").strip()
         image_list = [path.strip() for path in (images or []) if str(path).strip()]
@@ -2197,6 +2206,7 @@ class WebSessionStore:
                 author_id=(author_id or "").strip(),
                 author_label=(author_label or "").strip(),
                 source_tag=normalized_source_tag,
+                run_id=(run_id or "").strip(),
             )
             if normalized_source_tag == "API":
                 meta.open_api_session = True

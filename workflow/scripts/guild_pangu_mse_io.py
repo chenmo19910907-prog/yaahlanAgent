@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 REPO = Path(__file__).resolve().parents[2]
-SCENARIOS_PATH = REPO / "workflow/config/guild_pangu_shift_scenarios.json"
+DEFAULT_SCENARIOS_PATH = REPO / "workflow/config/guild_pangu_shift_scenarios.json"
 WORKFLOWS_DIR = REPO / "workflow/workflows"
 MSE_DIR = REPO / "MSE"
 
@@ -20,11 +20,22 @@ def _ensure_mse_path() -> None:
         sys.path.insert(0, p)
 
 
-def load_catalog() -> dict[str, Any]:
-    with SCENARIOS_PATH.open("r", encoding="utf-8") as f:
+def _resolve_scenarios_path(raw: str | None) -> Path:
+    text = str(raw or "").strip()
+    if not text:
+        return DEFAULT_SCENARIOS_PATH
+    p = Path(text)
+    if not p.is_absolute():
+        p = REPO / p
+    return p
+
+
+def load_catalog(scenarios_path: Path | None = None) -> dict[str, Any]:
+    path = scenarios_path or DEFAULT_SCENARIOS_PATH
+    with path.open("r", encoding="utf-8") as f:
         data = json.load(f)
     if not isinstance(data, dict):
-        raise RuntimeError("guild_pangu_shift_scenarios.json 格式错误")
+        raise RuntimeError(f"{path.name} 格式错误")
     return data
 
 
@@ -47,17 +58,22 @@ def _parse_config_value(raw: Any) -> dict[str, Any]:
     return {}
 
 
-def fetch_config_object(scenario: dict[str, Any]) -> dict[str, Any]:
+def fetch_config_object(
+    scenario: dict[str, Any],
+    *,
+    catalog: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     _ensure_mse_path()
     from mse.mutate import fetch_config_item, load_context  # noqa: WPS433
 
-    catalog = load_catalog()
+    catalog = catalog if catalog is not None else load_catalog()
     env = catalog.get("env") or {}
+    app_key = str(scenario.get("app_key") or env.get("app_key") or "")
     ctx = load_context(
         region=str(env.get("region") or "alpha"),
         env=str(env.get("env") or "alpha"),
         cluster=str(env.get("cluster") or "stage"),
-        app_key=str(env.get("app_key") or ""),
+        app_key=app_key,
     )
     config_key = str(scenario["config_key"])
     namespace = str(scenario["namespace"])
@@ -72,16 +88,29 @@ def white_users_to_input(users: Any) -> str:
     return ",".join(parts)
 
 
-def current_form_values(scenario_key: str) -> dict[str, Any]:
+def trade_union_fixed_time_sec() -> str:
     catalog = load_catalog()
+    env = catalog.get("env") or {}
+    scenario = {
+        "config_key": "shiftTime.tradeUnion",
+        "namespace": "voga-common",
+    }
+    cfg = fetch_config_object(scenario, catalog=catalog)
+    val = cfg.get("fixedTimeSec")
+    return str(val) if val is not None else ""
+
+
+def current_form_values(scenario_key: str, *, scenarios_path: Path | None = None) -> dict[str, Any]:
+    catalog = load_catalog(scenarios_path)
     scenario = scenario_by_key(catalog, scenario_key)
-    cfg = fetch_config_object(scenario)
+    cfg = fetch_config_object(scenario, catalog=catalog)
     fields = list(scenario.get("fields") or [])
+    wl_key = str(scenario.get("white_list_field") or "whiteUsers")
     out: dict[str, Any] = {
         "scenario": scenario_key,
         "configKey": scenario.get("config_key"),
         "namespace": scenario.get("namespace"),
-        "whiteUsers": white_users_to_input(cfg.get("whiteUsers")),
+        "whiteUsers": white_users_to_input(cfg.get(wl_key)),
         "fixedTimeSec": str(cfg.get("fixedTimeSec") or ""),
         "expireTimeSec": str(cfg.get("expireTimeSec") or ""),
         "shiftTime": str(cfg.get("shiftTime") if cfg.get("shiftTime") is not None else ""),
@@ -120,8 +149,8 @@ def _scenario_usage_note(raw: dict[str, Any]) -> str:
     return " ".join(parts)
 
 
-def scenarios_for_web() -> dict[str, Any]:
-    catalog = load_catalog()
+def scenarios_for_web(scenarios_path: Path | None = None) -> dict[str, Any]:
+    catalog = load_catalog(scenarios_path)
     scenarios_out: list[dict[str, Any]] = []
     for raw in catalog.get("scenarios") or []:
         if not isinstance(raw, dict) or raw.get("read_only"):
@@ -154,18 +183,33 @@ def scenarios_for_web() -> dict[str, Any]:
 def main() -> int:
     import argparse
 
-    parser = argparse.ArgumentParser(description="公会盘古 MSE 读当前值")
+    parser = argparse.ArgumentParser(description="盘古 shiftTime MSE 读当前值")
     parser.add_argument("--scenarios-json", action="store_true", help="输出场景清单（Web 用）")
     parser.add_argument("--scenario", default="", help="读指定场景当前表单值 JSON")
+    parser.add_argument(
+        "--scenarios-file",
+        dest="scenarios_file",
+        default="",
+        help="场景清单 JSON（默认 guild_pangu_shift_scenarios.json）",
+    )
+    parser.add_argument(
+        "--trade-union-fixed-hint",
+        action="store_true",
+        help="输出 voga-common shiftTime.tradeUnion 的 fixedTimeSec（中东算薪偏移参考）",
+    )
     args = parser.parse_args()
+    scenarios_path = _resolve_scenarios_path(args.scenarios_file or None)
+    if args.trade_union_fixed_hint:
+        print(json.dumps({"fixedTimeSec": trade_union_fixed_time_sec()}, ensure_ascii=False))
+        return 0
     if args.scenarios_json:
-        print(json.dumps(scenarios_for_web(), ensure_ascii=False))
+        print(json.dumps(scenarios_for_web(scenarios_path), ensure_ascii=False))
         return 0
     key = str(args.scenario or "").strip()
     if not key:
         print("需要 --scenario 或 --scenarios-json", file=sys.stderr)
         return 2
-    print(json.dumps(current_form_values(key), ensure_ascii=False))
+    print(json.dumps(current_form_values(key, scenarios_path=scenarios_path), ensure_ascii=False))
     return 0
 
 

@@ -1920,6 +1920,38 @@
         "双人幸运大富翁造数 掷骰次数 <num>"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/幸运大富翁-双人增加掷骰次数.json \\\n  --expr \\\n  'dao=context.getBean(\"luckyRichManCPDao\");svc=context.getBean(\"luckyRichManCPService\");v=svc.ver();id=\"<intimateId>\";return \\\n  dao.updateLotteryNum(v,id,\"<userIdA>\",<num>L)+\",\"+dao.updateLotteryNum(v,id,\"<userIdB>\",<num>L);'\n"
+    },
+    {
+      "id": "guild_clear_super_trade_president_daily_invite_record",
+      "name": "公会-清除母公会长当日邀请记录",
+      "category": "MOA公会（yaahalan-cms-backdoor）",
+      "description": "测试环境删除母公会长当日邀请计数 Redis 键（yaahalan-cms-backdoor execute；userNodeDao.del(\"1\",\"sub:trade:invite:record:{yyyyMMdd}:{userId}\")）。用于邀请好友上限/当日次数验收造数。",
+      "prompts": [
+        "清除母公会长当日邀请记录 日期<inviteRecordDate|20261113> ID<presidentUserId|公会长userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/公会-清除母公会长当日邀请记录.json \\\n  --guild-super-trade-invite-record-date \\\n  <inviteRecordDate> \\\n  --guild-super-trade-invite-record-user-id \\\n  <presidentUserId>\n"
+    },
+    {
+      "id": "房间_删除公屏消息",
+      "name": "房间-删除公屏消息",
+      "category": "房间-红包（room/external/room-share-stage）",
+      "description": "deleteRoomMessage（/service/room/external/room-manage-stage）",
+      "prompts": [
+        "执行 房间-删除公屏消息"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-删除公屏消息.json\n"
+    },
+    {
+      "id": "first_recharge_wheel_reset_not_drawn",
+      "name": "首充转盘-重置未抽奖",
+      "category": "首充转盘（voga-mts-vas-backdoor · FirstRechargeWheelDao）",
+      "description": "测试环境将用户首充转盘从「已抽奖待支付」（firstRechargeWheelPage status=2）恢复为「未抽奖」（status=1）。后门 execute：FirstRechargeWheelDao.delWheelStatus + setWheelStatus。Tunnel 对照 firstRechargeWheelInfo.buttonText=免费抽奖。",
+      "prompts": [
+        "首充转盘重置未抽奖 <userId>",
+        "将 <userId> 首充转盘改成没有抽奖状态",
+        "firstRechargeWheel 恢复免费抽奖 <userId>"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/首充转盘-重置未抽奖.json \\\n  --expr \\\n  'dao=context.getBean(\"firstRechargeWheelDao\"); \\\n  dao.delWheelStatus(\"<userId>\"); \\\n  dao.setWheelStatus(\"<userId>\"); \\\n  return \\\n  \"status=\"+dao.getWheelStatus(\"<userId>\");'\n"
     }
   ]
 }

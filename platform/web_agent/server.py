@@ -161,7 +161,13 @@ from web_moa_call_log import list_moa_call_entries, list_moa_call_log_operators 
 from web_call_log_replay import execute_replay, replay_spec  # noqa: E402
 from web_code_testcase_review import code_testcase_review_scenarios_payload  # noqa: E402
 from web_code_multilang_review import code_multilang_review_scenarios_payload  # noqa: E402
-from web_guild_pangu import guild_pangu_current_payload, guild_pangu_scenarios_payload  # noqa: E402
+from web_guild_pangu import (  # noqa: E402
+    dealer_pangu_current_payload,
+    dealer_pangu_scenarios_payload,
+    dealer_pangu_trade_union_fixed_hint,
+    guild_pangu_current_payload,
+    guild_pangu_scenarios_payload,
+)
 from web_admin_manage import (  # noqa: E402
     enrich_selectable_users_with_admin_roles,
     list_admin_users,
@@ -393,6 +399,13 @@ def _handle_catalog_nav_save(handler: SimpleHTTPRequestHandler, body: Any) -> No
         modules,
         include_playbook=False,
     )
+    # 折叠态仅存浏览器 localStorage；保存分组树时不要改写全局 collapsed
+    if not isinstance(body, dict) or "collapsed" not in body:
+        old_collapsed = stored_nav.get("collapsed")
+        if isinstance(old_collapsed, list):
+            normalized["collapsed"] = [
+                str(x).strip() for x in old_collapsed if str(x).strip()
+            ]
     try:
         _save_catalog_nav(normalized)
     except OSError as exc:
@@ -1087,7 +1100,11 @@ def _notify_run_interrupted(run: ActiveRun, text: str) -> bool:
             return False
         run.cancel_notified = True
         run.final_text = body
-    run.emit_event({"type": "done", "text": body})
+    done_evt: dict[str, Any] = {"type": "done", "text": body, "run_id": run.run_id}
+    if (run.last_terminal_text or "").strip():
+        done_evt["terminal_text"] = run.last_terminal_text
+        done_evt["terminal_seq"] = run.last_terminal_seq
+    run.emit_event(done_evt)
     run.done.set()
     RUN_MANAGER.release_session(run)
     return True
@@ -1110,10 +1127,16 @@ def _interrupt_active_run(run: ActiveRun) -> bool:
         stream_markdown=run.last_markdown,
         batch_line=run.last_batch_line,
         external_line=run.last_external_line,
+        terminal_text=run.last_terminal_text,
     )
     _notify_run_interrupted(run, interrupt_body)
     if run.final_text:
-        get_session_store().append_message(run.session_id, "assistant", run.final_text)
+        get_session_store().append_message(
+            run.session_id,
+            "assistant",
+            run.final_text,
+            run_id=run.run_id,
+        )
 
     meta = store.get_run(run.run_id)
     extra_roots: list[int] = []
@@ -1368,6 +1391,7 @@ def _finalize_cancelled_run(meta: RunMeta) -> None:
         stream_markdown=snap.last_markdown,
         batch_line=snap.last_batch_line,
         external_line=snap.last_external_line,
+        terminal_text=snap.last_terminal_text,
     )
     body = finalize_web_reply_text(
         body,
@@ -1377,7 +1401,12 @@ def _finalize_cancelled_run(meta: RunMeta) -> None:
         reply_mode=meta.reply_mode,
         user_key=user_key,
     )
-    get_session_store().append_message(meta.session_id, "assistant", body)
+    get_session_store().append_message(
+        meta.session_id,
+        "assistant",
+        body,
+        run_id=meta.run_id,
+    )
     store.append_event(meta.run_id, {"type": "done", "text": body})
     store.mark_status(meta.run_id, RUN_STATUS_INTERRUPTED)
     if not snap.final_text:
@@ -1418,6 +1447,7 @@ def _finalize_orphan_run(meta: RunMeta) -> None:
         stream_markdown=snap.last_markdown,
         batch_line=snap.last_batch_line,
         external_line=snap.last_external_line,
+        terminal_text=snap.last_terminal_text,
     )
     err_text = finalize_web_reply_text(
         err_body,
@@ -2962,6 +2992,29 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 logger.exception("guild pangu current")
                 return _json_response(self, {"error": str(exc)}, 500)
 
+        if path == "/api/dealer/pangu/scenarios":
+            try:
+                return _json_response(self, dealer_pangu_scenarios_payload())
+            except (RuntimeError, ValueError) as exc:
+                logger.exception("dealer pangu scenarios")
+                return _json_response(self, {"error": str(exc)}, 500)
+
+        if path == "/api/dealer/pangu/current":
+            qs = parse_qs(parsed.query)
+            scenario_key = str((qs.get("scenario") or [""])[0]).strip()
+            try:
+                return _json_response(self, dealer_pangu_current_payload(scenario_key or None))
+            except (RuntimeError, KeyError) as exc:
+                logger.exception("dealer pangu current")
+                return _json_response(self, {"error": str(exc)}, 500)
+
+        if path == "/api/dealer/pangu/trade-union-fixed":
+            try:
+                return _json_response(self, dealer_pangu_trade_union_fixed_hint())
+            except RuntimeError as exc:
+                logger.exception("dealer pangu trade union fixed")
+                return _json_response(self, {"error": str(exc)}, 500)
+
         if path == "/api/catalog":
             try:
                 data = _load_catalog_data_cached()
@@ -3369,6 +3422,8 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                         item["author_id"] = msg.author_id
                     if msg.author_label:
                         item["author_label"] = msg.author_label
+                    if msg.run_id:
+                        item["run_id"] = msg.run_id
                 messages.append(item)
             try:
                 from dingtalk_user_lookup import enrich_user_messages_with_avatars
@@ -3419,6 +3474,24 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
         m = re.match(r"^/api/chat/stream/([a-f0-9]+)$", path)
         if m:
             return self._handle_sse(m.group(1))
+
+        m = re.match(r"^/api/runs/([a-f0-9]{12})/terminal$", path)
+        if m:
+            run_id = m.group(1)
+            run_store = get_run_store()
+            if run_store.get_run(run_id) is None:
+                return _json_response(self, {"error": "run not found"}, 404)
+            snap = run_store.get_snapshot(run_id)
+            if snap is None:
+                return _json_response(self, {"terminal_text": "", "terminal_seq": 0})
+            return _json_response(
+                self,
+                {
+                    "run_id": run_id,
+                    "terminal_text": str(getattr(snap, "last_terminal_text", "") or ""),
+                    "terminal_seq": int(getattr(snap, "last_terminal_seq", 0) or 0),
+                },
+            )
 
         return super().do_GET()
 

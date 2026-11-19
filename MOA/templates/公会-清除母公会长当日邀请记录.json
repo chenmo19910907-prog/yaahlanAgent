@@ -1,0 +1,39 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/yaahalan-cms-backdoor",
+  "method": "execute",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "context.getBean(\"userNodeDao\").del(\"1\",\"sub:trade:invite:record:20261113:100063802\")",
+      "json": "",
+      "type": "string",
+      "value": "context.getBean(\"userNodeDao\").del(\"1\",\"sub:trade:invite:record:20261113:100063802\")"
+    }
+  ],
+  "settings": {
+    "time": "60000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "guild_clear_super_trade_president_daily_invite_record",
+    "name": "公会-清除母公会长当日邀请记录",
+    "category": "MOA公会（yaahalan-cms-backdoor）",
+    "description": "测试环境删除母公会长当日邀请计数 Redis 键（yaahalan-cms-backdoor execute；userNodeDao.del(\"1\",\"sub:trade:invite:record:{yyyyMMdd}:{userId}\")）。用于邀请好友上限/当日次数验收造数。",
+    "prompts": [
+      "清除母公会长当日邀请记录 日期<inviteRecordDate|20261113> ID<presidentUserId|公会长userId>"
+    ],
+    "cli": "--guild-super-trade-invite-record-date <inviteRecordDate> --guild-super-trade-invite-record-user-id <presidentUserId>"
+  }
+}

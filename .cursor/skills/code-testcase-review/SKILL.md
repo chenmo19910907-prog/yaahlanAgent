@@ -9,11 +9,11 @@ description: 从钉钉 AliDocs 读取测试用例表格、按 E 列仓库拉取 
 
 | 阶段 | 做什么 | 入口与约束 |
 |------|--------|------------|
-| **1 读用例** | 钉钉 AliDocs：`workbookId` + Sheet 名；读 **A–E**；备注解析仓库/分支；**B7=覆盖率任务代码质量平台** 时读 **C7/D7** 需求分支（无则忽略） | MCP / `scripts/dingtalk_sheet.py`；E 列为仓库/覆盖率备注 |
+| **1 读用例** | AliDocs + Sheet；读 **A–F**；**覆盖率行**（B=覆盖率任务代码质量平台）**C=仓库、D=分支**（可多行）；其次 E 列备注 | `code_testcase_review_execute.py sheet-info` 或 MCP `dingtalk-excel-read` |
 | **2 拉代码** | 本地更新或 clone 至 `voga-repos/` | `python3 DevCode/voga_pull_execute.py`（或 `--repo`）；按 E 列切分支 |
 | **3 比对比** | 按仓扫描（Java；Android strings/VM；iOS Localizable/VC；yaahlan-fe i18n/页面）→ **代码行为清单** ↔ 用例 | 只读代码，**禁止** commit/push |
 | **4 标注** | 与预期不符 → **E 列** `fail`；**F 列**可选原因 | **禁止**改 A–D（编号/模块/步骤/预期） |
-| **5 补用例** | 未覆盖场景 → Sheet **末尾**追加 A–D，编号续接 | 写入前定位首空行；写入后 GET 复核 |
+| **5 补用例** | 未覆盖场景 → **C/D 最后有用例行 +1** 追加 A–D | **禁止**用 A 列末行定位；`append-cases` 或 `find_last_case_row`；写后 GET 复核 |
 
 **形式**：非工具台一键脚本；由 Cursor Agent 按本 Skill 串行执行。前置拉仓能力见 DevCode `pull_voga_repos` / `pull_voga_repo_one`；工具台 **开发代码 → 用例审查** 对应 `code_testcase_review`。
 
@@ -77,7 +77,26 @@ read_url = f"{API_BASE}/workbooks/{WORKBOOK_ID}/sheets/{SHEET_ID}/ranges/{range_
 - 现有用例列表（编号、功能模块、步骤、预期结果）
 - 覆盖率备注列中的仓库名称和分支（搜索包含「仓库：」「分支：」的行）
   - 仓库地址规则：默认 `https://git.wemomo.com/voga/{repo-name}`；**H5** `yaahlan-fe` 为 `https://git.wemomo.com/yaahlan-fe`（见 `DevCode/config/repos.json` → `clone_urls`）
-- **第 7 行（B7）**：若 B7 单元格为 **`覆盖率任务代码质量平台`**，则 **C7、D7** 为需求所属 **分支名**（可含 `分支：` 前缀）；C/D 为空或非该 B7 文案时 **不读取**。脚本：`extract_b7_requirement_branches` / `extract_sheet_git_context`，并与 E 列仓库备注合并缺省分支（`extract_repo_info`）
+- **覆盖率配置行**（常见第 7–8 行）：`B=覆盖率任务代码质量平台`，**C=仓库描述**（如 `服务端voga-mts-user，voga-mts-components`）、**D=分支**（服务端一行、H5 `yaahlan-h5-vip` 再一行）。解析：`extract_coverage_platform_repos` / `extract_sheet_git_context`
+- **表头**（常见第 6 行）：`用例编号 / 功能模块 / case步骤描述 / 预期结果`；其下配置行之后为**首条用例行** `case_start_row`
+- **Web Agent 推荐话术**（一次跑全流程）：
+  > 读取用例表 \<URL\> Sheet：\<名\>，结合服务端和前端仓库及代码分析哪些不符合用例并在对应 **E 标 fail、F 写原因** → 末尾补用例并复核
+
+### 1.5 表布局探测（必先执行）
+
+```bash
+python3 DevCode/scripts/code_testcase_review_execute.py sheet-info \
+  --url "https://alidocs.dingtalk.com/i/nodes/<workbookId>" \
+  --sheet "<Sheet名>"
+```
+
+输出含：`case_start_row`、`protected_end_row`、`append_start_row`、`repos[]`。  
+**写入禁区**：行 `1 … protected_end_row`（版本信息、表头、覆盖率配置）**不得**写入 A–D。
+
+### 1.6 版本用例表与代码审查列
+
+- 表头 E/F 可能为「测试组结果」；**代码×用例审查**仍按用户指令写 **E=fail、F=原因**（仅覆盖 E/F，不动 A–D）
+- 大表（数百行）：按**功能模块**分批比对；区分 **新页 / 旧页 / 历史回测** 用例，避免用旧 index 规则误伤新 `yaahlanIndex`
 
 ---
 
@@ -92,7 +111,10 @@ read_url = f"{API_BASE}/workbooks/{WORKBOOK_ID}/sheets/{SHEET_ID}/ranges/{range_
 ls voga-repos/{repo-name}
 python3 DevCode/voga_pull_execute.py
 # 或单仓：python3 DevCode/voga_pull_execute.py --repo {repo-name}
+# 独立 H5 表内仓：python3 DevCode/fe_pull_execute.py --repo yaahlan-h5-vip
 ```
+
+Android/iOS 须切到**需求版本分支**（如 `release/x.y.z`），勿仅用 master 审 2.6.x 用例。
 
 ### 2.2 按 E 列仓库名切换分支（若备注含分支）
 
@@ -210,6 +232,16 @@ python3 DevCode/fe_pull_execute.py --repo yaahlan-h5-vip          # 直拉仓名
 
 ## 第四阶段：标注 fail
 
+### 4.0 安全写回（Web Agent / 无 httpx 环境）
+
+```bash
+# fails.json: [{"row": 43, "reason": "..."}, ...]
+python3 DevCode/scripts/code_testcase_review_execute.py mark-fail \
+  --url "<alidocs>" --sheet "<名>" --items fails.json
+```
+
+脚本使用 `dingtalk_sheet.mark_fail_sync`（标准库 urllib），行号须 ≥ `case_start_row`。
+
 ### 4.1 批量写入 fail 标记
 
 ```python
@@ -250,6 +282,15 @@ async def mark_fail(token, op, workbook_id, sheet_id, row_nums: list[int], reaso
 last_row = max(i+1 for i, row in enumerate(values) if row and any(c for c in row))
 start_row = last_row + 1
 ```
+
+### 5.2b CLI 追加（推荐）
+
+```bash
+python3 DevCode/scripts/code_testcase_review_execute.py append-cases \
+  --url "<alidocs>" --sheet "<名>" --cases new_cases.json
+```
+
+`append_start_row` 来自 **sheet-info**；脚本拒绝 `start_row ≤ protected_end_row`。
 
 ### 5.3 批量写入
 
@@ -313,7 +354,10 @@ GIT_BASE_URL    = "https://git.wemomo.com/voga"  # yaahlan-fe 等见 repos.json 
 
 - **🚫 严禁修改原始测试用例**：已有用例的 A/B/C/D 列（编号、功能模块、步骤、预期结果）**只读，任何情况下不得修改、覆盖或删除**。唯一允许写入的列是 E 列（`fail` 标记）和 F 列（原因备注）
 - **禁止** `git add`、`git commit`、`git push`，只读代码，不提交
-- 写入钉钉前先读当前末尾行号，防止覆盖已有数据
+- 补用例**必须**用 `find_last_case_row` / **C、D 列**定位末行；**禁止**仅用 A 列 `find_last_data_row`（会误写到第 7 行覆盖率区）
+- `write_range` / `append-cases` 传入 `protected_end_row`；覆盖表头/配置行须先 **GET 恢复** 再重跑
+- 读表优先 **dingtalk-excel-read MCP**；写回优先 **code_testcase_review_execute.py**（不依赖 httpx）
+- 写入钉钉前先跑 **sheet-info**，确认 `append_start_row`
 - 每次写入后用 GET 读取验证数据正确
 - 仓库 clone 地址以 `DevCode/config/repos.json` 为准（voga 组与 `yaahlan-fe` 分组不同）
 - fail 原因尽量精确（引用代码行号或方法名），便于开发定位

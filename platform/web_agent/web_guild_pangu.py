@@ -1,4 +1,4 @@
-"""Web Agent：公会盘古配置表单 API（读场景清单与 MSE 当前值）。"""
+"""Web Agent：盘古 shiftTime 配置表单 API（公会 / 币商）。"""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 IO_SCRIPT = REPO_ROOT / "workflow/scripts/guild_pangu_mse_io.py"
+DEALER_SCENARIOS_REL = "workflow/config/dealer_pangu_shift_scenarios.json"
 
 
 def _run_io_script(args: list[str]) -> dict[str, Any]:
@@ -41,3 +42,18 @@ def guild_pangu_current_payload(scenario_key: str) -> dict[str, Any]:
     if not key:
         raise ValueError("缺少 scenario")
     return _run_io_script(["--scenario", key])
+
+
+def dealer_pangu_scenarios_payload() -> dict[str, Any]:
+    return _run_io_script(["--scenarios-json", "--scenarios-file", DEALER_SCENARIOS_REL])
+
+
+def dealer_pangu_current_payload(scenario_key: str | None = None) -> dict[str, Any]:
+    key = str(scenario_key or "dealer_assistant_quota").strip() or "dealer_assistant_quota"
+    return _run_io_script(
+        ["--scenario", key, "--scenarios-file", DEALER_SCENARIOS_REL]
+    )
+
+
+def dealer_pangu_trade_union_fixed_hint() -> dict[str, Any]:
+    return _run_io_script(["--trade-union-fixed-hint"])

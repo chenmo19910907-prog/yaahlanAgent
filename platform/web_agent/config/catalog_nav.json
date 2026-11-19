@@ -38,7 +38,7 @@
             {
               "kind": "cap",
               "moduleId": "公会",
-              "catIndex": 3,
+              "catIndex": 4,
               "label": "清除设备入会申请账号限制",
               "sourceId": "workflow",
               "registryId": "guild_device_join_limit_clear"
@@ -46,7 +46,7 @@
             {
               "kind": "cap",
               "moduleId": "公会",
-              "catIndex": 3,
+              "catIndex": 4,
               "label": "清除真人认证失败",
               "sourceId": "workflow",
               "registryId": "guild_real_person_auth_failure_clear"
@@ -58,6 +58,14 @@
               "label": "公会-强制修改等级",
               "sourceId": "moa",
               "registryId": "guild_force_update_trade_level"
+            },
+            {
+              "kind": "cap",
+              "moduleId": "公会",
+              "catIndex": 3,
+              "label": "公会-清除母公会长当日邀请记录",
+              "sourceId": "moa",
+              "registryId": "guild_clear_super_trade_president_daily_invite_record"
             }
           ],
           "subfolder": true
@@ -70,7 +78,7 @@
             {
               "kind": "cap",
               "moduleId": "公会",
-              "catIndex": 4,
+              "catIndex": 5,
               "label": "公会盘古时间偏移配置",
               "sourceId": "workflow",
               "registryId": "guild_pangu_shift_config"
@@ -145,6 +153,27 @@
           "kind": "cap",
           "moduleId": "用户",
           "catIndex": 11
+        }
+      ]
+    },
+    {
+      "kind": "folder",
+      "id": "nav-mwkhk2f53mg7",
+      "label": "币商",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "币商盘古配置",
+          "label": "币商助理额度刷新时间",
+          "sourceId": "workflow",
+          "registryId": "dealer_pangu_assistant_quota_time"
+        },
+        {
+          "kind": "cap",
+          "moduleId": "币商盘古配置",
+          "label": "跳过币商充值真人认证白名单",
+          "sourceId": "workflow",
+          "registryId": "dealer_pangu_recharge_auth_whitelist"
         }
       ]
     },
@@ -437,383 +466,433 @@
           "kind": "folder",
           "id": "nav-activity-ultra-recharge",
           "label": "Ultra Recharge（充值返利）",
-          "subfolder": true,
           "children": [
             {
               "kind": "cap",
               "moduleId": "活动",
+              "catIndex": 8,
+              "label": "充值返利-模拟充值",
               "sourceId": "moa",
-              "registryId": "recharge_rebate_simulate_recharge",
-              "label": "充值返利-模拟充值"
+              "registryId": "recharge_rebate_simulate_recharge"
             },
             {
               "kind": "cap",
               "moduleId": "活动",
+              "catIndex": 8,
+              "label": "充值返利-增加流水",
               "sourceId": "moa",
-              "registryId": "recharge_rebate_incr_flow",
-              "label": "充值返利-增加流水"
+              "registryId": "recharge_rebate_incr_flow"
             },
             {
               "kind": "cap",
               "moduleId": "活动",
+              "catIndex": 8,
+              "label": "充值返利-添加黑名单",
               "sourceId": "moa",
-              "registryId": "recharge_rebate_add_blacklist",
-              "label": "充值返利-添加黑名单"
+              "registryId": "recharge_rebate_add_blacklist"
             },
             {
               "kind": "cap",
               "moduleId": "活动",
+              "catIndex": 8,
+              "label": "充值返利-删除黑名单",
               "sourceId": "moa",
-              "registryId": "recharge_rebate_delete_blacklist",
-              "label": "充值返利-删除黑名单"
+              "registryId": "recharge_rebate_delete_blacklist"
             },
             {
               "kind": "cap",
               "moduleId": "礼物",
+              "catIndex": 6,
+              "label": "财富-增加",
               "sourceId": "moa",
-              "registryId": "wealth_incr",
-              "label": "财富-增加"
+              "registryId": "wealth_incr"
             },
             {
               "kind": "cap",
               "moduleId": "支付",
+              "catIndex": 0,
+              "label": "钻石-查询余额",
               "sourceId": "moa",
-              "registryId": "diamond_query_account",
-              "label": "钻石-查询余额"
+              "registryId": "diamond_query_account"
             }
-          ]
+          ],
+          "subfolder": true
         },
         {
           "kind": "folder",
           "id": "nav-activity-star-ambassador-20261029",
           "label": "星光大使改版20261029",
-          "subfolder": true,
           "children": [
             {
               "kind": "cap",
               "moduleId": "活动",
+              "catIndex": 9,
+              "label": "星光大使-模拟拉新",
               "sourceId": "moa",
-              "registryId": "new_user_invite_test_add_user",
-              "label": "星光大使-模拟拉新"
+              "registryId": "new_user_invite_test_add_user"
             },
             {
               "kind": "cap",
               "moduleId": "活动",
+              "catIndex": 10,
+              "label": "活动-客服下发道具",
               "sourceId": "moa",
-              "registryId": "activity_customer_send_prop",
-              "label": "活动-客服下发道具"
+              "registryId": "activity_customer_send_prop"
             },
             {
               "kind": "cap",
               "moduleId": "活动",
+              "catIndex": 12,
+              "label": "活动-活动中心消息聚合IM",
               "sourceId": "moa",
-              "registryId": "activity_center_reward_im_send",
-              "label": "活动-活动中心消息聚合IM"
+              "registryId": "activity_center_reward_im_send"
             },
             {
               "kind": "cap",
               "moduleId": "用户",
+              "catIndex": 6,
+              "label": "铭牌-下发",
               "sourceId": "moa",
-              "registryId": "nameplate_dispatch",
-              "label": "铭牌-下发"
+              "registryId": "nameplate_dispatch"
             },
             {
               "kind": "cap",
               "moduleId": "vip",
+              "catIndex": 0,
+              "label": "VIP体验卡-下发",
               "sourceId": "moa",
-              "registryId": "vip_try_dispatch",
-              "label": "VIP体验卡-下发"
+              "registryId": "vip_try_dispatch"
             },
             {
               "kind": "cap",
               "moduleId": "用户",
+              "catIndex": 6,
+              "label": "游戏等级-升至目标",
               "sourceId": "moa",
-              "registryId": "game_level_target",
-              "label": "游戏等级-升至目标"
+              "registryId": "game_level_target"
             },
             {
               "kind": "cap",
               "moduleId": "用户",
+              "catIndex": 6,
+              "label": "游戏等级-增加经验",
               "sourceId": "moa",
-              "registryId": "game_exp_add",
-              "label": "游戏等级-增加经验"
+              "registryId": "game_exp_add"
             },
             {
               "kind": "cap",
               "moduleId": "支付",
+              "catIndex": 0,
+              "label": "钻石-发放",
               "sourceId": "moa",
-              "registryId": "diamond_provide",
-              "label": "钻石-发放"
+              "registryId": "diamond_provide"
             }
-          ]
+          ],
+          "subfolder": true
         },
         {
           "kind": "folder",
           "id": "nav-activity-lucky-rich-man-dual",
           "label": "双人幸运大富翁",
-          "subfolder": true,
           "children": [
             {
               "kind": "cap",
-              "moduleId": "活动",
+              "moduleId": "幸运大富翁双人",
+              "catIndex": 0,
+              "label": "幸运大富翁-双人活动主页",
               "sourceId": "moa",
-              "registryId": "lucky_rich_man_cp_home",
-              "label": "幸运大富翁-双人活动主页"
+              "registryId": "lucky_rich_man_cp_home"
+            },
+            {
+              "kind": "cap",
+              "moduleId": "幸运大富翁双人",
+              "catIndex": 1,
+              "label": "幸运大富翁-双人设置掷骰次数",
+              "sourceId": "moa",
+              "registryId": "lucky_rich_man_cp_update_lottery"
             },
             {
               "kind": "cap",
               "moduleId": "活动",
+              "catIndex": 11,
+              "label": "活动-模拟送礼",
               "sourceId": "moa",
-              "registryId": "lucky_rich_man_cp_update_lottery",
-              "label": "幸运大富翁-双人设置掷骰次数"
-            },
-            {
-              "kind": "cap",
-              "moduleId": "活动",
-              "sourceId": "moa",
-              "registryId": "activity_mock_gift",
-              "label": "活动-模拟送礼"
+              "registryId": "activity_mock_gift"
             },
             {
               "kind": "cap",
               "moduleId": "礼物",
+              "catIndex": 3,
+              "label": "礼物-私聊送礼",
               "sourceId": "moa",
-              "registryId": "p2p_gift_send",
-              "label": "礼物-私聊送礼"
+              "registryId": "p2p_gift_send"
             },
             {
               "kind": "cap",
               "moduleId": "礼物",
+              "catIndex": 1,
+              "label": "背包礼物-下发",
               "sourceId": "moa",
-              "registryId": "package_gift_add",
-              "label": "背包礼物-下发"
+              "registryId": "package_gift_add"
             },
             {
               "kind": "cap",
               "moduleId": "礼物",
+              "catIndex": 6,
+              "label": "财富-增加",
               "sourceId": "moa",
-              "registryId": "wealth_incr",
-              "label": "财富-增加"
+              "registryId": "wealth_incr"
             },
             {
               "kind": "cap",
               "moduleId": "活动",
+              "catIndex": 12,
+              "label": "活动-活动中心消息聚合IM",
               "sourceId": "moa",
-              "registryId": "activity_center_reward_im_send",
-              "label": "活动-活动中心消息聚合IM"
+              "registryId": "activity_center_reward_im_send"
             },
             {
               "kind": "cap",
               "moduleId": "活动",
+              "catIndex": 10,
+              "label": "活动-客服下发道具",
               "sourceId": "moa",
-              "registryId": "activity_customer_send_prop",
-              "label": "活动-客服下发道具"
+              "registryId": "activity_customer_send_prop"
             },
             {
               "kind": "cap",
-              "moduleId": "活动",
+              "moduleId": "奖励验收",
+              "catIndex": 1,
+              "label": "奖励验收-用户资产快照",
               "sourceId": "moa",
-              "registryId": "reward_verify_snapshot",
-              "label": "奖励验收-用户资产快照"
+              "registryId": "reward_verify_snapshot"
             },
             {
               "kind": "cap",
-              "moduleId": "活动",
+              "moduleId": "奖励验收",
+              "catIndex": 1,
+              "label": "奖励验收-发奖前后求差",
               "sourceId": "moa",
-              "registryId": "reward_verify_compare",
-              "label": "奖励验收-发奖前后求差"
+              "registryId": "reward_verify_compare"
             },
             {
               "kind": "cap",
-              "moduleId": "活动",
+              "moduleId": "奖励验收",
+              "catIndex": 0,
+              "label": "奖励未下发-拦截排查",
               "sourceId": "moa",
-              "registryId": "reward_dispatch_block_check",
-              "label": "奖励未下发-拦截排查"
+              "registryId": "reward_dispatch_block_check"
             },
             {
               "kind": "cap",
-              "moduleId": "活动",
+              "moduleId": "奖励验收",
+              "catIndex": 0,
+              "label": "奖励下发-风控预检",
               "sourceId": "moa",
-              "registryId": "reward_dispatch_risk_precheck",
-              "label": "奖励下发-风控预检"
+              "registryId": "reward_dispatch_risk_precheck"
             },
             {
               "kind": "cap",
               "moduleId": "支付",
+              "catIndex": 0,
+              "label": "钻石-发放",
               "sourceId": "moa",
-              "registryId": "diamond_provide",
-              "label": "钻石-发放"
+              "registryId": "diamond_provide"
             },
             {
               "kind": "cap",
               "moduleId": "支付",
+              "catIndex": 0,
+              "label": "钻石-查询余额",
               "sourceId": "moa",
-              "registryId": "diamond_query_account",
-              "label": "钻石-查询余额"
+              "registryId": "diamond_query_account"
             },
             {
               "kind": "cap",
               "moduleId": "用户",
+              "catIndex": 5,
+              "label": "用户-关注好友",
               "sourceId": "moa",
-              "registryId": "user_follow_friend",
-              "label": "用户-关注好友"
+              "registryId": "user_follow_friend"
             },
             {
               "kind": "cap",
-              "moduleId": "用户",
+              "moduleId": "cp",
+              "catIndex": 2,
+              "label": "亲密关系-发起变更好友类型",
               "sourceId": "moa",
-              "registryId": "intimate_buddy_change_apply",
-              "label": "亲密关系-发起变更好友类型"
+              "registryId": "intimate_buddy_change_apply"
             },
             {
               "kind": "cap",
-              "moduleId": "用户",
+              "moduleId": "cp",
+              "catIndex": 2,
+              "label": "亲密关系-接受变更好友类型",
               "sourceId": "moa",
-              "registryId": "intimate_buddy_change_accept",
-              "label": "亲密关系-接受变更好友类型"
+              "registryId": "intimate_buddy_change_accept"
             },
             {
               "kind": "cap",
-              "moduleId": "用户",
+              "moduleId": "cp",
+              "catIndex": 0,
+              "label": "CP总恩爱值-增加",
               "sourceId": "moa",
-              "registryId": "cp_love_value_add",
-              "label": "CP总恩爱值-增加"
+              "registryId": "cp_love_value_add"
             },
             {
               "kind": "cap",
-              "moduleId": "风险控制",
+              "moduleId": "活动",
+              "catIndex": 5,
+              "label": "活动风控-解除",
               "sourceId": "risk",
-              "registryId": "release_activity_risk",
-              "label": "活动风控-解除"
+              "registryId": "release_activity_risk"
             }
-          ]
+          ],
+          "subfolder": true
         },
         {
           "kind": "folder",
           "id": "nav-activity-surprise-halloween",
           "label": "惊喜万圣节",
-          "subfolder": true,
           "children": [
             {
               "kind": "cap",
               "moduleId": "活动",
+              "catIndex": 11,
+              "label": "活动-模拟送礼",
               "sourceId": "moa",
-              "registryId": "activity_mock_gift",
-              "label": "活动-模拟送礼"
+              "registryId": "activity_mock_gift"
+            },
+            {
+              "kind": "cap",
+              "moduleId": "客服",
+              "catIndex": 1,
+              "label": "房间-下发宝箱雨IM849",
+              "sourceId": "moa",
+              "registryId": "room_treasure_rain_im_849"
             },
             {
               "kind": "cap",
               "moduleId": "活动",
+              "catIndex": 12,
+              "label": "活动-活动中心消息聚合IM",
               "sourceId": "moa",
-              "registryId": "room_treasure_rain_im_849",
-              "label": "房间-下发宝箱雨IM849"
+              "registryId": "activity_center_reward_im_send"
             },
             {
               "kind": "cap",
               "moduleId": "活动",
+              "catIndex": 10,
+              "label": "活动-客服下发道具",
               "sourceId": "moa",
-              "registryId": "activity_center_reward_im_send",
-              "label": "活动-活动中心消息聚合IM"
+              "registryId": "activity_customer_send_prop"
             },
             {
               "kind": "cap",
-              "moduleId": "活动",
+              "moduleId": "奖励验收",
+              "catIndex": 1,
+              "label": "星礼包-查询配置",
               "sourceId": "moa",
-              "registryId": "activity_customer_send_prop",
-              "label": "活动-客服下发道具"
+              "registryId": "prize_bag_query_config"
             },
             {
               "kind": "cap",
-              "moduleId": "活动",
+              "moduleId": "奖励验收",
+              "catIndex": 1,
+              "label": "奖励验收-用户资产快照",
               "sourceId": "moa",
-              "registryId": "prize_bag_query_config",
-              "label": "星礼包-查询配置"
+              "registryId": "reward_verify_snapshot"
             },
             {
               "kind": "cap",
-              "moduleId": "活动",
+              "moduleId": "奖励验收",
+              "catIndex": 0,
+              "label": "奖励下发-拦截排查",
               "sourceId": "moa",
-              "registryId": "reward_verify_snapshot",
-              "label": "奖励验收-用户资产快照"
+              "registryId": "reward_dispatch_block_check"
             },
             {
               "kind": "cap",
-              "moduleId": "活动",
+              "moduleId": "奖励验收",
+              "catIndex": 0,
+              "label": "奖励下发-风控预检",
               "sourceId": "moa",
-              "registryId": "reward_dispatch_block_check",
-              "label": "奖励下发-拦截排查"
-            },
-            {
-              "kind": "cap",
-              "moduleId": "活动",
-              "sourceId": "moa",
-              "registryId": "reward_dispatch_risk_precheck",
-              "label": "奖励下发-风控预检"
+              "registryId": "reward_dispatch_risk_precheck"
             },
             {
               "kind": "cap",
               "moduleId": "礼物",
+              "catIndex": 1,
+              "label": "背包礼物-下发",
               "sourceId": "moa",
-              "registryId": "package_gift_add",
-              "label": "背包礼物-下发"
+              "registryId": "package_gift_add"
             },
             {
               "kind": "cap",
               "moduleId": "礼物",
+              "catIndex": 7,
+              "label": "礼物面板-查看背包礼物",
               "sourceId": "moa",
-              "registryId": "gift_panel_backpack_gifts",
-              "label": "礼物面板-查看背包礼物"
+              "registryId": "gift_panel_backpack_gifts"
             },
             {
               "kind": "cap",
               "moduleId": "支付",
+              "catIndex": 0,
+              "label": "钻石-发放",
               "sourceId": "moa",
-              "registryId": "diamond_provide",
-              "label": "钻石-发放"
+              "registryId": "diamond_provide"
             },
             {
               "kind": "cap",
               "moduleId": "支付",
+              "catIndex": 0,
+              "label": "钻石-查询余额",
               "sourceId": "moa",
-              "registryId": "diamond_query_account",
-              "label": "钻石-查询余额"
+              "registryId": "diamond_query_account"
+            },
+            {
+              "kind": "cap",
+              "moduleId": "礼物",
+              "catIndex": 6,
+              "label": "财富-增加",
+              "sourceId": "moa",
+              "registryId": "wealth_incr"
+            },
+            {
+              "kind": "cap",
+              "moduleId": "礼物",
+              "catIndex": 6,
+              "label": "魅力-增加",
+              "sourceId": "moa",
+              "registryId": "charm_incr"
             },
             {
               "kind": "cap",
               "moduleId": "用户",
+              "catIndex": 6,
+              "label": "铭牌-下发",
               "sourceId": "moa",
-              "registryId": "wealth_incr",
-              "label": "财富-增加"
+              "registryId": "nameplate_dispatch"
             },
             {
               "kind": "cap",
               "moduleId": "用户",
+              "catIndex": 11,
+              "label": "装扮-查询用户拥有道具",
               "sourceId": "moa",
-              "registryId": "charm_incr",
-              "label": "魅力-增加"
-            },
-            {
-              "kind": "cap",
-              "moduleId": "用户",
-              "sourceId": "moa",
-              "registryId": "nameplate_dispatch",
-              "label": "铭牌-下发"
-            },
-            {
-              "kind": "cap",
-              "moduleId": "用户",
-              "sourceId": "moa",
-              "registryId": "user_prop_query_own",
-              "label": "装扮-查询用户拥有道具"
+              "registryId": "user_prop_query_own"
             },
             {
               "kind": "cap",
               "moduleId": "vip",
+              "catIndex": 0,
+              "label": "VIP体验卡-下发",
               "sourceId": "moa",
-              "registryId": "vip_try_dispatch",
-              "label": "VIP体验卡-下发"
+              "registryId": "vip_try_dispatch"
             }
-          ]
+          ],
+          "subfolder": true
         },
         {
           "kind": "cap",
@@ -1262,18 +1341,18 @@
         {
           "kind": "cap",
           "moduleId": "开发代码",
-          "sourceId": "devcode",
-          "registryId": "code_testcase_review",
           "catIndex": 1,
-          "label": "用例审查"
+          "label": "用例审查",
+          "sourceId": "devcode",
+          "registryId": "code_testcase_review"
         },
         {
           "kind": "cap",
           "moduleId": "开发代码",
+          "catIndex": 0,
+          "label": "写回翻译文档",
           "sourceId": "devcode",
-          "registryId": "multilang_doc_writeback",
-          "catIndex": 2,
-          "label": "写回翻译文档"
+          "registryId": "multilang_doc_writeback"
         }
       ]
     },
