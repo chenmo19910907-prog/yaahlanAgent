@@ -18,6 +18,7 @@
     return Math.min(22, Math.max(5, units + 2));
   }
   const NAV_COLLAPSED_LS_KEY = 'web_agent_catalog_nav_collapsed';
+  const CAP_EXPANDED_LS_KEY = 'web_agent_catalog_cap_expanded';
 
   function readLsStringSet(key) {
     try {
@@ -774,7 +775,7 @@
     } else {
       this.restoreNavCollapsed();
     }
-    if (!preserveNavUi) this.capExpanded = new Set();
+    if (!preserveNavUi) this.restoreCapExpanded();
     this.renderNav();
     this.render();
     } finally {
@@ -878,6 +879,15 @@
     writeLsStringSet(NAV_COLLAPSED_LS_KEY, this.collapsed);
   };
 
+  CatalogPanel.prototype.restoreCapExpanded = function restoreCapExpanded() {
+    const stored = readLsStringSet(CAP_EXPANDED_LS_KEY);
+    this.capExpanded = stored ? new Set(stored) : new Set();
+  };
+
+  CatalogPanel.prototype.persistCapExpanded = function persistCapExpanded() {
+    writeLsStringSet(CAP_EXPANDED_LS_KEY, this.capExpanded);
+  };
+
   CatalogPanel.prototype.capRegistryKey = function capRegistryKey(sourceId, registryId) {
     const sid = String(sourceId || '').trim();
     const rid = String(registryId || '').trim();
@@ -908,6 +918,7 @@
       if (head.getAttribute('aria-expanded') === 'true') this.capExpanded.add(key);
       else this.capExpanded.delete(key);
     });
+    this.persistCapExpanded();
   };
 
   CatalogPanel.prototype.collectCapKeysInTree = function collectCapKeysInTree(nodes, out) {
@@ -1844,6 +1855,7 @@
         if (capKey) {
           if (open) this.capExpanded.delete(capKey);
           else this.capExpanded.add(capKey);
+          this.persistCapExpanded();
         }
       });
     });
@@ -2019,6 +2031,12 @@
     const rid = String(item.registry_id || item.registryId || '').trim();
     if (rid === 'guild_pangu_shift_config' && global.GuildPanguPanel) {
       return { panel: global.GuildPanguPanel, sub: '公会盘古 · 预上线改参' };
+    }
+    if (rid === 'dealer_pangu_assistant_quota_time' && global.DealerPanguPanel) {
+      return { panel: global.DealerPanguPanel, sub: '币商助理额度 · 预上线改参' };
+    }
+    if (rid === 'dealer_pangu_recharge_auth_whitelist' && global.DealerRechargeAuthPanel) {
+      return { panel: global.DealerRechargeAuthPanel, sub: '币商充值真人认证 · 白名单' };
     }
     if (rid === 'code_testcase_review') {
       const base = {

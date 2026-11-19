@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-11-11 18:40:47 北京时间",
-  "total_items": 406,
-  "module_count": 31,
+  "generated_at": "2026-11-19 15:53:58 北京时间",
+  "total_items": 411,
+  "module_count": 33,
   "modules": [
     {
       "id": "用户",
@@ -629,7 +629,7 @@
     {
       "id": "房间",
       "label": "房间",
-      "item_count": 37,
+      "item_count": 38,
       "categories": [
         {
           "name": "全服榜单（room/external/room-admin-handle）",
@@ -877,6 +877,17 @@
         {
           "name": "房间-红包（room/external/room-share-stage）",
           "items": [
+            {
+              "name": "房间-删除公屏消息",
+              "prompts": [
+                "执行 房间-删除公屏消息"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "房间_删除公屏消息"
+            },
             {
               "name": "房间-发红包",
               "prompts": [
@@ -3282,7 +3293,7 @@
     {
       "id": "公会",
       "label": "公会",
-      "item_count": 12,
+      "item_count": 13,
       "categories": [
         {
           "name": "Admin公会（melon-gateway / cms/anchor）",
@@ -3388,6 +3399,22 @@
               "source_tag_id": "moa",
               "env": "test",
               "registry_id": "guild_query_anchor_by_mmuidv3_record"
+            }
+          ]
+        },
+        {
+          "name": "MOA公会（yaahalan-cms-backdoor）",
+          "items": [
+            {
+              "name": "公会-清除母公会长当日邀请记录",
+              "prompts": [
+                "清除母公会长当日邀请记录 日期<inviteRecordDate|20261113> ID<presidentUserId|公会长userId>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "guild_clear_super_trade_president_daily_invite_record"
             }
           ]
         },
@@ -5361,6 +5388,40 @@
       ]
     },
     {
+      "id": "币商盘古配置",
+      "label": "币商盘古配置",
+      "item_count": 2,
+      "categories": [
+        {
+          "name": "币商盘古配置（workflow）",
+          "items": [
+            {
+              "name": "币商助理额度刷新时间",
+              "prompts": [
+                "币商助理额度盘古 whiteUsers=<whiteUsers> fixedTimeSec=<fixedTimeSec> 保存发布"
+              ],
+              "source": "工作流",
+              "source_id": "workflow",
+              "source_tag_id": "workflow",
+              "env": "tool",
+              "registry_id": "dealer_pangu_assistant_quota_time"
+            },
+            {
+              "name": "跳过币商充值真人认证白名单",
+              "prompts": [
+                "币商充值跳过真人认证白名单 whitelistUserIds=<whitelistUserIds> 保存发布"
+              ],
+              "source": "工作流",
+              "source_id": "workflow",
+              "source_tag_id": "workflow",
+              "env": "tool",
+              "registry_id": "dealer_pangu_recharge_auth_whitelist"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "幸运大富翁双人",
       "label": "幸运大富翁·双人",
       "item_count": 2,
@@ -5444,6 +5505,31 @@
               "source_tag_id": "dingtalk",
               "env": "tool",
               "registry_id": "excel_mark_p0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "首充转盘",
+      "label": "首充转盘",
+      "item_count": 1,
+      "categories": [
+        {
+          "name": "首充转盘（voga-mts-vas-backdoor · FirstRechargeWheelDao）",
+          "items": [
+            {
+              "name": "首充转盘-重置未抽奖",
+              "prompts": [
+                "首充转盘重置未抽奖 <userId>",
+                "将 <userId> 首充转盘改成没有抽奖状态",
+                "firstRechargeWheel 恢复免费抽奖 <userId>"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "first_recharge_wheel_reset_not_drawn"
             }
           ]
         }
