@@ -5,7 +5,7 @@
   "mcp_count": 6,
   "skills_count": 12,
   "modules_count": 33,
-  "capabilities_count": 411,
+  "capabilities_count": 419,
   "defaultAgentModel": "composer-2.5",
   "agentModels": [
     {
@@ -235,6 +235,18 @@
             "id": "bookmark-mt9t05rf",
             "label": "草料二维码",
             "url": "https://cli.im/text",
+            "icon": "link"
+          },
+          {
+            "id": "bookmark-mwswv468",
+            "label": "钉钉开发者后台",
+            "url": "https://open-dev.dingtalk.com/fe/app?hash=%23%2Fcorp%2Fapp#/corp/app",
+            "icon": "link"
+          },
+          {
+            "id": "bookmark-mwswyqw6",
+            "label": "cursor用量统计",
+            "url": "https://cursor.com/dashboard/usage",
             "icon": "link"
           }
         ]
