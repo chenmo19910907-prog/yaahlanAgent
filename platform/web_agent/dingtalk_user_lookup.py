@@ -174,6 +174,29 @@ def resolve_staff_display_name(
     return chinese_display_name(best)
 
 
+def resolve_staff_display_name_with_api(
+    staff_id: str,
+    *,
+    known_labels: dict[str, str] | None = None,
+    fallback_label: str = "",
+) -> str:
+    """展示名：本地映射优先；纯英文/无中文时再走钉钉 API。"""
+    resolved = resolve_staff_display_name(
+        staff_id,
+        known_labels=known_labels,
+        fallback_label=fallback_label,
+        try_api=False,
+    )
+    if (staff_id or "").strip() and not _has_cjk(resolved):
+        resolved = resolve_staff_display_name(
+            staff_id,
+            known_labels=known_labels,
+            fallback_label=fallback_label,
+            try_api=True,
+        )
+    return resolved
+
+
 def lookup_staff_public_name(
     staff_id: str,
     fallback_label: str = "",

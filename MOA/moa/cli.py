@@ -746,6 +746,59 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--room-online-limit", type=int, default=0, help="增加房间在线人数：进房人数上限（0=不限制，默认 0）")
     parser.add_argument("--room-online-mic", type=int, default=0, help="增加房间在线人数：自动上麦人数（0=不自动上麦，默认 0）")
 
+    parser.add_argument("--room-apply-seat-user-id", help="房间上麦：userId（applySeat）")
+    parser.add_argument("--room-apply-seat-room-id", help="房间上麦：roomId")
+    parser.add_argument("--room-apply-seat-id", help="房间上麦：麦位 seatId")
+    parser.add_argument("--room-apply-seat-area", default="MENA", help="房间上麦：area（默认 MENA）")
+    parser.add_argument("--room-apply-seat-lang", default="en", help="房间上麦：lang（默认 en）")
+    parser.add_argument("--room-apply-seat-os", default="android", help="房间上麦：os/osType（默认 android）")
+    parser.add_argument("--room-apply-seat-country", default="B1", help="房间上麦：country（默认 B1）")
+
+    parser.add_argument("--room-leave-seat-user-id", help="房间下麦：userId（leaveSeat）")
+    parser.add_argument("--room-leave-seat-room-id", help="房间下麦：roomId")
+    parser.add_argument("--room-leave-seat-area", default="MENA", help="房间下麦：area（默认 MENA）")
+    parser.add_argument("--room-leave-seat-lang", default="en", help="房间下麦：lang（默认 en）")
+    parser.add_argument("--room-leave-seat-os", default="android", help="房间下麦：os/osType（默认 android）")
+    parser.add_argument("--room-leave-seat-country", default="B1", help="房间下麦：country（默认 B1）")
+
+    parser.add_argument("--room-create-user-id", help="房间创建：userId（getUserCreateRoom）")
+    parser.add_argument("--room-create-area", default="MENA", help="房间创建：area（默认 MENA）")
+    parser.add_argument("--room-create-lang", default="en", help="房间创建：lang（默认 en）")
+    parser.add_argument("--room-create-os", default="android", help="房间创建：os/osType（默认 android）")
+    parser.add_argument("--room-create-country", default="B1", help="房间创建：country（默认 B1）")
+
+    parser.add_argument("--room-leave-room-user-id", help="房间退房：userId（leaveRoom）")
+    parser.add_argument("--room-leave-room-room-id", help="房间退房：roomId")
+    parser.add_argument("--room-leave-room-area", default="MENA", help="房间退房：area（默认 MENA）")
+    parser.add_argument("--room-leave-room-lang", default="en", help="房间退房：lang（默认 en）")
+    parser.add_argument("--room-leave-room-os", default="android", help="房间退房：os/osType（默认 android）")
+    parser.add_argument("--room-leave-room-country", default="B1", help="房间退房：country（默认 B1）")
+
+    parser.add_argument("--room-close-status-user-id", help="房间关闭开关：房主 userId（setCloseStatus）")
+    parser.add_argument("--room-close-status-room-id", help="房间关闭开关：roomId")
+    parser.add_argument(
+        "--room-close-status",
+        choices=("0", "1"),
+        help="房间关闭开关：0=开启 1=关闭",
+    )
+    parser.add_argument("--room-close-status-area", default="MENA", help="房间关闭开关：area（默认 MENA）")
+    parser.add_argument("--room-close-status-lang", default="en", help="房间关闭开关：lang（默认 en）")
+    parser.add_argument("--room-close-status-os", default="android", help="房间关闭开关：os（默认 android）")
+    parser.add_argument("--room-close-status-country", default="B1", help="房间关闭开关：country（默认 B1）")
+
+    parser.add_argument("--room-kick-user-id", help="房间踢人：房主 userId（kickOutOfRoom，须为该 roomId 房主）")
+    parser.add_argument("--room-kick-room-id", help="房间踢人：roomId")
+    parser.add_argument("--room-kick-remote-user-id", help="房间踢人：被踢用户 remoteUserId")
+    parser.add_argument(
+        "--room-kick-duration-hours", default="1", help="房间踢人：禁入时长小时数 kickDurationHours（默认 1）"
+    )
+    parser.add_argument("--room-kick-source", default="popup", help="房间踢人：source（默认 popup）")
+    parser.add_argument("--room-kick-req-source", default="mini_profile", help="房间踢人：reqSource（默认 mini_profile）")
+    parser.add_argument("--room-kick-area", default="MENA", help="房间踢人：area（默认 MENA）")
+    parser.add_argument("--room-kick-lang", default="en", help="房间踢人：lang（默认 en）")
+    parser.add_argument("--room-kick-os", default="android", help="房间踢人：os/osType（默认 android）")
+    parser.add_argument("--room-kick-country", default="B1", help="房间踢人：country（默认 B1）")
+
     parser.add_argument("--pk-rank-user-id", help="PK榜-增加PK值：用户 ID（handlePkRank）")
     parser.add_argument("--pk-rank-value", type=int, help="PK榜-增加PK值：增加的 PK 值")
     parser.add_argument("--user-reg-time-user-id", help="用户-查询注册时间：用户 ID（userVipTaskDao.getUserRegTime）")

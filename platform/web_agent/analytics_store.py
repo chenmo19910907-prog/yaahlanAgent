@@ -577,14 +577,35 @@ class AnalyticsStore:
         _merge_session_user_requests(counts, names, start=start, end=end)
 
         ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
-        items = [
-            {
-                "staffId": sid,
-                "displayName": names.get(sid) or sid,
-                "requests": count,
-            }
-            for sid, count in ranked[:max_items]
-        ]
+        try:
+            from dingtalk_user_lookup import (
+                _public_display_name,
+                collect_all_staff_labels,
+                resolve_staff_display_name_with_api,
+            )
+
+            known_labels = collect_all_staff_labels([])
+        except Exception:  # noqa: BLE001
+            known_labels = {}
+
+        items: list[dict[str, Any]] = []
+        for sid, count in ranked[:max_items]:
+            raw = (names.get(sid) or "").strip()
+            resolved = resolve_staff_display_name_with_api(
+                sid,
+                known_labels=known_labels,
+                fallback_label=raw,
+            )
+            display = _public_display_name(resolved or raw, sid)
+            if display == "未知用户":
+                display = raw or sid
+            items.append(
+                {
+                    "staffId": sid,
+                    "displayName": display,
+                    "requests": count,
+                }
+            )
         return {
             "range": key,
             "rangeLabel": label,

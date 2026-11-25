@@ -97,6 +97,12 @@ from .params import (
     set_room_channel_emote_params,
     set_room_channel_image_params,
     set_room_channel_message_params,
+    set_room_apply_seat_params,
+    set_room_close_status_params,
+    set_room_create_params,
+    set_room_kick_user_params,
+    set_room_leave_room_params,
+    set_room_leave_seat_params,
     set_room_dismiss_params,
     intimate_id_for_users,
     set_intimate_buddy_change_params,
@@ -1490,6 +1496,169 @@ def _room_channel_message_mode(args: argparse.Namespace) -> bool:
     return getattr(args, "room_chat_text", None) is not None
 
 
+def _room_apply_seat_mode(args: argparse.Namespace) -> bool:
+    return (
+        getattr(args, "room_apply_seat_user_id", None) is not None
+        or getattr(args, "room_apply_seat_room_id", None) is not None
+        or getattr(args, "room_apply_seat_id", None) is not None
+    )
+
+
+def _room_leave_seat_mode(args: argparse.Namespace) -> bool:
+    return getattr(args, "room_leave_seat_user_id", None) is not None or getattr(
+        args, "room_leave_seat_room_id", None
+    ) is not None
+
+
+def _room_create_mode(args: argparse.Namespace) -> bool:
+    return getattr(args, "room_create_user_id", None) is not None
+
+
+def _op_room_create(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(args.room_create_user_id or "").strip()
+    if not user_id:
+        raise ValueError("创建房间须提供 --room-create-user-id")
+    set_room_create_params(
+        payload,
+        user_id,
+        lang=str(args.room_create_lang or "en"),
+        area=str(args.room_create_area or "MENA"),
+        os_name=str(args.room_create_os or "android"),
+        country=str(args.room_create_country or "B1"),
+    )
+
+
+def _room_leave_room_mode(args: argparse.Namespace) -> bool:
+    return getattr(args, "room_leave_room_user_id", None) is not None or getattr(
+        args, "room_leave_room_room_id", None
+    ) is not None
+
+
+def _op_room_leave_room(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(args.room_leave_room_user_id or "").strip()
+    room_id = str(args.room_leave_room_room_id or "").strip()
+    if not user_id or not room_id:
+        raise ValueError("退房须提供 --room-leave-room-user-id、--room-leave-room-room-id")
+    set_room_leave_room_params(
+        payload,
+        user_id,
+        room_id,
+        lang=str(args.room_leave_room_lang or "en"),
+        area=str(args.room_leave_room_area or "MENA"),
+        os_name=str(args.room_leave_room_os or "android"),
+        country=str(args.room_leave_room_country or "B1"),
+    )
+
+
+def _room_close_status_mode(args: argparse.Namespace) -> bool:
+    return (
+        getattr(args, "room_close_status_user_id", None) is not None
+        or getattr(args, "room_close_status_room_id", None) is not None
+        or getattr(args, "room_close_status", None) is not None
+    )
+
+
+def _op_room_close_status(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    from .anniversary_egg import resolve_own_room_id
+
+    user_id = str(args.room_close_status_user_id or "").strip()
+    room_id = str(args.room_close_status_room_id or "").strip()
+    status = getattr(args, "room_close_status", None)
+    if status is None:
+        raise ValueError("须提供 --room-close-status（0 开启 / 1 关闭）")
+    if not user_id or not room_id:
+        raise ValueError("须提供 --room-close-status-user-id、--room-close-status-room-id")
+    owned_room_id = resolve_own_room_id(user_id)
+    if owned_room_id != room_id:
+        raise ValueError(
+            f"操作人须为房主：operator={user_id} ownedRoomId={owned_room_id} roomId={room_id}"
+        )
+    set_room_close_status_params(
+        payload,
+        user_id,
+        room_id,
+        status,
+        lang=str(args.room_close_status_lang or "en"),
+        area=str(args.room_close_status_area or "MENA"),
+        os_name=str(args.room_close_status_os or "android"),
+        country=str(args.room_close_status_country or "B1"),
+    )
+
+
+def _room_kick_user_mode(args: argparse.Namespace) -> bool:
+    return (
+        getattr(args, "room_kick_user_id", None) is not None
+        or getattr(args, "room_kick_room_id", None) is not None
+        or getattr(args, "room_kick_remote_user_id", None) is not None
+    )
+
+
+def _op_room_kick_user(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    from .anniversary_egg import resolve_own_room_id
+
+    user_id = str(args.room_kick_user_id or "").strip()
+    room_id = str(args.room_kick_room_id or "").strip()
+    remote_id = str(args.room_kick_remote_user_id or "").strip()
+    if not user_id or not room_id or not remote_id:
+        raise ValueError(
+            "踢人须提供 --room-kick-user-id、--room-kick-room-id、--room-kick-remote-user-id"
+        )
+    if user_id == remote_id:
+        raise ValueError("房主不能踢出自己")
+    owned_room_id = resolve_own_room_id(user_id)
+    if owned_room_id != room_id:
+        raise ValueError(
+            f"踢人操作人须为房主：operator={user_id} ownedRoomId={owned_room_id} roomId={room_id}"
+        )
+    set_room_kick_user_params(
+        payload,
+        user_id,
+        room_id,
+        remote_id,
+        kick_duration_hours=str(getattr(args, "room_kick_duration_hours", None) or "1"),
+        source=str(getattr(args, "room_kick_source", None) or "popup"),
+        req_source=str(getattr(args, "room_kick_req_source", None) or "mini_profile"),
+        lang=str(args.room_kick_lang or "en"),
+        area=str(args.room_kick_area or "MENA"),
+        os_name=str(args.room_kick_os or "android"),
+        country=str(args.room_kick_country or "B1"),
+    )
+
+
+def _op_room_leave_seat(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(args.room_leave_seat_user_id or "").strip()
+    room_id = str(args.room_leave_seat_room_id or "").strip()
+    if not user_id or not room_id:
+        raise ValueError("下麦须提供 --room-leave-seat-user-id、--room-leave-seat-room-id")
+    set_room_leave_seat_params(
+        payload,
+        user_id,
+        room_id,
+        lang=str(args.room_leave_seat_lang or "en"),
+        area=str(args.room_leave_seat_area or "MENA"),
+        os_name=str(args.room_leave_seat_os or "android"),
+        country=str(args.room_leave_seat_country or "B1"),
+    )
+
+
+def _op_room_apply_seat(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(args.room_apply_seat_user_id or "").strip()
+    room_id = str(args.room_apply_seat_room_id or "").strip()
+    seat_id = args.room_apply_seat_id
+    if not user_id or not room_id or seat_id is None:
+        raise ValueError("上麦须提供 --room-apply-seat-user-id、--room-apply-seat-room-id、--room-apply-seat-id")
+    set_room_apply_seat_params(
+        payload,
+        user_id,
+        room_id,
+        seat_id,
+        lang=str(args.room_apply_seat_lang or "en"),
+        area=str(args.room_apply_seat_area or "MENA"),
+        os_name=str(args.room_apply_seat_os or "android"),
+        country=str(args.room_apply_seat_country or "B1"),
+    )
+
+
 def _room_channel_image_mode(args: argparse.Namespace) -> bool:
     return getattr(args, "room_chat_image_url", None) is not None
 
@@ -2062,6 +2231,12 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: _room_channel_emote_mode(a), _op_room_channel_emote),
     (lambda a: _room_channel_image_mode(a), _op_room_channel_image),
     (lambda a: _room_channel_message_mode(a), _op_room_channel_message),
+    (lambda a: _room_apply_seat_mode(a), _op_room_apply_seat),
+    (lambda a: _room_create_mode(a), _op_room_create),
+    (lambda a: _room_leave_room_mode(a), _op_room_leave_room),
+    (lambda a: _room_close_status_mode(a), _op_room_close_status),
+    (lambda a: _room_kick_user_mode(a), _op_room_kick_user),
+    (lambda a: _room_leave_seat_mode(a), _op_room_leave_seat),
     (lambda a: _room_dismiss_mode(a), _op_room_dismiss),
     (lambda a: _p2p_message_mode(a), _op_p2p_message),
     (lambda a: _family_add_mode(a), _op_family_exp),

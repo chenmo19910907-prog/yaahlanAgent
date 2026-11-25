@@ -42,6 +42,15 @@ class WebNewMemberNotifyTests(unittest.TestCase):
         self.assertIn("张三", text)
         self.assertIn("新成员", text)
 
+    @patch(
+        "dingtalk_user_lookup.resolve_staff_display_name_with_api",
+        return_value="吴东岳",
+    )
+    def test_build_message_resolves_english_nickname(self, _resolve: unittest.mock.MagicMock) -> None:
+        text = notify.build_new_member_message(display_name="Dan", staff_id="4636305821358923")
+        self.assertIn("吴东岳", text)
+        self.assertNotIn("Dan", text)
+
     def test_dingtalk_conversation_keys(self) -> None:
         root = Path(self.tmp.name)
         conv = root / "dingtalk_gateway" / "data" / "conversations.json"

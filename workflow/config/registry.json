@@ -783,6 +783,18 @@
       "command": "python3 workflow/workflow_execute.py run room-member-quick-add-form --applicant-user-id <applicantUserId> --owner-user-id <ownerUserId> --room-id <roomId>"
     },
     {
+      "id": "room_clear_bots",
+      "name": "房间-清除机器人",
+      "category": "房间-压测（workflow）",
+      "description": "测试环境清空房间假人：关房开关(status=1)→房主退房(leaveRoom)→建房(getUserCreateRoom)→开房(status=0)。关房态下退房后重建可清残留 addOnlineUsersToRoom 假人；13311111111 roomId=38826842 已验收 inRoomUserCount=0。",
+      "prompts": [
+        "执行工作流 房间-清除机器人",
+        "工作流 room-clear-bots <ownerUserId> <roomId>",
+        "清除房间 <roomId> 假人 房主 <ownerUserId>"
+      ],
+      "command": "python3 workflow/workflow_execute.py run room-clear-bots --owner-user-id <ownerUserId> --room-id <roomId>"
+    },
+    {
       "id": "reward_verify_snapshot",
       "name": "奖励验收-用户资产快照",
       "category": "奖励验收-工作流（workflow）",

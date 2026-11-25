@@ -1,0 +1,71 @@
+{
+  "id": "room-clear-bots",
+  "name": "房间-清除机器人",
+  "category": "房间-压测（workflow）",
+  "description": "测试环境清空房间假人：关房开关(status=1)→房主退房(leaveRoom)→建房(getUserCreateRoom)→开房(status=0)。关房态下退房后重建可清残留 addOnlineUsersToRoom 假人；13311111111 roomId=38826842 已验收 inRoomUserCount=0。",
+  "version": 1,
+  "params": {
+    "ownerUserId": {
+      "label": "房主userId",
+      "type": "string",
+      "required": true,
+      "prompt": "须为 roomId 房主"
+    },
+    "roomId": {
+      "label": "roomId",
+      "type": "string",
+      "required": true,
+      "prompt": "目标语音房 ID"
+    }
+  },
+  "steps": [
+    {
+      "id": "close_room",
+      "name": "开启关闭房间开关",
+      "run": {
+        "type": "shell",
+        "command": "python3 MOA/moa_execute.py --payload-file MOA/templates/房间-设置关闭状态.json --room-close-status-user-id {{ownerUserId}} --room-close-status-room-id {{roomId}} --room-close-status 1",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    },
+    {
+      "id": "leave_room",
+      "name": "房主退出房间",
+      "run": {
+        "type": "shell",
+        "command": "python3 MOA/moa_execute.py --payload-file MOA/templates/房间-退出房间.json --room-leave-room-user-id {{ownerUserId}} --room-leave-room-room-id {{roomId}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    },
+    {
+      "id": "create_room",
+      "name": "房主创建房间",
+      "run": {
+        "type": "shell",
+        "command": "python3 MOA/moa_execute.py --payload-file MOA/templates/房间-创建房间.json --room-create-user-id {{ownerUserId}}",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    },
+    {
+      "id": "open_room",
+      "name": "关闭关闭房间开关",
+      "run": {
+        "type": "shell",
+        "command": "python3 MOA/moa_execute.py --payload-file MOA/templates/房间-设置关闭状态.json --room-close-status-user-id {{ownerUserId}} --room-close-status-room-id {{roomId}} --room-close-status 0",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

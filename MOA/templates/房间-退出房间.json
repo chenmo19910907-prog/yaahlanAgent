@@ -1,0 +1,56 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/room/external/room-behave-stage",
+  "method": "leaveRoom",
+  "header": "{\"userId\":\"100465989\",\"roomId\":\"38826842\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\",\"channelKey\":\"primary\",\"country\":\"B1\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100465989\",\"roomId\":\"38826842\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\",\"channelKey\":\"primary\",\"country\":\"B1\"}",
+      "type": "json",
+      "value": {
+        "userId": "100465989",
+        "roomId": "38826842",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "android",
+        "osType": "android",
+        "channelKey": "primary",
+        "country": "B1"
+      }
+    }
+  ],
+  "_meta": {
+    "serviceAgentRef": "room-behave-stage.leaveRoom",
+    "tunnelAlign": "/yaahlan/room/leave/leaveRoom",
+    "tunnelRef": "100465989（13311111111）`_id=OIk_86EB0MxPP6PXM2ta` roomId=38826842（2026-11-19 17:59:27）"
+  },
+  "_registry": {
+    "id": "room_leave_room",
+    "name": "房间-退出房间",
+    "category": "房间-行为（room/external/room-behave-stage）",
+    "description": "用户主动退出语音房（leaveRoom，对齐 /yaahlan/room/leave/leaveRoom）。body 需 userId、roomId；须在房内。Tunnel 100465989 实测 ec=200 data.flag=1。",
+    "prompts": [
+      "用户 <userId> 退出房间 <roomId>",
+      "房间 <roomId> 退房 userId <userId>",
+      "执行 房间-退出房间"
+    ],
+    "cli": "--room-leave-room-user-id <userId> --room-leave-room-room-id <roomId>"
+  }
+}

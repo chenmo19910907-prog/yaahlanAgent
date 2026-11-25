@@ -5860,7 +5860,35 @@
       display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
     }
     @media (max-width: 720px) { .guild-pangu-time-row { grid-template-columns: 1fr; } }
-    .guild-pangu-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    .guild-pangu-actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+    .guild-pangu-actions .btn {
+      appearance: none;
+      border: 1px solid #2c2c2e;
+      border-radius: 999px;
+      padding: 6px 14px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-family: inherit;
+      font-weight: 500;
+      color: #1d1d1f;
+      line-height: 1.35;
+      background: linear-gradient(180deg, #fafafa 0%, #ebebef 42%, #d1d1d6 100%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.75),
+        0 1px 2px rgba(0, 0, 0, 0.28);
+    }
+    .guild-pangu-actions .btn:hover {
+      background: linear-gradient(180deg, #ffffff 0%, #f0f0f4 42%, #d8d8dd 100%);
+    }
+    .guild-pangu-actions .btn:active {
+      background: linear-gradient(180deg, #d1d1d6 0%, #e3e3e8 55%, #f2f2f7 100%);
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.22);
+    }
+    .guild-pangu-actions .btn.primary {
+      background: linear-gradient(180deg, #fafafa 0%, #ebebef 42%, #d1d1d6 100%);
+      color: #1d1d1f;
+      border-color: #2c2c2e;
+    }
     .guild-pangu-btn {
       border: none; border-radius: 6px; padding: 7px 16px; cursor: pointer; font-size: 0.78rem;
     }
@@ -6824,7 +6852,7 @@
   <div class="usage-modal" id="usage-modal" aria-hidden="true">
     <div class="usage-bubble" id="usage-bubble" role="dialog" aria-labelledby="usage-title">
       <div class="usage-head">
-        <h3 id="usage-title">我的用量</h3>
+        <h3 id="usage-title">Cursor 用量</h3>
         <button type="button" class="btn-close" id="btn-usage-close" title="关闭" aria-label="关闭">×</button>
       </div>
       <div class="usage-body">
@@ -7007,7 +7035,7 @@
   <script src="about_panel.js?v=20260814a"></script>
   <script src="guild_pangu_panel.js?v=20261106a"></script>
   <script src="dealer_pangu_panel.js?v=20261117b"></script>
-  <script src="dealer_recharge_auth_panel.js?v=20261119a"></script>
+  <script src="dealer_recharge_auth_panel.js?v=20261124b"></script>
   <script src="code_testcase_review_panel.js?v=20261110c"></script>
   <script src="code_multilang_review_panel.js?v=20261111b"></script>
   <script src="catalog_panel.js?v=20261110c"></script>

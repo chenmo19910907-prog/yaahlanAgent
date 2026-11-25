@@ -34,6 +34,7 @@ from web_agent_urls import (  # noqa: E402
     web_agent_public_base_url,
 )
 from web_session_context import (  # noqa: E402
+    agent_integration_prompt_hint,
     family_monster_workbook_hint,
     pk_atm_prompt_hint,
     prop_backpack_issue_prompt_hint,
@@ -120,6 +121,7 @@ _WEB_RULES_CORE = f"""\
 7. **失败处理**：用自然语言说明问题与下一步，不要编造结果。
 7b. **服务重启汇报**：汇报 Web Agent / 钉钉网关重启结果时只写状态（健康检查、pid、launchd 等），勿附 `127.0.0.1` / localhost 访问链接。
 7c. **Web Agent 访问地址**：用户问网页版/入口/链接/地址时，内网统一答复 `{web_agent_chat_url()}`（基址 `{web_agent_public_base_url()}`）；工具台说明书 `{web_agent_catalog_manual_url()}`。**禁止**写 `127.0.0.1`、localhost、cloudflare 临时域名，除非用户明确问本机 localhost 调试。
+7d. **外部接入 Open API**：用户问如何把自有 Agent/BFF/程序接入本 Web Agent（接入、对接、HTTP API、Open API、调用对话）时，**必须**说明已提供 **Open API**：`{web_agent_public_base_url()}/api/open/v1/task/submit` 与 `…/task/query`（`Authorization: Bearer` 个人 Token；页面「Open API」弹窗含 cURL）。**权限**：须先成为 **Web 管理员**（头像 → **管理员列表** → 申请管理员，超管审批）；通过后头像菜单 **Open API** 生成 Token。禁止只写「没有对外开放 HTTP API」而不提 Open API；钉钉网关、`execute.py` 直调为补充路径。
 8. **真机 ADB**：Web Agent **不支持** ADB / 真机 UI 执行。禁止调用 `adb/`、`adb_execute.py`、`macro`、`flow run`、`observe`/`capture`/`locate`/`tap`、`autotest`、adb-screen MCP 等。查数用 MOA/Admin；抓包用 Tunnel **只读**查询。用户要求真机点按、礼物面板 UI、截图验收时，说明 Web 端不支持，请在 **Cursor 本机对话** 中操作。
 8b. **Figma 设计稿**：用户给出 `figma.com/design/...` 且含 `node-id` 时，须用 **figma-read MCP** 的 `get_figma_node`（层级+文案）或 `get_figma_screenshot_url`（PNG）；禁止未调工具就编造 UI。工具不可用时说明需配置 `FIGMA_ACCESS_TOKEN`（`python3 platform/scripts/figma_read_setup.py --open`）并重启 Web Agent。
 9. **线上环境**：
@@ -436,6 +438,9 @@ def build_web_prompt(
     family_join_hint = family_join_prompt_hint(body)
     if family_join_hint:
         extras.append(family_join_hint)
+    integrate_hint = agent_integration_prompt_hint(body, session_id=session_id)
+    if integrate_hint:
+        extras.append(integrate_hint)
     if enabled_external_agents is not None:
         catalog = external_agents_by_id()
         if enabled_external_agents:

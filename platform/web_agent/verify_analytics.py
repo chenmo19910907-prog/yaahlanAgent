@@ -171,6 +171,25 @@ class AnalyticsStoreTest(unittest.TestCase):
             self.assertEqual(rank["items"][0]["requests"], 2)
             self.assertEqual(rank["items"][0]["displayName"], "Alice")
 
+    def test_question_rank_resolves_chinese_name_over_english_nickname(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "events.jsonl"
+            store = AnalyticsStore(events_path=path)
+            store.record_event(
+                event="chat_send",
+                staff_id="uid_dan",
+                display_name="Dan",
+            )
+            empty_sessions = Path(tmp) / "sessions.json"
+            empty_sessions.write_text("{}", encoding="utf-8")
+            with patch("analytics_store.SESSIONS_INDEX", empty_sessions):
+                with patch(
+                    "dingtalk_user_lookup.resolve_staff_display_name_with_api",
+                    return_value="吴东岳",
+                ):
+                    rank = store.summarize_question_rank(range_key="30d")
+            self.assertEqual(rank["items"][0]["displayName"], "吴东岳")
+
     def test_question_rank_includes_dingtalk_history_from_sessions(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)

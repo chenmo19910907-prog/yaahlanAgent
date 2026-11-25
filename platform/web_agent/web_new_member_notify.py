@@ -138,7 +138,27 @@ def _ensure_bootstrap_locked() -> None:
 
 
 def build_new_member_message(*, display_name: str, staff_id: str) -> str:
-    name = (display_name or "").strip() or (staff_id or "").strip() or "新用户"
+    uid = (staff_id or "").strip()
+    raw = (display_name or "").strip()
+    name = raw or uid or "新用户"
+    try:
+        from dingtalk_user_lookup import (
+            _public_display_name,
+            collect_static_staff_labels,
+            resolve_staff_display_name_with_api,
+        )
+
+        known = collect_static_staff_labels()
+        resolved = resolve_staff_display_name_with_api(
+            uid,
+            known_labels=known,
+            fallback_label=raw,
+        )
+        pub = _public_display_name(resolved or raw, uid)
+        if pub and pub != "未知用户":
+            name = pub
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("新成员展示名解析失败 staff=%s…: %s", uid[:12], exc)
     return f"【新成员】{name} 加入了 Web Agent"
 
 

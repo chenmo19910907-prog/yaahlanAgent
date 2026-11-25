@@ -46,6 +46,13 @@ _REWARD_VERIFY_RE = re.compile(
     re.I,
 )
 
+_AGENT_INTEGRATE_RE = re.compile(
+    r"接入.{0,12}(agent|Agent|智能体)|把你接入|如何接入|对接.{0,8}(agent|Agent|API)|"
+    r"open\s*api|Open\s*API|HTTP\s*API|对外开放.{0,8}API|外部.{0,6}接入|"
+    r"把我.{0,6}agent|集成.{0,8}(agent|Agent)",
+    re.I,
+)
+
 _REWARD_VERIFY_SESSION_RE = re.compile(
     r"web_reward_verify\.py|full-inventory|奖励下发验证",
     re.I,
@@ -176,6 +183,23 @@ def session_looks_like_pk_atm(session_id: str) -> bool:
         if looks_like_pk_atm_task(msg.content):
             return True
     return False
+
+
+def agent_integration_prompt_hint(text: str, *, session_id: str = "") -> str | None:
+    blob = text or ""
+    if not _AGENT_INTEGRATE_RE.search(blob):
+        return None
+    from web_agent_urls import web_agent_public_base_url
+
+    base = web_agent_public_base_url().rstrip("/")
+    return (
+        "**外部接入（铁律）**：答复须含 **Web Agent Open API**（非「无 HTTP API」）。"
+        f"接口：`POST {base}/api/open/v1/task/submit`、`POST {base}/api/open/v1/task/query`；"
+        "鉴权 `Authorization: Bearer <Token>`（与弹窗示例一致，支持 callback_url）。"
+        "**开通**：先 **申请 Web 管理员**（头像 → 管理员列表 → 申请，超管审批）；"
+        "通过后头像菜单 **Open API** 生成个人 Token。"
+        "钉钉 `@` 机器人、`python3 * /execute.py` 可作补充，但不替代 Open API 对外对接说明。"
+    )
 
 
 def pk_atm_prompt_hint(text: str, *, session_id: str = "") -> str | None:

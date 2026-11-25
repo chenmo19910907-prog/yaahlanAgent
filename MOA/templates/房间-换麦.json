@@ -1,0 +1,58 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/room/external/room-seat-stage",
+  "method": "applySeat",
+  "header": "{\"userId\":\"100465989\",\"roomId\":\"38826842\",\"seatId\":\"2\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\",\"channelKey\":\"primary\",\"country\":\"B1\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100465989\",\"roomId\":\"38826842\",\"seatId\":\"2\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\",\"channelKey\":\"primary\",\"country\":\"B1\"}",
+      "type": "json",
+      "value": {
+        "userId": "100465989",
+        "roomId": "38826842",
+        "seatId": "2",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "android",
+        "osType": "android",
+        "channelKey": "primary",
+        "country": "B1"
+      }
+    }
+  ],
+  "_meta": {
+    "serviceAgentRef": "room-seat-stage.applySeat",
+    "tunnelAlign": "/yaahlan/room/apply/applySeat",
+    "tunnelRef": "100465989（13311111111）`_id=A-Yi86EBpk1mjMPPwFAH` 1号麦→2号麦 type=1 result=3（2026-11-19 17:28:22）",
+    "note": "客户端换麦仍走 applySeat，body 为目标 seatId；响应 data.fromSeatId 为原麦位。"
+  },
+  "_registry": {
+    "id": "room_switch_seat",
+    "name": "房间-换麦",
+    "category": "房间-麦位（room/external/room-seat-stage）",
+    "description": "测试环境已在麦用户换到指定麦位（applySeat，对齐 /yaahlan/room/apply/applySeat）。body 需 userId、roomId、目标 seatId；成功常见 data.type=1、data.fromSeatId 为原麦位。Tunnel 100465989 1→2 号麦实测 ec=200。",
+    "prompts": [
+      "用户 <userId> 在房间 <roomId> 换麦到 <seatId>",
+      "房间 <roomId> 换麦 userId <userId> 目标麦位 <seatId>",
+      "执行 房间-换麦"
+    ],
+    "cli": "--room-apply-seat-user-id <userId> --room-apply-seat-room-id <roomId> --room-apply-seat-id <seatId>"
+  }
+}

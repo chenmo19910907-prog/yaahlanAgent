@@ -10,8 +10,7 @@
       "prompts": [
         "给房间<roomId|roomId>增加<exp|经验值>经验值"
       ],
-      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间经验值-backdoor.json \\\n  --service-url /service/voga-mts-room-backdoor \\\n  --moa-method execute \\\n  --room-id <roomId> \\\n  --exp <exp>\n",
-      "source_tag": "online"
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间经验值-backdoor.json \\\n  --service-url /service/voga-mts-room-backdoor \\\n  --moa-method execute \\\n  --room-id <roomId> \\\n  --exp <exp>\n"
     },
     {
       "id": "room_level_upgrade",
@@ -1952,6 +1951,90 @@
         "firstRechargeWheel 恢复免费抽奖 <userId>"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/首充转盘-重置未抽奖.json \\\n  --expr \\\n  'dao=context.getBean(\"firstRechargeWheelDao\"); \\\n  dao.delWheelStatus(\"<userId>\"); \\\n  dao.setWheelStatus(\"<userId>\"); \\\n  return \\\n  \"status=\"+dao.getWheelStatus(\"<userId>\");'\n"
+    },
+    {
+      "id": "room_apply_seat",
+      "name": "房间-上麦",
+      "category": "房间-麦位（room/external/room-seat-stage）",
+      "description": "测试环境用户申请上麦（applySeat，对齐 /yaahlan/room/apply/applySeat）。body 需 userId、roomId、seatId；用户须在房内且麦位空闲。已在麦上常见 ec=20210111 You're on the mic。Tunnel 100465989 实测 ec=200。",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 上麦 seatId=<seatId>",
+        "房间 <roomId> 上麦 userId <userId> 麦位 <seatId>",
+        "执行 房间-上麦"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-上麦.json \\\n  --room-apply-seat-user-id \\\n  <userId> \\\n  --room-apply-seat-room-id \\\n  <roomId> \\\n  --room-apply-seat-id \\\n  <seatId>\n"
+    },
+    {
+      "id": "room_switch_seat",
+      "name": "房间-换麦",
+      "category": "房间-麦位（room/external/room-seat-stage）",
+      "description": "测试环境已在麦用户换到指定麦位（applySeat，对齐 /yaahlan/room/apply/applySeat）。body 需 userId、roomId、目标 seatId；成功常见 data.type=1、data.fromSeatId 为原麦位。Tunnel 100465989 1→2 号麦实测 ec=200。",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 换麦到 <seatId>",
+        "房间 <roomId> 换麦 userId <userId> 目标麦位 <seatId>",
+        "执行 房间-换麦"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-换麦.json \\\n  --room-apply-seat-user-id \\\n  <userId> \\\n  --room-apply-seat-room-id \\\n  <roomId> \\\n  --room-apply-seat-id \\\n  <seatId>\n"
+    },
+    {
+      "id": "room_leave_seat",
+      "name": "房间-下麦",
+      "category": "房间-麦位（room/external/room-seat-stage）",
+      "description": "测试环境用户下麦（leaveSeat，对齐 /yaahlan/room/seat/exit/leaveSeat）。body 需 userId、roomId；用户须在房内且在麦。未在麦常见业务失败。Tunnel 100465989 实测 ec=200。",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 下麦",
+        "房间 <roomId> 下麦 userId <userId>",
+        "执行 房间-下麦"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-下麦.json \\\n  --room-leave-seat-user-id \\\n  <userId> \\\n  --room-leave-seat-room-id \\\n  <roomId>\n"
+    },
+    {
+      "id": "room_set_close_status",
+      "name": "房间-设置关闭状态",
+      "category": "房间-行为（room/external/room-behave-stage）",
+      "description": "房主设置房间关闭开关（setCloseStatus，对齐 /yaahlan/room/enter2/setCloseStatus）。body 需 userId（房主）、roomId、status（1=关闭 0=开启）。Tunnel 100465989 status=1 实测 ec=200。",
+      "prompts": [
+        "房间 <roomId> 房主 <userId> 设置关闭状态 status=<status>",
+        "关闭房间开关 roomId=<roomId> userId=<userId> status=1",
+        "执行 房间-设置关闭状态"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-设置关闭状态.json \\\n  --room-close-status-user-id <userId> \\\n  --room-close-status-room-id <roomId> \\\n  --room-close-status <status>\n"
+    },
+    {
+      "id": "room_kick_user",
+      "name": "房间-踢出用户",
+      "category": "房间-行为（room/external/room-behave-stage）",
+      "description": "房主将用户踢出房间（kickOutOfRoom，对齐 /yaahlan/room/kick/kickOutOfRoom）。body 需 userId（须为房主）、roomId、remoteUserId、kickDurationHours；管理员不可用。CLI 校验 userId 的 ownedRoomId=roomId。Tunnel 100465989 实测 ec=200。",
+      "prompts": [
+        "房间 <roomId> 房主 <userId> 踢出用户 <remoteUserId>",
+        "用户 <remoteUserId> 从房间 <roomId> 被踢出 kickHours=<kickDurationHours>",
+        "执行 房间-踢出用户"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-踢出用户.json \\\n  --room-kick-user-id <userId> \\\n  --room-kick-room-id <roomId> \\\n  --room-kick-remote-user-id <remoteUserId> \\\n  --room-kick-duration-hours <kickDurationHours>\n"
+    },
+    {
+      "id": "room_leave_room",
+      "name": "房间-退出房间",
+      "category": "房间-行为（room/external/room-behave-stage）",
+      "description": "用户主动退出语音房（leaveRoom，对齐 /yaahlan/room/leave/leaveRoom）。body 需 userId、roomId；须在房内。Tunnel 100465989 实测 ec=200 data.flag=1。",
+      "prompts": [
+        "用户 <userId> 退出房间 <roomId>",
+        "房间 <roomId> 退房 userId <userId>",
+        "执行 房间-退出房间"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-退出房间.json \\\n  --room-leave-room-user-id \\\n  <userId> \\\n  --room-leave-room-room-id \\\n  <roomId>\n"
+    },
+    {
+      "id": "room_create",
+      "name": "房间-创建房间",
+      "category": "房间-资料（room/external/room-profile-stage）",
+      "description": "用户创建/获取本人语音房（getUserCreateRoom，对齐 /yaahlan/room/myself/getUserCreateRoom）。body 需 userId；返回 data.roomId 等。Tunnel 100465989 实测 ec=200。",
+      "prompts": [
+        "用户 <userId> 创建房间",
+        "13311111111 建房 getUserCreateRoom",
+        "执行 房间-创建房间"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-创建房间.json \\\n  --room-create-user-id \\\n  <userId>\n"
     }
   ]
 }

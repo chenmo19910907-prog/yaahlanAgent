@@ -1,0 +1,57 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/room/external/room-behave-stage",
+  "method": "setCloseStatus",
+  "header": "{\"userId\":\"100465989\",\"roomId\":\"38826842\",\"status\":\"1\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\",\"channelKey\":\"primary\",\"country\":\"B1\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100465989\",\"roomId\":\"38826842\",\"status\":\"1\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\",\"channelKey\":\"primary\",\"country\":\"B1\"}",
+      "type": "json",
+      "value": {
+        "userId": "100465989",
+        "roomId": "38826842",
+        "status": "1",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "android",
+        "osType": "android",
+        "channelKey": "primary",
+        "country": "B1"
+      }
+    }
+  ],
+  "_meta": {
+    "serviceAgentRef": "room-behave-stage.setCloseStatus",
+    "tunnelAlign": "/yaahlan/room/enter2/setCloseStatus",
+    "tunnelRef": "100465989（13311111111）`_id=mOs786EBpk1mjMPP9qZ_` roomId=38826842 status=1 关闭（2026-11-19 17:55:55）"
+  },
+  "_registry": {
+    "id": "room_set_close_status",
+    "name": "房间-设置关闭状态",
+    "category": "房间-行为（room/external/room-behave-stage）",
+    "description": "房主设置房间关闭开关（setCloseStatus，对齐 /yaahlan/room/enter2/setCloseStatus）。body 需 userId（房主）、roomId、status（1=关闭 0=开启）。Tunnel 100465989 status=1 实测 ec=200。",
+    "prompts": [
+      "房间 <roomId> 房主 <userId> 设置关闭状态 status=<status>",
+      "关闭房间开关 roomId=<roomId> userId=<userId> status=1",
+      "执行 房间-设置关闭状态"
+    ],
+    "cli": "--room-close-status-user-id <userId> --room-close-status-room-id <roomId> --room-close-status <status>"
+  }
+}

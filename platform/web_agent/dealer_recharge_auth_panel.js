@@ -7,6 +7,21 @@
   const REGISTRY_ID = 'dealer_pangu_recharge_auth_whitelist';
   const SCENARIO_KEY = 'dealer_recharge_auth_whitelist';
   const LS_PREFIX = 'web_agent_dealer_auth_whitelist_fields_';
+  const MSE_APP_KEY = 'momo.bpm.biz.gameplatform.overseas-voga-mts-user';
+  const MSE_NAMESPACE = 'Application';
+  const MSE_CONFIG_KEY = 'dealerAuthConfig';
+
+  function buildMseConfigUrl(catalog) {
+    const env = catalog?.env || {};
+    const q = new URLSearchParams({
+      corp: String(env.region || 'alpha'),
+      env: String(env.cluster || 'stage'),
+      appKey: MSE_APP_KEY,
+      nameSpace: MSE_NAMESPACE,
+      configKey: MSE_CONFIG_KEY,
+    });
+    return `https://mse.wemomo.com/#/config/app?${q.toString()}`;
+  }
 
   function loadSavedFields() {
     try {
@@ -44,7 +59,8 @@
         </label>
         <div class="guild-pangu-actions">
           <button type="button" class="btn" data-dra-reload>重新拉取 MSE 白名单</button>
-          <button type="button" class="btn primary" data-dra-run>生成执行提示</button>
+          <button type="button" class="btn" data-dra-run>生成执行提示</button>
+          <button type="button" class="btn" data-dra-mse>打开 MSE 配置</button>
         </div>
         <p class="guild-pangu-status" data-dra-status hidden></p>
       </div>`;
@@ -124,10 +140,20 @@
       }
     },
 
+    applyMseLink(root, catalog) {
+      const btn = root.querySelector('[data-dra-mse]');
+      if (btn) btn.dataset.mseUrl = buildMseConfigUrl(catalog);
+    },
+
     bind(root, onSubmit, meta, catalog) {
+      this.applyMseLink(root, catalog);
       root.querySelector('[data-dra-white]')?.addEventListener('input', () => saveFieldsFromRoot(root));
       root.querySelector('[data-dra-reload]')?.addEventListener('click', () => {
         this.reloadMse(root);
+      });
+      root.querySelector('[data-dra-mse]')?.addEventListener('click', () => {
+        const url = root.querySelector('[data-dra-mse]')?.dataset.mseUrl || '';
+        if (url) window.open(url, '_blank', 'noopener,noreferrer');
       });
       root.querySelector('[data-dra-run]')?.addEventListener('click', () => {
         saveFieldsFromRoot(root);

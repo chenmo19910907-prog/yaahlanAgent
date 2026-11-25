@@ -1613,6 +1613,221 @@ def set_room_dismiss_params(
         settings["headerType"] = "TXT"
 
 
+def set_room_leave_seat_params(
+    payload: dict[str, Any],
+    user_id: str,
+    room_id: str,
+    *,
+    lang: str = "en",
+    area: str = "MENA",
+    os_name: str = "android",
+    country: str = "B1",
+) -> None:
+    uid = str(user_id).strip()
+    rid = str(room_id).strip()
+    if not uid:
+        raise ValueError("userId 不能为空")
+    if not rid:
+        raise ValueError("roomId 不能为空")
+    body: dict[str, Any] = {
+        "userId": uid,
+        "roomId": rid,
+        "lang": str(lang or "en").strip() or "en",
+        "area": str(area or "MENA").strip() or "MENA",
+        "appId": "2005",
+        "osType": str(os_name or "android").strip() or "android",
+        "os": str(os_name or "android").strip() or "android",
+        "channelKey": "primary",
+        "country": str(country or "B1").strip() or "B1",
+    }
+    payload["url"] = "/service/room/external/room-seat-stage"
+    payload["method"] = "leaveSeat"
+    payload["params"] = [json_param(body)]
+    payload["header"] = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+
+
+def set_room_create_params(
+    payload: dict[str, Any],
+    user_id: str,
+    *,
+    lang: str = "en",
+    area: str = "MENA",
+    os_name: str = "android",
+    country: str = "B1",
+) -> None:
+    uid = str(user_id).strip()
+    if not uid:
+        raise ValueError("userId 不能为空")
+    body: dict[str, Any] = {
+        "userId": uid,
+        "lang": str(lang or "en").strip() or "en",
+        "area": str(area or "MENA").strip() or "MENA",
+        "appId": "2005",
+        "osType": str(os_name or "android").strip() or "android",
+        "os": str(os_name or "android").strip() or "android",
+        "channelKey": "primary",
+        "country": str(country or "B1").strip() or "B1",
+    }
+    payload["url"] = "/service/room/external/room-profile-stage"
+    payload["method"] = "getUserCreateRoom"
+    payload["params"] = [json_param(body)]
+    payload["header"] = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+
+
+def set_room_leave_room_params(
+    payload: dict[str, Any],
+    user_id: str,
+    room_id: str,
+    *,
+    lang: str = "en",
+    area: str = "MENA",
+    os_name: str = "android",
+    country: str = "B1",
+) -> None:
+    uid = str(user_id).strip()
+    rid = str(room_id).strip()
+    if not uid:
+        raise ValueError("userId 不能为空")
+    if not rid:
+        raise ValueError("roomId 不能为空")
+    body: dict[str, Any] = {
+        "userId": uid,
+        "roomId": rid,
+        "lang": str(lang or "en").strip() or "en",
+        "area": str(area or "MENA").strip() or "MENA",
+        "appId": "2005",
+        "osType": str(os_name or "android").strip() or "android",
+        "os": str(os_name or "android").strip() or "android",
+        "channelKey": "primary",
+        "country": str(country or "B1").strip() or "B1",
+    }
+    payload["url"] = "/service/room/external/room-behave-stage"
+    payload["method"] = "leaveRoom"
+    payload["params"] = [json_param(body)]
+    payload["header"] = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+
+
+def set_room_close_status_params(
+    payload: dict[str, Any],
+    user_id: str,
+    room_id: str,
+    status: str | int,
+    *,
+    lang: str = "en",
+    area: str = "MENA",
+    os_name: str = "android",
+    country: str = "B1",
+) -> None:
+    uid = str(user_id).strip()
+    rid = str(room_id).strip()
+    st = str(status).strip()
+    if not uid:
+        raise ValueError("userId 不能为空")
+    if not rid:
+        raise ValueError("roomId 不能为空")
+    if st not in ("0", "1"):
+        raise ValueError("status 须为 0（开启）或 1（关闭）")
+    body: dict[str, Any] = {
+        "userId": uid,
+        "roomId": rid,
+        "status": st,
+        "lang": str(lang or "en").strip() or "en",
+        "area": str(area or "MENA").strip() or "MENA",
+        "appId": "2005",
+        "osType": str(os_name or "android").strip() or "android",
+        "os": str(os_name or "android").strip() or "android",
+        "channelKey": "primary",
+        "country": str(country or "B1").strip() or "B1",
+    }
+    payload["url"] = "/service/room/external/room-behave-stage"
+    payload["method"] = "setCloseStatus"
+    payload["params"] = [json_param(body)]
+    payload["header"] = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+
+
+def set_room_kick_user_params(
+    payload: dict[str, Any],
+    user_id: str,
+    room_id: str,
+    remote_user_id: str,
+  *,
+    kick_duration_hours: str = "1",
+    source: str = "popup",
+    req_source: str = "mini_profile",
+    lang: str = "en",
+    area: str = "MENA",
+    os_name: str = "android",
+    country: str = "B1",
+) -> None:
+    uid = str(user_id).strip()
+    rid = str(room_id).strip()
+    remote = str(remote_user_id).strip()
+    hours = str(kick_duration_hours).strip() or "1"
+    if not uid:
+        raise ValueError("userId 不能为空")
+    if not rid:
+        raise ValueError("roomId 不能为空")
+    if not remote:
+        raise ValueError("remoteUserId 不能为空")
+    body: dict[str, Any] = {
+        "userId": uid,
+        "roomId": rid,
+        "remoteUserId": remote,
+        "kickDurationHours": hours,
+        "source": str(source or "popup").strip() or "popup",
+        "reqSource": str(req_source or "mini_profile").strip() or "mini_profile",
+        "lang": str(lang or "en").strip() or "en",
+        "area": str(area or "MENA").strip() or "MENA",
+        "appId": "2005",
+        "osType": str(os_name or "android").strip() or "android",
+        "os": str(os_name or "android").strip() or "android",
+        "channelKey": "primary",
+        "country": str(country or "B1").strip() or "B1",
+    }
+    payload["url"] = "/service/room/external/room-behave-stage"
+    payload["method"] = "kickOutOfRoom"
+    payload["params"] = [json_param(body)]
+    payload["header"] = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+
+
+def set_room_apply_seat_params(
+    payload: dict[str, Any],
+    user_id: str,
+    room_id: str,
+    seat_id: str | int,
+    *,
+    lang: str = "en",
+    area: str = "MENA",
+    os_name: str = "android",
+    country: str = "B1",
+) -> None:
+    uid = str(user_id).strip()
+    rid = str(room_id).strip()
+    sid = str(seat_id).strip()
+    if not uid:
+        raise ValueError("userId 不能为空")
+    if not rid:
+        raise ValueError("roomId 不能为空")
+    if not sid:
+        raise ValueError("seatId 不能为空")
+    body: dict[str, Any] = {
+        "userId": uid,
+        "roomId": rid,
+        "seatId": sid,
+        "lang": str(lang or "en").strip() or "en",
+        "area": str(area or "MENA").strip() or "MENA",
+        "appId": "2005",
+        "osType": str(os_name or "android").strip() or "android",
+        "os": str(os_name or "android").strip() or "android",
+        "channelKey": "primary",
+        "country": str(country or "B1").strip() or "B1",
+    }
+    payload["url"] = "/service/room/external/room-seat-stage"
+    payload["method"] = "applySeat"
+    payload["params"] = [json_param(body)]
+    payload["header"] = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+
+
 def set_room_channel_emote_params(
     payload: dict[str, Any],
     user_id: str,

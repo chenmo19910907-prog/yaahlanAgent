@@ -42,6 +42,15 @@ class WebPromptProfileTest(unittest.TestCase):
         self.assertIn("延续当前 Web Agent 对话", prompt)
         self.assertNotIn("你是 Yaahlan", prompt)
 
+    def test_agent_integrate_hint(self) -> None:
+        prompt = build_web_prompt(
+            "如何把你接入到我的Agent？",
+            is_new_session=False,
+            session_id="sess004",
+        )
+        self.assertIn("Open API", prompt)
+        self.assertIn("管理员", prompt)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,55 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/room/external/room-profile-stage",
+  "method": "getUserCreateRoom",
+  "header": "{\"userId\":\"100465989\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\",\"channelKey\":\"primary\",\"country\":\"B1\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100465989\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"os\":\"android\",\"osType\":\"android\",\"channelKey\":\"primary\",\"country\":\"B1\"}",
+      "type": "json",
+      "value": {
+        "userId": "100465989",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "os": "android",
+        "osType": "android",
+        "channelKey": "primary",
+        "country": "B1"
+      }
+    }
+  ],
+  "_meta": {
+    "serviceAgentRef": "room-profile-stage.getUserCreateRoom",
+    "tunnelAlign": "/yaahlan/room/myself/getUserCreateRoom",
+    "tunnelRef": "100465989（13311111111）`_id=BI5B86EB0MxPP6PXYX3C` roomId=38826842 inRoomUserCount=0（2026-11-19 18:01:50）"
+  },
+  "_registry": {
+    "id": "room_create",
+    "name": "房间-创建房间",
+    "category": "房间-资料（room/external/room-profile-stage）",
+    "description": "用户创建/获取本人语音房（getUserCreateRoom，对齐 /yaahlan/room/myself/getUserCreateRoom）。body 需 userId；返回 data.roomId 等。Tunnel 100465989 实测 ec=200。",
+    "prompts": [
+      "用户 <userId> 创建房间",
+      "13311111111 建房 getUserCreateRoom",
+      "执行 房间-创建房间"
+    ],
+    "cli": "--room-create-user-id <userId>"
+  }
+}
