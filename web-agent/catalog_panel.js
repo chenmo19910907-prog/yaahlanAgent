@@ -2038,6 +2038,12 @@
     if (rid === 'dealer_pangu_recharge_auth_whitelist' && global.DealerRechargeAuthPanel) {
       return { panel: global.DealerRechargeAuthPanel, sub: '币商充值真人认证 · 白名单' };
     }
+    if (rid === 'yaha_pangu_task_show_switch' && global.YahaPanguPanel) {
+      return { panel: global.YahaPanguPanel, sub: 'Yaha 每日任务 · 预上线改参' };
+    }
+    if (rid === 'yaha_pangu_trade_union_entrance' && global.YahaTradeUnionEntrancePanel) {
+      return { panel: global.YahaTradeUnionEntrancePanel, sub: 'Yaha 大区公会入口 · 预上线改参' };
+    }
     if (rid === 'code_testcase_review') {
       const base = {
         keepCapList: true,

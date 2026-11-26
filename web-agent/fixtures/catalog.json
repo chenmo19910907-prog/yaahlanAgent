@@ -1,8 +1,106 @@
 {
-  "generated_at": "2026-11-25 11:04:43 北京时间",
-  "total_items": 419,
-  "module_count": 33,
+  "generated_at": "2026-11-26 16:26:24 北京时间",
+  "total_items": 426,
+  "module_count": 34,
   "modules": [
+    {
+      "id": "yaha",
+      "label": "Yaha",
+      "item_count": 6,
+      "categories": [
+        {
+          "name": "Yaha-MOA（yaahlan-trick/internal/yaha-task）",
+          "items": [
+            {
+              "name": "Yaha主播任务-添加到任务用户列表",
+              "prompts": [
+                "Yaha每日任务 将用户 <userId> 加入主播ID <主播id> 的获取任务列表"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "yaha_task_door_add_companion_users"
+            }
+          ]
+        },
+        {
+          "name": "Yaha-MOA（yaahlan/user/appsflyer-moa）",
+          "items": [
+            {
+              "name": "Yaha买量归因-设置用户标签",
+              "prompts": [
+                "Yaha每日任务 为用户 <userId> 设置买量归因身份（gcc / social）"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "yaha_appsflyer_set_user_tag"
+            }
+          ]
+        },
+        {
+          "name": "Yaha-盘古配置（workflow）",
+          "items": [
+            {
+              "name": "Yaha大区公会入口展示",
+              "prompts": [
+                "Yaha大区公会入口 enabled=<enabled> openAreas=<openAreas> whiteUserIds=<whiteUserIds> 保存发布"
+              ],
+              "source": "工作流",
+              "source_id": "workflow",
+              "source_tag_id": "workflow",
+              "env": "tool",
+              "registry_id": "yaha_pangu_trade_union_entrance"
+            },
+            {
+              "name": "Yaha每日任务展示开关",
+              "prompts": [
+                "Yaha每日任务展示开关 configValue=<configValue> 保存发布"
+              ],
+              "source": "工作流",
+              "source_id": "workflow",
+              "source_tag_id": "workflow",
+              "env": "tool",
+              "registry_id": "yaha_pangu_task_show_switch"
+            }
+          ]
+        },
+        {
+          "name": "Yaha-风控（测试环境 mmuid 加白）",
+          "items": [
+            {
+              "name": "Yaha每日任务-解除设备风控",
+              "prompts": [
+                "Yaha每日任务 为设备 <mmuid> 解除设备风控"
+              ],
+              "source": "风险控制",
+              "source_id": "risk",
+              "source_tag_id": "risk",
+              "env": "test",
+              "registry_id": "yaha_daily_release_device"
+            }
+          ]
+        },
+        {
+          "name": "Yaha-风控（测试环境 user_id 加白）",
+          "items": [
+            {
+              "name": "Yaha每日任务-解除账号风控",
+              "prompts": [
+                "Yaha每日任务 为用户 <userId> 解除账号风控"
+              ],
+              "source": "风险控制",
+              "source_id": "risk",
+              "source_tag_id": "risk",
+              "env": "test",
+              "registry_id": "yaha_daily_release_account"
+            }
+          ]
+        }
+      ]
+    },
     {
       "id": "用户",
       "label": "用户",
@@ -629,7 +727,7 @@
     {
       "id": "房间",
       "label": "房间",
-      "item_count": 46,
+      "item_count": 47,
       "categories": [
         {
           "name": "全服榜单（room/external/room-admin-handle）",
@@ -889,6 +987,24 @@
               "source_tag_id": "moa",
               "env": "test",
               "registry_id": "房间_等级页衰减弹窗_mock说明"
+            }
+          ]
+        },
+        {
+          "name": "房间-管理（room/external/room-manage-stage）",
+          "items": [
+            {
+              "name": "房间-清屏",
+              "prompts": [
+                "用户 <userId> 在房间 <roomId> 清屏",
+                "房间 <roomId> 公屏清屏 操作者 <userId>",
+                "执行 房间-清屏"
+              ],
+              "source": "MOA",
+              "source_id": "moa",
+              "source_tag_id": "moa",
+              "env": "test",
+              "registry_id": "room_clear_room_msg"
             }
           ]
         },
