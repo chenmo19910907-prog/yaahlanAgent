@@ -36,10 +36,6 @@
   ].concat(MOBILE_DEFERRED);
   const DESKTOP_ALL = IMMEDIATE.concat(DESKTOP_PANELS);
 
-  function injectScript(src) {
-    document.write('<script src="' + src + '"><\/script>');
-  }
-
   function injectAsync(src) {
     return new Promise((resolve, reject) => {
       const el = document.createElement('script');
@@ -51,12 +47,19 @@
     });
   }
 
-  if (!mobile) {
-    const loadList = DESKTOP_ALL;
-    for (let i = 0; i < loadList.length; i += 1) {
-      injectScript(loadList[i]);
+  function schedulePanelScriptChain(sources) {
+    let chain = Promise.resolve();
+    for (let i = 0; i < sources.length; i += 1) {
+      const src = sources[i];
+      chain = chain.then(() => injectAsync(src));
     }
-    window.__WEB_AGENT_DEFERRED_PANELS_READY__ = Promise.resolve();
+    return chain;
+  }
+
+  if (!mobile) {
+    window.__WEB_AGENT_DEFERRED_PANELS_READY__ = schedulePanelScriptChain(DESKTOP_ALL).catch((err) => {
+      console.warn('desktop panel scripts', err);
+    });
     return;
   }
 

@@ -89,6 +89,7 @@
     let catalogPanel = null;
     let catalogPanelInitPromise = null;
     let bookmarksPanel = null;
+    let bookmarksPanelInitPromise = null;
     let messageBoardPanel = null;
     let aboutPanel = null;
     let moaRecordPanel = null;
@@ -10597,6 +10598,33 @@
     }
 
     let mobileDeferredOverlayUiBound = false;
+    let bookmarksDeferredOverlayUiBound = false;
+
+    function bindBookmarksDeferredOverlayUi() {
+      if (bookmarksDeferredOverlayUiBound) return;
+      const modal = document.getElementById('bookmarks-modal');
+      if (!modal) return;
+      bookmarksDeferredOverlayUiBound = true;
+      document.getElementById('btn-bookmarks-add')?.addEventListener('click', () => {
+        bookmarksPanel?.toggleAddPanel(true);
+      });
+      document.getElementById('btn-bookmarks-add-cancel')?.addEventListener('click', () => {
+        bookmarksPanel?.toggleAddPanel(false);
+      });
+      document.getElementById('bookmarks-add-modal')?.addEventListener('click', (event) => {
+        if (event.target.id === 'bookmarks-add-modal') bookmarksPanel?.toggleAddPanel(false);
+      });
+      document.getElementById('bookmarks-category-edit-modal')?.addEventListener('click', (event) => {
+        if (event.target.id === 'bookmarks-category-edit-modal') bookmarksPanel?.toggleCategoryEditPanel(false);
+      });
+      document.getElementById('btn-bookmarks-category-edit-cancel')?.addEventListener('click', () => {
+        bookmarksPanel?.toggleCategoryEditPanel(false);
+      });
+      modal.addEventListener('click', (event) => {
+        if (event.target.id === 'bookmarks-modal') setBookmarksOpen(false);
+      });
+    }
+
     function bindMobileDeferredOverlayUi() {
       if (!isWebAgentMobile() || mobileDeferredOverlayUiBound) return;
       const catalogClose = document.getElementById('btn-catalog-close');
@@ -10611,6 +10639,7 @@
       document.getElementById('settings-modal')?.addEventListener('click', (e) => {
         if (e.target.id === 'settings-modal') closeSettingsModal();
       });
+      bindBookmarksDeferredOverlayUi();
     }
 
     async function setCatalogOpen(open, opts = {}) {
@@ -10626,6 +10655,7 @@
         } else {
           showCatalogBootstrapLoading();
           void ensureCatalogPanelInit().catch((err) => {
+            clearCatalogBootstrapLoading();
             console.error('catalog init on open', err);
           });
         }
@@ -10776,6 +10806,54 @@
       );
     }
 
+    function waitForElementById(id, timeoutMs = 12000) {
+      return new Promise((resolve) => {
+        const existing = document.getElementById(id);
+        if (existing) {
+          resolve(existing);
+          return;
+        }
+        const deadline = Date.now() + timeoutMs;
+        const tick = () => {
+          const el = document.getElementById(id);
+          if (el) {
+            resolve(el);
+            return;
+          }
+          if (Date.now() >= deadline) {
+            resolve(null);
+            return;
+          }
+          requestAnimationFrame(tick);
+        };
+        tick();
+      });
+    }
+
+    async function ensureBookmarksOverlayReady() {
+      if (!isWebAgentMobile()) return;
+      document.dispatchEvent(new CustomEvent('wa-need-overlays'));
+      await waitForElementById('bookmarks-modal', 12000);
+    }
+
+    function ensureBookmarksPanelInit() {
+      if (bookmarksPanel) return Promise.resolve();
+      if (bookmarksPanelInitPromise) return bookmarksPanelInitPromise;
+      bookmarksPanelInitPromise = (async () => {
+        await ensureBookmarksOverlayReady();
+        if (isWebAgentMobile() && window.__WEB_AGENT_DEFERRED_PANELS_READY__) {
+          await window.__WEB_AGENT_DEFERRED_PANELS_READY__;
+        }
+        bindBookmarksDeferredOverlayUi();
+        await initBookmarksPanel();
+        if (!bookmarksPanel) throw new Error('bookmarks panel unavailable');
+      })().catch((err) => {
+        bookmarksPanelInitPromise = null;
+        throw err;
+      });
+      return bookmarksPanelInitPromise;
+    }
+
     async function initBookmarksPanel() {
       if (bookmarksPanel) return;
       if (typeof BookmarksPanel === 'undefined') return;
@@ -10810,7 +10888,17 @@
     }
 
     async function setBookmarksOpen(open, opts = {}) {
+      if (open) {
+        document.dispatchEvent(new CustomEvent('wa-need-overlays'));
+        try {
+          await ensureBookmarksPanelInit();
+        } catch (err) {
+          console.error('bookmarks open', err);
+          return;
+        }
+      }
       if (!bookmarksPanel) return;
+      if (open && !bookmarksPanel.open) trackEvent('panel_open', { panel: 'bookmarks' });
       if (!open && bookmarksPanel.open && !opts.skipAnimation && document.body.classList.contains('layout-ready')) {
         const modal = document.getElementById('bookmarks-modal');
         await animateOverlayClose(modal);
@@ -10957,16 +11045,48 @@
       }
     }
 
+    async function waitForCatalogPanelDom(timeoutMs = 15000) {
+      if (document.getElementById('catalog-panel')) return;
+      await new Promise((resolve, reject) => {
+        const started = Date.now();
+        const done = () => {
+          document.removeEventListener('wa-overlays-ready', onOverlay);
+          resolve();
+        };
+        const onOverlay = () => {
+          if (document.getElementById('catalog-panel')) done();
+        };
+        document.addEventListener('wa-overlays-ready', onOverlay);
+        const poll = () => {
+          if (document.getElementById('catalog-panel')) {
+            done();
+            return;
+          }
+          if (Date.now() - started > timeoutMs) {
+            document.removeEventListener('wa-overlays-ready', onOverlay);
+            reject(new Error('catalog panel dom timeout'));
+            return;
+          }
+          requestAnimationFrame(poll);
+        };
+        poll();
+      });
+    }
+
     function ensureCatalogPanelInit() {
       if (catalogPanel) return Promise.resolve();
       if (catalogPanelInitPromise) return catalogPanelInitPromise;
       catalogPanelInitPromise = (async () => {
-        if (isWebAgentMobile() && window.__WEB_AGENT_DEFERRED_PANELS_READY__) {
+        if (window.__WEB_AGENT_DEFERRED_PANELS_READY__) {
           await window.__WEB_AGENT_DEFERRED_PANELS_READY__;
+        }
+        if (isWebAgentMobile() && !document.getElementById('catalog-panel')) {
+          await waitForCatalogPanelDom();
         }
         await initCatalogPanel();
       })().catch((err) => {
         catalogPanelInitPromise = null;
+        clearCatalogBootstrapLoading();
         throw err;
       });
       return catalogPanelInitPromise;
@@ -10974,7 +11094,11 @@
 
     async function initCatalogPanel() {
       if (catalogPanel) return;
-      if (typeof CatalogPanel === 'undefined') return;
+      if (typeof CatalogPanel === 'undefined') {
+        clearCatalogBootstrapLoading();
+        showWebToast('工具台脚本未加载完成，请强刷页面后重试', { error: true, durationMs: 3200 });
+        throw new Error('CatalogPanel unavailable');
+      }
       catalogPanel = new CatalogPanel({
         root: document.getElementById('catalog-panel'),
         searchEl: document.getElementById('catalog-search'),
@@ -11048,8 +11172,8 @@
     document.getElementById('btn-moa-record')?.addEventListener('click', () => setMoaRecordOpen(true));
 
     document.getElementById('btn-bookmarks')?.addEventListener('click', async () => {
-      if (!bookmarksPanel) await initBookmarksPanel();
-      await setBookmarksOpen(!bookmarksPanel?.open);
+      const nextOpen = !bookmarksPanel?.open;
+      await setBookmarksOpen(nextOpen);
     });
     document.getElementById('btn-message-board')?.addEventListener('click', async () => {
       const opening = !messageBoardPanel?.open;
@@ -11679,6 +11803,12 @@
           delete el.dataset.mobileHeaderSuppressed;
         }
       });
+      const bookmarksBtn = document.getElementById('btn-bookmarks');
+      if (bookmarksBtn) {
+        bookmarksBtn.hidden = true;
+        bookmarksBtn.setAttribute('aria-hidden', 'true');
+        if (bookmarksPanel?.open) setBookmarksOpen(false);
+      }
       purgeMobileLogoutControl();
       purgeMobileLoginHeader();
     }

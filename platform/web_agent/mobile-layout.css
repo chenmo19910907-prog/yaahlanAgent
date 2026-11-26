@@ -322,13 +322,20 @@ html.web-agent-mobile #btn-logout {
   pointer-events: none !important;
 }
 
-html.web-agent-mobile #btn-bookmarks {
+/* 手机版不展示快捷入口（桌面保留） */
+html.web-agent-mobile .header-actions #btn-bookmarks,
+html.web-agent-mobile .sidebar-tool-actions-host #btn-bookmarks {
   display: none !important;
   visibility: hidden !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
   pointer-events: none !important;
 }
 
-/* 手机顶栏（侧栏收起）：工具台 + 设置 + 头像；隐藏快捷入口/主题/登录/退出等 */
+/* 手机顶栏（侧栏收起）：历史 / 能力 / 设置 + 头像；隐藏主题/登录/退出等 */
 html.web-agent-mobile body.sidebar-collapsed .header-actions #btn-logout,
 html.web-agent-mobile body.sidebar-collapsed .header-actions .tool-actions-wrap #btn-logout,
 html.web-agent-mobile body.sidebar-collapsed .header-actions #btn-login,
