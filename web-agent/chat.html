@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <script src="demo-fixtures.js?v=20261126090338"></script>
-  <script src="demo-api.js?v=20261126090338"></script>
+  <script src="demo-fixtures.js?v=20261126104840"></script>
+  <script src="demo-api.js?v=20261126104840"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -27,7 +27,7 @@
       } catch (_e) { /* no-op */ }
     })();
   </script>
-  <link rel="stylesheet" href="mobile-layout.css?v=20251127a" />
+  <link rel="stylesheet" href="mobile-layout.css?v=20251127h" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta name="web-agent-layout" content="sidebar-grid-v4" />
@@ -4860,14 +4860,14 @@
     .bookmarks-head h3 { font-size: 1.08rem; font-weight: 600; }
     .bookmarks-head p { font-size: 0.78rem; color: var(--muted); }
     .bookmarks-head-actions { display: flex; gap: 8px; flex-shrink: 0; }
-    .bookmarks-head-actions button {
+    .bookmarks-head-actions button:not(.btn-close) {
       min-height: 36px; padding: 0 12px; border-radius: 10px;
       border: 1px solid var(--border); background: var(--bg-soft);
       color: var(--text-soft); cursor: pointer; font-size: 0.82rem;
       display: inline-flex; align-items: center; gap: 6px;
       transition: border-color 180ms, background 180ms, color 180ms;
     }
-    .bookmarks-head-actions button:hover { border-color: var(--accent); color: var(--text); }
+    .bookmarks-head-actions button:not(.btn-close):hover { border-color: var(--accent); color: var(--text); }
     .bookmarks-head-actions button.primary {
       border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600;
     }
@@ -6362,20 +6362,13 @@
             </svg>
             Open API
           </button>
-          <button type="button" id="btn-logout" role="menuitem" data-desktop-only="1">
+          <button type="button" id="btn-logout" role="menuitem">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
               <path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>
             </svg>
             退出登录
           </button>
-          <script>
-            (function stripMobileLogoutMenuItem() {
-              if (!document.documentElement.classList.contains('web-agent-mobile')) return;
-              var el = document.getElementById('btn-logout');
-              if (el) el.remove();
-            })();
-          </script>
         </div>
       </div>
       <button type="button" class="btn-login-header" id="btn-login" hidden title="登录" aria-label="登录" data-desktop-only="1">
@@ -6966,10 +6959,10 @@
               <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
             </button>
             <button type="button" class="settings-feedback-btn" id="btn-message-board" title="反馈" aria-label="反馈">
+              <span>反馈</span>
               <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
               </svg>
-              <span>反馈</span>
             </button>
           </div>
           <div class="settings-footer-extra">
@@ -7154,6 +7147,7 @@
         </div>
         <div class="bookmarks-head-actions">
           <button type="button" class="primary" id="btn-bookmarks-add">+ 添加</button>
+          <button type="button" class="btn-close" id="btn-bookmarks-close" title="关闭" aria-label="关闭">×</button>
         </div>
       </div>
       <div class="bookmarks-body" id="bookmarks-body"></div>
@@ -7212,6 +7206,6 @@
 <!-- @wa-mobile-overlay-defer-end@ -->
 
   <script src="panel_scripts_boot.js?v=20251126h" defer></script>
-  <script src="chat-app.js?v=20251126h" defer></script>
+  <script src="chat-app.js?v=20251126l" defer></script>
 </body>
 </html>
