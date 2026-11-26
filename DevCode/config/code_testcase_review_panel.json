@@ -5,7 +5,7 @@
   "doc_note": "Agent 按 Skill 串行执行，非一键脚本。",
   "web_usage": {
     "title": "代码×用例交叉审查",
-    "env_hint": "本机 voga-repos + 钉钉用例表 · 代码只读 · 仅写 E/F · 补用例须用 sheet-info 定行号",
+    "env_hint": "本机 voga-repos + 钉钉用例表 · 代码只读 · 审查后先出草案 · 确认后再写 E/F 与补用例",
     "field_help": {
       "sheetUrl": "钉钉 AliDocs 链接（须含 workbookId）",
       "sheetName": "可选；留空由 Agent 列举确认"
@@ -18,8 +18,8 @@
       "doc_index": 0,
       "name": "全流程（①→⑤）",
       "guide_short": "①→⑤ 一次跑完",
-      "usage_note": "读 A–F · B7 覆盖率行 C/D 拉仓 → 比对 → mark-fail/append 走 code_testcase_review_execute.py · 写后复核。",
-      "prompt": "读取用例表 <sheetUrl> Sheet：<sheetName>，结合服务端和前端仓库及代码分析哪些不符合用例并在对应E标fail、F写原因→末尾补用例并复核"
+      "usage_note": "读 A–F · B7 覆盖率行 C/D 拉仓 → 比对 → 输出 fail/补用例草案 · 询问是否写回 · 确认后再 mark-fail/append · 写后复核。",
+      "prompt": "读取用例表 <sheetUrl> Sheet：<sheetName>，结合服务端和前端仓库及代码分析哪些不符合用例并整理E标fail、F写原因及末尾补用例草案→先不写表，询问是否写回，用户确认写回后再写表并复核"
     },
     {
       "key": "read_sheet",
@@ -50,7 +50,7 @@
       "doc_index": 4,
       "name": "④ 标注",
       "guide_short": "E fail",
-      "usage_note": "不符项：E 列 fail，F 列原因；不改 A–D。",
+      "usage_note": "不符项：草案 E fail + F 原因；不改 A–D；默认不写表，确认后再 mark-fail。",
       "prompt": "读取用例结合代码标注fail <sheetUrl>"
     },
     {
@@ -58,7 +58,7 @@
       "doc_index": 5,
       "name": "⑤ 补用例",
       "guide_short": "末尾追加",
-      "usage_note": "append-cases 使用 append_start_row；禁止覆盖 1–protected_end_row；写入后 GET 验证。",
+      "usage_note": "草案 A–D；append_start_row 来自 sheet-info；默认不写表，确认后再 append-cases 并 GET 验证。",
       "prompt": "根据代码补充未覆盖测试用例 <sheetUrl>"
     }
   ]

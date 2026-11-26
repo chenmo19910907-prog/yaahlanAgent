@@ -12,8 +12,9 @@ description: 从钉钉 AliDocs 读取测试用例表格、按 E 列仓库拉取 
 | **1 读用例** | AliDocs + Sheet；读 **A–F**；**覆盖率行**（B=覆盖率任务代码质量平台）**C=仓库、D=分支**（可多行）；其次 E 列备注 | `code_testcase_review_execute.py sheet-info` 或 MCP `dingtalk-excel-read` |
 | **2 拉代码** | 本地更新或 clone 至 `voga-repos/` | `python3 DevCode/voga_pull_execute.py`（或 `--repo`）；按 E 列切分支 |
 | **3 比对比** | 按仓扫描（Java；Android strings/VM；iOS Localizable/VC；yaahlan-fe i18n/页面）→ **代码行为清单** ↔ 用例 | 只读代码，**禁止** commit/push |
-| **4 标注** | 与预期不符 → **E 列** `fail`；**F 列**可选原因 | **禁止**改 A–D（编号/模块/步骤/预期） |
-| **5 补用例** | 未覆盖场景 → **C/D 最后有用例行 +1** 追加 A–D | **禁止**用 A 列末行定位；`append-cases` 或 `find_last_case_row`；写后 GET 复核 |
+| **4 标注** | 与预期不符 → 整理 **E=fail / F=原因**（草案） | **禁止**改 A–D；**默认不写钉钉** |
+| **5 补用例** | 未覆盖场景 → 整理待追加 **A–D**（草案） | **禁止**用 A 列末行定位；**默认不写钉钉** |
+| **⑥ 写回（须确认）** | 用户明确确认后 → `mark-fail` / `append-cases` → GET 复核 | 未确认 **禁止** 调用写表脚本 |
 
 **形式**：非工具台一键脚本；由 Cursor Agent 按本 Skill 串行执行。前置拉仓能力见 DevCode `pull_voga_repos` / `pull_voga_repo_one`；工具台 **开发代码 → 用例审查** 对应 `code_testcase_review`。
 
@@ -80,7 +81,7 @@ read_url = f"{API_BASE}/workbooks/{WORKBOOK_ID}/sheets/{SHEET_ID}/ranges/{range_
 - **覆盖率配置行**（常见第 7–8 行）：`B=覆盖率任务代码质量平台`，**C=仓库描述**（如 `服务端voga-mts-user，voga-mts-components`）、**D=分支**（服务端一行、H5 `yaahlan-h5-vip` 再一行）。解析：`extract_coverage_platform_repos` / `extract_sheet_git_context`
 - **表头**（常见第 6 行）：`用例编号 / 功能模块 / case步骤描述 / 预期结果`；其下配置行之后为**首条用例行** `case_start_row`
 - **Web Agent 推荐话术**（一次跑全流程）：
-  > 读取用例表 \<URL\> Sheet：\<名\>，结合服务端和前端仓库及代码分析哪些不符合用例并在对应 **E 标 fail、F 写原因** → 末尾补用例并复核
+  > 读取用例表 \<URL\> Sheet：\<名\>，结合服务端和前端仓库及代码分析哪些不符合用例并在对应 **E 标 fail、F 写原因** → 末尾补用例；**先输出草案并询问是否写回，确认后再写表**
 
 ### 1.5 表布局探测（必先执行）
 
@@ -230,9 +231,25 @@ python3 DevCode/fe_pull_execute.py --repo yaahlan-h5-vip          # 直拉仓名
 
 ---
 
+## 写回确认门（④⑤ 与钉钉之间，必须）
+
+审查完成 **④⑤ 草案** 后：
+
+1. **禁止** 在未获用户确认前执行 `mark-fail` / `append-cases` 或 MCP 写表。
+2. 在回复中输出：**fail 清单**（行号、F 原因摘要）、**待补用例**（模块/步骤/预期）、`append_start_row`（来自 sheet-info）。
+3. 将完整草案落盘便于确认后一键写回，例如：
+   - `.tmp/code_testcase_review_<workbookId>_<sheet>_fails.json`
+   - `.tmp/code_testcase_review_<workbookId>_<sheet>_append.json`
+4. 结尾 **明确询问**：「是否写回用例表？回复 **确认写回** / **写回** 后再执行写表。」
+5. **仅当** 用户下一条消息明确表示写回（同义：确认写回、写入钉钉、执行写回）时，才运行写表脚本并 GET 复核。
+
+用户只要读表/比对、不要写回时，停在步骤 3 即可。
+
+---
+
 ## 第四阶段：标注 fail
 
-### 4.0 安全写回（Web Agent / 无 httpx 环境）
+### 4.0 安全写回（Web Agent / 无 httpx 环境；须用户确认后执行）
 
 ```bash
 # fails.json: [{"row": 43, "reason": "..."}, ...]
@@ -340,12 +357,14 @@ GIT_BASE_URL    = "https://git.wemomo.com/voga"  # yaahlan-fe 等见 repos.json 
 整理「代码实际行为清单」
     ↓
 逐条比对用例
-    ├── 不符合 → E列写 fail（可选F列写原因）
-    └── 未覆盖 → 整理新用例（编号续接）
+    ├── 不符合 → 草案 E fail + F 原因
+    └── 未覆盖 → 草案新用例（编号续接）
     ↓
+输出草案 + 询问是否写回（未确认则停止）
+    ↓（用户确认写回）
 批量写入 fail 标记
     ↓
-追加补充用例到 Sheet 末尾
+追加补充用例到 Sheet 末尾 → GET 复核
 ```
 
 ---
@@ -357,6 +376,7 @@ GIT_BASE_URL    = "https://git.wemomo.com/voga"  # yaahlan-fe 等见 repos.json 
 - 补用例**必须**用 `find_last_case_row` / **C、D 列**定位末行；**禁止**仅用 A 列 `find_last_data_row`（会误写到第 7 行覆盖率区）
 - `write_range` / `append-cases` 传入 `protected_end_row`；覆盖表头/配置行须先 **GET 恢复** 再重跑
 - 读表优先 **dingtalk-excel-read MCP**；写回优先 **code_testcase_review_execute.py**（不依赖 httpx）
+- **④⑤ 完成后默认不写钉钉**；须用户确认后再写回（见「写回确认门」）
 - 写入钉钉前先跑 **sheet-info**，确认 `append_start_row`
 - 每次写入后用 GET 读取验证数据正确
 - 仓库 clone 地址以 `DevCode/config/repos.json` 为准（voga 组与 `yaahlan-fe` 分组不同）

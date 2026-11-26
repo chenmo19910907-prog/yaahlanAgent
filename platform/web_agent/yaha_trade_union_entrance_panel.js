@@ -32,6 +32,7 @@
           <small data-ytu-white-help></small>
         </label>
         <div class="guild-pangu-actions">
+          <button type="button" class="btn" data-ytu-refresh>刷新当前值</button>
           <button type="button" class="btn primary" data-ytu-run>生成执行提示</button>
         </div>
         <p class="guild-pangu-status" data-ytu-status hidden></p>
@@ -116,6 +117,37 @@
       if (whiteIn && white) whiteIn.value = white;
     },
 
+    applyFormValues(root, values) {
+      if (!values || typeof values !== 'object') return;
+      const enSel = root.querySelector('[data-ytu-enabled]');
+      if (enSel && values.enabled != null) {
+        const en = String(values.enabled);
+        if (en === 'true' || en === 'false') enSel.value = en;
+      }
+      const areasIn = root.querySelector('[data-ytu-areas]');
+      if (areasIn && values.openAreas != null) areasIn.value = String(values.openAreas);
+      const whiteIn = root.querySelector('[data-ytu-white]');
+      const white = values.whiteUserIds != null ? values.whiteUserIds : values.whiteUsers;
+      if (whiteIn && white != null) whiteIn.value = String(white);
+      this.saveFromRoot(root);
+    },
+
+    async refreshCurrent(root) {
+      this.setStatus(root, '正在读取 MSE 当前值…', false);
+      try {
+        const res = await fetch(`/api/yaha/pangu/current?scenario=${encodeURIComponent(SCENARIO_KEY)}`, {
+          credentials: 'same-origin',
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        this.applyFormValues(root, data);
+        this.setStatus(root, '已代入预上线当前值', false);
+        window.setTimeout(() => this.setStatus(root, '', false), 2500);
+      } catch (err) {
+        this.setStatus(root, `读取失败：${err.message || err}`, true);
+      }
+    },
+
     buildPrompt(root) {
       const enabled = root.querySelector('[data-ytu-enabled]')?.value?.trim() || 'true';
       const openAreas = root.querySelector('[data-ytu-areas]')?.value?.trim() || '';
@@ -136,6 +168,9 @@
       root.querySelectorAll('[data-ytu-enabled], [data-ytu-areas], [data-ytu-white]').forEach((el) => {
         el.addEventListener('change', persist);
         el.addEventListener('input', persist);
+      });
+      root.querySelector('[data-ytu-refresh]')?.addEventListener('click', () => {
+        this.refreshCurrent(root);
       });
       root.querySelector('[data-ytu-run]')?.addEventListener('click', () => {
         persist();

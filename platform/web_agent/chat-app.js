@@ -10620,6 +10620,9 @@
       document.getElementById('btn-bookmarks-category-edit-cancel')?.addEventListener('click', () => {
         bookmarksPanel?.toggleCategoryEditPanel(false);
       });
+      document.getElementById('btn-bookmarks-close')?.addEventListener('click', () => {
+        setBookmarksOpen(false);
+      });
       modal.addEventListener('click', (event) => {
         if (event.target.id === 'bookmarks-modal') setBookmarksOpen(false);
       });
@@ -10731,14 +10734,21 @@
     function initCatalogResize() {
       const root = document.documentElement;
       const nav = document.getElementById('catalog-nav');
+      const isMobileCatalog = root.classList.contains('web-agent-mobile');
       const PANEL_KEY = 'web_agent_catalog_width';
-      const NAV_KEY = 'web_agent_catalog_nav_width';
+      const NAV_KEY = isMobileCatalog
+        ? 'web_agent_catalog_nav_width_mobile'
+        : 'web_agent_catalog_nav_width';
       const MIN_PANEL = 280;
       const MAX_PANEL = 840;
-      const MIN_NAV = 88;
-      const MAX_NAV = 300;
+      const MIN_NAV = isMobileCatalog ? 132 : 88;
+      const MAX_NAV = isMobileCatalog ? 200 : 300;
       const DEFAULT_PANEL = 380;
-      const DEFAULT_NAV = 112;
+      function mobileCatalogNavDefault() {
+        const panelW = Math.min(window.innerWidth * 0.94, window.innerWidth);
+        return Math.round(Math.min(Math.max(panelW * 0.42, 132), 172));
+      }
+      const DEFAULT_NAV = isMobileCatalog ? mobileCatalogNavDefault() : 112;
 
       function clamp(n, min, max) { return Math.min(max, Math.max(min, n)); }
 
@@ -10752,13 +10762,18 @@
       function applyNavWidth(w, persist = true) {
         const width = clamp(w, MIN_NAV, MAX_NAV);
         root.style.setProperty('--catalog-nav-width', width + 'px');
-        if (nav) nav.style.width = width + 'px';
+        if (nav) {
+          if (isMobileCatalog) nav.style.removeProperty('width');
+          else nav.style.width = width + 'px';
+        }
         if (persist) localStorage.setItem(NAV_KEY, String(width));
         return width;
       }
 
       applyPanelWidth(Number(localStorage.getItem(PANEL_KEY)) || DEFAULT_PANEL);
-      applyNavWidth(Number(localStorage.getItem(NAV_KEY)) || DEFAULT_NAV);
+      let initialNav = Number(localStorage.getItem(NAV_KEY));
+      if (!Number.isFinite(initialNav) || initialNav < MIN_NAV) initialNav = DEFAULT_NAV;
+      applyNavWidth(initialNav, !isMobileCatalog);
 
       function bindHorizontalDrag(handle, getStartWidth, setWidth, invertDelta, persistWidth) {
         if (!handle) return;
@@ -10797,13 +10812,15 @@
         true,
         () => applyPanelWidth(parseInt(getComputedStyle(root).getPropertyValue('--catalog-width'), 10) || DEFAULT_PANEL, true)
       );
-      bindHorizontalDrag(
-        document.getElementById('catalog-nav-resizer'),
-        () => parseInt(getComputedStyle(root).getPropertyValue('--catalog-nav-width'), 10) || DEFAULT_NAV,
-        applyNavWidth,
-        false,
-        () => applyNavWidth(parseInt(getComputedStyle(root).getPropertyValue('--catalog-nav-width'), 10) || DEFAULT_NAV, true)
-      );
+      if (!isMobileCatalog) {
+        bindHorizontalDrag(
+          document.getElementById('catalog-nav-resizer'),
+          () => parseInt(getComputedStyle(root).getPropertyValue('--catalog-nav-width'), 10) || DEFAULT_NAV,
+          applyNavWidth,
+          false,
+          () => applyNavWidth(parseInt(getComputedStyle(root).getPropertyValue('--catalog-nav-width'), 10) || DEFAULT_NAV, true)
+        );
+      }
     }
 
     function waitForElementById(id, timeoutMs = 12000) {
@@ -11174,6 +11191,9 @@
     document.getElementById('btn-bookmarks')?.addEventListener('click', async () => {
       const nextOpen = !bookmarksPanel?.open;
       await setBookmarksOpen(nextOpen);
+    });
+    document.getElementById('btn-bookmarks-close')?.addEventListener('click', () => {
+      setBookmarksOpen(false);
     });
     document.getElementById('btn-message-board')?.addEventListener('click', async () => {
       const opening = !messageBoardPanel?.open;
@@ -11778,12 +11798,6 @@
       if (!hasItem) void setUserMenuOpen(false);
     }
 
-    function purgeMobileLogoutControl() {
-      if (!document.documentElement.classList.contains('web-agent-mobile')) return;
-      document.getElementById('user-menu-logout-park')?.remove();
-      document.getElementById('btn-logout')?.remove();
-    }
-
     function purgeMobileLoginHeader() {
       if (!document.documentElement.classList.contains('web-agent-mobile')) return;
       const loginBtn = document.getElementById('btn-login');
@@ -11792,31 +11806,30 @@
       loginBtn.setAttribute('aria-hidden', 'true');
     }
 
-    /** 手机顶栏：工具台 + 设置 + 头像；无快捷入口；登录/退出仍隐藏 */
+    /** 手机顶栏：快捷 + 能力 + 设置 + 头像；登录仍隐藏 */
     function syncMobileHeaderToolbar() {
       if (!document.documentElement.classList.contains('web-agent-mobile')) return;
-      ['btn-catalog'].forEach((id) => {
+      ['btn-bookmarks', 'btn-catalog'].forEach((id) => {
         const el = document.getElementById(id);
         if (!el) return;
+        el.hidden = false;
+        el.removeAttribute('aria-hidden');
         if (el.dataset.mobileHeaderSuppressed === '1') {
-          el.hidden = false;
           delete el.dataset.mobileHeaderSuppressed;
         }
       });
-      const bookmarksBtn = document.getElementById('btn-bookmarks');
-      if (bookmarksBtn) {
-        bookmarksBtn.hidden = true;
-        bookmarksBtn.setAttribute('aria-hidden', 'true');
-        if (bookmarksPanel?.open) setBookmarksOpen(false);
-      }
-      purgeMobileLogoutControl();
       purgeMobileLoginHeader();
     }
 
-    /** 桌面顶栏收起时不展示退出；手机版无退出菜单项（DOM 已移除） */
+    /** 桌面顶栏收起时不展示退出；手机版在下拉内展示退出 */
     function syncLogoutMenuItem() {
       if (document.documentElement.classList.contains('web-agent-mobile')) {
-        purgeMobileLogoutControl();
+        const logoutBtn = document.getElementById('btn-logout');
+        if (logoutBtn) {
+          const dropdown = document.getElementById('user-menu-dropdown');
+          if (dropdown && logoutBtn.parentElement !== dropdown) dropdown.appendChild(logoutBtn);
+          logoutBtn.hidden = !currentAuthUser;
+        }
         syncUserMenuDropdownInteractivity();
         return;
       }
@@ -13994,7 +14007,6 @@
     function finishPageBootstrapShell() {
       if (pageBootstrapShellFinished) return;
       pageBootstrapShellFinished = true;
-      purgeMobileLogoutControl();
       document.body.classList.remove('is-page-bootstrapping', 'layout-shell-pending');
       clearMessagesBootstrapLoading();
       document.body.classList.add('layout-ready');

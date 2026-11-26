@@ -73,15 +73,15 @@
       "id": "code_testcase_review",
       "name": "代码×用例交叉审查",
       "category": "开发代码（代码开发中）",
-      "description": "五阶段：读用例（覆盖率行 C/D 拉仓）→ voga-repos/fe H5 → Java/Android/iOS/H5 比对 → E/F 标 fail → 末尾补用例；sheet-info/execute 安全写表",
+      "description": "五阶段：读用例（覆盖率行 C/D 拉仓）→ voga-repos/fe H5 → Java/Android/iOS/H5 比对 → 整理 E/F fail 与补用例草案 → 用户确认后 sheet-info/execute 写表",
       "panel_config": "DevCode/config/code_testcase_review_panel.json",
       "skill": ".cursor/skills/code-testcase-review/SKILL.md",
       "workflow": [
         {"step": 1, "name": "读用例", "detail": "sheet-info；覆盖率行 C=仓 D=分支；case_start_row；读 A–F"},
         {"step": 2, "name": "拉代码", "detail": "python3 DevCode/voga_pull_execute.py → voga-repos/；按 E 列 checkout/pull"},
         {"step": 3, "name": "比对比", "detail": "Biz/Service/Controller·multiLang | Android strings/VM | iOS Localizable/VC | yaahlan-fe i18n/locale；行为清单↔用例"},
-        {"step": 4, "name": "标注", "detail": "不符 → E列 fail、F列原因；A–D 只读"},
-        {"step": 5, "name": "补用例", "detail": "append-cases @ append_start_row；禁区 1–protected_end_row；写后 GET"}
+        {"step": 4, "name": "标注", "detail": "不符 → 草案 E fail、F 原因；A–D 只读；默认不写表"},
+        {"step": 5, "name": "补用例", "detail": "草案 A–D；append_start_row；用户确认写回后再 append-cases；写后 GET"}
       ],
       "prompts": [
         "用例覆盖率分析 <钉钉用例表URL|表格链接>",
@@ -93,7 +93,7 @@
         "H5用例代码交叉审查 <表格链接>",
         "前端用例代码交叉审查 <表格链接>"
       ],
-      "command": "# Skill：.cursor/skills/code-testcase-review/SKILL.md\n# sheet-info：python3 DevCode/scripts/code_testcase_review_execute.py sheet-info --url <alidocs> --sheet <名>\n# mark-fail / append-cases 见 Skill §4.0 / §5.2b\n# 拉仓：DevCode/voga_pull_execute.py · fe_pull_execute.py\n"
+      "command": "# Skill：.cursor/skills/code-testcase-review/SKILL.md（写回须用户确认）\n# sheet-info：python3 DevCode/scripts/code_testcase_review_execute.py sheet-info --url <alidocs> --sheet <名>\n# 确认后：mark-fail / append-cases 见 Skill §写回确认门\n# 拉仓：DevCode/voga_pull_execute.py · fe_pull_execute.py\n"
     },
     {
       "id": "moa_source_anchor",

@@ -21,7 +21,7 @@
     'guild_pangu_panel.js?v=20261106a',
     'dealer_pangu_panel.js?v=20261117b',
     'yaha_pangu_panel.js?v=20261125a',
-    'yaha_trade_union_entrance_panel.js?v=20261126a',
+    'yaha_trade_union_entrance_panel.js?v=20261126b',
     'dealer_recharge_auth_panel.js?v=20261124b',
     'code_testcase_review_panel.js?v=20261110c',
     'code_multilang_review_panel.js?v=20261111b',

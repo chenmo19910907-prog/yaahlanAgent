@@ -270,7 +270,7 @@
         '',
         `Skill：${skill}`,
         '前置：python3 DevCode/voga_pull_execute.py',
-        '约束：voga-repos 只读；钉钉表仅写 E/F',
+        '约束：voga-repos 只读；审查先出草案；用户确认写回后再写 E/F',
         'registry：code_testcase_review',
       );
       return lines.join('\n');
