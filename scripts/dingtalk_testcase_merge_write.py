@@ -52,10 +52,29 @@ def _parse_md_table(path: Path) -> list[tuple[str, str, str, str]]:
         cid = parts[0]
         if cid in ("编号", "------") or cid.startswith("---"):
             continue
-        if not re.match(r"^[A-Z][A-Z0-9_]+_\d+$", cid):
-            continue
-        rows.append((cid, parts[1], parts[2], parts[3]))
+        exp = parts[3].replace("<br>", "\n")
+        rows.append((cid, parts[1], parts[2], exp))
     return rows
+
+
+def _expand_handwritten_rows(
+    cases: list[tuple[str, str, str, str]],
+) -> list[tuple[str, str, str, str]]:
+    """一步多预期拆成多行，续行步骤留空以便 C 列纵向合并。"""
+    out: list[tuple[str, str, str, str]] = []
+    for _cid, mod, step, exp in cases:
+        lines = [ln.strip() for ln in exp.split("\n") if ln.strip()]
+        if not lines:
+            lines = [exp.strip() or "—"]
+        for i, line in enumerate(lines):
+            row_step = step if i == 0 else ""
+            out.append(("", mod, row_step, line))
+    seq = 0
+    renumbered: list[tuple[str, str, str, str]] = []
+    for _cid, mod, step, exp in out:
+        seq += 1
+        renumbered.append((str(seq), mod, step, exp))
+    return renumbered
 
 
 def _build_grid(cases: list[tuple[str, str, str, str]]) -> list[list[str]]:
@@ -114,10 +133,19 @@ async def _merge_column(
         resp.raise_for_status()
 
 
-async def run(url: str, md_path: Path, sheetname: str | None, *, merge_only: bool = False) -> dict[str, Any]:
+async def run(
+    url: str,
+    md_path: Path,
+    sheetname: str | None,
+    *,
+    merge_only: bool = False,
+    handwritten: bool = False,
+) -> dict[str, Any]:
     cases = _parse_md_table(md_path)
     if not cases:
         raise SystemExit(f"未解析到用例: {md_path}")
+    if handwritten:
+        cases = _expand_handwritten_rows(cases)
     grid = _build_grid(cases)
     if not merge_only:
         await writeSheetData(url, grid, sheetname=sheetname, startRow=1, startColumn=1)
@@ -164,9 +192,20 @@ def main() -> int:
     parser.add_argument("--md", type=Path, required=True)
     parser.add_argument("--sheetname", default=None)
     parser.add_argument("--merge-only", action="store_true", help="仅合并单元格（表已写入）")
+    parser.add_argument(
+        "--handwritten",
+        action="store_true",
+        help="按手写表版式：拆多行预期、序号 1..n、B/C 列合并",
+    )
     args = parser.parse_args()
     info = asyncio.run(
-        run(args.url, args.md.expanduser(), args.sheetname, merge_only=args.merge_only)
+        run(
+            args.url,
+            args.md.expanduser(),
+            args.sheetname,
+            merge_only=args.merge_only,
+            handwritten=args.handwritten,
+        )
     )
     print(info)
     return 0

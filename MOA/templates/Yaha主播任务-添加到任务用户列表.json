@@ -1,0 +1,52 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "url": "/service/yaahlan-trick/internal/yaha-task",
+  "method": "doorAdCompanionTaskUserId",
+  "header": "",
+  "params": [
+    {
+      "title": "参数1",
+      "name": "1",
+      "txt": "100027378",
+      "json": "",
+      "type": "string",
+      "value": "100027378"
+    },
+    {
+      "title": "参数2",
+      "name": "2",
+      "txt": [
+        "100304538"
+      ],
+      "json": "[\"100304538\"]",
+      "type": "json",
+      "value": [
+        "100304538"
+      ]
+    }
+  ],
+  "settings": {
+    "time": "2000",
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "_registry": {
+    "id": "yaha_task_door_add_companion_users",
+    "name": "Yaha主播任务-添加到任务用户列表",
+    "category": "Yaha-MOA（yaahlan-trick/internal/yaha-task）",
+    "description": "Yaha 包专用：doorAdCompanionTaskUserId 将用户加入主播任务「获取列表」后门（/service/yaahlan-trick/internal/yaha-task）。params[0]=任务/活动配置 id（string）；params[1]=userId JSON 数组。仅 2 参，勿传空第三参。",
+    "prompts": [
+      "Yaha每日任务 将用户 <userId> 加入主播ID <taskId> 的获取任务列表",
+      "doorAdCompanionTaskUserId 添加任务用户 <userIds>"
+    ],
+    "cli": "--yaha-task-door-task-id <taskId> --yaha-task-door-user-ids <userId>[,<userId>...]"
+  }
+}

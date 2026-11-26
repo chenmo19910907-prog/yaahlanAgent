@@ -16,7 +16,11 @@ def extract_latest_id_auth_reason_list(inner_result: Any) -> list[str]:
     if not isinstance(lst, list) or not lst:
         return []
 
-    reason = lst[0].get("reason")
+    # 仅最近一条失败记录（2003）上的 reason 表示当前冲突；成功记录或历史失败勿当未清干净。
+    target = next((item for item in lst if item.get("processStatus") == 2003), None)
+    if target is None:
+        return []
+    reason = target.get("reason")
     if reason is None:
         return []
     if isinstance(reason, list):

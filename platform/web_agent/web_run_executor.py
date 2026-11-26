@@ -478,6 +478,16 @@ def _execute_web_run_body(
         )
         return file_payload
 
+    def _finalize_run_reply(body: str, elapsed: float, *, run_status: str) -> str:
+        return finalize_web_reply_text(
+            body,
+            elapsed,
+            task_kind=task_kind,
+            prompt=meta.message,
+            reply_mode=meta.reply_mode,
+            user_key=user_key,
+        )
+
     try:
         from command_router import try_route  # noqa: WPS433
 
@@ -496,14 +506,7 @@ def _execute_web_run_body(
                 reply_files: list[dict[str, object]] = []
             else:
                 body = routed.output or "任务已完成。"
-                final_text = finalize_web_reply_text(
-                    body,
-                    elapsed,
-                    task_kind=task_kind,
-                    prompt=meta.message,
-                    reply_mode=meta.reply_mode,
-                    user_key=user_key,
-                )
+                final_text = _finalize_run_reply(body, elapsed, run_status=RUN_STATUS_DONE)
                 reply_files = _append_assistant(final_text)
             fresh_meta = store.get_run(run_id) or meta
             dingtalk_push = (
@@ -556,14 +559,7 @@ def _execute_web_run_body(
         )
         elapsed = time.monotonic() - started_at
         body = final or last_markdown
-        final_text = finalize_web_reply_text(
-            body,
-            elapsed,
-            task_kind=task_kind,
-            prompt=meta.message,
-            reply_mode=meta.reply_mode,
-            user_key=user_key,
-        )
+        final_text = _finalize_run_reply(body, elapsed, run_status=RUN_STATUS_DONE)
         reply_files = _append_assistant(final_text)
         fresh_meta = store.get_run(run_id) or meta
         dingtalk_push = _maybe_push_result_to_dingtalk(fresh_meta, final_text, success=True)
@@ -597,14 +593,7 @@ def _execute_web_run_body(
             external_line=str(getattr(snap, "last_external_line", "") or "") if snap else "",
             terminal_text=terminal_text,
         )
-        final_text = finalize_web_reply_text(
-            body,
-            elapsed,
-            task_kind=task_kind,
-            prompt=meta.message,
-            reply_mode=meta.reply_mode,
-            user_key=user_key,
-        )
+        final_text = _finalize_run_reply(body, elapsed, run_status=RUN_STATUS_INTERRUPTED)
         _append_assistant(final_text)
         _emit(
             store,
@@ -636,14 +625,7 @@ def _execute_web_run_body(
             )
         else:
             body = f"⚠️ {err_msg}\n\n{RETRY_HINT}"
-        final_text = finalize_web_reply_text(
-            body,
-            elapsed,
-            task_kind=task_kind,
-            prompt=meta.message,
-            reply_mode=meta.reply_mode,
-            user_key=user_key,
-        )
+        final_text = _finalize_run_reply(body, elapsed, run_status=RUN_STATUS_ERROR)
         _append_assistant(final_text)
         _emit(
             store,

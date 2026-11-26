@@ -21,6 +21,7 @@ from .env import load_local_env
 from .device_kb import (
     fetch_online_login_context,
     fetch_online_login_context_by_user_id,
+    fetch_test_login_context_by_user_id,
     upsert_login_device_record,
 )
 from .test_devices import (
@@ -106,6 +107,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="解除活动风控（black/user_id，action=delete）",
     )
     scenario.add_argument(
+        "--release-activity-account-risk",
+        action="store_true",
+        help="解除账号风控-活动（white/user_id，action=add；Postman 解除账号风控）",
+    )
+    scenario.add_argument(
         "--release-test-device",
         action="store_true",
         help="从团队测试机知识库按平台解除设备风控（Android/鸿蒙=mmuidv3，iOS=mmuid）",
@@ -114,6 +120,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--release-online-login-device",
         action="store_true",
         help="线上环境：按 --phone 或 --user-id 查最近登录设备，解除风控并自动落库",
+    )
+    scenario.add_argument(
+        "--release-login-device",
+        action="store_true",
+        help="测试环境：按 --user-id 查 Admin loginDevice，解除设备风控（mmuid+mmuidv3 加白）",
     )
     parser.add_argument(
         "--list-test-devices",
@@ -169,18 +180,21 @@ def _parse_single_phone(phone: str | None) -> str:
 
 
 def _release_element_for_login_device(login_device: dict[str, Any]) -> str:
+    elements = _release_elements_for_login_device(login_device)
+    return elements[0]
+
+
+def _release_elements_for_login_device(login_device: dict[str, Any]) -> list[str]:
+    """与 Postman「解除设备风控」一致：elements 可同时含 mmuid 与 mmuidv3（去重）。"""
     mmuid = str(login_device.get("mmuid") or "").strip()
     mmuidv3 = str(login_device.get("mmuidv3") or "").strip()
-    ua = str(login_device.get("ua") or "")
-    if "iphone" in ua.casefold() or "ios" in ua.casefold():
-        if not mmuid:
-            raise ValueError("iOS 最近登录设备缺少 mmuid")
-        return mmuid
-    if mmuidv3:
-        return mmuidv3
-    if mmuid:
-        return mmuid
-    raise ValueError("最近登录设备缺少 mmuid / mmuidv3")
+    out: list[str] = []
+    for value in (mmuid, mmuidv3):
+        if value and value not in out:
+            out.append(value)
+    if not out:
+        raise ValueError("最近登录设备缺少 mmuid / mmuidv3")
+    return out
 
 
 def _post_menu_bodies(args: argparse.Namespace, bodies: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -223,6 +237,53 @@ def _resolve_online_login_context(args: argparse.Namespace) -> dict[str, Any]:
     if phone:
         return fetch_online_login_context(phone)
     raise ValueError("请提供 --phone 或 --user-id")
+
+
+def _handle_release_login_device(args: argparse.Namespace) -> int:
+    user_id = _parse_single_user_id(args.user_id)
+
+    try:
+        context = fetch_test_login_context_by_user_id(user_id)
+    except (ValueError, RuntimeError, json.JSONDecodeError) as exc:
+        print(f"查询测试环境登录设备失败: {exc}", file=sys.stderr)
+        return 2
+
+    login_device = context["loginDevice"]
+    device_elements = _release_elements_for_login_device(login_device)
+
+    bodies = [
+        resolve_menu_operate_body(
+            menu_event=args.menu_event,
+            menu_key="device_risk_release",
+            menu_type="white",
+            dimension="mmuid",
+            elements=device_elements,
+            action="add",
+            reason=args.reason,
+            token=args.token,
+        )
+    ]
+
+    try:
+        results = _post_menu_bodies(args, bodies)
+    except RuntimeError as exc:
+        print(f"执行失败: {exc}", file=sys.stderr)
+        return 1
+
+    output = {
+        "userId": context.get("userId") or user_id,
+        "deviceElements": device_elements,
+        "loginDevice": login_device,
+        "riskResults": results,
+    }
+    print(json.dumps(output, ensure_ascii=False, indent=2))
+    try:
+        from .web_call_log import try_record_risk_call
+
+        try_record_risk_call(args, results)
+    except Exception:  # noqa: BLE001
+        pass
+    return 0
 
 
 def _handle_release_online_login_device(args: argparse.Namespace) -> int:
@@ -365,6 +426,12 @@ def _apply_scenario_defaults(args: argparse.Namespace) -> None:
         args.menu_type = args.menu_type or "black"
         args.dimension = args.dimension or "user_id"
         args.action = "delete"
+        return
+    if args.release_activity_account_risk:
+        args.menu_key = args.menu_key or "activity_risk_release"
+        args.menu_type = args.menu_type or "white"
+        args.dimension = args.dimension or "user_id"
+        args.action = "add"
 
 
 def _resolve_batch_limit(args: argparse.Namespace) -> int:
@@ -547,6 +614,9 @@ def main() -> int:
 
     if args.release_online_login_device:
         return _handle_release_online_login_device(args)
+
+    if args.release_login_device:
+        return _handle_release_login_device(args)
 
     if args.list_test_devices:
         try:

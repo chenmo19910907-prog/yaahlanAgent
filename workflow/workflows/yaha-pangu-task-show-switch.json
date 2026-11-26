@@ -1,0 +1,28 @@
+{
+  "id": "yaha-pangu-task-show-switch",
+  "name": "Yaha每日任务展示开关",
+  "category": "Yaha-盘古配置（workflow）",
+  "description": "预上线 stage：改 yaahlan-trick Application.yaha_task_show_switch（1 展示 / 0 隐藏 Yaha 每日任务入口），保存并全量发布。",
+  "version": 1,
+  "params": {
+    "configValue": {
+      "label": "configValue（1 开 / 0 关）",
+      "type": "string",
+      "required": true
+    }
+  },
+  "steps": [
+    {
+      "id": "apply_yaha_pangu",
+      "name": "改 MSE 配置并发布",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/guild_pangu_shift_time_apply.py --scenarios-file workflow/config/yaha_pangu_scenarios.json --scenario yaha_task_show_switch --config-value \"{{configValue}}\"",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

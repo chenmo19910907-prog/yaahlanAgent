@@ -1,0 +1,56 @@
+{
+  "type": "moa",
+  "key": "momo.pt.toB.cosmos-server.quality-platform.codequality",
+  "settings": {
+    "time": 20000,
+    "group": "default",
+    "host": "",
+    "headerType": "TXT"
+  },
+  "region": "alpha",
+  "env": "alpha",
+  "cluster": "stage",
+  "server": "config",
+  "momoId": "df4c6f364f9fcae3",
+  "momoName": "e88aa376b29864ad",
+  "url": "/service/room/external/room-manage-stage",
+  "method": "clearRoomMsg",
+  "header": "{\"userId\":\"100305533\",\"roomId\":\"83652563\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"osType\":\"ios\",\"os\":\"ios\",\"channelKey\":\"primary\",\"country\":\"B1\"}",
+  "params": [
+    {
+      "name": 0,
+      "title": 0,
+      "txt": "",
+      "json": "{\"userId\":\"100305533\",\"roomId\":\"83652563\",\"lang\":\"en\",\"area\":\"MENA\",\"appId\":\"2005\",\"osType\":\"ios\",\"os\":\"ios\",\"channelKey\":\"primary\",\"country\":\"B1\"}",
+      "type": "json",
+      "value": {
+        "userId": "100305533",
+        "roomId": "83652563",
+        "lang": "en",
+        "area": "MENA",
+        "appId": "2005",
+        "osType": "ios",
+        "os": "ios",
+        "channelKey": "primary",
+        "country": "B1"
+      }
+    }
+  ],
+  "_meta": {
+    "httpPath": "/yaahlan/room/manage/clearRoomMsg",
+    "serviceAgentRef": "room-manage-stage.clearRoomMsg",
+    "tunnelRef": "100305533（13311111115）_id=vLSqEaIBpk1mjMPPWqHh roomId=83652563（2026-11-25 15:45:06）"
+  },
+  "_registry": {
+    "id": "room_clear_room_msg",
+    "name": "房间-清屏",
+    "category": "房间-管理（room/external/room-manage-stage）",
+    "description": "语音房公屏清屏（clearRoomMsg，对齐 /yaahlan/room/manage/clearRoomMsg）。body 需 userId（房主/管理员/超管）、roomId；须在目标房间内。Tunnel 100305533 实测 ec=200 data.flag=1。",
+    "prompts": [
+      "用户 <userId> 在房间 <roomId> 清屏",
+      "房间 <roomId> 公屏清屏 操作者 <userId>",
+      "执行 房间-清屏"
+    ],
+    "cli": "--room-clear-user-id <userId> --room-clear-room-id <roomId>"
+  }
+}

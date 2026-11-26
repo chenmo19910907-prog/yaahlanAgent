@@ -11,6 +11,7 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[2]
 IO_SCRIPT = REPO_ROOT / "workflow/scripts/guild_pangu_mse_io.py"
 DEALER_SCENARIOS_REL = "workflow/config/dealer_pangu_shift_scenarios.json"
+YAHA_SCENARIOS_REL = "workflow/config/yaha_pangu_scenarios.json"
 
 
 def _run_io_script(args: list[str]) -> dict[str, Any]:
@@ -57,3 +58,14 @@ def dealer_pangu_current_payload(scenario_key: str | None = None) -> dict[str, A
 
 def dealer_pangu_trade_union_fixed_hint() -> dict[str, Any]:
     return _run_io_script(["--trade-union-fixed-hint"])
+
+
+def yaha_pangu_scenarios_payload() -> dict[str, Any]:
+    return _run_io_script(["--scenarios-json", "--scenarios-file", YAHA_SCENARIOS_REL])
+
+
+def yaha_pangu_current_payload(scenario_key: str | None = None) -> dict[str, Any]:
+    key = str(scenario_key or "yaha_task_show_switch").strip() or "yaha_task_show_switch"
+    return _run_io_script(
+        ["--scenario", key, "--scenarios-file", YAHA_SCENARIOS_REL]
+    )

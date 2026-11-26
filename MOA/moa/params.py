@@ -98,6 +98,54 @@ def set_new_user_invite_test_add_user_params(
     ]
 
 
+YAHA_APPSFLYER_DEFAULT_REGION_TAG = "gcc"
+YAHA_APPSFLYER_DEFAULT_CHANNEL_TAG = "social"
+
+
+def set_yaha_appsflyer_set_user_tag_params(
+    payload: dict[str, Any],
+    user_id: str,
+    region_tag: str | None = None,
+    channel_tag: str | None = None,
+) -> None:
+    """Yaha 买量归因：setUserTag（userId、地区标签、投放标签；仅 3 参，勿传空第四参）。"""
+    user_id = str(user_id).strip()
+    region_tag = (str(region_tag).strip() if region_tag else "") or YAHA_APPSFLYER_DEFAULT_REGION_TAG
+    channel_tag = (str(channel_tag).strip() if channel_tag else "") or YAHA_APPSFLYER_DEFAULT_CHANNEL_TAG
+    if not user_id:
+        raise ValueError("买量归因 setUserTag：userId 不能为空")
+    payload["key"] = "momo.pt.toB.cosmos-server.quality-platform.codequality"
+    payload["url"] = "/service/yaahlan/user/appsflyer-moa"
+    payload["method"] = "setUserTag"
+    payload["params"] = [
+        _param("参数1", "1", user_id, ptype="string", txt=user_id),
+        _param("参数2", "2", region_tag, ptype="string", txt=region_tag),
+        _param("参数3", "3", channel_tag, ptype="string", txt=channel_tag),
+    ]
+
+
+def set_yaha_task_door_add_companion_users_params(
+    payload: dict[str, Any],
+    task_id: str,
+    user_ids: list[str],
+) -> None:
+    """Yaha 主播任务后门：doorAdCompanionTaskUserId（任务 id + userId 列表 JSON 数组；仅 2 参）。"""
+    task_id = str(task_id).strip()
+    cleaned = [str(uid).strip() for uid in user_ids if str(uid).strip()]
+    if not task_id:
+        raise ValueError("Yaha 任务用户列表：任务/活动 id 不能为空")
+    if not cleaned:
+        raise ValueError("Yaha 任务用户列表：至少提供一个 userId")
+    user_ids_json = json.dumps(cleaned, ensure_ascii=False, separators=(",", ":"))
+    payload["key"] = "momo.pt.toB.cosmos-server.quality-platform.codequality"
+    payload["url"] = "/service/yaahlan-trick/internal/yaha-task"
+    payload["method"] = "doorAdCompanionTaskUserId"
+    payload["params"] = [
+        _param("参数1", "1", task_id, ptype="string", txt=task_id),
+        _param("参数2", "2", cleaned, ptype="json", txt=cleaned, json_str=user_ids_json),
+    ]
+
+
 def set_cp_love_value_add_params(
     payload: dict[str, Any],
     user_id: str,
@@ -1786,6 +1834,39 @@ def set_room_kick_user_params(
     }
     payload["url"] = "/service/room/external/room-behave-stage"
     payload["method"] = "kickOutOfRoom"
+    payload["params"] = [json_param(body)]
+    payload["header"] = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
+
+
+def set_room_clear_room_msg_params(
+    payload: dict[str, Any],
+    user_id: str,
+    room_id: str,
+    *,
+    lang: str = "en",
+    area: str = "MENA",
+    os_name: str = "android",
+    country: str = "B1",
+) -> None:
+    uid = str(user_id).strip()
+    rid = str(room_id).strip()
+    if not uid:
+        raise ValueError("userId 不能为空")
+    if not rid:
+        raise ValueError("roomId 不能为空")
+    body: dict[str, Any] = {
+        "userId": uid,
+        "roomId": rid,
+        "lang": str(lang or "en").strip() or "en",
+        "area": str(area or "MENA").strip() or "MENA",
+        "appId": "2005",
+        "osType": str(os_name or "android").strip() or "android",
+        "os": str(os_name or "android").strip() or "android",
+        "channelKey": "primary",
+        "country": str(country or "B1").strip() or "B1",
+    }
+    payload["url"] = "/service/room/external/room-manage-stage"
+    payload["method"] = "clearRoomMsg"
     payload["params"] = [json_param(body)]
     payload["header"] = json.dumps(body, ensure_ascii=False, separators=(",", ":"))
 

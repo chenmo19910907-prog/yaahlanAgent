@@ -2035,6 +2035,38 @@
         "执行 房间-创建房间"
       ],
       "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-创建房间.json \\\n  --room-create-user-id \\\n  <userId>\n"
+    },
+    {
+      "id": "room_clear_room_msg",
+      "name": "房间-清屏",
+      "category": "房间-管理（room/external/room-manage-stage）",
+      "description": "语音房公屏清屏（clearRoomMsg，对齐 /yaahlan/room/manage/clearRoomMsg）。body 需 userId（房主/管理员/超管）、roomId；须在目标房间内。Tunnel 100305533 实测 ec=200 data.flag=1。",
+      "prompts": [
+        "用户 <userId> 在房间 <roomId> 清屏",
+        "房间 <roomId> 公屏清屏 操作者 <userId>",
+        "执行 房间-清屏"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/房间-清屏.json \\\n  --room-clear-user-id \\\n  <userId> \\\n  --room-clear-room-id \\\n  <roomId>\n"
+    },
+    {
+      "id": "yaha_task_door_add_companion_users",
+      "name": "Yaha主播任务-添加到任务用户列表",
+      "category": "Yaha-MOA（yaahlan-trick/internal/yaha-task）",
+      "description": "Yaha 包专用：doorAdCompanionTaskUserId 将用户加入主播任务「获取列表」后门（/service/yaahlan-trick/internal/yaha-task）。params[0]=任务/活动配置 id（string）；params[1]=userId JSON 数组。仅 2 参，勿传空第三参。",
+      "prompts": [
+        "Yaha每日任务 将用户 <userId> 加入主播ID <主播id> 的获取任务列表"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/Yaha主播任务-添加到任务用户列表.json \\\n  --yaha-task-door-task-id \\\n  <taskId> \\\n  --yaha-task-door-user-ids \\\n  <userId>[,<userId>...]\n"
+    },
+    {
+      "id": "yaha_appsflyer_set_user_tag",
+      "name": "Yaha买量归因-设置用户标签",
+      "category": "Yaha-MOA（yaahlan/user/appsflyer-moa）",
+      "description": "Yaha 包注册买量归因身份：setUserTag（/service/yaahlan/user/appsflyer-moa）。params[0]=userId；params[1]=gcc（写死）；params[2]=social（写死）。仅 3 参，勿传空第四参。",
+      "prompts": [
+        "Yaha每日任务 为用户 <userId> 设置买量归因身份（gcc / social）"
+      ],
+      "command": "python3 MOA/moa_execute.py \\\n  --payload-file MOA/templates/Yaha买量归因-设置用户标签.json \\\n  --yaha-appsflyer-user-id \\\n  <userId>\n"
     }
   ]
 }

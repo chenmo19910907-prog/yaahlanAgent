@@ -30,6 +30,11 @@
         "name_space": "Application"
       },
       {
+        "pattern": "yaha_task",
+        "app_key": "momo.ibt.yaahlan.service.yaahlan-trick",
+        "name_space": "Application"
+      },
+      {
         "pattern": "acrossRoomPk",
         "app_key": "momo.bpm.biz.gameplatform.overseas-voga-mts-room",
         "name_space": "Application"

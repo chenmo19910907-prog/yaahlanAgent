@@ -65,6 +65,26 @@
       "command": "python3 Risk/risk_execute.py \\\n  --release-sms-risk \\\n  --phone <phone> \\\n  --reason 测试yaahlan-测试加白"
     },
     {
+      "id": "yaha_daily_release_device",
+      "name": "Yaha每日任务-解除设备风控",
+      "category": "Yaha-风控（测试环境 mmuid 加白）",
+      "description": "Yaha 每日任务新注册设备等：与 Postman「QA风控自测 › 解除设备风控」一致——POST https://risk-backend-oversea.wemomo.com/api/sec_risk/open/menu/operate；Headers：Content-Type: application/json（Postman 仅显式这一条，Host/User-Agent 等由客户端自动带；CLI 另发 Accept）。鉴权在 JSON body 的 token（SEC_RISK_TOKEN），开放接口一般不需 Cookie。Body：menu_key=device_risk_release，dimension=mmuid，elements 为设备 mmuid（iOS）或 mmuidv3 值（Android/鸿蒙）；可逗号分隔多个（单次最多 5 个，超出自动分批）。",
+      "prompts": [
+        "Yaha每日任务 为设备 <mmuid> 解除设备风控"
+      ],
+      "command": "python3 Risk/risk_execute.py \\\n  --release-device \\\n  --mmuid <mmuid> \\\n  --reason 测试yaahlan-Yaha每日任务"
+    },
+    {
+      "id": "yaha_daily_release_account",
+      "name": "Yaha每日任务-解除账号风控",
+      "category": "Yaha-风控（测试环境 user_id 加白）",
+      "description": "Yaha 每日任务账号：与 Postman「QA风控自测 › 解除账号风控 (活动)」一致——POST https://risk-backend-oversea.wemomo.com/api/sec_risk/open/menu/operate；Body：menu_key=activity_risk_release，menu_type=white，dimension=user_id，action=add；elements 为 userId；可逗号分隔多个（单次最多 5 个，超出自动分批）。",
+      "prompts": [
+        "Yaha每日任务 为用户 <userId> 解除账号风控"
+      ],
+      "command": "python3 Risk/risk_execute.py \\\n  --release-activity-account-risk \\\n  --user-id <userId> \\\n  --reason 测试yaahlan-Yaha每日任务"
+    },
+    {
       "id": "release_online_login_device",
       "name": "线上-解除最近登录手机/设备风控并落库",
       "category": "线上环境（手机号 → 最近登录设备）",

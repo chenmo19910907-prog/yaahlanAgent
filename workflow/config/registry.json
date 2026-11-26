@@ -1015,6 +1015,26 @@
         "币商充值跳过真人认证白名单 whitelistUserIds=<whitelistUserIds> 保存发布"
       ],
       "command": "python3 workflow/workflow_execute.py run dealer-pangu-recharge-auth-whitelist --white-users <whiteUsers>"
+    },
+    {
+      "id": "yaha_pangu_task_show_switch",
+      "name": "Yaha每日任务展示开关",
+      "category": "Yaha-盘古配置（workflow）",
+      "description": "预上线 stage：改 yaahlan-trick Application.yaha_task_show_switch（1 展示 / 0 隐藏 Yaha 每日任务入口），保存并全量发布。",
+      "prompts": [
+        "Yaha每日任务展示开关 configValue=<configValue> 保存发布"
+      ],
+      "command": "python3 workflow/workflow_execute.py run yaha-pangu-task-show-switch --config-value <configValue>"
+    },
+    {
+      "id": "yaha_pangu_trade_union_entrance",
+      "name": "Yaha大区公会入口展示",
+      "category": "Yaha-盘古配置（workflow）",
+      "description": "预上线 stage：改 voga-common.trade_union_entrance_config（enabled / openAreas 大区 / whiteUserIds 白名单），控制 Yaha 包公会 H5 入口是否展示。",
+      "prompts": [
+        "Yaha大区公会入口 enabled=<enabled> openAreas=<openAreas> whiteUserIds=<whiteUserIds> 保存发布"
+      ],
+      "command": "python3 workflow/workflow_execute.py run yaha-pangu-trade-union-entrance --enabled <enabled> --open-areas <openAreas> --white-users <whiteUserIds>"
     }
   ]
 }

@@ -1,0 +1,38 @@
+{
+  "id": "yaha-pangu-trade-union-entrance",
+  "name": "Yaha大区公会入口展示",
+  "category": "Yaha-盘古配置（workflow）",
+  "description": "预上线 stage：改 voga-common.trade_union_entrance_config（enabled / openAreas / whiteUserIds），控制 Yaha 包大区公会 H5 入口展示与白名单。",
+  "version": 1,
+  "params": {
+    "enabled": {
+      "label": "enabled（true/false）",
+      "type": "string",
+      "required": true
+    },
+    "openAreas": {
+      "label": "openAreas（逗号分隔大区）",
+      "type": "string",
+      "required": true
+    },
+    "whiteUserIds": {
+      "label": "whiteUserIds（逗号分隔，可空）",
+      "type": "string",
+      "required": false
+    }
+  },
+  "steps": [
+    {
+      "id": "apply_yaha_trade_union_entrance",
+      "name": "改 MSE 配置并发布",
+      "run": {
+        "type": "shell",
+        "command": "python3 workflow/scripts/guild_pangu_shift_time_apply.py --scenarios-file workflow/config/yaha_pangu_scenarios.json --scenario yaha_trade_union_entrance --enabled \"{{enabled}}\" --open-areas \"{{openAreas}}\" --white-users \"{{whiteUserIds}}\"",
+        "cwd": "."
+      },
+      "expect": {
+        "returncode": 0
+      }
+    }
+  ]
+}

@@ -23,6 +23,7 @@ MOA = REPO / "MOA" / "moa_execute.py"
 QUERY_TPL = REPO / "MOA/templates/实名认证-查询认证记录.json"
 DELETE_TPL = REPO / "MOA/templates/实名认证-清除认证信息.json"
 EXPIRE_TPL = REPO / "MOA/templates/实名认证-设置认证过期时间.json"
+SCENE_TPL = REPO / "MOA/templates/实名认证-按场景删除真人认证.json"
 
 sys.path.insert(0, str(REPO / "MOA"))
 from moa.id_auth import extract_latest_id_auth_reason_list  # noqa: E402
@@ -73,12 +74,30 @@ def _reset_expire_past(uid: str) -> dict[str, Any]:
     )
 
 
+def _del_relation_scene(uid: str, scene: str) -> dict[str, Any]:
+    return _run_moa(
+        SCENE_TPL,
+        ["--id-auth-del-relation-user-id", uid, "--id-auth-relation-scene", scene],
+        timeout_ms=30000,
+    )
+
+
 def _clear_conflict_account(uid: str, *, dry_run: bool) -> dict[str, Any]:
     if dry_run:
         return {"userId": uid, "dryRun": True}
+    expire_first = _reset_expire_past(uid)
+    anchor = _del_relation_scene(uid, "ANCHOR")
+    dealer = _del_relation_scene(uid, "DEALER")
     delete_resp = _delete_person(uid)
     expire_resp = _reset_expire_past(uid)
-    return {"userId": uid, "delete": delete_resp, "expire": expire_resp}
+    return {
+        "userId": uid,
+        "expireFirst": expire_first,
+        "sceneAnchor": anchor,
+        "sceneDealer": dealer,
+        "delete": delete_resp,
+        "expire": expire_resp,
+    }
 
 
 def main() -> int:
@@ -98,25 +117,34 @@ def main() -> int:
         return 2
 
     log: dict[str, Any] = {"userId": user_id, "rounds": []}
+    cleared_conflicts: set[str] = set()
     for round_idx in range(1, max(1, args.max_rounds) + 1):
         reason_ids = _query_reason_user_ids(user_id)
         round_entry: dict[str, Any] = {"round": round_idx, "reasonUserIds": reason_ids, "cleared": []}
         log["rounds"].append(round_entry)
         if not reason_ids:
             break
-        for uid in reason_ids:
-            if uid == user_id:
-                continue
+        pending = [uid for uid in reason_ids if uid != user_id and uid not in cleared_conflicts]
+        if not pending:
+            break
+        for uid in pending:
+            cleared_conflicts.add(uid)
             round_entry["cleared"].append(_clear_conflict_account(uid, dry_run=args.dry_run))
 
     if not args.skip_target_reset and not args.dry_run:
         log["targetReset"] = {
-            "delete": _delete_person(user_id),
             "expire": _reset_expire_past(user_id),
+            "sceneAnchor": _del_relation_scene(user_id, "ANCHOR"),
+            "sceneDealer": _del_relation_scene(user_id, "DEALER"),
+            "delete": _delete_person(user_id),
+            "expireFinal": _reset_expire_past(user_id),
         }
 
-    remaining = _query_reason_user_ids(user_id) if not args.dry_run else log["rounds"][-1]["reasonUserIds"]
+    remaining_raw = _query_reason_user_ids(user_id) if not args.dry_run else log["rounds"][-1]["reasonUserIds"]
+    remaining = [uid for uid in remaining_raw if uid not in cleared_conflicts and uid != user_id]
     log["remainingReasonUserIds"] = remaining
+    log["clearedConflictUserIds"] = sorted(cleared_conflicts)
+    log["staleReasonOnLatestFailure"] = [uid for uid in remaining_raw if uid in cleared_conflicts]
     log["ok"] = not remaining
     print(json.dumps(log, ensure_ascii=False, indent=2))
     if remaining:

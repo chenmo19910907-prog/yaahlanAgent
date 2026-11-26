@@ -59,6 +59,10 @@ from .params import (
     set_id_auth_reset_expire_params,
     set_noble_params,
     set_new_user_invite_test_add_user_params,
+    YAHA_APPSFLYER_DEFAULT_CHANNEL_TAG,
+    YAHA_APPSFLYER_DEFAULT_REGION_TAG,
+    set_yaha_appsflyer_set_user_tag_params,
+    set_yaha_task_door_add_companion_users_params,
     set_anniversary_egg_smash_params,
     set_package_gift_params,
     set_change_user_area_params,
@@ -101,6 +105,7 @@ from .params import (
     set_room_close_status_params,
     set_room_create_params,
     set_room_kick_user_params,
+    set_room_clear_room_msg_params,
     set_room_leave_room_params,
     set_room_leave_seat_params,
     set_room_dismiss_params,
@@ -1625,6 +1630,29 @@ def _op_room_kick_user(args: argparse.Namespace, payload: dict[str, Any]) -> Non
     )
 
 
+def _room_clear_room_msg_mode(args: argparse.Namespace) -> bool:
+    return (
+        getattr(args, "room_clear_user_id", None) is not None
+        or getattr(args, "room_clear_room_id", None) is not None
+    )
+
+
+def _op_room_clear_room_msg(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_id = str(args.room_clear_user_id or "").strip()
+    room_id = str(args.room_clear_room_id or "").strip()
+    if not user_id or not room_id:
+        raise ValueError("清屏须提供 --room-clear-user-id 与 --room-clear-room-id")
+    set_room_clear_room_msg_params(
+        payload,
+        user_id,
+        room_id,
+        lang=str(args.room_clear_lang or "en"),
+        area=str(args.room_clear_area or "MENA"),
+        os_name=str(args.room_clear_os or "android"),
+        country=str(args.room_clear_country or "B1"),
+    )
+
+
 def _op_room_leave_seat(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     user_id = str(args.room_leave_seat_user_id or "").strip()
     room_id = str(args.room_leave_seat_room_id or "").strip()
@@ -2090,6 +2118,55 @@ def _op_new_user_invite_test_add(args: argparse.Namespace, payload: dict[str, An
     )
 
 
+def _parse_yaha_task_door_user_ids(raw: str | None) -> list[str]:
+    text = str(raw or "").strip()
+    if not text:
+        return []
+    parts = [p.strip() for p in text.replace(";", ",").split(",")]
+    return [p for p in parts if p]
+
+
+def _yaha_task_door_add_mode(args: argparse.Namespace) -> bool:
+    return getattr(args, "yaha_task_door_task_id", None) is not None
+
+
+def _yaha_appsflyer_set_user_tag_mode(args: argparse.Namespace) -> bool:
+    return getattr(args, "yaha_appsflyer_user_id", None) is not None
+
+
+def _op_yaha_appsflyer_set_user_tag(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    region = getattr(args, "yaha_appsflyer_region_tag", None)
+    channel = getattr(args, "yaha_appsflyer_channel_tag", None)
+    set_yaha_appsflyer_set_user_tag_params(
+        payload,
+        user_id=str(args.yaha_appsflyer_user_id),
+        region_tag=str(region) if region else None,
+        channel_tag=str(channel) if channel else None,
+    )
+    region_used = (str(region).strip() if region else "") or YAHA_APPSFLYER_DEFAULT_REGION_TAG
+    channel_used = (str(channel).strip() if channel else "") or YAHA_APPSFLYER_DEFAULT_CHANNEL_TAG
+    print(
+        f"Yaha 买量归因：userId={args.yaha_appsflyer_user_id} "
+        f"regionTag={region_used} channelTag={channel_used}",
+        file=sys.stderr,
+    )
+
+
+def _op_yaha_task_door_add_companion_users(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    user_ids = _parse_yaha_task_door_user_ids(getattr(args, "yaha_task_door_user_ids", None))
+    if not user_ids:
+        raise ValueError("Yaha 任务用户列表须提供 --yaha-task-door-user-ids（逗号分隔）")
+    set_yaha_task_door_add_companion_users_params(
+        payload,
+        task_id=str(args.yaha_task_door_task_id),
+        user_ids=user_ids,
+    )
+    print(
+        f"Yaha 任务用户列表：taskId={args.yaha_task_door_task_id} userIds={user_ids}",
+        file=sys.stderr,
+    )
+
+
 def _op_nameplate_dispatch(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     """铭牌下发（voga-mts-user-backdoor execute；dispatchConfigCenterNameplateById）。"""
     if args.nameplate_dispatch_id is None:
@@ -2139,6 +2216,8 @@ def _op_activity_mock_gift(args: argparse.Namespace, payload: dict[str, Any]) ->
 OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = [
     (lambda a: _intimate_buddy_change_apply_mode(a), _op_intimate_buddy_change_apply),
     (lambda a: _intimate_buddy_change_accept_mode(a), _op_intimate_buddy_change_accept),
+    (lambda a: _yaha_appsflyer_set_user_tag_mode(a), _op_yaha_appsflyer_set_user_tag),
+    (lambda a: _yaha_task_door_add_mode(a), _op_yaha_task_door_add_companion_users),
     (lambda a: a.new_user_invite_inviter_user_id is not None, _op_new_user_invite_test_add),
     (lambda a: a.nameplate_dispatch_user_id is not None, _op_nameplate_dispatch),
     (lambda a: a.activity_gift_from_user_id is not None, _op_activity_mock_gift),
@@ -2236,6 +2315,7 @@ OPERATIONS: list[tuple[Callable[[argparse.Namespace], bool], PayloadBuilder]] = 
     (lambda a: _room_leave_room_mode(a), _op_room_leave_room),
     (lambda a: _room_close_status_mode(a), _op_room_close_status),
     (lambda a: _room_kick_user_mode(a), _op_room_kick_user),
+    (lambda a: _room_clear_room_msg_mode(a), _op_room_clear_room_msg),
     (lambda a: _room_leave_seat_mode(a), _op_room_leave_seat),
     (lambda a: _room_dismiss_mode(a), _op_room_dismiss),
     (lambda a: _p2p_message_mode(a), _op_p2p_message),

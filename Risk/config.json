@@ -15,7 +15,11 @@
       "dimension": "mmuid",
       "action": "add",
       "max_elements_per_request": 5,
-      "description": "将设备 mmuid 加入白名单以解除设备风控；单次最多 5 个 mmuid"
+      "description": "将设备 mmuid 加入白名单以解除设备风控；单次最多 5 个 mmuid",
+      "http_method": "POST",
+      "http_headers": {
+        "Content-Type": "application/json"
+      }
     },
     "device_risk_release_mmuidv3": {
       "name": "解除设备风控（Android，element 填 mmuidv3 值）",
@@ -70,6 +74,15 @@
       "action": "add",
       "max_elements_per_request": 5,
       "description": "用户 user_id 活动风控黑名单：action=add 添加风控，action=delete 解除风控"
+    },
+    "activity_risk_release": {
+      "name": "解除账号风控（活动）",
+      "menu_event": "cf6bdc74-7be7-474a-b10d-1859f056e1b9",
+      "menu_type": "white",
+      "dimension": "user_id",
+      "action": "add",
+      "max_elements_per_request": 5,
+      "description": "Postman「QA风控自测 › 解除账号风控 (活动)」：user_id 加活动风控白名单；单次最多 5 个"
     },
     "example_mmuid_whitelist": {
       "name": "解除设备风控（别名，同 device_risk_release）",

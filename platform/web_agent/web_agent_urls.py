@@ -31,5 +31,9 @@ def web_agent_chat_url() -> str:
     return f"{web_agent_public_base_url()}/chat.html"
 
 
+def web_agent_chat_mobile_url() -> str:
+    return f"{web_agent_public_base_url()}/chat-mobile.html"
+
+
 def web_agent_catalog_manual_url() -> str:
     return f"{web_agent_public_base_url()}/catalog-manual/"

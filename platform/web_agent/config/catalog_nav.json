@@ -6,6 +6,85 @@
       "kind": "all"
     },
     {
+      "kind": "folder",
+      "id": "nav-yaha-module",
+      "label": "Yaha",
+      "children": [
+        {
+          "kind": "folder",
+          "id": "nav-yaha-ip-area",
+          "label": "大区与IP验收",
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "用户",
+              "catIndex": 6,
+              "label": "IP-查询归属地",
+              "sourceId": "moa",
+              "registryId": "ip_find"
+            },
+            {
+              "kind": "cap",
+              "moduleId": "yaha",
+              "catIndex": 2,
+              "label": "Yaha大区公会入口展示",
+              "sourceId": "workflow",
+              "registryId": "yaha_pangu_trade_union_entrance"
+            }
+          ],
+          "subfolder": true
+        },
+        {
+          "kind": "folder",
+          "id": "nav-yaha-accounts",
+          "label": "yaha每日任务",
+          "children": [
+            {
+              "kind": "cap",
+              "moduleId": "yaha",
+              "catIndex": 2,
+              "label": "Yaha每日任务展示开关",
+              "sourceId": "workflow",
+              "registryId": "yaha_pangu_task_show_switch"
+            },
+            {
+              "kind": "cap",
+              "moduleId": "yaha",
+              "catIndex": 3,
+              "label": "Yaha每日任务-解除设备风控（一）",
+              "sourceId": "risk",
+              "registryId": "yaha_daily_release_device"
+            },
+            {
+              "kind": "cap",
+              "moduleId": "yaha",
+              "catIndex": 4,
+              "label": "Yaha每日任务-解除账号风控（二）",
+              "sourceId": "risk",
+              "registryId": "yaha_daily_release_account"
+            },
+            {
+              "kind": "cap",
+              "moduleId": "yaha",
+              "catIndex": 1,
+              "label": "Yaha买量归因-设置用户标签（三）",
+              "sourceId": "moa",
+              "registryId": "yaha_appsflyer_set_user_tag"
+            },
+            {
+              "kind": "cap",
+              "moduleId": "yaha",
+              "catIndex": 0,
+              "label": "Yaha每日任务-添加到任务用户列表（四）",
+              "sourceId": "moa",
+              "registryId": "yaha_task_door_add_companion_users"
+            }
+          ],
+          "subfolder": true
+        }
+      ]
+    },
+    {
       "kind": "module",
       "moduleId": "公会",
       "hydrateCaps": false,
@@ -164,6 +243,7 @@
         {
           "kind": "cap",
           "moduleId": "币商盘古配置",
+          "catIndex": 0,
           "label": "币商助理额度刷新时间",
           "sourceId": "workflow",
           "registryId": "dealer_pangu_assistant_quota_time"
@@ -171,6 +251,7 @@
         {
           "kind": "cap",
           "moduleId": "币商盘古配置",
+          "catIndex": 0,
           "label": "跳过币商充值真人认证白名单",
           "sourceId": "workflow",
           "registryId": "dealer_pangu_recharge_auth_whitelist"
@@ -267,6 +348,31 @@
           "kind": "cap",
           "moduleId": "房间",
           "catIndex": 11
+        },
+        {
+          "kind": "cap",
+          "moduleId": "房间",
+          "catIndex": 12
+        },
+        {
+          "kind": "cap",
+          "moduleId": "房间",
+          "catIndex": 13
+        },
+        {
+          "kind": "cap",
+          "moduleId": "房间",
+          "catIndex": 14
+        },
+        {
+          "kind": "cap",
+          "moduleId": "房间",
+          "catIndex": 15
+        },
+        {
+          "kind": "cap",
+          "moduleId": "房间",
+          "catIndex": 16
         }
       ]
     },
@@ -1436,6 +1542,17 @@
         {
           "kind": "cap",
           "moduleId": "cms",
+          "catIndex": 0
+        }
+      ]
+    },
+    {
+      "kind": "module",
+      "moduleId": "首充转盘",
+      "children": [
+        {
+          "kind": "cap",
+          "moduleId": "首充转盘",
           "catIndex": 0
         }
       ]

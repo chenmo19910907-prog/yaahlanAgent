@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Yaahlan Agent（手机版）</title>
+  <script>
+    (function () {
+      var q = location.search || '';
+      var tail = q ? (q.charAt(0) === '?' ? q.slice(1) + '&' : q + '&') : '';
+      location.replace('chat.html?' + tail + 'mobile=1&from=chat-mobile');
+    })();
+  </script>
+</head>
+<body>
+  <p style="font-family: system-ui, sans-serif; padding: 24px; color: #64748b;">正在打开手机版…</p>
+  <p><a href="chat.html?mobile=1">若未自动跳转，点此进入</a></p>
+</body>
+</html>

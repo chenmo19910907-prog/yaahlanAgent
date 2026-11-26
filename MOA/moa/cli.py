@@ -799,6 +799,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--room-kick-os", default="android", help="房间踢人：os/osType（默认 android）")
     parser.add_argument("--room-kick-country", default="B1", help="房间踢人：country（默认 B1）")
 
+    parser.add_argument("--room-clear-user-id", help="房间清屏：操作者 userId（clearRoomMsg，须房主/管理员/超管）")
+    parser.add_argument("--room-clear-room-id", help="房间清屏：roomId")
+    parser.add_argument("--room-clear-area", default="MENA", help="房间清屏：area（默认 MENA）")
+    parser.add_argument("--room-clear-lang", default="en", help="房间清屏：lang（默认 en）")
+    parser.add_argument("--room-clear-os", default="android", help="房间清屏：os/osType（默认 android）")
+    parser.add_argument("--room-clear-country", default="B1", help="房间清屏：country（默认 B1）")
+
     parser.add_argument("--pk-rank-user-id", help="PK榜-增加PK值：用户 ID（handlePkRank）")
     parser.add_argument("--pk-rank-value", type=int, help="PK榜-增加PK值：增加的 PK 值")
     parser.add_argument("--user-reg-time-user-id", help="用户-查询注册时间：用户 ID（userVipTaskDao.getUserRegTime）")
@@ -1008,6 +1015,26 @@ def build_parser() -> argparse.ArgumentParser:
         "--new-user-invite-extra",
         default="",
         help="星光大使模拟拉新 testAddUser：第三参预留字符串（默认空）",
+    )
+    parser.add_argument(
+        "--yaha-appsflyer-user-id",
+        help="Yaha 买量归因 setUserTag：userId（params[0]）",
+    )
+    parser.add_argument(
+        "--yaha-appsflyer-region-tag",
+        help="Yaha 买量归因 setUserTag：地区标签（params[1]，默认 gcc）",
+    )
+    parser.add_argument(
+        "--yaha-appsflyer-channel-tag",
+        help="Yaha 买量归因 setUserTag：投放/渠道标签（params[2]，默认 social）",
+    )
+    parser.add_argument(
+        "--yaha-task-door-task-id",
+        help="Yaha 主播任务 doorAdCompanionTaskUserId：任务/活动配置 id（params[0]）",
+    )
+    parser.add_argument(
+        "--yaha-task-door-user-ids",
+        help="Yaha 主播任务 doorAdCompanionTaskUserId：待加入 userId，逗号分隔（params[1] JSON 数组）",
     )
     parser.add_argument(
         "--nameplate-dispatch-user-id",

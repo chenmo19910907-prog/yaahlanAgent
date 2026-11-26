@@ -4,6 +4,7 @@
   },
   "version": 3,
   "top_level_rules": [
+    { "group": "Yaha", "prefixes": ["Yaha-", "Yaha包", "yaha-"], "keywords": ["仅Yaha", "Yaha包", "regApp=yaha", "com.immomo.yaha"] },
     { "group": "用户", "prefixes": ["用户", "Admin用户", "Nova用户", "MOA用户资料", "生成式用户资料"] },
     { "group": "实名认证", "prefixes": ["实名认证"] },
     { "group": "CP", "prefixes": ["CP"] },
@@ -31,6 +32,7 @@
     { "group": "平台", "names": ["Admin", "MOA", "MSE", "MOA-generative", "生成式MOA", "MSE 服务配置", "Web Agent"] }
   ],
   "top_level_order": [
+    "Yaha",
     "用户",
     "实名认证",
     "VIP",

@@ -58,6 +58,29 @@ def _parse_config_value(raw: Any) -> dict[str, Any]:
     return {}
 
 
+def fetch_config_raw(
+    scenario: dict[str, Any],
+    *,
+    catalog: dict[str, Any] | None = None,
+) -> str:
+    _ensure_mse_path()
+    from mse.mutate import fetch_config_item, load_context  # noqa: WPS433
+
+    catalog = catalog if catalog is not None else load_catalog()
+    env = catalog.get("env") or {}
+    app_key = str(scenario.get("app_key") or env.get("app_key") or "")
+    ctx = load_context(
+        region=str(env.get("region") or "alpha"),
+        env=str(env.get("env") or "alpha"),
+        cluster=str(env.get("cluster") or "stage"),
+        app_key=app_key,
+    )
+    config_key = str(scenario["config_key"])
+    namespace = str(scenario["namespace"])
+    item, _display = fetch_config_item(ctx, config_key=config_key, name_space=namespace)
+    return str(item.get("configValue") or "").strip()
+
+
 def fetch_config_object(
     scenario: dict[str, Any],
     *,
@@ -103,8 +126,17 @@ def trade_union_fixed_time_sec() -> str:
 def current_form_values(scenario_key: str, *, scenarios_path: Path | None = None) -> dict[str, Any]:
     catalog = load_catalog(scenarios_path)
     scenario = scenario_by_key(catalog, scenario_key)
-    cfg = fetch_config_object(scenario, catalog=catalog)
     fields = list(scenario.get("fields") or [])
+    if str(scenario.get("value_type") or "") == "scalar":
+        raw = fetch_config_raw(scenario, catalog=catalog)
+        return {
+            "scenario": scenario_key,
+            "configKey": scenario.get("config_key"),
+            "namespace": scenario.get("namespace"),
+            "configValue": raw,
+            "fields": fields,
+        }
+    cfg = fetch_config_object(scenario, catalog=catalog)
     wl_key = str(scenario.get("white_list_field") or "whiteUsers")
     out: dict[str, Any] = {
         "scenario": scenario_key,
@@ -116,6 +148,18 @@ def current_form_values(scenario_key: str, *, scenarios_path: Path | None = None
         "shiftTime": str(cfg.get("shiftTime") if cfg.get("shiftTime") is not None else ""),
         "fields": fields,
     }
+    if "enabled" in fields:
+        val = cfg.get("enabled")
+        if val is True or str(val).lower() == "true":
+            out["enabled"] = "true"
+        elif val is False or str(val).lower() == "false":
+            out["enabled"] = "false"
+        else:
+            out["enabled"] = ""
+    if "openAreas" in fields:
+        out["openAreas"] = white_users_to_input(cfg.get("openAreas"))
+    if wl_key in fields and wl_key != "whiteUsers":
+        out[wl_key] = white_users_to_input(cfg.get(wl_key))
     return out
 
 
@@ -159,6 +203,7 @@ def scenarios_for_web(scenarios_path: Path | None = None) -> dict[str, Any]:
         only_edit = list(raw.get("only_edit_fields") or raw.get("required_fields") or fields)
         field_help_raw = raw.get("field_help")
         field_help = field_help_raw if isinstance(field_help_raw, dict) else {}
+        defaults_raw = raw.get("defaults")
         scenarios_out.append(
             {
                 "key": raw.get("key"),
@@ -169,6 +214,7 @@ def scenarios_for_web(scenarios_path: Path | None = None) -> dict[str, Any]:
                 "extraNote": str(raw.get("extra_note") or "").strip(),
                 "usageNote": _scenario_usage_note(raw),
                 "fieldHelp": field_help,
+                "defaults": defaults_raw if isinstance(defaults_raw, dict) else {},
             }
         )
     env = catalog.get("env") or {}

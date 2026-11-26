@@ -167,6 +167,8 @@ from web_guild_pangu import (  # noqa: E402
     dealer_pangu_trade_union_fixed_hint,
     guild_pangu_current_payload,
     guild_pangu_scenarios_payload,
+    yaha_pangu_current_payload,
+    yaha_pangu_scenarios_payload,
 )
 from web_admin_manage import (  # noqa: E402
     enrich_selectable_users_with_admin_roles,
@@ -298,6 +300,47 @@ def _inject_analytics_script(html: str) -> str:
     if "</body>" in html:
         return html.replace("</body>", f"{ANALYTICS_SCRIPT_TAG}\n</body>", 1)
     return html + ANALYTICS_SCRIPT_TAG
+
+
+_MOBILE_OVERLAY_START = "<!-- @wa-mobile-overlay-defer-start@ -->"
+_MOBILE_OVERLAY_END = "<!-- @wa-mobile-overlay-defer-end@ -->"
+
+
+def _strip_mobile_chat_overlays(html: str) -> str:
+    """手机首屏：去掉工具台/设置等 ~40KB 同步 DOM，改 idle 后拉 fragment。"""
+    if _MOBILE_OVERLAY_START not in html or _MOBILE_OVERLAY_END not in html:
+        return html
+    i = html.index(_MOBILE_OVERLAY_START)
+    j = html.index(_MOBILE_OVERLAY_END, i)
+    replacement = (
+        f"{_MOBILE_OVERLAY_START}\n"
+        '<div id="wa-overlay-defer-host"></div>\n'
+        "</div>\n"
+        '<script src="mobile-overlay-loader.js?v=20251126f" defer></script>\n'
+        f"{_MOBILE_OVERLAY_END}"
+    )
+    return html[:i] + replacement + html[j + len(_MOBILE_OVERLAY_END) :]
+
+
+def _serve_chat_html(handler: SimpleHTTPRequestHandler, query: str) -> None:
+    target = WEB_AGENT_DIR / "chat.html"
+    if not target.is_file():
+        handler.send_error(HTTPStatus.NOT_FOUND, "chat.html not found")
+        return
+    qs = parse_qs(query)
+    mobile = qs.get("mobile", [""])[0] == "1"
+    html = target.read_text(encoding="utf-8")
+    if mobile:
+        html = _strip_mobile_chat_overlays(html)
+    html = _inject_analytics_script(html)
+    data = html.encode("utf-8")
+    handler.send_response(HTTPStatus.OK)
+    handler.send_header("Content-Type", "text/html; charset=utf-8")
+    handler.send_header("Content-Length", str(len(data)))
+    handler.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+    handler.send_header("Pragma", "no-cache")
+    handler.end_headers()
+    handler.wfile.write(data)
 
 
 def _record_analytics(
@@ -2835,6 +2878,9 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
             self.path = "/chat.html"
             return super().do_GET()
 
+        if path == "/chat.html":
+            return _serve_chat_html(self, parsed.query)
+
         if path == KEYNOTE_URL_PREFIX or path == f"{KEYNOTE_URL_PREFIX}/":
             return self._serve_keynote_preview()
 
@@ -3015,8 +3061,29 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                 logger.exception("dealer pangu trade union fixed")
                 return _json_response(self, {"error": str(exc)}, 500)
 
+        if path == "/api/yaha/pangu/scenarios":
+            try:
+                return _json_response(self, yaha_pangu_scenarios_payload())
+            except (RuntimeError, ValueError) as exc:
+                logger.exception("yaha pangu scenarios")
+                return _json_response(self, {"error": str(exc)}, 500)
+
+        if path == "/api/yaha/pangu/current":
+            qs = parse_qs(parsed.query)
+            scenario_key = str((qs.get("scenario") or [""])[0]).strip()
+            try:
+                return _json_response(self, yaha_pangu_current_payload(scenario_key or None))
+            except (RuntimeError, KeyError) as exc:
+                logger.exception("yaha pangu current")
+                return _json_response(self, {"error": str(exc)}, 500)
+
         if path == "/api/catalog":
             try:
+                qs = parse_qs(parsed.query)
+                refresh_raw = str((qs.get("refresh") or ["0"])[0]).strip().lower()
+                force_refresh = refresh_raw in ("1", "true", "yes")
+                if force_refresh:
+                    _invalidate_catalog_cache()
                 data = _load_catalog_data_cached()
                 modules = data.get("modules") if isinstance(data.get("modules"), list) else []
                 data = dict(data)
@@ -3034,7 +3101,7 @@ class WebAgentHandler(SimpleHTTPRequestHandler):
                         },
                     ],
                 )
-                if _if_none_match_satisfied(self, etag):
+                if not force_refresh and _if_none_match_satisfied(self, etag):
                     return _respond_not_modified(self, etag=etag)
                 return _json_response(self, data, etag=etag)
             except (OSError, ValueError, FileNotFoundError) as exc:

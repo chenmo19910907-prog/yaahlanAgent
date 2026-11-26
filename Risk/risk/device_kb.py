@@ -276,6 +276,46 @@ def _fetch_online_admin_user(user_id: str) -> dict[str, Any]:
     }
 
 
+def _fetch_test_admin_user(user_id: str) -> dict[str, Any]:
+    root = _project_root()
+    admin_cmd = [
+        sys.executable,
+        str(root / "Admin" / "admin_execute.py"),
+        "--query-user-id",
+        user_id,
+    ]
+    admin_proc = subprocess.run(admin_cmd, cwd=str(root), capture_output=True, text=True, check=False)
+    if admin_proc.returncode != 0:
+        raise RuntimeError(admin_proc.stderr.strip() or admin_proc.stdout.strip() or "Admin 查询失败")
+
+    admin_text = admin_proc.stdout
+    start = admin_text.find("{")
+    if start < 0:
+        raise RuntimeError("Admin 返回非 JSON")
+    admin_data = json.loads(admin_text[start:])
+    login_device = admin_data.get("loginDevice")
+    if not isinstance(login_device, dict):
+        raise ValueError(f"userId {user_id} 缺少 loginDevice")
+
+    phone_raw = admin_data.get("phone")
+    phone = str(phone_raw).strip() if phone_raw else ""
+    return {
+        "phone": phone,
+        "areaCode": str(admin_data.get("areaCode") or "").strip(),
+        "userId": str(admin_data.get("userId") or user_id).strip(),
+        "nickname": str(admin_data.get("nickname") or "").strip(),
+        "loginDevice": login_device,
+    }
+
+
+def fetch_test_login_context_by_user_id(user_id: str) -> dict[str, Any]:
+    """测试环境：userId → Admin queryUserDetail 最近登录设备。"""
+    user_id = user_id.strip()
+    if not user_id:
+        raise ValueError("请提供 userId")
+    return _fetch_test_admin_user(user_id)
+
+
 def fetch_online_login_context_by_user_id(user_id: str) -> dict[str, Any]:
     """线上环境：userId → Admin 最近登录设备。"""
     user_id = user_id.strip()

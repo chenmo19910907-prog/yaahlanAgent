@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "category": "Yaha-盘古配置（workflow）",
+  "doc_note": "Yaha 验收用盘古：Application.yaha_task_show_switch（每日任务入口）、voga-common.trade_union_entrance_config（大区公会入口）；改参后保存并全量发布（预上线 stage）。",
+  "web_usage": {
+    "title": "改参并发布",
+    "env_hint": "预上线 stage：选择展示开关值后保存并全量发布。",
+    "field_help": {
+      "configValue": "1=展示每日任务入口；0=隐藏"
+    }
+  },
+  "env": {
+    "region": "alpha",
+    "cluster": "stage",
+    "env": "alpha",
+    "app_key": "momo.ibt.yaahlan.service.yaahlan-trick"
+  },
+  "scenarios": [
+    {
+      "key": "yaha_task_show_switch",
+      "name": "Yaha每日任务展示开关",
+      "config_key": "yaha_task_show_switch",
+      "namespace": "Application",
+      "value_type": "scalar",
+      "fields": ["configValue"],
+      "only_edit_fields": ["configValue"],
+      "required_fields": ["configValue"],
+      "field_help": {
+        "configValue": "1 开启展示；0 关闭展示"
+      },
+      "defaults": {
+        "configValue": "1"
+      },
+      "usage_note": "预上线：改 Application.yaha_task_show_switch。发布后 Yaha 包 Game/任务入口是否展示每日任务与此值一致（1 开 / 0 关）。",
+      "example": "configValue=1",
+      "prompt": "Yaha每日任务展示开关 configValue=<configValue> 保存发布",
+      "workflow_id": "yaha-pangu-task-show-switch"
+    },
+    {
+      "key": "yaha_trade_union_entrance",
+      "name": "Yaha大区公会入口展示",
+      "config_key": "trade_union_entrance_config",
+      "namespace": "voga-common",
+      "app_key": "momo.bpm.biz.gameplatform.overseas-voga-mts-vas",
+      "fields": ["enabled", "openAreas", "whiteUserIds"],
+      "only_edit_fields": ["enabled", "openAreas", "whiteUserIds"],
+      "required_fields": ["enabled", "openAreas"],
+      "white_list_field": "whiteUserIds",
+      "field_help": {
+        "enabled": "true 开启入口控制；false 全关",
+        "openAreas": "开放大区代码，逗号分隔：如 MENA,TR,SA,SAM,RU（与业务大区枚举一致）",
+        "whiteUserIds": "白名单 userId，逗号分隔；名单内用户不受大区限制可见公会入口"
+      },
+      "defaults": {
+        "enabled": "true",
+        "openAreas": "MENA,TR,SA,SAM,RU"
+      },
+      "usage_note": "预上线：改 vas 公有 voga-common.trade_union_entrance_config。enabled 总开关；openAreas 控制哪些大区展示 Yaha 公会 H5 入口；whiteUserIds 为不受大区限制的验收账号。保存并全量发布后，用对应大区 IP/账号验收 Me 或公会入口。",
+      "example": "enabled=true；openAreas=MENA,TR,SA,SAM,RU；whiteUserIds=100199151",
+      "prompt": "Yaha大区公会入口 enabled=<enabled> openAreas=<openAreas> whiteUserIds=<whiteUserIds> 保存发布",
+      "workflow_id": "yaha-pangu-trade-union-entrance"
+    }
+  ]
+}

@@ -88,12 +88,21 @@
     return true;
   }
 
+  function isUserProfileAvatarHoverTarget(event) {
+    if (!document.body.classList.contains('user-profile-clicks')) return false;
+    if (!event?.target?.closest) return false;
+    return !!event.target.closest(
+      '.msg.user .name-avatar[data-staff-id], .msg.user .name-avatar-fallback[data-staff-id]',
+    );
+  }
+
   function isWaitingHoverTarget(event) {
     const area = getChatArea();
     if (!area || !event) return false;
     if (!area.contains(event.target)) return false;
     if (isOwnerBarHoverTarget(event)) return false;
     if (isInteractiveHoverTarget(event)) return false;
+    if (isUserProfileAvatarHoverTarget(event)) return false;
     if (isPointInInputExclusionZone(event.clientX, event.clientY)) return false;
     return true;
   }

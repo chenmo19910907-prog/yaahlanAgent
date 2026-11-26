@@ -27,6 +27,12 @@ def _risk_call_meta(args: argparse.Namespace) -> tuple[str, str, str, str, str]:
         params = f"phone={phone}，userId={uid}".strip("，")
         return operation, account, params, "release_online_login_device", "POST"
 
+    if getattr(args, "release_login_device", False):
+        uid = (args.user_id or "").strip().split(",")[0]
+        operation = f"风控 按 userId {uid} 查登录设备并加白"
+        params = f"userId={uid}，reason={getattr(args, 'reason', '') or ''}"
+        return operation, uid, params, "release_login_device", "POST"
+
     if getattr(args, "release_test_device", False):
         asset = (args.device_asset or "").strip()
         name = (args.device_name or "").strip()
@@ -44,10 +50,29 @@ def _risk_call_meta(args: argparse.Namespace) -> tuple[str, str, str, str, str]:
 
     if getattr(args, "release_device", False):
         mmuid = (args.mmuid or "").strip()
+        reason = (getattr(args, "reason", "") or "").strip()
+        registry_id = (
+            "yaha_daily_release_device"
+            if reason.startswith("测试yaahlan-Yaha每日任务")
+            else "release_device"
+        )
         operation = f"风控 解除设备 {mmuid.split(',')[0]} 风控"
         first = mmuid.split(",")[0].strip()
         params = f"mmuid={mmuid[:120]}"
-        return operation, first, params, "release_device", "POST"
+        return operation, first, params, registry_id, "POST"
+
+    if getattr(args, "release_activity_account_risk", False):
+        uid = (args.user_id or "").strip()
+        reason = (getattr(args, "reason", "") or "").strip()
+        registry_id = (
+            "yaha_daily_release_account"
+            if reason.startswith("测试yaahlan-Yaha每日任务")
+            else "release_activity_account_risk"
+        )
+        first = uid.split(",")[0].strip()
+        operation = f"风控 解除账号(活动) {first} 风控"
+        params = f"userId={uid[:120]}"
+        return operation, first, params, registry_id, "POST"
 
     operation = "风控 菜单加白"
     params = f"reason={getattr(args, 'reason', '') or ''}"

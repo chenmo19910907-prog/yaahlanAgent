@@ -1,0 +1,708 @@
+    <aside class="catalog-panel" id="catalog-panel">
+      <div class="catalog-panel-resizer" id="catalog-panel-resizer" title="拖动调整能力目录宽度"></div>
+      <div class="catalog-panel-head">
+        <span class="catalog-title-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+            <path d="M4 5h7v7H4zM13 5h7v7h-7zM4 14h7v5H4zM13 14h7v5h-7z"/>
+          </svg>
+        </span>
+        <div class="head-main">
+          <div class="catalog-head-title-row">
+            <h2>工具台能力</h2>
+            <button type="button" class="btn-moa-record" id="btn-moa-record" title="MOA 录制" aria-label="MOA 录制">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/>
+                <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>
+              </svg>
+              <span class="btn-text" aria-hidden="true">MOA 录制</span>
+            </button>
+          </div>
+        </div>
+        <div class="head-actions">
+          <button type="button" class="btn-close" id="btn-catalog-close" title="关闭">×</button>
+        </div>
+      </div>
+      <div class="catalog-toolbar">
+        <input class="catalog-search" id="catalog-search" type="search"
+               placeholder="搜索能力、分类或提示语…" autocomplete="off" />
+      </div>
+      <div class="catalog-panel-body">
+        <nav class="catalog-nav" id="catalog-nav"></nav>
+        <div class="catalog-nav-resizer" id="catalog-nav-resizer" title="拖动调整分类栏宽度"></div>
+        <div class="catalog-main" id="catalog-main"></div>
+        <div class="catalog-panel-loading" id="catalog-panel-loading" hidden role="status" aria-live="polite">
+          <div class="bootstrap-loading-spinner" aria-hidden="true"></div>
+          <p>加载中…</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    (function applyWebAgentLayoutShellEarly() {
+      try {
+        var body = document.body;
+        var root = document.documentElement;
+        var isMobileLayout = root.classList.contains('web-agent-mobile');
+        var shellAlreadyReady =
+          isMobileLayout && body.classList.contains('layout-ready') && body.classList.contains('input-interactive');
+        if (!isMobileLayout) {
+          body.classList.add('layout-shell-pending', 'is-page-bootstrapping');
+        } else if (!shellAlreadyReady) {
+          body.classList.add('layout-shell-pending', 'is-page-bootstrapping');
+        } else {
+          body.classList.remove('layout-shell-pending', 'is-page-bootstrapping');
+        }
+        var sidebarPref = localStorage.getItem('web_agent_sidebar_open');
+        var sidebarOpen;
+        if (isMobileLayout) {
+          sidebarOpen = false;
+          body.classList.add('sidebar-collapsed');
+          body.classList.remove('tool-actions-docked-sidebar');
+          var sbBtn = document.getElementById('btn-sidebar');
+          if (sbBtn) sbBtn.classList.remove('active');
+          return;
+        } else {
+          sidebarOpen = sidebarPref === null ? true : sidebarPref === '1';
+          if (!sidebarOpen) body.classList.add('sidebar-collapsed');
+          body.classList.toggle('tool-actions-docked-sidebar', sidebarOpen);
+        }
+        var catalogPref = localStorage.getItem('web_agent_catalog_open');
+        if (!isMobileLayout && catalogPref === '1') {
+          body.classList.add('catalog-open');
+          var catalogPanel = document.getElementById('catalog-panel');
+          if (catalogPanel) catalogPanel.classList.add('open');
+          var catalogLoading = document.getElementById('catalog-panel-loading');
+          if (catalogLoading) catalogLoading.removeAttribute('hidden');
+        }
+        var sidebarWidth = localStorage.getItem('web_agent_sidebar_width');
+        if (sidebarWidth) root.style.setProperty('--sidebar-width', sidebarWidth + 'px');
+        var catalogWidth = localStorage.getItem('web_agent_catalog_width');
+        if (catalogWidth) root.style.setProperty('--catalog-width', catalogWidth + 'px');
+        var catalogNavWidth = localStorage.getItem('web_agent_catalog_nav_width');
+        if (catalogNavWidth) root.style.setProperty('--catalog-nav-width', catalogNavWidth + 'px');
+        var sidebarBtn = document.getElementById('btn-sidebar');
+        var catalogBtn = document.getElementById('btn-catalog');
+        if (sidebarBtn) sidebarBtn.classList.toggle('active', sidebarOpen);
+        if (catalogBtn) catalogBtn.classList.toggle('active', !isMobileLayout && catalogPref === '1');
+        var legacySessionKey = 'web_agent_session';
+        var sessionId = (localStorage.getItem(legacySessionKey) || '').trim();
+        if (!sessionId) {
+          for (var i = 0; i < localStorage.length; i += 1) {
+            var key = localStorage.key(i);
+            if (!key || key.indexOf('web_agent_last_session_') !== 0) continue;
+            var value = (localStorage.getItem(key) || '').trim();
+            if (value) { sessionId = value; break; }
+          }
+        }
+        if (sessionId && !isMobileLayout) {
+          var messages = document.getElementById('messages');
+          if (messages && !messages.querySelector('.msg, .empty-state, .bootstrap-loading-state')) {
+            messages.insertAdjacentHTML('beforeend',
+              '<div class="bootstrap-loading-state" role="status" aria-live="polite">'
+              + '<div class="bootstrap-loading-spinner" aria-hidden="true"></div>'
+              + '<p>加载中…</p></div>');
+          }
+        }
+      } catch (_) { /* localStorage / DOM */ }
+    })();
+  </script>
+
+  <div class="catalog-nav-dialog-modal" id="catalog-nav-dialog-modal" hidden>
+    <div class="catalog-nav-dialog" role="dialog" aria-modal="true" aria-labelledby="catalog-nav-dialog-title">
+      <h4 id="catalog-nav-dialog-title"></h4>
+      <p class="catalog-nav-dialog-message" id="catalog-nav-dialog-message" hidden></p>
+      <input class="catalog-nav-dialog-input" id="catalog-nav-dialog-input" type="text" autocomplete="off" />
+      <div class="catalog-nav-dialog-source" id="catalog-nav-dialog-source" hidden>
+        <span class="catalog-nav-dialog-source-label">来源标签</span>
+        <select class="catalog-nav-dialog-source-select" id="catalog-nav-dialog-source-select"></select>
+      </div>
+      <div class="catalog-nav-dialog-actions">
+        <button type="button" class="cancel" id="catalog-nav-dialog-cancel">取消</button>
+        <button type="button" class="submit" id="catalog-nav-dialog-submit">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="catalog-prompt-edit-modal" id="catalog-prompt-edit-modal" hidden aria-hidden="true">
+    <div class="catalog-prompt-edit-dialog" role="dialog" aria-labelledby="catalog-prompt-edit-title">
+      <h4 id="catalog-prompt-edit-title">编辑快捷提示</h4>
+      <p class="catalog-prompt-edit-hint" id="catalog-prompt-edit-hint">
+        输入框语法：<code>&lt;参数名|占位说明&gt;</code>，例如 <code>&lt;userId|用户 ID&gt;</code>。竖线后为输入框默认文案。
+      </p>
+      <textarea id="catalog-prompt-edit-textarea" class="catalog-prompt-edit-textarea"
+                rows="4" spellcheck="false" autocomplete="off"></textarea>
+      <div class="catalog-prompt-edit-toolbar">
+        <button type="button" id="catalog-prompt-edit-insert">插入输入框</button>
+      </div>
+      <div class="catalog-prompt-edit-actions">
+        <button type="button" class="cancel" id="catalog-prompt-edit-cancel">取消</button>
+        <button type="button" class="submit" id="catalog-prompt-edit-submit">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="session-context-menu" id="session-context-menu" role="menu" hidden>
+    <button type="button" id="session-context-rename-btn" role="menuitem">修改标题</button>
+    <button type="button" id="session-context-pin-btn" role="menuitem">置顶</button>
+  </div>
+
+  <div class="session-context-menu" id="messages-context-menu" role="menu" hidden>
+    <button type="button" id="messages-context-copy-btn" role="menuitem" hidden>复制</button>
+    <button type="button" id="messages-context-refresh-btn" role="menuitem">刷新</button>
+  </div>
+
+  <div class="session-context-menu" id="sessions-panel-context-menu" role="menu" hidden>
+    <button type="button" id="sessions-panel-context-refresh-btn" role="menuitem">刷新</button>
+  </div>
+
+  <div class="session-context-menu" id="catalog-panel-context-menu" role="menu" hidden>
+    <button type="button" id="catalog-panel-context-refresh-btn" role="menuitem">刷新</button>
+  </div>
+
+  <div class="collaborators-modal" id="forward-modal" aria-hidden="true">
+    <div class="collaborators-box" role="dialog" aria-labelledby="forward-title">
+      <div class="collaborators-head">
+        <h3 id="forward-title">分享到钉钉</h3>
+        <p>勾选接收人或群聊后点击分享；人员走钉钉私聊，群聊由机器人在群内发送。</p>
+        <input type="search" class="collaborators-search" id="forward-search"
+               placeholder="搜索姓名…" autocomplete="off" aria-label="搜索接收人" />
+        <div class="collaborators-meta" id="forward-meta" aria-live="polite"></div>
+      </div>
+      <div class="collaborators-list" id="forward-list"></div>
+      <div class="collaborators-actions">
+        <button type="button" id="btn-forward-cancel">取消</button>
+        <button type="button" class="primary" id="btn-forward-confirm">分享</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="collaborators-modal" id="open-api-modal" aria-hidden="true">
+    <div class="collaborators-box" role="dialog" aria-labelledby="open-api-title">
+      <div class="collaborators-head">
+        <h3 id="open-api-title">Open API</h3>
+        <p class="open-api-hint" id="open-api-base-url" aria-live="polite"></p>
+        <div class="open-api-token-block">
+          <div class="open-api-token-field">
+            <label for="open-api-token-input">我的 Token</label>
+            <input type="text" class="open-api-token-input" id="open-api-token-input"
+                   readonly autocomplete="off" spellcheck="false"
+                   placeholder="尚未生成，点下方「生成 Token」" />
+          </div>
+          <div class="open-api-token-footer">
+            <div class="open-api-token-actions">
+              <button type="button" id="btn-open-api-generate">生成 Token</button>
+              <button type="button" class="primary" id="btn-open-api-copy">复制</button>
+            </div>
+            <p class="open-api-hint open-api-token-hint-inline">重新生成会使旧 Token 失效。</p>
+            <div class="collaborators-meta" id="open-api-meta" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+      <div class="open-api-guide" id="open-api-guide">
+        <section aria-labelledby="open-api-guide-auth">
+          <h4 id="open-api-guide-auth">鉴权与响应格式</h4>
+          <ul>
+            <li>所有接口均为 <code>POST</code>，<code>Content-Type: application/json</code></li>
+            <li>响应体统一为 <code>{ "code", "message", "data" }</code>；业务成功时 <code>code</code> 为 <code>OK</code></li>
+            <li>401 表示 Token 缺失或无效；503 表示服务端未配置任何 Token</li>
+          </ul>
+        </section>
+        <section aria-labelledby="open-api-guide-submit">
+          <h4 id="open-api-guide-submit">提交任务 · <code>POST /task/submit</code></h4>
+          <ul>
+            <li><code>message</code>（可选）：发给 Agent 的文字，可与 <code>images</code> / <code>attachments</code> 同传</li>
+            <li><code>images</code> / <code>attachments</code>（可选）：附图或附件，格式同 Web <code>POST /api/chat</code>；每项含 <code>data_base64</code>、<code>mime</code>、<code>name</code>（扩展名决定图片或文件）</li>
+            <li><code>message</code> 与有效 <code>images</code> / <code>attachments</code> <strong>至少填一项</strong>（可只文字、只图/附件，或文字+图/附件一起）</li>
+            <li><code>conversation_id</code>（可选，别名 <code>session_id</code>）：指定会话；省略则自动续用该 Token 对应的 API 会话</li>
+            <li><code>caller</code>（可选，可省略）：不传时会话与 Agent 身份归属 <strong>Token 提供者</strong>（个人 <code>ywa_</code> Token 为生成者的钉钉 <code>staff_id</code>）。BFF 代登录用户时可传 <code>{ "work_id", "name", "momoid" }</code>；服务 Token 下按 <code>work_id</code> 隔离会话；个人 Token 仍以 Token 为准，<code>name</code> 仅补充展示名</li>
+            <li><code>callback_url</code>（可选）：任务进入终态后 POST 推送，Body 与 query 成功时 <code>data</code> 相同；配置了 <code>WEB_AGENT_OPEN_API_CALLBACK_SECRET</code>（或服务 Agent Webhook Secret）时带 <code>X-Webhook-Signature</code></li>
+            <li>成功 <code>data</code>：<code>task_id</code>、<code>conversation_id</code>、<code>status: "submitted"</code></li>
+            <li>409：该会话仍有任务进行中，<code>data</code> 含当前 <code>task_id</code></li>
+          </ul>
+          <details open>
+            <summary>cURL 示例：提交</summary>
+            <pre id="open-api-example-submit" aria-label="提交任务 cURL 示例"></pre>
+          </details>
+        </section>
+        <section aria-labelledby="open-api-guide-query">
+          <h4 id="open-api-guide-query">查询任务 · <code>POST /task/query</code></h4>
+          <ul>
+            <li><code>task_id</code>（必填）：提交接口返回的任务 ID</li>
+            <li><code>data.status</code>：<code>pending</code> / <code>running</code> / <code>completed</code> / <code>failed</code> / <code>cancelled</code></li>
+            <li>进行中可读 <code>data.phase</code>、<code>data.progress_preview</code>；<code>data.retry_after_ms</code> 建议下次轮询间隔（毫秒）</li>
+            <li>完成时读 <code>data.result</code>（Agent 最终回复）；失败或取消时读 <code>data.error_message</code></li>
+            <li>未设 <code>callback_url</code> 时按 <code>retry_after_ms</code> 轮询直至终态；已设回调仍可用 query 兜底</li>
+          </ul>
+          <details open>
+            <summary>cURL 示例：查询</summary>
+            <pre id="open-api-example-query" aria-label="查询任务 cURL 示例"></pre>
+          </details>
+        </section>
+      </div>
+      <div class="collaborators-actions">
+        <button type="button" id="btn-open-api-close">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="collaborators-modal" id="admin-list-modal" aria-hidden="true">
+    <div class="collaborators-box" role="dialog" aria-labelledby="admin-list-title">
+      <div class="collaborators-head">
+        <div class="admin-list-head-top">
+          <h3 id="admin-list-title">管理员列表</h3>
+          <button type="button" id="btn-apply-admin" class="admin-list-head-action" hidden title="将通过钉钉通知超级管理员，由其在后台手动添加">
+            <span class="admin-list-head-action-label">申请管理员</span>
+          </button>
+        </div>
+        <input type="search" class="collaborators-search" id="admin-list-search"
+               placeholder="搜索姓名…" autocomplete="off" aria-label="搜索用户" />
+        <div class="collaborators-meta" id="admin-list-meta" aria-live="polite"></div>
+      </div>
+      <div class="collaborators-list" id="admin-list-body"></div>
+      <div class="collaborators-actions is-split">
+        <div class="collaborators-actions-side">
+          <button type="button" id="btn-admin-audit-log">操作记录</button>
+        </div>
+        <div class="collaborators-actions-side">
+          <button type="button" id="btn-admin-list-close">关闭</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="collaborators-modal" id="admin-apply-modal" aria-hidden="true">
+    <div class="collaborators-box" role="dialog" aria-labelledby="admin-apply-title">
+      <div class="collaborators-head">
+        <h3 id="admin-apply-title">申请管理员</h3>
+        <div class="collaborators-meta" id="admin-apply-meta">勾选需要开通的权限，提交后将通知超级管理员审批</div>
+      </div>
+      <div class="admin-apply-perms" id="admin-apply-perms"></div>
+      <div class="collaborators-actions is-split">
+        <div class="collaborators-actions-side">
+          <button type="button" id="btn-admin-apply-cancel">取消</button>
+        </div>
+        <div class="collaborators-actions-side">
+          <button type="button" id="btn-admin-apply-submit" class="is-primary">提交申请</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="collaborators-modal" id="admin-audit-modal" aria-hidden="true">
+    <div class="collaborators-box" role="dialog" aria-labelledby="admin-audit-title">
+      <div class="collaborators-head">
+        <h3 id="admin-audit-title">操作记录</h3>
+        <div class="collaborators-meta" id="admin-audit-meta" aria-live="polite"></div>
+      </div>
+      <div class="collaborators-list" id="admin-audit-body"></div>
+      <div class="collaborators-actions">
+        <button type="button" id="btn-admin-audit-close">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="collaborators-modal" id="moa-call-log-modal" aria-hidden="true">
+    <div class="collaborators-box" role="dialog" aria-labelledby="moa-call-log-title">
+      <div class="collaborators-head">
+        <div class="call-log-head-top">
+          <h3 id="moa-call-log-title">操作记录</h3>
+          <div class="call-log-head-filters" id="call-log-filters">
+            <select class="call-log-operator-select" id="call-log-operator-select" aria-label="按操作人筛选">
+              <option value="">全部人员</option>
+            </select>
+            <div class="usage-date-range call-log-date-range" aria-label="日期区间">
+              <button type="button" class="usage-date-trigger is-empty" id="call-log-start-date" aria-label="开始日期" aria-haspopup="dialog" aria-expanded="false">选择日期</button>
+              <span class="usage-date-range-sep">—</span>
+              <button type="button" class="usage-date-trigger is-empty" id="call-log-end-date" aria-label="结束日期" aria-haspopup="dialog" aria-expanded="false">选择日期</button>
+              <div class="usage-date-range-hint" id="call-log-date-range-hint"></div>
+            </div>
+          </div>
+        </div>
+        <div class="call-log-head-sub">
+          <div class="collaborators-meta" id="moa-call-log-meta" aria-live="polite"></div>
+          <input type="search" class="collaborators-search call-log-title-search" id="call-log-title-search"
+            placeholder="搜索标题关键字" aria-label="按标题搜索" autocomplete="off" />
+        </div>
+      </div>
+      <div class="collaborators-list" id="moa-call-log-body"></div>
+      <div class="collaborators-actions">
+        <button type="button" id="btn-moa-call-log-close">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="collaborators-modal" id="call-log-replay-modal" aria-hidden="true">
+    <div class="collaborators-box" role="dialog" aria-labelledby="call-log-replay-title">
+      <div class="collaborators-head">
+        <h3 id="call-log-replay-title">执行参数</h3>
+        <p id="call-log-replay-sub" class="collaborators-meta"></p>
+      </div>
+      <div class="call-log-replay-body">
+        <div id="call-log-replay-notice" class="call-log-replay-notice" hidden></div>
+        <div class="call-log-replay-fields" id="call-log-replay-fields" aria-label="执行参数"></div>
+        <p id="call-log-replay-help" class="call-log-replay-help"></p>
+        <div id="call-log-replay-result" class="call-log-replay-result" hidden></div>
+      </div>
+      <div class="collaborators-actions">
+        <button type="button" id="btn-call-log-replay-cancel">取消</button>
+        <button type="button" class="primary" id="btn-call-log-replay-run">直接运行</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="collaborators-modal" id="user-profile-modal" aria-hidden="true">
+    <div class="collaborators-box" role="dialog" aria-labelledby="user-profile-title">
+      <div class="collaborators-head">
+        <h3 id="user-profile-title">用户资料</h3>
+        <p id="user-profile-subtitle">查看详细信息，或通过钉钉机器人私聊对方。</p>
+      </div>
+      <div id="user-profile-body">
+        <div class="user-profile-head" id="user-profile-head"></div>
+        <dl class="user-profile-details" id="user-profile-details"></dl>
+        <div class="user-profile-status" id="user-profile-status" aria-live="polite"></div>
+        <div class="user-profile-compose" id="user-profile-compose">
+          <div class="user-profile-compose-head">
+            <p class="user-profile-compose-hint">消息将以「Web Agent · 超管」身份通过钉钉机器人私聊发送。</p>
+            <button type="button" class="user-profile-message-log-toggle" id="btn-user-profile-message-log" hidden>查看记录</button>
+          </div>
+          <textarea id="user-profile-message" maxlength="4000" placeholder="输入要发送的内容…"></textarea>
+          <div class="user-profile-message-log" id="user-profile-message-log" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="collaborators-actions user-profile-actions">
+        <button type="button" id="btn-user-profile-close">关闭</button>
+        <button type="button" id="btn-user-profile-compose">发消息</button>
+        <button type="button" class="primary" id="btn-user-profile-send" hidden>发送</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="collaborators-modal" id="collaborators-modal" aria-hidden="true">
+    <div class="collaborators-box" role="dialog" aria-labelledby="collaborators-title">
+      <div class="collaborators-head">
+        <h3 id="collaborators-title">共同对话</h3>
+        <p>勾选参与人员后确定，对方可在本网页会话中一起提问。</p>
+        <input type="search" class="collaborators-search" id="collaborators-search"
+               placeholder="搜索姓名…" autocomplete="off" aria-label="搜索参与人员" />
+        <div class="collaborators-meta" id="collaborators-meta" aria-live="polite"></div>
+      </div>
+      <div class="collaborators-list" id="collaborators-list"></div>
+      <div class="collaborators-actions">
+        <button type="button" id="btn-collaborators-cancel">取消</button>
+        <button type="button" class="primary" id="btn-collaborators-confirm">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-modal" id="settings-modal">
+    <div class="settings-box" id="settings-box">
+      <div id="settings-view-main">
+        <div class="settings-head">
+          <h3>设置</h3>
+          <button type="button" class="btn-close" id="btn-settings-close" title="关闭" aria-label="关闭">×</button>
+        </div>
+        <div class="settings-section" id="settings-chat-prefs-section">
+          <div class="settings-label">对话</div>
+          <div class="settings-chat-prefs">
+            <button type="button" class="reply-mode-toggle" id="reply-mode-toggle-settings" data-mode="standard" title="点击切换回复详略：精简 / 标准 / 详细">
+              <span class="reply-mode-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"></svg>
+              </span>
+              <span class="reply-mode-label">标准回复</span>
+            </button>
+            <label class="dingtalk-push-toggle" id="dingtalk-push-toggle-settings" title="执行完成后将按当前勾选状态决定是否发送到您的钉钉私聊">
+              <input type="checkbox" id="chk-push-dingtalk-settings" />
+              <span>结果发钉钉</span>
+            </label>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-label">外观</div>
+          <div class="theme-toggle" role="group" aria-label="主题模式">
+            <button type="button" class="theme-option" id="theme-auto" data-theme="auto">自动模式</button>
+            <button type="button" class="theme-option" id="theme-light" data-theme="light">白天模式</button>
+            <button type="button" class="theme-option" id="theme-dark" data-theme="dark">夜间模式</button>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-label">大模型</div>
+          <div class="model-picker" id="model-picker">
+            <button type="button" class="model-picker-trigger" id="model-picker-trigger" aria-expanded="false" aria-haspopup="listbox">
+              <span class="model-picker-label" id="model-picker-label">Composer 2.5（默认）</span>
+              <svg class="model-picker-chevron" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+            <div class="model-picker-menu" id="model-picker-menu" role="listbox" hidden></div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-label">外部 Agent</div>
+          <div class="external-agent-list" id="external-agent-list"></div>
+        </div>
+        <div class="settings-section" id="settings-service-section" hidden>
+          <div class="settings-label">服务</div>
+          <div class="settings-service-row">
+            <button type="button" class="settings-service-restart-btn" id="btn-settings-restart-web-agent">重启 Web Agent</button>
+            <button type="button" class="settings-service-restart-btn" id="btn-settings-restart-gateway">重启钉钉网关</button>
+            <label class="settings-toggle-row" title="勾选时不向钉钉群推送启停通知（主要影响钉钉网关）">
+              <input type="checkbox" id="chk-restart-service-silent" checked />
+              静默
+            </label>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-label">其他</div>
+          <div class="settings-footer-links">
+            <button type="button" class="settings-link" id="btn-settings-about" title="关于 Yaahlan Web Agent" aria-label="关于">
+              <span>关于</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 10v6"/><path d="M12 7h.01"/></svg>
+            </button>
+            <button type="button" class="settings-link" id="btn-settings-usage" title="我的用量" aria-label="用量" hidden>
+              <span>用量</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+            </button>
+            <button type="button" class="settings-feedback-btn" id="btn-message-board" title="反馈" aria-label="反馈">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              <span>反馈</span>
+            </button>
+          </div>
+          <div class="settings-footer-extra">
+            <button type="button" class="settings-link" id="btn-settings-moa-history" title="MOA / Admin / 风控操作记录" aria-label="操作历史记录">
+              <span>操作历史记录</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="web-toast" id="web-toast" role="status" aria-live="polite" hidden></div>
+
+  <div class="message-board-modal" id="message-board-modal" aria-hidden="true">
+    <div class="message-board-bubble" id="message-board-bubble" role="dialog" aria-labelledby="message-board-title">
+      <div class="message-board-head">
+        <div>
+          <h3 id="message-board-title">反馈</h3>
+          <p id="message-board-hint">遇到问题、优化建议、功能补充 都可以进行反馈</p>
+        </div>
+      </div>
+      <div class="message-board-list" id="message-board-list"></div>
+      <form class="message-board-compose" id="message-board-form">
+        <textarea id="message-board-content" maxlength="2000" placeholder="输入反馈内容…" aria-label="反馈内容"></textarea>
+        <div class="message-board-compose-row">
+          <label class="message-board-realname" for="message-board-realname">
+            <input type="checkbox" id="message-board-realname" />
+            实名反馈
+          </label>
+          <button type="submit" class="message-board-submit" id="message-board-submit">发布反馈</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="moa-record-modal" id="moa-record-modal" aria-hidden="true">
+    <div class="moa-record-bubble" id="moa-record-bubble" role="dialog" aria-labelledby="moa-record-title">
+      <div class="moa-record-head">
+        <div>
+          <h3 id="moa-record-title">MOA 录制</h3>
+          <p>选择录制方式，填写信息后直接生成 MOA</p>
+        </div>
+        <button type="button" class="btn-close" id="btn-moa-record-close" title="关闭">×</button>
+      </div>
+      <div class="moa-record-body">
+        <div class="moa-record-mode-list" id="moa-record-mode-list"></div>
+        <div id="moa-record-form" hidden>
+          <div class="moa-record-form-head">
+            <span class="moa-record-form-title" id="moa-record-form-title"></span>
+          </div>
+          <p class="moa-record-form-desc" id="moa-record-form-desc"></p>
+          <div id="moa-record-form-fields"></div>
+        </div>
+      </div>
+      <div class="moa-record-actions">
+        <button type="button" class="moa-record-submit" id="btn-moa-record-submit" hidden>生成 MOA</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="usage-modal" id="usage-modal" aria-hidden="true">
+    <div class="usage-bubble" id="usage-bubble" role="dialog" aria-labelledby="usage-title">
+      <div class="usage-head">
+        <h3 id="usage-title">Cursor 用量</h3>
+        <button type="button" class="btn-close" id="btn-usage-close" title="关闭" aria-label="关闭">×</button>
+      </div>
+      <div class="usage-body">
+        <div class="usage-stats-panel" id="usage-stats-panel">
+          <div class="usage-stats-main" id="usage-stats-main">
+          <div class="usage-range-toggle" role="group" aria-label="统计时间范围">
+            <button type="button" class="usage-range-option active" data-range="day">本日</button>
+            <button type="button" class="usage-range-option" data-range="week">本周</button>
+            <button type="button" class="usage-range-option" data-range="month">本月</button>
+            <button type="button" class="usage-range-option" data-range="yesterday">昨日</button>
+            <button type="button" class="usage-range-option" data-range="7d">上周</button>
+            <button type="button" class="usage-range-option" data-range="last_month">上月</button>
+            <button type="button" class="usage-range-option" data-range="30d">30天内</button>
+          </div>
+          <div class="usage-date-range" aria-label="日期区间">
+            <button type="button" class="usage-date-trigger is-empty" id="usage-start-date" aria-label="开始日期" aria-haspopup="dialog" aria-expanded="false" disabled>选择日期</button>
+            <span class="usage-date-range-sep">—</span>
+            <button type="button" class="usage-date-trigger is-empty" id="usage-end-date" aria-label="结束日期" aria-haspopup="dialog" aria-expanded="false" disabled>选择日期</button>
+            <div class="usage-date-range-hint" id="usage-date-range-hint"></div>
+          </div>
+          <div class="usage-stats-card">
+            <div class="usage-stat">
+              <span class="usage-stat-value" id="usage-requests">—</span>
+              <span class="usage-stat-label">请求数</span>
+            </div>
+            <div class="usage-stat">
+              <span class="usage-stat-value" id="usage-tokens">—</span>
+              <span class="usage-stat-label">Token</span>
+            </div>
+          </div>
+          <div class="usage-daily-chart-wrap" id="usage-daily-chart-wrap" hidden>
+            <div class="usage-daily-chart-scroll">
+              <div class="usage-daily-chart" id="usage-daily-chart" aria-hidden="true"></div>
+              <div class="usage-chart-tooltip" id="usage-chart-tooltip" hidden role="tooltip"></div>
+            </div>
+            <div class="usage-daily-legend">
+              <span class="lg-req">请求数</span>
+              <span class="lg-tok">Token</span>
+            </div>
+          </div>
+          <div class="usage-stats-footer">
+            <div class="usage-stats-hint" id="usage-stats-hint">数据来源 <a href="https://cursor.com/dashboard/usage" target="_blank" rel="noopener noreferrer">Cursor Dashboard</a></div>
+            <button type="button" class="usage-rank-btn" id="btn-usage-rank" title="当前区间提问次数排行">榜单</button>
+          </div>
+          </div>
+          <div class="usage-rank-panel" id="usage-rank-panel" hidden>
+            <div class="usage-rank-head">
+              <button type="button" class="usage-rank-back" id="btn-usage-rank-back">← 返回</button>
+              <span class="usage-rank-title">提问次数榜</span>
+              <span class="usage-rank-meta" id="usage-rank-meta"></span>
+            </div>
+            <div class="usage-rank-loading" id="usage-rank-loading" hidden>加载中…</div>
+            <div class="usage-rank-empty" id="usage-rank-empty" hidden>该区间暂无提问记录</div>
+            <ol class="usage-rank-list" id="usage-rank-list"></ol>
+          </div>
+        </div>
+        <div class="usage-setup" id="usage-setup" hidden>
+          <p class="usage-setup-title">绑定 Cursor 账号</p>
+          <p class="usage-setup-desc">
+            用量数据来自
+            <a href="https://cursor.com/dashboard/usage" target="_blank" rel="noopener noreferrer">cursor.com/dashboard/usage</a>。
+            打开该页面并登录后，在浏览器 DevTools → Network 任意请求中复制
+            <code>Cookie</code> 整段，或仅复制 <code>WorkosCursorSessionToken</code> 的值粘贴到下方；
+            若服务端已配置 <code>CURSOR_API_KEY</code>，也可仅填写 Cursor 登录邮箱。
+          </p>
+          <div class="usage-setup-field">
+            <label for="usage-session-token">WorkosCursorSessionToken 或 Cookie</label>
+            <input type="password" id="usage-session-token" autocomplete="off" placeholder="user_… 或 Cookie 整段" />
+          </div>
+          <div class="usage-setup-field">
+            <label for="usage-cursor-email">Cursor 登录邮箱（可选，需 Admin API）</label>
+            <input type="email" id="usage-cursor-email" autocomplete="email" placeholder="you@company.com" />
+          </div>
+          <div class="usage-setup-actions">
+            <button type="button" class="usage-setup-btn primary" id="btn-usage-save">保存并查询</button>
+            <button type="button" class="usage-setup-btn" id="btn-usage-clear">清除绑定</button>
+          </div>
+          <div class="usage-setup-status" id="usage-setup-status"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="usage-date-picker" id="usage-date-picker" hidden role="dialog" aria-label="选择日期">
+    <div class="usage-date-picker-head">
+      <span class="usage-date-picker-title" id="usage-date-picker-title"></span>
+      <div class="usage-date-picker-nav">
+        <button type="button" id="usage-date-picker-prev" aria-label="上一月">◀</button>
+        <button type="button" id="usage-date-picker-next" aria-label="下一月">▶</button>
+      </div>
+    </div>
+    <div class="usage-date-picker-weekdays" aria-hidden="true">
+      <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+    </div>
+    <div class="usage-date-picker-grid" id="usage-date-picker-grid"></div>
+  </div>
+
+  <div class="about-modal" id="about-modal" aria-hidden="true">
+    <div class="about-bubble" id="about-bubble" role="dialog" aria-labelledby="about-title">
+      <div class="about-head">
+        <div>
+          <h3 id="about-title">关于 Yaahlan Web Agent</h3>
+          <p class="about-intro" id="about-intro"></p>
+        </div>
+        <button type="button" class="btn-close" id="btn-about-close" title="关闭" aria-label="关闭">×</button>
+      </div>
+      <div class="about-body" id="about-docs-list"></div>
+    </div>
+  </div>
+
+  <div class="bookmarks-modal" id="bookmarks-modal" aria-hidden="true">
+    <div class="bookmarks-bubble" id="bookmarks-bubble" role="dialog" aria-labelledby="bookmarks-title">
+      <div class="bookmarks-head">
+        <div class="bookmarks-head-main">
+          <h3 id="bookmarks-title">快捷入口</h3>
+        </div>
+        <div class="bookmarks-head-actions">
+          <button type="button" class="primary" id="btn-bookmarks-add">+ 添加</button>
+        </div>
+      </div>
+      <div class="bookmarks-body" id="bookmarks-body"></div>
+    </div>
+    <div class="bookmarks-add-modal" id="bookmarks-add-modal" hidden aria-hidden="true">
+      <div class="bookmarks-add-dialog" id="bookmarks-add-dialog" role="dialog" aria-labelledby="bookmarks-add-title">
+        <h4 id="bookmarks-add-title">添加快捷入口</h4>
+        <form class="bookmarks-add-form" id="bookmarks-add-form">
+          <div class="bookmarks-add-field">
+            <label for="bookmarks-url-input">网址</label>
+            <input id="bookmarks-url-input" name="url" type="url" placeholder="https://..." required autocomplete="off" />
+          </div>
+          <div class="bookmarks-add-edit-fields" id="bookmarks-add-edit-fields">
+            <div class="bookmarks-add-field">
+              <label for="bookmarks-label-input">名称</label>
+              <input id="bookmarks-label-input" name="label" type="text" maxlength="40"
+                     placeholder="显示名称" required autocomplete="off" />
+            </div>
+            <div class="bookmarks-add-field">
+              <label for="bookmarks-description-input">备注</label>
+              <input id="bookmarks-description-input" name="description" type="text" maxlength="80"
+                     placeholder="可选" autocomplete="off" />
+            </div>
+          </div>
+          <div class="bookmarks-add-field">
+            <label for="bookmarks-category-select">分类</label>
+            <select name="category" id="bookmarks-category-select" aria-label="分类"></select>
+            <input name="categoryNew" id="bookmarks-category-new" type="text"
+                   placeholder="新分类名称" maxlength="20" hidden />
+          </div>
+          <div class="bookmarks-add-actions">
+            <button type="button" class="cancel" id="btn-bookmarks-add-cancel">取消</button>
+            <button type="submit" class="submit">保存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="bookmarks-add-modal" id="bookmarks-category-edit-modal" hidden aria-hidden="true">
+      <div class="bookmarks-add-dialog" id="bookmarks-category-edit-dialog" role="dialog" aria-labelledby="bookmarks-category-edit-title">
+        <h4 id="bookmarks-category-edit-title">编辑分类</h4>
+        <form class="bookmarks-add-form" id="bookmarks-category-edit-form">
+          <div class="bookmarks-add-field">
+            <label for="bookmarks-category-label-input">分类名称</label>
+            <input id="bookmarks-category-label-input" name="label" type="text" maxlength="20"
+                   placeholder="分类名称" required autocomplete="off" />
+          </div>
+          <div class="bookmarks-add-actions">
+            <button type="button" class="cancel" id="btn-bookmarks-category-edit-cancel">取消</button>
+            <button type="submit" class="submit">保存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>

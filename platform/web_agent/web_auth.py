@@ -214,7 +214,9 @@ def is_anonymous_allowed(handler: BaseHTTPRequestHandler, *, method: str = "GET"
     if is_public_auth_path(path):
         return True
     if verb == "GET":
-        if path in ("/", "/chat.html", "/login.html"):
+        if path in ("/", "/chat.html", "/chat-mobile.html", "/login.html"):
+            return True
+        if path == "/mobile-layout.css":
             return True
         # 页面依赖的静态脚本须免鉴权，否则浏览器收到 login.html 导致 JS 变量未定义
         if path.endswith(".js") and not path.startswith("/api/"):

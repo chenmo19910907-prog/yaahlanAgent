@@ -78,6 +78,9 @@ def main() -> int:
     parser.add_argument("--expire-time-sec", dest="expire_time_sec", default="")
     parser.add_argument("--shift-time", dest="shift_time", default="")
     parser.add_argument("--white-users", dest="white_users", default="")
+    parser.add_argument("--enabled", default="", help="JSON 顶层 enabled（true/false）")
+    parser.add_argument("--open-areas", dest="open_areas", default="", help="JSON 顶层 openAreas，逗号分隔")
+    parser.add_argument("--config-value", dest="config_value", default="", help="标量 configValue（value_type=scalar 场景）")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--no-publish", action="store_true")
     args = parser.parse_args()
@@ -85,6 +88,39 @@ def main() -> int:
     scenarios_path = _resolve_scenarios_path(args.scenarios_file or None)
     catalog = _load_scenarios(scenarios_path)
     scenario = _scenario_by_key(catalog, args.scenario)
+    if str(scenario.get("value_type") or "") == "scalar":
+        config_key = str(scenario["config_key"])
+        namespace = str(scenario["namespace"])
+        env = catalog.get("env") or {}
+        app_key = str(scenario.get("app_key") or env.get("app_key") or "").strip()
+        cv = str(args.config_value or "").strip()
+        if not cv:
+            print("缺少 --config-value", file=sys.stderr)
+            return 2
+        mse_args = ["--namespace", namespace, "--config-key", config_key, "--config-value", cv]
+        if app_key:
+            mse_args.extend(["--app-key", app_key])
+        if args.dry_run:
+            mse_args.append("--dry-run")
+        else:
+            mse_args.append("--save")
+            if not args.no_publish:
+                mse_args.append("--publish")
+        print(f"场景：{scenario.get('name')} → {namespace}/{config_key} = {cv}")
+        _run_mse(mse_args)
+        if not args.dry_run:
+            share_args = [
+                "--namespace",
+                namespace,
+                "--config-key",
+                config_key,
+                "--share-link-only",
+            ]
+            if app_key:
+                share_args.extend(["--app-key", app_key])
+            _run_mse(share_args)
+        return 0
+
     if scenario.get("read_only"):
         config_key = str(scenario["config_key"])
         namespace = str(scenario["namespace"])
@@ -134,6 +170,19 @@ def main() -> int:
         set_pairs.append(f"{wl_mse_key}={json.dumps(white_users, ensure_ascii=False)}")
     elif white_users is not None and "whiteUsers" in writable:
         set_pairs.append(f"whiteUsers={json.dumps(white_users, ensure_ascii=False)}")
+    open_areas = _parse_white_users(args.open_areas or None)
+    if open_areas is not None and "openAreas" in writable:
+        set_pairs.append(f"openAreas={json.dumps(open_areas, ensure_ascii=False)}")
+    enabled_raw = str(args.enabled or "").strip()
+    if enabled_raw and "enabled" in writable:
+        low = enabled_raw.lower()
+        if low in ("true", "1", "yes"):
+            set_pairs.append("enabled=true")
+        elif low in ("false", "0", "no"):
+            set_pairs.append("enabled=false")
+        else:
+            print(f"无效的 --enabled={enabled_raw!r}，须 true/false", file=sys.stderr)
+            return 2
     if not set_pairs:
         print("未指定任何可写字段", file=sys.stderr)
         return 2
